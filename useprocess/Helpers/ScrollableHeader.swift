@@ -7,6 +7,7 @@ extension View {
         selectedSection: Binding<ProcessMainSection>,
         pageSection: ProcessMainSection,
         dismissesKeyboard: ScrollDismissesKeyboardMode? = nil,
+        scrollDisabled: Bool = false,
         @ViewBuilder content: @escaping () -> ScrollContent
     ) -> some View {
         Group {
@@ -14,11 +15,13 @@ extension View {
                 ScrollView {
                     content()
                 }
+                .scrollDisabled(scrollDisabled)
                 .scrollDismissesKeyboard(dismissesKeyboard)
             } else {
                 ScrollView {
                     content()
                 }
+                .scrollDisabled(scrollDisabled)
             }
         }
         .scrollIndicators(.hidden)

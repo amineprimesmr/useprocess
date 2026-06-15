@@ -27,9 +27,14 @@ struct ProcessProfileView: View {
         NavigationStack(path: $navigationPath) {
             ScrollView(.vertical, showsIndicators: false) {
                 profileContent(resolvedProfile)
+                    .frame(maxWidth: .infinity)
             }
             .background(ProfileTheme.background)
+            .scrollContentBackground(.hidden)
             .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 0, for: .scrollContent)
+            .contentMargins(.top, -ProfileTheme.topSafeInset, for: .scrollContent)
+            .clipped()
             .ignoresSafeArea(edges: .top)
             .overlay(alignment: .top) {
                 ProfileTopBar(onSettings: { showSettings = true })
@@ -46,7 +51,7 @@ struct ProcessProfileView: View {
                 profileFieldEditor(for: destination)
             }
         }
-        .background(ProfileTheme.background)
+        .background(ProfileTheme.background.ignoresSafeArea())
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
             hasExistingPhoto: profileStore.hasCoverPhoto,
@@ -135,6 +140,8 @@ struct ProcessProfileView: View {
 
             ProfileActionButtons(onShare: { showShareSheet = true })
 
+            WelcomePlanProfileSection()
+
             if let bio = profile.bio, !bio.isEmpty {
                 Text(bio)
                     .font(.system(size: 15))
@@ -149,5 +156,6 @@ struct ProcessProfileView: View {
         }
         .padding(.horizontal, ProfileTheme.horizontalPadding)
         .padding(.bottom, 32)
+        .safeAreaPadding(.bottom, 8)
     }
 }

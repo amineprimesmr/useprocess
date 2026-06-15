@@ -24,6 +24,10 @@ struct CoachChatView: View {
     @State private var thinkingBlobStart = Date.now
     @State private var showAttachmentMenu = false
     @State private var activeAttachmentSheet: CoachAttachmentSheet?
+    @State private var showWelcomePlanPreview = false
+    @State private var welcomePlanPreviewID = UUID()
+    @State private var messageContextMenu: CoachUserMessageContextState?
+    @State private var viewportHeight: CGFloat = 0
 
     private let messageFont = Font.system(size: 18, weight: .regular)
     private let messageLineSpacing: CGFloat = 5
@@ -49,10 +53,44 @@ struct CoachChatView: View {
                 onDelete: { id in
                     Task { await viewModel.deleteConversation(id) }
                 },
-                onOpenProfile: onOpenProfile
+                onOpenProfile: onOpenProfile,
+                onOpenWelcomePlan: openWelcomePlanPreview
             )
         } content: { _ in
             chatContent
+        }
+        .overlay {
+            if let context = messageContextMenu {
+                CoachUserMessageContextOverlay(
+                    message: context.message,
+                    bubbleFrame: context.bubbleFrame,
+                    font: messageFont,
+                    lineSpacing: messageLineSpacing,
+                    bubbleColor: theme.coachUserBubble,
+                    textColor: theme.primaryText,
+                    onEdit: {
+                        let msg = context.message
+                        messageContextMenu = nil
+                        Task {
+                            await viewModel.beginEditingMessage(msg)
+                            try? await Task.sleep(nanoseconds: 280_000_000)
+                            isInputFocused = true
+                        }
+                    },
+                    onDismiss: { messageContextMenu = nil }
+                )
+                .zIndex(999)
+                .transition(.opacity)
+            }
+        }
+        .animation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
+        .fullScreenCover(isPresented: $showWelcomePlanPreview) {
+            WelcomePlanChatView(previewMode: true) {
+                showWelcomePlanPreview = false
+            }
+            .id(welcomePlanPreviewID)
+            .environment(\.appTheme, theme)
+            .environmentObject(profileService)
         }
         .reportsCoachSidebarExpanded(viewModel.isSidebarExpanded)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -64,16 +102,21 @@ struct CoachChatView: View {
             viewModel.bind(profile: profileService.currentProfile)
             Task { await viewModel.loadThreadIfNeeded() }
         }
+        .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenCoach) { _, should in
+            guard should else { return }
+            Task { await viewModel.consumePendingPlanPromptIfNeeded() }
+        }
     }
 
     private var chatContent: some View {
-        GeometryReader { rootGeo in
+        ZStack(alignment: .topLeading) {
             VStack(spacing: 0) {
                 ScrollViewReader { proxy in
                     processMainScrollableChrome(
                         selectedSection: $selectedSection,
                         pageSection: .coach,
-                        dismissesKeyboard: .interactively
+                        dismissesKeyboard: .interactively,
+                        scrollDisabled: messageContextMenu != nil
                     ) {
                         LazyVStack(alignment: .leading, spacing: 20) {
                             if !viewModel.claudeConfigured {
@@ -96,29 +139,34 @@ struct CoachChatView: View {
                             }
 
                             Color.clear
-                                .frame(height: scrollBottomInset(for: rootGeo.size.height))
+                                .frame(height: scrollBottomInset)
                                 .id("bottom-spacer")
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .padding(.bottom, viewModel.isVoiceRecording ? 80 : 0)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .simultaneousGesture(
                         TapGesture().onEnded {
                             isInputFocused = false
                         }
                     )
-                    .onChange(of: viewModel.messages.count) { _, _ in
-                        scrollToActiveTurn(proxy, viewportHeight: rootGeo.size.height)
+                    .onChange(of: viewModel.messages.count) { oldCount, newCount in
+                        if newCount < oldCount {
+                            scrollToConversationTop(proxy, delay: 0.05)
+                        } else {
+                            scrollToActiveTurn(proxy)
+                        }
                     }
                     .onChange(of: viewModel.streamingText) { _, _ in
-                        scrollToActiveTurn(proxy, viewportHeight: rootGeo.size.height)
+                        scrollToActiveTurn(proxy)
                     }
                     .onChange(of: viewModel.isSending) { _, sending in
                         if sending {
                             thinkingBlobStart = .now
                             isInputFocused = false
-                            scrollToActiveTurn(proxy, viewportHeight: rootGeo.size.height, delay: 0.08)
+                            scrollToActiveTurn(proxy, delay: 0.08)
                         }
                     }
                 }
@@ -131,6 +179,16 @@ struct CoachChatView: View {
                         .padding(.bottom, 4)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background {
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear { viewportHeight = geo.size.height }
+                        .onChange(of: geo.size.height) { _, height in
+                            viewportHeight = height
+                        }
+                }
+            }
             .background(theme.background.ignoresSafeArea())
             .overlay(alignment: .topLeading) {
                 if viewModel.isSending && viewModel.streamingText.isEmpty {
@@ -138,7 +196,7 @@ struct CoachChatView: View {
                         isDark: theme.isDark,
                         mode: .thinking(start: thinkingBlobStart)
                     )
-                    .padding(.top, blobVerticalCenter(in: rootGeo.size.height) - 36)
+                    .padding(.top, blobVerticalCenter - 36)
                 } else if viewModel.isVoiceRecording || viewModel.isVoiceExiting {
                     CoachEdgeBlobOverlay(
                         isDark: theme.isDark,
@@ -147,7 +205,7 @@ struct CoachChatView: View {
                             total: viewModel.voiceMaxDuration
                         )
                     )
-                    .padding(.top, blobVerticalCenter(in: rootGeo.size.height) - 36)
+                    .padding(.top, blobVerticalCenter - 36)
                 }
             }
             .ignoresSafeArea(edges: .leading)
@@ -159,7 +217,7 @@ struct CoachChatView: View {
                         isExiting: viewModel.isVoiceExiting,
                         onCancel: { viewModel.cancelVoiceRecording() }
                     )
-                    .frame(width: rootGeo.size.width)
+                    .frame(maxWidth: .infinity)
                     .padding(.bottom, 148)
                     .ignoresSafeArea(edges: .leading)
                     .transition(
@@ -171,7 +229,7 @@ struct CoachChatView: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             CoachLiquidGlassInputBar(
                 text: $viewModel.inputText,
                 isFocused: $isInputFocused,
@@ -261,17 +319,35 @@ struct CoachChatView: View {
         }
     }
 
-    private func blobVerticalCenter(in viewportHeight: CGFloat) -> CGFloat {
-        viewportHeight * 0.42
+    private var blobVerticalCenter: CGFloat {
+        max(viewportHeight * 0.42, 180)
     }
 
-    private func scrollBottomInset(for viewportHeight: CGFloat) -> CGFloat {
-        max(0, viewportHeight * 0.58)
+    private var scrollBottomInset: CGFloat { 24 }
+
+    private func scrollToConversationTop(
+        _ proxy: ScrollViewProxy,
+        delay: TimeInterval = 0.04
+    ) {
+        let performScroll = {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
+                if let first = viewModel.messages.first {
+                    proxy.scrollTo(first.id, anchor: .top)
+                } else {
+                    proxy.scrollTo("bottom-spacer", anchor: .top)
+                }
+            }
+        }
+
+        if delay > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: performScroll)
+        } else {
+            performScroll()
+        }
     }
 
     private func scrollToActiveTurn(
         _ proxy: ScrollViewProxy,
-        viewportHeight: CGFloat,
         delay: TimeInterval = 0.04
     ) {
         let performScroll = {
@@ -309,12 +385,14 @@ struct CoachChatView: View {
     }
 
     private var streamingText: some View {
-        Text(viewModel.streamingText)
-            .font(messageFont)
-            .foregroundStyle(theme.primaryText)
-            .lineSpacing(messageLineSpacing)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .textSelection(.enabled)
+        CoachFormattedText(
+            text: viewModel.streamingText,
+            font: messageFont,
+            lineSpacing: messageLineSpacing,
+            color: theme.primaryText
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .textSelection(.enabled)
     }
 
     @ViewBuilder
@@ -322,24 +400,35 @@ struct CoachChatView: View {
         let isUser = message.role == .user
 
         if isUser {
-            HStack {
-                Spacer(minLength: 56)
-                Text(message.text)
-                    .font(messageFont)
-                    .foregroundStyle(theme.primaryText)
-                    .lineSpacing(messageLineSpacing)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(theme.coachUserBubble, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .textSelection(.enabled)
-            }
+            CoachUserMessageBubbleView(
+                message: message,
+                font: messageFont,
+                lineSpacing: messageLineSpacing,
+                bubbleColor: theme.coachUserBubble,
+                textColor: theme.primaryText,
+                onLongPress: { frame in
+                    isInputFocused = false
+                    messageContextMenu = CoachUserMessageContextState(
+                        message: message,
+                        bubbleFrame: frame
+                    )
+                }
+            )
         } else {
-            Text(message.text)
-                .font(messageFont)
-                .foregroundStyle(theme.primaryText)
-                .lineSpacing(messageLineSpacing)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+            CoachFormattedText(
+                text: message.text,
+                font: messageFont,
+                lineSpacing: messageLineSpacing,
+                color: theme.primaryText
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .textSelection(.enabled)
         }
+    }
+
+    private func openWelcomePlanPreview() {
+        WelcomePlanStore.shared.resetQuestionnaireForPreview()
+        welcomePlanPreviewID = UUID()
+        showWelcomePlanPreview = true
     }
 }

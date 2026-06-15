@@ -41,7 +41,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 struct ProcessMainFilterBar: View {
     @Binding var selection: ProcessMainSection
     var glassAnimationsEnabled: Bool = true
-    @Namespace private var glassNamespace
+    @Namespace private var chipNamespace
     @Environment(\.colorScheme) private var colorScheme
 
     private var selectedFill: Color { colorScheme == .dark ? .white : .black }
@@ -62,13 +62,18 @@ struct ProcessMainFilterBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 2)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(ProcessGlass.spring, value: selection)
     }
 
     private func filterChip(_ item: ProcessMainSection) -> some View {
         let isSelected = selection == item
 
         return Button {
-            selection = item
+            guard selection != item else { return }
+            HapticManager.shared.selection()
+            withAnimation(ProcessGlass.spring) {
+                selection = item
+            }
         } label: {
             HStack(spacing: 7) {
                 chipIcon(for: item, isSelected: isSelected)
@@ -80,28 +85,16 @@ struct ProcessMainFilterBar: View {
             .foregroundStyle(isSelected ? selectedLabel : Color.primary)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+            .background {
+                ProcessFilterChipBackground(
+                    isSelected: isSelected,
+                    glassAnimationsEnabled: glassAnimationsEnabled,
+                    selectedFill: selectedFill,
+                    namespace: chipNamespace
+                )
+            }
         }
         .buttonStyle(.plain)
-        .background {
-            if #available(iOS 26.0, *) {
-                EmptyView()
-            } else if isSelected {
-                Capsule().fill(selectedFill)
-            } else {
-                Capsule().fill(.ultraThinMaterial)
-            }
-        }
-        .overlay {
-            if #unavailable(iOS 26.0), !isSelected {
-                Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
-            }
-        }
-        .modifier(ProcessFilterGlassChipModifier(
-            isSelected: isSelected,
-            glassAnimationsEnabled: glassAnimationsEnabled,
-            namespace: glassNamespace,
-            selectedFill: selectedFill
-        ))
         .buttonStyle(ProcessGlassPressStyle())
     }
 
@@ -120,29 +113,35 @@ struct ProcessMainFilterBar: View {
     }
 }
 
-private struct ProcessFilterGlassChipModifier: ViewModifier {
+private struct ProcessFilterChipBackground: View {
     let isSelected: Bool
     let glassAnimationsEnabled: Bool
-    let namespace: Namespace.ID
     let selectedFill: Color
+    let namespace: Namespace.ID
 
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            if isSelected && glassAnimationsEnabled {
-                content
+    var body: some View {
+        if isSelected {
+            if #available(iOS 26.0, *) {
+                Capsule()
+                    .fill(.clear)
                     .glassEffect(ProcessGlass.filterSelected(selectedFill), in: .capsule)
                     .glassEffectID("filter-selection", in: namespace)
             } else {
-                content
-                    .glassEffect(
-                        isSelected
-                            ? ProcessGlass.filterSelected(selectedFill)
-                            : ProcessGlass.regular,
-                        in: .capsule
-                    )
+                Capsule()
+                    .fill(selectedFill)
+                    .matchedGeometryEffect(id: "filter-selection", in: namespace)
             }
+        } else if #available(iOS 26.0, *) {
+            Capsule()
+                .fill(.clear)
+                .glassEffect(ProcessGlass.regular, in: .capsule)
         } else {
-            content
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                }
         }
     }
 }

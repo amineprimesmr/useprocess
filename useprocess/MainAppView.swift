@@ -9,11 +9,15 @@ struct MainAppView: View {
         .scan: .init(section: .scan, headerProgress: 0, headerVisibility: 1)
     ]
     @State private var coachSidebarExpanded = false
+    @State private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var session = AppSession.shared
     @Environment(\.appTheme) private var theme
 
     private var activeScrollHeader: ProcessMainScrollHeaderPreference {
-        scrollHeaders[selectedSection]
+        if selectedSection == .coach {
+            return .init(section: .coach, headerProgress: 0, headerVisibility: 1)
+        }
+        return scrollHeaders[selectedSection]
             ?? .init(section: selectedSection, headerProgress: 0, headerVisibility: 1)
     }
 
@@ -43,10 +47,11 @@ struct MainAppView: View {
 
                 ProcessProfileView()
                     .background(theme.background.ignoresSafeArea())
-                    .safeAreaPadding(.bottom, 72)
+                    .ignoresSafeArea(.container, edges: .top)
                     .tag(ProcessMainSection.profile)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .animation(ProcessGlass.spring, value: selectedSection)
             .ignoresSafeArea(.container, edges: .bottom)
 
             if selectedSection != .profile, !coachSidebarExpanded {
@@ -56,13 +61,6 @@ struct MainAppView: View {
                     headerVisibility: activeScrollHeader.headerVisibility
                 )
                 .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            if selectedSection == .profile {
-                VStack {
-                    Spacer()
-                    ProcessFloatingSectionBar(selection: $selectedSection)
-                }
             }
         }
         .background(theme.background.ignoresSafeArea())
@@ -78,9 +76,18 @@ struct MainAppView: View {
         .onAppear {
             _ = UserSessionCoordinator.shared
         }
+        .onChange(of: planBridge.shouldOpenCoach) { _, should in
+            guard should else { return }
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = .coach
+            }
+            planBridge.shouldOpenCoach = false
+        }
     }
 
     private func openProfile() {
-        selectedSection = .profile
+        withAnimation(ProcessGlass.spring) {
+            selectedSection = .profile
+        }
     }
 }

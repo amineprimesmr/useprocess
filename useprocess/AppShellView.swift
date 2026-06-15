@@ -14,7 +14,13 @@ struct AppShellView: View {
             theme.background.ignoresSafeArea()
 
             if session.hasCompletedOnboarding {
-                MainAppView()
+                if session.hasCompletedWelcomePlanChat {
+                    MainAppView()
+                } else {
+                    WelcomePlanChatView {
+                        // Navigation gérée par AppSession.completeWelcomePlanChat()
+                    }
+                }
             } else {
                 SportOnboardingRootView()
             }
@@ -31,7 +37,17 @@ struct AppShellView: View {
                 _ = UserSessionCoordinator.shared
                 await UnifiedProfileService.shared.loadProfile()
             }
-            if session.hasCompletedOnboarding, HealthManager.shared.isHealthDataAvailable {
+            if session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat {
+                WelcomePlanStore.shared.reloadForCurrentUser()
+                if let plan = WelcomePlanStore.shared.plan {
+                    await OriginPlanNotificationService.scheduleMorningBrief(plan: plan)
+                }
+                await CoachMemorySummarizer.refreshIfNeeded(
+                    profile: UnifiedProfileService.shared.currentProfile,
+                    force: false
+                )
+            }
+            if session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat, HealthManager.shared.isHealthDataAvailable {
                 if HealthManager.shared.isAuthorized {
                     await HealthManager.shared.performFullSync()
                     await DailyDataManager.shared.updateCurrentDayData(with: HealthManager.shared)

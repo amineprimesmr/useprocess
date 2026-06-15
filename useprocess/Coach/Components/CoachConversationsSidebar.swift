@@ -9,6 +9,7 @@ struct CoachConversationsSidebar: View {
     var onCreate: () -> Void
     var onDelete: (UUID) -> Void
     var onOpenProfile: () -> Void
+    var onOpenWelcomePlan: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
     @State private var profileStore = SocialProfileStore.shared
@@ -48,6 +49,11 @@ struct CoachConversationsSidebar: View {
                 .padding(.top, 12)
 
             Spacer(minLength: 0)
+
+            if onOpenWelcomePlan != nil {
+                welcomePlanButton
+                    .padding(.top, 12)
+            }
 
             newConversationButton
                 .padding(.top, 12)
@@ -119,6 +125,16 @@ struct CoachConversationsSidebar: View {
         }
         .frame(width: 52, height: 52)
         .clipShape(Circle())
+    }
+
+    private var welcomePlanButton: some View {
+        ProcessGlassWideButton(
+            title: "Protocole Origine",
+            icon: "leaf.fill"
+        ) {
+            isExpanded = false
+            onOpenWelcomePlan?()
+        }
     }
 
     private var newConversationButton: some View {

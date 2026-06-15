@@ -27,6 +27,7 @@ struct HealthDashboardView: View {
             ) {
                 VStack(spacing: 20) {
                     readinessCard
+                    WelcomePlanHealthSection()
                     faceScanSection
                     claudeBriefCard
                     metricsGrid

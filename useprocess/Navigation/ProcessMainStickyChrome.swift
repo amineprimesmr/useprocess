@@ -50,21 +50,26 @@ struct ProcessMainStickyChromeOverlay: View {
     let headerVisibility: CGFloat
 
     var body: some View {
-        ZStack(alignment: .top) {
-            ProcessMainTopScrollBlur(
-                visibility: headerVisibility,
-                height: ProcessMainChromeMetrics.blurHeight
-            )
+        VStack(spacing: 0) {
+            ZStack(alignment: .top) {
+                ProcessMainTopScrollBlur(
+                    visibility: headerVisibility,
+                    height: ProcessMainChromeMetrics.blurHeight
+                )
+                .allowsHitTesting(false)
 
-            ProcessMainFilterBar(selection: $selection)
-                .padding(.top, ProcessMainChromeMetrics.topSafeInset)
-                .offset(y: headerProgress * -ProcessMainChromeMetrics.dismissDistance)
-                .opacity(Double(headerVisibility))
-                .allowsHitTesting(true)
+                ProcessMainFilterBar(selection: $selection)
+                    .padding(.top, ProcessMainChromeMetrics.topSafeInset)
+                    .offset(y: headerProgress * -ProcessMainChromeMetrics.dismissDistance)
+                    .opacity(Double(headerVisibility))
+            }
+            .frame(height: ProcessMainChromeMetrics.scrollTopInset, alignment: .top)
+
+            Spacer(minLength: 0)
+                .allowsHitTesting(false)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(edges: .top)
-        .allowsHitTesting(false)
     }
 }
 

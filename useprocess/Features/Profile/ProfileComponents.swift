@@ -1,10 +1,10 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Top bar
 
 struct ProfileTopBar: View {
     var onSettings: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack {
@@ -12,16 +12,13 @@ struct ProfileTopBar: View {
             ProcessGlassIconButton(systemName: "gearshape.fill", iconSize: 18, action: onSettings)
         }
         .padding(.horizontal, ProfileTheme.horizontalPadding)
-        .padding(.top, 4)
+        .padding(.top, ProfileTheme.topSafeInset + 4)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .background {
-            LinearGradient(
-                colors: colorScheme == .dark
-                    ? [Color.black.opacity(0.55), Color.black.opacity(0.0)]
-                    : [ProfileTheme.background.opacity(0.94), ProfileTheme.background.opacity(0.0)],
-                startPoint: .top,
-                endPoint: .bottom
+        .background(alignment: .top) {
+            ProcessMainTopScrollBlur(
+                visibility: 1,
+                height: ProfileTheme.topBarBlurHeight
             )
             .ignoresSafeArea(edges: .top)
             .allowsHitTesting(false)
@@ -54,10 +51,10 @@ struct ProfileEmptyHeroSection: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.top, ProfileTheme.emptyHeroTopClearance)
+            .padding(.top, ProfileTheme.emptyHeroTopClearance + ProfileTheme.topSafeInset)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(height: ProfileTheme.emptyHeroHeight)
+        .frame(height: ProfileTheme.emptyHeroTotalHeight)
         .frame(maxWidth: .infinity)
         .clipShape(ProfileTheme.heroBottomShape)
     }
@@ -74,44 +71,43 @@ struct ProfileCoverPhotoSection: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ZStack {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+                .overlay(alignment: .top) {
+                    ProcessMainTopScrollBlur(
+                        visibility: 1,
+                        height: ProfileTheme.heroTopBlurHeight
+                    )
                     .frame(maxWidth: .infinity)
-                    .frame(height: ProfileTheme.heroHeight)
-                    .clipped()
-                    .overlay {
-                        LinearGradient(
-                            colors: [
-                                .black.opacity(0.12),
-                                .clear,
-                                .black.opacity(0.35),
-                                .black.opacity(0.78)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    }
                     .allowsHitTesting(false)
-
-                Button(action: onChangePhoto) {
-                    ZStack {
-                        Circle()
-                            .fill(.black.opacity(0.38))
-                            .frame(width: 58, height: 58)
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.95))
-                    }
-                    .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Modifier la photo de profil")
-                .offset(y: -36)
-            }
-            .frame(height: ProfileTheme.heroHeight)
-            .frame(maxWidth: .infinity)
+                .overlay {
+                    LinearGradient(
+                        colors: [.clear, .clear, .black.opacity(0.35), .black.opacity(0.78)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .allowsHitTesting(false)
+                }
+                .overlay {
+                    Button(action: onChangePhoto) {
+                        ZStack {
+                            Circle()
+                                .fill(.black.opacity(0.38))
+                                .frame(width: 58, height: 58)
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.95))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Modifier la photo de profil")
+                    .padding(.top, ProfileTheme.topSafeInset + ProfileTheme.heroHeight * 0.18)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                }
 
             ProfileIdentityBlock(
                 displayName: displayName,
@@ -121,11 +117,11 @@ struct ProfileCoverPhotoSection: View {
             )
             .padding(.horizontal, ProfileTheme.horizontalPadding)
             .padding(.bottom, 20)
-            .allowsHitTesting(false)
         }
-        .frame(height: ProfileTheme.heroHeight)
         .frame(maxWidth: .infinity)
+        .frame(height: ProfileTheme.heroTotalHeight)
         .clipShape(ProfileTheme.heroBottomShape)
+        .contentShape(ProfileTheme.heroBottomShape)
     }
 }
 

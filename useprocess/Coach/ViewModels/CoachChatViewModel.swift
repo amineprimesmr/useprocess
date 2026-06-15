@@ -37,6 +37,8 @@ final class CoachChatViewModel {
         !isSending && !isVoiceRecording
     }
 
+    private var activePlanFocus: CoachPlanFocus?
+
     func bind(profile: UnifiedUserProfile?) {
         self.profile = profile
         claudeConfigured = ClaudeConfiguration.isConfigured
@@ -50,6 +52,7 @@ final class CoachChatViewModel {
 
         guard let conversationId = libraryStore.activeConversationId else {
             await createNewConversation()
+            await consumePendingPlanPromptIfNeeded()
             return
         }
 
@@ -66,6 +69,14 @@ final class CoachChatViewModel {
         } else {
             messages = stored.messages
         }
+        await consumePendingPlanPromptIfNeeded()
+    }
+
+    func consumePendingPlanPromptIfNeeded() async {
+        guard let prompt = CoachPlanNavigationBridge.shared.consumePendingPrompt() else { return }
+        activePlanFocus = CoachPlanNavigationBridge.shared.consumePendingFocus()
+        await sendPrompt(prompt, persistUserMessage: true)
+        activePlanFocus = nil
     }
 
     func selectConversation(_ id: UUID) async {
@@ -258,16 +269,55 @@ final class CoachChatViewModel {
         defer { isSending = false }
 
         do {
+            let modIntent = CoachPlanModificationService.detectIntent(in: trimmed)
+            var effectiveFocus = activePlanFocus
+            if effectiveFocus == nil, let intent = modIntent, let plan = WelcomePlanStore.shared.plan {
+                effectiveFocus = CoachPlanModificationService.buildFocus(intent: intent, plan: plan)
+            }
+
             var assembled = ""
-            for try await chunk in CoachEngine.streamChatMessage(trimmed, profile: profile, history: messages) {
+            for try await chunk in CoachEngine.streamChatMessage(
+                trimmed,
+                profile: profile,
+                history: messages,
+                planFocus: effectiveFocus
+            ) {
                 assembled += chunk
                 streamingText = assembled
+            }
+
+            var planChanges: [String] = []
+            if modIntent != nil || effectiveFocus?.mode == .modify, var plan = WelcomePlanStore.shared.plan {
+                planChanges = CoachPlanModificationService.apply(
+                    userRequest: trimmed,
+                    coachResponse: assembled,
+                    focus: effectiveFocus,
+                    plan: &plan
+                )
+                WelcomePlanStore.shared.savePlan(plan)
+            }
+
+            if !planChanges.isEmpty {
+                assembled = CoachPlanModificationService.confirmationPrefix(changes: planChanges) + assembled
             }
 
             streamingText = ""
             let model = ClaudeModel.preferred(for: .chat).rawValue
             let reply = CoachMessage(role: .assistant, text: assembled, modelUsed: model)
             messages.append(reply)
+            CoachMemoryStore.shared.recordExchange(
+                userText: trimmed,
+                assistantText: assembled,
+                conversationTitle: libraryStore.activeConversation?.title
+            )
+            CoachMemoryStore.shared.refreshConversationDigests(
+                excludingActiveId: libraryStore.activeConversationId
+            )
+
+            Task {
+                await CoachMemorySummarizer.refreshIfNeeded(profile: profile)
+            }
+
             await CoachSyncService.appendMessage(
                 reply,
                 userId: userId,
@@ -341,5 +391,26 @@ final class CoachChatViewModel {
 
     func sendFileAttachment(name: String) async {
         await sendPrompt("📎 Fichier : \(name)", persistUserMessage: true)
+    }
+
+    func copyMessage(_ message: CoachMessage) {
+        UIPasteboard.general.string = message.text
+    }
+
+    func beginEditingMessage(_ message: CoachMessage) async {
+        guard message.role == .user,
+              let index = messages.firstIndex(where: { $0.id == message.id }) else { return }
+
+        messages = Array(messages.prefix(index))
+        libraryStore.setActiveMessages(messages)
+        inputText = message.text
+
+        guard let conversationId = libraryStore.activeConversationId else { return }
+        await CoachSyncService.replaceThread(
+            CoachChatThread(messages: messages),
+            userId: userId,
+            conversationId: conversationId,
+            title: libraryStore.activeConversation?.title
+        )
     }
 }

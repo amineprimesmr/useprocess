@@ -95,12 +95,13 @@ struct CoachLiquidGlassInputBar: View {
                     } label: {
                         Image(systemName: "arrow.up")
                             .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(isDark ? .black : .white)
+                            .foregroundStyle(.white)
                             .frame(width: 36, height: 36)
-                            .background(isDark ? Color.white : Color.primary, in: Circle())
+                            .background(Color.processPrimary, in: Circle())
                     }
                     .buttonStyle(LiquidGlassPressStyle())
                     .disabled(isDisabled)
+                    .opacity(isDisabled ? 0.45 : 1)
                 } else {
                     Button {
                         guard !isRecording else { return }

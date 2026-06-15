@@ -76,6 +76,9 @@ struct CoachUserContext: Codable, Sendable {
     var latestFaceScan: OnboardingFaceBlock?
     var recentFaceScans: [FaceScanHistoryEntry]?
     var recentScans: [ScanHistoryEntry]?
+    var planDayTitle: String?
+    var planWeek: Int?
+    var planProgressTasks: Int?
 }
 
 enum UserContextBuilder {
@@ -193,6 +196,13 @@ enum UserContextBuilder {
             }
         }
 
+        if let plan = WelcomePlanStore.shared.plan {
+            ctx.planWeek = plan.calendar.currentWeekNumber()
+            ctx.planProgressTasks = plan.progress.completedTaskIds.count
+            let idx = plan.calendar.currentProgramDayIndex()
+            ctx.planDayTitle = plan.calendar.day(globalIndex: idx)?.title
+        }
+
         return ctx
     }
 
@@ -222,6 +232,15 @@ enum UserContextBuilder {
 
         if let face = context.latestFaceScan {
             lines.append("• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)")
+        }
+
+        lines.append(CoachPlanContextBuilder.compactBlock(
+            plan: WelcomePlanStore.shared.plan,
+            memory: CoachMemoryStore.shared.memory
+        ))
+
+        if let plan = WelcomePlanStore.shared.plan {
+            lines.append(CoachPlanContextBuilder.todayDetailBlock(plan: plan))
         }
 
         if lines.isEmpty {

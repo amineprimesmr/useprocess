@@ -9,17 +9,52 @@ enum CoachEngine {
         """
         Tu es le coach useprocess. Style Enzo : direct, tutoiement, bienveillant.
 
-        RÈGLES CHAT (strictes) :
-        - MAX 2-3 phrases courtes. Jamais plus sauf si l'utilisateur demande explicitement un plan détaillé.
-        - Réponds UNIQUEMENT à la question posée. Pas de cours, pas de listes, pas d'analyse complète du profil.
-        - 1 insight max + 1 action concrète. Cite 0-1 chiffre du contexte si utile.
-        - Français. Pas de diagnostic médical. Pas de CTA externe.
+        RÈGLES CHAT :
+        - Le Protocole Origine (plan 13 semaines) est TA BASE. Chaque réponse doit s'y rattacher.
+        - Tu as accès à la mémoire, au calendrier jour par jour, à la santé HealthKit et aux scans — utilise-les.
+        - Réponses courtes (2–4 phrases) sauf demande de détail plan / modification / programme complet.
+        - 1 insight + 1 action concrète minimum. Français. Pas de diagnostic médical. Zéro pilule.
+        - PAS de markdown dans tes réponses (pas de **, pas de #, pas de listes avec tirets).
         """
     }
 
-    private static func contextualSystem(profile: UnifiedUserProfile?) -> String {
+    private static let planModificationPrompt = """
+    
+    ⚡ MODE MODIFICATION DU PLAN — ACTIF :
+    - L'utilisateur demande de MODIFIER son Protocole Origine dans l'app.
+    - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier (91 jours).
+    - EXÉCUTE sa demande telle quelle. Pas de refus. Pas de score de pertinence.
+    - PAS de markdown (pas de **, pas de #). Texte brut uniquement.
+    - Confirme en 2–3 phrases ce qui a changé.
+    - Pour nutrition OMAD / 1 repas : écris « Repas unique: [contenu] » (pas PDJ/déj/dîner vides).
+    - Tu peux ajouter 1 suggestion optionnelle à la fin (« Si tu veux, on peut aussi… ») — l'utilisateur n'est pas obligé de répondre.
+    """
+
+    private static func contextualSystem(profile: UnifiedUserProfile?, planFocus: CoachPlanFocus? = nil, userText: String? = nil) -> String {
+        CoachMemoryStore.shared.refreshConversationDigests(
+            excludingActiveId: CoachConversationLibraryStore.shared.activeConversationId
+        )
         let context = UserContextBuilder.build(profile: profile)
-        return chatSystemPrompt + "\n\n" + UserContextBuilder.compactPromptBlock(from: context)
+        var system = chatSystemPrompt + "\n\n" + UserContextBuilder.compactPromptBlock(from: context)
+
+        let isModify = planFocus?.mode == .modify
+            || (userText.flatMap { CoachPlanModificationService.detectIntent(in: $0) } != nil)
+
+        if isModify {
+            system += planModificationPrompt
+        }
+
+        if let focus = planFocus {
+            system += """
+
+            FOCUS PLAN (\(focus.mode.rawValue)) :
+            Section : \(focus.sectionTitle)
+            Chemin : \(focus.sectionPath)
+            Contenu actuel :
+            \(focus.sectionContent)
+            """
+        }
+        return system
     }
 
     // MARK: - Chat (streaming)
@@ -27,27 +62,32 @@ enum CoachEngine {
     static func streamChatMessage(
         _ text: String,
         profile: UnifiedUserProfile?,
-        history: [CoachMessage]? = nil
+        history: [CoachMessage]? = nil,
+        planFocus: CoachPlanFocus? = nil
     ) -> AsyncThrowingStream<String, Error> {
-        let system = contextualSystem(profile: profile)
+        let system = contextualSystem(profile: profile, planFocus: planFocus, userText: text)
         let resolvedHistory = history ?? CoachConversationStore.loadThreadLocal().messages
         let model = ClaudeModel.preferred(for: .chat)
+        let isModify = planFocus?.mode == .modify
+            || CoachPlanModificationService.detectIntent(in: text) != nil
+        let maxTokens = isModify ? 900 : 480
         return CoachAPITransport.streamChat(
             system: system,
             userText: text,
             history: resolvedHistory,
             model: model,
-            maxTokens: 380
+            maxTokens: maxTokens
         )
     }
 
     static func sendChatMessage(
         _ text: String,
         profile: UnifiedUserProfile?,
-        history: [CoachMessage]? = nil
+        history: [CoachMessage]? = nil,
+        planFocus: CoachPlanFocus? = nil
     ) async throws -> CoachMessage {
         var full = ""
-        for try await chunk in streamChatMessage(text, profile: profile, history: history) {
+        for try await chunk in streamChatMessage(text, profile: profile, history: history, planFocus: planFocus) {
             full += chunk
         }
         return CoachMessage(
@@ -66,7 +106,7 @@ enum CoachEngine {
         guard let jpeg = image.jpegData(compressionQuality: 0.72) else {
             throw ClaudeAPIError.invalidResponse
         }
-        let system = contextualSystem(profile: profile)
+        let system = contextualSystem(profile: profile, planFocus: nil, userText: caption)
         let model = ClaudeModel.preferred(for: .chat)
         let text = try await CoachAPITransport.complete(
             task: .chat,
@@ -103,11 +143,22 @@ enum CoachEngine {
         let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         let greeting = (name?.isEmpty == false) ? "Salut \(name!) 👋" : "Salut 👋"
         let mode = ClaudeConfiguration.transportLabel
+        let planHint: String
+        if let plan = WelcomePlanStore.shared.plan {
+            planHint = """
+
+            Ton Protocole Origine est actif (semaine \(plan.calendar.currentWeekNumber())/13).
+            Demande-moi de modifier ton programme — je l'applique directement dans ton calendrier.
+            Priorités : \(plan.primaryFaceGoal).
+            """
+        } else {
+            planHint = ""
+        }
         return CoachMessage(
             role: .assistant,
             text: """
             \(greeting) Je suis ton coach useprocess (\(mode)).
-            Pose-moi une question — je réponds court et concret.
+            Pose-moi une question — je réponds court et concret.\(planHint)
             """
         )
     }

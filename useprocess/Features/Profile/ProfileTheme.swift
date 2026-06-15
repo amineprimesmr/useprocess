@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum ProfileTheme {
     static let background = ProcessColors.background
@@ -24,8 +25,16 @@ enum ProfileTheme {
     static let heroBottomRadius: CGFloat = 32
     static let buttonCornerRadius: CGFloat = 14
     static let iconButtonSize: CGFloat = 44
-    static let heroHeight: CGFloat = 430
-    static let emptyHeroHeight: CGFloat = 300
+    static var heroHeight: CGFloat = 430
+    static var emptyHeroHeight: CGFloat = 300
+    static var topSafeInset: CGFloat { UIApplication.safeAreaTop }
+    /// Hero edge-to-edge : hauteur visible + zone sous Dynamic Island / status bar.
+    static var heroTotalHeight: CGFloat { heroHeight + topSafeInset }
+    static var emptyHeroTotalHeight: CGFloat { emptyHeroHeight + topSafeInset }
+    /// Extension au-dessus du layout pour peindre derrière la status bar.
+    static var heroSafeAreaExtension: CGFloat { topSafeInset + 8 }
+    static var heroTopBlurHeight: CGFloat { topSafeInset + 96 }
+    static var topBarBlurHeight: CGFloat { topSafeInset + 56 }
     static let pinWidth: CGFloat = 118
     static let pinHeight: CGFloat = 168
 
