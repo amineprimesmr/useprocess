@@ -33,7 +33,7 @@ struct GoalPaceStepView: View {
                             Text("kg/semaine")
                                 .font(.system(size: 12, weight: .medium))
                         }
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                     }
@@ -44,7 +44,7 @@ struct GoalPaceStepView: View {
 
                     // Slider natif avec style glass
                     Slider(value: $sliderValue, in: paceRange, step: 1.0)
-                        .tint(.white)
+                        .tint(OnboardingTheme.primaryText)
                         .onChange(of: sliderValue) { _, newValue in
                             // Snap à la valeur entière la plus proche (0, 1, ou 2)
                             let snappedValue = round(newValue)

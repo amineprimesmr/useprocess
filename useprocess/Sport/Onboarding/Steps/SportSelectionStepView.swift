@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SportSelectionStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var profileService: UnifiedProfileService
     @ObservedObject private var onboardingData = OnboardingDataModel.shared
     @State private var selectedSports: Set<String> = []
@@ -236,7 +237,7 @@ struct SportSelectionStepView: View {
     var body: some View {
         ZStack(alignment: .top) {
             // Fond noir pour la page (comme les autres pages d'onboarding)
-            Color.black
+            OnboardingTheme.screenBackground
                 .ignoresSafeArea(.all)
 
             VStack(spacing: 0) {
@@ -288,15 +289,15 @@ struct SportSelectionStepView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 40))
-                            .foregroundColor(.white.opacity(0.4))
+                            .foregroundStyle(OnboardingTheme.mutedText)
 
                         Text("Aucun résultat")
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundStyle(OnboardingTheme.footnoteText)
 
                         Text("Tu peux quand même ajouter ce sport manuellement")
                             .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundStyle(OnboardingTheme.mutedText)
                             .multilineTextAlignment(.center)
 
                         Button(action: {
@@ -314,7 +315,7 @@ struct SportSelectionStepView: View {
                         }) {
                             Text("Ajouter \"\(searchText)\"")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(OnboardingTheme.primaryText)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 10)
                         }
@@ -386,11 +387,11 @@ struct SportSelectionStepView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "magnifyingglass")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundStyle(OnboardingTheme.bodyText)
 
                                 Text("Chercher un sport")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(OnboardingTheme.primaryText)
 
                                 Spacer()
                             }
@@ -429,14 +430,14 @@ struct SportSelectionStepView: View {
                         // Contenu interactif par-dessus
                     HStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundStyle(OnboardingTheme.bodyText)
                             .font(.system(size: 18, weight: .medium))
 
                         TextField("Rechercher un sport...", text: $searchText)
                             .textFieldStyle(.plain)
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
                             .focused($isSearchFocused)
-                                .tint(.white)
+                                .tint(OnboardingTheme.primaryText)
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                             .onChange(of: searchText) { _, newValue in
@@ -454,7 +455,7 @@ struct SportSelectionStepView: View {
                                 }
                             }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.white.opacity(0.6))
+                                    .foregroundStyle(OnboardingTheme.footnoteText)
                                     .font(.system(size: 18))
                             }
                                 .buttonStyle(.plain)
@@ -472,7 +473,7 @@ struct SportSelectionStepView: View {
                         }) {
                             Text("Annuler")
                                 .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(OnboardingTheme.primaryText)
                             }
                             .buttonStyle(.plain)
                     }
@@ -499,12 +500,7 @@ struct SportSelectionStepView: View {
 
                 // Gradient progressif pour effet de transition fluide
                 LinearGradient(
-                    colors: [
-                        Color.clear,
-                        Color.black.opacity(0.3),
-                        Color.black.opacity(0.6),
-                        Color.black.opacity(0.8)
-                    ],
+                    colors: [Color.clear] + OnboardingTheme.imageScrimGradient(for: colorScheme),
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -705,7 +701,7 @@ struct SportRowButton: View {
 
                 Text(sportName)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
 
                 Spacer()
 
@@ -715,7 +711,7 @@ struct SportRowButton: View {
                         .font(.system(size: 20))
                 } else {
                     Image(systemName: "circle")
-                        .foregroundColor(.white.opacity(0.3))
+                        .foregroundStyle(OnboardingTheme.mutedText)
                         .font(.system(size: 20))
                 }
             }
@@ -738,7 +734,7 @@ struct SportCard: View {
         Button(action: onTap) {
             Text(sport)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundStyle(OnboardingTheme.primaryText)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .frame(height: 60)

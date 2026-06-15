@@ -27,6 +27,7 @@ struct ScrollOffsetPreferenceKey: PreferenceKey {
 }
 
 struct AgeWheelPicker: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var selectedAge: Int
     let minAge: Int
     let maxAge: Int
@@ -53,7 +54,7 @@ struct AgeWheelPicker: View {
                 // Masques de dégradé en haut et en bas pour effet fade
                 VStack {
                     LinearGradient(
-                        colors: [Color.black, Color.black.opacity(0)],
+                        colors: OnboardingTheme.wheelFadeGradient(from: colorScheme, reversed: false),
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -63,7 +64,7 @@ struct AgeWheelPicker: View {
                     Spacer()
 
                     LinearGradient(
-                        colors: [Color.black.opacity(0), Color.black],
+                        colors: OnboardingTheme.wheelFadeGradient(from: colorScheme, reversed: true),
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -298,8 +299,8 @@ struct AgeItem: View {
                     isSelected ?
                     LinearGradient(
                         colors: [
-                            Color.white,
-                            Color.white.opacity(0.95),
+                            OnboardingTheme.primaryText,
+                            OnboardingTheme.primaryText.opacity(0.95),
                             Color.gray.opacity(0.6)
                         ],
                         startPoint: .topLeading,
@@ -307,8 +308,8 @@ struct AgeItem: View {
                     ) :
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.6),
-                            Color.white.opacity(0.5),
+                            OnboardingTheme.primaryText.opacity(0.6),
+                            OnboardingTheme.primaryText.opacity(0.5),
                             Color.gray.opacity(0.4)
                         ],
                         startPoint: .topLeading,

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct IdealWeightStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var profileService: UnifiedProfileService
 
     @Binding var idealWeight: Double
@@ -73,7 +74,7 @@ struct IdealWeightStepView: View {
                     if recommendedWeight > 0 {
                         Text("Poids recommandé : \(Int(recommendedWeight.rounded())) kg")
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundStyle(OnboardingTheme.footnoteText)
                             .padding(.top, 8)
                             .animation(nil, value: recommendedWeight)
                     }
@@ -90,16 +91,15 @@ struct IdealWeightStepView: View {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text(weightString.isEmpty ? "" : weightString)
                                 .font(.system(size: 56, weight: .bold))
-                                .foregroundColor(.white)
-                                .shadow(color: .white.opacity(0.4), radius: 12, x: 0, y: 0)
-                                .shadow(color: .white.opacity(0.2), radius: 20, x: 0, y: 0)
+                                .foregroundStyle(OnboardingTheme.primaryText)
+                                .onboardingValueGlow(colorScheme: colorScheme)
                                 .contentTransition(.numericText())
                                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
 
                             if !weightString.isEmpty {
                                 Text("kg")
                                     .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundStyle(OnboardingTheme.bodyText)
                             }
                         }
                         .allowsHitTesting(false)

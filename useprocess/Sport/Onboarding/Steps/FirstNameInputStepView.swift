@@ -51,13 +51,13 @@ struct FirstNameInputStepView: View {
                     if firstName.isEmpty {
                         Text(OnboardingCopy.text("Comment devons-nous t'appeler ?", blank: "Saisie libre"))
                             .font(.system(size: 22, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundStyle(OnboardingTheme.mutedText)
                             .multilineTextAlignment(.center)
                             .allowsHitTesting(false)
                     } else {
                         Text(firstName)
                             .font(.system(size: 36, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
                             .multilineTextAlignment(.center)
                             .allowsHitTesting(false)
                     }

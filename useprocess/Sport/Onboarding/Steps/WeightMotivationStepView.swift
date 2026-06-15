@@ -61,7 +61,7 @@ struct WeightMotivationStepView: View {
                         displayedText: displayedText,
                         fontSize: 28,
                         fontWeight: .semibold,
-                        defaultColor: .white.opacity(0.9),
+                        defaultColor: OnboardingTheme.narrativeText,
                         highlightColor: Color(red: 0.13, green: 0.98, blue: 0.47),
                         highlightStart: "Ce n'est pas"
                     )
@@ -73,7 +73,7 @@ struct WeightMotivationStepView: View {
 
                 Text(statisticsText)
                     .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(OnboardingTheme.bodyText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                     .padding(.top, 20)

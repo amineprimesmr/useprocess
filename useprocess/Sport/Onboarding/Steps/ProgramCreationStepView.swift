@@ -51,7 +51,7 @@ struct ProgramCreationStepView: View {
 
     var body: some View {
         ZStack {
-            Color.black
+            OnboardingTheme.screenBackground
                 .ignoresSafeArea(.all)
 
             ScrollView(showsIndicators: false) {
@@ -65,15 +65,15 @@ struct ProgramCreationStepView: View {
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [
-                                        Color.white,
-                                        Color.white.opacity(0.95),
+                                        OnboardingTheme.primaryText,
+                                        OnboardingTheme.primaryText.opacity(0.95),
                                         Color.gray.opacity(0.6)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)
+                            .shadow(color: OnboardingTheme.titleShadow, radius: 2, x: 1, y: 1)
                             .contentTransition(.numericText())
                             .animation(.easeInOut(duration: 0.3), value: displayedPercentage)
 
@@ -82,15 +82,15 @@ struct ProgramCreationStepView: View {
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [
-                                        Color.white,
-                                        Color.white.opacity(0.95),
+                                        OnboardingTheme.primaryText,
+                                        OnboardingTheme.primaryText.opacity(0.95),
                                         Color.gray.opacity(0.6)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)
+                            .shadow(color: OnboardingTheme.titleShadow, radius: 2, x: 1, y: 1)
                     }
                     .padding(.bottom, 40)
 
@@ -162,7 +162,7 @@ struct ProgramCreationStepView: View {
         VStack(spacing: 20) {
             Text("Creation du programme")
                 .font(.system(size: 24, weight: .semibold))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundStyle(OnboardingTheme.narrativeText)
                 .padding(.horizontal, 40)
         }
     }
@@ -183,12 +183,12 @@ struct ProgramCreationStepView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(objectives[index])
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundStyle(OnboardingTheme.bodyText)
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.1))
+                        .fill(OnboardingTheme.mutedFill)
                         .frame(height: 10)
 
                     RoundedRectangle(cornerRadius: 4)
@@ -220,11 +220,11 @@ struct ProgramCreationStepView: View {
                     VStack(spacing: 12) {
                         Text("Pour pouvoir continuer, précise")
                             .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundStyle(OnboardingTheme.bodyText)
 
                         Text(popupQuestion)
                             .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundStyle(OnboardingTheme.narrativeText)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 20)
                     }
@@ -341,7 +341,7 @@ struct ProgramCreationStepView: View {
                let summary = await CoachEngine.generateProgramSummary(profile: profileService.currentProfile) {
                 let programMessage = CoachMessage(
                     role: .assistant,
-                    text: "## Ton plan useprocess\n\n\(summary)",
+                    text: "## Ton plan \(AppBranding.name)\n\n\(summary)",
                     modelUsed: ClaudeModel.preferred(for: .programSummary).rawValue
                 )
                 CoachConversationStore.appendMessage(programMessage)

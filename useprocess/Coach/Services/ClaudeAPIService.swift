@@ -158,7 +158,7 @@ enum ClaudeLocalAPIService {
     static func complete(
         system: String,
         userText: String,
-        model: ClaudeModel = .sonnet4,
+        model: ClaudeModel = .sonnet46,
         maxTokens: Int = 1024
     ) async throws -> String {
         let content: [[String: Any]] = [["type": "text", "text": userText]]
@@ -175,7 +175,7 @@ enum ClaudeLocalAPIService {
         system: String,
         prompt: String,
         jpegData: Data,
-        model: ClaudeModel = .sonnet4,
+        model: ClaudeModel = .sonnet46,
         maxTokens: Int = 512
     ) async throws -> String {
         let content: [[String: Any]] = [
@@ -202,14 +202,10 @@ enum ClaudeLocalAPIService {
         system: String,
         history: [CoachMessage],
         userMessage: String,
-        model: ClaudeModel = .sonnet4,
+        model: ClaudeModel = .sonnet46,
         maxTokens: Int = 1200
     ) async throws -> String {
-        var messages = apiMessages(from: history)
-        messages.append([
-            "role": "user",
-            "content": [["type": "text", "text": userMessage]]
-        ])
+        let messages = messagesIncludingUserTurn(history: history, userMessage: userMessage)
         return try await sendMessages(
             system: system,
             messages: messages,
@@ -223,17 +219,13 @@ enum ClaudeLocalAPIService {
         system: String,
         history: [CoachMessage],
         userMessage: String,
-        model: ClaudeModel = .sonnet4,
+        model: ClaudeModel = .sonnet46,
         maxTokens: Int = 1200
     ) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 do {
-                    var messages = apiMessages(from: history)
-                    messages.append([
-                        "role": "user",
-                        "content": [["type": "text", "text": userMessage]]
-                    ])
+                    let messages = messagesIncludingUserTurn(history: history, userMessage: userMessage)
 
                     let stream = openStream(
                         system: system,
@@ -264,6 +256,22 @@ enum ClaudeLocalAPIService {
                     "content": [["type": "text", "text": msg.text]]
                 ]
             }
+    }
+
+    /// Évite de dupliquer le dernier message user déjà présent dans l'historique UI.
+    private static func messagesIncludingUserTurn(
+        history: [CoachMessage],
+        userMessage: String
+    ) -> [[String: Any]] {
+        var messages = apiMessages(from: history)
+        if let last = history.last, last.role == .user, last.text == userMessage {
+            return messages
+        }
+        messages.append([
+            "role": "user",
+            "content": [["type": "text", "text": userMessage]]
+        ])
+        return messages
     }
 
     private static func sendMessages(
@@ -304,7 +312,7 @@ enum ClaudeLocalAPIService {
         }
 
         let payload: [String: Any] = [
-            "model": model.rawValue,
+            "model": model.apiModelId,
             "max_tokens": maxTokens,
             "system": system,
             "messages": messages
@@ -344,7 +352,7 @@ enum ClaudeLocalAPIService {
                     }
 
                     let payload: [String: Any] = [
-                        "model": model.rawValue,
+                        "model": model.apiModelId,
                         "max_tokens": maxTokens,
                         "system": system,
                         "messages": messages,
@@ -360,8 +368,19 @@ enum ClaudeLocalAPIService {
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
                     let (bytes, response) = try await URLSession.shared.bytes(for: request)
-                    guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                    guard let http = response as? HTTPURLResponse else {
                         throw ClaudeAPIError.invalidResponse
+                    }
+                    if !(200...299).contains(http.statusCode) {
+                        var errorBody = Data()
+                        for try await byte in bytes {
+                            errorBody.append(byte)
+                            if errorBody.count > 4000 { break }
+                        }
+                        throw ClaudeAPIError.httpError(
+                            status: http.statusCode,
+                            body: String(data: errorBody, encoding: .utf8) ?? "Réponse vide"
+                        )
                     }
 
                     for try await line in bytes.lines {
@@ -404,7 +423,7 @@ enum ClaudeAPIService {
     static func complete(
         system: String,
         userText: String,
-        model: ClaudeModel = .sonnet4,
+        model: ClaudeModel = .sonnet46,
         maxTokens: Int = 1024
     ) async throws -> String {
         try await CoachAPITransport.complete(
@@ -420,7 +439,7 @@ enum ClaudeAPIService {
         system: String,
         prompt: String,
         jpegData: Data,
-        model: ClaudeModel = .sonnet4,
+        model: ClaudeModel = .sonnet46,
         maxTokens: Int = 512
     ) async throws -> String {
         try await CoachAPITransport.complete(
@@ -437,7 +456,7 @@ enum ClaudeAPIService {
         system: String,
         history: [CoachMessage],
         userMessage: String,
-        model: ClaudeModel = .sonnet4,
+        model: ClaudeModel = .sonnet46,
         maxTokens: Int = 1200
     ) async throws -> String {
         try await CoachAPITransport.complete(

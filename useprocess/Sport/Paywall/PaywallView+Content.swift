@@ -67,61 +67,45 @@ extension PaywallView {
     var fixedButtonsView: some View {
         // ✅ BOUTON/SLIDER FIXE
         VStack(spacing: LayoutConstants.isIPad ? 16 : 12) {
-            // ✅ Texte "Aucun paiement n'est dû aujourd'hui" AU-DESSUS du bouton
+            // Choix mensuel / annuel
             if isSliderUnlocked {
-                HStack(spacing: 8) {
-                    if let checkImage = UIImage(named: "check") {
-                        Image(uiImage: checkImage)
-                            .renderingMode(.original)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: LayoutConstants.isIPad ? 24 : 20, height: LayoutConstants.isIPad ? 24 : 20)
-                    } else {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: LayoutConstants.isIPad ? 24 : 20))
-                            .foregroundColor(.green)
-                    }
-                    Text("Aucun paiement n'est dû aujourd'hui")
-                        .font(.system(size: LayoutConstants.isIPad ? LayoutConstants.Typography.bodySize : 16, weight: .medium, design: .default))
-                        .foregroundColor(.white.opacity(0.95))
-                }
-                .padding(.bottom, 8)
-                .adaptiveHorizontalPadding()
-                .transition(.opacity)
-                .iPadContentWidth()
-                .frame(maxWidth: .infinity)
+                billingPlanPickerView
+                    .adaptiveHorizontalPadding()
+                    .iPadContentWidth()
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 4)
             }
 
             // Slider ou bouton final
             sliderOrButtonView
 
-            // ✅ Texte prix + conformité App Store 3.1.2 (titre offre, durée implicite annuelle, prix, CGU & confidentialité)
+            // ✅ Conformité App Store 3.1.2
             if isSliderUnlocked {
-                if let product = subscriptionService.annualProduct {
-                    VStack(spacing: 10) {
-                        Text(product.displayName)
-                            .font(.system(size: LayoutConstants.isIPad ? 16 : 14, weight: .semibold, design: .default))
-                            .foregroundColor(.white.opacity(0.92))
-                            .multilineTextAlignment(.center)
-                        Text("Puis \(product.displayPrice) par an (\(calculateMonthlyPrice(from: product)) /mois)")
-                            .font(.system(size: LayoutConstants.isIPad ? 15 : 13, weight: .regular, design: .default))
-                            .foregroundColor(.white.opacity(0.7))
-                        HStack(spacing: 8) {
-                            Link("Conditions d'utilisation", destination: termsURL)
-                            Text("•")
-                                .foregroundColor(.white.opacity(0.45))
-                            Link("Politique de confidentialité", destination: privacyURL)
-                        }
-                        .font(.system(size: LayoutConstants.isIPad ? 13 : 11, weight: .regular, design: .default))
+                let product = subscriptionService.displayProduct(for: selectedBillingPlan)
+                VStack(spacing: 10) {
+                    Text(product.displayName)
+                        .font(.system(size: LayoutConstants.isIPad ? 16 : 14, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.92))
+                        .multilineTextAlignment(.center)
+                    Text(compliancePriceLine(for: product))
+                        .font(.system(size: LayoutConstants.isIPad ? 15 : 13, weight: .regular, design: .default))
                         .foregroundColor(.white.opacity(0.7))
-                        .tint(.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                    HStack(spacing: 8) {
+                        Link("Conditions d'utilisation", destination: termsURL)
+                        Text("•")
+                            .foregroundColor(.white.opacity(0.45))
+                        Link("Politique de confidentialité", destination: privacyURL)
                     }
-                    .padding(.top, 8)
-                    .adaptiveHorizontalPadding()
-                    .transition(.opacity)
-                    .iPadContentWidth()
-                    .frame(maxWidth: .infinity)
+                    .font(.system(size: LayoutConstants.isIPad ? 13 : 11, weight: .regular, design: .default))
+                    .foregroundColor(.white.opacity(0.7))
+                    .tint(.white.opacity(0.85))
                 }
+                .padding(.top, 8)
+                .adaptiveHorizontalPadding()
+                .transition(.opacity)
+                .iPadContentWidth()
+                .frame(maxWidth: .infinity)
             }
         }
         .frame(maxWidth: LayoutConstants.isIPad ? LayoutConstants.maxContentWidth : .infinity)
@@ -352,137 +336,88 @@ extension PaywallView {
 
     // MARK: - Computed Properties
 
-    // ✅ Toggle essai gratuit avec liquid glass - Design propre et contenu
     @ViewBuilder
-    var freeTrialToggleView: some View {
-        VStack(spacing: 20) {
-            // Bouton liquid glass avec toggle - TOUT CONTENU DANS UN CAPSULE
-            Button(action: {
-                HapticManager.shared.impact(.light)
-                // ✅ Animation plus progressive et fluide
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0.3)) {
-                    isFreeTrialEnabled.toggle()
-                }
-            }) {
-                HStack(spacing: 10) {
-                    Text("Essai gratuit")
-                        .font(.system(size: 14, weight: .semibold, design: .default))
-                        .foregroundColor(.white)
-
-                    Spacer()
-
-                    // ✅ Toggle switch visible avec style moderne (plus petit)
-                    ZStack {
-                        // Track du toggle
+    var billingPlanPickerView: some View {
+        HStack(spacing: 10) {
+            ForEach(SubscriptionBillingPlan.allCases) { plan in
+                let isSelected = selectedBillingPlan == plan
+                let isAvailable = plan == .monthly
+                    ? subscriptionService.hasLiveMonthlyProduct
+                    : subscriptionService.hasLiveAnnualProduct
+                Button {
+                    guard isAvailable else { return }
+                    HapticManager.shared.selection()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                        selectedBillingPlan = plan
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Text(plan.title)
+                            .font(.system(size: 15, weight: .semibold))
+                        Text(isAvailable ? planPriceSubtitle(for: plan) : "Indisponible")
+                            .font(.system(size: 12, weight: .medium))
+                            .opacity(0.85)
+                    }
+                    .foregroundStyle(isSelected ? Color.black : Color.white)
+                    .opacity(isAvailable ? 1 : 0.45)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background {
                         Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: isFreeTrialEnabled ? [
-                                        Color(red: 0.0, green: 0.7, blue: 0.9),
-                                        Color(red: 0.2, green: 0.9, blue: 0.7)
-                                    ] : [
-                                        Color.white.opacity(0.3),
-                                        Color.white.opacity(0.2)
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: 44, height: 26) // ✅ Plus petit
-
-                        // Thumb du toggle
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 22, height: 22) // ✅ Plus petit
-                            .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
-                            .offset(x: isFreeTrialEnabled ? 9 : -9) // ✅ Ajusté pour le nouveau track
+                            .fill(isSelected ? Color.white : Color.white.opacity(0.12))
                     }
                 }
-                .padding(.horizontal, 16) // ✅ Réduit de 20 à 16
-                .padding(.vertical, 10) // ✅ Réduit de 14 à 10
-            }
-            .glassStyle() // ✅ LIQUID GLASS NATIF
-            .buttonStyle(.plain)
-
-            // Affichage du prix avec animation fluide (comme besoin de sommeil)
-            VStack(spacing: 6) {
-                if isFreeTrialEnabled {
-                    // ✅ Toggle ACTIVÉ : Barrer 2,90€ /mois et afficher 0,00€ /mois
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        // Prix barré (2,90€)
-                        Text("2,90€")
-                            .font(.system(size: 24, weight: .medium, design: .default))
-                            .foregroundColor(.white.opacity(0.5))
-                            .strikethrough()
-                            .contentTransition(.numericText()) // ✅ Animation fluide
-
-                        Text("0,00€")
-                            .font(.system(size: 32, weight: .bold, design: .default))
-                            .foregroundColor(.white)
-                            .contentTransition(.numericText()) // ✅ Animation fluide
-                            .scaleEffect(priceScale)
-
-                        Text("/mois")
-                            .font(.system(size: 18, weight: .regular, design: .default))
-                            .foregroundColor(.white.opacity(0.8))
-                            .id("mois_\(isFreeTrialEnabled)") // ✅ Animation fluide
-                            .offset(y: 2)
-                    }
-                } else {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("2,90€")
-                            .font(.system(size: 36, weight: .bold, design: .default))
-                            .foregroundColor(.white)
-                            .contentTransition(.numericText()) // ✅ Animation fluide
-                            .scaleEffect(priceScale)
-
-                        Text("/mois")
-                            .font(.system(size: 20, weight: .medium, design: .default))
-                            .foregroundColor(.white.opacity(0.9))
-                            .id("mois_\(isFreeTrialEnabled)") // ✅ Animation fluide
-                            .offset(y: 3)
-                    }
-                }
+                .buttonStyle(.plain)
             }
         }
     }
 
-    // ✅ CORRECTION APPLE REVIEW: Prix dynamique depuis StoreKit
+    func planPriceSubtitle(for plan: SubscriptionBillingPlan) -> String {
+        let product = subscriptionService.displayProduct(for: plan)
+        switch plan {
+        case .monthly:
+            return "\(product.displayPrice) / mois"
+        case .annual:
+            if let monthly = product.monthlyEquivalentPrice {
+                return "\(product.displayPrice) / an · \(monthly)/mois"
+            }
+            return "\(product.displayPrice) / an"
+        }
+    }
+
+    func compliancePriceLine(for product: SubscriptionProductDisplay) -> String {
+        switch selectedBillingPlan {
+        case .monthly:
+            return "Renouvellement automatique · \(product.displayPrice) \(product.periodLabel)"
+        case .annual:
+            if let monthly = product.monthlyEquivalentPrice {
+                return "Renouvellement automatique · \(product.displayPrice) \(product.periodLabel) (\(monthly) / mois)"
+            }
+            return "Renouvellement automatique · \(product.displayPrice) \(product.periodLabel)"
+        }
+    }
+
     var buttonText: String {
-        if isFreeTrialEnabled {
-            return "Commencer l'essai gratuit"
-        } else {
-            if let product = subscriptionService.annualProduct {
-                return "S'abonner pour \(product.displayPrice)/an"
-            } else {
-                return "S'abonner"
-            }
+        let product = subscriptionService.displayProduct(for: selectedBillingPlan)
+        switch selectedBillingPlan {
+        case .monthly:
+            return "S'abonner · \(product.displayPrice)/mois"
+        case .annual:
+            return "S'abonner · \(product.displayPrice)/an"
         }
     }
 
-    // ✅ Prix affiché selon l'état du toggle
     var displayedPrice: String {
-        guard let product = subscriptionService.annualProduct else {
-            return "Chargement..."
-        }
-
-        return product.displayPrice
+        subscriptionService.displayProduct(for: selectedBillingPlan).displayPrice
     }
 
-    // ✅ Prix original (pour le barré)
     var originalPrice: String {
-        guard let product = subscriptionService.annualProduct else {
-            return ""
-        }
-        return product.displayPrice
+        displayedPrice
     }
 
-    // ✅ Prix mensuel affiché
     var displayedMonthlyPrice: String {
-        guard let product = subscriptionService.annualProduct else {
-            return ""
-        }
-        return calculateMonthlyPrice(from: product)
+        let product = subscriptionService.displayProduct(for: selectedBillingPlan)
+        return product.monthlyEquivalentPrice ?? product.displayPrice
     }
 
     var billingDateText: String {

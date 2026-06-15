@@ -53,10 +53,6 @@ class OnboardingNavigationEngine {
             path.append(step)
             stepForNavigation = step
             guard let next = getNextStep() else { break }
-            if next == OnboardingStep.complete.rawValue {
-                path.append(next)
-                break
-            }
             step = next
         }
 
@@ -352,11 +348,10 @@ class OnboardingNavigationEngine {
             return OnboardingStep.payment.rawValue
 
         case .payment:
-            // ✅ Après le paiement, afficher d'abord les pages de bienvenue
-            return OnboardingStep.processWelcome.rawValue
-            
-        case .processWelcome, .referralReward, .featuresUnlock:
-            return OnboardingStep.complete.rawValue
+            return nil
+
+        case .processWelcome, .referralReward, .featuresUnlock, .complete:
+            return nil
             
         default:
             return nil

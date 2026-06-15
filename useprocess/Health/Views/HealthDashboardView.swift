@@ -53,7 +53,7 @@ struct HealthDashboardView: View {
                     ScrollView {
                         Text(readinessExplanation ?? "Analyse indisponible.")
                             .font(.body)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primaryText)
                             .padding()
                     }
                     .background(theme.background.ignoresSafeArea())
@@ -82,24 +82,24 @@ struct HealthDashboardView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Brief Claude du jour", systemImage: "sparkles")
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.primaryText)
 
                     if isLoadingBrief {
                         HStack(spacing: 8) {
-                            ProgressView().tint(.white)
+                            ProgressView().tint(theme.primaryText)
                             Text("Analyse de tes données…")
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(theme.secondaryText)
                         }
                     } else if let brief = claudeDailyBrief {
                         Text(brief)
                             .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.9))
+                            .foregroundStyle(theme.primaryText)
                             .textSelection(.enabled)
                     } else {
                         Text("Brief indisponible — tire pour rafraîchir.")
                             .font(.caption)
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(theme.secondaryText)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -115,11 +115,11 @@ struct HealthDashboardView: View {
         VStack(spacing: 12) {
             Text("Readiness")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(theme.secondaryText)
 
             ZStack {
                 Circle()
-                    .stroke(.white.opacity(0.15), lineWidth: 10)
+                    .stroke(theme.progressTrack, lineWidth: 10)
                     .frame(width: 140, height: 140)
                 Circle()
                     .trim(from: 0, to: CGFloat(healthManager.readinessScore) / 100)
@@ -129,16 +129,16 @@ struct HealthDashboardView: View {
                 VStack(spacing: 2) {
                     Text("\(healthManager.readinessScore)")
                         .font(.system(size: 42, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.primaryText)
                     Text("/ 100")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(theme.secondaryText)
                 }
             }
 
             Text(healthManager.readinessLabel)
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.primaryText)
 
             if ClaudeConfiguration.isConfigured {
                 Button {
@@ -152,7 +152,7 @@ struct HealthDashboardView: View {
                 }
                 .disabled(isExplainingReadiness)
                 .buttonStyle(.bordered)
-                .tint(.white)
+                .tint(theme.primaryText)
             }
         }
         .frame(maxWidth: .infinity)
@@ -193,13 +193,13 @@ struct HealthDashboardView: View {
     private func metricTile(_ title: String, value: String, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(theme.secondaryText)
             Text(value)
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.primaryText)
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(theme.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -249,15 +249,15 @@ struct HealthDashboardView: View {
             if healthManager.connectedSources.isEmpty {
                 Text("Aucune source détectée — autorise Santé Apple")
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(theme.secondaryText)
             } else {
                 ForEach(healthManager.connectedSources.prefix(8), id: \.self) { source in
                     HStack {
                         Image(systemName: source.localizedCaseInsensitiveContains("watch") ? "applewatch" : "iphone")
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(theme.secondaryText)
                         Text(source)
                             .font(.subheadline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primaryText)
                     }
                 }
             }
@@ -285,11 +285,11 @@ struct HealthDashboardView: View {
             if let last = healthManager.lastSyncDate {
                 Text("Dernière sync : \(last.formatted(date: .omitted, time: .shortened))")
                     .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(theme.secondaryText)
             }
 
             if healthManager.syncInProgress {
-                ProgressView().tint(.white)
+                ProgressView().tint(theme.primaryText)
             }
         }
         .frame(maxWidth: .infinity)
@@ -300,14 +300,18 @@ struct HealthDashboardView: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: 16)
-            .fill(.white.opacity(0.08))
+            .fill(theme.cardBackground)
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(theme.cardStroke, lineWidth: theme.isDark ? 0 : 0.5)
+            }
     }
 
     private func sectionCard(_ title: String, icon: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label(title, systemImage: icon)
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.primaryText)
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -319,11 +323,11 @@ struct HealthDashboardView: View {
         HStack {
             Text(label)
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(theme.secondaryText)
             Spacer()
             Text(value)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.primaryText)
         }
     }
 }

@@ -43,12 +43,12 @@ struct HasWeightGoalStepView: View {
             HStack(spacing: 12) {
                 Text(title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
 
                 Spacer()
 
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(selected ? .green : .white.opacity(0.3))
+                    .foregroundColor(selected ? .green : OnboardingTheme.mutedText)
                     .font(.system(size: 20))
             }
             .padding(.horizontal, 16)

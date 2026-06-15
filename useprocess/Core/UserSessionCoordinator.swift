@@ -34,10 +34,12 @@ final class UserSessionCoordinator {
 
         if userId != nil {
             Task {
+                await SubscriptionService.shared.syncAppUserID(userId)
                 await UnifiedProfileService.shared.loadProfile()
                 SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
             }
         } else {
+            Task { await SubscriptionService.shared.syncAppUserID(nil) }
             UnifiedProfileService.shared.clearLocalProfile()
             SocialProfileStore.shared.bind(unified: nil)
         }

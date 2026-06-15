@@ -25,12 +25,12 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
                 VStack(spacing: 18) {
                     Text("D'après nos estimations")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundStyle(OnboardingTheme.bodyText)
                         .frame(maxWidth: .infinity)
 
                     Text(titleMessage)
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
@@ -39,8 +39,7 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
                         Button(action: {}) {
                             Text(displayDay)
                                 .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
-                                .contentTransition(.numericText())
+                                .foregroundStyle(OnboardingTheme.primaryText)
                                 .frame(width: 50, height: 28)
                         }
                         .glassStyle()
@@ -49,8 +48,7 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
                         Button(action: {}) {
                             Text(displayMonth)
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
-                                .contentTransition(.identity)
+                                .foregroundStyle(OnboardingTheme.primaryText)
                                 .frame(height: 28)
                         }
                         .glassStyle()

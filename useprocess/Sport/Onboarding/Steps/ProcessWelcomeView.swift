@@ -52,7 +52,7 @@ struct ProcessWelcomeView: View {
                     // Texte "Bienvenue dans" avec animation
                     Text(OnboardingCopy.text("Bienvenue dans", blank: "Bienvenue"))
                         .font(.system(size: 28, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundStyle(OnboardingTheme.narrativeText)
                         .opacity(titleTextOpacity)
                         .offset(y: titleTextOffset)
 
@@ -61,7 +61,7 @@ struct ProcessWelcomeView: View {
 
                     Text(AppBranding.name)
                         .font(.system(size: 42, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                         .opacity(titleImageOpacity)
@@ -82,7 +82,7 @@ struct ProcessWelcomeView: View {
                             } else {
                                 Text(OnboardingCopy.text("Commencer", blank: "Action"))
                                     .font(.system(size: 20, weight: .black))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(OnboardingTheme.primaryText)
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -111,7 +111,7 @@ struct ProcessWelcomeView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundStyle(OnboardingTheme.bodyText)
                         .frame(width: 34, height: 34)
                     }
                 .glassStyle()

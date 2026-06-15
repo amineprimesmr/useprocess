@@ -21,7 +21,7 @@ struct PersonalInfoProgressBar: View {
                 ZStack(alignment: .leading) {
                     // Fond de la barre
                 RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.2))
+                        .fill(OnboardingTheme.softFill)
                     .frame(height: 6)
 
                 // Barre de progression remplie - Vert pétant brillant avec animation fluide

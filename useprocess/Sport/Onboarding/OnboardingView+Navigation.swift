@@ -41,6 +41,8 @@ func skipTransientStep() {
 }
 
 func nextStep() {
+    viewModel.commitPendingStepAnswers()
+
     guard viewModel.isCurrentStepValidated() else {
         return
     }
@@ -225,7 +227,7 @@ func checkPermissions() {
                let summary = await CoachEngine.generateProgramSummary(profile: profileService.currentProfile) {
                 let msg = CoachMessage(
                     role: .assistant,
-                    text: "## Bienvenue dans useprocess\n\n\(summary)\n\nOuvre l'onglet **Coach** pour continuer la conversation.",
+                    text: "## Bienvenue dans \(AppBranding.name)\n\n\(summary)\n\nOuvre l'onglet **Coach** pour continuer la conversation.",
                     modelUsed: ClaudeModel.preferred(for: .programSummary).rawValue
                 )
                 CoachConversationStore.appendMessage(msg)

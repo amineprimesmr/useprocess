@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct AnimatedOnboardingGlow: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let currentStep: Int
     let visitedStepsCount: Int // Nombre d'étapes réellement visitées
     let totalStepsForFlow: Int // Total d'étapes pour le flux actuel
@@ -82,13 +84,8 @@ struct AnimatedOnboardingGlow: View {
 
     var body: some View {
         if iOS26Stability.isEnabled {
-            // Lueur statique — les animations RadialGradient cassent le renderer CALayer iOS 26.
             RadialGradient(
-                colors: [
-                    Color(red: 0.3, green: 0.45, blue: 0.95).opacity(0.12),
-                    Color(red: 0.2, green: 0.35, blue: 0.85).opacity(0.06),
-                    Color.clear
-                ],
+                colors: lightModeGlowColors,
                 center: .center,
                 startRadius: 0,
                 endRadius: 420
@@ -97,6 +94,25 @@ struct AnimatedOnboardingGlow: View {
         } else {
             animatedGlowBody
         }
+    }
+
+    private var lightModeGlowColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color(red: 0.3, green: 0.45, blue: 0.95).opacity(0.12),
+                Color(red: 0.2, green: 0.35, blue: 0.85).opacity(0.06),
+                Color.clear
+            ]
+        }
+        return [
+            Color(red: 0.35, green: 0.52, blue: 0.98).opacity(0.05),
+            Color(red: 0.25, green: 0.42, blue: 0.92).opacity(0.025),
+            Color.clear
+        ]
+    }
+
+    private var glowOpacityScale: Double {
+        colorScheme == .dark ? 1.0 : 0.45
     }
 
     @ViewBuilder
@@ -120,10 +136,10 @@ struct AnimatedOnboardingGlow: View {
         let shouldIncreaseOpacity = isEarlyStep || isAtTopOrBottom
 
         // ✅ Opacités BEAUCOUP réduites pour rendre la lueur moins visible
-        let centerOpacity = shouldIncreaseOpacity ? 0.15 : 0.10
-        let middleOpacity = shouldIncreaseOpacity ? 0.12 : 0.08
-        let outerOpacity = shouldIncreaseOpacity ? 0.08 : 0.05
-        let edgeOpacity = shouldIncreaseOpacity ? 0.05 : 0.03
+        let centerOpacity = (shouldIncreaseOpacity ? 0.15 : 0.10) * glowOpacityScale
+        let middleOpacity = (shouldIncreaseOpacity ? 0.12 : 0.08) * glowOpacityScale
+        let outerOpacity = (shouldIncreaseOpacity ? 0.08 : 0.05) * glowOpacityScale
+        let edgeOpacity = (shouldIncreaseOpacity ? 0.05 : 0.03) * glowOpacityScale
 
         // ✅ Interpoler les couleurs du BLEU (déjà bleu au début) vers le bleu PÉTANT en fonction de la progression
         // Bleu (début): RGB(0.3, 0.45, 0.95) -> Bleu PÉTANT (fin): RGB(0.2, 0.5, 1.0)

@@ -11,13 +11,15 @@ struct useprocessApp: App {
     init() {
         iOS26Stability.configureAtLaunch()
         FirebaseBootstrap.configure()
+        SubscriptionService.shared.configure()
     }
 
     var body: some Scene {
-        LaunchScreen(config: .init(forceHideLogo: false)) {
-            Image("LaunchScreenLogo")
-        } rootContent: {
+        WindowGroup {
             AppShellView()
+                .task {
+                    await PermissionsManager.shared.clearAppBadge()
+                }
                 .onAppear {
                     AppIntegrations.shared.refresh()
                 }

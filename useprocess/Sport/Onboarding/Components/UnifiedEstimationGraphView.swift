@@ -63,11 +63,11 @@ struct UnifiedEstimationGraphView: View {
             VStack(spacing: 8) {
                 Text("Le")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(OnboardingTheme.bodyText)
 
                 Text(formatDate(displayedDate))
                     .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
                     .contentTransition(.numericText(value: displayedDate.timeIntervalSince1970))
                     .id(displayedDate) // Force la réanimation
             }
@@ -78,7 +78,7 @@ struct UnifiedEstimationGraphView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Ta progression")
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .padding(.horizontal, 40)
 
                     GeometryReader { geometry in
@@ -94,7 +94,7 @@ struct UnifiedEstimationGraphView: View {
                                     path.addLine(to: CGPoint(x: width, y: y))
                                 }
                             }
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            .stroke(OnboardingTheme.mutedFill, lineWidth: 1)
 
                             // Labels d'abscisse : "Aujourd'hui" à gauche et le mois d'atteinte à droite
                             VStack {
@@ -102,11 +102,11 @@ struct UnifiedEstimationGraphView: View {
                                 HStack {
                                     Text("Aujourd'hui")
                                         .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundStyle(OnboardingTheme.footnoteText)
                                     Spacer()
                                     Text(formatMonth(projectedDate))
                                         .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundStyle(OnboardingTheme.footnoteText)
                                 }
                                 .padding(.horizontal, 0)
                                 .padding(.top, 4)
@@ -203,12 +203,12 @@ struct UnifiedEstimationGraphView: View {
                                         .frame(width: 12, height: 12)
                                         .overlay(
                                             Circle()
-                                                .stroke(Color.white, lineWidth: 2)
+                                                .stroke(OnboardingTheme.primaryText, lineWidth: 2)
                                         )
 
                                     Text("\(Int(lastData.value))")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundStyle(OnboardingTheme.primaryText)
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 3)
                                         .background(

@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>useprocess</string>
+	<string>Process AI</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>La caméra permet d'analyser ta posture et ton corps en 360°.</string>
 	<key>NSHealthShareUsageDescription</key>

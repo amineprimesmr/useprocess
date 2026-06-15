@@ -3,6 +3,7 @@ import SwiftUI
 
 /// Page d'accueil onboarding — connexion Apple ou mode démo.
 struct OnboardingWelcomeStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var authManager: AuthenticationManager
     @EnvironmentObject var profileService: UnifiedProfileService
 
@@ -13,24 +14,12 @@ struct OnboardingWelcomeStepView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Image("WelcomePage")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Spacer()
-
-                VStack(spacing: 16) {
-                    Text(AppBranding.name.uppercased())
-                        .font(.system(size: 42, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .tracking(2)
-
-                    Text("Ton corps. Tes données. Ton plan.")
-                        .font(.system(size: 18, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.72))
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 32)
-
                 Spacer()
 
                 VStack(spacing: 14) {
@@ -39,7 +28,7 @@ struct OnboardingWelcomeStepView: View {
                     } label: {
                         HStack(spacing: 10) {
                             if isLoading {
-                                ProgressView().tint(.black)
+                                ProgressView().tint(OnboardingTheme.filledButtonText(for: colorScheme))
                             } else {
                                 Image(systemName: "apple.logo")
                                     .font(.system(size: 20, weight: .semibold))
@@ -47,10 +36,13 @@ struct OnboardingWelcomeStepView: View {
                                     .font(.system(size: 18, weight: .bold))
                             }
                         }
-                        .foregroundStyle(.black)
+                        .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 27))
+                        .background(
+                            OnboardingTheme.filledButtonBackground(for: colorScheme),
+                            in: RoundedRectangle(cornerRadius: 27)
+                        )
                     }
                     .disabled(isLoading)
 
@@ -59,7 +51,7 @@ struct OnboardingWelcomeStepView: View {
                     } label: {
                         Text("Mode démo")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .foregroundStyle(OnboardingTheme.narrativeText)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
                     }

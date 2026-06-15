@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct WeightManagementExperienceStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var selectedExperience: WeightManagementExperience?
     var weightGoal: WeightGoal?  // Pour adapter le texte (perdre ou prendre)
     var onValidationChanged: ((Bool) -> Void)?
@@ -49,7 +50,7 @@ struct WeightManagementExperienceStepView: View {
                                     HStack(spacing: 12) {
                                         Text(OnboardingCopy.choiceLabel(index: index, sport: experience.rawValue))
                                             .font(.system(size: 16, weight: .semibold))
-                                            .foregroundColor(.white)
+                                            .foregroundStyle(OnboardingTheme.primaryText)
 
                                         Spacer()
 
@@ -59,7 +60,7 @@ struct WeightManagementExperienceStepView: View {
                                                 .font(.system(size: 20))
                                         } else {
                                             Image(systemName: "circle")
-                                                .foregroundColor(.white.opacity(0.3))
+                                                .foregroundStyle(OnboardingTheme.mutedText)
                                                 .font(.system(size: 20))
                                         }
                                     }
@@ -92,12 +93,7 @@ struct WeightManagementExperienceStepView: View {
 
                     // Gradient progressif pour effet de transition fluide
                     LinearGradient(
-                        colors: [
-                            Color.clear,
-                            Color.black.opacity(0.3),
-                            Color.black.opacity(0.6),
-                            Color.black.opacity(0.8)
-                        ],
+                        colors: [Color.clear] + OnboardingTheme.imageScrimGradient(for: colorScheme),
                         startPoint: .top,
                         endPoint: .bottom
                     )

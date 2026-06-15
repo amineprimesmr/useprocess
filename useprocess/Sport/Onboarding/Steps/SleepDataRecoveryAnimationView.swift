@@ -18,8 +18,8 @@ struct SleepDataRecoveryAnimationView: View {
         GeometryReader { _ in
             ZStack {
                 // Fond noir
-                Color.black
-                    .ignoresSafeArea(.all)
+                OnboardingTheme.screenBackground
+                .ignoresSafeArea(.all)
 
                 // ✅ Animation de lueur en dégradé qui tourne autour de l'écran
                 RotatingGlowAnimation(progress: progress)
@@ -31,11 +31,11 @@ struct SleepDataRecoveryAnimationView: View {
                     VStack(spacing: 16) {
                         Text("Récupération")
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
 
                         Text("des données")
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
                     }
 
                     // Barre de progression
@@ -45,7 +45,7 @@ struct SleepDataRecoveryAnimationView: View {
                             ZStack(alignment: .leading) {
                                 // Fond de la barre
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white.opacity(0.15))
+                                    .fill(OnboardingTheme.mutedFill)
                                     .frame(height: 12)
 
                                 // Barre de progression avec gradient
@@ -71,7 +71,7 @@ struct SleepDataRecoveryAnimationView: View {
                         // Pourcentage avec animation de défilement
                         Text("\(displayedPercentage)%")
                             .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
                             .monospacedDigit()
                     }
 

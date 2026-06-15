@@ -113,10 +113,10 @@ extension GoalProjectionStepView {
                 ZStack {
                     // ✨ Rectangle sombre en fond - moins large horizontalement
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.black.opacity(0.4))
+                        .fill(OnboardingTheme.graphTooltip)
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(OnboardingTheme.mutedFill, lineWidth: 1)
                         )
 
                     // ✨ Texte "Ta progression" en haut à gauche et compte à rebours en haut à droite
@@ -124,7 +124,7 @@ extension GoalProjectionStepView {
                         HStack {
                             Text("Ta progression")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.85))
+                                .foregroundStyle(OnboardingTheme.primaryText.opacity(0.85))
                                 .padding(.leading, 8) // ✅ Réduit de 16 à 8 pour réduire la largeur
                                 .padding(.top, 12)
 
@@ -134,15 +134,15 @@ extension GoalProjectionStepView {
                             HStack(spacing: 4) {
                                 Text("Dans")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundStyle(OnboardingTheme.bodyText)
 
                                 Text("\(finalCountdownDays)")
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundStyle(OnboardingTheme.bodyText)
 
                                 Text(finalCountdownDays <= 1 ? "jour" : "jours")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundStyle(OnboardingTheme.bodyText)
                             }
                             .padding(.trailing, 8) // ✅ Réduit de 16 à 8 pour réduire la largeur
                             .padding(.top, 12)
@@ -160,7 +160,7 @@ extension GoalProjectionStepView {
                             path.addLine(to: CGPoint(x: width, y: y))
                         }
                     }
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(OnboardingTheme.mutedFill, lineWidth: 1)
 
                         // ✨ Zone de remplissage sous la courbe (avec gradient violet) - ANIMÉE avec trimmedPath pour synchronisation fluide
                         if !adjustedProgressPoints.isEmpty {
@@ -217,7 +217,7 @@ extension GoalProjectionStepView {
                             GeometryReader { maskGeometry in
                                 HStack(spacing: 0) {
                                     Rectangle()
-                                        .fill(Color.white)
+                                        .fill(OnboardingTheme.primaryText)
                                         .frame(width: maskGeometry.size.width * curveAnimationProgress)
                                     Spacer()
                                 }
@@ -262,7 +262,7 @@ extension GoalProjectionStepView {
                             }
                             .trimmedPath(from: 0, to: curveAnimationProgress) // ✅ Utiliser trimmedPath pour animation fluide et continue
                             .stroke(
-                                Color.black.opacity(0.4),
+                                OnboardingTheme.graphTooltip,
                                 style: StrokeStyle(lineWidth: 5, lineCap: .square, lineJoin: .round) // ✅ .square au lieu de .round pour éviter l'arrondi au début
                             )
                             .blur(radius: 3)
@@ -331,7 +331,7 @@ extension GoalProjectionStepView {
                             }
                             .trimmedPath(from: 0, to: curveAnimationProgress) // ✅ Utiliser trimmedPath pour animation fluide et continue
                             .stroke(
-                                Color.white.opacity(0.3),
+                                OnboardingTheme.softBorder,
                                 style: StrokeStyle(lineWidth: 1, lineCap: .square, lineJoin: .round) // ✅ .square au lieu de .round pour éviter l'arrondi au début
                             )
                         }
@@ -339,7 +339,7 @@ extension GoalProjectionStepView {
                         // ✨ Point blanc à la fin de la courbe - ANIMÉE (apparaît uniquement à la fin de l'animation)
                         if curveAnimationProgress >= 1.0, let lastPoint = adjustedProgressPoints.last {
                             Circle()
-                                .fill(Color.white)
+                                .fill(OnboardingTheme.primaryText)
                                 .frame(width: 12, height: 12)
                                 .position(lastPoint)
                         }
@@ -354,12 +354,12 @@ extension GoalProjectionStepView {
             HStack {
                 Text("Aujourd'hui")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundStyle(OnboardingTheme.footnoteText)
                     .padding(.leading, 4) // ✅ Plus à gauche (réduit de 20 à 4)
                 Spacer()
                 Text(formatMonth(date))
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundStyle(OnboardingTheme.footnoteText)
                     .padding(.trailing, 20) // ✅ Plus à droite
             }
             .padding(.horizontal, 8)

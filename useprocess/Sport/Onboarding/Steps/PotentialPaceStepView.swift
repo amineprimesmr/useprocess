@@ -23,7 +23,7 @@ struct PotentialPaceStepView: View {
                 ForEach(Array(OnboardingCopy.titleLines(from: ["À quelle vitesse", "veux-tu atteindre", "100% de ton potentiel ?"]).enumerated()), id: \.offset) { _, line in
                     Text(line)
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -40,11 +40,11 @@ struct PotentialPaceStepView: View {
 
                         Text(OnboardingCopy.choiceLabel(index: 0, sport: pace.rawValue))
                             .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
 
                         Text(OnboardingCopy.text(pace.description, blank: "Description à personnaliser"))
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundStyle(OnboardingTheme.bodyText)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
                     }
@@ -76,13 +76,13 @@ struct PotentialPaceStepView: View {
                     HStack {
                         Text(OnboardingCopy.binaryLabels(sportFirst: "Lent", sportSecond: "Rapide").0)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundStyle(OnboardingTheme.mutedText)
 
                         Spacer()
 
                         Text(OnboardingCopy.binaryLabels(sportFirst: "Lent", sportSecond: "Rapide").1)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundStyle(OnboardingTheme.mutedText)
                     }
                     .padding(.horizontal, 30)
                 }

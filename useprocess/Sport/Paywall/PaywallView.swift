@@ -23,7 +23,7 @@ struct PaywallView: View {
     @State var errorMessage: String?
     @State var showError = false
     @State var hasScheduledExitNotification = false
-    @State var isFreeTrialEnabled = true
+    @State var selectedBillingPlan: SubscriptionBillingPlan = .annual
     @State var priceScale: CGFloat = 1.0
     @State var buttonTextScale: CGFloat = 1.0
     @State var billingDate: Date?
@@ -97,6 +97,9 @@ struct PaywallView: View {
         }
         .task {
             await subscriptionService.loadSubscriptions()
+            if !subscriptionService.hasLiveMonthlyProduct, subscriptionService.hasLiveAnnualProduct {
+                selectedBillingPlan = .annual
+            }
             billingDate = Calendar.current.date(byAdding: .day, value: 3, to: Date())
             await subscriptionService.checkSubscriptionStatus()
 
@@ -112,7 +115,7 @@ struct PaywallView: View {
         .onDisappear {
             scheduleExitNotificationIfNeeded()
         }
-        .onChange(of: isFreeTrialEnabled) { _, _ in
+        .onChange(of: selectedBillingPlan) { _, _ in
             withAnimation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0.3)) {
                 buttonTextScale = 1.08
                 priceScale = 1.08

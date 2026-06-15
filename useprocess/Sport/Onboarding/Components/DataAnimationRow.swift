@@ -23,13 +23,13 @@ struct DataAnimationRow: View {
             HStack {
                 Text(title)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
 
                 Spacer()
 
                 Text("\(String(format: "%.0f", animatedValue)) \(unit)")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
             }
 
             // Barre de progression
@@ -37,12 +37,12 @@ struct DataAnimationRow: View {
                 ZStack(alignment: .leading) {
                     // Fond de la barre
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.2))
+                        .fill(OnboardingTheme.softFill)
                         .frame(height: 8)
 
                     // Barre de progression animée
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white)
+                        .fill(OnboardingTheme.progressFill)
                         .frame(width: geometry.size.width * barProgress, height: 8)
                         .animation(.easeInOut(duration: 1.0).delay(delay), value: barProgress)
                 }

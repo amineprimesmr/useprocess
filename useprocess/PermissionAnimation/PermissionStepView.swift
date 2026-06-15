@@ -12,6 +12,7 @@ struct PermissionStepView: View {
     let onComplete: () -> Void
     var onSkip: (() -> Void)?
 
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var permissionsManager: PermissionsManager
     @EnvironmentObject private var healthManager: HealthManager
     @State private var isRequesting = false
@@ -22,13 +23,12 @@ struct PermissionStepView: View {
                 simpleHealthKitView
             } else {
                 PermissionOnBoarding(config: makeConfig())
-                    .preferredColorScheme(.dark)
             }
         }
         .overlay {
             if isRequesting {
                 ProgressView()
-                    .tint(.white)
+                    .tint(OnboardingTheme.primaryText)
                     .scaleEffect(1.2)
             }
         }
@@ -36,7 +36,7 @@ struct PermissionStepView: View {
 
     private var simpleHealthKitView: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            OnboardingTheme.screenBackground.ignoresSafeArea()
 
             OnboardingStandardStepLayout("Connecte-toi à", "Santé Apple") {
                 VStack(spacing: 28) {
@@ -51,7 +51,7 @@ struct PermissionStepView: View {
                         )
                     )
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(OnboardingTheme.bodyText)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
                     .padding(.horizontal, 8)
@@ -62,10 +62,13 @@ struct PermissionStepView: View {
                         } label: {
                             Text(OnboardingCopy.text("Autoriser l'accès", blank: "Autoriser"))
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.black)
+                                .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 54)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 27))
+                                .background(
+                                    OnboardingTheme.filledButtonBackground(for: colorScheme),
+                                    in: RoundedRectangle(cornerRadius: 27)
+                                )
                         }
                         .disabled(isRequesting)
 
@@ -74,7 +77,7 @@ struct PermissionStepView: View {
                         } label: {
                             Text(OnboardingCopy.text("Plus tard", blank: "Ignorer"))
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(OnboardingTheme.bodyText)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
                         }

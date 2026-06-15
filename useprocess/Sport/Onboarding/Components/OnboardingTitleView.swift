@@ -57,8 +57,8 @@ struct OnboardingTitleView: View {
         // ✅ Combiner toutes les lignes en un seul texte pour permettre le retour à la ligne naturel
         Text(displayLines.joined(separator: " "))
                     .font(.system(size: 26, weight: .bold, design: .default))
-            .foregroundColor(Color(white: 0.98))
-                    .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)
+            .foregroundStyle(OnboardingTheme.primaryText)
+                    .shadow(color: OnboardingTheme.titleShadow, radius: 2, x: 1, y: 1)
                     .opacity(opacity)
             .lineLimit(3) // Maximum 3 lignes pour éviter les titres trop longs
                     .multilineTextAlignment(.leading)
@@ -74,8 +74,8 @@ struct OnboardingTitleView: View {
             // ✅ Combiner toutes les lignes en un seul texte pour permettre le retour à la ligne naturel
             Text(displayLines.joined(separator: " "))
                         .font(.system(size: 26, weight: .bold, design: .default))
-                .foregroundColor(Color(white: 0.98))
-                        .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)
+                .foregroundStyle(OnboardingTheme.primaryText)
+                        .shadow(color: OnboardingTheme.titleShadow, radius: 2, x: 1, y: 1)
                         .opacity(opacity)
                 .lineLimit(3) // Maximum 3 lignes pour éviter les titres trop longs
                 .multilineTextAlignment(.leading)

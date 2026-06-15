@@ -45,7 +45,7 @@ struct WeightFailureReasonsStepView: View {
                                     HStack(spacing: 12) {
                                         Text(OnboardingCopy.choiceLabel(index: index, sport: obstacle.rawValue))
                                             .font(.system(size: 16, weight: .semibold))
-                                            .foregroundColor(.white)
+                                            .foregroundStyle(OnboardingTheme.primaryText)
                                             .multilineTextAlignment(.leading)
                                             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -57,7 +57,7 @@ struct WeightFailureReasonsStepView: View {
                                                 .font(.system(size: 20))
                                         } else {
                                             Image(systemName: "circle")
-                                                .foregroundColor(.white.opacity(0.3))
+                                                .foregroundStyle(OnboardingTheme.mutedText)
                                                 .font(.system(size: 20))
                                         }
                                     }

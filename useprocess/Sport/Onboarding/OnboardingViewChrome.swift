@@ -29,30 +29,6 @@ struct OnboardingSpecificBottomBar: View {
     @ViewBuilder
     private var bottomButtonContent: some View {
         switch OnboardingStep(rawValue: viewModel.currentStep) {
-        case .complete:
-            Button(action: {
-                Task {
-                    await onCompleteOnboarding()
-                }
-            }) {
-                HStack(spacing: 12) {
-                    if viewModel.isCompleting {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                    }
-                    Text(viewModel.isCompleting ? "Finalisation..." : "TERMINER")
-                        .font(.system(size: 20, weight: .black))
-                        .foregroundColor(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-            }
-            .glassStyle()
-            .buttonBorderShape(.roundedRectangle(radius: 50))
-            .padding(.horizontal, 40)
-            .disabled(viewModel.isCompleting)
-
         case .caloriesGoal:
             HStack(spacing: 12) {
                 Button(action: {
@@ -64,7 +40,7 @@ struct OnboardingSpecificBottomBar: View {
                 }) {
                     Text("Non")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.actionButtonText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
@@ -80,7 +56,7 @@ struct OnboardingSpecificBottomBar: View {
                 }) {
                     Text("Oui")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.actionButtonText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
@@ -100,7 +76,7 @@ struct OnboardingSpecificBottomBar: View {
                 }) {
                     Text("Non")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.actionButtonText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
@@ -116,7 +92,7 @@ struct OnboardingSpecificBottomBar: View {
                 }) {
                     Text("Oui")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.actionButtonText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
@@ -137,7 +113,7 @@ struct OnboardingSpecificBottomBar: View {
                 }) {
                     Text("Je m'engage envers moi-même")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.actionButtonText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
@@ -169,7 +145,7 @@ struct OnboardingSpecificBottomBar: View {
             }) {
                 Text("CONTINUER")
                     .font(.system(size: 20, weight: .black))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
             }

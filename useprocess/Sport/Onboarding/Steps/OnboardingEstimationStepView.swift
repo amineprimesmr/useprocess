@@ -21,9 +21,10 @@ struct OnboardingEstimationStepView: View {
     @State private var showingBaselineDate = false
     @State private var baselineDisplayDate: Date?
     @State private var isCountdownFinished = false
-    @State private var countdownTask: Task<Void, Never>?
-    @State private var dateAnimationTasks: [DispatchWorkItem] = []
-    @State private var curveAnimationTimer: Timer?
+    @State private var animationTask: Task<Void, Never>?
+
+    private let mainAnimationDuration: TimeInterval = 3.5
+    private let optimizedHoldDuration: TimeInterval = 1.0
 
     private var engine: OnboardingEstimationEngine { .shared }
 
@@ -50,9 +51,7 @@ struct OnboardingEstimationStepView: View {
             prepareAndAnimate()
         }
         .onDisappear {
-            countdownTask?.cancel()
-            dateAnimationTasks.forEach { $0.cancel() }
-            curveAnimationTimer?.invalidate()
+            cancelAllAnimations()
         }
     }
 
@@ -89,7 +88,7 @@ struct OnboardingEstimationStepView: View {
 
                 Text("Basé sur ton profil")
                     .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(OnboardingTheme.bodyText)
             }
             .padding(.top, 8)
 
@@ -102,7 +101,7 @@ struct OnboardingEstimationStepView: View {
 
                     Text(monthlySecondLine)
                         .font(.system(size: 15, weight: .regular))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundStyle(OnboardingTheme.bodyText)
                 }
             }
         }
@@ -113,165 +112,128 @@ struct OnboardingEstimationStepView: View {
     // MARK: - Setup & animation
 
     private func prepareAndAnimate() {
+        cancelAllAnimations()
+
         curveAnimationProgress = 0
         isCountdownFinished = false
+        showingBaselineDate = false
+        baselineDisplayDate = nil
         onValidationChanged?(false)
 
         let finalDate = engine.computeProjectedDate(for: context)
         projectedDate = finalDate
         monthlySecondLine = engine.monthlySecondLine(for: context, projectedDate: finalDate)
+        updateDateDisplay(date: finalDate)
 
-        startCurveAnimation(delay: 0.3)
+        animationTask = Task { @MainActor in
+            if context.phase == .optimized,
+               let baseline = engine.loadBaselineDate(),
+               baseline > finalDate {
+                await runOptimizedSequence(baseline: baseline, final: finalDate)
+            } else {
+                await runBaselineSequence(final: finalDate)
+            }
 
-        _ = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            guard !Task.isCancelled else { return }
+            finishAnimation()
+        }
+
+        // Filet de sécurité si l'animation est interrompue
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
             if !isCountdownFinished {
                 finishAnimation()
             }
         }
-
-        if context.phase == .optimized,
-           let baseline = engine.loadBaselineDate(),
-           baseline > finalDate {
-            baselineDisplayDate = baseline
-            showingBaselineDate = true
-            updateDateDisplay(date: baseline)
-
-            Task {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                guard !Task.isCancelled else { return }
-
-                showingBaselineDate = false
-                curveAnimationProgress = 0
-                startCurveAnimation(delay: 0.1)
-                _ = animateDateFrom(baseline, to: finalDate) { duration in
-                    startCountdownAnimation(totalDuration: duration)
-                }
-            }
-        } else {
-            let calendar = Calendar.current
-            let now = Date()
-            let daysDifference = max(1, calendar.dateComponents([.day], from: now, to: finalDate).day ?? 30)
-            let initialDays = Int(Double(daysDifference) * 1.2)
-            if let animStart = calendar.date(byAdding: .day, value: initialDays, to: now) {
-                _ = animateDateFrom(animStart, to: finalDate) { duration in
-                    startCountdownAnimation(totalDuration: duration)
-                }
-            } else {
-                updateDateDisplay(date: finalDate)
-                startCountdownAnimation()
-            }
-        }
     }
 
-    private func startCurveAnimation(delay: TimeInterval) {
-        Task {
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            curveAnimationTimer?.invalidate()
-
-            let duration: TimeInterval = 3.0
-            let startTime = Date()
-            curveAnimationTimer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { timer in
-                let elapsed = Date().timeIntervalSince(startTime)
-                let progress = min(elapsed / duration, 1.0)
-                curveAnimationProgress = 1.0 - pow(1.0 - progress, 3.0)
-                if progress >= 1.0 {
-                    timer.invalidate()
-                    curveAnimationProgress = 1.0
-                }
-            }
-            if let timer = curveAnimationTimer {
-                RunLoop.main.add(timer, forMode: .common)
-            }
-        }
-    }
-
-    @discardableResult
-    private func animateDateFrom(
-        _ fromDate: Date,
-        to toDate: Date,
-        startCountdownCallback: ((TimeInterval) -> Void)? = nil
-    ) -> TimeInterval {
-        let calendar = Calendar.current
-        let fromDay = calendar.component(.day, from: fromDate)
-        let toDay = calendar.component(.day, from: toDate)
-        let fromMonth = formatMonth(fromDate)
-        let toMonth = formatMonth(toDate)
-        let animationDuration: TimeInterval = 4.0
-
-        displayedDay = "\(fromDay)"
-        displayedMonth = fromMonth
-        dayOnly = "\(toDay)"
-        monthOnly = toMonth
-
-        if fromDay != toDay {
-            let daySteps: [Int] = fromDay < toDay
-                ? Array(fromDay...toDay)
-                : Array((toDay...fromDay).reversed())
-            let dayStepDuration = animationDuration / Double(max(daySteps.count, 1))
-
-            dateAnimationTasks.forEach { $0.cancel() }
-            dateAnimationTasks.removeAll()
-
-            for (index, day) in daySteps.enumerated() {
-                let workItem = DispatchWorkItem {
-                    withAnimation(.easeOut(duration: dayStepDuration)) {
-                        displayedDay = "\(day)"
-                    }
-                    if index > 0 {
-                        HapticManager.shared.impact(.soft)
-                    }
-                }
-                dateAnimationTasks.append(workItem)
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * dayStepDuration, execute: workItem)
-            }
-        } else {
-            displayedDay = "\(toDay)"
-        }
-
-        if fromMonth != toMonth {
-            DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration * 0.5) {
-                withAnimation(.easeOut(duration: animationDuration * 0.5)) {
-                    displayedMonth = toMonth
-                }
-            }
-        } else {
-            displayedMonth = toMonth
-        }
-
-        startCountdownCallback?(animationDuration)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-            updateDateDisplay(date: toDate)
-            finishAnimation()
-        }
-
-        return animationDuration
-    }
-
-    private func startCountdownAnimation(totalDuration: TimeInterval = 4.0) {
-        guard let date = projectedDate else { return }
-
-        countdownTask?.cancel()
+    /// Première estimation : courbe + date synchronisées une seule fois.
+    private func runBaselineSequence(final: Date) async {
         let calendar = Calendar.current
         let now = Date()
-        let daysDifference = calendar.dateComponents([.day], from: now, to: date).day ?? 0
-        let initialDays = max(daysDifference, Int(Double(max(daysDifference, 1)) * 1.2))
-        let steps = abs(initialDays - daysDifference)
+        let daysDifference = max(1, calendar.dateComponents([.day], from: now, to: final).day ?? 30)
+        let initialDays = Int(Double(daysDifference) * 1.2)
+        let startDate = calendar.date(byAdding: .day, value: initialDays, to: now) ?? final
 
-        guard steps > 0 else { return }
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        guard !Task.isCancelled else { return }
 
-        let stepInterval = totalDuration / Double(steps)
-        let direction = initialDays > daysDifference ? -1 : 1
+        await runSynchronizedAnimation(from: startDate, to: final, animateCurve: true)
+    }
 
-        countdownTask = Task { @MainActor in
-            var currentDays = initialDays
-            while currentDays != daysDifference {
-                if Task.isCancelled { return }
-                currentDays += direction
-                try? await Task.sleep(nanoseconds: UInt64(stepInterval * 1_000_000_000))
+    /// Deuxième estimation : pause sur la baseline (courbe déjà complète), puis une seule animation vers la date optimisée.
+    private func runOptimizedSequence(baseline: Date, final: Date) async {
+        baselineDisplayDate = baseline
+        showingBaselineDate = true
+        curveAnimationProgress = 1.0
+        applyDateDisplay(for: baseline)
+
+        try? await Task.sleep(nanoseconds: UInt64(optimizedHoldDuration * 1_000_000_000))
+        guard !Task.isCancelled else { return }
+
+        showingBaselineDate = false
+        curveAnimationProgress = 0
+        applyDateDisplay(for: baseline)
+
+        await runSynchronizedAnimation(from: baseline, to: final, animateCurve: true)
+    }
+
+    /// Timeline unique : courbe + date + haptics sur la même horloge.
+    private func runSynchronizedAnimation(
+        from startDate: Date,
+        to endDate: Date,
+        animateCurve: Bool
+    ) async {
+        let calendar = Calendar.current
+        let totalDayDelta = abs(calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 0)
+        let direction = endDate >= startDate ? 1 : -1
+        var lastHapticDay = calendar.component(.day, from: startDate)
+        var lastHapticMonth = calendar.component(.month, from: startDate)
+
+        let startTime = Date()
+
+        while !Task.isCancelled {
+            let elapsed = Date().timeIntervalSince(startTime)
+            let progress = min(elapsed / mainAnimationDuration, 1.0)
+            let eased = 1.0 - pow(1.0 - progress, 3.0)
+
+            if animateCurve {
+                curveAnimationProgress = eased
             }
+
+            let daysMoved = Int(round(Double(totalDayDelta) * progress))
+            let displayDate = calendar.date(byAdding: .day, value: daysMoved * direction, to: startDate) ?? endDate
+            applyDateDisplay(for: displayDate)
+
+            let day = calendar.component(.day, from: displayDate)
+            let month = calendar.component(.month, from: displayDate)
+            if progress > 0, (day != lastHapticDay || month != lastHapticMonth) {
+                HapticManager.shared.impact(.soft)
+                lastHapticDay = day
+                lastHapticMonth = month
+            }
+
+            if progress >= 1.0 { break }
+            try? await Task.sleep(nanoseconds: 16_000_000)
         }
+
+        guard !Task.isCancelled else { return }
+
+        applyDateDisplay(for: endDate)
+        updateDateDisplay(date: endDate)
+        if animateCurve {
+            curveAnimationProgress = 1.0
+        }
+    }
+
+    private func cancelAllAnimations() {
+        animationTask?.cancel()
+        animationTask = nil
+    }
+
+    private func applyDateDisplay(for date: Date) {
+        displayedDay = "\(Calendar.current.component(.day, from: date))"
+        displayedMonth = formatMonth(date)
     }
 
     private func updateDateDisplay(date: Date) {
@@ -280,6 +242,7 @@ struct OnboardingEstimationStepView: View {
     }
 
     private func finishAnimation() {
+        guard !isCountdownFinished else { return }
         isCountdownFinished = true
         onValidationChanged?(true)
         HapticManager.shared.notification(.success)

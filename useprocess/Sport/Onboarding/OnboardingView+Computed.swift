@@ -45,7 +45,7 @@ var shouldShowContinueButton: Bool {
 var shouldShowSpecificButton: Bool {
     let step = OnboardingStep(rawValue: viewModel.currentStep)
     switch step {
-    case .complete, .caloriesGoal, .carryOverCalories:
+    case .caloriesGoal, .carryOverCalories:
         return true
     default:
         return false
@@ -104,6 +104,8 @@ var shouldHideButtonUntilValidated: Bool {
 // ✅ NOUVEAU: Gérer le tap sur le bouton global
 func handleContinueButtonTap() {
     HapticManager.shared.impact(.medium)
+
+    viewModel.commitPendingStepAnswers()
 
     let step = OnboardingStep(rawValue: viewModel.currentStep)
 

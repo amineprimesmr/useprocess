@@ -4,7 +4,7 @@ import SwiftUI
 enum OnboardingValidationScheduler {
     @MainActor
     static func deferValidation(_ action: @escaping () -> Void) {
-        Task { @MainActor in
+        DispatchQueue.main.async {
             action()
         }
     }

@@ -46,11 +46,38 @@ async function verifyFirebaseUser(req: any): Promise<string> {
   return decoded.uid;
 }
 
+function normalizeModel(model: string): string {
+  switch (model) {
+    case "claude-sonnet-4-20250514":
+    case "claude-3-7-sonnet-20250219":
+    case "claude-3-5-sonnet-20240620":
+    case "claude-3-5-sonnet-20241022":
+    case "claude-sonnet-4-5-20250929":
+      return "claude-sonnet-4-6";
+    case "claude-opus-4-20250514":
+    case "claude-opus-4-1-20250805":
+    case "claude-opus-4-6":
+    case "claude-opus-4-7":
+    case "claude-opus-4-5-20251101":
+      return "claude-opus-4-8";
+    case "claude-3-5-haiku-20241022":
+    case "claude-3-haiku-20240307":
+      return "claude-haiku-4-5-20251001";
+    default:
+      return model;
+  }
+}
+
 function buildMessages(body: CoachCompleteBody): Anthropic.MessageParam[] {
   const history = (body.history ?? []).map((m) => ({
     role: m.role,
     content: [{ type: "text" as const, text: m.text }],
   }));
+
+  const last = body.history?.[body.history.length - 1];
+  if (last?.role === "user" && last.text === body.userText) {
+    return history;
+  }
 
   let userContent: Anthropic.ContentBlockParam[];
 
@@ -122,8 +149,9 @@ export const coachComplete = onRequest(
       }
 
       const client = new Anthropic({ apiKey: anthropicApiKey.value() });
+      const model = normalizeModel(body.model);
       const response = await client.messages.create({
-        model: body.model,
+        model,
         max_tokens: maxTokensForTask(body.task ?? "chat", body.maxTokens),
         system: body.system,
         messages: buildMessages(body),
@@ -144,13 +172,13 @@ export const coachComplete = onRequest(
         .set(
           {
             lastTask: body.task ?? "chat",
-            lastModel: body.model,
+            lastModel: model,
             lastCalledAt: admin.firestore.FieldValue.serverTimestamp(),
           },
           { merge: true }
         );
 
-      res.status(200).json({ text, model: body.model, uid });
+      res.status(200).json({ text, model, uid });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
       const status = message === "UNAUTHORIZED" ? 401 : 500;
@@ -194,8 +222,9 @@ export const coachStream = onRequest(
       res.flushHeaders?.();
 
       const client = new Anthropic({ apiKey: anthropicApiKey.value() });
+      const model = normalizeModel(body.model);
       const stream = await client.messages.stream({
-        model: body.model,
+        model,
         max_tokens: maxTokensForTask(body.task ?? "chat", body.maxTokens),
         system: body.system,
         messages: buildMessages(body),
@@ -221,7 +250,7 @@ export const coachStream = onRequest(
         .trim();
 
       res.write(
-        `data: ${JSON.stringify({ type: "done", text: finalText, model: body.model, uid })}\n\n`
+        `data: ${JSON.stringify({ type: "done", text: finalText, model, uid })}\n\n`
       );
       res.end();
 
@@ -234,7 +263,7 @@ export const coachStream = onRequest(
         .set(
           {
             lastTask: "chat_stream",
-            lastModel: body.model,
+            lastModel: model,
             lastStreamAt: admin.firestore.FieldValue.serverTimestamp(),
           },
           { merge: true }

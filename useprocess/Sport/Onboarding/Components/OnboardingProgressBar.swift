@@ -13,10 +13,10 @@ struct OnboardingProgressBar: View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.white.opacity(0.18))
+                    .fill(OnboardingTheme.progressTrack)
 
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.white)
+                    .fill(OnboardingTheme.progressFill)
                     .frame(width: geometry.size.width * clampedProgress)
             }
         }

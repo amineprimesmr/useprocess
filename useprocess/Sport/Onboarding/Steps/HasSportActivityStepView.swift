@@ -30,7 +30,7 @@ struct HasSportActivityStepView: View {
                     HStack(spacing: 12) {
                         Text(OnboardingCopy.binaryLabels(sportFirst: "Oui", sportSecond: "Non").0)
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
 
                         Spacer()
 
@@ -40,7 +40,7 @@ struct HasSportActivityStepView: View {
                                 .font(.system(size: 20))
                         } else {
                             Image(systemName: "circle")
-                                .foregroundColor(.white.opacity(0.3))
+                                .foregroundStyle(OnboardingTheme.mutedText)
                                 .font(.system(size: 20))
                         }
                     }
@@ -65,7 +65,7 @@ struct HasSportActivityStepView: View {
                     HStack(spacing: 12) {
                         Text(OnboardingCopy.binaryLabels(sportFirst: "Oui", sportSecond: "Non").1)
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
 
                         Spacer()
 
@@ -75,7 +75,7 @@ struct HasSportActivityStepView: View {
                                 .font(.system(size: 20))
                         } else {
                             Image(systemName: "circle")
-                                .foregroundColor(.white.opacity(0.3))
+                                .foregroundStyle(OnboardingTheme.mutedText)
                                 .font(.system(size: 20))
                         }
                     }

@@ -53,7 +53,7 @@ enum CoachRemoteService {
 
         var payload: [String: Any] = [
             "task": task.rawValue,
-            "model": model.rawValue,
+            "model": model.apiModelId,
             "system": system,
             "userText": userText,
             "history": history.filter { $0.role != .system }.map {
@@ -106,7 +106,7 @@ enum CoachRemoteService {
 
                     let payload: [String: Any] = [
                         "task": CoachRemoteTask.chat.rawValue,
-                        "model": model.rawValue,
+                        "model": model.apiModelId,
                         "system": system,
                         "userText": userText,
                         "history": history.filter { $0.role != .system }.map {

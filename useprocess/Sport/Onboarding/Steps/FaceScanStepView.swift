@@ -163,13 +163,13 @@ struct FaceScanStepView: View {
         VStack(spacing: 16) {
             Image(systemName: "faceid")
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(OnboardingTheme.mutedText)
             Text("TrueDepth requis")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(OnboardingTheme.primaryText)
             Text("Utilisez un iPhone avec Face ID\n(iPhone X ou plus récent).")
                 .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(OnboardingTheme.footnoteText)
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 32)
@@ -178,7 +178,7 @@ struct FaceScanStepView: View {
     private var instructionSection: some View {
         Text(instruction)
             .font(.system(size: 17, weight: .regular))
-            .foregroundStyle(.white)
+            .foregroundStyle(OnboardingTheme.primaryText)
             .multilineTextAlignment(phase == .completed ? .trailing : .center)
             .frame(maxWidth: .infinity, alignment: phase == .completed ? .trailing : .center)
             .lineSpacing(4)

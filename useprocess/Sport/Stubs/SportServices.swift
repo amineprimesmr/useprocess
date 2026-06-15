@@ -248,12 +248,20 @@ final class PermissionsManager: NSObject, ObservableObject, CLLocationManagerDel
     func requestNotificationPermission() async -> Bool {
         let center = UNUserNotificationCenter.current()
         do {
-            let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
+            let granted = try await center.requestAuthorization(options: [.alert, .sound])
             notificationsGranted = granted
             return granted
         } catch {
             return false
         }
+    }
+
+    /// Remet la pastille à zéro — iOS peut conserver un badge d'une ancienne install ou d'un test.
+    func clearAppBadge() async {
+        let center = UNUserNotificationCenter.current()
+        center.removeAllDeliveredNotifications()
+        center.removeAllPendingNotificationRequests()
+        try? await center.setBadgeCount(0)
     }
 
     func requestLocationPermission() async -> Bool {
@@ -286,74 +294,7 @@ final class PermissionsManager: NSObject, ObservableObject, CLLocationManagerDel
     }
 }
 
-// MARK: - Subscriptions (visuel)
-
-enum SubscriptionError: LocalizedError {
-    case userNotAuthenticated
-    case productNotFound
-    case offerNotFound
-    case verificationFailed
-    case userCancelled
-    case pending
-    case noActiveSubscription
-    case unknown
-
-    var errorDescription: String? {
-        switch self {
-        case .userNotAuthenticated: return "Vous devez être connecté pour acheter un abonnement"
-        case .productNotFound: return "Produit d'abonnement non trouvé"
-        case .offerNotFound: return "Offre promotionnelle non disponible"
-        case .verificationFailed: return "Échec de vérification de la transaction"
-        case .userCancelled: return "Achat annulé"
-        case .pending: return "Achat en attente de validation"
-        case .noActiveSubscription: return "Aucun abonnement actif"
-        case .unknown: return "Erreur inconnue"
-        }
-    }
-}
-
-@MainActor
-final class SubscriptionService: ObservableObject {
-    static let shared = SubscriptionService()
-
-    @Published var subscriptionStatus: SubscriptionStatus = .notSubscribed
-    @Published var isLoading = false
-    @Published var annualProduct: Product?
-    /// Achats simulés tant que StoreKit n'est pas branché.
-    private let usesSimulatedPurchases = true
-
-    enum SubscriptionStatus: Equatable {
-        case unknown, notSubscribed, subscribed, expired, inGracePeriod, inBillingRetryPeriod
-        var isActive: Bool {
-            switch self {
-            case .subscribed, .inGracePeriod, .inBillingRetryPeriod: return true
-            default: return false
-            }
-        }
-    }
-
-    var canPurchase: Bool { annualProduct != nil || usesSimulatedPurchases }
-
-    func loadSubscriptions() async { isLoading = false }
-    func loadProducts() async { await loadSubscriptions() }
-    func checkSubscriptionStatus() async {}
-    func purchase() async throws {
-        subscriptionStatus = .subscribed
-    }
-    func purchaseWithPromoOffer() async throws {
-        subscriptionStatus = .subscribed
-    }
-    func purchaseAnnual() async throws { try await purchase() }
-    func restorePurchases() async throws {
-        subscriptionStatus = .subscribed
-    }
-    func forcePremiumForDevelopment() {
-        subscriptionStatus = .subscribed
-    }
-    func disableDevMode() {
-        subscriptionStatus = .notSubscribed
-    }
-}
+// MARK: - Subscriptions → voir Subscriptions/SubscriptionService.swift
 
 @MainActor
 final class PaywallExitNotificationService {

@@ -31,7 +31,7 @@ extension HealthDataAnimationStepView {
                     HStack {
                         Text("Sources de données")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
             Spacer()
                     }
                     .padding(.horizontal, 12)
@@ -48,7 +48,7 @@ extension HealthDataAnimationStepView {
                                 HStack(spacing: 6) {
                                     Text(source)
                                         .font(.system(size: 14, weight: .medium)) // Plus petit
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
 
                                     // Flèche double à droite de chaque source (sauf le dernier)
                                     if index < compactSources.count - 1 {
@@ -83,7 +83,7 @@ extension HealthDataAnimationStepView {
                     HStack {
                         Text("Sources de données")
                             .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
 
                         Spacer()
                     }
@@ -103,7 +103,7 @@ extension HealthDataAnimationStepView {
 
                             // ✨ Séparateur
                             Divider()
-                                .background(Color.white.opacity(0.1))
+                                .background(OnboardingTheme.mutedFill)
 
                             // ✨ Sous-partie 2 : Santé Apple
                             appleHealthSubsection
@@ -122,18 +122,18 @@ extension HealthDataAnimationStepView {
                 ZStack {
                     Image(systemName: "iphone")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundStyle(OnboardingTheme.narrativeText)
 
                     Text("Zz")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundStyle(OnboardingTheme.bodyText)
                         .offset(x: 10, y: -10)
                 }
                 .frame(width: 24, height: 24)
 
                 Text("Mouvement du téléphone")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundStyle(OnboardingTheme.narrativeText)
 
                 Spacer()
 
@@ -148,7 +148,7 @@ extension HealthDataAnimationStepView {
                         ZStack(alignment: .leading) {
                             // Fond gris avec rayures animées
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(0.2))
+                                .fill(OnboardingTheme.softFill)
                                 .frame(height: 8)
                                 .overlay(
                                     // Rayures diagonales animées pour la partie non remplie
@@ -161,7 +161,7 @@ extension HealthDataAnimationStepView {
                                             x += stripeWidth * 2
                                         }
                                     }
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                    .stroke(OnboardingTheme.softBorder, lineWidth: 1)
                                 )
 
                             // Partie remplie avec animation fluide et gradient
@@ -169,8 +169,8 @@ extension HealthDataAnimationStepView {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(0.6),
-                                            Color.white.opacity(0.4)
+                                            OnboardingTheme.primaryText.opacity(0.6),
+                                            OnboardingTheme.primaryText.opacity(0.4)
                                         ],
                                         startPoint: .leading,
                                         endPoint: .trailing
@@ -202,7 +202,7 @@ extension HealthDataAnimationStepView {
 
                 Text("Santé Apple")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundStyle(OnboardingTheme.narrativeText)
 
                 Spacer()
 
@@ -217,7 +217,7 @@ extension HealthDataAnimationStepView {
                         ZStack(alignment: .leading) {
                             // Fond gris avec rayures animées
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(0.2))
+                                .fill(OnboardingTheme.softFill)
                                 .frame(height: 8)
                                 .overlay(
                                     // Rayures diagonales animées pour la partie non remplie
@@ -230,7 +230,7 @@ extension HealthDataAnimationStepView {
                                             x += stripeWidth * 2
                                         }
                                     }
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                    .stroke(OnboardingTheme.softBorder, lineWidth: 1)
                                 )
 
                             // Partie remplie avec animation fluide et gradient
@@ -238,8 +238,8 @@ extension HealthDataAnimationStepView {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(0.6),
-                                            Color.white.opacity(0.4)
+                                            OnboardingTheme.primaryText.opacity(0.6),
+                                            OnboardingTheme.primaryText.opacity(0.4)
                                         ],
                                         startPoint: .leading,
                                         endPoint: .trailing
@@ -263,7 +263,7 @@ extension HealthDataAnimationStepView {
 
                         Text(dataType)
                             .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundStyle(OnboardingTheme.narrativeText)
 
                         Spacer()
                     }
@@ -334,7 +334,7 @@ extension HealthDataAnimationStepView {
                     HStack {
                         Text("Aujourd'hui")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(OnboardingTheme.primaryText)
 
                         Spacer()
 
@@ -342,18 +342,18 @@ extension HealthDataAnimationStepView {
                         HStack(spacing: 4) {
                             Text("\(daysFound)")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(OnboardingTheme.screenBackground)
                                 .contentTransition(.numericText()) // ✨ Animation fluide du compteur
 
                             Text("JOURS TROUVÉS")
                                 .font(.system(size: 10, weight: .regular))
-                                .foregroundColor(.white)
+                                .foregroundStyle(OnboardingTheme.screenBackground)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.black)
+                                .fill(OnboardingTheme.primaryText)
                         )
                     }
                 }
@@ -375,14 +375,14 @@ extension HealthDataAnimationStepView {
                         if showDataSection {
                             // ✨ Séparateur
                             Divider()
-                                .background(Color.white.opacity(0.1))
+                                .background(OnboardingTheme.mutedFill)
 
                             // ✨ Sous-partie 2 : Récupération (anciennement "Besoin de sommeil")
                             sleepNeedSubsection
 
                             // ✨ Séparateur
                             Divider()
-                                .background(Color.white.opacity(0.1))
+                                .background(OnboardingTheme.mutedFill)
 
                             // ✨ Sous-partie 3 : Capacité d'entrainement (anciennement "Dette de sommeil")
                             sleepDebtSubsection
@@ -413,7 +413,7 @@ extension HealthDataAnimationStepView {
 
                 Text("Récupération")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundStyle(OnboardingTheme.narrativeText)
 
                 Spacer()
 
@@ -428,7 +428,7 @@ extension HealthDataAnimationStepView {
                         ZStack(alignment: .leading) {
                             // Fond gris avec rayures animées
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(0.2))
+                                .fill(OnboardingTheme.softFill)
                                 .frame(height: 8)
                                 .overlay(
                                     // Rayures diagonales animées pour la partie non remplie
@@ -441,7 +441,7 @@ extension HealthDataAnimationStepView {
                                             x += stripeWidth * 2
                                         }
                                     }
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                    .stroke(OnboardingTheme.softBorder, lineWidth: 1)
                                 )
 
                             // Partie remplie avec animation fluide et gradient
@@ -449,8 +449,8 @@ extension HealthDataAnimationStepView {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(0.6),
-                                            Color.white.opacity(0.4)
+                                            OnboardingTheme.primaryText.opacity(0.6),
+                                            OnboardingTheme.primaryText.opacity(0.4)
                                         ],
                                         startPoint: .leading,
                                         endPoint: .trailing
@@ -474,7 +474,7 @@ extension HealthDataAnimationStepView {
 
                         Text(dataType)
                             .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundStyle(OnboardingTheme.narrativeText)
 
             Spacer()
         }
@@ -500,7 +500,7 @@ extension HealthDataAnimationStepView {
 
                 Text("Récupération")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundStyle(OnboardingTheme.narrativeText)
 
                 Spacer()
 
@@ -515,7 +515,7 @@ extension HealthDataAnimationStepView {
                         ZStack(alignment: .leading) {
                             // Fond gris avec rayures animées
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(0.2))
+                                .fill(OnboardingTheme.softFill)
                                 .frame(height: 8)
                                 .overlay(
                                     // Rayures diagonales animées pour la partie non remplie
@@ -528,7 +528,7 @@ extension HealthDataAnimationStepView {
                                             x += stripeWidth * 2
                                         }
                                     }
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                    .stroke(OnboardingTheme.softBorder, lineWidth: 1)
                                 )
 
                             // Partie remplie avec animation fluide et gradient
@@ -536,8 +536,8 @@ extension HealthDataAnimationStepView {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(0.6),
-                                            Color.white.opacity(0.4)
+                                            OnboardingTheme.primaryText.opacity(0.6),
+                                            OnboardingTheme.primaryText.opacity(0.4)
                                         ],
                                         startPoint: .leading,
                                         endPoint: .trailing
@@ -561,7 +561,7 @@ extension HealthDataAnimationStepView {
 
                         Text(dataType)
                             .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundStyle(OnboardingTheme.narrativeText)
 
             Spacer()
         }
@@ -586,7 +586,7 @@ extension HealthDataAnimationStepView {
 
                 Text("Capacité d'entrainement")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundStyle(OnboardingTheme.narrativeText)
 
                 Spacer()
 
@@ -601,7 +601,7 @@ extension HealthDataAnimationStepView {
                         ZStack(alignment: .leading) {
                             // Fond gris avec rayures animées
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(0.2))
+                                .fill(OnboardingTheme.softFill)
                                 .frame(height: 8)
                                 .overlay(
                                     // Rayures diagonales animées pour la partie non remplie
@@ -614,7 +614,7 @@ extension HealthDataAnimationStepView {
                                             x += stripeWidth * 2
                                         }
                                     }
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                    .stroke(OnboardingTheme.softBorder, lineWidth: 1)
                                 )
 
                             // Partie remplie avec animation fluide et gradient
@@ -622,8 +622,8 @@ extension HealthDataAnimationStepView {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(0.6),
-                                            Color.white.opacity(0.4)
+                                            OnboardingTheme.primaryText.opacity(0.6),
+                                            OnboardingTheme.primaryText.opacity(0.4)
                                         ],
                                         startPoint: .leading,
                                         endPoint: .trailing
@@ -647,7 +647,7 @@ extension HealthDataAnimationStepView {
 
                         Text(dataType)
                             .font(.system(size: 15, weight: .regular))
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundStyle(OnboardingTheme.narrativeText)
 
                         Spacer()
                     }

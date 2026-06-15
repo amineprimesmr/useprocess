@@ -51,8 +51,8 @@ struct SportOnboardingView: View {
 
     var body: some View {
         ZStack {
-            // ✅ FOND NOIR pour toutes les pages d'onboarding
-            Color.black
+            // Fond adaptatif clair / sombre
+            OnboardingTheme.screenBackground
                 .ignoresSafeArea(.all)
                 .allowsHitTesting(false)
 
@@ -107,7 +107,7 @@ struct SportOnboardingView: View {
                                 // ✅ Afficher "CONTINUER" normal
                                 Text("CONTINUER")
                                     .font(.system(size: 20, weight: .black))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(OnboardingTheme.actionButtonText)
                                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                             }
                         }

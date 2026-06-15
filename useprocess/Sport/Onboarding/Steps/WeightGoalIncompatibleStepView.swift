@@ -70,8 +70,8 @@ struct WeightGoalIncompatibleStepView: View {
                         displayedText: displayedText,
                         fontSize: 28,
                         fontWeight: .semibold,
-                        defaultColor: .white.opacity(0.9),
-                        highlightColor: .white.opacity(0.9),
+                        defaultColor: OnboardingTheme.narrativeText,
+                        highlightColor: OnboardingTheme.narrativeText,
                         highlightStart: ""
                     )
                     .multilineTextAlignment(.center)

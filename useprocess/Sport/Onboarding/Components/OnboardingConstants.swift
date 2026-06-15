@@ -59,7 +59,6 @@ enum OnboardingHeaderLayout {
         guard let step = OnboardingStep(rawValue: currentStep) else { return false }
 
         if step == .videoIntroduction || step == .faceAnalysis { return false }
-        if step == .goalProjection || step == .weightEstimation { return false }
 
         switch step {
         case .healthKitPermissions, .programCreation, .biometricAuth, .notificationPermission,

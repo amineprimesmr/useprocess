@@ -51,14 +51,14 @@ struct OnboardingStepContainer<Content: View>: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(Color(white: 0.98))
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .opacity(titleOpacity)
                         .offset(y: titleOffset)
 
                     if let subtitle = subtitle {
                         Text(subtitle)
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(Color(white: 0.98))
+                            .foregroundStyle(OnboardingTheme.primaryText)
                             .opacity(titleOpacity)
                             .offset(y: titleOffset)
                     }
@@ -66,7 +66,7 @@ struct OnboardingStepContainer<Content: View>: View {
                     if let subtitle2 = subtitle2 {
                         Text(subtitle2)
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(Color(white: 0.98))
+                            .foregroundStyle(OnboardingTheme.primaryText)
                             .opacity(titleOpacity)
                             .offset(y: titleOffset)
                     }

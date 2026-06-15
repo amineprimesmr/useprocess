@@ -22,13 +22,13 @@ struct WeeklyStatRow: View {
             HStack {
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundStyle(OnboardingTheme.bodyText)
 
                 Spacer()
 
                 Text("\(String(format: "%.0f", animatedValue)) \(unit)")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
             }
 
             // Barre de progression plus fine
@@ -36,12 +36,12 @@ struct WeeklyStatRow: View {
                 ZStack(alignment: .leading) {
                     // Fond de la barre
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white.opacity(0.15))
+                        .fill(OnboardingTheme.mutedFill)
                         .frame(height: 4)
 
                     // Barre de progression animée
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white.opacity(0.8))
+                        .fill(OnboardingTheme.primaryText.opacity(0.8))
                         .frame(width: geometry.size.width * barProgress, height: 4)
                         .animation(.easeInOut(duration: 1.2).delay(delay), value: barProgress)
                 }

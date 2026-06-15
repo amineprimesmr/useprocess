@@ -247,7 +247,8 @@ class OnboardingViewModel: ObservableObject {
         case .trainingFrequency:
             return isTrainingFrequencySelected && selectedTrainingFrequency != nil
         case .nutritionQuality:
-            return nutritionProfile.nutritionQuality != nil
+            // Toujours validée : valeur par défaut + commit explicite au tap Continuer
+            return true
         case .nutritionObstacles, .nutritionPotential:
             return true
         case .perfectNutritionBelief:
@@ -330,6 +331,20 @@ class OnboardingViewModel: ObservableObject {
         profile.nutritionQuality = quality
         nutritionProfile = profile
         isNutritionQualitySelected = quality != nil
+    }
+
+    /// Persiste les réponses implicites (valeurs par défaut UI) avant navigation.
+    func commitPendingStepAnswers() {
+        guard let step = OnboardingStep(rawValue: currentStep) else { return }
+
+        switch step {
+        case .nutritionQuality:
+            if nutritionProfile.nutritionQuality == nil {
+                updateNutritionQuality(.average)
+            }
+        default:
+            break
+        }
     }
 
     func syncInferredWeightGoal() {
@@ -497,7 +512,8 @@ class OnboardingViewModel: ObservableObject {
         if let value = snapshot.isIdealWeightEntered { isIdealWeightEntered = value }
         if let value = snapshot.isSportsSelected { isSportsSelected = value }
         if let value = snapshot.isGoalPaceSelected { isGoalPaceSelected = value }
-        if let value = snapshot.isNutritionQualitySelected { isNutritionQualitySelected = value }
+        isNutritionQualitySelected = nutritionProfile.nutritionQuality != nil
+            || (snapshot.isNutritionQualitySelected ?? false)
         if let value = snapshot.isWeightManagementExperienceSelected {
             isWeightManagementExperienceSelected = value
         }

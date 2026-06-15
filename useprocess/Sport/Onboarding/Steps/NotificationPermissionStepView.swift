@@ -23,16 +23,16 @@ struct NotificationPermissionStepView: View {
 
     var body: some View {
         ZStack {
-            Color.black
+            OnboardingTheme.screenBackground
                 .ignoresSafeArea(.all)
 
             VStack(spacing: 0) {
                 Spacer()
                     .frame(height: OnboardingConstants.scrollContentTopInset)
 
-                (Text("Tu recevras un message ") + Text("à la fin").foregroundColor(Color(hex: "a7c4f2")) + Text(" de ton essai"))
+                (Text("Tu recevras un message ") + Text("à la fin").foregroundColor(OnboardingTheme.accentHighlight) + Text(" de ton essai"))
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                     .padding(.bottom, 50)
@@ -55,13 +55,13 @@ struct NotificationPermissionStepView: View {
                     HStack(spacing: 12) {
                         if isRequesting {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
                                 .scaleEffect(0.8)
                         }
                         Text("Activer les notifications")
                             .font(.system(size: 20, weight: .black))
                     }
-                    .foregroundColor(.white)
+                    .foregroundStyle(OnboardingTheme.primaryText)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                 }

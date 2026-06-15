@@ -12,7 +12,7 @@ extension PaywallView {
 
     @MainActor
     func purchaseSubscription() async {
-        if subscriptionService.annualProduct == nil {
+        if subscriptionService.monthlyProduct == nil && subscriptionService.annualProduct == nil {
             await subscriptionService.loadSubscriptions()
 
             guard subscriptionService.canPurchase else {
@@ -26,7 +26,7 @@ extension PaywallView {
         errorMessage = nil
 
         do {
-            try await subscriptionService.purchase()
+            try await subscriptionService.purchase(plan: selectedBillingPlan)
             await subscriptionService.checkSubscriptionStatus()
 
             if subscriptionService.subscriptionStatus.isActive {
@@ -39,7 +39,9 @@ extension PaywallView {
                 case .userCancelled:
                     break
                 case .productNotFound:
-                    errorMessage = "Le produit d'abonnement est introuvable. Veuillez réessayer plus tard."
+                    errorMessage = selectedBillingPlan == .monthly
+                        ? "L'abonnement mensuel n'est pas encore disponible côté App Store (propagation Apple jusqu'à 24 h). Essaie l'annuel ou réessaie demain."
+                        : "Le produit d'abonnement est introuvable. Veuillez réessayer plus tard."
                     showError = true
                 case .userNotAuthenticated:
                     errorMessage = "Vous devez être connecté pour acheter un abonnement."

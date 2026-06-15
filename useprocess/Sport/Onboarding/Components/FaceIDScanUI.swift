@@ -240,7 +240,7 @@ struct FaceIDFrameHint: View {
     var body: some View {
         Text(text)
             .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(OnboardingTheme.primaryText)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)

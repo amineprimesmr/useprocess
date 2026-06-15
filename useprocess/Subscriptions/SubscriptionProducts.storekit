@@ -1,0 +1,79 @@
+{
+  "identifier" : "F4A8B2C1",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "F2CJGJ69XU",
+    "_lastSynchronizedDate" : 768787200
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21482999",
+      "localizations" : [
+
+      ],
+      "name" : "Process AI Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "5.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6738291001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Accès premium mensuel à Process AI",
+              "displayName" : "Process AI Premium — Mensuel",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.useprocess.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium Monthly",
+          "subscriptionGroupID" : "21482999",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6738291002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Accès premium annuel à Process AI",
+              "displayName" : "Process AI Premium — Annuel",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.useprocess.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly",
+          "subscriptionGroupID" : "21482999",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

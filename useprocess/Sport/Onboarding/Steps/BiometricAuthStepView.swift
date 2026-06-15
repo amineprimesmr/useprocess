@@ -47,7 +47,7 @@ struct BiometricAuthStepView: View {
     var body: some View {
         ZStack {
             // Fond noir simple
-            Color.black
+            OnboardingTheme.screenBackground
                 .ignoresSafeArea(.all)
 
                 VStack(spacing: 0) {
@@ -57,7 +57,7 @@ struct BiometricAuthStepView: View {
                     // Titre avec prénom (aligné à gauche)
                     Text(OnboardingCopy.text("\(userFirstName), établissons un contrat", blank: "Titre à personnaliser"))
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 40)
@@ -66,7 +66,7 @@ struct BiometricAuthStepView: View {
                     // Texte d'introduction
                     Text(OnboardingCopy.text("À partir de ce jour, je m'engage à :", blank: "Sous-titre à personnaliser"))
                         .font(.system(size: 18, weight: .regular))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 40)
@@ -124,7 +124,7 @@ struct BiometricAuthStepView: View {
             // Texte légèrement plus petit avec animation simple
             Text(text)
                 .font(.system(size: 18, weight: .medium))
-                .foregroundColor(.white)
+                .foregroundStyle(OnboardingTheme.primaryText)
                 .opacity(commitmentOpacities[index])
                 .contentTransition(.opacity)
         }
@@ -151,23 +151,13 @@ struct BiometricAuthStepView: View {
     private var fingerprintZone: some View {
         // Zone d'appui avec image fingerprint et cercle de progression
         ZStack {
-            // Image fingerprint - ENCORE PLUS GROSSE
-            if let fingerprintImage = UIImage(named: "fingerprint") {
-                Image(uiImage: fingerprintImage)
-                    .resizable()
-                    .renderingMode(.original)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 380, height: 380)
-                    .scaleEffect(isPressed ? 1.05 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
-            } else {
-                // Fallback si l'image n'existe pas
-                Image(systemName: "touchid")
-                    .font(.system(size: 200, weight: .light))
-                    .foregroundColor(.white.opacity(0.8))
-                    .scaleEffect(isPressed ? 1.05 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
-            }
+            Image("fingerprint")
+                .resizable()
+                .renderingMode(.original)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 380, height: 380)
+                .scaleEffect(isPressed ? 1.05 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
 
             // Cercle de progression - Lueur subtile autour de l'image (ENCORE PLUS PETIT)
             ZStack {

@@ -18,7 +18,7 @@ struct SourceDataItemRowView: View {
             // Nom
             Text(source)
                 .font(.system(size: 15, weight: .regular))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundStyle(OnboardingTheme.narrativeText)
                 .multilineTextAlignment(.leading)
 
             Spacer()
@@ -26,7 +26,7 @@ struct SourceDataItemRowView: View {
             // État : chargement ou check vert
             if isLoading {
                 ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
                     .scaleEffect(0.7)
             } else if isCompleted {
                 Image(systemName: "checkmark.circle.fill")
@@ -38,7 +38,7 @@ struct SourceDataItemRowView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.05))
+                .fill(OnboardingTheme.subtleFill)
         )
     }
 }
@@ -55,14 +55,14 @@ struct DataItemRowView: View {
             if !item.icon.isEmpty {
                 Image(systemName: item.icon)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(OnboardingTheme.bodyText)
                     .frame(width: 20, height: 20)
             }
 
             // Nom
             Text(item.name)
                 .font(.system(size: 15, weight: .regular))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundStyle(OnboardingTheme.narrativeText)
                 .multilineTextAlignment(.leading)
 
             Spacer()
@@ -70,7 +70,7 @@ struct DataItemRowView: View {
             // État : chargement, check vert, pending ou barre de progression
             if isLoading {
                 ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
                     .scaleEffect(0.7)
             } else if isCompleted {
                 Image(systemName: "checkmark.circle.fill")
@@ -79,13 +79,13 @@ struct DataItemRowView: View {
             } else if item.isPending {
                 Image(systemName: "star.fill")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundStyle(OnboardingTheme.mutedText)
             } else if item.hasProgress {
                 // Barre de progression horizontale
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.white.opacity(0.2))
+                            .fill(OnboardingTheme.softFill)
                             .frame(height: 4)
 
                         RoundedRectangle(cornerRadius: 2)
@@ -100,7 +100,7 @@ struct DataItemRowView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.05))
+                .fill(OnboardingTheme.subtleFill)
         )
     }
 }

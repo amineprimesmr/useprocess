@@ -122,7 +122,7 @@ enum OnboardingStep: Int, CaseIterable {
              .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
              .alarmConfiguration, .sleepWindowReveal,
              .referralCode, .caloriesGoal, .carryOverCalories, .appRating,
-             .referralReward, .featuresUnlock,
+             .processWelcome, .referralReward, .featuresUnlock, .complete,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
              .personalizedWelcome, .processResultsDurability,
              .sleepDataRecovery:

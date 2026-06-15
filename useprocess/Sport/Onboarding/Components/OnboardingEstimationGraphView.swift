@@ -46,17 +46,17 @@ struct OnboardingEstimationGraphView: View {
 
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.black.opacity(0.4))
+                        .fill(OnboardingTheme.cardBackground)
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(OnboardingTheme.cardBorder, lineWidth: 1)
                         )
 
                     VStack {
                         HStack {
                             Text("Ta progression")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.85))
+                                .foregroundStyle(OnboardingTheme.primaryText.opacity(0.85))
                                 .padding(.leading, 8)
                                 .padding(.top, 12)
 
@@ -69,7 +69,7 @@ struct OnboardingEstimationGraphView: View {
                                 Text(finalCountdownDays <= 1 ? "jour" : "jours")
                             }
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundStyle(OnboardingTheme.bodyText)
                             .padding(.trailing, 8)
                             .padding(.top, 12)
                         }
@@ -83,11 +83,11 @@ struct OnboardingEstimationGraphView: View {
                             path.addLine(to: CGPoint(x: width, y: y))
                         }
                     }
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(OnboardingTheme.mutedFill, lineWidth: 1)
 
                     if !points.isEmpty {
                         fillPath(points: points, height: height)
-                        strokePath(points: points, lineWidth: 5, color: Color.black.opacity(0.4), yOffset: 2, blur: 3)
+                        strokePath(points: points, lineWidth: 5, color: OnboardingTheme.graphTooltip, yOffset: 2, blur: 3)
                         strokePath(
                             points: points,
                             lineWidth: 5,
@@ -97,11 +97,11 @@ struct OnboardingEstimationGraphView: View {
                                 Color(red: 0.42, green: 0.05, blue: 0.51)
                             ]
                         )
-                        strokePath(points: points, lineWidth: 1, color: Color.white.opacity(0.3), yOffset: -2)
+                        strokePath(points: points, lineWidth: 1, color: OnboardingTheme.softBorder, yOffset: -2)
 
                         if curveAnimationProgress >= 1.0, let lastPoint = points.last {
                             Circle()
-                                .fill(Color.white)
+                                .fill(OnboardingTheme.primaryText)
                                 .frame(width: 12, height: 12)
                                 .position(lastPoint)
                         }
@@ -113,12 +113,12 @@ struct OnboardingEstimationGraphView: View {
             HStack {
                 Text("Aujourd'hui")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundStyle(OnboardingTheme.footnoteText)
                     .padding(.leading, 4)
                 Spacer()
                 Text(formatMonth(projectedDate))
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundStyle(OnboardingTheme.footnoteText)
                     .padding(.trailing, 20)
             }
             .padding(.horizontal, 8)
@@ -185,7 +185,7 @@ struct OnboardingEstimationGraphView: View {
             GeometryReader { maskGeometry in
                 HStack(spacing: 0) {
                     Rectangle()
-                        .fill(Color.white)
+                        .fill(OnboardingTheme.primaryText)
                         .frame(width: maskGeometry.size.width * curveAnimationProgress)
                     Spacer()
                 }
@@ -209,7 +209,7 @@ struct OnboardingEstimationGraphView: View {
         .stroke(
             gradient != nil
                 ? AnyShapeStyle(LinearGradient(colors: gradient!, startPoint: .leading, endPoint: .trailing))
-                : AnyShapeStyle(color ?? .white),
+                : AnyShapeStyle(color ?? OnboardingTheme.primaryText),
             style: StrokeStyle(lineWidth: lineWidth, lineCap: .square, lineJoin: .round)
         )
         .blur(radius: blur)

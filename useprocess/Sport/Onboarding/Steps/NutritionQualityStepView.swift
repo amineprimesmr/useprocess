@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct NutritionQualityStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var selectedQuality: NutritionQuality?
     var onValidationChanged: ((Bool) -> Void)?
     
@@ -19,6 +20,7 @@ struct NutritionQualityStepView: View {
     @State private var imageOpacity: [Double] = [0.0, 0.0, 0.0]
     @State private var imagePulse: [CGFloat] = [1.0, 1.0, 1.0]
     @State private var currentQualityIndex: Int = 1  // Pour suivre la qualité actuelle
+    @State private var didInitialize = false
     
     // ✅ 3 positions fixes : 0, 1, 2
     private let minValue: Double = 0.0
@@ -34,9 +36,6 @@ struct NutritionQualityStepView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                NutritionStepBackground()
-                    .allowsHitTesting(false)
-                
                 VStack(spacing: 0) {
                     Spacer()
                         .frame(height: OnboardingConstants.titleAreaHeight)
@@ -65,7 +64,7 @@ struct NutritionQualityStepView: View {
                                     
                                     Text(OnboardingCopy.text(quality.description, blank: "Description à personnaliser"))
                                         .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundStyle(OnboardingTheme.footnoteText)
                                         .multilineTextAlignment(.center)
                                         .lineSpacing(6)
                                         .padding(.horizontal, 40)
@@ -89,7 +88,7 @@ struct NutritionQualityStepView: View {
                                     ZStack(alignment: .leading) {
                                         // Barre de fond (gris foncé)
                                         RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                            .fill(Color(red: 0.08, green: 0.08, blue: 0.08))
+                                            .fill(OnboardingTheme.segmentTrack(for: colorScheme))
                                             .frame(width: sliderWidth, height: sliderHeight)
                                         
                                         // Barre de progression avec dégradé dynamique selon la qualité
@@ -239,7 +238,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[0] * imagePulse[0])
                                     .rotationEffect(.degrees(imageRotation[0]))
                                     .opacity(imageOpacity[0] * 0.75)
-                                    .shadow(color: .orange.opacity(0.6), radius: 20, x: 3, y: 8)
+                                    .shadow(color: decorShadowColor(.orange), radius: decorShadowRadius, x: 3, y: 8)
                                     .position(
                                         x: geo.size.width * 0.25,
                                         y: geo.size.height * 0.38
@@ -253,7 +252,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[1] * imagePulse[1])
                                     .rotationEffect(.degrees(imageRotation[1]))
                                     .opacity(imageOpacity[1] * 0.75)
-                                    .shadow(color: .red.opacity(0.6), radius: 20, x: -3, y: 8)
+                                    .shadow(color: decorShadowColor(.red), radius: decorShadowRadius, x: -3, y: 8)
                                     .position(
                                         x: geo.size.width * 0.82,
                                         y: geo.size.height * 0.40
@@ -267,7 +266,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[2] * imagePulse[2])
                                     .rotationEffect(.degrees(imageRotation[2]))
                                     .opacity(imageOpacity[2] * 0.75)
-                                    .shadow(color: .brown.opacity(0.6), radius: 20, x: 4, y: -5)
+                                    .shadow(color: decorShadowColor(.brown), radius: decorShadowRadius, x: 4, y: -5)
                                     .position(
                                         x: geo.size.width * 0.28,
                                         y: geo.size.height * 0.68
@@ -282,7 +281,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[0] * imagePulse[0])
                                     .rotationEffect(.degrees(imageRotation[0]))
                                     .opacity(imageOpacity[0] * 0.75)
-                                    .shadow(color: .yellow.opacity(0.6), radius: 20, x: -2, y: 6)
+                                    .shadow(color: decorShadowColor(.yellow), radius: decorShadowRadius, x: -2, y: 6)
                                     .position(
                                         x: geo.size.width * 0.72,
                                         y: geo.size.height * 0.32
@@ -296,7 +295,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[1] * imagePulse[1])
                                     .rotationEffect(.degrees(imageRotation[1]))
                                     .opacity(imageOpacity[1] * 0.75)
-                                    .shadow(color: .orange.opacity(0.6), radius: 20, x: 2, y: 7)
+                                    .shadow(color: decorShadowColor(.orange), radius: decorShadowRadius, x: 2, y: 7)
                                     .position(
                                         x: geo.size.width * 0.18,
                                         y: geo.size.height * 0.42
@@ -310,7 +309,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[2] * imagePulse[2])
                                     .rotationEffect(.degrees(imageRotation[2]))
                                     .opacity(imageOpacity[2] * 0.75)
-                                    .shadow(color: .brown.opacity(0.6), radius: 20, x: -4, y: -6)
+                                    .shadow(color: decorShadowColor(.brown), radius: decorShadowRadius, x: -4, y: -6)
                                     .position(
                                         x: geo.size.width * 0.70,
                                         y: geo.size.height * 0.67
@@ -325,7 +324,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[0] * imagePulse[0])
                                     .rotationEffect(.degrees(imageRotation[0]))
                                     .opacity(imageOpacity[0] * 0.75)
-                                    .shadow(color: .green.opacity(0.6), radius: 20, x: 3, y: 5)
+                                    .shadow(color: decorShadowColor(.green), radius: decorShadowRadius, x: 3, y: 5)
                                     .position(
                                         x: geo.size.width * 0.20,
                                         y: geo.size.height * 0.32
@@ -339,7 +338,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[1] * imagePulse[1])
                                     .rotationEffect(.degrees(imageRotation[1]))
                                     .opacity(imageOpacity[1] * 0.75)
-                                    .shadow(color: .green.opacity(0.6), radius: 20, x: -3, y: -4)
+                                    .shadow(color: decorShadowColor(.green), radius: decorShadowRadius, x: -3, y: -4)
                                     .position(
                                         x: geo.size.width * 0.74,
                                         y: geo.size.height * 0.70
@@ -353,7 +352,7 @@ struct NutritionQualityStepView: View {
                                     .scaleEffect(imageScale[2] * imagePulse[2])
                                     .rotationEffect(.degrees(imageRotation[2]))
                                     .opacity(imageOpacity[2] * 0.75)
-                                    .shadow(color: .yellow.opacity(0.6), radius: 20, x: 2, y: 9)
+                                    .shadow(color: decorShadowColor(.yellow), radius: decorShadowRadius, x: 2, y: 9)
                                     .position(
                                         x: geo.size.width * 0.68,
                                         y: geo.size.height * 0.36
@@ -367,19 +366,42 @@ struct NutritionQualityStepView: View {
             }
         }
         .onAppear {
-            initializeSelectedQualityIfNeeded()
+            guard !didInitialize else { return }
+            didInitialize = true
+
+            DispatchQueue.main.async {
+                initializeSelectedQualityIfNeeded()
+            }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 showImages = true
             }
         }
     }
+
+    private var decorShadowRadius: CGFloat {
+        colorScheme == .dark ? 20 : 8
+    }
+
+    private func decorShadowColor(_ color: Color) -> Color {
+        color.opacity(colorScheme == .dark ? 0.6 : 0.12)
+    }
+
+    private func sliderIndex(for quality: NutritionQuality) -> Int {
+        switch quality {
+        case .veryPoor, .poor:
+            return 0
+        case .average:
+            return 1
+        case .good, .veryGood, .excellent:
+            return 2
+        }
+    }
     
     private func initializeSelectedQualityIfNeeded() {
         let selectedIndex: Int
-        if let quality = selectedQuality,
-           let index = nutritionQualities.firstIndex(of: quality) {
-            selectedIndex = index
+        if let quality = selectedQuality {
+            selectedIndex = sliderIndex(for: quality)
         } else {
             selectedIndex = 1
         }
@@ -432,12 +454,17 @@ struct NutritionQualityStepView: View {
     private func syncSliderUI(to index: Int, animated: Bool) {
         let quality = nutritionQualities[index]
 
+        // Binding hors animation — évite la perte de @Published pendant withAnimation
+        selectedQuality = quality
+
         if animated {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                selectedQuality = quality
+                sliderValue = Double(index)
+                currentQualityIndex = index
             }
         } else {
-            selectedQuality = quality
+            sliderValue = Double(index)
+            currentQualityIndex = index
         }
 
         withAnimation(.easeOut(duration: animated ? 0.15 : 0)) {
@@ -449,9 +476,7 @@ struct NutritionQualityStepView: View {
 
         animateImages(for: quality)
 
-        OnboardingValidationScheduler.deferValidation {
-            onValidationChanged?(true)
-        }
+        onValidationChanged?(true)
     }
     
     // ✅ Animation ultra fluide des images selon la qualité - INSTANTANÉE

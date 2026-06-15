@@ -2,7 +2,7 @@ import Foundation
 
 enum AppConfiguration {
     static var appDisplayName: String {
-        infoString(for: "CFBundleDisplayName") ?? "useprocess"
+        infoString(for: "CFBundleDisplayName") ?? "Process AI"
     }
 
     static let supportEmail = "hello@useprocess.app"

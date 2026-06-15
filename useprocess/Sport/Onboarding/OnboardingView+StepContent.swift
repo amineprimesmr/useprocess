@@ -59,7 +59,7 @@ extension SportOnboardingView {
              .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
              .alarmConfiguration, .sleepWindowReveal,
              .referralCode, .caloriesGoal, .carryOverCalories, .appRating,
-             .referralReward, .featuresUnlock,
+             .processWelcome, .referralReward, .featuresUnlock,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
              .personalizedWelcome, .processResultsDurability:
             EmptyView()
@@ -194,11 +194,16 @@ extension SportOnboardingView {
                     set: { viewModel.updateNutritionQuality($0) }
                 ),
                 onValidationChanged: { isValid in
-                    OnboardingValidationScheduler.deferValidation {
-                        viewModel.isNutritionQualitySelected = isValid
-                    }
+                    viewModel.isNutritionQualitySelected = isValid
                 }
             )
+            .onAppear {
+                DispatchQueue.main.async {
+                    if viewModel.nutritionProfile.nutritionQuality == nil {
+                        viewModel.updateNutritionQuality(.average)
+                    }
+                }
+            }
         case .healthKitPermissions:
             PermissionStepView(kind: .healthKit, onComplete: nextStep)
                 .environmentObject(permissionsManager)
@@ -232,19 +237,15 @@ extension SportOnboardingView {
                 }
             )
         case .payment:
-            PaywallView(onComplete: {
-                // Après le paiement, afficher les pages de bienvenue
-                nextStep()
-            }, onBack: previousStep)
-        case .processWelcome:
-            ProcessWelcomeView(onComplete: {
-                // ✅ CRITIQUE: Terminer l'onboarding directement après "Commencer"
-                Task { @MainActor in
-                    await completeOnboarding()
-                }
-            }, onBack: previousStep)
+            PaywallView(
+                onComplete: {
+                    Task { await completeOnboarding() }
+                },
+                onBack: previousStep
+            )
         case .complete:
-            CompleteStepView()
+            Color.clear
+                .task { await completeOnboarding() }
         @unknown default:
             EmptyView()
                 .onAppear {

@@ -52,7 +52,7 @@ struct GenderSelectionStepView: View {
 
                             Text(OnboardingCopy.binaryLabels(sportFirst: "Homme", sportSecond: "Femme").0)
                                 .font(.system(size: LayoutConstants.isIPad ? 20 : 16, weight: .medium, design: .rounded))
-                                .foregroundColor(.white)
+                                .foregroundStyle(OnboardingTheme.primaryText)
                                 .opacity(selectedGender == .male ? 1.0 : 0.6)
                         }
                     }
@@ -82,7 +82,7 @@ struct GenderSelectionStepView: View {
 
                             Text(OnboardingCopy.binaryLabels(sportFirst: "Homme", sportSecond: "Femme").1)
                                 .font(.system(size: LayoutConstants.isIPad ? 20 : 16, weight: .medium, design: .rounded))
-                                .foregroundColor(.white)
+                                .foregroundStyle(OnboardingTheme.primaryText)
                                 .opacity(selectedGender == .female ? 1.0 : 0.6)
                         }
                     }

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct WeightStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var profileService: UnifiedProfileService
 
     @Binding var selectedWeight: Double  // en kg
@@ -66,8 +67,18 @@ struct WeightStepView: View {
                         .frame(height: OnboardingConstants.titleToContentSpacing)
 
                     // ✅ Toggle KG/LBS
-                    unitToggle
-                        .padding(.bottom, 60)
+                    OnboardingUnitSegmentToggle(
+                        leftLabel: "KG",
+                        rightLabel: "LBS",
+                        isLeftSelected: Binding(
+                            get: { unit == .kg },
+                            set: { unit = $0 ? .kg : .lbs }
+                        )
+                    )
+                    .padding(.bottom, 60)
+                    .onChange(of: unit) { _, _ in
+                        convertWeight()
+                    }
 
                     // ✅ Affichage du poids avec TextField invisible
                     ZStack {
@@ -87,15 +98,14 @@ struct WeightStepView: View {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text(displayWeightString)
                                 .font(.system(size: 56, weight: .bold))
-                                .foregroundColor(.white)
-                                .shadow(color: .white.opacity(0.4), radius: 12, x: 0, y: 0)
-                                .shadow(color: .white.opacity(0.2), radius: 20, x: 0, y: 0)
+                                .foregroundStyle(OnboardingTheme.primaryText)
+                                .onboardingValueGlow(colorScheme: colorScheme)
                                 .contentTransition(.numericText())
                                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
 
                             Text(unit == .kg ? "kg" : "lbs")
                                 .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white.opacity(0.7))
+                                .foregroundStyle(OnboardingTheme.bodyText)
                         }
                         .allowsHitTesting(false)
                     }
@@ -139,121 +149,7 @@ struct WeightStepView: View {
             onValidationChanged?(!newValue.isEmpty && weightValue > 0)
             selectedWeight = displayWeight
         }
-        .onChange(of: unit) { _, _ in
-            convertWeight()
-        }
     }
-
-    // MARK: - Toggle KG/LBS
-
-    private var unitToggle: some View {
-        HStack(spacing: 0) {
-            // KG
-            Button(action: {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    unit = .kg
-                    convertWeight()
-                }
-                HapticManager.shared.selection()
-            }) {
-                ZStack {
-                    if unit == .kg {
-                        activeToggleBackground
-                    } else {
-                        inactiveToggleBackground
-                    }
-
-                    Text("KG")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-            }
-
-            // LBS
-            Button(action: {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    unit = .lbs
-                    convertWeight()
-                }
-                HapticManager.shared.selection()
-            }) {
-                ZStack {
-                    if unit == .lbs {
-                        activeToggleBackground
-                    } else {
-                        inactiveToggleBackground
-                    }
-
-                    Text("LBS")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-            }
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 28)
-                .fill(Color(red: 18/255, green: 18/255, blue: 20/255))
-                .shadow(color: .black.opacity(0.6), radius: 6, x: 0, y: 3)
-        )
-        .frame(width: ScreenMetrics.width - 80)
-        .frame(height: 56)
-    }
-
-    private var activeToggleBackground: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 28)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 35/255, green: 35/255, blue: 37/255),
-                            Color(red: 25/255, green: 25/255, blue: 27/255),
-                            Color(red: 18/255, green: 18/255, blue: 20/255)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-
-            RoundedRectangle(cornerRadius: 28)
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.white.opacity(0.08),
-                            Color.clear
-                        ],
-                        center: .topLeading,
-                        startRadius: 5,
-                        endRadius: 30
-                    )
-                )
-
-            RoundedRectangle(cornerRadius: 28)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.2),
-                            Color.white.opacity(0.05),
-                            Color.clear
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 1.5
-                )
-        }
-        .shadow(color: .black.opacity(0.4), radius: 3, x: 0, y: 1.5)
-    }
-
-    private var inactiveToggleBackground: some View {
-        RoundedRectangle(cornerRadius: 28)
-            .fill(Color(red: 18/255, green: 18/255, blue: 20/255))
-    }
-
-    // MARK: - Actions
 
     private func handleContinue() {
         let trimmed = weightString.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -261,14 +157,11 @@ struct WeightStepView: View {
 
         HapticManager.shared.impact(.medium)
 
-        // Fermer le clavier
         isTextFieldFocused = false
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
-        // Passer à l'étape suivante IMMÉDIATEMENT
         onContinue?()
 
-        // Sauvegarder en arrière-plan
         selectedWeight = displayWeight
         Task.detached(priority: .background) {
             await saveWeight()

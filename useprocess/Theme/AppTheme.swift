@@ -44,12 +44,33 @@ struct AppTheme {
         resolved == .light ? Color(.separator).opacity(0.35) : Color(.separator).opacity(0.5)
     }
 
+    var cardBackground: Color {
+        primaryText.opacity(isDark ? 0.08 : 0.06)
+    }
+
+    var cardBackgroundStrong: Color {
+        primaryText.opacity(isDark ? 0.12 : 0.08)
+    }
+
     var coachUserBubble: Color {
         resolved == .light ? Color(.systemGray5) : Color(.systemGray6)
     }
 
     var coachAssistantBubble: Color {
         resolved == .light ? Color(.systemGray6) : Color.white.opacity(0.1)
+    }
+
+    /// Accent bleu clair (titres onboarding, surlignage).
+    var onboardingAccent: Color {
+        Color(red: 0.655, green: 0.769, blue: 0.949)
+    }
+
+    var inverseBackground: Color {
+        isDark ? .white : .black
+    }
+
+    var inverseText: Color {
+        isDark ? .black : .white
     }
 }
 

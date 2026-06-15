@@ -57,7 +57,7 @@ extension GoalProjectionStepView {
 
                 Text("Basé sur ton profil")
                     .font(.system(size: 15, weight: .regular)) // ✅ Moins gras
-                    .foregroundColor(.white.opacity(0.7)) // ✅ Gris très clair
+                    .foregroundStyle(OnboardingTheme.bodyText) // ✅ Gris très clair
             }
             .padding(.top, 8) // ✅ Un peu plus haut
 
@@ -71,7 +71,7 @@ extension GoalProjectionStepView {
 
                     Text(monthlyProjectionSecondLine)
                         .font(.system(size: 15, weight: .regular)) // ✅ Moins gras
-                        .foregroundColor(.white.opacity(0.7)) // ✅ Gris très clair
+                        .foregroundStyle(OnboardingTheme.bodyText) // ✅ Gris très clair
                 }
             }
 

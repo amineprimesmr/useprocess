@@ -13,10 +13,12 @@ final class AppIntegrations {
     func refresh() {
         firebaseReady = AppConfiguration.firebaseConfigured
         authReady = firebaseReady && AuthUser.current != nil
+        SubscriptionService.shared.configure()
     }
 
     var summary: String {
         if !firebaseReady { return "Firebase non configuré" }
-        return authReady ? "Firebase · Auth connectée" : "Firebase · Auth en attente"
+        let sub = SubscriptionService.shared.subscriptionStatus.isActive ? "Premium actif" : "Premium inactif"
+        return authReady ? "Firebase · Auth · \(sub)" : "Firebase · Auth en attente · \(sub)"
     }
 }

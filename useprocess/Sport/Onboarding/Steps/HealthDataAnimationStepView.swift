@@ -143,7 +143,7 @@ struct HealthDataAnimationStepView: View {
                 }) {
                     Text("Continuer")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundColor(.white)
+                        .foregroundStyle(OnboardingTheme.primaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
