@@ -1,0 +1,14 @@
+.derivedData/
+DerivedData/
+Index.noindex/
+SourcePackages/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.turbo/
+.vercel/

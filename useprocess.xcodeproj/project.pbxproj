@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		67E2B31F2FDD8C240016422D /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C52FD90001006422D /* FirebaseCore */; };
+		67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C62FD90001006422D /* FirebaseAuth */; };
+		67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C72FD90001006422D /* FirebaseFirestore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		67E2AE312FDD89E60016422D /* useprocess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = useprocess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */,
+				67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */,
+				67E2B31F2FDD8C240016422D /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +74,9 @@
 			);
 			name = useprocess;
 			packageProductDependencies = (
+				F1A2B3C52FD90001006422D /* FirebaseCore */,
+				F1A2B3C62FD90001006422D /* FirebaseAuth */,
+				F1A2B3C72FD90001006422D /* FirebaseFirestore */,
 			);
 			productName = useprocess;
 			productReference = 67E2AE312FDD89E60016422D /* useprocess.app */;
@@ -94,6 +106,9 @@
 			);
 			mainGroup = 67E2AE282FDD89E60016422D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67E2AE322FDD89E60016422D /* Products */;
 			projectDirPath = "";
@@ -246,6 +261,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
@@ -254,6 +270,14 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = useprocess;
+				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra permet d'analyser ta posture et ton corps en 360°.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Connexion rapide et sécurisée à ton compte.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "La localisation permet de personnaliser ton expérience sport.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "L'activité physique permet d'adapter ton programme.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -269,7 +293,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.totem.useprocess;
+				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -290,6 +314,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
@@ -298,6 +323,14 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = useprocess;
+				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra permet d'analyser ta posture et ton corps en 360°.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Connexion rapide et sécurisée à ton compte.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "La localisation permet de personnaliser ton expérience sport.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "L'activité physique permet d'adapter ton programme.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -313,7 +346,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.totem.useprocess;
+				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -351,6 +384,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F1A2B3C52FD90001006422D /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		F1A2B3C62FD90001006422D /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		F1A2B3C72FD90001006422D /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 67E2AE292FDD89E60016422D /* Project object */;
 }

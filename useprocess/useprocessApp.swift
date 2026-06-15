@@ -6,16 +6,21 @@
 //
 
 import SwiftUI
-import CoreData
+import FirebaseCore
 
 @main
 struct useprocessApp: App {
-    let persistenceController = PersistenceController.shared
+    init() {
+        iOS26Stability.configureAtLaunch()
+        FirebaseBootstrap.configure()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            AppShellView()
+                .onAppear {
+                    AppIntegrations.shared.refresh()
+                }
         }
     }
 }
