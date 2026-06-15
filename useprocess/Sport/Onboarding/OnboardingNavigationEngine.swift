@@ -112,7 +112,7 @@ class OnboardingNavigationEngine {
             if viewModel.hasWeightGoal == true {
                 return OnboardingStep.idealWeight.rawValue
             }
-            return OnboardingStep.hasSportActivity.rawValue
+            return OnboardingStep.weightEstimation.rawValue
         default:
             break
         }
@@ -212,9 +212,15 @@ class OnboardingNavigationEngine {
             return OnboardingStep.idealWeight.rawValue
             
         case .idealWeight:
-            viewModel.syncInferredWeightGoal()
-            if viewModel.isWeightGoalIncompatibleWithBMI() {
-                return OnboardingStep.weightGoalIncompatible.rawValue
+            if isSimulatingNavigation {
+                if wouldWeightGoalBeIncompatibleWithBMI() {
+                    return OnboardingStep.weightGoalIncompatible.rawValue
+                }
+            } else {
+                viewModel.syncInferredWeightGoal()
+                if viewModel.isWeightGoalIncompatibleWithBMI() {
+                    return OnboardingStep.weightGoalIncompatible.rawValue
+                }
             }
             return OnboardingStep.weightMotivation.rawValue
             
@@ -222,13 +228,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.goalPace.rawValue
             
         case .goalPace:
-            if viewModel.hasWeightObjective,
-               let weightGoal = viewModel.selectedWeightGoal,
-               (weightGoal == .lose || weightGoal == .gain),
-               viewModel.isIdealWeightEntered {
-                return OnboardingStep.weightEstimation.rawValue
-            }
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
             
         case .weightEstimation:
             // ✅ CORRECTION: Après weightEstimation, aller aux questions sportives (hasSportActivity)
@@ -388,13 +388,13 @@ class OnboardingNavigationEngine {
             return OnboardingStep.trainingFrequency.rawValue
             
         case .weightEstimation:
-            return OnboardingStep.goalPace.rawValue
-            
-        case .hasSportActivity:
             if viewModel.hasWeightObjective && viewModel.isIdealWeightEntered {
-                return OnboardingStep.weightEstimation.rawValue
+                return OnboardingStep.goalPace.rawValue
             }
             return OnboardingStep.primaryGoal.rawValue
+            
+        case .hasSportActivity:
+            return OnboardingStep.weightEstimation.rawValue
             
         case .sportSelection:
             return OnboardingStep.hasSportActivity.rawValue
@@ -550,5 +550,26 @@ class OnboardingNavigationEngine {
         }
 
         return pendingStepsQueue().last?.rawValue ?? OnboardingStep.primaryGoal.rawValue
+    }
+
+    /// Lecture seule — utilisé pendant `buildActiveFlowPath` sans muter le ViewModel.
+    private func wouldWeightGoalBeIncompatibleWithBMI() -> Bool {
+        guard viewModel.hasWeightGoal == true, viewModel.isIdealWeightEntered else { return false }
+
+        let goal: WeightGoal?
+        if viewModel.idealWeightValue < viewModel.selectedWeight {
+            goal = .lose
+        } else if viewModel.idealWeightValue > viewModel.selectedWeight {
+            goal = .gain
+        } else {
+            goal = nil
+        }
+        guard let goal else { return false }
+
+        let heightInMeters = viewModel.selectedHeight / 100.0
+        guard heightInMeters > 0 else { return false }
+
+        let currentBMI = viewModel.selectedWeight / (heightInMeters * heightInMeters)
+        return (currentBMI >= 25.0 && goal == .gain) || (currentBMI < 18.5 && goal == .lose)
     }
 }

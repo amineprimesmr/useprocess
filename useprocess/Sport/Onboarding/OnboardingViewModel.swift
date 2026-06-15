@@ -68,6 +68,7 @@ class OnboardingViewModel: ObservableObject {
     @Published var isDeadlineSelected: Bool = false
     @Published var isGoalPaceSelected: Bool = false
     @Published var isWeightEstimationCompleted: Bool = false
+    @Published var isGoalProjectionCompleted: Bool = false
     @Published var isNutritionQualitySelected: Bool = false
     @Published var isHasDietaryRestrictionsSelected: Bool = false
     @Published var isWhichRestrictionsSelected: Bool = false
@@ -241,10 +242,12 @@ class OnboardingViewModel: ObservableObject {
             return isGoalPaceSelected && selectedGoalPace != nil
         case .weightEstimation:
             return isWeightEstimationCompleted
+        case .goalProjection:
+            return isGoalProjectionCompleted
         case .trainingFrequency:
             return isTrainingFrequencySelected && selectedTrainingFrequency != nil
         case .nutritionQuality:
-            return isNutritionQualitySelected && nutritionProfile.nutritionQuality != nil
+            return nutritionProfile.nutritionQuality != nil
         case .nutritionObstacles, .nutritionPotential:
             return true
         case .perfectNutritionBelief:
@@ -322,6 +325,13 @@ class OnboardingViewModel: ObservableObject {
         }
     }
 
+    func updateNutritionQuality(_ quality: NutritionQuality?) {
+        var profile = nutritionProfile
+        profile.nutritionQuality = quality
+        nutritionProfile = profile
+        isNutritionQualitySelected = quality != nil
+    }
+
     func syncInferredWeightGoal() {
         guard hasWeightGoal == true, isIdealWeightEntered else { return }
 
@@ -335,9 +345,15 @@ class OnboardingViewModel: ObservableObject {
         isWeightGoalSelected = selectedWeightGoal != nil
     }
 
+    private func inferredWeightGoalFromIdealWeight() -> WeightGoal? {
+        guard hasWeightGoal == true, isIdealWeightEntered else { return nil }
+        if idealWeightValue < selectedWeight { return .lose }
+        if idealWeightValue > selectedWeight { return .gain }
+        return nil
+    }
+
     func isWeightGoalIncompatibleWithBMI() -> Bool {
-        syncInferredWeightGoal()
-        guard let goal = selectedWeightGoal else { return false }
+        guard let goal = selectedWeightGoal ?? inferredWeightGoalFromIdealWeight() else { return false }
 
         let heightInMeters = selectedHeight / 100.0
         guard heightInMeters > 0 else { return false }

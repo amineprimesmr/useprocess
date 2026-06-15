@@ -50,19 +50,11 @@ struct SportOnboardingView: View {
     let totalSteps = 70  // ✅ CORRECTION: Permettre d'aller jusqu'à complete + weight (67) + autres étapes
 
     var body: some View {
-        // ✅ CRITIQUE: Si l'onboarding est terminé, ne rien afficher
-        // ContentView devrait déjà avoir remplacé cette vue par MainAppView
-        // Ne pas afficher d'écran de chargement car cela bloque la transition
-        Group {
-            if authManager.hasCompletedOnboarding {
-                Color.clear
-                    .ignoresSafeArea(.all)
-            } else {
-            ZStack {
-                // ✅ FOND NOIR pour toutes les pages d'onboarding
-                Color.black
-                    .ignoresSafeArea(.all)
-                    .allowsHitTesting(false)
+        ZStack {
+            // ✅ FOND NOIR pour toutes les pages d'onboarding
+            Color.black
+                .ignoresSafeArea(.all)
+                .allowsHitTesting(false)
 
             if isImmersiveOnboardingStep {
                 Group {
@@ -82,7 +74,7 @@ struct SportOnboardingView: View {
                     } else {
                         // ✅ CORRECTION: Si rawValue est invalide, réinitialiser à l'étape de départ
                         OnboardingWelcomeStepView(onComplete: nextStep)
-                            .onAppear {
+                            .task {
                                 viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
                                 viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
                             }
@@ -186,47 +178,34 @@ struct SportOnboardingView: View {
             }
             }
             .ignoresSafeArea(.all)
-            }
-        }
         .onAppear {
-            refreshOnboardingFlowProgress()
-            // ✅ CRITIQUE: Ne pas charger l'étape sauvegardée si l'onboarding est terminé
-            if authManager.hasCompletedOnboarding {
-                return
-            }
+            Task { @MainActor in
+                refreshOnboardingFlowProgress()
+                if !authManager.isInOnboarding {
+                    authManager.startOnboarding()
+                }
+                checkPermissions()
 
-            refreshOnboardingFlowProgress()
-            checkPermissions()
-            if !authManager.isInOnboarding {
-                authManager.startOnboarding()
-            }
-
-            // ✅ CRITIQUE: Charger le profil AVANT de déterminer l'étape
-            Task {
                 if profileService.currentProfile == nil {
                     await profileService.loadProfile()
                 }
 
-                // ✅ CRITIQUE: Synchroniser le ViewModel avec le profil existant
                 if let profile = profileService.currentProfile {
                     if let cached = OnboardingProgressService.shared.loadAnswers() {
                         viewModel.applyCachedAnswers(cached)
                     }
                     viewModel.syncWithExistingProfile(profile)
 
-                    // ✅ INTELLIGENT: Valider l'étape sauvegardée et déterminer la meilleure étape de départ
                     let savedStep = OnboardingProgressService.shared.loadCurrentStep()
 
-                    // Vérifier si l'étape sauvegardée est valide
                     guard let step = OnboardingStep(rawValue: savedStep), savedStep >= 0, savedStep < totalSteps else {
-                        // ✅ Étape invalide : recommencer depuis le début
                         viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
                         viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
                         viewModel.saveProgress()
+                        refreshOnboardingFlowProgress()
                         return
                     }
 
-                    // ✅ Vérifier si l'étape nécessite des données qui sont disponibles
                     let canDisplayStep = validateOnboardingStepAvailability(step: step, viewModel: viewModel)
 
                     if canDisplayStep && savedStep > 0 {
@@ -250,7 +229,6 @@ struct SportOnboardingView: View {
                             currentStep: viewModel.currentStep
                         )
                     } else if !canDisplayStep && savedStep > 0 {
-                        // ✅ Étape nécessite des données manquantes : trouver la dernière étape valide
                         let lastValidStep = findLastValidOnboardingStepIndex(visitedSteps: viewModel.visitedSteps, viewModel: viewModel)
                         viewModel.currentStep = lastValidStep
                         viewModel.visitedSteps = normalizeOnboardingVisitedStack(
@@ -259,7 +237,6 @@ struct SportOnboardingView: View {
                         )
                         viewModel.saveProgress()
                     } else {
-                        // ✅ Pas d'étape sauvegardée ou début : commencer depuis le début
                         if viewModel.visitedSteps.isEmpty {
                             viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
                         }
@@ -268,6 +245,8 @@ struct SportOnboardingView: View {
                         }
                     }
                 }
+
+                refreshOnboardingFlowProgress()
             }
         }
         .onChange(of: profileService.currentProfile) { _, newValue in
@@ -316,7 +295,10 @@ struct SportOnboardingView: View {
             }
         }
         .onChange(of: viewModel.currentStep) { oldValue, newValue in
-            // ✅ Réinitialiser l'état quand on quitte la page firstNameInput
+            Task { @MainActor in
+                refreshOnboardingFlowProgress()
+            }
+
             if oldValue == OnboardingStep.firstNameInput.rawValue && newValue != OnboardingStep.firstNameInput.rawValue {
                 isFirstNameAvailable = false
                 firstNameDebounceTask?.cancel()

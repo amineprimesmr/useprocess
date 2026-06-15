@@ -1,0 +1,253 @@
+import * as admin from "firebase-admin";
+import { onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
+import Anthropic from "@anthropic-ai/sdk";
+
+admin.initializeApp();
+
+const anthropicApiKey = defineSecret("ANTHROPIC_API_KEY");
+
+type CoachTask =
+  | "chat"
+  | "dailyBrief"
+  | "readinessAnalysis"
+  | "bodyScanVision"
+  | "bodyScanReport"
+  | "programSummary"
+  | "tool";
+
+interface CoachCompleteBody {
+  task: CoachTask;
+  model: string;
+  system: string;
+  userText: string;
+  history?: Array<{ role: "user" | "assistant"; text: string }>;
+  imageBase64?: string;
+  maxTokens?: number;
+}
+
+interface CoachStreamBody extends CoachCompleteBody {
+  stream?: boolean;
+}
+
+function setCors(res: any) {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
+
+async function verifyFirebaseUser(req: any): Promise<string> {
+  const header = req.headers.authorization as string | undefined;
+  if (!header?.startsWith("Bearer ")) {
+    throw new Error("UNAUTHORIZED");
+  }
+  const token = header.slice("Bearer ".length);
+  const decoded = await admin.auth().verifyIdToken(token);
+  return decoded.uid;
+}
+
+function buildMessages(body: CoachCompleteBody): Anthropic.MessageParam[] {
+  const history = (body.history ?? []).map((m) => ({
+    role: m.role,
+    content: [{ type: "text" as const, text: m.text }],
+  }));
+
+  let userContent: Anthropic.ContentBlockParam[];
+
+  if (body.imageBase64) {
+    userContent = [
+      {
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/jpeg",
+          data: body.imageBase64,
+        },
+      },
+      { type: "text", text: body.userText },
+    ];
+  } else {
+    userContent = [{ type: "text", text: body.userText }];
+  }
+
+  return [
+    ...history,
+    { role: "user", content: userContent },
+  ];
+}
+
+function maxTokensForTask(task: CoachTask, requested?: number): number {
+  if (requested && requested > 0) return Math.min(requested, 4096);
+  switch (task) {
+    case "dailyBrief":
+    case "readinessAnalysis":
+      return 400;
+    case "bodyScanVision":
+      return 450;
+    case "programSummary":
+      return 800;
+    case "bodyScanReport":
+      return 1600;
+    default:
+      return 1200;
+  }
+}
+
+export const coachComplete = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    secrets: [anthropicApiKey],
+    timeoutSeconds: 120,
+    memory: "512MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const uid = await verifyFirebaseUser(req);
+      const body = req.body as CoachCompleteBody;
+
+      if (!body?.system || !body?.userText || !body?.model) {
+        res.status(400).json({ error: "Missing system, userText or model" });
+        return;
+      }
+
+      const client = new Anthropic({ apiKey: anthropicApiKey.value() });
+      const response = await client.messages.create({
+        model: body.model,
+        max_tokens: maxTokensForTask(body.task ?? "chat", body.maxTokens),
+        system: body.system,
+        messages: buildMessages(body),
+      });
+
+      const text = response.content
+        .filter((b) => b.type === "text")
+        .map((b) => (b.type === "text" ? b.text : ""))
+        .join("\n")
+        .trim();
+
+      await admin
+        .firestore()
+        .collection("users")
+        .doc(uid)
+        .collection("coachMeta")
+        .doc("usage")
+        .set(
+          {
+            lastTask: body.task ?? "chat",
+            lastModel: body.model,
+            lastCalledAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+      res.status(200).json({ text, model: body.model, uid });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      const status = message === "UNAUTHORIZED" ? 401 : 500;
+      console.error("[coachComplete]", message);
+      res.status(status).json({ error: message });
+    }
+  }
+);
+
+export const coachStream = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    secrets: [anthropicApiKey],
+    timeoutSeconds: 180,
+    memory: "512MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const uid = await verifyFirebaseUser(req);
+      const body = req.body as CoachStreamBody;
+
+      if (!body?.system || !body?.userText || !body?.model) {
+        res.status(400).json({ error: "Missing system, userText or model" });
+        return;
+      }
+
+      res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.setHeader("Connection", "keep-alive");
+      res.flushHeaders?.();
+
+      const client = new Anthropic({ apiKey: anthropicApiKey.value() });
+      const stream = await client.messages.stream({
+        model: body.model,
+        max_tokens: maxTokensForTask(body.task ?? "chat", body.maxTokens),
+        system: body.system,
+        messages: buildMessages(body),
+      });
+
+      for await (const event of stream) {
+        if (
+          event.type === "content_block_delta" &&
+          event.delta.type === "text_delta"
+        ) {
+          const payload = JSON.stringify({
+            type: "delta",
+            text: event.delta.text,
+          });
+          res.write(`data: ${payload}\n\n`);
+        }
+      }
+
+      const finalText = (await stream.finalMessage()).content
+        .filter((b) => b.type === "text")
+        .map((b) => (b.type === "text" ? b.text : ""))
+        .join("\n")
+        .trim();
+
+      res.write(
+        `data: ${JSON.stringify({ type: "done", text: finalText, model: body.model, uid })}\n\n`
+      );
+      res.end();
+
+      await admin
+        .firestore()
+        .collection("users")
+        .doc(uid)
+        .collection("coachMeta")
+        .doc("usage")
+        .set(
+          {
+            lastTask: "chat_stream",
+            lastModel: body.model,
+            lastStreamAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[coachStream]", message);
+      if (!res.headersSent) {
+        res.status(message === "UNAUTHORIZED" ? 401 : 500).json({ error: message });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`);
+        res.end();
+      }
+    }
+  }
+);

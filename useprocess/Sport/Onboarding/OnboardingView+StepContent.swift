@@ -90,13 +90,19 @@ extension SportOnboardingView {
                 idealWeight: $viewModel.idealWeightValue,
                 currentWeight: viewModel.selectedWeight,
                 height: viewModel.selectedHeight,
+                age: viewModel.selectedAge,
+                gender: viewModel.selectedGender ?? .male,
                 weightGoal: viewModel.selectedWeightGoal,
                 firstName: viewModel.firstName,
                 onValidationChanged: { isValid in
                     viewModel.isIdealWeightEntered = isValid
                     if isValid {
                         viewModel.syncInferredWeightGoal()
+                        viewModel.saveProgress()
                     }
+                },
+                onPersistAnswers: {
+                    viewModel.saveProgress()
                 }
             )
         case .weightGoalIncompatible:
@@ -137,17 +143,15 @@ extension SportOnboardingView {
                 }
             )
         case .goalProjection:
-            GoalProjectionStepView(
-                primaryGoals: viewModel.hasWeightObjective ? Set([.manageWeight]) : [],
-                currentWeight: viewModel.selectedWeight,
-                idealWeight: viewModel.isIdealWeightEntered ? viewModel.idealWeightValue : nil,
-                weightGoal: viewModel.selectedWeightGoal,
-                experienceLevel: viewModel.selectedExperienceLevel,
-                yearsOfExperience: viewModel.selectedYearsOfExperience,
-                selectedSports: Set(profileService.currentProfile?.sports.map { $0.name } ?? []),
-                deadline: viewModel.goalDeadline,
-                trainingFrequency: viewModel.selectedTrainingFrequency,
-                goalPace: viewModel.selectedGoalPace
+            OnboardingEstimationStepView(
+                context: .make(
+                    phase: .optimized,
+                    viewModel: viewModel,
+                    selectedSports: Set(profileService.currentProfile?.sports.map { $0.name } ?? [])
+                ),
+                onValidationChanged: { isValid in
+                    viewModel.isGoalProjectionCompleted = isValid
+                }
             )
         case .goalPace:
             GoalPaceStepView(
@@ -158,32 +162,16 @@ extension SportOnboardingView {
                 }
             )
         case .weightEstimation:
-            if viewModel.hasWeightObjective,
-               let weightGoal = viewModel.selectedWeightGoal,
-               viewModel.isIdealWeightEntered {
-                WeightEstimationStepView(
-                    currentWeight: viewModel.selectedWeight,
-                    idealWeight: viewModel.idealWeightValue,
-                    weightGoal: weightGoal,
-                    weeklyRate: viewModel.selectedGoalPace?.weightEstimationWeeklyRate ?? 0.5,
-                    // ✅ Paramètres pour la deuxième estimation (après questions sport)
-                    experienceLevel: viewModel.selectedExperienceLevel,
-                    yearsOfExperience: viewModel.selectedYearsOfExperience,
-                    selectedSports: Set(profileService.currentProfile?.sports.map { $0.name } ?? []),
-                    deadline: viewModel.goalDeadline,
-                    trainingFrequency: viewModel.selectedTrainingFrequency,
-                    goalPace: viewModel.selectedGoalPace,
-                    onValidationChanged: { isValid in
-                        // ✅ Mettre à jour l'état de validation dans le ViewModel
-                        // Le bouton "Continuer" apparaîtra seulement quand isValid est true
-                        // (après que l'animation du compteur soit terminée)
-                        viewModel.isWeightEstimationCompleted = isValid
-                    }
-                )
-            } else {
-            EmptyView()
-                .onAppear { skipTransientStep() }
-            }
+            OnboardingEstimationStepView(
+                context: .make(
+                    phase: .baseline,
+                    viewModel: viewModel,
+                    selectedSports: []
+                ),
+                onValidationChanged: { isValid in
+                    viewModel.isWeightEstimationCompleted = isValid
+                }
+            )
         case .weightManagementExperience:
             WeightManagementExperienceStepView(
                 selectedExperience: $viewModel.nutritionProfile.weightManagementExperience,
@@ -201,9 +189,14 @@ extension SportOnboardingView {
             )
         case .nutritionQuality:
             NutritionQualityStepView(
-                selectedQuality: $viewModel.nutritionProfile.nutritionQuality,
+                selectedQuality: Binding(
+                    get: { viewModel.nutritionProfile.nutritionQuality },
+                    set: { viewModel.updateNutritionQuality($0) }
+                ),
                 onValidationChanged: { isValid in
-                    viewModel.isNutritionQualitySelected = isValid
+                    OnboardingValidationScheduler.deferValidation {
+                        viewModel.isNutritionQualitySelected = isValid
+                    }
                 }
             )
         case .healthKitPermissions:

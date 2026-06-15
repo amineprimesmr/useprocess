@@ -7,10 +7,14 @@ struct SportOnboardingRootView: View {
     var body: some View {
         SportOnboardingView()
             .onAppear {
-                authManager.hasCompletedOnboarding = session.hasCompletedOnboarding
-                if !session.hasCompletedOnboarding {
-                    authManager.startOnboarding()
-                }
+                syncAuthWithSessionIfNeeded()
             }
+    }
+
+    @MainActor
+    private func syncAuthWithSessionIfNeeded() {
+        if authManager.hasCompletedOnboarding != session.hasCompletedOnboarding {
+            authManager.hasCompletedOnboarding = session.hasCompletedOnboarding
+        }
     }
 }

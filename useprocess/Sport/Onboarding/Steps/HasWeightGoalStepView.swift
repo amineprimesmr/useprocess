@@ -29,7 +29,9 @@ struct HasWeightGoalStepView: View {
             Spacer()
         }
         .onAppear {
-            onValidationChanged?(viewModel.hasWeightGoal != nil)
+            OnboardingValidationScheduler.deferValidation {
+                onValidationChanged?(viewModel.hasWeightGoal != nil)
+            }
         }
     }
 

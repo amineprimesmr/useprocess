@@ -2,111 +2,81 @@
 //  IdealWeightStepView.swift
 //  Process
 //
-//  Saisie du poids idéal avec recommandation basée sur IMC, taille, âge et genre.
+//  Saisie du poids idéal avec recommandation stable (basée sur le profil onboarding).
 //
 
 import SwiftUI
 
 struct IdealWeightStepView: View {
     @EnvironmentObject var profileService: UnifiedProfileService
-    @EnvironmentObject var healthManager: HealthManager
+
     @Binding var idealWeight: Double
 
     let currentWeight: Double
     let height: Double
+    let age: Int
+    let gender: Gender
     let weightGoal: WeightGoal?
     let firstName: String
 
     var onValidationChanged: ((Bool) -> Void)?
+    var onPersistAnswers: (() -> Void)?
 
     @State private var weightString: String = ""
+    @State private var recommendedWeight: Double = 0
+    @State private var didInitialize = false
+    @State private var saveTask: Task<Void, Never>?
     @FocusState private var isTextFieldFocused: Bool
-
-    private var profile: UnifiedUserProfile? {
-        profileService.currentProfile
-    }
-
-    private var age: Int {
-        profile?.age ?? 25
-    }
-
-    private var gender: Gender {
-        profile?.gender ?? .male
-    }
 
     private var currentBodyComposition: BodyComposition {
         BodyCompositionEstimate.calculate(
             height: height,
-            weight: currentWeight,
+            weight: max(currentWeight, 1),
             age: age,
             gender: gender
         )
     }
 
-    private var recommendedWeight: Double {
-        PersonalizedIdealWeightCalculator.calculatePersonalizedIdealWeight(
-            currentWeight: currentWeight,
-            height: height,
-            age: age,
-            gender: gender,
-            weightGoal: weightGoal ?? effectiveWeightGoal,
-            bodyFatPercentage: currentBodyComposition.bodyFatPercentage,
-            leanBodyMass: currentBodyComposition.leanMass,
-            bodyComposition: currentBodyComposition
-        )
-    }
-
-    private var displayWeightString: String {
-        weightString
-    }
-
-    private var effectiveWeightGoal: WeightGoal? {
-        if let weightGoal { return weightGoal }
-        guard let weight = Double(weightString), weight > 0 else { return nil }
-        if weight < currentWeight { return .lose }
-        if weight > currentWeight { return .gain }
-        return nil
-    }
-
     private var isValidWeight: Bool {
         guard !weightString.isEmpty else { return false }
-        guard let weight = Double(weightString), weight > 0 else { return false }
-
-        if let goal = effectiveWeightGoal {
-            switch goal {
-            case .lose:
-                return weight < currentWeight && weight >= 35
-            case .gain:
-                return weight > currentWeight && weight <= 200
-            }
-        }
-        return weight >= 35 && weight <= 200 && weight != currentWeight
+        guard let weight = Double(weightString), weight >= 35, weight <= 200 else { return false }
+        guard currentWeight > 0 else { return weight > 0 }
+        return abs(weight - currentWeight) >= 0.5
     }
 
     init(
         idealWeight: Binding<Double> = .constant(70.0),
         currentWeight: Double = 70.0,
         height: Double = 175.0,
+        age: Int = 25,
+        gender: Gender = .male,
         weightGoal: WeightGoal? = nil,
         firstName: String = "",
-        onValidationChanged: ((Bool) -> Void)? = nil
+        onValidationChanged: ((Bool) -> Void)? = nil,
+        onPersistAnswers: (() -> Void)? = nil
     ) {
         self._idealWeight = idealWeight
         self.currentWeight = currentWeight
         self.height = height
+        self.age = age
+        self.gender = gender
         self.weightGoal = weightGoal
         self.firstName = firstName
         self.onValidationChanged = onValidationChanged
+        self.onPersistAnswers = onPersistAnswers
     }
 
     var body: some View {
         ScrollView {
             OnboardingStandardStepLayout("Quel est ton", "poids idéal ?") {
                 VStack(spacing: 0) {
-                    Text("Poids recommandé : \(Int(recommendedWeight)) kg")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                        .padding(.top, 8)
+                    if recommendedWeight > 0 {
+                        Text("Poids recommandé : \(Int(recommendedWeight.rounded())) kg")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.6))
+                            .padding(.top, 8)
+                            .animation(nil, value: recommendedWeight)
+                    }
 
                     ZStack {
                         TextField("", text: $weightString)
@@ -118,7 +88,7 @@ struct IdealWeightStepView: View {
                             .focused($isTextFieldFocused)
 
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(displayWeightString.isEmpty ? "" : displayWeightString)
+                            Text(weightString.isEmpty ? "" : weightString)
                                 .font(.system(size: 56, weight: .bold))
                                 .foregroundColor(.white)
                                 .shadow(color: .white.opacity(0.4), radius: 12, x: 0, y: 0)
@@ -126,7 +96,7 @@ struct IdealWeightStepView: View {
                                 .contentTransition(.numericText())
                                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
 
-                            if !displayWeightString.isEmpty {
+                            if !weightString.isEmpty {
                                 Text("kg")
                                     .font(.system(size: 20, weight: .medium))
                                     .foregroundColor(.white.opacity(0.7))
@@ -147,9 +117,22 @@ struct IdealWeightStepView: View {
         .scrollDisabled(true)
         .scrollDismissesKeyboard(.never)
         .onAppear {
-            loadExistingIdealWeight()
+            initializeIfNeeded()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isTextFieldFocused = true
+            }
+            OnboardingValidationScheduler.deferValidation {
+                onValidationChanged?(isValidWeight)
+            }
+        }
+        .onChange(of: idealWeight) { _, newValue in
+            guard newValue > 0 else { return }
+            let formatted = formatIdealWeight(newValue)
+            if weightString.isEmpty || weightString != formatted {
+                weightString = formatted
+            }
+            OnboardingValidationScheduler.deferValidation {
+                onValidationChanged?(isValidWeight)
             }
         }
         .onChange(of: weightString) { _, newValue in
@@ -161,14 +144,27 @@ struct IdealWeightStepView: View {
 
             if let weight = Double(newValue), weight > 0 {
                 idealWeight = weight
-                Task { await saveIdealWeight(weight) }
+                scheduleSave(weight)
+                onPersistAnswers?()
             }
 
-            onValidationChanged?(isValidWeight)
+            OnboardingValidationScheduler.deferValidation {
+                onValidationChanged?(isValidWeight)
+            }
+        }
+        .onDisappear {
+            saveTask?.cancel()
         }
     }
 
-    private func loadExistingIdealWeight() {
+    // MARK: - Init & persistance
+
+    private func initializeIfNeeded() {
+        guard !didInitialize else { return }
+        didInitialize = true
+
+        recommendedWeight = computeStableRecommendation()
+
         if idealWeight > 0 {
             weightString = formatIdealWeight(idealWeight)
         } else if let profile = profileService.currentProfile,
@@ -176,10 +172,32 @@ struct IdealWeightStepView: View {
                   ideal > 0 {
             idealWeight = ideal
             weightString = formatIdealWeight(ideal)
-        } else {
-            weightString = ""
         }
-        onValidationChanged?(isValidWeight)
+    }
+
+    /// Recommandation figée à l’ouverture — ne dépend pas de la saisie en cours.
+    private func computeStableRecommendation() -> Double {
+        guard height > 0, currentWeight > 0 else { return 0 }
+
+        return PersonalizedIdealWeightCalculator.calculatePersonalizedIdealWeight(
+            currentWeight: currentWeight,
+            height: height,
+            age: age,
+            gender: gender,
+            weightGoal: weightGoal,
+            bodyFatPercentage: currentBodyComposition.bodyFatPercentage,
+            leanBodyMass: currentBodyComposition.leanMass,
+            bodyComposition: currentBodyComposition
+        )
+    }
+
+    private func scheduleSave(_ weight: Double) {
+        saveTask?.cancel()
+        saveTask = Task {
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            guard !Task.isCancelled else { return }
+            await saveIdealWeight(weight)
+        }
     }
 
     private func formatIdealWeight(_ weight: Double) -> String {

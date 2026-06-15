@@ -113,7 +113,7 @@ struct BodyScanRootView: View {
                     .foregroundStyle(theme.secondaryText)
             }
             if result.aiEnhanced {
-                Label("Rapport Claude", systemImage: "sparkles")
+                Label("Analyse Claude", systemImage: "sparkles")
                     .font(.caption)
                     .foregroundStyle(.orange)
             }

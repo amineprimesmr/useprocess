@@ -91,7 +91,9 @@ struct HasSportActivityStepView: View {
             Spacer()
         }
         .onAppear {
-            onValidationChanged?(hasSportActivity != nil)
+            OnboardingValidationScheduler.deferValidation {
+                onValidationChanged?(hasSportActivity != nil)
+            }
         }
 }
 }

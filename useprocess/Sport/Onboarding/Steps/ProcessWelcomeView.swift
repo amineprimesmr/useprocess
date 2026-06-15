@@ -19,6 +19,7 @@ struct ProcessWelcomeView: View {
     @State private var titleTextOffset: CGFloat = 30
     @State private var buttonOpacity: Double = 0
     @State private var buttonOffset: CGFloat = 30
+    @State private var isFinishing = false
 
     var onComplete: () -> Void
     var onBack: (() -> Void)?
@@ -69,24 +70,34 @@ struct ProcessWelcomeView: View {
 
                     // ✅ Bouton "Commencer" Liquid Glass en bas
                     Button(action: {
+                        guard !isFinishing else { return }
+                        isFinishing = true
                         HapticManager.shared.impact(.medium)
                         HapticManager.shared.notification(.success)
-                        // Accéder directement à l'application Process
                         onComplete()
                     }) {
-                        Text(OnboardingCopy.text("Commencer", blank: "Action"))
-                            .font(.system(size: 20, weight: .black))
-                                .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
+                        Group {
+                            if isFinishing {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text(OnboardingCopy.text("Commencer", blank: "Action"))
+                                    .font(.system(size: 20, weight: .black))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
                     }
                     .glassStyle()
                     .buttonBorderShape(.roundedRectangle(radius: 50))
+                    .disabled(isFinishing)
                     .padding(.horizontal, 40)
                     .padding(.bottom, 50)
                     .opacity(buttonOpacity)
                     .offset(y: buttonOffset)
+                    .zIndex(10)
                 }
+                .zIndex(5)
             }
         }
         .ignoresSafeArea(.all)
@@ -249,91 +260,39 @@ class ProcessWelcomeVideoViewController: UIViewController {
     }
 
     private var playerLayer: AVPlayerLayer?
+    private var lastLayerBounds: CGRect = .zero
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
-        view.clipsToBounds = false // ✅ Ne pas couper pour remplir tout l'écran
-
-        additionalSafeAreaInsets = .zero
-
-        // ✅ Utiliser la taille complète de l'écran (y compris les safe areas)
-        let screenBounds = resolvedScreenBounds
-        view.frame = screenBounds
-        view.bounds = screenBounds
-        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-
+        view.clipsToBounds = true
         setupPlayerLayer()
-    }
-
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
-        // ✅ Forcer le frame à prendre tout l'écran avant le layout
-        let screenBounds = resolvedScreenBounds
-        view.frame = screenBounds
-        view.bounds = screenBounds
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // ✅ Forcer le frame à prendre tout l'écran après le layout
-        let screenBounds = resolvedScreenBounds
-        view.frame = screenBounds
-        view.bounds = screenBounds
-        updateVideoLayerFrame()
+        updateVideoLayerFrameIfNeeded()
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        // ✅ Forcer le frame à prendre tout l'écran quand la vue apparaît
-        let screenBounds = resolvedScreenBounds
-        view.frame = screenBounds
-        view.bounds = screenBounds
-        updateVideoLayerFrame()
-                                }
-
     private func setupPlayerLayer() {
-        // Supprimer l'ancien layer s'il existe
         playerLayer?.removeFromSuperlayer()
+        guard let player else { return }
 
-        guard let player = player else { return }
-
-        // ✅ Utiliser la taille complète de l'écran (y compris les safe areas et Dynamic Island)
-        let screenBounds = resolvedScreenBounds
-        // ✅ CRITIQUE: Utiliser des coordonnées négatives si nécessaire pour vraiment tout couvrir
-        let fullFrame = CGRect(
-            x: -view.safeAreaInsets.left,
-            y: -view.safeAreaInsets.top,
-            width: screenBounds.width + view.safeAreaInsets.left + view.safeAreaInsets.right,
-            height: screenBounds.height + view.safeAreaInsets.top + view.safeAreaInsets.bottom
-        )
-
-        let newLayer = AVPlayerLayer(player: player)
-        newLayer.videoGravity = .resizeAspectFill
-        newLayer.frame = fullFrame
-        view.layer.insertSublayer(newLayer, at: 0)
-        playerLayer = newLayer
-
-        // Mettre à jour le frame immédiatement
-        DispatchQueue.main.async { [weak self] in
-            self?.updateVideoLayerFrame()
-        }
+        let layer = AVPlayerLayer(player: player)
+        layer.videoGravity = .resizeAspectFill
+        layer.frame = view.bounds
+        view.layer.insertSublayer(layer, at: 0)
+        playerLayer = layer
+        lastLayerBounds = view.bounds
     }
 
     func updateVideoLayer() {
         setupPlayerLayer()
     }
 
-    private func updateVideoLayerFrame() {
-        // Bounds écran via windowScene
-        let screenBounds = resolvedScreenBounds
-
-        // ✅ Forcer la vue à prendre tout l'écran
-        view.frame = screenBounds
-        view.bounds = screenBounds
-
-        // ✅ CRITIQUE: Utiliser screenBounds directement pour le layer, pas view.bounds
-        playerLayer?.frame = screenBounds
-        playerLayer?.videoGravity = .resizeAspectFill
-}
+    private func updateVideoLayerFrameIfNeeded() {
+        guard view.bounds != lastLayerBounds else { return }
+        lastLayerBounds = view.bounds
+        playerLayer?.frame = view.bounds
+    }
 }

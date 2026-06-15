@@ -1,28 +1,199 @@
+import ARKit
 import SwiftUI
 
-/// Étape onboarding — scan visage 3D ARKit TrueDepth + analyse bien-être.
+/// Scan visage Face ID — carré → cercle, ticks yaw, analyse complète.
 struct FaceScanStepView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     var onComplete: () -> Void
     var onBack: () -> Void
 
     @State private var scanProgress: Double = 0
-    @State private var instruction = "Approche ton visage dans le cercle"
+    @State private var ringProgress: Double = 0
+    @State private var activeTickSectors: Set<Int> = []
+    @State private var instruction = "Placez votre visage dans le cadre."
+    @State private var frameHint: String?
+    @State private var isFaceDetected = false
+    @State private var isDeviceSupported = ARFaceTrackingConfiguration.isSupported
+    @State private var phase: FaceScanPhase = .positioning
+    @State private var scanSessionID = UUID()
+    @State private var showContent = false
+    @State private var isExpanding = false
+    @State private var morphToCircle: CGFloat = 0
     @State private var capturedMesh: FaceMesh3DData?
-    @State private var markers: FaceWellnessMarkers?
-    @State private var isScanning = true
+
+    private enum FaceScanPhase {
+        case positioning
+        case scanning
+        case completed
+    }
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        GeometryReader { geometry in
+            let safeArea = geometry.safeAreaInsets
+            let haveDynamicIsland = safeArea.top >= 59
+            let dynamicIslandHeight: CGFloat = 36
+            let topOffset: CGFloat = haveDynamicIsland
+                ? (11 + max(safeArea.top - 59, 0))
+                : safeArea.top
+            let expandedHeight = geometry.size.width - 30
+            let scannerBottom = topOffset + (isExpanding ? expandedHeight : dynamicIslandHeight)
+            let ringDiameter = expandedHeight - 160
 
-            if isScanning {
-                scanningLayer
-            } else {
-                resultLayer
+            ZStack(alignment: .top) {
+                Color.black.ignoresSafeArea()
+
+                if !isDeviceSupported {
+                    unsupportedSection
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    FaceDynamicIslandScanner(
+                        isExpanding: $isExpanding,
+                        showContent: showContent,
+                        morphToCircle: morphToCircle,
+                        camera: { cameraSize in
+                            FaceMeshScanView(
+                                progress: $scanProgress,
+                                ringProgress: $ringProgress,
+                                activeTickSectors: $activeTickSectors,
+                                instruction: $instruction,
+                                frameHint: $frameHint,
+                                isFaceDetected: $isFaceDetected,
+                                isDeviceSupported: $isDeviceSupported,
+                                onComplete: handleCapture
+                            )
+                            .id(scanSessionID)
+                            .frame(width: cameraSize.width, height: cameraSize.height)
+                        },
+                        overlay: { cameraSize in
+                            scannerOverlay(viewportSize: cameraSize, ringDiameter: ringDiameter)
+                        }
+                    )
+                    .ignoresSafeArea()
+                }
+
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(height: scannerBottom + 28)
+
+                    instructionSection
+
+                    if let hint = frameHint, phase != .completed {
+                        FaceIDFrameHint(text: hint)
+                            .padding(.top, 12)
+                    }
+
+                    Spacer(minLength: 16)
+
+                    bottomAction
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, max(safeArea.bottom + 16, 28))
+                }
+
+                if phase != .completed {
+                    faceScanBackButton
+                }
             }
+        }
+        .task {
+            guard isDeviceSupported else { return }
+            showContent = true
+            try? await Task.sleep(for: .seconds(0.05))
+            isExpanding = true
+        }
+        .onChange(of: isFaceDetected) { _, detected in
+            guard isDeviceSupported, phase != .completed else { return }
+            if detected {
+                withAnimation(.interpolatingSpring(duration: 0.55, bounce: 0.08, initialVelocity: 0)) {
+                    morphToCircle = 1
+                }
+                if phase == .positioning {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        phase = .scanning
+                    }
+                }
+            } else if phase == .scanning, scanProgress < 0.05 {
+                withAnimation(.interpolatingSpring(duration: 0.45, bounce: 0, initialVelocity: 0)) {
+                    morphToCircle = 0
+                    phase = .positioning
+                }
+            }
+        }
+        .onChange(of: scanProgress) { _, value in
+            if value >= 1, phase != .completed {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+                    phase = .completed
+                    morphToCircle = 1
+                }
+            }
+        }
+    }
 
-            faceScanBackButton
+    // MARK: - Overlay Face ID
+
+    @ViewBuilder
+    private func scannerOverlay(viewportSize: CGSize, ringDiameter: CGFloat) -> some View {
+        let ringSize = min(viewportSize.width, viewportSize.height) + 14
+
+        ZStack {
+            if morphToCircle > 0.5 {
+                switch phase {
+                case .positioning, .scanning:
+                    FaceIDTickProgressRing(
+                        activeSectors: activeTickSectors,
+                        diameter: ringSize
+                    )
+                    if phase == .scanning {
+                        FaceIDScanningWave(diameter: min(viewportSize.width, viewportSize.height) * 0.92)
+                    }
+                case .completed:
+                    FaceIDSuccessRing(diameter: ringSize)
+                    FaceIDTickProgressRing(
+                        activeSectors: activeTickSectors,
+                        diameter: ringSize,
+                        isComplete: true
+                    )
+                }
+            }
+        }
+        .opacity(morphToCircle)
+        .animation(.easeOut(duration: 0.25), value: morphToCircle)
+    }
+
+    private var unsupportedSection: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "faceid")
+                .font(.system(size: 52))
+                .foregroundStyle(.white.opacity(0.5))
+            Text("TrueDepth requis")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+            Text("Utilisez un iPhone avec Face ID\n(iPhone X ou plus récent).")
+                .font(.system(size: 15))
+                .foregroundStyle(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 32)
+    }
+
+    private var instructionSection: some View {
+        Text(instruction)
+            .font(.system(size: 17, weight: .regular))
+            .foregroundStyle(.white)
+            .multilineTextAlignment(phase == .completed ? .trailing : .center)
+            .frame(maxWidth: .infinity, alignment: phase == .completed ? .trailing : .center)
+            .lineSpacing(4)
+            .padding(.horizontal, 32)
+            .animation(.easeInOut(duration: 0.25), value: instruction)
+    }
+
+    @ViewBuilder
+    private var bottomAction: some View {
+        if phase == .completed, capturedMesh?.isValid == true {
+            FaceIDContinueButton {
+                HapticManager.shared.impact(.medium)
+                onComplete()
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 
@@ -34,127 +205,26 @@ struct FaceScanStepView: View {
             }
             .padding(.horizontal, OnboardingConstants.headerHorizontalPadding)
             .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
-
             Spacer()
         }
         .allowsHitTesting(true)
     }
 
-    private var scanningLayer: some View {
-        ZStack {
-            FaceMeshScanView(
-                progress: $scanProgress,
-                instruction: $instruction,
-                onComplete: handleMeshCaptured
-            )
-            .ignoresSafeArea()
+    // MARK: - Capture
 
-            FaceIDScanOverlay(progress: scanProgress)
+    private func handleCapture(_ payload: FaceScanCapturePayload) {
+        guard payload.mesh.isValid else { return }
 
-            VStack {
-                Spacer()
-                VStack(spacing: 12) {
-                    Text("SCAN VISAGE 3D")
-                        .font(.system(size: 36, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    Text(instruction)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-
-                    Text("\(Int(scanProgress * 100))%")
-                        .font(.caption.bold())
-                        .foregroundStyle(.green)
-                }
-                .padding(.vertical, 28)
-                .frame(maxWidth: .infinity)
-                .background(.black.opacity(0.65))
-                .padding(.bottom, 36)
-            }
-        }
-    }
-
-    private var resultLayer: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            if let mesh = capturedMesh, mesh.isValid {
-                FaceMeshPreviewView(mesh: mesh)
-                    .frame(width: 220, height: 220)
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(Color.cyan.opacity(0.35), lineWidth: 2)
-                    )
-            } else {
-                Image(systemName: "face.dashed")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-
-            Text("Scan 3D terminé")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
-
-            if let markers {
-                VStack(spacing: 8) {
-                    metricRow("Clarté", markers.skinClarityScore)
-                    metricRow("Fatigue", markers.underEyeFatigueScore)
-                    metricRow("Gonflement", markers.puffinessScore)
-                    metricRow("Symétrie", markers.facialSymmetryScore)
-                }
-                .padding(20)
-                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal, 32)
-
-                ForEach(markers.notes.prefix(2), id: \.self) { note in
-                    Text(note)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.75))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                }
-            }
-
-            Spacer()
-
-            Button {
-                onComplete()
-            } label: {
-                Text("CONTINUER")
-                    .font(.system(size: 20, weight: .black, design: .rounded))
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 28))
-            }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 48)
-        }
-    }
-
-    private func metricRow(_ title: String, _ value: Int) -> some View {
-        HStack {
-            Text(title)
-                .foregroundStyle(.white.opacity(0.8))
-            Spacer()
-            Text("\(value)/100")
-                .font(.headline.bold())
-                .foregroundStyle(.white)
-        }
-    }
-
-    private func handleMeshCaptured(_ mesh: FaceMesh3DData) {
-        let result = FaceWellnessAnalyzer.analyze(from: mesh, pose: .faceMesh)
-        capturedMesh = mesh
-        markers = result
-        viewModel.onboardingFaceMesh = mesh.isValid ? mesh : nil
+        let result = FaceWellnessAnalyzer.analyze(from: payload)
+        viewModel.onboardingFaceMesh = payload.mesh
         viewModel.onboardingFaceMarkers = result
         viewModel.isFaceAnalysisCompleted = true
-        OnboardingFaceMarkersStore.save(markers: result, mesh: mesh)
-        isScanning = false
-        HapticManager.shared.notification(.success)
+        OnboardingFaceMarkersStore.save(markers: result, mesh: payload.mesh)
+        capturedMesh = payload.mesh
+
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+            phase = .completed
+            morphToCircle = 1
+        }
     }
 }

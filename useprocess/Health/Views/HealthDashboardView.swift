@@ -3,13 +3,21 @@ import SwiftUI
 struct HealthDashboardView: View {
     @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var dataManager: DailyDataManager
+    @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
+
+    @State private var claudeDailyBrief: String?
+    @State private var isLoadingBrief = false
+    @State private var readinessExplanation: String?
+    @State private var isExplainingReadiness = false
+    @State private var showReadinessSheet = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     readinessCard
+                    claudeBriefCard
                     metricsGrid
                     sleepSection
                     vitalsSection
@@ -24,6 +32,7 @@ struct HealthDashboardView: View {
             .refreshable {
                 await healthManager.performFullSync()
                 await dataManager.updateCurrentDayData(with: healthManager)
+                await loadClaudeBrief()
             }
             .task {
                 if healthManager.isHealthDataAvailable && !healthManager.isAuthorized {
@@ -32,6 +41,65 @@ struct HealthDashboardView: View {
                     await healthManager.performFullSync()
                     await dataManager.updateCurrentDayData(with: healthManager)
                 }
+                await loadClaudeBrief()
+            }
+            .sheet(isPresented: $showReadinessSheet) {
+                NavigationStack {
+                    ScrollView {
+                        Text(readinessExplanation ?? "Analyse indisponible.")
+                            .font(.body)
+                            .foregroundStyle(.white)
+                            .padding()
+                    }
+                    .background(Color.black.ignoresSafeArea())
+                    .navigationTitle("Readiness — Claude")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Fermer") { showReadinessSheet = false }
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+        }
+    }
+
+    private func loadClaudeBrief() async {
+        guard ClaudeConfiguration.isConfigured else { return }
+        isLoadingBrief = true
+        defer { isLoadingBrief = false }
+        claudeDailyBrief = await CoachEngine.generateDailyBrief(profile: profileService.currentProfile)
+    }
+
+    private var claudeBriefCard: some View {
+        Group {
+            if ClaudeConfiguration.isConfigured {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Brief Claude du jour", systemImage: "sparkles")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    if isLoadingBrief {
+                        HStack(spacing: 8) {
+                            ProgressView().tint(.white)
+                            Text("Analyse de tes données…")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                    } else if let brief = claudeDailyBrief {
+                        Text(brief)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.9))
+                            .textSelection(.enabled)
+                    } else {
+                        Text("Brief indisponible — tire pour rafraîchir.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(cardBackground)
             }
         }
     }
@@ -66,10 +134,32 @@ struct HealthDashboardView: View {
             Text(healthManager.readinessLabel)
                 .font(.headline)
                 .foregroundStyle(.white)
+
+            if ClaudeConfiguration.isConfigured {
+                Button {
+                    Task { await explainReadiness() }
+                } label: {
+                    Label(
+                        isExplainingReadiness ? "Analyse…" : "Expliquer avec Claude",
+                        systemImage: "sparkles"
+                    )
+                    .font(.caption.weight(.semibold))
+                }
+                .disabled(isExplainingReadiness)
+                .buttonStyle(.bordered)
+                .tint(.white)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
         .background(cardBackground)
+    }
+
+    private func explainReadiness() async {
+        isExplainingReadiness = true
+        defer { isExplainingReadiness = false }
+        readinessExplanation = await CoachEngine.explainReadiness(profile: profileService.currentProfile)
+        showReadinessSheet = readinessExplanation != nil
     }
 
     private var readinessColor: Color {

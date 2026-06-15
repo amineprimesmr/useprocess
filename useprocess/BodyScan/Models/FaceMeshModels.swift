@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 struct FaceMesh3DData: Codable, Hashable {
     var vertices: [Float]
@@ -15,4 +16,12 @@ struct FaceMesh3DData: Codable, Hashable {
 struct OnboardingFaceScanPayload: Codable, Hashable {
     var markers: FaceWellnessMarkers
     var mesh: FaceMesh3DData
+}
+
+/// Données brutes capturées à la fin du scan Face ID.
+struct FaceScanCapturePayload: Sendable {
+    let mesh: FaceMesh3DData
+    let snapshot: UIImage?
+    let averageBlendShapes: [String: Float]
+    let yawCoverage: Double
 }

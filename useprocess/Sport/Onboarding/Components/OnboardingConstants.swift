@@ -56,19 +56,19 @@ struct OnboardingConstants {
 
 enum OnboardingHeaderLayout {
     static func showsFullHeader(currentStep: Int) -> Bool {
-        let isEstimationPage = currentStep == OnboardingStep.goalProjection.rawValue
-            || currentStep == OnboardingStep.weightEstimation.rawValue
+        guard let step = OnboardingStep(rawValue: currentStep) else { return false }
 
-        let pagesWithFullHeader: Set<Int> = [
-            OnboardingStep.height.rawValue,
-            OnboardingStep.weight.rawValue,
-            OnboardingStep.heightWeight.rawValue
-        ]
+        if step == .videoIntroduction || step == .faceAnalysis { return false }
+        if step == .goalProjection || step == .weightEstimation { return false }
 
-        let isInNormalRange = currentStep > OnboardingStep.videoIntroduction.rawValue
-            && currentStep <= OnboardingStep.nutritionQuality.rawValue
-
-        return (isInNormalRange || pagesWithFullHeader.contains(currentStep)) && !isEstimationPage
+        switch step {
+        case .healthKitPermissions, .programCreation, .biometricAuth, .notificationPermission,
+             .payment, .processWelcome, .referralReward, .featuresUnlock, .complete,
+             .caloriesGoal, .carryOverCalories, .appleSignIn, .referralCode, .appRating:
+            return false
+        default:
+            return true
+        }
     }
 
     static func showsBackOnly(currentStep: Int, shouldShowBackButton: Bool) -> Bool {

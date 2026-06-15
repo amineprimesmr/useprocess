@@ -194,7 +194,7 @@ final class BodyScanSessionModel {
             profile: profile
         )
 
-        result = await BodyScanAIService.enhanceReport(result)
+        result = await CoachEngine.enhanceBodyScanReport(result)
 
         if AppConfiguration.firebaseConfigured, AuthUser.current != nil {
             try? await BodyScanFirestoreRepository.shared.save(result)

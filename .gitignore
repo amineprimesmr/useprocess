@@ -1,6 +1,9 @@
 # Firebase (ne pas committer les clés)
 **/GoogleService-Info.plist
 **/BodyScanSecrets.plist
+**/CoachSecrets.plist
+.secrets/
+firebase/functions/node_modules/
 
 # Xcode
 DerivedData/

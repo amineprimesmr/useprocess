@@ -6,6 +6,11 @@ struct MainAppView: View {
 
     var body: some View {
         TabView {
+            CoachChatView()
+                .tabItem {
+                    Label("Coach", systemImage: "sparkles")
+                }
+
             HealthDashboardView()
                 .tabItem {
                     Label("Santé", systemImage: "heart.text.square.fill")
@@ -103,11 +108,14 @@ private struct ProfileTabView: View {
                     }
                 }
 
-                Section("IA") {
+                Section("Intelligence Claude") {
+                    LabeledContent("Transport", value: ClaudeConfiguration.transportLabel)
                     LabeledContent(
-                        "Analyse cloud",
-                        value: BodyScanConfiguration.aiAnalysisEnabled ? "Activée" : "Locale uniquement"
+                        "Statut",
+                        value: ClaudeConfiguration.isConfigured ? "Connecté" : "Non configuré"
                     )
+                    LabeledContent("Modèle chat", value: ClaudeModel.preferred(for: .chat).displayName)
+                    LabeledContent("Modèle scan", value: ClaudeModel.preferred(for: .bodyScanReport).displayName)
                 }
             }
             .navigationTitle("Profil")

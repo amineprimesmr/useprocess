@@ -13,6 +13,8 @@ struct ProgramCreationStepView: View {
     let onBack: (() -> Void)?
     let onValidationChanged: ((Bool) -> Void)?
 
+    @EnvironmentObject private var profileService: UnifiedProfileService
+
     @State private var allAnimationsComplete = false
 
     @State private var overallProgress: Double = 0.0
@@ -334,6 +336,17 @@ struct ProgramCreationStepView: View {
 
             allAnimationsComplete = true
             onValidationChanged?(true)
+
+            if ClaudeConfiguration.isConfigured,
+               let summary = await CoachEngine.generateProgramSummary(profile: profileService.currentProfile) {
+                let programMessage = CoachMessage(
+                    role: .assistant,
+                    text: "## Ton plan useprocess\n\n\(summary)",
+                    modelUsed: ClaudeModel.preferred(for: .programSummary).rawValue
+                )
+                CoachConversationStore.appendMessageLocal(programMessage)
+                await CoachSyncService.appendMessage(programMessage, userId: profileService.currentProfile?.userId)
+            }
         }
     }
 

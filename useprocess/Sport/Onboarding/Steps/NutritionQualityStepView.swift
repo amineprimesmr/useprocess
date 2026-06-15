@@ -38,14 +38,12 @@ struct NutritionQualityStepView: View {
                     .allowsHitTesting(false)
                 
                 VStack(spacing: 0) {
-                    // Espace pour le titre en overlay + espacement uniforme
                     Spacer()
                         .frame(height: OnboardingConstants.titleAreaHeight)
-                    
-                    // Espacement uniforme entre titre et réponses
+
                     Spacer()
-                        .frame(height: OnboardingConstants.titleToContentSpacing)
-                    
+                        .frame(height: OnboardingConstants.titleToContentSpacing + geometry.size.height * 0.10)
+
                     VStack(spacing: 0) {
                         VStack(spacing: 30) {
                             // ✅ Affichage simple de la qualité sélectionnée avec description
@@ -82,9 +80,9 @@ struct NutritionQualityStepView: View {
                             
                             // ✅ Slider épais horizontal avec 3 positions (style comme vitesse de perte de poids)
                             GeometryReader { geometry in
-                                let sliderWidth = geometry.size.width - 80
+                                let sliderWidth = max(0, geometry.size.width - 80)
                                 let sliderHeight: CGFloat = 50
-                                let qualityProgress = sliderValue / maxValue
+                                let qualityProgress = max(0, min(1, sliderValue / maxValue))
                                 
                             VStack(spacing: 0) {
                                     // Slider épais horizontal
@@ -104,7 +102,7 @@ struct NutritionQualityStepView: View {
                                                         endPoint: .trailing
                                                     )
                                                 )
-                                                .frame(width: sliderWidth * qualityProgress, height: sliderHeight)
+                                                .frame(width: max(0, sliderWidth * qualityProgress), height: sliderHeight)
                                                 .animation(.easeInOut(duration: 0.4), value: selectedQuality)
                                         } else {
                                             RoundedRectangle(cornerRadius: 25, style: .continuous)
@@ -118,7 +116,7 @@ struct NutritionQualityStepView: View {
                                                         endPoint: .trailing
                                                     )
                                                 )
-                                                .frame(width: sliderWidth * qualityProgress, height: sliderHeight)
+                                                .frame(width: max(0, sliderWidth * qualityProgress), height: sliderHeight)
                                         }
                                         
                                         // Zones cliquables pour les 3 positions
@@ -126,7 +124,7 @@ struct NutritionQualityStepView: View {
                                             // Zone gauche (Mauvaise)
                                             Rectangle()
                                                 .fill(Color.clear)
-                                                .frame(width: sliderWidth / 3)
+                                                .frame(width: max(0, sliderWidth / 3))
                                                 .contentShape(Rectangle())
                                                 .onTapGesture {
                                                     currentQualityIndex = 0
@@ -140,7 +138,7 @@ struct NutritionQualityStepView: View {
                                             // Zone centre (Améliorable)
                                             Rectangle()
                                                 .fill(Color.clear)
-                                                .frame(width: sliderWidth / 3)
+                                                .frame(width: max(0, sliderWidth / 3))
                                                 .contentShape(Rectangle())
                                                 .onTapGesture {
                                                     currentQualityIndex = 1
@@ -154,7 +152,7 @@ struct NutritionQualityStepView: View {
                                             // Zone droite (Excellente)
                                             Rectangle()
                                                 .fill(Color.clear)
-                                                .frame(width: sliderWidth / 3)
+                                                .frame(width: max(0, sliderWidth / 3))
                                                 .contentShape(Rectangle())
                                                 .onTapGesture {
                                                     currentQualityIndex = 2
@@ -178,7 +176,9 @@ struct NutritionQualityStepView: View {
                                                 }
                                                 
                                                 let location = value.location.x - 40
-                                                let normalizedProgress = max(0, min(1, location / sliderWidth))
+                                                let normalizedProgress = sliderWidth > 0
+                                                    ? max(0, min(1, location / sliderWidth))
+                                                    : 0
                                                 
                                                 // Snap direct aux 3 positions (0, 1, 2) - plus réactif
                                                 let snappedIndex: Int
@@ -263,7 +263,7 @@ struct NutritionQualityStepView: View {
                             
                             // Nutella - plus proche du slider, bas gauche
                             if quality == .poor {
-                                NutritionDecorIcon(name: "nutella", systemName: "jar.fill", size: 62)
+                                NutritionDecorIcon(name: "nutella", systemName: "archivebox.fill", size: 62)
                                     .scaleEffect(imageScale[2] * imagePulse[2])
                                     .rotationEffect(.degrees(imageRotation[2]))
                                     .opacity(imageOpacity[2] * 0.75)
@@ -367,18 +367,7 @@ struct NutritionQualityStepView: View {
             }
         }
         .onAppear {
-            if let quality = selectedQuality,
-               let index = nutritionQualities.firstIndex(of: quality) {
-                sliderValue = Double(index)
-                currentQualityIndex = index
-                syncSliderUI(to: index, animated: false)
-            } else {
-                sliderValue = 1.0
-                currentQualityIndex = 1
-                updateQualitySmoothly(to: 1)
-            }
-
-            onValidationChanged?(selectedQuality != nil)
+            initializeSelectedQualityIfNeeded()
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 showImages = true
@@ -386,6 +375,20 @@ struct NutritionQualityStepView: View {
         }
     }
     
+    private func initializeSelectedQualityIfNeeded() {
+        let selectedIndex: Int
+        if let quality = selectedQuality,
+           let index = nutritionQualities.firstIndex(of: quality) {
+            selectedIndex = index
+        } else {
+            selectedIndex = 1
+        }
+
+        sliderValue = Double(selectedIndex)
+        currentQualityIndex = selectedIndex
+        syncSliderUI(to: selectedIndex, animated: false)
+    }
+
     // ✅ Couleurs du dégradé selon la qualité
     private func gradientColors(for quality: NutritionQuality) -> [Color] {
         switch quality {
@@ -446,7 +449,9 @@ struct NutritionQualityStepView: View {
 
         animateImages(for: quality)
 
-        onValidationChanged?(true)
+        OnboardingValidationScheduler.deferValidation {
+            onValidationChanged?(true)
+        }
     }
     
     // ✅ Animation ultra fluide des images selon la qualité - INSTANTANÉE

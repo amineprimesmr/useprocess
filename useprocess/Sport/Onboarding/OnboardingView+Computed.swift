@@ -134,7 +134,7 @@ var isImmersiveOnboardingStep: Bool {
 
 /// Progression de la lueur — alignée sur la barre (100 % avant le scan facial).
 var onboardingGlowProgressCount: Int {
-    let path = buildOnboardingProgressFlowPath(navigationEngine: navigationEngine)
+    let path = buildOnboardingProgressFlowPath(viewModel: viewModel, navigationEngine: navigationEngine)
     guard !path.isEmpty else { return 1 }
 
     if let current = OnboardingStep(rawValue: viewModel.currentStep),
@@ -146,7 +146,11 @@ var onboardingGlowProgressCount: Int {
         return index + 1
     }
 
-    return max(1, path.filter { viewModel.visitedSteps.contains($0) }.count)
+    if let furthestIndex = furthestProgressIndex(in: path, viewModel: viewModel) {
+        return furthestIndex + 1
+    }
+
+    return 1
 }
 
 var shouldShowBackButton: Bool {

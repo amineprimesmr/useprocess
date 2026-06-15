@@ -208,7 +208,7 @@ struct BodyScanSessionView: View {
     private var analyzingView: some View {
         VStack(spacing: 20) {
             ProgressView().tint(.white).scaleEffect(1.4)
-            Text("ANALYSE CLAUDE…")
+            Text("ANALYSE IA…")
                 .font(.system(size: 28, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
             Text("Rapport personnalisé en cours")

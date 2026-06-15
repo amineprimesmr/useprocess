@@ -207,26 +207,39 @@ func checkPermissions() {
 
 // MARK: - Completion
 
-func completeOnboarding() async {
-    guard !authManager.hasCompletedOnboarding else { return }
+    func completeOnboarding() async {
+        guard !viewModel.isCompleting else { return }
 
-    HapticManager.shared.impact(.heavy)
-    viewModel.isCompleting = true
+        HapticManager.shared.impact(.heavy)
+        viewModel.isCompleting = true
 
-    do {
-        await OnboardingProgressService.shared.savePendingDataIfNeeded(to: profileService)
-        let coordinator = OnboardingCoordinator(viewModel: viewModel, profileService: profileService)
-        try await coordinator.saveAllOnboardingData()
-        try await OnboardingService.shared.completeOnboarding()
-        AppSession.shared.completeOnboarding()
-        HapticManager.shared.notification(.success)
-    } catch {
-        HapticManager.shared.notification(.error)
-        viewModel.errorMessage = "Erreur lors de la finalisation. Veuillez réessayer."
+        do {
+            await OnboardingProgressService.shared.savePendingDataIfNeeded(to: profileService)
+            let coordinator = OnboardingCoordinator(viewModel: viewModel, profileService: profileService)
+            try await coordinator.saveAllOnboardingData()
+            try await OnboardingService.shared.completeOnboarding()
+            AppSession.shared.completeOnboarding()
+            HapticManager.shared.notification(.success)
+
+            if ClaudeConfiguration.isConfigured,
+               let summary = await CoachEngine.generateProgramSummary(profile: profileService.currentProfile) {
+                let msg = CoachMessage(
+                    role: .assistant,
+                    text: "## Bienvenue dans useprocess\n\n\(summary)\n\nOuvre l'onglet **Coach** pour continuer la conversation.",
+                    modelUsed: ClaudeModel.preferred(for: .programSummary).rawValue
+                )
+                CoachConversationStore.appendMessageLocal(msg)
+                await CoachSyncService.appendMessage(msg, userId: profileService.currentProfile?.userId)
+            }
+        } catch {
+            HapticManager.shared.notification(.error)
+            viewModel.errorMessage = "Erreur lors de la finalisation. Veuillez réessayer."
+            // Même en cas d'erreur Firestore, débloquer l'accès à l'app.
+            AppSession.shared.completeOnboarding()
+        }
+
+        viewModel.isCompleting = false
     }
-
-    viewModel.isCompleting = false
-}
 
 // MARK: - Helpers
 

@@ -79,7 +79,7 @@ struct NotificationPermissionStepView: View {
         HapticManager.shared.impact(.medium)
         isRequesting = true
 
-        await permissionsManager.requestNotificationPermission()
+        _ = await permissionsManager.requestNotificationPermission()
 
         isRequesting = false
 
