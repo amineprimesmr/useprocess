@@ -8,73 +8,127 @@ struct CoachConversationsSidebar: View {
     var onSelect: (UUID) -> Void
     var onCreate: () -> Void
     var onDelete: (UUID) -> Void
+    var onOpenProfile: () -> Void
 
     @Environment(\.appTheme) private var theme
+    @State private var profileStore = SocialProfileStore.shared
+    @State private var showSettings = false
+
+    private var resolvedSocialProfile: SocialProfile {
+        if let saved = profileStore.profile {
+            return saved
+        }
+        if let unified = profile {
+            return SocialProfile.from(unified: unified)
+        }
+        return .guest
+    }
 
     private var displayName: String {
-        let first = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !first.isEmpty { return first }
-        return "Coach"
+        let name = resolvedSocialProfile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? "Profil" : name
     }
 
     private var handle: String {
-        if let uid = profile?.userId, !uid.isEmpty {
-            return "@\(String(uid.prefix(8)))"
-        }
-        return "@useprocess"
+        "@\(resolvedSocialProfile.username)"
+    }
+
+    private var avatarInitials: String {
+        let parts = displayName.split(separator: " ")
+        let first = parts.first?.first.map(String.init) ?? "?"
+        let last = parts.dropFirst().first?.first.map(String.init) ?? ""
+        return (first + last).uppercased()
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 0) {
             header
 
-            newConversationButton
-                .padding(.top, 8)
-
             conversationsList
+                .padding(.top, 12)
+
+            Spacer(minLength: 0)
+
+            newConversationButton
                 .padding(.top, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .padding([.horizontal, .top], 15)
+        .padding(.bottom, 20)
         .background(theme.background)
+        .onAppear {
+            profileStore.bind(unified: profile)
+        }
+        .onChange(of: profile?.userId) { _, _ in
+            profileStore.bind(unified: profile)
+        }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                ProcessSettingsView()
+            }
+        }
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
-            Image("ProcessIA")
-                .resizable()
-                .renderingMode(.original)
-                .scaledToFit()
-                .frame(width: 52, height: 52)
+        HStack(alignment: .center, spacing: 8) {
+            Button {
+                isExpanded = false
+                onOpenProfile()
+            } label: {
+                HStack(spacing: 12) {
+                    profileAvatar
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(displayName)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
-                Text(handle)
-                    .font(.subheadline)
-                    .foregroundStyle(theme.secondaryText)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(displayName)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(theme.primaryText)
+                        Text(handle)
+                            .font(.subheadline)
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 0)
+
+            ProcessGlassIconButton(systemName: "gearshape.fill", iconSize: 18) {
+                isExpanded = false
+                showSettings = true
             }
         }
         .padding(.bottom, 6)
     }
 
+    @ViewBuilder
+    private var profileAvatar: some View {
+        Group {
+            if let image = profileStore.profilePhoto {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                ZStack {
+                    Circle().fill(ProfileTheme.avatarAccent)
+                    Text(avatarInitials.prefix(2))
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .frame(width: 52, height: 52)
+        .clipShape(Circle())
+    }
+
     private var newConversationButton: some View {
-        Button {
+        ProcessGlassWideButton(
+            title: "Nouvelle conversation",
+            icon: "square.and.pencil"
+        ) {
             isExpanded = false
             onCreate()
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "square.and.pencil")
-                    .font(.title3)
-                    .frame(width: 30)
-                Text("Nouvelle conversation")
-                    .font(.title3.weight(.bold))
-            }
-            .foregroundStyle(theme.primaryText)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
     }
 
     private var conversationsList: some View {

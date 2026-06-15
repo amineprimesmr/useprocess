@@ -40,6 +40,10 @@ final class HealthManager: ObservableObject {
     @Published private(set) var todaySnapshot = DailyHealthSnapshot(date: Date())
     @Published private(set) var readinessScore = 0
     @Published private(set) var readinessLabel = "—"
+    @Published private(set) var readinessFactors: [String] = []
+    @Published private(set) var faceDayScore: Int?
+    @Published private(set) var faceDayLabel: String?
+    @Published private(set) var faceCorrelations: [FaceScanCorrelationInsight] = []
     @Published private(set) var connectedSources: [String] = []
     @Published private(set) var hasAppleWatch = false
     @Published private(set) var lastSyncDate: Date?
@@ -89,9 +93,18 @@ final class HealthManager: ObservableObject {
 
         baselines = await BaselineCalculator.computeFromHealthManager(self, days: 14)
         todaySnapshot = await buildSnapshot(for: Date())
-        let readiness = ReadinessScorer.score(snapshot: todaySnapshot, baselines: baselines)
+        let faceMarkers = faceMarkers(for: Date())
+        let readiness = ReadinessScorer.score(
+            snapshot: todaySnapshot,
+            baselines: baselines,
+            faceMarkers: faceMarkers
+        )
         readinessScore = readiness.score
         readinessLabel = readiness.label
+        readinessFactors = readiness.factors
+        faceDayScore = readiness.faceScore
+        faceDayLabel = readiness.faceLabel
+        faceCorrelations = FaceScanCorrelationEngine.insights(from: FaceScanHistoryStore.shared.history)
 
         if AppConfiguration.firebaseConfigured, let uid = AuthUser.current?.uid {
             try? await HealthFirestoreRepository.shared.saveBaselines(baselines, userId: uid)
@@ -103,10 +116,25 @@ final class HealthManager: ObservableObject {
         let snapshot = await buildSnapshot(for: date)
         if Calendar.current.isDateInToday(date) {
             todaySnapshot = snapshot
-            let readiness = ReadinessScorer.score(snapshot: snapshot, baselines: baselines)
+            let faceMarkers = faceMarkers(for: date)
+            let readiness = ReadinessScorer.score(
+                snapshot: snapshot,
+                baselines: baselines,
+                faceMarkers: faceMarkers
+            )
             readinessScore = readiness.score
             readinessLabel = readiness.label
+            readinessFactors = readiness.factors
+            faceDayScore = readiness.faceScore
+            faceDayLabel = readiness.faceLabel
+            faceCorrelations = FaceScanCorrelationEngine.insights(from: FaceScanHistoryStore.shared.history)
         }
+    }
+
+    private func faceMarkers(for date: Date) -> FaceWellnessMarkers? {
+        guard let latest = FaceScanHistoryStore.shared.latestResult else { return nil }
+        guard Calendar.current.isDate(latest.createdAt, inSameDayAs: date) else { return nil }
+        return latest.markers
     }
 
     // MARK: - API onboarding (compat)
@@ -210,7 +238,12 @@ final class HealthManager: ObservableObject {
         snapshot.nutrition.fatGrams = await fat
         snapshot.nutrition.waterLiters = await water
 
-        let readiness = ReadinessScorer.score(snapshot: snapshot, baselines: baselines)
+        let faceMarkers = faceMarkers(for: date)
+        let readiness = ReadinessScorer.score(
+            snapshot: snapshot,
+            baselines: baselines,
+            faceMarkers: faceMarkers
+        )
         snapshot.recovery.recoveryScore = readiness.score
         snapshot.recovery.readinessLabel = readiness.label
         snapshot.recovery.hrv = snapshot.vitals.hrv

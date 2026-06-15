@@ -19,6 +19,7 @@ struct useprocessApp: App {
             AppShellView()
                 .task {
                     await PermissionsManager.shared.clearAppBadge()
+                    await FaceScanReminderService.scheduleMorningReminder()
                 }
                 .onAppear {
                     AppIntegrations.shared.refresh()

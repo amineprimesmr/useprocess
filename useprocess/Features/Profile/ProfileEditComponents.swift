@@ -184,6 +184,7 @@ struct ProfileEditListRow: View {
     let value: String?
     let placeholder: String
     var showsAccentDot: Bool = false
+    var showsChevron: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -203,15 +204,53 @@ struct ProfileEditListRow: View {
             Text(value?.isEmpty == false ? value! : placeholder)
                 .font(.system(size: 16))
                 .foregroundStyle(value?.isEmpty == false ? ProfileEditTheme.textSecondary : ProfileEditTheme.placeholder)
-                .lineLimit(1)
+                .lineLimit(2)
+                .multilineTextAlignment(.trailing)
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(ProfileEditTheme.textSecondary.opacity(0.7))
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(ProfileEditTheme.textSecondary.opacity(0.7))
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 18)
         .contentShape(Rectangle())
+    }
+}
+
+struct ProfileSummarySectionHeader: View {
+    let title: String
+
+    var body: some View {
+        Text(title.uppercased())
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(ProfileEditTheme.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, 22)
+            .padding(.bottom, 6)
+    }
+}
+
+struct ProfileSummaryInfoRow: View {
+    let item: ProfileSummaryItem
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(item.label)
+                .font(.system(size: 16))
+                .foregroundStyle(Color.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(item.displayValue)
+                .font(.system(size: 16))
+                .foregroundStyle(item.isPlaceholder ? ProfileEditTheme.placeholder : ProfileEditTheme.textSecondary)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
     }
 }
 

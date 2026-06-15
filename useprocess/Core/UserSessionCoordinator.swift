@@ -29,6 +29,7 @@ final class UserSessionCoordinator {
 
         AppSession.shared.reloadForCurrentUser()
         BodyScanHistoryStore.shared.reloadForUser(userId: userId)
+        FaceScanHistoryStore.shared.reloadForUser(userId: userId)
         CoachConversationStore.reloadForUser(userId: userId)
         SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
 
@@ -37,6 +38,8 @@ final class UserSessionCoordinator {
                 await SubscriptionService.shared.syncAppUserID(userId)
                 await UnifiedProfileService.shared.loadProfile()
                 SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
+                await FaceScanHistoryStore.shared.syncFromRemote()
+                await HealthManager.shared.performFullSync()
             }
         } else {
             Task { await SubscriptionService.shared.syncAppUserID(nil) }

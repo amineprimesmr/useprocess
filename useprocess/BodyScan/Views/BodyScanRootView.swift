@@ -22,7 +22,8 @@ struct BodyScanRootView: View {
 
                 if let result = historyStore.latestResult {
                     processMainScrollableChrome(
-                        selectedSection: $selectedSection
+                        selectedSection: $selectedSection,
+                        pageSection: .scan
                     ) {
                         VStack(spacing: 20) {
                             lastScanCard(result)
@@ -44,7 +45,8 @@ struct BodyScanRootView: View {
                     }
                 } else {
                     processMainScrollableChrome(
-                        selectedSection: $selectedSection
+                        selectedSection: $selectedSection,
+                        pageSection: .scan
                     ) {
                         emptyState
                             .frame(minHeight: 520)
@@ -79,6 +81,7 @@ struct BodyScanRootView: View {
         .task {
             await loadRemoteHistory()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyState: some View {

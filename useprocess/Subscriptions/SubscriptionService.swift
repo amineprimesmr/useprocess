@@ -120,35 +120,40 @@ final class SubscriptionService: NSObject, ObservableObject {
             SubscriptionConfiguration.annualProductID
         ]
 
-        let offerings = await Purchases.shared.offerings()
-        let storeProducts = await fetchStoreProductsWithRetry(ids: ids)
+        do {
+            let offerings = try await Purchases.shared.offerings()
+            let storeProducts = await fetchStoreProductsWithRetry(ids: ids)
 
-        applyDirectStoreProducts(storeProducts)
+            applyDirectStoreProducts(storeProducts)
 
-        let offering = offerings.offering(identifier: SubscriptionConfiguration.defaultOfferingID)
-            ?? offerings.current
+            let offering = offerings.offering(identifier: SubscriptionConfiguration.defaultOfferingID)
+                ?? offerings.current
 
-        monthlyPackage = resolvePackage(
-            in: offering,
-            productID: SubscriptionConfiguration.monthlyProductID,
-            packageID: SubscriptionConfiguration.monthlyPackageID,
-            fallbackType: .monthly
-        )
+            monthlyPackage = resolvePackage(
+                in: offering,
+                productID: SubscriptionConfiguration.monthlyProductID,
+                packageID: SubscriptionConfiguration.monthlyPackageID,
+                fallbackType: .monthly
+            )
 
-        annualPackage = resolvePackage(
-            in: offering,
-            productID: SubscriptionConfiguration.annualProductID,
-            packageID: SubscriptionConfiguration.annualPackageID,
-            fallbackType: .annual
-        )
+            annualPackage = resolvePackage(
+                in: offering,
+                productID: SubscriptionConfiguration.annualProductID,
+                packageID: SubscriptionConfiguration.annualPackageID,
+                fallbackType: .annual
+            )
 
-        applyPackageDisplay(monthlyPackage, plan: .monthly)
-        applyPackageDisplay(annualPackage, plan: .annual)
+            applyPackageDisplay(monthlyPackage, plan: .monthly)
+            applyPackageDisplay(annualPackage, plan: .annual)
 
-        logCatalogDiagnostics(
-            offering: offering,
-            storeProducts: storeProducts
-        )
+            logCatalogDiagnostics(
+                offering: offering,
+                storeProducts: storeProducts
+            )
+        } catch {
+            print("[SubscriptionService] offerings: \(error.localizedDescription)")
+            applyFallbackProducts()
+        }
     }
 
     func loadProducts() async {

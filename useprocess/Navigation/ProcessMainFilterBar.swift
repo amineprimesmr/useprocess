@@ -8,6 +8,9 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
+    /// Ordre des onglets dans le pager principal.
+    static let tabOrder: [ProcessMainSection] = [.coach, .health, .scan, .profile]
+
     var label: String {
         switch self {
         case .coach: "Coach"
@@ -37,6 +40,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 
 struct ProcessMainFilterBar: View {
     @Binding var selection: ProcessMainSection
+    var glassAnimationsEnabled: Bool = true
     @Namespace private var glassNamespace
     @Environment(\.colorScheme) private var colorScheme
 
@@ -64,9 +68,7 @@ struct ProcessMainFilterBar: View {
         let isSelected = selection == item
 
         return Button {
-            withAnimation(ProcessGlass.spring) {
-                selection = item
-            }
+            selection = item
         } label: {
             HStack(spacing: 7) {
                 chipIcon(for: item, isSelected: isSelected)
@@ -96,7 +98,7 @@ struct ProcessMainFilterBar: View {
         }
         .modifier(ProcessFilterGlassChipModifier(
             isSelected: isSelected,
-            id: item.id,
+            glassAnimationsEnabled: glassAnimationsEnabled,
             namespace: glassNamespace,
             selectedFill: selectedFill
         ))
@@ -120,20 +122,25 @@ struct ProcessMainFilterBar: View {
 
 private struct ProcessFilterGlassChipModifier: ViewModifier {
     let isSelected: Bool
-    let id: String
+    let glassAnimationsEnabled: Bool
     let namespace: Namespace.ID
     let selectedFill: Color
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content
-                .glassEffect(
-                    isSelected
-                        ? ProcessGlass.filterSelected(selectedFill)
-                        : ProcessGlass.regular,
-                    in: .capsule
-                )
-                .glassEffectID("filter-\(id)", in: namespace)
+            if isSelected && glassAnimationsEnabled {
+                content
+                    .glassEffect(ProcessGlass.filterSelected(selectedFill), in: .capsule)
+                    .glassEffectID("filter-selection", in: namespace)
+            } else {
+                content
+                    .glassEffect(
+                        isSelected
+                            ? ProcessGlass.filterSelected(selectedFill)
+                            : ProcessGlass.regular,
+                        in: .capsule
+                    )
+            }
         } else {
             content
         }

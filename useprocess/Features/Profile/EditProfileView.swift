@@ -6,8 +6,15 @@ struct EditProfileView: View {
     @State private var profileStore = SocialProfileStore.shared
     @State private var showPhotoFlow = false
 
+    private var profile: UnifiedUserProfile? {
+        profileService.currentProfile
+    }
+
+    private var sections: [ProfileSummarySection] {
+        UserProfileOnboardingSummary.sections(from: profile)
+    }
+
     private var initials: String {
-        let profile = profileService.currentProfile
         let first = profile?.firstName.first.map(String.init) ?? "?"
         let last = profile?.lastName?.first.map(String.init) ?? ""
         return (first + last).uppercased()
@@ -28,17 +35,13 @@ struct EditProfileView: View {
                             action: { showPhotoFlow = true }
                         )
 
-                        editRow(.name)
-                        divider
-                        editRow(.username)
-                        divider
-                        editRow(.bio)
-                        divider
-                        editRow(.education)
-                        divider
-                        editRow(.interests)
+                        if sections.isEmpty {
+                            emptyState
+                        } else {
+                            profileSections
+                        }
                     }
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 32)
                 }
                 .scrollIndicators(.hidden)
             }
@@ -58,14 +61,61 @@ struct EditProfileView: View {
                 }
             }
         )
+        .task {
+            if profileService.currentProfile == nil {
+                await profileService.loadProfile()
+            }
+            profileStore.bind(unified: profileService.currentProfile)
+        }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
         }
     }
 
+    private var profileSections: some View {
+        ForEach(sections) { section in
+            VStack(spacing: 0) {
+                ProfileSummarySectionHeader(title: section.title)
+
+                ForEach(Array(section.rows.enumerated()), id: \.element.id) { index, item in
+                    if item.isEditable {
+                        NavigationLink(value: ProfileEditDestination.firstName) {
+                            ProfileEditListRow(
+                                label: item.label,
+                                value: item.value,
+                                placeholder: "Non renseigné"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        ProfileSummaryInfoRow(item: item)
+                    }
+
+                    if index < section.rows.count - 1 {
+                        divider
+                    }
+                }
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Text("Aucune donnée onboarding")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.primary)
+            Text("Termine l'onboarding pour voir ici ton profil personnalisé.")
+                .font(.system(size: 15))
+                .foregroundStyle(ProfileEditTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 28)
+        }
+        .padding(.vertical, 36)
+    }
+
     private var editHeader: some View {
         ZStack {
-            Text("Modifier le profil")
+            Text("Mon profil")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.primary)
 
@@ -84,50 +134,6 @@ struct EditProfileView: View {
         }
         .padding(.top, 4)
         .padding(.bottom, 6)
-    }
-
-    private func editRow(_ destination: ProfileEditDestination) -> some View {
-        NavigationLink(value: destination) {
-            ProfileEditListRow(
-                label: label(for: destination),
-                value: value(for: destination),
-                placeholder: placeholder(for: destination),
-                showsAccentDot: destination == .interests && (profileStore.profile?.interestTags.isEmpty ?? true)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func label(for destination: ProfileEditDestination) -> String {
-        switch destination {
-        case .name: "Nom"
-        case .username: "Nom d'Utilisateur"
-        case .bio: "Bio"
-        case .education: "Éducation"
-        case .interests: "Intérêts"
-        }
-    }
-
-    private func placeholder(for destination: ProfileEditDestination) -> String {
-        switch destination {
-        case .name: "Ton nom"
-        case .username: "nom_utilisateur"
-        case .bio: "Ajoute ta bio"
-        case .education: "Ajoute ton école"
-        case .interests: "Ajoute des intérêts"
-        }
-    }
-
-    private func value(for destination: ProfileEditDestination) -> String? {
-        guard let profile = profileStore.profile else { return nil }
-        switch destination {
-        case .name: return profile.displayName
-        case .username: return profile.username
-        case .bio: return profile.bio
-        case .education: return profile.education
-        case .interests:
-            return ProfileInterestsCatalog.summary(for: profile.interestTags) ?? profile.interests
-        }
     }
 
     private var divider: some View {

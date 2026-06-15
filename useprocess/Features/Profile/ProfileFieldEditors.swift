@@ -1,11 +1,7 @@
 import SwiftUI
 
 enum ProfileEditDestination: Hashable {
-    case name
-    case username
-    case bio
-    case education
-    case interests
+    case firstName
 }
 
 enum ProfileRoute: Hashable {
@@ -14,18 +10,13 @@ enum ProfileRoute: Hashable {
 
 @ViewBuilder
 func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
-    let store = SocialProfileStore.shared
     switch destination {
-    case .name:
-        ProfileNameEditorView(initialValue: store.profile?.displayName ?? "")
-    case .username:
-        ProfileUsernameEditorView(initialValue: store.profile?.username ?? "")
-    case .bio:
-        ProfileBioEditorView(initialValue: store.profile?.bio ?? "")
-    case .education:
-        ProfileEducationEditorView(initialValue: store.profile?.education ?? "")
-    case .interests:
-        ProfileInterestsEditorView(initialIDs: store.profile?.interestTags ?? [])
+    case .firstName:
+        ProfileNameEditorView(
+            initialValue: UnifiedProfileService.shared.currentProfile?.firstName
+                ?? SocialProfileStore.shared.profile?.displayName
+                ?? ""
+        )
     }
 }
 
@@ -33,6 +24,7 @@ func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
 
 struct ProfileNameEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var profileService: UnifiedProfileService
     @State private var profileStore = SocialProfileStore.shared
     @State private var name: String
     @FocusState private var isFocused: Bool
@@ -46,15 +38,15 @@ struct ProfileNameEditorView: View {
             ProfileEditTheme.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: "Nom", onDismiss: { dismiss() })
+                ProfileEditorHeader(title: "Prénom", onDismiss: { dismiss() })
 
                 ProfileEditorHero(
-                    headline: "Tu t'appelles comment? 👋",
-                    subtitle: "Ton prénom, ton surnom... ou même ton nom d'espion si tu veux."
+                    headline: "Comment tu t'appelles ? 👋",
+                    subtitle: "C'est le prénom qu'on utilise partout dans Process AI."
                 )
 
                 TextField("", text: $name, prompt:
-                    Text("Ajoute ton nom")
+                    Text("Ton prénom")
                         .foregroundStyle(ProfileEditTheme.placeholder)
                         .font(.system(size: 28, weight: .bold))
                 )
@@ -91,7 +83,17 @@ struct ProfileNameEditorView: View {
 
     private func save() {
         guard !trimmedName.isEmpty else { return }
-        profileStore.update { $0.displayName = trimmedName }
+
+        profileStore.update { profile in
+            profile.displayName = trimmedName
+        }
+
+        Task {
+            guard var unified = profileService.currentProfile else { return }
+            unified.firstName = trimmedName
+            unified.updateLastUpdated()
+            try? await profileService.saveProfile(unified)
+        }
     }
 }
 

@@ -3,7 +3,7 @@ import SceneKit
 import SwiftUI
 import UIKit
 
-/// Scan visage TrueDepth — mesh 3D, ticks yaw relatifs (style Face ID).
+/// Scan visage TrueDepth — mesh 3D, validation stricte, flash écran si faible luminosité.
 struct FaceMeshScanView: UIViewRepresentable {
     @Binding var progress: Double
     @Binding var ringProgress: Double
@@ -12,6 +12,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     @Binding var frameHint: String?
     @Binding var isFaceDetected: Bool
     @Binding var isDeviceSupported: Bool
+    @Binding var isLowLight: Bool
     var onComplete: (FaceScanCapturePayload) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -23,6 +24,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             frameHint: $frameHint,
             isFaceDetected: $isFaceDetected,
             isDeviceSupported: $isDeviceSupported,
+            isLowLight: $isLowLight,
             onComplete: onComplete
         )
     }
@@ -59,6 +61,9 @@ struct FaceMeshScanView: UIViewRepresentable {
         config.isLightEstimationEnabled = true
         config.maximumNumberOfTrackedFaces = 1
         view.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+        Task { @MainActor in
+            FaceScanScreenFlash.shared.activate(animated: false)
+        }
         return view
     }
 
@@ -68,6 +73,9 @@ struct FaceMeshScanView: UIViewRepresentable {
         uiView.session.pause()
         coordinator.arView = nil
         coordinator.faceNode = nil
+        Task { @MainActor in
+            FaceScanScreenFlash.shared.deactivate()
+        }
     }
 
     final class Coordinator: NSObject, ARSCNViewDelegate, ARSessionDelegate {
@@ -78,25 +86,31 @@ struct FaceMeshScanView: UIViewRepresentable {
         @Binding var frameHint: String?
         @Binding var isFaceDetected: Bool
         @Binding var isDeviceSupported: Bool
+        @Binding var isLowLight: Bool
         let onComplete: (FaceScanCapturePayload) -> Void
 
         weak var arView: ARSCNView?
         weak var faceNode: SCNNode?
 
-        let scanDuration: TimeInterval = 5.5
+        let scanDuration: TimeInterval = 7.0
         let tickCount = 72
-        let minSectorsToComplete = 24
-        /// Amplitude typique d’un mouvement de tête Face ID (~35°).
+        let minSectorsToComplete = 48
+        let minTickProgress = 0.62
         let maxHeadRotation: Float = 0.62
+        let minTrackedFramesBeforeScan = 12
+
         var completed = false
         var scanStartTime: Date?
         var trackedFrameCount = 0
         var faceDetected = false
         var lostFrameStreak = 0
+        var currentAmbientIntensity: CGFloat = 1000
+        var qualityRetryCount = 0
 
         var sampledMeshes: [FaceMesh3DData] = []
         var filledTickSectors = Set<Int>()
         var blendShapeAccumulators: [String: (sum: Float, count: Int)] = [:]
+        var angleSamples: [SIMD2<Float>] = []
         var bestSnapshot: UIImage?
 
         private var referenceTransform: simd_float4x4?
@@ -113,6 +127,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             frameHint: Binding<String?>,
             isFaceDetected: Binding<Bool>,
             isDeviceSupported: Binding<Bool>,
+            isLowLight: Binding<Bool>,
             onComplete: @escaping (FaceScanCapturePayload) -> Void
         ) {
             _progress = progress
@@ -122,7 +137,20 @@ struct FaceMeshScanView: UIViewRepresentable {
             _frameHint = frameHint
             _isFaceDetected = isFaceDetected
             _isDeviceSupported = isDeviceSupported
+            _isLowLight = isLowLight
             self.onComplete = onComplete
+        }
+
+        func session(_ session: ARSession, didUpdate frame: ARFrame) {
+            guard !completed else { return }
+            let intensity = frame.lightEstimate?.ambientIntensity ?? 1000
+            currentAmbientIntensity = intensity
+            let low = FaceScanQualityValidator.isLowLight(ambientIntensity: intensity)
+
+            DispatchQueue.main.async {
+                self.isLowLight = low
+                FaceScanScreenFlash.shared.refreshMaximum()
+            }
         }
 
         func session(_ session: ARSession, didFailWithError error: Error) {
@@ -167,10 +195,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             guard !completed else { return }
 
             if force {
-                lostFrameStreak = 12
+                lostFrameStreak = 15
             } else {
                 lostFrameStreak += 1
-                guard lostFrameStreak >= 12 else { return }
+                guard lostFrameStreak >= 15 else { return }
             }
 
             guard faceDetected || scanStartTime != nil else { return }
@@ -180,7 +208,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.progress = 0
                 self.ringProgress = 0
                 self.activeTickSectors = []
-                self.instruction = "Placez votre visage dans le cadre."
+                self.instruction = "Place ton visage dans le cadre."
                 self.frameHint = nil
             }
         }
@@ -193,6 +221,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             referenceTransform = nil
             lastSector = nil
             filledTickSectors.removeAll()
+            angleSamples.removeAll()
+            sampledMeshes.removeAll()
+            blendShapeAccumulators.removeAll()
+            bestSnapshot = nil
             lastPublishedSectorSignature = 0
         }
 
@@ -202,14 +234,19 @@ struct FaceMeshScanView: UIViewRepresentable {
             let startSector = sectorIndex(for: faceAnchor.transform)
             lastSector = startSector
             filledTickSectors.insert(startSector)
-            for offset in -1...1 {
-                filledTickSectors.insert((startSector + offset + tickCount) % tickCount)
+            angleSamples.append(relativeAngles(from: faceAnchor.transform))
+
+            Task { @MainActor in
+                FaceScanScreenFlash.shared.activate(animated: false)
             }
+
             publishUI(force: true) {
                 HapticManager.shared.impact(.soft)
                 self.isFaceDetected = true
-                self.instruction = "Bougez lentement la tête pour compléter le cercle."
-                self.frameHint = nil
+                self.instruction = "Tourne lentement la tête pour compléter le cercle."
+                self.frameHint = self.isLowLight
+                    ? "Flash écran activé — garde le visage centré"
+                    : "Éclairage écran au maximum"
             }
         }
 
@@ -226,24 +263,33 @@ struct FaceMeshScanView: UIViewRepresentable {
             let z = faceAnchor.transform.columns.3.z
             if let hint = distanceHint(z: z), scanStartTime == nil {
                 publishUI(force: false) {
-                    self.isFaceDetected = self.trackedFrameCount >= 4
+                    self.isFaceDetected = self.trackedFrameCount >= self.minTrackedFramesBeforeScan
                     self.frameHint = hint
-                    self.instruction = "Ajustez la distance avec l’iPhone."
+                    self.instruction = "Ajuste la distance avec l'iPhone."
                 }
                 return
             }
 
-            if scanStartTime == nil, trackedFrameCount >= 5 {
-                beginScan(with: faceAnchor)
-            }
-
-            guard scanStartTime != nil, referenceTransform != nil else {
-                publishUI(force: false) {
-                    self.isFaceDetected = true
-                    self.instruction = "Placez votre visage dans le cadre."
+            if scanStartTime == nil {
+                if trackedFrameCount >= minTrackedFramesBeforeScan {
+                    if isLowLight || FaceScanQualityValidator.isLowLight(ambientIntensity: currentAmbientIntensity) {
+                        publishUI(force: false) {
+                            self.isFaceDetected = true
+                            self.instruction = "Environnement sombre — flash activé."
+                            self.frameHint = "Place ton visage face à l'écran."
+                        }
+                    }
+                    beginScan(with: faceAnchor)
+                } else {
+                    publishUI(force: false) {
+                        self.isFaceDetected = self.trackedFrameCount >= 4
+                        self.instruction = "Place ton visage dans le cadre."
+                    }
                 }
                 return
             }
+
+            guard referenceTransform != nil else { return }
 
             registerHeadPose(from: faceAnchor.transform)
             accumulateBlendShapes(faceAnchor.blendShapes)
@@ -251,34 +297,33 @@ struct FaceMeshScanView: UIViewRepresentable {
             guard let scanStart = scanStartTime else { return }
             let elapsed = Date().timeIntervalSince(scanStart)
             let tickProgress = Double(filledTickSectors.count) / Double(tickCount)
-            let timeProgress = min(1, elapsed / scanDuration)
-            let combined = min(1, tickProgress * 0.75 + timeProgress * 0.25)
 
-            if elapsed > 0.25, sampledMeshes.count < 40 {
+            if elapsed > 0.4, sampledMeshes.count < 50 {
                 sampledMeshes.append(extractMesh(from: faceAnchor.geometry))
-                if Int(elapsed * 2) % 2 == 0, let snap = arView?.snapshot() {
-                    bestSnapshot = snap
+                if let snap = arView?.snapshot() {
+                    if bestSnapshot == nil
+                        || FaceScanQualityValidator.averageLuminance(of: snap)
+                        > FaceScanQualityValidator.averageLuminance(of: bestSnapshot!) {
+                        bestSnapshot = snap
+                    }
                 }
             }
 
             let instructionText: String
-            if tickProgress < 0.45 {
-                instructionText = "Bougez lentement la tête pour compléter le cercle."
-            } else if combined < 0.92 {
-                instructionText = "Presque terminé…"
+            if tickProgress < 0.35 {
+                instructionText = "Tourne lentement la tête — gauche, droite, haut, bas."
+            } else if tickProgress < minTickProgress {
+                instructionText = "Continue à tourner la tête pour compléter le cercle."
+            } else if !qualityReady(elapsed: elapsed, tickProgress: tickProgress) {
+                instructionText = qualityHint(elapsed: elapsed, tickProgress: tickProgress)
             } else {
                 instructionText = "Finalisation du scan…"
             }
 
             let sectorSignature = filledTickSectors.reduce(0) { $0 ^ ($1 &* 31) }
             let sectorsChanged = sectorSignature != lastPublishedSectorSignature
-            publishUI(
-                ring: tickProgress,
-                progress: combined,
-                force: sectorsChanged
-            ) {
+            publishUI(ring: tickProgress, progress: tickProgress, force: sectorsChanged) {
                 self.isFaceDetected = true
-                self.frameHint = nil
                 self.activeTickSectors = self.filledTickSectors
                 self.instruction = instructionText
                 if sectorsChanged {
@@ -288,14 +333,63 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
 
             let best = sampledMeshes.max(by: { $0.vertices.count < $1.vertices.count }) ?? .empty
-            let hasSolidMesh = best.isValid && best.vertices.count >= 200
 
-            if filledTickSectors.count >= minSectorsToComplete,
-               tickProgress >= 0.33,
-               elapsed >= scanDuration * 0.65,
-               hasSolidMesh,
+            if qualityReady(elapsed: elapsed, tickProgress: tickProgress),
+               FaceScanQualityValidator.meshIsSolid(best),
                !completed {
                 finishScan(bestMesh: best)
+            } else if elapsed >= scanDuration * 1.15, !completed {
+                handleQualityFailure()
+            }
+        }
+
+        private func qualityReady(elapsed: TimeInterval, tickProgress: Double) -> Bool {
+            guard elapsed >= scanDuration * 0.85 else { return false }
+            guard tickProgress >= minTickProgress else { return false }
+            guard filledTickSectors.count >= minSectorsToComplete else { return false }
+            guard FaceScanQualityValidator.headSpreadIsSufficient(angleSamples) else { return false }
+
+            let snap = bestSnapshot ?? arView?.snapshot()
+            let minLuma: CGFloat = isLowLight ? 0.16 : 0.11
+            return FaceScanQualityValidator.snapshotIsUsable(snap, minimumLuminance: minLuma)
+        }
+
+        private func qualityHint(elapsed: TimeInterval, tickProgress: Double) -> String {
+            if tickProgress < minTickProgress {
+                return "Tourne plus la tête pour remplir le cercle."
+            }
+            if !FaceScanQualityValidator.headSpreadIsSufficient(angleSamples) {
+                return "Fais de plus grands mouvements de tête."
+            }
+            let snap = bestSnapshot ?? arView?.snapshot()
+            if !FaceScanQualityValidator.snapshotIsUsable(snap, minimumLuminance: isLowLight ? 0.16 : 0.11) {
+                return isLowLight
+                    ? "Trop sombre — rapproche-toi de l'écran éclairé."
+                    : "Image trop sombre — va vers une source de lumière."
+            }
+            if elapsed < scanDuration * 0.85 {
+                return "Encore quelques secondes…"
+            }
+            return "Finalisation…"
+        }
+
+        private func handleQualityFailure() {
+            qualityRetryCount += 1
+            if qualityRetryCount >= 3 {
+                publishUI(force: true) {
+                    self.instruction = "Scan impossible — augmente la lumière et réessaie."
+                    self.frameHint = "Quitte puis relance le scan."
+                }
+                return
+            }
+            resetScanTracking()
+            publishUI(force: true) {
+                self.progress = 0
+                self.ringProgress = 0
+                self.activeTickSectors = []
+                self.instruction = "Qualité insuffisante — recommence en bougeant la tête."
+                self.frameHint = self.isLowLight ? "Flash écran activé" : "Cherche plus de lumière."
+                HapticManager.shared.notification(.warning)
             }
         }
 
@@ -311,15 +405,16 @@ struct FaceMeshScanView: UIViewRepresentable {
             publishUI(force: true) {
                 self.progress = 1
                 self.ringProgress = 1
-                self.activeTickSectors = Set(0..<self.tickCount)
-                self.instruction = "Première analyse\nFace ID terminée."
+                self.activeTickSectors = self.filledTickSectors
+                self.instruction = "Analyse terminée."
                 self.frameHint = nil
                 HapticManager.shared.notification(.success)
+                Task { @MainActor in FaceScanScreenFlash.shared.deactivate() }
                 self.onComplete(payload)
             }
         }
 
-        // MARK: - Pose → secteurs (yaw/pitch relatifs au neutre, style Face ID)
+        // MARK: - Pose → secteurs (strict)
 
         private func relativeAngles(from transform: simd_float4x4) -> SIMD2<Float> {
             guard let ref = referenceTransform else { return .zero }
@@ -338,13 +433,12 @@ struct FaceMeshScanView: UIViewRepresentable {
             return SIMD2(pitch, yaw)
         }
 
-        /// Index 0 = haut (pitch +), sens horaire. Combine yaw et pitch sur le cercle.
         private func sectorIndex(for transform: simd_float4x4) -> Int {
             let angles = relativeAngles(from: transform)
             let pitch = angles.x
             let yaw = angles.y
 
-            let nx = max(-1, min(1, yaw / maxHeadRotation))
+            let nx = max(-1, min(1, -yaw / maxHeadRotation))
             let ny = max(-1, min(1, pitch / maxHeadRotation))
             let circleAngle = atan2(nx, ny)
 
@@ -356,36 +450,33 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         private func registerHeadPose(from transform: simd_float4x4) {
             let sector = sectorIndex(for: transform)
+            let angles = relativeAngles(from: transform)
+            angleSamples.append(angles)
+            if angleSamples.count > 150 { angleSamples.removeFirst() }
 
-            if let last = lastSector, last != sector {
-                fillShortestArc(from: last, to: sector)
+            guard let last = lastSector else {
+                filledTickSectors.insert(sector)
+                lastSector = sector
+                return
             }
-            lastSector = sector
 
-            for offset in -3...3 {
-                filledTickSectors.insert((sector + offset + tickCount) % tickCount)
-            }
-        }
+            guard sector != last else { return }
 
-        private func fillShortestArc(from: Int, to: Int) {
-            guard from != to else { return }
-            let n = tickCount
-            let forward = (to - from + n) % n
-            let backward = (from - to + n) % n
+            let forward = (sector - last + tickCount) % tickCount
+            let backward = (last - sector + tickCount) % tickCount
 
             if forward <= backward {
-                var idx = from
-                for _ in 0...forward {
-                    filledTickSectors.insert(idx)
-                    idx = (idx + 1) % n
+                guard forward <= 3 else { return }
+                for step in 1...forward {
+                    filledTickSectors.insert((last + step) % tickCount)
                 }
             } else {
-                var idx = from
-                for _ in 0...backward {
-                    filledTickSectors.insert(idx)
-                    idx = (idx - 1 + n) % n
+                guard backward <= 3 else { return }
+                for step in 1...backward {
+                    filledTickSectors.insert((last - step + tickCount) % tickCount)
                 }
             }
+            lastSector = sector
         }
 
         private func publishUI(
@@ -426,8 +517,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         private func distanceHint(z: Float) -> String? {
-            if z > -0.15 { return "Éloignez un peu l’iPhone" }
-            if z < -0.75 { return "Rapprochez l’iPhone de votre visage" }
+            if z > -0.15 { return "Éloigne un peu l'iPhone" }
+            if z < -0.75 { return "Rapproche l'iPhone de ton visage" }
             return nil
         }
 

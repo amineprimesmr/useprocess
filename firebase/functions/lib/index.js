@@ -91,8 +91,9 @@ function maxTokensForTask(task, requested) {
         case "dailyBrief":
         case "readinessAnalysis":
             return 400;
-        case "bodyScanVision":
-            return 450;
+    case "bodyScanVision":
+    case "faceScanVision":
+      return 450;
         case "programSummary":
             return 800;
         case "bodyScanReport":

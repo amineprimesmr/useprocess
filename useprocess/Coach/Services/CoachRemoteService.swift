@@ -6,6 +6,7 @@ enum CoachRemoteTask: String, Codable, Sendable {
     case dailyBrief
     case readinessAnalysis
     case bodyScanVision
+    case faceScanVision
     case bodyScanReport
     case programSummary
     case tool

@@ -32,7 +32,7 @@ enum ClaudeModel: String, CaseIterable, Identifiable, Sendable {
     /// Usage recommandé par type de tâche (juin 2026).
     static func preferred(for task: CoachTaskKind) -> ClaudeModel {
         switch task {
-        case .chat, .dailyBrief, .bodyScanVision:
+        case .chat, .dailyBrief, .bodyScanVision, .faceScanVision:
             return .sonnet46
         case .bodyScanReport, .programSummary, .readinessAnalysis:
             return .opus48
@@ -90,6 +90,7 @@ enum CoachTaskKind: Sendable {
     case chat
     case dailyBrief
     case bodyScanVision
+    case faceScanVision
     case bodyScanReport
     case programSummary
     case readinessAnalysis

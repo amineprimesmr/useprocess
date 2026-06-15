@@ -134,7 +134,7 @@ struct FaceIDTickProgressRing: View {
     var body: some View {
         ZStack {
             ForEach(0..<tickCount, id: \.self) { index in
-                let isActive = isComplete || activeSectors.contains(index)
+                let isActive = activeSectors.contains(index)
 
                 Capsule()
                     .fill(isActive ? FaceIDScanColors.activeTick : FaceIDScanColors.inactiveTick)

@@ -11,7 +11,7 @@ enum EnzoCoachingVoiceGuide {
     entraînement, visage — jamais un conseil isolé.
 
     RÈGLES DE TON :
-    - Tutoyer ("tu"), énergie positive, parfois "les gars" en ouverture
+    - Tutoyer une seule personne (« tu »). Jamais « les gars » ni pluriel de groupe (app 1:1).
     - Structure : CAUSE → CONSÉQUENCE → SOLUTION → HABITUDE CONCRÈTE
     - "Ce n'est pas ta génétique" — c'est tes habitudes (<20 % du potentiel exploité)
     - Indicateurs de santé = indicateurs de beauté (biologie, pas superficialité)

@@ -114,30 +114,54 @@ enum CoachEngine {
 
     // MARK: - Brief quotidien
 
-    static func generateDailyBrief(profile: UnifiedUserProfile?) async -> String? {
-        if let cached = CoachConversationStore.cachedDailyBrief() {
-            return cached
+    private static let dailyBriefSystemPrompt = """
+    Tu es le coach Process AI. Tu t'adresses à UNE seule personne (tu / ton / ta).
+    Jamais « les gars », jamais pluriel de groupe, jamais tutoiement collectif.
+
+    Brief Santé : court, clair, actionnable. Pas de diagnostic médical.
+    Pas de cours de biologie. Pas de markdown. Pas de listes longues.
+    """
+
+    static func generateDailyBrief(
+        profile: UnifiedUserProfile?,
+        forceRefresh: Bool = false
+    ) async -> CoachDailyBriefContent? {
+        if !forceRefresh, let cached = CoachConversationStore.cachedDailyBrief() {
+            let parsed = CoachDailyBriefParser.parse(cached)
+            if parsed.isValid { return parsed }
         }
         guard ClaudeConfiguration.isConfigured else { return nil }
 
         let context = UserContextBuilder.build(profile: profile)
+        let firstName = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nameHint = (firstName?.isEmpty == false) ? "Prénom : \(firstName!)." : ""
+
         let prompt = """
-        Génère un brief coaching du jour (5-7 phrases max) pour l'écran Santé useprocess.
-        \(UserContextBuilder.promptBlock(from: context))
-        Structure : readiness → cause habitudes → 2 actions. Tutoiement direct.
+        \(nameHint)
+        \(UserContextBuilder.compactPromptBlock(from: context))
+
+        Génère le brief du jour. Réponds UNIQUEMENT avec ces 4 lignes (labels exacts) :
+
+        VERDICT: [1 phrase, max 12 mots — état readiness]
+        POURQUOI: [1 phrase, max 18 mots — cause principale]
+        ACTION_1: [action concrète pour aujourd'hui]
+        ACTION_2: [action concrète pour demain]
+
+        Règles : tutoiement singulier, 2 actions max, pas de pavé, pas de chiffres inventés.
         """
 
         do {
             let model = ClaudeModel.preferred(for: .dailyBrief)
             let text = try await CoachAPITransport.complete(
                 task: .dailyBrief,
-                system: EnzoCoachingVoiceGuide.systemPrompt,
+                system: dailyBriefSystemPrompt,
                 userText: prompt,
                 model: model,
-                maxTokens: 350
+                maxTokens: 160
             )
-            CoachConversationStore.cacheDailyBrief(text)
-            return text
+            let sanitized = CoachDailyBriefParser.sanitize(text)
+            CoachConversationStore.cacheDailyBrief(sanitized)
+            return CoachDailyBriefParser.parse(sanitized)
         } catch {
             print("[CoachEngine] dailyBrief: \(error.localizedDescription)")
             return nil
@@ -162,6 +186,94 @@ enum CoachEngine {
             print("[CoachEngine] readiness: \(error.localizedDescription)")
             return nil
         }
+    }
+
+    // MARK: - Scan visage
+
+    private static let faceScanSystemPrompt = """
+    Tu es le coach Process AI — analyse visage wellness (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
+    Tu t'adresses à UNE personne (tu). Jamais « les gars ». Pas de diagnostic médical.
+    """
+
+    static func analyzeFaceScan(
+        result: FaceScanResult,
+        profile: UnifiedUserProfile?,
+        history: [FaceScanResult]
+    ) async -> FaceScanResult? {
+        guard ClaudeConfiguration.isConfigured else { return nil }
+
+        let context = UserContextBuilder.build(profile: profile)
+        let historyBlock = faceScanHistoryBlock(history: history, current: result)
+        let markers = result.markers
+
+        let prompt = """
+        \(UserContextBuilder.compactPromptBlock(from: context))
+
+        Scores locaux (0-100, plus haut = signal plus marqué pour fatigue/gonflement/tension) :
+        - Gonflement : \(markers.puffinessScore)
+        - Cernes / fatigue : \(markers.underEyeFatigueScore)
+        - Tension mâchoire : \(markers.jawTensionScore)
+        - Clarté peau : \(markers.skinClarityScore)
+        - Symétrie : \(markers.facialSymmetryScore)
+
+        \(historyBlock)
+
+        Analyse cette photo + scores. Format EXACT :
+
+        RESUME: [1 phrase — état global du visage aujourd'hui, max 18 mots]
+        SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — ex: rétention eau, cortisol, cervicales]
+        EVOLUTION: [1 phrase vs scan précédent si historique, sinon "Premier scan de référence."]
+        CONSEIL_1: [action concrète aujourd'hui]
+        CONSEIL_2: [action demain matin]
+        """
+
+        do {
+            let jpeg: Data?
+            if let filename = result.snapshotFilename,
+               let image = FaceScanImageStore.load(filename: filename) {
+                jpeg = image.jpegData(compressionQuality: 0.78)
+            } else {
+                jpeg = nil
+            }
+
+            let raw = try await CoachAPITransport.complete(
+                task: .faceScanVision,
+                system: faceScanSystemPrompt,
+                userText: prompt,
+                model: ClaudeModel.preferred(for: .faceScanVision),
+                imageBase64: jpeg?.base64EncodedString(),
+                maxTokens: 320
+            )
+
+            var updated = result
+            updated.claudeAnalysis = FaceScanAnalysisParser.sanitize(raw)
+            updated.aiEnhanced = true
+            return updated
+        } catch {
+            print("[CoachEngine] faceScan: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    static func parsedFaceAnalysis(for result: FaceScanResult) -> FaceScanAnalysisContent {
+        guard let text = result.claudeAnalysis else { return .empty }
+        return FaceScanAnalysisParser.parse(text)
+    }
+
+    private static func faceScanHistoryBlock(history: [FaceScanResult], current: FaceScanResult) -> String {
+        let past = history.filter { $0.id != current.id }.prefix(6)
+        guard !past.isEmpty else { return "Historique : aucun scan précédent enregistré." }
+
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.locale = Locale(identifier: "fr_FR")
+
+        let lines = past.map { scan in
+            let date = formatter.string(from: scan.createdAt)
+            let m = scan.markers
+            return "- \(date) : gonflement \(m.puffinessScore), cernes \(m.underEyeFatigueScore), mâchoire \(m.jawTensionScore)"
+        }
+        return "Historique récent :\n" + lines.joined(separator: "\n")
     }
 
     // MARK: - Body Scan

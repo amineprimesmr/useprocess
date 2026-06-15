@@ -55,6 +55,13 @@ struct CoachUserContext: Codable, Sendable {
         var jawTension: Int?
     }
 
+    struct FaceScanHistoryEntry: Codable, Sendable {
+        var puffiness: Int
+        var underEyeFatigue: Int
+        var jawTension: Int
+        var createdAt: String
+    }
+
     struct ScanHistoryEntry: Codable, Sendable {
         var postureScore: Int
         var createdAt: String
@@ -66,6 +73,8 @@ struct CoachUserContext: Codable, Sendable {
     var health: HealthBlock?
     var lastBodyScan: BodyScanBlock?
     var onboardingFace: OnboardingFaceBlock?
+    var latestFaceScan: OnboardingFaceBlock?
+    var recentFaceScans: [FaceScanHistoryEntry]?
     var recentScans: [ScanHistoryEntry]?
 }
 
@@ -151,6 +160,28 @@ enum UserContextBuilder {
             )
         }
 
+        if let latestFace = FaceScanHistoryStore.shared.latestResult {
+            let m = latestFace.markers
+            ctx.latestFaceScan = .init(
+                skinClarity: m.skinClarityScore,
+                underEyeFatigue: m.underEyeFatigueScore,
+                puffiness: m.puffinessScore,
+                jawTension: m.jawTensionScore
+            )
+        }
+
+        let faceHistory = FaceScanHistoryStore.shared.recentResults(limit: 7)
+        if !faceHistory.isEmpty {
+            ctx.recentFaceScans = faceHistory.map {
+                CoachUserContext.FaceScanHistoryEntry(
+                    puffiness: $0.markers.puffinessScore,
+                    underEyeFatigue: $0.markers.underEyeFatigueScore,
+                    jawTension: $0.markers.jawTensionScore,
+                    createdAt: formatter.string(from: $0.createdAt)
+                )
+            }
+        }
+
         let history = BodyScanHistoryStore.shared.history.prefix(6)
         if !history.isEmpty {
             ctx.recentScans = history.map {
@@ -187,6 +218,10 @@ enum UserContextBuilder {
 
         if let scan = context.lastBodyScan, let score = scan.postureScore {
             lines.append("• Dernier scan posture \(score)/100")
+        }
+
+        if let face = context.latestFaceScan {
+            lines.append("• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)")
         }
 
         if lines.isEmpty {

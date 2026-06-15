@@ -9,19 +9,25 @@ struct HealthDashboardView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
 
-    @State private var claudeDailyBrief: String?
+    @State private var claudeDailyBrief: CoachDailyBriefContent?
     @State private var isLoadingBrief = false
     @State private var readinessExplanation: String?
     @State private var isExplainingReadiness = false
     @State private var showReadinessSheet = false
+    @State private var showFaceScan = false
+    @State private var showFaceHistory = false
+    @State private var selectedFaceScan: FaceScanResult?
+    @State private var faceHistoryStore = FaceScanHistoryStore.shared
 
     var body: some View {
         NavigationStack {
             processMainScrollableChrome(
-                selectedSection: $selectedSection
+                selectedSection: $selectedSection,
+                pageSection: .health
             ) {
                 VStack(spacing: 20) {
                     readinessCard
+                    faceScanSection
                     claudeBriefCard
                     metricsGrid
                     sleepSection
@@ -33,11 +39,12 @@ struct HealthDashboardView: View {
                 .padding()
             }
             .background(theme.background.ignoresSafeArea())
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
             .refreshable {
                 await healthManager.performFullSync()
                 await dataManager.updateCurrentDayData(with: healthManager)
-                await loadClaudeBrief()
+                await loadClaudeBrief(forceRefresh: true)
             }
             .task {
                 if healthManager.isHealthDataAvailable && !healthManager.isAuthorized {
@@ -66,14 +73,57 @@ struct HealthDashboardView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+            .fullScreenCover(isPresented: $showFaceScan) {
+                FaceScanSessionView(
+                    onDismiss: { showFaceScan = false },
+                    onComplete: { _ in
+                        faceHistoryStore = FaceScanHistoryStore.shared
+                        showFaceScan = false
+                        Task { await healthManager.performFullSync() }
+                    }
+                )
+                .environmentObject(profileService)
+            }
+            .sheet(isPresented: $showFaceHistory) {
+                FaceScanHistoryView(history: faceHistoryStore.history) { scan in
+                    showFaceHistory = false
+                    selectedFaceScan = scan
+                }
+            }
+            .sheet(item: $selectedFaceScan) { scan in
+                FaceScanDetailView(
+                    result: scan,
+                    previous: faceHistoryStore.history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
+                )
+            }
+            .onAppear {
+                faceHistoryStore = FaceScanHistoryStore.shared
+            }
         }
     }
 
-    private func loadClaudeBrief() async {
+    private var faceScanSection: some View {
+        FaceScanHealthSection(
+            latest: faceHistoryStore.latestResult,
+            previous: faceHistoryStore.previousResult,
+            history: faceHistoryStore.history,
+            streakDays: faceHistoryStore.streakDays,
+            daysSinceLastScan: faceHistoryStore.daysSinceLastScan,
+            faceDayScore: healthManager.faceDayScore,
+            correlations: healthManager.faceCorrelations,
+            onScan: { showFaceScan = true },
+            onHistory: { showFaceHistory = true }
+        )
+    }
+
+    private func loadClaudeBrief(forceRefresh: Bool = false) async {
         guard ClaudeConfiguration.isConfigured else { return }
         isLoadingBrief = true
         defer { isLoadingBrief = false }
-        claudeDailyBrief = await CoachEngine.generateDailyBrief(profile: profileService.currentProfile)
+        claudeDailyBrief = await CoachEngine.generateDailyBrief(
+            profile: profileService.currentProfile,
+            forceRefresh: forceRefresh
+        )
     }
 
     private var claudeBriefCard: some View {
@@ -91,11 +141,8 @@ struct HealthDashboardView: View {
                                 .font(.caption)
                                 .foregroundStyle(theme.secondaryText)
                         }
-                    } else if let brief = claudeDailyBrief {
-                        Text(brief)
-                            .font(.subheadline)
-                            .foregroundStyle(theme.primaryText)
-                            .textSelection(.enabled)
+                    } else if let brief = claudeDailyBrief, brief.isValid {
+                        CoachDailyBriefCard(content: brief, theme: theme)
                     } else {
                         Text("Brief indisponible — tire pour rafraîchir.")
                             .font(.caption)
@@ -117,28 +164,45 @@ struct HealthDashboardView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
 
-            ZStack {
-                Circle()
-                    .stroke(theme.progressTrack, lineWidth: 10)
-                    .frame(width: 140, height: 140)
-                Circle()
-                    .trim(from: 0, to: CGFloat(healthManager.readinessScore) / 100)
-                    .stroke(readinessColor, style: StrokeStyle(lineWidth: 10, lineCap: .round))
-                    .frame(width: 140, height: 140)
-                    .rotationEffect(.degrees(-90))
-                VStack(spacing: 2) {
-                    Text("\(healthManager.readinessScore)")
-                        .font(.system(size: 42, weight: .black, design: .rounded))
-                        .foregroundStyle(theme.primaryText)
-                    Text("/ 100")
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
+            HStack(spacing: 20) {
+                readinessRing(
+                    score: healthManager.readinessScore,
+                    title: "Global",
+                    size: 140,
+                    fontSize: 42
+                )
+
+                if let faceScore = healthManager.faceDayScore {
+                    readinessRing(
+                        score: faceScore,
+                        title: "Visage",
+                        size: 88,
+                        fontSize: 28
+                    )
                 }
             }
 
             Text(healthManager.readinessLabel)
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
+
+            if let faceLabel = healthManager.faceDayLabel {
+                Text(faceLabel)
+                    .font(.caption)
+                    .foregroundStyle(theme.secondaryText)
+            }
+
+            if !healthManager.readinessFactors.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(healthManager.readinessFactors.prefix(3), id: \.self) { factor in
+                        Text("• \(factor)")
+                            .font(.caption)
+                            .foregroundStyle(theme.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
 
             if ClaudeConfiguration.isConfigured {
                 Button {
@@ -160,6 +224,27 @@ struct HealthDashboardView: View {
         .background(cardBackground)
     }
 
+    private func readinessRing(score: Int, title: String, size: CGFloat, fontSize: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .stroke(theme.progressTrack, lineWidth: size > 100 ? 10 : 7)
+                    .frame(width: size, height: size)
+                Circle()
+                    .trim(from: 0, to: CGFloat(score) / 100)
+                    .stroke(readinessColor(for: score), style: StrokeStyle(lineWidth: size > 100 ? 10 : 7, lineCap: .round))
+                    .frame(width: size, height: size)
+                    .rotationEffect(.degrees(-90))
+                Text("\(score)")
+                    .font(.system(size: fontSize, weight: .black, design: .rounded))
+                    .foregroundStyle(theme.primaryText)
+            }
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(theme.secondaryText)
+        }
+    }
+
     private func explainReadiness() async {
         isExplainingReadiness = true
         defer { isExplainingReadiness = false }
@@ -168,7 +253,11 @@ struct HealthDashboardView: View {
     }
 
     private var readinessColor: Color {
-        switch healthManager.readinessScore {
+        readinessColor(for: healthManager.readinessScore)
+    }
+
+    private func readinessColor(for score: Int) -> Color {
+        switch score {
         case 80...: return .green
         case 60..<80: return .yellow
         case 40..<60: return .orange

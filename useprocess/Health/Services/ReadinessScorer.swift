@@ -6,11 +6,14 @@ enum ReadinessScorer {
         let score: Int
         let label: String
         let factors: [String]
+        let faceScore: Int?
+        let faceLabel: String?
     }
 
     static func score(
         snapshot: DailyHealthSnapshot,
-        baselines: UserHealthBaselines
+        baselines: UserHealthBaselines,
+        faceMarkers: FaceWellnessMarkers? = nil
     ) -> Result {
         var points = 50.0
         var factors: [String] = []
@@ -64,6 +67,27 @@ enum ReadinessScorer {
             points += 5
         }
 
+        // Visage du jour (gonflement + cernes)
+        var faceScore: Int?
+        var faceLabel: String?
+        if let faceMarkers {
+            faceScore = FaceWellnessScore.dayScore(from: faceMarkers)
+            faceLabel = FaceWellnessScore.label(for: faceScore!)
+            let contribution = (Double(faceScore!) - 50) * 0.28
+            points += contribution
+
+            switch faceScore! {
+            case 80...:
+                factors.append("Visage reposé — bon signal de récupération")
+            case 60..<80:
+                factors.append("Fatigue visuelle légère")
+            case 40..<60:
+                factors.append("Gonflement ou cernes visibles")
+            default:
+                factors.append("Fatigue visuelle marquée — priorité récupération")
+            }
+        }
+
         let final = Int(min(100, max(0, points)).rounded())
         let label: String = switch final {
         case 80...: "Prêt à performer"
@@ -76,6 +100,12 @@ enum ReadinessScorer {
             factors.append("Données limitées — complète ton profil santé")
         }
 
-        return Result(score: final, label: label, factors: factors)
+        return Result(
+            score: final,
+            label: label,
+            factors: factors,
+            faceScore: faceScore,
+            faceLabel: faceLabel
+        )
     }
 }

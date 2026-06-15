@@ -99,8 +99,12 @@ struct ProcessFeedScrollHeader: View {
 
 struct ProcessMainTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
+    let pageSection: ProcessMainSection
 
     var body: some View {
-        ProcessMainFilterBar(selection: $selectedSection)
+        ProcessMainFilterBar(
+            selection: $selectedSection,
+            glassAnimationsEnabled: pageSection == selectedSection
+        )
     }
 }

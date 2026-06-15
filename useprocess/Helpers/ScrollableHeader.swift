@@ -2,9 +2,10 @@ import SwiftUI
 import UIKit
 
 extension View {
-    /// Header scrollable Totem + blur progressif derrière la filter bar.
+    /// Scroll sous le menu sticky (MainAppView) — blur + hide/show via overlay.
     func processMainScrollableChrome<ScrollContent: View>(
         selectedSection: Binding<ProcessMainSection>,
+        pageSection: ProcessMainSection,
         dismissesKeyboard: ScrollDismissesKeyboardMode? = nil,
         @ViewBuilder content: @escaping () -> ScrollContent
     ) -> some View {
@@ -21,8 +22,13 @@ extension View {
             }
         }
         .scrollIndicators(.hidden)
-        .scrollableHeader(dismissDistance: 100, topBlur: true) {
-            ProcessMainTopChrome(selectedSection: selectedSection)
+        .scrollableHeader(
+            dismissDistance: ProcessMainChromeMetrics.dismissDistance,
+            topBlur: false,
+            pageSection: pageSection,
+            usesExternalStickyChrome: true
+        ) {
+            EmptyView()
         }
     }
 
@@ -32,6 +38,8 @@ extension View {
         topBlur: Bool = false,
         isPinned: Bool = false,
         extendsIntoTopSafeArea: Bool = false,
+        pageSection: ProcessMainSection? = nil,
+        usesExternalStickyChrome: Bool = false,
         @ViewBuilder header: @escaping () -> Header
     ) -> some View {
         modifier(
@@ -40,6 +48,8 @@ extension View {
                 topBlur: topBlur,
                 isPinned: isPinned,
                 extendsIntoTopSafeArea: extendsIntoTopSafeArea,
+                pageSection: pageSection,
+                usesExternalStickyChrome: usesExternalStickyChrome,
                 header: header
             )
         )
@@ -64,6 +74,8 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
     var topBlur: Bool
     var isPinned: Bool
     var extendsIntoTopSafeArea: Bool
+    var pageSection: ProcessMainSection?
+    var usesExternalStickyChrome: Bool
     @ViewBuilder var header: () -> Header
 
     @State private var scrollOffset: CGFloat = 0
@@ -75,7 +87,6 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
     @State private var measuredHeaderHeight: CGFloat = 112
 
     private var bottomRevealThreshold: CGFloat { dismissDistance * 0.85 }
-
     private var headerVisibility: CGFloat { isPinned ? 1 : (1 - headerProgress) }
     private var topSafeInset: CGFloat { UIApplication.safeAreaTop }
 
@@ -135,23 +146,38 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
                 }
             }
             .overlay(alignment: .top) {
-                if topBlur {
-                    TopScrollProgressiveBlur(
+                if topBlur, !usesExternalStickyChrome {
+                    ProcessMainTopScrollBlur(
                         visibility: headerVisibility,
                         height: blurHeight
                     )
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {
-                headerChrome
-                    .background {
-                        GeometryReader { proxy in
-                            Color.clear
-                                .preference(key: ScrollHeaderHeightKey.self, value: proxy.size.height)
+                if usesExternalStickyChrome {
+                    Color.clear
+                        .frame(height: ProcessMainChromeMetrics.scrollTopInset)
+                } else {
+                    headerChrome
+                        .background {
+                            GeometryReader { proxy in
+                                Color.clear
+                                    .preference(key: ScrollHeaderHeightKey.self, value: proxy.size.height)
+                            }
                         }
-                    }
-                    .offset(y: headerOffset)
-                    .opacity(headerVisibility)
+                        .offset(y: headerOffset)
+                        .opacity(headerVisibility)
+                }
+            }
+            .background {
+                if usesExternalStickyChrome, let pageSection {
+                    Color.clear
+                        .reportsProcessMainScrollHeader(
+                            section: pageSection,
+                            headerProgress: headerProgress,
+                            headerVisibility: headerVisibility
+                        )
+                }
             }
             .onPreferenceChange(ScrollHeaderHeightKey.self) { height in
                 guard height > 0 else { return }
@@ -204,23 +230,5 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
 
     private var animation: Animation {
         .interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: 0)
-    }
-}
-
-private struct TopScrollProgressiveBlur: View {
-    let visibility: CGFloat
-    let height: CGFloat
-
-    var body: some View {
-        VariableBlurView(
-            maxBlurRadius: 10,
-            direction: .blurredTopClearBottom,
-            startOffset: -0.06
-        )
-        .frame(maxWidth: .infinity)
-        .frame(height: height)
-        .opacity(Double(visibility))
-        .ignoresSafeArea(edges: .top)
-        .allowsHitTesting(false)
     }
 }

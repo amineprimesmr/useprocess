@@ -12,6 +12,7 @@ type CoachTask =
   | "dailyBrief"
   | "readinessAnalysis"
   | "bodyScanVision"
+  | "faceScanVision"
   | "bodyScanReport"
   | "programSummary"
   | "tool";
@@ -110,6 +111,7 @@ function maxTokensForTask(task: CoachTask, requested?: number): number {
     case "readinessAnalysis":
       return 400;
     case "bodyScanVision":
+    case "faceScanVision":
       return 450;
     case "programSummary":
       return 800;

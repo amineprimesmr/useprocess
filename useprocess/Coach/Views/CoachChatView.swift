@@ -48,11 +48,14 @@ struct CoachChatView: View {
                 },
                 onDelete: { id in
                     Task { await viewModel.deleteConversation(id) }
-                }
+                },
+                onOpenProfile: onOpenProfile
             )
         } content: { _ in
             chatContent
         }
+        .reportsCoachSidebarExpanded(viewModel.isSidebarExpanded)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             viewModel.bind(profile: profileService.currentProfile)
             await viewModel.loadThreadIfNeeded()
@@ -69,6 +72,7 @@ struct CoachChatView: View {
                 ScrollViewReader { proxy in
                     processMainScrollableChrome(
                         selectedSection: $selectedSection,
+                        pageSection: .coach,
                         dismissesKeyboard: .interactively
                     ) {
                         LazyVStack(alignment: .leading, spacing: 20) {
