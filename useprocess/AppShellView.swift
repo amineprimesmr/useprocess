@@ -2,15 +2,16 @@ import SwiftUI
 
 /// Racine SwiftUI — onboarding sport puis écran principal.
 struct AppShellView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable private var session = AppSession.shared
 
     private var theme: AppTheme {
-        AppTheme(appearance: session.appearance)
+        AppTheme(appearance: session.appearance, colorScheme: colorScheme)
     }
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            theme.background.ignoresSafeArea()
 
             if session.hasCompletedOnboarding {
                 MainAppView()
@@ -19,7 +20,7 @@ struct AppShellView: View {
             }
         }
         .environment(\.appTheme, theme)
-        .preferredColorScheme(session.appearance.colorScheme)
+        .preferredColorScheme(session.appearance.preferredColorScheme)
         .environmentObject(AuthenticationManager.shared)
         .environmentObject(UnifiedProfileService.shared)
         .environmentObject(HealthManager.shared)
@@ -27,6 +28,7 @@ struct AppShellView: View {
         .environmentObject(DailyDataManager.shared)
         .task {
             if AppConfiguration.firebaseConfigured {
+                _ = UserSessionCoordinator.shared
                 await UnifiedProfileService.shared.loadProfile()
             }
             if session.hasCompletedOnboarding, HealthManager.shared.isHealthDataAvailable {

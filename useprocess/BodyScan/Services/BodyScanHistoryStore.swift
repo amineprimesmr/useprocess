@@ -8,35 +8,62 @@ final class BodyScanHistoryStore {
     private(set) var latestResult: BodyScanResult?
     private(set) var history: [BodyScanResult] = []
 
-    private let latestKey = (AppConfiguration.bundleIdentifier) + ".bodyscan.latest"
+    private var userId: String?
+
+    private var latestKey: String {
+        UserScopedStorage.key("bodyscan.latest", userId: userId)
+    }
+
+    private var historyKey: String {
+        UserScopedStorage.key("bodyscan.history", userId: userId)
+    }
 
     private init() {
-        loadCachedLatest()
+        reloadForUser(userId: UserScopedStorage.currentUserId())
+    }
+
+    func reloadForUser(userId: String?) {
+        self.userId = userId
+        loadFromDisk()
     }
 
     func push(_ result: BodyScanResult) {
         latestResult = result
         history.removeAll { $0.id == result.id }
         history.insert(result, at: 0)
-        if history.count > 20 { history = Array(history.prefix(20)) }
-        persistLatest(result)
+        if history.count > 50 { history = Array(history.prefix(50)) }
+        persist()
     }
 
     func replace(with results: [BodyScanResult]) {
         history = results
         latestResult = results.first
-        if let latest = results.first { persistLatest(latest) }
+        persist()
     }
 
-    private func persistLatest(_ result: BodyScanResult) {
-        guard let data = try? JSONEncoder().encode(result) else { return }
-        UserDefaults.standard.set(data, forKey: latestKey)
+    private func persist() {
+        if let latest = latestResult, let data = try? JSONEncoder().encode(latest) {
+            UserDefaults.standard.set(data, forKey: latestKey)
+        }
+        if let data = try? JSONEncoder().encode(history) {
+            UserDefaults.standard.set(data, forKey: historyKey)
+        }
     }
 
-    private func loadCachedLatest() {
-        guard let data = UserDefaults.standard.data(forKey: latestKey),
-              let result = try? JSONDecoder().decode(BodyScanResult.self, from: data) else { return }
-        latestResult = result
-        history = [result]
+    private func loadFromDisk() {
+        if let data = UserDefaults.standard.data(forKey: historyKey),
+           let items = try? JSONDecoder().decode([BodyScanResult].self, from: data) {
+            history = items
+            latestResult = items.first
+            return
+        }
+        if let data = UserDefaults.standard.data(forKey: latestKey),
+           let result = try? JSONDecoder().decode(BodyScanResult.self, from: data) {
+            latestResult = result
+            history = [result]
+            return
+        }
+        latestResult = nil
+        history = []
     }
 }

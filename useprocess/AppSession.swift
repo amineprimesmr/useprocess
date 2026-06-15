@@ -10,22 +10,29 @@ final class AppSession {
     var appearance: AppAppearance
 
     private init() {
-        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Keys.completed)
-        let rawAppearance = UserDefaults.standard.string(forKey: Keys.appearance) ?? AppAppearance.dark.rawValue
-        appearance = AppAppearance(rawValue: rawAppearance) ?? .dark
+        let uid = UserScopedStorage.currentUserId()
+        hasCompletedOnboarding = UserDefaults.standard.bool(
+            forKey: UserScopedStorage.key("onboarding.completed", userId: uid)
+        )
+        let rawAppearance = UserDefaults.standard.string(forKey: Keys.appearance) ?? AppAppearance.system.rawValue
+        appearance = AppAppearance(rawValue: rawAppearance) ?? .system
     }
 
     func completeOnboarding() {
         hasCompletedOnboarding = true
-        UserDefaults.standard.set(true, forKey: Keys.completed)
+        UserDefaults.standard.set(true, forKey: onboardingStorageKey)
         AuthenticationManager.shared.completeOnboarding()
     }
 
     func resetOnboarding() {
         hasCompletedOnboarding = false
-        UserDefaults.standard.set(false, forKey: Keys.completed)
+        UserDefaults.standard.set(false, forKey: onboardingStorageKey)
         AuthenticationManager.shared.resetSession()
         OnboardingProgressService.shared.resetProgress()
+    }
+
+    func reloadForCurrentUser() {
+        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
     }
 
     func setAppearance(_ mode: AppAppearance) {
@@ -33,15 +40,17 @@ final class AppSession {
         UserDefaults.standard.set(mode.rawValue, forKey: Keys.appearance)
     }
 
-    private enum Keys {
-        private static let prefix = (Bundle.main.bundleIdentifier ?? "useprocess") + "."
+    private var onboardingStorageKey: String {
+        UserScopedStorage.key("onboarding.completed", userId: UserScopedStorage.currentUserId())
+    }
 
-        static var completed: String { prefix + "onboarding.completed" }
-        static var appearance: String { prefix + "appearance" }
+    private enum Keys {
+        static var appearance: String { UserScopedStorage.globalKey("appearance") }
     }
 }
 
 enum AppAppearance: String, CaseIterable, Identifiable {
+    case system
     case dark
     case light
 
@@ -49,13 +58,24 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
+        case .system: return "Automatique"
         case .dark: return "Sombre"
         case .light: return "Clair"
         }
     }
 
-    var colorScheme: ColorScheme {
+    /// `nil` = suit le réglage iPhone.
+    var preferredColorScheme: ColorScheme? {
         switch self {
+        case .system: return nil
+        case .dark: return .dark
+        case .light: return .light
+        }
+    }
+
+    func resolved(with system: ColorScheme) -> AppAppearance {
+        switch self {
+        case .system: return system == .dark ? .dark : .light
         case .dark: return .dark
         case .light: return .light
         }

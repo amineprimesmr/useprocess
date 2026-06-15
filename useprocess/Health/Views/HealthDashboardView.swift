@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct HealthDashboardView: View {
+    @Binding var selectedSection: ProcessMainSection
+    var onOpenProfile: () -> Void
+
     @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var dataManager: DailyDataManager
     @EnvironmentObject private var profileService: UnifiedProfileService
@@ -14,7 +17,9 @@ struct HealthDashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            processMainScrollableChrome(
+                selectedSection: $selectedSection
+            ) {
                 VStack(spacing: 20) {
                     readinessCard
                     claudeBriefCard
@@ -27,8 +32,8 @@ struct HealthDashboardView: View {
                 }
                 .padding()
             }
-            .background(Color.black.ignoresSafeArea())
-            .navigationTitle("Santé")
+            .background(theme.background.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
             .refreshable {
                 await healthManager.performFullSync()
                 await dataManager.updateCurrentDayData(with: healthManager)
@@ -51,7 +56,7 @@ struct HealthDashboardView: View {
                             .foregroundStyle(.white)
                             .padding()
                     }
-                    .background(Color.black.ignoresSafeArea())
+                    .background(theme.background.ignoresSafeArea())
                     .navigationTitle("Readiness — Claude")
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {

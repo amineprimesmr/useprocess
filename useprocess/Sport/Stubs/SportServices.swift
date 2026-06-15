@@ -87,7 +87,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
         hasCompletedOnboarding = true
         isAuthenticated = Auth.auth().currentUser != nil || isDemoSession
         isLoading = false
-        UserDefaults.standard.set(true, forKey: AuthKeys.completed)
+        UserDefaults.standard.set(true, forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid))
     }
 
     func exitOnboarding() {
@@ -96,7 +96,9 @@ final class AuthenticationManager: NSObject, ObservableObject {
 
     override private init() {
         super.init()
-        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AuthKeys.completed)
+        hasCompletedOnboarding = UserDefaults.standard.bool(
+            forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid)
+        )
 
         guard AppConfiguration.firebaseConfigured else { return }
 
@@ -123,7 +125,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
         isInOnboarding = false
         isAuthenticated = false
         isDemoSession = false
-        UserDefaults.standard.set(false, forKey: AuthKeys.completed)
+        UserDefaults.standard.set(false, forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid))
         if AppConfiguration.firebaseConfigured {
             try? Auth.auth().signOut()
         }
@@ -156,13 +158,25 @@ final class UnifiedProfileService: ObservableObject {
 
     func loadProfile() async {
         if AuthenticationManager.shared.isDemoSession {
-            isAuthenticated = currentProfile != nil
+            if currentProfile == nil {
+                currentProfile = UnifiedUserProfile(
+                    userId: "demo-user",
+                    firstName: "Demo"
+                )
+            }
+            isAuthenticated = true
             return
         }
 
         guard AppConfiguration.firebaseConfigured,
               let userId = Auth.auth().currentUser?.uid else {
-            isAuthenticated = false
+            if currentProfile == nil {
+                currentProfile = UnifiedUserProfile(
+                    userId: "local-user",
+                    firstName: "Process"
+                )
+            }
+            isAuthenticated = currentProfile != nil
             return
         }
 
@@ -183,6 +197,14 @@ final class UnifiedProfileService: ObservableObject {
             error = nil
         } catch {
             self.error = error
+            if currentProfile == nil {
+                currentProfile = UnifiedUserProfile(
+                    userId: userId,
+                    firstName: Auth.auth().currentUser?.displayName ?? "Process",
+                    email: Auth.auth().currentUser?.email
+                )
+            }
+            isAuthenticated = true
         }
     }
 

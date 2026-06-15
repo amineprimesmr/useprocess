@@ -1,42 +1,60 @@
 import SwiftUI
 
-/// Tokens visuels dérivés du mode clair / sombre.
+/// Tokens visuels dérivés du mode clair / sombre (résolu depuis système ou préférence).
 struct AppTheme {
-    let appearance: AppAppearance
+    let resolved: AppAppearance
+
+    init(appearance: AppAppearance, colorScheme: ColorScheme) {
+        resolved = appearance.resolved(with: colorScheme)
+    }
+
+    init(appearance: AppAppearance) {
+        resolved = appearance == .light ? .light : .dark
+    }
+
+    var isDark: Bool { resolved == .dark }
 
     var background: Color {
-        appearance == .light ? .white : .black
+        resolved == .light ? Color(.systemBackground) : Color(.systemBackground)
     }
 
     var primaryText: Color {
-        appearance == .light ? .black : Color(white: 0.98)
+        Color(.label)
     }
 
     var secondaryText: Color {
-        appearance == .light ? .black.opacity(0.55) : .white.opacity(0.65)
+        Color(.secondaryLabel)
     }
 
     var glow: Color {
-        appearance == .light
+        resolved == .light
             ? Color(red: 0.35, green: 0.55, blue: 0.95)
             : Color(red: 0.2, green: 0.4, blue: 0.7)
     }
 
     var progressTrack: Color {
-        appearance == .light ? .black.opacity(0.08) : .white.opacity(0.2)
+        resolved == .light ? Color(.label).opacity(0.12) : Color(.label).opacity(0.22)
     }
 
     var progressFill: Color {
-        appearance == .light ? .black : .white
+        Color(.label)
     }
 
     var cardStroke: Color {
-        appearance == .light ? .black.opacity(0.12) : .white.opacity(0.28)
+        resolved == .light ? Color(.separator).opacity(0.35) : Color(.separator).opacity(0.5)
+    }
+
+    var coachUserBubble: Color {
+        resolved == .light ? Color(.systemGray5) : Color(.systemGray6)
+    }
+
+    var coachAssistantBubble: Color {
+        resolved == .light ? Color(.systemGray6) : Color.white.opacity(0.1)
     }
 }
 
 private struct AppThemeKey: EnvironmentKey {
-    static let defaultValue = AppTheme(appearance: .dark)
+    static let defaultValue = AppTheme(appearance: .system, colorScheme: .dark)
 }
 
 extension EnvironmentValues {

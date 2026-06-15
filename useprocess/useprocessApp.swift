@@ -2,8 +2,6 @@
 //  useprocessApp.swift
 //  useprocess
 //
-//  Created by Amine Ennasri on 13/06/2026.
-//
 
 import SwiftUI
 import FirebaseCore
@@ -16,7 +14,9 @@ struct useprocessApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        LaunchScreen(config: .init(forceHideLogo: false)) {
+            Image("LaunchScreenLogo")
+        } rootContent: {
             AppShellView()
                 .onAppear {
                     AppIntegrations.shared.refresh()

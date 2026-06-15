@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct BodyScanRootView: View {
+    @Binding var selectedSection: ProcessMainSection
+    var onOpenProfile: () -> Void
+
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
     @Bindable private var historyStore = BodyScanHistoryStore.shared
@@ -18,7 +21,9 @@ struct BodyScanRootView: View {
                 theme.background.ignoresSafeArea()
 
                 if let result = historyStore.latestResult {
-                    ScrollView {
+                    processMainScrollableChrome(
+                        selectedSection: $selectedSection
+                    ) {
                         VStack(spacing: 20) {
                             lastScanCard(result)
 
@@ -38,11 +43,15 @@ struct BodyScanRootView: View {
                         .padding(.vertical, 24)
                     }
                 } else {
-                    emptyState
+                    processMainScrollableChrome(
+                        selectedSection: $selectedSection
+                    ) {
+                        emptyState
+                            .frame(minHeight: 520)
+                    }
                 }
             }
-            .navigationTitle("Scan corporel")
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.hidden, for: .navigationBar)
             .fullScreenCover(isPresented: $showScanner) {
                 BodyScanSessionView(
                     userId: userId,

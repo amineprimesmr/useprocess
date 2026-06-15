@@ -7,45 +7,47 @@ enum CoachEngine {
 
     private static var chatSystemPrompt: String {
         """
-        \(EnzoCoachingVoiceGuide.systemPrompt)
+        Tu es le coach useprocess. Style Enzo : direct, tutoiement, bienveillant.
 
-        Tu es le coach principal de useprocess. L'utilisateur te parle dans le chat in-app.
-        Tu as accès à son profil, ses données HealthKit du jour, son dernier scan corporel et son scan visage onboarding.
-        Réponds en français, tutoiement, concis mais actionnable (3-8 phrases sauf demande de plan détaillé).
-        Relie toujours tes conseils aux chiffres du CONTEXTE UTILISATEUR quand ils existent.
-        Pas de diagnostic médical. Pas de CTA externe.
+        RÈGLES CHAT (strictes) :
+        - MAX 2-3 phrases courtes. Jamais plus sauf si l'utilisateur demande explicitement un plan détaillé.
+        - Réponds UNIQUEMENT à la question posée. Pas de cours, pas de listes, pas d'analyse complète du profil.
+        - 1 insight max + 1 action concrète. Cite 0-1 chiffre du contexte si utile.
+        - Français. Pas de diagnostic médical. Pas de CTA externe.
         """
     }
 
     private static func contextualSystem(profile: UnifiedUserProfile?) -> String {
         let context = UserContextBuilder.build(profile: profile)
-        return chatSystemPrompt + "\n\n" + UserContextBuilder.promptBlock(from: context)
+        return chatSystemPrompt + "\n\n" + UserContextBuilder.compactPromptBlock(from: context)
     }
 
     // MARK: - Chat (streaming)
 
     static func streamChatMessage(
         _ text: String,
-        profile: UnifiedUserProfile?
+        profile: UnifiedUserProfile?,
+        history: [CoachMessage]? = nil
     ) -> AsyncThrowingStream<String, Error> {
         let system = contextualSystem(profile: profile)
-        let history = CoachConversationStore.loadThreadLocal().messages
+        let resolvedHistory = history ?? CoachConversationStore.loadThreadLocal().messages
         let model = ClaudeModel.preferred(for: .chat)
         return CoachAPITransport.streamChat(
             system: system,
             userText: text,
-            history: history,
+            history: resolvedHistory,
             model: model,
-            maxTokens: 1200
+            maxTokens: 380
         )
     }
 
     static func sendChatMessage(
         _ text: String,
-        profile: UnifiedUserProfile?
+        profile: UnifiedUserProfile?,
+        history: [CoachMessage]? = nil
     ) async throws -> CoachMessage {
         var full = ""
-        for try await chunk in streamChatMessage(text, profile: profile) {
+        for try await chunk in streamChatMessage(text, profile: profile, history: history) {
             full += chunk
         }
         return CoachMessage(
@@ -55,12 +57,35 @@ enum CoachEngine {
         )
     }
 
+    static func analyzeAttachedImage(
+        _ image: UIImage,
+        caption: String,
+        profile: UnifiedUserProfile?,
+        history: [CoachMessage]
+    ) async throws -> CoachMessage {
+        guard let jpeg = image.jpegData(compressionQuality: 0.72) else {
+            throw ClaudeAPIError.invalidResponse
+        }
+        let system = contextualSystem(profile: profile)
+        let model = ClaudeModel.preferred(for: .chat)
+        let text = try await CoachAPITransport.complete(
+            task: .chat,
+            system: system,
+            userText: caption,
+            history: history,
+            model: model,
+            imageBase64: jpeg.base64EncodedString(),
+            maxTokens: 380
+        )
+        return CoachMessage(role: .assistant, text: text, modelUsed: model.rawValue)
+    }
+
     static func runTool(
         _ tool: CoachTool,
         profile: UnifiedUserProfile?
     ) async throws -> CoachMessage {
         let context = UserContextBuilder.build(profile: profile)
-        let prompt = tool.buildPrompt(context: context) + "\n\n" + UserContextBuilder.promptBlock(from: context)
+        let prompt = tool.buildPrompt(context: context) + "\n\nRéponds en MAX 3 phrases.\n\n" + UserContextBuilder.compactPromptBlock(from: context)
         let model = ClaudeModel.preferred(for: .readinessAnalysis)
 
         let text = try await CoachAPITransport.complete(
@@ -68,7 +93,7 @@ enum CoachEngine {
             system: EnzoCoachingVoiceGuide.systemPrompt,
             userText: prompt,
             model: model,
-            maxTokens: 500
+            maxTokens: 280
         )
 
         return CoachMessage(role: .assistant, text: text, modelUsed: model.rawValue)
@@ -81,10 +106,8 @@ enum CoachEngine {
         return CoachMessage(
             role: .assistant,
             text: """
-            \(greeting) Je suis ton coach useprocess, propulsé par Claude (\(mode)).
-
-            Je connais ton profil, ta santé du jour, tes scans et tes réponses onboarding.
-            Utilise les raccourcis ci-dessous ou pose-moi n'importe quelle question.
+            \(greeting) Je suis ton coach useprocess (\(mode)).
+            Pose-moi une question — je réponds court et concret.
             """
         )
     }

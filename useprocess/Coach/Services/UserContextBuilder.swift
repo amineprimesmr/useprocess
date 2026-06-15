@@ -165,6 +165,37 @@ enum UserContextBuilder {
         return ctx
     }
 
+    /// Contexte court pour le chat — évite les réponses encyclopédiques.
+    static func compactPromptBlock(from context: CoachUserContext) -> String {
+        var lines: [String] = []
+
+        if let p = context.profile {
+            let name = p.firstName ?? "Utilisateur"
+            let goal = p.weightGoal ?? "—"
+            let sports = p.sports.prefix(2).joined(separator: ", ")
+            lines.append("• \(name), \(p.age.map { "\($0) ans" } ?? "âge —"), objectif \(goal)\(sports.isEmpty ? "" : ", \(sports)")")
+        }
+
+        if let h = context.health {
+            var health = "• Readiness \(h.readinessScore.map(String.init) ?? "—")"
+            if let steps = h.steps { health += ", \(steps) pas" }
+            if let sleep = h.sleepHours, sleep > 0 {
+                health += ", sommeil \(String(format: "%.1f", sleep))h"
+            }
+            lines.append(health)
+        }
+
+        if let scan = context.lastBodyScan, let score = scan.postureScore {
+            lines.append("• Dernier scan posture \(score)/100")
+        }
+
+        if lines.isEmpty {
+            return "CONTEXTE : profil useprocess (données limitées)."
+        }
+
+        return "CONTEXTE (résumé — ne pas tout reciter) :\n" + lines.joined(separator: "\n")
+    }
+
     static func promptBlock(from context: CoachUserContext) -> String {
         guard let data = try? JSONEncoder().encode(context),
               let json = String(data: data, encoding: .utf8) else {

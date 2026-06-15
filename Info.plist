@@ -18,5 +18,9 @@
 	<string>La localisation permet de personnaliser ton expérience sport.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Les notifications te rappellent tes séances et ta récupération.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Le micro permet de parler au Coach Claude par message vocal.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>La dictée transforme ta voix en texte pour discuter avec Claude.</string>
 </dict>
 </plist>

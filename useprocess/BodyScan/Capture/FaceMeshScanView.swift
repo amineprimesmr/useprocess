@@ -370,7 +370,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         private func fillShortestArc(from: Int, to: Int) {
             guard from != to else { return }
             let n = tickCount
-            var forward = (to - from + n) % n
+            let forward = (to - from + n) % n
             let backward = (from - to + n) % n
 
             if forward <= backward {

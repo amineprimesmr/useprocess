@@ -2,11 +2,29 @@ import Foundation
 
 @MainActor
 enum CoachConversationStore {
-    private static let threadKey = "useprocess.coach.thread"
-    private static let dailyBriefKey = "useprocess.coach.daily_brief"
-    private static let dailyBriefDateKey = "useprocess.coach.daily_brief_date"
+    private static var userId: String?
+
+    private static var threadKey: String {
+        UserScopedStorage.key("coach.thread", userId: userId)
+    }
+
+    private static var dailyBriefKey: String {
+        UserScopedStorage.key("coach.daily_brief", userId: userId)
+    }
+
+    private static var dailyBriefDateKey: String {
+        UserScopedStorage.key("coach.daily_brief_date", userId: userId)
+    }
+
+    static func reloadForUser(userId newUserId: String?) {
+        userId = newUserId
+        CoachConversationLibraryStore.shared.reloadForUser(userId: newUserId)
+    }
 
     static func loadThreadLocal() -> CoachChatThread {
+        if let active = CoachConversationLibraryStore.shared.activeConversation {
+            return CoachChatThread(messages: active.messages, updatedAt: active.updatedAt)
+        }
         guard let data = UserDefaults.standard.data(forKey: threadKey),
               let thread = try? JSONDecoder().decode(CoachChatThread.self, from: data) else {
             return CoachChatThread()
@@ -15,30 +33,34 @@ enum CoachConversationStore {
     }
 
     static func saveThreadLocal(_ thread: CoachChatThread) {
-        guard let data = try? JSONEncoder().encode(thread) else { return }
-        UserDefaults.standard.set(data, forKey: threadKey)
+        CoachConversationLibraryStore.shared.setActiveMessages(thread.messages)
     }
 
     static func appendMessageLocal(_ message: CoachMessage) {
-        var thread = loadThreadLocal()
-        thread.messages.append(message)
-        thread.updatedAt = Date()
-        saveThreadLocal(thread)
+        CoachConversationLibraryStore.shared.appendToActive(message)
     }
 
     static func resetThreadLocal() {
-        UserDefaults.standard.removeObject(forKey: threadKey)
+        CoachConversationLibraryStore.shared.setActiveMessages([])
     }
 
-    /// Compat — charge local puis sync Firestore si possible.
     static func loadThread(userId: String? = nil) -> CoachChatThread {
         loadThreadLocal()
     }
 
     static func appendMessage(_ message: CoachMessage) {
-        appendMessageLocal(message)
-        Task {
-            await CoachSyncService.appendMessage(message, userId: AuthUser.current?.uid)
+        Task { @MainActor in
+            let store = CoachConversationLibraryStore.shared
+            store.loadLocal()
+            let welcome = CoachEngine.welcomeMessage(profile: UnifiedProfileService.shared.currentProfile)
+            store.migrateLegacyThreadIfNeeded(welcome: welcome)
+            guard let conversationId = store.activeConversationId else { return }
+            await CoachSyncService.appendMessage(
+                message,
+                userId: AuthUser.current?.uid,
+                conversationId: conversationId,
+                title: store.activeConversation?.title
+            )
         }
     }
 

@@ -228,8 +228,7 @@ func checkPermissions() {
                     text: "## Bienvenue dans useprocess\n\n\(summary)\n\nOuvre l'onglet **Coach** pour continuer la conversation.",
                     modelUsed: ClaudeModel.preferred(for: .programSummary).rawValue
                 )
-                CoachConversationStore.appendMessageLocal(msg)
-                await CoachSyncService.appendMessage(msg, userId: profileService.currentProfile?.userId)
+                CoachConversationStore.appendMessage(msg)
             }
         } catch {
             HapticManager.shared.notification(.error)

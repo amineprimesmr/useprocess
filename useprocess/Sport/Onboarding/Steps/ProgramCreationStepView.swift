@@ -344,8 +344,7 @@ struct ProgramCreationStepView: View {
                     text: "## Ton plan useprocess\n\n\(summary)",
                     modelUsed: ClaudeModel.preferred(for: .programSummary).rawValue
                 )
-                CoachConversationStore.appendMessageLocal(programMessage)
-                await CoachSyncService.appendMessage(programMessage, userId: profileService.currentProfile?.userId)
+                CoachConversationStore.appendMessage(programMessage)
             }
         }
     }
