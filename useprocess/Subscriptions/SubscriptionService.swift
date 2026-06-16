@@ -292,7 +292,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         var lastProducts: [StoreProduct] = []
 
         for attempt in 0..<attempts {
-            let products = (try? await Purchases.shared.products(ids)) ?? []
+            let products = await Purchases.shared.products(ids)
             lastProducts = products
             let found = Set(products.map(\.productIdentifier))
 

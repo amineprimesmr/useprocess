@@ -110,6 +110,8 @@ struct HealthDashboardView: View {
             history: faceHistoryStore.history,
             streakDays: faceHistoryStore.streakDays,
             daysSinceLastScan: faceHistoryStore.daysSinceLastScan,
+            daysUntilNextScan: faceHistoryStore.daysUntilNextScan,
+            isScanDue: faceHistoryStore.isScanDue,
             faceDayScore: healthManager.faceDayScore,
             correlations: healthManager.faceCorrelations,
             onScan: { showFaceScan = true },

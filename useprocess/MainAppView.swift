@@ -6,19 +6,26 @@ struct MainAppView: View {
     @State private var scrollHeaders: [ProcessMainSection: ProcessMainScrollHeaderPreference] = [
         .coach: .init(section: .coach, headerProgress: 0, headerVisibility: 1),
         .health: .init(section: .health, headerProgress: 0, headerVisibility: 1),
-        .scan: .init(section: .scan, headerProgress: 0, headerVisibility: 1)
+        .scan: .init(section: .scan, headerProgress: 0, headerVisibility: 1),
+        .profile: .init(section: .profile, headerProgress: 0, headerVisibility: 1)
     ]
     @State private var coachSidebarExpanded = false
+    @State private var profileSubrouteActive = false
     @State private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var session = AppSession.shared
     @Environment(\.appTheme) private var theme
 
     private var activeScrollHeader: ProcessMainScrollHeaderPreference {
-        if selectedSection == .coach {
-            return .init(section: .coach, headerProgress: 0, headerVisibility: 1)
-        }
-        return scrollHeaders[selectedSection]
+        scrollHeaders[selectedSection]
             ?? .init(section: selectedSection, headerProgress: 0, headerVisibility: 1)
+    }
+
+    private var isWelcomePlanGating: Bool {
+        !session.hasCompletedWelcomePlanChat
+    }
+
+    private var lockedSections: Set<ProcessMainSection> {
+        isWelcomePlanGating ? [.health, .scan, .profile] : []
     }
 
     var body: some View {
@@ -37,6 +44,7 @@ struct MainAppView: View {
                 )
                 .background(theme.background.ignoresSafeArea())
                 .tag(ProcessMainSection.health)
+                .welcomePlanSectionGate(isLocked: isWelcomePlanGating)
 
                 BodyScanRootView(
                     selectedSection: $selectedSection,
@@ -44,19 +52,21 @@ struct MainAppView: View {
                 )
                 .background(theme.background.ignoresSafeArea())
                 .tag(ProcessMainSection.scan)
+                .welcomePlanSectionGate(isLocked: isWelcomePlanGating)
 
-                ProcessProfileView()
+                ProcessProfileView(selectedSection: $selectedSection)
                     .background(theme.background.ignoresSafeArea())
-                    .ignoresSafeArea(.container, edges: .top)
                     .tag(ProcessMainSection.profile)
+                    .welcomePlanSectionGate(isLocked: isWelcomePlanGating)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .animation(ProcessGlass.spring, value: selectedSection)
+            .processMainTabSwipeDisabled(isWelcomePlanGating)
             .ignoresSafeArea(.container, edges: .bottom)
 
-            if selectedSection != .profile, !coachSidebarExpanded {
+            if !coachSidebarExpanded, !(selectedSection == .profile && profileSubrouteActive) {
                 ProcessMainStickyChromeOverlay(
                     selection: $selectedSection,
+                    lockedSections: lockedSections,
                     headerProgress: activeScrollHeader.headerProgress,
                     headerVisibility: activeScrollHeader.headerVisibility
                 )
@@ -64,6 +74,23 @@ struct MainAppView: View {
             }
         }
         .background(theme.background.ignoresSafeArea())
+        .onAppear {
+            if isWelcomePlanGating {
+                selectedSection = .coach
+            }
+        }
+        .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
+            if !completed {
+                selectedSection = .coach
+            }
+        }
+        .onChange(of: selectedSection) { _, newSection in
+            guard lockedSections.contains(newSection) else { return }
+            HapticManager.shared.notification(.warning)
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = .coach
+            }
+        }
         .onPreferenceChange(ProcessMainScrollHeaderPreferenceKey.self) { preference in
             guard let preference else { return }
             scrollHeaders[preference.section] = preference
@@ -71,6 +98,11 @@ struct MainAppView: View {
         .onPreferenceChange(CoachSidebarExpandedKey.self) { expanded in
             withAnimation(.easeOut(duration: 0.2)) {
                 coachSidebarExpanded = expanded
+            }
+        }
+        .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
+            withAnimation(.easeOut(duration: 0.2)) {
+                profileSubrouteActive = active
             }
         }
         .onAppear {
@@ -86,6 +118,13 @@ struct MainAppView: View {
     }
 
     private func openProfile() {
+        guard session.hasCompletedWelcomePlanChat else {
+            HapticManager.shared.notification(.warning)
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = .coach
+            }
+            return
+        }
         withAnimation(ProcessGlass.spring) {
             selectedSection = .profile
         }

@@ -250,6 +250,7 @@ enum ClaudeLocalAPIService {
     private static func apiMessages(from history: [CoachMessage]) -> [[String: Any]] {
         history
             .filter { $0.role != .system }
+            .filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
             .map { msg in
                 [
                     "role": msg.role == .user ? "user" : "assistant",

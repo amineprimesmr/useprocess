@@ -115,6 +115,12 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
     var faceProtocol: OriginFaceProtocol
     var mindsetNotes: [String]
 
+    /// Durée calendrier (semaines générées).
+    var totalWeeks: Int
+    /// Fourchette affichée (cohérence profil).
+    var durationMinWeeks: Int
+    var durationMaxWeeks: Int
+
     var calendar: OriginProgramCalendar
     var progress: OriginPlanProgress
     var lifestyleExtras: OriginLifestyleExtras
@@ -143,6 +149,9 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         postureProtocol: OriginPostureProtocol,
         faceProtocol: OriginFaceProtocol,
         mindsetNotes: [String],
+        totalWeeks: Int = 13,
+        durationMinWeeks: Int = 12,
+        durationMaxWeeks: Int = 14,
         calendar: OriginProgramCalendar = .empty,
         progress: OriginPlanProgress = OriginPlanProgress(),
         lifestyleExtras: OriginLifestyleExtras = .default
@@ -165,6 +174,9 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         self.postureProtocol = postureProtocol
         self.faceProtocol = faceProtocol
         self.mindsetNotes = mindsetNotes
+        self.totalWeeks = totalWeeks
+        self.durationMinWeeks = durationMinWeeks
+        self.durationMaxWeeks = durationMaxWeeks
         self.calendar = calendar
         self.progress = progress
         self.lifestyleExtras = lifestyleExtras
@@ -190,6 +202,9 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         postureProtocol = try c.decode(OriginPostureProtocol.self, forKey: .postureProtocol)
         faceProtocol = try c.decode(OriginFaceProtocol.self, forKey: .faceProtocol)
         mindsetNotes = try c.decode([String].self, forKey: .mindsetNotes)
+        totalWeeks = try c.decodeIfPresent(Int.self, forKey: .totalWeeks) ?? 13
+        durationMinWeeks = try c.decodeIfPresent(Int.self, forKey: .durationMinWeeks) ?? 12
+        durationMaxWeeks = try c.decodeIfPresent(Int.self, forKey: .durationMaxWeeks) ?? 14
         calendar = try c.decodeIfPresent(OriginProgramCalendar.self, forKey: .calendar) ?? .empty
         progress = try c.decodeIfPresent(OriginPlanProgress.self, forKey: .progress) ?? OriginPlanProgress()
         lifestyleExtras = try c.decodeIfPresent(OriginLifestyleExtras.self, forKey: .lifestyleExtras) ?? .default
@@ -215,6 +230,9 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         try c.encode(postureProtocol, forKey: .postureProtocol)
         try c.encode(faceProtocol, forKey: .faceProtocol)
         try c.encode(mindsetNotes, forKey: .mindsetNotes)
+        try c.encode(totalWeeks, forKey: .totalWeeks)
+        try c.encode(durationMinWeeks, forKey: .durationMinWeeks)
+        try c.encode(durationMaxWeeks, forKey: .durationMaxWeeks)
         try c.encode(calendar, forKey: .calendar)
         try c.encode(progress, forKey: .progress)
         try c.encode(lifestyleExtras, forKey: .lifestyleExtras)
@@ -224,6 +242,7 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         case id, userId, createdAt, lastUpdated, headline, executiveSummary, philosophyNote
         case primaryFaceGoal, pillarScores, dailyHabits, weeklyRhythm, phaseRoadmap
         case nutritionProtocol, sleepProtocol, trainingProtocol, postureProtocol, faceProtocol, mindsetNotes
+        case totalWeeks, durationMinWeeks, durationMaxWeeks
         case calendar, progress, lifestyleExtras
     }
 }

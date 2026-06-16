@@ -10,7 +10,7 @@ enum FaceScanService {
         profile: UnifiedUserProfile?
     ) async -> FaceScanResult {
         let userId = profile?.userId ?? UserScopedStorage.currentUserId() ?? "local-user"
-        let scanId = UUID().uuidString
+        let scanId = payload.scanId
         let health = HealthManager.shared
 
         var snapshotFilename: String?
@@ -31,6 +31,7 @@ enum FaceScanService {
             userId: userId,
             markers: markers,
             snapshotFilename: snapshotFilename,
+            videoFilename: payload.videoFilename,
             source: .daily,
             sleepHoursAtScan: sleepHours,
             hrvAtScan: hrv,
@@ -52,7 +53,7 @@ enum FaceScanService {
         }
 
         await health.performFullSync()
-        await FaceScanReminderService.scheduleMorningReminder()
+        await FaceScanReminderService.scheduleNextReminder(after: result.createdAt)
 
         return result
     }

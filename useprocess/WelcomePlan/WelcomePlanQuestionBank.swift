@@ -7,14 +7,12 @@ enum WelcomePlanQuestionBank {
         WelcomePlanQuestion(
             id: "welcome_ready",
             phase: .welcome,
-            kind: .yesNo,
-            prompt: "On construit ton Protocole Origine sur 13 semaines — visage, corps, hormones, tout connecté. 100 % naturel, zéro pilule. On y va ?",
-            coachIntro: """
-            Salut. Je suis ton coach Process.
-
-            Avant de te lâcher dans l'app, quelques questions pour calibrer ton plan : sommeil, alimentation, posture, entraînement.
-            Ça prend 5–8 minutes. Réponds franchement.
-            """
+            kind: .singleChoice,
+            prompt: "Quelques questions pour calibrer ton protocole. 100 % naturel, zéro pilule.",
+            coachIntro: "Salut — je suis ton coach Process. On configure ton plan en quelques minutes.",
+            choices: [
+                .init(id: "start", label: "Commencer")
+            ]
         ),
 
         // MARK: Profil visage
@@ -23,15 +21,15 @@ enum WelcomePlanQuestionBank {
             phase: .profile,
             kind: .multiChoice,
             prompt: "Qu'est-ce qui te dérange le plus sur ton visage ou ton corps en ce moment ?",
-            coachIntro: "L'objectif c'est simple : optimiser ta biologie pour un meilleur visage. Dis-moi ce qui te saute aux yeux aujourd'hui.",
+            coachIntro: "Dis-moi ce qui te dérange le plus aujourd'hui.",
             choices: [
-                .init(id: "dark_circles", label: "Cernes / regard fatigué"),
-                .init(id: "puffiness", label: "Gonflement / visage bouffi"),
-                .init(id: "acne", label: "Acné / boutons"),
-                .init(id: "weak_jaw", label: "Maxillaire faible / menton reculé"),
+                .init(id: "dark_circles", label: "Cernes"),
+                .init(id: "puffiness", label: "Visage gonflé"),
+                .init(id: "acne", label: "Acné"),
+                .init(id: "weak_jaw", label: "Menton reculé"),
                 .init(id: "double_chin", label: "Double menton"),
-                .init(id: "dull_skin", label: "Peau terne / grise"),
-                .init(id: "asymmetry", label: "Asymétrie faciale")
+                .init(id: "dull_skin", label: "Peau terne"),
+                .init(id: "asymmetry", label: "Asymétrie")
             ]
         ),
         WelcomePlanQuestion(
@@ -41,10 +39,10 @@ enum WelcomePlanQuestionBank {
             prompt: "Globalement, tu te sens plutôt…",
             choices: [
                 .init(id: "very_lean", label: "Très sec"),
-                .init(id: "athletic", label: "Athlétique / musclé"),
+                .init(id: "athletic", label: "Athlétique"),
                 .init(id: "normal", label: "Normal"),
-                .init(id: "soft", label: "Un peu de gras en trop"),
-                .init(id: "high", label: "Beaucoup de gras visible")
+                .init(id: "soft", label: "Un peu de gras"),
+                .init(id: "high", label: "Gras visible")
             ]
         ),
         WelcomePlanQuestion(
@@ -96,7 +94,7 @@ enum WelcomePlanQuestionBank {
             kind: .singleChoice,
             prompt: "Tu prends du soleil ou de la lumière naturelle le matin ?",
             choices: [
-                .init(id: "daily_15", label: "Oui, au moins 15 min"),
+                .init(id: "daily_15", label: "Régulièrement"),
                 .init(id: "sometimes", label: "De temps en temps"),
                 .init(id: "rarely", label: "Rarement"),
                 .init(id: "never", label: "Jamais")
@@ -116,7 +114,7 @@ enum WelcomePlanQuestionBank {
             choices: [
                 .init(id: "never", label: "Jamais"),
                 .init(id: "rare", label: "Rarement"),
-                .init(id: "weekly", label: "1–2 fois par semaine"),
+                .init(id: "weekly", label: "Chaque semaine"),
                 .init(id: "often", label: "3 fois par semaine ou plus")
             ]
         ),
@@ -205,10 +203,10 @@ enum WelcomePlanQuestionBank {
             kind: .singleChoice,
             prompt: "Tu cuisines toi-même tes repas ?",
             choices: [
-                .init(id: "daily", label: "Oui, presque tous les jours"),
+                .init(id: "daily", label: "Presque tous les jours"),
                 .init(id: "often", label: "Souvent"),
                 .init(id: "sometimes", label: "Parfois"),
-                .init(id: "rarely", label: "Rarement / jamais")
+                .init(id: "rarely", label: "Rarement")
             ]
         ),
         WelcomePlanQuestion(
@@ -238,9 +236,9 @@ enum WelcomePlanQuestionBank {
             prompt: "Tu prends des compléments alimentaires ou vitamines ?",
             choices: [
                 .init(id: "none", label: "Non"),
-                .init(id: "basic", label: "Oui — multivitamines ou whey"),
-                .init(id: "many", label: "Oui — plusieurs produits"),
-                .init(id: "want_stop", label: "Oui, mais je veux arrêter")
+                .init(id: "basic", label: "Multivitamines"),
+                .init(id: "many", label: "Plusieurs produits"),
+                .init(id: "want_stop", label: "Oui, j'arrête")
             ]
         ),
 
@@ -250,19 +248,19 @@ enum WelcomePlanQuestionBank {
             phase: .postureFace,
             kind: .yesNo,
             prompt: "Tu passes plus de 6 h par jour assis devant un écran ?",
-            coachIntro: "Forward head (tête en avant) = langue qui quitte le palais = maxillaire qui recule. C'est le lien direct avec ton visage."
+            coachIntro: "La posture du cou influence ton maxillaire et ton visage."
         ),
         WelcomePlanQuestion(
             id: "forward_head",
             phase: .postureFace,
             kind: .yesNo,
-            prompt: "Tu as la tête qui part en avant (forward head) sur téléphone ou ordi ?"
+            prompt: "Tu as la tête qui part en avant sur téléphone ou ordi ?"
         ),
         WelcomePlanQuestion(
             id: "mouth_breathing",
             phase: .postureFace,
             kind: .yesNo,
-            prompt: "Tu respires par la bouche (mouth breathing) le jour ou la nuit ?"
+            prompt: "Tu respires par la bouche le jour ou la nuit ?"
         ),
         WelcomePlanQuestion(
             id: "tongue_posture",
@@ -270,9 +268,9 @@ enum WelcomePlanQuestionBank {
             kind: .singleChoice,
             prompt: "Tu pratiques le mewing (langue au palais) au repos ?",
             choices: [
-                .init(id: "practice", label: "Oui, je mewing au quotidien"),
+                .init(id: "practice", label: "Oui, au quotidien"),
                 .init(id: "aware", label: "J'en ai entendu parler"),
-                .init(id: "no", label: "Non — c'est quoi le mewing ?")
+                .init(id: "no", label: "Non, c'est quoi ?")
             ]
         ),
         WelcomePlanQuestion(
@@ -362,7 +360,7 @@ enum WelcomePlanQuestionBank {
         ,
             choices: [
                 .init(id: "weeks", label: "Quelques semaines"),
-                .init(id: "months", label: "2–3 mois"),
+                .init(id: "months", label: "Quelques mois"),
                 .init(id: "long", label: "6 mois ou plus"),
                 .init(id: "first_time", label: "C'est ma première vraie tentative")
             ]
@@ -387,10 +385,10 @@ enum WelcomePlanQuestionBank {
             prompt: "Tu as quelqu'un qui te soutient dans ce changement ?"
         ),
         WelcomePlanQuestion(
-            id: "commit_13_weeks",
+            id: "commit_plan",
             phase: .psychology,
             kind: .yesNo,
-            prompt: "Tu es prêt à t'engager sur 13 semaines — les bases d'abord, pas de raccourci ?"
+            prompt: "Tu es prêt à t'engager sur la durée de ton protocole — les bases d'abord, pas de raccourci ?"
         ),
 
         // MARK: Closing
@@ -402,7 +400,7 @@ enum WelcomePlanQuestionBank {
             coachIntro: "J'ai ce qu'il me faut. Je génère ton Protocole Origine."
         ,
             choices: [
-                .init(id: "yes", label: "Oui, maintenant"),
+                .init(id: "yes", label: "Maintenant"),
                 .init(id: "later", label: "Plus tard"),
                 .init(id: "skip", label: "Non merci")
             ]
@@ -436,12 +434,12 @@ enum WelcomePlanQuestionBank {
     static func phaseTransitionMessage(for phase: WelcomePlanPhase) -> String? {
         switch phase {
         case .welcome: return nil
-        case .profile: return "On commence par ton profil."
-        case .hormonesSleep: return "Sommeil et rythme — la base de tout."
-        case .nutrition: return "Alimentation dense. Zéro pilule."
-        case .postureFace: return "Mewing, maxillaire et posture — le lien direct avec ton visage."
-        case .training: return "Entraînement adapté à ton emploi du temps."
-        case .psychology: return "Dernières questions sur ta régularité."
+        case .profile: return "Ton profil."
+        case .hormonesSleep: return "Sommeil et rythme."
+        case .nutrition: return "Alimentation."
+        case .postureFace: return "Posture et maxillaire."
+        case .training: return "Entraînement."
+        case .psychology: return "Régularité."
         case .closing: return nil
         }
     }

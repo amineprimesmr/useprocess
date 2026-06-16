@@ -95,9 +95,9 @@ final class WelcomePlanChatViewModel {
 
     func finishAndEnterApp(previewMode: Bool = false, onComplete: @escaping () -> Void) async {
         guard let plan = generatedPlan else { return }
-        WelcomePlanStore.shared.markQuestionnaireComplete()
-        WelcomePlanStore.shared.savePlan(plan)
         if !previewMode {
+            WelcomePlanStore.shared.markQuestionnaireComplete()
+            WelcomePlanStore.shared.savePlan(plan)
             await WelcomePlanProfileSync.apply(
                 answers: answers,
                 plan: plan,
@@ -188,7 +188,7 @@ final class WelcomePlanChatViewModel {
         isGenerating = false
 
         await appendCoachMessages([
-            "Voilà. Ton plan 13 semaines est prêt.",
+            "Voilà. Ton Protocole Origine est prêt.",
             planSummarySnippet(plan),
             FaceOriginPlan.noSupplementsPhilosophy,
             pendingFaceScan
@@ -202,6 +202,7 @@ final class WelcomePlanChatViewModel {
         return """
         \(plan.executiveSummary)
 
+        Durée : \(plan.durationMinWeeks) à \(plan.durationMaxWeeks) semaines (\(plan.totalWeeks) semaines calendrier).
         Habitudes clés : \(habits).
         \(plan.trainingProtocol.sessionsPerWeek) séances/sem · Sommeil cible \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h.
         """

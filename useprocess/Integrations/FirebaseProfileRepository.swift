@@ -18,6 +18,10 @@ final class FirebaseProfileRepository {
         return try snapshot.data(as: UnifiedUserProfile.self)
     }
 
+    func deleteProfile(userId: String) async throws {
+        try await db.collection(collection).document(userId).delete()
+    }
+
     func saveProfile(_ profile: UnifiedUserProfile) async throws {
         var updated = profile
         updated.updateLastUpdated()

@@ -40,6 +40,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 
 struct ProcessMainFilterBar: View {
     @Binding var selection: ProcessMainSection
+    var lockedSections: Set<ProcessMainSection> = []
     var glassAnimationsEnabled: Bool = true
     @Namespace private var chipNamespace
     @Environment(\.colorScheme) private var colorScheme
@@ -67,8 +68,13 @@ struct ProcessMainFilterBar: View {
 
     private func filterChip(_ item: ProcessMainSection) -> some View {
         let isSelected = selection == item
+        let isLocked = lockedSections.contains(item)
 
         return Button {
+            guard !isLocked else {
+                HapticManager.shared.notification(.warning)
+                return
+            }
             guard selection != item else { return }
             HapticManager.shared.selection()
             withAnimation(ProcessGlass.spring) {
@@ -76,18 +82,25 @@ struct ProcessMainFilterBar: View {
             }
         } label: {
             HStack(spacing: 7) {
-                chipIcon(for: item, isSelected: isSelected)
+                if isLocked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                        .opacity(0.7)
+                } else {
+                    chipIcon(for: item, isSelected: isSelected)
+                }
                 Text(item.label)
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
             .foregroundStyle(isSelected ? selectedLabel : Color.primary)
+            .opacity(isLocked ? 0.52 : 1)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background {
                 ProcessFilterChipBackground(
-                    isSelected: isSelected,
+                    isSelected: isSelected && !isLocked,
                     glassAnimationsEnabled: glassAnimationsEnabled,
                     selectedFill: selectedFill,
                     namespace: chipNamespace
@@ -96,6 +109,7 @@ struct ProcessMainFilterBar: View {
         }
         .buttonStyle(.plain)
         .buttonStyle(ProcessGlassPressStyle())
+        .disabled(isLocked)
     }
 
     @ViewBuilder

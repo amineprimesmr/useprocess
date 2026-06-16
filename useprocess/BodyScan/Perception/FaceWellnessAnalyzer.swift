@@ -93,7 +93,14 @@ enum FaceWellnessAnalyzer {
     }
 
     static func analyze(from mesh: FaceMesh3DData, pose: ScanPoseKind = .faceMesh) -> FaceWellnessMarkers {
-        analyze(from: FaceScanCapturePayload(mesh: mesh, snapshot: nil, averageBlendShapes: [:], yawCoverage: 0.5), pose: pose)
+        analyze(from: FaceScanCapturePayload(
+            scanId: UUID().uuidString,
+            mesh: mesh,
+            snapshot: nil,
+            videoFilename: nil,
+            averageBlendShapes: [:],
+            yawCoverage: 0.5
+        ), pose: pose)
     }
 
     // MARK: - Mesh heuristics

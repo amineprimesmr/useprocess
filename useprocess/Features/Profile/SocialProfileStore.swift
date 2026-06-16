@@ -89,9 +89,47 @@ final class SocialProfileStore {
             activeUserID = nil
             return
         }
-        guard activeUserID != unified.userId || profile == nil else { return }
+        if activeUserID == unified.userId, profile != nil {
+            syncFromUnified(unified)
+            return
+        }
         activeUserID = unified.userId
         load(for: unified)
+    }
+
+    func syncFromUnified(_ unified: UnifiedUserProfile) {
+        activeUserID = unified.userId
+        let mergedName = [unified.firstName, unified.lastName]
+            .map { $0?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        if var current = profile {
+            if !mergedName.isEmpty {
+                current.displayName = mergedName
+            }
+            if let username = unified.username?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !username.isEmpty {
+                current.username = username
+            }
+            profile = current
+            persist()
+            return
+        }
+
+        load(for: unified)
+    }
+
+    func resetForUser(userId: String) {
+        if let cover = profile?.coverPhotoFilename {
+            deleteFile(cover)
+        }
+        if let avatar = profile?.profilePhotoFilename, avatar != profile?.coverPhotoFilename {
+            deleteFile(avatar)
+        }
+        profile = nil
+        activeUserID = nil
+        UserDefaults.standard.removeObject(forKey: Self.storageKey(for: userId))
     }
 
     func load(for unified: UnifiedUserProfile) {
@@ -113,6 +151,9 @@ final class SocialProfileStore {
     }
 
     func applyPhotos(_ image: UIImage) {
+        if let previous = profile?.coverPhotoFilename {
+            deleteFile(previous)
+        }
         guard let filename = saveImage(image, prefix: "cover") else { return }
         update {
             $0.profilePhotoFilename = filename
@@ -177,9 +218,15 @@ final class SocialProfileStore {
         UserScopedStorage.key("socialProfile", userId: userID)
     }
 
+    private enum PhotoStorage {
+        /// Cover hero pleine largeur (Retina 3× ~430 pt → ~1290 px, marge pour zoom/crop).
+        static let coverMaxPixelDimension: CGFloat = 2560
+        static let jpegQuality: CGFloat = 0.92
+    }
+
     private func saveImage(_ image: UIImage, prefix: String) -> String? {
-        let resized = image.resizedForProfile(maxDimension: 1400)
-        guard let data = resized.jpegData(compressionQuality: 0.82) else { return nil }
+        let prepared = image.resizedForProfile(maxPixelDimension: PhotoStorage.coverMaxPixelDimension)
+        guard let data = prepared.jpegData(compressionQuality: PhotoStorage.jpegQuality) else { return nil }
         let filename = "\(prefix)-\(UUID().uuidString).jpg"
         let url = photosDirectory.appendingPathComponent(filename)
         do {
@@ -197,13 +244,19 @@ final class SocialProfileStore {
 }
 
 private extension UIImage {
-    func resizedForProfile(maxDimension: CGFloat) -> UIImage {
-        let maxSide = max(size.width, size.height)
-        guard maxSide > maxDimension else { return self }
-        let scale = maxDimension / maxSide
-        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        return renderer.image { _ in
+    /// Downscale only if larger than `maxPixelDimension` (pixels), preserving native scale.
+    func resizedForProfile(maxPixelDimension: CGFloat) -> UIImage {
+        let pixelWidth = size.width * scale
+        let pixelHeight = size.height * scale
+        let maxPixelSide = max(pixelWidth, pixelHeight)
+        guard maxPixelSide > maxPixelDimension else { return self }
+
+        let ratio = maxPixelDimension / maxPixelSide
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
             draw(in: CGRect(origin: .zero, size: newSize))
         }
     }

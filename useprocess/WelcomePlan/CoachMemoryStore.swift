@@ -125,4 +125,9 @@ final class CoachMemoryStore {
     private var storageKey: String {
         UserScopedStorage.key("coach.global.memory", userId: UserScopedStorage.currentUserId())
     }
+
+    func clearForUser(userId: String) {
+        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("coach.global.memory", userId: userId))
+        memory = CoachGlobalMemory()
+    }
 }

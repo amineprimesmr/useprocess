@@ -1,4 +1,5 @@
 import SwiftUI
+import Photos
 import PhotosUI
 import UIKit
 
@@ -83,7 +84,7 @@ struct ProfilePhotoFlowModifier: ViewModifier {
                 ProfileCameraPicker { image in
                     showCamera = false
                     if let image {
-                        cropPayload = ProfileCropPayload(image: image)
+                        cropPayload = ProfileCropPayload(image: image.normalizedOrientation())
                     } else {
                         isPresented = false
                     }
@@ -93,10 +94,42 @@ struct ProfilePhotoFlowModifier: ViewModifier {
     }
 
     private func handleLibraryItem(_ item: PhotosPickerItem?) async {
-        guard let data = try? await item?.loadTransferable(type: Data.self),
-              let image = UIImage(data: data) else { return }
+        guard let item else { return }
+        let image = await loadFullResolutionImage(from: item)
         libraryItem = nil
+        guard let image else { return }
         cropPayload = ProfileCropPayload(image: image)
+    }
+
+    private func loadFullResolutionImage(from item: PhotosPickerItem) async -> UIImage? {
+        if let identifier = item.itemIdentifier {
+            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil)
+            if let asset = assets.firstObject, let image = await requestFullSizeImage(for: asset) {
+                return image.normalizedOrientation()
+            }
+        }
+
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else { return nil }
+        return image.normalizedOrientation()
+    }
+
+    private func requestFullSizeImage(for asset: PHAsset) async -> UIImage? {
+        await withCheckedContinuation { continuation in
+            let options = PHImageRequestOptions()
+            options.deliveryMode = .highQualityFormat
+            options.isNetworkAccessAllowed = true
+            options.resizeMode = .none
+
+            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, info in
+                if (info?[PHImageResultIsDegradedKey] as? Bool) == true { return }
+                guard let data, let image = UIImage(data: data) else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                continuation.resume(returning: image)
+            }
+        }
     }
 }
 
@@ -251,8 +284,47 @@ struct ProfileImageCropView: View {
             y: (side - drawH) / 2 + offset.height
         )
 
+        // Convert the on-screen crop square into source-image coordinates (points),
+        // then crop pixels at native resolution — not at screen point size (was ~350 px).
+        let uniformScale = drawW / imageSize.width
+        var cropRect = CGRect(
+            x: (-origin.x) / uniformScale,
+            y: (-origin.y) / uniformScale,
+            width: side / uniformScale,
+            height: side / uniformScale
+        )
+        cropRect = cropRect.intersection(CGRect(origin: .zero, size: imageSize))
+        guard cropRect.width > 1, cropRect.height > 1 else { return nil }
+
+        guard let cgImage = sourceImage.cgImage else {
+            return renderCroppedImageLegacy(
+                side: side,
+                drawW: drawW,
+                drawH: drawH,
+                origin: origin
+            )
+        }
+
+        let pixelRect = CGRect(
+            x: cropRect.origin.x * sourceImage.scale,
+            y: cropRect.origin.y * sourceImage.scale,
+            width: cropRect.width * sourceImage.scale,
+            height: cropRect.height * sourceImage.scale
+        ).integral
+
+        guard let cropped = cgImage.cropping(to: pixelRect) else { return nil }
+        return UIImage(cgImage: cropped, scale: sourceImage.scale, orientation: .up)
+    }
+
+    /// Fallback when CGImage crop is unavailable.
+    private func renderCroppedImageLegacy(
+        side: CGFloat,
+        drawW: CGFloat,
+        drawH: CGFloat,
+        origin: CGPoint
+    ) -> UIImage? {
         let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
+        format.scale = sourceImage.scale
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format)
         return renderer.image { _ in
             sourceImage.draw(in: CGRect(origin: origin, size: CGSize(width: drawW, height: drawH)))
@@ -300,6 +372,7 @@ private extension UIImage {
         guard imageOrientation != .up else { return self }
         let format = UIGraphicsImageRendererFormat()
         format.scale = scale
+        format.opaque = true
         return UIGraphicsImageRenderer(size: size, format: format).image { _ in
             draw(in: CGRect(origin: .zero, size: size))
         }

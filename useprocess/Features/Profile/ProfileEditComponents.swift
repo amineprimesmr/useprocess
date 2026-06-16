@@ -28,15 +28,7 @@ struct ProfileEditorHeader: View {
                 .foregroundStyle(Color.primary)
 
             HStack {
-                Button(action: onDismiss) {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 36, height: 36)
-                        .background(ProfileEditTheme.headerButton)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
+                ProcessGlassIconButton(systemName: "chevron.left", size: 40, iconSize: 16, action: onDismiss)
 
                 Spacer()
 
@@ -44,22 +36,22 @@ struct ProfileEditorHeader: View {
                     Button(action: onSave) {
                         Text("Enregistrer")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Color.primary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(ProfileEditTheme.savePill)
-                            .clipShape(Capsule())
+                            .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
                     }
                     .buttonStyle(.plain)
+                    .processGlassEffect(in: Capsule())
+                    .buttonStyle(ProcessGlassPressStyle())
                     .disabled(saveDisabled)
-                    .opacity(saveDisabled ? 0.45 : 1)
+                    .opacity(saveDisabled ? 0.72 : 1)
                 } else {
-                    Color.clear.frame(width: 36, height: 36)
+                    Color.clear.frame(width: 40, height: 40)
                 }
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.top, 12)
         .padding(.bottom, 12)
     }
 }
@@ -91,19 +83,21 @@ struct ProfileEditorBottomSaveButton: View {
     var disabled: Bool = false
     let action: () -> Void
 
+    private let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(Color.white)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(disabled ? Color(.tertiaryLabel) : Color.primary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background(Color.processPrimary)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
+        .processGlassEffect(in: shape)
+        .buttonStyle(ProcessGlassPressStyle())
         .disabled(disabled)
-        .opacity(disabled ? 0.45 : 1)
+        .opacity(disabled ? 0.72 : 1)
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 10)
@@ -185,6 +179,7 @@ struct ProfileEditListRow: View {
     let placeholder: String
     var showsAccentDot: Bool = false
     var showsChevron: Bool = true
+    var valueIsMuted: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -203,19 +198,182 @@ struct ProfileEditListRow: View {
 
             Text(value?.isEmpty == false ? value! : placeholder)
                 .font(.system(size: 16))
-                .foregroundStyle(value?.isEmpty == false ? ProfileEditTheme.textSecondary : ProfileEditTheme.placeholder)
+                .foregroundStyle(valueForeground)
                 .lineLimit(2)
                 .multilineTextAlignment(.trailing)
 
             if showsChevron {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(ProfileEditTheme.textSecondary.opacity(0.7))
+                    .foregroundStyle(ProfileEditTheme.textSecondary.opacity(0.55))
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 18)
+        .padding(.vertical, 16)
         .contentShape(Rectangle())
+    }
+
+    private var valueForeground: Color {
+        guard value?.isEmpty == false else { return ProfileEditTheme.placeholder }
+        if valueIsMuted { return ProfileEditTheme.textSecondary.opacity(0.85) }
+        return Color.primary
+    }
+}
+
+// MARK: - Account details (Détails du compte)
+
+enum AccountDetailsTheme {
+    static let pageBackground = ProfileTheme.background
+    static let linkText = ProfileTheme.textSecondary
+    static let rowCornerRadius: CGFloat = 16
+    static let actionCornerRadius: CGFloat = 14
+    static let rowSpacing: CGFloat = 10
+    static let horizontalPadding: CGFloat = 16
+}
+
+struct AccountDetailsGlassReliefModifier: ViewModifier {
+    var cornerRadius: CGFloat = AccountDetailsTheme.rowCornerRadius
+    var destructiveTint: Bool = false
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        content
+            .processGlassEffect(in: shape)
+            .overlay {
+                if destructiveTint {
+                    shape.fill(Color.red.opacity(0.07))
+                }
+            }
+    }
+}
+
+extension View {
+    func accountDetailsGlassRelief(
+        cornerRadius: CGFloat = AccountDetailsTheme.rowCornerRadius,
+        destructiveTint: Bool = false
+    ) -> some View {
+        modifier(AccountDetailsGlassReliefModifier(cornerRadius: cornerRadius, destructiveTint: destructiveTint))
+    }
+}
+
+struct AccountDetailsGlassHeader: View {
+    let onBack: () -> Void
+    let onSave: () -> Void
+    var saveDisabled: Bool = true
+
+    var body: some View {
+        HStack {
+            ProcessGlassIconButton(systemName: "chevron.down", size: 40, iconSize: 16, action: onBack)
+
+            Spacer()
+
+            Button(action: onSave) {
+                Text("Enregistrer")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .processGlassEffect(in: Capsule())
+            .buttonStyle(ProcessGlassPressStyle())
+            .disabled(saveDisabled)
+            .opacity(saveDisabled ? 0.72 : 1)
+        }
+        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+    }
+}
+
+struct AccountDetailsAvatarSection: View {
+    let fullName: String
+    let initials: String
+    let image: UIImage?
+    let onChangePhoto: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Group {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    ZStack {
+                        Circle().fill(ProfileTheme.avatarAccent)
+                        Text(initials.prefix(1).uppercased())
+                            .font(.system(size: 52, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+            .frame(width: 110, height: 110)
+            .clipShape(Circle())
+
+            Text(fullName)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Color.primary)
+                .multilineTextAlignment(.center)
+
+            Button(action: onChangePhoto) {
+                Text("Modifier la photo")
+                    .font(.system(size: 15))
+                    .foregroundStyle(AccountDetailsTheme.linkText)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+        .padding(.bottom, 22)
+    }
+}
+
+struct AccountDetailsCard<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(spacing: AccountDetailsTheme.rowSpacing) {
+            content
+        }
+    }
+}
+
+struct AccountDetailsGlassRow<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .accountDetailsGlassRelief()
+    }
+}
+
+struct AccountDetailsDivider: View {
+    var body: some View {
+        EmptyView()
+    }
+}
+
+struct AccountDetailsActionButton: View {
+    let title: String
+    var destructive: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(destructive ? Color.red : Color.primary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+        }
+        .buttonStyle(.plain)
+        .accountDetailsGlassRelief(
+            cornerRadius: AccountDetailsTheme.actionCornerRadius,
+            destructiveTint: destructive
+        )
+        .buttonStyle(ProcessGlassPressStyle())
     }
 }
 
@@ -277,20 +435,6 @@ struct ProfileEditAvatarButton: View {
             }
             .frame(width: 118, height: 118)
             .clipShape(Circle())
-            .overlay(alignment: .bottomTrailing) {
-                ZStack {
-                    Circle().fill(Color.white)
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.black)
-                }
-                .frame(width: 34, height: 34)
-                .overlay {
-                    Circle().strokeBorder(Color.white.opacity(0.85), lineWidth: 1.5)
-                }
-                .offset(x: 2, y: 2)
-                .allowsHitTesting(false)
-            }
         }
         .buttonStyle(.plain)
         .padding(.vertical, 28)

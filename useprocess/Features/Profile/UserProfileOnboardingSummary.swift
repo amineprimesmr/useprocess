@@ -34,13 +34,8 @@ enum UserProfileOnboardingSummary {
         result.append(identitySection(profile))
         result.append(measurementsSection(profile))
         result.append(goalsSection(profile))
-        result.append(sportSection(profile))
         result.append(nutritionSection(profile))
         result.append(sleepSection(profile))
-
-        if let face = OnboardingFaceMarkersStore.load() {
-            result.append(faceScanSection(face))
-        }
 
         return result.filter { !$0.rows.isEmpty }
     }
@@ -51,8 +46,7 @@ enum UserProfileOnboardingSummary {
         var rows: [ProfileSummaryItem] = [
             .init(id: "firstName", label: "Prénom", value: profile.firstName, isEditable: true),
             .init(id: "age", label: "Âge", value: profile.age > 0 ? profile.ageFormatted : nil),
-            .init(id: "gender", label: "Genre", value: profile.gender.displayName),
-            .init(id: "birthDate", label: "Date de naissance", value: profile.birthDateFormatted)
+            .init(id: "gender", label: "Genre", value: profile.gender.displayName)
         ]
 
         if let email = profile.email, !email.isEmpty {
@@ -109,38 +103,6 @@ enum UserProfileOnboardingSummary {
         }
 
         return .init(id: "goals", title: "Objectifs", rows: rows)
-    }
-
-    private static func sportSection(_ profile: UnifiedUserProfile) -> ProfileSummarySection {
-        var rows: [ProfileSummaryItem] = []
-
-        if !profile.sports.isEmpty {
-            rows.append(.init(id: "sports", label: "Sports pratiqués", value: profile.sportsList))
-        }
-        if let level = profile.experienceLevel {
-            rows.append(.init(id: "experience", label: "Niveau d'expérience", value: level.rawValue))
-        }
-        if let years = profile.yearsOfExperience, years > 0 {
-            rows.append(.init(id: "years", label: "Années de pratique", value: "\(years) an\(years > 1 ? "s" : "")"))
-        }
-
-        rows.append(.init(id: "activity", label: "Niveau d'activité", value: profile.activityLevel.displayName))
-
-        if let sessions = profile.sessionsPerWeek, sessions > 0 {
-            rows.append(.init(id: "sessions", label: "Séances / semaine", value: "\(sessions)"))
-        }
-        if let duration = profile.sessionDuration, duration > 0 {
-            rows.append(.init(id: "duration", label: "Durée séance", value: "\(duration) min"))
-        }
-        if let location = profile.trainingLocation {
-            rows.append(.init(id: "location", label: "Lieu d'entraînement", value: location.rawValue))
-        }
-        if let equipment = profile.availableEquipment, !equipment.isEmpty {
-            let list = equipment.map(\.rawValue).joined(separator: ", ")
-            rows.append(.init(id: "equipment", label: "Équipement", value: list))
-        }
-
-        return .init(id: "sport", title: "Sport & entraînement", rows: rows)
     }
 
     private static func nutritionSection(_ profile: UnifiedUserProfile) -> ProfileSummarySection {
@@ -209,25 +171,7 @@ enum UserProfileOnboardingSummary {
         return .init(id: "sleep", title: "Sommeil & énergie", rows: rows)
     }
 
-    private static func faceScanSection(_ face: FaceWellnessMarkers) -> ProfileSummarySection {
-        .init(
-            id: "faceScan",
-            title: "Scan visage (onboarding)",
-            rows: [
-                .init(id: "skinClarity", label: "Clarté de peau", value: scoreLabel(face.skinClarityScore)),
-                .init(id: "underEye", label: "Fatigue sous les yeux", value: scoreLabel(face.underEyeFatigueScore)),
-                .init(id: "puffiness", label: "Gonflement", value: scoreLabel(face.puffinessScore)),
-                .init(id: "jawTension", label: "Tension mâchoire", value: scoreLabel(face.jawTensionScore)),
-                .init(id: "symmetry", label: "Symétrie faciale", value: scoreLabel(face.facialSymmetryScore))
-            ]
-        )
-    }
-
     // MARK: - Helpers
-
-    private static func scoreLabel(_ score: Int) -> String {
-        "\(score)/100"
-    }
 
     private static func nonEmptyJoined(_ values: [String]) -> String? {
         let filtered = values.filter { !$0.isEmpty }

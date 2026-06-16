@@ -18,7 +18,9 @@ final class CoachChatViewModel {
     var isVoiceRecording = false
     var isVoiceExiting = false
     var voiceElapsed: TimeInterval = 0
-    let voiceMaxDuration: TimeInterval = 5.0
+    var voiceTranscript = ""
+    var voiceAudioLevel: CGFloat = 0
+    var voiceAudioLevels: [CGFloat] = Array(repeating: 0.06, count: 32)
 
     private let libraryStore = CoachConversationLibraryStore.shared
     private var profile: UnifiedUserProfile?
@@ -86,7 +88,7 @@ final class CoachChatViewModel {
     }
 
     func createNewConversation() async {
-        cancelVoiceRecording()
+        resetVoiceStateImmediately()
         clearPendingAttachment()
         isSending = false
         streamingText = ""
@@ -124,7 +126,7 @@ final class CoachChatViewModel {
             await createNewConversation()
             return
         }
-        cancelVoiceRecording()
+        resetVoiceStateImmediately()
         clearPendingAttachment()
         isSending = false
         streamingText = ""
@@ -173,6 +175,9 @@ final class CoachChatViewModel {
             isVoiceExiting = false
             isVoiceRecording = true
             voiceElapsed = 0
+            voiceTranscript = ""
+            voiceAudioLevel = 0
+            voiceAudioLevels = Array(repeating: 0.06, count: 32)
             startVoiceTimer()
         } catch {
             errorMessage = error.localizedDescription
@@ -180,33 +185,60 @@ final class CoachChatViewModel {
     }
 
     func cancelVoiceRecording() {
+        guard isVoiceRecording || isVoiceExiting else { return }
         voiceTimerTask?.cancel()
         isVoiceExiting = true
         Task {
-            try? await Task.sleep(for: .milliseconds(300))
+            try? await Task.sleep(for: .milliseconds(220))
             CoachSpeechTranscriber.shared.cancelRecording()
             isVoiceRecording = false
             isVoiceExiting = false
             voiceElapsed = 0
+            voiceTranscript = ""
+            voiceAudioLevel = 0
+            voiceAudioLevels = Array(repeating: 0.06, count: 32)
         }
     }
 
-    func confirmVoiceRecording() async {
-        guard isVoiceRecording else { return }
+    /// Arrêt immédiat sans animation — changement de conversation / historique.
+    private func resetVoiceStateImmediately() {
+        guard isVoiceRecording || isVoiceExiting else { return }
         voiceTimerTask?.cancel()
-        isVoiceExiting = true
-        try? await Task.sleep(for: .milliseconds(260))
-
-        let transcript = CoachSpeechTranscriber.shared.stopRecording()
+        voiceTimerTask = nil
+        CoachSpeechTranscriber.shared.cancelRecording()
         isVoiceRecording = false
         isVoiceExiting = false
         voiceElapsed = 0
+        voiceTranscript = ""
+        voiceAudioLevel = 0
+        voiceAudioLevels = Array(repeating: 0.06, count: 32)
+    }
 
-        guard !transcript.isEmpty else {
+    func confirmVoiceRecording() async -> Bool {
+        guard isVoiceRecording else { return false }
+        voiceTimerTask?.cancel()
+        isVoiceExiting = true
+        try? await Task.sleep(for: .milliseconds(180))
+
+        let fallback = voiceTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let captured = CoachSpeechTranscriber.shared.stopRecording()
+        let finalText = captured.isEmpty ? fallback : captured
+
+        isVoiceRecording = false
+        isVoiceExiting = false
+        voiceElapsed = 0
+        voiceTranscript = ""
+        voiceAudioLevel = 0
+        voiceAudioLevels = Array(repeating: 0.06, count: 32)
+
+        guard !finalText.isEmpty else {
             errorMessage = "Aucune voix détectée — réessaie."
-            return
+            return false
         }
-        await sendPrompt(transcript, persistUserMessage: true)
+
+        inputText = finalText
+        errorMessage = nil
+        return true
     }
 
     func runTool(_ tool: CoachTool) async {
@@ -234,25 +266,26 @@ final class CoachChatViewModel {
         let startedAt = Date()
         voiceTimerTask = Task {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(20))
+                try? await Task.sleep(for: .milliseconds(40))
                 guard !Task.isCancelled else { break }
                 voiceElapsed = Date().timeIntervalSince(startedAt)
-                if voiceElapsed >= voiceMaxDuration {
-                    await confirmVoiceRecording()
-                    break
-                }
+                voiceTranscript = CoachSpeechTranscriber.shared.partialTranscript
+                voiceAudioLevel = CoachSpeechTranscriber.shared.audioLevel
+                voiceAudioLevels = CoachSpeechTranscriber.shared.audioLevels
             }
         }
     }
 
     private func sendPrompt(_ trimmed: String, persistUserMessage: Bool) async {
+        let cleaned = trimmed.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
         guard let conversationId = libraryStore.activeConversationId else { return }
 
         if persistUserMessage {
-            libraryStore.updateActiveConversation { $0.applyAutoTitle(from: trimmed) }
+            libraryStore.updateActiveConversation { $0.applyAutoTitle(from: cleaned) }
             let title = libraryStore.activeConversation?.title
 
-            let userMsg = CoachMessage(role: .user, text: trimmed)
+            let userMsg = CoachMessage(role: .user, text: cleaned)
             messages.append(userMsg)
             await CoachSyncService.appendMessage(
                 userMsg,
@@ -269,7 +302,7 @@ final class CoachChatViewModel {
         defer { isSending = false }
 
         do {
-            let modIntent = CoachPlanModificationService.detectIntent(in: trimmed)
+            let modIntent = CoachPlanModificationService.detectIntent(in: cleaned)
             var effectiveFocus = activePlanFocus
             if effectiveFocus == nil, let intent = modIntent, let plan = WelcomePlanStore.shared.plan {
                 effectiveFocus = CoachPlanModificationService.buildFocus(intent: intent, plan: plan)
@@ -277,7 +310,7 @@ final class CoachChatViewModel {
 
             var assembled = ""
             for try await chunk in CoachEngine.streamChatMessage(
-                trimmed,
+                cleaned,
                 profile: profile,
                 history: messages,
                 planFocus: effectiveFocus
@@ -289,7 +322,7 @@ final class CoachChatViewModel {
             var planChanges: [String] = []
             if modIntent != nil || effectiveFocus?.mode == .modify, var plan = WelcomePlanStore.shared.plan {
                 planChanges = CoachPlanModificationService.apply(
-                    userRequest: trimmed,
+                    userRequest: cleaned,
                     coachResponse: assembled,
                     focus: effectiveFocus,
                     plan: &plan
@@ -306,7 +339,7 @@ final class CoachChatViewModel {
             let reply = CoachMessage(role: .assistant, text: assembled, modelUsed: model)
             messages.append(reply)
             CoachMemoryStore.shared.recordExchange(
-                userText: trimmed,
+                userText: cleaned,
                 assistantText: assembled,
                 conversationTitle: libraryStore.activeConversation?.title
             )

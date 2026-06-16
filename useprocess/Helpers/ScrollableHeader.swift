@@ -35,6 +35,22 @@ extension View {
         }
     }
 
+    /// Profil : hero edge-to-edge derrière le menu sticky + status bar.
+    func processProfileScrollableChrome<ScrollContent: View>(
+        selectedSection: Binding<ProcessMainSection>,
+        @ViewBuilder content: @escaping () -> ScrollContent
+    ) -> some View {
+        processMainScrollableChrome(
+            selectedSection: selectedSection,
+            pageSection: .profile
+        ) {
+            content()
+        }
+        .scrollContentBackground(.hidden)
+        .scrollClipDisabled()
+        .contentMargins(.horizontal, 0, for: .scrollContent)
+    }
+
     @ViewBuilder
     func scrollableHeader<Header: View>(
         dismissDistance: CGFloat,

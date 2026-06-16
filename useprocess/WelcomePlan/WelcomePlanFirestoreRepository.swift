@@ -67,7 +67,7 @@ final class WelcomePlanFirestoreRepository {
 
         if let planJSON = remote.planJSON,
            let data = planJSON.data(using: .utf8),
-           let remotePlan = try? JSONDecoder().decode(FaceOriginPlan.self, from: data) {
+           (try? JSONDecoder().decode(FaceOriginPlan.self, from: data)) != nil {
             let localKey = UserScopedStorage.key("welcome.plan", userId: userId)
             let localUpdated = localPlanUpdatedAt(userId: userId)
             if remote.updatedAt > localUpdated {

@@ -70,6 +70,9 @@ final class FaceScanHistoryStore {
                 if merged.snapshotFilename == nil {
                     merged.snapshotFilename = existing.snapshotFilename
                 }
+                if merged.videoFilename == nil {
+                    merged.videoFilename = existing.videoFilename
+                }
                 if !merged.aiEnhanced, existing.aiEnhanced {
                     merged.claudeAnalysis = existing.claudeAnalysis
                     merged.aiEnhanced = true
@@ -99,21 +102,33 @@ final class FaceScanHistoryStore {
 
     var daysSinceLastScan: Int? {
         guard let latest = latestResult else { return nil }
-        let days = Calendar.current.dateComponents([.day], from: latest.createdAt, to: Date()).day ?? 0
+        let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: latest.createdAt), to: Calendar.current.startOfDay(for: Date())).day ?? 0
         return max(0, days)
     }
 
+    var daysUntilNextScan: Int? {
+        guard let latest = latestResult else { return 0 }
+        return FaceScanCadence.daysUntilNextScan(since: latest.createdAt)
+    }
+
+    var isScanDue: Bool {
+        FaceScanCadence.isScanDue(since: latestResult?.createdAt)
+    }
+
+    /// Nombre de cycles de 3 jours complétés (rythme respecté).
     var streakDays: Int {
         guard !history.isEmpty else { return 0 }
         let calendar = Calendar.current
+        let sorted = history.sorted { $0.createdAt > $1.createdAt }
         var streak = 0
-        var checkDay = calendar.startOfDay(for: Date())
+        var windowEnd = calendar.startOfDay(for: Date())
 
-        let scanDays = Set(history.map { calendar.startOfDay(for: $0.createdAt) })
-        while scanDays.contains(checkDay) {
+        for scan in sorted {
+            let scanDay = calendar.startOfDay(for: scan.createdAt)
+            let daysBeforeWindow = calendar.dateComponents([.day], from: scanDay, to: windowEnd).day ?? 0
+            guard daysBeforeWindow <= FaceScanCadence.intervalDays else { break }
             streak += 1
-            guard let previous = calendar.date(byAdding: .day, value: -1, to: checkDay) else { break }
-            checkDay = previous
+            windowEnd = calendar.date(byAdding: .day, value: -FaceScanCadence.intervalDays, to: scanDay) ?? scanDay
         }
         return streak
     }
@@ -160,6 +175,17 @@ final class FaceScanHistoryStore {
             history = [result]
             return
         }
+        latestResult = nil
+        history = []
+    }
+
+    func clearForUser(userId: String?) {
+        if let userId {
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.latest", userId: userId))
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.history", userId: userId))
+        }
+        self.userId = userId
+        didImportOnboarding = false
         latestResult = nil
         history = []
     }

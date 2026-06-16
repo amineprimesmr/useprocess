@@ -66,4 +66,14 @@ final class BodyScanHistoryStore {
         latestResult = nil
         history = []
     }
+
+    func clearForUser(userId: String?) {
+        if let userId {
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("bodyscan.latest", userId: userId))
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("bodyscan.history", userId: userId))
+        }
+        self.userId = userId
+        latestResult = nil
+        history = []
+    }
 }

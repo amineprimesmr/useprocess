@@ -29,4 +29,26 @@ enum FaceScanImageStore {
         guard let data = try? Data(contentsOf: url) else { return nil }
         return UIImage(data: data)
     }
+
+    static func videoURL(for scanId: String) -> URL {
+        directoryURL.appendingPathComponent("\(scanId)_face.mp4")
+    }
+
+    static func saveVideo(from sourceURL: URL, scanId: String) -> String? {
+        let name = "\(scanId)_face.mp4"
+        let destination = directoryURL.appendingPathComponent(name)
+        do {
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.moveItem(at: sourceURL, to: destination)
+            return name
+        } catch {
+            return nil
+        }
+    }
+
+    static func videoFileURL(filename: String) -> URL {
+        directoryURL.appendingPathComponent(filename)
+    }
 }

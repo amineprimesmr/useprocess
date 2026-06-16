@@ -17,19 +17,19 @@ enum WelcomePlanGenerator {
         let pillarScores = computePillarScores(answers: answers)
         let dailyHabits = buildDailyHabits(answers: answers, gender: gender)
         let weeklyRhythm = buildWeeklyRhythm(sessions: sessions, answers: answers)
-        let phaseRoadmap = buildPhaseRoadmap(sessions: sessions, answers: answers)
+        let duration = OriginPlanDuration.compute(from: answers)
+        let phaseRoadmap = buildPhaseRoadmap(duration: duration, sessions: sessions, answers: answers)
         let nutrition = buildNutritionProtocol(answers: answers, bodyFat: bodyFat)
         let sleep = buildSleepProtocol(answers: answers)
         let training = buildTrainingProtocol(answers: answers, profile: profile, sessions: sessions, gender: gender)
         let posture = buildPostureProtocol(answers: answers)
-        let face = buildFaceProtocol(answers: answers, faceGoal: faceGoal)
-        let mindset = buildMindsetNotes(answers: answers, supplements: supplements)
 
         let summary = buildExecutiveSummary(
             faceGoal: faceGoal,
             answers: answers,
             sleepQ: sleepQ,
-            sessions: sessions
+            sessions: sessions,
+            duration: duration
         )
 
         var plan = FaceOriginPlan(
@@ -37,7 +37,7 @@ enum WelcomePlanGenerator {
             userId: userId,
             createdAt: Date(),
             lastUpdated: Date(),
-            headline: "Protocole Origine — 13 semaines",
+            headline: duration.headlineLabel,
             executiveSummary: summary,
             philosophyNote: FaceOriginPlan.noSupplementsPhilosophy,
             primaryFaceGoal: faceGoal,
@@ -49,8 +49,11 @@ enum WelcomePlanGenerator {
             sleepProtocol: sleep,
             trainingProtocol: training,
             postureProtocol: posture,
-            faceProtocol: face,
-            mindsetNotes: mindset,
+            faceProtocol: buildFaceProtocol(answers: answers, faceGoal: faceGoal, duration: duration),
+            mindsetNotes: buildMindsetNotes(answers: answers, supplements: supplements, duration: duration),
+            totalWeeks: duration.totalWeeks,
+            durationMinWeeks: duration.minWeeks,
+            durationMaxWeeks: duration.maxWeeks,
             calendar: OriginProgramCalendar.empty,
             progress: OriginPlanProgress(),
             lifestyleExtras: buildLifestyleExtras(answers: answers)
@@ -180,11 +183,17 @@ enum WelcomePlanGenerator {
         ]
     }
 
-    private static func buildPhaseRoadmap(sessions: Int, answers: [String: WelcomePlanAnswer]) -> [OriginPlanPhaseBlock] {
-        [
+    private static func buildPhaseRoadmap(
+        duration: OriginPlanDuration,
+        sessions: Int,
+        answers: [String: WelcomePlanAnswer]
+    ) -> [OriginPlanPhaseBlock] {
+        let ends = duration.phaseEnds
+        let total = duration.totalWeeks
+        return [
             .init(
                 id: "p1",
-                weeksRange: "Semaines 1–3",
+                weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: ends.p1),
                 title: "Fondations — Reset biologique",
                 objectives: [
                     "Stabiliser le rythme circadien (coucher / réveil fixes ±30 min)",
@@ -195,7 +204,7 @@ enum WelcomePlanGenerator {
             ),
             .init(
                 id: "p2",
-                weeksRange: "Semaines 4–6",
+                weeksRange: OriginPlanDuration.weeksRangeLabel(from: ends.p1 + 1, through: ends.p2),
                 title: "Hormones & digestion",
                 objectives: [
                     "Optimiser la digestion (mastication, repas réguliers)",
@@ -206,25 +215,25 @@ enum WelcomePlanGenerator {
             ),
             .init(
                 id: "p3",
-                weeksRange: "Semaines 7–10",
+                weeksRange: OriginPlanDuration.weeksRangeLabel(from: ends.p2 + 1, through: ends.p3),
                 title: "Entraînement & composition",
                 objectives: [
                     "\(sessions) séances progressive overload",
                     "Ajustement calories via aliments entiers (pas de shake isolé)",
                     "Travail chaîne postérieure + cou / trapèzes"
                 ],
-                habits: ["Séances loguées", "Sommeil 7,5 h minimum", "Scan visage mensuel"]
+                habits: ["Séances loguées", "Sommeil 7,5 h minimum", "Scan visage régulier"]
             ),
             .init(
                 id: "p4",
-                weeksRange: "Semaines 11–13",
+                weeksRange: OriginPlanDuration.weeksRangeLabel(from: ends.p3 + 1, through: total),
                 title: "Affinage visage & consolidation",
                 objectives: [
                     "Affiner masse grasse si objectif",
-                    "Libération fascias maxillaire / SCM / nuque",
+                    "Libération fascias maxillaire et nuque",
                     "Ancrer les habitudes sur le long terme"
                 ],
-                habits: ["Bilan photos / scan", "Maintien 80 % des bases", "Plan post-13 semaines"]
+                habits: ["Bilan photos / scan", "Maintien 80 % des bases", "Plan après le protocole"]
             )
         ]
     }
@@ -233,8 +242,8 @@ enum WelcomePlanGenerator {
         answers: [String: WelcomePlanAnswer],
         bodyFat: String?
     ) -> OriginNutritionProtocol {
-        var reduce: [String] = ["Ultra-transformés", "Huiles de graines industrielles", "Sucre ajouté quotidien"]
-        var prioritize: [String] = ["Œufs", "Viande rouge / abats (foie 1×/sem)", "Tubercules vapeur", "Fruits modérés (1/jour max)"]
+        let reduce: [String] = ["Ultra-transformés", "Huiles de graines industrielles", "Sucre ajouté quotidien"]
+        var prioritize: [String] = ["Œufs", "Foie 1× par semaine", "Tubercules vapeur", "Fruits modérés"]
         var principles: [String] = [
             "Alimentation dense = moins de volume, plus de nutriments — digestion légère",
             "Zéro complément isolé : cofacteurs viennent des aliments entiers",
@@ -384,11 +393,18 @@ enum WelcomePlanGenerator {
         )
     }
 
-    private static func buildFaceProtocol(answers: [String: WelcomePlanAnswer], faceGoal: String) -> OriginFaceProtocol {
+    private static func buildFaceProtocol(
+        answers: [String: WelcomePlanAnswer],
+        faceGoal: String,
+        duration: OriginPlanDuration
+    ) -> OriginFaceProtocol {
         var focus = [faceGoal]
         focus.append(contentsOf: multi("face_concerns", in: answers).map {
             WelcomePlanQuestionBank.choiceLabel(for: "face_concerns", choiceId: $0)
         })
+
+        let midScan = max(2, duration.totalWeeks / 3)
+        let finalScan = duration.totalWeeks
 
         return OriginFaceProtocol(
             focusAreas: Array(Set(focus)),
@@ -402,22 +418,26 @@ enum WelcomePlanGenerator {
             lymphAndFascia: [
                 "Marche + hydratation minérale = drainage lymphatique naturel",
                 "Massage doux sous-orbital vers les oreilles — 1 min/j",
-                "Libération SCM / nuque si forward head (fascias faciaux)"
+                "Libération nuque si tête en avant (fascias faciaux)"
             ],
-            scanCadence: "Scan TrueDepth semaine 1, 4, 8, 13 — corrélations auto dans Santé"
+            scanCadence: "Scan visage semaine 1, \(midScan), \(finalScan) — suivi dans Santé"
         )
     }
 
-    private static func buildMindsetNotes(answers: [String: WelcomePlanAnswer], supplements: String?) -> [String] {
+    private static func buildMindsetNotes(
+        answers: [String: WelcomePlanAnswer],
+        supplements: String?,
+        duration: OriginPlanDuration
+    ) -> [String] {
         var notes = [
-            "Ce n'est pas ta génétique — c'est tes habitudes. 13 semaines = fondations.",
+            "Ce n'est pas ta génétique — ce sont tes habitudes. \(duration.totalWeeks) semaines posent les fondations.",
             "10 % des actions (sommeil, alimentation dense, mewing + posture) = 90 % du résultat visage.",
             "Pas de raccourci artificiel. La beauté est la conséquence d'une biologie en ordre."
         ]
         if supplements == "many" || supplements == "basic" {
             notes.append("On remplace les compléments par des aliments entiers — foie, œufs, laitiers, bouillon.")
         }
-        if choice("commit_13_weeks", in: answers) == "no" {
+        if choice("commit_plan", in: answers) == "no" {
             notes.append("Reviens quand tu es prêt à t'engager — les bases demandent de la constance.")
         }
         return notes
@@ -427,11 +447,12 @@ enum WelcomePlanGenerator {
         faceGoal: String,
         answers: [String: WelcomePlanAnswer],
         sleepQ: String?,
-        sessions: Int
+        sessions: Int,
+        duration: OriginPlanDuration
     ) -> String {
         var parts: [String] = []
         parts.append("Priorités : \(faceGoal).")
-        parts.append("Plan 13 semaines Protocole Origine — 100 % naturel, zéro pilule.")
+        parts.append("Protocole Origine sur \(duration.rangeLabel) (\(duration.totalWeeks) semaines calendrier) — 100 % naturel, zéro pilule.")
 
         if sleepQ?.contains("Mauvais") == true || sleepQ?.contains("mauvais") == true {
             parts.append("Priorité #1 : sommeil et rythme circadien — sans ça, le visage reste gonflé.")
@@ -440,7 +461,8 @@ enum WelcomePlanGenerator {
             parts.append("Alimentation industrielle détectée : transition vers repas denses faits maison.")
         }
         parts.append("\(sessions) séances/semaine + marche (HealthKit) + mewing & travail maxillaire.")
-        parts.append("Semaines 1–3 = fondations. Le visage suit la biologie, pas l'inverse.")
+        let ends = duration.phaseEnds
+        parts.append("\(OriginPlanDuration.weeksRangeLabel(from: 1, through: ends.p1)) = fondations. Le visage suit la biologie, pas l'inverse.")
 
         return parts.joined(separator: " ")
     }

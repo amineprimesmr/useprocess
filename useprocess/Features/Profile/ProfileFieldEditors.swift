@@ -2,10 +2,9 @@ import SwiftUI
 
 enum ProfileEditDestination: Hashable {
     case firstName
-}
-
-enum ProfileRoute: Hashable {
-    case editProfile
+    case lastName
+    case gender
+    case birthDate
 }
 
 @ViewBuilder
@@ -17,7 +16,32 @@ func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
                 ?? SocialProfileStore.shared.profile?.displayName
                 ?? ""
         )
+    case .lastName:
+        ProfileLastNameEditorView(
+            initialValue: UnifiedProfileService.shared.currentProfile?.lastName ?? ""
+        )
+    case .gender:
+        ProfileGenderEditorView(
+            initialValue: UnifiedProfileService.shared.currentProfile?.gender ?? .male
+        )
+    case .birthDate:
+        ProfileBirthDateEditorView(
+            initialValue: UnifiedProfileService.shared.currentProfile?.birthDate
+                ?? Calendar.current.date(byAdding: .year, value: -25, to: Date())
+                ?? Date()
+        )
     }
+}
+
+@MainActor
+private func persistProfileChanges(
+    using profileService: UnifiedProfileService,
+    update: (inout UnifiedUserProfile) -> Void
+) async {
+    guard var unified = profileService.currentProfile else { return }
+    update(&unified)
+    unified.updateLastUpdated()
+    try? await profileService.saveProfile(unified)
 }
 
 // MARK: - Name
@@ -25,7 +49,6 @@ func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
 struct ProfileNameEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
-    @State private var profileStore = SocialProfileStore.shared
     @State private var name: String
     @FocusState private var isFocused: Bool
 
@@ -66,8 +89,10 @@ struct ProfileNameEditorView: View {
                 title: "Enregistrer",
                 disabled: trimmedName.isEmpty
             ) {
-                save()
-                dismiss()
+                Task {
+                    await persistProfileChanges(using: profileService) { $0.firstName = trimmedName }
+                    dismiss()
+                }
             }
         }
         .onAppear {
@@ -80,20 +105,184 @@ struct ProfileNameEditorView: View {
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+}
 
-    private func save() {
-        guard !trimmedName.isEmpty else { return }
+// MARK: - Last name
 
-        profileStore.update { profile in
-            profile.displayName = trimmedName
+struct ProfileLastNameEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var profileService: UnifiedProfileService
+    @State private var lastName: String
+    @FocusState private var isFocused: Bool
+
+    init(initialValue: String) {
+        _lastName = State(initialValue: initialValue)
+    }
+
+    var body: some View {
+        ZStack {
+            ProfileEditTheme.background.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                ProfileEditorHeader(title: "Nom de famille", onDismiss: { dismiss() })
+
+                ProfileEditorHero(
+                    headline: "Quel est ton nom ?",
+                    subtitle: "Il apparaît sur ton profil et dans les détails du compte."
+                )
+
+                TextField("", text: $lastName, prompt:
+                    Text("Ton nom de famille")
+                        .foregroundStyle(ProfileEditTheme.placeholder)
+                        .font(.system(size: 28, weight: .bold))
+                )
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(Color.primary)
+                .multilineTextAlignment(.center)
+                .focused($isFocused)
+                .padding(.horizontal, 24)
+                .padding(.top, 36)
+
+                Spacer(minLength: 0)
+            }
         }
-
-        Task {
-            guard var unified = profileService.currentProfile else { return }
-            unified.firstName = trimmedName
-            unified.updateLastUpdated()
-            try? await profileService.saveProfile(unified)
+        .toolbar(.hidden, for: .navigationBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            ProfileEditorBottomSaveButton(
+                title: "Enregistrer",
+                disabled: trimmedLastName.isEmpty
+            ) {
+                Task {
+                    await persistProfileChanges(using: profileService) { $0.lastName = trimmedLastName }
+                    dismiss()
+                }
+            }
         }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                isFocused = true
+            }
+        }
+    }
+
+    private var trimmedLastName: String {
+        lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+// MARK: - Gender
+
+struct ProfileGenderEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var profileService: UnifiedProfileService
+    @State private var selectedGender: Gender
+
+    init(initialValue: Gender) {
+        _selectedGender = State(initialValue: initialValue)
+    }
+
+    var body: some View {
+        ZStack {
+            AccountDetailsTheme.pageBackground.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                ProfileEditorHeader(
+                    title: "Sexe",
+                    showsSave: true,
+                    onDismiss: { dismiss() },
+                    onSave: {
+                        Task {
+                            await persistProfileChanges(using: profileService) { $0.gender = selectedGender }
+                            dismiss()
+                        }
+                    }
+                )
+
+                AccountDetailsCard {
+                    ForEach(Gender.allCases, id: \.self) { gender in
+                        Button {
+                            selectedGender = gender
+                        } label: {
+                            AccountDetailsGlassRow {
+                                HStack {
+                                    Text(gender.displayName)
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(Color.primary)
+                                    Spacer()
+                                    if selectedGender == gender {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundStyle(Color.primary)
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
+                                .contentShape(Rectangle())
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                .padding(.top, 20)
+
+                Spacer(minLength: 0)
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+// MARK: - Birth date
+
+struct ProfileBirthDateEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var profileService: UnifiedProfileService
+    @State private var birthDate: Date
+
+    init(initialValue: Date) {
+        _birthDate = State(initialValue: initialValue)
+    }
+
+    var body: some View {
+        ZStack {
+            AccountDetailsTheme.pageBackground.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                ProfileEditorHeader(
+                    title: "Date de naissance",
+                    showsSave: true,
+                    onDismiss: { dismiss() },
+                    onSave: {
+                        Task {
+                            await persistProfileChanges(using: profileService) { profile in
+                                profile.birthDate = birthDate
+                                profile.age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? profile.age
+                            }
+                            dismiss()
+                        }
+                    }
+                )
+
+                DatePicker(
+                    "",
+                    selection: $birthDate,
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .environment(\.locale, Locale(identifier: "fr_FR"))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accountDetailsGlassRelief()
+                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                .padding(.top, 12)
+
+                Spacer(minLength: 0)
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

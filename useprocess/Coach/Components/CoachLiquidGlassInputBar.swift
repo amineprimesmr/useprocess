@@ -16,10 +16,6 @@ struct CoachLiquidGlassInputBar: View {
     var onOpenMenu: () -> Void
     var onRemovePendingImage: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
-
-    private var isDark: Bool { colorScheme == .dark }
-
     private var trimmedEmpty: Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -95,9 +91,8 @@ struct CoachLiquidGlassInputBar: View {
                     } label: {
                         Image(systemName: "arrow.up")
                             .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                             .frame(width: 36, height: 36)
-                            .background(Color.processPrimary, in: Circle())
                     }
                     .buttonStyle(LiquidGlassPressStyle())
                     .disabled(isDisabled)

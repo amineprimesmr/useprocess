@@ -3,15 +3,15 @@ import SwiftUI
 struct EditProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @Bindable private var session = AppSession.shared
     @State private var profileStore = SocialProfileStore.shared
     @State private var showPhotoFlow = false
+    @State private var showLogoutConfirm = false
+    @State private var showDeleteAlert = false
+    @State private var isDeletingAccount = false
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
-    }
-
-    private var sections: [ProfileSummarySection] {
-        UserProfileOnboardingSummary.sections(from: profile)
     }
 
     private var initials: String {
@@ -20,26 +20,52 @@ struct EditProfileView: View {
         return (first + last).uppercased()
     }
 
+    private var fullName: String {
+        if let profile {
+            return profile.fullName
+        }
+        return profileStore.profile?.displayName ?? "Mon profil"
+    }
+
+    private var ageText: String? {
+        guard let profile, profile.age > 0 else { return nil }
+        return profile.ageFormatted
+    }
+
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
+            AccountDetailsTheme.pageBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                editHeader
+                AccountDetailsGlassHeader(
+                    onBack: { dismiss() },
+                    onSave: { dismiss() },
+                    saveDisabled: true
+                )
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        ProfileEditAvatarButton(
+                        AccountDetailsAvatarSection(
+                            fullName: fullName,
                             initials: initials,
                             image: profileStore.profilePhoto,
-                            action: { showPhotoFlow = true }
+                            onChangePhoto: { showPhotoFlow = true }
                         )
 
-                        if sections.isEmpty {
-                            emptyState
-                        } else {
-                            profileSections
+                        accountFieldsSection
+                            .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+
+                        VStack(spacing: AccountDetailsTheme.rowSpacing) {
+                            AccountDetailsActionButton(title: "Se déconnecter") {
+                                showLogoutConfirm = true
+                            }
+
+                            AccountDetailsActionButton(title: "Supprimer le compte", destructive: true) {
+                                showDeleteAlert = true
+                            }
                         }
+                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                        .padding(.top, 24)
                     }
                     .padding(.bottom, 32)
                 }
@@ -61,6 +87,47 @@ struct EditProfileView: View {
                 }
             }
         )
+        .confirmationDialog(
+            "Se déconnecter ?",
+            isPresented: $showLogoutConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Se déconnecter", role: .destructive) {
+                AuthenticationManager.shared.signOut()
+                dismiss()
+            }
+            Button("Annuler", role: .cancel) {}
+        }
+        .alert("Supprimer le compte ?", isPresented: $showDeleteAlert) {
+            Button("Annuler", role: .cancel) {}
+            Button("Supprimer le compte", role: .destructive) {
+                Task {
+                    isDeletingAccount = true
+                    await session.deleteAccount()
+                    isDeletingAccount = false
+                    dismiss()
+                }
+            }
+        } message: {
+            Text("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.")
+        }
+        .overlay {
+            if isDeletingAccount {
+                ZStack {
+                    Color.black.opacity(0.45).ignoresSafeArea()
+                    VStack(spacing: 14) {
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Suppression du compte…")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(28)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+            }
+        }
+        .allowsHitTesting(!isDeletingAccount)
         .task {
             if profileService.currentProfile == nil {
                 await profileService.loadProfile()
@@ -72,74 +139,76 @@ struct EditProfileView: View {
         }
     }
 
-    private var profileSections: some View {
-        ForEach(sections) { section in
-            VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: section.title)
-
-                ForEach(Array(section.rows.enumerated()), id: \.element.id) { index, item in
-                    if item.isEditable {
-                        NavigationLink(value: ProfileEditDestination.firstName) {
-                            ProfileEditListRow(
-                                label: item.label,
-                                value: item.value,
-                                placeholder: "Non renseigné"
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        ProfileSummaryInfoRow(item: item)
-                    }
-
-                    if index < section.rows.count - 1 {
-                        divider
-                    }
+    @ViewBuilder
+    private var accountFieldsSection: some View {
+        AccountDetailsCard {
+            NavigationLink(value: ProfileEditDestination.firstName) {
+                AccountDetailsGlassRow {
+                    ProfileEditListRow(
+                        label: "Prénom",
+                        value: profile?.firstName,
+                        placeholder: "Non renseigné",
+                        showsChevron: false
+                    )
                 }
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink(value: ProfileEditDestination.lastName) {
+                AccountDetailsGlassRow {
+                    ProfileEditListRow(
+                        label: "Nom de famille",
+                        value: profile?.lastName,
+                        placeholder: "Non renseigné",
+                        showsChevron: false
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink(value: ProfileEditDestination.gender) {
+                AccountDetailsGlassRow {
+                    ProfileEditListRow(
+                        label: "Sexe",
+                        value: profile?.gender.displayName,
+                        placeholder: "Non renseigné"
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink(value: ProfileEditDestination.birthDate) {
+                AccountDetailsGlassRow {
+                    ProfileEditListRow(
+                        label: "Date de naissance",
+                        value: birthDateDisplay,
+                        placeholder: "Non renseigné"
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+
+            AccountDetailsGlassRow {
+                ProfileEditListRow(
+                    label: "Âge",
+                    value: ageText,
+                    placeholder: "—",
+                    showsChevron: false,
+                    valueIsMuted: true
+                )
             }
         }
     }
 
-    private var emptyState: some View {
-        VStack(spacing: 10) {
-            Text("Aucune donnée onboarding")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary)
-            Text("Termine l'onboarding pour voir ici ton profil personnalisé.")
-                .font(.system(size: 15))
-                .foregroundStyle(ProfileEditTheme.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 28)
-        }
-        .padding(.vertical, 36)
+    private var birthDateDisplay: String? {
+        guard let profile else { return nil }
+        return Self.birthDateFormatter.string(from: profile.birthDate)
     }
 
-    private var editHeader: some View {
-        ZStack {
-            Text("Mon profil")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary)
-
-            HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-            }
-            .padding(.horizontal, 8)
-        }
-        .padding(.top, 4)
-        .padding(.bottom, 6)
-    }
-
-    private var divider: some View {
-        Rectangle()
-            .fill(ProfileEditTheme.separator)
-            .frame(height: 1)
-            .padding(.leading, 16)
-    }
+    private static let birthDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "d MMMM yyyy"
+        return formatter
+    }()
 }

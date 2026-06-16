@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Page profil — design Totem (hero, glass, pins).
+/// Page profil — hero edge-to-edge + menu sticky partagé (comme Coach / Santé / Scan).
 struct ProcessProfileView: View {
+    @Binding var selectedSection: ProcessMainSection
+
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @Bindable private var session = AppSession.shared
     @State private var profileStore = SocialProfileStore.shared
-    @State private var navigationPath = NavigationPath()
-    @State private var showSettings = false
+    @State private var showEditProfile = false
     @State private var showShareSheet = false
     @State private var showAddPin = false
     @State private var showPhotoFlow = false
@@ -24,33 +26,11 @@ struct ProcessProfileView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            ScrollView(.vertical, showsIndicators: false) {
-                profileContent(resolvedProfile)
-                    .frame(maxWidth: .infinity)
-            }
-            .background(ProfileTheme.background)
-            .scrollContentBackground(.hidden)
-            .scrollIndicators(.hidden)
-            .contentMargins(.horizontal, 0, for: .scrollContent)
-            .contentMargins(.top, -ProfileTheme.topSafeInset, for: .scrollContent)
-            .clipped()
-            .ignoresSafeArea(edges: .top)
-            .overlay(alignment: .top) {
-                ProfileTopBar(onSettings: { showSettings = true })
-                    .zIndex(10)
-            }
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: ProfileRoute.self) { route in
-                switch route {
-                case .editProfile:
-                    EditProfileView()
-                }
-            }
-            .navigationDestination(for: ProfileEditDestination.self) { destination in
-                profileFieldEditor(for: destination)
-            }
+        processProfileScrollableChrome(selectedSection: $selectedSection) {
+            profileContent(resolvedProfile)
+                .frame(maxWidth: .infinity)
         }
+        .reportsProfileSubrouteActive(showEditProfile)
         .background(ProfileTheme.background.ignoresSafeArea())
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
@@ -66,13 +46,26 @@ struct ProcessProfileView: View {
                 }
             }
         )
-        .sheet(isPresented: $showSettings) {
-            NavigationStack {
-                ProcessSettingsView()
-            }
-        }
         .sheet(isPresented: $showShareSheet) {
             ProfileShareSheet(items: [profileStore.shareText])
+        }
+        .sheet(isPresented: $showEditProfile) {
+            NavigationStack {
+                EditProfileView()
+                    .navigationDestination(for: ProfileEditDestination.self) { destination in
+                        profileFieldEditor(for: destination)
+                    }
+            }
+            .environmentObject(profileService)
+            .environmentObject(AuthenticationManager.shared)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(AccountDetailsTheme.pageBackground)
+        }
+        .onChange(of: session.hasCompletedOnboarding) { _, completed in
+            if !completed {
+                showEditProfile = false
+            }
         }
         .sheet(isPresented: $showAddPin) {
             ProfileAddPinSheet(title: $newPinTitle, emoji: $newPinEmoji) {
@@ -118,9 +111,7 @@ struct ProcessProfileView: View {
             ProfileCoverPhotoSection(
                 image: cover,
                 displayName: profile.displayName,
-                username: profile.username,
-                isPrivate: profile.isPrivate,
-                onChangePhoto: { showPhotoFlow = true }
+                isPrivate: profile.isPrivate
             )
             .transition(.opacity.combined(with: .scale(scale: 0.985)))
         } else {
@@ -132,13 +123,15 @@ struct ProcessProfileView: View {
             if !profileStore.hasCoverPhoto {
                 ProfileIdentityBlock(
                     displayName: profile.displayName,
-                    username: profile.username,
                     isPrivate: profile.isPrivate
                 )
                 .padding(.top, 8)
             }
 
-            ProfileActionButtons(onShare: { showShareSheet = true })
+            ProfileActionButtons(
+                onShare: { showShareSheet = true },
+                onEdit: { showEditProfile = true }
+            )
 
             WelcomePlanProfileSection()
 

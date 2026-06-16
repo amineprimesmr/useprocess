@@ -9,6 +9,8 @@ final class AppSession {
     var hasCompletedOnboarding: Bool
     var hasCompletedWelcomePlanChat: Bool
     var appearance: AppAppearance
+    /// Empêche UserSessionCoordinator de recharger l'onboarding pendant une suppression.
+    private(set) var isAccountWipeInProgress = false
 
     private init() {
         let uid = UserScopedStorage.currentUserId()
@@ -41,16 +43,58 @@ final class AppSession {
     }
 
     func resetOnboarding() {
+        let uid = UnifiedProfileService.shared.currentProfile?.userId
+            ?? UserScopedStorage.currentUserId()
+            ?? "local-user"
+
         hasCompletedOnboarding = false
         hasCompletedWelcomePlanChat = false
-        UserDefaults.standard.set(false, forKey: onboardingStorageKey)
-        UserDefaults.standard.set(false, forKey: welcomePlanChatStorageKey)
-        AuthenticationManager.shared.resetSession()
+
+        for id in UserScopedStorage.likelyUserIds(primary: uid) {
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("onboarding.completed", userId: id))
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan.chat.completed", userId: id))
+        }
+
         OnboardingProgressService.shared.resetProgress()
         WelcomePlanStore.shared.resetForCurrentUser()
+        AuthenticationManager.shared.hasCompletedOnboarding = false
+    }
+
+    /// Suppression complète du compte : données locales + Firebase + retour onboarding.
+    func deleteAccount() async {
+        isAccountWipeInProgress = true
+        defer { isAccountWipeInProgress = false }
+
+        let primaryUID = UserScopedStorage.currentUserId()
+            ?? UnifiedProfileService.shared.currentProfile?.userId
+            ?? "local-user"
+
+        WelcomePlanStore.shared.resetForCurrentUser()
+        CoachConversationStore.resetThread()
+        CoachConversationLibraryStore.shared.clearStoredData(userId: primaryUID)
+        CoachMemoryStore.shared.clearForUser(userId: primaryUID)
+        SocialProfileStore.shared.resetForUser(userId: primaryUID)
+        BodyScanHistoryStore.shared.clearForUser(userId: primaryUID)
+        FaceScanHistoryStore.shared.clearForUser(userId: primaryUID)
+        OnboardingProgressService.shared.resetProgress()
+
+        hasCompletedOnboarding = false
+        hasCompletedWelcomePlanChat = false
+
+        for uid in UserScopedStorage.likelyUserIds(primary: primaryUID) {
+            UserScopedStorage.clearAllUserData(userId: uid)
+        }
+
+        UnifiedProfileService.shared.clearLocalProfile()
+
+        await AuthenticationManager.shared.deleteRemoteUserIfNeeded()
+        AuthenticationManager.shared.applyPostAccountDeletion()
+
+        UserSessionCoordinator.shared.handleAccountDeleted()
     }
 
     func reloadForCurrentUser() {
+        guard !isAccountWipeInProgress else { return }
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
         let welcomeKey = welcomePlanChatStorageKey
         if hasCompletedOnboarding, UserDefaults.standard.object(forKey: welcomeKey) == nil {
@@ -68,11 +112,17 @@ final class AppSession {
     }
 
     private var onboardingStorageKey: String {
-        UserScopedStorage.key("onboarding.completed", userId: UserScopedStorage.currentUserId())
+        UserScopedStorage.key(
+            "onboarding.completed",
+            userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId
+        )
     }
 
     private var welcomePlanChatStorageKey: String {
-        UserScopedStorage.key("welcome.plan.chat.completed", userId: UserScopedStorage.currentUserId())
+        UserScopedStorage.key(
+            "welcome.plan.chat.completed",
+            userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId
+        )
     }
 
     private enum Keys {

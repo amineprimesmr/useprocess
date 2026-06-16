@@ -12,6 +12,7 @@ final class FaceScanFirestoreRepository {
     func save(_ result: FaceScanResult) async throws {
         var cloud = result
         cloud.snapshotFilename = nil
+        cloud.videoFilename = nil
 
         let ref = db.collection("users")
             .document(result.userId)

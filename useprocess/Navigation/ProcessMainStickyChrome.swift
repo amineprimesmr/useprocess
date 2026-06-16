@@ -27,6 +27,21 @@ extension View {
     }
 }
 
+struct ProfileSubrouteActiveKey: PreferenceKey {
+    static var defaultValue = false
+
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
+    }
+}
+
+extension View {
+    /// Masque le menu sticky principal (ex. écran « Modifier le profil »).
+    func reportsProfileSubrouteActive(_ isActive: Bool) -> some View {
+        preference(key: ProfileSubrouteActiveKey.self, value: isActive)
+    }
+}
+
 struct ProcessMainScrollHeaderPreference: Equatable {
     var section: ProcessMainSection
     var headerProgress: CGFloat
@@ -46,6 +61,7 @@ struct ProcessMainScrollHeaderPreferenceKey: PreferenceKey {
 /// Menu + blur sticky au-dessus du TabView (une seule instance).
 struct ProcessMainStickyChromeOverlay: View {
     @Binding var selection: ProcessMainSection
+    var lockedSections: Set<ProcessMainSection> = []
     let headerProgress: CGFloat
     let headerVisibility: CGFloat
 
@@ -58,7 +74,7 @@ struct ProcessMainStickyChromeOverlay: View {
                 )
                 .allowsHitTesting(false)
 
-                ProcessMainFilterBar(selection: $selection)
+                ProcessMainFilterBar(selection: $selection, lockedSections: lockedSections)
                     .padding(.top, ProcessMainChromeMetrics.topSafeInset)
                     .offset(y: headerProgress * -ProcessMainChromeMetrics.dismissDistance)
                     .opacity(Double(headerVisibility))

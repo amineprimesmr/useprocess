@@ -355,7 +355,35 @@ struct CoachThinkingBlobPlaceholder: View {
     var body: some View {
         Color.clear
             .frame(height: 44)
+            .coachResponseAnchor()
             .accessibilityLabel("Coach réfléchit")
+    }
+}
+
+// MARK: - Ancrage vertical de la goutte (alignée sur la réponse en cours)
+
+struct CoachResponseAnchorKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next != .zero {
+            value = next
+        }
+    }
+}
+
+extension View {
+    func coachResponseAnchor() -> some View {
+        background {
+            GeometryReader { geo in
+                Color.clear
+                    .preference(
+                        key: CoachResponseAnchorKey.self,
+                        value: geo.frame(in: .named("coachChatRoot"))
+                    )
+            }
+        }
     }
 }
 

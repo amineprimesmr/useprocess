@@ -125,7 +125,37 @@ final class AuthenticationManager: NSObject, ObservableObject {
         isInOnboarding = false
         isAuthenticated = false
         isDemoSession = false
-        UserDefaults.standard.set(false, forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid))
+        let uid = Auth.auth().currentUser?.uid
+        UserDefaults.standard.set(false, forKey: UserScopedStorage.key("onboarding.completed", userId: uid))
+        if AppConfiguration.firebaseConfigured {
+            try? Auth.auth().signOut()
+        }
+        UnifiedProfileService.shared.clearLocalProfile()
+    }
+
+    func deleteRemoteUserIfNeeded() async {
+        guard AppConfiguration.firebaseConfigured, let user = Auth.auth().currentUser else { return }
+        try? await FirebaseProfileRepository.shared.deleteProfile(userId: user.uid)
+        do {
+            try await user.delete()
+        } catch {
+            try? Auth.auth().signOut()
+        }
+    }
+
+    func applyPostAccountDeletion() {
+        isDemoSession = false
+        isAuthenticated = false
+        isInOnboarding = false
+        hasCompletedOnboarding = false
+        if AppConfiguration.firebaseConfigured {
+            try? Auth.auth().signOut()
+        }
+        UnifiedProfileService.shared.clearLocalProfile()
+    }
+
+    func signOut() {
+        isDemoSession = false
         if AppConfiguration.firebaseConfigured {
             try? Auth.auth().signOut()
         }
@@ -143,6 +173,8 @@ enum UnifiedProfileError: Error {
 final class UnifiedProfileService: ObservableObject {
     static let shared = UnifiedProfileService()
 
+    private static let localProfileKey = "unified.profile"
+
     @Published var currentProfile: UnifiedUserProfile?
     @Published var isLoading = false
     @Published var error: Error?
@@ -156,27 +188,50 @@ final class UnifiedProfileService: ObservableObject {
         error = nil
     }
 
+    func clearAllLocalData(userId: String) {
+        UserScopedStorage.clearAllUserData(userId: userId)
+        clearLocalProfile()
+    }
+
+    private func persistLocalProfile(_ profile: UnifiedUserProfile) {
+        let key = UserScopedStorage.key(Self.localProfileKey, userId: profile.userId)
+        if let data = try? JSONEncoder().encode(profile) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    private func loadLocalProfile(userId: String) -> UnifiedUserProfile? {
+        let key = UserScopedStorage.key(Self.localProfileKey, userId: userId)
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(UnifiedUserProfile.self, from: data)
+    }
+
     func loadProfile() async {
         if AuthenticationManager.shared.isDemoSession {
+            let userId = AuthenticationManager.demoUserID
             if currentProfile == nil {
-                currentProfile = UnifiedUserProfile(
-                    userId: "demo-user",
-                    firstName: "Demo"
-                )
+                currentProfile = loadLocalProfile(userId: userId)
+                    ?? UnifiedUserProfile(userId: userId, firstName: "Demo")
             }
             isAuthenticated = true
+            if let currentProfile {
+                SocialProfileStore.shared.syncFromUnified(currentProfile)
+            }
             return
         }
 
         guard AppConfiguration.firebaseConfigured,
               let userId = Auth.auth().currentUser?.uid else {
-            if currentProfile == nil {
-                currentProfile = UnifiedUserProfile(
-                    userId: "local-user",
-                    firstName: "Process"
-                )
+            let userId = "local-user"
+            if let cached = loadLocalProfile(userId: userId) {
+                currentProfile = cached
+            } else if currentProfile == nil {
+                currentProfile = UnifiedUserProfile(userId: userId, firstName: "Process")
             }
             isAuthenticated = currentProfile != nil
+            if let currentProfile {
+                SocialProfileStore.shared.syncFromUnified(currentProfile)
+            }
             return
         }
 
@@ -195,16 +250,24 @@ final class UnifiedProfileService: ObservableObject {
             }
             isAuthenticated = true
             error = nil
+            if let currentProfile {
+                persistLocalProfile(currentProfile)
+                SocialProfileStore.shared.syncFromUnified(currentProfile)
+            }
         } catch {
             self.error = error
             if currentProfile == nil {
-                currentProfile = UnifiedUserProfile(
-                    userId: userId,
-                    firstName: Auth.auth().currentUser?.displayName ?? "Process",
-                    email: Auth.auth().currentUser?.email
-                )
+                currentProfile = loadLocalProfile(userId: userId)
+                    ?? UnifiedUserProfile(
+                        userId: userId,
+                        firstName: Auth.auth().currentUser?.displayName ?? "Process",
+                        email: Auth.auth().currentUser?.email
+                    )
             }
             isAuthenticated = true
+            if let currentProfile {
+                SocialProfileStore.shared.syncFromUnified(currentProfile)
+            }
         }
     }
 
@@ -212,6 +275,8 @@ final class UnifiedProfileService: ObservableObject {
         currentProfile = profile
         isAuthenticated = true
         error = nil
+        persistLocalProfile(profile)
+        SocialProfileStore.shared.syncFromUnified(profile)
 
         guard AppConfiguration.firebaseConfigured,
               !AuthenticationManager.shared.isDemoSession,

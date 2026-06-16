@@ -20,8 +20,10 @@ struct OnboardingFaceScanPayload: Codable, Hashable {
 
 /// Données brutes capturées à la fin du scan Face ID.
 struct FaceScanCapturePayload: Sendable {
+    let scanId: String
     let mesh: FaceMesh3DData
     let snapshot: UIImage?
+    let videoFilename: String?
     let averageBlendShapes: [String: Float]
     let yawCoverage: Double
 }
@@ -39,6 +41,7 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
     let createdAt: Date
     let markers: FaceWellnessMarkers
     var snapshotFilename: String?
+    var videoFilename: String?
     var claudeAnalysis: String?
     var aiEnhanced: Bool
     var source: FaceScanSource
@@ -56,6 +59,7 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
         createdAt: Date = Date(),
         markers: FaceWellnessMarkers,
         snapshotFilename: String? = nil,
+        videoFilename: String? = nil,
         claudeAnalysis: String? = nil,
         aiEnhanced: Bool = false,
         source: FaceScanSource = .daily,
@@ -68,6 +72,7 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
         self.createdAt = createdAt
         self.markers = markers
         self.snapshotFilename = snapshotFilename
+        self.videoFilename = videoFilename
         self.claudeAnalysis = claudeAnalysis
         self.aiEnhanced = aiEnhanced
         self.source = source

@@ -1,35 +1,12 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Top bar
-
-struct ProfileTopBar: View {
-    var onSettings: () -> Void
-
-    var body: some View {
-        HStack {
-            Spacer(minLength: 0)
-            ProcessGlassIconButton(systemName: "gearshape.fill", iconSize: 18, action: onSettings)
-        }
-        .padding(.horizontal, ProfileTheme.horizontalPadding)
-        .padding(.top, ProfileTheme.topSafeInset + 4)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .background(alignment: .top) {
-            ProcessMainTopScrollBlur(
-                visibility: 1,
-                height: ProfileTheme.topBarBlurHeight
-            )
-            .ignoresSafeArea(edges: .top)
-            .allowsHitTesting(false)
-        }
-    }
-}
-
 // MARK: - Empty hero (gradient + placeholder)
 
 struct ProfileEmptyHeroSection: View {
     var onAddPhoto: () -> Void
+
+    private var totalHeight: CGFloat { ProfileTheme.emptyHeroHeight + ProfileTheme.heroMenuBleedInset }
 
     var body: some View {
         ZStack {
@@ -51,12 +28,13 @@ struct ProfileEmptyHeroSection: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.top, ProfileTheme.emptyHeroTopClearance + ProfileTheme.topSafeInset)
+            .padding(.top, ProfileTheme.heroMenuBleedInset + ProfileTheme.emptyHeroTopClearance * 0.35)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(height: ProfileTheme.emptyHeroTotalHeight)
+        .frame(height: totalHeight)
         .frame(maxWidth: .infinity)
         .clipShape(ProfileTheme.heroBottomShape)
+        .padding(.top, -ProfileTheme.heroMenuBleedInset)
     }
 }
 
@@ -65,53 +43,29 @@ struct ProfileEmptyHeroSection: View {
 struct ProfileCoverPhotoSection: View {
     let image: UIImage
     let displayName: String
-    let username: String
     let isPrivate: Bool
-    var onChangePhoto: () -> Void
+
+    private var totalHeight: CGFloat { ProfileTheme.heroHeight + ProfileTheme.heroMenuBleedInset }
 
     var body: some View {
         ZStack(alignment: .bottom) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity)
+                .frame(height: totalHeight)
                 .clipped()
-                .overlay(alignment: .top) {
-                    ProcessMainTopScrollBlur(
-                        visibility: 1,
-                        height: ProfileTheme.heroTopBlurHeight
-                    )
-                    .frame(maxWidth: .infinity)
-                    .allowsHitTesting(false)
-                }
                 .overlay {
                     LinearGradient(
-                        colors: [.clear, .clear, .black.opacity(0.35), .black.opacity(0.78)],
+                        colors: [.clear, .clear, .black.opacity(0.25), .black.opacity(0.68)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                     .allowsHitTesting(false)
                 }
-                .overlay {
-                    Button(action: onChangePhoto) {
-                        ZStack {
-                            Circle()
-                                .fill(.black.opacity(0.38))
-                                .frame(width: 58, height: 58)
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.95))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Modifier la photo de profil")
-                    .padding(.top, ProfileTheme.topSafeInset + ProfileTheme.heroHeight * 0.18)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                }
 
             ProfileIdentityBlock(
                 displayName: displayName,
-                username: username,
                 isPrivate: isPrivate,
                 style: .overlay
             )
@@ -119,9 +73,10 @@ struct ProfileCoverPhotoSection: View {
             .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: ProfileTheme.heroTotalHeight)
+        .frame(height: totalHeight)
         .clipShape(ProfileTheme.heroBottomShape)
         .contentShape(ProfileTheme.heroBottomShape)
+        .padding(.top, -ProfileTheme.heroMenuBleedInset)
     }
 }
 
@@ -131,40 +86,39 @@ enum ProfileIdentityStyle {
 
 struct ProfileIdentityBlock: View {
     let displayName: String
-    let username: String
     let isPrivate: Bool
     var style: ProfileIdentityStyle = .inline
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: 8) {
             Text(displayName)
                 .font(.system(size: style == .overlay ? 30 : 26, weight: .bold))
-                .foregroundStyle(ProfileTheme.textPrimary)
+                .foregroundStyle(style == .overlay ? .white : ProfileTheme.textPrimary)
 
-            HStack(spacing: 6) {
-                Text("@\(username)")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(style == .overlay ? .white.opacity(0.92) : ProfileTheme.textPrimary)
-
-                if isPrivate {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(style == .overlay ? .white.opacity(0.9) : ProfileTheme.textSecondary)
-                }
+            if isPrivate {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(style == .overlay ? .white.opacity(0.9) : ProfileTheme.textSecondary)
             }
         }
+        .shadow(
+            color: style == .overlay ? .black.opacity(0.35) : .clear,
+            radius: 6,
+            y: 2
+        )
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 struct ProfileActionButtons: View {
     var onShare: () -> Void
+    var onEdit: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
             ProcessGlassWideButton(title: "Partager mon Profil", action: onShare)
 
-            NavigationLink(value: ProfileRoute.editProfile) {
+            Button(action: onEdit) {
                 Image(systemName: "square.and.pencil")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color.primary)

@@ -8,6 +8,8 @@ struct FaceScanHealthSection: View {
     let history: [FaceScanResult]
     let streakDays: Int
     let daysSinceLastScan: Int?
+    let daysUntilNextScan: Int?
+    let isScanDue: Bool
     let faceDayScore: Int?
     let correlations: [FaceScanCorrelationInsight]
     var onScan: () -> Void
@@ -43,7 +45,7 @@ struct FaceScanHealthSection: View {
                 }
 
                 if streakDays > 0 {
-                    Text("\(streakDays) j 🔥")
+                    Text("\(streakDays)×3j 🔥")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
                 }
@@ -93,14 +95,14 @@ struct FaceScanHealthSection: View {
                     .font(.caption2)
                     .foregroundStyle(theme.secondaryText)
             } else {
-                Text("Scanne ton visage chaque matin pour suivre gonflement, cernes, cortisol et récupération.")
+                Text("Scanne ton visage tous les 3 jours pour suivre gonflement, cernes, cortisol et récupération.")
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             }
 
             HStack(spacing: 10) {
                 Button(action: onScan) {
-                    Label("Nouveau scan", systemImage: "camera.fill")
+                    Label(isScanDue ? "Nouveau scan" : "Scanner quand même", systemImage: "camera.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
@@ -124,16 +126,22 @@ struct FaceScanHealthSection: View {
 
     @ViewBuilder
     private var dailyNudge: some View {
-        if let days = daysSinceLastScan {
-            if days == 0 {
-                Label("Scan du jour effectué", systemImage: "checkmark.circle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.green)
-            } else {
-                Text("Pas de scan depuis \(days) jour\(days > 1 ? "s" : "") — refais-en un ce matin.")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
+        if latest == nil {
+            Label("Premier scan à faire", systemImage: "exclamationmark.circle")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.orange)
+        } else if isScanDue {
+            Label("Scan visage recommandé — tous les 3 jours", systemImage: "bell.badge")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.orange)
+        } else if let remaining = daysUntilNextScan, remaining > 0 {
+            Label("Prochain scan dans \(remaining) jour\(remaining > 1 ? "s" : "")", systemImage: "checkmark.circle.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.green)
+        } else if let days = daysSinceLastScan, days == 0 {
+            Label("Scan enregistré aujourd'hui", systemImage: "checkmark.circle.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.green)
         }
     }
 

@@ -13,12 +13,18 @@ enum OriginPlanCalendarBuilder {
         let bedtime = answers["bedtime"]?.timeValue ?? plan.sleepProtocol.bedtimeWindow.replacingOccurrences(of: "Cible ", with: "").components(separatedBy: " ").first ?? "22:30"
         let wake = answers["wake_time"]?.timeValue ?? plan.sleepProtocol.wakeWindow.replacingOccurrences(of: "Cible ", with: "").components(separatedBy: " ").first ?? "07:00"
         let hours = WelcomePlanGenerator.computedSleepHours(bedtime: bedtime, wake: wake)
+        let totalWeeks = max(plan.totalWeeks, 1)
+        let phaseEnds = OriginPlanDuration(
+            minWeeks: plan.durationMinWeeks,
+            maxWeeks: plan.durationMaxWeeks,
+            totalWeeks: totalWeeks
+        ).phaseEnds
 
         var weeks: [OriginProgramWeek] = []
         var globalDay = 0
 
-        for weekNum in 1...13 {
-            let phase = phaseForWeek(weekNum)
+        for weekNum in 1...totalWeeks {
+            let phase = phaseForWeek(weekNum, totalWeeks: totalWeeks, phaseEnds: phaseEnds)
             var days: [OriginProgramDay] = []
 
             for weekday in 0..<7 {
@@ -28,7 +34,8 @@ enum OriginPlanCalendarBuilder {
                     sessions: sessions,
                     gender: gender,
                     phase: phase,
-                    plan: plan
+                    plan: plan,
+                    phaseEnds: phaseEnds
                 )
                 let nutrition = nutritionForDay(
                     week: weekNum,
@@ -84,17 +91,45 @@ enum OriginPlanCalendarBuilder {
 
     // MARK: - Phase
 
-    private static func phaseForWeek(_ week: Int) -> OriginPlanPhaseBlock {
-        switch week {
-        case 1...3:
-            return .init(id: "p1", weeksRange: "Semaines 1–3", title: "Fondations — Reset biologique", objectives: ["Rythme circadien", "Alimentation dense", "Mewing (langue au palais)"], habits: ["Couvre-feu lumière", "Repas protéinés", "Marche"])
-        case 4...6:
-            return .init(id: "p2", weeksRange: "Semaines 4–6", title: "Hormones & digestion", objectives: ["Digestion optimale", "Stress ↓", "Hydratation minérale"], habits: ["Bouillon", "Routine soir", "Mobilité"])
-        case 7...10:
-            return .init(id: "p3", weeksRange: "Semaines 7–10", title: "Entraînement & composition", objectives: ["Progressive overload", "Composition corporelle", "Chaîne postérieure"], habits: ["Séances loguées", "Sommeil 7,5 h+", "Scan mensuel"])
-        default:
-            return .init(id: "p4", weeksRange: "Semaines 11–13", title: "Affinage visage & consolidation", objectives: ["Affiner si besoin", "Fascias maxillaire / SCM / nuque", "Ancrage long terme"], habits: ["Bilan photos", "Maintien 80 % bases", "Plan post-13 sem"])
+    private static func phaseForWeek(
+        _ week: Int,
+        totalWeeks: Int,
+        phaseEnds: (p1: Int, p2: Int, p3: Int)
+    ) -> OriginPlanPhaseBlock {
+        if week <= phaseEnds.p1 {
+            return .init(
+                id: "p1",
+                weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: phaseEnds.p1),
+                title: "Fondations — Reset biologique",
+                objectives: ["Rythme circadien", "Alimentation dense", "Mewing (langue au palais)"],
+                habits: ["Couvre-feu lumière", "Repas protéinés", "Marche"]
+            )
         }
+        if week <= phaseEnds.p2 {
+            return .init(
+                id: "p2",
+                weeksRange: OriginPlanDuration.weeksRangeLabel(from: phaseEnds.p1 + 1, through: phaseEnds.p2),
+                title: "Hormones & digestion",
+                objectives: ["Digestion optimale", "Stress ↓", "Hydratation minérale"],
+                habits: ["Bouillon", "Routine soir", "Mobilité"]
+            )
+        }
+        if week <= phaseEnds.p3 {
+            return .init(
+                id: "p3",
+                weeksRange: OriginPlanDuration.weeksRangeLabel(from: phaseEnds.p2 + 1, through: phaseEnds.p3),
+                title: "Entraînement & composition",
+                objectives: ["Progressive overload", "Composition corporelle", "Chaîne postérieure"],
+                habits: ["Séances loguées", "Sommeil 7,5 h+", "Scan régulier"]
+            )
+        }
+        return .init(
+            id: "p4",
+            weeksRange: OriginPlanDuration.weeksRangeLabel(from: phaseEnds.p3 + 1, through: totalWeeks),
+            title: "Affinage visage & consolidation",
+            objectives: ["Affiner si besoin", "Fascias maxillaire et nuque", "Ancrage long terme"],
+            habits: ["Bilan photos", "Maintien 80 % bases", "Plan après protocole"]
+        )
     }
 
     // MARK: - Training
@@ -105,12 +140,13 @@ enum OriginPlanCalendarBuilder {
         sessions: Int,
         gender: Gender,
         phase: OriginPlanPhaseBlock,
-        plan: FaceOriginPlan
+        plan: FaceOriginPlan,
+        phaseEnds: (p1: Int, p2: Int, p3: Int)
     ) -> OriginDayTraining? {
         let slots = trainingSlots(sessionsPerWeek: sessions)
         guard slots.contains(weekday) else { return nil }
 
-        let isDeload = week == 4 || week == 8
+        let isDeload = week == phaseEnds.p1 || week == phaseEnds.p2
         let intensityNote = isDeload ? "Semaine deload — RPE 5–6, pas de failure." : nil
         let sessionIndex = slots.firstIndex(of: weekday) ?? 0
 

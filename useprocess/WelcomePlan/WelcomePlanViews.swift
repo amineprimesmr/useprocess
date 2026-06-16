@@ -66,7 +66,7 @@ struct WelcomePlanProfileSection: View {
                     Image(systemName: "leaf.fill")
                         .foregroundStyle(ProfileTheme.avatarAccent)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Protocole Origine · 13 sem.")
+                        Text("Protocole Origine · \(plan.totalWeeks) sem.")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(ProfileTheme.textPrimary)
                         Text("Semaine \(plan.calendar.currentWeekNumber()) — \(plan.primaryFaceGoal)")
@@ -142,7 +142,7 @@ struct WelcomePlanDetailView: View {
 
     private var roadmapSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Roadmap 13 semaines")
+            Text("Roadmap · \(plan.durationMinWeeks) à \(plan.durationMaxWeeks) semaines")
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
 

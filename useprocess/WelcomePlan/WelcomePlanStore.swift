@@ -8,6 +8,10 @@ final class WelcomePlanStore {
     private(set) var questionnaire: WelcomePlanQuestionnaireState = WelcomePlanQuestionnaireState()
     private(set) var plan: FaceOriginPlan?
 
+    private var previewBackup: (questionnaire: WelcomePlanQuestionnaireState, plan: FaceOriginPlan?)?
+
+    var isPreviewSession: Bool { previewBackup != nil }
+
     private init() {
         reload()
     }
@@ -41,12 +45,16 @@ final class WelcomePlanStore {
 
     func saveAnswer(questionId: String, answer: WelcomePlanAnswer) {
         questionnaire.answers[questionId] = answer
-        persistQuestionnaire()
+        if !isPreviewSession {
+            persistQuestionnaire()
+        }
     }
 
     func markQuestionnaireComplete() {
         questionnaire.completedAt = Date()
-        persistQuestionnaire()
+        if !isPreviewSession {
+            persistQuestionnaire()
+        }
     }
 
     func savePlan(_ newPlan: FaceOriginPlan) {
@@ -55,6 +63,7 @@ final class WelcomePlanStore {
             enriched.calendar.startedAt = enriched.createdAt
         }
         plan = enriched
+        guard !isPreviewSession else { return }
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("welcome.plan", userId: uid)
         if let data = try? JSONEncoder().encode(enriched) {
@@ -108,14 +117,32 @@ final class WelcomePlanStore {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.questionnaire", userId: uid))
         UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan", userId: uid))
+        previewBackup = nil
         questionnaire = WelcomePlanQuestionnaireState()
         plan = nil
     }
 
     /// Réinitialise le questionnaire pour rejouer le chat d'accueil (preview / debug).
     func resetQuestionnaireForPreview() {
+        beginPreviewSession()
+    }
+
+    /// Sauvegarde l'état réel, puis démarre un questionnaire vierge en mémoire (sans écraser le compte).
+    func beginPreviewSession() {
+        if previewBackup == nil {
+            previewBackup = (questionnaire, plan)
+        }
         questionnaire = WelcomePlanQuestionnaireState()
-        persistQuestionnaire()
+    }
+
+    /// Restaure le questionnaire / plan réels après une preview abandonnée ou terminée.
+    func endPreviewSession(restore: Bool = true) {
+        guard let backup = previewBackup else { return }
+        if restore {
+            questionnaire = backup.questionnaire
+            plan = backup.plan
+        }
+        previewBackup = nil
     }
 
     private func persistQuestionnaire() {

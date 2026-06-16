@@ -18,6 +18,7 @@ struct CoachChatView: View {
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @Bindable private var session = AppSession.shared
 
     @State private var viewModel = CoachChatViewModel()
     @FocusState private var isInputFocused: Bool
@@ -34,6 +35,44 @@ struct CoachChatView: View {
     private let responseScrollAnchor = UnitPoint(x: 0.5, y: 0.02)
 
     var body: some View {
+        Group {
+            if !session.hasCompletedWelcomePlanChat {
+                WelcomePlanChatView(
+                    embeddedInMainApp: true,
+                    selectedSection: $selectedSection,
+                    onComplete: dismissWelcomePlanChat
+                )
+            } else {
+                coachMainContent
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
+            guard completed, !showWelcomePlanPreview else { return }
+            Task {
+                viewModel.bind(profile: profileService.currentProfile)
+                await viewModel.loadThreadIfNeeded()
+            }
+        }
+    }
+
+    private func dismissWelcomePlanChat() {
+        if showWelcomePlanPreview {
+            WelcomePlanStore.shared.endPreviewSession(restore: true)
+            showWelcomePlanPreview = false
+            Task {
+                viewModel.bind(profile: profileService.currentProfile)
+                await viewModel.loadThreadIfNeeded()
+            }
+        } else {
+            Task {
+                viewModel.bind(profile: profileService.currentProfile)
+                await viewModel.loadThreadIfNeeded()
+            }
+        }
+    }
+
+    private var coachMainContent: some View {
         CustomSideMenu(
             isEnabled: viewModel.isSidebarEnabled,
             sideBarWidth: 300,
@@ -57,7 +96,17 @@ struct CoachChatView: View {
                 onOpenWelcomePlan: openWelcomePlanPreview
             )
         } content: { _ in
-            chatContent
+            if showWelcomePlanPreview {
+                WelcomePlanChatView(
+                    previewMode: true,
+                    embeddedInMainApp: true,
+                    selectedSection: $selectedSection,
+                    onComplete: dismissWelcomePlanChat
+                )
+                .id(welcomePlanPreviewID)
+            } else {
+                chatContent
+            }
         }
         .overlay {
             if let context = messageContextMenu {
@@ -84,14 +133,6 @@ struct CoachChatView: View {
             }
         }
         .animation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
-        .fullScreenCover(isPresented: $showWelcomePlanPreview) {
-            WelcomePlanChatView(previewMode: true) {
-                showWelcomePlanPreview = false
-            }
-            .id(welcomePlanPreviewID)
-            .environment(\.appTheme, theme)
-            .environmentObject(profileService)
-        }
         .reportsCoachSidebarExpanded(viewModel.isSidebarExpanded)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
@@ -142,6 +183,7 @@ struct CoachChatView: View {
                                 .frame(height: scrollBottomInset)
                                 .id("bottom-spacer")
                         }
+                        .id(viewModel.activeConversationId)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .padding(.bottom, viewModel.isVoiceRecording ? 80 : 0)
@@ -158,6 +200,9 @@ struct CoachChatView: View {
                         } else {
                             scrollToActiveTurn(proxy)
                         }
+                    }
+                    .onChange(of: viewModel.activeConversationId) { _, _ in
+                        scrollToConversationTop(proxy, delay: 0.02)
                     }
                     .onChange(of: viewModel.streamingText) { _, _ in
                         scrollToActiveTurn(proxy)
@@ -197,15 +242,6 @@ struct CoachChatView: View {
                         mode: .thinking(start: thinkingBlobStart)
                     )
                     .padding(.top, blobVerticalCenter - 36)
-                } else if viewModel.isVoiceRecording || viewModel.isVoiceExiting {
-                    CoachEdgeBlobOverlay(
-                        isDark: theme.isDark,
-                        mode: .voice(
-                            elapsed: viewModel.voiceElapsed,
-                            total: viewModel.voiceMaxDuration
-                        )
-                    )
-                    .padding(.top, blobVerticalCenter - 36)
                 }
             }
             .ignoresSafeArea(edges: .leading)
@@ -213,19 +249,23 @@ struct CoachChatView: View {
                 if viewModel.isVoiceRecording || viewModel.isVoiceExiting {
                     CoachVoiceRecorderPill(
                         elapsed: viewModel.voiceElapsed,
-                        total: viewModel.voiceMaxDuration,
+                        audioLevel: viewModel.voiceAudioLevel,
+                        audioLevels: viewModel.voiceAudioLevels,
+                        transcript: viewModel.voiceTranscript,
                         isExiting: viewModel.isVoiceExiting,
-                        onCancel: { viewModel.cancelVoiceRecording() }
+                        onCancel: { viewModel.cancelVoiceRecording() },
+                        onConfirm: {
+                            Task {
+                                let inserted = await viewModel.confirmVoiceRecording()
+                                if inserted {
+                                    isInputFocused = true
+                                }
+                            }
+                        }
                     )
                     .frame(maxWidth: .infinity)
-                    .padding(.bottom, 148)
+                    .padding(.bottom, 132)
                     .ignoresSafeArea(edges: .leading)
-                    .transition(
-                        .asymmetric(
-                            insertion: .opacity,
-                            removal: .opacity.combined(with: .scale(scale: 0.92, anchor: .leading))
-                        )
-                    )
                 }
             }
         }
@@ -427,8 +467,15 @@ struct CoachChatView: View {
     }
 
     private func openWelcomePlanPreview() {
-        WelcomePlanStore.shared.resetQuestionnaireForPreview()
+        if showWelcomePlanPreview {
+            dismissWelcomePlanChat()
+            return
+        }
+        WelcomePlanStore.shared.beginPreviewSession()
         welcomePlanPreviewID = UUID()
-        showWelcomePlanPreview = true
+        withAnimation(ProcessGlass.spring) {
+            selectedSection = .coach
+            showWelcomePlanPreview = true
+        }
     }
 }

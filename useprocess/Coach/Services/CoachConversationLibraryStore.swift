@@ -122,4 +122,11 @@ final class CoachConversationLibraryStore {
     func conversation(for id: UUID) -> CoachConversation? {
         library.conversations.first { $0.id == id }
     }
+
+    func clearStoredData(userId: String) {
+        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("coach.conversations.library", userId: userId))
+        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("coach.thread", userId: userId))
+        library = CoachConversationLibrary()
+        self.userId = nil
+    }
 }

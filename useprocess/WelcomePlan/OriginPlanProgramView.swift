@@ -35,7 +35,7 @@ struct OriginPlanProgramView: View {
                 .padding()
             }
             .background(theme.background.ignoresSafeArea())
-            .navigationTitle("Programme 13 semaines")
+            .navigationTitle("Programme · \(livePlan.totalWeeks) sem.")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

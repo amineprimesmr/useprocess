@@ -27,13 +27,17 @@ final class UserSessionCoordinator {
         guard activeUserId != userId else { return }
         activeUserId = userId
 
-        AppSession.shared.reloadForCurrentUser()
-        BodyScanHistoryStore.shared.reloadForUser(userId: userId)
-        FaceScanHistoryStore.shared.reloadForUser(userId: userId)
-        CoachConversationStore.reloadForUser(userId: userId)
-        SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
+        if AppSession.shared.isAccountWipeInProgress {
+            return
+        }
 
-        if userId != nil {
+        if let userId {
+            AppSession.shared.reloadForCurrentUser()
+            BodyScanHistoryStore.shared.reloadForUser(userId: userId)
+            FaceScanHistoryStore.shared.reloadForUser(userId: userId)
+            CoachConversationStore.reloadForUser(userId: userId)
+            SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
+
             Task {
                 await SubscriptionService.shared.syncAppUserID(userId)
                 await UnifiedProfileService.shared.loadProfile()
@@ -42,9 +46,16 @@ final class UserSessionCoordinator {
                 await HealthManager.shared.performFullSync()
             }
         } else {
-            Task { await SubscriptionService.shared.syncAppUserID(nil) }
-            UnifiedProfileService.shared.clearLocalProfile()
-            SocialProfileStore.shared.bind(unified: nil)
+            handleAccountDeleted()
         }
+    }
+
+    func handleAccountDeleted() {
+        activeUserId = nil
+        UnifiedProfileService.shared.clearLocalProfile()
+        SocialProfileStore.shared.bind(unified: nil)
+        BodyScanHistoryStore.shared.clearForUser(userId: nil)
+        FaceScanHistoryStore.shared.clearForUser(userId: nil)
+        Task { await SubscriptionService.shared.syncAppUserID(nil) }
     }
 }

@@ -1,156 +1,263 @@
 import SwiftUI
 
-// MARK: - Pill flottante enregistrement vocal (liquid glass — le blob est en overlay séparé)
+// MARK: - Pilule vocale — durée illimitée, waveform réactive au micro
 
 struct CoachVoiceRecorderPill: View {
     let elapsed: TimeInterval
-    let total: TimeInterval
+    let audioLevel: CGFloat
+    let audioLevels: [CGFloat]
+    let transcript: String
     var isExiting: Bool = false
     var onCancel: () -> Void
+    var onConfirm: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-    @State private var entrance: CGFloat = 0
-    @State private var contentOpacity: CGFloat = 0
+    @State private var appeared = false
+    @State private var dragOffset: CGSize = .zero
 
-    private let pillHeight: CGFloat = 76
-    private let trackHeight: CGFloat = 8
+    private let pillHeight: CGFloat = 118
+    private let barCount = 28
 
-    private var isDark: Bool { colorScheme == .dark }
-
-    private var progress: CGFloat {
-        guard total > 0 else { return 0 }
-        return min(max(elapsed / total, 0), 1)
+    private var glowIntensity: CGFloat {
+        min(max(audioLevel * 1.35 + 0.15, 0.12), 1)
     }
 
     var body: some View {
-        GeometryReader { geo in
-            let fullWidth = geo.size.width
-            let minWidth = pillHeight
-            let expand = easeOutCubic(entrance)
-            let width = minWidth + (fullWidth - minWidth) * expand
-            let centerBlend = smoothstep(edge0: 0.18, edge1: 0.78, x: entrance)
-            let leadingX = (1 - centerBlend) * 0 + centerBlend * ((fullWidth - width) / 2)
+        VStack(spacing: 10) {
+            swipeHint
 
-            pillBody
-                .frame(width: width, height: pillHeight, alignment: .leading)
-                .offset(x: leadingX)
-                .frame(width: fullWidth, height: pillHeight, alignment: .leading)
+            pillCard
+                .scaleEffect(1 + audioLevel * 0.018)
+                .offset(x: dragOffset.width * 0.35, y: min(dragOffset.height * 0.2, 0))
+                .gesture(dragGesture)
         }
-        .frame(height: pillHeight)
-        .onAppear { playEntrance() }
+        .padding(.horizontal, 12)
+        .opacity(appeared && !isExiting ? 1 : 0)
+        .scaleEffect(appeared && !isExiting ? 1 : 0.94, anchor: .bottom)
+        .onAppear {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
+                appeared = true
+            }
+            HapticManager.shared.impact(.light)
+        }
         .onChange(of: isExiting) { _, exiting in
-            if exiting { playExit() }
+            guard exiting else { return }
+            withAnimation(.easeIn(duration: 0.16)) {
+                appeared = false
+            }
         }
-        .onTapGesture { onCancel() }
     }
 
-    private var pillBody: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(CoachVoiceTimeFormat.elapsed(elapsed))
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                Spacer(minLength: 0)
-                Text(CoachVoiceTimeFormat.total(total))
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-            }
-            .foregroundStyle(isDark ? Color.white.opacity(0.92) : Color.primary.opacity(0.88))
+    private var swipeHint: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "chevron.up")
+                .font(.system(size: 10, weight: .semibold))
+            Text("Balayez vers le haut pour valider")
+                .font(.system(size: 12, weight: .medium))
+        }
+        .foregroundStyle(Color.primary.opacity(colorScheme == .dark ? 0.45 : 0.38))
+    }
 
-            GeometryReader { trackGeo in
-                let trackW = trackGeo.size.width
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(isDark ? Color.white.opacity(0.22) : Color.primary.opacity(0.18))
-                        .frame(height: trackHeight)
+    private var pillCard: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            let phase = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
 
-                    Capsule()
-                        .fill(isDark ? Color.white : Color.primary)
-                        .frame(width: max(trackHeight, trackW * progress), height: trackHeight)
-                        .animation(.linear(duration: 0.04), value: progress)
+            ZStack {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(baseGradient)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(sweepGradient(phase: phase))
+                            .blendMode(.plusLighter)
+                            .opacity(0.55 + glowIntensity * 0.45)
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.65),
+                                        Color(red: 0.45, green: 0.85, blue: 0.95).opacity(0.35 + glowIntensity * 0.4)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    }
+                    .shadow(
+                        color: Color(red: 0.35, green: 0.62, blue: 0.98).opacity(0.18 + glowIntensity * 0.28),
+                        radius: 14 + glowIntensity * 16,
+                        y: 6
+                    )
+
+                VStack(spacing: 8) {
+                    HStack {
+                        recordingDot
+                        Text(formattedElapsed)
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Color.primary.opacity(0.55))
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+
+                    liveWaveform
+                        .padding(.horizontal, 14)
+
+                    if !transcript.isEmpty {
+                        Text(transcript)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.primary.opacity(0.88))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                            .animation(.easeOut(duration: 0.12), value: transcript)
+                    }
+
+                    controlsRow
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 12)
                 }
             }
-            .frame(height: trackHeight)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .opacity(contentOpacity)
-        .modifier(CoachRecorderGlassModifier(isDark: isDark))
-    }
-
-    private func playEntrance() {
-        entrance = 0
-        contentOpacity = 0
-        withAnimation(.interpolatingSpring(duration: 0.52, bounce: 0.14, initialVelocity: 0.55)) {
-            entrance = 1
-        }
-        withAnimation(.easeOut(duration: 0.24).delay(0.08)) {
-            contentOpacity = 1
-        }
-        HapticManager.shared.impact(.light)
-    }
-
-    private func playExit() {
-        withAnimation(.easeIn(duration: 0.2)) {
-            contentOpacity = 0
-        }
-        withAnimation(.interpolatingSpring(duration: 0.42, bounce: 0.06)) {
-            entrance = 0
+            .frame(height: pillHeight)
         }
     }
 
-    private func easeOutCubic(_ t: CGFloat) -> CGFloat {
-        let c = min(max(t, 0), 1)
-        return 1 - pow(1 - c, 3)
+    private var recordingDot: some View {
+        Circle()
+            .fill(Color.red)
+            .frame(width: 7, height: 7)
+            .overlay {
+                Circle()
+                    .stroke(Color.red.opacity(0.45), lineWidth: 2)
+                    .scaleEffect(1 + audioLevel * 0.9)
+                    .opacity(0.35 + audioLevel * 0.5)
+            }
     }
 
-    private func smoothstep(edge0: CGFloat, edge1: CGFloat, x: CGFloat) -> CGFloat {
-        guard edge1 > edge0 else { return x >= edge1 ? 1 : 0 }
-        let t = min(max((x - edge0) / (edge1 - edge0), 0), 1)
-        return t * t * (3 - 2 * t)
-    }
-}
-
-// MARK: - Glass flottant adaptatif
-
-private struct CoachRecorderGlassModifier: ViewModifier {
-    var isDark: Bool
-
-    func body(content: Content) -> some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                content.glassEffect(isDark ? ProcessGlass.dark : ProcessGlass.regular, in: Capsule(style: .continuous))
-            } else {
-                content
-                    .background(.ultraThinMaterial, in: Capsule(style: .continuous))
-                    .background(
-                        (isDark ? Color.black : Color(white: 0.25)).opacity(isDark ? 0.55 : 0.72),
-                        in: Capsule(style: .continuous)
-                    )
+    private var liveWaveform: some View {
+        HStack(alignment: .center, spacing: 3) {
+            ForEach(0..<barCount, id: \.self) { index in
+                let level = barLevel(at: index)
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(barGradient(level: level))
+                    .frame(width: 4, height: barHeight(level: level))
+                    .animation(.spring(response: 0.18, dampingFraction: 0.62), value: level)
             }
         }
-        .shadow(color: Color.black.opacity(isDark ? 0.32 : 0.18), radius: 24, y: 12)
-        .shadow(color: Color.black.opacity(isDark ? 0.14 : 0.08), radius: 8, y: 4)
-    }
-}
-
-// MARK: - Format temps (00:03,74 / 00:05)
-
-enum CoachVoiceTimeFormat {
-    static func elapsed(_ t: TimeInterval) -> String {
-        let clamped = max(t, 0)
-        let minutes = Int(clamped) / 60
-        let seconds = Int(clamped) % 60
-        let centis = Int((clamped.truncatingRemainder(dividingBy: 1)) * 100)
-        return String(format: "%02d:%02d,%02d", minutes, seconds, centis)
+        .frame(height: 36)
+        .frame(maxWidth: .infinity)
     }
 
-    static func total(_ t: TimeInterval) -> String {
-        let clamped = max(t, 0)
-        let minutes = Int(clamped) / 60
-        let seconds = Int(clamped) % 60
-        if abs(clamped - clamped.rounded()) < 0.01 {
-            return String(format: "%02d:%02d", minutes, seconds)
+    private func barLevel(at index: Int) -> CGFloat {
+        let samples = audioLevels
+        guard !samples.isEmpty else { return 0.08 }
+        let sampleIndex = min(
+            max(Int(CGFloat(index) / CGFloat(barCount) * CGFloat(samples.count)), 0),
+            samples.count - 1
+        )
+        let sample = samples[sampleIndex]
+        let centerBoost = 1 - abs(CGFloat(index) - CGFloat(barCount) / 2) / (CGFloat(barCount) / 2) * 0.25
+        return min(max(sample * centerBoost + audioLevel * 0.12, 0.08), 1)
+    }
+
+    private func barHeight(level: CGFloat) -> CGFloat {
+        8 + level * 28
+    }
+
+    private func barGradient(level: CGFloat) -> LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.38, green: 0.58, blue: 0.98).opacity(0.55 + level * 0.45),
+                Color(red: 0.22, green: 0.82, blue: 0.78).opacity(0.65 + level * 0.35),
+                Color(red: 0.55, green: 0.92, blue: 0.62).opacity(0.75 + level * 0.25)
+            ],
+            startPoint: .bottom,
+            endPoint: .top
+        )
+    }
+
+    private var controlsRow: some View {
+        HStack(spacing: 10) {
+            Button(action: onCancel) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.primary.opacity(0.72))
+                    .frame(width: 32, height: 32)
+                    .background(Color.primary.opacity(0.08), in: Circle())
+            }
+            .buttonStyle(.plain)
+
+            Text("Glisser vers la gauche pour annuler")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color(red: 0.28, green: 0.52, blue: 0.96))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(maxWidth: .infinity)
+
+            Button(action: onConfirm) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(Color.primary, in: Circle())
+            }
+            .buttonStyle(.plain)
         }
-        let centis = Int((clamped.truncatingRemainder(dividingBy: 1)) * 100)
-        return String(format: "%02d:%02d,%02d", minutes, seconds, centis)
+    }
+
+    private var formattedElapsed: String {
+        let total = max(Int(elapsed), 0)
+        let minutes = total / 60
+        let seconds = total % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private var baseGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.68, green: 0.80, blue: 0.99),
+                Color(red: 0.74, green: 0.93, blue: 0.90),
+                Color(red: 0.88, green: 0.98, blue: 0.94)
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private func sweepGradient(phase: Double) -> LinearGradient {
+        let shift = phase * 1.5 - 0.25
+        return LinearGradient(
+            colors: [
+                Color.white.opacity(0),
+                Color(red: 0.55, green: 0.88, blue: 1.0).opacity(0.35 + Double(glowIntensity) * 0.35),
+                Color.white.opacity(0.65),
+                Color(red: 0.45, green: 0.95, blue: 0.72).opacity(0.25 + Double(glowIntensity) * 0.3),
+                Color.white.opacity(0)
+            ],
+            startPoint: UnitPoint(x: shift, y: 0.5),
+            endPoint: UnitPoint(x: shift + 0.5, y: 0.5)
+        )
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                dragOffset = value.translation
+            }
+            .onEnded { value in
+                let t = value.translation
+                if t.height < -72 {
+                    HapticManager.shared.impact(.medium)
+                    onConfirm()
+                } else if t.width < -72 {
+                    HapticManager.shared.impact(.light)
+                    onCancel()
+                }
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                    dragOffset = .zero
+                }
+            }
     }
 }

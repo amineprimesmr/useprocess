@@ -107,6 +107,9 @@ struct FaceMeshScanView: UIViewRepresentable {
         var currentAmbientIntensity: CGFloat = 1000
         var qualityRetryCount = 0
 
+        var activeScanId = UUID().uuidString
+        let videoRecorder = FaceScanVideoRecorder()
+
         var sampledMeshes: [FaceMesh3DData] = []
         var filledTickSectors = Set<Int>()
         var blendShapeAccumulators: [String: (sum: Float, count: Int)] = [:]
@@ -146,6 +149,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             let intensity = frame.lightEstimate?.ambientIntensity ?? 1000
             currentAmbientIntensity = intensity
             let low = FaceScanQualityValidator.isLowLight(ambientIntensity: intensity)
+
+            if scanStartTime != nil {
+                videoRecorder.append(frame: frame)
+            }
 
             DispatchQueue.main.async {
                 self.isLowLight = low
@@ -226,9 +233,13 @@ struct FaceMeshScanView: UIViewRepresentable {
             blendShapeAccumulators.removeAll()
             bestSnapshot = nil
             lastPublishedSectorSignature = 0
+            videoRecorder.cancel()
+            activeScanId = UUID().uuidString
         }
 
         private func beginScan(with faceAnchor: ARFaceAnchor) {
+            activeScanId = UUID().uuidString
+            videoRecorder.start(at: videoRecorder.prepareOutputURL(scanId: activeScanId))
             scanStartTime = Date()
             referenceTransform = faceAnchor.transform
             let startSector = sectorIndex(for: faceAnchor.transform)
@@ -396,21 +407,39 @@ struct FaceMeshScanView: UIViewRepresentable {
         private func finishScan(bestMesh: FaceMesh3DData) {
             completed = true
             let shapes = blendShapeAccumulators.mapValues { $0.sum / Float($0.count) }
-            let payload = FaceScanCapturePayload(
-                mesh: bestMesh,
-                snapshot: bestSnapshot ?? arView?.snapshot(),
-                averageBlendShapes: shapes,
-                yawCoverage: Double(filledTickSectors.count) / Double(tickCount)
-            )
-            publishUI(force: true) {
-                self.progress = 1
-                self.ringProgress = 1
-                self.activeTickSectors = self.filledTickSectors
-                self.instruction = "Analyse terminée."
-                self.frameHint = nil
-                HapticManager.shared.notification(.success)
-                Task { @MainActor in FaceScanScreenFlash.shared.deactivate() }
-                self.onComplete(payload)
+            let scanId = activeScanId
+            let snapshot = bestSnapshot ?? arView?.snapshot()
+
+            Task {
+                let videoURL = await videoRecorder.finish()
+                let videoFilename: String?
+                if let videoURL, FileManager.default.fileExists(atPath: videoURL.path) {
+                    videoFilename = "\(scanId)_face.mp4"
+                } else {
+                    videoFilename = nil
+                }
+
+                let payload = FaceScanCapturePayload(
+                    scanId: scanId,
+                    mesh: bestMesh,
+                    snapshot: snapshot,
+                    videoFilename: videoFilename,
+                    averageBlendShapes: shapes,
+                    yawCoverage: Double(filledTickSectors.count) / Double(tickCount)
+                )
+
+                await MainActor.run {
+                    self.publishUI(force: true) {
+                        self.progress = 1
+                        self.ringProgress = 1
+                        self.activeTickSectors = self.filledTickSectors
+                        self.instruction = "Analyse terminée."
+                        self.frameHint = nil
+                        HapticManager.shared.notification(.success)
+                        Task { @MainActor in FaceScanScreenFlash.shared.deactivate() }
+                        self.onComplete(payload)
+                    }
+                }
             }
         }
 

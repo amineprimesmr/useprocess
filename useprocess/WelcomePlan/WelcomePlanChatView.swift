@@ -2,6 +2,8 @@ import SwiftUI
 
 struct WelcomePlanChatView: View {
     var previewMode: Bool = false
+    var embeddedInMainApp: Bool = false
+    var selectedSection: Binding<ProcessMainSection>?
     var onComplete: () -> Void
 
     @Environment(\.appTheme) private var theme
@@ -17,48 +19,11 @@ struct WelcomePlanChatView: View {
     private let messageLineSpacing: CGFloat = 5
 
     var body: some View {
-        VStack(spacing: 0) {
-            progressHeader
-
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 20) {
-                        ForEach(viewModel.messages) { message in
-                            messageRow(message)
-                                .id(message.id)
-                                .coachMessageFadeIn()
-                        }
-
-                        if viewModel.isTyping {
-                            CoachThinkingBlobPlaceholder()
-                                .id("thinking")
-                        }
-
-                        if viewModel.isComplete {
-                            completionCard
-                                .id("complete")
-                        }
-
-                        Color.clear.frame(height: 24).id("bottom")
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                }
-                .onChange(of: viewModel.messages.count) { _, _ in
-                    withAnimation(ProcessGlass.spring) {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
-                }
-                .onChange(of: viewModel.isComplete) { _, _ in
-                    withAnimation(ProcessGlass.spring) {
-                        proxy.scrollTo("complete", anchor: .bottom)
-                    }
-                }
-            }
-
-            if !viewModel.isComplete, let question = viewModel.currentQuestion, !viewModel.isGenerating {
-                answerPanel(for: question)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+        Group {
+            if embeddedInMainApp, let selectedSection {
+                embeddedLayout(selectedSection: selectedSection)
+            } else {
+                standaloneLayout
             }
         }
         .background(theme.background.ignoresSafeArea())
@@ -74,28 +39,95 @@ struct WelcomePlanChatView: View {
         }
     }
 
-    private var progressHeader: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Text("Protocole Origine")
-                    .font(.headline)
-                    .foregroundStyle(theme.primaryText)
-                Spacer()
-                if previewMode {
-                    Button("Fermer") { onComplete() }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.onboardingAccent)
+    // MARK: - Embedded (onglet Coach + menu sticky)
+
+    private func embeddedLayout(selectedSection: Binding<ProcessMainSection>) -> some View {
+        VStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                processMainScrollableChrome(
+                    selectedSection: selectedSection,
+                    pageSection: .coach
+                ) {
+                    messageStack
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                 }
-                Text("\(Int(viewModel.progress * 100)) %")
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(theme.secondaryText)
+                .onChange(of: viewModel.messages.count) { _, _ in
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: viewModel.isComplete) { _, _ in
+                    scrollToBottom(proxy, anchor: .bottom)
+                }
             }
-            ProgressView(value: viewModel.progress)
-                .tint(theme.onboardingAccent)
+
+            if !viewModel.isComplete, let question = viewModel.currentQuestion, !viewModel.isGenerating {
+                answerPanel(for: question)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
+    }
+
+    // MARK: - Standalone (preview depuis la sidebar)
+
+    private var standaloneLayout: some View {
+        VStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    messageStack
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                }
+                .onChange(of: viewModel.messages.count) { _, _ in
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: viewModel.isComplete) { _, _ in
+                    scrollToBottom(proxy, anchor: .bottom)
+                }
+            }
+
+            if !viewModel.isComplete, let question = viewModel.currentQuestion, !viewModel.isGenerating {
+                answerPanel(for: question)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+
+    private var messageStack: some View {
+        LazyVStack(alignment: .leading, spacing: 20) {
+            if !viewModel.isComplete {
+                progressBar
+            }
+
+            ForEach(viewModel.messages) { message in
+                messageRow(message)
+                    .id(message.id)
+                    .coachMessageFadeIn()
+            }
+
+            if viewModel.isTyping {
+                CoachThinkingBlobPlaceholder()
+                    .id("thinking")
+            }
+
+            if viewModel.isComplete {
+                completionCard
+                    .id("complete")
+            }
+
+            Color.clear.frame(height: 24).id("bottom")
+        }
+    }
+
+    private var progressBar: some View {
+        HStack(spacing: 10) {
+            ProgressView(value: viewModel.progress)
+                .tint(Color.primary.opacity(0.85))
+            Text("\(Int(viewModel.progress * 100)) %")
+                .font(.caption.monospacedDigit().weight(.medium))
+                .foregroundStyle(theme.secondaryText)
+                .frame(minWidth: 34, alignment: .trailing)
+        }
+        .padding(.bottom, 4)
     }
 
     private var completionCard: some View {
@@ -128,42 +160,42 @@ struct WelcomePlanChatView: View {
             switch question.kind {
             case .yesNo:
                 HStack(spacing: 12) {
-                    answerButton("Oui", prominent: true) {
+                    answerButton("Oui", prominent: true, inPanel: true) {
                         await viewModel.submitYesNo(true)
                     }
-                    answerButton("Non") {
+                    answerButton("Non", inPanel: true) {
                         await viewModel.submitYesNo(false)
                     }
                 }
 
             case .singleChoice:
-                FlowLayout(spacing: 8) {
-                    ForEach(question.choices) { choice in
-                        answerChip(choice.label) {
-                            await viewModel.submitSingleChoice(choice.id)
+                if question.choices.count == 1, let only = question.choices.first {
+                    welcomePrimaryButton(only.label, inPanel: true) {
+                        await viewModel.submitSingleChoice(only.id)
+                    }
+                } else {
+                    FlowLayout(spacing: 10) {
+                        ForEach(question.choices) { choice in
+                            answerChip(choice.label, inPanel: true) {
+                                await viewModel.submitSingleChoice(choice.id)
+                            }
                         }
                     }
                 }
 
             case .multiChoice:
-                FlowLayout(spacing: 8) {
+                FlowLayout(spacing: 10) {
                     ForEach(question.choices) { choice in
-                        let selected = multiSelection.contains(choice.id)
-                        Button {
-                            if selected { multiSelection.remove(choice.id) }
-                            else { multiSelection.insert(choice.id) }
-                        } label: {
-                            Text(choice.label)
-                                .font(.subheadline)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(selected ? theme.onboardingAccent.opacity(0.25) : theme.coachUserBubble, in: Capsule())
-                                .overlay(Capsule().stroke(selected ? theme.onboardingAccent : .clear, lineWidth: 1.5))
+                        multiChoiceChip(choice.label, isSelected: multiSelection.contains(choice.id), inPanel: true) {
+                            if multiSelection.contains(choice.id) {
+                                multiSelection.remove(choice.id)
+                            } else {
+                                multiSelection.insert(choice.id)
+                            }
                         }
-                        .buttonStyle(.plain)
                     }
                 }
-                welcomePrimaryButton("Valider", disabled: multiSelection.isEmpty) {
+                welcomePrimaryButton("Valider", disabled: multiSelection.isEmpty, inPanel: true) {
                     let selection = multiSelection
                     multiSelection = []
                     await viewModel.submitMultiChoice(selection)
@@ -174,90 +206,149 @@ struct WelcomePlanChatView: View {
                     .datePickerStyle(.wheel)
                     .labelsHidden()
                     .frame(maxWidth: .infinity)
-                answerButton("Continuer", prominent: true) {
+                    .padding(.vertical, 8)
+                    .welcomePlanPanelInset(cornerRadius: 16)
+                answerButton("Continuer", prominent: true, inPanel: true) {
                     await viewModel.submitTime(timeDraft)
                 }
 
             case .text:
                 TextField("Ta réponse…", text: $textDraft, axis: .vertical)
                     .lineLimit(2...4)
-                    .padding(12)
-                    .background(theme.coachUserBubble, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                HStack {
+                    .font(.system(size: 16))
+                    .foregroundStyle(theme.primaryText)
+                    .padding(14)
+                    .welcomePlanPanelInset(cornerRadius: 16)
+                HStack(spacing: 12) {
                     if question.allowsSkip {
-                        answerButton("Passer") {
+                        answerButton("Passer", inPanel: true) {
                             await viewModel.submitText("", skipped: true)
                             textDraft = ""
                         }
                     }
-                    answerButton("Envoyer", prominent: true) {
+                    answerButton("Envoyer", prominent: true, inPanel: true) {
                         await viewModel.submitText(textDraft)
                         textDraft = ""
                     }
                 }
 
             case .info:
-                answerButton("Continuer", prominent: true) {
+                answerButton("Continuer", prominent: true, inPanel: true) {
                     await viewModel.submitText("OK", skipped: false)
                 }
             }
         }
         .padding(16)
-        .background(.ultraThinMaterial)
+        .welcomePlanGlass(cornerRadius: 22)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 10)
         .onChange(of: viewModel.currentQuestion?.id) { _, _ in
             multiSelection = []
             textDraft = ""
         }
     }
 
-    private func answerButton(_ title: String, prominent: Bool = false, action: @escaping () async -> Void) -> some View {
-        Button {
-            Task { await action() }
-        } label: {
-            Text(title)
-                .font(prominent ? .headline : .subheadline.weight(.semibold))
-                .foregroundStyle(prominent ? Color.white : theme.primaryText)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, prominent ? 14 : 12)
-                .background(
-                    prominent ? theme.onboardingAccent : theme.coachUserBubble,
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func welcomePrimaryButton(
+    private func answerButton(
         _ title: String,
-        disabled: Bool = false,
+        prominent: Bool = false,
+        inPanel: Bool = false,
         action: @escaping () async -> Void
     ) -> some View {
         Button {
             Task { await action() }
         } label: {
             Text(title)
-                .font(.headline)
-                .foregroundStyle(.white)
+                .font(prominent ? .headline.weight(.semibold) : .subheadline.weight(.semibold))
+                .foregroundStyle(Color.primary)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(theme.onboardingAccent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .padding(.vertical, prominent ? 14 : 12)
         }
         .buttonStyle(.plain)
-        .disabled(disabled)
-        .opacity(disabled ? 0.45 : 1)
+        .modifier(WelcomePlanAnswerChromeModifier(
+            theme: theme,
+            cornerRadius: 14,
+            isCapsule: false,
+            prominent: prominent,
+            isSelected: false,
+            inPanel: inPanel
+        ))
+        .buttonStyle(ProcessGlassPressStyle())
     }
 
-    private func answerChip(_ title: String, action: @escaping () async -> Void) -> some View {
+    private func welcomePrimaryButton(
+        _ title: String,
+        disabled: Bool = false,
+        inPanel: Bool = false,
+        action: @escaping () async -> Void
+    ) -> some View {
         Button {
             Task { await action() }
         } label: {
             Text(title)
-                .font(.subheadline)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(theme.coachUserBubble, in: Capsule())
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
         }
         .buttonStyle(.plain)
+        .modifier(WelcomePlanAnswerChromeModifier(
+            theme: theme,
+            cornerRadius: 14,
+            isCapsule: false,
+            prominent: true,
+            isSelected: false,
+            inPanel: inPanel
+        ))
+        .buttonStyle(ProcessGlassPressStyle())
+        .disabled(disabled)
+        .opacity(disabled ? 0.72 : 1)
+    }
+
+    private func answerChip(_ title: String, inPanel: Bool = false, action: @escaping () async -> Void) -> some View {
+        Button {
+            Task { await action() }
+        } label: {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.primary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .modifier(WelcomePlanAnswerChromeModifier(
+            theme: theme,
+            cornerRadius: 999,
+            isCapsule: true,
+            prominent: false,
+            isSelected: false,
+            inPanel: inPanel
+        ))
+        .buttonStyle(ProcessGlassPressStyle())
+    }
+
+    private func multiChoiceChip(
+        _ title: String,
+        isSelected: Bool,
+        inPanel: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.primary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .modifier(WelcomePlanAnswerChromeModifier(
+            theme: theme,
+            cornerRadius: 999,
+            isCapsule: true,
+            prominent: false,
+            isSelected: isSelected,
+            inPanel: inPanel
+        ))
+        .buttonStyle(ProcessGlassPressStyle())
     }
 
     @ViewBuilder
@@ -271,15 +362,98 @@ struct WelcomePlanChatView: View {
                     .lineSpacing(messageLineSpacing)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(theme.coachUserBubble, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .background(
+                        theme.coachUserBubble,
+                        in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    )
             }
         } else {
-            Text(message.text)
-                .font(messageFont)
-                .foregroundStyle(theme.primaryText)
-                .lineSpacing(messageLineSpacing)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            CoachFormattedText(
+                text: message.text,
+                font: messageFont,
+                lineSpacing: messageLineSpacing,
+                color: theme.primaryText
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .textSelection(.enabled)
         }
+    }
+
+    private func scrollToBottom(_ proxy: ScrollViewProxy, anchor: UnitPoint = .bottom) {
+        withAnimation(ProcessGlass.spring) {
+            if viewModel.isComplete {
+                proxy.scrollTo("complete", anchor: anchor)
+            } else {
+                proxy.scrollTo("bottom", anchor: anchor)
+            }
+        }
+    }
+}
+
+// MARK: - Glass (aligné menu Coach / analyse)
+
+private struct WelcomePlanAnswerChromeModifier: ViewModifier {
+    let theme: AppTheme
+    let cornerRadius: CGFloat
+    let isCapsule: Bool
+    let prominent: Bool
+    let isSelected: Bool
+    let inPanel: Bool
+
+    func body(content: Content) -> some View {
+        if inPanel {
+            if isCapsule {
+                content.background(Capsule().fill(panelFillColor))
+            } else {
+                content.background(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(panelFillColor)
+                )
+            }
+        } else if isCapsule {
+            content.welcomePlanGlassCapsule()
+        } else {
+            content.welcomePlanGlass(cornerRadius: cornerRadius)
+        }
+    }
+
+    private var panelFillColor: Color {
+        if isSelected {
+            return Color.primary.opacity(theme.isDark ? 0.16 : 0.1)
+        }
+        if prominent {
+            return Color.primary.opacity(theme.isDark ? 0.12 : 0.08)
+        }
+        return Color.primary.opacity(theme.isDark ? 0.07 : 0.05)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func welcomePlanGlass(cornerRadius: CGFloat) -> some View {
+        processGlassEffect(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+
+    @ViewBuilder
+    func welcomePlanGlassCapsule() -> some View {
+        processGlassEffect(in: Capsule())
+    }
+
+    @ViewBuilder
+    func welcomePlanPanelInset(cornerRadius: CGFloat) -> some View {
+        modifier(WelcomePlanPanelInsetModifier(cornerRadius: cornerRadius))
+    }
+}
+
+private struct WelcomePlanPanelInsetModifier: ViewModifier {
+    @Environment(\.appTheme) private var theme
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        content.background(
+            Color.primary.opacity(theme.isDark ? 0.07 : 0.05),
+            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        )
     }
 }
 
