@@ -63,7 +63,7 @@ extension OnboardingEstimationContext {
         return OnboardingEstimationContext(
             phase: phase,
             hasWeightGoal: hasWeightGoal,
-            currentWeight: viewModel.selectedWeight > 0 ? viewModel.selectedWeight : nil,
+            currentWeight: OnboardingViewModel.isPlausibleWeight(viewModel.selectedWeight) ? viewModel.selectedWeight : nil,
             idealWeight: hasWeightGoal ? viewModel.idealWeightValue : nil,
             weightGoal: viewModel.selectedWeightGoal,
             weeklyRate: viewModel.selectedGoalPace?.weightEstimationWeeklyRate ?? 0.5,

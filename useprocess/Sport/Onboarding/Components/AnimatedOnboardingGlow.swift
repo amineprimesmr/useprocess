@@ -127,7 +127,15 @@ struct AnimatedOnboardingGlow: View {
         let progress = pow(rawProgress, 0.3) // Racine cubique pour accélérer ENCORE PLUS la transition
 
         // ✅ Opacité légèrement augmentée pour les premières pages (0-4: genre, âge, taille/poids, prénom)
-        let isEarlyStep = currentStep <= 4
+        let isEarlyStep: Bool = {
+            guard let step = OnboardingStep(rawValue: currentStep) else { return false }
+            switch step {
+            case .genderSelection, .ageSelection, .height, .weight, .firstNameInput:
+                return true
+            default:
+                return false
+            }
+        }()
 
         // ✅ Détecter si la lueur est en bas ou en haut (moins visible dans ces zones)
         let isAtTopOrBottom = animatedPosition.y < 0.2 || animatedPosition.y > 0.8

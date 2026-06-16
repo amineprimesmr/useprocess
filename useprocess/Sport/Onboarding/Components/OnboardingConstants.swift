@@ -58,7 +58,7 @@ enum OnboardingHeaderLayout {
     static func showsFullHeader(currentStep: Int) -> Bool {
         guard let step = OnboardingStep(rawValue: currentStep) else { return false }
 
-        if step == .videoIntroduction || step == .faceAnalysis { return false }
+        if step == .videoIntroduction || isAfterQuestionnairePhase(step) { return false }
 
         switch step {
         case .healthKitPermissions, .programCreation, .biometricAuth, .notificationPermission,
@@ -71,16 +71,7 @@ enum OnboardingHeaderLayout {
     }
 
     static func showsBackOnly(currentStep: Int, shouldShowBackButton: Bool) -> Bool {
-        let pagesWithOwnBackButton: Set<Int> = [
-            OnboardingStep.processWelcome.rawValue
-        ]
-
-        let appleSignInOnly = false
-        let afterNutritionFlow = currentStep > OnboardingStep.nutritionQuality.rawValue
-            && !pagesWithOwnBackButton.contains(currentStep)
-            && shouldShowBackButton
-
-        return appleSignInOnly || afterNutritionFlow
+        false
     }
 
     static func showsAnyHeader(currentStep: Int, shouldShowBackButton: Bool) -> Bool {

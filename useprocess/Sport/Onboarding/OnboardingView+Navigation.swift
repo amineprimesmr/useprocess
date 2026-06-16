@@ -81,6 +81,39 @@ func nextStep() {
     refreshOnboardingFlowProgress()
 }
 
+func continueFromNutritionQuality() {
+    viewModel.commitPendingStepAnswers()
+
+    guard OnboardingStep(rawValue: viewModel.currentStep) == .nutritionQuality else {
+        nextStep()
+        return
+    }
+
+    let nextStepIndex = OnboardingStep.programCreation.rawValue
+
+    HapticManager.shared.impact(.medium)
+    OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
+    commitVisibleStepToHistory(viewModel.currentStep)
+
+    previousStepIndex = viewModel.currentStep
+    transitionDirection = .forward
+    isTransitioning = true
+
+    withAnimation(.onboardingTransition) {
+        viewModel.currentStep = nextStepIndex
+    }
+
+    commitVisibleStepToHistory(nextStepIndex)
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        isTransitioning = false
+    }
+
+    OnboardingProgressService.shared.saveCurrentStep(nextStepIndex)
+    viewModel.saveProgress()
+    refreshOnboardingFlowProgress()
+}
+
 // MARK: - Biometric Auth
 
 func triggerBiometricAuthAndContinue() async {
@@ -160,7 +193,7 @@ func previousStep() {
 }
 
 /// Ajoute une étape visible à la pile (tronque une éventuelle branche future).
-private func commitVisibleStepToHistory(_ step: Int) {
+func commitVisibleStepToHistory(_ step: Int) {
     guard let onboardingStep = OnboardingStep(rawValue: step),
           !onboardingStep.isTransientSkippedStep else {
         return
@@ -179,10 +212,10 @@ private func commitVisibleStepToHistory(_ step: Int) {
 // MARK: - Progression header (hors body)
 
 func refreshOnboardingFlowProgress() {
-    flowProgress = onboardingFlowProgress(
-        viewModel: viewModel,
-        navigationEngine: navigationEngine
-    )
+    let metrics = onboardingFlowMetrics(viewModel: viewModel)
+    flowProgress = metrics.progress
+    flowTotalSteps = metrics.totalSteps
+    flowGlowProgressCount = metrics.glowProgressCount
 }
 
 func buildPendingStepsQueue() {

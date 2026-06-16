@@ -49,6 +49,10 @@ final class OnboardingProgressService {
         userDefaults.set(data, forKey: answersKey)
     }
 
+    func flush() {
+        userDefaults.synchronize()
+    }
+
     func loadAnswers() -> OnboardingAnswersSnapshot? {
         guard let data = userDefaults.data(forKey: answersKey) else { return nil }
         return try? JSONDecoder().decode(OnboardingAnswersSnapshot.self, from: data)
@@ -59,9 +63,8 @@ final class OnboardingProgressService {
         guard var profile = profileService.currentProfile else { return }
 
         if let firstName = snapshot.firstName,
-           !firstName.isEmpty,
-           firstName != "Utilisateur",
-           profile.firstName.isEmpty || profile.firstName == "Utilisateur" {
+           OnboardingViewModel.isRealUserFirstName(firstName),
+           !OnboardingViewModel.isRealUserFirstName(profile.firstName) {
             profile.firstName = firstName
         }
 
@@ -73,11 +76,11 @@ final class OnboardingProgressService {
             profile.height = height
         }
 
-        if let weight = snapshot.selectedWeight, weight > 0 {
+        if let weight = snapshot.selectedWeight, OnboardingViewModel.isPlausibleWeight(weight) {
             profile.weight = weight
         }
 
-        if let idealWeight = snapshot.idealWeightValue, idealWeight > 0 {
+        if let idealWeight = snapshot.idealWeightValue, OnboardingViewModel.isPlausibleWeight(idealWeight) {
             profile.idealWeight = idealWeight
         }
 

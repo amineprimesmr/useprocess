@@ -55,51 +55,6 @@ enum ClaudeConfiguration {
         if let env = ProcessInfo.processInfo.environment[key], !env.isEmpty, !env.hasPrefix("YOUR_") {
             return env
         }
-
-        for url in secretsPlistURLs() {
-            if let value = readSecret(key: key, from: url) {
-                return value
-            }
-        }
         return nil
-    }
-
-    private static func secretsPlistURLs() -> [URL] {
-        var urls: [URL] = []
-        let resourceNames = ["CoachSecrets", "BodyScanSecrets"]
-        let subdirs: [String?] = [nil, "Coach/Config", "BodyScan/Config", "Config"]
-
-        for name in resourceNames {
-            for sub in subdirs {
-                if let sub {
-                    if let u = Bundle.main.url(forResource: name, withExtension: "plist", subdirectory: sub) {
-                        urls.append(u)
-                    }
-                } else if let u = Bundle.main.url(forResource: name, withExtension: "plist") {
-                    urls.append(u)
-                }
-            }
-        }
-
-        urls.append(URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .appendingPathComponent("CoachSecrets.plist"))
-        urls.append(URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("BodyScan/Config/BodyScanSecrets.plist"))
-
-        return urls
-    }
-
-    private static func readSecret(key: String, from url: URL) -> String? {
-        guard FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url),
-              let dict = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String],
-              let value = dict[key], !value.isEmpty,
-              !value.hasPrefix("YOUR_") else {
-            return nil
-        }
-        return value
     }
 }

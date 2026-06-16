@@ -214,7 +214,6 @@ enum CoachEngine {
             CoachConversationStore.cacheDailyBrief(sanitized)
             return CoachDailyBriefParser.parse(sanitized)
         } catch {
-            print("[CoachEngine] dailyBrief: \(error.localizedDescription)")
             return nil
         }
     }
@@ -234,7 +233,6 @@ enum CoachEngine {
                 maxTokens: 450
             )
         } catch {
-            print("[CoachEngine] readiness: \(error.localizedDescription)")
             return nil
         }
     }
@@ -301,7 +299,6 @@ enum CoachEngine {
             updated.aiEnhanced = true
             return updated
         } catch {
-            print("[CoachEngine] faceScan: \(error.localizedDescription)")
             return nil
         }
     }
@@ -387,7 +384,6 @@ enum CoachEngine {
                 maxTokens: 700
             )
         } catch {
-            print("[CoachEngine] programSummary: \(error.localizedDescription)")
             return nil
         }
     }
@@ -419,7 +415,6 @@ enum CoachEngine {
                 maxTokens: 400
             )
         } catch {
-            print("[CoachEngine] vision: \(error.localizedDescription)")
             return nil
         }
     }
@@ -442,7 +437,6 @@ enum CoachEngine {
                 maxTokens: 1400
             )
         } catch {
-            print("[CoachEngine] fullReport: \(error.localizedDescription)")
             return nil
         }
     }

@@ -148,21 +148,11 @@ struct AgeWheelPicker: View {
                         }
                     }
                     .onAppear {
-                        hasInitialized = true
-                        // ✅ FORCER à 25 si l'âge est suspect
-                        let invalidDefaultAges: Set<Int> = [minAge, 13, 16, 21]
-                        if invalidDefaultAges.contains(selectedAge) {
-                            selectedAge = 25
-                            onAgeChanged?(25)
-                        }
+                        let initialAge = min(max(selectedAge, minAge), maxAge)
 
-                        // ✅ Scroll vers 25 au démarrage (garantir la position)
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            // Toujours scroll vers 25, même si selectedAge est différent
-                            scrollToAge(25, proxy: proxy, animated: false)
-                            selectedAge = 25
+                            scrollToAge(initialAge, proxy: proxy, animated: false)
 
-                            // ✅ Marquer comme initialisé APRÈS avoir scrollé vers 25
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                 hasInitialized = true
                             }

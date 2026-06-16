@@ -9,7 +9,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>La caméra permet d'analyser ta posture et ton corps en 360°.</string>
+	<string>La caméra permet d'analyser ton visage, ta posture et ton corps en 360°.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Tes données santé servent à personnaliser ton programme sport.</string>
 	<key>NSHealthUpdateUsageDescription</key>

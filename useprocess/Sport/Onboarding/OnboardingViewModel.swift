@@ -101,6 +101,10 @@ class OnboardingViewModel: ObservableObject {
         
         // ✅ CORRECTION: Charger l'historique complet des étapes visitées depuis UserDefaults
         let savedVisitedSteps = OnboardingProgressService.shared.loadVisitedSteps()
+
+        if let cached = OnboardingProgressService.shared.loadAnswers() {
+            applyCachedAnswers(cached)
+        }
         
         if savedStep > 0, OnboardingStep(rawValue: savedStep) != nil {
             currentStep = savedStep
@@ -143,10 +147,6 @@ class OnboardingViewModel: ObservableObject {
         if hasWeightGoal == nil, selectedPrimaryGoals.contains(.manageWeight) {
             hasWeightGoal = true
         }
-
-        if let cached = OnboardingProgressService.shared.loadAnswers() {
-            applyCachedAnswers(cached)
-        }
         
         // ✅ La synchronisation avec le profil se fait dans OnboardingView.onAppear et onChange
         // car le profil n'est pas encore chargé à ce stade
@@ -158,9 +158,8 @@ class OnboardingViewModel: ObservableObject {
     func syncWithExistingProfile(_ profile: UnifiedUserProfile?) {
         guard let profile = profile else { return }
 
-        if !profile.firstName.isEmpty,
-           profile.firstName != "Utilisateur",
-           firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || firstName == "Utilisateur" {
+        if Self.isRealUserFirstName(profile.firstName),
+           firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !Self.isRealUserFirstName(firstName) {
             firstName = profile.firstName
             isFirstNameEntered = true
         }
@@ -181,11 +180,11 @@ class OnboardingViewModel: ObservableObject {
             selectedHeight = profile.height
         }
 
-        if profile.weight > 0, selectedWeight <= 0 {
+        if Self.isPlausibleWeight(profile.weight), selectedWeight <= 0 {
             selectedWeight = profile.weight
         }
 
-        if let ideal = profile.idealWeight, ideal > 0, !isIdealWeightEntered {
+        if let ideal = profile.idealWeight, Self.isPlausibleWeight(ideal), !isIdealWeightEntered {
             idealWeightValue = ideal
             isIdealWeightEntered = true
         }
@@ -207,9 +206,9 @@ class OnboardingViewModel: ObservableObject {
         case .height:
             return selectedHeight > 0
         case .weight:
-            return selectedWeight > 0
+            return Self.isPlausibleWeight(selectedWeight)
         case .heightWeight:
-            return isHeightWeightSelected && selectedHeight > 0 && selectedWeight > 0
+            return isHeightWeightSelected && selectedHeight > 0 && Self.isPlausibleWeight(selectedWeight)
         case .firstNameInput:
             return isFirstNameEntered && !firstName.trimmingCharacters(in: .whitespaces).isEmpty
         case .personalizedWelcome:
@@ -381,7 +380,6 @@ class OnboardingViewModel: ObservableObject {
     
     func saveProgress() {
         OnboardingProgressService.shared.saveCurrentStep(currentStep)
-        OnboardingProgressService.shared.saveLastCompletedStep(currentStep)
         OnboardingProgressService.shared.saveVisitedSteps(visitedSteps)
         OnboardingProgressService.shared.saveAnswers(makeAnswersSnapshot())
     }
@@ -401,7 +399,7 @@ class OnboardingViewModel: ObservableObject {
             firstName: firstName,
             idealWeightValue: idealWeightValue,
             hasWeightGoal: hasWeightGoal,
-            selectedPrimaryGoals: Array(selectedPrimaryGoals),
+            selectedPrimaryGoals: selectedPrimaryGoals.sorted { $0.rawValue < $1.rawValue },
             selectedWeightGoal: selectedWeightGoal,
             selectedGoalPace: selectedGoalPace,
             hasSportActivity: hasSportActivity,
@@ -412,7 +410,7 @@ class OnboardingViewModel: ObservableObject {
             selectedSessionsPerWeek: selectedSessionsPerWeek,
             selectedSessionDuration: selectedSessionDuration,
             selectedTrainingLocation: selectedTrainingLocation,
-            selectedEquipment: Array(selectedEquipment),
+            selectedEquipment: selectedEquipment.sorted { $0.rawValue < $1.rawValue },
             nutritionProfile: nutritionProfile,
             hasDietaryRestrictions: hasDietaryRestrictions,
             otherDietaryRestriction: otherDietaryRestriction,
@@ -442,13 +440,13 @@ class OnboardingViewModel: ObservableObject {
         if let value = snapshot.selectedHeight, value > 0 {
             selectedHeight = value
         }
-        if let value = snapshot.selectedWeight, value > 0 {
+        if let value = snapshot.selectedWeight, Self.isPlausibleWeight(value) {
             selectedWeight = value
         }
-        if let value = snapshot.firstName {
+        if let value = snapshot.firstName, Self.isRealUserFirstName(value) {
             firstName = value
         }
-        if let value = snapshot.idealWeightValue, value > 0 {
+        if let value = snapshot.idealWeightValue, Self.isPlausibleWeight(value) {
             idealWeightValue = value
         }
         if let value = snapshot.hasWeightGoal {
@@ -521,7 +519,25 @@ class OnboardingViewModel: ObservableObject {
     }
 
     private func hasReachedFaceScanStep(savedStep: Int, visited: [Int]) -> Bool {
-        let faceStep = OnboardingStep.faceAnalysis.rawValue
-        return savedStep >= faceStep || visited.contains(faceStep)
+        if visited.contains(OnboardingStep.faceAnalysis.rawValue) {
+            return true
+        }
+
+        guard let step = OnboardingStep(rawValue: savedStep) else {
+            return false
+        }
+
+        return isAfterQuestionnairePhase(step)
+    }
+
+    static func isRealUserFirstName(_ value: String) -> Bool {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return false }
+        let blocked = ["process", "process ai", "utilisateur", "user", "local-user", "anonymous"]
+        return !blocked.contains(normalized.lowercased())
+    }
+
+    static func isPlausibleWeight(_ value: Double) -> Bool {
+        value >= 35 && value <= 250
     }
 }

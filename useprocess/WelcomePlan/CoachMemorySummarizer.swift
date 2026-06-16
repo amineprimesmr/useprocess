@@ -54,8 +54,6 @@ enum CoachMemorySummarizer {
             if let uid = profile?.userId ?? UserScopedStorage.currentUserId() {
                 await WelcomePlanFirestoreRepository.shared.saveMemory(CoachMemoryStore.shared.memory, userId: uid)
             }
-        } catch {
-            print("[CoachMemorySummarizer] \(error.localizedDescription)")
-        }
+        } catch {}
     }
 }

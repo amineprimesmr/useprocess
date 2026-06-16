@@ -12,47 +12,16 @@ extension SportOnboardingView {
 
 // MARK: - Computed Properties
 
-var shouldShowBottomButton: Bool {
-    let step = OnboardingStep(rawValue: viewModel.currentStep)
-    switch step {
-    case .videoIntroduction, .faceAnalysis, .sportSelection, .sleepDataRecovery,
-         .payment, .appleSignIn, .notificationPermission, .healthKitPermissions, .sleepInfo,
-         .processWelcome, .featuresUnlock, .referralCode, .referralReward:  // ✅ Pas de bouton en bas (elles ont leur propre bouton)
-        return false
-    default:
-        return true
-    }
-}
-
-// ✅ NOUVEAU: Bouton CONTINUER global visible sur certaines pages
 var shouldShowContinueButton: Bool {
     if isImmersiveOnboardingStep { return false }
 
-    let step = OnboardingStep(rawValue: viewModel.currentStep)
-    switch step {
-    case .videoIntroduction, .faceAnalysis, .sleepDataRecovery,
-         .payment, .appleSignIn, .notificationPermission, .sleepInfo,
-         .processWelcome, .featuresUnlock, .referralCode, .referralReward,
-         .healthKitPermissions, .biometricAuth, .caloriesGoal, .carryOverCalories:
-        // ✅ programCreation retiré - utilise maintenant le bouton global CONTINUER
-        return false
-    default:
-        return true
-    }
-}
-
-// ✅ Pages qui ont un bouton spécifique (pas le bouton global CONTINUER)
-var shouldShowSpecificButton: Bool {
-    let step = OnboardingStep(rawValue: viewModel.currentStep)
-    switch step {
-    case .caloriesGoal, .carryOverCalories:
-        return true
-    default:
+    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else {
         return false
     }
+
+    return !step.usesInternalContinueAction
 }
 
-// ✅ NOUVEAU: Offset depuis le bas pour le bouton selon la page
 var continueButtonBottomOffset: CGFloat {
     let step = OnboardingStep(rawValue: viewModel.currentStep)
 
@@ -68,7 +37,6 @@ var continueButtonBottomOffset: CGFloat {
     }
 }
 
-// ✅ NOUVEAU: Vérifier si on peut continuer (étape validée)
 var canContinue: Bool {
     guard viewModel.isCurrentStepValidated() else { return false }
 
@@ -89,7 +57,10 @@ var isFirstNameVerifying: Bool {
         && !isFirstNameAvailable
 }
 
-// ✅ NOUVEAU: Pages où le bouton doit être complètement caché jusqu'à validation
+var shouldShowNoWeightGoalLink: Bool {
+    viewModel.currentStep == OnboardingStep.idealWeight.rawValue
+}
+
 var shouldHideButtonUntilValidated: Bool {
     let step = OnboardingStep(rawValue: viewModel.currentStep)
     switch step {
@@ -101,7 +72,37 @@ var shouldHideButtonUntilValidated: Bool {
     }
 }
 
-// ✅ NOUVEAU: Gérer le tap sur le bouton global
+func skipWeightGoalFromIdealWeight() {
+    HapticManager.shared.impact(.light)
+    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+
+    viewModel.applyHasWeightGoal(false)
+    viewModel.idealWeightValue = 0
+    viewModel.isIdealWeightEntered = false
+    viewModel.selectedWeightGoal = nil
+    viewModel.isWeightGoalSelected = false
+    viewModel.saveProgress()
+
+    OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
+    commitVisibleStepToHistory(viewModel.currentStep)
+    previousStepIndex = viewModel.currentStep
+    transitionDirection = .forward
+    isTransitioning = true
+
+    withAnimation(.onboardingTransition) {
+        viewModel.currentStep = OnboardingStep.weightEstimation.rawValue
+    }
+
+    commitVisibleStepToHistory(OnboardingStep.weightEstimation.rawValue)
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        isTransitioning = false
+    }
+
+    viewModel.saveProgress()
+    refreshOnboardingFlowProgress()
+}
+
 func handleContinueButtonTap() {
     HapticManager.shared.impact(.medium)
 
@@ -110,6 +111,9 @@ func handleContinueButtonTap() {
     let step = OnboardingStep(rawValue: viewModel.currentStep)
 
     switch step {
+    case .nutritionQuality:
+        continueFromNutritionQuality()
+
     case .firstNameInput:
         // Fermer le clavier et sauvegarder
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -132,27 +136,6 @@ func handleContinueButtonTap() {
 var isImmersiveOnboardingStep: Bool {
     guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
     return step == .videoIntroduction || step == .faceAnalysis
-}
-
-/// Progression de la lueur — alignée sur la barre (100 % avant le scan facial).
-var onboardingGlowProgressCount: Int {
-    let path = buildOnboardingProgressFlowPath(viewModel: viewModel, navigationEngine: navigationEngine)
-    guard !path.isEmpty else { return 1 }
-
-    if let current = OnboardingStep(rawValue: viewModel.currentStep),
-       isPostFaceScanOnboardingPhase(current) {
-        return path.count
-    }
-
-    if let index = path.firstIndex(of: viewModel.currentStep) {
-        return index + 1
-    }
-
-    if let furthestIndex = furthestProgressIndex(in: path, viewModel: viewModel) {
-        return furthestIndex + 1
-    }
-
-    return 1
 }
 
 var shouldShowBackButton: Bool {

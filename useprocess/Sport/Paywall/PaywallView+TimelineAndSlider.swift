@@ -398,26 +398,6 @@ extension PaywallView {
                         Label("J'ai un code", systemImage: "giftcard")
                     }
 
-                    #if DEBUG
-                    Divider()
-
-                    // Option Mode dev (uniquement en DEBUG)
-                    if UserDefaults.standard.bool(forKey: "devModeEnabled") {
-                        Button(action: {
-                            HapticManager.shared.impact(.light)
-                            disableDevMode()
-                        }) {
-                            Label("Désactiver mode dev", systemImage: "xmark.circle")
-                        }
-                    } else {
-                        Button(action: {
-                            HapticManager.shared.impact(.light)
-                            enableDevMode()
-                        }) {
-                            Label("Activer mode dev", systemImage: "wrench.and.screwdriver")
-                        }
-                    }
-                    #endif
                 } label: {
                     // Bouton avec 3 points
                     HStack(spacing: 3) {

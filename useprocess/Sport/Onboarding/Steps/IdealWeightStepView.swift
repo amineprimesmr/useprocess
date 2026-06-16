@@ -69,50 +69,61 @@ struct IdealWeightStepView: View {
 
     var body: some View {
         ScrollView {
-            OnboardingStandardStepLayout("Quel est ton", "poids idéal ?") {
-                VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                Spacer()
+                    .frame(height: OnboardingConstants.titleTopPadding)
+
+                VStack(spacing: 8) {
+                    OnboardingTitleView("Quel est ton", "poids idéal ?")
+
                     if recommendedWeight > 0 {
                         Text("Poids recommandé : \(Int(recommendedWeight.rounded())) kg")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(OnboardingTheme.footnoteText)
-                            .padding(.top, 8)
+                            .multilineTextAlignment(.center)
                             .animation(nil, value: recommendedWeight)
                     }
-
-                    ZStack {
-                        TextField("", text: $weightString)
-                            .font(.system(size: 56, weight: .bold))
-                            .foregroundColor(.clear)
-                            .multilineTextAlignment(.center)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .focused($isTextFieldFocused)
-
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(weightString.isEmpty ? "" : weightString)
-                                .font(.system(size: 56, weight: .bold))
-                                .foregroundStyle(OnboardingTheme.primaryText)
-                                .onboardingValueGlow(colorScheme: colorScheme)
-                                .contentTransition(.numericText())
-                                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
-
-                            if !weightString.isEmpty {
-                                Text("kg")
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundStyle(OnboardingTheme.bodyText)
-                            }
-                        }
-                        .allowsHitTesting(false)
-                    }
-                    .padding(.horizontal, 40)
-                    .onTapGesture {
-                        isTextFieldFocused = true
-                    }
-
-                    Spacer()
                 }
-                .frame(minHeight: ScreenMetrics.height)
+                .padding(.horizontal, 40)
+
+                Spacer()
+                    .frame(height: OnboardingConstants.titleToContentSpacing)
+
+                ZStack {
+                    TextField("", text: $weightString)
+                        .font(.system(size: 56, weight: .bold))
+                        .foregroundColor(.clear)
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.decimalPad)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .focused($isTextFieldFocused)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(weightString.isEmpty ? "" : weightString)
+                            .font(.system(size: 56, weight: .bold))
+                            .foregroundStyle(OnboardingTheme.primaryText)
+                            .onboardingValueGlow(colorScheme: colorScheme)
+                            .contentTransition(.numericText())
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
+
+                        if !weightString.isEmpty {
+                            Text("kg")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundStyle(OnboardingTheme.bodyText)
+                        }
+                    }
+                    .allowsHitTesting(false)
+                }
+                .padding(.horizontal, 40)
+                .onTapGesture {
+                    isTextFieldFocused = true
+                }
+
+                Spacer()
             }
+            .frame(minHeight: ScreenMetrics.height)
         }
         .scrollDisabled(true)
         .scrollDismissesKeyboard(.never)
@@ -154,6 +165,7 @@ struct IdealWeightStepView: View {
         }
         .onDisappear {
             saveTask?.cancel()
+            isTextFieldFocused = false
         }
     }
 
@@ -165,13 +177,16 @@ struct IdealWeightStepView: View {
 
         recommendedWeight = computeStableRecommendation()
 
-        if idealWeight > 0 {
+        if OnboardingViewModel.isPlausibleWeight(idealWeight) {
             weightString = formatIdealWeight(idealWeight)
         } else if let profile = profileService.currentProfile,
                   let ideal = profile.idealWeight,
-                  ideal > 0 {
+                  OnboardingViewModel.isPlausibleWeight(ideal) {
             idealWeight = ideal
             weightString = formatIdealWeight(ideal)
+        } else {
+            idealWeight = 0
+            weightString = ""
         }
     }
 

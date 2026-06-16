@@ -25,13 +25,6 @@ enum AuthUser {
                 email: user.email
             )
         }
-        if AuthenticationManager.shared.isDemoSession {
-            return Session(
-                uid: AuthenticationManager.demoUserID,
-                displayName: "Démo",
-                email: nil
-            )
-        }
         return nil
     }
 }

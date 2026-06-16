@@ -141,7 +141,7 @@ enum ClaudeAPIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            return "Claude indisponible — connecte Firebase ou ajoute ANTHROPIC_API_KEY (CoachSecrets.plist)."
+            return "Le coach est momentanément indisponible. Réessaie dans quelques instants."
         case .invalidResponse:
             return "Réponse Claude invalide"
         case .httpError(let status, let body):

@@ -6,9 +6,6 @@
 //
 
 import SwiftUI
-import AuthenticationServices
-import HealthKit
-import LocalAuthentication
 
 struct SportOnboardingView: View {
     @EnvironmentObject var profileService: UnifiedProfileService
@@ -16,19 +13,13 @@ struct SportOnboardingView: View {
     @EnvironmentObject var permissionsManager: PermissionsManager
     @EnvironmentObject var dataManager: DataManager
     @EnvironmentObject var authManager: AuthenticationManager
+    @Environment(\.scenePhase) private var scenePhase
 
     /// `internal` : accès depuis `OnboardingView+StepContent`, `+Computed`, `+Navigation` (autres fichiers).
     @StateObject var viewModel = OnboardingViewModel()
-    private var hapticManager: HapticManager { HapticManager.shared }
-
-    // ✅ État pour les transitions fluides
     @State var previousStepIndex: Int?
     @State var transitionDirection: TransitionDirection = .forward
     @State var isTransitioning: Bool = false
-
-    // État pour les choix Oui/Non
-    @State private var caloriesGoalSelected: Bool?
-    @State private var carryOverCaloriesSelected: Bool?
 
     // État pour l'authentification biométrique
     @State var biometricAuthCompleted: Bool = false
@@ -38,8 +29,9 @@ struct SportOnboardingView: View {
 
     /// Progression header — fraction 0…1.
     @State var flowProgress: Double = 0
+    @State var flowTotalSteps: Int = 1
+    @State var flowGlowProgressCount: Int = 1
 
-    // ✅ État pour gérer la transition "Vérification" → "Disponible"
     @State var isFirstNameAvailable: Bool = false
     @State private var firstNameDebounceTask: Task<Void, Never>?
 
@@ -47,7 +39,7 @@ struct SportOnboardingView: View {
         OnboardingNavigationEngine(viewModel: viewModel, profileService: profileService)
     }
 
-    let totalSteps = 70  // ✅ CORRECTION: Permettre d'aller jusqu'à complete + weight (67) + autres étapes
+    let totalSteps = OnboardingStep.validSavedStepUpperBound
 
     var body: some View {
         ZStack {
@@ -68,11 +60,9 @@ struct SportOnboardingView: View {
             VStack(spacing: 0) {
                 // Contenu principal avec transition ultra fluide
                 Group {
-                    // ✅ CORRECTION: Gérer le cas où rawValue est invalide (EXC_BAD_ACCESS)
                     if let step = OnboardingStep(rawValue: viewModel.currentStep) {
                         onboardingStepContent(for: step)
                     } else {
-                        // ✅ CORRECTION: Si rawValue est invalide, réinitialiser à l'étape de départ
                         OnboardingWelcomeStepView(onComplete: nextStep)
                             .task {
                                 viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
@@ -89,7 +79,6 @@ struct SportOnboardingView: View {
             }
             }
 
-            // ✅ Bouton CONTINUER — masqué en mode immersif (scan corporel, vidéo…)
             if !isImmersiveOnboardingStep && shouldShowContinueButton {
                 VStack {
                     Spacer()
@@ -97,14 +86,11 @@ struct SportOnboardingView: View {
                     Button(action: {
                         handleContinueButtonTap()
                     }) {
-                        // ✅ Texte du bouton avec transition fluide entre "CONTINUER", "Vérification" et "Disponible"
                         Group {
                             if viewModel.currentStep == OnboardingStep.firstNameInput.rawValue && !viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                // ✅ Afficher "Vérification" ou "Disponible" avec animation de couleur
                                 AnimatedVerificationButtonText(isAvailable: isFirstNameAvailable)
                                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                             } else {
-                                // ✅ Afficher "CONTINUER" normal
                                 Text("CONTINUER")
                                     .font(.system(size: 20, weight: .black))
                                     .foregroundStyle(OnboardingTheme.actionButtonText)
@@ -121,34 +107,24 @@ struct SportOnboardingView: View {
                     .allowsHitTesting(canContinue)
                     .opacity(shouldHideButtonUntilValidated ? (canContinue ? 1.0 : 0.0) : (canContinue ? 1.0 : (isFirstNameVerifying ? 0.45 : 0.5)))
 
+                    if shouldShowNoWeightGoalLink {
+                        Button(action: skipWeightGoalFromIdealWeight) {
+                            Text("Je n'ai pas d'objectif de poids")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(OnboardingTheme.bodyText)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 12)
+                        }
+                    }
+
                     Spacer()
                         .frame(height: continueButtonBottomOffset)
                 }
                 .ios26SafeAnimation(.onboardingTransition, value: viewModel.currentStep)
                 .ios26SafeAnimation(.easeInOut(duration: 0.3), value: viewModel.firstName.isEmpty)
+                .zIndex(20)
             }
 
-            // ✅ Boutons spécifiques
-            if !isImmersiveOnboardingStep && shouldShowSpecificButton {
-                VStack {
-                    Spacer()
-                    OnboardingSpecificBottomBar(
-                        viewModel: viewModel,
-                        hapticManager: hapticManager,
-                        caloriesGoalSelected: $caloriesGoalSelected,
-                        carryOverCaloriesSelected: $carryOverCaloriesSelected,
-                        biometricAuthCompleted: $biometricAuthCompleted,
-                        onNextStep: nextStep,
-                        onRequestHealthKit: { await requestHealthKitAndContinue() },
-                        onCompleteOnboarding: { await completeOnboarding() },
-                        onBiometricContinue: { await triggerBiometricAuthAndContinue() }
-                    )
-                    Spacer()
-                        .frame(height: 50)
-                }
-            }
-
-            // ✅ Header unifié : Bouton retour | Barre de progression | Bouton langue
             if !isImmersiveOnboardingStep {
             if OnboardingHeaderLayout.showsAnyHeader(
                 currentStep: viewModel.currentStep,
@@ -156,9 +132,8 @@ struct SportOnboardingView: View {
             ) {
                 OnboardingHeaderChrome(
                     viewModel: viewModel,
-                    hapticManager: hapticManager,
                     shouldShowBackButton: shouldShowBackButton,
-                    flowProgress: flowProgress,
+                    flowProgress: onboardingFlowMetrics(viewModel: viewModel).progress,
                     onPreviousStep: previousStep
                 )
             }
@@ -166,11 +141,8 @@ struct SportOnboardingView: View {
             if OnboardingHeaderLayout.showsFullHeader(currentStep: viewModel.currentStep) {
                 AnimatedOnboardingGlow(
                     currentStep: viewModel.currentStep,
-                    visitedStepsCount: onboardingGlowProgressCount,
-                    totalStepsForFlow: calculateTotalOnboardingStepsForFlow(
-                        viewModel: viewModel,
-                        navigationEngine: navigationEngine
-                    )
+                    visitedStepsCount: onboardingFlowMetrics(viewModel: viewModel).glowProgressCount,
+                    totalStepsForFlow: onboardingFlowMetrics(viewModel: viewModel).totalSteps
                 )
                     .ignoresSafeArea(.all)
                     .allowsHitTesting(false)
@@ -260,10 +232,8 @@ struct SportOnboardingView: View {
             // (appel explicite de completeOnboarding() dans FeaturesUnlockView)
         }
         .onChange(of: viewModel.firstName) { _, newValue in
-            // ✅ Détecter quand l'utilisateur arrête de taper pour afficher "Disponible"
             let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-            // ✅ Réinitialiser l'état "Disponible" si le champ est vide
             if trimmed.isEmpty {
                 isFirstNameAvailable = false
                 firstNameDebounceTask?.cancel()
@@ -271,30 +241,26 @@ struct SportOnboardingView: View {
                 return
             }
 
-            // ✅ Annuler la tâche précédente si elle existe
             firstNameDebounceTask?.cancel()
 
-            // ✅ Réinitialiser à "Vérification" immédiatement quand l'utilisateur tape
             isFirstNameAvailable = false
 
-            // ✅ Créer une nouvelle tâche avec debounce de 1 seconde
             firstNameDebounceTask = Task {
-                // Attendre 1 seconde
                 try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
 
-                // ✅ Vérifier que la tâche n'a pas été annulée et que le prénom n'est pas vide
                 guard !Task.isCancelled else { return }
 
                 let currentTrimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !currentTrimmed.isEmpty else { return }
 
-                // ✅ Passer à "Disponible" avec animation fluide
                 withAnimation(.easeInOut(duration: 0.4)) {
                         isFirstNameAvailable = true
                 }
             }
         }
         .onChange(of: viewModel.currentStep) { oldValue, newValue in
+            viewModel.saveProgress()
+
             Task { @MainActor in
                 refreshOnboardingFlowProgress()
             }
@@ -304,6 +270,28 @@ struct SportOnboardingView: View {
                 firstNameDebounceTask?.cancel()
                 firstNameDebounceTask = nil
             }
+        }
+        .onChange(of: viewModel.hasWeightGoal) { _, _ in
+            viewModel.saveProgress()
+            refreshOnboardingFlowProgress()
+        }
+        .onChange(of: viewModel.hasSportActivity) { _, _ in
+            viewModel.saveProgress()
+            refreshOnboardingFlowProgress()
+        }
+        .onChange(of: viewModel.nutritionProfile.weightManagementExperience) { _, _ in
+            viewModel.saveProgress()
+            refreshOnboardingFlowProgress()
+        }
+        .onChange(of: viewModel.makeAnswersSnapshot()) { _, _ in
+            viewModel.saveProgress()
+            refreshOnboardingFlowProgress()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .inactive || phase == .background else { return }
+            viewModel.commitPendingStepAnswers()
+            viewModel.saveProgress()
+            OnboardingProgressService.shared.flush()
         }
     }
 }

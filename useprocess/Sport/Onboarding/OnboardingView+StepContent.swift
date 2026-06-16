@@ -6,9 +6,6 @@
 //
 
 import SwiftUI
-import AuthenticationServices
-import HealthKit
-import LocalAuthentication
 
 extension SportOnboardingView {
     @ViewBuilder
@@ -48,7 +45,7 @@ extension SportOnboardingView {
                 },
                 onContinue: nextStep // ✅ NOUVEAU: Passer à l'étape suivante depuis le clavier
             )
-        case .heightWeight, .bodyScan, .weightGoal, .sportClub, .experienceLevel, .hardestMeal,
+        case .heightWeight, .bodyScan, .primaryGoal, .weightGoal, .sportClub, .experienceLevel, .hardestMeal,
              .appleSignIn,
              .yearsOfExperience, .deadlineSelection, .eventDetails,
              .potentialPace, .trainingFrequency, .nutritionScanFeature,
@@ -78,13 +75,6 @@ extension SportOnboardingView {
                     viewModel.isFirstNameEntered = isValid
                 }
             )
-        case .primaryGoal:
-            HasWeightGoalStepView(
-                viewModel: viewModel,
-                onValidationChanged: { isValid in
-                    viewModel.isPrimaryGoalSelected = isValid
-                }
-            )
         case .idealWeight:
             IdealWeightStepView(
                 idealWeight: $viewModel.idealWeightValue,
@@ -97,6 +87,7 @@ extension SportOnboardingView {
                 onValidationChanged: { isValid in
                     viewModel.isIdealWeightEntered = isValid
                     if isValid {
+                        viewModel.applyHasWeightGoal(true)
                         viewModel.syncInferredWeightGoal()
                         viewModel.saveProgress()
                     }

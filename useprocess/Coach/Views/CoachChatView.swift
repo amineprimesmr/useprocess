@@ -415,7 +415,7 @@ struct CoachChatView: View {
         HStack(spacing: 10) {
             Image(systemName: "key.fill")
                 .foregroundStyle(.orange)
-            Text("Connecte Firebase + déploie les Cloud Functions, ou ajoute ANTHROPIC_API_KEY dans CoachSecrets.plist.")
+            Text("Le coach est momentanément indisponible. Réessaie dans quelques instants.")
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }

@@ -35,6 +35,9 @@ struct FirstNameInputStepView: View {
                         .multilineTextAlignment(.center)
                         .textFieldStyle(.plain)
                         .focused($isTextFieldFocusedState)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled(true)
+                        .textContentType(.givenName)
                         .onSubmit {
                             let trimmed = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
                             guard !trimmed.isEmpty else { return }
@@ -83,23 +86,25 @@ struct FirstNameInputStepView: View {
             let isValid = !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             onValidationChanged?(isValid)
         }
+        .onDisappear {
+            isTextFieldFocusedState = false
+        }
     }
 
     private func loadExistingFirstName() {
         let trimmed = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty, trimmed != "Utilisateur" {
+        if OnboardingViewModel.isRealUserFirstName(trimmed) {
             onValidationChanged?(true)
             return
         }
+        firstName = ""
 
         if let profile = profileService.currentProfile,
-           !profile.firstName.isEmpty,
-           profile.firstName != "Utilisateur" {
+           OnboardingViewModel.isRealUserFirstName(profile.firstName) {
             firstName = profile.firstName
         } else if let user = AuthUser.current,
                   let displayName = user.displayName,
-                  !displayName.isEmpty,
-                  displayName != "Utilisateur" {
+                  OnboardingViewModel.isRealUserFirstName(displayName) {
             firstName = displayName
         }
     }

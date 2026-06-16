@@ -4,6 +4,7 @@ import SwiftUI
 /// Écran de capture TrueDepth réutilisable (onboarding + Santé).
 struct FaceScanCaptureScreen: View {
     var onBack: () -> Void
+    var onSkip: (() -> Void)? = nil
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
     @State private var scanProgress: Double = 0
@@ -21,6 +22,7 @@ struct FaceScanCaptureScreen: View {
     @State private var morphToCircle: CGFloat = 0
     @State private var capturedPayload: FaceScanCapturePayload?
     @State private var capturedMarkers: FaceWellnessMarkers?
+    @State private var canSkipScan = false
 
     private enum FaceScanPhase {
         case positioning
@@ -123,6 +125,16 @@ struct FaceScanCaptureScreen: View {
             showContent = true
             try? await Task.sleep(for: .seconds(0.05))
             isExpanding = true
+            try? await Task.sleep(for: .seconds(8))
+            guard phase != .completed else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                canSkipScan = true
+            }
+        }
+        .onChange(of: isDeviceSupported) { _, supported in
+            if !supported {
+                canSkipScan = true
+            }
         }
         .onChange(of: isFaceDetected) { _, detected in
             guard isDeviceSupported, phase != .completed else { return }
@@ -216,6 +228,8 @@ struct FaceScanCaptureScreen: View {
                 .font(.system(size: 15))
                 .foregroundStyle(OnboardingTheme.footnoteText)
                 .multilineTextAlignment(.center)
+            skipScanButton
+                .padding(.top, 8)
         }
         .padding(.horizontal, 32)
     }
@@ -241,6 +255,28 @@ struct FaceScanCaptureScreen: View {
                 }
             }
             .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if canSkipScan {
+            skipScanButton
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    @ViewBuilder
+    private var skipScanButton: some View {
+        if let onSkip {
+            Button(action: {
+                HapticManager.shared.impact(.medium)
+                FaceScanScreenFlash.shared.deactivate()
+                onSkip()
+            }) {
+                Text("CONTINUER SANS SCAN")
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(OnboardingTheme.actionButtonText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+            }
+            .glassStyle()
+            .buttonBorderShape(.roundedRectangle(radius: 50))
         }
     }
 

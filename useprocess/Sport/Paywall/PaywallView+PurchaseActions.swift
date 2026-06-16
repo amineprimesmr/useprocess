@@ -2,7 +2,7 @@
 //  PaywallView+PurchaseActions.swift
 //  Process
 //
-//  Achat StoreKit, restauration, mode dev (DEBUG), notification de sortie paywall.
+//  Achat StoreKit, restauration, notification de sortie paywall.
 //
 
 import SwiftUI
@@ -87,19 +87,6 @@ extension PaywallView {
 
         isRestoring = false
     }
-
-    #if DEBUG
-    @MainActor
-    func enableDevMode() {
-        subscriptionService.forcePremiumForDevelopment()
-        completePaywallFlow()
-    }
-
-    @MainActor
-    func disableDevMode() {
-        subscriptionService.disableDevMode()
-    }
-    #endif
 
     func scheduleExitNotificationIfNeeded() {
         guard !hasScheduledExitNotification else { return }

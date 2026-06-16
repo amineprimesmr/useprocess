@@ -101,14 +101,20 @@ class OnboardingNavigationEngine {
         case .heightWeight:
             return OnboardingStep.firstNameInput.rawValue
         case .firstNameInput:
-            return OnboardingStep.primaryGoal.rawValue
+            if viewModel.hasWeightGoal == false {
+                return OnboardingStep.weightEstimation.rawValue
+            }
+            return OnboardingStep.idealWeight.rawValue
         case .personalizedWelcome, .processResultsDurability:
-            return OnboardingStep.primaryGoal.rawValue
+            return OnboardingStep.idealWeight.rawValue
         case .primaryGoal:
             if viewModel.hasWeightGoal == true {
                 return OnboardingStep.idealWeight.rawValue
             }
-            return OnboardingStep.weightEstimation.rawValue
+            if viewModel.hasWeightGoal == false {
+                return OnboardingStep.weightEstimation.rawValue
+            }
+            return OnboardingStep.idealWeight.rawValue
         default:
             break
         }
@@ -133,9 +139,14 @@ class OnboardingNavigationEngine {
             return next
         }
         
-        // Fallback : étape suivante
-        let nextIndex = resolvedCurrentStep + 1
-        return nextIndex < 53 ? nextIndex : nil  // ✅ Corrigé : 53 étapes totales
+        // Fallback de compatibilité pour anciennes étapes non routées explicitement.
+        let orderedSteps = OnboardingStep.semanticOrder
+            .map(\.rawValue)
+        guard let currentIndex = orderedSteps.firstIndex(of: resolvedCurrentStep) else {
+            return nil
+        }
+        let nextIndex = currentIndex + 1
+        return nextIndex < orderedSteps.count ? orderedSteps[nextIndex] : nil
     }
     
     // MARK: - Previous Step
@@ -189,8 +200,14 @@ class OnboardingNavigationEngine {
             return previous
         }
         
-        // Fallback : étape précédente
-        return max(0, viewModel.currentStep - 1)
+        // Fallback de compatibilité pour rawValues non linéaires.
+        let orderedSteps = OnboardingStep.semanticOrder
+            .map(\.rawValue)
+        guard let currentIndex = orderedSteps.firstIndex(of: viewModel.currentStep),
+              currentIndex > 0 else {
+            return OnboardingStep.videoIntroduction.rawValue
+        }
+        return orderedSteps[currentIndex - 1]
     }
     
     // MARK: - Specific Flow (Objectifs)
@@ -227,8 +244,6 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightEstimation.rawValue
             
         case .weightEstimation:
-            // ✅ CORRECTION: Après weightEstimation, aller aux questions sportives (hasSportActivity)
-            // Même si l'objectif est uniquement "changer mon poids", on doit poser les questions sportives
             return OnboardingStep.hasSportActivity.rawValue
             
         case .hasSportActivity:
@@ -236,9 +251,6 @@ class OnboardingNavigationEngine {
             if viewModel.hasSportActivity == true {
                 return OnboardingStep.sportSelection.rawValue
             } else {
-                // ✅ NOUVELLE LOGIQUE: Si l'utilisateur ne pratique pas de sport
-                // - Si l'utilisateur a choisi "changer mon poids" → aller à weightManagementExperience
-                // - Sinon → aller directement à nutritionQuality
                 if viewModel.hasWeightObjective {
                     return OnboardingStep.weightManagementExperience.rawValue
                 } else {
@@ -266,8 +278,6 @@ class OnboardingNavigationEngine {
     private func getNextStepInNutritionFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .weightManagementExperience:
-            // ✅ NOUVELLE LOGIQUE: Si l'utilisateur a répondu "J'ai essayé plusieurs fois" ou "J'essaie actuellement"
-            // Aller à weightFailureReasons, sinon aller directement à nutritionQuality
             if let experience = viewModel.nutritionProfile.weightManagementExperience,
                (experience == .triedMultiple || experience == .currentlyTrying) {
                 return OnboardingStep.weightFailureReasons.rawValue
@@ -275,17 +285,16 @@ class OnboardingNavigationEngine {
             return OnboardingStep.nutritionQuality.rawValue
             
         case .weightFailureReasons:
-            // ✅ Après weightFailureReasons, aller à nutritionQuality
             return OnboardingStep.nutritionQuality.rawValue
             
         case .nutritionQuality:
-            return OnboardingStep.faceAnalysis.rawValue
+            return OnboardingStep.programCreation.rawValue
 
         case .hasDietaryRestrictions, .whichRestrictions:
-            return OnboardingStep.faceAnalysis.rawValue
+            return OnboardingStep.programCreation.rawValue
 
         case .hardestMeal:
-            return OnboardingStep.faceAnalysis.rawValue
+            return OnboardingStep.programCreation.rawValue
 
         case .faceAnalysis:
             return OnboardingStep.programCreation.rawValue
@@ -334,11 +343,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.biometricAuth.rawValue
             
         case .caloriesGoal:
-            // ✅ TEMPORAIRE : Page désactivée, ne devrait pas être atteinte
             return OnboardingStep.biometricAuth.rawValue
             
         case .carryOverCalories:
-            // ✅ TEMPORAIRE : Page désactivée, ne devrait pas être atteinte
             return OnboardingStep.biometricAuth.rawValue
             
         case .biometricAuth:
@@ -366,7 +373,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.idealWeight.rawValue
             
         case .idealWeight:
-            return OnboardingStep.primaryGoal.rawValue
+            return OnboardingStep.firstNameInput.rawValue
             
         case .weightMotivation:
             return OnboardingStep.idealWeight.rawValue
@@ -386,7 +393,7 @@ class OnboardingNavigationEngine {
             if viewModel.hasWeightObjective && viewModel.isIdealWeightEntered {
                 return OnboardingStep.goalPace.rawValue
             }
-            return OnboardingStep.primaryGoal.rawValue
+            return OnboardingStep.firstNameInput.rawValue
             
         case .hasSportActivity:
             return OnboardingStep.weightEstimation.rawValue
@@ -407,8 +414,6 @@ class OnboardingNavigationEngine {
             return OnboardingStep.hasSportActivity.rawValue
             
         case .weightManagementExperience:
-            // ✅ NOUVELLE LOGIQUE: Si l'utilisateur est arrivé depuis hasSportActivity (pas de sport + objectif poids)
-            // Revenir à hasSportActivity, sinon revenir à goalProjection
             if viewModel.hasSportActivity == false && viewModel.hasWeightObjective {
                 return OnboardingStep.hasSportActivity.rawValue
             }
@@ -422,12 +427,9 @@ class OnboardingNavigationEngine {
     private func getPreviousStepInNutritionFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .nutritionQuality:
-            // ✅ NOUVELLE LOGIQUE: Si l'utilisateur est arrivé depuis hasSportActivity (pas de sport + pas d'objectif poids)
-            // Revenir à hasSportActivity, sinon revenir à weightFailureReasons ou goalProjection
             if viewModel.hasSportActivity == false && !viewModel.hasWeightObjective {
                 return OnboardingStep.goalProjection.rawValue
             }
-            // Si on vient de weightFailureReasons, revenir à weightFailureReasons
             if let experience = viewModel.nutritionProfile.weightManagementExperience,
                (experience == .triedMultiple || experience == .currentlyTrying) {
                 return OnboardingStep.weightFailureReasons.rawValue
@@ -435,7 +437,6 @@ class OnboardingNavigationEngine {
             return OnboardingStep.goalProjection.rawValue
             
         case .weightFailureReasons:
-            // ✅ Revenir à weightManagementExperience depuis weightFailureReasons
             return OnboardingStep.weightManagementExperience.rawValue
             
         case .hasDietaryRestrictions, .whichRestrictions:
@@ -445,7 +446,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.nutritionQuality.rawValue
 
         case .programCreation:
-            return OnboardingStep.faceAnalysis.rawValue
+            return OnboardingStep.nutritionQuality.rawValue
 
         case .nutritionPotential, .hasSufficientHydration, .hydrationLevel,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed,
@@ -469,7 +470,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.programCreation.rawValue
 
         case .appleSignIn:
-            return OnboardingStep.faceAnalysis.rawValue
+            return OnboardingStep.programCreation.rawValue
 
         case .alarmConfiguration, .sleepWindowReveal:
             return OnboardingStep.healthKitPermissions.rawValue
@@ -537,16 +538,6 @@ class OnboardingNavigationEngine {
         return queue[stepIndex - 1].rawValue
     }
     
-    private func getLastSpecificStepInQueue() -> Int {
-        if viewModel.hasWeightObjective {
-            if viewModel.isIdealWeightEntered {
-                return OnboardingStep.idealWeight.rawValue
-            }
-        }
-
-        return pendingStepsQueue().last?.rawValue ?? OnboardingStep.primaryGoal.rawValue
-    }
-
     /// Lecture seule — utilisé pendant `buildActiveFlowPath` sans muter le ViewModel.
     private func wouldWeightGoalBeIncompatibleWithBMI() -> Bool {
         guard viewModel.hasWeightGoal == true, viewModel.isIdealWeightEntered else { return false }

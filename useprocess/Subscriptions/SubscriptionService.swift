@@ -32,12 +32,6 @@ final class SubscriptionService: NSObject, ObservableObject {
         annualPackage != nil || annualStoreProductRC != nil || annualStoreProduct != nil
     }
 
-    #if DEBUG
-    private var usesSimulatedPurchases: Bool { !RevenueCatConfiguration.isConfigured }
-    #else
-    private var usesSimulatedPurchases: Bool { false }
-    #endif
-
     enum SubscriptionStatus: Equatable {
         case unknown, notSubscribed, subscribed, expired, inGracePeriod, inBillingRetryPeriod
 
@@ -50,7 +44,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     var canPurchase: Bool {
-        hasLiveMonthlyProduct || hasLiveAnnualProduct || usesSimulatedPurchases
+        hasLiveMonthlyProduct || hasLiveAnnualProduct
     }
 
     private override init() {
@@ -63,13 +57,9 @@ final class SubscriptionService: NSObject, ObservableObject {
         guard !isConfigured else { return }
         guard RevenueCatConfiguration.isConfigured, let apiKey = RevenueCatConfiguration.apiKey else {
             applyFallbackProducts()
-            subscriptionStatus = usesSimulatedPurchases ? .notSubscribed : .notSubscribed
+            subscriptionStatus = .notSubscribed
             return
         }
-
-        #if DEBUG
-        Purchases.logLevel = .debug
-        #endif
 
         Purchases.configure(withAPIKey: apiKey)
         Purchases.shared.delegate = self
@@ -91,7 +81,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             _ = try await Purchases.shared.logIn(userID)
             await checkSubscriptionStatus()
         } catch {
-            print("[SubscriptionService] logIn: \(error.localizedDescription)")
+            return
         }
     }
 
@@ -145,13 +135,7 @@ final class SubscriptionService: NSObject, ObservableObject {
 
             applyPackageDisplay(monthlyPackage, plan: .monthly)
             applyPackageDisplay(annualPackage, plan: .annual)
-
-            logCatalogDiagnostics(
-                offering: offering,
-                storeProducts: storeProducts
-            )
         } catch {
-            print("[SubscriptionService] offerings: \(error.localizedDescription)")
             applyFallbackProducts()
         }
     }
@@ -163,11 +147,6 @@ final class SubscriptionService: NSObject, ObservableObject {
     // MARK: - Purchase
 
     func purchase(plan: SubscriptionBillingPlan = .annual) async throws {
-        if usesSimulatedPurchases {
-            subscriptionStatus = .subscribed
-            return
-        }
-
         guard isConfigured else { throw SubscriptionError.notConfigured }
 
         let package: Package?
@@ -226,11 +205,6 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func restorePurchases() async throws {
-        if usesSimulatedPurchases {
-            subscriptionStatus = .subscribed
-            return
-        }
-
         guard isConfigured else { throw SubscriptionError.notConfigured }
 
         let info = try await Purchases.shared.restorePurchases()
@@ -239,8 +213,6 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func checkSubscriptionStatus() async {
-        if usesSimulatedPurchases { return }
-
         guard isConfigured else {
             subscriptionStatus = .notSubscribed
             return
@@ -250,20 +222,9 @@ final class SubscriptionService: NSObject, ObservableObject {
             let info = try await Purchases.shared.customerInfo()
             applyCustomerInfo(info)
         } catch {
-            print("[SubscriptionService] customerInfo: \(error.localizedDescription)")
+            return
         }
     }
-
-    #if DEBUG
-    func forcePremiumForDevelopment() {
-        subscriptionStatus = .subscribed
-    }
-
-    func disableDevMode() {
-        subscriptionStatus = .notSubscribed
-        Task { await checkSubscriptionStatus() }
-    }
-    #endif
 
     // MARK: - Private
 
@@ -301,7 +262,6 @@ final class SubscriptionService: NSObject, ObservableObject {
             }
 
             if attempt < attempts - 1 {
-                print("[SubscriptionService] Produits manquants (tentative \(attempt + 1)/\(attempts)) — nouvel essai dans 3 s…")
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
             }
         }
@@ -367,28 +327,6 @@ final class SubscriptionService: NSObject, ObservableObject {
             annualDisplay = display
             annualStoreProductRC = package.storeProduct
             annualStoreProduct = package.storeProduct.sk2Product ?? annualStoreProduct
-        }
-    }
-
-    private func logCatalogDiagnostics(offering: Offering?, storeProducts: [StoreProduct]) {
-        let foundIDs = Set(storeProducts.map(\.productIdentifier))
-        let expected = [
-            SubscriptionConfiguration.monthlyProductID,
-            SubscriptionConfiguration.annualProductID
-        ]
-
-        for id in expected where !foundIDs.contains(id) {
-            print("[SubscriptionService] ⚠️ StoreKit n'a pas renvoyé le produit « \(id) » — vérifie App Store Connect (Ready to Submit + lié à la version) et la propagation (jusqu'à 24 h).")
-        }
-
-        if let offering {
-            let packageIDs = offering.availablePackages.map(\.storeProduct.productIdentifier)
-            print("[SubscriptionService] Offering « \(offering.identifier) » packages: \(packageIDs.joined(separator: ", "))")
-        }
-
-        for package in offering?.availablePackages ?? [] where package.storeProduct.productIdentifier != SubscriptionConfiguration.monthlyProductID
-            && package.identifier == SubscriptionConfiguration.monthlyPackageID {
-            print("[SubscriptionService] ⚠️ Package mensuel RC pointe vers « \(package.storeProduct.productIdentifier) » au lieu de « \(SubscriptionConfiguration.monthlyProductID) » — corrige dans RevenueCat.")
         }
     }
 

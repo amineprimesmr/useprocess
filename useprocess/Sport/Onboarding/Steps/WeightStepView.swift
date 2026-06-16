@@ -90,6 +90,8 @@ struct WeightStepView: View {
                             .keyboardType(.decimalPad)
                             .textFieldStyle(PlainTextFieldStyle())
                             .focused($isTextFieldFocused)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
                             .onSubmit {
                                 handleContinue()
                             }
@@ -149,6 +151,9 @@ struct WeightStepView: View {
             onValidationChanged?(!newValue.isEmpty && weightValue > 0)
             selectedWeight = displayWeight
         }
+        .onDisappear {
+            isTextFieldFocused = false
+        }
     }
 
     private func handleContinue() {
@@ -169,12 +174,14 @@ struct WeightStepView: View {
     }
 
     private func loadExistingWeight() {
-        if selectedWeight > 0 {
+        if OnboardingViewModel.isPlausibleWeight(selectedWeight) {
             populateWeightString(from: selectedWeight)
-        } else if let profile = profileService.currentProfile, profile.weight > 0 {
+        } else if let profile = profileService.currentProfile,
+                  OnboardingViewModel.isPlausibleWeight(profile.weight) {
             selectedWeight = profile.weight
             populateWeightString(from: profile.weight)
         } else {
+            selectedWeight = 0
             weightString = ""
         }
 
@@ -222,6 +229,7 @@ struct WeightStepView: View {
 
     private func saveWeight() async {
         guard var profile = profileService.currentProfile else { return }
+        guard OnboardingViewModel.isPlausibleWeight(selectedWeight) else { return }
 
         profile.weight = selectedWeight
         do {

@@ -21,7 +21,7 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
          .nutritionPotential, .alarmConfiguration, .sleepWindowReveal,
          .sleepNeed, .referralCode, .referralReward,
          .featuresUnlock, .payment, .appRating, .appleSignIn,
-         .notificationPermission, .processWelcome, .complete,
+         .biometricAuth, .notificationPermission, .processWelcome, .complete,
          .nutritionScanFeature, .yearsOfExperience,
          .hasDietaryRestrictions, .whichRestrictions, .faceAnalysis:
         return true
@@ -31,7 +31,7 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
     case .bodyScan:
         return true
     case .primaryGoal:
-        return viewModel.hasWeightGoal != nil
+        return true
     case .firstNameInput:
         return true
     case .personalizedWelcome:
@@ -41,7 +41,9 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
 
     case .weightGoal:
         return true
-    case .idealWeight, .weightMotivation, .goalPace,
+    case .idealWeight:
+        return true
+    case .weightMotivation, .goalPace,
          .weightManagementExperience, .weightFailureReasons:
         return viewModel.hasWeightObjective
 
@@ -71,7 +73,7 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
         return true
 
     case .planReady, .onboardingInfo,
-         .biometricAuth, .caloriesGoal, .carryOverCalories:
+         .caloriesGoal, .carryOverCalories:
         return false
     case .programCreation:
         return true
@@ -82,8 +84,7 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
 
 /// Parcourt l'historique des étapes visitées et retourne la dernière étape affichable.
 func findLastValidOnboardingStepIndex(visitedSteps: [Int], viewModel: OnboardingViewModel) -> Int {
-    let sorted = visitedSteps.sorted()
-    for stepValue in sorted.reversed() {
+    for stepValue in visitedSteps.reversed() {
         guard let step = OnboardingStep(rawValue: stepValue) else { continue }
         if validateOnboardingStepAvailability(step: step, viewModel: viewModel) {
             return stepValue
@@ -94,49 +95,22 @@ func findLastValidOnboardingStepIndex(visitedSteps: [Int], viewModel: Onboarding
 
 // MARK: - Progression barre / lueur
 
-/// Étapes du questionnaire affichant la barre de progression (jusqu'à nutrition, avant le scan facial).
-private let onboardingProgressExcludedSteps: Set<OnboardingStep> = [
-    .videoIntroduction,
-    .goalProjection,
-    .weightEstimation,
-    .faceAnalysis
-]
-
-/// Parcours utilisé pour la barre : du genre à la nutrition (dernière étape avec barre), scan facial exclu.
+/// Parcours utilisé pour la barre : uniquement le questionnaire, terminé à `nutritionQuality`.
 func buildOnboardingProgressFlowPath(
-    viewModel: OnboardingViewModel,
-    navigationEngine: OnboardingNavigationEngine
+    viewModel: OnboardingViewModel
 ) -> [Int] {
-    var result: [Int] = []
-    var cursor: Int? = OnboardingStep.genderSelection.rawValue
-    var visited = Set<Int>()
-
-    for _ in 0..<80 {
-        guard let stepValue = cursor else { break }
-        guard visited.insert(stepValue).inserted else { break }
-        guard let step = OnboardingStep(rawValue: stepValue) else { break }
-        if step == .faceAnalysis { break }
-        if !step.isTransientSkippedStep && !onboardingProgressExcludedSteps.contains(step) {
-            result.append(stepValue)
-        }
-        cursor = navigationEngine.resolveNextVisibleStep(from: stepValue)
-    }
-
-    if !result.isEmpty {
-        return result
-    }
-
     return buildExplicitOnboardingProgressFlowPath(viewModel: viewModel)
 }
 
-/// Parcours déterministe de secours si la simulation échoue.
 private func buildExplicitOnboardingProgressFlowPath(viewModel: OnboardingViewModel) -> [Int] {
     var steps: [OnboardingStep] = [
-        .genderSelection, .ageSelection, .height, .weight, .firstNameInput, .primaryGoal
+        .genderSelection, .ageSelection, .height, .weight, .firstNameInput, .idealWeight
     ]
 
     if viewModel.hasWeightObjective {
-        steps.append(contentsOf: [.idealWeight, .weightMotivation, .goalPace])
+        steps.append(contentsOf: [.weightMotivation, .goalPace, .weightEstimation])
+    } else {
+        steps.append(.weightEstimation)
     }
 
     steps.append(.hasSportActivity)
@@ -144,6 +118,8 @@ private func buildExplicitOnboardingProgressFlowPath(viewModel: OnboardingViewMo
     if viewModel.hasSportActivity == true {
         steps.append(.sportSelection)
     }
+
+    steps.append(.goalProjection)
 
     if viewModel.hasWeightObjective {
         steps.append(.weightManagementExperience)
@@ -157,7 +133,7 @@ private func buildExplicitOnboardingProgressFlowPath(viewModel: OnboardingViewMo
     return steps.map(\.rawValue)
 }
 
-func isPostFaceScanOnboardingPhase(_ step: OnboardingStep) -> Bool {
+func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     switch step {
     case .faceAnalysis, .programCreation, .healthKitPermissions, .sleepDataRecovery,
          .biometricAuth, .notificationPermission, .payment, .processWelcome,
@@ -168,14 +144,6 @@ func isPostFaceScanOnboardingPhase(_ step: OnboardingStep) -> Bool {
     }
 }
 
-/// Clé pour recalculer la progression sans recalculer le parcours à chaque frame SwiftUI.
-func onboardingFlowProgressCacheKey(viewModel: OnboardingViewModel) -> String {
-    let weightGoalFlag = viewModel.hasWeightGoal.map { $0 ? "1" : "0" } ?? "n"
-    let sport = viewModel.hasSportActivity.map { $0 ? "1" : "0" } ?? "n"
-    let weightExperience = viewModel.nutritionProfile.weightManagementExperience?.rawValue ?? ""
-    return "\(viewModel.currentStep)|\(weightGoalFlag)|\(sport)|\(viewModel.isIdealWeightEntered)|\(weightExperience)"
-}
-
 func furthestProgressIndex(in path: [Int], viewModel: OnboardingViewModel) -> Int? {
     path.enumerated()
         .filter { viewModel.visitedSteps.contains($0.element) }
@@ -183,36 +151,41 @@ func furthestProgressIndex(in path: [Int], viewModel: OnboardingViewModel) -> In
         .max()
 }
 
-/// Progression normalisée 0…1 — complète à 100 % sur la dernière étape questionnaire (nutrition).
-func onboardingFlowProgress(
-    viewModel: OnboardingViewModel,
-    navigationEngine: OnboardingNavigationEngine
-) -> Double {
-    let path = buildOnboardingProgressFlowPath(viewModel: viewModel, navigationEngine: navigationEngine)
-    guard !path.isEmpty else { return 0 }
+/// Calcule en une seule passe les métriques utilisées par la barre et la lueur.
+func onboardingFlowMetrics(viewModel: OnboardingViewModel) -> (progress: Double, totalSteps: Int, glowProgressCount: Int) {
+    let path = buildOnboardingProgressFlowPath(viewModel: viewModel)
+    guard !path.isEmpty else {
+        return (progress: 0, totalSteps: 1, glowProgressCount: 1)
+    }
+
+    let totalSteps = max(path.count, 1)
 
     if let current = OnboardingStep(rawValue: viewModel.currentStep),
-       isPostFaceScanOnboardingPhase(current) {
-        return 1.0
+       isAfterQuestionnairePhase(current) {
+        return (progress: 1.0, totalSteps: totalSteps, glowProgressCount: totalSteps)
     }
 
     if let index = path.firstIndex(of: viewModel.currentStep) {
-        return min(1.0, Double(index + 1) / Double(path.count))
+        let count = index + 1
+        return (
+            progress: min(1.0, Double(count) / Double(totalSteps)),
+            totalSteps: totalSteps,
+            glowProgressCount: count
+        )
     }
 
     if let furthestIndex = furthestProgressIndex(in: path, viewModel: viewModel) {
-        var progress = Double(furthestIndex + 1) / Double(path.count)
+        var progress = Double(furthestIndex + 1) / Double(totalSteps)
+        let glowProgressCount = furthestIndex + 1
 
-        if let current = OnboardingStep(rawValue: viewModel.currentStep),
-           onboardingProgressExcludedSteps.contains(current),
-           current != .videoIntroduction {
-            progress = min(1.0, progress + (0.35 / Double(path.count)))
-        }
-
-        return min(1.0, progress)
+        return (
+            progress: min(1.0, progress),
+            totalSteps: totalSteps,
+            glowProgressCount: glowProgressCount
+        )
     }
 
-    return 0
+    return (progress: 0, totalSteps: totalSteps, glowProgressCount: 1)
 }
 
 /// Reconstruit l'historique visité comme préfixe du parcours jusqu'à l'étape cible (étapes visibles uniquement).
@@ -262,11 +235,3 @@ func normalizeOnboardingVisitedStack(
 }
 
 // MARK: - Nombre d'étapes pour la barre / lueur
-
-/// Nombre d'étapes du questionnaire (barre complète avant le scan facial).
-func calculateTotalOnboardingStepsForFlow(
-    viewModel: OnboardingViewModel,
-    navigationEngine: OnboardingNavigationEngine
-) -> Int {
-    max(buildOnboardingProgressFlowPath(viewModel: viewModel, navigationEngine: navigationEngine).count, 1)
-}

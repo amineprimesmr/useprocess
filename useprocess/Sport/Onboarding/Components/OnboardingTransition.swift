@@ -55,8 +55,12 @@ struct OnboardingTransitionContainer<Content: View>: View {
     }
 
     private var direction: TransitionDirection {
-        guard let previous = previousStep else { return .forward }
-        return currentStep > previous ? .forward : .backward
+        guard let previousStepValue = previousStep else { return .forward }
+        guard let current = OnboardingStep(rawValue: currentStep),
+              let previous = OnboardingStep(rawValue: previousStepValue) else {
+            return currentStep > previousStepValue ? .forward : .backward
+        }
+        return current.semanticOrderIndex > previous.semanticOrderIndex ? .forward : .backward
     }
 
     var body: some View {

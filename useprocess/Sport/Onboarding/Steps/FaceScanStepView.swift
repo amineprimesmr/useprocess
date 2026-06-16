@@ -7,7 +7,15 @@ struct FaceScanStepView: View {
     var onBack: () -> Void
 
     var body: some View {
-        FaceScanCaptureScreen(onBack: onBack) { payload, markers in
+        FaceScanCaptureScreen(
+            onBack: onBack,
+            onSkip: {
+                viewModel.onboardingFaceMesh = nil
+                viewModel.onboardingFaceMarkers = nil
+                viewModel.isFaceAnalysisCompleted = true
+                onComplete()
+            }
+        ) { payload, markers in
             viewModel.onboardingFaceMesh = payload.mesh
             viewModel.onboardingFaceMarkers = markers
             viewModel.isFaceAnalysisCompleted = true

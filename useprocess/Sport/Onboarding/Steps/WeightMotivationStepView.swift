@@ -31,9 +31,15 @@ struct WeightMotivationStepView: View {
         return goal == .lose ? "perdre" : "prendre"
     }
 
+    private var firstNameSuffix: String {
+        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard OnboardingViewModel.isRealUserFirstName(trimmed) else { return "" }
+        return " \(trimmed)"
+    }
+
     // Texte complet à animer
     private var fullText: String {
-        let sport = "\(actionText.capitalized) \(Int(weightDifference)) kg est un objectif réalisable. Ce n'est pas du tout difficile"
+        let sport = "\(actionText.capitalized) \(Int(weightDifference)) kg est un objectif réalisable\(firstNameSuffix). Ce n'est pas du tout difficile"
         return OnboardingCopy.text(sport, blank: "Message de motivation à personnaliser")
     }
 

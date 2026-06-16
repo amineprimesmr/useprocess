@@ -93,20 +93,102 @@ enum OnboardingStep: Int, CaseIterable {
     case complete = 66
     // Note: bodyScan = 63 est placé après heightWeight mais avant firstNameInput pour logique de flow
 
-    var isStoryPage: Bool {
-        return false
-    }
-
-    var hasButton: Bool {
+    var usesInternalContinueAction: Bool {
         switch self {
-        case .videoIntroduction, .goalProjection, .sleepDataRecovery, .faceAnalysis, .sleepInfo, .weightEstimation, .planReady, .notificationPermission, .biometricAuth, .caloriesGoal, .carryOverCalories, .referralCode, .appRating, .processWelcome, .referralReward, .featuresUnlock, .processResultsDurability, .weightMotivation, .nutritionPotential, .programCreation, .sleepWindowReveal, .personalizedWelcome, .weightGoalIncompatible:
-            return false  // Auto-avancement ou page avec navigation interne
-        default:
+        case .videoIntroduction, .faceAnalysis, .sportSelection,
+             .healthKitPermissions, .biometricAuth, .notificationPermission,
+             .payment, .processWelcome, .referralReward, .featuresUnlock,
+             .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
+             .personalizedWelcome, .processResultsDurability,
+             .weightGoalIncompatible:
             return true
+        default:
+            return false
         }
     }
 
-    static var totalSteps: Int { 69 } // height=3, weight=67, heightWeight=68 (déprécié), bodyScan=63, featuresUnlock=65, complete=66
+    static var maxRawValue: Int {
+        allCases.map(\.rawValue).max() ?? 0
+    }
+
+    static var validSavedStepUpperBound: Int {
+        maxRawValue + 1
+    }
+
+    static let semanticOrder: [OnboardingStep] = [
+        .videoIntroduction,
+        .genderSelection,
+        .ageSelection,
+        .height,
+        .weight,
+        .heightWeight,
+        .bodyScan,
+        .firstNameInput,
+        .personalizedWelcome,
+        .processResultsDurability,
+        .primaryGoal,
+        .weightGoal,
+        .idealWeight,
+        .weightGoalIncompatible,
+        .weightMotivation,
+        .goalPace,
+        .weightEstimation,
+        .hasSportActivity,
+        .sportSelection,
+        .sportClub,
+        .experienceLevel,
+        .yearsOfExperience,
+        .trainingFrequency,
+        .deadlineSelection,
+        .eventDetails,
+        .potentialPace,
+        .goalProjection,
+        .weightManagementExperience,
+        .weightFailureReasons,
+        .nutritionQuality,
+        .nutritionScanFeature,
+        .hasDietaryRestrictions,
+        .whichRestrictions,
+        .nutritionObstacles,
+        .perfectNutritionBelief,
+        .hardestMeal,
+        .nutritionPotential,
+        .hasSufficientHydration,
+        .hydrationLevel,
+        .sleepInfo,
+        .sleepQuality,
+        .fatigueFrequency,
+        .fatiguePeaks,
+        .sleepNeed,
+        .faceAnalysis,
+        .programCreation,
+        .planGeneration,
+        .healthKitPermissions,
+        .sleepDataRecovery,
+        .newsStep,
+        .sleepNeedReveal,
+        .sleepDebtInfo,
+        .alarmConfiguration,
+        .sleepWindowReveal,
+        .planReady,
+        .onboardingInfo,
+        .appleSignIn,
+        .referralCode,
+        .appRating,
+        .caloriesGoal,
+        .carryOverCalories,
+        .biometricAuth,
+        .notificationPermission,
+        .payment,
+        .processWelcome,
+        .referralReward,
+        .featuresUnlock,
+        .complete
+    ]
+
+    var semanticOrderIndex: Int {
+        Self.semanticOrder.firstIndex(of: self) ?? rawValue
+    }
 
     /// Étapes sautées automatiquement — absentes de l'historique retour.
     var isTransientSkippedStep: Bool {
@@ -125,7 +207,7 @@ enum OnboardingStep: Int, CaseIterable {
              .processWelcome, .referralReward, .featuresUnlock, .complete,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
              .personalizedWelcome, .processResultsDurability,
-             .sleepDataRecovery:
+             .sleepDataRecovery, .primaryGoal:
             return true
         default:
             return false

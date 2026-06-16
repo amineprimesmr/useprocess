@@ -41,12 +41,12 @@ class OnboardingCoordinator {
 
             var newProfile = UnifiedUserProfile(
                 userId: userId,
-                firstName: viewModel.firstName.isEmpty ? "" : viewModel.firstName,
+                firstName: OnboardingViewModel.isRealUserFirstName(viewModel.firstName) ? viewModel.firstName : "",
                 birthDate: Calendar.current.date(byAdding: .year, value: -viewModel.selectedAge, to: Date()) ?? Date(),
                 gender: viewModel.selectedGender ?? .male,
                 height: viewModel.selectedHeight,
-                weight: viewModel.selectedWeight,
-                idealWeight: viewModel.idealWeightValue > 0 ? viewModel.idealWeightValue : nil
+                weight: OnboardingViewModel.isPlausibleWeight(viewModel.selectedWeight) ? viewModel.selectedWeight : 0,
+                idealWeight: OnboardingViewModel.isPlausibleWeight(viewModel.idealWeightValue) ? viewModel.idealWeightValue : nil
             )
 
             // ✅ CRITIQUE: Ajouter les sports au nouveau profil
@@ -72,7 +72,9 @@ class OnboardingCoordinator {
             }
 
             // ✅ CRITIQUE: Synchroniser toutes les données
-            currentProfile.firstName = viewModel.firstName.isEmpty ? currentProfile.firstName : viewModel.firstName
+            if OnboardingViewModel.isRealUserFirstName(viewModel.firstName) {
+                currentProfile.firstName = viewModel.firstName
+            }
 
             // ✅ CRITIQUE: Utiliser updateAge pour garantir la cohérence âge/birthDate
             if viewModel.selectedAge > 0 && viewModel.selectedAge <= 120 {
@@ -83,11 +85,11 @@ class OnboardingCoordinator {
             currentProfile.height = viewModel.selectedHeight > 0 ? viewModel.selectedHeight : currentProfile.height
 
             // ✅ CRITIQUE: Toujours mettre à jour le poids si > 0 (même si déjà présent)
-            if viewModel.selectedWeight > 0 {
+            if OnboardingViewModel.isPlausibleWeight(viewModel.selectedWeight) {
                 currentProfile.weight = viewModel.selectedWeight
             }
 
-            currentProfile.idealWeight = viewModel.idealWeightValue > 0 ? viewModel.idealWeightValue : currentProfile.idealWeight
+            currentProfile.idealWeight = OnboardingViewModel.isPlausibleWeight(viewModel.idealWeightValue) ? viewModel.idealWeightValue : currentProfile.idealWeight
 
             // ✅ CRITIQUE: Synchroniser les sports depuis onboardingData (ou persistance UserDefaults)
             let onboardingData = OnboardingDataModel.shared

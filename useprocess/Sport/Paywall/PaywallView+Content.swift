@@ -51,7 +51,6 @@ extension PaywallView {
         .contentMargins(.bottom, 0, for: .scrollContent)
         .scrollIndicators(.hidden)
         .onAppear {
-            // ✅ TEMPORAIREMENT : Animer directement la timeline puisque isSliderUnlocked = true
             animateTimelineEntry()
         }
     }

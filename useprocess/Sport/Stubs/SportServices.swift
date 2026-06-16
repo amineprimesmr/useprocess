@@ -62,20 +62,8 @@ final class AuthenticationManager: NSObject, ObservableObject {
     @Published var isInOnboarding = false
     @Published var hasCompletedOnboarding = false
     @Published var isLoading = false
-    @Published private(set) var isDemoSession = false
-
-    static let demoUserID = OnboardingWelcomeAuth.demoUserID
 
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
-
-    func activateDemoSession() {
-        isDemoSession = true
-        isAuthenticated = true
-    }
-
-    func clearDemoSession() {
-        isDemoSession = false
-    }
 
     func startOnboarding() {
         isInOnboarding = true
@@ -85,7 +73,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
     func completeOnboarding() {
         isInOnboarding = false
         hasCompletedOnboarding = true
-        isAuthenticated = Auth.auth().currentUser != nil || isDemoSession
+        isAuthenticated = Auth.auth().currentUser != nil
         isLoading = false
         UserDefaults.standard.set(true, forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid))
     }
@@ -105,10 +93,6 @@ final class AuthenticationManager: NSObject, ObservableObject {
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 guard let self else { return }
-                if self.isDemoSession {
-                    self.isAuthenticated = true
-                    return
-                }
                 self.isAuthenticated = user != nil
                 if user != nil {
                     await UnifiedProfileService.shared.loadProfile()
@@ -117,14 +101,13 @@ final class AuthenticationManager: NSObject, ObservableObject {
                 }
             }
         }
-        isAuthenticated = Auth.auth().currentUser != nil || isDemoSession
+        isAuthenticated = Auth.auth().currentUser != nil
     }
 
     func resetSession() {
         hasCompletedOnboarding = false
         isInOnboarding = false
         isAuthenticated = false
-        isDemoSession = false
         let uid = Auth.auth().currentUser?.uid
         UserDefaults.standard.set(false, forKey: UserScopedStorage.key("onboarding.completed", userId: uid))
         if AppConfiguration.firebaseConfigured {
@@ -144,7 +127,6 @@ final class AuthenticationManager: NSObject, ObservableObject {
     }
 
     func applyPostAccountDeletion() {
-        isDemoSession = false
         isAuthenticated = false
         isInOnboarding = false
         hasCompletedOnboarding = false
@@ -155,7 +137,6 @@ final class AuthenticationManager: NSObject, ObservableObject {
     }
 
     func signOut() {
-        isDemoSession = false
         if AppConfiguration.firebaseConfigured {
             try? Auth.auth().signOut()
         }
@@ -207,26 +188,13 @@ final class UnifiedProfileService: ObservableObject {
     }
 
     func loadProfile() async {
-        if AuthenticationManager.shared.isDemoSession {
-            let userId = AuthenticationManager.demoUserID
-            if currentProfile == nil {
-                currentProfile = loadLocalProfile(userId: userId)
-                    ?? UnifiedUserProfile(userId: userId, firstName: "Demo")
-            }
-            isAuthenticated = true
-            if let currentProfile {
-                SocialProfileStore.shared.syncFromUnified(currentProfile)
-            }
-            return
-        }
-
         guard AppConfiguration.firebaseConfigured,
               let userId = Auth.auth().currentUser?.uid else {
             let userId = "local-user"
             if let cached = loadLocalProfile(userId: userId) {
                 currentProfile = cached
             } else if currentProfile == nil {
-                currentProfile = UnifiedUserProfile(userId: userId, firstName: "Process")
+                currentProfile = UnifiedUserProfile(userId: userId, firstName: "")
             }
             isAuthenticated = currentProfile != nil
             if let currentProfile {
@@ -260,7 +228,7 @@ final class UnifiedProfileService: ObservableObject {
                 currentProfile = loadLocalProfile(userId: userId)
                     ?? UnifiedUserProfile(
                         userId: userId,
-                        firstName: Auth.auth().currentUser?.displayName ?? "Process",
+                        firstName: Auth.auth().currentUser?.displayName ?? "",
                         email: Auth.auth().currentUser?.email
                     )
             }
@@ -279,7 +247,6 @@ final class UnifiedProfileService: ObservableObject {
         SocialProfileStore.shared.syncFromUnified(profile)
 
         guard AppConfiguration.firebaseConfigured,
-              !AuthenticationManager.shared.isDemoSession,
               Auth.auth().currentUser != nil else {
             return
         }

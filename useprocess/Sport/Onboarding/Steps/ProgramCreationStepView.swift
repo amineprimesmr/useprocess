@@ -181,32 +181,18 @@ struct ProgramCreationStepView: View {
 
     private func objectiveRow(index: Int) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(objectives[index])
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(OnboardingTheme.bodyText)
+            HStack(spacing: 12) {
+                Image(systemName: objectiveProgresses[index] >= 1.0 ? "checkmark.circle.fill" : "sparkles")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(objectiveProgresses[index] >= 1.0 ? Color.green.opacity(0.95) : OnboardingTheme.bodyText)
 
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(OnboardingTheme.mutedFill)
-                        .frame(height: 10)
+                Text(objectives[index])
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(OnboardingTheme.bodyText)
 
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.7, green: 0.55, blue: 0.85),
-                                    Color(red: 0.5, green: 0.3, blue: 0.7)
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: geometry.size.width * objectiveProgresses[index], height: 10)
-                        .animation(.easeInOut(duration: 0.2), value: objectiveProgresses[index])
-                }
+                Spacer(minLength: 0)
             }
-            .frame(height: 10)
+            .animation(.easeInOut(duration: 0.2), value: objectiveProgresses[index])
         }
     }
 

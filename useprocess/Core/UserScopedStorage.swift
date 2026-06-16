@@ -37,7 +37,7 @@ enum UserScopedStorage {
     }
 
     static func likelyUserIds(primary: String) -> [String] {
-        var ids = Set([primary, "local-user", "anonymous", OnboardingWelcomeAuth.demoUserID])
+        var ids = Set([primary, "local-user", "anonymous"])
         if let current = currentUserId() {
             ids.insert(current)
         }

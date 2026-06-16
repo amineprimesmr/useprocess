@@ -3,8 +3,6 @@ import Foundation
 
 @MainActor
 enum OnboardingWelcomeAuth {
-    static let demoUserID = "demo-useprocess-local"
-
     static func signInWithApple(
         authManager: AuthenticationManager,
         profileService: UnifiedProfileService
@@ -38,21 +36,6 @@ enum OnboardingWelcomeAuth {
 
         await createProfileIfNeeded(profileService: profileService)
         try? await Task.sleep(nanoseconds: 200_000_000)
-    }
-
-    static func signInDemo(
-        authManager: AuthenticationManager,
-        profileService: UnifiedProfileService
-    ) async throws {
-        authManager.startOnboarding()
-        authManager.activateDemoSession()
-
-        let profile = UnifiedUserProfile(
-            userId: demoUserID,
-            firstName: "Démo",
-            email: nil
-        )
-        try await profileService.saveProfile(profile)
     }
 
     private static func createProfileIfNeeded(profileService: UnifiedProfileService) async {
