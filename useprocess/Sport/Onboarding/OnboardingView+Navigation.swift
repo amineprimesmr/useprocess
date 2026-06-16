@@ -58,6 +58,12 @@ func nextStep() {
 
     HapticManager.shared.impact(.medium)
 
+    if viewModel.currentStep == OnboardingStep.firstNameInput.rawValue {
+        isFirstNameAvailable = false
+        firstNameDebounceTask?.cancel()
+        firstNameDebounceTask = nil
+    }
+
     OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
 
     commitVisibleStepToHistory(viewModel.currentStep)
@@ -211,8 +217,52 @@ func commitVisibleStepToHistory(_ step: Int) {
 
 // MARK: - Progression header (hors body)
 
+func restoreOnboardingProgressFromSavedState() {
+    let savedStep = OnboardingProgressService.shared.loadCurrentStep()
+
+    guard let step = OnboardingStep(rawValue: savedStep), savedStep >= 0, savedStep < totalSteps else {
+        viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
+        viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
+        viewModel.saveProgress()
+        return
+    }
+
+    let canDisplayStep = validateOnboardingStepAvailability(step: step, viewModel: viewModel)
+
+    if canDisplayStep && savedStep > 0 {
+        if step.isTransientSkippedStep,
+           let visibleStep = navigationEngine.resolveNextVisibleStep(from: savedStep) {
+            viewModel.currentStep = visibleStep
+        } else {
+            viewModel.currentStep = savedStep
+        }
+    } else if !canDisplayStep && savedStep > 0 {
+        let lastValidStep = findLastValidOnboardingStepIndex(
+            visitedSteps: viewModel.visitedSteps,
+            viewModel: viewModel
+        )
+        viewModel.currentStep = lastValidStep
+    } else {
+        if viewModel.visitedSteps.isEmpty {
+            viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
+        }
+        if viewModel.currentStep == 0 {
+            viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
+        }
+    }
+
+    reconcileVisitedStepsForRestore(
+        viewModel: viewModel,
+        navigationEngine: navigationEngine
+    )
+    viewModel.saveProgress()
+}
+
 func refreshOnboardingFlowProgress() {
-    let metrics = onboardingFlowMetrics(viewModel: viewModel)
+    let metrics = onboardingFlowMetrics(
+        viewModel: viewModel,
+        navigationEngine: navigationEngine
+    )
     flowProgress = metrics.progress
     flowTotalSteps = metrics.totalSteps
     flowGlowProgressCount = metrics.glowProgressCount

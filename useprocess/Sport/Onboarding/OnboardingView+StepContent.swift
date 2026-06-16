@@ -52,6 +52,8 @@ extension SportOnboardingView {
              .hasDietaryRestrictions, .whichRestrictions,
              .nutritionObstacles, .perfectNutritionBelief, .hasSufficientHydration, .hydrationLevel,
              .nutritionPotential,
+             .goalPace, .hasSportActivity, .sportSelection,
+             .weightManagementExperience, .weightFailureReasons, .nutritionQuality,
              .sleepNeed, .planGeneration,
              .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
              .alarmConfiguration, .sleepWindowReveal,
@@ -79,11 +81,6 @@ extension SportOnboardingView {
             IdealWeightStepView(
                 idealWeight: $viewModel.idealWeightValue,
                 currentWeight: viewModel.selectedWeight,
-                height: viewModel.selectedHeight,
-                age: viewModel.selectedAge,
-                gender: viewModel.selectedGender ?? .male,
-                weightGoal: viewModel.selectedWeightGoal,
-                firstName: viewModel.firstName,
                 onValidationChanged: { isValid in
                     viewModel.isIdealWeightEntered = isValid
                     if isValid {
@@ -92,6 +89,7 @@ extension SportOnboardingView {
                         viewModel.saveProgress()
                     }
                 },
+                onContinue: nextStep,
                 onPersistAnswers: {
                     viewModel.saveProgress()
                 }
@@ -106,50 +104,19 @@ extension SportOnboardingView {
                 onValidationChanged: { _ in }
             )
         case .weightMotivation:
-            WeightMotivationStepView(
-                viewModel: viewModel,
-                currentWeight: viewModel.selectedWeight,
-                idealWeight: viewModel.idealWeightValue,
-                weightGoal: viewModel.selectedWeightGoal,
-                onComplete: nextStep,
-                onValidationChanged: { _ in
-                    // Validation automatique
-                }
-            )
-        case .hasSportActivity:
-            HasSportActivityStepView(
-                hasSportActivity: $viewModel.hasSportActivity,
-                onValidationChanged: { _ in
-                    // Validation automatique
-                }
-            )
-        case .sportSelection:
-            SportSelectionStepView(
-                onComplete: nextStep,
-                onValidationChanged: { isValid in
-                    viewModel.isSportsSelected = isValid
-                },
-                onSearchStateChanged: { isSearching in
-                    isSportSearchActive = isSearching
-                }
+            OnboardingProfileChatView(
+                onboardingViewModel: viewModel,
+                onComplete: nextStep
             )
         case .goalProjection:
             OnboardingEstimationStepView(
                 context: .make(
                     phase: .optimized,
                     viewModel: viewModel,
-                    selectedSports: Set(profileService.currentProfile?.sports.map { $0.name } ?? [])
+                    selectedSports: OnboardingDataModel.shared.selectedSports
                 ),
                 onValidationChanged: { isValid in
                     viewModel.isGoalProjectionCompleted = isValid
-                }
-            )
-        case .goalPace:
-            GoalPaceStepView(
-                selectedPace: $viewModel.selectedGoalPace,
-                weightGoal: viewModel.selectedWeightGoal,
-                onValidationChanged: { isValid in
-                    viewModel.isGoalPaceSelected = isValid
                 }
             )
         case .weightEstimation:
@@ -157,44 +124,12 @@ extension SportOnboardingView {
                 context: .make(
                     phase: .baseline,
                     viewModel: viewModel,
-                    selectedSports: []
+                    selectedSports: OnboardingDataModel.shared.selectedSports
                 ),
                 onValidationChanged: { isValid in
                     viewModel.isWeightEstimationCompleted = isValid
                 }
             )
-        case .weightManagementExperience:
-            WeightManagementExperienceStepView(
-                selectedExperience: $viewModel.nutritionProfile.weightManagementExperience,
-                weightGoal: viewModel.selectedWeightGoal,
-                onValidationChanged: { isValid in
-                    viewModel.isWeightManagementExperienceSelected = isValid
-                }
-            )
-        case .weightFailureReasons:
-            WeightFailureReasonsStepView(
-                selectedReasons: $viewModel.nutritionProfile.nutritionObstacles,
-                onValidationChanged: { _ in
-                    // Validation automatique
-                }
-            )
-        case .nutritionQuality:
-            NutritionQualityStepView(
-                selectedQuality: Binding(
-                    get: { viewModel.nutritionProfile.nutritionQuality },
-                    set: { viewModel.updateNutritionQuality($0) }
-                ),
-                onValidationChanged: { isValid in
-                    viewModel.isNutritionQualitySelected = isValid
-                }
-            )
-            .onAppear {
-                DispatchQueue.main.async {
-                    if viewModel.nutritionProfile.nutritionQuality == nil {
-                        viewModel.updateNutritionQuality(.average)
-                    }
-                }
-            }
         case .healthKitPermissions:
             PermissionStepView(kind: .healthKit, onComplete: nextStep)
                 .environmentObject(permissionsManager)

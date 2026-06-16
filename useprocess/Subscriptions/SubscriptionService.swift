@@ -13,6 +13,9 @@ final class SubscriptionService: NSObject, ObservableObject {
     @Published private(set) var annualDisplay: SubscriptionProductDisplay?
     @Published private(set) var monthlyStoreProduct: Product?
     @Published private(set) var annualStoreProduct: Product?
+    @Published private(set) var isInFreeTrial = false
+    @Published private(set) var trialExpirationDate: Date?
+    @Published private(set) var isIntroOfferEligible = true
 
     /// Compat paywall existant.
     var annualProduct: Product? { annualStoreProduct }
@@ -94,6 +97,10 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
     }
 
+    func trialInfo(for plan: SubscriptionBillingPlan) -> SubscriptionTrialInfo {
+        displayProduct(for: plan).trialInfo
+    }
+
     // MARK: - Catalog
 
     func loadSubscriptions() async {
@@ -135,6 +142,7 @@ final class SubscriptionService: NSObject, ObservableObject {
 
             applyPackageDisplay(monthlyPackage, plan: .monthly)
             applyPackageDisplay(annualPackage, plan: .annual)
+            await refreshIntroOfferEligibility()
         } catch {
             applyFallbackProducts()
         }
@@ -179,6 +187,7 @@ final class SubscriptionService: NSObject, ObservableObject {
 
             if userCancelled { throw SubscriptionError.userCancelled }
             applyCustomerInfo(customerInfo)
+            await scheduleTrialReminderIfNeeded(from: customerInfo)
         } catch let error as ErrorCode where error == .purchaseCancelledError {
             throw SubscriptionError.userCancelled
         } catch let error as SubscriptionError {
@@ -231,22 +240,50 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func applyCustomerInfo(_ info: CustomerInfo) {
         guard let entitlement = info.entitlements[SubscriptionConfiguration.entitlementID] else {
             subscriptionStatus = .notSubscribed
+            isInFreeTrial = false
+            trialExpirationDate = nil
             return
         }
 
         if entitlement.isActive {
+            isInFreeTrial = entitlement.periodType == .trial
+            trialExpirationDate = entitlement.expirationDate
+
             if entitlement.billingIssueDetectedAt != nil {
                 subscriptionStatus = .inBillingRetryPeriod
-            } else if entitlement.periodType == .trial || entitlement.willRenew {
-                subscriptionStatus = .subscribed
             } else {
                 subscriptionStatus = .subscribed
             }
         } else if entitlement.expirationDate != nil {
             subscriptionStatus = .expired
+            isInFreeTrial = false
+            trialExpirationDate = nil
         } else {
             subscriptionStatus = .notSubscribed
+            isInFreeTrial = false
+            trialExpirationDate = nil
         }
+    }
+
+    private func refreshIntroOfferEligibility() async {
+        let groupID = SubscriptionConfiguration.subscriptionGroupID
+        let eligible = await Product.SubscriptionInfo.isEligibleForIntroOffer(for: groupID)
+        isIntroOfferEligible = eligible
+
+        if let monthlyDisplay {
+            self.monthlyDisplay = monthlyDisplay.updatingIntroEligibility(eligible)
+        }
+        if let annualDisplay {
+            self.annualDisplay = annualDisplay.updatingIntroEligibility(eligible)
+        }
+    }
+
+    private func scheduleTrialReminderIfNeeded(from info: CustomerInfo) async {
+        guard let entitlement = info.entitlements[SubscriptionConfiguration.entitlementID],
+              entitlement.isActive,
+              entitlement.periodType == .trial,
+              let expiration = entitlement.expirationDate else { return }
+        await PaywallTrialNotificationService.shared.scheduleTrialEndingReminder(trialEndDate: expiration)
     }
 
     private func fetchStoreProductsWithRetry(ids: [String], attempts: Int = 4) async -> [StoreProduct] {
@@ -272,6 +309,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func applyFallbackProducts() {
         monthlyDisplay = .fallback(for: .monthly)
         annualDisplay = .fallback(for: .annual)
+        isIntroOfferEligible = true
     }
 
     private func applyDirectStoreProducts(_ storeProducts: [StoreProduct]) {
@@ -333,6 +371,8 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func makeDisplay(from product: StoreProduct, plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
         let price = product.localizedPriceString
         let name = product.localizedTitle.isEmpty ? plan.title : product.localizedTitle
+        let trialDays = SubscriptionIntroOfferParser.trialDays(from: product)
+            ?? SubscriptionConfiguration.freeTrialDays
 
         switch plan {
         case .monthly:
@@ -341,7 +381,9 @@ final class SubscriptionService: NSObject, ObservableObject {
                 displayName: name,
                 displayPrice: price,
                 periodLabel: "par mois",
-                monthlyEquivalentPrice: nil
+                monthlyEquivalentPrice: nil,
+                freeTrialDays: trialDays,
+                isIntroOfferEligible: isIntroOfferEligible
             )
         case .annual:
             let monthly = monthlyEquivalent(from: product)
@@ -350,7 +392,9 @@ final class SubscriptionService: NSObject, ObservableObject {
                 displayName: name,
                 displayPrice: price,
                 periodLabel: "par an",
-                monthlyEquivalentPrice: monthly
+                monthlyEquivalentPrice: monthly,
+                freeTrialDays: trialDays,
+                isIntroOfferEligible: isIntroOfferEligible
             )
         }
     }

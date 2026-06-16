@@ -97,14 +97,11 @@ class OnboardingNavigationEngine {
         case .height:
             return OnboardingStep.weight.rawValue
         case .weight, .bodyScan:
-            return OnboardingStep.firstNameInput.rawValue
+            return OnboardingStep.idealWeight.rawValue
         case .heightWeight:
             return OnboardingStep.firstNameInput.rawValue
         case .firstNameInput:
-            if viewModel.hasWeightGoal == false {
-                return OnboardingStep.weightEstimation.rawValue
-            }
-            return OnboardingStep.idealWeight.rawValue
+            return OnboardingStep.weightMotivation.rawValue
         case .personalizedWelcome, .processResultsDurability:
             return OnboardingStep.idealWeight.rawValue
         case .primaryGoal:
@@ -166,10 +163,12 @@ class OnboardingNavigationEngine {
             return OnboardingStep.ageSelection.rawValue
         case .weight:
             return OnboardingStep.height.rawValue
+        case .idealWeight:
+            return OnboardingStep.weight.rawValue
         case .heightWeight:
             return OnboardingStep.ageSelection.rawValue
         case .firstNameInput:
-            return OnboardingStep.weight.rawValue
+            return OnboardingStep.idealWeight.rawValue
         case .bodyScan:
             return OnboardingStep.weight.rawValue
         case .personalizedWelcome, .processResultsDurability:
@@ -235,40 +234,25 @@ class OnboardingNavigationEngine {
                     return OnboardingStep.weightGoalIncompatible.rawValue
                 }
             }
-            return OnboardingStep.weightMotivation.rawValue
+            return OnboardingStep.firstNameInput.rawValue
             
         case .weightMotivation:
-            return OnboardingStep.goalPace.rawValue
-            
-        case .goalPace:
             return OnboardingStep.weightEstimation.rawValue
             
         case .weightEstimation:
-            return OnboardingStep.hasSportActivity.rawValue
+            return OnboardingStep.goalProjection.rawValue
             
-        case .hasSportActivity:
-            // Si l'utilisateur pratique un sport, aller à sportSelection
-            if viewModel.hasSportActivity == true {
-                return OnboardingStep.sportSelection.rawValue
-            } else {
-                if viewModel.hasWeightObjective {
-                    return OnboardingStep.weightManagementExperience.rawValue
-                } else {
-                    return OnboardingStep.goalProjection.rawValue
-                }
-            }
-            
-        case .sportSelection:
+        case .hasSportActivity, .sportSelection:
             return OnboardingStep.goalProjection.rawValue
             
         case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace:
             return OnboardingStep.goalProjection.rawValue
             
         case .goalProjection:
-            if viewModel.hasWeightObjective {
-                return OnboardingStep.weightManagementExperience.rawValue
-            }
-            return OnboardingStep.nutritionQuality.rawValue
+            return OnboardingStep.programCreation.rawValue
+            
+        case .weightManagementExperience, .weightFailureReasons, .nutritionQuality:
+            return OnboardingStep.programCreation.rawValue
             
         default:
             return nil
@@ -373,51 +357,26 @@ class OnboardingNavigationEngine {
             return OnboardingStep.idealWeight.rawValue
             
         case .idealWeight:
-            return OnboardingStep.firstNameInput.rawValue
+            return OnboardingStep.weight.rawValue
             
         case .weightMotivation:
-            return OnboardingStep.idealWeight.rawValue
+            return OnboardingStep.firstNameInput.rawValue
             
-        case .goalPace:
-            if viewModel.hasWeightObjective,
-               viewModel.selectedWeightGoal != nil,
-               viewModel.isIdealWeightEntered {
-                return OnboardingStep.weightMotivation.rawValue
-            }
-            if viewModel.hasWeightObjective {
-                return OnboardingStep.idealWeight.rawValue
-            }
-            return OnboardingStep.trainingFrequency.rawValue
+        case .goalPace, .hasSportActivity, .sportSelection,
+             .weightManagementExperience, .weightFailureReasons, .nutritionQuality:
+            return OnboardingStep.weightMotivation.rawValue
             
         case .weightEstimation:
-            if viewModel.hasWeightObjective && viewModel.isIdealWeightEntered {
-                return OnboardingStep.goalPace.rawValue
+            if viewModel.hasWeightObjective {
+                return OnboardingStep.weightMotivation.rawValue
             }
             return OnboardingStep.firstNameInput.rawValue
             
-        case .hasSportActivity:
-            return OnboardingStep.weightEstimation.rawValue
-            
-        case .sportSelection:
-            return OnboardingStep.hasSportActivity.rawValue
-            
         case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace, .eventDetails:
-            if viewModel.hasSportActivity == true {
-                return OnboardingStep.sportSelection.rawValue
-            }
-            return OnboardingStep.hasSportActivity.rawValue
+            return OnboardingStep.goalProjection.rawValue
             
         case .goalProjection:
-            if viewModel.hasSportActivity == true {
-                return OnboardingStep.sportSelection.rawValue
-            }
-            return OnboardingStep.hasSportActivity.rawValue
-            
-        case .weightManagementExperience:
-            if viewModel.hasSportActivity == false && viewModel.hasWeightObjective {
-                return OnboardingStep.hasSportActivity.rawValue
-            }
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
             
         default:
             return nil
@@ -426,32 +385,22 @@ class OnboardingNavigationEngine {
     
     private func getPreviousStepInNutritionFlow(from current: OnboardingStep) -> Int? {
         switch current {
-        case .nutritionQuality:
-            if viewModel.hasSportActivity == false && !viewModel.hasWeightObjective {
-                return OnboardingStep.goalProjection.rawValue
-            }
-            if let experience = viewModel.nutritionProfile.weightManagementExperience,
-               (experience == .triedMultiple || experience == .currentlyTrying) {
-                return OnboardingStep.weightFailureReasons.rawValue
-            }
-            return OnboardingStep.goalProjection.rawValue
-            
-        case .weightFailureReasons:
-            return OnboardingStep.weightManagementExperience.rawValue
+        case .nutritionQuality, .weightFailureReasons, .weightManagementExperience:
+            return OnboardingStep.weightMotivation.rawValue
             
         case .hasDietaryRestrictions, .whichRestrictions:
-            return OnboardingStep.nutritionQuality.rawValue
+            return OnboardingStep.goalProjection.rawValue
 
         case .faceAnalysis:
-            return OnboardingStep.nutritionQuality.rawValue
+            return OnboardingStep.goalProjection.rawValue
 
         case .programCreation:
-            return OnboardingStep.nutritionQuality.rawValue
+            return OnboardingStep.goalProjection.rawValue
 
         case .nutritionPotential, .hasSufficientHydration, .hydrationLevel,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed,
              .planGeneration, .alarmConfiguration, .sleepWindowReveal, .hardestMeal:
-            return OnboardingStep.nutritionQuality.rawValue
+            return OnboardingStep.goalProjection.rawValue
 
         default:
             return nil
@@ -461,7 +410,7 @@ class OnboardingNavigationEngine {
     private func getPreviousStepInSleepFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed, .planGeneration:
-            return OnboardingStep.nutritionQuality.rawValue
+            return OnboardingStep.goalProjection.rawValue
 
         case .sleepDataRecovery, .newsStep, .sleepNeedReveal, .sleepDebtInfo:
             return OnboardingStep.healthKitPermissions.rawValue

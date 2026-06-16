@@ -12,6 +12,11 @@ extension SportOnboardingView {
 
 // MARK: - Computed Properties
 
+var shouldShowFirstNameVerificationLabel: Bool {
+    viewModel.currentStep == OnboardingStep.firstNameInput.rawValue
+        && !viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+}
+
 var shouldShowContinueButton: Bool {
     if isImmersiveOnboardingStep { return false }
 
@@ -20,6 +25,29 @@ var shouldShowContinueButton: Bool {
     }
 
     return !step.usesInternalContinueAction
+}
+
+var shouldShowGlobalContinueButton: Bool {
+    guard !isImmersiveOnboardingStep else { return false }
+    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
+    return !step.usesInternalContinueAction
+}
+
+var continueButtonOpacity: Double {
+    if shouldHideButtonUntilValidated {
+        return canContinue ? 1.0 : 0.0
+    }
+    if canContinue {
+        return 1.0
+    }
+    return isFirstNameVerifying ? 0.45 : 0.5
+}
+
+var continueButtonHitTestingEnabled: Bool {
+    if shouldHideButtonUntilValidated {
+        return canContinue
+    }
+    return true
 }
 
 var continueButtonBottomOffset: CGFloat {
@@ -90,10 +118,10 @@ func skipWeightGoalFromIdealWeight() {
     isTransitioning = true
 
     withAnimation(.onboardingTransition) {
-        viewModel.currentStep = OnboardingStep.weightEstimation.rawValue
+        viewModel.currentStep = OnboardingStep.firstNameInput.rawValue
     }
 
-    commitVisibleStepToHistory(OnboardingStep.weightEstimation.rawValue)
+    commitVisibleStepToHistory(OnboardingStep.firstNameInput.rawValue)
 
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
         isTransitioning = false
@@ -112,7 +140,7 @@ func handleContinueButtonTap() {
 
     switch step {
     case .nutritionQuality:
-        continueFromNutritionQuality()
+        nextStep()
 
     case .firstNameInput:
         // Fermer le clavier et sauvegarder
@@ -180,6 +208,17 @@ var shouldAddTopPadding: Bool {
         currentStep: viewModel.currentStep,
         shouldShowBackButton: shouldShowBackButton
     )
+}
+
+func updateContinueButtonLayout(animated: Bool) {
+    let target = continueButtonBottomOffset
+    if animated {
+        withAnimation(.onboardingTransition) {
+            animatedContinueBottomOffset = target
+        }
+    } else {
+        animatedContinueBottomOffset = target
+    }
 }
 
 }

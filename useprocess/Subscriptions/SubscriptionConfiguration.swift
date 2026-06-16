@@ -16,6 +16,12 @@ enum SubscriptionConfiguration {
     static let monthlyProductID = "com.useprocess.monthly"
     static let annualProductID = "com.useprocess.annual"
 
+    /// Groupe d'abonnements App Store (StoreKit + éligibilité intro).
+    static let subscriptionGroupID = "21482999"
+
+    /// Essai gratuit — doit correspondre à l'offre intro App Store Connect (P3D).
+    static let freeTrialDays = 3
+
     /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR).
     static let fallbackMonthlyPrice = "5,99 €"
     static let fallbackAnnualPrice = "29,99 €"
@@ -56,6 +62,15 @@ struct SubscriptionProductDisplay: Equatable {
     let displayPrice: String
     let periodLabel: String
     let monthlyEquivalentPrice: String?
+    let freeTrialDays: Int?
+    let isIntroOfferEligible: Bool
+
+    var trialInfo: SubscriptionTrialInfo {
+        if isIntroOfferEligible, let freeTrialDays, freeTrialDays > 0 {
+            return SubscriptionTrialInfo(days: freeTrialDays, isEligible: true)
+        }
+        return SubscriptionTrialInfo(days: 0, isEligible: false)
+    }
 
     static func fallback(for plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
         switch plan {
@@ -65,7 +80,9 @@ struct SubscriptionProductDisplay: Equatable {
                 displayName: "Process AI Premium — Mensuel",
                 displayPrice: SubscriptionConfiguration.fallbackMonthlyPrice,
                 periodLabel: "par mois",
-                monthlyEquivalentPrice: nil
+                monthlyEquivalentPrice: nil,
+                freeTrialDays: SubscriptionConfiguration.freeTrialDays,
+                isIntroOfferEligible: true
             )
         case .annual:
             return SubscriptionProductDisplay(
@@ -73,9 +90,23 @@ struct SubscriptionProductDisplay: Equatable {
                 displayName: "Process AI Premium — Annuel",
                 displayPrice: SubscriptionConfiguration.fallbackAnnualPrice,
                 periodLabel: "par an",
-                monthlyEquivalentPrice: SubscriptionConfiguration.fallbackAnnualMonthlyEquivalent
+                monthlyEquivalentPrice: SubscriptionConfiguration.fallbackAnnualMonthlyEquivalent,
+                freeTrialDays: SubscriptionConfiguration.freeTrialDays,
+                isIntroOfferEligible: true
             )
         }
+    }
+
+    func updatingIntroEligibility(_ eligible: Bool) -> SubscriptionProductDisplay {
+        SubscriptionProductDisplay(
+            productID: productID,
+            displayName: displayName,
+            displayPrice: displayPrice,
+            periodLabel: periodLabel,
+            monthlyEquivalentPrice: monthlyEquivalentPrice,
+            freeTrialDays: freeTrialDays,
+            isIntroOfferEligible: eligible
+        )
     }
 }
 

@@ -2,7 +2,7 @@
 //  IdealWeightStepView.swift
 //  Process
 //
-//  Saisie du poids idéal avec recommandation stable (basée sur le profil onboarding).
+//  Saisie du poids idéal — même UX que WeightStepView (clavier, toggle KG/LBS, overlay titre).
 //
 
 import SwiftUI
@@ -12,138 +12,139 @@ struct IdealWeightStepView: View {
     @EnvironmentObject var profileService: UnifiedProfileService
 
     @Binding var idealWeight: Double
-
     let currentWeight: Double
-    let height: Double
-    let age: Int
-    let gender: Gender
-    let weightGoal: WeightGoal?
-    let firstName: String
 
     var onValidationChanged: ((Bool) -> Void)?
+    var onContinue: (() -> Void)?
     var onPersistAnswers: (() -> Void)?
 
+    @State private var unit: WeightUnit = .kg
     @State private var weightString: String = ""
-    @State private var recommendedWeight: Double = 0
-    @State private var didInitialize = false
-    @State private var saveTask: Task<Void, Never>?
     @FocusState private var isTextFieldFocused: Bool
 
-    private var currentBodyComposition: BodyComposition {
-        BodyCompositionEstimate.calculate(
-            height: height,
-            weight: max(currentWeight, 1),
-            age: age,
-            gender: gender
-        )
+    enum WeightUnit {
+        case kg
+        case lbs
+
+        var displayName: String {
+            switch self {
+            case .kg: return "KG"
+            case .lbs: return "LBS"
+            }
+        }
+    }
+
+    private var displayWeight: Double {
+        if weightString.isEmpty {
+            return 0
+        }
+        let value = Double(weightString) ?? 0
+        return unit == .kg ? value : value * 0.453592
+    }
+
+    private var displayWeightString: String {
+        if weightString.isEmpty {
+            return ""
+        }
+        return weightString
     }
 
     private var isValidWeight: Bool {
         guard !weightString.isEmpty else { return false }
-        guard let weight = Double(weightString), weight >= 35, weight <= 200 else { return false }
-        guard currentWeight > 0 else { return weight > 0 }
-        return abs(weight - currentWeight) >= 0.5
+
+        let weightKg = displayWeight
+        guard weightKg > 0, weightKg >= 35, weightKg <= 200 else { return false }
+        guard OnboardingViewModel.isPlausibleWeight(currentWeight) else { return true }
+        return abs(weightKg - currentWeight) >= 0.5
     }
 
     init(
-        idealWeight: Binding<Double> = .constant(70.0),
-        currentWeight: Double = 70.0,
-        height: Double = 175.0,
-        age: Int = 25,
-        gender: Gender = .male,
-        weightGoal: WeightGoal? = nil,
-        firstName: String = "",
+        idealWeight: Binding<Double>,
+        currentWeight: Double,
         onValidationChanged: ((Bool) -> Void)? = nil,
+        onContinue: (() -> Void)? = nil,
         onPersistAnswers: (() -> Void)? = nil
     ) {
         self._idealWeight = idealWeight
         self.currentWeight = currentWeight
-        self.height = height
-        self.age = age
-        self.gender = gender
-        self.weightGoal = weightGoal
-        self.firstName = firstName
         self.onValidationChanged = onValidationChanged
+        self.onContinue = onContinue
         self.onPersistAnswers = onPersistAnswers
     }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
-                Spacer()
-                    .frame(height: OnboardingConstants.titleTopPadding)
+            ZStack {
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(height: OnboardingConstants.titleAreaHeight)
 
-                VStack(spacing: 8) {
-                    OnboardingTitleView("Quel est ton", "poids idéal ?")
+                    Spacer()
+                        .frame(height: OnboardingConstants.titleToContentSpacing)
 
-                    if recommendedWeight > 0 {
-                        Text("Poids recommandé : \(Int(recommendedWeight.rounded())) kg")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(OnboardingTheme.footnoteText)
-                            .multilineTextAlignment(.center)
-                            .animation(nil, value: recommendedWeight)
+                    OnboardingUnitSegmentToggle(
+                        leftLabel: "KG",
+                        rightLabel: "LBS",
+                        isLeftSelected: Binding(
+                            get: { unit == .kg },
+                            set: { unit = $0 ? .kg : .lbs }
+                        )
+                    )
+                    .padding(.bottom, 60)
+                    .onChange(of: unit) { _, _ in
+                        convertWeight()
                     }
-                }
-                .padding(.horizontal, 40)
 
-                Spacer()
-                    .frame(height: OnboardingConstants.titleToContentSpacing)
-
-                ZStack {
-                    TextField("", text: $weightString)
-                        .font(.system(size: 56, weight: .bold))
-                        .foregroundColor(.clear)
-                        .multilineTextAlignment(.center)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(PlainTextFieldStyle())
-                        .focused($isTextFieldFocused)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled(true)
-
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(weightString.isEmpty ? "" : weightString)
+                    ZStack {
+                        TextField("", text: $weightString)
                             .font(.system(size: 56, weight: .bold))
-                            .foregroundStyle(OnboardingTheme.primaryText)
-                            .onboardingValueGlow(colorScheme: colorScheme)
-                            .contentTransition(.numericText())
-                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
+                            .foregroundColor(.clear)
+                            .multilineTextAlignment(.center)
+                            .keyboardType(.decimalPad)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .focused($isTextFieldFocused)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                            .onSubmit {
+                                handleContinue()
+                            }
 
-                        if !weightString.isEmpty {
-                            Text("kg")
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(displayWeightString)
+                                .font(.system(size: 56, weight: .bold))
+                                .foregroundStyle(OnboardingTheme.primaryText)
+                                .onboardingValueGlow(colorScheme: colorScheme)
+                                .contentTransition(.numericText())
+                                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
+
+                            Text(unit == .kg ? "kg" : "lbs")
                                 .font(.system(size: 20, weight: .medium))
                                 .foregroundStyle(OnboardingTheme.bodyText)
                         }
+                        .allowsHitTesting(false)
                     }
-                    .allowsHitTesting(false)
-                }
-                .padding(.horizontal, 40)
-                .onTapGesture {
-                    isTextFieldFocused = true
-                }
+                    .padding(.horizontal, 40)
+                    .onTapGesture {
+                        isTextFieldFocused = true
+                    }
 
-                Spacer()
+                    Spacer()
+                }
+                .frame(minHeight: ScreenMetrics.height)
+
+                VStack {
+                    OnboardingTitleView("Quel est ton poids idéal ?")
+                        .padding(.top, OnboardingConstants.titleTopPadding)
+                    Spacer()
+                }
             }
-            .frame(minHeight: ScreenMetrics.height)
         }
         .scrollDisabled(true)
         .scrollDismissesKeyboard(.never)
         .onAppear {
-            initializeIfNeeded()
+            loadExistingWeight()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isTextFieldFocused = true
-            }
-            OnboardingValidationScheduler.deferValidation {
-                onValidationChanged?(isValidWeight)
-            }
-        }
-        .onChange(of: idealWeight) { _, newValue in
-            guard newValue > 0 else { return }
-            let formatted = formatIdealWeight(newValue)
-            if weightString.isEmpty || weightString != formatted {
-                weightString = formatted
-            }
-            OnboardingValidationScheduler.deferValidation {
-                onValidationChanged?(isValidWeight)
             }
         }
         .onChange(of: weightString) { _, newValue in
@@ -153,79 +154,102 @@ struct IdealWeightStepView: View {
                 return
             }
 
-            if let weight = Double(newValue), weight > 0 {
-                idealWeight = weight
-                scheduleSave(weight)
-                onPersistAnswers?()
-            }
+            let weightValue = Double(newValue) ?? 0
+            onValidationChanged?(isValidWeight)
+            idealWeight = displayWeight
 
-            OnboardingValidationScheduler.deferValidation {
-                onValidationChanged?(isValidWeight)
+            if weightValue > 0 {
+                onPersistAnswers?()
             }
         }
         .onDisappear {
-            saveTask?.cancel()
             isTextFieldFocused = false
         }
     }
 
-    // MARK: - Init & persistance
+    private func handleContinue() {
+        let trimmed = weightString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, Double(trimmed) ?? 0 > 0, isValidWeight else { return }
 
-    private func initializeIfNeeded() {
-        guard !didInitialize else { return }
-        didInitialize = true
+        HapticManager.shared.impact(.medium)
 
-        recommendedWeight = computeStableRecommendation()
+        isTextFieldFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
+        onContinue?()
+
+        idealWeight = displayWeight
+        Task.detached(priority: .background) {
+            await saveIdealWeight()
+        }
+    }
+
+    private func loadExistingWeight() {
         if OnboardingViewModel.isPlausibleWeight(idealWeight) {
-            weightString = formatIdealWeight(idealWeight)
+            populateWeightString(from: idealWeight)
         } else if let profile = profileService.currentProfile,
-                  let ideal = profile.idealWeight,
-                  OnboardingViewModel.isPlausibleWeight(ideal) {
-            idealWeight = ideal
-            weightString = formatIdealWeight(ideal)
+                  let savedIdeal = profile.idealWeight,
+                  OnboardingViewModel.isPlausibleWeight(savedIdeal) {
+            idealWeight = savedIdeal
+            populateWeightString(from: savedIdeal)
         } else {
             idealWeight = 0
             weightString = ""
         }
+
+        onValidationChanged?(isValidWeight)
     }
 
-    /// Recommandation figée à l’ouverture — ne dépend pas de la saisie en cours.
-    private func computeStableRecommendation() -> Double {
-        guard height > 0, currentWeight > 0 else { return 0 }
-
-        return PersonalizedIdealWeightCalculator.calculatePersonalizedIdealWeight(
-            currentWeight: currentWeight,
-            height: height,
-            age: age,
-            gender: gender,
-            weightGoal: weightGoal,
-            bodyFatPercentage: currentBodyComposition.bodyFatPercentage,
-            leanBodyMass: currentBodyComposition.leanMass,
-            bodyComposition: currentBodyComposition
-        )
-    }
-
-    private func scheduleSave(_ weight: Double) {
-        saveTask?.cancel()
-        saveTask = Task {
-            try? await Task.sleep(nanoseconds: 600_000_000)
-            guard !Task.isCancelled else { return }
-            await saveIdealWeight(weight)
+    private func populateWeightString(from weightKg: Double) {
+        if unit == .kg {
+            weightString = formatWeight(weightKg)
+        } else {
+            weightString = formatWeight(weightKg * 2.20462)
         }
     }
 
-    private func formatIdealWeight(_ weight: Double) -> String {
-        let rounded = weight.rounded()
-        if abs(weight - rounded) < 0.01 {
+    private func formatWeight(_ value: Double) -> String {
+        let rounded = value.rounded()
+        if abs(value - rounded) < 0.01 {
             return "\(Int(rounded))"
         }
-        return String(format: "%.1f", weight)
+        return String(format: "%.1f", value)
     }
 
-    private func saveIdealWeight(_ weight: Double) async {
+    private func convertWeight() {
+        if idealWeight > 0 {
+            if unit == .kg {
+                weightString = formatWeight(idealWeight)
+            } else {
+                let lbs = idealWeight * 2.20462
+                weightString = formatWeight(lbs)
+            }
+        } else if !weightString.isEmpty {
+            let currentValue = Double(weightString) ?? 0
+            if unit == .kg {
+                let kg = currentValue * 0.453592
+                weightString = formatWeight(kg)
+                idealWeight = kg
+            } else {
+                let lbs = currentValue * 2.20462
+                weightString = formatWeight(lbs)
+                idealWeight = currentValue
+            }
+        }
+
+        onValidationChanged?(isValidWeight)
+    }
+
+    private func saveIdealWeight() async {
         guard var profile = profileService.currentProfile else { return }
-        profile.idealWeight = weight
-        try? await profileService.saveProfile(profile)
+        guard OnboardingViewModel.isPlausibleWeight(idealWeight) else { return }
+
+        profile.idealWeight = idealWeight
+        do {
+            try await profileService.saveProfile(profile)
+            await profileService.loadProfile()
+        } catch {
+            DebugLogger.error("\(error.localizedDescription)")
+        }
     }
 }

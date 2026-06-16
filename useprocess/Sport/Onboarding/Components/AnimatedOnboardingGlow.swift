@@ -191,31 +191,26 @@ struct AnimatedOnboardingGlow: View {
             endRadius: animatedRadius
         )
         .onChange(of: visitedStepsCount) { _, newValue in
-            // ✅ CORRECTION: Utiliser visitedStepsCount au lieu de currentStep pour suivre le parcours réel
-            let targetPosition = calculateTargetPosition(for: newValue)
-            let targetRadius = calculateTargetRadius(for: newValue)
-
-            // ✅ Animation fluide pour la position, le rayon ET la couleur
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.85, blendDuration: 0.5)) {
-                animatedPosition = targetPosition
-                animatedRadius = targetRadius
-            }
+            updateGlowPosition(for: newValue)
         }
         .onChange(of: totalStepsForFlow) { _, _ in
-            // ✅ Recalculer la position si le total change (parcours personnalisé)
-            let targetPosition = calculateTargetPosition(for: visitedStepsCount)
-            let targetRadius = calculateTargetRadius(for: visitedStepsCount)
-
-            // ✅ Animation fluide pour la position, le rayon ET la couleur
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.85, blendDuration: 0.5)) {
-                animatedPosition = targetPosition
-                animatedRadius = targetRadius
-            }
+            updateGlowPosition(for: visitedStepsCount)
+        }
+        .onChange(of: currentStep) { _, _ in
+            updateGlowPosition(for: visitedStepsCount)
         }
         .onAppear {
-            // ✅ Initialiser la position au démarrage avec visitedStepsCount
-            animatedPosition = calculateTargetPosition(for: visitedStepsCount)
-            animatedRadius = calculateTargetRadius(for: visitedStepsCount)
+            updateGlowPosition(for: visitedStepsCount)
+        }
+    }
+
+    private func updateGlowPosition(for progressCount: Int) {
+        let targetPosition = calculateTargetPosition(for: progressCount)
+        let targetRadius = calculateTargetRadius(for: progressCount)
+
+        withAnimation(.spring(response: 1.0, dampingFraction: 0.85, blendDuration: 0.5)) {
+            animatedPosition = targetPosition
+            animatedRadius = targetRadius
         }
     }
 

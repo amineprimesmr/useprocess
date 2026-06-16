@@ -50,15 +50,26 @@ struct OnboardingConstants {
 
     /// Espace réservé en haut du contenu scrollé (pages sans overlay titre).
     static var scrollContentTopInset: CGFloat { titleTopPaddingFromScreenTop + 24 }
+
+    /// Repère haut après la page prénom (retour seul, sans barre ni drapeau).
+    static var backOnlyContentTopInset: CGFloat {
+        headerBackButtonTopPadding + backButtonSize + spacingBelowHeaderBar
+    }
 }
 
 // MARK: - Visibilité du header
 
 enum OnboardingHeaderLayout {
+    /// Barre de progression + sélecteur de langue (questionnaire jusqu'au prénom).
+    static func showsProgressAndLanguage(currentStep: Int) -> Bool {
+        showsFullHeader(currentStep: currentStep)
+    }
+
     static func showsFullHeader(currentStep: Int) -> Bool {
         guard let step = OnboardingStep(rawValue: currentStep) else { return false }
 
         if step == .videoIntroduction || isAfterQuestionnairePhase(step) { return false }
+        if isAfterFirstNameProgressPhase(step) { return false }
 
         switch step {
         case .healthKitPermissions, .programCreation, .biometricAuth, .notificationPermission,
@@ -70,12 +81,16 @@ enum OnboardingHeaderLayout {
         }
     }
 
+    /// Retour seul après la page prénom (pas de barre ni drapeau).
     static func showsBackOnly(currentStep: Int, shouldShowBackButton: Bool) -> Bool {
-        false
+        guard shouldShowBackButton else { return false }
+        guard let step = OnboardingStep(rawValue: currentStep) else { return false }
+        if step == .videoIntroduction || isAfterQuestionnairePhase(step) { return false }
+        return isAfterFirstNameProgressPhase(step)
     }
 
     static func showsAnyHeader(currentStep: Int, shouldShowBackButton: Bool) -> Bool {
-        showsFullHeader(currentStep: currentStep)
+        showsProgressAndLanguage(currentStep: currentStep)
             || showsBackOnly(currentStep: currentStep, shouldShowBackButton: shouldShowBackButton)
     }
 }

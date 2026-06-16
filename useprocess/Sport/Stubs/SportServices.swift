@@ -328,12 +328,6 @@ final class PermissionsManager: NSObject, ObservableObject, CLLocationManagerDel
 
 // MARK: - Subscriptions → voir Subscriptions/SubscriptionService.swift
 
-@MainActor
-final class PaywallExitNotificationService {
-    static let shared = PaywallExitNotificationService()
-    func scheduleExitNotification(hasPurchased: Bool) async {}
-}
-
 enum OnboardingError: Error, LocalizedError {
     case notAuthenticated
     case healthKitNotAvailable

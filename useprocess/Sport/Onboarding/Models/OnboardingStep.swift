@@ -95,7 +95,7 @@ enum OnboardingStep: Int, CaseIterable {
 
     var usesInternalContinueAction: Bool {
         switch self {
-        case .videoIntroduction, .faceAnalysis, .sportSelection,
+        case .videoIntroduction, .faceAnalysis, .weightMotivation, .sportSelection,
              .healthKitPermissions, .biometricAuth, .notificationPermission,
              .payment, .processWelcome, .referralReward, .featuresUnlock,
              .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
@@ -200,6 +200,8 @@ enum OnboardingStep: Int, CaseIterable {
              .hasDietaryRestrictions, .whichRestrictions,
              .nutritionObstacles, .perfectNutritionBelief, .hasSufficientHydration, .hydrationLevel,
              .nutritionPotential,
+             .goalPace, .hasSportActivity, .sportSelection,
+             .weightManagementExperience, .weightFailureReasons, .nutritionQuality,
              .sleepNeed, .planGeneration,
              .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
              .alarmConfiguration, .sleepWindowReveal,

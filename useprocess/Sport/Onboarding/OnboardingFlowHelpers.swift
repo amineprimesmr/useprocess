@@ -95,42 +95,27 @@ func findLastValidOnboardingStepIndex(visitedSteps: [Int], viewModel: Onboarding
 
 // MARK: - Progression barre / lueur
 
-/// Parcours utilisé pour la barre : uniquement le questionnaire, terminé à `nutritionQuality`.
+/// Parcours utilisé pour la barre : dérivé du moteur de navigation (questionnaire jusqu'à `nutritionQuality`).
 func buildOnboardingProgressFlowPath(
-    viewModel: OnboardingViewModel
+    viewModel: OnboardingViewModel,
+    navigationEngine: OnboardingNavigationEngine
 ) -> [Int] {
-    return buildExplicitOnboardingProgressFlowPath(viewModel: viewModel)
-}
+    let activePath = navigationEngine.buildActiveFlowPath()
+    var progressPath: [Int] = []
 
-private func buildExplicitOnboardingProgressFlowPath(viewModel: OnboardingViewModel) -> [Int] {
-    var steps: [OnboardingStep] = [
-        .genderSelection, .ageSelection, .height, .weight, .firstNameInput, .idealWeight
-    ]
-
-    if viewModel.hasWeightObjective {
-        steps.append(contentsOf: [.weightMotivation, .goalPace, .weightEstimation])
-    } else {
-        steps.append(.weightEstimation)
-    }
-
-    steps.append(.hasSportActivity)
-
-    if viewModel.hasSportActivity == true {
-        steps.append(.sportSelection)
-    }
-
-    steps.append(.goalProjection)
-
-    if viewModel.hasWeightObjective {
-        steps.append(.weightManagementExperience)
-        if let experience = viewModel.nutritionProfile.weightManagementExperience,
-           experience == .triedMultiple || experience == .currentlyTrying {
-            steps.append(.weightFailureReasons)
+    for rawStep in activePath {
+        guard let step = OnboardingStep(rawValue: rawStep) else { continue }
+        if step == .videoIntroduction { continue }
+        if step == .firstNameInput {
+            progressPath.append(rawStep)
+            break
         }
+        if isAfterQuestionnairePhase(step) { break }
+        if step.isTransientSkippedStep { continue }
+        progressPath.append(rawStep)
     }
 
-    steps.append(.nutritionQuality)
-    return steps.map(\.rawValue)
+    return progressPath
 }
 
 func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
@@ -144,16 +129,47 @@ func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     }
 }
 
-func furthestProgressIndex(in path: [Int], viewModel: OnboardingViewModel) -> Int? {
-    path.enumerated()
-        .filter { viewModel.visitedSteps.contains($0.element) }
-        .map(\.offset)
-        .max()
+/// Étapes après la page prénom — pas de barre de progression ni lueur header.
+func isAfterFirstNameProgressPhase(_ step: OnboardingStep) -> Bool {
+    switch step {
+    case .genderSelection, .ageSelection, .height, .weight, .heightWeight, .bodyScan,
+         .idealWeight, .weightGoalIncompatible, .firstNameInput:
+        return false
+    default:
+        return true
+    }
+}
+
+private func progressCount(
+    in path: [Int],
+    viewModel: OnboardingViewModel
+) -> Int {
+    if let index = path.firstIndex(of: viewModel.currentStep) {
+        return index + 1
+    }
+
+    let stack = normalizeOnboardingVisitedStack(
+        visitedSteps: viewModel.visitedSteps,
+        currentStep: viewModel.currentStep
+    )
+
+    let matchedIndices = stack.compactMap { path.firstIndex(of: $0) }
+    if let lastMatched = matchedIndices.last {
+        return lastMatched + 1
+    }
+
+    return 1
 }
 
 /// Calcule en une seule passe les métriques utilisées par la barre et la lueur.
-func onboardingFlowMetrics(viewModel: OnboardingViewModel) -> (progress: Double, totalSteps: Int, glowProgressCount: Int) {
-    let path = buildOnboardingProgressFlowPath(viewModel: viewModel)
+func onboardingFlowMetrics(
+    viewModel: OnboardingViewModel,
+    navigationEngine: OnboardingNavigationEngine
+) -> (progress: Double, totalSteps: Int, glowProgressCount: Int) {
+    let path = buildOnboardingProgressFlowPath(
+        viewModel: viewModel,
+        navigationEngine: navigationEngine
+    )
     guard !path.isEmpty else {
         return (progress: 0, totalSteps: 1, glowProgressCount: 1)
     }
@@ -165,27 +181,35 @@ func onboardingFlowMetrics(viewModel: OnboardingViewModel) -> (progress: Double,
         return (progress: 1.0, totalSteps: totalSteps, glowProgressCount: totalSteps)
     }
 
-    if let index = path.firstIndex(of: viewModel.currentStep) {
-        let count = index + 1
-        return (
-            progress: min(1.0, Double(count) / Double(totalSteps)),
-            totalSteps: totalSteps,
-            glowProgressCount: count
-        )
-    }
+    let count = progressCount(in: path, viewModel: viewModel)
+    return (
+        progress: min(1.0, Double(count) / Double(totalSteps)),
+        totalSteps: totalSteps,
+        glowProgressCount: count
+    )
+}
 
-    if let furthestIndex = furthestProgressIndex(in: path, viewModel: viewModel) {
-        var progress = Double(furthestIndex + 1) / Double(totalSteps)
-        let glowProgressCount = furthestIndex + 1
+/// Réaligne l'historique visité sur le parcours actif (reprise après relance ou changement de branche).
+func reconcileVisitedStepsForRestore(
+    viewModel: OnboardingViewModel,
+    navigationEngine: OnboardingNavigationEngine
+) {
+    let expectedPrefix = rebuildVisitedStepsPrefix(
+        to: viewModel.currentStep,
+        viewModel: viewModel,
+        navigationEngine: navigationEngine
+    )
+    let normalized = normalizeOnboardingVisitedStack(
+        visitedSteps: viewModel.visitedSteps,
+        currentStep: viewModel.currentStep
+    )
 
-        return (
-            progress: min(1.0, progress),
-            totalSteps: totalSteps,
-            glowProgressCount: glowProgressCount
-        )
-    }
+    let needsRebuild = normalized.isEmpty
+        || normalized.last != viewModel.currentStep
+        || normalized.count != expectedPrefix.count
+        || normalized != expectedPrefix
 
-    return (progress: 0, totalSteps: totalSteps, glowProgressCount: 1)
+    viewModel.visitedSteps = needsRebuild ? expectedPrefix : normalized
 }
 
 /// Reconstruit l'historique visité comme préfixe du parcours jusqu'à l'étape cible (étapes visibles uniquement).

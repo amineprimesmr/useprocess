@@ -49,6 +49,9 @@
             ReferencedContainer = "container:useprocess.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <StoreKitConfigurationFileReference
+         identifier = "../../useprocess/Subscriptions/SubscriptionProducts.storekit">
+      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

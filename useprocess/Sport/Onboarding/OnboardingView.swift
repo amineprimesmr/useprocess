@@ -33,7 +33,8 @@ struct SportOnboardingView: View {
     @State var flowGlowProgressCount: Int = 1
 
     @State var isFirstNameAvailable: Bool = false
-    @State private var firstNameDebounceTask: Task<Void, Never>?
+    @State var firstNameDebounceTask: Task<Void, Never>?
+    @State var animatedContinueBottomOffset: CGFloat = 50
 
     var navigationEngine: OnboardingNavigationEngine {
         OnboardingNavigationEngine(viewModel: viewModel, profileService: profileService)
@@ -79,51 +80,11 @@ struct SportOnboardingView: View {
             }
             }
 
-            if !isImmersiveOnboardingStep && shouldShowContinueButton {
-                VStack {
-                    Spacer()
-
-                    Button(action: {
-                        handleContinueButtonTap()
-                    }) {
-                        Group {
-                            if viewModel.currentStep == OnboardingStep.firstNameInput.rawValue && !viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                AnimatedVerificationButtonText(isAvailable: isFirstNameAvailable)
-                                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                            } else {
-                                Text("CONTINUER")
-                                    .font(.system(size: 20, weight: .black))
-                                    .foregroundStyle(OnboardingTheme.actionButtonText)
-                                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                    }
-                    .glassStyle()
-
-                    .padding(.horizontal, 40)
-                    .disabled(!canContinue)
-                    .allowsHitTesting(canContinue)
-                    .opacity(shouldHideButtonUntilValidated ? (canContinue ? 1.0 : 0.0) : (canContinue ? 1.0 : (isFirstNameVerifying ? 0.45 : 0.5)))
-
-                    if shouldShowNoWeightGoalLink {
-                        Button(action: skipWeightGoalFromIdealWeight) {
-                            Text("Je n'ai pas d'objectif de poids")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(OnboardingTheme.bodyText)
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 12)
-                        }
-                    }
-
-                    Spacer()
-                        .frame(height: continueButtonBottomOffset)
-                }
-                .ios26SafeAnimation(.onboardingTransition, value: viewModel.currentStep)
-                .ios26SafeAnimation(.easeInOut(duration: 0.3), value: viewModel.firstName.isEmpty)
-                .zIndex(20)
-            }
+            continueButtonOverlay
+                .opacity(shouldShowGlobalContinueButton ? continueButtonOpacity : 0)
+                .allowsHitTesting(shouldShowGlobalContinueButton && canContinue && continueButtonHitTestingEnabled)
+                .accessibilityHidden(!shouldShowGlobalContinueButton)
+                .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
 
             if !isImmersiveOnboardingStep {
             if OnboardingHeaderLayout.showsAnyHeader(
@@ -133,16 +94,16 @@ struct SportOnboardingView: View {
                 OnboardingHeaderChrome(
                     viewModel: viewModel,
                     shouldShowBackButton: shouldShowBackButton,
-                    flowProgress: onboardingFlowMetrics(viewModel: viewModel).progress,
+                    flowProgress: flowProgress,
                     onPreviousStep: previousStep
                 )
             }
 
-            if OnboardingHeaderLayout.showsFullHeader(currentStep: viewModel.currentStep) {
+            if OnboardingHeaderLayout.showsProgressAndLanguage(currentStep: viewModel.currentStep) {
                 AnimatedOnboardingGlow(
                     currentStep: viewModel.currentStep,
-                    visitedStepsCount: onboardingFlowMetrics(viewModel: viewModel).glowProgressCount,
-                    totalStepsForFlow: onboardingFlowMetrics(viewModel: viewModel).totalSteps
+                    visitedStepsCount: flowGlowProgressCount,
+                    totalStepsForFlow: flowTotalSteps
                 )
                     .ignoresSafeArea(.all)
                     .allowsHitTesting(false)
@@ -162,74 +123,29 @@ struct SportOnboardingView: View {
                     await profileService.loadProfile()
                 }
 
-                if let profile = profileService.currentProfile {
-                    if let cached = OnboardingProgressService.shared.loadAnswers() {
-                        viewModel.applyCachedAnswers(cached)
-                    }
-                    viewModel.syncWithExistingProfile(profile)
-
-                    let savedStep = OnboardingProgressService.shared.loadCurrentStep()
-
-                    guard let step = OnboardingStep(rawValue: savedStep), savedStep >= 0, savedStep < totalSteps else {
-                        viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
-                        viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
-                        viewModel.saveProgress()
-                        refreshOnboardingFlowProgress()
-                        return
-                    }
-
-                    let canDisplayStep = validateOnboardingStepAvailability(step: step, viewModel: viewModel)
-
-                    if canDisplayStep && savedStep > 0 {
-                        if let stepEnum = OnboardingStep(rawValue: savedStep), stepEnum.isTransientSkippedStep,
-                           let visibleStep = navigationEngine.resolveNextVisibleStep(from: savedStep) {
-                            viewModel.currentStep = visibleStep
-                        } else {
-                            viewModel.currentStep = savedStep
-                        }
-
-                        if OnboardingProgressService.shared.loadVisitedSteps().isEmpty {
-                            viewModel.visitedSteps = rebuildVisitedStepsPrefix(
-                                to: viewModel.currentStep,
-                                viewModel: viewModel,
-                                navigationEngine: navigationEngine
-                            )
-                        }
-
-                        viewModel.visitedSteps = normalizeOnboardingVisitedStack(
-                            visitedSteps: viewModel.visitedSteps,
-                            currentStep: viewModel.currentStep
-                        )
-                    } else if !canDisplayStep && savedStep > 0 {
-                        let lastValidStep = findLastValidOnboardingStepIndex(visitedSteps: viewModel.visitedSteps, viewModel: viewModel)
-                        viewModel.currentStep = lastValidStep
-                        viewModel.visitedSteps = normalizeOnboardingVisitedStack(
-                            visitedSteps: viewModel.visitedSteps,
-                            currentStep: lastValidStep
-                        )
-                        viewModel.saveProgress()
-                    } else {
-                        if viewModel.visitedSteps.isEmpty {
-                            viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
-                        }
-                        if viewModel.currentStep == 0 {
-                            viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
-                        }
-                    }
+                if let cached = OnboardingProgressService.shared.loadAnswers() {
+                    viewModel.applyCachedAnswers(cached)
                 }
 
+                if let profile = profileService.currentProfile {
+                    viewModel.syncWithExistingProfile(profile)
+                }
+
+                restoreOnboardingProgressFromSavedState()
                 refreshOnboardingFlowProgress()
+                updateContinueButtonLayout(animated: false)
             }
         }
         .onChange(of: profileService.currentProfile) { _, newValue in
             guard let profile = newValue else { return }
             Task { @MainActor in
                 viewModel.syncWithExistingProfile(profile)
+                reconcileVisitedStepsForRestore(
+                    viewModel: viewModel,
+                    navigationEngine: navigationEngine
+                )
                 refreshOnboardingFlowProgress()
             }
-
-            // L'onboarding ne doit être complété QUE quand toutes les étapes sont terminées
-            // (appel explicite de completeOnboarding() dans FeaturesUnlockView)
         }
         .onChange(of: viewModel.firstName) { _, newValue in
             let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -249,6 +165,7 @@ struct SportOnboardingView: View {
                 try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
 
                 guard !Task.isCancelled else { return }
+                guard viewModel.currentStep == OnboardingStep.firstNameInput.rawValue else { return }
 
                 let currentTrimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !currentTrimmed.isEmpty else { return }
@@ -260,6 +177,13 @@ struct SportOnboardingView: View {
         }
         .onChange(of: viewModel.currentStep) { oldValue, newValue in
             viewModel.saveProgress()
+            updateContinueButtonLayout(animated: true)
+
+            if newValue != OnboardingStep.firstNameInput.rawValue {
+                isFirstNameAvailable = false
+                firstNameDebounceTask?.cancel()
+                firstNameDebounceTask = nil
+            }
 
             Task { @MainActor in
                 refreshOnboardingFlowProgress()
@@ -270,6 +194,9 @@ struct SportOnboardingView: View {
                 firstNameDebounceTask?.cancel()
                 firstNameDebounceTask = nil
             }
+        }
+        .onChange(of: viewModel.visitedSteps) { _, _ in
+            refreshOnboardingFlowProgress()
         }
         .onChange(of: viewModel.hasWeightGoal) { _, _ in
             viewModel.saveProgress()
@@ -288,10 +215,57 @@ struct SportOnboardingView: View {
             refreshOnboardingFlowProgress()
         }
         .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                reconcileVisitedStepsForRestore(
+                    viewModel: viewModel,
+                    navigationEngine: navigationEngine
+                )
+                refreshOnboardingFlowProgress()
+            }
             guard phase == .inactive || phase == .background else { return }
             viewModel.commitPendingStepAnswers()
             viewModel.saveProgress()
             OnboardingProgressService.shared.flush()
         }
+    }
+
+    private var continueButtonOverlay: some View {
+        VStack {
+            Spacer()
+
+            Button(action: {
+                handleContinueButtonTap()
+            }) {
+                Group {
+                    if shouldShowFirstNameVerificationLabel {
+                        AnimatedVerificationButtonText(isAvailable: isFirstNameAvailable)
+                    } else {
+                        Text("CONTINUER")
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundStyle(OnboardingTheme.actionButtonText)
+                    }
+                }
+                .id("continue_button_label_\(viewModel.currentStep)")
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+            }
+            .glassStyle()
+            .padding(.horizontal, 40)
+            .disabled(!canContinue)
+
+            if shouldShowNoWeightGoalLink {
+                Button(action: skipWeightGoalFromIdealWeight) {
+                    Text("Je n'ai pas d'objectif de poids")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(OnboardingTheme.bodyText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 12)
+                }
+            }
+
+            Spacer()
+                .frame(height: animatedContinueBottomOffset)
+        }
+        .id("onboarding_global_continue")
     }
 }

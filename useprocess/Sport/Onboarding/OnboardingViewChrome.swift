@@ -21,14 +21,16 @@ struct OnboardingHeaderChrome: View {
 
     @ViewBuilder
     private var headerContent: some View {
-        let showsFull = OnboardingHeaderLayout.showsFullHeader(currentStep: viewModel.currentStep)
+        let showsProgressAndLanguage = OnboardingHeaderLayout.showsProgressAndLanguage(
+            currentStep: viewModel.currentStep
+        )
         let showsBack = OnboardingHeaderLayout.showsBackOnly(
             currentStep: viewModel.currentStep,
             shouldShowBackButton: shouldShowBackButton
         )
 
-        if showsFull || showsBack {
-            onboardingHeaderBar(showsProgressAndLanguage: showsFull)
+        if showsProgressAndLanguage || showsBack {
+            onboardingHeaderBar(showsProgressAndLanguage: showsProgressAndLanguage)
         } else {
             EmptyView()
         }
