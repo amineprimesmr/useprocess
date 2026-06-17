@@ -10,8 +10,8 @@ enum FaceScanReminderService {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [notificationID])
 
-        let granted = await PermissionsManager.shared.requestNotificationPermission()
-        guard granted else { return }
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized else { return }
 
         let calendar = Calendar.current
         let now = Date()

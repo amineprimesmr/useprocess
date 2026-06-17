@@ -22,7 +22,7 @@ struct OnboardingConstants {
         guard let window = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .first?.windows.first(where: \.isKeyWindow) else {
-            return 59
+            return LayoutConstants.isIPad ? 24 : 59
         }
         return window.safeAreaInsets.top
     }
@@ -92,5 +92,18 @@ enum OnboardingHeaderLayout {
     static func showsAnyHeader(currentStep: Int, shouldShowBackButton: Bool) -> Bool {
         showsProgressAndLanguage(currentStep: currentStep)
             || showsBackOnly(currentStep: currentStep, shouldShowBackButton: shouldShowBackButton)
+    }
+
+    /// Étapes sans chrome global (pas de barre, drapeau ni retour overlay).
+    static func usesDedicatedFullScreenChrome(currentStep: Int) -> Bool {
+        guard let step = OnboardingStep(rawValue: currentStep) else { return false }
+        switch step {
+        case .videoIntroduction, .faceAnalysis, .payment,
+             .processWelcome, .featuresUnlock, .complete,
+             .healthKitPermissions, .programCreation, .sleepDataRecovery:
+            return true
+        default:
+            return false
+        }
     }
 }

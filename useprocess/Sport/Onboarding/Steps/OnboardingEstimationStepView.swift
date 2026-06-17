@@ -2,7 +2,7 @@
 //  OnboardingEstimationStepView.swift
 //  Process
 //
-//  Écran unifié « D'après nos estimations » (baseline + optimized).
+//  Écran unique « D'après nos estimations ».
 //
 
 import SwiftUI
@@ -12,19 +12,17 @@ struct OnboardingEstimationStepView: View {
     var onValidationChanged: ((Bool) -> Void)?
 
     @State private var projectedDate: Date?
+    @State private var graphSnapshot: OnboardingEstimationGraphSnapshot?
     @State private var dayOnly = ""
     @State private var monthOnly = ""
     @State private var displayedDay = ""
     @State private var displayedMonth = ""
-    @State private var monthlySecondLine = ""
+    @State private var summaryLine = ""
     @State private var curveAnimationProgress: Double = 0
-    @State private var showingBaselineDate = false
-    @State private var baselineDisplayDate: Date?
     @State private var isCountdownFinished = false
     @State private var animationTask: Task<Void, Never>?
 
     private let mainAnimationDuration: TimeInterval = 3.5
-    private let optimizedHoldDuration: TimeInterval = 1.0
 
     private var engine: OnboardingEstimationEngine { .shared }
 
@@ -34,17 +32,15 @@ struct OnboardingEstimationStepView: View {
             displayDay: currentDisplayDay,
             displayMonth: currentDisplayMonth,
             graph: {
-                if let date = graphDate {
+                if let snapshot = graphSnapshot {
                     OnboardingEstimationGraphView(
-                        projectedDate: date,
-                        context: context,
-                        curveAnimationProgress: curveAnimationProgress,
-                        useAcceleratedCurve: context.phase == .optimized && !showingBaselineDate
+                        snapshot: snapshot,
+                        curveAnimationProgress: curveAnimationProgress
                     )
                 }
             },
             bottom: {
-                bottomMessagesView
+                bottomMessageView
             }
         )
         .onAppear {
@@ -53,11 +49,6 @@ struct OnboardingEstimationStepView: View {
         .onDisappear {
             cancelAllAnimations()
         }
-    }
-
-    private var graphDate: Date? {
-        if showingBaselineDate { return baselineDisplayDate }
-        return projectedDate
     }
 
     private var currentDisplayDay: String {
@@ -78,77 +69,59 @@ struct OnboardingEstimationStepView: View {
         return "..."
     }
 
-    private var bottomMessagesView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 10) {
-                Image("check")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
+    private var bottomMessageView: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image("check")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 16, height: 16)
 
-                Text("Basé sur ton profil")
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(OnboardingTheme.bodyText)
-            }
-            .padding(.top, 8)
-
-            if !monthlySecondLine.isEmpty {
-                HStack(alignment: .top, spacing: 10) {
-                    Image("check")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16, height: 16)
-
-                    Text(monthlySecondLine)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(OnboardingTheme.bodyText)
-                }
-            }
+            Text(summaryLine)
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(OnboardingTheme.bodyText)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 40)
+        .padding(.top, 8)
+        .opacity(summaryLine.isEmpty ? 0 : 1)
     }
 
-    // MARK: - Setup & animation
+    // MARK: - Animation
 
     private func prepareAndAnimate() {
         cancelAllAnimations()
 
         curveAnimationProgress = 0
         isCountdownFinished = false
-        showingBaselineDate = false
-        baselineDisplayDate = nil
         onValidationChanged?(false)
 
-        let finalDate = engine.computeProjectedDate(for: context)
+        let referenceDate = Date()
+        let finalDate = engine.computePotentialDate(for: context, now: referenceDate)
         projectedDate = finalDate
-        monthlySecondLine = engine.monthlySecondLine(for: context, projectedDate: finalDate)
+        graphSnapshot = OnboardingEstimationGraphSnapshot.make(
+            context: context,
+            projectedDate: finalDate,
+            referenceDate: referenceDate
+        )
+        summaryLine = engine.summaryLine(for: context)
         updateDateDisplay(date: finalDate)
 
         animationTask = Task { @MainActor in
-            if context.phase == .optimized,
-               let baseline = engine.loadBaselineDate(),
-               baseline > finalDate {
-                await runOptimizedSequence(baseline: baseline, final: finalDate)
-            } else {
-                await runBaselineSequence(final: finalDate)
-            }
-
+            await runAnimation(to: finalDate)
             guard !Task.isCancelled else { return }
             finishAnimation()
         }
 
-        // Filet de sécurité si l'animation est interrompue
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
             if !isCountdownFinished {
                 finishAnimation()
             }
         }
     }
 
-    /// Première estimation : courbe + date synchronisées une seule fois.
-    private func runBaselineSequence(final: Date) async {
+    private func runAnimation(to final: Date) async {
         let calendar = Calendar.current
         let now = Date()
         let daysDifference = max(1, calendar.dateComponents([.day], from: now, to: final).day ?? 30)
@@ -158,38 +131,10 @@ struct OnboardingEstimationStepView: View {
         try? await Task.sleep(nanoseconds: 300_000_000)
         guard !Task.isCancelled else { return }
 
-        await runSynchronizedAnimation(from: startDate, to: final, animateCurve: true)
-    }
-
-    /// Deuxième estimation : pause sur la baseline (courbe déjà complète), puis une seule animation vers la date optimisée.
-    private func runOptimizedSequence(baseline: Date, final: Date) async {
-        baselineDisplayDate = baseline
-        showingBaselineDate = true
-        curveAnimationProgress = 1.0
-        applyDateDisplay(for: baseline)
-
-        try? await Task.sleep(nanoseconds: UInt64(optimizedHoldDuration * 1_000_000_000))
-        guard !Task.isCancelled else { return }
-
-        showingBaselineDate = false
-        curveAnimationProgress = 0
-        applyDateDisplay(for: baseline)
-
-        await runSynchronizedAnimation(from: baseline, to: final, animateCurve: true)
-    }
-
-    /// Timeline unique : courbe + date + haptics sur la même horloge.
-    private func runSynchronizedAnimation(
-        from startDate: Date,
-        to endDate: Date,
-        animateCurve: Bool
-    ) async {
-        let calendar = Calendar.current
-        let totalDayDelta = abs(calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 0)
-        let direction = endDate >= startDate ? 1 : -1
+        let totalDayDelta = abs(calendar.dateComponents([.day], from: startDate, to: final).day ?? 0)
+        let direction = final >= startDate ? 1 : -1
         var lastHapticDay = calendar.component(.day, from: startDate)
         var lastHapticMonth = calendar.component(.month, from: startDate)
-
         let startTime = Date()
 
         while !Task.isCancelled {
@@ -197,12 +142,14 @@ struct OnboardingEstimationStepView: View {
             let progress = min(elapsed / mainAnimationDuration, 1.0)
             let eased = 1.0 - pow(1.0 - progress, 3.0)
 
-            if animateCurve {
+            if abs(curveAnimationProgress - eased) > 0.001 {
                 curveAnimationProgress = eased
+            } else if progress >= 1.0 {
+                curveAnimationProgress = 1.0
             }
 
             let daysMoved = Int(round(Double(totalDayDelta) * progress))
-            let displayDate = calendar.date(byAdding: .day, value: daysMoved * direction, to: startDate) ?? endDate
+            let displayDate = calendar.date(byAdding: .day, value: daysMoved * direction, to: startDate) ?? final
             applyDateDisplay(for: displayDate)
 
             let day = calendar.component(.day, from: displayDate)
@@ -219,11 +166,9 @@ struct OnboardingEstimationStepView: View {
 
         guard !Task.isCancelled else { return }
 
-        applyDateDisplay(for: endDate)
-        updateDateDisplay(date: endDate)
-        if animateCurve {
-            curveAnimationProgress = 1.0
-        }
+        applyDateDisplay(for: final)
+        updateDateDisplay(date: final)
+        curveAnimationProgress = 1.0
     }
 
     private func cancelAllAnimations() {
@@ -232,8 +177,10 @@ struct OnboardingEstimationStepView: View {
     }
 
     private func applyDateDisplay(for date: Date) {
-        displayedDay = "\(Calendar.current.component(.day, from: date))"
-        displayedMonth = formatMonth(date)
+        let day = "\(Calendar.current.component(.day, from: date))"
+        let month = formatMonth(date)
+        if displayedDay != day { displayedDay = day }
+        if displayedMonth != month { displayedMonth = month }
     }
 
     private func updateDateDisplay(date: Date) {

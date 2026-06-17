@@ -89,10 +89,8 @@ struct TickPicker: View {
             }
         }
         .frame(height: config.interactionHeight)
-        .task {
-            guard !isInitialSetupDone else { return }
+        .onAppear {
             updateScrollPosition(selection: selection)
-            try? await Task.sleep(for: .seconds(0.05))
             isInitialSetupDone = true
         }
         .onChange(of: scrollIndex) { _, newValue in
@@ -104,7 +102,6 @@ struct TickPicker: View {
             guard scrollIndex != newValue else { return }
             updateScrollPosition(selection: newValue)
         }
-        .allowsHitTesting(isInitialSetupDone)
     }
 
     @ViewBuilder

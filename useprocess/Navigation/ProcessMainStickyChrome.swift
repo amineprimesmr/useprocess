@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 enum ProcessMainChromeMetrics {
-    static let filterBarHeight: CGFloat = 52
+    static var filterBarHeight: CGFloat { LayoutConstants.isIPad ? 68 : 52 }
     static let dismissDistance: CGFloat = 100
 
     static var topSafeInset: CGFloat { UIApplication.safeAreaTop }

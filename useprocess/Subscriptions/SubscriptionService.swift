@@ -27,6 +27,12 @@ final class SubscriptionService: NSObject, ObservableObject {
     private var monthlyStoreProductRC: StoreProduct?
     private var annualStoreProductRC: StoreProduct?
 
+    private static let complimentaryAccessStorageKey = "subscription.complimentary.access"
+
+    private var hasComplimentaryAccess: Bool {
+        UserDefaults.standard.bool(forKey: UserScopedStorage.key(Self.complimentaryAccessStorageKey))
+    }
+
     var hasLiveMonthlyProduct: Bool {
         monthlyPackage != nil || monthlyStoreProductRC != nil || monthlyStoreProduct != nil
     }
@@ -52,15 +58,34 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     private override init() {
         super.init()
+        restoreComplimentaryAccessIfNeeded()
     }
 
     // MARK: - Setup
+
+    /// Accès premium interne (ex. review / QA) — persiste localement par utilisateur.
+    func grantComplimentaryAccess() {
+        UserDefaults.standard.set(true, forKey: UserScopedStorage.key(Self.complimentaryAccessStorageKey))
+        subscriptionStatus = .subscribed
+        isInFreeTrial = false
+        trialExpirationDate = nil
+    }
+
+    private func restoreComplimentaryAccessIfNeeded() {
+        guard hasComplimentaryAccess else { return }
+        subscriptionStatus = .subscribed
+        isInFreeTrial = false
+        trialExpirationDate = nil
+    }
 
     func configure() {
         guard !isConfigured else { return }
         guard RevenueCatConfiguration.isConfigured, let apiKey = RevenueCatConfiguration.apiKey else {
             applyFallbackProducts()
-            subscriptionStatus = .notSubscribed
+            restoreComplimentaryAccessIfNeeded()
+            if !hasComplimentaryAccess {
+                subscriptionStatus = .notSubscribed
+            }
             return
         }
 
@@ -222,6 +247,11 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func checkSubscriptionStatus() async {
+        if hasComplimentaryAccess {
+            restoreComplimentaryAccessIfNeeded()
+            return
+        }
+
         guard isConfigured else {
             subscriptionStatus = .notSubscribed
             return
@@ -238,6 +268,11 @@ final class SubscriptionService: NSObject, ObservableObject {
     // MARK: - Private
 
     private func applyCustomerInfo(_ info: CustomerInfo) {
+        if hasComplimentaryAccess {
+            restoreComplimentaryAccessIfNeeded()
+            return
+        }
+
         guard let entitlement = info.entitlements[SubscriptionConfiguration.entitlementID] else {
             subscriptionStatus = .notSubscribed
             isInFreeTrial = false

@@ -7,30 +7,39 @@ final class FaceScanScreenFlash {
 
     private var savedBrightness: CGFloat?
     private(set) var isActive = false
+    private var animationGeneration = 0
 
     private init() {}
 
-    /// Monte la luminosité à 100 % immédiatement (utilisé pendant tout le scan visage).
+    /// Monte la luminosité à 100 % — idempotent, sans re-animation si déjà actif.
     func activate(animated: Bool = false) {
         if savedBrightness == nil {
             savedBrightness = UIScreen.main.brightness
         }
-        isActive = true
-        setBrightness(1.0, animated: animated)
-    }
 
-    /// Ré-applique le max si iOS ou l'utilisateur a baissé la luminosité pendant le scan.
-    func refreshMaximum() {
-        guard isActive else { return }
-        UIScreen.main.brightness = 1.0
+        if isActive {
+            UIScreen.main.brightness = 1.0
+            return
+        }
+
+        isActive = true
+        cancelPendingAnimations()
+        setBrightness(1.0, animated: animated)
     }
 
     func deactivate(animated: Bool = true) {
         guard isActive else { return }
+
         isActive = false
+        cancelPendingAnimations()
+
         let target = savedBrightness ?? UIScreen.main.brightness
         setBrightness(target, animated: animated)
         savedBrightness = nil
+    }
+
+    private func cancelPendingAnimations() {
+        animationGeneration += 1
     }
 
     private func setBrightness(_ value: CGFloat, animated: Bool) {
@@ -47,9 +56,11 @@ final class FaceScanScreenFlash {
             return
         }
 
-        let steps = 8
+        let generation = animationGeneration
+        let steps = 6
         for step in 1...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(step) * 0.02) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(step) * 0.025) { [weak self] in
+                guard let self, self.animationGeneration == generation else { return }
                 guard self.isActive || clamped < 1 else { return }
                 let progress = CGFloat(step) / CGFloat(steps)
                 UIScreen.main.brightness = start + delta * progress

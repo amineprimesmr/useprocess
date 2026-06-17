@@ -23,6 +23,31 @@ enum OnboardingTheme {
     static var actionButtonText: Color { Color.primary }
     static var progressTrack: Color { Color.primary.opacity(0.15) }
     static var progressFill: Color { Color.primary }
+
+    /// Barre d'analyse (chat + création programme) — visible en clair et sombre.
+    static var analysisProgressTrack: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.20, green: 0.16, blue: 0.30, alpha: 1)
+                : UIColor(red: 0.94, green: 0.90, blue: 0.99, alpha: 1)
+        })
+    }
+    static var analysisProgressBorder: Color {
+        Color(UIColor { traits in
+            UIColor(red: 0.72, green: 0.58, blue: 0.92, alpha: traits.userInterfaceStyle == .dark ? 0.55 : 0.45)
+        })
+    }
+    static var analysisProgressFillGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.82, green: 0.70, blue: 0.98),
+                Color(red: 0.68, green: 0.48, blue: 0.88),
+                Color(red: 0.58, green: 0.36, blue: 0.82)
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
     static var accentHighlight: Color { Color(red: 0.655, green: 0.769, blue: 0.949) }
     static var titleShadow: Color { Color.primary.opacity(0.12) }
 

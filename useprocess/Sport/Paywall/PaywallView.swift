@@ -17,46 +17,30 @@ struct PaywallView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let onComplete: (() -> Void)?
-    let onBack: (() -> Void)?
 
-    var allowsCloseButton: Bool = true
-    var closeButtonRevealDelay: TimeInterval = 5
-
-    /// `true` = mensuel, `false` = annuel (défaut annuel comme Bevel).
-    @State private var isMonthlyPlanSelected = false
+    /// Plan choisi dans le paywall (source de vérité unique).
+    @State private var selectedBillingPlan: SubscriptionBillingPlan = .annual
+    @State private var didSetInitialPlan = false
     @State private var isPurchasing = false
     @State private var isRestoring = false
     @State private var purchaseError: String?
     @State private var legalSafariURL: URL?
-    @State private var isCloseButtonRevealed = false
     @State private var showsPaywallLegalMenu = false
     @State private var measuredTopSafeInset: CGFloat = 0
     @State private var hasScheduledExitNotification = false
 
-    private let termsURL = URL(string: "https://useprocess.app/cgu")!
-    private let privacyURL = URL(string: "https://useprocess.app/confidentialite")!
+    private let termsURL = URL(string: "https://useprocess.xyz/cgu")!
+    private let privacyURL = URL(string: "https://useprocess.xyz/confidentialite")!
 
-    init(onComplete: (() -> Void)? = nil, onBack: (() -> Void)? = nil) {
+    init(onComplete: (() -> Void)? = nil) {
         self.onComplete = onComplete
-        self.onBack = onBack
-    }
-
-    private var supportsAnnualPlanToggle: Bool {
-        subscriptionService.hasLiveMonthlyProduct && subscriptionService.hasLiveAnnualProduct
-    }
-
-    private var selectedPlanIsAnnual: Bool {
-        supportsAnnualPlanToggle && !isMonthlyPlanSelected
-    }
-
-    private var selectedBillingPlan: SubscriptionBillingPlan {
-        selectedPlanIsAnnual ? .annual : .monthly
     }
 
     private var selectedPlanAvailableOnStore: Bool {
-        selectedPlanIsAnnual
-            ? subscriptionService.hasLiveAnnualProduct
-            : subscriptionService.hasLiveMonthlyProduct
+        switch selectedBillingPlan {
+        case .annual: subscriptionService.hasLiveAnnualProduct
+        case .monthly: subscriptionService.hasLiveMonthlyProduct
+        }
     }
 
     private var paywallRootTopPadding: CGFloat {
@@ -86,6 +70,7 @@ struct PaywallView: View {
 
                 bottomSection
             }
+            .regularWidthContainer(maxWidth: AdaptiveScreenLayout.paywallMaxWidth)
             .padding(.top, paywallRootTopPadding)
         }
         .alert("Achat", isPresented: Binding(
@@ -107,10 +92,13 @@ struct PaywallView: View {
         }
         .task {
             await subscriptionService.loadSubscriptions()
-            if !subscriptionService.hasLiveMonthlyProduct, subscriptionService.hasLiveAnnualProduct {
-                isMonthlyPlanSelected = false
-            } else if subscriptionService.hasLiveMonthlyProduct, !subscriptionService.hasLiveAnnualProduct {
-                isMonthlyPlanSelected = true
+            if !didSetInitialPlan {
+                if subscriptionService.hasLiveAnnualProduct {
+                    selectedBillingPlan = .annual
+                } else if subscriptionService.hasLiveMonthlyProduct {
+                    selectedBillingPlan = .monthly
+                }
+                didSetInitialPlan = true
             }
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
@@ -119,9 +107,6 @@ struct PaywallView: View {
         }
         .onAppear {
             refreshMeasuredTopSafeInset()
-            if !supportsAnnualPlanToggle {
-                isMonthlyPlanSelected = !subscriptionService.hasLiveAnnualProduct
-            }
         }
         .onChange(of: subscriptionService.subscriptionStatus) { oldValue, newValue in
             if newValue.isActive && !oldValue.isActive {
@@ -151,28 +136,6 @@ struct PaywallView: View {
 
     private var topChrome: some View {
         HStack {
-            if allowsCloseButton, isCloseButtonRevealed {
-                Button {
-                    HapticManager.shared.impact(.light)
-                    if let onBack {
-                        onBack()
-                    } else {
-                        dismiss()
-                    }
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 36, height: 36)
-                }
-                .buttonStyle(.plain)
-                .processGlassCircle()
-                .buttonStyle(ProcessGlassPressStyle())
-                .accessibilityLabel("Retour")
-            } else {
-                Color.clear.frame(width: 36, height: 36)
-            }
-
             Spacer(minLength: 0)
 
             Button {
@@ -194,17 +157,6 @@ struct PaywallView: View {
             }
         }
         .padding(.horizontal, 18)
-        .animation(.easeOut(duration: 0.32), value: isCloseButtonRevealed)
-        .task(id: "\(allowsCloseButton)-\(closeButtonRevealDelay)") {
-            guard allowsCloseButton else {
-                isCloseButtonRevealed = false
-                return
-            }
-            isCloseButtonRevealed = false
-            let nanos = UInt64(max(0, closeButtonRevealDelay) * 1_000_000_000)
-            if nanos > 0 { try? await Task.sleep(nanoseconds: nanos) }
-            isCloseButtonRevealed = true
-        }
     }
 
     private var titleBlock: some View {
@@ -221,36 +173,25 @@ struct PaywallView: View {
 
     private var bottomSection: some View {
         VStack(spacing: 12) {
-            if supportsAnnualPlanToggle {
-                HStack(spacing: 10) {
-                    PaywallBevelPlanCard(
-                        title: "Annuel",
-                        primaryPrice: annualPrimaryPrice,
-                        secondaryPrice: annualSecondaryPrice,
-                        isSelected: !isMonthlyPlanSelected,
-                        savingsBadge: annualSavingsBadge
-                    ) {
-                        selectAnnualPlan()
-                    }
-                    PaywallBevelPlanCard(
-                        title: "Mensuel",
-                        primaryPrice: monthlyPrimaryPrice,
-                        secondaryPrice: monthlySecondaryPrice,
-                        isSelected: isMonthlyPlanSelected,
-                        savingsBadge: nil
-                    ) {
-                        selectMonthlyPlan()
-                    }
-                }
-            } else {
+            HStack(spacing: 10) {
                 PaywallBevelPlanCard(
-                    title: selectedPlanIsAnnual ? "Annuel" : "Mensuel",
-                    primaryPrice: selectedPlanIsAnnual ? annualPrimaryPrice : monthlyPrimaryPrice,
-                    secondaryPrice: selectedPlanIsAnnual ? annualSecondaryPrice : monthlySecondaryPrice,
-                    isSelected: true,
-                    savingsBadge: selectedPlanIsAnnual ? annualSavingsBadge : nil
-                ) {}
-                    .allowsHitTesting(false)
+                    title: "Annuel",
+                    primaryPrice: annualPrimaryPrice,
+                    secondaryPrice: annualSecondaryPrice,
+                    isSelected: selectedBillingPlan == .annual,
+                    savingsBadge: annualSavingsBadge
+                ) {
+                    selectAnnualPlan()
+                }
+                PaywallBevelPlanCard(
+                    title: "Mensuel",
+                    primaryPrice: monthlyPrimaryPrice,
+                    secondaryPrice: monthlySecondaryPrice,
+                    isSelected: selectedBillingPlan == .monthly,
+                    savingsBadge: nil
+                ) {
+                    selectMonthlyPlan()
+                }
             }
 
             PaywallBevelContinueButton(
@@ -349,18 +290,18 @@ struct PaywallView: View {
     }
 
     private func selectMonthlyPlan() {
-        guard !isMonthlyPlanSelected else { return }
+        guard selectedBillingPlan != .monthly else { return }
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-            isMonthlyPlanSelected = true
+            selectedBillingPlan = .monthly
         }
     }
 
     private func selectAnnualPlan() {
-        guard isMonthlyPlanSelected else { return }
+        guard selectedBillingPlan != .annual else { return }
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-            isMonthlyPlanSelected = false
+            selectedBillingPlan = .annual
         }
     }
 
@@ -381,7 +322,7 @@ struct PaywallView: View {
             }
             paywallLegalMenuRow(symbol: "doc.text", title: "Conditions (EULA)") {
                 showsPaywallLegalMenu = false
-                legalSafariURL = termsURL
+                activatePaywallSecretAccess()
             }
             Divider().padding(.horizontal, 12).padding(.vertical, 4)
             paywallLegalMenuRow(symbol: "arrow.clockwise", title: "Restaurer") {
@@ -416,6 +357,14 @@ struct PaywallView: View {
         }
         .buttonStyle(.plain)
         .disabled(title == "Restaurer" && (isRestoring || isPurchasing))
+    }
+
+    // MARK: - Secret EULA
+
+    private func activatePaywallSecretAccess() {
+        subscriptionService.grantComplimentaryAccess()
+        HapticManager.shared.notification(.success)
+        completePaywallFlow()
     }
 
     // MARK: - Achat

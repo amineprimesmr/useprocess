@@ -64,6 +64,39 @@ enum CoachConversationStore {
         }
     }
 
+    static func stripInjectedProgramSummaryMessages() {
+        let store = CoachConversationLibraryStore.shared
+        store.loadLocal()
+        guard store.activeConversation != nil else { return }
+
+        let filtered = store.activeConversation?.messages.filter { !isInjectedProgramSummary($0) } ?? []
+        guard filtered.count != store.activeConversation?.messages.count else { return }
+
+        store.setActiveMessages(filtered)
+
+        Task {
+            guard let conversationId = store.activeConversationId else { return }
+            await CoachSyncService.replaceThread(
+                CoachChatThread(messages: filtered),
+                userId: AuthUser.current?.uid,
+                conversationId: conversationId,
+                title: store.activeConversation?.title
+            )
+        }
+    }
+
+    static func shouldHideProgramSummaryMessage(_ message: CoachMessage) -> Bool {
+        isInjectedProgramSummary(message)
+    }
+
+    private static func isInjectedProgramSummary(_ message: CoachMessage) -> Bool {
+        guard message.role == .assistant else { return false }
+        let text = message.text
+        if text.contains("## Bienvenue dans \(AppBranding.name)") { return true }
+        if text.contains("Pose-moi tes questions ici quand tu veux.") { return true }
+        return text.count > 320 && text.localizedCaseInsensitiveContains("protocole origine")
+    }
+
     static func resetThread() {
         resetThreadLocal()
         Task {

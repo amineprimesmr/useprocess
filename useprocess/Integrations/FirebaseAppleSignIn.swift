@@ -10,18 +10,36 @@ final class AppleSignInManager: NSObject, ObservableObject {
 
     private var currentNonce: String?
     private var completion: ((Result<Void, Error>) -> Void)?
+    private var intent: AppleSignInIntent = .signIn
 
     private override init() {
         super.init()
     }
 
+    enum AppleSignInIntent {
+        case signIn
+        case reauthenticate
+    }
+
     func startSignInWithAppleFlow(completion: @escaping (Result<Void, Error>) -> Void) {
+        startAuthorization(intent: .signIn, completion: completion)
+    }
+
+    func startReauthenticationFlow(completion: @escaping (Result<Void, Error>) -> Void) {
+        startAuthorization(intent: .reauthenticate, completion: completion)
+    }
+
+    private func startAuthorization(
+        intent: AppleSignInIntent,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
         guard AppConfiguration.firebaseConfigured else {
             completion(.failure(AppleSignInError.firebaseNotConfigured))
             return
         }
 
         self.completion = completion
+        self.intent = intent
         let nonce = randomNonceString()
         currentNonce = nonce
 
@@ -91,16 +109,24 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
                     rawNonce: nonce,
                     fullName: credential.fullName
                 )
-                let result = try await Auth.auth().signIn(with: firebaseCredential)
 
-                if let fullName = credential.fullName {
-                    let formatter = PersonNameComponentsFormatter()
-                    let displayName = formatter.string(from: fullName).trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !displayName.isEmpty, result.user.displayName == nil {
-                        let changeRequest = result.user.createProfileChangeRequest()
-                        changeRequest.displayName = displayName
-                        try? await changeRequest.commitChanges()
+                switch intent {
+                case .signIn:
+                    let result = try await Auth.auth().signIn(with: firebaseCredential)
+                    if let fullName = credential.fullName {
+                        let formatter = PersonNameComponentsFormatter()
+                        let displayName = formatter.string(from: fullName).trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !displayName.isEmpty, result.user.displayName == nil {
+                            let changeRequest = result.user.createProfileChangeRequest()
+                            changeRequest.displayName = displayName
+                            try? await changeRequest.commitChanges()
+                        }
                     }
+                case .reauthenticate:
+                    guard let user = Auth.auth().currentUser else {
+                        throw AppleSignInError.invalidCredential
+                    }
+                    try await user.reauthenticate(with: firebaseCredential)
                 }
 
                 completion?(.success(()))
@@ -109,6 +135,7 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
             }
             completion = nil
             currentNonce = nil
+            intent = .signIn
         }
     }
 

@@ -56,6 +56,7 @@ final class UserSessionCoordinator {
         SocialProfileStore.shared.bind(unified: nil)
         BodyScanHistoryStore.shared.clearForUser(userId: nil)
         FaceScanHistoryStore.shared.clearForUser(userId: nil)
+        AuthenticationManager.shared.applyPostAccountDeletion()
         Task { await SubscriptionService.shared.syncAppUserID(nil) }
     }
 }

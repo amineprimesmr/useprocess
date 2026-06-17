@@ -22,6 +22,34 @@ final class FirebaseProfileRepository {
         try await db.collection(collection).document(userId).delete()
     }
 
+    /// Efface le document utilisateur et les sous-collections connues.
+    func deleteAllRemoteUserData(userId: String) async throws {
+        try await deleteDocuments(
+            in: db.collection(collection).document(userId).collection("faceScans")
+        )
+
+        let coachThreads = try await db.collection(collection)
+            .document(userId)
+            .collection("coachThreads")
+            .getDocuments()
+
+        for thread in coachThreads.documents {
+            try await deleteDocuments(in: thread.reference.collection("messages"))
+            try await thread.reference.delete()
+        }
+
+        try await deleteProfile(userId: userId)
+    }
+
+    private func deleteDocuments(in collection: CollectionReference) async throws {
+        let snapshot = try await collection.getDocuments()
+        guard !snapshot.documents.isEmpty else { return }
+
+        let batch = db.batch()
+        snapshot.documents.forEach { batch.deleteDocument($0.reference) }
+        try await batch.commit()
+    }
+
     func saveProfile(_ profile: UnifiedUserProfile) async throws {
         var updated = profile
         updated.updateLastUpdated()

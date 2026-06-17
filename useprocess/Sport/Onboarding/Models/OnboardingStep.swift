@@ -209,7 +209,8 @@ enum OnboardingStep: Int, CaseIterable {
              .processWelcome, .referralReward, .featuresUnlock, .complete,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
              .personalizedWelcome, .processResultsDurability,
-             .sleepDataRecovery, .primaryGoal:
+             .sleepDataRecovery, .primaryGoal, .goalProjection,
+             .healthKitPermissions, .programCreation:
             return true
         default:
             return false

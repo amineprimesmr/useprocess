@@ -49,6 +49,7 @@ final class CoachChatViewModel {
 
     func loadThreadIfNeeded() async {
         libraryStore.loadLocal()
+        CoachConversationStore.stripInjectedProgramSummaryMessages()
         let welcome = CoachEngine.welcomeMessage(profile: profile)
         libraryStore.migrateLegacyThreadIfNeeded(welcome: welcome)
 
@@ -69,7 +70,16 @@ final class CoachChatViewModel {
                 title: libraryStore.activeConversation?.title
             )
         } else {
-            messages = stored.messages
+            messages = Self.filteredCoachMessages(stored.messages, welcome: welcome)
+            if messages.count != stored.messages.count {
+                libraryStore.setActiveMessages(messages)
+                await CoachSyncService.replaceThread(
+                    CoachChatThread(messages: messages),
+                    userId: userId,
+                    conversationId: conversationId,
+                    title: libraryStore.activeConversation?.title
+                )
+            }
         }
         await consumePendingPlanPromptIfNeeded()
     }
@@ -137,8 +147,17 @@ final class CoachChatViewModel {
             messages = [welcome]
             libraryStore.setActiveMessages(messages)
         } else {
-            messages = stored.messages
+            let welcome = CoachEngine.welcomeMessage(profile: profile)
+            messages = Self.filteredCoachMessages(stored.messages, welcome: welcome)
+            if messages.count != stored.messages.count {
+                libraryStore.setActiveMessages(messages)
+            }
         }
+    }
+
+    private static func filteredCoachMessages(_ messages: [CoachMessage], welcome: CoachMessage) -> [CoachMessage] {
+        let filtered = messages.filter { !CoachConversationStore.shouldHideProgramSummaryMessage($0) }
+        return filtered.isEmpty ? [welcome] : filtered
     }
 
     func sendCurrentMessage() async {

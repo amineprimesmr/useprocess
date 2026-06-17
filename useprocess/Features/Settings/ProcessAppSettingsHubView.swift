@@ -10,9 +10,11 @@ import SafariServices
 import UIKit
 
 private enum ProcessLegalURLs {
-    static let termsOfUse = URL(string: "https://useprocess.app/cgu")!
-    static let privacyPolicy = URL(string: "https://useprocess.app/confidentialite")!
-    static let supportMail = URL(string: "mailto:support@useprocess.app")!
+    static let termsOfUse = URL(string: "https://useprocess.xyz/cgu")!
+    static let privacyPolicy = URL(string: "https://useprocess.xyz/confidentialite")!
+    static let legalNotice = URL(string: "https://useprocess.xyz/mentions-legales")!
+    static let supportPage = URL(string: "https://useprocess.xyz/support")!
+    static let supportMail = URL(string: "mailto:support@useprocess.xyz")!
 }
 
 struct ProcessAppSettingsHubView: View {
@@ -138,9 +140,31 @@ struct ProcessAppSettingsHubView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                GroupedSettingsRowDivider()
+                Button { inAppSafariURL = ProcessLegalURLs.legalNotice } label: {
+                    GroupedSettingsNavigationRow(
+                        icon: "building.columns",
+                        title: "Mentions légales",
+                        subtitle: nil,
+                        value: nil,
+                        showsChevron: true
+                    )
+                }
+                .buttonStyle(.plain)
             }
 
             GroupedSettingsCard {
+                Button { inAppSafariURL = ProcessLegalURLs.supportPage } label: {
+                    GroupedSettingsNavigationRow(
+                        icon: "questionmark.circle",
+                        title: "Centre d'aide",
+                        subtitle: "FAQ et assistance",
+                        value: nil,
+                        showsChevron: true
+                    )
+                }
+                .buttonStyle(.plain)
+                GroupedSettingsRowDivider()
                 Button { openURL(ProcessLegalURLs.supportMail) } label: {
                     GroupedSettingsNavigationRow(
                         icon: "envelope.open",

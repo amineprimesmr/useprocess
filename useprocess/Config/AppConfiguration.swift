@@ -5,7 +5,7 @@ enum AppConfiguration {
         infoString(for: "CFBundleDisplayName") ?? "Process AI"
     }
 
-    static let supportEmail = "hello@useprocess.app"
+    static let supportEmail = "hello@useprocess.xyz"
 
     static var firebaseConfigured: Bool {
         Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil

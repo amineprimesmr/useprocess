@@ -240,19 +240,19 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightEstimation.rawValue
             
         case .weightEstimation:
-            return OnboardingStep.goalProjection.rawValue
-            
-        case .hasSportActivity, .sportSelection:
-            return OnboardingStep.goalProjection.rawValue
-            
-        case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace:
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.biometricAuth.rawValue
             
         case .goalProjection:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.biometricAuth.rawValue
+            
+        case .hasSportActivity, .sportSelection:
+            return OnboardingStep.biometricAuth.rawValue
+            
+        case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace:
+            return OnboardingStep.biometricAuth.rawValue
             
         case .weightManagementExperience, .weightFailureReasons, .nutritionQuality:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.biometricAuth.rawValue
             
         default:
             return nil
@@ -272,24 +272,24 @@ class OnboardingNavigationEngine {
             return OnboardingStep.nutritionQuality.rawValue
             
         case .nutritionQuality:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.biometricAuth.rawValue
 
         case .hasDietaryRestrictions, .whichRestrictions:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.biometricAuth.rawValue
 
         case .hardestMeal:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.biometricAuth.rawValue
 
         case .faceAnalysis:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.biometricAuth.rawValue
 
         case .programCreation:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.biometricAuth.rawValue
 
         case .nutritionPotential,
              .nutritionObstacles, .perfectNutritionBelief, .hasSufficientHydration, .hydrationLevel,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed, .planGeneration:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.biometricAuth.rawValue
             
         default:
             return nil
@@ -299,7 +299,7 @@ class OnboardingNavigationEngine {
     private func getNextStepInSleepFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .appleSignIn:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.biometricAuth.rawValue
 
         case .healthKitPermissions:
             return OnboardingStep.biometricAuth.rawValue
@@ -373,7 +373,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.firstNameInput.rawValue
             
         case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace, .eventDetails:
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
             
         case .goalProjection:
             return OnboardingStep.weightEstimation.rawValue
@@ -389,18 +389,21 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightMotivation.rawValue
             
         case .hasDietaryRestrictions, .whichRestrictions:
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .faceAnalysis:
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .programCreation:
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
+
+        case .biometricAuth:
+            return OnboardingStep.weightEstimation.rawValue
 
         case .nutritionPotential, .hasSufficientHydration, .hydrationLevel,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed,
              .planGeneration, .alarmConfiguration, .sleepWindowReveal, .hardestMeal:
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         default:
             return nil
@@ -410,19 +413,19 @@ class OnboardingNavigationEngine {
     private func getPreviousStepInSleepFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed, .planGeneration:
-            return OnboardingStep.goalProjection.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .sleepDataRecovery, .newsStep, .sleepNeedReveal, .sleepDebtInfo:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .healthKitPermissions:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .appleSignIn:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .alarmConfiguration, .sleepWindowReveal:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         default:
             return nil
@@ -432,16 +435,16 @@ class OnboardingNavigationEngine {
     private func getPreviousStepInFinalizationFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .referralCode:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .sleepWindowReveal, .alarmConfiguration:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .appRating, .caloriesGoal, .carryOverCalories:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .biometricAuth:
-            return OnboardingStep.healthKitPermissions.rawValue
+            return OnboardingStep.weightEstimation.rawValue
             
         case .notificationPermission:
             return OnboardingStep.biometricAuth.rawValue
@@ -460,7 +463,7 @@ class OnboardingNavigationEngine {
     // MARK: - Helper Methods
     
     private func getDeadlineOrTrainingFrequency() -> Int {
-        OnboardingStep.goalProjection.rawValue
+        OnboardingStep.weightEstimation.rawValue
     }
     
     private func getNextStepInQueue(after step: OnboardingStep) -> Int? {

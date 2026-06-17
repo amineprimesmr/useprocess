@@ -60,7 +60,6 @@ struct MainAppView: View {
                     .welcomePlanSectionGate(isLocked: isWelcomePlanGating)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .processMainTabSwipeDisabled(isWelcomePlanGating)
             .ignoresSafeArea(.container, edges: .bottom)
 
             if !coachSidebarExpanded, !(selectedSection == .profile && profileSubrouteActive) {
@@ -81,13 +80,6 @@ struct MainAppView: View {
         }
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
             if !completed {
-                selectedSection = .coach
-            }
-        }
-        .onChange(of: selectedSection) { _, newSection in
-            guard lockedSections.contains(newSection) else { return }
-            HapticManager.shared.notification(.warning)
-            withAnimation(ProcessGlass.spring) {
                 selectedSection = .coach
             }
         }
@@ -118,13 +110,6 @@ struct MainAppView: View {
     }
 
     private func openProfile() {
-        guard session.hasCompletedWelcomePlanChat else {
-            HapticManager.shared.notification(.warning)
-            withAnimation(ProcessGlass.spring) {
-                selectedSection = .coach
-            }
-            return
-        }
         withAnimation(ProcessGlass.spring) {
             selectedSection = .profile
         }

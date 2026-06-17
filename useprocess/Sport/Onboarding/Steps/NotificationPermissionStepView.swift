@@ -28,7 +28,7 @@ struct NotificationPermissionStepView: View {
 
             VStack(spacing: 0) {
                 Spacer()
-                    .frame(height: OnboardingConstants.scrollContentTopInset)
+                    .frame(height: OnboardingConstants.backOnlyContentTopInset)
 
                 (Text("Tu recevras un message ") + Text("à la fin").foregroundColor(OnboardingTheme.accentHighlight) + Text(" de ton essai"))
                     .font(.system(size: 28, weight: .bold))
@@ -47,45 +47,74 @@ struct NotificationPermissionStepView: View {
 
                 Spacer()
 
-                Button(action: {
-                    Task {
-                        await requestNotifications()
-                    }
-                }) {
-                    HStack(spacing: 12) {
-                        if isRequesting {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
-                                .scaleEffect(0.8)
+                VStack(spacing: 12) {
+                    Button {
+                        Task { await requestNotifications() }
+                    } label: {
+                        HStack(spacing: 12) {
+                            if isRequesting {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
+                                    .scaleEffect(0.8)
+                            }
+                            Text("Activer les notifications")
+                                .font(.system(size: 20, weight: .black))
                         }
-                        Text("Activer les notifications")
-                            .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(OnboardingTheme.primaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
                     }
-                    .foregroundStyle(OnboardingTheme.primaryText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
+                    .glassStyle()
+                    .buttonBorderShape(.roundedRectangle(radius: 50))
+                    .disabled(isRequesting)
+
+                    Button {
+                        skipNotifications()
+                    } label: {
+                        Text("Plus tard")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(OnboardingTheme.bodyText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                    }
+                    .glassStyle()
+                    .buttonBorderShape(.roundedRectangle(radius: 25))
+                    .disabled(isRequesting)
                 }
-                .glassStyle()
-                .buttonBorderShape(.roundedRectangle(radius: 50))
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
-                .disabled(isRequesting)
             }
+        }
+        .task {
+            await permissionsManager.refreshNotificationAuthorizationStatus()
         }
     }
 
     @MainActor
     private func requestNotifications() async {
+        guard !isRequesting else { return }
+
         HapticManager.shared.impact(.medium)
         isRequesting = true
 
-        _ = await permissionsManager.requestNotificationPermission()
+        let granted = await permissionsManager.requestNotificationPermission()
+
+        if granted {
+            await PaywallTrialNotificationService.shared.scheduleTrialEndingReminder(
+                days: SubscriptionConfiguration.freeTrialDays
+            )
+            HapticManager.shared.notification(.success)
+        }
 
         isRequesting = false
 
-        try? await Task.sleep(for: .milliseconds(300))
+        try? await Task.sleep(for: .milliseconds(250))
+        onComplete()
+    }
 
-        HapticManager.shared.notification(.success)
+    private func skipNotifications() {
+        guard !isRequesting else { return }
+        HapticManager.shared.impact(.light)
         onComplete()
     }
 }

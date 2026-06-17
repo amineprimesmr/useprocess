@@ -53,10 +53,19 @@ struct FaceScanSessionView: View {
 
 struct FaceScanResultSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.appTheme) private var theme
 
     let result: FaceScanResult
     var onDone: () -> Void
+
+    private var isRegularWidth: Bool {
+        AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass)
+    }
+
+    private var mediaHeight: CGFloat {
+        AdaptiveScreenLayout.mediaPreviewHeight(containerWidth: 520, isRegular: isRegularWidth)
+    }
 
     private var analysis: FaceScanAnalysisContent {
         CoachEngine.parsedFaceAnalysis(for: result)
@@ -66,16 +75,7 @@ struct FaceScanResultSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    if let filename = result.snapshotFilename,
-                       let image = FaceScanImageStore.load(filename: filename) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 200)
-                            .frame(maxWidth: .infinity)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
+                    FaceScanRecordingMediaView(result: result, height: mediaHeight)
 
                     Text(result.createdAt.formatted(date: .abbreviated, time: .shortened))
                         .font(.caption)
@@ -96,6 +96,7 @@ struct FaceScanResultSheet: View {
                     }
                 }
                 .padding()
+                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
             }
             .background(theme.background.ignoresSafeArea())
             .navigationTitle("Scan enregistré")
@@ -109,6 +110,7 @@ struct FaceScanResultSheet: View {
                 }
             }
         }
-        .presentationDetents([.large])
+        .presentationDetents(isRegularWidth ? [.medium, .large] : [.large])
+        .presentationDragIndicator(.visible)
     }
 }

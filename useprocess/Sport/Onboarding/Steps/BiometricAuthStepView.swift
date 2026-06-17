@@ -88,6 +88,7 @@ struct BiometricAuthStepView: View {
                             .padding(.horizontal, 40)
                     .padding(.bottom, 50)
             }
+            .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
         }
         .alert("Erreur", isPresented: $showError) {
             Button("OK") {
@@ -149,47 +150,51 @@ struct BiometricAuthStepView: View {
     // MARK: - Fingerprint Zone
 
     private var fingerprintZone: some View {
-        // Zone d'appui avec image fingerprint et cercle de progression
-        ZStack {
-            Image("fingerprint")
-                .resizable()
-                .renderingMode(.original)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 380, height: 380)
-                .scaleEffect(isPressed ? 1.05 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        GeometryReader { geometry in
+            let side = AdaptiveScreenLayout.biometricZoneSize(containerWidth: geometry.size.width)
+            let ringSide = side * (210.0 / 380.0)
 
-            // Cercle de progression - Lueur subtile autour de l'image (ENCORE PLUS PETIT)
             ZStack {
-                // Lueur de progression - Cercle beaucoup plus petit avec ombre douce
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.6),
-                                Color(red: 0.20, green: 0.85, blue: 0.60).opacity(0.4),
-                                Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.3)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
-                    )
-                    .frame(width: 210, height: 210)
-                    .rotationEffect(.degrees(-90))
-                    .shadow(color: Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.5), radius: 8, x: 0, y: 0)
-                    .blur(radius: 1)
-                    .animation(.easeInOut(duration: 0.1), value: progress)
+                Image("fingerprint")
+                    .resizable()
+                    .renderingMode(.original)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: side, height: side)
+                    .scaleEffect(isPressed ? 1.05 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+
+                ZStack {
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.6),
+                                    Color(red: 0.20, green: 0.85, blue: 0.60).opacity(0.4),
+                                    Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.3)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                        )
+                        .frame(width: ringSide, height: ringSide)
+                        .rotationEffect(.degrees(-90))
+                        .shadow(color: Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.5), radius: 8, x: 0, y: 0)
+                        .blur(radius: 1)
+                        .animation(.easeInOut(duration: 0.1), value: progress)
+                }
             }
-            }
-        .frame(width: 380, height: 380)
+            .frame(width: side, height: side)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .safePressGesture(
                 onPress: {
                     if !isPressed { startPress() }
                 },
                 onRelease: endPress
             )
+        }
+        .frame(height: 380)
     }
 
     // MARK: - Actions

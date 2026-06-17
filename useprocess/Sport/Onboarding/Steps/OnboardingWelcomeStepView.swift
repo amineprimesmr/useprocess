@@ -2,7 +2,6 @@ import SwiftUI
 
 /// Page d'accueil onboarding avec connexion Apple.
 struct OnboardingWelcomeStepView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var authManager: AuthenticationManager
     @EnvironmentObject var profileService: UnifiedProfileService
 
@@ -11,44 +10,62 @@ struct OnboardingWelcomeStepView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
 
+    private var welcomeBackgroundImage: String {
+        LayoutConstants.isIPad ? "WelcomePageiPad" : "WelcomePage"
+    }
+
+    private var horizontalPadding: CGFloat {
+        LayoutConstants.isIPad ? 48 : 32
+    }
+
+    private var bottomPadding: CGFloat {
+        LayoutConstants.isIPad ? 56 : 48
+    }
+
     var body: some View {
-        ZStack {
-            Image("WelcomePage")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                Image(welcomeBackgroundImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
 
-            VStack(spacing: 0) {
-                Spacer()
+                VStack(spacing: 0) {
+                    Spacer()
 
-                VStack(spacing: 14) {
-                    Button {
-                        Task { await handleAppleSignIn() }
-                    } label: {
-                        HStack(spacing: 10) {
-                            if isLoading {
-                                ProgressView().tint(OnboardingTheme.filledButtonText(for: colorScheme))
-                            } else {
-                                Image(systemName: "apple.logo")
-                                    .font(.system(size: 20, weight: .semibold))
-                                Text("Continuer avec Apple")
-                                    .font(.system(size: 18, weight: .bold))
+                    VStack(spacing: 14) {
+                        Button {
+                            Task { await handleAppleSignIn() }
+                        } label: {
+                            HStack(spacing: 10) {
+                                if isLoading {
+                                    ProgressView()
+                                        .tint(.black)
+                                } else {
+                                    Image(systemName: "apple.logo")
+                                        .font(.system(size: 20, weight: .semibold))
+                                    Text("Continuer avec Apple")
+                                        .font(.system(size: 18, weight: .bold))
+                                }
                             }
+                            .foregroundStyle(Color.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 54)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 27, style: .continuous))
                         }
-                        .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(
-                            OnboardingTheme.filledButtonBackground(for: colorScheme),
-                            in: RoundedRectangle(cornerRadius: 27)
-                        )
+                        .buttonStyle(.plain)
+                        .disabled(isLoading)
                     }
-                    .disabled(isLoading)
+                    .regularWidthContainer(maxWidth: 480)
+                    .padding(.horizontal, horizontalPadding)
+                    .frame(maxWidth: geometry.size.width)
+                    .padding(.bottom, bottomPadding)
                 }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 48)
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
+        .ignoresSafeArea()
         .alert("Connexion impossible", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }

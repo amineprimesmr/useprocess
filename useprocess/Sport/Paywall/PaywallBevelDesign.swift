@@ -482,6 +482,7 @@ struct PaywallBevelPlanCard: View {
             }
         }
         .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var planRadio: some View {

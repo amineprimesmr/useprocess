@@ -1,8 +1,10 @@
 import ARKit
 import SwiftUI
 
-/// Écran de capture TrueDepth réutilisable (onboarding + Santé).
+/// Écran de capture TrueDepth — layout fixe, flash contrôlé, sans animation Dynamic Island.
 struct FaceScanCaptureScreen: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     var onBack: () -> Void
     var onSkip: (() -> Void)? = nil
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
@@ -17,12 +19,15 @@ struct FaceScanCaptureScreen: View {
     @State private var isDeviceSupported = ARFaceTrackingConfiguration.isSupported
     @State private var phase: FaceScanPhase = .positioning
     @State private var scanSessionID = UUID()
-    @State private var showContent = false
-    @State private var isExpanding = false
-    @State private var morphToCircle: CGFloat = 0
     @State private var capturedPayload: FaceScanCapturePayload?
     @State private var capturedMarkers: FaceWellnessMarkers?
     @State private var canSkipScan = false
+    @State private var isFlashEnabled = false
+    @State private var userFlashOverride = false
+
+    private var cameraZoom: CGFloat {
+        AdaptiveScreenLayout.faceScanCameraZoom(horizontalSizeClass: horizontalSizeClass)
+    }
 
     private enum FaceScanPhase {
         case positioning
@@ -33,216 +38,228 @@ struct FaceScanCaptureScreen: View {
     var body: some View {
         GeometryReader { geometry in
             let safeArea = geometry.safeAreaInsets
-            let haveDynamicIsland = safeArea.top >= 59
-            let dynamicIslandHeight: CGFloat = 36
-            let topOffset: CGFloat = haveDynamicIsland
-                ? (11 + max(safeArea.top - 59, 0))
-                : safeArea.top
-            let expandedHeight = geometry.size.width - 30
-            let scannerBottom = topOffset + (isExpanding ? expandedHeight : dynamicIslandHeight)
-            let ringDiameter = expandedHeight - 160
+            let viewportSize = AdaptiveScreenLayout.faceScanViewportDiameter(
+                width: geometry.size.width,
+                height: geometry.size.height,
+                horizontalSizeClass: horizontalSizeClass
+            )
 
-            ZStack(alignment: .top) {
-                Color.black.ignoresSafeArea()
-
-                if phase != .completed {
-                    screenFlashOverlay(topOffset: topOffset, expandedHeight: expandedHeight)
-                }
-
-                if !isDeviceSupported {
-                    unsupportedSection
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    FaceDynamicIslandScanner(
-                        isExpanding: $isExpanding,
-                        showContent: showContent,
-                        morphToCircle: morphToCircle,
-                        camera: { cameraSize in
-                            FaceMeshScanView(
-                                progress: $scanProgress,
-                                ringProgress: $ringProgress,
-                                activeTickSectors: $activeTickSectors,
-                                instruction: $instruction,
-                                frameHint: $frameHint,
-                                isFaceDetected: $isFaceDetected,
-                                isDeviceSupported: $isDeviceSupported,
-                                isLowLight: $isLowLight,
-                                onComplete: handleCapture
-                            )
-                            .id(scanSessionID)
-                            .frame(width: cameraSize.width, height: cameraSize.height)
-                        },
-                        overlay: { cameraSize in
-                            scannerOverlay(viewportSize: cameraSize, ringDiameter: ringDiameter)
-                        }
-                    )
+            ZStack {
+                (isFlashEnabled ? Color.white : Color.black)
                     .ignoresSafeArea()
-                }
 
                 VStack(spacing: 0) {
-                    Spacer()
-                        .frame(height: scannerBottom + 28)
+                    header(safeArea: safeArea)
+                        .padding(.top, safeArea.top + 6)
 
-                    instructionSection
+                    cameraSection(viewportSize: viewportSize)
+                        .padding(.top, AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) ? 28 : 18)
+
+                    instructionBlock
+                        .padding(.top, 22)
 
                     if let hint = frameHint, phase != .completed {
-                        FaceIDFrameHint(text: hint)
+                        FaceIDFrameHint(text: hint, isLightBackdrop: isFlashEnabled)
                             .padding(.top, 12)
                     }
 
-                    if isLowLight, phase != .completed {
-                        Label("Flash écran", systemImage: "bolt.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.yellow)
-                            .padding(.top, 8)
-                    } else if phase != .completed {
-                        Label("Éclairage écran", systemImage: "sun.max.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.yellow.opacity(0.85))
-                            .padding(.top, 8)
-                    }
+                    flashStatusLabel
+                        .padding(.top, 10)
 
-                    Spacer(minLength: 16)
+                    Spacer(minLength: 12)
+
+                    if phase != .completed {
+                        retryScanButton
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 8)
+                    }
 
                     bottomAction
                         .padding(.horizontal, 24)
                         .padding(.bottom, max(safeArea.bottom + 16, 28))
                 }
-
-                if phase != .completed {
-                    faceScanBackButton
-                }
+                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
             }
         }
         .onAppear {
-            FaceScanScreenFlash.shared.activate(animated: false)
+            userFlashOverride = false
+            isFlashEnabled = false
+            FaceScanScreenFlash.shared.deactivate(animated: false)
         }
         .onDisappear {
             FaceScanScreenFlash.shared.deactivate()
         }
         .task {
-            guard isDeviceSupported else { return }
-            showContent = true
-            try? await Task.sleep(for: .seconds(0.05))
-            isExpanding = true
-            try? await Task.sleep(for: .seconds(8))
+            guard isDeviceSupported else {
+                canSkipScan = true
+                return
+            }
+            try? await Task.sleep(for: .seconds(6))
             guard phase != .completed else { return }
             withAnimation(.easeInOut(duration: 0.25)) {
                 canSkipScan = true
             }
         }
         .onChange(of: isDeviceSupported) { _, supported in
-            if !supported {
-                canSkipScan = true
-            }
+            if !supported { canSkipScan = true }
+        }
+        .onChange(of: isLowLight) { _, low in
+            guard !userFlashOverride else { return }
+            // Auto ON uniquement — le flash éclaire la scène et fausse la détection lux.
+            // Ne jamais auto-OFF sinon boucle clignotante.
+            guard low, !isFlashEnabled else { return }
+            isFlashEnabled = true
         }
         .onChange(of: isFaceDetected) { _, detected in
             guard isDeviceSupported, phase != .completed else { return }
-            if detected {
-                withAnimation(.interpolatingSpring(duration: 0.55, bounce: 0.08, initialVelocity: 0)) {
-                    morphToCircle = 1
+            if detected, phase == .positioning {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    phase = .scanning
                 }
-                if phase == .positioning {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        phase = .scanning
-                    }
-                }
-            } else if phase == .scanning, scanProgress < 0.05 {
-                withAnimation(.interpolatingSpring(duration: 0.45, bounce: 0, initialVelocity: 0)) {
-                    morphToCircle = 0
+            } else if !detected, phase == .scanning, scanProgress < 0.08 {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     phase = .positioning
                 }
             }
         }
-        .onChange(of: scanProgress) { _, value in
-            if value >= 1, phase != .completed {
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+        .onChange(of: scanProgress) { oldValue, value in
+            if value >= 1, phase != .completed, capturedPayload != nil {
+                withAnimation(.easeInOut(duration: 0.3)) {
                     phase = .completed
-                    morphToCircle = 1
                 }
+            } else if value < 0.05, oldValue > 0.12, phase == .scanning {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    phase = .positioning
+                    capturedPayload = nil
+                    capturedMarkers = nil
+                }
+            }
+        }
+        .onChange(of: isFlashEnabled) { _, enabled in
+            if enabled {
+                FaceScanScreenFlash.shared.activate(animated: false)
+            } else {
+                FaceScanScreenFlash.shared.deactivate(animated: true)
             }
         }
     }
 
-    @ViewBuilder
-    private func screenFlashOverlay(topOffset: CGFloat, expandedHeight: CGFloat) -> some View {
-        let centerY = topOffset + expandedHeight / 2
-        ZStack {
-            Color.white.opacity(0.18)
-                .ignoresSafeArea()
+    // MARK: - Header
 
-            RadialGradient(
-                colors: [
-                    Color.white,
-                    Color.white.opacity(0.88),
-                    Color.white.opacity(0.35),
-                    Color.clear
-                ],
-                center: UnitPoint(x: 0.5, y: centerY / max(UIScreen.main.bounds.height, 1)),
-                startRadius: 20,
-                endRadius: expandedHeight * 0.95
-            )
-            .ignoresSafeArea()
-        }
-        .allowsHitTesting(false)
-    }
+    private func header(safeArea: EdgeInsets) -> some View {
+        HStack(spacing: 12) {
+            OnboardingBackButton(action: {
+                FaceScanScreenFlash.shared.deactivate()
+                onBack()
+            })
 
-    @ViewBuilder
-    private func scannerOverlay(viewportSize: CGSize, ringDiameter: CGFloat) -> some View {
-        let ringSize = min(viewportSize.width, viewportSize.height) + 14
+            Spacer(minLength: 0)
 
-        ZStack {
-            if morphToCircle > 0.5 {
-                switch phase {
-                case .positioning, .scanning:
-                    FaceIDTickProgressRing(
-                        activeSectors: activeTickSectors,
-                        diameter: ringSize
-                    )
-                    if phase == .scanning {
-                        FaceIDScanningWave(diameter: min(viewportSize.width, viewportSize.height) * 0.92)
-                    }
-                case .completed:
-                    FaceIDSuccessRing(diameter: ringSize)
-                    FaceIDTickProgressRing(
-                        activeSectors: activeTickSectors,
-                        diameter: ringSize,
-                        isComplete: false
-                    )
+            if isDeviceSupported, phase != .completed {
+                FaceScanFlashToggle(isEnabled: isFlashEnabled) {
+                    userFlashOverride = true
+                    isFlashEnabled.toggle()
                 }
             }
         }
-        .opacity(morphToCircle)
-        .animation(.easeOut(duration: 0.25), value: morphToCircle)
+        .padding(.horizontal, OnboardingConstants.headerHorizontalPadding)
     }
 
-    private var unsupportedSection: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "faceid")
-                .font(.system(size: 52))
-                .foregroundStyle(OnboardingTheme.mutedText)
-            Text("TrueDepth requis")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(OnboardingTheme.primaryText)
-            Text("Utilise un iPhone avec Face ID\n(iPhone X ou plus récent).")
-                .font(.system(size: 15))
-                .foregroundStyle(OnboardingTheme.footnoteText)
-                .multilineTextAlignment(.center)
-            skipScanButton
-                .padding(.top, 8)
+    // MARK: - Camera
+
+    private func cameraSection(viewportSize: CGFloat) -> some View {
+        ZStack {
+            if isDeviceSupported {
+                FaceMeshScanView(
+                    progress: $scanProgress,
+                    ringProgress: $ringProgress,
+                    activeTickSectors: $activeTickSectors,
+                    instruction: $instruction,
+                    frameHint: $frameHint,
+                    isFaceDetected: $isFaceDetected,
+                    isDeviceSupported: $isDeviceSupported,
+                    isLowLight: $isLowLight,
+                    onComplete: handleCapture
+                )
+                .id(scanSessionID)
+                .frame(width: viewportSize, height: viewportSize)
+                .scaleEffect(cameraZoom)
+                .frame(width: viewportSize, height: viewportSize)
+                .clipShape(Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(
+                            isFlashEnabled ? Color.black.opacity(0.08) : Color.white.opacity(0.18),
+                            lineWidth: 1.5
+                        )
+                }
+                .shadow(
+                    color: .black.opacity(isFlashEnabled ? 0.12 : 0.35),
+                    radius: 14,
+                    y: 4
+                )
+
+                scannerOverlay(cameraDiameter: viewportSize)
+            } else {
+                unsupportedSection
+                    .frame(width: viewportSize)
+            }
         }
-        .padding(.horizontal, 32)
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.25), value: phase)
     }
 
-    private var instructionSection: some View {
+    @ViewBuilder
+    private func scannerOverlay(cameraDiameter: CGFloat) -> some View {
+        FaceIDTickProgressRing(
+            activeSectors: activeTickSectors,
+            cameraDiameter: cameraDiameter,
+            isComplete: phase == .completed,
+            isLightBackdrop: isFlashEnabled
+        )
+        .opacity(phase == .completed || isFaceDetected || phase == .scanning ? 1 : 0.55)
+    }
+
+    // MARK: - Copy
+
+    private var instructionBlock: some View {
         Text(instruction)
-            .font(.system(size: 17, weight: .regular))
-            .foregroundStyle(OnboardingTheme.primaryText)
-            .multilineTextAlignment(phase == .completed ? .trailing : .center)
-            .frame(maxWidth: .infinity, alignment: phase == .completed ? .trailing : .center)
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.88) : OnboardingTheme.primaryText)
+            .multilineTextAlignment(.center)
             .lineSpacing(4)
             .padding(.horizontal, 32)
-            .animation(.easeInOut(duration: 0.25), value: instruction)
+            .animation(.easeInOut(duration: 0.2), value: instruction)
+    }
+
+    @ViewBuilder
+    private var flashStatusLabel: some View {
+        if phase != .completed, isDeviceSupported {
+            if isFlashEnabled {
+                Label(
+                    userFlashOverride ? "Flash activé" : "Flash auto — environnement sombre",
+                    systemImage: "bolt.fill"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.55) : .yellow)
+            } else if isLowLight {
+                Label("Environnement sombre — active le flash", systemImage: "moon.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.5) : OnboardingTheme.mutedText)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var retryScanButton: some View {
+        if isDeviceSupported, scanProgress > 0.02, scanProgress < 1 {
+            Button(action: restartScan) {
+                Text("Recommencer le scan")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.55) : OnboardingTheme.mutedText)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     @ViewBuilder
@@ -250,14 +267,15 @@ struct FaceScanCaptureScreen: View {
         if phase == .completed, capturedPayload?.mesh.isValid == true, capturedMarkers != nil {
             FaceIDContinueButton {
                 HapticManager.shared.impact(.medium)
+                FaceScanScreenFlash.shared.deactivate()
                 if let payload = capturedPayload, let markers = capturedMarkers {
                     onContinue(payload, markers)
                 }
             }
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
         } else if canSkipScan {
             skipScanButton
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
     }
 
@@ -271,7 +289,7 @@ struct FaceScanCaptureScreen: View {
             }) {
                 Text("CONTINUER SANS SCAN")
                     .font(.system(size: 17, weight: .black))
-                    .foregroundStyle(OnboardingTheme.actionButtonText)
+                    .foregroundStyle(isFlashEnabled ? Color.black : OnboardingTheme.actionButtonText)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
             }
@@ -280,33 +298,84 @@ struct FaceScanCaptureScreen: View {
         }
     }
 
-    private var faceScanBackButton: some View {
-        VStack {
-            HStack {
-                OnboardingBackButton(action: {
-                    FaceScanScreenFlash.shared.deactivate()
-                    onBack()
-                })
-                Spacer()
-            }
-            .padding(.horizontal, OnboardingConstants.headerHorizontalPadding)
-            .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
-            Spacer()
+    private var unsupportedSection: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "faceid")
+                .font(.system(size: 48))
+                .foregroundStyle(OnboardingTheme.mutedText)
+            Text("TrueDepth requis")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(OnboardingTheme.primaryText)
+            Text("Utilise un appareil avec Face ID\n(iPhone ou iPad Pro).")
+                .font(.system(size: 15))
+                .foregroundStyle(OnboardingTheme.footnoteText)
+                .multilineTextAlignment(.center)
+            skipScanButton
+                .padding(.top, 8)
         }
-        .allowsHitTesting(true)
+        .padding(.horizontal, 16)
     }
 
+    // MARK: - Actions
+
     private func handleCapture(_ payload: FaceScanCapturePayload) {
-        guard payload.mesh.isValid else { return }
-        guard FaceScanQualityValidator.meshIsSolid(payload.mesh) else { return }
+        guard payload.mesh.isValid, FaceScanQualityValidator.meshIsSolid(payload.mesh) else {
+            restartScan()
+            return
+        }
 
         let markers = FaceWellnessAnalyzer.analyze(from: payload)
         capturedPayload = payload
         capturedMarkers = markers
 
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+        FaceScanScreenFlash.shared.deactivate(animated: true)
+        isFlashEnabled = false
+
+        withAnimation(.easeInOut(duration: 0.3)) {
             phase = .completed
-            morphToCircle = 1
         }
+    }
+
+    private func restartScan() {
+        scanSessionID = UUID()
+        scanProgress = 0
+        ringProgress = 0
+        activeTickSectors = []
+        isFaceDetected = false
+        frameHint = nil
+        instruction = "Place ton visage dans le cadre."
+        capturedPayload = nil
+        capturedMarkers = nil
+        withAnimation(.easeInOut(duration: 0.2)) {
+            phase = .positioning
+        }
+    }
+}
+
+// MARK: - Flash toggle
+
+struct FaceScanFlashToggle: View {
+    let isEnabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            HapticManager.shared.impact(.light)
+            action()
+        }) {
+            Image(systemName: isEnabled ? "bolt.fill" : "bolt.slash")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(iconColor)
+                .frame(
+                    width: OnboardingConstants.backButtonSize,
+                    height: OnboardingConstants.backButtonSize
+                )
+        }
+        .glassStyle()
+        .accessibilityLabel(isEnabled ? "Désactiver le flash écran" : "Activer le flash écran")
+    }
+
+    private var iconColor: Color {
+        isEnabled ? Color(red: 0.95, green: 0.78, blue: 0.12) : OnboardingTheme.bodyText
     }
 }

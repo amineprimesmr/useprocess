@@ -26,6 +26,17 @@ struct HeightStepView: View {
     /// Nombre d'intervalles : 140…220 cm → 81 valeurs, indices 0…80.
     private let tickIndexMax: Int = 80
 
+    init(selectedHeight: Binding<Double>, onValidationChanged: ((Bool) -> Void)? = nil) {
+        _selectedHeight = selectedHeight
+        self.onValidationChanged = onValidationChanged
+
+        let cm = selectedHeight.wrappedValue
+        if cm > 0 {
+            let clamped = min(max(Int(cm.rounded()), 140), 220)
+            _tickSelection = State(initialValue: clamped - 140)
+        }
+    }
+
     enum HeightUnit {
         case cm
         case ft

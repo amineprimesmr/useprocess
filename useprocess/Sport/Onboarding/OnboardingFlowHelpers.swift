@@ -43,8 +43,10 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
         return true
     case .idealWeight:
         return true
-    case .weightMotivation, .goalPace,
-         .weightManagementExperience, .weightFailureReasons:
+    case .weightMotivation, .weightEstimation, .biometricAuth, .notificationPermission, .payment:
+        return true
+
+    case .goalPace, .weightManagementExperience, .weightFailureReasons:
         return viewModel.hasWeightObjective
 
     case .weightEstimation:
@@ -144,8 +146,15 @@ private func progressCount(
     in path: [Int],
     viewModel: OnboardingViewModel
 ) -> Int {
+    guard !path.isEmpty else { return 1 }
+
     if let index = path.firstIndex(of: viewModel.currentStep) {
         return index + 1
+    }
+
+    if let step = OnboardingStep(rawValue: viewModel.currentStep),
+       isAfterFirstNameProgressPhase(step) || isAfterQuestionnairePhase(step) {
+        return path.count
     }
 
     let stack = normalizeOnboardingVisitedStack(
@@ -154,8 +163,8 @@ private func progressCount(
     )
 
     let matchedIndices = stack.compactMap { path.firstIndex(of: $0) }
-    if let lastMatched = matchedIndices.last {
-        return lastMatched + 1
+    if let bestMatched = matchedIndices.max() {
+        return bestMatched + 1
     }
 
     return 1
@@ -177,7 +186,7 @@ func onboardingFlowMetrics(
     let totalSteps = max(path.count, 1)
 
     if let current = OnboardingStep(rawValue: viewModel.currentStep),
-       isAfterQuestionnairePhase(current) {
+       isAfterQuestionnairePhase(current) || isAfterFirstNameProgressPhase(current) {
         return (progress: 1.0, totalSteps: totalSteps, glowProgressCount: totalSteps)
     }
 

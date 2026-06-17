@@ -1,4 +1,5 @@
 import CoreGraphics
+import simd
 import UIKit
 
 enum FaceScanQualityValidator {
@@ -43,17 +44,22 @@ enum FaceScanQualityValidator {
         return total / CGFloat(count)
     }
 
-    static func snapshotIsUsable(_ image: UIImage?, minimumLuminance: CGFloat = 0.12) -> Bool {
+    static func snapshotIsUsable(
+        _ image: UIImage?,
+        minimumLuminance: CGFloat = 0.12,
+        screenFlashActive: Bool = false
+    ) -> Bool {
+        if screenFlashActive { return true }
         guard let image else { return false }
         return averageLuminance(of: image) >= minimumLuminance
     }
 
     static func meshIsSolid(_ mesh: FaceMesh3DData) -> Bool {
-        mesh.isValid && mesh.vertices.count >= 450
+        mesh.isValid && mesh.vertices.count >= 360
     }
 
-    static func headSpreadIsSufficient(_ samples: [SIMD2<Float>], minimum: Float = 0.38) -> Bool {
-        guard samples.count >= 20 else { return false }
+    static func headSpreadIsSufficient(_ samples: [SIMD2<Float>], minimum: Float = 0.26) -> Bool {
+        guard samples.count >= 12 else { return false }
         let pitches = samples.map(\.x)
         let yaws = samples.map(\.y)
         guard let pMin = pitches.min(), let pMax = pitches.max(),

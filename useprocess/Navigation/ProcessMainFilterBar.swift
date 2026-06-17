@@ -45,24 +45,35 @@ struct ProcessMainFilterBar: View {
     @Namespace private var chipNamespace
     @Environment(\.colorScheme) private var colorScheme
 
+    private var isRegularLayout: Bool { LayoutConstants.isIPad }
+
+    private var chipSpacing: CGFloat { isRegularLayout ? 14 : 8 }
+    private var chipFontSize: CGFloat { isRegularLayout ? 17 : 14 }
+    private var chipHorizontalPadding: CGFloat { isRegularLayout ? 24 : 14 }
+    private var chipVerticalPadding: CGFloat { isRegularLayout ? 14 : 10 }
+    private var chipAssetIconSize: CGFloat { isRegularLayout ? 24 : 20 }
+    private var chipSystemIconSize: CGFloat { isRegularLayout ? 18 : 15 }
+    private var lockIconSize: CGFloat { isRegularLayout ? 13 : 11 }
+    private var horizontalInset: CGFloat { isRegularLayout ? 32 : 16 }
+
     private var selectedFill: Color { colorScheme == .dark ? .white : .black }
     private var selectedLabel: Color { colorScheme == .dark ? .black : .white }
 
     var body: some View {
         filterContent
-            .padding(.top, 2)
-            .padding(.bottom, 8)
+            .padding(.top, isRegularLayout ? 4 : 2)
+            .padding(.bottom, isRegularLayout ? 10 : 8)
     }
 
     private var filterContent: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: chipSpacing) {
             ForEach(ProcessMainSection.allCases) { item in
                 filterChip(item)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, horizontalInset)
         .padding(.vertical, 2)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: isRegularLayout ? .center : .leading)
         .animation(ProcessGlass.spring, value: selection)
     }
 
@@ -71,36 +82,36 @@ struct ProcessMainFilterBar: View {
         let isLocked = lockedSections.contains(item)
 
         return Button {
-            guard !isLocked else {
-                HapticManager.shared.notification(.warning)
-                return
-            }
             guard selection != item else { return }
-            HapticManager.shared.selection()
+            if isLocked {
+                HapticManager.shared.notification(.warning)
+            } else {
+                HapticManager.shared.selection()
+            }
             withAnimation(ProcessGlass.spring) {
                 selection = item
             }
         } label: {
-            HStack(spacing: 7) {
+            HStack(spacing: isRegularLayout ? 9 : 7) {
                 if isLocked {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: lockIconSize, weight: .semibold))
                         .opacity(0.7)
                 } else {
                     chipIcon(for: item, isSelected: isSelected)
                 }
                 Text(item.label)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: chipFontSize, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
             .foregroundStyle(isSelected ? selectedLabel : Color.primary)
-            .opacity(isLocked ? 0.52 : 1)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .opacity(isLocked && !isSelected ? 0.58 : 1)
+            .padding(.horizontal, chipHorizontalPadding)
+            .padding(.vertical, chipVerticalPadding)
             .background {
                 ProcessFilterChipBackground(
-                    isSelected: isSelected && !isLocked,
+                    isSelected: isSelected,
                     glassAnimationsEnabled: glassAnimationsEnabled,
                     selectedFill: selectedFill,
                     namespace: chipNamespace
@@ -109,7 +120,6 @@ struct ProcessMainFilterBar: View {
         }
         .buttonStyle(.plain)
         .buttonStyle(ProcessGlassPressStyle())
-        .disabled(isLocked)
     }
 
     @ViewBuilder
@@ -119,10 +129,10 @@ struct ProcessMainFilterBar: View {
                 .resizable()
                 .renderingMode(.original)
                 .scaledToFit()
-                .frame(width: 20, height: 20)
+                .frame(width: chipAssetIconSize, height: chipAssetIconSize)
         } else {
             Image(systemName: item.icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: chipSystemIconSize, weight: .semibold))
         }
     }
 }

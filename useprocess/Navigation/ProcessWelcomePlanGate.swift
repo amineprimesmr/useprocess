@@ -25,7 +25,7 @@ private struct WelcomePlanSectionGateModifier: ViewModifier {
                         .foregroundStyle(.white.opacity(0.92))
                         .padding(.horizontal, 24)
                     }
-                    .allowsHitTesting(true)
+                    .allowsHitTesting(false)
                 }
             }
     }

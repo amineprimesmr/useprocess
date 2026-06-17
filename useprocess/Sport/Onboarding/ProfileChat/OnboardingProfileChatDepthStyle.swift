@@ -12,6 +12,23 @@ enum OnboardingProfileChatDepthStyle {
     static let messageSpacing: CGFloat = 20
     static let maxVisibleMessages = 5
     static let historySpring = Animation.spring(response: 0.56, dampingFraction: 0.88)
+    static let scrollableChoiceThreshold = 5
+
+    static func shouldScrollAnswers(choiceCount: Int) -> Bool {
+        choiceCount >= scrollableChoiceThreshold
+    }
+
+    static func answersScrollMaxHeight(
+        screenHeight: CGFloat,
+        contentTopPadding: CGFloat,
+        historySlotHeight: CGFloat,
+        slotSpacing: CGFloat,
+        bottomPadding: CGFloat,
+        activeMessageHeight: CGFloat = 96
+    ) -> CGFloat {
+        let reserved = contentTopPadding + historySlotHeight + slotSpacing + activeMessageHeight + bottomPadding + 24
+        return max(180, screenHeight - reserved)
+    }
 
     struct Appearance: Equatable {
         let opacity: Double
@@ -100,6 +117,27 @@ enum OnboardingProfileChatDepthStyle {
                 color: OnboardingTheme.mutedText.opacity(0.72),
                 isHidden: false
             )
+        }
+    }
+}
+
+struct OnboardingChatScrollableAnswerStack<Content: View>: View {
+    let choiceCount: Int
+    let maxHeight: CGFloat
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        if OnboardingProfileChatDepthStyle.shouldScrollAnswers(choiceCount: choiceCount) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 12) {
+                    content()
+                }
+            }
+            .frame(maxHeight: maxHeight)
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                content()
+            }
         }
     }
 }

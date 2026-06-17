@@ -9,23 +9,110 @@ import SwiftUI
 @MainActor
 @Observable
 final class OnboardingProfileChatViewModel {
+    enum AnalysisPhase: Equatable {
+        case idle
+        case running
+        case complete
+    }
+
     var messages: [OnboardingProfileChatMessage] = []
     var isMessageAnimating = false
     var isSubmittingAnswer = false
     var shouldFinish = false
     var currentQuestion: OnboardingProfileChatQuestion?
+    var analysisPhase: AnalysisPhase = .idle
+    var analysisProgressPanelVisible = false
+    var analysisProgress: Double = 0
+    var analysisDisplayedPercentage = 0
+    var analysisPhaseLabel = OnboardingAnalysisProgressConfig.phases[0]
+    var analysisShowPopup = false
+    var analysisPopupQuestion = ""
+    var analysisPopupSubtitle = OnboardingAnalysisProgressConfig.popups[0].subtitle
+    var analysisPopupAffirmativeTitle = "Oui"
+    var analysisPopupNegativeTitle = "Non"
+    var analysisPopupKind = OnboardingAnalysisProgressConfig.PopupKind.yesNo
+    var analysisPopupOffset: CGFloat = 200
+    var analysisPopupPhaseIndex = -1
+    var analysisIsPaused = false
+    var analysisLetsGoUnlocked = false
+    var shouldPresentFaceScan = false
 
     var showsAnswerOptions: Bool {
         !shouldFinish
             && !isMessageAnimating
             && !isSubmittingAnswer
+            && !shouldPresentFaceScan
             && currentQuestion != nil
             && isQuestionReadyForAnswers
+            && currentQuestion?.kind != .analysisProgress
+    }
+
+    var showsAnalysisSection: Bool {
+        !shouldFinish
+            && currentQuestion?.kind == .analysisProgress
+            && analysisProgressPanelVisible
+    }
+
+    var showsLetsGoButton: Bool {
+        analysisLetsGoUnlocked
+    }
+
+    func handleAnalysisPopupAnswer(_ answer: Bool) {
+        let popupKind = analysisPopupKind
+        let popupIndex = analysisPopupPhaseIndex
+
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            self.analysisPopupOffset = 200
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.analysisShowPopup = false
+            self.analysisPopupOffset = 200
+        }
+
+        Task {
+            if popupKind == .healthKit {
+                await handleHealthKitPopupAnswer(answer)
+            }
+
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            self.analysisIsPaused = false
+
+            let phases = OnboardingAnalysisProgressConfig.phases
+            guard popupIndex >= 0, popupIndex < phases.count else { return }
+
+            withAnimation(.easeInOut(duration: 0.35)) {
+                self.analysisProgress = Double(popupIndex + 1) / Double(phases.count)
+                let percentagePerPhase = 100.0 / Double(phases.count)
+                let total = Int((Double(popupIndex + 1) * percentagePerPhase).rounded())
+                self.analysisDisplayedPercentage = min(total, 100)
+            }
+        }
+    }
+
+    private func handleHealthKitPopupAnswer(_ answer: Bool) async {
+        guard let healthManager else { return }
+
+        onboardingViewModel?.isRequestingHealthKit = true
+
+        if answer {
+            await healthManager.requestAuthorizationAsync()
+            if let permissionsManager {
+                _ = await permissionsManager.requestLocationPermission()
+                _ = await permissionsManager.requestMotionPermission()
+            }
+            HapticManager.shared.notification(.success)
+        }
+
+        onboardingViewModel?.healthKitGranted = healthManager.isAuthorized
+        onboardingViewModel?.isRequestingHealthKit = false
     }
 
     private var isQuestionReadyForAnswers = false
 
     private var onboardingViewModel: OnboardingViewModel?
+    private var healthManager: HealthManager?
+    private var permissionsManager: PermissionsManager?
     private var questions: [OnboardingProfileChatQuestion] = []
     private var currentIndex = 0
     private var hasStarted = false
@@ -33,11 +120,18 @@ final class OnboardingProfileChatViewModel {
     private var pendingSportQuestion = false
     private var pendingObstaclesQuestion = false
     private var typewriterTask: Task<Void, Never>?
+    private var analysisTask: Task<Void, Never>?
     private var pendingTypewriterMessageID: UUID?
     private var pendingTypewriterText: String?
 
-    func bind(_ viewModel: OnboardingViewModel) {
+    func bind(
+        _ viewModel: OnboardingViewModel,
+        healthManager: HealthManager,
+        permissionsManager: PermissionsManager
+    ) {
         onboardingViewModel = viewModel
+        self.healthManager = healthManager
+        self.permissionsManager = permissionsManager
         guard !hasStarted else { return }
         questions = OnboardingProfileChatQuestionBank.questions(for: viewModel)
         currentIndex = 0
@@ -75,12 +169,17 @@ final class OnboardingProfileChatViewModel {
 
         try? await Task.sleep(nanoseconds: 320_000_000)
         await runTypewriter(initialDelay: true)
-        isQuestionReadyForAnswers = true
+        await finalizeQuestionPresentation()
     }
 
     private func presentOpeningLine() async {
         guard let viewModel = onboardingViewModel else { return }
         await appendAssistantMessage(OnboardingProfileChatQuestionBank.openingLine(for: viewModel))
+    }
+
+    func submitLetsGo() {
+        guard showsLetsGoButton else { return }
+        shouldFinish = true
     }
 
     func submitInfoContinue() async {
@@ -164,10 +263,69 @@ final class OnboardingProfileChatViewModel {
         await recordAnswer(display: display)
     }
 
+    func submitFaceScanNow() async {
+        guard !isSubmittingAnswer, currentQuestion?.id == "face_scan_offer" else { return }
+        isSubmittingAnswer = true
+
+        typewriterTask?.cancel()
+        isQuestionReadyForAnswers = false
+        currentQuestion = nil
+
+        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+            appendUserMessage("Lancer le scan")
+        }
+
+        try? await Task.sleep(nanoseconds: 280_000_000)
+        shouldPresentFaceScan = true
+        isSubmittingAnswer = false
+    }
+
+    func submitFaceScanLater() async {
+        guard !isSubmittingAnswer, currentQuestion?.id == "face_scan_offer" else { return }
+        isSubmittingAnswer = true
+        onboardingViewModel?.isFaceAnalysisCompleted = true
+        await recordAnswer(display: "Plus tard")
+    }
+
+    func faceScanDidComplete(payload: FaceScanCapturePayload, markers: FaceWellnessMarkers) {
+        shouldPresentFaceScan = false
+        onboardingViewModel?.onboardingFaceMesh = payload.mesh
+        onboardingViewModel?.onboardingFaceMarkers = markers
+        onboardingViewModel?.isFaceAnalysisCompleted = true
+        OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
+        Task { await advanceAfterFaceScanResponse() }
+    }
+
+    func faceScanDidSkip() {
+        shouldPresentFaceScan = false
+        onboardingViewModel?.onboardingFaceMesh = nil
+        onboardingViewModel?.onboardingFaceMarkers = nil
+        onboardingViewModel?.isFaceAnalysisCompleted = true
+        Task { await advanceAfterFaceScanResponse() }
+    }
+
+    func faceScanDidCancel() {
+        shouldPresentFaceScan = false
+        isSubmittingAnswer = false
+
+        guard currentIndex < questions.count,
+              questions[currentIndex].id == "face_scan_offer" else { return }
+
+        if messages.last?.role == .user, messages.last?.text == "Lancer le scan" {
+            withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+                messages.removeLast()
+            }
+        }
+
+        currentQuestion = questions[currentIndex]
+        isQuestionReadyForAnswers = true
+    }
+
     func finish(onComplete: () -> Void) {
         guard !didFinish else { return }
         didFinish = true
         typewriterTask?.cancel()
+        analysisTask?.cancel()
 
         if onboardingViewModel?.hasSportActivity == nil {
             onboardingViewModel?.hasSportActivity = false
@@ -184,12 +342,23 @@ final class OnboardingProfileChatViewModel {
         }
 
         onboardingViewModel?.isWeightMotivationCompleted = true
+        onboardingViewModel?.isProgramCreationCompleted = true
         onboardingViewModel?.commitPendingStepAnswers()
         onboardingViewModel?.saveProgress()
         onComplete()
     }
 
     // MARK: - Private
+
+    private func advanceAfterFaceScanResponse() async {
+        isSubmittingAnswer = true
+        let shouldType = prepareNextQuestionMessage()
+        if shouldType {
+            await runTypewriter(initialDelay: false)
+            await finalizeQuestionPresentation()
+        }
+        isSubmittingAnswer = false
+    }
 
     private func recordAnswer(display: String) async {
         typewriterTask?.cancel()
@@ -205,10 +374,162 @@ final class OnboardingProfileChatViewModel {
 
         if shouldTypeNextQuestion {
             await runTypewriter(initialDelay: false)
-            isQuestionReadyForAnswers = true
+            await finalizeQuestionPresentation()
         }
 
         isSubmittingAnswer = false
+    }
+
+    private func finalizeQuestionPresentation() async {
+        if currentQuestion?.kind == .analysisProgress {
+            isQuestionReadyForAnswers = true
+            beginAnalysisProgressPanel()
+            startAnalysisProgressAnimation()
+            await analysisTask?.value
+            guard analysisPhase == .complete else { return }
+            await presentAnalysisDetailMessage()
+            return
+        }
+        isQuestionReadyForAnswers = true
+    }
+
+    private func beginAnalysisProgressPanel() {
+        let phases = OnboardingAnalysisProgressConfig.phases
+
+        analysisPhase = .running
+        analysisProgress = 0
+        analysisDisplayedPercentage = 0
+        analysisPhaseLabel = phases[0]
+        analysisProgressPanelVisible = true
+        analysisIsPaused = false
+        analysisShowPopup = false
+        analysisPopupOffset = 200
+        analysisLetsGoUnlocked = false
+    }
+
+    private func presentAnalysisDetailMessage() async {
+        guard let detail = currentQuestion?.detailText, !detail.isEmpty else { return }
+
+        isMessageAnimating = true
+        analysisLetsGoUnlocked = false
+
+        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+            analysisProgressPanelVisible = false
+        }
+
+        try? await Task.sleep(nanoseconds: 320_000_000)
+        guard currentQuestion?.kind == .analysisProgress else { return }
+
+        let messageID = UUID()
+        pendingTypewriterMessageID = messageID
+        pendingTypewriterText = detail
+
+        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+            messages.append(
+                .init(
+                    id: messageID,
+                    role: .assistant,
+                    text: "",
+                    layoutAnchorText: detail
+                )
+            )
+        }
+
+        await runTypewriter(initialDelay: false)
+
+        try? await Task.sleep(nanoseconds: 180_000_000)
+        guard currentQuestion?.kind == .analysisProgress else { return }
+
+        withAnimation(OnboardingProfileChatAnswerReveal.spring) {
+            analysisLetsGoUnlocked = true
+        }
+    }
+
+    private func startAnalysisProgressAnimation() {
+        analysisTask?.cancel()
+
+        let phases = OnboardingAnalysisProgressConfig.phases
+        let popups = OnboardingAnalysisProgressConfig.popups
+        let tickInterval = OnboardingAnalysisProgressConfig.tickIntervalNs
+        let segmentStep = OnboardingAnalysisProgressConfig.segmentStep
+
+        analysisTask = Task {
+            try? await Task.sleep(nanoseconds: OnboardingAnalysisProgressConfig.startDelayNs)
+            guard !Task.isCancelled else { return }
+
+            for index in 0..<phases.count {
+                guard !Task.isCancelled else { return }
+
+                analysisPhaseLabel = phases[index]
+
+                var segmentProgress = 0.0
+                while segmentProgress < 0.5 {
+                    while analysisIsPaused {
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        guard !Task.isCancelled else { return }
+                    }
+
+                    try? await Task.sleep(nanoseconds: tickInterval)
+                    segmentProgress += segmentStep
+
+                    let percentagePerPhase = 100.0 / Double(phases.count)
+                    let base = Double(index) * percentagePerPhase
+                    let total = Int((base + segmentProgress * percentagePerPhase).rounded())
+
+                    analysisProgress = (Double(index) + segmentProgress) / Double(phases.count)
+                    analysisDisplayedPercentage = min(total, 100)
+                }
+
+                analysisIsPaused = true
+                let popup = popups[index]
+                analysisPopupQuestion = popup.question
+                analysisPopupSubtitle = popup.subtitle
+                analysisPopupAffirmativeTitle = popup.affirmativeTitle
+                analysisPopupNegativeTitle = popup.negativeTitle
+                analysisPopupKind = popup.kind
+                analysisPopupPhaseIndex = index
+                analysisPopupOffset = 200
+                analysisShowPopup = true
+
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.75)) {
+                    analysisPopupOffset = 0
+                }
+
+                while analysisIsPaused {
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    guard !Task.isCancelled else { return }
+                }
+
+                while segmentProgress < 1.0 {
+                    while analysisIsPaused {
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        guard !Task.isCancelled else { return }
+                    }
+
+                    try? await Task.sleep(nanoseconds: tickInterval)
+                    segmentProgress += segmentStep
+
+                    let percentagePerPhase = 100.0 / Double(phases.count)
+                    let base = Double(index) * percentagePerPhase
+                    let total = Int((base + segmentProgress * percentagePerPhase).rounded())
+
+                    analysisProgress = (Double(index) + segmentProgress) / Double(phases.count)
+                    if index == phases.count - 1 && segmentProgress >= 1.0 {
+                        analysisDisplayedPercentage = 100
+                        analysisProgress = 1
+                    } else {
+                        analysisDisplayedPercentage = min(total, 100)
+                    }
+                }
+            }
+
+            guard !Task.isCancelled else { return }
+            HapticManager.shared.notification(.success)
+            analysisProgress = 1
+            analysisDisplayedPercentage = 100
+            analysisPhase = .complete
+            isMessageAnimating = true
+        }
     }
 
     @discardableResult
@@ -235,7 +556,24 @@ final class OnboardingProfileChatViewModel {
         }
 
         currentQuestion = questions[currentIndex]
-        guard let question = currentQuestion else { return false }
+        guard var question = currentQuestion else { return false }
+
+        if question.id == "answers_analysis", let viewModel = onboardingViewModel {
+            question = OnboardingProfileChatQuestionBank.analysisQuestion(for: viewModel)
+            questions[currentIndex] = question
+            currentQuestion = question
+        }
+
+        if question.kind == .analysisProgress {
+            analysisPhase = .idle
+            analysisProgress = 0
+            analysisDisplayedPercentage = 0
+            analysisProgressPanelVisible = false
+            analysisShowPopup = false
+            analysisPopupOffset = 200
+            analysisPhaseLabel = OnboardingAnalysisProgressConfig.phases[0]
+            analysisLetsGoUnlocked = false
+        }
 
         let messageID = UUID()
         pendingTypewriterMessageID = messageID
@@ -258,7 +596,7 @@ final class OnboardingProfileChatViewModel {
         let shouldType = prepareNextQuestionMessage()
         if shouldType {
             await runTypewriter(initialDelay: true)
-            isQuestionReadyForAnswers = true
+            await finalizeQuestionPresentation()
         }
     }
 

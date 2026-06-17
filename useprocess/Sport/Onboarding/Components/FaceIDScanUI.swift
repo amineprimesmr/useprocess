@@ -8,8 +8,8 @@
 import SwiftUI
 
 enum FaceIDScanColors {
-    static let activeTick = Color(red: 0.20, green: 0.84, blue: 0.42)
-    static let inactiveTick = Color.white.opacity(0.22)
+    static let activeTick = Color(red: 0.19, green: 0.82, blue: 0.35)
+    static let inactiveTick = Color(white: 0.24)
     static let scanWave = Color(red: 0.35, green: 0.92, blue: 1.0)
     static let shellFill = Color(red: 0.11, green: 0.11, blue: 0.12)
     static let meshTint = Color(red: 0.20, green: 0.84, blue: 1.0)
@@ -118,14 +118,33 @@ struct FaceScannerViewport<Camera: View, Overlay: View>: View {
     }
 }
 
-// MARK: - Anneau de ticks (progression rotation tête)
+// MARK: - Anneau de ticks (progression rotation tête — traits à l'extérieur du cercle)
 
 struct FaceIDTickProgressRing: View {
     /// Secteurs réellement visités (comme Face ID — pas un remplissage séquentiel).
     let activeSectors: Set<Int>
-    let diameter: CGFloat
+    /// Diamètre du cercle caméra ; les traits sont dessinés à l'extérieur.
+    let cameraDiameter: CGFloat
     var tickCount: Int = 72
     var isComplete: Bool = false
+    var isLightBackdrop: Bool = false
+
+    private let gapFromCircle: CGFloat = 8
+    private let activeTickLength: CGFloat = 13
+    private let inactiveTickLength: CGFloat = 10
+    private let tickWidth: CGFloat = 2.8
+
+    private var cameraRadius: CGFloat { cameraDiameter / 2 }
+
+    private var outerRadius: CGFloat {
+        cameraRadius + gapFromCircle + activeTickLength
+    }
+
+    private var ringDiameter: CGFloat { outerRadius * 2 }
+
+    private var inactiveTick: Color {
+        isLightBackdrop ? Color.black.opacity(0.14) : FaceIDScanColors.inactiveTick
+    }
 
     private var sectorSignature: Int {
         activeSectors.reduce(0) { $0 ^ ($1 &* 31) }
@@ -134,17 +153,29 @@ struct FaceIDTickProgressRing: View {
     var body: some View {
         ZStack {
             ForEach(0..<tickCount, id: \.self) { index in
-                let isActive = activeSectors.contains(index)
-
-                Capsule()
-                    .fill(isActive ? FaceIDScanColors.activeTick : FaceIDScanColors.inactiveTick)
-                    .frame(width: 2.2, height: isActive ? 11 : 8)
-                    .offset(y: -(diameter / 2) + 5)
-                    .rotationEffect(.degrees(Double(index) / Double(tickCount) * 360 - 90))
+                tickView(for: index)
             }
         }
-        .frame(width: diameter, height: diameter)
-        .animation(.easeOut(duration: 0.1), value: sectorSignature)
+        .frame(width: ringDiameter, height: ringDiameter)
+        .animation(.easeOut(duration: 0.12), value: sectorSignature)
+        .animation(.easeOut(duration: 0.12), value: isComplete)
+    }
+
+    @ViewBuilder
+    private func tickView(for index: Int) -> some View {
+        let isActive = isComplete || activeSectors.contains(index)
+        let length = isActive ? activeTickLength : inactiveTickLength
+        let radialOffset = cameraRadius + gapFromCircle + length / 2
+
+        Capsule()
+            .fill(isActive ? FaceIDScanColors.activeTick : inactiveTick)
+            .frame(width: tickWidth, height: length)
+            .shadow(
+                color: isActive ? FaceIDScanColors.activeTick.opacity(0.5) : .clear,
+                radius: 2.5
+            )
+            .offset(y: -radialOffset)
+            .rotationEffect(.degrees(Double(index) / Double(tickCount) * 360 - 90))
     }
 }
 
@@ -236,16 +267,21 @@ struct FaceIDSuccessRing: View {
 
 struct FaceIDFrameHint: View {
     let text: String
+    var isLightBackdrop: Bool = false
 
     var body: some View {
         Text(text)
             .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(OnboardingTheme.primaryText)
+            .foregroundStyle(isLightBackdrop ? Color.black.opacity(0.75) : OnboardingTheme.primaryText)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
-            .environment(\.colorScheme, .dark)
+            .background {
+                Capsule()
+                    .fill(isLightBackdrop ? Color.black.opacity(0.06) : Color.clear)
+                    .background(.ultraThinMaterial, in: Capsule())
+            }
+            .environment(\.colorScheme, isLightBackdrop ? .light : .dark)
     }
 }
 

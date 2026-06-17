@@ -17,6 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "67E2AE302FDD89E60016422D"
                BuildableName = "useprocess.app"
+               BlueprintName = "useprocess"
                ReferencedContainer = "container:useprocess.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,6 +47,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "67E2AE302FDD89E60016422D"
             BuildableName = "useprocess.app"
+            BlueprintName = "useprocess"
             ReferencedContainer = "container:useprocess.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -65,6 +67,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "67E2AE302FDD89E60016422D"
             BuildableName = "useprocess.app"
+            BlueprintName = "useprocess"
             ReferencedContainer = "container:useprocess.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

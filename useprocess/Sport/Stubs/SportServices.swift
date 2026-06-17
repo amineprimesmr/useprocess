@@ -48,6 +48,23 @@ final class DailyDataManager: ObservableObject {
 
 // MARK: - Auth
 
+enum AccountDeletionError: LocalizedError {
+    case notSignedIn
+    case cancelled
+    case remoteDeletionFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .notSignedIn:
+            return "Aucune session active."
+        case .cancelled:
+            return "Suppression annulée."
+        case .remoteDeletionFailed(let message):
+            return message
+        }
+    }
+}
+
 private enum AuthKeys {
     private static let prefix = (Bundle.main.bundleIdentifier ?? "useprocess") + "."
 
@@ -93,6 +110,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 guard let self else { return }
+                guard !AppSession.shared.isAccountWipeInProgress else { return }
                 self.isAuthenticated = user != nil
                 if user != nil {
                     await UnifiedProfileService.shared.loadProfile()
@@ -116,20 +134,68 @@ final class AuthenticationManager: NSObject, ObservableObject {
         UnifiedProfileService.shared.clearLocalProfile()
     }
 
-    func deleteRemoteUserIfNeeded() async {
-        guard AppConfiguration.firebaseConfigured, let user = Auth.auth().currentUser else { return }
-        try? await FirebaseProfileRepository.shared.deleteProfile(userId: user.uid)
+    func deleteRemoteAccount() async throws {
+        guard AppConfiguration.firebaseConfigured else { return }
+        guard Auth.auth().currentUser != nil else { return }
+
+        if usesAppleProvider {
+            try await reauthenticateWithApple()
+        }
+
+        guard let user = Auth.auth().currentUser else {
+            throw AccountDeletionError.notSignedIn
+        }
+
+        do {
+            try await deleteAuthenticatedUser(user)
+        } catch let error as AccountDeletionError {
+            throw error
+        } catch {
+            throw AccountDeletionError.remoteDeletionFailed(error.localizedDescription)
+        }
+    }
+
+    private func deleteAuthenticatedUser(_ user: User) async throws {
+        // Firestore peut refuser la suppression côté client — on tente quand même Auth.delete().
+        try? await FirebaseProfileRepository.shared.deleteAllRemoteUserData(userId: user.uid)
+
         do {
             try await user.delete()
+        } catch let error as NSError
+            where error.domain == AuthErrorDomain
+                && AuthErrorCode(rawValue: error.code) == .requiresRecentLogin {
+            try await reauthenticateWithApple()
+            guard let refreshedUser = Auth.auth().currentUser else {
+                throw AccountDeletionError.notSignedIn
+            }
+            try? await FirebaseProfileRepository.shared.deleteAllRemoteUserData(userId: refreshedUser.uid)
+            try await refreshedUser.delete()
         } catch {
-            try? Auth.auth().signOut()
+            throw error
         }
+    }
+
+    private var usesAppleProvider: Bool {
+        Auth.auth().currentUser?.providerData.contains { $0.providerID == "apple.com" } == true
+    }
+
+    private func reauthenticateWithApple() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            AppleSignInManager.shared.startReauthenticationFlow { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    func deleteRemoteUserIfNeeded() async {
+        try? await deleteRemoteAccount()
     }
 
     func applyPostAccountDeletion() {
         isAuthenticated = false
         isInOnboarding = false
         hasCompletedOnboarding = false
+        isLoading = false
         if AppConfiguration.firebaseConfigured {
             try? Auth.auth().signOut()
         }
@@ -280,12 +346,22 @@ final class PermissionsManager: NSObject, ObservableObject, CLLocationManagerDel
     func requestNotificationPermission() async -> Bool {
         let center = UNUserNotificationCenter.current()
         do {
-            let granted = try await center.requestAuthorization(options: [.alert, .sound])
+            let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
             notificationsGranted = granted
             return granted
         } catch {
             return false
         }
+    }
+
+    func refreshNotificationAuthorizationStatus() async {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        notificationsGranted = status == .authorized
+    }
+
+    func canScheduleNotifications() async -> Bool {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        return status == .authorized
     }
 
     /// Remet la pastille à zéro — iOS peut conserver un badge d'une ancienne install ou d'un test.

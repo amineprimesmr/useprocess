@@ -56,13 +56,14 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
                     }
                 }
                 .padding(.horizontal, 40)
-                .padding(.top, OnboardingConstants.titleTopPaddingFromScreenTop)
+                .padding(.top, OnboardingConstants.backOnlyContentTopInset)
 
                 Spacer()
                     .frame(height: 16)
 
                 graph()
                     .frame(height: graphHeight)
+                    .clipped()
 
                 bottom()
 

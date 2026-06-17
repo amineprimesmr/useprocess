@@ -8,8 +8,7 @@ enum WelcomePlanQuestionBank {
             id: "welcome_ready",
             phase: .welcome,
             kind: .singleChoice,
-            prompt: "Quelques questions pour calibrer ton protocole. 100 % naturel, zéro pilule.",
-            coachIntro: "Salut — je suis ton coach Process. On configure ton plan en quelques minutes.",
+            prompt: "Quelques questions pour calibrer ton protocole.",
             choices: [
                 .init(id: "start", label: "Commencer")
             ]
@@ -21,7 +20,6 @@ enum WelcomePlanQuestionBank {
             phase: .profile,
             kind: .multiChoice,
             prompt: "Qu'est-ce qui te dérange le plus sur ton visage ou ton corps en ce moment ?",
-            coachIntro: "Dis-moi ce qui te dérange le plus aujourd'hui.",
             choices: [
                 .init(id: "dark_circles", label: "Cernes"),
                 .init(id: "puffiness", label: "Visage gonflé"),
@@ -45,18 +43,6 @@ enum WelcomePlanQuestionBank {
                 .init(id: "high", label: "Gras visible")
             ]
         ),
-        WelcomePlanQuestion(
-            id: "motivation",
-            phase: .profile,
-            kind: .singleChoice,
-            prompt: "Aujourd'hui, tu te sens plutôt…",
-            choices: [
-                .init(id: "high", label: "Très motivé"),
-                .init(id: "medium", label: "Motivé mais pas régulier"),
-                .init(id: "low", label: "J'ai besoin qu'on m'accompagne"),
-                .init(id: "restart", label: "Je repars de zéro")
-            ]
-        ),
 
         // MARK: Hormones & sommeil
         WelcomePlanQuestion(
@@ -64,8 +50,6 @@ enum WelcomePlanQuestionBank {
             phase: .hormonesSleep,
             kind: .singleChoice,
             prompt: "Comment tu dors en ce moment ?",
-            coachIntro: "Le visage se répare la nuit. Sans sommeil profond, le reste ne marchera pas."
-        ,
             choices: OnboardingSleepQuality.allCases.map {
                 .init(id: $0.rawValue, label: "\($0.emoji) \($0.rawValue)")
             }
@@ -127,15 +111,6 @@ enum WelcomePlanQuestionBank {
                 .init(id: $0.rawValue, label: "\($0.emoji) \($0.rawValue)")
             }
         ),
-        WelcomePlanQuestion(
-            id: "fatigue_peaks",
-            phase: .hormonesSleep,
-            kind: .multiChoice,
-            prompt: "À quel moment tu es le plus cuit ?",
-            choices: FatiguePeaks.allCases.map {
-                .init(id: $0.rawValue, label: "\($0.emoji) \($0.rawValue)")
-            }
-        ),
 
         // MARK: Alimentation
         WelcomePlanQuestion(
@@ -143,8 +118,6 @@ enum WelcomePlanQuestionBank {
             phase: .nutrition,
             kind: .singleChoice,
             prompt: "Honnêtement, ton alimentation actuelle c'est plutôt…",
-            coachIntro: "Ce que tu manges sculpte ton visage. Dense, naturel, digeste — pas de pilules."
-        ,
             choices: NutritionQuality.allCases.map {
                 .init(id: $0.rawValue, label: "\($0.emoji) \($0.comment)")
             }
@@ -159,18 +132,6 @@ enum WelcomePlanQuestionBank {
                 .init(id: "few_week", label: "Quelques fois par semaine"),
                 .init(id: "daily", label: "Presque tous les jours"),
                 .init(id: "most_meals", label: "À la plupart de mes repas")
-            ]
-        ),
-        WelcomePlanQuestion(
-            id: "sugar_frequency",
-            phase: .nutrition,
-            kind: .singleChoice,
-            prompt: "Le sucre ajouté (sodas, desserts, céréales sucrées) ?",
-            choices: [
-                .init(id: "rare", label: "Rarement"),
-                .init(id: "few_week", label: "Quelques fois par semaine"),
-                .init(id: "daily", label: "Tous les jours"),
-                .init(id: "cravings", label: "J'ai des fringales tout le temps")
             ]
         ),
         WelcomePlanQuestion(
@@ -197,58 +158,13 @@ enum WelcomePlanQuestionBank {
                 .init(id: $0.rawValue, label: $0.rawValue)
             }
         ),
-        WelcomePlanQuestion(
-            id: "cooking_frequency",
-            phase: .nutrition,
-            kind: .singleChoice,
-            prompt: "Tu cuisines toi-même tes repas ?",
-            choices: [
-                .init(id: "daily", label: "Presque tous les jours"),
-                .init(id: "often", label: "Souvent"),
-                .init(id: "sometimes", label: "Parfois"),
-                .init(id: "rarely", label: "Rarement")
-            ]
-        ),
-        WelcomePlanQuestion(
-            id: "dietary_restrictions",
-            phase: .nutrition,
-            kind: .multiChoice,
-            prompt: "Tu as des restrictions alimentaires ?",
-            choices: DietaryRestriction.allCases.filter {
-                $0 != .halal && $0 != .kosher && $0 != .nutAllergy && $0 != .eggAllergy && $0 != .soyAllergy
-            }.map {
-                .init(id: $0.rawValue, label: $0.rawValue)
-            }
-        ),
-        WelcomePlanQuestion(
-            id: "nutrition_obstacles",
-            phase: .nutrition,
-            kind: .multiChoice,
-            prompt: "Qu'est-ce qui t'empêche le plus de bien manger ?",
-            choices: NutritionObstacle.allCases.map {
-                .init(id: $0.rawValue, label: $0.rawValue)
-            }
-        ),
-        WelcomePlanQuestion(
-            id: "supplements_use",
-            phase: .nutrition,
-            kind: .singleChoice,
-            prompt: "Tu prends des compléments alimentaires ou vitamines ?",
-            choices: [
-                .init(id: "none", label: "Non"),
-                .init(id: "basic", label: "Multivitamines"),
-                .init(id: "many", label: "Plusieurs produits"),
-                .init(id: "want_stop", label: "Oui, j'arrête")
-            ]
-        ),
 
         // MARK: Posture & visage
         WelcomePlanQuestion(
             id: "desk_job",
             phase: .postureFace,
             kind: .yesNo,
-            prompt: "Tu passes plus de 6 h par jour assis devant un écran ?",
-            coachIntro: "La posture du cou influence ton maxillaire et ton visage."
+            prompt: "Tu passes plus de 6 h par jour assis devant un écran ?"
         ),
         WelcomePlanQuestion(
             id: "forward_head",
@@ -262,28 +178,6 @@ enum WelcomePlanQuestionBank {
             kind: .yesNo,
             prompt: "Tu respires par la bouche le jour ou la nuit ?"
         ),
-        WelcomePlanQuestion(
-            id: "tongue_posture",
-            phase: .postureFace,
-            kind: .singleChoice,
-            prompt: "Tu pratiques le mewing (langue au palais) au repos ?",
-            choices: [
-                .init(id: "practice", label: "Oui, au quotidien"),
-                .init(id: "aware", label: "J'en ai entendu parler"),
-                .init(id: "no", label: "Non, c'est quoi ?")
-            ]
-        ),
-        WelcomePlanQuestion(
-            id: "chewing_habit",
-            phase: .postureFace,
-            kind: .singleChoice,
-            prompt: "Tu mâches longtemps avant d'avaler (mastication lente) ?",
-            choices: [
-                .init(id: "always", label: "Oui, je prends mon temps"),
-                .init(id: "sometimes", label: "Parfois"),
-                .init(id: "fast", label: "Non, je mange vite")
-            ]
-        ),
 
         // MARK: Training
         WelcomePlanQuestion(
@@ -291,8 +185,6 @@ enum WelcomePlanQuestionBank {
             phase: .training,
             kind: .singleChoice,
             prompt: "Ton niveau en musculation / sport ?",
-            coachIntro: "L'entraînement adapte le corps — mais seulement si le sommeil et l'alimentation suivent."
-        ,
             choices: ExperienceLevel.allCases.map {
                 .init(id: $0.rawValue, label: $0.rawValue)
             }
@@ -336,19 +228,6 @@ enum WelcomePlanQuestionBank {
                 .init(id: "other", label: "Autre")
             ]
         ),
-        WelcomePlanQuestion(
-            id: "cardio_preference",
-            phase: .training,
-            kind: .singleChoice,
-            prompt: "Pour le cardio, tu préfères quoi ?",
-            choices: [
-                .init(id: "walking", label: "Marche / rando"),
-                .init(id: "running", label: "Course"),
-                .init(id: "cycling", label: "Vélo"),
-                .init(id: "minimal", label: "Le minimum possible"),
-                .init(id: "mixed", label: "Un peu de tout")
-            ]
-        ),
 
         // MARK: Psychologie
         WelcomePlanQuestion(
@@ -356,8 +235,6 @@ enum WelcomePlanQuestionBank {
             phase: .psychology,
             kind: .singleChoice,
             prompt: "Quand tu te lances dans une routine, tu tiens combien de temps en général ?",
-            coachIntro: "Presque fini. La régularité compte plus que l'intensité."
-        ,
             choices: [
                 .init(id: "weeks", label: "Quelques semaines"),
                 .init(id: "months", label: "Quelques mois"),
@@ -379,12 +256,6 @@ enum WelcomePlanQuestionBank {
             ]
         ),
         WelcomePlanQuestion(
-            id: "social_support",
-            phase: .psychology,
-            kind: .yesNo,
-            prompt: "Tu as quelqu'un qui te soutient dans ce changement ?"
-        ),
-        WelcomePlanQuestion(
             id: "commit_plan",
             phase: .psychology,
             kind: .yesNo,
@@ -397,20 +268,11 @@ enum WelcomePlanQuestionBank {
             phase: .closing,
             kind: .singleChoice,
             prompt: "Tu veux faire un scan visage maintenant pour calibrer ton plan ?",
-            coachIntro: "J'ai ce qu'il me faut. Je génère ton Protocole Origine."
-        ,
             choices: [
                 .init(id: "yes", label: "Maintenant"),
                 .init(id: "later", label: "Plus tard"),
                 .init(id: "skip", label: "Non merci")
             ]
-        ),
-        WelcomePlanQuestion(
-            id: "extra_notes",
-            phase: .closing,
-            kind: .text,
-            prompt: "Un truc important que je devrais savoir ? (optionnel)",
-            allowsSkip: true
         )
     ]
 
@@ -423,24 +285,40 @@ enum WelcomePlanQuestionBank {
         }
     }
 
+    static func configurationProgress(answers: [String: WelcomePlanAnswer], isComplete: Bool) -> Double {
+        guard !isComplete else { return 1 }
+        let questions = activeQuestions(answers: answers)
+        guard !questions.isEmpty else { return 0 }
+        let answered = questions.filter { answers[$0.id] != nil }.count
+        return Double(answered) / Double(questions.count)
+    }
+
+    static func configurationStepLabel(answers: [String: WelcomePlanAnswer], isComplete: Bool) -> String {
+        let questions = activeQuestions(answers: answers)
+        guard !questions.isEmpty else { return "0 / 0" }
+        if isComplete { return "\(questions.count) / \(questions.count)" }
+        let answered = questions.filter { answers[$0.id] != nil }.count
+        return "\(answered) / \(questions.count)"
+    }
+
+    static func phaseLabel(for phase: WelcomePlanPhase) -> String {
+        switch phase {
+        case .welcome: return "Démarrage"
+        case .profile: return "Profil"
+        case .hormonesSleep: return "Sommeil & hormones"
+        case .nutrition: return "Alimentation"
+        case .postureFace: return "Posture"
+        case .training: return "Entraînement"
+        case .psychology: return "Régularité"
+        case .closing: return "Finalisation"
+        }
+    }
+
     static func choiceLabel(for questionId: String, choiceId: String) -> String {
         guard let question = all.first(where: { $0.id == questionId }),
               let choice = question.choices.first(where: { $0.id == choiceId || $0.label == choiceId }) else {
             return choiceId
         }
         return choice.label
-    }
-
-    static func phaseTransitionMessage(for phase: WelcomePlanPhase) -> String? {
-        switch phase {
-        case .welcome: return nil
-        case .profile: return "Ton profil."
-        case .hormonesSleep: return "Sommeil et rythme."
-        case .nutrition: return "Alimentation."
-        case .postureFace: return "Posture et maxillaire."
-        case .training: return "Entraînement."
-        case .psychology: return "Régularité."
-        case .closing: return nil
-        }
     }
 }

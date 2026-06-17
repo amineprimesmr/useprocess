@@ -54,6 +54,7 @@ extension SportOnboardingView {
              .nutritionPotential,
              .goalPace, .hasSportActivity, .sportSelection,
              .weightManagementExperience, .weightFailureReasons, .nutritionQuality,
+             .goalProjection,
              .sleepNeed, .planGeneration,
              .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
              .alarmConfiguration, .sleepWindowReveal,
@@ -108,32 +109,20 @@ extension SportOnboardingView {
                 onboardingViewModel: viewModel,
                 onComplete: nextStep
             )
-        case .goalProjection:
-            OnboardingEstimationStepView(
-                context: .make(
-                    phase: .optimized,
-                    viewModel: viewModel,
-                    selectedSports: OnboardingDataModel.shared.selectedSports
-                ),
-                onValidationChanged: { isValid in
-                    viewModel.isGoalProjectionCompleted = isValid
-                }
-            )
         case .weightEstimation:
             OnboardingEstimationStepView(
                 context: .make(
-                    phase: .baseline,
                     viewModel: viewModel,
                     selectedSports: OnboardingDataModel.shared.selectedSports
                 ),
                 onValidationChanged: { isValid in
                     viewModel.isWeightEstimationCompleted = isValid
+                    viewModel.isGoalProjectionCompleted = isValid
                 }
             )
         case .healthKitPermissions:
-            PermissionStepView(kind: .healthKit, onComplete: nextStep)
-                .environmentObject(permissionsManager)
-                .environmentObject(healthManager)
+            EmptyView()
+                .onAppear { skipTransientStep() }
         case .sleepDataRecovery:
             EmptyView()
                 .onAppear { skipTransientStep() }
@@ -155,19 +144,13 @@ extension SportOnboardingView {
             NotificationPermissionStepView(onComplete: nextStep, onBack: previousStep)
                 .environmentObject(permissionsManager)
         case .programCreation:
-            ProgramCreationStepView(
-                onComplete: nextStep,
-                onBack: previousStep,
-                onValidationChanged: { isValid in
-                    viewModel.isProgramCreationCompleted = isValid
-                }
-            )
+            EmptyView()
+                .onAppear { skipTransientStep() }
         case .payment:
             PaywallView(
                 onComplete: {
                     Task { await completeOnboarding() }
-                },
-                onBack: previousStep
+                }
             )
         case .complete:
             Color.clear

@@ -10,6 +10,7 @@ final class OnboardingProgressService {
     private var lastCompletedStepKey: String { prefix + "onboarding_last_completed_step" }
     private var visitedStepsKey: String { prefix + "onboarding_visited_steps" }
     private var answersKey: String { prefix + "onboarding_answers_cache" }
+    private var flowProgressKey: String { prefix + "onboarding_flow_progress" }
 
     private init() {}
 
@@ -37,11 +38,21 @@ final class OnboardingProgressService {
         userDefaults.array(forKey: visitedStepsKey) as? [Int] ?? []
     }
 
+    func saveFlowProgress(_ progress: Double) {
+        userDefaults.set(min(max(progress, 0), 1), forKey: flowProgressKey)
+    }
+
+    func loadFlowProgress() -> Double? {
+        guard userDefaults.object(forKey: flowProgressKey) != nil else { return nil }
+        return min(max(userDefaults.double(forKey: flowProgressKey), 0), 1)
+    }
+
     func resetProgress() {
         userDefaults.removeObject(forKey: currentStepKey)
         userDefaults.removeObject(forKey: lastCompletedStepKey)
         userDefaults.removeObject(forKey: visitedStepsKey)
         userDefaults.removeObject(forKey: answersKey)
+        userDefaults.removeObject(forKey: flowProgressKey)
     }
 
     func saveAnswers(_ snapshot: OnboardingAnswersSnapshot) {

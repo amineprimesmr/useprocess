@@ -1,5 +1,4 @@
 import SwiftUI
-import AVKit
 
 struct FaceScanHistoryView: View {
     @Environment(\.dismiss) private var dismiss
@@ -102,24 +101,7 @@ struct FaceScanDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    if let filename = result.videoFilename {
-                        let url = FaceScanImageStore.videoFileURL(filename: filename)
-                        if FileManager.default.fileExists(atPath: url.path) {
-                            VideoPlayer(player: AVPlayer(url: url))
-                                .frame(height: 260)
-                                .frame(maxWidth: .infinity)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                    } else if let filename = result.snapshotFilename,
-                              let image = FaceScanImageStore.load(filename: filename) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 220)
-                            .frame(maxWidth: .infinity)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
+                    FaceScanRecordingMediaView(result: result, height: 260)
 
                     FaceScanMetricsRow(
                         markers: result.markers,

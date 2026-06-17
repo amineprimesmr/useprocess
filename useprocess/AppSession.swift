@@ -18,14 +18,10 @@ final class AppSession {
         let completedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
         hasCompletedOnboarding = completedOnboarding
 
-        let welcomeKey = UserScopedStorage.key("welcome.plan.chat.completed", userId: uid)
-        if completedOnboarding, UserDefaults.standard.object(forKey: welcomeKey) == nil {
-            // Utilisateurs existants avant cette feature : pas de re-questionnaire.
-            hasCompletedWelcomePlanChat = true
-            UserDefaults.standard.set(true, forKey: welcomeKey)
-        } else {
-            hasCompletedWelcomePlanChat = UserDefaults.standard.bool(forKey: welcomeKey)
-        }
+        hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
+            completedOnboarding: completedOnboarding,
+            userId: uid
+        )
 
         let rawAppearance = UserDefaults.standard.string(forKey: Keys.appearance) ?? AppAppearance.system.rawValue
         appearance = AppAppearance(rawValue: rawAppearance) ?? .system
@@ -35,6 +31,10 @@ final class AppSession {
         hasCompletedOnboarding = true
         UserDefaults.standard.set(true, forKey: onboardingStorageKey)
         AuthenticationManager.shared.completeOnboarding()
+
+        // Le Protocole Origine reste obligatoire après l'onboarding.
+        hasCompletedWelcomePlanChat = false
+        UserDefaults.standard.set(false, forKey: welcomePlanChatStorageKey)
     }
 
     func completeWelcomePlanChat() {
@@ -60,14 +60,16 @@ final class AppSession {
         AuthenticationManager.shared.hasCompletedOnboarding = false
     }
 
-    /// Suppression complète du compte : données locales + Firebase + retour onboarding.
-    func deleteAccount() async {
+    /// Suppression complète du compte : Firebase d'abord, puis données locales + retour onboarding.
+    func deleteAccount() async throws {
         isAccountWipeInProgress = true
         defer { isAccountWipeInProgress = false }
 
         let primaryUID = UserScopedStorage.currentUserId()
             ?? UnifiedProfileService.shared.currentProfile?.userId
             ?? "local-user"
+
+        try await AuthenticationManager.shared.deleteRemoteAccount()
 
         WelcomePlanStore.shared.resetForCurrentUser()
         CoachConversationStore.resetThread()
@@ -83,27 +85,62 @@ final class AppSession {
 
         for uid in UserScopedStorage.likelyUserIds(primary: primaryUID) {
             UserScopedStorage.clearAllUserData(userId: uid)
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("onboarding.completed", userId: uid))
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan.chat.completed", userId: uid))
         }
 
         UnifiedProfileService.shared.clearLocalProfile()
-
-        await AuthenticationManager.shared.deleteRemoteUserIfNeeded()
         AuthenticationManager.shared.applyPostAccountDeletion()
-
         UserSessionCoordinator.shared.handleAccountDeleted()
     }
 
     func reloadForCurrentUser() {
         guard !isAccountWipeInProgress else { return }
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
-        let welcomeKey = welcomePlanChatStorageKey
-        if hasCompletedOnboarding, UserDefaults.standard.object(forKey: welcomeKey) == nil {
-            hasCompletedWelcomePlanChat = true
-            UserDefaults.standard.set(true, forKey: welcomeKey)
-        } else {
-            hasCompletedWelcomePlanChat = UserDefaults.standard.bool(forKey: welcomeKey)
-        }
+        hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
+            completedOnboarding: hasCompletedOnboarding,
+            userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId
+        )
         WelcomePlanStore.shared.reloadForCurrentUser()
+    }
+
+    /// Détermine si le questionnaire Protocole Origine est vraiment terminé (évite la fausse complétion au relaunch).
+    private static func resolveWelcomePlanChatCompleted(completedOnboarding: Bool, userId: String?) -> Bool {
+        guard completedOnboarding else { return false }
+
+        let uid = userId ?? "local-user"
+        let welcomeKey = UserScopedStorage.key("welcome.plan.chat.completed", userId: uid)
+        let questionnaire = loadPersistedQuestionnaire(userId: uid)
+        let hasCompletedQuestionnaire = questionnaire?.completedAt != nil
+        let hasSavedPlan = UserDefaults.standard.data(
+            forKey: UserScopedStorage.key("welcome.plan", userId: uid)
+        ) != nil
+
+        if UserDefaults.standard.object(forKey: welcomeKey) != nil {
+            let explicit = UserDefaults.standard.bool(forKey: welcomeKey)
+            if explicit, hasCompletedQuestionnaire || hasSavedPlan {
+                return true
+            }
+            if explicit {
+                // Auto-migration erronée : flag true sans questionnaire/plan → réparer.
+                UserDefaults.standard.set(false, forKey: welcomeKey)
+            }
+            return false
+        }
+
+        // Anciens comptes (avant le flag) : exemptés seulement s'ils ont déjà un plan sauvegardé.
+        if hasCompletedQuestionnaire || hasSavedPlan {
+            UserDefaults.standard.set(true, forKey: welcomeKey)
+            return true
+        }
+
+        return false
+    }
+
+    private static func loadPersistedQuestionnaire(userId: String) -> WelcomePlanQuestionnaireState? {
+        let key = UserScopedStorage.key("welcome.questionnaire", userId: userId)
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(WelcomePlanQuestionnaireState.self, from: data)
     }
 
     func setAppearance(_ mode: AppAppearance) {

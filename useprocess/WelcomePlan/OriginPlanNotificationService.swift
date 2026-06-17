@@ -9,8 +9,8 @@ enum OriginPlanNotificationService {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [notificationID])
 
-        let granted = await PermissionsManager.shared.requestNotificationPermission()
-        guard granted else { return }
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized else { return }
 
         let dayIndex = plan.calendar.currentProgramDayIndex()
         let dayNumber = dayIndex + 1

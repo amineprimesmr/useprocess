@@ -35,6 +35,8 @@ enum OnboardingProfileChatQuestionKind {
     case yesNo
     case singleChoice
     case multiChoice
+    case faceScanOffer
+    case analysisProgress
 }
 
 struct OnboardingProfileChatChoice: Identifiable, Equatable {
@@ -55,19 +57,22 @@ struct OnboardingProfileChatQuestion: Identifiable, Equatable {
     let kind: OnboardingProfileChatQuestionKind
     let choices: [OnboardingProfileChatChoice]
     let allowsSkip: Bool
+    let detailText: String?
 
     init(
         id: String,
         prompt: String,
         kind: OnboardingProfileChatQuestionKind,
         choices: [OnboardingProfileChatChoice] = [],
-        allowsSkip: Bool = false
+        allowsSkip: Bool = false,
+        detailText: String? = nil
     ) {
         self.id = id
         self.prompt = prompt
         self.kind = kind
         self.choices = choices
         self.allowsSkip = allowsSkip
+        self.detailText = detailText
     }
 }
 
@@ -114,7 +119,36 @@ enum OnboardingProfileChatQuestionBank {
             )
         )
 
+        items.append(faceScanQuestion(for: viewModel))
+        items.append(analysisQuestion(for: viewModel))
+
         return items
+    }
+
+    static func faceScanQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
+        .init(
+            id: "face_scan_offer",
+            prompt: faceScanPrompt(for: viewModel),
+            kind: .faceScanOffer,
+            detailText: "Tu pourras le faire plus tard depuis l'onglet Scan."
+        )
+    }
+
+    static func analysisQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
+        .init(
+            id: "answers_analysis",
+            prompt: "J'analyse tes réponses…",
+            kind: .analysisProgress,
+            detailText: analysisDetailText(for: viewModel)
+        )
+    }
+
+    static func analysisDetailText(for viewModel: OnboardingViewModel) -> String {
+        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if OnboardingViewModel.isRealUserFirstName(trimmed) {
+            return "\(trimmed), tout est prêt. On prépare ton plan sur mesure."
+        }
+        return "Tout est prêt. On prépare ton plan sur mesure."
     }
 
     static func openingLine(for viewModel: OnboardingViewModel) -> String {
@@ -194,5 +228,13 @@ enum OnboardingProfileChatQuestionBank {
     private static func experiencePrompt(for viewModel: OnboardingViewModel) -> String {
         let action = weightGoal(for: viewModel) == .gain ? "prendre" : "perdre"
         return "Déjà tenté de \(action) du poids ?"
+    }
+
+    private static func faceScanPrompt(for viewModel: OnboardingViewModel) -> String {
+        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if OnboardingViewModel.isRealUserFirstName(trimmed) {
+            return "\(trimmed), on peut scanner ton visage pour calibrer ton suivi — environ 30 secondes."
+        }
+        return "On peut scanner ton visage pour calibrer ton suivi — environ 30 secondes."
     }
 }

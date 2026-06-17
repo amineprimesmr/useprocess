@@ -232,15 +232,7 @@ extension View {
 
     /// Limite la largeur du contenu sur iPad (centré avec marges)
     func iPadContentWidth() -> some View {
-        Group {
-            if LayoutConstants.isIPad {
-                self
-                    .frame(maxWidth: LayoutConstants.maxContentWidth)
-                    .frame(maxWidth: .infinity)
-            } else {
-                self
-            }
-        }
+        regularWidthContainer(maxWidth: LayoutConstants.maxContentWidth)
     }
 
     /// Applique un espacement adaptatif entre éléments

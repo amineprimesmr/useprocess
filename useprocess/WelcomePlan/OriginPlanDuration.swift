@@ -22,24 +22,28 @@ struct OriginPlanDuration: Equatable {
         var minW = 8
         var maxW = 12
 
-        let motivation = answers["motivation"]?.choiceIds.first
         let consistency = answers["consistency_history"]?.choiceIds.first
         let bodyFat = answers["body_fat_feel"]?.choiceIds.first
         let concernCount = answers["face_concerns"]?.choiceIds.count ?? 0
         let sleepQuality = answers["sleep_quality"]?.choiceIds.first ?? ""
         let processed = answers["processed_food"]?.choiceIds.first
 
-        if motivation == "low" || motivation == "restart" {
+        switch consistency {
+        case "weeks":
+            minW += 2
+            maxW += 4
+        case "first_time":
             minW += 2
             maxW += 3
+        case "long":
+            if bodyFat == "athletic" || bodyFat == "very_lean" {
+                minW = max(6, minW - 1)
+                maxW = max(minW + 3, maxW - 2)
+            }
+        default:
+            break
         }
-        if consistency == "weeks" {
-            maxW += 2
-        }
-        if consistency == "first_time" {
-            minW += 1
-            maxW += 2
-        }
+
         if bodyFat == "soft" || bodyFat == "high" {
             minW += 1
             maxW += 2
@@ -54,11 +58,6 @@ struct OriginPlanDuration: Equatable {
         if processed == "daily" || processed == "most_meals" {
             minW += 1
             maxW += 2
-        }
-
-        if motivation == "high", bodyFat == "athletic" || bodyFat == "very_lean" {
-            minW = max(6, minW - 1)
-            maxW = max(minW + 3, maxW - 2)
         }
 
         minW = min(max(6, minW), 16)

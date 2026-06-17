@@ -28,12 +28,11 @@ struct SportOnboardingView: View {
     @State var isSportSearchActive = false
 
     /// Progression header — fraction 0…1.
-    @State var flowProgress: Double = 0
+    @State var flowProgress: Double = OnboardingProgressService.shared.loadFlowProgress() ?? 0
     @State var flowTotalSteps: Int = 1
     @State var flowGlowProgressCount: Int = 1
+    @State private var isOnboardingRestoreComplete = false
 
-    @State var isFirstNameAvailable: Bool = false
-    @State var firstNameDebounceTask: Task<Void, Never>?
     @State var animatedContinueBottomOffset: CGFloat = 50
 
     var navigationEngine: OnboardingNavigationEngine {
@@ -74,6 +73,7 @@ struct SportOnboardingView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, shouldAddTopPadding ? OnboardingConstants.titleTopPaddingFromScreenTop : 0)
                 .ignoresSafeArea(.all)
+                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
                 .ios26SafeAnimation(.onboardingTransition, value: viewModel.currentStep)
                 .id("onboarding_content_\(viewModel.currentStep)") // Force le re-render pour animations fluides
 
@@ -86,7 +86,9 @@ struct SportOnboardingView: View {
                 .accessibilityHidden(!shouldShowGlobalContinueButton)
                 .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
 
-            if !isImmersiveOnboardingStep {
+            if !isImmersiveOnboardingStep,
+               isOnboardingRestoreComplete,
+               !OnboardingHeaderLayout.usesDedicatedFullScreenChrome(currentStep: viewModel.currentStep) {
             if OnboardingHeaderLayout.showsAnyHeader(
                 currentStep: viewModel.currentStep,
                 shouldShowBackButton: shouldShowBackButton
@@ -109,11 +111,10 @@ struct SportOnboardingView: View {
                     .allowsHitTesting(false)
             }
             }
-            }
-            .ignoresSafeArea(.all)
+        }
+        .ignoresSafeArea(.all)
         .onAppear {
             Task { @MainActor in
-                refreshOnboardingFlowProgress()
                 if !authManager.isInOnboarding {
                     authManager.startOnboarding()
                 }
@@ -132,8 +133,13 @@ struct SportOnboardingView: View {
                 }
 
                 restoreOnboardingProgressFromSavedState()
+                reconcileVisitedStepsForRestore(
+                    viewModel: viewModel,
+                    navigationEngine: navigationEngine
+                )
                 refreshOnboardingFlowProgress()
                 updateContinueButtonLayout(animated: false)
+                isOnboardingRestoreComplete = true
             }
         }
         .onChange(of: profileService.currentProfile) { _, newValue in
@@ -147,52 +153,12 @@ struct SportOnboardingView: View {
                 refreshOnboardingFlowProgress()
             }
         }
-        .onChange(of: viewModel.firstName) { _, newValue in
-            let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if trimmed.isEmpty {
-                isFirstNameAvailable = false
-                firstNameDebounceTask?.cancel()
-                firstNameDebounceTask = nil
-                return
-            }
-
-            firstNameDebounceTask?.cancel()
-
-            isFirstNameAvailable = false
-
-            firstNameDebounceTask = Task {
-                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 seconde
-
-                guard !Task.isCancelled else { return }
-                guard viewModel.currentStep == OnboardingStep.firstNameInput.rawValue else { return }
-
-                let currentTrimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !currentTrimmed.isEmpty else { return }
-
-                withAnimation(.easeInOut(duration: 0.4)) {
-                        isFirstNameAvailable = true
-                }
-            }
-        }
-        .onChange(of: viewModel.currentStep) { oldValue, newValue in
+        .onChange(of: viewModel.currentStep) { _, _ in
             viewModel.saveProgress()
             updateContinueButtonLayout(animated: true)
 
-            if newValue != OnboardingStep.firstNameInput.rawValue {
-                isFirstNameAvailable = false
-                firstNameDebounceTask?.cancel()
-                firstNameDebounceTask = nil
-            }
-
             Task { @MainActor in
                 refreshOnboardingFlowProgress()
-            }
-
-            if oldValue == OnboardingStep.firstNameInput.rawValue && newValue != OnboardingStep.firstNameInput.rawValue {
-                isFirstNameAvailable = false
-                firstNameDebounceTask?.cancel()
-                firstNameDebounceTask = nil
             }
         }
         .onChange(of: viewModel.visitedSteps) { _, _ in
@@ -232,20 +198,15 @@ struct SportOnboardingView: View {
     private var continueButtonOverlay: some View {
         VStack {
             Spacer()
+                .allowsHitTesting(false)
 
             Button(action: {
                 handleContinueButtonTap()
             }) {
-                Group {
-                    if shouldShowFirstNameVerificationLabel {
-                        AnimatedVerificationButtonText(isAvailable: isFirstNameAvailable)
-                    } else {
-                        Text("CONTINUER")
-                            .font(.system(size: 20, weight: .black))
-                            .foregroundStyle(OnboardingTheme.actionButtonText)
-                    }
-                }
-                .id("continue_button_label_\(viewModel.currentStep)")
+                Text("CONTINUER")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(OnboardingTheme.actionButtonText)
+                    .id("continue_button_label_\(viewModel.currentStep)")
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
             }
@@ -256,15 +217,16 @@ struct SportOnboardingView: View {
             if shouldShowNoWeightGoalLink {
                 Button(action: skipWeightGoalFromIdealWeight) {
                     Text("Je n'ai pas d'objectif de poids")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(OnboardingTheme.bodyText)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 12)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(OnboardingTheme.mutedText.opacity(0.75))
+                        .padding(.top, 8)
                 }
+                .buttonStyle(.plain)
             }
 
             Spacer()
                 .frame(height: animatedContinueBottomOffset)
+                .allowsHitTesting(false)
         }
         .id("onboarding_global_continue")
     }

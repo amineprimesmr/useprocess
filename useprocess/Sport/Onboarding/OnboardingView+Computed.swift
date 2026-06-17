@@ -12,11 +12,6 @@ extension SportOnboardingView {
 
 // MARK: - Computed Properties
 
-var shouldShowFirstNameVerificationLabel: Bool {
-    viewModel.currentStep == OnboardingStep.firstNameInput.rawValue
-        && !viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-}
-
 var shouldShowContinueButton: Bool {
     if isImmersiveOnboardingStep { return false }
 
@@ -37,10 +32,7 @@ var continueButtonOpacity: Double {
     if shouldHideButtonUntilValidated {
         return canContinue ? 1.0 : 0.0
     }
-    if canContinue {
-        return 1.0
-    }
-    return isFirstNameVerifying ? 0.45 : 0.5
+    return canContinue ? 1.0 : 0.5
 }
 
 var continueButtonHitTestingEnabled: Bool {
@@ -66,23 +58,7 @@ var continueButtonBottomOffset: CGFloat {
 }
 
 var canContinue: Bool {
-    guard viewModel.isCurrentStepValidated() else { return false }
-
-    if viewModel.currentStep == OnboardingStep.firstNameInput.rawValue {
-        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            return isFirstNameAvailable
-        }
-    }
-
-    return true
-}
-
-/// Prénom saisi mais vérification en cours (bouton non cliquable).
-var isFirstNameVerifying: Bool {
-    viewModel.currentStep == OnboardingStep.firstNameInput.rawValue
-        && !viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        && !isFirstNameAvailable
+    viewModel.isCurrentStepValidated()
 }
 
 var shouldShowNoWeightGoalLink: Bool {
@@ -92,8 +68,8 @@ var shouldShowNoWeightGoalLink: Bool {
 var shouldHideButtonUntilValidated: Bool {
     let step = OnboardingStep(rawValue: viewModel.currentStep)
     switch step {
-    case .programCreation, .weightEstimation, .goalProjection:
-        // Ces pages ont des animations - le bouton doit être caché jusqu'à la fin
+    case .weightEstimation:
+        // Animation intégrée — le bouton reste caché jusqu'à la fin
         return true
     default:
         return false

@@ -242,7 +242,7 @@ class OnboardingViewModel: ObservableObject {
         case .weightEstimation:
             return isWeightEstimationCompleted
         case .goalProjection:
-            return isGoalProjectionCompleted
+            return isWeightEstimationCompleted
         case .trainingFrequency:
             return isTrainingFrequencySelected && selectedTrainingFrequency != nil
         case .nutritionQuality:
@@ -270,7 +270,7 @@ class OnboardingViewModel: ObservableObject {
         case .faceAnalysis:
             return isFaceAnalysisCompleted
         case .programCreation:
-            return isProgramCreationCompleted
+            return true
         case .weightManagementExperience:
             if hasWeightGoal != true {
                 return true
@@ -382,6 +382,10 @@ class OnboardingViewModel: ObservableObject {
         OnboardingProgressService.shared.saveCurrentStep(currentStep)
         OnboardingProgressService.shared.saveVisitedSteps(visitedSteps)
         OnboardingProgressService.shared.saveAnswers(makeAnswersSnapshot())
+    }
+
+    func saveFlowProgress(_ progress: Double) {
+        OnboardingProgressService.shared.saveFlowProgress(progress)
     }
     
     func resetProgress() {

@@ -58,12 +58,6 @@ func nextStep() {
 
     HapticManager.shared.impact(.medium)
 
-    if viewModel.currentStep == OnboardingStep.firstNameInput.rawValue {
-        isFirstNameAvailable = false
-        firstNameDebounceTask?.cancel()
-        firstNameDebounceTask = nil
-    }
-
     OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
 
     commitVisibleStepToHistory(viewModel.currentStep)
@@ -95,7 +89,7 @@ func continueFromNutritionQuality() {
         return
     }
 
-    let nextStepIndex = OnboardingStep.programCreation.rawValue
+    let nextStepIndex = OnboardingStep.biometricAuth.rawValue
 
     HapticManager.shared.impact(.medium)
     OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
@@ -237,11 +231,16 @@ func restoreOnboardingProgressFromSavedState() {
             viewModel.currentStep = savedStep
         }
     } else if !canDisplayStep && savedStep > 0 {
-        let lastValidStep = findLastValidOnboardingStepIndex(
-            visitedSteps: viewModel.visitedSteps,
-            viewModel: viewModel
-        )
-        viewModel.currentStep = lastValidStep
+        let activePath = navigationEngine.buildActiveFlowPath()
+        if activePath.contains(savedStep) {
+            viewModel.currentStep = savedStep
+        } else {
+            let lastValidStep = findLastValidOnboardingStepIndex(
+                visitedSteps: viewModel.visitedSteps,
+                viewModel: viewModel
+            )
+            viewModel.currentStep = lastValidStep
+        }
     } else {
         if viewModel.visitedSteps.isEmpty {
             viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
@@ -266,6 +265,7 @@ func refreshOnboardingFlowProgress() {
     flowProgress = metrics.progress
     flowTotalSteps = metrics.totalSteps
     flowGlowProgressCount = metrics.glowProgressCount
+    viewModel.saveFlowProgress(metrics.progress)
 }
 
 func buildPendingStepsQueue() {
@@ -305,16 +305,6 @@ func checkPermissions() {
             try await OnboardingService.shared.completeOnboarding()
             AppSession.shared.completeOnboarding()
             HapticManager.shared.notification(.success)
-
-            if ClaudeConfiguration.isConfigured,
-               let summary = await CoachEngine.generateProgramSummary(profile: profileService.currentProfile) {
-                let msg = CoachMessage(
-                    role: .assistant,
-                    text: "## Bienvenue dans \(AppBranding.name)\n\n\(summary)\n\nOuvre l'onglet **Coach** pour continuer la conversation.",
-                    modelUsed: ClaudeModel.preferred(for: .programSummary).rawValue
-                )
-                CoachConversationStore.appendMessage(msg)
-            }
         } catch {
             HapticManager.shared.notification(.error)
             viewModel.errorMessage = "Erreur lors de la finalisation. Veuillez réessayer."

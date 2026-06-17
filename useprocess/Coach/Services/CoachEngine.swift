@@ -144,13 +144,8 @@ enum CoachEngine {
         let greeting = (name?.isEmpty == false) ? "Salut \(name!) 👋" : "Salut 👋"
         let mode = ClaudeConfiguration.transportLabel
         let planHint: String
-        if let plan = WelcomePlanStore.shared.plan {
-            planHint = """
-
-            Ton Protocole Origine est actif (semaine \(plan.calendar.currentWeekNumber())/13).
-            Demande-moi de modifier ton programme — je l'applique directement dans ton calendrier.
-            Priorités : \(plan.primaryFaceGoal).
-            """
+        if WelcomePlanStore.shared.plan != nil {
+            planHint = "\n\nTon protocole est dans Santé — pose-moi une question ici."
         } else {
             planHint = ""
         }
@@ -369,7 +364,15 @@ enum CoachEngine {
         guard ClaudeConfiguration.isConfigured, profile != nil else { return nil }
 
         let context = UserContextBuilder.build(profile: profile)
+        let hasScans = context.lastBodyScan != nil
+            || context.latestFaceScan != nil
+            || !(context.recentFaceScans?.isEmpty ?? true)
+            || !(context.recentScans?.isEmpty ?? true)
+        let scanInstruction = hasScans
+            ? "Tu peux t'appuyer sur les données de scan si elles sont présentes dans le contexte."
+            : "IMPORTANT : aucun scan visage ni corporel n'a été effectué. Ne dis JAMAIS « ton scan révèle » ni ne fais référence à un scan — base-toi uniquement sur le profil et les données HealthKit."
         let prompt = """
+        \(scanInstruction)
         Génère un résumé de plan personnalisé 13 semaines (8-12 phrases).
         \(UserContextBuilder.promptBlock(from: context))
         Objectif, 3 piliers Protocole Origine, rythme hebdo, 3 habitudes quotidiennes.

@@ -6,7 +6,6 @@ struct WelcomePlanChatView: View {
     var selectedSection: Binding<ProcessMainSection>?
     var onComplete: () -> Void
 
-    @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
 
     @State private var viewModel = WelcomePlanChatViewModel()
@@ -14,19 +13,76 @@ struct WelcomePlanChatView: View {
     @State private var textDraft = ""
     @State private var timeDraft = Calendar.current.date(from: DateComponents(hour: 22, minute: 30)) ?? .now
     @State private var showFaceScan = false
+    @State private var revealedAnswerIDs: Set<String> = []
 
-    private let messageFont = Font.system(size: 18, weight: .regular)
-    private let messageLineSpacing: CGFloat = 5
+    private let messageLineSpacing: CGFloat = 7
+    private let horizontalPadding: CGFloat = 28
+    private let answerButtonShape = Capsule()
+    private let configurationProgressHeaderHeight: CGFloat = 18
 
     var body: some View {
-        Group {
-            if embeddedInMainApp, let selectedSection {
-                embeddedLayout(selectedSection: selectedSection)
-            } else {
-                standaloneLayout
+        GeometryReader { geometry in
+            let layout = ChatLayoutMetrics(
+                screenHeight: geometry.size.height,
+                topInset: topChromeInset,
+                embedded: embeddedInMainApp
+            )
+            let bottomContentPadding: CGFloat = {
+                if viewModel.showsEnterButton { return 120 }
+                if showsMultiChoiceValidate { return 72 }
+                if viewModel.showsGenerationProgress { return 28 }
+                return 28
+            }()
+
+            ZStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: layout.slotSpacing) {
+                    historySlot(height: layout.historySlotHeight)
+                    activeSlot(layout: layout, bottomPadding: bottomContentPadding)
+                    Spacer(minLength: 0)
+                }
+                .animation(OnboardingProfileChatDepthStyle.historySpring, value: viewModel.messages.count)
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, layout.contentTopPadding + topChromeInset + configurationProgressInset)
+                .padding(.bottom, bottomContentPadding)
+                .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+
+                if showsConfigurationProgress {
+                    configurationProgressHeader
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, max(0, topChromeInset - 6))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .transition(.opacity)
+                }
+
+                if showsMultiChoiceValidate {
+                    multiChoiceValidateButton
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.bottom, embeddedInMainApp ? 12 : 28)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+
+                if viewModel.showsEnterButton {
+                    enterAppButton
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.bottom, embeddedInMainApp ? 28 : 50)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            }
+            .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
+            .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsAnswerOptions)
+            .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsGenerationProgress)
+            .mask(topFadeMask)
+            .clipped()
+            .onChange(of: viewModel.currentQuestion?.id) { _, _ in
+                multiSelection = []
+                textDraft = ""
+                revealedAnswerIDs = []
             }
         }
-        .background(theme.background.ignoresSafeArea())
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(OnboardingTheme.screenBackground.ignoresSafeArea())
         .task {
             viewModel.bind(profile: profileService.currentProfile)
             await viewModel.startIfNeeded()
@@ -39,108 +95,378 @@ struct WelcomePlanChatView: View {
         }
     }
 
-    // MARK: - Embedded (onglet Coach + menu sticky)
+    private var topChromeInset: CGFloat {
+        embeddedInMainApp ? ProcessMainChromeMetrics.scrollTopInset : 0
+    }
 
-    private func embeddedLayout(selectedSection: Binding<ProcessMainSection>) -> some View {
+    // MARK: - Layout slots
+
+    private var showsConfigurationProgress: Bool {
+        !viewModel.showsEnterButton && !viewModel.isGenerating
+    }
+
+    private var configurationProgressInset: CGFloat {
+        showsConfigurationProgress ? configurationProgressHeaderHeight : 0
+    }
+
+    private var configurationProgressHeader: some View {
+        OnboardingProgressBar(
+            progress: viewModel.configurationProgress,
+            height: 8,
+            cornerRadius: 5
+        )
+        .animation(.easeInOut(duration: 0.25), value: viewModel.configurationProgress)
+    }
+
+    private var showsMultiChoiceValidate: Bool {
+        viewModel.showsAnswerOptions && viewModel.currentQuestion?.kind == .multiChoice
+    }
+
+    private struct ChatLayoutMetrics {
+        let screenHeight: CGFloat
+        let activeAnchorY: CGFloat
+        let historySlotHeight: CGFloat
+        let slotSpacing: CGFloat
+        let contentTopPadding: CGFloat
+        let topInset: CGFloat
+        let embedded: Bool
+
+        init(screenHeight: CGFloat, topInset: CGFloat = 0, embedded: Bool = false) {
+            self.screenHeight = screenHeight
+            self.topInset = topInset
+            self.embedded = embedded
+
+            if embedded {
+                activeAnchorY = screenHeight * 0.13
+                historySlotHeight = screenHeight * 0.09
+            } else {
+                activeAnchorY = screenHeight * 0.30
+                historySlotHeight = screenHeight * 0.16
+            }
+            slotSpacing = 10
+            contentTopPadding = max(4, activeAnchorY - historySlotHeight - slotSpacing)
+        }
+
+        func answersScrollMaxHeight(bottomPadding: CGFloat) -> CGFloat {
+            OnboardingProfileChatDepthStyle.answersScrollMaxHeight(
+                screenHeight: screenHeight,
+                contentTopPadding: contentTopPadding + topInset,
+                historySlotHeight: historySlotHeight,
+                slotSpacing: slotSpacing,
+                bottomPadding: bottomPadding,
+                activeMessageHeight: embedded ? 68 : 96
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func historySlot(height: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
+            ForEach(historyMessages, id: \.message.id) { item in
+                let distance = (viewModel.messages.count - 1) - item.index
+                depthMessageRow(item.message, distanceFromActive: distance)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .bottomLeading)
+        .clipped()
+        .mask(historyFadeMask)
+    }
+
+    @ViewBuilder
+    private func activeSlot(layout: ChatLayoutMetrics, bottomPadding: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
+            if let active = activeMessage {
+                depthMessageRow(active, distanceFromActive: 0)
+            }
+
+            if viewModel.showsAnswerOptions, let question = viewModel.currentQuestion {
+                answerSection(
+                    for: question,
+                    maxScrollHeight: layout.answersScrollMaxHeight(bottomPadding: bottomPadding)
+                )
+                    .id("answers_\(question.id)")
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .task(id: answerRevealTaskID(for: question)) {
+                        await runAnswerReveal(for: question)
+                    }
+            }
+
+            if viewModel.showsGenerationProgress {
+                planGenerationSection
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .animation(nil, value: viewModel.messages.last?.text)
+    }
+
+    private var planGenerationSection: some View {
+        OnboardingProfileChatAnalysisPanel(
+            phaseLabel: viewModel.generationPhaseLabel,
+            displayedPercentage: viewModel.generationDisplayedPercentage,
+            progress: viewModel.generationProgress,
+            isVisible: viewModel.showsGenerationProgress
+        )
+        .padding(.top, 10)
+    }
+
+    private var activeMessage: OnboardingProfileChatMessage? {
+        viewModel.messages.last
+    }
+
+    private var historyMessages: [(index: Int, message: OnboardingProfileChatMessage)] {
+        guard viewModel.messages.count > 1 else { return [] }
+        let history = Array(viewModel.messages.enumerated().dropLast())
+        let maxHistory = OnboardingProfileChatDepthStyle.maxVisibleMessages - 1
+        let start = max(0, history.count - maxHistory)
+        return history.dropFirst(start).map { ($0.offset, $0.element) }
+    }
+
+    private var historyFadeMask: some View {
         VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                processMainScrollableChrome(
-                    selectedSection: selectedSection,
-                    pageSection: .coach
+            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                .frame(height: 32)
+            Rectangle().fill(.black)
+        }
+    }
+
+    private var topFadeMask: some View {
+        VStack(spacing: 0) {
+            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                .frame(height: 110)
+            Rectangle().fill(.black)
+        }
+    }
+
+    private func answerRevealTaskID(for question: WelcomePlanQuestion) -> String {
+        "\(question.id)-\(viewModel.showsAnswerOptions)"
+    }
+
+    @MainActor
+    private func runAnswerReveal(for question: WelcomePlanQuestion) async {
+        revealedAnswerIDs = []
+        let ids = WelcomePlanChatAnswerReveal.orderedIDs(for: question)
+        guard !ids.isEmpty else { return }
+
+        try? await Task.sleep(nanoseconds: WelcomePlanChatAnswerReveal.initialDelay)
+        guard viewModel.showsAnswerOptions else { return }
+
+        for (index, id) in ids.enumerated() {
+            if Task.isCancelled { return }
+            guard viewModel.showsAnswerOptions else { return }
+            if index > 0 {
+                try? await Task.sleep(nanoseconds: WelcomePlanChatAnswerReveal.staggerDelay)
+            }
+            if Task.isCancelled { return }
+            guard viewModel.showsAnswerOptions else { return }
+            _ = withAnimation(OnboardingProfileChatAnswerReveal.spring) {
+                revealedAnswerIDs.insert(id)
+            }
+        }
+    }
+
+    private func isAnswerRevealed(_ id: String) -> Bool {
+        revealedAnswerIDs.contains(id)
+    }
+
+    // MARK: - Messages
+
+    @ViewBuilder
+    private func depthMessageRow(
+        _ message: OnboardingProfileChatMessage,
+        distanceFromActive: Int
+    ) -> some View {
+        let appearance = OnboardingProfileChatDepthStyle.appearance(
+            distanceFromActive: distanceFromActive,
+            role: message.role
+        )
+
+        if !appearance.isHidden {
+            Group {
+                let layoutText = message.layoutAnchorText ?? message.text
+                let visibleText = message.text
+
+                if layoutText.isEmpty && visibleText.isEmpty {
+                    Color.clear.frame(height: 1)
+                } else {
+                    ZStack(alignment: .topLeading) {
+                        if !layoutText.isEmpty {
+                            Text(layoutText)
+                                .font(
+                                    .system(
+                                        size: OnboardingProfileChatDepthStyle.activeFontSize,
+                                        weight: message.role == .user ? .medium : .regular
+                                    )
+                                )
+                                .foregroundStyle(.clear)
+                                .lineSpacing(messageLineSpacing)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityHidden(true)
+                        }
+
+                        if !visibleText.isEmpty {
+                            Text(visibleText)
+                                .font(.system(size: appearance.fontSize, weight: message.role == .user ? .medium : .regular))
+                                .foregroundStyle(appearance.color)
+                                .lineSpacing(messageLineSpacing)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .scaleEffect(appearance.scale, anchor: .leading)
+                    .blur(radius: appearance.blur)
+                    .opacity(visibleText.isEmpty ? 0 : appearance.opacity)
+                }
+            }
+            .animation(OnboardingProfileChatDepthStyle.historySpring, value: distanceFromActive)
+            .animation(nil, value: message.text)
+        }
+    }
+
+    // MARK: - Answers
+
+    @ViewBuilder
+    private func answerSection(for question: WelcomePlanQuestion, maxScrollHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            switch question.kind {
+            case .info:
+                chatPrimaryButton("Continuer") {
+                    await viewModel.submitInfoContinue()
+                }
+                .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("continue"))
+
+            case .yesNo:
+                HStack(spacing: 12) {
+                    chatChoiceButton(title: "Oui", centered: true) {
+                        await viewModel.submitYesNo(true)
+                    }
+                    .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("yes"))
+
+                    chatChoiceButton(title: "Non", centered: true) {
+                        await viewModel.submitYesNo(false)
+                    }
+                    .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("no"))
+                }
+
+            case .singleChoice where question.choices.count == 1:
+                if let only = question.choices.first {
+                    chatPrimaryButton(only.label) {
+                        await viewModel.submitSingleChoice(only.id)
+                    }
+                    .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed(only.id))
+                }
+
+            case .singleChoice:
+                OnboardingChatScrollableAnswerStack(
+                    choiceCount: question.choices.count,
+                    maxHeight: maxScrollHeight
                 ) {
-                    messageStack
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                    ForEach(question.choices) { choice in
+                        chatChoiceButton(title: choice.label) {
+                            await viewModel.submitSingleChoice(choice.id)
+                        }
+                        .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed(choice.id))
+                    }
                 }
-                .onChange(of: viewModel.messages.count) { _, _ in
-                    scrollToBottom(proxy)
-                }
-                .onChange(of: viewModel.isComplete) { _, _ in
-                    scrollToBottom(proxy, anchor: .bottom)
-                }
-            }
 
-            if !viewModel.isComplete, let question = viewModel.currentQuestion, !viewModel.isGenerating {
-                answerPanel(for: question)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            case .multiChoice:
+                OnboardingChatScrollableAnswerStack(
+                    choiceCount: question.choices.count,
+                    maxHeight: maxScrollHeight
+                ) {
+                    ForEach(question.choices) { choice in
+                        chatMultiChoiceButton(
+                            title: choice.label,
+                            isSelected: multiSelection.contains(choice.id)
+                        ) {
+                            if multiSelection.contains(choice.id) {
+                                multiSelection.remove(choice.id)
+                            } else {
+                                multiSelection.insert(choice.id)
+                            }
+                        }
+                        .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed(choice.id))
+                    }
+                }
+
+            case .time:
+                DatePicker("Heure", selection: $timeDraft, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("time_picker"))
+
+                chatPrimaryButton("Continuer") {
+                    await viewModel.submitTime(timeDraft)
+                }
+                .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("time_continue"))
+
+            case .text:
+                TextField("Ta réponse…", text: $textDraft, axis: .vertical)
+                    .lineLimit(2...4)
+                    .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize))
+                    .foregroundStyle(OnboardingTheme.primaryText)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                    .processGlassEffect(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("text_field"))
+
+                HStack(spacing: 12) {
+                    if question.allowsSkip {
+                        chatChoiceButton(title: "Passer", centered: true) {
+                            await viewModel.submitText("", skipped: true)
+                            textDraft = ""
+                        }
+                        .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("skip"))
+                    }
+
+                    chatPrimaryButton("Envoyer", disabled: textDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                        await viewModel.submitText(textDraft)
+                        textDraft = ""
+                    }
+                    .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("send"))
+                }
             }
         }
+        .padding(.top, 10)
+        .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsAnswerOptions)
     }
 
-    // MARK: - Standalone (preview depuis la sidebar)
+    // MARK: - CTA
 
-    private var standaloneLayout: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    messageStack
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                }
-                .onChange(of: viewModel.messages.count) { _, _ in
-                    scrollToBottom(proxy)
-                }
-                .onChange(of: viewModel.isComplete) { _, _ in
-                    scrollToBottom(proxy, anchor: .bottom)
-                }
-            }
+    private var multiChoiceValidateButton: some View {
+        let isDisabled = multiSelection.isEmpty || viewModel.isSubmittingAnswer
 
-            if !viewModel.isComplete, let question = viewModel.currentQuestion, !viewModel.isGenerating {
-                answerPanel(for: question)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+        return Button {
+            guard !isDisabled else { return }
+            HapticManager.shared.impact(.medium)
+            let selection = multiSelection
+            multiSelection = []
+            Task { await viewModel.submitMultiChoice(selection) }
+        } label: {
+            Text("Valider")
+                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
+                .foregroundStyle(isDisabled ? OnboardingTheme.mutedText : OnboardingTheme.actionButtonText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .contentShape(answerButtonShape)
         }
+        .buttonStyle(.plain)
+        .processGlassEffect(in: answerButtonShape)
+        .buttonStyle(ProcessGlassPressStyle())
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.55 : 1)
+        .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("validate"))
     }
 
-    private var messageStack: some View {
-        LazyVStack(alignment: .leading, spacing: 20) {
-            if !viewModel.isComplete {
-                progressBar
-            }
-
-            ForEach(viewModel.messages) { message in
-                messageRow(message)
-                    .id(message.id)
-                    .coachMessageFadeIn()
-            }
-
-            if viewModel.isTyping {
-                CoachThinkingBlobPlaceholder()
-                    .id("thinking")
-            }
-
-            if viewModel.isComplete {
-                completionCard
-                    .id("complete")
-            }
-
-            Color.clear.frame(height: 24).id("bottom")
-        }
-    }
-
-    private var progressBar: some View {
-        HStack(spacing: 10) {
-            ProgressView(value: viewModel.progress)
-                .tint(Color.primary.opacity(0.85))
-            Text("\(Int(viewModel.progress * 100)) %")
-                .font(.caption.monospacedDigit().weight(.medium))
-                .foregroundStyle(theme.secondaryText)
-                .frame(minWidth: 34, alignment: .trailing)
-        }
-        .padding(.bottom, 4)
-    }
-
-    private var completionCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let plan = viewModel.generatedPlan {
-                WelcomePlanCompactCard(plan: plan)
-            }
-
-            welcomePrimaryButton(
-                previewMode
-                    ? (viewModel.pendingFaceScan ? "Terminer & lancer le scan" : "Terminer la preview")
-                    : (viewModel.pendingFaceScan ? "Entrer & lancer le scan" : "Entrer dans Process")
-            ) {
+    private var enterAppButton: some View {
+        Button {
+            HapticManager.shared.impact(.medium)
+            Task {
                 if viewModel.pendingFaceScan {
                     await viewModel.finishAndEnterApp(previewMode: previewMode) {
                         showFaceScan = true
@@ -150,349 +476,121 @@ struct WelcomePlanChatView: View {
                     await viewModel.finishAndEnterApp(previewMode: previewMode, onComplete: onComplete)
                 }
             }
-        }
-        .padding(.top, 8)
-    }
-
-    @ViewBuilder
-    private func answerPanel(for question: WelcomePlanQuestion) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            switch question.kind {
-            case .yesNo:
-                HStack(spacing: 12) {
-                    answerButton("Oui", prominent: true, inPanel: true) {
-                        await viewModel.submitYesNo(true)
-                    }
-                    answerButton("Non", inPanel: true) {
-                        await viewModel.submitYesNo(false)
-                    }
-                }
-
-            case .singleChoice:
-                if question.choices.count == 1, let only = question.choices.first {
-                    welcomePrimaryButton(only.label, inPanel: true) {
-                        await viewModel.submitSingleChoice(only.id)
-                    }
-                } else {
-                    FlowLayout(spacing: 10) {
-                        ForEach(question.choices) { choice in
-                            answerChip(choice.label, inPanel: true) {
-                                await viewModel.submitSingleChoice(choice.id)
-                            }
-                        }
-                    }
-                }
-
-            case .multiChoice:
-                FlowLayout(spacing: 10) {
-                    ForEach(question.choices) { choice in
-                        multiChoiceChip(choice.label, isSelected: multiSelection.contains(choice.id), inPanel: true) {
-                            if multiSelection.contains(choice.id) {
-                                multiSelection.remove(choice.id)
-                            } else {
-                                multiSelection.insert(choice.id)
-                            }
-                        }
-                    }
-                }
-                welcomePrimaryButton("Valider", disabled: multiSelection.isEmpty, inPanel: true) {
-                    let selection = multiSelection
-                    multiSelection = []
-                    await viewModel.submitMultiChoice(selection)
-                }
-
-            case .time:
-                DatePicker("Heure", selection: $timeDraft, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .welcomePlanPanelInset(cornerRadius: 16)
-                answerButton("Continuer", prominent: true, inPanel: true) {
-                    await viewModel.submitTime(timeDraft)
-                }
-
-            case .text:
-                TextField("Ta réponse…", text: $textDraft, axis: .vertical)
-                    .lineLimit(2...4)
-                    .font(.system(size: 16))
-                    .foregroundStyle(theme.primaryText)
-                    .padding(14)
-                    .welcomePlanPanelInset(cornerRadius: 16)
-                HStack(spacing: 12) {
-                    if question.allowsSkip {
-                        answerButton("Passer", inPanel: true) {
-                            await viewModel.submitText("", skipped: true)
-                            textDraft = ""
-                        }
-                    }
-                    answerButton("Envoyer", prominent: true, inPanel: true) {
-                        await viewModel.submitText(textDraft)
-                        textDraft = ""
-                    }
-                }
-
-            case .info:
-                answerButton("Continuer", prominent: true, inPanel: true) {
-                    await viewModel.submitText("OK", skipped: false)
-                }
-            }
-        }
-        .padding(16)
-        .welcomePlanGlass(cornerRadius: 22)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 10)
-        .onChange(of: viewModel.currentQuestion?.id) { _, _ in
-            multiSelection = []
-            textDraft = ""
-        }
-    }
-
-    private func answerButton(
-        _ title: String,
-        prominent: Bool = false,
-        inPanel: Bool = false,
-        action: @escaping () async -> Void
-    ) -> some View {
-        Button {
-            Task { await action() }
         } label: {
-            Text(title)
-                .font(prominent ? .headline.weight(.semibold) : .subheadline.weight(.semibold))
-                .foregroundStyle(Color.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, prominent ? 14 : 12)
-        }
-        .buttonStyle(.plain)
-        .modifier(WelcomePlanAnswerChromeModifier(
-            theme: theme,
-            cornerRadius: 14,
-            isCapsule: false,
-            prominent: prominent,
-            isSelected: false,
-            inPanel: inPanel
-        ))
-        .buttonStyle(ProcessGlassPressStyle())
-    }
-
-    private func welcomePrimaryButton(
-        _ title: String,
-        disabled: Bool = false,
-        inPanel: Bool = false,
-        action: @escaping () async -> Void
-    ) -> some View {
-        Button {
-            Task { await action() }
-        } label: {
-            Text(title)
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.primary)
+            Text(enterButtonTitle)
+                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
+                .foregroundStyle(OnboardingTheme.actionButtonText)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
+                .contentShape(answerButtonShape)
         }
         .buttonStyle(.plain)
-        .modifier(WelcomePlanAnswerChromeModifier(
-            theme: theme,
-            cornerRadius: 14,
-            isCapsule: false,
-            prominent: true,
-            isSelected: false,
-            inPanel: inPanel
-        ))
+        .processGlassEffect(in: answerButtonShape)
         .buttonStyle(ProcessGlassPressStyle())
-        .disabled(disabled)
-        .opacity(disabled ? 0.72 : 1)
     }
 
-    private func answerChip(_ title: String, inPanel: Bool = false, action: @escaping () async -> Void) -> some View {
+    private var enterButtonTitle: String {
+        if previewMode {
+            return viewModel.pendingFaceScan ? "Terminer & lancer le scan" : "Terminer la preview"
+        }
+        return viewModel.pendingFaceScan ? "Entrer & lancer le scan" : "Entrer dans Process"
+    }
+
+    // MARK: - Buttons
+
+    private func chatChoiceButton(
+        title: String,
+        centered: Bool = false,
+        action: @escaping () async -> Void
+    ) -> some View {
         Button {
+            guard !viewModel.isSubmittingAnswer else { return }
+            HapticManager.shared.selection()
             Task { await action() }
         } label: {
             Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Color.primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize, weight: .semibold))
+                .foregroundStyle(OnboardingTheme.primaryText)
+                .multilineTextAlignment(centered ? .center : .leading)
+                .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .contentShape(answerButtonShape)
         }
         .buttonStyle(.plain)
-        .modifier(WelcomePlanAnswerChromeModifier(
-            theme: theme,
-            cornerRadius: 999,
-            isCapsule: true,
-            prominent: false,
-            isSelected: false,
-            inPanel: inPanel
-        ))
+        .processGlassEffect(in: answerButtonShape)
         .buttonStyle(ProcessGlassPressStyle())
+        .disabled(viewModel.isSubmittingAnswer)
     }
 
-    private func multiChoiceChip(
-        _ title: String,
+    private func chatMultiChoiceButton(
+        title: String,
         isSelected: Bool,
-        inPanel: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Color.primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+        Button {
+            guard !viewModel.isSubmittingAnswer else { return }
+            HapticManager.shared.selection()
+            action()
+        } label: {
+            HStack(spacing: 12) {
+                Text(title)
+                    .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize, weight: .semibold))
+                    .foregroundStyle(OnboardingTheme.primaryText)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(OnboardingTheme.primaryText.opacity(0.85))
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(answerButtonShape)
         }
         .buttonStyle(.plain)
-        .modifier(WelcomePlanAnswerChromeModifier(
-            theme: theme,
-            cornerRadius: 999,
-            isCapsule: true,
-            prominent: false,
-            isSelected: isSelected,
-            inPanel: inPanel
-        ))
+        .processGlassEffect(in: answerButtonShape)
+        .overlay {
+            if isSelected {
+                answerButtonShape
+                    .strokeBorder(OnboardingTheme.primaryText.opacity(0.22), lineWidth: 1)
+            }
+        }
         .buttonStyle(ProcessGlassPressStyle())
+        .opacity(isSelected ? 1 : 0.82)
+        .disabled(viewModel.isSubmittingAnswer)
     }
 
-    @ViewBuilder
-    private func messageRow(_ message: CoachMessage) -> some View {
-        if message.role == .user {
-            HStack {
-                Spacer(minLength: 56)
-                Text(message.text)
-                    .font(messageFont)
-                    .foregroundStyle(theme.primaryText)
-                    .lineSpacing(messageLineSpacing)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        theme.coachUserBubble,
-                        in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    )
-            }
-        } else {
-            CoachFormattedText(
-                text: message.text,
-                font: messageFont,
-                lineSpacing: messageLineSpacing,
-                color: theme.primaryText
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .textSelection(.enabled)
-        }
-    }
+    private func chatPrimaryButton(
+        _ title: String,
+        disabled: Bool = false,
+        action: @escaping () async -> Void
+    ) -> some View {
+        let isDisabled = disabled || viewModel.isSubmittingAnswer
 
-    private func scrollToBottom(_ proxy: ScrollViewProxy, anchor: UnitPoint = .bottom) {
-        withAnimation(ProcessGlass.spring) {
-            if viewModel.isComplete {
-                proxy.scrollTo("complete", anchor: anchor)
-            } else {
-                proxy.scrollTo("bottom", anchor: anchor)
-            }
+        return Button {
+            guard !isDisabled else { return }
+            HapticManager.shared.impact(.medium)
+            Task { await action() }
+        } label: {
+            Text(title)
+                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
+                .foregroundStyle(isDisabled ? OnboardingTheme.mutedText : OnboardingTheme.actionButtonText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .contentShape(answerButtonShape)
         }
+        .buttonStyle(.plain)
+        .processGlassEffect(in: answerButtonShape)
+        .buttonStyle(ProcessGlassPressStyle())
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.55 : 1)
+        .padding(.top, 4)
     }
 }
 
-// MARK: - Glass (aligné menu Coach / analyse)
-
-private struct WelcomePlanAnswerChromeModifier: ViewModifier {
-    let theme: AppTheme
-    let cornerRadius: CGFloat
-    let isCapsule: Bool
-    let prominent: Bool
-    let isSelected: Bool
-    let inPanel: Bool
-
-    func body(content: Content) -> some View {
-        if inPanel {
-            if isCapsule {
-                content.background(Capsule().fill(panelFillColor))
-            } else {
-                content.background(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(panelFillColor)
-                )
-            }
-        } else if isCapsule {
-            content.welcomePlanGlassCapsule()
-        } else {
-            content.welcomePlanGlass(cornerRadius: cornerRadius)
-        }
-    }
-
-    private var panelFillColor: Color {
-        if isSelected {
-            return Color.primary.opacity(theme.isDark ? 0.16 : 0.1)
-        }
-        if prominent {
-            return Color.primary.opacity(theme.isDark ? 0.12 : 0.08)
-        }
-        return Color.primary.opacity(theme.isDark ? 0.07 : 0.05)
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func welcomePlanGlass(cornerRadius: CGFloat) -> some View {
-        processGlassEffect(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-    }
-
-    @ViewBuilder
-    func welcomePlanGlassCapsule() -> some View {
-        processGlassEffect(in: Capsule())
-    }
-
-    @ViewBuilder
-    func welcomePlanPanelInset(cornerRadius: CGFloat) -> some View {
-        modifier(WelcomePlanPanelInsetModifier(cornerRadius: cornerRadius))
-    }
-}
-
-private struct WelcomePlanPanelInsetModifier: ViewModifier {
-    @Environment(\.appTheme) private var theme
-    let cornerRadius: CGFloat
-
-    func body(content: Content) -> some View {
-        content.background(
-            Color.primary.opacity(theme.isDark ? 0.07 : 0.05),
-            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        )
-    }
-}
-
-// MARK: - Flow layout for chips
-
-private struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        return result.size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        for (index, frame) in result.frames.enumerated() {
-            subviews[index].place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY), proposal: .unspecified)
-        }
-    }
-
-    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, frames: [CGRect]) {
-        let maxWidth = proposal.width ?? UIScreen.main.bounds.width - 32
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var frames: [CGRect] = []
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth, x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            frames.append(CGRect(origin: CGPoint(x: x, y: y), size: size))
-            rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
-        }
-
-        return (CGSize(width: maxWidth, height: y + rowHeight), frames)
-    }
+#Preview("Protocole Origine") {
+    WelcomePlanChatView(onComplete: {})
+        .environmentObject(UnifiedProfileService.shared)
 }
