@@ -117,6 +117,8 @@ struct FaceScanDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(theme.primaryText)
                     }
+
+                    HealthMedicalSourcesView(style: .compact)
                 }
                 .padding()
             }

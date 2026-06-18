@@ -27,9 +27,9 @@ struct CoachUserMessageBubbleView: View {
                 .font(font)
                 .foregroundStyle(textColor)
                 .lineSpacing(lineSpacing)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(bubbleColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .padding(.horizontal, 13)
+                .padding(.vertical, 5)
+                .background(bubbleColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .background {
                     GeometryReader { proxy in
                         Color.clear
@@ -170,9 +170,9 @@ struct CoachUserMessageContextOverlay: View {
                     .font(font)
                     .foregroundStyle(textColor)
                     .lineSpacing(lineSpacing)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(bubbleColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 5)
+                    .background(bubbleColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .shadow(color: .black.opacity(0.14), radius: 14, y: 5)
                     .frame(width: max(localBubble.width, 40), height: max(localBubble.height, 36))
                     .position(x: localBubble.midX, y: localBubble.midY)

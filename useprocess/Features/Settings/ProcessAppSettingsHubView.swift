@@ -9,14 +9,6 @@ import SwiftUI
 import SafariServices
 import UIKit
 
-private enum ProcessLegalURLs {
-    static let termsOfUse = URL(string: "https://useprocess.xyz/cgu")!
-    static let privacyPolicy = URL(string: "https://useprocess.xyz/confidentialite")!
-    static let legalNotice = URL(string: "https://useprocess.xyz/mentions-legales")!
-    static let supportPage = URL(string: "https://useprocess.xyz/support")!
-    static let supportMail = URL(string: "mailto:support@useprocess.xyz")!
-}
-
 struct ProcessAppSettingsHubView: View {
     @Environment(\.openURL) private var openURL
     @Bindable private var session = AppSession.shared
@@ -146,6 +138,28 @@ struct ProcessAppSettingsHubView: View {
                         icon: "building.columns",
                         title: "Mentions légales",
                         subtitle: nil,
+                        value: nil,
+                        showsChevron: true
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            GroupedSettingsCard {
+                NavigationLink {
+                    ScrollView {
+                        HealthMedicalSourcesView()
+                            .padding(GroupedSettingsMetrics.horizontalPadding)
+                            .padding(.vertical, 16)
+                    }
+                    .background(GroupedSettingsMetrics.pageBackground.ignoresSafeArea())
+                    .navigationTitle("Sources santé")
+                    .navigationBarTitleDisplayMode(.inline)
+                } label: {
+                    GroupedSettingsNavigationRow(
+                        icon: "heart.text.square",
+                        title: "Sources et références santé",
+                        subtitle: "Citations des recommandations",
                         value: nil,
                         showsChevron: true
                     )

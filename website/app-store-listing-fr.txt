@@ -1,0 +1,105 @@
+================================================================================
+PROCESS AI — FICHE APP STORE (FRANÇAIS)
+Copier-coller dans App Store Connect → Distribution → iOS App → Version 1.0
+================================================================================
+
+NOM DE L'APP (30 car. max)
+Process AI
+
+SOUS-TITRE (30 car. max)
+Santé, sport & coach IA
+
+TEXTE PROMOTIONNEL (170 car. max — modifiable sans nouvelle version)
+Coach IA, suivi Santé Apple, scan visage et protocole sur mesure. Essai gratuit 3 jours, puis abonnement Process AI Premium pour débloquer l'accès complet.
+
+URL ASSISTANCE
+https://useprocess.xyz/support
+
+URL POLITIQUE DE CONFIDENTIALITÉ
+https://useprocess.xyz/confidentialite
+(À renseigner aussi dans : Général → Confidentialité de l'app)
+
+================================================================================
+DESCRIPTION (corps principal)
+================================================================================
+
+Process AI est ton application santé tout-en-un : coach intelligent, suivi Apple Santé, scan visage et protocole personnalisé sport, nutrition et récupération.
+
+CONÇU POUR TOI
+- Onboarding rapide pour calibrer ton profil et tes objectifs
+- Protocole Origine adapté à ton rythme, ton sport et ton sommeil
+- Interface claire sur iPhone et iPad
+
+COACH IA
+- Discute avec ton coach pour des conseils motivationnels et pratiques
+- Analyses basées sur ton profil, ton activité et tes habitudes
+- Messages vocaux et photos (abonnement requis)
+
+SANTÉ ET RÉCUPÉRATION
+- Connexion Apple Santé : pas, sommeil, fréquence cardiaque, calories, HRV
+- Score de readiness du jour pour ajuster ton effort
+- Tableau de bord sommeil, signes vitaux et nutrition
+
+SCAN VISAGE
+- Scan TrueDepth pour suivre des indicateurs bien-être (fatigue, récupération)
+- Historique et tendances sur plusieurs semaines
+- Complément au suivi santé - ne remplace pas un avis médical
+
+SPORT ET PROTOCOLE
+- Plan d'entraînement et habitudes quotidiennes personnalisées
+- Suivi de ta progression semaine après semaine
+- Rappels et notifications pour rester régulier
+
+ABONNEMENT PROCESS AI PREMIUM
+
+L'accès complet à Process AI (coach IA, protocole avancé, scan visage, suivi détaillé) nécessite un abonnement Process AI Premium après un essai gratuit de 3 jours.
+
+- Formules : mensuelle ou annuelle (prix affichés dans l'app avant achat)
+- Renouvellement automatique jusqu'à annulation
+- Gestion et annulation : Réglages iOS, puis Abonnements Apple
+- Restauration des achats disponible dans l'app
+
+Sans abonnement actif, certaines fonctionnalités restent limitées ou indisponibles.
+
+Conditions d'utilisation : https://useprocess.xyz/cgu
+Politique de confidentialité : https://useprocess.xyz/confidentialite
+Support : https://useprocess.xyz/support
+
+AVIS MÉDICAL
+
+Process AI fournit des estimations bien-être et des recommandations générales. Ce n'est pas un dispositif médical. En cas de doute sur ta santé, consulte un professionnel. Sources et références disponibles dans l'app (onglet Santé et Paramètres).
+
+================================================================================
+MOTS-CLÉS (100 car. max, séparés par des virgules, sans espace après)
+================================================================================
+
+santé,sport,coach,fitness,sommeil,nutrition,scan,visage,récupération,wellness
+
+================================================================================
+NOUVEAUTÉS DE CETTE VERSION (première sortie 1.0)
+================================================================================
+
+Première version de Process AI :
+- Coach IA et protocole personnalisé
+- Intégration Apple Santé
+- Scan visage et score de readiness
+- Abonnement Premium avec essai gratuit 3 jours
+
+================================================================================
+NOTES POUR LA REVIEW (App Review Information → Notes)
+================================================================================
+
+Privacy policy URL: https://useprocess.xyz/confidentialite (also in App Privacy section).
+EULA: https://useprocess.xyz/cgu (in app description and paywall footer links).
+Subscription title, duration, price and legal links are visible on the paywall before purchase.
+Health/medical sources with external links are in Health tab and Settings → Sources santé.
+
+Compte de test : [À COMPLÉTER si tu en as un]
+
+================================================================================
+EULA DANS LA DESCRIPTION (requis Apple pour abonnements)
+================================================================================
+
+Les liens CGU et Confidentialité ci-dessus dans la description suffisent.
+Tu peux aussi ajouter dans Général → Informations sur l'app → EULA personnalisée
+le texte : https://useprocess.xyz/cgu

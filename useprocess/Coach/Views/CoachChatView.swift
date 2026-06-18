@@ -30,8 +30,8 @@ struct CoachChatView: View {
     @State private var messageContextMenu: CoachUserMessageContextState?
     @State private var viewportHeight: CGFloat = 0
 
-    private let messageFont = Font.system(size: 18, weight: .regular)
-    private let messageLineSpacing: CGFloat = 5
+    private let messageFont = Font.system(size: 16, weight: .regular)
+    private let messageLineSpacing: CGFloat = 2
     private let responseScrollAnchor = UnitPoint(x: 0.5, y: 0.02)
 
     var body: some View {
@@ -159,7 +159,7 @@ struct CoachChatView: View {
                         dismissesKeyboard: .interactively,
                         scrollDisabled: messageContextMenu != nil
                     ) {
-                        LazyVStack(alignment: .leading, spacing: 20) {
+                        LazyVStack(alignment: .leading, spacing: 10) {
                             if !viewModel.claudeConfigured {
                                 configurationBanner
                             }
@@ -285,9 +285,12 @@ struct CoachChatView: View {
                     Task { await viewModel.startVoiceRecording() }
                 },
                 onOpenMenu: {
-                    isInputFocused = false
+                    let keepKeyboard = isInputFocused
                     withAnimation(ProcessGlass.spring) {
                         showAttachmentMenu.toggle()
+                    }
+                    if keepKeyboard {
+                        isInputFocused = true
                     }
                 },
                 onRemovePendingImage: {

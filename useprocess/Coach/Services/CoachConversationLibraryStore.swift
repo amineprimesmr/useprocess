@@ -47,8 +47,9 @@ final class CoachConversationLibraryStore {
            !legacy.messages.isEmpty {
             let title = legacy.messages
                 .first(where: { $0.role == .user })
-                .map { String($0.text.prefix(44)) } ?? "Conversation"
+                .map { CoachConversationSubjectService.keywords(from: $0.text) } ?? "Conversation"
             var conversation = CoachConversation.fromLegacyThread(legacy, title: title)
+            conversation.subjectLabel = title
             if conversation.title.isEmpty { conversation.title = "Conversation" }
             library.conversations = [conversation]
             library.activeConversationId = conversation.id

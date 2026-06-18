@@ -180,10 +180,14 @@ struct BodyScanReportView: View {
     }
 
     private var disclaimer: some View {
-        Text(result.disclaimer)
-            .font(.caption2)
-            .foregroundStyle(theme.secondaryText)
-            .padding(.top, 8)
+        VStack(alignment: .leading, spacing: 12) {
+            Text(result.disclaimer)
+                .font(.caption2)
+                .foregroundStyle(theme.secondaryText)
+
+            HealthMedicalSourcesView(style: .compact)
+        }
+        .padding(.top, 8)
     }
 
     private var continueButton: some View {

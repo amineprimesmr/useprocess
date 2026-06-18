@@ -193,28 +193,21 @@ struct CoachConversationsSidebar: View {
             isExpanded = false
             onSelect(conversation.id)
         } label: {
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(conversation.title)
-                        .font(.body.weight(isActive ? .semibold : .medium))
-                        .foregroundStyle(theme.primaryText)
-                        .lineLimit(1)
+            HStack(alignment: .center, spacing: 10) {
+                Text(conversation.sidebarSubject)
+                    .font(.subheadline.weight(isActive ? .semibold : .regular))
+                    .foregroundStyle(theme.primaryText)
+                    .lineLimit(1)
 
-                    Text(conversation.preview)
-                        .font(.subheadline)
-                        .foregroundStyle(theme.secondaryText)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                Spacer(minLength: 8)
 
-                    Text(conversation.updatedAt.coachRelativeLabel)
-                        .font(.caption2)
-                        .foregroundStyle(theme.secondaryText.opacity(0.85))
-                }
-
-                Spacer(minLength: 0)
+                Text(conversation.updatedAt.coachRelativeLabel)
+                    .font(.caption2)
+                    .foregroundStyle(theme.secondaryText)
+                    .lineLimit(1)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .background {
                 if isActive {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)

@@ -29,8 +29,8 @@ struct PaywallView: View {
     @State private var measuredTopSafeInset: CGFloat = 0
     @State private var hasScheduledExitNotification = false
 
-    private let termsURL = URL(string: "https://useprocess.xyz/cgu")!
-    private let privacyURL = URL(string: "https://useprocess.xyz/confidentialite")!
+    private let termsURL = ProcessLegalURLs.termsOfUse
+    private let privacyURL = ProcessLegalURLs.privacyPolicy
 
     init(onComplete: (() -> Void)? = nil) {
         self.onComplete = onComplete
@@ -216,6 +216,12 @@ struct PaywallView: View {
                     .foregroundStyle(Color.red.opacity(0.85))
                     .multilineTextAlignment(.center)
             }
+
+            paywallSubscriptionLegalFooter
+
+            #if DEBUG
+            paywallDemoAccessButton
+            #endif
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 24)
@@ -312,6 +318,58 @@ struct PaywallView: View {
             .safeAreaInsets.top ?? 0
     }
 
+    private var paywallSubscriptionLegalFooter: some View {
+        let product = subscriptionService.displayProduct(for: selectedBillingPlan)
+
+        return VStack(spacing: 8) {
+            Text(subscriptionLegalSummary(for: product))
+                .font(.system(size: 11, weight: .regular))
+                .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 14) {
+                Button("Politique de confidentialité") {
+                    legalSafariURL = privacyURL
+                }
+                Text("·")
+                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                Button("Conditions d'utilisation") {
+                    legalSafariURL = termsURL
+                }
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .buttonStyle(.plain)
+            .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+        }
+        .padding(.top, 2)
+    }
+
+    private func subscriptionLegalSummary(for product: SubscriptionProductDisplay) -> String {
+        let length = selectedBillingPlan == .annual ? "1 an" : "1 mois"
+        let trialPrefix = selectedTrialInfo.isActiveOffer
+            ? " Essai gratuit de \(SubscriptionConfiguration.freeTrialDays) jours, puis "
+            : " "
+        return "Abonnement auto-renouvelable « \(product.displayName) » (\(length)) — \(product.displayPrice).\(trialPrefix)Renouvellement automatique jusqu'à annulation dans Réglages › Apple ID › Abonnements."
+    }
+
+    #if DEBUG
+    private var paywallDemoAccessButton: some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            subscriptionService.grantComplimentaryAccess()
+            completePaywallFlow()
+        } label: {
+            Text("Mode démo")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.45))
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
+        .accessibilityLabel("Activer le mode démo développeur")
+    }
+    #endif
+
     // MARK: - Menu légal
 
     private var paywallLegalMenuPopover: some View {
@@ -322,7 +380,7 @@ struct PaywallView: View {
             }
             paywallLegalMenuRow(symbol: "doc.text", title: "Conditions (EULA)") {
                 showsPaywallLegalMenu = false
-                activatePaywallSecretAccess()
+                legalSafariURL = termsURL
             }
             Divider().padding(.horizontal, 12).padding(.vertical, 4)
             paywallLegalMenuRow(symbol: "arrow.clockwise", title: "Restaurer") {
@@ -357,14 +415,6 @@ struct PaywallView: View {
         }
         .buttonStyle(.plain)
         .disabled(title == "Restaurer" && (isRestoring || isPurchasing))
-    }
-
-    // MARK: - Secret EULA
-
-    private func activatePaywallSecretAccess() {
-        subscriptionService.grantComplimentaryAccess()
-        HapticManager.shared.notification(.success)
-        completePaywallFlow()
     }
 
     // MARK: - Achat

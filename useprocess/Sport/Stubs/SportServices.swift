@@ -2,7 +2,6 @@ import Combine
 import SwiftUI
 import HealthKit
 import UserNotifications
-import CoreLocation
 import StoreKit
 import FirebaseAuth
 
@@ -330,18 +329,12 @@ final class UnifiedProfileService: ObservableObject {
 // MARK: - Permissions
 
 @MainActor
-final class PermissionsManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+final class PermissionsManager: ObservableObject {
     static let shared = PermissionsManager()
 
     @Published private(set) var notificationsGranted = false
-    @Published private(set) var locationGranted = false
 
-    private let locationManager = CLLocationManager()
-
-    override private init() {
-        super.init()
-        locationManager.delegate = self
-    }
+    private init() {}
 
     func requestNotificationPermission() async -> Bool {
         let center = UNUserNotificationCenter.current()
@@ -372,33 +365,9 @@ final class PermissionsManager: NSObject, ObservableObject, CLLocationManagerDel
         try? await center.setBadgeCount(0)
     }
 
-    func requestLocationPermission() async -> Bool {
-        let status = locationManager.authorizationStatus
-        switch status {
-        case .authorizedWhenInUse, .authorizedAlways:
-            locationGranted = true
-            return true
-        case .notDetermined:
-            locationManager.requestWhenInUseAuthorization()
-            try? await Task.sleep(for: .milliseconds(500))
-            let updated = locationManager.authorizationStatus
-            locationGranted = updated == .authorizedWhenInUse || updated == .authorizedAlways
-            return locationGranted
-        default:
-            return false
-        }
-    }
-
     func requestMotionPermission() async -> Bool {
         // CoreMotion n'affiche pas de popup — Info.plist NSMotionUsageDescription suffit.
         true
-    }
-
-    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        Task { @MainActor in
-            let status = manager.authorizationStatus
-            locationGranted = status == .authorizedWhenInUse || status == .authorizedAlways
-        }
     }
 }
 

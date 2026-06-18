@@ -95,10 +95,12 @@ struct FaceScanHealthSection: View {
                     .font(.caption2)
                     .foregroundStyle(theme.secondaryText)
             } else {
-                Text("Scanne ton visage tous les 3 jours pour suivre gonflement, cernes, cortisol et récupération.")
+                Text("Scanne ton visage chaque jour pour suivre gonflement, cernes, cortisol et récupération.")
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             }
+
+            HealthMedicalSourcesView(style: .compact, showsDisclaimer: true)
 
             HStack(spacing: 10) {
                 Button(action: onScan) {
@@ -131,11 +133,15 @@ struct FaceScanHealthSection: View {
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.orange)
         } else if isScanDue {
-            Label("Scan visage recommandé — tous les 3 jours", systemImage: "bell.badge")
+            Label("Scan du jour à faire", systemImage: "bell.badge")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.orange)
-        } else if let remaining = daysUntilNextScan, remaining > 0 {
-            Label("Prochain scan dans \(remaining) jour\(remaining > 1 ? "s" : "")", systemImage: "checkmark.circle.fill")
+        } else if let remaining = daysUntilNextScan, remaining == 1 {
+            Label("Prochain scan demain", systemImage: "checkmark.circle.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.green)
+        } else if let remaining = daysUntilNextScan, remaining > 1 {
+            Label("Prochain scan dans \(remaining) jours", systemImage: "checkmark.circle.fill")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.green)
         } else if let days = daysSinceLastScan, days == 0 {

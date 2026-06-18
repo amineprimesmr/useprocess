@@ -301,6 +301,7 @@ final class CoachChatViewModel {
         guard let conversationId = libraryStore.activeConversationId else { return }
 
         if persistUserMessage {
+            let userCountBefore = libraryStore.activeConversation?.messages.filter { $0.role == .user }.count ?? 0
             libraryStore.updateActiveConversation { $0.applyAutoTitle(from: cleaned) }
             let title = libraryStore.activeConversation?.title
 
@@ -313,6 +314,10 @@ final class CoachChatViewModel {
                 title: title
             )
             inputText = ""
+
+            if userCountBefore == 0 {
+                Task { await refineConversationSubject(from: cleaned, conversationId: conversationId) }
+            }
         }
 
         isSending = true
@@ -380,6 +385,11 @@ final class CoachChatViewModel {
             errorMessage = error.localizedDescription
             streamingText = ""
         }
+    }
+
+    private func refineConversationSubject(from userText: String, conversationId: UUID) async {
+        guard let refined = await CoachConversationSubjectService.refineWithAI(from: userText) else { return }
+        libraryStore.updateConversation(conversationId) { $0.applySubjectLabel(refined) }
     }
 
     private func persistMessage(_ message: CoachMessage) async {

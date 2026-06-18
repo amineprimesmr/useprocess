@@ -5,7 +5,7 @@ import UserNotifications
 enum FaceScanReminderService {
     static let notificationID = "process.facescan.cadence"
 
-    /// Planifie une notif pour le prochain scan (tous les 3 jours après le dernier).
+    /// Planifie une notif pour le prochain scan (chaque matin si le scan du jour n’est pas fait).
     static func scheduleNextReminder(after lastScan: Date?, hour: Int = 8, minute: Int = 0) async {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [notificationID])
@@ -42,7 +42,7 @@ enum FaceScanReminderService {
 
         let content = UNMutableNotificationContent()
         content.title = "Scan visage — c'est le moment"
-        content.body = "30 sec pour suivre gonflement, cernes et récupération (tous les 3 jours)."
+        content.body = "30 sec pour suivre gonflement, cernes et récupération — scan quotidien."
         content.sound = .default
 
         let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)

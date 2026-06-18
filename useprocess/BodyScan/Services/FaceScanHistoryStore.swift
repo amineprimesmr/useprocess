@@ -115,7 +115,7 @@ final class FaceScanHistoryStore {
         FaceScanCadence.isScanDue(since: latestResult?.createdAt)
     }
 
-    /// Nombre de cycles de 3 jours complétés (rythme respecté).
+    /// Nombre de jours consécutifs avec scan (rythme quotidien).
     var streakDays: Int {
         guard !history.isEmpty else { return 0 }
         let calendar = Calendar.current

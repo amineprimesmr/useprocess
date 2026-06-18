@@ -53,10 +53,18 @@ struct OnboardingProfileChatView: View {
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
 
                 if chatViewModel.showsLetsGoButton {
-                    letsGoButton
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.bottom, 50)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    VStack(spacing: 10) {
+                        Text(HealthMedicalSources.disclaimer)
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(OnboardingTheme.mutedText.opacity(0.85))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 8)
+
+                        letsGoButton
+                    }
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.bottom, 50)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
                 if chatViewModel.analysisShowPopup {

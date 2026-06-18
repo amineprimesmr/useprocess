@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Barre liquid glass grande (style Grok — adaptatif clair/sombre)
+// MARK: - Barre liquid glass (style Grok — adaptatif clair/sombre)
 
 struct CoachLiquidGlassInputBar: View {
     @Binding var text: String
@@ -25,14 +25,14 @@ struct CoachLiquidGlassInputBar: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 8) {
             if let pendingImage {
                 ZStack(alignment: .topTrailing) {
                     Image(uiImage: pendingImage)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 76, height: 76)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .frame(width: 68, height: 68)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                     Button {
                         HapticManager.shared.impact(.light)
@@ -41,12 +41,12 @@ struct CoachLiquidGlassInputBar: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(Color.primary)
-                            .frame(width: 22, height: 22)
+                            .frame(width: 20, height: 20)
                             .background(.ultraThinMaterial, in: Circle())
                             .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
                     }
                     .buttonStyle(.plain)
-                    .offset(x: 8, y: -8)
+                    .offset(x: 6, y: -6)
                 }
                 .padding(.top, 2)
             }
@@ -59,7 +59,7 @@ struct CoachLiquidGlassInputBar: View {
                 axis: .vertical
             )
             .lineLimit(1...6)
-            .font(.system(size: 17, weight: .regular))
+            .font(.system(size: 16, weight: .regular))
             .foregroundStyle(.primary)
             .focused($isFocused)
             .disabled(isDisabled || isRecording)
@@ -70,16 +70,23 @@ struct CoachLiquidGlassInputBar: View {
                     onSend()
                 }
             }
-            .frame(minHeight: 44, alignment: .topLeading)
+            .frame(minHeight: 32, alignment: .topLeading)
 
-            HStack(spacing: 10) {
-                glassCircleButton(imageName: "ProcessIA", size: 36) {
+            HStack(spacing: 8) {
+                Button {
                     HapticManager.shared.impact(.light)
                     onOpenMenu()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.72))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .disabled(isDisabled)
                 .rotationEffect(.degrees(isAttachmentMenuOpen ? 45 : 0))
-                .animation(ProcessGlass.spring, value: isAttachmentMenuOpen)
+                .animation(.spring(response: 0.34, dampingFraction: 0.78), value: isAttachmentMenuOpen)
 
                 Spacer(minLength: 8)
 
@@ -90,9 +97,9 @@ struct CoachLiquidGlassInputBar: View {
                         onSend()
                     } label: {
                         Image(systemName: "arrow.up")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(Color.primary)
-                            .frame(width: 36, height: 36)
+                            .frame(width: 32, height: 32)
                     }
                     .buttonStyle(LiquidGlassPressStyle())
                     .disabled(isDisabled)
@@ -105,65 +112,33 @@ struct CoachLiquidGlassInputBar: View {
                         onStartVoice()
                     } label: {
                         Image(systemName: isRecording ? "mic.fill" : "mic")
-                            .font(.system(size: 20, weight: .medium))
+                            .font(.system(size: 18, weight: .medium))
                             .foregroundStyle(isRecording ? Color.red : Color.primary.opacity(0.7))
-                            .frame(width: 36, height: 36)
+                            .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
                     .disabled(isDisabled || isRecording)
                 }
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, pendingImage == nil ? 16 : 12)
-        .padding(.bottom, 14)
+        .padding(.horizontal, 16)
+        .padding(.top, pendingImage == nil ? 10 : 8)
+        .padding(.bottom, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: pendingImage == nil ? 112 : 168)
-        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .frame(minHeight: pendingImage == nil ? 84 : 140)
+        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .onTapGesture {
             guard !isDisabled, !isRecording else { return }
             isFocused = true
         }
         .modifier(CoachInputGlassModifier())
     }
-
-    @ViewBuilder
-    private func glassCircleButton(
-        systemName: String? = nil,
-        imageName: String? = nil,
-        size: CGFloat,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Group {
-                if let imageName {
-                    Image(imageName)
-                        .resizable()
-                        .renderingMode(.original)
-                        .scaledToFit()
-                        .frame(width: size * 0.82, height: size * 0.82)
-                } else if let systemName {
-                    Image(systemName: systemName)
-                        .font(.system(size: size * 0.42, weight: .semibold))
-                        .foregroundStyle(Color.primary)
-                }
-            }
-            .frame(width: size, height: size)
-            .background {
-                if imageName == nil {
-                    Circle().fill(Color.primary.opacity(0.08))
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .buttonStyle(LiquidGlassPressStyle())
-    }
 }
 
 // MARK: - Liquid glass (même rendu que les chips du menu)
 
 private struct CoachInputGlassModifier: ViewModifier {
-    private let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
+    private let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {

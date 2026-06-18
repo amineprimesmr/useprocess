@@ -98,7 +98,6 @@ final class OnboardingProfileChatViewModel {
         if answer {
             await healthManager.requestAuthorizationAsync()
             if let permissionsManager {
-                _ = await permissionsManager.requestLocationPermission()
                 _ = await permissionsManager.requestMotionPermission()
             }
             HapticManager.shared.notification(.success)

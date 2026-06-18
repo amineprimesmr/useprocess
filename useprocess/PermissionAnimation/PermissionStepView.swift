@@ -5,7 +5,6 @@ struct PermissionStepView: View {
     enum Kind {
         case notifications
         case healthKit
-        case location
     }
 
     let kind: Kind
@@ -116,27 +115,6 @@ struct PermissionStepView: View {
                 secondaryAction: { onSkip?() ?? onComplete() }
             )
 
-        case .location:
-            return .init(
-                iPhoneTint: .gray,
-                buttonTint: .white,
-                initialDelay: 0.4,
-                title: OnboardingCopy.text(
-                    "Autorise la\nlocalisation",
-                    blank: "Permission\nlocalisation"
-                ),
-                description: OnboardingCopy.text(
-                    "Nous utilisons ta position pour\npersonnaliser ton expérience.",
-                    blank: "Description permission à personnaliser"
-                ),
-                alertButtons: .three,
-                activeTap: .two,
-                primaryTitle: OnboardingCopy.text("Continuer", blank: "Autoriser"),
-                primaryAction: { Task { await requestAndContinue(location: true) } },
-                secondaryTitle: OnboardingCopy.text("Plus tard", blank: "Ignorer"),
-                secondaryAction: { onSkip?() ?? onComplete() }
-            )
-
         case .healthKit:
             preconditionFailure("Santé Apple utilise simpleHealthKitView")
         }
@@ -145,8 +123,7 @@ struct PermissionStepView: View {
     @MainActor
     private func requestAndContinue(
         notifications: Bool = false,
-        healthKit: Bool = false,
-        location: Bool = false
+        healthKit: Bool = false
     ) async {
         guard !isRequesting else { return }
         isRequesting = true
@@ -157,11 +134,7 @@ struct PermissionStepView: View {
         }
         if healthKit {
             await healthManager.requestAuthorizationAsync()
-            _ = await permissionsManager.requestLocationPermission()
             _ = await permissionsManager.requestMotionPermission()
-        }
-        if location {
-            _ = await permissionsManager.requestLocationPermission()
         }
 
         isRequesting = false

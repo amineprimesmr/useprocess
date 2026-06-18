@@ -272,7 +272,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				ENABLE_APP_SANDBOX = NO;
@@ -286,7 +286,6 @@
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Connexion rapide et sécurisée à ton compte.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "La localisation permet de personnaliser ton expérience sport.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Le micro permet de parler au Coach Claude par message vocal.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "L'activité physique permet d'adapter ton programme.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "La dictée transforme ta voix en texte pour discuter avec Claude.";
@@ -314,7 +313,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-                TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -326,7 +325,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				ENABLE_APP_SANDBOX = NO;
@@ -340,7 +339,6 @@
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Connexion rapide et sécurisée à ton compte.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "La localisation permet de personnaliser ton expérience sport.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Le micro permet de parler au Coach Claude par message vocal.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "L'activité physique permet d'adapter ton programme.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "La dictée transforme ta voix en texte pour discuter avec Claude.";
@@ -368,7 +366,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-                TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

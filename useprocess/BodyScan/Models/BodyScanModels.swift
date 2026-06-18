@@ -201,7 +201,7 @@ struct BodyScanResult: Codable, Identifiable, Hashable {
     let disclaimer: String
 
     static let wellnessDisclaimer =
-        "Estimation bien-être uniquement — ne remplace pas un avis médical, kinésithérapeutique ou dermatologique."
+        "Estimation bien-être uniquement — ne remplace pas un avis médical, kinésithérapeutique ou dermatologique. Voir les sources dans l'onglet Santé."
 
     enum CodingKeys: String, CodingKey {
         case id, userId, createdAt, postureScore, confidence, captures, metrics

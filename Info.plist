@@ -13,15 +13,13 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>La photothèque permet de choisir une photo de profil ou d'envoyer une image au coach.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Tes données santé servent à personnaliser ton programme sport.</string>
+	<string>Process lit tes données Santé (pas, sommeil, fréquence cardiaque) pour calculer ton score de readiness et personnaliser ton programme. Exemple : adapter l'intensité du jour selon ta nuit.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Tes données santé servent à personnaliser ton programme sport.</string>
+	<string>Process peut enregistrer tes séances et données d'activité dans Santé pour centraliser ton suivi sportif.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Connexion rapide et sécurisée à ton compte.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>L'activité physique permet d'adapter ton programme.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>La localisation permet de personnaliser ton expérience sport.</string>
+	<string>Process utilise les capteurs de mouvement pour estimer ton activité quotidienne et compléter les données Santé. Exemple : compter tes pas quand tu marches sans Apple Watch.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Les notifications te rappellent tes séances et ta récupération.</string>
 	<key>NSMicrophoneUsageDescription</key>
