@@ -12,72 +12,25 @@ import Foundation
 /// Indique si une étape peut être affichée avec les données actuelles du ViewModel (reprise de progression).
 func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: OnboardingViewModel) -> Bool {
     switch step {
-    case .videoIntroduction, .genderSelection, .ageSelection, .height, .weight,
-         .hasSportActivity, .deadlineSelection, .eventDetails, .nutritionQuality,
-         .hasSufficientHydration,
-         .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
-         .healthKitPermissions, .planGeneration, .sleepDataRecovery,
-         .newsStep, .sleepNeedReveal, .sleepDebtInfo,
-         .nutritionPotential, .alarmConfiguration, .sleepWindowReveal,
-         .sleepNeed, .referralCode, .referralReward,
-         .featuresUnlock, .payment, .appRating, .appleSignIn,
-         .biometricAuth, .notificationPermission, .processWelcome, .complete,
-         .nutritionScanFeature, .yearsOfExperience,
-         .hasDietaryRestrictions, .whichRestrictions, .faceAnalysis:
-        return true
-
-    case .heightWeight:
-        return true
-    case .bodyScan:
-        return true
-    case .primaryGoal:
-        return true
-    case .firstNameInput:
-        return true
-    case .personalizedWelcome:
-        return !viewModel.firstName.isEmpty
-    case .processResultsDurability:
-        return true
-
-    case .weightGoal:
-        return true
-    case .idealWeight:
-        return true
-    case .weightMotivation, .weightEstimation, .biometricAuth, .notificationPermission, .payment:
-        return true
-
     case .goalPace, .weightManagementExperience, .weightFailureReasons:
         return viewModel.hasWeightObjective
 
-    case .weightEstimation:
-        return true
-
     case .weightGoalIncompatible:
         return viewModel.selectedWeightGoal != nil
-    case .goalProjection, .potentialPace:
-        return true
+
+    case .personalizedWelcome:
+        return !viewModel.firstName.isEmpty
 
     case .sportSelection:
         return viewModel.hasSportActivity == true
-    case .sportClub, .experienceLevel, .hardestMeal:
-        return true
 
     case .hydrationLevel:
         return viewModel.nutritionProfile.hasSufficientHydration == false
 
-    case .nutritionObstacles:
-        return true
-
-    case .perfectNutritionBelief:
-        return true
-
-    case .trainingFrequency:
-        return true
-
-    case .planReady, .onboardingInfo,
-         .caloriesGoal, .carryOverCalories:
+    case .planReady, .onboardingInfo, .caloriesGoal, .carryOverCalories:
         return false
-    case .programCreation:
+
+    default:
         return true
     }
 }

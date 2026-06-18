@@ -31,6 +31,7 @@ struct CoachChatView: View {
     @State private var thinkingResponseAnchor: CGRect = .zero
     @State private var showFaceScan = false
     @State private var isSidebarExpanded = false
+    @State private var planStore = WelcomePlanStore.shared
 
     private let messageFont = Font.system(size: 17, weight: .regular)
     private let messageLineSpacing: CGFloat = 4
@@ -75,67 +76,39 @@ struct CoachChatView: View {
 
     private let coachSidebarWidth: CGFloat = 300
 
+    /// Questionnaire accessible uniquement tant qu'aucun protocole n'existe encore.
+    private var showsWelcomePlanMenuEntry: Bool {
+        planStore.plan == nil && !planStore.isQuestionnaireComplete
+    }
+
+    private var welcomePlanMenuAction: (() -> Void)? {
+        guard showsWelcomePlanMenuEntry else { return nil }
+        return { openWelcomePlanPreview() }
+    }
+
+    private var hasWelcomePlan: Bool {
+        planStore.plan != nil
+    }
+
     private var coachMainContent: some View {
         CustomSideMenu(
             isEnabled: viewModel.isSidebarEnabled,
             sideBarWidth: coachSidebarWidth,
             isExpanded: $isSidebarExpanded
         ) { _ in
-            CoachConversationsSidebar(
-                isExpanded: $isSidebarExpanded,
-                conversations: viewModel.conversations,
-                activeConversationId: viewModel.activeConversationId,
-                profile: profileService.currentProfile,
-                onSelect: { id in
-                    Task { await viewModel.selectConversation(id) }
-                },
-                onCreate: {
-                    Task { await viewModel.createNewConversation() }
-                },
-                onDelete: { id in
-                    Task { await viewModel.deleteConversation(id) }
-                },
-                onOpenProfile: onOpenProfile,
-                onOpenWelcomePlan: openWelcomePlanPreview
-            )
+            coachSidebar
         } content: { _ in
-            Group {
-                if showWelcomePlanPreview {
-                    WelcomePlanChatView(
-                        previewMode: true,
-                        embeddedInMainApp: true,
-                        selectedSection: $selectedSection,
-                        onComplete: dismissWelcomePlanChat
-                    )
-                    .id(welcomePlanPreviewID)
-                } else {
-                    chatContent
-                }
-            }
+            coachMainPane
+        }
+        .onAppear {
+            planStore.reloadForCurrentUser()
+        }
+        .onChange(of: hasWelcomePlan) { _, hasPlan in
+            guard hasPlan, showWelcomePlanPreview else { return }
+            dismissWelcomePlanChat()
         }
         .overlay {
-            if let context = messageContextMenu {
-                CoachUserMessageContextOverlay(
-                    message: context.message,
-                    bubbleFrame: context.bubbleFrame,
-                    font: messageFont,
-                    lineSpacing: messageLineSpacing,
-                    bubbleColor: theme.coachUserBubble,
-                    textColor: theme.primaryText,
-                    onEdit: {
-                        let msg = context.message
-                        messageContextMenu = nil
-                        Task {
-                            await viewModel.beginEditingMessage(msg)
-                            try? await Task.sleep(nanoseconds: 280_000_000)
-                            isInputFocused = true
-                        }
-                    },
-                    onDismiss: { messageContextMenu = nil }
-                )
-                .zIndex(999)
-                .transition(.opacity)
-            }
+            coachMessageContextOverlay
         }
         .animation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -160,6 +133,67 @@ struct CoachChatView: View {
                 }
             )
             .environmentObject(profileService)
+        }
+    }
+
+    private var coachSidebar: some View {
+        CoachConversationsSidebar(
+            isExpanded: $isSidebarExpanded,
+            conversations: viewModel.conversations,
+            activeConversationId: viewModel.activeConversationId,
+            profile: profileService.currentProfile,
+            onSelect: { id in
+                Task { await viewModel.selectConversation(id) }
+            },
+            onCreate: {
+                Task { await viewModel.createNewConversation() }
+            },
+            onDelete: { id in
+                Task { await viewModel.deleteConversation(id) }
+            },
+            onOpenProfile: onOpenProfile,
+            onOpenWelcomePlan: welcomePlanMenuAction
+        )
+    }
+
+    @ViewBuilder
+    private var coachMainPane: some View {
+        if showWelcomePlanPreview, showsWelcomePlanMenuEntry {
+            WelcomePlanChatView(
+                previewMode: true,
+                embeddedInMainApp: true,
+                selectedSection: $selectedSection,
+                onComplete: dismissWelcomePlanChat
+            )
+            .id(welcomePlanPreviewID)
+        } else {
+            chatContent
+        }
+    }
+
+    @ViewBuilder
+    private var coachMessageContextOverlay: some View {
+        if let context = messageContextMenu {
+            CoachUserMessageContextOverlay(
+                message: context.message,
+                bubbleFrame: context.bubbleFrame,
+                font: messageFont,
+                lineSpacing: messageLineSpacing,
+                bubbleColor: theme.coachUserBubble,
+                textColor: theme.primaryText,
+                onEdit: {
+                    let msg = context.message
+                    messageContextMenu = nil
+                    Task {
+                        await viewModel.beginEditingMessage(msg)
+                        try? await Task.sleep(nanoseconds: 280_000_000)
+                        isInputFocused = true
+                    }
+                },
+                onDismiss: { messageContextMenu = nil }
+            )
+            .zIndex(999)
+            .transition(.opacity)
         }
     }
 
@@ -586,6 +620,7 @@ struct CoachChatView: View {
     }
 
     private func openWelcomePlanPreview() {
+        guard showsWelcomePlanMenuEntry else { return }
         if showWelcomePlanPreview {
             dismissWelcomePlanChat()
             return

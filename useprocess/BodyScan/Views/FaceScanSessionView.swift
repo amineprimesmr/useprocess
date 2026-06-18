@@ -77,9 +77,17 @@ struct FaceScanResultSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     FaceScanRecordingMediaView(result: result, height: mediaHeight)
 
-                    Text(result.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
+                    HStack(alignment: .center) {
+                        Text(result.createdAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(.caption)
+                            .foregroundStyle(theme.secondaryText)
+                        Spacer()
+                        FaceWellnessScoreBadge(
+                            score: result.resolvedFaceDayScore,
+                            theme: theme,
+                            style: .compact
+                        )
+                    }
 
                     FaceScanMetricsRow(markers: result.markers, trend: nil, theme: theme)
 

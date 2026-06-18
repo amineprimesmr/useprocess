@@ -306,7 +306,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         isIntroOfferEligible = eligible
 
         if let monthlyDisplay {
-            self.monthlyDisplay = monthlyDisplay.updatingIntroEligibility(eligible)
+            self.monthlyDisplay = monthlyDisplay.updatingIntroEligibility(false)
         }
         if let annualDisplay {
             self.annualDisplay = annualDisplay.updatingIntroEligibility(eligible)
@@ -406,8 +406,18 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func makeDisplay(from product: StoreProduct, plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
         let price = product.localizedPriceString
         let name = product.localizedTitle.isEmpty ? plan.title : product.localizedTitle
-        let trialDays = SubscriptionIntroOfferParser.trialDays(from: product)
-            ?? SubscriptionConfiguration.freeTrialDays
+        let trialDays: Int?
+        let introEligible: Bool
+
+        switch plan {
+        case .monthly:
+            trialDays = nil
+            introEligible = false
+        case .annual:
+            trialDays = SubscriptionIntroOfferParser.trialDays(from: product)
+                ?? SubscriptionConfiguration.freeTrialDays
+            introEligible = isIntroOfferEligible
+        }
 
         switch plan {
         case .monthly:
@@ -418,7 +428,7 @@ final class SubscriptionService: NSObject, ObservableObject {
                 periodLabel: "par mois",
                 monthlyEquivalentPrice: nil,
                 freeTrialDays: trialDays,
-                isIntroOfferEligible: isIntroOfferEligible
+                isIntroOfferEligible: introEligible
             )
         case .annual:
             let monthly = monthlyEquivalent(from: product)
@@ -429,7 +439,7 @@ final class SubscriptionService: NSObject, ObservableObject {
                 periodLabel: "par an",
                 monthlyEquivalentPrice: monthly,
                 freeTrialDays: trialDays,
-                isIntroOfferEligible: isIntroOfferEligible
+                isIntroOfferEligible: introEligible
             )
         }
     }

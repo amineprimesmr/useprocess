@@ -160,13 +160,25 @@ struct PaywallView: View {
     }
 
     private var titleBlock: some View {
-        Text("Choisissez un plan après votre essai de 3 jours")
+        Text(paywallTitleText)
             .font(PaywallBevelTheme.paywallTitleFont())
             .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
             .multilineTextAlignment(.center)
             .lineSpacing(3)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)
+    }
+
+    private var paywallTitleText: String {
+        switch selectedBillingPlan {
+        case .annual:
+            if subscriptionService.trialInfo(for: .annual).isActiveOffer {
+                return "3 jours gratuits sur l'offre annuelle"
+            }
+            return "Choisissez l'offre annuelle"
+        case .monthly:
+            return "Abonnement mensuel sans essai"
+        }
     }
 
     // MARK: - Bas (forfaits + CTA)
@@ -348,7 +360,7 @@ struct PaywallView: View {
     private func subscriptionLegalSummary(for product: SubscriptionProductDisplay) -> String {
         let length = selectedBillingPlan == .annual ? "1 an" : "1 mois"
         let trialPrefix = selectedTrialInfo.isActiveOffer
-            ? " Essai gratuit de \(SubscriptionConfiguration.freeTrialDays) jours, puis "
+            ? " Essai gratuit de \(selectedTrialInfo.days) jours, puis "
             : " "
         return "Abonnement auto-renouvelable « \(product.displayName) » (\(length)) — \(product.displayPrice).\(trialPrefix)Renouvellement automatique jusqu'à annulation dans Réglages › Apple ID › Abonnements."
     }

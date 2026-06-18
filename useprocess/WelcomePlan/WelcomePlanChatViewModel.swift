@@ -71,6 +71,21 @@ final class WelcomePlanChatViewModel {
         currentIndex = firstUnansweredIndex()
         currentQuestion = question(at: currentIndex)
 
+        if let existingPlan = WelcomePlanStore.shared.plan,
+           WelcomePlanStore.shared.isQuestionnaireComplete || currentIndex >= activeQuestions.count {
+            generatedPlan = existingPlan
+            if !answers.isEmpty {
+                restoreConversationHistory()
+            }
+            appendAssistantMessageInstant("Ton Protocole Origine est déjà prêt — tu peux entrer dans l'app.")
+            withAnimation(OnboardingProfileChatAnswerReveal.spring) {
+                showsEnterButton = true
+            }
+            currentQuestion = nil
+            isQuestionReadyForAnswers = false
+            return
+        }
+
         if currentIndex > 0 {
             lastPhase = activeQuestions[currentIndex - 1].phase
         }

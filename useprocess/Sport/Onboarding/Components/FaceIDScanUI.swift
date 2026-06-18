@@ -18,8 +18,17 @@ enum FaceIDScanColors {
 
 // MARK: - Forme morph carré arrondi → cercle
 
-struct FaceMorphClipShape: Shape {
+enum FaceScanViewportMetrics {
+    static let roundedCornerRadius: CGFloat = 30
+}
+
+struct FaceMorphClipShape: InsettableShape {
     var morph: CGFloat
+    private var insetAmount: CGFloat = 0
+
+    init(morph: CGFloat) {
+        self.morph = morph
+    }
 
     var animatableData: CGFloat {
         get { morph }
@@ -27,9 +36,73 @@ struct FaceMorphClipShape: Shape {
     }
 
     func path(in rect: CGRect) -> Path {
-        let maxRadius = min(rect.width, rect.height) / 2
-        let cornerRadius = 30 + (maxRadius - 30) * morph
-        return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).path(in: rect)
+        morphPath(in: rect, inset: insetAmount)
+    }
+
+    func inset(by amount: CGFloat) -> FaceMorphClipShape {
+        var copy = self
+        copy.insetAmount += amount
+        return copy
+    }
+
+    private func morphPath(in rect: CGRect, inset: CGFloat) -> Path {
+        let adjusted = rect.insetBy(dx: inset, dy: inset)
+        let maxRadius = min(adjusted.width, adjusted.height) / 2
+        let cornerRadius = FaceScanViewportMetrics.roundedCornerRadius
+            + (maxRadius - FaceScanViewportMetrics.roundedCornerRadius) * morph
+        return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).path(in: adjusted)
+    }
+}
+
+// MARK: - Coins du cadre (positionnement — carré arrondi)
+
+struct FaceScanFrameCornerBrackets: View {
+    let size: CGFloat
+    var armLength: CGFloat = 26
+    var inset: CGFloat = 20
+    var lineWidth: CGFloat = 2.5
+    var color: Color = .white
+
+    var body: some View {
+        FaceScanCornerBracketsShape(armLength: armLength, inset: inset)
+            .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+            .frame(width: size, height: size)
+            .allowsHitTesting(false)
+    }
+}
+
+private struct FaceScanCornerBracketsShape: Shape {
+    var armLength: CGFloat
+    var inset: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let len = armLength
+        let i = inset
+        let maxX = rect.maxX - inset
+        let maxY = rect.maxY - inset
+
+        // Haut-gauche
+        path.move(to: CGPoint(x: i, y: i + len))
+        path.addLine(to: CGPoint(x: i, y: i))
+        path.addLine(to: CGPoint(x: i + len, y: i))
+
+        // Haut-droite
+        path.move(to: CGPoint(x: maxX - len, y: i))
+        path.addLine(to: CGPoint(x: maxX, y: i))
+        path.addLine(to: CGPoint(x: maxX, y: i + len))
+
+        // Bas-droite
+        path.move(to: CGPoint(x: maxX, y: maxY - len))
+        path.addLine(to: CGPoint(x: maxX, y: maxY))
+        path.addLine(to: CGPoint(x: maxX - len, y: maxY))
+
+        // Bas-gauche
+        path.move(to: CGPoint(x: i + len, y: maxY))
+        path.addLine(to: CGPoint(x: i, y: maxY))
+        path.addLine(to: CGPoint(x: i, y: maxY - len))
+
+        return path
     }
 }
 

@@ -61,7 +61,7 @@ struct ProcessMainScrollHeaderPreferenceKey: PreferenceKey {
     }
 }
 
-/// Menu + blur sticky au-dessus du TabView (une seule instance).
+/// Menu + blur sticky au-dessus des pages principales (une seule instance).
 struct ProcessMainStickyChromeOverlay: View {
     @Binding var selection: ProcessMainSection
     var lockedSections: Set<ProcessMainSection> = []

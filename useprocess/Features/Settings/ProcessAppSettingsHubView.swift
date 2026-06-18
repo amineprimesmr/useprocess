@@ -153,13 +153,13 @@ struct ProcessAppSettingsHubView: View {
                             .padding(.vertical, 16)
                     }
                     .background(GroupedSettingsMetrics.pageBackground.ignoresSafeArea())
-                    .navigationTitle("Sources santé")
+                    .navigationTitle("Scores et recommandations")
                     .navigationBarTitleDisplayMode(.inline)
                 } label: {
                     GroupedSettingsNavigationRow(
                         icon: "heart.text.square",
-                        title: "Sources et références santé",
-                        subtitle: "Citations des recommandations",
+                        title: "Scores, rapports et recommandations",
+                        subtitle: "Avertissements et sources de référence",
                         value: nil,
                         showsChevron: true
                     )

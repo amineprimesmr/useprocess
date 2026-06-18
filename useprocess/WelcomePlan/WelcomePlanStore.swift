@@ -20,6 +20,7 @@ final class WelcomePlanStore {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
         plan = loadPlan(userId: uid)
+        repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
         if plan != nil {
             migratePlanIfNeeded(answers: questionnaire.answers, profile: UnifiedProfileService.shared.currentProfile)
         }
@@ -36,6 +37,7 @@ final class WelcomePlanStore {
     private func reloadLocalOnly(uid: String) {
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
         plan = loadPlan(userId: uid)
+        repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
         CoachMemoryStore.shared.reloadForCurrentUser()
     }
 
@@ -99,18 +101,98 @@ final class WelcomePlanStore {
             current.lifestyleExtras = OriginLifestyleExtras.default
             changed = true
         }
+        if current.calendar.buildVersion < 5 {
+            CoachPlanEditor.regenerateCalendar(
+                plan: &current,
+                answers: answers ?? questionnaire.answers,
+                profile: profile
+            )
+            changed = true
+        }
 
         if changed { savePlan(current) }
     }
 
-    func toggleTaskComplete(taskId: String, dayId: String) {
+    func setJournalTaskStatus(_ status: JournalTaskStatus?, taskId: String, dayId: String) {
         guard var current = plan else { return }
-        if current.progress.completedTaskIds.contains(taskId) {
-            current.progress.completedTaskIds.remove(taskId)
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+        let key = OriginPlanProgress.taskKey(dayId: dayId, taskId: taskId)
+        if let status {
+            current.progress.taskStatuses[key] = status
+            if status == .completed {
+                current.progress.completedTaskIds.insert(taskId)
+            } else {
+                current.progress.completedTaskIds.remove(taskId)
+            }
         } else {
-            current.progress.completedTaskIds.insert(taskId)
+            current.progress.taskStatuses.removeValue(forKey: key)
+            current.progress.completedTaskIds.remove(taskId)
         }
+        syncJournalDayCompletion(on: &current, dayId: dayId)
         savePlan(current)
+    }
+
+    func toggleTaskComplete(taskId: String, dayId: String) {
+        guard let current = plan else { return }
+        let existing = current.progress.status(for: taskId, dayId: dayId)
+        setJournalTaskStatus(existing == .completed ? nil : .completed, taskId: taskId, dayId: dayId)
+    }
+
+    func saveValidatedMeal(dayId: String, meal: String) {
+        guard var current = plan else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+        current.progress.validatedMeals[dayId] = meal
+        syncJournalDayCompletion(on: &current, dayId: dayId)
+        savePlan(current)
+    }
+
+    func clearValidatedMeal(dayId: String) {
+        guard var current = plan else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+        current.progress.validatedMeals.removeValue(forKey: dayId)
+        savePlan(current)
+    }
+
+    func validatedMeal(for dayId: String) -> String? {
+        plan?.progress.validatedMeals[dayId]
+    }
+
+    private func syncJournalDayCompletion(on plan: inout FaceOriginPlan, dayId: String) {
+        guard let day = plan.calendar.weeks.flatMap(\.days).first(where: { $0.id == dayId }) else { return }
+        if OriginPlanPresenter.isDayJournalFilled(plan: plan, day: day) {
+            plan.progress.completedDayIds.insert(dayId)
+            plan.lastUpdated = Date()
+        } else {
+            plan.progress.completedDayIds.remove(dayId)
+        }
+    }
+
+    var hasQuestionnaireAnswers: Bool {
+        !questionnaire.answers.isEmpty
+    }
+
+    var isQuestionnaireComplete: Bool {
+        questionnaire.completedAt != nil
+    }
+
+    var canRestorePlan: Bool {
+        plan == nil && hasQuestionnaireAnswers
+    }
+
+    /// Importe données locales d'un autre uid, régénère le plan si besoin, resynchronise le flag d'accès.
+    @discardableResult
+    func repairAccessIfNeeded(profile: UnifiedUserProfile?) -> Bool {
+        importPersistedDataFromLikelyUsers()
+
+        if plan == nil, hasQuestionnaireAnswers {
+            regeneratePlanFromQuestionnaire(profile: profile)
+        }
+
+        if plan != nil {
+            syncWelcomePlanCompletionFlag()
+            return true
+        }
+        return false
     }
 
     func resetForCurrentUser() {
@@ -166,6 +248,46 @@ final class WelcomePlanStore {
         let key = UserScopedStorage.key("welcome.plan", userId: userId)
         guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(FaceOriginPlan.self, from: data)
+    }
+
+    private func importPersistedDataFromLikelyUsers() {
+        let targetUid = UserScopedStorage.currentUserId() ?? "local-user"
+
+        if questionnaire.answers.isEmpty {
+            for sourceUid in UserScopedStorage.likelyUserIds(primary: targetUid) {
+                guard sourceUid != targetUid,
+                      let imported = loadQuestionnaire(userId: sourceUid),
+                      !imported.answers.isEmpty
+                else { continue }
+                questionnaire = imported
+                persistQuestionnaire()
+                break
+            }
+        }
+
+        if plan == nil {
+            for sourceUid in UserScopedStorage.likelyUserIds(primary: targetUid) {
+                guard sourceUid != targetUid, let imported = loadPlan(userId: sourceUid) else { continue }
+                savePlan(imported)
+                break
+            }
+        }
+    }
+
+    private func regeneratePlanFromQuestionnaire(profile: UnifiedUserProfile?) {
+        guard hasQuestionnaireAnswers else { return }
+        let regenerated = WelcomePlanGenerator.generate(answers: questionnaire.answers, profile: profile)
+        if !isQuestionnaireComplete {
+            markQuestionnaireComplete()
+        }
+        savePlan(regenerated)
+    }
+
+    private func syncWelcomePlanCompletionFlag() {
+        guard AppSession.shared.hasCompletedOnboarding, plan != nil else { return }
+        if isQuestionnaireComplete || hasQuestionnaireAnswers {
+            AppSession.shared.completeWelcomePlanChat()
+        }
     }
 }
 

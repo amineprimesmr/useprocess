@@ -69,16 +69,7 @@ enum OnboardingHeaderLayout {
         guard let step = OnboardingStep(rawValue: currentStep) else { return false }
 
         if step == .videoIntroduction || isAfterQuestionnairePhase(step) { return false }
-        if isAfterFirstNameProgressPhase(step) { return false }
-
-        switch step {
-        case .healthKitPermissions, .programCreation, .biometricAuth, .notificationPermission,
-             .payment, .processWelcome, .referralReward, .featuresUnlock, .complete,
-             .caloriesGoal, .carryOverCalories, .appleSignIn, .referralCode, .appRating:
-            return false
-        default:
-            return true
-        }
+        return !isAfterFirstNameProgressPhase(step)
     }
 
     /// Retour seul après la page prénom (pas de barre ni drapeau).

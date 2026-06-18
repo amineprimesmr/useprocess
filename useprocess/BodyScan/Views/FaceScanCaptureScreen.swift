@@ -35,6 +35,29 @@ struct FaceScanCaptureScreen: View {
         case completed
     }
 
+    /// Visage bien cadré en phase de positionnement (distance OK, pas de hint).
+    private var isPositioningWellFramed: Bool {
+        frameHint == nil && isFaceDetected
+    }
+
+    /// Une fois le scan lancé, on garde le cercle — les rotations faussent parfois le cadrage.
+    private var usesCircularViewport: Bool {
+        phase == .scanning || phase == .completed || isPositioningWellFramed
+    }
+
+    /// 0 = carré arrondi, 1 = cercle.
+    private var viewportMorph: CGFloat {
+        usesCircularViewport ? 1 : 0
+    }
+
+    private var showsFrameCorners: Bool {
+        phase == .positioning && !isPositioningWellFramed
+    }
+
+    private var showsScanRing: Bool {
+        scanProgress > 0.005 || phase == .completed
+    }
+
     var body: some View {
         GeometryReader { geometry in
             let safeArea = geometry.safeAreaInsets
@@ -112,22 +135,23 @@ struct FaceScanCaptureScreen: View {
         }
         .onChange(of: isFaceDetected) { _, detected in
             guard isDeviceSupported, phase != .completed else { return }
-            if detected, phase == .positioning {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    phase = .scanning
-                }
-            } else if !detected, phase == .scanning, scanProgress < 0.08 {
+            if !detected, phase == .scanning, scanProgress < 0.03 {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     phase = .positioning
                 }
             }
         }
         .onChange(of: scanProgress) { oldValue, value in
+            if value > 0.005, phase == .positioning {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    phase = .scanning
+                }
+            }
             if value >= 1, phase != .completed, capturedPayload != nil {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     phase = .completed
                 }
-            } else if value < 0.05, oldValue > 0.12, phase == .scanning {
+            } else if value < 0.03, oldValue > 0.15, phase == .scanning {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     phase = .positioning
                     capturedPayload = nil
@@ -170,24 +194,28 @@ struct FaceScanCaptureScreen: View {
     private func cameraSection(viewportSize: CGFloat) -> some View {
         ZStack {
             if isDeviceSupported {
-                FaceMeshScanView(
-                    progress: $scanProgress,
-                    ringProgress: $ringProgress,
-                    activeTickSectors: $activeTickSectors,
-                    instruction: $instruction,
-                    frameHint: $frameHint,
-                    isFaceDetected: $isFaceDetected,
-                    isDeviceSupported: $isDeviceSupported,
-                    isLowLight: $isLowLight,
-                    onComplete: handleCapture
+                FaceScannerViewport(
+                    size: CGSize(width: viewportSize, height: viewportSize),
+                    morphToCircle: viewportMorph,
+                    camera: {
+                        FaceMeshScanView(
+                            progress: $scanProgress,
+                            ringProgress: $ringProgress,
+                            activeTickSectors: $activeTickSectors,
+                            instruction: $instruction,
+                            frameHint: $frameHint,
+                            isFaceDetected: $isFaceDetected,
+                            isDeviceSupported: $isDeviceSupported,
+                            isLowLight: $isLowLight,
+                            onComplete: handleCapture
+                        )
+                        .id(scanSessionID)
+                        .scaleEffect(cameraZoom)
+                    },
+                    overlay: { EmptyView() }
                 )
-                .id(scanSessionID)
-                .frame(width: viewportSize, height: viewportSize)
-                .scaleEffect(cameraZoom)
-                .frame(width: viewportSize, height: viewportSize)
-                .clipShape(Circle())
                 .overlay {
-                    Circle()
+                    FaceMorphClipShape(morph: viewportMorph)
                         .strokeBorder(
                             isFlashEnabled ? Color.black.opacity(0.08) : Color.white.opacity(0.18),
                             lineWidth: 1.5
@@ -199,14 +227,25 @@ struct FaceScanCaptureScreen: View {
                     y: 4
                 )
 
-                scannerOverlay(cameraDiameter: viewportSize)
+                if showsFrameCorners {
+                    FaceScanFrameCornerBrackets(size: viewportSize)
+                        .transition(.opacity)
+                }
+
+                if showsScanRing {
+                    scannerOverlay(cameraDiameter: viewportSize)
+                        .transition(.opacity)
+                }
             } else {
                 unsupportedSection
                     .frame(width: viewportSize)
             }
         }
         .frame(maxWidth: .infinity)
+        .animation(.interpolatingSpring(duration: 0.55, bounce: 0.08), value: viewportMorph)
         .animation(.easeInOut(duration: 0.25), value: phase)
+        .animation(.easeInOut(duration: 0.2), value: showsFrameCorners)
+        .animation(.easeInOut(duration: 0.2), value: showsScanRing)
     }
 
     @ViewBuilder
@@ -217,7 +256,6 @@ struct FaceScanCaptureScreen: View {
             isComplete: phase == .completed,
             isLightBackdrop: isFlashEnabled
         )
-        .opacity(phase == .completed || isFaceDetected || phase == .scanning ? 1 : 0.55)
     }
 
     // MARK: - Copy

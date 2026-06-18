@@ -84,14 +84,38 @@ struct ProcessSettingsView: View {
             GroupedSettingsRowDivider()
 
             Button {
-                Task { await healthManager.performFullSync() }
+                Task {
+                    if healthManager.isAuthorized {
+                        await healthManager.performFullSync()
+                    } else {
+                        await healthManager.requestAuthorizationAsync()
+                    }
+                }
             } label: {
                 GroupedSettingsNavigationRow(
                     icon: "heart.text.square",
-                    title: "Synchroniser Santé",
-                    subtitle: healthManager.hasAppleWatch ? "Apple Watch connectée" : "Sources Apple Santé",
+                    title: healthManager.isAuthorized ? "Synchroniser Santé" : "Connecter Apple Santé",
+                    subtitle: healthManager.isAuthorized
+                        ? (healthManager.hasAppleWatch ? "Apple Watch connectée" : "Données synchronisées depuis l'app Santé")
+                        : "Autorise l'accès à tes données santé",
                     value: nil,
                     showsChevron: false
+                )
+            }
+            .buttonStyle(.plain)
+
+            GroupedSettingsRowDivider()
+
+            NavigationLink {
+                HealthConnectedSourcesSettingsView()
+                    .environmentObject(healthManager)
+            } label: {
+                GroupedSettingsNavigationRow(
+                    icon: "apps.iphone",
+                    title: "Sources connectées",
+                    subtitle: "Apps et appareils Apple Santé",
+                    value: healthManager.connectedSources.isEmpty ? nil : "\(healthManager.connectedSources.count)",
+                    showsChevron: true
                 )
             }
             .buttonStyle(.plain)

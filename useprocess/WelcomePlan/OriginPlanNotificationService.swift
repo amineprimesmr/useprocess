@@ -19,7 +19,10 @@ enum OriginPlanNotificationService {
         var hour = 7
         var minute = 30
         if let wake = day?.sleep.targetWake ?? plan.sleepProtocol.wakeWindow.components(separatedBy: " ").last {
-            let parts = wake.replacingOccurrences(of: "(±30 min)", with: "").split(separator: ":")
+            let parts = wake
+                .replacingOccurrences(of: "(±30 min)", with: "")
+                .replacingOccurrences(of: #"\(marge \d+ min\)"#, with: "", options: .regularExpression)
+                .split(separator: ":")
             if parts.count == 2, let h = Int(parts[0]), let m = Int(parts[1]) {
                 hour = h
                 minute = max(m - 15, 0)
@@ -31,7 +34,12 @@ enum OriginPlanNotificationService {
         components.minute = minute
 
         let trainingLine = day?.training.map { "Séance : \($0.sessionName)" } ?? "Récup active + marche"
-        let nutritionLine = day.map { "PDJ : \($0.nutrition.breakfast)" } ?? plan.nutritionProtocol.mealExamples.first ?? "Repas dense"
+        let nutritionLine: String = {
+            if let day, let meal = plan.progress.validatedMeals[day.id], !meal.isEmpty {
+                return "Repas : \(OriginPlanPresenter.truncate(meal, max: 40))"
+            }
+            return "Nutrition : demande une idée de repas dans l'app"
+        }()
 
         let content = UNMutableNotificationContent()
         content.title = "Protocole Origine — Jour \(dayNumber)"

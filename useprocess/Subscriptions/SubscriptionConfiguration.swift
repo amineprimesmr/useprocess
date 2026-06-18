@@ -19,8 +19,19 @@ enum SubscriptionConfiguration {
     /// Groupe d'abonnements App Store (StoreKit + éligibilité intro).
     static let subscriptionGroupID = "21482999"
 
-    /// Essai gratuit — doit correspondre à l'offre intro App Store Connect (P3D).
+    /// Essai gratuit — doit correspondre à l'offre intro App Store Connect (P3D), annuel uniquement.
     static let freeTrialDays = 3
+
+    static func freeTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
+        switch plan {
+        case .annual: return freeTrialDays
+        case .monthly: return nil
+        }
+    }
+
+    static func supportsFreeTrial(_ plan: SubscriptionBillingPlan) -> Bool {
+        freeTrialDays(for: plan) != nil
+    }
 
     /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR).
     static let fallbackMonthlyPrice = "5,99 €"
@@ -81,8 +92,8 @@ struct SubscriptionProductDisplay: Equatable {
                 displayPrice: SubscriptionConfiguration.fallbackMonthlyPrice,
                 periodLabel: "par mois",
                 monthlyEquivalentPrice: nil,
-                freeTrialDays: SubscriptionConfiguration.freeTrialDays,
-                isIntroOfferEligible: true
+                freeTrialDays: nil,
+                isIntroOfferEligible: false
             )
         case .annual:
             return SubscriptionProductDisplay(

@@ -38,8 +38,9 @@ enum CoachHomeContext {
     @MainActor
     static func resolve(
         profile: UnifiedUserProfile?,
-        scanStore: FaceScanHistoryStore = .shared
+        scanStore: FaceScanHistoryStore? = nil
     ) -> CoachHomePrompt {
+        let scanStore = scanStore ?? FaceScanHistoryStore.shared
         let trimmedName = profile?.firstName
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasName = !trimmedName.isEmpty
@@ -142,14 +143,9 @@ enum CoachHomeContext {
         }
 
         let nutritionLine = OriginPlanPresenter.nutritionOneLiner(day: day, plan: plan)
-        let mealQuestion: String = {
-            if day.nutrition.isOMAD || plan.nutritionProtocol.mealPlanStyle == .omad {
-                return "Je mange quoi aujourd'hui ?"
-            }
-            if !day.nutrition.lunch.isEmpty { return "C'est quoi mon déjeuner ?" }
-            if !day.nutrition.dinner.isEmpty { return "C'est quoi mon dîner ?" }
-            return "Je mange quoi au prochain repas ?"
-        }()
+        let mealQuestion = plan.progress.validatedMeals[day.id]?.isEmpty == false
+            ? "Comment optimiser mon repas validé ?"
+            : "Propose-moi une idée de repas pour aujourd'hui"
         items.append(
             suggestion(
                 id: "meal",
@@ -158,12 +154,12 @@ enum CoachHomeContext {
             )
         )
 
-        if let faceTask = day.face.first?.title, !faceTask.isEmpty {
+        if day.morning.contains(where: { $0.title.lowercased().contains("alimentation") }) {
             items.append(
                 suggestion(
-                    id: "face-routine",
-                    question: "C'est quoi ma routine visage ce soir ?",
-                    hint: faceTask
+                    id: "nutrition-day",
+                    question: "Comment je mange parfaitement aujourd'hui ?",
+                    hint: "Alimentation parfaite"
                 )
             )
         } else {

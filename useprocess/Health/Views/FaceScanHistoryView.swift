@@ -103,6 +103,23 @@ struct FaceScanDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     FaceScanRecordingMediaView(result: result, height: 260)
 
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Score visage")
+                                .font(.caption)
+                                .foregroundStyle(theme.secondaryText)
+                            Text(FaceWellnessScore.label(for: result.resolvedFaceDayScore))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(theme.primaryText)
+                        }
+                        Spacer()
+                        FaceWellnessScoreBadge(
+                            score: result.resolvedFaceDayScore,
+                            theme: theme,
+                            style: .prominent
+                        )
+                    }
+
                     FaceScanMetricsRow(
                         markers: result.markers,
                         trend: previous.map { result.delta(from: $0) },
@@ -117,8 +134,6 @@ struct FaceScanDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(theme.primaryText)
                     }
-
-                    HealthMedicalSourcesView(style: .compact)
                 }
                 .padding()
             }

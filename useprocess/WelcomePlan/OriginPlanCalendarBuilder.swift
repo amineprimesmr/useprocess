@@ -45,20 +45,22 @@ enum OriginPlanCalendarBuilder {
                     answers: answers
                 )
 
+                let dayId = "w\(weekNum)-d\(weekday)"
+
                 days.append(
                     OriginProgramDay(
-                        id: "w\(weekNum)-d\(weekday)",
+                        id: dayId,
                         globalDayIndex: globalDay,
                         weekNumber: weekNum,
                         weekdayIndex: weekday,
                         weekdayLabel: weekdayLabels[weekday],
                         title: dayTitle(week: weekNum, weekday: weekday, hasTraining: training != nil),
-                        morning: morningTasks(plan: plan, phase: phase, weekday: weekday),
+                        morning: morningTasks(plan: plan, phase: phase, weekday: weekday, dayId: dayId),
                         nutrition: nutrition,
                         training: training,
-                        posture: postureTasks(plan: plan, phase: phase, weekday: weekday),
-                        face: faceTasks(plan: plan, phase: phase),
-                        evening: eveningTasks(plan: plan, answers: answers),
+                        posture: postureTasks(plan: plan, phase: phase, weekday: weekday, dayId: dayId),
+                        face: faceTasks(plan: plan, phase: phase, dayId: dayId),
+                        evening: eveningTasks(plan: plan, answers: answers, dayId: dayId),
                         sleep: OriginDaySleep(
                             targetBedtime: bedtime,
                             targetWake: wake,
@@ -86,7 +88,7 @@ enum OriginPlanCalendarBuilder {
             )
         }
 
-        return OriginProgramCalendar(startedAt: Date(), weeks: weeks)
+        return OriginProgramCalendar(startedAt: Date(), weeks: weeks, buildVersion: 5)
     }
 
     // MARK: - Phase
@@ -101,7 +103,7 @@ enum OriginPlanCalendarBuilder {
                 id: "p1",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: phaseEnds.p1),
                 title: "Fondations — Reset biologique",
-                objectives: ["Rythme circadien", "Alimentation dense", "Mewing (langue au palais)"],
+                objectives: ["Rythme circadien", "Alimentation dense", "Hydratation \(ProcessHydrationGuide.dailyLiters)"],
                 habits: ["Couvre-feu lumière", "Repas protéinés", "Marche"]
             )
         }
@@ -110,8 +112,8 @@ enum OriginPlanCalendarBuilder {
                 id: "p2",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: phaseEnds.p1 + 1, through: phaseEnds.p2),
                 title: "Hormones & digestion",
-                objectives: ["Digestion optimale", "Stress ↓", "Hydratation minérale"],
-                habits: ["Bouillon", "Routine soir", "Mobilité"]
+                objectives: ["Digestion optimale", "Stress ↓", "Hydratation \(ProcessHydrationGuide.dailyLiters)"],
+                habits: ["Minéraux", "Routine soir", "Scan visage"]
             )
         }
         if week <= phaseEnds.p3 {
@@ -120,7 +122,7 @@ enum OriginPlanCalendarBuilder {
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: phaseEnds.p2 + 1, through: phaseEnds.p3),
                 title: "Entraînement & composition",
                 objectives: ["Progressive overload", "Composition corporelle", "Chaîne postérieure"],
-                habits: ["Séances loguées", "Sommeil 7,5 h+", "Scan régulier"]
+                habits: ["Séances loguées", "Sommeil \(ProcessDailyTargets.sleepHours) h+", "Scan régulier"]
             )
         }
         return .init(
@@ -194,7 +196,7 @@ enum OriginPlanCalendarBuilder {
             durationMinutes: plan.trainingProtocol.sessionDurationMinutes,
             warmup: ["5 min marche ou vélo", "Mobilité épaules + hanches 5 min"],
             exercises: exercises,
-            cooldown: ["Étirement psoas 2 min", "Respiration nasale 2 min"],
+            cooldown: ["Marche lente 3 min"],
             notes: note
         )
     }
@@ -239,21 +241,15 @@ enum OriginPlanCalendarBuilder {
         plan: FaceOriginPlan,
         answers: [String: WelcomePlanAnswer]
     ) -> OriginDayNutrition {
-        let examples = plan.nutritionProtocol.mealExamples
-        let e0 = examples.indices.contains(0) ? examples[0] : "Œufs + patate douce"
-        let e1 = examples.indices.contains(1) ? examples[1] : "Steak + tubercule vapeur"
-        let e2 = examples.indices.contains(2) ? examples[2] : "Poisson + légumes cuits"
-        let isTrainingDay = weekday == 0 || weekday == 2 || weekday == 4
-
         var principles = Array(plan.nutritionProtocol.principles.prefix(2))
         if week <= 3 { principles.append("Phase fondations : zéro ultra-transformé") }
         if week >= 7 { principles.append("Ajuster portions selon énergie et composition") }
 
         return OriginDayNutrition(
-            breakfast: e0,
-            lunch: e1,
-            dinner: isTrainingDay ? e1 : e2,
-            snack: weekday == 5 ? "Fromage entier + miel" : "Fruit modéré (1 max)",
+            breakfast: "",
+            lunch: "",
+            dinner: "",
+            snack: nil,
             hydration: plan.nutritionProtocol.hydrationGuide,
             principles: principles,
             foodsToday: Array(plan.nutritionProtocol.foodsToPrioritize.prefix(4))
@@ -262,54 +258,71 @@ enum OriginPlanCalendarBuilder {
 
     // MARK: - Daily tasks
 
-    private static func morningTasks(plan: FaceOriginPlan, phase: OriginPlanPhaseBlock, weekday: Int) -> [OriginPlanTask] {
-        var tasks: [OriginPlanTask] = [
-            task("Lumière matinale", "10–20 min soleil ou lumière naturelle", "Hormones", 15),
-            task("Hydratation + sel/citron", "Réveil mineral — pas café immédiat", "Nutrition", 2),
-            task("Mewing matinal", "Langue au palais, lèvres closes, respiration nasale — 5 min actif", "Posture", 5)
-        ]
-        if weekday == 0 {
-            tasks.append(task("Bilan semaine", "5 min : sommeil, digestion, visage, énergie", "Mindset", 5))
-        }
-        return tasks
-    }
-
-    private static func postureTasks(plan: FaceOriginPlan, phase: OriginPlanPhaseBlock, weekday: Int) -> [OriginPlanTask] {
-        var tasks = plan.postureProtocol.mobilityBlocks.prefix(2).enumerated().map { i, block in
-            task("Mobilité \(i + 1)", block, "Posture", 5)
-        }
-        tasks.append(task("Marche", plan.postureProtocol.walkingTargets, "Posture", 30))
-        if weekday == 3 || weekday == 6 {
-            tasks.append(task("Respiration", plan.postureProtocol.breathingWork.first ?? "Box breathing 3 min", "Posture", 3))
-        }
-        return tasks
-    }
-
-    private static func faceTasks(plan: FaceOriginPlan, phase: OriginPlanPhaseBlock) -> [OriginPlanTask] {
+    private static func morningTasks(plan: FaceOriginPlan, phase: OriginPlanPhaseBlock, weekday: Int, dayId: String) -> [OriginPlanTask] {
         [
-            task("Mastication lente", "20–30 mâchées par bouchée — stimulation maxillaire + digestion", "Maxillaire", nil),
-            task("Mewing actif", plan.faceProtocol.jawAndTongueWork.first ?? "5 min langue au palais", "Maxillaire", 5),
-            task("Déglution consciente", "3 déglutions correctes — langue seule, posture droite", "Maxillaire", 2),
-            task("Drainage lymphatique", plan.faceProtocol.lymphAndFascia.first ?? "Massage sous-orbital 1 min", "Maxillaire", 1)
+            task("Lumière matinale", "\(ProcessDailyTargets.morningLightMinutes) min soleil ou lumière naturelle", "Hormones", ProcessDailyTargets.morningLightMinutes, dayId: dayId),
+            task(ProcessHydrationGuide.dailyTaskTitle, ProcessHydrationGuide.dailyTaskDetail, "Nutrition", nil, dayId: dayId),
+            task(
+                "Eau froide sur le visage",
+                "\(ProcessDailyTargets.coldFaceRinseSeconds) sec — front, joues, contour des yeux. Réveille la lymphe et réduit le gonflement.",
+                "Visage",
+                nil,
+                dayId: dayId
+            ),
+            task(
+                "Alimentation parfaite",
+                alimentationParfaiteDetail(plan: plan),
+                "Nutrition",
+                nil,
+                dayId: dayId
+            )
         ]
     }
 
-    private static func eveningTasks(plan: FaceOriginPlan, answers: [String: WelcomePlanAnswer]) -> [OriginPlanTask] {
-        var tasks: [OriginPlanTask] = [
-            task("Routine sommeil", "Lumière chaude, préparation coucher", "Sommeil", 20)
-        ]
-        if answers["screen_before_bed"]?.choiceIds.first == "yes" {
-            tasks.insert(task("Couvre-feu écran", "Zéro écran 60 min avant le coucher", "Sommeil", nil), at: 0)
+    private static func alimentationParfaiteDetail(plan: FaceOriginPlan) -> String {
+        let principles = plan.nutritionProtocol.principles.prefix(2).joined(separator: " · ")
+        if principles.isEmpty {
+            return "Repas denses, protéines et légumes — valide ton repas du jour."
         }
-        return tasks
+        return principles
     }
 
-    private static func task(_ title: String, _ detail: String, _ pillar: String, _ minutes: Int?) -> OriginPlanTask {
-        OriginPlanTask(id: UUID().uuidString, title: title, detail: detail, pillar: pillar, durationMinutes: minutes, isOptional: false)
+    private static func postureTasks(plan: FaceOriginPlan, phase: OriginPlanPhaseBlock, weekday: Int, dayId: String) -> [OriginPlanTask] {
+        [
+            task("Marche", plan.postureProtocol.walkingTargets, "Posture", 30, dayId: dayId)
+        ]
+    }
+
+    private static func faceTasks(plan: FaceOriginPlan, phase: OriginPlanPhaseBlock, dayId: String) -> [OriginPlanTask] {
+        []
+    }
+
+    private static func eveningTasks(plan: FaceOriginPlan, answers: [String: WelcomePlanAnswer], dayId: String) -> [OriginPlanTask] {
+        []
+    }
+
+    private static func task(_ title: String, _ detail: String, _ pillar: String, _ minutes: Int?, dayId: String) -> OriginPlanTask {
+        OriginPlanTask(
+            id: "\(dayId).\(stableSlug(title))",
+            title: title,
+            detail: detail,
+            pillar: pillar,
+            durationMinutes: minutes,
+            isOptional: false
+        )
+    }
+
+    private static func stableSlug(_ title: String) -> String {
+        title
+            .lowercased()
+            .folding(options: .diacriticInsensitive, locale: Locale(identifier: "fr_FR"))
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: "·", with: "")
+            .replacingOccurrences(of: "'", with: "")
     }
 
     private static func dayTitle(week: Int, weekday: Int, hasTraining: Bool) -> String {
-        if weekday == 6 { return "Semaine \(week) — Récupération & review" }
+        if weekday == 6 { return "Semaine \(week) — Récupération" }
         if hasTraining { return "Semaine \(week) — \(weekdayLabels[weekday]) · Séance" }
         return "Semaine \(week) — \(weekdayLabels[weekday]) · Récup active"
     }

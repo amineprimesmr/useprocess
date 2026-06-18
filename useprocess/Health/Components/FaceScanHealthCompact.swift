@@ -8,6 +8,7 @@ struct FaceScanHealthCompact: View {
     let faceDayScore: Int?
     let isScanDue: Bool
     let daysUntilNextScan: Int?
+    var correlationHint: String?
     var onScan: () -> Void
     var onHistory: () -> Void
 
@@ -29,14 +30,17 @@ struct FaceScanHealthCompact: View {
                 HealthHubDesign.sectionHeader("Scan visage", subtitle: statusSubtitle, theme: theme)
                 Spacer()
                 if let faceDayScore {
-                    Text("\(faceDayScore)")
-                        .font(.headline.weight(.bold).monospacedDigit())
-                        .foregroundStyle(theme.onboardingAccent)
+                    FaceWellnessScoreBadge(score: faceDayScore, theme: theme)
                 }
             }
 
             if let analysisLine {
                 Text(analysisLine)
+                    .font(.caption)
+                    .foregroundStyle(theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if let correlationHint {
+                Text(correlationHint)
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)

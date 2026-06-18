@@ -11,14 +11,11 @@ struct HealthDashboardView: View {
 
     @State private var planStore = WelcomePlanStore.shared
 
-    @State private var readinessExplanation: String?
-    @State private var isExplainingReadiness = false
-    @State private var showReadinessSheet = false
-
     @State private var showFaceScan = false
     @State private var showFaceHistory = false
     @State private var selectedFaceScan: FaceScanResult?
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
+    @State private var isRestoringPlan = false
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
@@ -38,7 +35,6 @@ struct HealthDashboardView: View {
             .toolbar(.hidden, for: .navigationBar)
             .refreshable { await refreshAll() }
             .task { await refreshAll() }
-            .sheet(isPresented: $showReadinessSheet) { readinessSheet }
             .fullScreenCover(isPresented: $showFaceScan) { faceScanCover }
             .sheet(isPresented: $showFaceHistory) {
                 FaceScanHistoryView(history: faceHistoryStore.history) { scan in
@@ -62,26 +58,7 @@ struct HealthDashboardView: View {
     @ViewBuilder
     private var healthContent: some View {
         if let plan = livePlan {
-            OriginPlanHeaderCard(plan: plan)
-        }
-
-        ReadinessScoreGaugeView(
-            score: healthManager.readinessScore,
-            label: healthManager.readinessLabel,
-            subtitle: ReadinessGaugeCopy.defaultSubtitle(for: healthManager.readinessScore),
-            showsDetails: ClaudeConfiguration.isConfigured,
-            isLoadingDetails: isExplainingReadiness,
-            onDetails: {
-                Task { await explainReadiness() }
-            }
-        )
-
-        if let face = healthManager.faceDayScore {
-            faceDayChip(score: face, label: healthManager.faceDayLabel ?? "Visage")
-        }
-
-        if let plan = livePlan {
-            programSection(title: "Aujourd'hui", section: .today, plan: plan)
+            DailyJournalChecklistView(plan: plan)
         } else {
             noPlanCard
         }
@@ -91,111 +68,81 @@ struct HealthDashboardView: View {
             faceDayScore: healthManager.faceDayScore,
             isScanDue: faceHistoryStore.isScanDue,
             daysUntilNextScan: faceHistoryStore.daysUntilNextScan,
+            correlationHint: healthManager.faceCorrelations.first.map {
+                OriginPlanPresenter.truncate($0.message, max: 90)
+            },
             onScan: { showFaceScan = true },
             onHistory: { showFaceHistory = true }
         )
 
-        if !healthManager.faceCorrelations.isEmpty {
-            correlationsBlock
-        }
-
-        HealthTrackingPanel {
-            Task { await healthManager.requestAuthorizationAsync() }
-        }
-
-        if let plan = livePlan {
-            programSection(title: "Semaine", section: .week, plan: plan)
-            programSection(title: "Piliers", section: .pillars, plan: plan)
-        }
-    }
-
-    private func programSection(
-        title: String,
-        section: OriginPlanProgramSection,
-        plan: FaceOriginPlan
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(theme.primaryText)
-
-            OriginPlanProgramContent(section: .constant(section), plan: plan)
-        }
-    }
-
-    // MARK: - Sections
-
-    private func faceDayChip(score: Int, label: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "face.smiling")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(theme.secondaryText)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Scan visage")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.secondaryText)
-                Text("\(score)/100 · \(label)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
+        HealthTodayMetricsCard()
     }
 
     private var noPlanCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("Protocole Origine")
                 .font(.headline)
-            Text("Termine la configuration avec le coach pour débloquer ton programme.")
-                .font(.caption)
+
+            Text(noPlanMessage)
+                .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                openWelcomePlanConfiguration()
+            } label: {
+                Label("Terminer la configuration", systemImage: "sparkles")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(theme.onboardingAccent)
+
+            if planStore.canRestorePlan {
+                Button {
+                    Task { await restorePlan() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if isRestoringPlan {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text(isRestoringPlan ? "Restauration…" : "Restaurer mon protocole")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(isRestoringPlan)
+            }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(HealthHubDesign.surfaceCard(theme: theme))
     }
 
-    private var correlationsBlock: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Tendances scan")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
-            ForEach(healthManager.faceCorrelations.prefix(2)) { insight in
-                Text("• \(OriginPlanPresenter.truncate(insight.message, max: 100))")
-                    .font(.caption)
-                    .foregroundStyle(theme.primaryText)
-            }
+    private var noPlanMessage: String {
+        if planStore.canRestorePlan {
+            return "Tu as déjà répondu au questionnaire, mais ton programme n'a pas pu être chargé. Restaure-le en un clic ou reprends la configuration avec le coach."
         }
-        .padding(14)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
+        return "Le chat Protocole Origine débloque ton journal, tes tâches du jour et ton suivi personnalisé."
+    }
+
+    private func openWelcomePlanConfiguration() {
+        HapticManager.shared.impact(.medium)
+        withAnimation(ProcessGlass.spring) {
+            selectedSection = .coach
+        }
+    }
+
+    private func restorePlan() async {
+        isRestoringPlan = true
+        defer { isRestoringPlan = false }
+        _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
+        planStore.reloadForCurrentUser()
     }
 
     // MARK: - Sheets
-
-    private var readinessSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text(readinessExplanation ?? "Analyse indisponible.")
-                        .font(.body)
-                        .foregroundStyle(theme.primaryText)
-                    HealthMedicalSourcesView(style: .compact)
-                }
-                .padding()
-            }
-            .background(theme.background.ignoresSafeArea())
-            .navigationTitle("Readiness")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { showReadinessSheet = false }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
 
     private var faceScanCover: some View {
         FaceScanSessionView(
@@ -213,6 +160,9 @@ struct HealthDashboardView: View {
 
     private func refreshAll() async {
         planStore.reloadForCurrentUser()
+        if planStore.plan == nil {
+            _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
+        }
         if healthManager.isHealthDataAvailable && !healthManager.isAuthorized {
             await healthManager.requestAuthorizationAsync()
         } else if healthManager.isAuthorized {
@@ -220,181 +170,112 @@ struct HealthDashboardView: View {
             await dataManager.updateCurrentDayData(with: healthManager)
         }
     }
-
-    private func explainReadiness() async {
-        isExplainingReadiness = true
-        defer { isExplainingReadiness = false }
-        readinessExplanation = await CoachEngine.explainReadiness(profile: profileService.currentProfile)
-        showReadinessSheet = readinessExplanation != nil
-    }
 }
 
-// MARK: - Suivi HealthKit
+// MARK: - Métriques santé (résumé compact)
 
-private struct HealthTrackingPanel: View {
+private struct HealthTodayMetricsCard: View {
     @EnvironmentObject private var healthManager: HealthManager
+    @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
 
-    var onRequestConnect: () -> Void
+    @State private var showDetails = false
+
+    private var snapshot: DailyHealthSnapshot { healthManager.todaySnapshot }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            appleHealthStatusCard
-            keyMetricsGrid
+        VStack(alignment: .leading, spacing: 12) {
+            HealthHubDesign.sectionHeader("Suivi", subtitle: "Métriques", theme: theme)
 
-            trackingDisclosure("Activité", icon: "figure.run") {
-                let e = healthManager.todaySnapshot.effort
-                trackingRow("Pas", metricValue(e.steps))
-                trackingRow("Calories actives", e.activeEnergyBurned > 0 ? "\(Int(e.activeEnergyBurned)) kcal" : "—")
-                trackingRow("Exercice", e.exerciseMinutes > 0 ? "\(Int(e.exerciseMinutes)) min" : "—")
-                trackingRow("Effort Process", e.effortScore > 0 ? "\(Int(e.effortScore)) %" : "—")
-                trackingRow("Distance", formatDistance(e.distanceKm))
-                trackingRow("Séances", metricValue(e.workoutCount))
-                trackingRow("Étages", metricValue(e.flightsClimbed))
-                trackingRow("Heures debout", metricValue(healthManager.todaySnapshot.activity.standHours))
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                metricChip("Pas", value: metricValue(snapshot.effort.steps), icon: "figure.walk")
+                metricChip("Sommeil", value: formatSleep(snapshot.sleep.sleepDuration), icon: "bed.double.fill")
+                metricChip("HRV", value: snapshot.vitals.hrv > 0 ? String(format: "%.0f", snapshot.vitals.hrv) : "—", icon: "waveform.path.ecg")
+                metricChip("Calories", value: snapshot.effort.activeEnergyBurned > 0 ? "\(Int(snapshot.effort.activeEnergyBurned))" : "—", icon: "flame.fill")
+                metricChip("Exercice", value: snapshot.effort.exerciseMinutes > 0 ? "\(Int(snapshot.effort.exerciseMinutes))m" : "—", icon: "figure.run")
+                metricChip("FC repos", value: snapshot.vitals.restingHeartRate > 0 ? "\(Int(snapshot.vitals.restingHeartRate))" : "—", icon: "heart.fill")
             }
 
-            trackingDisclosure("Sommeil", icon: "bed.double.fill") {
-                let s = healthManager.todaySnapshot.sleep
-                trackingRow("Durée", s.sleepDuration > 0 ? String(format: "%.1f h", s.sleepDuration) : "—")
-                trackingRow("Profond", s.deepSleepHours > 0 ? String(format: "%.1f h", s.deepSleepHours) : "—")
-                trackingRow("REM", s.remSleepHours > 0 ? String(format: "%.1f h", s.remSleepHours) : "—")
-                trackingRow("Dette", s.sleepDebt > 0 ? String(format: "%.1f h", s.sleepDebt) : "Aucune")
-                if let bed = s.bedtime {
-                    trackingRow("Coucher", bed.formatted(date: .omitted, time: .shortened))
-                }
-                if let wake = s.wakeTime {
-                    trackingRow("Réveil", wake.formatted(date: .omitted, time: .shortened))
-                }
-            }
-
-            trackingDisclosure("Signes vitaux", icon: "heart.fill") {
-                let v = healthManager.todaySnapshot.vitals
-                let b = healthManager.baselines
-                trackingRow("FC moyenne", v.heartRate > 0 ? "\(Int(v.heartRate)) bpm" : "—")
-                trackingRow("FC repos", v.restingHeartRate > 0 ? "\(Int(v.restingHeartRate)) bpm" : "—")
-                trackingRow("HRV (SDNN)", v.hrv > 0 ? String(format: "%.0f ms", v.hrv) : "—")
-                if b.hrv > 0 {
-                    trackingRow("HRV baseline", String(format: "%.0f ms", b.hrv))
-                }
-                if b.restingHeartRate > 0 {
-                    trackingRow("FC repos baseline", String(format: "%.0f bpm", b.restingHeartRate))
-                }
-                trackingRow("SpO2", v.spo2 > 0 ? String(format: "%.0f %%", v.spo2) : "—")
-                trackingRow("Fréq. respiratoire", v.respiratoryRate > 0 ? String(format: "%.0f /min", v.respiratoryRate) : "—")
-                trackingRow("VO2 max", healthManager.todaySnapshot.activity.vo2Max > 0
-                    ? String(format: "%.1f", healthManager.todaySnapshot.activity.vo2Max) : "—")
-            }
-
-            trackingDisclosure("Corps", icon: "figure.stand") {
-                let v = healthManager.todaySnapshot.vitals
-                trackingRow("Poids", v.bodyMass > 0 ? String(format: "%.1f kg", v.bodyMass) : "—")
-                trackingRow("Masse grasse", v.bodyFatPercentage > 0 ? String(format: "%.1f %%", v.bodyFatPercentage) : "—")
-            }
-
-            trackingDisclosure("Nutrition", icon: "fork.knife") {
-                let n = healthManager.todaySnapshot.nutrition
-                trackingRow("Calories", n.caloriesConsumed > 0 ? "\(Int(n.caloriesConsumed)) kcal" : "—")
-                trackingRow("Protéines", n.proteinGrams > 0 ? "\(Int(n.proteinGrams)) g" : "—")
-                trackingRow("Glucides", n.carbsGrams > 0 ? "\(Int(n.carbsGrams)) g" : "—")
-                trackingRow("Lipides", n.fatGrams > 0 ? "\(Int(n.fatGrams)) g" : "—")
-                trackingRow("Eau", n.waterLiters > 0 ? String(format: "%.1f L", n.waterLiters) : "—")
-            }
-
-            if healthManager.baselines.daysOfData > 0 {
-                trackingDisclosure("Tes moyennes (14 j)", icon: "chart.line.uptrend.xyaxis") {
-                    let b = healthManager.baselines
-                    trackingRow("Jours de données", "\(b.daysOfData)")
-                    trackingRow("Sommeil cible", b.sleepNeedHours > 0 ? String(format: "%.1f h", b.sleepNeedHours) : "—")
-                    trackingRow("Pas / jour", b.avgDailySteps > 0 ? "\(Int(b.avgDailySteps))" : "—")
-                    trackingRow("Calories / jour", b.avgActiveCalories > 0 ? "\(Int(b.avgActiveCalories)) kcal" : "—")
-                }
-            }
-
-            connectedSourcesCard
-
-            HealthMedicalSourcesView(style: .compact)
-                .padding(12)
-                .background(HealthHubDesign.surfaceCard(theme: theme))
-
-            syncFooter
-        }
-    }
-
-    private var appleHealthStatusCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label("Apple Santé", systemImage: "heart.text.square.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
-                Spacer()
-                statusBadge
-            }
-
-            if !healthManager.isHealthDataAvailable {
-                Text("HealthKit n'est pas disponible sur cet appareil.")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            } else if !healthManager.isAuthorized {
-                Text("Autorise l'accès à tes données pour alimenter le readiness, le protocole et le coach.")
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-                Button("Connecter Apple Santé", action: onRequestConnect)
-                    .buttonStyle(.borderedProminent)
-                    .tint(theme.onboardingAccent)
-            } else {
-                Text("Données synchronisées depuis l'app Santé (iPhone, Apple Watch, apps tierces).")
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-
-                HStack(spacing: 12) {
-                    if healthManager.hasAppleWatch {
-                        Label("Apple Watch", systemImage: "applewatch")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.green)
+            if showDetails {
+                VStack(spacing: 8) {
+                    detailSection("Activité", icon: "figure.run") {
+                        let e = snapshot.effort
+                        detailRow("Effort Process", e.effortScore > 0 ? "\(Int(e.effortScore)) %" : "—")
+                        detailRow("Distance", formatDistance(e.distanceKm))
+                        detailRow("Séances", metricValue(e.workoutCount))
+                        detailRow("Étages", metricValue(e.flightsClimbed))
+                        detailRow("Heures debout", metricValue(snapshot.activity.standHours))
                     }
-                    if let last = healthManager.lastSyncDate {
-                        Label("Sync \(last.formatted(date: .omitted, time: .shortened))", systemImage: "arrow.triangle.2.circlepath")
-                            .font(.caption2)
-                            .foregroundStyle(theme.secondaryText)
+
+                    detailSection("Sommeil", icon: "bed.double.fill") {
+                        let s = snapshot.sleep
+                        detailRow("Profond", s.deepSleepHours > 0 ? String(format: "%.1f h", s.deepSleepHours) : "—")
+                        detailRow("REM", s.remSleepHours > 0 ? String(format: "%.1f h", s.remSleepHours) : "—")
+                        detailRow("Dette", s.sleepDebt > 0 ? String(format: "%.1f h", s.sleepDebt) : "Aucune")
+                        if let bed = s.bedtime {
+                            detailRow("Coucher", bed.formatted(date: .omitted, time: .shortened))
+                        }
+                        if let wake = s.wakeTime {
+                            detailRow("Réveil", wake.formatted(date: .omitted, time: .shortened))
+                        }
+                    }
+
+                    detailSection("Signes vitaux", icon: "heart.fill") {
+                        let v = snapshot.vitals
+                        let b = healthManager.baselines
+                        detailRow("FC moyenne", v.heartRate > 0 ? "\(Int(v.heartRate)) bpm" : "—")
+                        detailRow("SpO2", v.spo2 > 0 ? String(format: "%.0f %%", v.spo2) : "—")
+                        detailRow("Fréq. respiratoire", v.respiratoryRate > 0 ? String(format: "%.0f /min", v.respiratoryRate) : "—")
+                        detailRow("VO2 max", snapshot.activity.vo2Max > 0 ? String(format: "%.1f", snapshot.activity.vo2Max) : "—")
+                        if b.hrv > 0 { detailRow("HRV baseline", String(format: "%.0f ms", b.hrv)) }
+                        if b.restingHeartRate > 0 { detailRow("FC repos baseline", String(format: "%.0f bpm", b.restingHeartRate)) }
+                    }
+
+                    detailSection("Corps", icon: "figure.stand") {
+                        let v = snapshot.vitals
+                        let profile = profileService.currentProfile
+                        let weightKg = v.bodyMass > 0 ? v.bodyMass : (profile?.weight ?? 0)
+                        detailRow("Poids", weightKg > 0 ? String(format: "%.1f kg", weightKg) : "—")
+                        if let profile, profile.height > 0 {
+                            detailRow("Taille", "\(Int(profile.height)) cm")
+                        }
+                        detailRow("Masse grasse", v.bodyFatPercentage > 0 ? String(format: "%.1f %%", v.bodyFatPercentage) : "—")
+                    }
+
+                    detailSection("Nutrition", icon: "fork.knife") {
+                        let n = snapshot.nutrition
+                        detailRow("Calories", n.caloriesConsumed > 0 ? "\(Int(n.caloriesConsumed)) kcal" : "—")
+                        detailRow("Protéines", n.proteinGrams > 0 ? "\(Int(n.proteinGrams)) g" : "—")
+                        detailRow("Glucides", n.carbsGrams > 0 ? "\(Int(n.carbsGrams)) g" : "—")
+                        detailRow("Lipides", n.fatGrams > 0 ? "\(Int(n.fatGrams)) g" : "—")
+                        detailRow("Eau", n.waterLiters > 0 ? String(format: "%.1f L", n.waterLiters) : "—")
+                    }
+
+                    if healthManager.baselines.daysOfData > 0 {
+                        detailSection("Moyennes (14 j)", icon: "chart.line.uptrend.xyaxis") {
+                            let b = healthManager.baselines
+                            detailRow("Jours de données", "\(b.daysOfData)")
+                            detailRow("Sommeil cible", b.sleepNeedHours > 0 ? String(format: "%.1f h", b.sleepNeedHours) : "—")
+                            detailRow("Pas (14 j)", b.avgDailySteps > 0 ? "\(Int(b.avgDailySteps))" : "—")
+                            detailRow("Calories (14 j)", b.avgActiveCalories > 0 ? "\(Int(b.avgActiveCalories)) kcal" : "—")
+                        }
                     }
                 }
+                .padding(.top, 4)
             }
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.22)) { showDetails.toggle() }
+            } label: {
+                Label(showDetails ? "Réduire" : "Plus de détails", systemImage: showDetails ? "chevron.up" : "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(theme.secondaryText)
         }
         .padding(14)
         .background(HealthHubDesign.surfaceCard(theme: theme))
-    }
-
-    @ViewBuilder
-    private var statusBadge: some View {
-        if !healthManager.isHealthDataAvailable {
-            badge("Indisponible", color: .orange)
-        } else if healthManager.isAuthorized {
-            badge("Connecté", color: .green)
-        } else {
-            badge("Non connecté", color: .orange)
-        }
-    }
-
-    private func badge(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(.caption2.weight(.bold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.15), in: Capsule())
-            .foregroundStyle(color)
-    }
-
-    private var keyMetricsGrid: some View {
-        let s = healthManager.todaySnapshot
-        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-            metricChip("Pas", value: metricValue(s.effort.steps), icon: "figure.walk")
-            metricChip("Sommeil", value: formatSleep(s.sleep.sleepDuration), icon: "bed.double.fill")
-            metricChip("HRV", value: s.vitals.hrv > 0 ? String(format: "%.0f", s.vitals.hrv) : "—", icon: "waveform.path.ecg")
-            metricChip("Calories", value: s.effort.activeEnergyBurned > 0 ? "\(Int(s.effort.activeEnergyBurned))" : "—", icon: "flame.fill")
-            metricChip("Exercice", value: s.effort.exerciseMinutes > 0 ? "\(Int(s.effort.exerciseMinutes))m" : "—", icon: "figure.run")
-            metricChip("Effort", value: s.effort.effortScore > 0 ? "\(Int(s.effort.effortScore))%" : "—", icon: "bolt.fill")
-        }
     }
 
     private func metricChip(_ title: String, value: String, icon: String) -> some View {
@@ -413,85 +294,27 @@ private struct HealthTrackingPanel: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
+        .background(theme.coachUserBubble.opacity(0.25), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var connectedSourcesCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HealthHubDesign.sectionHeader(
-                "Sources connectées",
-                subtitle: "Apps et appareils qui alimentent Santé",
-                theme: theme
-            )
-
-            if healthManager.connectedSources.isEmpty {
-                Text(healthManager.isAuthorized
-                    ? "Aucune source détectée pour aujourd'hui."
-                    : "Connecte Apple Santé pour voir tes sources.")
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-            } else {
-                ForEach(healthManager.connectedSources.prefix(10), id: \.self) { source in
-                    HStack(spacing: 10) {
-                        Image(systemName: sourceIcon(for: source))
-                            .foregroundStyle(theme.secondaryText)
-                            .frame(width: 20)
-                        Text(source)
-                            .font(.caption)
-                            .foregroundStyle(theme.primaryText)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
-    }
-
-    private func sourceIcon(for name: String) -> String {
-        let lower = name.lowercased()
-        if lower.contains("watch") { return "applewatch" }
-        if lower.contains("iphone") || lower.contains("phone") { return "iphone" }
-        return "app.badge"
-    }
-
-    private func trackingDisclosure(
-        _ title: String,
-        icon: String,
-        @ViewBuilder content: @escaping () -> some View
-    ) -> some View {
-        DisclosureGroup {
-            VStack(spacing: 8) { content() }
-                .padding(.top, 6)
-        } label: {
+    private func detailSection(_ title: String, icon: String, @ViewBuilder rows: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             Label(title, systemImage: icon)
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(theme.primaryText)
+            rows()
         }
-        .padding(14)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.coachUserBubble.opacity(0.18), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private func trackingRow(_ label: String, _ value: String) -> some View {
+    private func detailRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label).font(.caption).foregroundStyle(theme.secondaryText)
             Spacer()
             Text(value).font(.caption.weight(.medium)).foregroundStyle(theme.primaryText)
         }
-    }
-
-    private var syncFooter: some View {
-        VStack(spacing: 6) {
-            if healthManager.syncInProgress {
-                ProgressView().tint(theme.primaryText)
-            }
-            Text("Tire vers le bas pour resynchroniser Apple Santé.")
-                .font(.caption2)
-                .foregroundStyle(theme.secondaryText)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
     }
 
     private func metricValue(_ value: Int) -> String {

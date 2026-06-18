@@ -221,6 +221,7 @@ final class HealthManager: ObservableObject {
         snapshot.vitals.respiratoryRate = await resp
         snapshot.vitals.bodyMass = await bodyMass
         snapshot.vitals.bodyFatPercentage = await bodyFat > 0 ? await bodyFat * 100 : 0
+        applyProfileBodyFallbacks(to: &snapshot)
 
         snapshot.activity.standHours = Int((await stand) / 60)
         snapshot.activity.vo2Max = await vo2
@@ -282,6 +283,14 @@ final class HealthManager: ObservableObject {
     }
 
     // MARK: - Helpers
+
+    /// Complète le snapshot avec le profil (onboarding) quand HealthKit n'a pas encore de mesure.
+    private func applyProfileBodyFallbacks(to snapshot: inout DailyHealthSnapshot) {
+        guard let profile = UnifiedProfileService.shared.currentProfile else { return }
+        if snapshot.vitals.bodyMass <= 0, profile.weight > 0 {
+            snapshot.vitals.bodyMass = profile.weight
+        }
+    }
 
     private func computeEffortScore(_ effort: DailyEffortData) -> Double {
         let stepScore = min(30, Double(effort.steps) / 10_000 * 30)

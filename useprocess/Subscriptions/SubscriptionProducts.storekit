@@ -30,15 +30,9 @@
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "6738291001",
-          "introductoryOffer" : {
-            "internalID" : "6738291101",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D"
-          },
           "localizations" : [
             {
-              "description" : "Accès premium mensuel à Process AI — 3 jours gratuits",
+              "description" : "Accès premium mensuel à Process AI",
               "displayName" : "Process AI Premium — Mensuel",
               "locale" : "fr_FR"
             }

@@ -5,8 +5,34 @@ import Foundation
 struct OriginProgramCalendar: Codable, Equatable {
     var startedAt: Date?
     var weeks: [OriginProgramWeek]
+    /// Incrémenté quand le schéma du calendrier change (ex. IDs stables des tâches).
+    var buildVersion: Int = 5
 
-    static var empty: OriginProgramCalendar { OriginProgramCalendar(startedAt: nil, weeks: []) }
+    static var empty: OriginProgramCalendar { OriginProgramCalendar(startedAt: nil, weeks: [], buildVersion: 5) }
+
+    enum CodingKeys: String, CodingKey {
+        case startedAt, weeks, buildVersion
+    }
+
+    init(startedAt: Date?, weeks: [OriginProgramWeek], buildVersion: Int = 5) {
+        self.startedAt = startedAt
+        self.weeks = weeks
+        self.buildVersion = buildVersion
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        startedAt = try c.decodeIfPresent(Date.self, forKey: .startedAt)
+        weeks = try c.decodeIfPresent([OriginProgramWeek].self, forKey: .weeks) ?? []
+        buildVersion = try c.decodeIfPresent(Int.self, forKey: .buildVersion) ?? 1
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(startedAt, forKey: .startedAt)
+        try c.encode(weeks, forKey: .weeks)
+        try c.encode(buildVersion, forKey: .buildVersion)
+    }
 
     var totalDays: Int { weeks.reduce(0) { $0 + $1.days.count } }
 
@@ -120,12 +146,31 @@ struct OriginDaySleep: Codable, Equatable {
     var morningActions: [String]
 }
 
+enum JournalTaskStatus: String, Codable, Equatable {
+    case failed
+    case completed
+}
+
 struct OriginPlanProgress: Codable, Equatable {
     var completedTaskIds: Set<String> = []
+    var taskStatuses: [String: JournalTaskStatus] = [:]
     var completedDayIds: Set<String> = []
     var userNotes: [String: String] = [:]
     var modifications: [OriginPlanModification] = []
     var lastCoachSyncAt: Date?
+    /// Repas validé par jour (`dayId` → description).
+    var validatedMeals: [String: String] = [:]
+
+    static func taskKey(dayId: String, taskId: String) -> String {
+        "\(dayId)|\(taskId)"
+    }
+
+    func status(for taskId: String, dayId: String) -> JournalTaskStatus? {
+        let key = Self.taskKey(dayId: dayId, taskId: taskId)
+        if let status = taskStatuses[key] { return status }
+        if completedTaskIds.contains(taskId) { return .completed }
+        return nil
+    }
 }
 
 struct OriginPlanModification: Codable, Identifiable, Equatable {
@@ -149,12 +194,11 @@ struct OriginLifestyleExtras: Codable, Equatable {
     static var `default`: OriginLifestyleExtras {
         OriginLifestyleExtras(
             sunlightProtocol: [
-                "10–20 min lumière naturelle dans l'heure après le réveil",
-                "Marche outdoor 2–3×/sem minimum"
+                "\(ProcessDailyTargets.morningLightMinutes) min lumière naturelle dans l'heure après le réveil",
+                "Marche outdoor \(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/sem"
             ],
             stressRegulation: [
-                "Respiration nasale consciente 3×/jour",
-                "Couvre-feu écran 60 min avant coucher si sommeil fragile"
+                "Pas de téléphone au lit — validé le lendemain matin dans le journal"
             ],
             recoveryProtocol: [
                 "Deload semaine 4 et 8",
@@ -165,16 +209,12 @@ struct OriginLifestyleExtras: Codable, Equatable {
                 "Photos profil : même lumière, même angle",
                 "Readiness + pas via Santé chaque matin"
             ],
-            weeklyReviews: [
-                "Dimanche 5 min : sommeil, digestion, énergie, visage",
-                "Ajuster 1 habitude max — pas tout d'un coup"
-            ],
+            weeklyReviews: [],
             bonusProposals: [
-                "Bouillon d'os 3–4×/sem pour minéraux naturels",
-                "Mastication lente = digestion + stimulation maxillaire",
-                "Mewing (langue au palais) en permanence — gratuit, effet cumulatif",
-                "Marche post-repas 10 min — glycémie + lymphe",
-                "Chambre fraîche (~18 °C) + obscurité totale"
+                ProcessContinuousHabits.masticationDetail,
+                ProcessContinuousHabits.mewingDetail,
+                ProcessContinuousHabits.deglutitionDetail,
+                "Chambre fraîche (\(ProcessDailyTargets.bedroomTempCelsius) °C) + obscurité totale"
             ]
         )
     }

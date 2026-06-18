@@ -28,8 +28,14 @@ enum CoachPlanEditor {
     @MainActor
     static func regenerateCalendarIfNeeded(plan: inout FaceOriginPlan, answers: [String: WelcomePlanAnswer], profile: UnifiedUserProfile?) {
         guard plan.calendar.weeks.isEmpty else { return }
+        regenerateCalendar(plan: &plan, answers: answers, profile: profile)
+    }
+
+    @MainActor
+    static func regenerateCalendar(plan: inout FaceOriginPlan, answers: [String: WelcomePlanAnswer], profile: UnifiedUserProfile?) {
         let gender = profile?.gender ?? .male
+        let startedAt = plan.calendar.startedAt ?? plan.createdAt
         plan.calendar = OriginPlanCalendarBuilder.build(from: plan, answers: answers, gender: gender)
-        if plan.calendar.startedAt == nil { plan.calendar.startedAt = plan.createdAt }
+        plan.calendar.startedAt = startedAt
     }
 }

@@ -31,8 +31,13 @@ struct SubscriptionTrialInfo: Equatable {
         annualMonthlyEquivalent: String
     ) -> String {
         switch plan {
-        case .monthly: return "Facturé mensuellement"
-        case .annual: return "Équivalent à \(annualMonthlyEquivalent) /mois"
+        case .monthly:
+            return "Facturé mensuellement"
+        case .annual:
+            if isActiveOffer {
+                return "\(days) jours gratuits · \(annualMonthlyEquivalent)/mois"
+            }
+            return "Équivalent à \(annualMonthlyEquivalent) /mois"
         }
     }
 }

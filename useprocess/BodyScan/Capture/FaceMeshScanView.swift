@@ -91,7 +91,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         let maxHeadRotation: Float = 0.55
         let minTrackedFramesBeforeScan = 8
         let minDistanceOkFramesBeforeScan = 14
-        let maxSectorBridge = 14
+        let minActivationAngle: Float = 0.06
+        let maxSectorBridgeSteps = 2
         let lostFrameThresholdPositioning = 30
         let lostFrameThresholdScanning = 55
 
@@ -118,7 +119,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         var bestSnapshot: UIImage?
 
         private var referenceTransform: simd_float4x4?
-        private var lastSector: Int?
+        private var lastRegisteredSector: Int?
         private var lastPublishedSectorSignature = 0
         private var lastUIUpdate: CFTimeInterval = 0
         private var lastQualityFailureAt: Date?
@@ -303,7 +304,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             lostFrameStreak = 0
             scanStartTime = nil
             referenceTransform = nil
-            lastSector = nil
+            lastRegisteredSector = nil
             lastPublishedSectorSignature = 0
 
             if !soft {
@@ -324,16 +325,17 @@ struct FaceMeshScanView: UIViewRepresentable {
             videoRecorder.start(at: videoRecorder.prepareOutputURL(scanId: activeScanId))
             scanStartTime = Date()
             referenceTransform = faceAnchor.transform
-            let startSector = sectorIndex(for: faceAnchor.transform)
-            lastSector = startSector
-            filledTickSectors.insert(startSector)
-            angleSamples.append(relativeAngles(from: faceAnchor.transform))
+            filledTickSectors.removeAll()
+            lastRegisteredSector = nil
+            angleSamples.append(relativeYawPitch(from: faceAnchor.transform))
 
-            publishUI(force: true) {
+            publishUI(ring: 0, progress: 0.02, force: true) {
                 HapticManager.shared.impact(.soft)
                 self.isFaceDetected = true
                 self.instruction = "Tourne lentement la tête pour compléter le cercle."
                 self.frameHint = nil
+                self.activeTickSectors = []
+                self.ringProgress = 0
             }
         }
 
@@ -356,20 +358,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                 screenFillRatio: fillRatio
             )
 
-            if distanceFeedback != .ok {
+            if distanceFeedback != .ok, scanStartTime == nil {
                 distanceOkFrameCount = 0
-
-                if scanStartTime != nil {
-                    publishUI(force: false) {
-                        self.isFaceDetected = true
-                        self.instruction = FaceScanQualityValidator.distanceInstruction(for: distanceFeedback)
-                        self.frameHint = FaceScanQualityValidator.distanceHint(for: distanceFeedback)
-                    }
-                    return
-                }
-
                 publishUI(force: false) {
-                    self.isFaceDetected = self.scanStartTime != nil || self.trackedFrameCount >= 4
+                    self.isFaceDetected = self.trackedFrameCount >= 4
                     self.instruction = FaceScanQualityValidator.distanceInstruction(for: distanceFeedback)
                     self.frameHint = FaceScanQualityValidator.distanceHint(for: distanceFeedback)
                 }
@@ -383,7 +375,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                     publishUI(force: false) {
                         self.isFaceDetected = false
                         self.instruction = "Place ton visage dans le cadre."
-                        self.frameHint = "Rapproche-toi pour bien remplir le cercle."
+                        self.frameHint = "Rapproche-toi pour bien remplir le cadre."
                     }
                     return
                 }
@@ -441,6 +433,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 force: sectorsChanged || Int(elapsed * 10) % 3 == 0
             ) {
                 self.isFaceDetected = true
+                self.frameHint = nil
                 self.activeTickSectors = self.filledTickSectors
                 self.instruction = instructionText
                 if sectorsChanged {
@@ -463,7 +456,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         private func progressValue(elapsed: TimeInterval, tickProgress: Double? = nil) -> Double {
             let tick = tickProgress ?? Double(filledTickSectors.count) / Double(tickCount)
             let time = min(1, elapsed / scanDuration)
-            return min(1, tick * 0.7 + time * 0.3)
+            // La progression visuelle suit surtout les angles visités, pas le temps seul.
+            return min(1, tick * 0.92 + time * 0.08)
         }
 
         private func qualityReady(elapsed: TimeInterval, tickProgress: Double) -> Bool {
@@ -588,72 +582,70 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
         }
 
-        // MARK: - Pose → secteurs
+        // MARK: - Pose → anneau Face ID (direction réelle sur l'écran)
 
-        private func relativeAngles(from transform: simd_float4x4) -> SIMD2<Float> {
+        /// Pitch (haut/bas) et yaw (gauche/droite) — utilisé pour la qualité du scan.
+        private func relativeYawPitch(from transform: simd_float4x4) -> SIMD2<Float> {
             guard let ref = referenceTransform else { return .zero }
             let rel = simd_mul(simd_inverse(ref), transform)
-            let q = simd_quaternion(rel)
-            let x = q.vector.x
-            let y = q.vector.y
-            let z = q.vector.z
-            let w = q.vector.w
-
-            let sinPitch = 2 * (w * x - y * z)
-            let pitch = asin(max(-1, min(1, sinPitch)))
-            let sinYaw = 2 * (w * y + x * z)
-            let cosYaw = 1 - 2 * (x * x + y * y)
-            let yaw = atan2(sinYaw, cosYaw)
+            let forward = rel.columns.2
+            let pitch = asin(max(-1, min(1, -forward.y)))
+            let yaw = atan2(forward.x, forward.z)
             return SIMD2(pitch, yaw)
         }
 
-        private func sectorIndex(for transform: simd_float4x4) -> Int {
-            let angles = relativeAngles(from: transform)
-            let pitch = angles.x
-            let yaw = angles.y
+        /// Secteur sur l'anneau : 0 = haut, sens horaire (aligné sur `FaceIDTickProgressRing`).
+        private func sectorIndex(for transform: simd_float4x4) -> Int? {
+            guard let ref = referenceTransform else { return nil }
+            let rel = simd_mul(simd_inverse(ref), transform)
+            let forward = rel.columns.2
 
-            let nx = max(-1, min(1, -yaw / maxHeadRotation))
-            let ny = max(-1, min(1, pitch / maxHeadRotation))
-            let circleAngle = atan2(nx, ny)
+            // Projection du nez sur le plan écran : haut = +vertical, droite = +horizontal.
+            let horizontal = forward.x
+            let vertical = -forward.y
+            let planar = sqrt(horizontal * horizontal + vertical * vertical)
+            guard planar >= sin(minActivationAngle) else { return nil }
 
-            var t = (circleAngle + Float.pi) / (2 * Float.pi)
-            if t >= 1 { t -= 1 }
-            if t < 0 { t += 1 }
-            return Int(t * Float(tickCount)) % tickCount
+            // atan2(horizontal, vertical) : 0 = haut, π/2 = droite, π = bas, 3π/2 = gauche.
+            var compass = atan2(horizontal, vertical)
+            if compass < 0 { compass += 2 * Float.pi }
+            return Int(compass / (2 * Float.pi) * Float(tickCount)) % tickCount
         }
 
+        /// Enregistre le secteur visité selon l'inclinaison réelle (comme Face ID).
         private func registerHeadPose(from transform: simd_float4x4) {
-            let sector = sectorIndex(for: transform)
-            let angles = relativeAngles(from: transform)
+            let angles = relativeYawPitch(from: transform)
             angleSamples.append(angles)
             if angleSamples.count > 200 {
                 angleSamples.removeFirst(angleSamples.count - 200)
             }
 
+            guard let sector = sectorIndex(for: transform) else { return }
+
             filledTickSectors.insert(sector)
 
-            guard let last = lastSector else {
-                lastSector = sector
-                return
-            }
+            if let last = lastRegisteredSector, last != sector {
+                let forward = (sector - last + tickCount) % tickCount
+                let backward = (last - sector + tickCount) % tickCount
+                let gap = min(forward, backward)
 
-            guard sector != last else { return }
-
-            let forward = (sector - last + tickCount) % tickCount
-            let backward = (last - sector + tickCount) % tickCount
-
-            if forward <= backward {
-                let steps = min(forward, maxSectorBridge)
-                for step in 1...steps {
-                    filledTickSectors.insert((last + step) % tickCount)
+                // Combler uniquement les petits écarts (mouvement fluide), jamais un demi-cercle d'un coup.
+                if gap <= maxSectorBridgeSteps + 1 {
+                    let steps = min(gap - 1, maxSectorBridgeSteps)
+                    if steps > 0 {
+                        if forward <= backward {
+                            for step in 1...steps {
+                                filledTickSectors.insert((last + step) % tickCount)
+                            }
+                        } else {
+                            for step in 1...steps {
+                                filledTickSectors.insert((last - step + tickCount) % tickCount)
+                            }
+                        }
+                    }
                 }
-            } else {
-                let steps = min(backward, maxSectorBridge)
-                for step in 1...steps {
-                    filledTickSectors.insert((last - step + tickCount) % tickCount)
-                }
             }
-            lastSector = sector
+            lastRegisteredSector = sector
         }
 
         private func publishUI(

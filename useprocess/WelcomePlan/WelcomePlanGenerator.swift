@@ -152,23 +152,19 @@ enum WelcomePlanGenerator {
 
     private static func buildDailyHabits(answers: [String: WelcomePlanAnswer], gender: Gender) -> [OriginDailyHabit] {
         var habits: [OriginDailyHabit] = [
-            .init(id: "sun", title: "Lumière matinale", detail: "10–20 min de soleil ou lumière naturelle dans l'heure après le réveil — ancre le cortisol.", pillar: "Hormones", timing: "Réveil"),
-            .init(id: "tongue", title: "Mewing (langue au palais)", detail: "Langue entière contre le palais, lèvres closes, respiration nasale. 5 min de mewing actif + posture passive toute la journée.", pillar: "Posture", timing: "Matin + journée"),
-            .init(id: "chew", title: "Mastication lente", detail: "20–30 mâchées par bouchée. Stimule le maxillaire et la digestion — pas de complément.", pillar: "Maxillaire", timing: "Repas"),
-            .init(id: "walk", title: "Marche décompresse", detail: "Minimum 6 000 pas — idéalement 8 000+. Drainage lymphatique naturel.", pillar: "Posture", timing: "Journée"),
-            .init(id: "hydrate", title: "Hydratation minérale", detail: "Eau + aliments riches en minéraux (bouillon os, sel de qualité, fruits) — pas que de l'eau plate.", pillar: "Nutrition", timing: "Journée")
+            .init(id: "sun", title: "Lumière matinale", detail: "\(ProcessDailyTargets.morningLightMinutes) min de lumière naturelle dans l'heure après le réveil.", pillar: "Hormones", timing: "Réveil"),
+            .init(id: "cold_face", title: "Eau froide sur le visage", detail: "\(ProcessDailyTargets.coldFaceRinseSeconds) sec au réveil — stimule la lymphe et dégonfle.", pillar: "Visage", timing: "Réveil"),
+            .init(id: "nutrition", title: "Alimentation parfaite", detail: "Repas denses, zéro ultra-transformé — valide ton repas du jour.", pillar: "Nutrition", timing: "Journée"),
+            .init(id: "walk", title: "Marche", detail: "\(ProcessDailyTargets.dailySteps) pas — mouvement quotidien.", pillar: "Posture", timing: "Journée"),
+            .init(id: "hydrate", title: ProcessHydrationGuide.dailyTaskTitle, detail: ProcessHydrationGuide.protocolGuide, pillar: "Nutrition", timing: "Journée")
         ]
-
-        if choice("screen_before_bed", in: answers) == "yes" {
-            habits.append(.init(id: "digital", title: "Couvre-feu écran", detail: "Zéro écran 60 min avant le coucher. Lumière chaude ou bougie.", pillar: "Hormones", timing: "Soir"))
-        }
 
         if gender == .female {
             habits.append(.init(id: "cycle", title: "Sync cycle", detail: "Adapter l'intensité selon la phase — moins de stress nerveux en phase lutéale.", pillar: "Entraînement", timing: "Hebdo"))
         }
 
         if multi("face_concerns", in: answers).contains("dark_circles") {
-            habits.append(.init(id: "sleep_face", title: "Sommeil prioritaire visage", detail: "7,5–8,5 h visées. Les cernes = cortisol + lymphe stagnante, pas un crème miracle.", pillar: "Visage", timing: "Nuit"))
+            habits.append(.init(id: "sleep_face", title: "Sommeil prioritaire visage", detail: "\(ProcessDailyTargets.sleepHours) h par nuit. Les cernes = cortisol + lymphe stagnante.", pillar: "Visage", timing: "Nuit"))
         }
 
         return habits
@@ -176,10 +172,9 @@ enum WelcomePlanGenerator {
 
     private static func buildWeeklyRhythm(sessions: Int, answers: [String: WelcomePlanAnswer]) -> [OriginWeeklyBlock] {
         [
-            .init(id: "w1", title: "Structure hebdo", detail: "\(sessions) séances force + marche quotidienne + 1 session mobilité/posture 20 min"),
-            .init(id: "w2", title: "Récupération", detail: "1–2 jours off complets. Sommeil > séance supplémentaire si fatigue."),
-            .init(id: "w3", title: "Soleil & nature", detail: "2–3 sessions outdoor minimum — lumière + grounding pieds nus si possible."),
-            .init(id: "w4", title: "Review", detail: "Dimanche : 5 min bilan — sommeil, digestion, mewing / tension maxillaire, énergie.")
+            .init(id: "w1", title: "Structure hebdo", detail: "\(sessions) séances force + marche quotidienne"),
+            .init(id: "w2", title: "Récupération", detail: "\(ProcessDailyTargets.restDaysPerWeek) jours off complets. Sommeil > séance supplémentaire si fatigue."),
+            .init(id: "w3", title: "Soleil & nature", detail: "\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) sessions outdoor/sem — lumière + grounding pieds nus.")
         ]
     }
 
@@ -196,11 +191,11 @@ enum WelcomePlanGenerator {
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: ends.p1),
                 title: "Fondations — Reset biologique",
                 objectives: [
-                    "Stabiliser le rythme circadien (coucher / réveil fixes ±30 min)",
+                    "Stabiliser le rythme circadien (coucher / réveil, marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min max)",
                     "Alimentation dense sans ultra-transformé",
-                    "Mewing (langue au palais) + respiration nasale"
+                    "Mewing en permanence (voir section dédiée)"
                 ],
-                habits: ["Couvre-feu lumière bleue", "Repas protéinés denses", "Marche 6k+ pas"]
+                habits: ["Couvre-feu lumière bleue", "Repas protéinés denses", "Marche \(ProcessDailyTargets.dailySteps) pas"]
             ),
             .init(
                 id: "p2",
@@ -208,10 +203,10 @@ enum WelcomePlanGenerator {
                 title: "Hormones & digestion",
                 objectives: [
                     "Optimiser la digestion (mastication, repas réguliers)",
-                    "Réduire le stress chronique (respiration, marche)",
-                    "Hydratation minérale via aliments"
+                    "Réduire le stress chronique (sommeil, marche)",
+                    "Hydratation \(ProcessHydrationGuide.dailyLiters)"
                 ],
-                habits: ["Bouillon / minéraux naturels", "Routine soir sans écran", "Mobilité thoracique 10 min/j"]
+                habits: ["Minéraux naturels", "Routine soir sans écran", "Scan visage quotidien"]
             ),
             .init(
                 id: "p3",
@@ -222,7 +217,7 @@ enum WelcomePlanGenerator {
                     "Ajustement calories via aliments entiers (pas de shake isolé)",
                     "Travail chaîne postérieure + cou / trapèzes"
                 ],
-                habits: ["Séances loguées", "Sommeil 7,5 h minimum", "Scan visage régulier"]
+                habits: ["Séances loguées", "Sommeil \(ProcessDailyTargets.sleepHours) h minimum", "Scan visage régulier"]
             ),
             .init(
                 id: "p4",
@@ -243,11 +238,11 @@ enum WelcomePlanGenerator {
         bodyFat: String?
     ) -> OriginNutritionProtocol {
         let reduce: [String] = ["Ultra-transformés", "Huiles de graines industrielles", "Sucre ajouté quotidien"]
-        var prioritize: [String] = ["Œufs", "Foie 1× par semaine", "Tubercules vapeur", "Fruits modérés"]
+        var prioritize: [String] = ["Œufs", "Tubercules vapeur", "Fruits modérés"]
         var principles: [String] = [
             "Alimentation dense = moins de volume, plus de nutriments — digestion légère",
             "Zéro complément isolé : cofacteurs viennent des aliments entiers",
-            "Électrolytes via bouillon, sel minéral, laitiers de qualité — pas de sachets"
+            "Électrolytes via sel minéral et laitiers de qualité — pas de sachets"
         ]
 
         let restrictions = multi("dietary_restrictions", in: answers)
@@ -273,20 +268,15 @@ enum WelcomePlanGenerator {
         return OriginNutritionProtocol(
             principles: principles,
             dailyStructure: [
-                "Petit-déjeuner : protéines + graisses (œufs, fromage entier)",
-                "Déjeuner : viande / poisson + tubercule + fruit",
-                "Collation optionnelle : miel + fromage ou fruit",
-                "Dîner : protéines + légumes cuits — léger le soir si sommeil fragile"
+                "Repas denses : protéines + tubercule ou légumes cuits",
+                "Idées de repas via l'IA dans le journal (pas de menu imposé)",
+                "Collation optionnelle si faim réelle : fromage entier ou fruit",
+                "Dîner léger si sommeil fragile"
             ],
             foodsToPrioritize: prioritize,
             foodsToReduce: reduce,
-            hydrationGuide: "Eau + minéraux alimentaires. Bouillon d'os 3–4×/sem. Sel de qualité. Pas de boisson sucrée.",
-            mealExamples: [
-                "Œufs au beurre + patate douce",
-                "Steak + patate vapeur + beurre",
-                "Foie de bœuf + salade cuite au beurre",
-                "Fromage entier + miel + fruit"
-            ]
+            hydrationGuide: ProcessHydrationGuide.protocolGuide,
+            mealExamples: [],
         )
     }
 
@@ -297,26 +287,24 @@ enum WelcomePlanGenerator {
 
         var evening: [String] = [
             "Lumière chaude / tamisée 2 h avant le coucher",
-            "Dernière caféine avant 14 h",
-            "Chambre fraîche (~18 °C), obscurité totale"
+            "Dernière caféine avant \(ProcessDailyTargets.caffeineCutoffHour) h",
+            "Chambre fraîche (\(ProcessDailyTargets.bedroomTempCelsius) °C), obscurité totale"
         ]
         let morning: [String] = [
-            "Réveil même heure ±30 min (week-end inclus)",
-            "Lumière naturelle dans les 30 min",
+            "Réveil même heure (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min max, week-end inclus)",
+            "Lumière naturelle dans les \(ProcessDailyTargets.morningLightMinutes) min",
+            "Eau froide sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) sec",
             "Hydratation + sel / citron — pas de téléphone au lit"
         ]
 
         if choice("screen_before_bed", in: answers) == "yes" {
-            evening.insert("Mode avion ou téléphone hors chambre 60 min avant", at: 0)
-        }
-        if choice("alcohol_frequency", in: answers) == "weekly" || choice("alcohol_frequency", in: answers) == "often" {
-            evening.append("Alcool max 1×/sem — casse le sommeil profond et gonfle le visage")
+            evening.insert("Mode avion ou téléphone hors chambre \(ProcessDailyTargets.screenCurfewMinutes) min avant", at: 0)
         }
 
         return OriginSleepProtocol(
             targetHours: hours,
-            bedtimeWindow: "Cible \(bedtime) (±30 min)",
-            wakeWindow: "Cible \(wake) (±30 min)",
+            bedtimeWindow: "Cible \(bedtime) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
+            wakeWindow: "Cible \(wake) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
             eveningRoutine: evening,
             morningRoutine: morning
         )
@@ -372,24 +360,16 @@ enum WelcomePlanGenerator {
     }
 
     private static func buildPostureProtocol(answers: [String: WelcomePlanAnswer]) -> OriginPostureProtocol {
-        var mobility = [
-            "Étirement psoas + fléchisseurs hanche 5 min/j",
-            "Extension thoracique sur foam roller ou serviette roulée",
-            "Renforcement scapulaire (face pulls, Y raises)"
-        ]
+        var checks: [String] = ProcessContinuousHabits.all.map { "\($0.title) — \($0.detail)" }
         if choice("forward_head", in: answers) == "yes" {
-            mobility.insert("Rétraction cervicale chin tucks — 3×15/j", at: 0)
+            checks.append("Rétraction cervicale chin tucks — 3×15 si tête en avant")
         }
 
         return OriginPostureProtocol(
-            dailyChecks: [
-                "Mewing au repos — langue entière au palais",
-                "Lèvres closes, respiration nasale",
-                "Oreilles au-dessus des épaules (pas de forward head)"
-            ],
-            mobilityBlocks: mobility,
-            breathingWork: ["Box breathing 4-4-4-4 — 3 min matin", "Respiration nasale à l'effort modéré"],
-            walkingTargets: "Objectif 8 000+ pas/j — suivi automatique via Santé / HealthKit"
+            dailyChecks: checks,
+            mobilityBlocks: [],
+            breathingWork: [],
+            walkingTargets: "Objectif \(ProcessDailyTargets.dailySteps) pas — suivi automatique via Santé / HealthKit"
         )
     }
 
@@ -409,16 +389,12 @@ enum WelcomePlanGenerator {
         return OriginFaceProtocol(
             focusAreas: Array(Set(focus)),
             jawAndTongueWork: [
-                "Mewing actif 5 min — langue au palais, lèvres closes, dents légèrement en contact",
-                "Mewing passif toute la journée (posture linguale au repos)",
-                "Déglution correcte — langue seule, sans pousser avec les lèvres ou les joues",
-                "Mastication lente 20–30× — viande ferme, crudités cuites al dente",
-                "Gomme xylitol modérée si besoin — pas de chewing excessif"
+                "Mastication lente \(ProcessDailyTargets.chewsPerBite)× — viande ferme, aliments durs à mâcher"
             ],
             lymphAndFascia: [
-                "Marche + hydratation minérale = drainage lymphatique naturel",
-                "Massage doux sous-orbital vers les oreilles — 1 min/j",
-                "Libération nuque si tête en avant (fascias faciaux)"
+                "Eau froide sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) sec au réveil",
+                "Massage doux sous-orbital vers les oreilles — \(ProcessDailyTargets.lymphFaceMassageMinutes) min",
+                "Marche \(ProcessDailyTargets.dailySteps) pas + \(ProcessDailyTargets.hydrationLabel) = drainage lymphatique"
             ],
             scanCadence: "Scan visage semaine 1, \(midScan), \(finalScan) — suivi dans Santé"
         )
@@ -435,7 +411,7 @@ enum WelcomePlanGenerator {
             "Pas de raccourci artificiel. La beauté est la conséquence d'une biologie en ordre."
         ]
         if supplements == "many" || supplements == "basic" {
-            notes.append("On remplace les compléments par des aliments entiers — foie, œufs, laitiers, bouillon.")
+            notes.append("On remplace les compléments par des aliments entiers — œufs, laitiers, viande rouge.")
         }
         if choice("commit_plan", in: answers) == "no" {
             notes.append("Reviens quand tu es prêt à t'engager — les bases demandent de la constance.")

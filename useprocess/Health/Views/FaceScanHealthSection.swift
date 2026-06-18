@@ -35,13 +35,7 @@ struct FaceScanHealthSection: View {
                 Spacer()
 
                 if let faceDayScore {
-                    Text("Visage \(faceDayScore)")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(theme.primaryText)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(theme.cardBackground.opacity(0.8))
-                        .clipShape(Capsule())
+                    FaceWellnessScoreBadge(score: faceDayScore, theme: theme)
                 }
 
                 if streakDays > 0 {
@@ -99,8 +93,6 @@ struct FaceScanHealthSection: View {
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             }
-
-            HealthMedicalSourcesView(style: .compact, showsDisclaimer: true)
 
             HStack(spacing: 10) {
                 Button(action: onScan) {

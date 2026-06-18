@@ -78,6 +78,7 @@ struct OriginPlanProgramContent: View {
 
         if let day = OriginPlanPresenter.todayDay(in: livePlan) {
             todayEssentials(day)
+            continuousHabitsSection
             checklistSection(day)
         } else {
             Text("Calendrier en cours de génération.")
@@ -123,7 +124,9 @@ struct OriginPlanProgramContent: View {
         VStack(alignment: .leading, spacing: 10) {
             HealthHubDesign.sectionHeader("Essentiel du jour", subtitle: day.title, theme: theme)
 
-            essentialRow(icon: "fork.knife", title: "Nutrition", value: OriginPlanPresenter.nutritionOneLiner(day: day, plan: livePlan))
+            OriginMealSuggestionCard(plan: livePlan, day: day)
+                .environmentObject(UnifiedProfileService.shared)
+
             essentialRow(icon: "bed.double.fill", title: "Sommeil", value: OriginPlanPresenter.sleepOneLiner(day.sleep))
             if let training = OriginPlanPresenter.trainingOneLiner(day.training) {
                 essentialRow(icon: "figure.strengthtraining.traditional", title: "Sport", value: training)
@@ -131,22 +134,28 @@ struct OriginPlanProgramContent: View {
         }
     }
 
-    private func checklistSection(_ day: OriginProgramDay) -> some View {
-        let tasks = OriginPlanPresenter.todayChecklist(from: day)
+    private var continuousHabitsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HealthHubDesign.sectionHeader("En permanence", subtitle: "24/7 — rien à cocher", theme: theme)
 
-        return VStack(alignment: .leading, spacing: 10) {
-            HealthHubDesign.sectionHeader("Checklist", subtitle: "Coche au fur et à mesure", theme: theme)
-
-            if tasks.isEmpty {
-                Text("Aucune tâche pour aujourd'hui.")
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-            } else {
-                ForEach(tasks) { task in
-                    taskRow(task, dayId: day.id)
+            ForEach(Array(ProcessContinuousHabits.all.enumerated()), id: \.offset) { _, habit in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(habit.title)
+                        .font(.subheadline.weight(.semibold))
+                    Text(habit.detail)
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryText)
                 }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(cardBackground)
             }
         }
+    }
+
+    private func checklistSection(_ day: OriginProgramDay) -> some View {
+        DailyJournalChecklistView(plan: livePlan, showHeader: false, showWeekStrip: true)
+            .environmentObject(HealthManager.shared)
     }
 
     private var weekContent: some View {
@@ -165,7 +174,9 @@ struct OriginPlanProgramContent: View {
                     collapsedTraining(day, training)
                 }
                 collapsedBlock("Posture", tasks: day.posture, path: "\(day.id)/posture")
-                collapsedBlock("Visage", tasks: day.face, path: "\(day.id)/face")
+                if !day.face.isEmpty {
+                    collapsedBlock("Visage", tasks: day.face, path: "\(day.id)/face")
+                }
                 collapsedBlock("Soir", tasks: day.evening, path: "\(day.id)/evening")
                 collapsedSleep(day)
             }
@@ -295,32 +306,14 @@ struct OriginPlanProgramContent: View {
     }
 
     private func taskRow(_ task: OriginPlanTask, dayId: String) -> some View {
-        let done = livePlan.progress.completedTaskIds.contains(task.id)
-        return Button {
-            store.toggleTaskComplete(taskId: task.id, dayId: dayId)
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: done ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(done ? theme.onboardingAccent : theme.secondaryText)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(task.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
-                        .strikethrough(done, color: theme.secondaryText)
-                    if !done {
-                        Text(OriginPlanPresenter.truncate(task.detail, max: 72))
-                            .font(.caption)
-                            .foregroundStyle(theme.secondaryText)
-                            .multilineTextAlignment(.leading)
-                    }
-                }
-                Spacer(minLength: 0)
+        JournalTaskRow(
+            task: task,
+            dayId: dayId,
+            plan: livePlan,
+            onStatusChange: { status in
+                store.setJournalTaskStatus(status, taskId: task.id, dayId: dayId)
             }
-            .padding(12)
-            .background(cardBackground)
-        }
-        .buttonStyle(.plain)
+        )
     }
 
     private func collapsedBlock(_ title: String, tasks: [OriginPlanTask], path: String) -> some View {
@@ -344,19 +337,8 @@ struct OriginPlanProgramContent: View {
     }
 
     private func collapsedNutrition(_ day: OriginProgramDay) -> some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(OriginPlanPresenter.nutritionOneLiner(day: day, plan: livePlan))
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-                coachLink(path: "\(day.id)/nutrition", title: "Nutrition", content: OriginPlanPresenter.nutritionOneLiner(day: day, plan: livePlan))
-            }
-            .padding(.top, 8)
-        } label: {
-            Text("Nutrition").font(.subheadline.weight(.semibold))
-        }
-        .padding(12)
-        .background(cardBackground)
+        OriginMealSuggestionCard(plan: livePlan, day: day)
+            .environmentObject(UnifiedProfileService.shared)
     }
 
     private func collapsedTraining(_ day: OriginProgramDay, _ training: OriginDayTraining) -> some View {

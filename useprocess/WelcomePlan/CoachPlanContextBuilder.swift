@@ -79,7 +79,8 @@ enum CoachPlanContextBuilder {
         }
 
         parts.append("POSTURE : " + day.posture.map(\.title).joined(separator: ", "))
-        parts.append("MEWING & MAXILLAIRE : " + day.face.map(\.title).joined(separator: ", "))
+        let continuous = ProcessContinuousHabits.all.map(\.title).joined(separator: ", ")
+        parts.append("24/7 : \(continuous)")
         parts.append("SOIR : " + day.evening.map(\.title).joined(separator: ", "))
 
         return parts.joined(separator: "\n")

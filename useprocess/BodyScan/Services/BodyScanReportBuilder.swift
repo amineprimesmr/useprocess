@@ -67,7 +67,7 @@ enum BodyScanReportBuilder {
         var tips: [String] = []
 
         if metrics.spineAlignmentScore < 72 {
-            tips.append("Exercices d'ouverture thoracique 5 min/jour + pause écran toutes les 45 min.")
+            tips.append("Renforcement chaîne postérieure + face pulls 3×/sem.")
         }
         if metrics.hipAlignmentScore < 70 {
             tips.append("Renforcement fessiers (pont, clamshell) 3×/semaine.")

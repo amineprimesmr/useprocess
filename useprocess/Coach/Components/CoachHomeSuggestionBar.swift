@@ -141,7 +141,7 @@ struct CoachHomeSuggestionBar: View {
             }
             if Task.isCancelled { return }
             guard isRevealed, !instantReveal else { return }
-            withAnimation(OnboardingProfileChatAnswerReveal.spring) {
+            _ = withAnimation(OnboardingProfileChatAnswerReveal.spring) {
                 revealedIDs.insert(suggestion.id)
             }
         }

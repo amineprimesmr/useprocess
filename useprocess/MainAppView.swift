@@ -42,14 +42,19 @@ struct MainAppView: View {
                 )
                 .background(theme.background.ignoresSafeArea())
                 .tag(ProcessMainSection.health)
-                .welcomePlanSectionGate(isLocked: isWelcomePlanGating)
+                .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
+                    openWelcomePlanConfiguration()
+                }
 
                 ProcessProfileView(selectedSection: $selectedSection)
                     .background(theme.background.ignoresSafeArea())
                     .tag(ProcessMainSection.profile)
-                    .welcomePlanSectionGate(isLocked: isWelcomePlanGating)
+                    .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
+                        openWelcomePlanConfiguration()
+                    }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .processMainTabPaging(swipeDisabled: isWelcomePlanGating)
             .ignoresSafeArea(.container, edges: .bottom)
 
             CoachMainStickyChromeLayer(
@@ -95,6 +100,12 @@ struct MainAppView: View {
     private func openProfile() {
         withAnimation(ProcessGlass.spring) {
             selectedSection = .profile
+        }
+    }
+
+    private func openWelcomePlanConfiguration() {
+        withAnimation(ProcessGlass.spring) {
+            selectedSection = .coach
         }
     }
 }
