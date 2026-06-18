@@ -16,9 +16,11 @@ struct AppShellView: View {
             if session.hasCompletedOnboarding {
                 MainAppView()
                     .transition(.opacity)
+                    .id("main-app")
             } else {
                 SportOnboardingRootView()
                     .transition(.opacity)
+                    .id("welcome-onboarding")
             }
         }
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
@@ -29,7 +31,8 @@ struct AppShellView: View {
         .environmentObject(HealthManager.shared)
         .environmentObject(PermissionsManager.shared)
         .environmentObject(DailyDataManager.shared)
-        .task {
+        .task(id: session.hasCompletedOnboarding) {
+            guard session.hasCompletedOnboarding else { return }
             if AppConfiguration.firebaseConfigured {
                 _ = UserSessionCoordinator.shared
                 await UnifiedProfileService.shared.loadProfile()
@@ -49,6 +52,36 @@ struct AppShellView: View {
                 await HealthManager.shared.performFullSync()
                 await DailyDataManager.shared.updateCurrentDayData(with: HealthManager.shared)
             }
+        }
+        .overlay {
+            if session.isAccountWipeInProgress {
+                ZStack {
+                    Color.black.opacity(0.45).ignoresSafeArea()
+                    VStack(spacing: 14) {
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Suppression du compte…")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(28)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                .allowsHitTesting(true)
+            }
+        }
+        .alert(
+            "Suppression impossible",
+            isPresented: Binding(
+                get: { session.accountDeletionErrorMessage != nil },
+                set: { if !$0 { session.accountDeletionErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                session.accountDeletionErrorMessage = nil
+            }
+        } message: {
+            Text(session.accountDeletionErrorMessage ?? "Réessaie dans un instant.")
         }
     }
 }

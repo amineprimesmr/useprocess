@@ -1,16 +1,13 @@
-import AuthenticationServices
 import SwiftUI
 
 struct EditProfileView: View {
+    var onLogout: () -> Void = {}
+    var onDeleteConfirmed: () -> Void = {}
+
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
-    @Bindable private var session = AppSession.shared
     @State private var profileStore = SocialProfileStore.shared
     @State private var showPhotoFlow = false
-    @State private var showLogoutConfirm = false
-    @State private var showDeleteAlert = false
-    @State private var isDeletingAccount = false
-    @State private var deleteErrorMessage: String?
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
@@ -59,11 +56,11 @@ struct EditProfileView: View {
 
                         VStack(spacing: AccountDetailsTheme.rowSpacing) {
                             AccountDetailsActionButton(title: "Se déconnecter") {
-                                showLogoutConfirm = true
+                                onLogout()
                             }
 
-                            AccountDetailsActionButton(title: "Supprimer le compte", destructive: true) {
-                                showDeleteAlert = true
+                            AccountDeleteAnimatedButton {
+                                onDeleteConfirmed()
                             }
                         }
                         .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
@@ -89,59 +86,6 @@ struct EditProfileView: View {
                 }
             }
         )
-        .confirmationDialog(
-            "Se déconnecter ?",
-            isPresented: $showLogoutConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Se déconnecter", role: .destructive) {
-                AuthenticationManager.shared.signOut()
-                dismiss()
-            }
-            Button("Annuler", role: .cancel) {}
-        }
-        .confirmationDialog(
-            "Supprimer le compte ?",
-            isPresented: $showDeleteAlert,
-            titleVisibility: .visible
-        ) {
-            Button("Supprimer le compte", role: .destructive) {
-                Task { await performAccountDeletion() }
-            }
-            Button("Annuler", role: .cancel) {}
-        } message: {
-            Text("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.")
-        }
-        .alert(
-            "Suppression impossible",
-            isPresented: Binding(
-                get: { deleteErrorMessage != nil },
-                set: { if !$0 { deleteErrorMessage = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) {
-                deleteErrorMessage = nil
-            }
-        } message: {
-            Text(deleteErrorMessage ?? "Réessaie dans un instant.")
-        }
-        .overlay {
-            if isDeletingAccount {
-                ZStack {
-                    Color.black.opacity(0.45).ignoresSafeArea()
-                    VStack(spacing: 14) {
-                        ProgressView()
-                            .controlSize(.large)
-                        Text("Suppression du compte…")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.primary)
-                    }
-                    .padding(28)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                }
-            }
-        }
-        .allowsHitTesting(!isDeletingAccount)
         .task {
             if profileService.currentProfile == nil {
                 await profileService.loadProfile()
@@ -150,25 +94,6 @@ struct EditProfileView: View {
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
-        }
-    }
-
-    private func performAccountDeletion() async {
-        isDeletingAccount = true
-        defer { isDeletingAccount = false }
-
-        do {
-            try await session.deleteAccount()
-            dismiss()
-        } catch let error as AccountDeletionError {
-            if case .cancelled = error { return }
-            deleteErrorMessage = error.localizedDescription
-        } catch {
-            if (error as NSError).domain == ASAuthorizationError.errorDomain,
-               (error as NSError).code == ASAuthorizationError.canceled.rawValue {
-                return
-            }
-            deleteErrorMessage = error.localizedDescription
         }
     }
 

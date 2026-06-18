@@ -11,6 +11,16 @@ final class AppSession {
     var appearance: AppAppearance
     /// Empêche UserSessionCoordinator de recharger l'onboarding pendant une suppression.
     private(set) var isAccountWipeInProgress = false
+    var accountDeletionErrorMessage: String?
+
+    func beginAccountDeletion() {
+        isAccountWipeInProgress = true
+        accountDeletionErrorMessage = nil
+    }
+
+    func cancelAccountDeletion() {
+        isAccountWipeInProgress = false
+    }
 
     private init() {
         let uid = UserScopedStorage.currentUserId()
@@ -60,6 +70,28 @@ final class AppSession {
         AuthenticationManager.shared.hasCompletedOnboarding = false
     }
 
+    /// Remet l'app au parcours d'accueil (onboarding) après suppression de compte.
+    func resetAfterAccountDeletion(primaryUID: String? = nil) {
+        hasCompletedOnboarding = false
+        hasCompletedWelcomePlanChat = false
+
+        let primary = primaryUID
+            ?? UserScopedStorage.currentUserId()
+            ?? UnifiedProfileService.shared.currentProfile?.userId
+            ?? "local-user"
+
+        for uid in UserScopedStorage.likelyUserIds(primary: primary) {
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("onboarding.completed", userId: uid))
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan.chat.completed", userId: uid))
+        }
+
+        OnboardingProgressService.shared.resetProgress()
+        WelcomePlanStore.shared.resetForCurrentUser()
+
+        AuthenticationManager.shared.applyPostAccountDeletion()
+        AuthenticationManager.shared.startOnboarding()
+    }
+
     /// Suppression complète du compte : Firebase d'abord, puis données locales + retour onboarding.
     func deleteAccount() async throws {
         isAccountWipeInProgress = true
@@ -71,17 +103,12 @@ final class AppSession {
 
         try await AuthenticationManager.shared.deleteRemoteAccount()
 
-        WelcomePlanStore.shared.resetForCurrentUser()
         CoachConversationStore.resetThread()
         CoachConversationLibraryStore.shared.clearStoredData(userId: primaryUID)
         CoachMemoryStore.shared.clearForUser(userId: primaryUID)
         SocialProfileStore.shared.resetForUser(userId: primaryUID)
         BodyScanHistoryStore.shared.clearForUser(userId: primaryUID)
         FaceScanHistoryStore.shared.clearForUser(userId: primaryUID)
-        OnboardingProgressService.shared.resetProgress()
-
-        hasCompletedOnboarding = false
-        hasCompletedWelcomePlanChat = false
 
         for uid in UserScopedStorage.likelyUserIds(primary: primaryUID) {
             UserScopedStorage.clearAllUserData(userId: uid)
@@ -90,12 +117,19 @@ final class AppSession {
         }
 
         UnifiedProfileService.shared.clearLocalProfile()
-        AuthenticationManager.shared.applyPostAccountDeletion()
+        resetAfterAccountDeletion(primaryUID: primaryUID)
         UserSessionCoordinator.shared.handleAccountDeleted()
     }
 
     func reloadForCurrentUser() {
         guard !isAccountWipeInProgress else { return }
+
+        guard AuthUser.current != nil else {
+            hasCompletedOnboarding = false
+            hasCompletedWelcomePlanChat = false
+            return
+        }
+
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
         hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
             completedOnboarding: hasCompletedOnboarding,

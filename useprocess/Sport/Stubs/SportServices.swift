@@ -4,6 +4,7 @@ import HealthKit
 import UserNotifications
 import StoreKit
 import FirebaseAuth
+import AuthenticationServices
 
 // MARK: - Data
 
@@ -135,43 +136,29 @@ final class AuthenticationManager: NSObject, ObservableObject {
 
     func deleteRemoteAccount() async throws {
         guard AppConfiguration.firebaseConfigured else { return }
-        guard Auth.auth().currentUser != nil else { return }
+
+        guard Auth.auth().currentUser != nil else {
+            throw AccountDeletionError.notSignedIn
+        }
+
+        // La Cloud Function utilise l'Admin SDK : pas besoin de réauth Apple.
+        // (La réauth échouait systématiquement avec ASAuthorizationError 1001.)
+        do {
+            try await AccountDeletionRemoteService.deleteViaCloudFunction()
+            #if DEBUG
+            print("[Auth] Compte supprimé via Cloud Function")
+            #endif
+            return
+        } catch {
+            #if DEBUG
+            print("[Auth] Cloud delete failed, trying client SDK: \(error.localizedDescription)")
+            #endif
+        }
 
         if usesAppleProvider {
             try await reauthenticateWithApple()
         }
-
-        guard let user = Auth.auth().currentUser else {
-            throw AccountDeletionError.notSignedIn
-        }
-
-        do {
-            try await deleteAuthenticatedUser(user)
-        } catch let error as AccountDeletionError {
-            throw error
-        } catch {
-            throw AccountDeletionError.remoteDeletionFailed(error.localizedDescription)
-        }
-    }
-
-    private func deleteAuthenticatedUser(_ user: User) async throws {
-        // Firestore peut refuser la suppression côté client — on tente quand même Auth.delete().
-        try? await FirebaseProfileRepository.shared.deleteAllRemoteUserData(userId: user.uid)
-
-        do {
-            try await user.delete()
-        } catch let error as NSError
-            where error.domain == AuthErrorDomain
-                && AuthErrorCode(rawValue: error.code) == .requiresRecentLogin {
-            try await reauthenticateWithApple()
-            guard let refreshedUser = Auth.auth().currentUser else {
-                throw AccountDeletionError.notSignedIn
-            }
-            try? await FirebaseProfileRepository.shared.deleteAllRemoteUserData(userId: refreshedUser.uid)
-            try await refreshedUser.delete()
-        } catch {
-            throw error
-        }
+        try await AccountDeletionRemoteService.deleteViaClientSDK()
     }
 
     private var usesAppleProvider: Bool {
@@ -179,10 +166,37 @@ final class AuthenticationManager: NSObject, ObservableObject {
     }
 
     private func reauthenticateWithApple() async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            AppleSignInManager.shared.startReauthenticationFlow { result in
-                continuation.resume(with: result)
+        do {
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                group.addTask { @MainActor in
+                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                        AppleSignInManager.shared.startReauthenticationFlow { result in
+                            continuation.resume(with: result)
+                        }
+                    }
+                }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 60_000_000_000)
+                    throw AccountDeletionError.remoteDeletionFailed(
+                        "Confirmation Apple expirée. Ferme les fenêtres ouvertes et réessaie."
+                    )
+                }
+
+                defer { group.cancelAll() }
+                try await group.next()!
             }
+        } catch let error as AccountDeletionError {
+            throw error
+        } catch {
+            if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+                throw AccountDeletionError.cancelled
+            }
+            let nsError = error as NSError
+            if nsError.domain == ASAuthorizationError.errorDomain,
+               nsError.code == ASAuthorizationError.canceled.rawValue {
+                throw AccountDeletionError.cancelled
+            }
+            throw error
         }
     }
 

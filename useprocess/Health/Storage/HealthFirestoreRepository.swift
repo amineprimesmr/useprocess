@@ -10,12 +10,14 @@ final class HealthFirestoreRepository {
     private init() {}
 
     func saveBaselines(_ baselines: UserHealthBaselines, userId: String) async throws {
+        guard !AppSession.shared.isAccountWipeInProgress else { return }
         try db.collection("users").document(userId)
             .collection("healthBaselines").document("current")
             .setData(from: baselines, merge: true)
     }
 
     func saveDailySnapshot(_ snapshot: DailyHealthSnapshot, userId: String) async throws {
+        guard !AppSession.shared.isAccountWipeInProgress else { return }
         try db.collection("users").document(userId)
             .collection("healthDaily").document(snapshot.dateKey)
             .setData(from: snapshot, merge: true)

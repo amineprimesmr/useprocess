@@ -21,6 +21,7 @@ final class WelcomePlanFirestoreRepository {
     }
 
     func savePlan(_ plan: FaceOriginPlan, userId: String) async {
+        guard !AppSession.shared.isAccountWipeInProgress else { return }
         guard AppConfiguration.firebaseConfigured, userId != "local-user", !userId.isEmpty else { return }
         guard let json = encode(plan) else { return }
         try? await docRef(userId: userId).setData([

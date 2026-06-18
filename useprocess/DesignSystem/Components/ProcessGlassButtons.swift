@@ -66,6 +66,10 @@ enum ProcessGlass {
     @available(iOS 26.0, *)
     static var regular: Glass { .regular.interactive() }
 
+    /// Fond glass sans capture de toucher — boutons et lignes de formulaire.
+    @available(iOS 26.0, *)
+    static var regularSurface: Glass { .regular }
+
     @available(iOS 26.0, *)
     static var primary: Glass { .regular.tint(Color.processPrimary.opacity(0.9)).interactive() }
 

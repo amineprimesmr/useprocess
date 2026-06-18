@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.coachStream = exports.coachComplete = void 0;
+exports.coachStream = exports.coachComplete = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -155,6 +155,80 @@ async function withAnthropicRetry(operation, maxAttempts = 3) {
     }
     throw lastError;
 }
+async function deleteFirestoreCollection(col, batchSize = 100) {
+    const snapshot = await col.limit(batchSize).get();
+    if (snapshot.empty) {
+        return;
+    }
+    const batch = admin.firestore().batch();
+    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+    if (snapshot.size >= batchSize) {
+        await deleteFirestoreCollection(col, batchSize);
+    }
+}
+async function deleteAllUserFirestoreData(uid) {
+    const db = admin.firestore();
+    const userRef = db.collection("users").doc(uid);
+    const directSubcollections = [
+        "faceScans",
+        "scans",
+        "healthDaily",
+        "healthBaselines",
+        "welcomePlan",
+        "coachMeta",
+    ];
+    for (const name of directSubcollections) {
+        await deleteFirestoreCollection(userRef.collection(name));
+    }
+    const coachThreads = await userRef.collection("coachThreads").get();
+    for (const thread of coachThreads.docs) {
+        await deleteFirestoreCollection(thread.ref.collection("messages"));
+        await thread.ref.delete();
+    }
+    await userRef.delete();
+}
+exports.deleteUserAccount = (0, https_1.onRequest)({
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 120,
+    memory: "512MiB",
+}, async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+    }
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+    try {
+        const uid = await verifyFirebaseUser(req);
+        try {
+            await admin.auth().deleteUser(uid);
+        }
+        catch (authError) {
+            if (authError?.code !== "auth/user-not-found") {
+                throw authError;
+            }
+        }
+        try {
+            await deleteAllUserFirestoreData(uid);
+        }
+        catch (firestoreError) {
+            console.warn("[deleteUserAccount] Firestore cleanup failed", uid, firestoreError);
+        }
+        console.info("[deleteUserAccount] Deleted user", uid);
+        res.status(200).json({ ok: true, uid });
+    }
+    catch (error) {
+        const message = error?.message ?? "Unknown error";
+        const status = message === "UNAUTHORIZED" ? 401 : 500;
+        console.error("[deleteUserAccount]", message);
+        res.status(status).json({ error: message });
+    }
+});
 exports.coachComplete = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,

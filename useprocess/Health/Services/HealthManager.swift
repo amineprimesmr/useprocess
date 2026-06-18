@@ -85,6 +85,7 @@ final class HealthManager: ObservableObject {
 
     func performFullSync() async {
         guard isHealthDataAvailable else { return }
+        guard !AppSession.shared.isAccountWipeInProgress else { return }
         syncInProgress = true
         defer {
             syncInProgress = false

@@ -1,4 +1,15 @@
+import AuthenticationServices
 import SwiftUI
+
+private enum ProfileConfirmation: Identifiable {
+    case removePin(SocialProfilePin)
+
+    var id: String {
+        switch self {
+        case .removePin(let pin): return "pin-\(pin.id)"
+        }
+    }
+}
 
 /// Page profil — hero edge-to-edge + menu sticky partagé (comme Coach / Santé / Scan).
 struct ProcessProfileView: View {
@@ -13,7 +24,9 @@ struct ProcessProfileView: View {
     @State private var showPhotoFlow = false
     @State private var newPinTitle = ""
     @State private var newPinEmoji = "📌"
-    @State private var pinToRemove: SocialProfilePin?
+    @State private var pendingConfirmation: ProfileConfirmation?
+    @State private var pendingAccountConfirmation: AccountConfirmation?
+    @State private var deleteAccountWhenSheetDismisses = false
 
     private var resolvedProfile: SocialProfile {
         if let profile = profileStore.profile {
@@ -51,16 +64,49 @@ struct ProcessProfileView: View {
         }
         .sheet(isPresented: $showEditProfile) {
             NavigationStack {
-                EditProfileView()
-                    .navigationDestination(for: ProfileEditDestination.self) { destination in
-                        profileFieldEditor(for: destination)
+                EditProfileView(
+                    onLogout: { pendingAccountConfirmation = .logout },
+                    onDeleteConfirmed: {
+                        session.beginAccountDeletion()
+                        deleteAccountWhenSheetDismisses = true
+                        showEditProfile = false
                     }
+                )
+                .navigationDestination(for: ProfileEditDestination.self) { destination in
+                    profileFieldEditor(for: destination)
+                }
             }
             .environmentObject(profileService)
             .environmentObject(AuthenticationManager.shared)
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
             .presentationBackground(AccountDetailsTheme.pageBackground)
+            .alert(
+                "Se déconnecter ?",
+                isPresented: Binding(
+                    get: { pendingAccountConfirmation == .logout },
+                    set: { if !$0 { pendingAccountConfirmation = nil } }
+                )
+            ) {
+                Button("Se déconnecter", role: .destructive) {
+                    pendingAccountConfirmation = nil
+                    AuthenticationManager.shared.signOut()
+                    showEditProfile = false
+                }
+                Button("Annuler", role: .cancel) {
+                    pendingAccountConfirmation = nil
+                }
+            } message: {
+                Text("Tu pourras te reconnecter à tout moment.")
+            }
+        }
+        .onChange(of: showEditProfile) { wasOpen, isOpen in
+            guard wasOpen, !isOpen, deleteAccountWhenSheetDismisses else { return }
+            deleteAccountWhenSheetDismisses = false
+            Task {
+                try? await Task.sleep(for: .milliseconds(650))
+                await performAccountDeletion()
+            }
         }
         .onChange(of: session.hasCompletedOnboarding) { _, completed in
             if !completed {
@@ -78,17 +124,27 @@ struct ProcessProfileView: View {
                 newPinEmoji = "📌"
             }
         }
-        .confirmationDialog("Supprimer ce pin ?", isPresented: .init(
-            get: { pinToRemove != nil },
-            set: { if !$0 { pinToRemove = nil } }
-        )) {
+        .confirmationDialog(
+            "Supprimer ce pin ?",
+            isPresented: Binding(
+                get: {
+                    if case .removePin = pendingConfirmation { return true }
+                    return false
+                },
+                set: { if !$0 { pendingConfirmation = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
             Button("Supprimer", role: .destructive) {
-                if let pin = pinToRemove {
+                if case .removePin(let pin) = pendingConfirmation {
                     withAnimation(ProfileTheme.spring) {
                         profileStore.removePin(pin.id)
                     }
                 }
-                pinToRemove = nil
+                pendingConfirmation = nil
+            }
+            Button("Annuler", role: .cancel) {
+                pendingConfirmation = nil
             }
         }
         .task(id: profileService.currentProfile?.userId) {
@@ -144,11 +200,26 @@ struct ProcessProfileView: View {
             ProfilePinsSection(
                 pins: profile.pins,
                 onAdd: { showAddPin = true },
-                onRemove: { pin in pinToRemove = pin }
+                onRemove: { pin in pendingConfirmation = .removePin(pin) }
             )
         }
         .padding(.horizontal, ProfileTheme.horizontalPadding)
         .padding(.bottom, 32)
         .safeAreaPadding(.bottom, 8)
+    }
+
+    private func performAccountDeletion() async {
+        session.accountDeletionErrorMessage = nil
+
+        do {
+            try await session.deleteAccount()
+        } catch let error as AccountDeletionError {
+            session.cancelAccountDeletion()
+            if case .cancelled = error { return }
+            session.accountDeletionErrorMessage = error.localizedDescription
+        } catch {
+            session.cancelAccountDeletion()
+            session.accountDeletionErrorMessage = error.localizedDescription
+        }
     }
 }

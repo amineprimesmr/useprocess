@@ -1,6 +1,36 @@
 import SwiftUI
 import UIKit
 
+enum AccountConfirmation: Identifiable {
+    case logout
+    case deleteAccount
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .logout: return "Se déconnecter ?"
+        case .deleteAccount: return "Supprimer le compte ?"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .logout:
+            return "Tu pourras te reconnecter à tout moment."
+        case .deleteAccount:
+            return "Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process."
+        }
+    }
+
+    var confirmTitle: String {
+        switch self {
+        case .logout: return "Se déconnecter"
+        case .deleteAccount: return "Supprimer le compte"
+        }
+    }
+}
+
 enum ProfileEditTheme {
     static let background = ProcessColors.background
     static let chipBackground = ProcessColors.secondaryBackground
@@ -239,7 +269,7 @@ struct AccountDetailsGlassReliefModifier: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
         content
-            .processGlassEffect(in: shape)
+            .processGlassEffect(in: shape, interactive: false)
             .overlay {
                 if destructiveTint {
                     shape.fill(Color.red.opacity(0.07))
@@ -360,6 +390,10 @@ struct AccountDetailsActionButton: View {
     var destructive: Bool = false
     let action: () -> Void
 
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AccountDetailsTheme.actionCornerRadius, style: .continuous)
+    }
+
     var body: some View {
         Button(action: action) {
             Text(title)
@@ -367,13 +401,78 @@ struct AccountDetailsActionButton: View {
                 .foregroundStyle(destructive ? Color.red : Color.primary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
+                .background {
+                    shape
+                        .fill(.clear)
+                        .processGlassEffect(in: shape, interactive: false)
+                        .overlay {
+                            if destructive {
+                                shape.fill(Color.red.opacity(0.07))
+                            }
+                        }
+                }
+                .contentShape(shape)
         }
-        .buttonStyle(.plain)
-        .accountDetailsGlassRelief(
-            cornerRadius: AccountDetailsTheme.actionCornerRadius,
-            destructiveTint: destructive
-        )
         .buttonStyle(ProcessGlassPressStyle())
+    }
+}
+
+struct AccountDeleteAnimatedButton: View {
+    let onConfirm: () -> Void
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AccountDetailsTheme.actionCornerRadius, style: .continuous)
+    }
+
+    var body: some View {
+        AnimatedDeleteButton(
+            cornerRadius: .init(
+                source: AccountDetailsTheme.actionCornerRadius,
+                destination: 28
+            ),
+            customAction: CustomDeleteAction(
+                confirmTitle: "Supprimer le compte",
+                cancelTitle: "Annuler",
+                background: .red,
+                foreground: .white
+            )
+        ) {
+            VStack(alignment: .leading, spacing: 15) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text("Supprimer le compte ?")
+                    .font(.title2.bold())
+                    .foregroundStyle(Color.primary)
+
+                Text("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.bottom, 10)
+        } label: {
+            Text("Supprimer le compte")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.red)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background {
+                    shape
+                        .fill(.clear)
+                        .processGlassEffect(in: shape, interactive: false)
+                        .overlay {
+                            shape.fill(Color.red.opacity(0.07))
+                        }
+                }
+                .contentShape(shape)
+        } action: { confirmed in
+            if confirmed {
+                onConfirm()
+            }
+        }
     }
 }
 

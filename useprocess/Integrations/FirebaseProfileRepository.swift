@@ -24,15 +24,20 @@ final class FirebaseProfileRepository {
 
     /// Efface le document utilisateur et les sous-collections connues.
     func deleteAllRemoteUserData(userId: String) async throws {
-        try await deleteDocuments(
-            in: db.collection(collection).document(userId).collection("faceScans")
-        )
+        let userRef = db.collection(collection).document(userId)
 
-        let coachThreads = try await db.collection(collection)
-            .document(userId)
-            .collection("coachThreads")
-            .getDocuments()
+        try await deleteDocuments(in: userRef.collection("faceScans"))
+        try await deleteDocuments(in: userRef.collection("scans"))
+        try await deleteDocuments(in: userRef.collection("healthDaily"))
+        try await deleteDocuments(in: userRef.collection("welcomePlan"))
 
+        let healthBaselines = userRef.collection("healthBaselines")
+        try await deleteDocuments(in: healthBaselines)
+
+        let coachMeta = userRef.collection("coachMeta")
+        try await deleteDocuments(in: coachMeta)
+
+        let coachThreads = try await userRef.collection("coachThreads").getDocuments()
         for thread in coachThreads.documents {
             try await deleteDocuments(in: thread.reference.collection("messages"))
             try await thread.reference.delete()

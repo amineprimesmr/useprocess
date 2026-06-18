@@ -52,6 +52,7 @@ final class FaceScanHistoryStore {
     }
 
     func syncFromRemote() async {
+        guard !AppSession.shared.isAccountWipeInProgress else { return }
         guard AppConfiguration.firebaseConfigured,
               let uid = userId ?? AuthUser.current?.uid else { return }
 

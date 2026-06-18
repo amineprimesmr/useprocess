@@ -11,6 +11,7 @@ final class AppleSignInManager: NSObject, ObservableObject {
     private var currentNonce: String?
     private var completion: ((Result<Void, Error>) -> Void)?
     private var intent: AppleSignInIntent = .signIn
+    private var isPerformingRequest = false
 
     private override init() {
         super.init()
@@ -38,6 +39,12 @@ final class AppleSignInManager: NSObject, ObservableObject {
             return
         }
 
+        guard !isPerformingRequest else {
+            completion(.failure(AppleSignInError.requestInProgress))
+            return
+        }
+
+        isPerformingRequest = true
         self.completion = completion
         self.intent = intent
         let nonce = randomNonceString()
@@ -45,13 +52,26 @@ final class AppleSignInManager: NSObject, ObservableObject {
 
         let provider = ASAuthorizationAppleIDProvider()
         let request = provider.createRequest()
-        request.requestedScopes = [.fullName, .email]
+        if intent == .signIn {
+            request.requestedScopes = [.fullName, .email]
+        }
         request.nonce = sha256(nonce)
 
         let controller = ASAuthorizationController(authorizationRequests: [request])
         controller.delegate = self
         controller.presentationContextProvider = self
-        controller.performRequests()
+
+        DispatchQueue.main.async {
+            controller.performRequests()
+        }
+    }
+
+    private func finish(with result: Result<Void, Error>) {
+        isPerformingRequest = false
+        completion?(result)
+        completion = nil
+        currentNonce = nil
+        intent = .signIn
     }
 
     private func randomNonceString(length: Int = 32) -> String {
@@ -84,23 +104,22 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
         didCompleteWithAuthorization authorization: ASAuthorization
     ) {
         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-            completion?(.failure(AppleSignInError.invalidCredential))
-            completion = nil
+            finish(with: .failure(AppleSignInError.invalidCredential))
             return
         }
 
         guard let nonce = currentNonce else {
-            completion?(.failure(AppleSignInError.missingNonce))
-            completion = nil
+            finish(with: .failure(AppleSignInError.missingNonce))
             return
         }
 
         guard let tokenData = credential.identityToken,
               let token = String(data: tokenData, encoding: .utf8) else {
-            completion?(.failure(AppleSignInError.missingToken))
-            completion = nil
+            finish(with: .failure(AppleSignInError.missingToken))
             return
         }
+
+        let activeIntent = intent
 
         Task { @MainActor in
             do {
@@ -110,7 +129,7 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
                     fullName: credential.fullName
                 )
 
-                switch intent {
+                switch activeIntent {
                 case .signIn:
                     let result = try await Auth.auth().signIn(with: firebaseCredential)
                     if let fullName = credential.fullName {
@@ -129,20 +148,15 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
                     try await user.reauthenticate(with: firebaseCredential)
                 }
 
-                completion?(.success(()))
+                finish(with: .success(()))
             } catch {
-                completion?(.failure(error))
+                finish(with: .failure(error))
             }
-            completion = nil
-            currentNonce = nil
-            intent = .signIn
         }
     }
 
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        completion?(.failure(error))
-        completion = nil
-        currentNonce = nil
+        finish(with: .failure(error))
     }
 }
 
@@ -153,8 +167,12 @@ extension AppleSignInManager: ASAuthorizationControllerPresentationContextProvid
             preconditionFailure("Aucune UIWindowScene disponible pour Sign in with Apple")
         }
 
-        if let window = scene.windows.first(where: \.isKeyWindow) {
-            return window
+        let orderedWindows = scene.windows.sorted { $0.windowLevel.rawValue > $1.windowLevel.rawValue }
+        if let key = orderedWindows.first(where: \.isKeyWindow) {
+            return key
+        }
+        if let top = orderedWindows.first {
+            return top
         }
 
         return UIWindow(windowScene: scene)
@@ -166,6 +184,7 @@ enum AppleSignInError: LocalizedError {
     case missingNonce
     case missingToken
     case firebaseNotConfigured
+    case requestInProgress
 
     var errorDescription: String? {
         switch self {
@@ -173,6 +192,7 @@ enum AppleSignInError: LocalizedError {
         case .missingNonce: return "Nonce de sécurité manquant"
         case .missingToken: return "Jeton Apple manquant"
         case .firebaseNotConfigured: return "Firebase non configuré"
+        case .requestInProgress: return "Une authentification Apple est déjà en cours"
         }
     }
 }

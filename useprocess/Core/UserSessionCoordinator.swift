@@ -45,8 +45,10 @@ final class UserSessionCoordinator {
                 await FaceScanHistoryStore.shared.syncFromRemote()
                 await HealthManager.shared.performFullSync()
             }
+        } else if AppSession.shared.isAccountWipeInProgress {
+            return
         } else {
-            handleAccountDeleted()
+            handleSignedOut()
         }
     }
 
@@ -56,7 +58,13 @@ final class UserSessionCoordinator {
         SocialProfileStore.shared.bind(unified: nil)
         BodyScanHistoryStore.shared.clearForUser(userId: nil)
         FaceScanHistoryStore.shared.clearForUser(userId: nil)
-        AuthenticationManager.shared.applyPostAccountDeletion()
+        Task { await SubscriptionService.shared.syncAppUserID(nil) }
+    }
+
+    private func handleSignedOut() {
+        activeUserId = nil
+        UnifiedProfileService.shared.clearLocalProfile()
+        SocialProfileStore.shared.bind(unified: nil)
         Task { await SubscriptionService.shared.syncAppUserID(nil) }
     }
 }

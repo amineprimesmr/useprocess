@@ -2,9 +2,9 @@ import SwiftUI
 
 extension View {
     @ViewBuilder
-    func processGlassEffect(in shape: some InsettableShape) -> some View {
+    func processGlassEffect(in shape: some InsettableShape, interactive: Bool = true) -> some View {
         if #available(iOS 26.0, *) {
-            glassEffect(ProcessGlass.regular, in: shape)
+            glassEffect(interactive ? ProcessGlass.regular : ProcessGlass.regularSurface, in: shape)
         } else {
             background(.ultraThinMaterial, in: shape)
                 .overlay(shape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))

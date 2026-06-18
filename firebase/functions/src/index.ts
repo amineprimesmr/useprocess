@@ -157,6 +157,96 @@ async function withAnthropicRetry<T>(
   throw lastError;
 }
 
+async function deleteFirestoreCollection(
+  col: admin.firestore.CollectionReference,
+  batchSize = 100
+): Promise<void> {
+  const snapshot = await col.limit(batchSize).get();
+  if (snapshot.empty) {
+    return;
+  }
+
+  const batch = admin.firestore().batch();
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+
+  if (snapshot.size >= batchSize) {
+    await deleteFirestoreCollection(col, batchSize);
+  }
+}
+
+async function deleteAllUserFirestoreData(uid: string): Promise<void> {
+  const db = admin.firestore();
+  const userRef = db.collection("users").doc(uid);
+
+  const directSubcollections = [
+    "faceScans",
+    "scans",
+    "healthDaily",
+    "healthBaselines",
+    "welcomePlan",
+    "coachMeta",
+  ];
+
+  for (const name of directSubcollections) {
+    await deleteFirestoreCollection(userRef.collection(name));
+  }
+
+  const coachThreads = await userRef.collection("coachThreads").get();
+  for (const thread of coachThreads.docs) {
+    await deleteFirestoreCollection(thread.ref.collection("messages"));
+    await thread.ref.delete();
+  }
+
+  await userRef.delete();
+}
+
+export const deleteUserAccount = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 120,
+    memory: "512MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const uid = await verifyFirebaseUser(req);
+
+      try {
+        await admin.auth().deleteUser(uid);
+      } catch (authError: any) {
+        if (authError?.code !== "auth/user-not-found") {
+          throw authError;
+        }
+      }
+
+      try {
+        await deleteAllUserFirestoreData(uid);
+      } catch (firestoreError) {
+        console.warn("[deleteUserAccount] Firestore cleanup failed", uid, firestoreError);
+      }
+
+      console.info("[deleteUserAccount] Deleted user", uid);
+      res.status(200).json({ ok: true, uid });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      const status = message === "UNAUTHORIZED" ? 401 : 500;
+      console.error("[deleteUserAccount]", message);
+      res.status(status).json({ error: message });
+    }
+  }
+);
+
 export const coachComplete = onRequest(
   {
     invoker: "public",
