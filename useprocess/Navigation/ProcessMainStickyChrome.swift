@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 enum ProcessMainChromeMetrics {
-    static var filterBarHeight: CGFloat { LayoutConstants.isIPad ? 68 : 52 }
+    static var filterBarHeight: CGFloat { LayoutConstants.isIPad ? 72 : 58 }
     static let dismissDistance: CGFloat = 100
 
     static var topSafeInset: CGFloat { UIApplication.safeAreaTop }
@@ -13,17 +13,20 @@ enum ProcessMainChromeMetrics {
     static var blurHeight: CGFloat { topSafeInset + filterBarHeight + 10 }
 }
 
-struct CoachSidebarExpandedKey: PreferenceKey {
-    static var defaultValue = false
+struct CoachSidebarOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
-    static func reduce(value: inout Bool, nextValue: () -> Bool) {
-        value = value || nextValue()
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
-extension View {
-    func reportsCoachSidebarExpanded(_ isExpanded: Bool) -> some View {
-        preference(key: CoachSidebarExpandedKey.self, value: isExpanded)
+/// Progression du panneau latéral coach (0 = fermé, 1 = ouvert).
+struct CoachSidebarProgressKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
@@ -86,6 +89,35 @@ struct ProcessMainStickyChromeOverlay: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(edges: .top)
+    }
+}
+
+/// Couche sticky isolée — seule cette vue observe la progression sidebar.
+struct CoachMainStickyChromeLayer: View {
+    @Binding var selection: ProcessMainSection
+    var lockedSections: Set<ProcessMainSection> = []
+    var profileSubrouteActive: Bool
+    let headerProgress: CGFloat
+    let headerVisibility: CGFloat
+
+    @Bindable private var sidebar = CoachSidebarPresentation.shared
+
+    private var opacity: Double {
+        if selection == .profile && profileSubrouteActive { return 0 }
+        if selection == .coach { return Double(1 - sidebar.progress) }
+        return 1
+    }
+
+    var body: some View {
+        ProcessMainStickyChromeOverlay(
+            selection: $selection,
+            lockedSections: lockedSections,
+            headerProgress: headerProgress,
+            headerVisibility: headerVisibility
+        )
+        .opacity(opacity)
+        .allowsHitTesting(opacity > 0.05)
+        .animation(.none, value: sidebar.progress)
     }
 }
 

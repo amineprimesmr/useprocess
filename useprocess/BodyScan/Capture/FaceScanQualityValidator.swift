@@ -66,4 +66,45 @@ enum FaceScanQualityValidator {
               let yMin = yaws.min(), let yMax = yaws.max() else { return false }
         return (pMax - pMin) + (yMax - yMin) >= minimum
     }
+
+    enum FaceDistanceFeedback: Equatable {
+        case ok
+        case tooFar
+        case tooClose
+    }
+
+    /// Distance caméra (z ARKit, négatif = devant) + part du visage à l'écran.
+    static func distanceFeedback(z: Float, screenFillRatio: CGFloat?) -> FaceDistanceFeedback {
+        if z > -0.14 { return .tooClose }
+        if z < -0.52 { return .tooFar }
+
+        if let ratio = screenFillRatio {
+            if ratio < 0.11 { return .tooFar }
+            if ratio > 0.40 { return .tooClose }
+        }
+
+        return .ok
+    }
+
+    static func distanceHint(for feedback: FaceDistanceFeedback) -> String? {
+        switch feedback {
+        case .ok:
+            return nil
+        case .tooFar:
+            return "Ton visage doit bien remplir le cadre."
+        case .tooClose:
+            return "Recule d'un tout petit peu."
+        }
+    }
+
+    static func distanceInstruction(for feedback: FaceDistanceFeedback) -> String {
+        switch feedback {
+        case .ok:
+            return "Parfait — garde cette distance."
+        case .tooFar:
+            return "Rapproche-toi de l'iPhone."
+        case .tooClose:
+            return "Éloigne un peu l'iPhone."
+        }
+    }
 }

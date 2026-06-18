@@ -90,6 +90,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         let minTickProgress = 0.48
         let maxHeadRotation: Float = 0.55
         let minTrackedFramesBeforeScan = 8
+        let minDistanceOkFramesBeforeScan = 14
         let maxSectorBridge = 14
         let lostFrameThresholdPositioning = 30
         let lostFrameThresholdScanning = 55
@@ -99,6 +100,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         var scanStartTime: Date?
         var trackedFrameCount = 0
         var stableFrameCount = 0
+        var distanceOkFrameCount = 0
         var faceDetected = false
         var lostFrameStreak = 0
         var currentAmbientIntensity: CGFloat = 1000
@@ -297,6 +299,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             faceDetected = false
             trackedFrameCount = 0
             stableFrameCount = 0
+            distanceOkFrameCount = 0
             lostFrameStreak = 0
             scanStartTime = nil
             referenceTransform = nil
@@ -347,23 +350,53 @@ struct FaceMeshScanView: UIViewRepresentable {
             stableFrameCount += 1
 
             let z = faceAnchor.transform.columns.3.z
-            if let hint = distanceHint(z: z), scanStartTime == nil, stableFrameCount < 24 {
+            let fillRatio = projectedFaceFillRatio(faceAnchor: faceAnchor)
+            let distanceFeedback = FaceScanQualityValidator.distanceFeedback(
+                z: z,
+                screenFillRatio: fillRatio
+            )
+
+            if distanceFeedback != .ok {
+                distanceOkFrameCount = 0
+
+                if scanStartTime != nil {
+                    publishUI(force: false) {
+                        self.isFaceDetected = true
+                        self.instruction = FaceScanQualityValidator.distanceInstruction(for: distanceFeedback)
+                        self.frameHint = FaceScanQualityValidator.distanceHint(for: distanceFeedback)
+                    }
+                    return
+                }
+
                 publishUI(force: false) {
-                    self.isFaceDetected = self.trackedFrameCount >= 4
-                    self.frameHint = hint
-                    self.instruction = "Ajuste la distance avec l'iPhone."
+                    self.isFaceDetected = self.scanStartTime != nil || self.trackedFrameCount >= 4
+                    self.instruction = FaceScanQualityValidator.distanceInstruction(for: distanceFeedback)
+                    self.frameHint = FaceScanQualityValidator.distanceHint(for: distanceFeedback)
                 }
                 return
             }
 
+            distanceOkFrameCount += 1
+
             if scanStartTime == nil {
                 guard trackedFrameCount >= minTrackedFramesBeforeScan else {
                     publishUI(force: false) {
-                        self.isFaceDetected = self.trackedFrameCount >= 4
+                        self.isFaceDetected = false
                         self.instruction = "Place ton visage dans le cadre."
+                        self.frameHint = "Rapproche-toi pour bien remplir le cercle."
                     }
                     return
                 }
+
+                guard distanceOkFrameCount >= minDistanceOkFramesBeforeScan else {
+                    publishUI(force: false) {
+                        self.isFaceDetected = true
+                        self.instruction = FaceScanQualityValidator.distanceInstruction(for: .ok)
+                        self.frameHint = "Ne bouge plus — le scan va démarrer."
+                    }
+                    return
+                }
+
                 beginScan(with: faceAnchor)
                 return
             }
@@ -484,7 +517,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                     scanExhausted = true
                     publishUI(force: true) {
                         self.instruction = "Scan difficile — active le flash et réessaie."
-                        self.frameHint = "Recule d'un pas puis replace ton visage."
+                        self.frameHint = "Rapproche-toi puis replace ton visage dans le cadre."
                     }
                     HapticManager.shared.notification(.warning)
                 }
@@ -660,10 +693,36 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
         }
 
-        private func distanceHint(z: Float) -> String? {
-            if z > -0.10 { return "Éloigne un peu l'iPhone" }
-            if z < -0.82 { return "Rapproche l'iPhone de ton visage" }
-            return nil
+        private func projectedFaceFillRatio(faceAnchor: ARFaceAnchor) -> CGFloat? {
+            guard let view = arView else { return nil }
+            let bounds = view.bounds
+            guard bounds.width > 1, bounds.height > 1 else { return nil }
+
+            let transform = faceAnchor.transform
+            var minX = CGFloat.infinity
+            var maxX = -CGFloat.infinity
+            var minY = CGFloat.infinity
+            var maxY = -CGFloat.infinity
+            var projectedCount = 0
+
+            let vertices = faceAnchor.geometry.vertices
+            for (index, vertex) in vertices.enumerated() where index.isMultiple(of: 4) {
+                let local = transform * SIMD4<Float>(vertex.x, vertex.y, vertex.z, 1)
+                let projected = view.projectPoint(SCNVector3(local.x, local.y, local.z))
+                guard projected.z > 0, projected.z < 1 else { continue }
+
+                let point = CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
+                minX = min(minX, point.x)
+                maxX = max(maxX, point.x)
+                minY = min(minY, point.y)
+                maxY = max(maxY, point.y)
+                projectedCount += 1
+            }
+
+            guard projectedCount >= 10 else { return nil }
+            let faceArea = (maxX - minX) * (maxY - minY)
+            guard faceArea > 1 else { return nil }
+            return faceArea / (bounds.width * bounds.height)
         }
 
         private func extractMesh(from geometry: ARFaceGeometry) -> FaceMesh3DData {

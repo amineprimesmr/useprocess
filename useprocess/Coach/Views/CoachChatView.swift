@@ -28,11 +28,12 @@ struct CoachChatView: View {
     @State private var showWelcomePlanPreview = false
     @State private var welcomePlanPreviewID = UUID()
     @State private var messageContextMenu: CoachUserMessageContextState?
-    @State private var viewportHeight: CGFloat = 0
+    @State private var thinkingResponseAnchor: CGRect = .zero
+    @State private var showFaceScan = false
+    @State private var isSidebarExpanded = false
 
-    private let messageFont = Font.system(size: 16, weight: .regular)
-    private let messageLineSpacing: CGFloat = 2
-    private let responseScrollAnchor = UnitPoint(x: 0.5, y: 0.02)
+    private let messageFont = Font.system(size: 17, weight: .regular)
+    private let messageLineSpacing: CGFloat = 4
 
     var body: some View {
         Group {
@@ -72,14 +73,16 @@ struct CoachChatView: View {
         }
     }
 
+    private let coachSidebarWidth: CGFloat = 300
+
     private var coachMainContent: some View {
         CustomSideMenu(
             isEnabled: viewModel.isSidebarEnabled,
-            sideBarWidth: 300,
-            isExpanded: $viewModel.isSidebarExpanded
+            sideBarWidth: coachSidebarWidth,
+            isExpanded: $isSidebarExpanded
         ) { _ in
             CoachConversationsSidebar(
-                isExpanded: $viewModel.isSidebarExpanded,
+                isExpanded: $isSidebarExpanded,
                 conversations: viewModel.conversations,
                 activeConversationId: viewModel.activeConversationId,
                 profile: profileService.currentProfile,
@@ -96,16 +99,18 @@ struct CoachChatView: View {
                 onOpenWelcomePlan: openWelcomePlanPreview
             )
         } content: { _ in
-            if showWelcomePlanPreview {
-                WelcomePlanChatView(
-                    previewMode: true,
-                    embeddedInMainApp: true,
-                    selectedSection: $selectedSection,
-                    onComplete: dismissWelcomePlanChat
-                )
-                .id(welcomePlanPreviewID)
-            } else {
-                chatContent
+            Group {
+                if showWelcomePlanPreview {
+                    WelcomePlanChatView(
+                        previewMode: true,
+                        embeddedInMainApp: true,
+                        selectedSection: $selectedSection,
+                        onComplete: dismissWelcomePlanChat
+                    )
+                    .id(welcomePlanPreviewID)
+                } else {
+                    chatContent
+                }
             }
         }
         .overlay {
@@ -133,7 +138,6 @@ struct CoachChatView: View {
             }
         }
         .animation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
-        .reportsCoachSidebarExpanded(viewModel.isSidebarExpanded)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             viewModel.bind(profile: profileService.currentProfile)
@@ -147,162 +151,66 @@ struct CoachChatView: View {
             guard should else { return }
             Task { await viewModel.consumePendingPlanPromptIfNeeded() }
         }
+        .fullScreenCover(isPresented: $showFaceScan) {
+            FaceScanSessionView(
+                onDismiss: { showFaceScan = false },
+                onComplete: { _ in
+                    showFaceScan = false
+                    FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
+                }
+            )
+            .environmentObject(profileService)
+        }
     }
 
     private var chatContent: some View {
         ZStack(alignment: .topLeading) {
-            VStack(spacing: 0) {
-                ScrollViewReader { proxy in
-                    processMainScrollableChrome(
-                        selectedSection: $selectedSection,
-                        pageSection: .coach,
-                        dismissesKeyboard: .interactively,
-                        scrollDisabled: messageContextMenu != nil
-                    ) {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            if !viewModel.claudeConfigured {
-                                configurationBanner
-                            }
-
-                            ForEach(viewModel.messages) { message in
-                                messageRow(message)
-                                    .id(message.id)
-                                    .coachMessageFadeIn()
-                            }
-
-                            if !viewModel.streamingText.isEmpty {
-                                streamingText
-                                    .id("streaming")
-                                    .coachMessageFadeIn()
-                            } else if viewModel.isSending {
-                                CoachThinkingBlobPlaceholder()
-                                    .id("thinking")
-                            }
-
-                            Color.clear
-                                .frame(height: scrollBottomInset)
-                                .id("bottom-spacer")
+            if viewModel.showsContextualHome {
+                CoachContextualHomeView(
+                    prompt: viewModel.homePrompt,
+                    startsComplete: viewModel.shouldSkipHomeAnimation,
+                    onGreetingComplete: {
+                        Task { @MainActor in
+                            viewModel.onHomeGreetingComplete()
                         }
-                        .id(viewModel.activeConversationId)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .padding(.bottom, viewModel.isVoiceRecording ? 80 : 0)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .simultaneousGesture(
-                        TapGesture().onEnded {
-                            isInputFocused = false
-                        }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(theme.background.ignoresSafeArea())
+                .transition(
+                    .opacity
+                        .combined(with: .offset(y: 6))
+                )
+            } else {
+                activeConversationScroll
+                    .transition(
+                        .opacity
+                            .combined(with: .offset(y: 8))
                     )
-                    .onChange(of: viewModel.messages.count) { oldCount, newCount in
-                        if newCount < oldCount {
-                            scrollToConversationTop(proxy, delay: 0.05)
-                        } else {
-                            scrollToActiveTurn(proxy)
-                        }
-                    }
-                    .onChange(of: viewModel.activeConversationId) { _, _ in
-                        scrollToConversationTop(proxy, delay: 0.02)
-                    }
-                    .onChange(of: viewModel.streamingText) { _, _ in
-                        scrollToActiveTurn(proxy)
-                    }
-                    .onChange(of: viewModel.isSending) { _, sending in
-                        if sending {
-                            thinkingBlobStart = .now
-                            isInputFocused = false
-                            scrollToActiveTurn(proxy, delay: 0.08)
-                        }
-                    }
-                }
-
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 4)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background {
-                GeometryReader { geo in
-                    Color.clear
-                        .onAppear { viewportHeight = geo.size.height }
-                        .onChange(of: geo.size.height) { _, height in
-                            viewportHeight = height
-                        }
-                }
-            }
-            .background(theme.background.ignoresSafeArea())
-            .overlay(alignment: .topLeading) {
-                if viewModel.isSending && viewModel.streamingText.isEmpty {
-                    CoachEdgeBlobOverlay(
-                        isDark: theme.isDark,
-                        mode: .thinking(start: thinkingBlobStart)
-                    )
-                    .padding(.top, blobVerticalCenter - 36)
-                }
-            }
-            .ignoresSafeArea(edges: .leading)
-            .overlay(alignment: .bottom) {
-                if viewModel.isVoiceRecording || viewModel.isVoiceExiting {
-                    CoachVoiceRecorderPill(
-                        elapsed: viewModel.voiceElapsed,
-                        audioLevel: viewModel.voiceAudioLevel,
-                        audioLevels: viewModel.voiceAudioLevels,
-                        transcript: viewModel.voiceTranscript,
-                        isExiting: viewModel.isVoiceExiting,
-                        onCancel: { viewModel.cancelVoiceRecording() },
-                        onConfirm: {
-                            Task {
-                                let inserted = await viewModel.confirmVoiceRecording()
-                                if inserted {
-                                    isInputFocused = true
-                                }
-                            }
-                        }
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, 132)
-                    .ignoresSafeArea(edges: .leading)
-                }
             }
         }
+        .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.showsContextualHome)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            CoachLiquidGlassInputBar(
-                text: $viewModel.inputText,
-                isFocused: $isInputFocused,
-                pendingImage: viewModel.pendingAttachmentImage,
-                isDisabled: viewModel.isSending,
-                isRecording: viewModel.isVoiceRecording,
-                isAttachmentMenuOpen: showAttachmentMenu,
-                onSend: {
+            CoachChatBottomAccessory(
+                showsContextualHome: viewModel.showsContextualHome,
+                suggestions: viewModel.homePrompt.suggestions,
+                homeActionsRevealed: viewModel.homeActionsRevealed,
+                skipHomeAnimation: viewModel.shouldSkipHomeAnimation,
+                showsHomeInsteadOfInput: viewModel.showsHomeInsteadOfInput,
+                isSending: viewModel.isSending,
+                onSelectSuggestion: { suggestion in
                     isInputFocused = false
-                    Task { await viewModel.sendCurrentMessage() }
+                    Task { await viewModel.sendHomeSuggestion(suggestion) }
                 },
-                onStartVoice: {
-                    Task { await viewModel.startVoiceRecording() }
-                },
-                onOpenMenu: {
-                    let keepKeyboard = isInputFocused
-                    withAnimation(ProcessGlass.spring) {
-                        showAttachmentMenu.toggle()
-                    }
-                    if keepKeyboard {
-                        isInputFocused = true
-                    }
-                },
-                onRemovePendingImage: {
-                    viewModel.clearPendingAttachment()
-                }
+                contextualHomeBottomBar: { contextualHomeBottomBar },
+                chatInputBar: { coachChatInputBar }
             )
-            .padding(.horizontal, 14)
-            .padding(.bottom, 10)
-            .animation(ProcessGlass.spring, value: viewModel.isVoiceRecording)
         }
         .overlay {
-            if showAttachmentMenu {
+            if showAttachmentMenu,
+               !viewModel.showsHomeInsteadOfInput,
+               !viewModel.isVoiceRecording,
+               !viewModel.isVoiceExiting {
                 Color.black.opacity(0.001)
                     .ignoresSafeArea()
                     .onTapGesture {
@@ -313,7 +221,10 @@ struct CoachChatView: View {
             }
         }
         .overlay(alignment: .bottomLeading) {
-            if showAttachmentMenu {
+            if showAttachmentMenu,
+               !viewModel.showsHomeInsteadOfInput,
+               !viewModel.isVoiceRecording,
+               !viewModel.isVoiceExiting {
                 CoachAttachmentGlassPopover { option in
                     withAnimation(ProcessGlass.spring) {
                         showAttachmentMenu = false
@@ -351,6 +262,233 @@ struct CoachChatView: View {
                 )
             }
         }
+        .onChange(of: viewModel.activeConversationId) { _, _ in
+            viewModel.onActiveConversationChanged()
+        }
+        .onChange(of: viewModel.homePrompt.greetingText) { old, new in
+            guard old != new else { return }
+            viewModel.syncHomePresentationFromCache()
+        }
+    }
+
+    private var activeConversationScroll: some View {
+        ZStack(alignment: .topLeading) {
+            VStack(spacing: 0) {
+                ScrollViewReader { proxy in
+                    processMainScrollableChrome(
+                        selectedSection: $selectedSection,
+                        pageSection: .coach,
+                        dismissesKeyboard: .interactively,
+                        scrollDisabled: messageContextMenu != nil
+                    ) {
+                        VStack(alignment: .leading, spacing: 14) {
+                            if !viewModel.claudeConfigured {
+                                configurationBanner
+                            }
+
+                            ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
+                                messageRow(message)
+                                    .padding(.top, messageTopSpacing(at: index))
+                                    .id(message.id)
+                            }
+
+                            if !viewModel.streamingText.isEmpty {
+                                streamingText
+                                    .padding(.top, pendingAssistantReplySpacing)
+                                    .id("streaming")
+                                    .coachMessageFadeIn()
+                            } else if viewModel.isSending {
+                                CoachThinkingBlobPlaceholder()
+                                    .padding(.top, pendingAssistantReplySpacing)
+                                    .id("thinking")
+                            }
+
+                            Color.clear
+                                .frame(height: scrollBottomInset)
+                                .id("bottom-spacer")
+                        }
+                        .id(viewModel.activeConversationId)
+                        .padding(.leading, 16)
+                        .padding(.trailing, 6)
+                        .padding(.vertical, 12)
+                        .animation(.spring(response: 0.38, dampingFraction: 0.88), value: viewModel.messages.count)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .simultaneousGesture(
+                        TapGesture().onEnded {
+                            isInputFocused = false
+                        }
+                    )
+                    .onAppear {
+                        scrollToBottom(proxy, animated: false)
+                    }
+                    .onChange(of: viewModel.messages.count) { _, _ in
+                        scrollToBottom(proxy)
+                    }
+                    .onChange(of: viewModel.activeConversationId) { _, _ in
+                        scrollToBottom(proxy, delay: 0.06, animated: false)
+                    }
+                    .onChange(of: viewModel.streamingText) { _, _ in
+                        scrollToBottom(proxy, delay: 0.02)
+                    }
+                    .onChange(of: viewModel.isSending) { wasSending, sending in
+                        if sending, !wasSending {
+                            thinkingResponseAnchor = .zero
+                            thinkingBlobStart = .now
+                            isInputFocused = false
+                            scrollToBottom(proxy, delay: 0.08)
+                        } else if !sending {
+                            thinkingResponseAnchor = .zero
+                        }
+                    }
+                    .onChange(of: isInputFocused) { _, focused in
+                        guard focused else { return }
+                        scrollToBottom(proxy, delay: 0.04)
+                        scrollToBottom(proxy, delay: 0.22)
+                    }
+                    .onChange(of: viewModel.inputText) { _, _ in
+                        guard isInputFocused else { return }
+                        scrollToBottom(proxy, animated: false)
+                    }
+                }
+
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 4)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(theme.background.ignoresSafeArea())
+            .coordinateSpace(name: "coachChatRoot")
+            .onPreferenceChange(CoachResponseAnchorKey.self) { anchor in
+                thinkingResponseAnchor = anchor
+            }
+            .overlay(alignment: .topLeading) {
+                if viewModel.isSending,
+                   viewModel.streamingText.isEmpty,
+                   thinkingResponseAnchor.height > 0 {
+                    CoachEdgeBlobOverlay(
+                        mode: .thinking(start: thinkingBlobStart)
+                    )
+                    .padding(.top, CoachBlobLayout.overlayTopPadding(for: thinkingResponseAnchor))
+                    .zIndex(2)
+                }
+            }
+            .ignoresSafeArea(edges: .leading)
+        }
+    }
+
+    private var coachChatInputBar: some View {
+        CoachLiquidGlassInputBar(
+            text: $viewModel.inputText,
+            isFocused: $isInputFocused,
+            pendingImage: viewModel.pendingAttachmentImage,
+            isDisabled: viewModel.isSending,
+            isRecording: viewModel.isVoiceRecording,
+            isVoiceExiting: viewModel.isVoiceExiting,
+            isAttachmentMenuOpen: showAttachmentMenu,
+            voiceAudioLevel: viewModel.voiceAudioLevel,
+            voiceAudioLevels: viewModel.voiceAudioLevels,
+            onSend: {
+                isInputFocused = false
+                Task { await viewModel.sendCurrentMessage() }
+            },
+            onStartVoice: {
+                withAnimation(ProcessGlass.spring) {
+                    showAttachmentMenu = false
+                }
+                Task { await viewModel.startVoiceRecording() }
+            },
+            onCancelVoice: {
+                viewModel.cancelVoiceRecording()
+            },
+            onConfirmVoice: {
+                Task {
+                    let inserted = await viewModel.confirmVoiceRecording()
+                    if inserted {
+                        isInputFocused = true
+                    }
+                }
+            },
+            onOpenMenu: {
+                let keepKeyboard = isInputFocused
+                withAnimation(ProcessGlass.spring) {
+                    showAttachmentMenu.toggle()
+                }
+                if keepKeyboard {
+                    isInputFocused = true
+                }
+            },
+            onRemovePendingImage: {
+                viewModel.clearPendingAttachment()
+            }
+        )
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
+        .animation(ProcessGlass.spring, value: viewModel.isVoiceRecording)
+        .animation(ProcessGlass.spring, value: viewModel.isVoiceExiting)
+    }
+
+    private var contextualHomeBottomBar: some View {
+        VStack(spacing: 14) {
+            if let title = viewModel.homePrompt.primaryActionTitle {
+                Button {
+                    HapticManager.shared.impact(.medium)
+                    showFaceScan = true
+                } label: {
+                    Text(title)
+                        .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
+                        .foregroundStyle(theme.primaryText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .processGlassEffect(in: Capsule())
+                .buttonStyle(ProcessGlassPressStyle())
+                .onboardingChatAnswerReveal(isRevealed: viewModel.homeActionsRevealed)
+            }
+
+            Button {
+                HapticManager.shared.selection()
+                viewModel.unlockHomeChatInput()
+                isInputFocused = true
+            } label: {
+                Text("Écrire un message")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(theme.secondaryText)
+            }
+            .buttonStyle(.plain)
+            .onboardingChatAnswerReveal(isRevealed: viewModel.homeActionsRevealed)
+        }
+        .padding(.horizontal, 28)
+        .padding(.bottom, LayoutConstants.safeAreaBottom + 10)
+    }
+
+    private enum CoachMessageSpacing {
+        /// Espace après un message utilisateur, avant la réponse coach.
+        static let userToAssistant: CGFloat = 24
+        static let assistantToUser: CGFloat = 10
+    }
+
+    private var pendingAssistantReplySpacing: CGFloat {
+        viewModel.messages.last?.role == .user ? CoachMessageSpacing.userToAssistant : 0
+    }
+
+    private func messageTopSpacing(at index: Int) -> CGFloat {
+        guard index > 0 else { return 0 }
+        let previous = viewModel.messages[index - 1]
+        let current = viewModel.messages[index]
+        if previous.role == .user, current.role == .assistant {
+            return CoachMessageSpacing.userToAssistant
+        }
+        if previous.role == .assistant, current.role == .user {
+            return CoachMessageSpacing.assistantToUser
+        }
+        return 0
     }
 
     private func handleAttachmentOption(_ option: CoachAttachmentOption) {
@@ -362,48 +500,20 @@ struct CoachChatView: View {
         }
     }
 
-    private var blobVerticalCenter: CGFloat {
-        max(viewportHeight * 0.42, 180)
-    }
+    private var scrollBottomInset: CGFloat { 12 }
 
-    private var scrollBottomInset: CGFloat { 24 }
-
-    private func scrollToConversationTop(
+    private func scrollToBottom(
         _ proxy: ScrollViewProxy,
-        delay: TimeInterval = 0.04
+        delay: TimeInterval = 0.04,
+        animated: Bool = true
     ) {
         let performScroll = {
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
-                if let first = viewModel.messages.first {
-                    proxy.scrollTo(first.id, anchor: .top)
-                } else {
-                    proxy.scrollTo("bottom-spacer", anchor: .top)
+            if animated {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
+                    proxy.scrollTo("bottom-spacer", anchor: .bottom)
                 }
-            }
-        }
-
-        if delay > 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: performScroll)
-        } else {
-            performScroll()
-        }
-    }
-
-    private func scrollToActiveTurn(
-        _ proxy: ScrollViewProxy,
-        delay: TimeInterval = 0.04
-    ) {
-        let performScroll = {
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
-                if !viewModel.streamingText.isEmpty {
-                    proxy.scrollTo("streaming", anchor: responseScrollAnchor)
-                } else if viewModel.isSending {
-                    proxy.scrollTo("thinking", anchor: responseScrollAnchor)
-                } else if let lastAssistant = viewModel.messages.last(where: { $0.role == .assistant }) {
-                    proxy.scrollTo(lastAssistant.id, anchor: responseScrollAnchor)
-                } else if let last = viewModel.messages.last {
-                    proxy.scrollTo(last.id, anchor: responseScrollAnchor)
-                }
+            } else {
+                proxy.scrollTo("bottom-spacer", anchor: .bottom)
             }
         }
 
@@ -445,6 +555,7 @@ struct CoachChatView: View {
         if isUser {
             CoachUserMessageBubbleView(
                 message: message,
+                profile: profileService.currentProfile,
                 font: messageFont,
                 lineSpacing: messageLineSpacing,
                 bubbleColor: theme.coachUserBubble,
@@ -456,6 +567,11 @@ struct CoachChatView: View {
                         bubbleFrame: frame
                     )
                 }
+            )
+            .transition(
+                .opacity
+                    .combined(with: .offset(y: 10))
+                    .combined(with: .scale(scale: 0.98, anchor: .bottomTrailing))
             )
         } else {
             CoachFormattedText(
@@ -480,5 +596,53 @@ struct CoachChatView: View {
             selectedSection = .coach
             showWelcomePlanPreview = true
         }
+    }
+}
+
+private struct CoachChatBottomAccessory<ContextualBar: View, InputBar: View>: View {
+    let showsContextualHome: Bool
+    let suggestions: [CoachHomeSuggestion]
+    let homeActionsRevealed: Bool
+    let skipHomeAnimation: Bool
+    let showsHomeInsteadOfInput: Bool
+    let isSending: Bool
+    let onSelectSuggestion: (CoachHomeSuggestion) -> Void
+    @ViewBuilder var contextualHomeBottomBar: () -> ContextualBar
+    @ViewBuilder var chatInputBar: () -> InputBar
+
+    var body: some View {
+        VStack(spacing: 12) {
+            if showsContextualHome, !suggestions.isEmpty {
+                CoachHomeSuggestionBar(
+                    suggestions: suggestions,
+                    isRevealed: homeActionsRevealed,
+                    instantReveal: skipHomeAnimation,
+                    isDisabled: isSending,
+                    onSelect: onSelectSuggestion
+                )
+                .padding(.horizontal, 20)
+                .transition(
+                    .opacity
+                        .combined(with: .offset(y: 10))
+                        .combined(with: .scale(scale: 0.98, anchor: .bottom))
+                )
+            }
+
+            if showsHomeInsteadOfInput {
+                contextualHomeBottomBar()
+                    .transition(
+                        .opacity
+                            .combined(with: .offset(y: 8))
+                    )
+            } else {
+                chatInputBar()
+                    .transition(
+                        .opacity
+                            .combined(with: .offset(y: 8))
+                    )
+            }
+        }
+        .animation(.spring(response: 0.4, dampingFraction: 0.88), value: showsContextualHome)
+        .animation(.spring(response: 0.4, dampingFraction: 0.88), value: showsHomeInsteadOfInput)
     }
 }

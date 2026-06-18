@@ -53,7 +53,9 @@ struct AppTheme {
     }
 
     var coachUserBubble: Color {
-        resolved == .light ? Color(.systemGray5) : Color(.systemGray6)
+        resolved == .light
+            ? Color(red: 0.949, green: 0.949, blue: 0.949)
+            : Color(.systemGray6)
     }
 
     var coachAssistantBubble: Color {

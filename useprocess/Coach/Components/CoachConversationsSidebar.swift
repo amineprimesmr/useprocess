@@ -156,15 +156,11 @@ struct CoachConversationsSidebar: View {
                 .padding(.bottom, 8)
 
             Group {
-                if isExpanded {
-                    ScrollView(.vertical) {
-                        conversationRows
-                    }
-                    .mask { Rectangle().ignoresSafeArea() }
-                    .scrollClipDisabled()
-                } else {
+                ScrollView(.vertical, showsIndicators: false) {
                     conversationRows
                 }
+                .mask { Rectangle().ignoresSafeArea() }
+                .scrollClipDisabled()
             }
         }
         .frame(maxHeight: .infinity)

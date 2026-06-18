@@ -57,11 +57,36 @@ async function verifyFirebaseUser(req) {
     const decoded = await admin.auth().verifyIdToken(token);
     return decoded.uid;
 }
+function normalizeModel(model) {
+    switch (model) {
+        case "claude-sonnet-4-20250514":
+        case "claude-3-7-sonnet-20250219":
+        case "claude-3-5-sonnet-20240620":
+        case "claude-3-5-sonnet-20241022":
+        case "claude-sonnet-4-5-20250929":
+            return "claude-sonnet-4-6";
+        case "claude-opus-4-20250514":
+        case "claude-opus-4-1-20250805":
+        case "claude-opus-4-6":
+        case "claude-opus-4-7":
+        case "claude-opus-4-5-20251101":
+            return "claude-opus-4-8";
+        case "claude-3-5-haiku-20241022":
+        case "claude-3-haiku-20240307":
+            return "claude-haiku-4-5-20251001";
+        default:
+            return model;
+    }
+}
 function buildMessages(body) {
     const history = (body.history ?? []).map((m) => ({
         role: m.role,
         content: [{ type: "text", text: m.text }],
     }));
+    const last = body.history?.[body.history.length - 1];
+    if (last?.role === "user" && last.text === body.userText) {
+        return history;
+    }
     let userContent;
     if (body.imageBase64) {
         userContent = [
@@ -91,9 +116,9 @@ function maxTokensForTask(task, requested) {
         case "dailyBrief":
         case "readinessAnalysis":
             return 400;
-    case "bodyScanVision":
-    case "faceScanVision":
-      return 450;
+        case "bodyScanVision":
+        case "faceScanVision":
+            return 450;
         case "programSummary":
             return 800;
         case "bodyScanReport":
@@ -101,6 +126,34 @@ function maxTokensForTask(task, requested) {
         default:
             return 1200;
     }
+}
+async function sleep(ms) {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+}
+function isRetryableAnthropicError(error) {
+    const message = error?.message?.toLowerCase() ?? "";
+    const status = error?.status;
+    return (status === 529 ||
+        status === 503 ||
+        status === 429 ||
+        message.includes("overloaded") ||
+        message.includes("rate limit"));
+}
+async function withAnthropicRetry(operation, maxAttempts = 3) {
+    let lastError;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            return await operation();
+        }
+        catch (error) {
+            lastError = error;
+            if (!isRetryableAnthropicError(error) || attempt >= maxAttempts - 1) {
+                throw error;
+            }
+            await sleep(900 * (attempt + 1));
+        }
+    }
+    throw lastError;
 }
 exports.coachComplete = (0, https_1.onRequest)({
     invoker: "public",
@@ -126,12 +179,13 @@ exports.coachComplete = (0, https_1.onRequest)({
             return;
         }
         const client = new sdk_1.default({ apiKey: anthropicApiKey.value() });
-        const response = await client.messages.create({
-            model: body.model,
+        const model = normalizeModel(body.model);
+        const response = await withAnthropicRetry(() => client.messages.create({
+            model,
             max_tokens: maxTokensForTask(body.task ?? "chat", body.maxTokens),
             system: body.system,
             messages: buildMessages(body),
-        });
+        }));
         const text = response.content
             .filter((b) => b.type === "text")
             .map((b) => (b.type === "text" ? b.text : ""))
@@ -145,10 +199,10 @@ exports.coachComplete = (0, https_1.onRequest)({
             .doc("usage")
             .set({
             lastTask: body.task ?? "chat",
-            lastModel: body.model,
+            lastModel: model,
             lastCalledAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
-        res.status(200).json({ text, model: body.model, uid });
+        res.status(200).json({ text, model, uid });
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";
@@ -183,42 +237,66 @@ exports.coachStream = (0, https_1.onRequest)({
         res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
         res.setHeader("Cache-Control", "no-cache, no-transform");
         res.setHeader("Connection", "keep-alive");
-        res.flushHeaders?.();
         const client = new sdk_1.default({ apiKey: anthropicApiKey.value() });
-        const stream = await client.messages.stream({
-            model: body.model,
+        const model = normalizeModel(body.model);
+        const streamParams = {
+            model,
             max_tokens: maxTokensForTask(body.task ?? "chat", body.maxTokens),
             system: body.system,
             messages: buildMessages(body),
-        });
-        for await (const event of stream) {
-            if (event.type === "content_block_delta" &&
-                event.delta.type === "text_delta") {
-                const payload = JSON.stringify({
-                    type: "delta",
-                    text: event.delta.text,
-                });
-                res.write(`data: ${payload}\n\n`);
+        };
+        let lastStreamError;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const stream = client.messages.stream(streamParams);
+                for await (const event of stream) {
+                    if (event.type === "content_block_delta" &&
+                        event.delta.type === "text_delta") {
+                        if (!res.headersSent) {
+                            res.flushHeaders?.();
+                        }
+                        const payload = JSON.stringify({
+                            type: "delta",
+                            text: event.delta.text,
+                        });
+                        res.write(`data: ${payload}\n\n`);
+                    }
+                }
+                const finalText = (await stream.finalMessage()).content
+                    .filter((b) => b.type === "text")
+                    .map((b) => (b.type === "text" ? b.text : ""))
+                    .join("\n")
+                    .trim();
+                if (!res.headersSent) {
+                    res.flushHeaders?.();
+                }
+                res.write(`data: ${JSON.stringify({ type: "done", text: finalText, model, uid })}\n\n`);
+                res.end();
+                await admin
+                    .firestore()
+                    .collection("users")
+                    .doc(uid)
+                    .collection("coachMeta")
+                    .doc("usage")
+                    .set({
+                    lastTask: "chat_stream",
+                    lastModel: model,
+                    lastStreamAt: admin.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true });
+                return;
+            }
+            catch (error) {
+                lastStreamError = error;
+                const canRetry = !res.headersSent &&
+                    isRetryableAnthropicError(error) &&
+                    attempt < 2;
+                if (!canRetry) {
+                    throw error;
+                }
+                await sleep(900 * (attempt + 1));
             }
         }
-        const finalText = (await stream.finalMessage()).content
-            .filter((b) => b.type === "text")
-            .map((b) => (b.type === "text" ? b.text : ""))
-            .join("\n")
-            .trim();
-        res.write(`data: ${JSON.stringify({ type: "done", text: finalText, model: body.model, uid })}\n\n`);
-        res.end();
-        await admin
-            .firestore()
-            .collection("users")
-            .doc(uid)
-            .collection("coachMeta")
-            .doc("usage")
-            .set({
-            lastTask: "chat_stream",
-            lastModel: body.model,
-            lastStreamAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
+        throw lastStreamError;
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";

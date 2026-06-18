@@ -10,11 +10,7 @@ struct HealthDashboardView: View {
     @Environment(\.appTheme) private var theme
 
     @State private var planStore = WelcomePlanStore.shared
-    @State private var hubTab: HealthHubTab = .today
-    @State private var programSection: OriginPlanProgramSection = .week
 
-    @State private var claudeDailyBrief: CoachDailyBriefContent?
-    @State private var isLoadingBrief = false
     @State private var readinessExplanation: String?
     @State private var isExplainingReadiness = false
     @State private var showReadinessSheet = false
@@ -28,43 +24,20 @@ struct HealthDashboardView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                Picker("Hub", selection: $hubTab) {
-                    ForEach(HealthHubTab.allCases) { tab in
-                        Text(tab.rawValue).tag(tab)
-                    }
+            processMainScrollableChrome(
+                selectedSection: $selectedSection,
+                pageSection: .health
+            ) {
+                VStack(spacing: 18) {
+                    healthContent
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 4)
-                .padding(.bottom, 10)
-
-                processMainScrollableChrome(
-                    selectedSection: $selectedSection,
-                    pageSection: .health
-                ) {
-                    VStack(spacing: 18) {
-                        if let plan = livePlan {
-                            OriginPlanHeaderCard(plan: plan)
-                        }
-
-                        switch hubTab {
-                        case .today:
-                            todayTab
-                        case .tracking:
-                            trackingTab
-                        case .program:
-                            programTab
-                        }
-                    }
-                    .padding()
-                }
+                .padding()
             }
             .background(theme.background.ignoresSafeArea())
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
-            .refreshable { await refreshAll(forceBrief: true) }
-            .task { await refreshAll(forceBrief: false) }
+            .refreshable { await refreshAll() }
+            .task { await refreshAll() }
             .sheet(isPresented: $showReadinessSheet) { readinessSheet }
             .fullScreenCover(isPresented: $showFaceScan) { faceScanCover }
             .sheet(isPresented: $showFaceHistory) {
@@ -86,16 +59,29 @@ struct HealthDashboardView: View {
         }
     }
 
-    // MARK: - Aujourd'hui
-
     @ViewBuilder
-    private var todayTab: some View {
-        readinessCompact
-        HealthTodayMetricsStrip(onOpenTracking: { hubTab = .tracking })
-        briefCard
+    private var healthContent: some View {
+        if let plan = livePlan {
+            OriginPlanHeaderCard(plan: plan)
+        }
+
+        ReadinessScoreGaugeView(
+            score: healthManager.readinessScore,
+            label: healthManager.readinessLabel,
+            subtitle: ReadinessGaugeCopy.defaultSubtitle(for: healthManager.readinessScore),
+            showsDetails: ClaudeConfiguration.isConfigured,
+            isLoadingDetails: isExplainingReadiness,
+            onDetails: {
+                Task { await explainReadiness() }
+            }
+        )
+
+        if let face = healthManager.faceDayScore {
+            faceDayChip(score: face, label: healthManager.faceDayLabel ?? "Visage")
+        }
 
         if let plan = livePlan {
-            OriginPlanProgramContent(section: .constant(.today), plan: plan)
+            programSection(title: "Aujourd'hui", section: .today, plan: plan)
         } else {
             noPlanCard
         }
@@ -112,85 +98,51 @@ struct HealthDashboardView: View {
         if !healthManager.faceCorrelations.isEmpty {
             correlationsBlock
         }
-    }
 
-    private var readinessCompact: some View {
-        HStack(spacing: 16) {
-            readinessMiniRing(score: healthManager.readinessScore, title: "Ready")
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(healthManager.readinessLabel)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
-
-                if let factor = healthManager.readinessFactors.first {
-                    Text(factor)
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
-                        .lineLimit(2)
-                }
-
-                if ClaudeConfiguration.isConfigured {
-                    Button {
-                        Task { await explainReadiness() }
-                    } label: {
-                        Text(isExplainingReadiness ? "…" : "Détails")
-                            .font(.caption.weight(.semibold))
-                    }
-                    .disabled(isExplainingReadiness)
-                }
-            }
-
-            if let face = healthManager.faceDayScore {
-                readinessMiniRing(score: face, title: "Visage")
-            }
+        HealthTrackingPanel {
+            Task { await healthManager.requestAuthorizationAsync() }
         }
-        .padding(14)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
+
+        if let plan = livePlan {
+            programSection(title: "Semaine", section: .week, plan: plan)
+            programSection(title: "Piliers", section: .pillars, plan: plan)
+        }
     }
 
-    private func readinessMiniRing(score: Int, title: String) -> some View {
-        VStack(spacing: 4) {
-            ZStack {
-                Circle()
-                    .stroke(theme.progressTrack, lineWidth: 5)
-                    .frame(width: 52, height: 52)
-                Circle()
-                    .trim(from: 0, to: CGFloat(max(score, 0)) / 100)
-                    .stroke(readinessColor(for: score), style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .frame(width: 52, height: 52)
-                    .rotationEffect(.degrees(-90))
-                Text("\(score)")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-            }
+    private func programSection(
+        title: String,
+        section: OriginPlanProgramSection,
+        plan: FaceOriginPlan
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
+                .font(.headline)
+                .foregroundStyle(theme.primaryText)
+
+            OriginPlanProgramContent(section: .constant(section), plan: plan)
         }
     }
 
-    @ViewBuilder
-    private var briefCard: some View {
-        if ClaudeConfiguration.isConfigured {
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Brief du jour", systemImage: "sparkles")
+    // MARK: - Sections
+
+    private func faceDayChip(score: Int, label: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "face.smiling")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(theme.secondaryText)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Scan visage")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(theme.secondaryText)
+                Text("\(score)/100 · \(label)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
-
-                if isLoadingBrief {
-                    ProgressView().tint(theme.primaryText)
-                } else if let brief = claudeDailyBrief, brief.isValid {
-                    CoachDailyBriefCard(content: brief, theme: theme)
-                } else {
-                    Text("Tire pour rafraîchir.")
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
-                }
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(HealthHubDesign.surfaceCard(theme: theme))
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(HealthHubDesign.surfaceCard(theme: theme))
     }
 
     private var noPlanCard: some View {
@@ -219,31 +171,6 @@ struct HealthDashboardView: View {
         }
         .padding(14)
         .background(HealthHubDesign.surfaceCard(theme: theme))
-    }
-
-    // MARK: - Suivi
-
-    private var trackingTab: some View {
-        HealthTrackingPanel {
-            Task { await healthManager.requestAuthorizationAsync() }
-        }
-    }
-
-    // MARK: - Programme
-
-    @ViewBuilder
-    private var programTab: some View {
-        if let plan = livePlan {
-            Picker("Programme", selection: $programSection) {
-                Text("Semaine").tag(OriginPlanProgramSection.week)
-                Text("Piliers").tag(OriginPlanProgramSection.pillars)
-            }
-            .pickerStyle(.segmented)
-
-            OriginPlanProgramContent(section: $programSection, plan: plan)
-        } else {
-            noPlanCard
-        }
     }
 
     // MARK: - Sheets
@@ -284,7 +211,7 @@ struct HealthDashboardView: View {
 
     // MARK: - Data
 
-    private func refreshAll(forceBrief: Bool) async {
+    private func refreshAll() async {
         planStore.reloadForCurrentUser()
         if healthManager.isHealthDataAvailable && !healthManager.isAuthorized {
             await healthManager.requestAuthorizationAsync()
@@ -292,17 +219,6 @@ struct HealthDashboardView: View {
             await healthManager.performFullSync()
             await dataManager.updateCurrentDayData(with: healthManager)
         }
-        await loadClaudeBrief(forceRefresh: forceBrief)
-    }
-
-    private func loadClaudeBrief(forceRefresh: Bool) async {
-        guard ClaudeConfiguration.isConfigured else { return }
-        isLoadingBrief = true
-        defer { isLoadingBrief = false }
-        claudeDailyBrief = await CoachEngine.generateDailyBrief(
-            profile: profileService.currentProfile,
-            forceRefresh: forceRefresh
-        )
     }
 
     private func explainReadiness() async {
@@ -310,15 +226,6 @@ struct HealthDashboardView: View {
         defer { isExplainingReadiness = false }
         readinessExplanation = await CoachEngine.explainReadiness(profile: profileService.currentProfile)
         showReadinessSheet = readinessExplanation != nil
-    }
-
-    private func readinessColor(for score: Int) -> Color {
-        switch score {
-        case 80...: return .green
-        case 60..<80: return .yellow
-        case 40..<60: return .orange
-        default: return .red
-        }
     }
 }
 
@@ -597,69 +504,5 @@ private struct HealthTrackingPanel: View {
 
     private func formatDistance(_ km: Double) -> String {
         km > 0 ? String(format: "%.1f km", km) : "—"
-    }
-}
-
-private struct HealthTodayMetricsStrip: View {
-    @EnvironmentObject private var healthManager: HealthManager
-    @Environment(\.appTheme) private var theme
-
-    var onOpenTracking: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                HealthHubDesign.sectionHeader("Apple Santé", subtitle: healthSubtitle, theme: theme)
-                Spacer()
-                Button("Tout voir", action: onOpenTracking)
-                    .font(.caption.weight(.semibold))
-            }
-
-            HStack(spacing: 8) {
-                miniStat("Pas", value: stat(healthManager.todaySnapshot.effort.steps))
-                miniStat("Sommeil", value: sleepStat)
-                miniStat("HRV", value: hrvStat)
-                miniStat("Kcal", value: kcalStat)
-            }
-        }
-        .padding(14)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
-    }
-
-    private var healthSubtitle: String {
-        if !healthManager.isAuthorized { return "Non connecté" }
-        if healthManager.hasAppleWatch { return "iPhone + Watch" }
-        return "Synchronisé"
-    }
-
-    private func miniStat(_ label: String, value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.caption.weight(.bold).monospacedDigit())
-                .foregroundStyle(theme.primaryText)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(theme.secondaryText)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(theme.coachUserBubble.opacity(0.35), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-
-    private func stat(_ v: Int) -> String { v > 0 ? "\(v)" : "—" }
-
-    private var sleepStat: String {
-        let h = healthManager.todaySnapshot.sleep.sleepDuration
-        return h > 0 ? String(format: "%.1fh", h) : "—"
-    }
-
-    private var hrvStat: String {
-        let h = healthManager.todaySnapshot.vitals.hrv
-        return h > 0 ? String(format: "%.0f", h) : "—"
-    }
-
-    private var kcalStat: String {
-        let c = healthManager.todaySnapshot.effort.activeEnergyBurned
-        return c > 0 ? "\(Int(c))" : "—"
     }
 }

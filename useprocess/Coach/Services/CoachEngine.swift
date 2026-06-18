@@ -70,7 +70,7 @@ enum CoachEngine {
         let model = ClaudeModel.preferred(for: .chat)
         let isModify = planFocus?.mode == .modify
             || CoachPlanModificationService.detectIntent(in: text) != nil
-        let maxTokens = isModify ? 900 : 480
+        let maxTokens = isModify ? 1400 : 1100
         return CoachAPITransport.streamChat(
             system: system,
             userText: text,
@@ -137,25 +137,6 @@ enum CoachEngine {
         )
 
         return CoachMessage(role: .assistant, text: text, modelUsed: model.rawValue)
-    }
-
-    static func welcomeMessage(profile: UnifiedUserProfile?) -> CoachMessage {
-        let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let greeting = (name?.isEmpty == false) ? "Salut \(name!) 👋" : "Salut 👋"
-        let mode = ClaudeConfiguration.transportLabel
-        let planHint: String
-        if WelcomePlanStore.shared.plan != nil {
-            planHint = "\n\nTon protocole est dans Santé — pose-moi une question ici."
-        } else {
-            planHint = ""
-        }
-        return CoachMessage(
-            role: .assistant,
-            text: """
-            \(greeting) Je suis ton coach useprocess (\(mode)).
-            Pose-moi une question — je réponds court et concret.\(planHint)
-            """
-        )
     }
 
     // MARK: - Brief quotidien

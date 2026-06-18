@@ -1,13 +1,5 @@
 import SwiftUI
 
-enum HealthHubTab: String, CaseIterable, Identifiable {
-    case today = "Aujourd'hui"
-    case tracking = "Suivi"
-    case program = "Programme"
-
-    var id: String { rawValue }
-}
-
 enum HealthHubDesign {
     static func sectionHeader(_ title: String, subtitle: String, theme: AppTheme) -> some View {
         VStack(alignment: .leading, spacing: 2) {

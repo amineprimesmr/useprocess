@@ -39,16 +39,20 @@ final class CoachConversationLibraryStore {
         UserDefaults.standard.set(data, forKey: libraryKey)
     }
 
-    func migrateLegacyThreadIfNeeded(welcome: CoachMessage) {
+    func migrateLegacyThreadIfNeeded() {
         guard library.conversations.isEmpty else { return }
 
         if let data = UserDefaults.standard.data(forKey: legacyThreadKey),
            let legacy = try? JSONDecoder().decode(CoachChatThread.self, from: data),
            !legacy.messages.isEmpty {
-            let title = legacy.messages
+            let sanitized = CoachHomeContext.sanitizedMessages(legacy.messages)
+            let title = sanitized
                 .first(where: { $0.role == .user })
                 .map { CoachConversationSubjectService.keywords(from: $0.text) } ?? "Conversation"
-            var conversation = CoachConversation.fromLegacyThread(legacy, title: title)
+            var conversation = CoachConversation.fromLegacyThread(
+                CoachChatThread(messages: sanitized),
+                title: title
+            )
             conversation.subjectLabel = title
             if conversation.title.isEmpty { conversation.title = "Conversation" }
             library.conversations = [conversation]
@@ -57,7 +61,7 @@ final class CoachConversationLibraryStore {
             return
         }
 
-        let conversation = CoachConversation(title: "Nouvelle conversation", messages: [welcome])
+        let conversation = CoachConversation(title: "Nouvelle conversation", messages: [])
         library.conversations = [conversation]
         library.activeConversationId = conversation.id
         saveLocal()
@@ -81,8 +85,8 @@ final class CoachConversationLibraryStore {
     }
 
     @discardableResult
-    func createConversation(welcome: CoachMessage) -> UUID {
-        let conversation = CoachConversation(title: "Nouvelle conversation", messages: [welcome])
+    func createConversation() -> UUID {
+        let conversation = CoachConversation(title: "Nouvelle conversation", messages: [])
         library.conversations.insert(conversation, at: 0)
         library.activeConversationId = conversation.id
         saveLocal()

@@ -79,4 +79,9 @@ enum ProcessGlass {
 
     @available(iOS 26.0, *)
     static var dark: Glass { .regular.tint(Color.black.opacity(0.38)).interactive() }
+
+    @available(iOS 26.0, *)
+    static func tinted(_ color: Color, opacity: CGFloat = 0.38) -> Glass {
+        .regular.tint(color.opacity(opacity)).interactive()
+    }
 }

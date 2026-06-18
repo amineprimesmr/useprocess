@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Side menu style X — swipe depuis le bord gauche (Balaji Venkatesh / XStyleSideBar).
+/// Side menu style X — implémentation fidèle à [Balaji Venkatesh / XStyleSideBar](https://github.com/balajivenkatesh/XStyleSideBar).
 struct CustomSideMenu<MenuContent: View, Content: View>: View {
     var isEnabled: Bool = true
     var sideBarWidth: CGFloat = 300
@@ -10,7 +10,7 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
 
     @State private var progress: CGFloat = 0
     @State private var xOffset: CGFloat = 0
-    @State private var haptics: Bool = false
+    @State private var haptics = false
 
     var body: some View {
         ZStack(alignment: .leading) {
@@ -18,28 +18,34 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
                 .frame(width: sideBarWidth)
                 .frame(maxHeight: .infinity)
                 .opacity(progress)
-                .scaleEffect(0.95 + (0.05 * progress))
+                .scaleEffect(0.95 + (0.05 * progress), anchor: .leading)
 
             content(progress)
                 .containerRelativeFrame(.horizontal)
                 .frame(maxHeight: .infinity)
                 .background {
-                    backgroundShape
+                    SideMenuPanelShape()
                         .fill(.background)
                         .ignoresSafeArea()
                 }
                 .overlay {
-                    backgroundShape
+                    SideMenuPanelShape()
                         .fill(.fill.tertiary)
                         .stroke(.fill.secondary, lineWidth: 1)
                         .ignoresSafeArea()
                         .contentShape(.rect)
                         .onTapGesture {
-                            withAnimation(animation) { dismissMenu() }
+                            withAnimation(animation) {
+                                dismissMenu()
+                            }
                         }
                         .opacity(progress)
                 }
-                .mask { backgroundShape.ignoresSafeArea() }
+                .mask {
+                    SideMenuPanelShape()
+                        .ignoresSafeArea()
+                }
+                .compositingGroup()
                 .shadow(color: .black.opacity(0.06 * progress), radius: 5, x: -10, y: 0)
                 .offset(x: xOffset)
         }
@@ -54,6 +60,7 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
                 if state == .began || state == .changed {
                     xOffset = min(max(translation, 0), sideBarWidth)
                     progress = xOffset / sideBarWidth
+                    publishProgress()
                 } else {
                     withAnimation(animation) {
                         if (xOffset + velocity) > (sideBarWidth / 2) {
@@ -68,9 +75,23 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
         .sensoryFeedback(.impact(weight: .light), trigger: haptics)
         .onChange(of: isExpanded) { _, newValue in
             withAnimation(animation) {
-                if newValue && progress != 1 { expandMenu() }
-                if !newValue && progress != 0 { dismissMenu() }
+                if newValue, progress != 1 {
+                    expandMenu()
+                }
+                if !newValue, progress != 0 {
+                    dismissMenu()
+                }
             }
+        }
+        .onAppear {
+            if isExpanded {
+                xOffset = sideBarWidth
+                progress = 1
+            } else {
+                xOffset = 0
+                progress = 0
+            }
+            publishProgress()
         }
     }
 
@@ -79,6 +100,7 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
         xOffset = sideBarWidth
         progress = 1
         isExpanded = true
+        publishProgress()
     }
 
     private func dismissMenu() {
@@ -86,13 +108,15 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
         xOffset = 0
         progress = 0
         isExpanded = false
+        publishProgress()
     }
 
-    private var backgroundShape: some Shape {
-        if #available(iOS 26.0, *) {
-            return ConcentricRectangle(corners: .concentric, isUniform: true)
-        }
-        return RoundedRectangle(cornerRadius: 45)
+    private func publishProgress() {
+        CoachSidebarPresentation.shared.sync(
+            offset: xOffset,
+            width: sideBarWidth,
+            expanded: isExpanded
+        )
     }
 
     private var animation: Animation {
@@ -100,6 +124,17 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
     }
 }
 
+private struct SideMenuPanelShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        if #available(iOS 26.0, *) {
+            ConcentricRectangle(corners: .concentric, isUniform: true).path(in: rect)
+        } else {
+            RoundedRectangle(cornerRadius: 45, style: .continuous).path(in: rect)
+        }
+    }
+}
+
+/// Geste horizontal qui cède aux scroll views tant que contentOffset.x <= 0.
 private struct CustomSideMenuGesture: UIGestureRecognizerRepresentable {
     var isEnabled: Bool
     @Binding var isExpanded: Bool
@@ -129,14 +164,14 @@ private struct CustomSideMenuGesture: UIGestureRecognizerRepresentable {
         init(parent: CustomSideMenuGesture) { self.parent = parent }
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
-            let velocity = pan.velocity(in: pan.view)
-            let isHorizontal = abs(velocity.x) > abs(velocity.y)
-            return (isHorizontal && velocity.x > 0) || (isHorizontal && velocity.x < 0 && parent.isExpanded)
+            guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else { return false }
+            let velocity = panGesture.velocity(in: panGesture.view)
+            let isHorizontalSwipe = abs(velocity.x) > abs(velocity.y)
+            return (isHorizontalSwipe && velocity.x > 0) || (isHorizontalSwipe && velocity.x < 0 && parent.isExpanded)
         }
 
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
-            if let scrollView = other.view as? UIScrollView {
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            if let scrollView = otherGestureRecognizer.view as? UIScrollView {
                 return scrollView.contentOffset.x <= 0
             }
             return false

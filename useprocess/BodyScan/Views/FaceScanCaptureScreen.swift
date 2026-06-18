@@ -12,7 +12,7 @@ struct FaceScanCaptureScreen: View {
     @State private var scanProgress: Double = 0
     @State private var ringProgress: Double = 0
     @State private var activeTickSectors: Set<Int> = []
-    @State private var instruction = "Place ton visage dans le cadre."
+    @State private var instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
     @State private var frameHint: String?
     @State private var isFaceDetected = false
     @State private var isLowLight = false

@@ -23,7 +23,7 @@ struct BodyScanRootView: View {
                 if let result = historyStore.latestResult {
                     processMainScrollableChrome(
                         selectedSection: $selectedSection,
-                        pageSection: .scan
+                        pageSection: .health
                     ) {
                         VStack(spacing: 20) {
                             lastScanCard(result)
@@ -46,7 +46,7 @@ struct BodyScanRootView: View {
                 } else {
                     processMainScrollableChrome(
                         selectedSection: $selectedSection,
-                        pageSection: .scan
+                        pageSection: .health
                     ) {
                         emptyState
                             .frame(minHeight: 520)

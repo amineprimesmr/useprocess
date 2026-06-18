@@ -12,6 +12,7 @@ struct CoachUserMessageContextState: Equatable {
 
 struct CoachUserMessageBubbleView: View {
     let message: CoachMessage
+    var profile: UnifiedUserProfile?
     var font: Font
     var lineSpacing: CGFloat
     var bubbleColor: Color
@@ -21,33 +22,43 @@ struct CoachUserMessageBubbleView: View {
     @State private var bubbleFrame: CGRect = .zero
 
     var body: some View {
-        HStack {
-            Spacer(minLength: 56)
-            Text(message.text)
-                .font(font)
-                .foregroundStyle(textColor)
-                .lineSpacing(lineSpacing)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 5)
-                .background(bubbleColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .background {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onAppear { bubbleFrame = proxy.frame(in: .global) }
-                            .onChange(of: proxy.frame(in: .global)) { _, frame in
-                                bubbleFrame = frame
-                            }
-                    }
+        HStack(alignment: .bottom, spacing: 0) {
+            Spacer(minLength: 48)
+
+            CoachUserThoughtBubbleBody(bubbleColor: bubbleColor) {
+                Text(message.text)
+                    .font(font)
+                    .foregroundStyle(textColor)
+                    .lineSpacing(lineSpacing)
+                    .multilineTextAlignment(.leading)
+            }
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { bubbleFrame = proxy.frame(in: .global) }
+                        .onChange(of: proxy.frame(in: .global)) { _, frame in
+                            bubbleFrame = frame
+                        }
                 }
-                .overlay {
-                    CoachBubbleLongPressDetector { globalFrame in
-                        let frame = globalFrame.width > 1 ? globalFrame : bubbleFrame
-                        guard frame.width > 1, frame.height > 1 else { return }
-                        HapticManager.shared.impact(.medium)
-                        onLongPress(frame)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .overlay {
+                CoachBubbleLongPressDetector { globalFrame in
+                    let frame = globalFrame.width > 1 ? globalFrame : bubbleFrame
+                    guard frame.width > 1, frame.height > 1 else { return }
+                    HapticManager.shared.impact(.medium)
+                    onLongPress(frame)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            CoachThoughtBubbleTailView(color: bubbleColor)
+                .padding(.leading, -7)
+
+            CoachUserChatAvatarView(
+                profile: profile,
+                bubbleColor: bubbleColor,
+                textColor: textColor
+            )
         }
     }
 }
@@ -170,9 +181,15 @@ struct CoachUserMessageContextOverlay: View {
                     .font(font)
                     .foregroundStyle(textColor)
                     .lineSpacing(lineSpacing)
-                    .padding(.horizontal, 13)
-                    .padding(.vertical, 5)
-                    .background(bubbleColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .padding(.horizontal, CoachUserThoughtBubbleMetrics.horizontalPadding)
+                    .padding(.vertical, CoachUserThoughtBubbleMetrics.verticalPadding)
+                    .background(
+                        bubbleColor,
+                        in: RoundedRectangle(
+                            cornerRadius: CoachUserThoughtBubbleMetrics.cornerRadius,
+                            style: .continuous
+                        )
+                    )
                     .shadow(color: .black.opacity(0.14), radius: 14, y: 5)
                     .frame(width: max(localBubble.width, 40), height: max(localBubble.height, 36))
                     .position(x: localBubble.midX, y: localBubble.midY)

@@ -52,8 +52,7 @@ enum CoachConversationStore {
         Task { @MainActor in
             let store = CoachConversationLibraryStore.shared
             store.loadLocal()
-            let welcome = CoachEngine.welcomeMessage(profile: UnifiedProfileService.shared.currentProfile)
-            store.migrateLegacyThreadIfNeeded(welcome: welcome)
+            store.migrateLegacyThreadIfNeeded()
             guard let conversationId = store.activeConversationId else { return }
             await CoachSyncService.appendMessage(
                 message,
@@ -78,6 +77,32 @@ enum CoachConversationStore {
             guard let conversationId = store.activeConversationId else { return }
             await CoachSyncService.replaceThread(
                 CoachChatThread(messages: filtered),
+                userId: AuthUser.current?.uid,
+                conversationId: conversationId,
+                title: store.activeConversation?.title
+            )
+        }
+    }
+
+    static func stripLegacyWelcomeMessages() {
+        let store = CoachConversationLibraryStore.shared
+        store.loadLocal()
+
+        let ids = store.sortedConversations.map(\.id)
+        var didChange = false
+        for id in ids {
+            guard let conversation = store.conversation(for: id) else { continue }
+            let sanitized = CoachHomeContext.sanitizedMessages(conversation.messages)
+            guard sanitized.count != conversation.messages.count else { continue }
+            store.updateConversation(id) { $0.messages = sanitized }
+            didChange = true
+        }
+
+        guard didChange, let conversationId = store.activeConversationId else { return }
+        Task {
+            let messages = store.activeConversation?.messages ?? []
+            await CoachSyncService.replaceThread(
+                CoachChatThread(messages: messages),
                 userId: AuthUser.current?.uid,
                 conversationId: conversationId,
                 title: store.activeConversation?.title

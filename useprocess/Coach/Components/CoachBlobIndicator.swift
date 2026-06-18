@@ -8,19 +8,29 @@ enum CoachEdgeBlobMode: Equatable {
 }
 
 struct CoachEdgeBlobOverlay: View {
-    var isDark: Bool
+    @Environment(\.appTheme) private var theme
     var mode: CoachEdgeBlobMode
 
-    private var fill: Color { isDark ? .white : .black }
+    private var fillColor: Color {
+        theme.isDark ? .white : .black
+    }
 
-    private let circleRadius: CGFloat = 9
-    private let dotRadius: CGFloat = 3.2
-    private let dotSpacing: CGFloat = 11
-    private let flatHeight: CGFloat = 40
-    private let flatProtrusionMin: CGFloat = 0.35
-    private let flatProtrusionMax: CGFloat = 0.75
+    private var specularColor: Color {
+        theme.isDark ? Color.white.opacity(0.95) : Color.white.opacity(0.62)
+    }
+
+    /// Ralentit légèrement toute la séquence thinking (~6 %).
+    private let thinkingPace: Double = 1.06
+    private let circleRadius: CGFloat = 12
+    private let dotRadius: CGFloat = 4.4
+    private let dotSpacing: CGFloat = 14
+    private let flatHeight: CGFloat = 52
+    private let flatProtrusionMin: CGFloat = 0.65
+    private let flatProtrusionMax: CGFloat = 0.95
     /// Éloignement max du bord une fois rond.
-    private let detachGap: CGFloat = 10
+    private let detachGap: CGFloat = 13
+    private let canvasWidth: CGFloat = 74
+    private let canvasHeight: CGFloat = 96
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { timeline in
@@ -32,7 +42,7 @@ struct CoachEdgeBlobOverlay: View {
                 switch frame.kind {
                 case .flat(let protrusion, let height):
                     let path = flatShape(protrusion: protrusion, height: height, midY: midY)
-                    context.fill(path, with: .color(fill.opacity(frame.opacity)))
+                    fillBlob(in: &context, path: path, opacity: frame.opacity)
 
                 case .morph(let protrusion, let roundness, let leadingX):
                     let path = morphShape(
@@ -41,7 +51,7 @@ struct CoachEdgeBlobOverlay: View {
                         leadingX: leadingX,
                         midY: midY
                     )
-                    context.fill(path, with: .color(fill.opacity(frame.opacity)))
+                    fillBlob(in: &context, path: path, opacity: frame.opacity)
 
                 case .circle(let radius, let leadingX):
                     let rect = CGRect(
@@ -50,10 +60,7 @@ struct CoachEdgeBlobOverlay: View {
                         width: radius * 2,
                         height: radius * 2
                     )
-                    context.fill(
-                        Path(ellipseIn: rect),
-                        with: .color(fill.opacity(frame.opacity))
-                    )
+                    fillBlob(in: &context, path: Path(ellipseIn: rect), opacity: frame.opacity)
 
                 case .dots(let dots):
                     for dot in dots {
@@ -63,18 +70,61 @@ struct CoachEdgeBlobOverlay: View {
                             width: dot.radius * 2,
                             height: dot.radius * 2
                         )
-                        context.fill(
-                            Path(ellipseIn: rect),
-                            with: .color(fill.opacity(dot.opacity * frame.opacity))
+                        fillBlob(
+                            in: &context,
+                            path: Path(ellipseIn: rect),
+                            opacity: dot.opacity * frame.opacity
                         )
                     }
                 }
             }
-            .frame(width: 56, height: 72, alignment: .leading)
+            .frame(width: canvasWidth, height: canvasHeight, alignment: .leading)
         }
-        .frame(width: 56, height: 72, alignment: .leading)
+        .frame(width: canvasWidth, height: canvasHeight, alignment: .leading)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+        .id(theme.isDark)
+    }
+
+    private func fillBlob(in context: inout GraphicsContext, path: Path, opacity: Double) {
+        let clampedOpacity = min(max(opacity, 0), 1)
+        guard clampedOpacity > 0.01 else { return }
+
+        let bounds = path.boundingRect
+        let highlight = CGPoint(
+            x: bounds.midX - bounds.width * 0.18,
+            y: bounds.midY - bounds.height * 0.22
+        )
+
+        if theme.isDark {
+            context.fill(
+                path,
+                with: .radialGradient(
+                    Gradient(stops: [
+                        .init(color: Color.white.opacity(clampedOpacity), location: 0.0),
+                        .init(color: Color.white.opacity(clampedOpacity * 0.82), location: 0.42),
+                        .init(color: Color.white.opacity(clampedOpacity * 0.34), location: 1.0)
+                    ]),
+                    center: highlight,
+                    startRadius: 0,
+                    endRadius: max(bounds.width, bounds.height) * 0.62
+                )
+            )
+        } else {
+            context.fill(
+                path,
+                with: .radialGradient(
+                    Gradient(stops: [
+                        .init(color: specularColor.opacity(clampedOpacity), location: 0.0),
+                        .init(color: fillColor.opacity(clampedOpacity * 0.96), location: 0.36),
+                        .init(color: fillColor.opacity(clampedOpacity * 0.62), location: 1.0)
+                    ]),
+                    center: highlight,
+                    startRadius: 0,
+                    endRadius: max(bounds.width, bounds.height) * 0.64
+                )
+            )
+        }
     }
 
     // MARK: - Frame
@@ -113,25 +163,39 @@ struct CoachEdgeBlobOverlay: View {
     // 4. Rond → point + 2 points
     // 5. Animation chargement 3 points
 
+    private func thinkingPhase(_ seconds: TimeInterval) -> TimeInterval {
+        seconds * thinkingPace
+    }
+
     private func thinkingFrame(elapsed: TimeInterval) -> ResolvedFrame {
-        let cycle: TimeInterval = 3.8
-        let t = elapsed.truncatingRemainder(dividingBy: cycle)
+        let cycle = thinkingPhase(3.8)
+
+        // Une seule intro (plat → goutte → 3 points), puis pulsation stable — pas de boucle.
+        if elapsed >= cycle {
+            let bouncePhase = (elapsed - thinkingPhase(2.05)) / thinkingPhase(1.55)
+            return ResolvedFrame(
+                kind: .dots(shrinkToThreeDots(progress: 1, bouncePhase: bouncePhase)),
+                opacity: 1
+            )
+        }
+
+        let t = elapsed
 
         // Plat au bord — fin et haut
-        if t < 0.35 {
-            let p = WaterCurve.easeOut(t / 0.35)
+        if t < thinkingPhase(0.35) {
+            let p = WaterCurve.easeOut(t / thinkingPhase(0.35))
             return ResolvedFrame(
                 kind: .flat(
                     protrusion: flatProtrusionMin + (flatProtrusionMax - flatProtrusionMin) * p,
                     height: flatHeight
                 ),
-                opacity: Double(0.55 + 0.45 * p)
+                opacity: Double(0.88 + 0.12 * p)
             )
         }
 
         // Détachement : s'épaissit, s'arrondit et s'éloigne du bord avec l'arrondi
-        if t < 1.35 {
-            let roundness = WaterCurve.detach((t - 0.35) / 1.0)
+        if t < thinkingPhase(1.35) {
+            let roundness = WaterCurve.detach((t - thinkingPhase(0.35)) / thinkingPhase(1.0))
             let leadingX = detachGap * WaterCurve.detachLift(roundness)
             return ResolvedFrame(
                 kind: .morph(
@@ -144,7 +208,7 @@ struct CoachEdgeBlobOverlay: View {
         }
 
         // Rond détaché du bord
-        if t < 1.65 {
+        if t < thinkingPhase(1.65) {
             return ResolvedFrame(
                 kind: .circle(radius: circleRadius, leadingX: detachGap),
                 opacity: 1
@@ -152,8 +216,8 @@ struct CoachEdgeBlobOverlay: View {
         }
 
         // Le rond devient le 1er point, les 2 autres apparaissent
-        if t < 2.05 {
-            let p = WaterCurve.easeInOut((t - 1.65) / 0.40)
+        if t < thinkingPhase(2.05) {
+            let p = WaterCurve.easeInOut((t - thinkingPhase(1.65)) / thinkingPhase(0.40))
             return ResolvedFrame(
                 kind: .dots(shrinkToThreeDots(progress: p, bouncePhase: 0)),
                 opacity: 1
@@ -161,7 +225,7 @@ struct CoachEdgeBlobOverlay: View {
         }
 
         // Animation de chargement — 3 points qui pulsent
-        let bouncePhase = (t - 2.05) / 1.55
+        let bouncePhase = (t - thinkingPhase(2.05)) / thinkingPhase(1.55)
         return ResolvedFrame(
             kind: .dots(shrinkToThreeDots(progress: 1, bouncePhase: bouncePhase)),
             opacity: 1
@@ -260,8 +324,8 @@ struct CoachEdgeBlobOverlay: View {
         guard enabled, phase > 0 else { return (1, 1) }
         let offset = CGFloat(index) * 0.22
         let wave = sin((phase - offset) * .pi * 2) * 0.5 + 0.5
-        let scale = 0.72 + 0.28 * wave
-        let opacity = 0.45 + 0.55 * wave
+        let scale = 0.82 + 0.18 * wave
+        let opacity = 0.82 + 0.18 * wave
         return (scale, opacity)
     }
 
@@ -351,10 +415,20 @@ private enum WaterCurve {
     }
 }
 
+enum CoachBlobLayout {
+    static let canvasHeight: CGFloat = 96
+    /// Alignement vertical sur la première ligne de texte assistant.
+    static let responseLineOffset: CGFloat = 11
+
+    static func overlayTopPadding(for anchor: CGRect) -> CGFloat {
+        anchor.minY + responseLineOffset - canvasHeight / 2
+    }
+}
+
 struct CoachThinkingBlobPlaceholder: View {
     var body: some View {
         Color.clear
-            .frame(height: 44)
+            .frame(height: 56)
             .coachResponseAnchor()
             .accessibilityLabel("Coach réfléchit")
     }

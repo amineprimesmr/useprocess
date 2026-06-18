@@ -83,10 +83,8 @@ final class SocialProfileStore {
 
     func bind(unified: UnifiedUserProfile?) {
         guard let unified else {
-            if profile == nil {
-                profile = .guest
-            }
             activeUserID = nil
+            profile = nil
             return
         }
         if activeUserID == unified.userId, profile != nil {
@@ -95,29 +93,35 @@ final class SocialProfileStore {
         }
         activeUserID = unified.userId
         load(for: unified)
+        migrateFromLegacyLocalUserIfNeeded(to: unified.userId)
+        syncFromUnified(unified)
     }
 
     func syncFromUnified(_ unified: UnifiedUserProfile) {
         activeUserID = unified.userId
+
+        var current: SocialProfile
+        if let persisted = loadPersistedProfile(userId: unified.userId) {
+            current = persisted
+        } else if let inMemory = profile {
+            current = inMemory
+        } else {
+            current = .from(unified: unified)
+        }
+
         let mergedName = [unified.firstName, unified.lastName]
             .map { $0?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-
-        if var current = profile {
-            if !mergedName.isEmpty {
-                current.displayName = mergedName
-            }
-            if let username = unified.username?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !username.isEmpty {
-                current.username = username
-            }
-            profile = current
-            persist()
-            return
+        if !mergedName.isEmpty {
+            current.displayName = mergedName
         }
-
-        load(for: unified)
+        if let username = unified.username?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !username.isEmpty {
+            current.username = username
+        }
+        profile = current
+        persist()
     }
 
     func resetForUser(userId: String) {
@@ -133,9 +137,8 @@ final class SocialProfileStore {
     }
 
     func load(for unified: UnifiedUserProfile) {
-        let key = Self.storageKey(for: unified.userId)
-        if let data = UserDefaults.standard.data(forKey: key),
-           let saved = try? JSONDecoder().decode(SocialProfile.self, from: data) {
+        activeUserID = unified.userId
+        if let saved = loadPersistedProfile(userId: unified.userId) {
             profile = saved
         } else {
             profile = .from(unified: unified)
@@ -151,13 +154,14 @@ final class SocialProfileStore {
     }
 
     func applyPhotos(_ image: UIImage) {
-        if let previous = profile?.coverPhotoFilename {
-            deleteFile(previous)
-        }
         guard let filename = saveImage(image, prefix: "cover") else { return }
+        let previous = profile?.coverPhotoFilename
         update {
             $0.profilePhotoFilename = filename
             $0.coverPhotoFilename = filename
+        }
+        if let previous, previous != filename {
+            deleteFile(previous)
         }
     }
 
@@ -205,6 +209,55 @@ final class SocialProfileStore {
         let url = photosDirectory.appendingPathComponent(filename)
         guard fileManager.fileExists(atPath: url.path) else { return nil }
         return UIImage(contentsOfFile: url.path)
+    }
+
+    private func loadPersistedProfile(userId: String) -> SocialProfile? {
+        guard let data = UserDefaults.standard.data(forKey: Self.storageKey(for: userId)) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(SocialProfile.self, from: data)
+    }
+
+    /// Reprend une photo enregistrée sous `local-user` avant connexion Apple/Firebase.
+    private func migrateFromLegacyLocalUserIfNeeded(to userId: String) {
+        guard userId != "local-user", userId != "anonymous" else { return }
+        guard let legacy = loadPersistedProfile(userId: "local-user") else { return }
+
+        var current = profile ?? legacy
+        var didChange = false
+
+        if current.profilePhotoFilename == nil, legacy.profilePhotoFilename != nil {
+            current.profilePhotoFilename = legacy.profilePhotoFilename
+            current.coverPhotoFilename = legacy.coverPhotoFilename
+            didChange = true
+        }
+        if current.pins.isEmpty, !legacy.pins.isEmpty {
+            current.pins = legacy.pins
+            didChange = true
+        }
+        if current.bio == nil, legacy.bio != nil {
+            current.bio = legacy.bio
+            didChange = true
+        }
+        if current.education == nil, legacy.education != nil {
+            current.education = legacy.education
+            didChange = true
+        }
+        if current.interests == nil, legacy.interests != nil {
+            current.interests = legacy.interests
+            didChange = true
+        }
+        if current.interestTags.isEmpty, !legacy.interestTags.isEmpty {
+            current.interestTags = legacy.interestTags
+            didChange = true
+        }
+
+        if didChange {
+            profile = current
+            persist()
+        }
+
+        UserDefaults.standard.removeObject(forKey: Self.storageKey(for: "local-user"))
     }
 
     private func persist() {

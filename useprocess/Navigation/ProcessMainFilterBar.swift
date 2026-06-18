@@ -3,19 +3,20 @@ import SwiftUI
 enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     case coach
     case health
-    case scan
     case profile
 
     var id: String { rawValue }
 
+    /// Onglets visibles dans le menu principal.
+    static let menuSections: [ProcessMainSection] = [.coach, .health, .profile]
+
     /// Ordre des onglets dans le pager principal.
-    static let tabOrder: [ProcessMainSection] = [.coach, .health, .scan, .profile]
+    static let tabOrder: [ProcessMainSection] = menuSections
 
     var label: String {
         switch self {
         case .coach: "Coach"
         case .health: "Santé"
-        case .scan: "Scan"
         case .profile: "Profil"
         }
     }
@@ -24,7 +25,6 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .coach: "sparkles"
         case .health: "heart.text.square.fill"
-        case .scan: "viewfinder"
         case .profile: "person.crop.circle.fill"
         }
     }
@@ -47,13 +47,13 @@ struct ProcessMainFilterBar: View {
 
     private var isRegularLayout: Bool { LayoutConstants.isIPad }
 
-    private var chipSpacing: CGFloat { isRegularLayout ? 14 : 8 }
-    private var chipFontSize: CGFloat { isRegularLayout ? 17 : 14 }
-    private var chipHorizontalPadding: CGFloat { isRegularLayout ? 24 : 14 }
-    private var chipVerticalPadding: CGFloat { isRegularLayout ? 14 : 10 }
-    private var chipAssetIconSize: CGFloat { isRegularLayout ? 24 : 20 }
-    private var chipSystemIconSize: CGFloat { isRegularLayout ? 18 : 15 }
-    private var lockIconSize: CGFloat { isRegularLayout ? 13 : 11 }
+    private var chipSpacing: CGFloat { isRegularLayout ? 16 : 10 }
+    private var chipFontSize: CGFloat { isRegularLayout ? 18 : 16 }
+    private var chipHorizontalPadding: CGFloat { isRegularLayout ? 26 : 18 }
+    private var chipVerticalPadding: CGFloat { isRegularLayout ? 15 : 12 }
+    private var chipAssetIconSize: CGFloat { isRegularLayout ? 26 : 22 }
+    private var chipSystemIconSize: CGFloat { isRegularLayout ? 19 : 17 }
+    private var lockIconSize: CGFloat { isRegularLayout ? 14 : 12 }
     private var horizontalInset: CGFloat { isRegularLayout ? 32 : 16 }
 
     private var selectedFill: Color { colorScheme == .dark ? .white : .black }
@@ -67,7 +67,7 @@ struct ProcessMainFilterBar: View {
 
     private var filterContent: some View {
         HStack(spacing: chipSpacing) {
-            ForEach(ProcessMainSection.allCases) { item in
+            ForEach(ProcessMainSection.menuSections) { item in
                 filterChip(item)
             }
         }
