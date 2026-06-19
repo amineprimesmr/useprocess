@@ -8,6 +8,8 @@
 	<string>AppIcon</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>La caméra TrueDepth et la caméra arrière permettent le scan visage wellness, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
