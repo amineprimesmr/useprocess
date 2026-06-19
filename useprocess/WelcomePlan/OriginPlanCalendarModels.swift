@@ -158,8 +158,75 @@ struct OriginPlanProgress: Codable, Equatable {
     var userNotes: [String: String] = [:]
     var modifications: [OriginPlanModification] = []
     var lastCoachSyncAt: Date?
-    /// Repas validé par jour (`dayId` → description).
+    /// Repas validé par jour (`dayId` → description JSON ou texte).
     var validatedMeals: [String: String] = [:]
+    /// Repas validés par créneau (`dayId` → slot → payload).
+    var validatedMealsBySlot: [String: [String: String]] = [:]
+    var shoppingList: [MealShoppingItem] = []
+    var mealHistory: [MealHistoryEntry] = []
+    var mealFeedbacks: [MealFeedbackEntry] = []
+
+    enum CodingKeys: String, CodingKey {
+        case completedTaskIds, taskStatuses, completedDayIds, userNotes, modifications
+        case lastCoachSyncAt, validatedMeals, validatedMealsBySlot
+        case shoppingList, mealHistory, mealFeedbacks
+    }
+
+    init(
+        completedTaskIds: Set<String> = [],
+        taskStatuses: [String: JournalTaskStatus] = [:],
+        completedDayIds: Set<String> = [],
+        userNotes: [String: String] = [:],
+        modifications: [OriginPlanModification] = [],
+        lastCoachSyncAt: Date? = nil,
+        validatedMeals: [String: String] = [:],
+        validatedMealsBySlot: [String: [String: String]] = [:],
+        shoppingList: [MealShoppingItem] = [],
+        mealHistory: [MealHistoryEntry] = [],
+        mealFeedbacks: [MealFeedbackEntry] = []
+    ) {
+        self.completedTaskIds = completedTaskIds
+        self.taskStatuses = taskStatuses
+        self.completedDayIds = completedDayIds
+        self.userNotes = userNotes
+        self.modifications = modifications
+        self.lastCoachSyncAt = lastCoachSyncAt
+        self.validatedMeals = validatedMeals
+        self.validatedMealsBySlot = validatedMealsBySlot
+        self.shoppingList = shoppingList
+        self.mealHistory = mealHistory
+        self.mealFeedbacks = mealFeedbacks
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        completedTaskIds = try c.decodeIfPresent(Set<String>.self, forKey: .completedTaskIds) ?? []
+        taskStatuses = try c.decodeIfPresent([String: JournalTaskStatus].self, forKey: .taskStatuses) ?? [:]
+        completedDayIds = try c.decodeIfPresent(Set<String>.self, forKey: .completedDayIds) ?? []
+        userNotes = try c.decodeIfPresent([String: String].self, forKey: .userNotes) ?? [:]
+        modifications = try c.decodeIfPresent([OriginPlanModification].self, forKey: .modifications) ?? []
+        lastCoachSyncAt = try c.decodeIfPresent(Date.self, forKey: .lastCoachSyncAt)
+        validatedMeals = try c.decodeIfPresent([String: String].self, forKey: .validatedMeals) ?? [:]
+        validatedMealsBySlot = try c.decodeIfPresent([String: [String: String]].self, forKey: .validatedMealsBySlot) ?? [:]
+        shoppingList = try c.decodeIfPresent([MealShoppingItem].self, forKey: .shoppingList) ?? []
+        mealHistory = try c.decodeIfPresent([MealHistoryEntry].self, forKey: .mealHistory) ?? []
+        mealFeedbacks = try c.decodeIfPresent([MealFeedbackEntry].self, forKey: .mealFeedbacks) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(completedTaskIds, forKey: .completedTaskIds)
+        try c.encode(taskStatuses, forKey: .taskStatuses)
+        try c.encode(completedDayIds, forKey: .completedDayIds)
+        try c.encode(userNotes, forKey: .userNotes)
+        try c.encode(modifications, forKey: .modifications)
+        try c.encodeIfPresent(lastCoachSyncAt, forKey: .lastCoachSyncAt)
+        try c.encode(validatedMeals, forKey: .validatedMeals)
+        try c.encode(validatedMealsBySlot, forKey: .validatedMealsBySlot)
+        try c.encode(shoppingList, forKey: .shoppingList)
+        try c.encode(mealHistory, forKey: .mealHistory)
+        try c.encode(mealFeedbacks, forKey: .mealFeedbacks)
+    }
 
     static func taskKey(dayId: String, taskId: String) -> String {
         "\(dayId)|\(taskId)"

@@ -9,22 +9,22 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>La caméra permet d'analyser ton visage, ta posture et ton corps en 360°.</string>
+	<string>La caméra TrueDepth et la caméra arrière permettent le scan visage wellness, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>La photothèque permet de choisir une photo de profil ou d'envoyer une image au coach.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Process lit tes données Santé (pas, sommeil, fréquence cardiaque) pour calculer ton score de readiness et personnaliser ton programme. Exemple : adapter l'intensité du jour selon ta nuit.</string>
+	<string>Process lit tes données Santé (pas, sommeil, fréquence cardiaque) pour calculer ton score de readiness et personnaliser ton programme. Ces résumés peuvent être transmis au coach IA si tu l'autorises.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Process peut enregistrer tes séances et données d'activité dans Santé pour centraliser ton suivi sportif.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Connexion rapide et sécurisée à ton compte.</string>
+	<string>TrueDepth est utilisé pour le scan visage wellness (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Process utilise les capteurs de mouvement pour estimer ton activité quotidienne et compléter les données Santé. Exemple : compter tes pas quand tu marches sans Apple Watch.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Les notifications te rappellent tes séances et ta récupération.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Le micro permet de parler au Coach Claude par message vocal.</string>
+	<string>Le micro permet d'enregistrer des messages vocaux convertis en texte pour le coach. Le texte peut être envoyé au service IA Anthropic (Claude) si tu l'autorises.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>La dictée transforme ta voix en texte pour discuter avec Claude.</string>
+	<string>La dictée transforme ta voix en texte sur l'appareil pour discuter avec le coach. Le texte peut ensuite être envoyé à Anthropic (Claude) si tu l'autorises.</string>
 </dict>
 </plist>

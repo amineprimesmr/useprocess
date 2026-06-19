@@ -16,6 +16,9 @@ struct HealthDashboardView: View {
     @State private var selectedFaceScan: FaceScanResult?
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var isRestoringPlan = false
+    @State private var weeklyMealHistory: [MealHistoryEntry] = []
+    @State private var shoppingItems: [MealShoppingItem] = []
+    @State private var lastHealthRefresh: Date?
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
@@ -25,7 +28,7 @@ struct HealthDashboardView: View {
                 selectedSection: $selectedSection,
                 pageSection: .health
             ) {
-                VStack(spacing: 18) {
+                LazyVStack(spacing: 18) {
                     healthContent
                 }
                 .padding()
@@ -33,8 +36,8 @@ struct HealthDashboardView: View {
             .background(theme.background.ignoresSafeArea())
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
-            .refreshable { await refreshAll() }
-            .task { await refreshAll() }
+            .refreshable { await refreshAll(force: true) }
+            .task(id: planStore.plan?.id) { await refreshAll(force: false) }
             .fullScreenCover(isPresented: $showFaceScan) { faceScanCover }
             .sheet(isPresented: $showFaceHistory) {
                 FaceScanHistoryView(history: faceHistoryStore.history) { scan in
@@ -51,6 +54,10 @@ struct HealthDashboardView: View {
             .onAppear {
                 planStore.reloadForCurrentUser()
                 faceHistoryStore = FaceScanHistoryStore.shared
+                refreshMealSections()
+            }
+            .onChange(of: planStore.plan?.lastUpdated) { _, _ in
+                refreshMealSections()
             }
         }
     }
@@ -59,6 +66,18 @@ struct HealthDashboardView: View {
     private var healthContent: some View {
         if let plan = livePlan {
             DailyJournalChecklistView(plan: plan)
+
+            MealHistoryCarouselView(
+                entries: weeklyMealHistory,
+                theme: theme
+            )
+
+            MealShoppingListSection(
+                items: shoppingItems,
+                theme: theme,
+                onToggle: { id in planStore.toggleShoppingItem(id); refreshMealSections() },
+                onClearChecked: { planStore.clearCheckedShoppingItems(); refreshMealSections() }
+            )
         } else {
             noPlanCard
         }
@@ -145,7 +164,7 @@ struct HealthDashboardView: View {
     // MARK: - Sheets
 
     private var faceScanCover: some View {
-        FaceScanSessionView(
+        FaceScanPrivacyGateView(
             onDismiss: { showFaceScan = false },
             onComplete: { _ in
                 faceHistoryStore = FaceScanHistoryStore.shared
@@ -158,9 +177,19 @@ struct HealthDashboardView: View {
 
     // MARK: - Data
 
-    private func refreshAll() async {
-        planStore.reloadForCurrentUser()
+    private func refreshMealSections() {
+        weeklyMealHistory = planStore.mealHistoryThisWeek()
+        shoppingItems = planStore.plan?.progress.shoppingList ?? []
+    }
+
+    private func refreshAll(force: Bool) async {
+        if !force, let last = lastHealthRefresh, Date().timeIntervalSince(last) < 120 {
+            return
+        }
+        lastHealthRefresh = Date()
+
         if planStore.plan == nil {
+            planStore.reloadForCurrentUser()
             _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
         }
         if healthManager.isHealthDataAvailable && !healthManager.isAuthorized {

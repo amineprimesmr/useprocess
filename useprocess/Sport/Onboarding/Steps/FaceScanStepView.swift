@@ -7,20 +7,21 @@ struct FaceScanStepView: View {
     var onBack: () -> Void
 
     var body: some View {
-        FaceScanCaptureScreen(
+        FaceScanCapturePrivacyGateView(
             onBack: onBack,
             onSkip: {
                 viewModel.onboardingFaceMesh = nil
                 viewModel.onboardingFaceMarkers = nil
                 viewModel.isFaceAnalysisCompleted = true
                 onComplete()
+            },
+            onCapture: { payload, markers in
+                viewModel.onboardingFaceMesh = payload.mesh
+                viewModel.onboardingFaceMarkers = markers
+                viewModel.isFaceAnalysisCompleted = true
+                OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
+                onComplete()
             }
-        ) { payload, markers in
-            viewModel.onboardingFaceMesh = payload.mesh
-            viewModel.onboardingFaceMarkers = markers
-            viewModel.isFaceAnalysisCompleted = true
-            OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
-            onComplete()
-        }
+        )
     }
 }

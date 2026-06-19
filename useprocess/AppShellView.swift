@@ -25,6 +25,7 @@ struct AppShellView: View {
         }
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
         .environment(\.appTheme, theme)
+        .processThirdPartyAIConsentSheet()
         .preferredColorScheme(session.appearance.preferredColorScheme)
         .environmentObject(AuthenticationManager.shared)
         .environmentObject(UnifiedProfileService.shared)

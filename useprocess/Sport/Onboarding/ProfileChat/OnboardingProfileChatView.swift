@@ -96,7 +96,7 @@ struct OnboardingProfileChatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .fullScreenCover(isPresented: $showFaceScan) {
-            FaceScanCaptureScreen(
+            FaceScanCapturePrivacyGateView(
                 onBack: {
                     showFaceScan = false
                     chatViewModel.faceScanDidCancel()
@@ -104,11 +104,12 @@ struct OnboardingProfileChatView: View {
                 onSkip: {
                     showFaceScan = false
                     chatViewModel.faceScanDidSkip()
+                },
+                onCapture: { payload, markers in
+                    showFaceScan = false
+                    chatViewModel.faceScanDidComplete(payload: payload, markers: markers)
                 }
-            ) { payload, markers in
-                showFaceScan = false
-                chatViewModel.faceScanDidComplete(payload: payload, markers: markers)
-            }
+            )
         }
         .onChange(of: chatViewModel.shouldPresentFaceScan) { _, should in
             if should { showFaceScan = true }

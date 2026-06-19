@@ -25,6 +25,7 @@ extension View {
             }
         }
         .scrollIndicators(.hidden)
+        .processMainVerticalScrollHook()
         .scrollableHeader(
             dismissDistance: ProcessMainChromeMetrics.dismissDistance,
             topBlur: false,
@@ -88,6 +89,24 @@ private struct ScrollHeaderMetrics: Equatable {
     var isNearBottom: Bool
 }
 
+private struct ScrollHeaderPreferenceReporter: View {
+    let section: ProcessMainSection
+    let headerProgress: CGFloat
+    let headerVisibility: CGFloat
+
+    var body: some View {
+        Color.clear
+            .preference(
+                key: ProcessMainScrollHeaderPreferenceKey.self,
+                value: ProcessMainScrollHeaderPreference(
+                    section: section,
+                    headerProgress: headerProgress,
+                    headerVisibility: headerVisibility
+                )
+            )
+    }
+}
+
 private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
     let dismissDistance: CGFloat
     var topBlur: Bool
@@ -104,6 +123,8 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
     @State private var shiftScrollOffset: CGFloat = 0
     @State private var headerProgress: CGFloat = 0
     @State private var measuredHeaderHeight: CGFloat = 112
+    @State private var reportedProgress: CGFloat = 0
+    @State private var reportedVisibility: CGFloat = 1
 
     private var bottomRevealThreshold: CGFloat { dismissDistance * 0.85 }
     private var headerVisibility: CGFloat { isPinned ? 1 : (1 - headerProgress) }
@@ -139,11 +160,18 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
                 if scrollDirection != nil {
                     let offset = newValue.offset.rounded() - shiftScrollOffset
                     let progress = max(min(offset / dismissDistance, 1), 0)
-                    headerProgress = progress
+                    let quantized = (progress * 20).rounded() / 20
+                    if abs(quantized - headerProgress) > 0.001 {
+                        headerProgress = quantized
+                    }
                 }
             }
             .onScrollPhaseChange { _, newPhase in
                 scrollPhase = newPhase
+
+                if usesExternalStickyChrome {
+                    ProcessMainPagingCoordinator.shared.setVerticalDragActive(newPhase == .interacting)
+                }
 
                 if isPinned {
                     headerProgress = 0
@@ -190,12 +218,14 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
             }
             .background {
                 if usesExternalStickyChrome, let pageSection {
-                    Color.clear
-                        .reportsProcessMainScrollHeader(
-                            section: pageSection,
-                            headerProgress: headerProgress,
-                            headerVisibility: headerVisibility
-                        )
+                    ScrollHeaderPreferenceReporter(
+                        section: pageSection,
+                        headerProgress: reportedProgress,
+                        headerVisibility: reportedVisibility
+                    )
+                    .onChange(of: headerProgress) { _, _ in syncReportedHeaderPreference() }
+                    .onChange(of: headerVisibility) { _, _ in syncReportedHeaderPreference() }
+                    .onAppear { syncReportedHeaderPreference(force: true) }
                 }
             }
             .onPreferenceChange(ScrollHeaderHeightKey.self) { height in
@@ -228,6 +258,14 @@ private struct ScrollableHeaderModifier<Header: View>: ViewModifier {
         let collapseOffset = headerProgress * -dismissDistance
         let bleedOffset = extendsIntoTopSafeArea ? -topSafeInset : 0
         return collapseOffset + bleedOffset
+    }
+
+    private func syncReportedHeaderPreference(force: Bool = false) {
+        let progressChanged = abs(headerProgress - reportedProgress) > 0.04
+        let visibilityChanged = abs(headerVisibility - reportedVisibility) > 0.04
+        guard force || progressChanged || visibilityChanged else { return }
+        reportedProgress = headerProgress
+        reportedVisibility = headerVisibility
     }
 
     private func revealHeader(animated: Bool) {

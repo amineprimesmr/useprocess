@@ -30,6 +30,35 @@ enum CoachEngine {
     - Tu peux ajouter 1 suggestion optionnelle à la fin (« Si tu veux, on peut aussi… ») — l'utilisateur n'est pas obligé de répondre.
     """
 
+    private static let mealSuggestionPrompt = """
+
+    🍽 MODE REPAS — ACTIF :
+    L'utilisateur demande une idée de repas. Réponds UNIQUEMENT avec ce format (labels exacts, pas de markdown) :
+
+    MEAL_NAME: [nom appétissant court]
+    MEAL_TYPE: [Petit-déjeuner|Déjeuner|Dîner|Collation]
+    SCORE: [0-100 alignement Protocole Origine]
+    SCORE_WHY: [1 phrase max]
+    ITEM_1: [aliment] | [quantité] | [Protéine|Glucide|Légume|Gras|Autre]
+    ITEM_2: [aliment] | [quantité] | [role]
+    ITEM_3: [aliment] | [quantité] | [role]
+    PREP_MIN: [minutes]
+    PREP: [1 phrase préparation]
+    TIP: [1 conseil coach court]
+    TAG_1: [tag court ex: Anti-gonflement]
+    TAG_2: [tag optionnel]
+    SCORE_PROTOCOL: [0-100]
+    SCORE_SATIETY: [0-100]
+    SCORE_BLOAT: [0-100]
+
+    - 3 à 5 items. Protocole Origine : dense, peu transformé, protéines + légumes/tubercules cuits.
+    """
+
+    private static func isMealQuestion(_ text: String?) -> Bool {
+        guard let text else { return false }
+        return CoachMealMessageDetector.isMealRelated(userText: text)
+    }
+
     private static func contextualSystem(profile: UnifiedUserProfile?, planFocus: CoachPlanFocus? = nil, userText: String? = nil) -> String {
         CoachMemoryStore.shared.refreshConversationDigests(
             excludingActiveId: CoachConversationLibraryStore.shared.activeConversationId
@@ -42,6 +71,8 @@ enum CoachEngine {
 
         if isModify {
             system += planModificationPrompt
+        } else if isMealQuestion(userText) {
+            system += mealSuggestionPrompt
         }
 
         if let focus = planFocus {
@@ -163,9 +194,18 @@ enum CoachEngine {
         let firstName = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         let nameHint = (firstName?.isEmpty == false) ? "Prénom : \(firstName!)." : ""
 
+        let validatedMealHint: String = {
+            guard let plan = WelcomePlanStore.shared.plan else { return "" }
+            let idx = plan.calendar.currentProgramDayIndex()
+            guard let day = plan.calendar.day(globalIndex: idx),
+                  let raw = plan.progress.validatedMeals[day.id],
+                  let meal = MealSuggestionContent.fromStored(raw) else { return "" }
+            return "\nRepas validé aujourd'hui : \(meal.name) (score \(meal.protocolScore)/100)."
+        }()
+
         let prompt = """
         \(nameHint)
-        \(UserContextBuilder.compactPromptBlock(from: context))
+        \(UserContextBuilder.compactPromptBlock(from: context))\(validatedMealHint)
 
         Génère le brief du jour. Réponds UNIQUEMENT avec ces 4 lignes (labels exacts) :
 

@@ -335,6 +335,12 @@ final class CoachChatViewModel {
 
     func runTool(_ tool: CoachTool) async {
         guard !isSending else { return }
+        guard ProcessPrivacyConsentStore.shared.canUseThirdPartyAI else {
+            ProcessPrivacyConsentStore.shared.presentThirdPartyAIConsentIfNeeded {
+                Task { await self.runTool(tool) }
+            }
+            return
+        }
         let prompt = tool.label
         let userMsg = CoachMessage(role: .user, text: "🔹 \(prompt)")
         messages.append(userMsg)
@@ -375,6 +381,14 @@ final class CoachChatViewModel {
     ) async {
         let cleaned = trimmed.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty else { return }
+
+        guard ProcessPrivacyConsentStore.shared.canUseThirdPartyAI else {
+            ProcessPrivacyConsentStore.shared.presentThirdPartyAIConsentIfNeeded {
+                Task { await self.sendPrompt(cleaned, userDisplayText: userDisplayText, persistUserMessage: persistUserMessage) }
+            }
+            return
+        }
+
         guard let conversationId = libraryStore.activeConversationId else { return }
         let bubbleText: String = {
             if let userDisplayText,
@@ -439,6 +453,14 @@ final class CoachChatViewModel {
                     break
                 } catch {
                     lastError = error
+                    if error is ProcessPrivacyConsentError {
+                        ProcessPrivacyConsentStore.shared.presentThirdPartyAIConsentIfNeeded {
+                            Task { await self.sendPrompt(cleaned, userDisplayText: userDisplayText, persistUserMessage: false) }
+                        }
+                        isSending = false
+                        streamingText = ""
+                        return
+                    }
                     let canRetry = CoachRemoteError.isRetryable(error) && attempt < maxAttempts - 1
                     if canRetry {
                         try? await Task.sleep(nanoseconds: UInt64(900_000_000 * UInt64(attempt + 1)))

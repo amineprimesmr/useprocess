@@ -61,6 +61,15 @@ struct ProcessMainScrollHeaderPreferenceKey: PreferenceKey {
     }
 }
 
+/// Remonte l'état « scroll vertical en cours » pour bloquer le swipe entre onglets.
+struct ProcessMainVerticalScrollLockPreferenceKey: PreferenceKey {
+    static var defaultValue: [ProcessMainSection: Bool] = [:]
+
+    static func reduce(value: inout [ProcessMainSection: Bool], nextValue: () -> [ProcessMainSection: Bool]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
 /// Menu + blur sticky au-dessus des pages principales (une seule instance).
 struct ProcessMainStickyChromeOverlay: View {
     @Binding var selection: ProcessMainSection
@@ -152,6 +161,16 @@ extension View {
                 headerProgress: headerProgress,
                 headerVisibility: headerVisibility
             )
+        )
+    }
+
+    func reportsProcessMainVerticalScrollLock(
+        section: ProcessMainSection,
+        isScrollingVertically: Bool
+    ) -> some View {
+        preference(
+            key: ProcessMainVerticalScrollLockPreferenceKey.self,
+            value: [section: isScrollingVertically]
         )
     }
 }

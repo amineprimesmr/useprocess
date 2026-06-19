@@ -93,16 +93,61 @@ struct ProcessAppSettingsHubView: View {
             GroupedSettingsCard {
                 GroupedSettingsInfoRow(
                     icon: "sparkles",
-                    title: "Coach Claude",
-                    value: ClaudeConfiguration.isConfigured ? "Connecté" : "Non configuré"
+                    title: "Coach IA (Anthropic)",
+                    value: ProcessPrivacyConsentStore.shared.canUseThirdPartyAI ? "Autorisé" : "Non autorisé"
                 )
                 GroupedSettingsRowDivider()
                 GroupedSettingsInfoRow(
-                    icon: "network",
-                    title: "Transport",
-                    value: ClaudeConfiguration.transportLabel
+                    icon: "face.smiling",
+                    title: "Scan visage + IA",
+                    value: ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI ? "Autorisé" : "Local uniquement"
                 )
                 GroupedSettingsRowDivider()
+                if ProcessPrivacyConsentStore.shared.canUseThirdPartyAI {
+                    Button {
+                        ProcessPrivacyConsentStore.shared.revokeThirdPartyAI()
+                    } label: {
+                        GroupedSettingsNavigationRow(
+                            icon: "xmark.circle",
+                            title: "Révoquer le coach IA",
+                            subtitle: "Désactive l'envoi de données à Anthropic",
+                            value: nil,
+                            showsChevron: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Button {
+                        ProcessPrivacyConsentStore.shared.presentThirdPartyAIConsentIfNeeded()
+                    } label: {
+                        GroupedSettingsNavigationRow(
+                            icon: "checkmark.circle",
+                            title: "Activer le coach IA",
+                            subtitle: "Autoriser Anthropic (Claude) via Firebase",
+                            value: nil,
+                            showsChevron: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                GroupedSettingsRowDivider()
+                if ProcessPrivacyConsentStore.shared.hasAcceptedFaceScanCapture {
+                    Button {
+                        ProcessPrivacyConsentStore.shared.revokeFaceScanConsents()
+                    } label: {
+                        GroupedSettingsNavigationRow(
+                            icon: "camera.fill",
+                            title: "Révoquer le scan visage",
+                            subtitle: "Redemandera l'autorisation au prochain scan",
+                            value: nil,
+                            showsChevron: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            GroupedSettingsCard {
                 GroupedSettingsInfoRow(
                     icon: "cpu",
                     title: "Modèle chat",

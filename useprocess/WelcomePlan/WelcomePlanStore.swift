@@ -138,18 +138,22 @@ final class WelcomePlanStore {
         setJournalTaskStatus(existing == .completed ? nil : .completed, taskId: taskId, dayId: dayId)
     }
 
-    func saveValidatedMeal(dayId: String, meal: String) {
+    func clearValidatedMeal(dayId: String, slot: MealTimeSlot? = nil) {
         guard var current = plan else { return }
         guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
-        current.progress.validatedMeals[dayId] = meal
-        syncJournalDayCompletion(on: &current, dayId: dayId)
-        savePlan(current)
-    }
 
-    func clearValidatedMeal(dayId: String) {
-        guard var current = plan else { return }
-        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
-        current.progress.validatedMeals.removeValue(forKey: dayId)
+        if let slot {
+            current.progress.validatedMealsBySlot[dayId]?.removeValue(forKey: slot.rawValue)
+            if current.progress.validatedMealsBySlot[dayId]?.isEmpty == true {
+                current.progress.validatedMealsBySlot.removeValue(forKey: dayId)
+            }
+            if slot == .lunch {
+                current.progress.validatedMeals.removeValue(forKey: dayId)
+            }
+        } else {
+            current.progress.validatedMeals.removeValue(forKey: dayId)
+            current.progress.validatedMealsBySlot.removeValue(forKey: dayId)
+        }
         savePlan(current)
     }
 
@@ -157,7 +161,7 @@ final class WelcomePlanStore {
         plan?.progress.validatedMeals[dayId]
     }
 
-    private func syncJournalDayCompletion(on plan: inout FaceOriginPlan, dayId: String) {
+    func syncJournalDayCompletion(on plan: inout FaceOriginPlan, dayId: String) {
         guard let day = plan.calendar.weeks.flatMap(\.days).first(where: { $0.id == dayId }) else { return }
         if OriginPlanPresenter.isDayJournalFilled(plan: plan, day: day) {
             plan.progress.completedDayIds.insert(dayId)

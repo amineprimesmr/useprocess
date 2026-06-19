@@ -142,4 +142,9 @@ enum CoachConversationStore {
         UserDefaults.standard.set(text, forKey: dailyBriefKey)
         UserDefaults.standard.set(Date(), forKey: dailyBriefDateKey)
     }
+
+    static func invalidateDailyBriefCache() {
+        UserDefaults.standard.removeObject(forKey: dailyBriefKey)
+        UserDefaults.standard.removeObject(forKey: dailyBriefDateKey)
+    }
 }

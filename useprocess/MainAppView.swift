@@ -26,6 +26,10 @@ struct MainAppView: View {
         isWelcomePlanGating ? [.health, .profile] : []
     }
 
+    private var isHorizontalPagingLocked: Bool {
+        isWelcomePlanGating
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
             TabView(selection: $selectedSection) {
@@ -54,7 +58,6 @@ struct MainAppView: View {
                     }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .processMainTabPaging(swipeDisabled: isWelcomePlanGating)
             .ignoresSafeArea(.container, edges: .bottom)
 
             CoachMainStickyChromeLayer(
@@ -65,6 +68,7 @@ struct MainAppView: View {
                 headerVisibility: activeScrollHeader.headerVisibility
             )
         }
+        .processMainTabPaging(swipeDisabled: isHorizontalPagingLocked)
         .background(theme.background.ignoresSafeArea())
         .onAppear {
             if isWelcomePlanGating {
@@ -78,6 +82,10 @@ struct MainAppView: View {
         }
         .onPreferenceChange(ProcessMainScrollHeaderPreferenceKey.self) { preference in
             guard let preference else { return }
+            let existing = scrollHeaders[preference.section]
+            let progressDelta = abs((existing?.headerProgress ?? 0) - preference.headerProgress)
+            let visibilityDelta = abs((existing?.headerVisibility ?? 1) - preference.headerVisibility)
+            guard progressDelta > 0.03 || visibilityDelta > 0.03 else { return }
             scrollHeaders[preference.section] = preference
         }
         .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in

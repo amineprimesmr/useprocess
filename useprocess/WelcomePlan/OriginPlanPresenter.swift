@@ -183,7 +183,8 @@ enum OriginPlanPresenter {
         analysisParts.append("Phase : \(phase).")
 
         if let meal = plan.progress.validatedMeals[day.id], !meal.isEmpty {
-            analysisParts.append("Repas : \(truncate(meal, max: 72)).")
+            let mealLabel = MealSuggestionContent.fromStored(meal)?.name ?? truncate(meal, max: 72)
+            analysisParts.append("Repas : \(mealLabel).")
         } else if let priority = impactPriorities(from: plan, limit: 1).first {
             analysisParts.append("Levier prioritaire : \(priority.pillar.lowercased()).")
         }

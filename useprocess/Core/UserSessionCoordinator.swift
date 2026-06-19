@@ -33,6 +33,7 @@ final class UserSessionCoordinator {
 
         if let userId {
             AppSession.shared.reloadForCurrentUser()
+            ProcessPrivacyConsentStore.shared.reloadForUser(userId: userId)
             BodyScanHistoryStore.shared.reloadForUser(userId: userId)
             FaceScanHistoryStore.shared.reloadForUser(userId: userId)
             CoachConversationStore.reloadForUser(userId: userId)

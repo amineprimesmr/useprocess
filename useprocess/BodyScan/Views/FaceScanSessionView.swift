@@ -21,12 +21,21 @@ struct FaceScanSessionView: View {
                     ProgressView()
                         .tint(.white)
                         .scaleEffect(1.1)
-                    Text("Claude analyse ton visage…")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                    Text("Comparaison avec tes scans précédents")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.8))
+                    if ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI {
+                        Text("Analyse wellness en cours…")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Text("Comparaison avec tes scans précédents")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                    } else {
+                        Text("Enregistrement du scan…")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Text("Scores calculés localement sur ton appareil")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
                 }
                 .padding(24)
             }

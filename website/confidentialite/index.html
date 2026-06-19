@@ -18,11 +18,11 @@
 
     <article class="card">
       <h1>Politique de confidentialité</h1>
-      <p class="meta">Dernière mise à jour : 18 juin 2026</p>
+      <p class="meta">Dernière mise à jour : 19 juin 2026</p>
 
       <p>
         La présente politique décrit comment <strong>Process AI</strong> (« l'Application », « nous »)
-        collecte, utilise et protège vos données lorsque vous utilisez l'application mobile iOS
+        collecte, utilise, partage et conserve vos données lorsque vous utilisez l'application mobile iOS
         disponible sur l'App Store.
       </p>
 
@@ -39,10 +39,10 @@
         <li><strong>Compte</strong> : identifiant Apple (Sign in with Apple), adresse e-mail relayée le cas échéant, prénom.</li>
         <li><strong>Profil</strong> : objectifs, préférences sport et nutrition, réponses d'onboarding.</li>
         <li><strong>Données santé</strong> (avec votre autorisation HealthKit) : activité, sommeil, fréquence cardiaque, calories, pas, etc.</li>
-        <li><strong>Scan visage</strong> (avec votre autorisation caméra / TrueDepth) : données de mesh facial et indicateurs wellness dérivés, stockés localement et sur votre compte.</li>
+        <li><strong>Données faciales</strong> (avec votre autorisation — voir section 3) : mesh 3D TrueDepth, photo, vidéo courte, scores wellness dérivés.</li>
         <li><strong>Activité physique</strong> (capteurs de mouvement, si autorisés).</li>
-        <li><strong>Coach IA</strong> : messages échangés avec l'assistant pour générer des conseils personnalisés.</li>
-        <li><strong>Audio</strong> (si autorisé) : dictée vocale pour saisir des messages au coach.</li>
+        <li><strong>Coach IA</strong> : messages échangés avec l'assistant (voir section 4).</li>
+        <li><strong>Audio</strong> (si autorisé) : dictée vocale convertie en texte sur l'appareil.</li>
         <li><strong>Abonnement</strong> : statut d'abonnement via Apple et RevenueCat (aucune donnée bancaire n'est collectée par nous).</li>
         <li><strong>Technique</strong> : identifiants de session, logs d'erreur, version de l'app.</li>
       </ul>
@@ -51,7 +51,103 @@
         Aucune donnée de localisation n'est demandée ni transmise par l'application.
       </p>
 
-      <h2>3. Finalités</h2>
+      <h2 id="donnees-faciales">3. Données faciales (TrueDepth)</h2>
+      <p>
+        Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra <strong>TrueDepth</strong>
+        (capteur Face ID) pour estimer des indicateurs wellness. <strong>Aucune reconnaissance biométrique
+        d'identité</strong> (déverrouillage, authentification biométrique du visage) n'est effectuée dans le cadre
+        du scan wellness.
+      </p>
+
+      <h3>3.1 Données faciales collectées</h3>
+      <ul>
+        <li><strong>Mesh 3D facial</strong> : géométrie du visage (vertices, triangles), traitée principalement sur l'appareil.</li>
+        <li><strong>Photo JPEG</strong> : capture d'image du visage pendant le scan.</li>
+        <li><strong>Vidéo courte</strong> (optionnelle) : enregistrement local du scan.</li>
+        <li><strong>Scores wellness dérivés</strong> : gonflement, cernes/fatigue, tension mâchoire, clarté peau, symétrie (échelle 0–100).</li>
+        <li><strong>Métadonnées</strong> : date du scan, scores, sommeil/HRV au moment du scan si HealthKit est autorisé.</li>
+      </ul>
+
+      <h3>3.2 Utilisations</h3>
+      <ul>
+        <li>Suivi wellness personnalisé et comparaison de tendances dans le temps.</li>
+        <li>Synchronisation entre vos appareils via votre compte.</li>
+        <li>Enrichissement du contexte du coach (scores, pas la photo, sauf si vous autorisez l'analyse IA photo — voir 3.3).</li>
+        <li><strong>Analyse IA optionnelle</strong> : si vous activez explicitement l'option dans l'Application, la photo du scan peut être envoyée à Anthropic (Claude) pour générer un texte d'analyse wellness.</li>
+      </ul>
+
+      <h3>3.3 Partage et stockage</h3>
+      <ul>
+        <li><strong>Sur votre iPhone</strong> : dossier sécurisé de l'Application (Application Support).</li>
+        <li><strong>Cloud</strong> : si vous êtes connecté, historique synchronisé sur <strong>Google Firebase Firestore</strong> (collection <code>faceScans</code>), rattaché à votre identifiant de compte.</li>
+        <li><strong>Anthropic (Claude)</strong> : uniquement si vous avez coché l'option d'analyse IA du scan — la photo JPEG et les scores associés sont transmis via nos <strong>Firebase Cloud Functions</strong> (proxy). Anthropic traite ces données pour produire l'analyse textuelle demandée. Selon les conditions commerciales d'Anthropic, les données API ne sont pas utilisées pour entraîner leurs modèles.</li>
+      </ul>
+
+      <h3>3.4 Durée de conservation</h3>
+      <ul>
+        <li><strong>Historique local et cloud</strong> : jusqu'à <strong>90 scans</strong> par compte (les plus anciens sont supprimés automatiquement).</li>
+        <li><strong>Suppression de compte</strong> : toutes les données faciales associées au compte sont supprimées sous <strong>30 jours</strong> après votre demande.</li>
+        <li><strong>Analyse IA</strong> : le texte d'analyse est stocké avec le scan ; la photo transmise à Anthropic est traitée pour la requête en cours (politique de rétention d'Anthropic applicable).</li>
+      </ul>
+
+      <blockquote>
+        <strong>Extrait — collecte et usage des données faciales :</strong>
+        « Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth,
+        une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Ces données sont
+        stockées sur votre appareil et, si vous êtes connecté, sur Firebase Firestore. Si vous autorisez
+        explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud
+        Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ;
+        suppression sous 30 jours après suppression du compte. »
+      </blockquote>
+
+      <h2 id="intelligence-artificielle">4. Intelligence artificielle tierce (Anthropic Claude)</h2>
+      <p>
+        L'Application intègre un coach et des fonctionnalités IA. <strong>Avant tout envoi de données
+        personnelles à un service IA tiers, l'Application vous demande votre consentement explicite</strong>
+        (écran dédié « Coach IA »). Vous pouvez refuser ou révoquer ce consentement dans les paramètres.
+      </p>
+
+      <h3>4.1 Prestataire</h3>
+      <p>
+        <strong>Anthropic PBC</strong> — modèle <strong>Claude</strong> (IA conversationnelle et vision).<br>
+        Transmission via <strong>Google Firebase Cloud Functions</strong> (proxy sécurisé ; clé API côté serveur).<br>
+        Politique Anthropic : <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer">anthropic.com/privacy</a>
+      </p>
+
+      <h3>4.2 Données pouvant être envoyées (avec votre consentement)</h3>
+      <ul>
+        <li>Messages écrits ou dictés au coach et historique de conversation.</li>
+        <li>Profil : prénom, âge, genre, objectifs, sport, nutrition, réponses d'onboarding.</li>
+        <li>Résumés HealthKit : pas, sommeil, fréquence cardiaque, HRV, score readiness.</li>
+        <li>Scores de scans (visage, posture) et historique agrégé.</li>
+        <li>Photos que vous envoyez volontairement (coach, repas, scan visage si option IA activée).</li>
+      </ul>
+
+      <h3>4.3 Finalités</h3>
+      <ul>
+        <li>Réponses personnalisées du coach.</li>
+        <li>Génération et résumé de protocole.</li>
+        <li>Suggestions de repas et analyse d'images alimentaires.</li>
+        <li>Analyses wellness optionnelles (scan visage/corps).</li>
+      </ul>
+
+      <h3>4.4 Protection équivalente</h3>
+      <p>
+        Nous sélectionnons Anthropic en tant que sous-traitant offrant des garanties contractuelles et
+        techniques appropriées (chiffrement en transit, conditions commerciales API, non-utilisation
+        des données API pour l'entraînement des modèles selon leurs conditions). Des clauses contractuelles
+        types s'appliquent pour les transferts hors UE le cas échéant.
+      </p>
+
+      <blockquote>
+        <strong>Extrait — IA tierce :</strong>
+        « Avec votre consentement explicite, Process envoie certaines données personnelles à Anthropic (Claude)
+        via Firebase Cloud Functions pour le coach IA, les suggestions repas et les analyses optionnelles.
+        Vous pouvez refuser ou révoquer à tout moment dans l'Application. Anthropic ne reçoit vos données
+        qu'après votre accord in-app. »
+      </blockquote>
+
+      <h2>5. Finalités générales</h2>
       <ul>
         <li>Fournir et personnaliser l'Application (programme, coach, suivi santé).</li>
         <li>Synchroniser vos données entre appareils via votre compte.</li>
@@ -61,68 +157,66 @@
         <li>Respecter nos obligations légales.</li>
       </ul>
 
-      <h2>4. Bases légales (RGPD)</h2>
+      <h2>6. Bases légales (RGPD)</h2>
       <ul>
         <li><strong>Exécution du contrat</strong> : fourniture de l'Application et de l'abonnement.</li>
-        <li><strong>Consentement</strong> : accès HealthKit, caméra, notifications, micro.</li>
+        <li><strong>Consentement</strong> : HealthKit, caméra/TrueDepth, notifications, micro, <strong>coach IA Anthropic</strong>, <strong>analyse IA photo du scan visage</strong>.</li>
         <li><strong>Intérêt légitime</strong> : sécurité, prévention de la fraude, amélioration du service.</li>
       </ul>
 
-      <h2>5. Sous-traitants et services tiers</h2>
+      <h2>7. Sous-traitants et services tiers</h2>
       <ul>
-        <li><strong>Apple</strong> : App Store, Sign in with Apple, HealthKit, achats intégrés.</li>
-        <li><strong>Google Firebase</strong> : authentification et stockage cloud (Firestore).</li>
+        <li><strong>Apple</strong> : App Store, Sign in with Apple, HealthKit, achats intégrés, Speech (dictée on-device).</li>
+        <li><strong>Google Firebase</strong> : authentification, Firestore, Cloud Functions (proxy IA).</li>
         <li><strong>RevenueCat</strong> : gestion des abonnements.</li>
-        <li><strong>Anthropic (Claude)</strong> : traitement des messages du coach IA, selon configuration.</li>
+        <li><strong>Anthropic (Claude)</strong> : coach IA et analyses vision — <strong>uniquement avec consentement explicite</strong> (section 4).</li>
       </ul>
-      <p>
-        Ces prestataires agissent selon leurs propres politiques de confidentialité et nos instructions
-        contractuelles lorsque applicable.
-      </p>
 
-      <h2>6. Durée de conservation</h2>
+      <h2>8. Durée de conservation</h2>
       <ul>
-        <li>Données de compte : tant que le compte est actif, puis suppression sous 30 jours après demande.</li>
-        <li>Données santé synchronisées : selon votre utilisation, supprimées avec le compte.</li>
-        <li>Données d'abonnement : conservées selon les obligations comptables et légales applicables.</li>
+        <li>Données de compte : tant que le compte est actif, puis suppression sous <strong>30 jours</strong> après demande.</li>
+        <li>Données santé synchronisées : supprimées avec le compte.</li>
+        <li>Données faciales : voir section 3.4 (max. 90 scans).</li>
+        <li>Conversations coach : conservées tant que le compte est actif ; supprimables par vous.</li>
+        <li>Données d'abonnement : selon obligations comptables et légales applicables.</li>
       </ul>
 
-      <h2>7. Vos droits</h2>
+      <h2>9. Vos droits</h2>
       <p>
         Conformément au RGPD, vous disposez des droits d'accès, de rectification, d'effacement,
         de limitation, d'opposition et de portabilité. Vous pouvez retirer votre consentement
-        à tout moment via les réglages iOS ou en supprimant votre compte dans l'Application.
+        (HealthKit, IA, scan visage) via les réglages iOS ou dans l'Application (Paramètres → Confidentialité IA).
       </p>
       <p>
         Pour exercer vos droits : <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a>.
         Vous pouvez également introduire une réclamation auprès de la CNIL.
       </p>
 
-      <h2>8. Sécurité</h2>
+      <h2>10. Sécurité</h2>
       <p>
         Nous mettons en œuvre des mesures techniques et organisationnelles raisonnables
-        (chiffrement en transit, authentification sécurisée, accès restreint) pour protéger vos données.
+        (chiffrement en transit TLS, authentification Firebase, accès restreint) pour protéger vos données.
       </p>
 
-      <h2>9. Transferts hors UE</h2>
+      <h2>11. Transferts hors UE</h2>
       <p>
-        Certains prestataires peuvent traiter des données hors de l'Union européenne.
-        Dans ce cas, des garanties appropriées sont mises en place (clauses contractuelles types, etc.).
+        Certains prestataires (Firebase, Anthropic) peuvent traiter des données aux États-Unis.
+        Des garanties appropriées sont mises en place (clauses contractuelles types, etc.).
       </p>
 
-      <h2>10. Mineurs</h2>
+      <h2>12. Mineurs</h2>
       <p>
-        L'Application s'adresse aux personnes de 16 ans et plus. Si vous pensez qu'un mineur
+        L'Application s'adresse aux personnes de <strong>16 ans et plus</strong>. Si vous pensez qu'un mineur
         nous a transmis des données sans autorisation parentale, contactez-nous pour suppression.
       </p>
 
-      <h2>11. Modifications</h2>
+      <h2>13. Modifications</h2>
       <p>
         Nous pouvons mettre à jour cette politique. La date en tête de page sera modifiée en conséquence.
-        L'utilisation continue de l'Application vaut acceptation de la version en vigueur.
+        En cas de changement substantiel, nous pourrons vous demander un nouveau consentement in-app.
       </p>
 
-      <h2>12. Contact</h2>
+      <h2>14. Contact</h2>
       <p>
         Questions : <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a><br>
         Support : <a href="/support">useprocess.xyz/support</a>

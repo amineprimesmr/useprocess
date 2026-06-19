@@ -21,7 +21,12 @@ enum UserScopedStorage {
         "facescan.history",
         "bodyscan.latest",
         "bodyscan.history",
-        "subscription.complimentary.access"
+        "subscription.complimentary.access",
+        "privacy.ai_third_party",
+        "privacy.ai_third_party.date",
+        "privacy.face_capture",
+        "privacy.face_capture.date",
+        "privacy.face_ai"
     ]
 
     static func currentUserId() -> String? {

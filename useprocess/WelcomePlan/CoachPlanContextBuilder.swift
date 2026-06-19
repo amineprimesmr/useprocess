@@ -24,6 +24,10 @@ enum CoachPlanContextBuilder {
 
         if let today {
             lines.append("• Aujourd'hui (\(today.weekdayLabel)) : \(today.title)")
+            if let meal = plan.progress.validatedMeals[today.id],
+               let content = MealSuggestionContent.fromStored(meal) {
+                lines.append("  → Repas validé : \(content.name) (score \(content.protocolScore)/100)")
+            }
             if let training = today.training {
                 lines.append("  → Séance : \(training.sessionName) (\(training.durationMinutes) min)")
             }
@@ -36,6 +40,12 @@ enum CoachPlanContextBuilder {
 
         if !memory.planAdjustments.isEmpty {
             lines.append("• Derniers ajustements plan : \(memory.planAdjustments.prefix(2).joined(separator: " | "))")
+        }
+
+        let recentFeedbacks = plan.progress.mealFeedbacks.prefix(2)
+        if !recentFeedbacks.isEmpty {
+            let fb = recentFeedbacks.map { "\($0.feeling.rawValue) (\($0.rating)/5)" }.joined(separator: ", ")
+            lines.append("• Feedback repas récent : \(fb)")
         }
 
         if !memory.keyFacts.isEmpty {

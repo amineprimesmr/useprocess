@@ -88,7 +88,7 @@ struct WelcomePlanChatView: View {
             await viewModel.startIfNeeded()
         }
         .fullScreenCover(isPresented: $showFaceScan) {
-            FaceScanSessionView(
+            FaceScanPrivacyGateView(
                 onDismiss: { showFaceScan = false },
                 onComplete: { _ in showFaceScan = false }
             )

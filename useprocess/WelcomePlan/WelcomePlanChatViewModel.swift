@@ -356,7 +356,8 @@ final class WelcomePlanChatViewModel {
     private func buildGeneratedPlan() async -> FaceOriginPlan {
         var plan = WelcomePlanGenerator.generate(answers: answers, profile: profile)
 
-        if ClaudeConfiguration.isConfigured {
+        if ClaudeConfiguration.isConfigured,
+           ProcessPrivacyConsentStore.shared.canUseThirdPartyAI {
             if let enhanced = await enhanceSummaryWithClaude(plan: plan) {
                 plan.executiveSummary = enhanced
             }

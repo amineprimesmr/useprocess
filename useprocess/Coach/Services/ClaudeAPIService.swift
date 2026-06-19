@@ -28,6 +28,7 @@ enum CoachAPITransport {
         imageBase64: String? = nil,
         maxTokens: Int? = nil
     ) async throws -> String {
+        try assertPrivacyConsent(task: task, imageBase64: imageBase64)
         if activeMode == .remote {
             do {
                 return try await CoachRemoteService.complete(
@@ -110,6 +111,9 @@ enum CoachAPITransport {
         model: ClaudeModel,
         maxTokens: Int = 1200
     ) -> AsyncThrowingStream<String, Error> {
+        if let consentError = privacyConsentError(task: .chat, imageBase64: nil) {
+            return AsyncThrowingStream { $0.finish(throwing: consentError) }
+        }
         if activeMode == .remote {
             return CoachRemoteService.streamChat(
                 system: system,
@@ -129,6 +133,26 @@ enum CoachAPITransport {
             model: model,
             maxTokens: maxTokens
         )
+    }
+
+    private static func assertPrivacyConsent(task: CoachRemoteTask, imageBase64: String?) throws {
+        if let error = privacyConsentError(task: task, imageBase64: imageBase64) {
+            throw error
+        }
+    }
+
+    private static func privacyConsentError(task: CoachRemoteTask, imageBase64: String?) -> ProcessPrivacyConsentError? {
+        let store = ProcessPrivacyConsentStore.shared
+        if task == .faceScanVision {
+            return store.canSendFacePhotoToAI ? nil : .faceScanAINotAccepted
+        }
+        guard store.canUseThirdPartyAI else {
+            return .thirdPartyAINotAccepted
+        }
+        if imageBase64 != nil, !store.canUseThirdPartyAI {
+            return .thirdPartyAINotAccepted
+        }
+        return nil
     }
 }
 

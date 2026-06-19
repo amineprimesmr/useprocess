@@ -125,7 +125,7 @@ struct CoachChatView: View {
             Task { await viewModel.consumePendingPlanPromptIfNeeded() }
         }
         .fullScreenCover(isPresented: $showFaceScan) {
-            FaceScanSessionView(
+            FaceScanPrivacyGateView(
                 onDismiss: { showFaceScan = false },
                 onComplete: { _ in
                     showFaceScan = false
@@ -607,6 +607,12 @@ struct CoachChatView: View {
                     .combined(with: .offset(y: 10))
                     .combined(with: .scale(scale: 0.98, anchor: .bottomTrailing))
             )
+        } else if let meal = CoachMealMessageDetector.mealContent(from: message.text) {
+            CoachMealSuggestionMessageView(content: meal)
+                .transition(
+                    .opacity
+                        .combined(with: .offset(y: 8))
+                )
         } else {
             CoachFormattedText(
                 text: message.text,
