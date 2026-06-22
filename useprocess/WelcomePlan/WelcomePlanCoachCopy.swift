@@ -99,6 +99,16 @@ enum WelcomePlanCoachCopy {
     }
 
     private static func nutritionTransition(answers: [String: WelcomePlanAnswer]) -> String {
+        if let current = ProcessMealPlanConfiguration.readCurrentMeals(from: answers) {
+            let planType = ProcessMealPlanConfiguration.readTargetPlan(from: answers)
+            let target = planType.targetMealsPerDay
+            if current != target {
+                if current > target {
+                    return "Tu manges \(current) repas — on passe au \(planType.label). On structure ça dans ton plan."
+                }
+                return "On densifie ton \(planType.label) pour le debloat."
+            }
+        }
         let sleep = choice("sleep_quality", in: answers) ?? ""
         if sleep.contains("Mauvais") || sleep.contains("Très mauvais") {
             return "Tu dors mal — l'assiette va t'aider."

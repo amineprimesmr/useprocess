@@ -11,26 +11,26 @@ enum CoachPlanAutoApplier {
         var results: [String] = []
 
         if matchesOMAD(lower) {
-            applyOMAD(to: &plan)
-            results.append("Nutrition → 1 repas/jour (OMAD) sur tout le calendrier")
+            NutritionPlanType.omad.applyToPlan(&plan)
+            results.append("Nutrition → OMAD (1 repas / jour)")
             return results
         }
 
-        if matchesRemoveBreakfast(lower) {
-            applyRemoveBreakfast(to: &plan)
-            results.append("Petit-déjeuner supprimé — déjeuner + dîner conservés")
+        if matchesRemoveBreakfast(lower) || lower.contains("2mad") {
+            NutritionPlanType.twoMAD.applyToPlan(&plan)
+            results.append("Nutrition → 2MAD (déjeuner + dîner)")
             return results
         }
 
         if lower.contains("2 repas") || lower.contains("deux repas") {
-            applyTwoMeals(to: &plan)
-            results.append("Nutrition → 2 repas/jour (déjeuner + dîner)")
+            NutritionPlanType.twoMAD.applyToPlan(&plan)
+            results.append("Nutrition → 2MAD (déjeuner + dîner)")
             return results
         }
 
         if lower.contains("3 repas") || lower.contains("trois repas") {
-            restoreThreeMeals(to: &plan)
-            results.append("Nutrition → 3 repas/jour rétablis")
+            NutritionPlanType.threeMeals.applyToPlan(&plan)
+            results.append("Nutrition → 3 repas / jour")
             return results
         }
 
@@ -60,94 +60,6 @@ enum CoachPlanAutoApplier {
         if lower.contains("3 seances") || lower.contains("trois seances") { return 3 }
         if lower.contains("4 seances") || lower.contains("quatre seances") { return 4 }
         return nil
-    }
-
-    @MainActor
-    private static func applyOMAD(to plan: inout FaceOriginPlan) {
-        let dayIdx = plan.calendar.currentProgramDayIndex()
-        let currentDay = plan.calendar.day(globalIndex: dayIdx)
-        let baseDinner = currentDay?.nutrition.dinner ?? ""
-        let example = plan.nutritionProtocol.mealExamples.first(where: { !$0.isEmpty && !$0.hasPrefix("—") })
-            ?? "Steak + patate vapeur + beurre"
-        let rawMeal = baseDinner.isEmpty || baseDinner.hasPrefix("—") ? example : baseDinner
-        let meal = CoachFormattedText.sanitizeField(rawMeal) + " (repas unique — fenêtre 4–6 h)"
-
-        applyNutritionGlobally(plan: &plan) { nutrition in
-            nutrition.mealPlanStyle = .omad
-            nutrition.omadMeal = meal
-            nutrition.breakfast = ""
-            nutrition.lunch = ""
-            nutrition.dinner = ""
-            nutrition.snack = nil
-            if !nutrition.principles.contains(where: { $0.lowercased().contains("omad") }) {
-                nutrition.principles.insert("OMAD — 1 repas/jour", at: 0)
-            }
-        }
-        plan.nutritionProtocol.mealPlanStyle = .omad
-        plan.nutritionProtocol.dailyStructure = [
-            "OMAD — 1 repas unique dense par jour (fenêtre 4–6 h)",
-            "Hydratation + minéraux en dehors de la fenêtre repas"
-        ]
-        if !plan.nutritionProtocol.principles.contains(where: { $0.lowercased().contains("omad") }) {
-            plan.nutritionProtocol.principles.insert("Mode OMAD activé — adapte l'énergie et le sommeil", at: 0)
-        }
-        plan.lastUpdated = Date()
-    }
-
-    @MainActor
-    private static func applyRemoveBreakfast(to plan: inout FaceOriginPlan) {
-        applyNutritionGlobally(plan: &plan) { nutrition in
-            nutrition.breakfast = "— (supprimé)"
-        }
-        plan.nutritionProtocol.dailyStructure = [
-            "Déjeuner : protéines + tubercule",
-            "Dîner : protéines + légumes cuits"
-        ]
-        plan.lastUpdated = Date()
-    }
-
-    @MainActor
-    private static func applyTwoMeals(to plan: inout FaceOriginPlan) {
-        applyNutritionGlobally(plan: &plan) { nutrition in
-            nutrition.mealPlanStyle = .twoMeals
-            nutrition.omadMeal = nil
-            nutrition.breakfast = ""
-            if nutrition.lunch.isEmpty || nutrition.lunch.hasPrefix("—") {
-                nutrition.lunch = "Déjeuner dense — protéines + tubercule"
-            }
-            if nutrition.dinner.isEmpty || nutrition.dinner.hasPrefix("—") {
-                nutrition.dinner = "Dîner protéines + légumes cuits"
-            }
-            nutrition.snack = nil
-        }
-        plan.nutritionProtocol.mealPlanStyle = .twoMeals
-        plan.lastUpdated = Date()
-    }
-
-    @MainActor
-    private static func restoreThreeMeals(to plan: inout FaceOriginPlan) {
-        let examples = plan.nutritionProtocol.mealExamples
-        let e0 = examples.indices.contains(0) ? examples[0] : "Œufs + patate douce"
-        let e1 = examples.indices.contains(1) ? examples[1] : "Steak + tubercule vapeur"
-        let e2 = examples.indices.contains(2) ? examples[2] : "Poisson + légumes cuits"
-        applyNutritionGlobally(plan: &plan) { nutrition in
-            nutrition.mealPlanStyle = .standard
-            nutrition.omadMeal = nil
-            if nutrition.breakfast.isEmpty || nutrition.breakfast.hasPrefix("—") { nutrition.breakfast = e0 }
-            if nutrition.lunch.isEmpty || nutrition.lunch.hasPrefix("—") { nutrition.lunch = e1 }
-            if nutrition.dinner.isEmpty || nutrition.dinner.hasPrefix("—") { nutrition.dinner = e2 }
-        }
-        plan.nutritionProtocol.mealPlanStyle = .standard
-        plan.lastUpdated = Date()
-    }
-
-    @MainActor
-    private static func applyNutritionGlobally(plan: inout FaceOriginPlan, update: (inout OriginDayNutrition) -> Void) {
-        for weekIndex in plan.calendar.weeks.indices {
-            for dayIndex in plan.calendar.weeks[weekIndex].days.indices {
-                update(&plan.calendar.weeks[weekIndex].days[dayIndex].nutrition)
-            }
-        }
     }
 
     // MARK: - Coach response

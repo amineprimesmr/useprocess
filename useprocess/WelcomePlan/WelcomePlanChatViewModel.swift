@@ -16,6 +16,8 @@ final class WelcomePlanChatViewModel {
     var errorMessage: String?
     var pendingFaceScan = false
     var showsEnterButton = false
+    private(set) var pendingAnswerDraft: WelcomePlanAnswer?
+    private(set) var answerDraftRevision = 0
 
     private(set) var currentQuestion: WelcomePlanQuestion?
     private var activeQuestions: [WelcomePlanQuestion] = []
@@ -56,6 +58,72 @@ final class WelcomePlanChatViewModel {
         return WelcomePlanQuestionBank.phaseLabel(for: phase)
     }
 
+    var canEditHistory: Bool {
+        !isComplete
+            && !isGenerating
+            && !isSubmittingAnswer
+            && !isMessageAnimating
+            && currentQuestion != nil
+    }
+
+    func consumeAnswerDraft() -> WelcomePlanAnswer? {
+        defer { pendingAnswerDraft = nil }
+        return pendingAnswerDraft
+    }
+
+    func questionIdForHistoryMessage(at index: Int) -> String? {
+        guard messages.indices.contains(index), messages[index].role == .user else { return nil }
+        if let questionId = messages[index].questionId { return questionId }
+
+        let userOrdinal = messages.prefix(index + 1).filter { $0.role == .user }.count - 1
+        guard userOrdinal >= 0 else { return nil }
+        let ordered = orderedAnsweredQuestionIds()
+        guard userOrdinal < ordered.count else { return nil }
+        return ordered[userOrdinal]
+    }
+
+    func reopenQuestion(questionId: String) async {
+        guard canEditHistory else { return }
+        guard answers[questionId] != nil else { return }
+
+        let ordered = orderedAnsweredQuestionIds()
+        guard let startIndex = ordered.firstIndex(of: questionId) else { return }
+
+        typewriterTask?.cancel()
+        isMessageAnimating = false
+        pendingTypewriterMessageID = nil
+        pendingTypewriterText = nil
+
+        let previousAnswer = answers[questionId]
+        let removedQuestionIds = Array(ordered[startIndex...])
+        for removedId in removedQuestionIds {
+            answers.removeValue(forKey: removedId)
+        }
+        WelcomePlanStore.shared.removeAnswers(for: removedQuestionIds)
+
+        if let messageIndex = messages.enumerated().first(where: { pair in
+            pair.element.role == .user && questionIdForHistoryMessage(at: pair.offset) == questionId
+        })?.offset {
+            withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+                messages = Array(messages.prefix(messageIndex))
+            }
+        }
+
+        activeQuestions = WelcomePlanQuestionBank.activeQuestions(answers: answers)
+        guard let questionIndex = activeQuestions.firstIndex(where: { $0.id == questionId }) else { return }
+
+        currentIndex = questionIndex
+        currentQuestion = activeQuestions[questionIndex]
+        lastPhase = questionIndex > 0 ? activeQuestions[questionIndex - 1].phase : nil
+        pendingAnswerDraft = previousAnswer
+        answerDraftRevision += 1
+        pendingFaceScan = answers["optional_face_scan"]?.choiceIds.first == "yes"
+        skipNextCoachIntro = true
+        isQuestionReadyForAnswers = true
+
+        HapticManager.shared.impact(.light)
+    }
+
     func bind(profile: UnifiedUserProfile?) {
         self.profile = profile
         answers = WelcomePlanStore.shared.questionnaire.answers
@@ -72,7 +140,8 @@ final class WelcomePlanChatViewModel {
         currentQuestion = question(at: currentIndex)
 
         if let existingPlan = WelcomePlanStore.shared.plan,
-           WelcomePlanStore.shared.isQuestionnaireComplete || currentIndex >= activeQuestions.count {
+           WelcomePlanStore.shared.isQuestionnaireComplete,
+           WelcomePlanQuestionBank.isFullyAnswered(answers: answers) {
             generatedPlan = existingPlan
             if !answers.isEmpty {
                 restoreConversationHistory()
@@ -158,19 +227,17 @@ final class WelcomePlanChatViewModel {
         )
     }
 
-    func finishAndEnterApp(previewMode: Bool = false, onComplete: @escaping () -> Void) async {
+    func finishAndEnterApp(onComplete: @escaping () -> Void) async {
         guard let plan = generatedPlan else { return }
-        if !previewMode {
-            WelcomePlanStore.shared.markQuestionnaireComplete()
-            WelcomePlanStore.shared.savePlan(plan)
-            await WelcomePlanProfileSync.apply(
-                answers: answers,
-                plan: plan,
-                profileService: UnifiedProfileService.shared
-            )
-            AppSession.shared.completeWelcomePlanChat()
-            CoachConversationStore.stripInjectedProgramSummaryMessages()
-        }
+        WelcomePlanStore.shared.markQuestionnaireComplete()
+        WelcomePlanStore.shared.savePlan(plan)
+        await WelcomePlanProfileSync.apply(
+            answers: answers,
+            plan: plan,
+            profileService: UnifiedProfileService.shared
+        )
+        AppSession.shared.completeWelcomePlanChat()
+        CoachConversationStore.stripInjectedProgramSummaryMessages()
         onComplete()
     }
 
@@ -195,7 +262,7 @@ final class WelcomePlanChatViewModel {
             messages.append(
                 .init(role: .assistant, text: question.prompt, layoutAnchorText: question.prompt)
             )
-            messages.append(.init(role: .user, text: displayLabel(for: question, answer: answer)))
+            messages.append(.init(role: .user, text: displayLabel(for: question, answer: answer), questionId: question.id))
 
             simulated[question.id] = answer
             questions = WelcomePlanQuestionBank.activeQuestions(answers: simulated)
@@ -214,6 +281,22 @@ final class WelcomePlanChatViewModel {
                 .joined(separator: ", ")
         }
         return "—"
+    }
+
+    private func orderedAnsweredQuestionIds() -> [String] {
+        var simulated: [String: WelcomePlanAnswer] = [:]
+        var questions = WelcomePlanQuestionBank.activeQuestions(answers: simulated)
+        var ordered: [String] = []
+
+        while let nextIndex = questions.firstIndex(where: { simulated[$0.id] == nil }),
+              let answer = answers[questions[nextIndex].id] {
+            let question = questions[nextIndex]
+            ordered.append(question.id)
+            simulated[question.id] = answer
+            questions = WelcomePlanQuestionBank.activeQuestions(answers: simulated)
+        }
+
+        return ordered
     }
 
     private func firstUnansweredIndex() -> Int {
@@ -244,7 +327,7 @@ final class WelcomePlanChatViewModel {
         currentQuestion = nil
 
         withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
-            appendUserMessage(display)
+            appendUserMessage(display, questionId: question.id)
         }
 
         await advanceFlow()
@@ -445,8 +528,8 @@ final class WelcomePlanChatViewModel {
         }
     }
 
-    private func appendUserMessage(_ text: String) {
-        messages.append(.init(role: .user, text: text))
+    private func appendUserMessage(_ text: String, questionId: String) {
+        messages.append(.init(role: .user, text: text, questionId: questionId))
     }
 
     private func appendAssistantMessage(_ text: String) async {

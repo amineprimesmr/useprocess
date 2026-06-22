@@ -114,6 +114,10 @@ final class VariableBlurUIView: UIVisualEffectView {
         }
 
         let rect = CGRect(x: 0, y: 0, width: width, height: height)
-        return CIContext().createCGImage(gradient.outputImage!, from: rect)!
+        return VariableBlurUIView.sharedContext.createCGImage(gradient.outputImage!, from: rect)!
     }
+}
+
+extension VariableBlurUIView {
+    fileprivate static let sharedContext = CIContext(options: [.useSoftwareRenderer: false])
 }

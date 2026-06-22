@@ -17,6 +17,7 @@ struct PaywallView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let onComplete: (() -> Void)?
+    let onBack: (() -> Void)?
 
     /// Plan choisi dans le paywall (source de vérité unique).
     @State private var selectedBillingPlan: SubscriptionBillingPlan = .annual
@@ -32,8 +33,9 @@ struct PaywallView: View {
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
 
-    init(onComplete: (() -> Void)? = nil) {
+    init(onComplete: (() -> Void)? = nil, onBack: (() -> Void)? = nil) {
         self.onComplete = onComplete
+        self.onBack = onBack
     }
 
     private var selectedPlanAvailableOnStore: Bool {
@@ -136,6 +138,22 @@ struct PaywallView: View {
 
     private var topChrome: some View {
         HStack {
+            if let onBack {
+                Button {
+                    HapticManager.shared.impact(.light)
+                    onBack()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 36, height: 36)
+                }
+                .processGlassIconButtonStyle()
+                .accessibilityLabel("Retour")
+            } else {
+                Spacer(minLength: 0)
+            }
+
             Spacer(minLength: 0)
 
             Button {
@@ -147,9 +165,7 @@ struct PaywallView: View {
                     .foregroundStyle(Color.primary)
                     .frame(width: 36, height: 36)
             }
-            .buttonStyle(.plain)
-            .processGlassCircle()
-            .buttonStyle(ProcessGlassPressStyle())
+            .processGlassIconButtonStyle()
             .accessibilityLabel("Options et informations légales")
             .popover(isPresented: $showsPaywallLegalMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
                 paywallLegalMenuPopover
@@ -170,15 +186,7 @@ struct PaywallView: View {
     }
 
     private var paywallTitleText: String {
-        switch selectedBillingPlan {
-        case .annual:
-            if subscriptionService.trialInfo(for: .annual).isActiveOffer {
-                return "3 jours gratuits sur l'offre annuelle"
-            }
-            return "Choisissez l'offre annuelle"
-        case .monthly:
-            return "Abonnement mensuel sans essai"
-        }
+        "Commencez votre transformation aujourd'hui avec Process"
     }
 
     // MARK: - Bas (forfaits + CTA)
@@ -208,6 +216,9 @@ struct PaywallView: View {
 
             PaywallBevelContinueButton(
                 title: paywallContinueButtonTitle,
+                subtitle: selectedTrialInfo.isActiveOffer
+                    ? "Aucun paiement aujourd'hui, sans engagement."
+                    : nil,
                 isLoading: isPurchasing,
                 isEnabled: paywallContinueButtonEnabled
             ) {
@@ -215,25 +226,12 @@ struct PaywallView: View {
             }
             .padding(.top, -4)
 
-            if selectedTrialInfo.isActiveOffer {
-                Text("Aucun paiement aujourd'hui, sans engagement.")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
-                    .multilineTextAlignment(.center)
-            }
-
             if !subscriptionService.isLoading, !selectedPlanAvailableOnStore {
                 Text("Cette offre n'est pas encore disponible sur l'App Store. Réessayez dans quelques minutes.")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.red.opacity(0.85))
                     .multilineTextAlignment(.center)
             }
-
-            paywallSubscriptionLegalFooter
-
-            #if DEBUG
-            paywallDemoAccessButton
-            #endif
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 24)
@@ -329,58 +327,6 @@ struct PaywallView: View {
             .first(where: { $0.isKeyWindow })?
             .safeAreaInsets.top ?? 0
     }
-
-    private var paywallSubscriptionLegalFooter: some View {
-        let product = subscriptionService.displayProduct(for: selectedBillingPlan)
-
-        return VStack(spacing: 8) {
-            Text(subscriptionLegalSummary(for: product))
-                .font(.system(size: 11, weight: .regular))
-                .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 14) {
-                Button("Politique de confidentialité") {
-                    legalSafariURL = privacyURL
-                }
-                Text("·")
-                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
-                Button("Conditions d'utilisation") {
-                    legalSafariURL = termsURL
-                }
-            }
-            .font(.system(size: 11, weight: .semibold))
-            .buttonStyle(.plain)
-            .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
-        }
-        .padding(.top, 2)
-    }
-
-    private func subscriptionLegalSummary(for product: SubscriptionProductDisplay) -> String {
-        let length = selectedBillingPlan == .annual ? "1 an" : "1 mois"
-        let trialPrefix = selectedTrialInfo.isActiveOffer
-            ? " Essai gratuit de \(selectedTrialInfo.days) jours, puis "
-            : " "
-        return "Abonnement auto-renouvelable « \(product.displayName) » (\(length)) — \(product.displayPrice).\(trialPrefix)Renouvellement automatique jusqu'à annulation dans Réglages › Apple ID › Abonnements."
-    }
-
-    #if DEBUG
-    private var paywallDemoAccessButton: some View {
-        Button {
-            HapticManager.shared.impact(.light)
-            subscriptionService.grantComplimentaryAccess()
-            completePaywallFlow()
-        } label: {
-            Text("Mode démo")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.45))
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 4)
-        .accessibilityLabel("Activer le mode démo développeur")
-    }
-    #endif
 
     // MARK: - Menu légal
 

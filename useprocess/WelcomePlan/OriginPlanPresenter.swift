@@ -14,9 +14,142 @@ enum OriginPlanPresenter {
         manualJournalTasks(from: day)
     }
 
+    static func journalSections(for day: OriginProgramDay, calendar: OriginProgramCalendar) -> [JournalSection] {
+        chronologicalPhases(for: day, calendar: calendar).map { phase in
+            JournalSection(
+                id: phase.id,
+                title: phase.title,
+                subtitle: phase.timeHint,
+                tasks: phase.checklistTasks
+            )
+        }
+    }
+
+    // MARK: - Timeline chronologique (page Plan)
+
+    enum PlanDayPhaseKind: Equatable {
+        case checklist([OriginPlanTask])
+        case meals
+        case training(OriginDayTraining)
+        case autoTracking
+    }
+
+    struct PlanDayPhase: Identifiable, Equatable {
+        let id: String
+        let title: String
+        var timeHint: String?
+        let kind: PlanDayPhaseKind
+
+        var checklistTasks: [OriginPlanTask] {
+            if case .checklist(let tasks) = kind { return tasks }
+            return []
+        }
+
+        var isActionOnly: Bool {
+            switch kind {
+            case .checklist: return false
+            case .meals, .training, .autoTracking: return true
+            }
+        }
+    }
+
+    /// Ordre logique d'une journée : hier soir → matin → repas → sport → mouvement → posture → visage → soir.
+    static func chronologicalPhases(
+        for day: OriginProgramDay,
+        calendar: OriginProgramCalendar,
+        includeAutoTracking: Bool = false
+    ) -> [PlanDayPhase] {
+        let posture = day.posture.filter { !isAutomaticStepsTask($0) }
+        var phases: [PlanDayPhase] = []
+
+        let lastNight = lastNightJournalTasks(dayId: day.id)
+        if !lastNight.isEmpty {
+            phases.append(.init(
+                id: "lastNight",
+                title: "Hier soir",
+                timeHint: "Avant le coucher",
+                kind: .checklist(lastNight)
+            ))
+        }
+
+        if !day.morning.isEmpty {
+            phases.append(.init(
+                id: "morning",
+                title: "Matin",
+                timeHint: "Au réveil",
+                kind: .checklist(day.morning)
+            ))
+        }
+
+        phases.append(.init(
+            id: "meals",
+            title: "Repas",
+            timeHint: mealPhaseHint(for: day),
+            kind: .meals
+        ))
+
+        if let training = day.training {
+            phases.append(.init(
+                id: "training",
+                title: "Entraînement",
+                timeHint: "\(training.durationMinutes) min · \(training.sessionName)",
+                kind: .training(training)
+            ))
+        }
+
+        if includeAutoTracking {
+            phases.append(.init(
+                id: "movement",
+                title: "Mouvement",
+                timeHint: "Suivi automatique · Santé",
+                kind: .autoTracking
+            ))
+        }
+
+        if !posture.isEmpty {
+            phases.append(.init(
+                id: "posture",
+                title: "Posture",
+                timeHint: "Dans la journée",
+                kind: .checklist(posture)
+            ))
+        }
+
+        if !day.face.isEmpty {
+            phases.append(.init(
+                id: "face",
+                title: "Visage",
+                timeHint: "Routine",
+                kind: .checklist(day.face)
+            ))
+        }
+
+        if !day.evening.isEmpty {
+            phases.append(.init(
+                id: "evening",
+                title: "Soir",
+                timeHint: nightRangeLabel(for: day, calendar: calendar) ?? "Avant le coucher",
+                kind: .checklist(day.evening)
+            ))
+        }
+
+        return phases
+    }
+
+    private static func mealPhaseHint(for day: OriginProgramDay) -> String {
+        if day.nutrition.isOMAD { return "Un repas principal" }
+        let configured = [
+            day.nutrition.breakfast.isEmpty ? nil : "Petit-déj",
+            day.nutrition.lunch.isEmpty ? nil : "Déjeuner",
+            day.nutrition.dinner.isEmpty ? nil : "Dîner"
+        ].compactMap { $0 }
+        if configured.isEmpty { return "Valide tes repas du jour" }
+        return configured.joined(separator: " · ")
+    }
+
     static func manualJournalTasks(from day: OriginProgramDay) -> [OriginPlanTask] {
         let posture = day.posture.filter { !isAutomaticStepsTask($0) }
-        return lastNightJournalTasks(dayId: day.id) + day.morning + posture + day.evening
+        return lastNightJournalTasks(dayId: day.id) + day.morning + posture + day.face + day.evening
     }
 
     static func isAutomaticStepsTask(_ task: OriginPlanTask) -> Bool {
@@ -48,16 +181,6 @@ enum OriginPlanPresenter {
                 durationMinutes: nil,
                 isOptional: false
             )
-        ]
-    }
-
-    static func journalSections(for day: OriginProgramDay, calendar: OriginProgramCalendar) -> [JournalSection] {
-        let posture = day.posture.filter { !isAutomaticStepsTask($0) }
-        return [
-            JournalSection(id: "lastNight", title: "Hier soir", subtitle: nil, tasks: lastNightJournalTasks(dayId: day.id)),
-            JournalSection(id: "morning", title: "Matin", subtitle: nil, tasks: day.morning),
-            JournalSection(id: "posture", title: "Posture", subtitle: nil, tasks: posture),
-            JournalSection(id: "night", title: "Nuit", subtitle: nightRangeLabel(for: day, calendar: calendar), tasks: day.evening)
         ]
     }
 
@@ -105,6 +228,11 @@ enum OriginPlanPresenter {
             return .editable(day: day, date: dayStart)
         }
         return .outsidePlan(date: dayStart)
+    }
+
+    /// Bandeau journal : 7 jours avant → 7 jours après aujourd'hui, limité aux jours du protocole.
+    static func journalStripDates(in plan: FaceOriginPlan, relativeTo today: Date = Date()) -> [Date] {
+        journalStripDates(relativeTo: today).filter { programDay(in: plan, for: $0) != nil }
     }
 
     /// Bandeau journal : 7 jours avant → 7 jours après aujourd'hui.

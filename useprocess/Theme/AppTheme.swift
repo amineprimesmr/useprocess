@@ -74,6 +74,13 @@ struct AppTheme {
     var inverseText: Color {
         isDark ? .black : .white
     }
+
+    /// Animation « bulle pensée » coach (TrueDepth thinking) — blanc en sombre, noir en clair.
+    var chatThinkingBlobColor: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? .white : .black
+        })
+    }
 }
 
 private struct AppThemeKey: EnvironmentKey {

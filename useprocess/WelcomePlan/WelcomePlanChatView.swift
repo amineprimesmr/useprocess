@@ -1,7 +1,7 @@
 import SwiftUI
+import UIKit
 
 struct WelcomePlanChatView: View {
-    var previewMode: Bool = false
     var embeddedInMainApp: Bool = false
     var selectedSection: Binding<ProcessMainSection>?
     var onComplete: () -> Void
@@ -11,7 +11,7 @@ struct WelcomePlanChatView: View {
     @State private var viewModel = WelcomePlanChatViewModel()
     @State private var multiSelection: Set<String> = []
     @State private var textDraft = ""
-    @State private var timeDraft = Calendar.current.date(from: DateComponents(hour: 22, minute: 30)) ?? .now
+    @State private var timeDraft = Calendar.current.date(from: DateComponents(hour: 0, minute: 0)) ?? .now
     @State private var showFaceScan = false
     @State private var revealedAnswerIDs: Set<String> = []
 
@@ -76,9 +76,10 @@ struct WelcomePlanChatView: View {
             .mask(topFadeMask)
             .clipped()
             .onChange(of: viewModel.currentQuestion?.id) { _, _ in
-                multiSelection = []
-                textDraft = ""
-                revealedAnswerIDs = []
+                applyAnswerDraftIfNeeded()
+            }
+            .onChange(of: viewModel.answerDraftRevision) { _, _ in
+                applyAnswerDraftIfNeeded()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -164,7 +165,11 @@ struct WelcomePlanChatView: View {
         VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
             ForEach(historyMessages, id: \.message.id) { item in
                 let distance = (viewModel.messages.count - 1) - item.index
-                depthMessageRow(item.message, distanceFromActive: distance)
+                depthMessageRow(
+                    item.message,
+                    distanceFromActive: distance,
+                    onEdit: historyEditAction(for: item.message, at: item.index, distanceFromActive: distance)
+                )
             }
         }
         .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .bottomLeading)
@@ -175,8 +180,16 @@ struct WelcomePlanChatView: View {
     @ViewBuilder
     private func activeSlot(layout: ChatLayoutMetrics, bottomPadding: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
-            if let active = activeMessage {
-                depthMessageRow(active, distanceFromActive: 0)
+            HStack(alignment: .top, spacing: 0) {
+                if viewModel.isMessageAnimating {
+                    CoachThinkingDotsView()
+                        .frame(width: 36)
+                }
+
+                if let active = activeMessage {
+                    depthMessageRow(active, distanceFromActive: 0)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             if viewModel.showsAnswerOptions, let question = viewModel.currentQuestion {
@@ -274,7 +287,8 @@ struct WelcomePlanChatView: View {
     @ViewBuilder
     private func depthMessageRow(
         _ message: OnboardingProfileChatMessage,
-        distanceFromActive: Int
+        distanceFromActive: Int,
+        onEdit: (() -> Void)? = nil
     ) -> some View {
         let appearance = OnboardingProfileChatDepthStyle.appearance(
             distanceFromActive: distanceFromActive,
@@ -319,11 +333,78 @@ struct WelcomePlanChatView: View {
                     .scaleEffect(appearance.scale, anchor: .leading)
                     .blur(radius: appearance.blur)
                     .opacity(visibleText.isEmpty ? 0 : appearance.opacity)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onEdit?()
+                    }
                 }
             }
             .animation(OnboardingProfileChatDepthStyle.historySpring, value: distanceFromActive)
             .animation(nil, value: message.text)
         }
+    }
+
+    private func historyEditAction(
+        for message: OnboardingProfileChatMessage,
+        at index: Int,
+        distanceFromActive: Int
+    ) -> (() -> Void)? {
+        guard distanceFromActive > 0,
+              message.role == .user,
+              viewModel.canEditHistory,
+              let questionId = viewModel.questionIdForHistoryMessage(at: index) else { return nil }
+
+        return {
+            Task { await viewModel.reopenQuestion(questionId: questionId) }
+        }
+    }
+
+    private func applyAnswerDraftIfNeeded() {
+        multiSelection = []
+        textDraft = ""
+        revealedAnswerIDs = []
+
+        guard let question = viewModel.currentQuestion else { return }
+
+        if let draft = viewModel.consumeAnswerDraft() {
+            switch question.kind {
+            case .multiChoice:
+                multiSelection = Set(draft.choiceIds)
+            case .text:
+                textDraft = draft.textValue ?? ""
+            case .time:
+                if let timeValue = draft.timeValue {
+                    timeDraft = dateFromTimeValue(timeValue) ?? defaultTime(for: question)
+                } else {
+                    timeDraft = defaultTime(for: question)
+                }
+            case .singleChoice, .yesNo, .info:
+                break
+            }
+            revealedAnswerIDs = Set(WelcomePlanChatAnswerReveal.orderedIDs(for: question))
+        } else if question.kind == .time {
+            timeDraft = defaultTime(for: question)
+        }
+    }
+
+    private func defaultTime(for question: WelcomePlanQuestion) -> Date {
+        switch question.id {
+        case "bedtime":
+            return dateFromTimeValue("00:00") ?? .now
+        case "wake_time":
+            return dateFromTimeValue("08:30") ?? .now
+        default:
+            return dateFromTimeValue("22:30") ?? .now
+        }
+    }
+
+    private func dateFromTimeValue(_ timeValue: String) -> Date? {
+        let parts = timeValue.split(separator: ":")
+        guard parts.count == 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1]) else { return nil }
+        let snappedMinute = (minute / 5) * 5
+        return Calendar.current.date(from: DateComponents(hour: hour, minute: snappedMinute))
     }
 
     // MARK: - Answers
@@ -393,9 +474,7 @@ struct WelcomePlanChatView: View {
                 }
 
             case .time:
-                DatePicker("Heure", selection: $timeDraft, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
+                WelcomePlanFiveMinuteTimePicker(selection: $timeDraft)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("time_picker"))
@@ -412,7 +491,10 @@ struct WelcomePlanChatView: View {
                     .foregroundStyle(OnboardingTheme.primaryText)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)
-                    .processGlassEffect(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .processGlassEffect(
+                        in: RoundedRectangle(cornerRadius: 20, style: .continuous),
+                        interactive: false
+                    )
                     .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("text_field"))
 
                 HStack(spacing: 12) {
@@ -455,9 +537,7 @@ struct WelcomePlanChatView: View {
                 .padding(.vertical, 16)
                 .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerButtonShape)
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.55 : 1)
         .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("validate"))
@@ -468,12 +548,12 @@ struct WelcomePlanChatView: View {
             HapticManager.shared.impact(.medium)
             Task {
                 if viewModel.pendingFaceScan {
-                    await viewModel.finishAndEnterApp(previewMode: previewMode) {
+                    await viewModel.finishAndEnterApp {
                         showFaceScan = true
                         onComplete()
                     }
                 } else {
-                    await viewModel.finishAndEnterApp(previewMode: previewMode, onComplete: onComplete)
+                    await viewModel.finishAndEnterApp(onComplete: onComplete)
                 }
             }
         } label: {
@@ -484,16 +564,11 @@ struct WelcomePlanChatView: View {
                 .padding(.vertical, 16)
                 .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerButtonShape)
     }
 
     private var enterButtonTitle: String {
-        if previewMode {
-            return viewModel.pendingFaceScan ? "Terminer & lancer le scan" : "Terminer la preview"
-        }
-        return viewModel.pendingFaceScan ? "Entrer & lancer le scan" : "Entrer dans Process"
+        viewModel.pendingFaceScan ? "Entrer & lancer le scan" : "Entrer dans Process"
     }
 
     // MARK: - Buttons
@@ -517,9 +592,7 @@ struct WelcomePlanChatView: View {
                 .padding(.vertical, 16)
                 .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerButtonShape)
         .disabled(viewModel.isSubmittingAnswer)
     }
 
@@ -549,15 +622,13 @@ struct WelcomePlanChatView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
+        .processGlassButton(in: answerButtonShape)
         .overlay {
             if isSelected {
                 answerButtonShape
                     .strokeBorder(OnboardingTheme.primaryText.opacity(0.22), lineWidth: 1)
             }
         }
-        .buttonStyle(ProcessGlassPressStyle())
         .opacity(isSelected ? 1 : 0.82)
         .disabled(viewModel.isSubmittingAnswer)
     }
@@ -581,12 +652,46 @@ struct WelcomePlanChatView: View {
                 .padding(.vertical, 16)
                 .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerButtonShape)
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.55 : 1)
         .padding(.top, 4)
+    }
+}
+
+private struct WelcomePlanFiveMinuteTimePicker: UIViewRepresentable {
+    @Binding var selection: Date
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(selection: $selection)
+    }
+
+    func makeUIView(context: Context) -> UIDatePicker {
+        let picker = UIDatePicker()
+        picker.datePickerMode = .time
+        picker.preferredDatePickerStyle = .wheels
+        picker.minuteInterval = 5
+        picker.date = selection
+        picker.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
+        return picker
+    }
+
+    func updateUIView(_ picker: UIDatePicker, context: Context) {
+        if abs(picker.date.timeIntervalSince(selection)) > 1 {
+            picker.date = selection
+        }
+    }
+
+    final class Coordinator: NSObject {
+        @Binding var selection: Date
+
+        init(selection: Binding<Date>) {
+            _selection = selection
+        }
+
+        @objc func changed(_ picker: UIDatePicker) {
+            selection = picker.date
+        }
     }
 }
 

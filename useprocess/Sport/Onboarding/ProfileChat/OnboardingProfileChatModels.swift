@@ -16,17 +16,21 @@ struct OnboardingProfileChatMessage: Identifiable, Equatable {
     let text: String
     /// Texte complet pour figer la mise en page pendant le typewriter.
     let layoutAnchorText: String?
+    /// Question associée quand il s'agit d'une réponse utilisateur (édition depuis l'historique).
+    let questionId: String?
 
     init(
         id: UUID = UUID(),
         role: OnboardingProfileChatRole,
         text: String,
-        layoutAnchorText: String? = nil
+        layoutAnchorText: String? = nil,
+        questionId: String? = nil
     ) {
         self.id = id
         self.role = role
         self.text = text
         self.layoutAnchorText = layoutAnchorText
+        self.questionId = questionId
     }
 }
 

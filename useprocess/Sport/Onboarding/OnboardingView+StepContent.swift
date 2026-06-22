@@ -143,6 +143,8 @@ extension SportOnboardingView {
         case .notificationPermission:
             NotificationPermissionStepView(onComplete: nextStep, onBack: previousStep)
                 .environmentObject(permissionsManager)
+        case .transformationPreview:
+            TransformationPreviewStepView(onComplete: nextStep, onBack: previousStep)
         case .programCreation:
             EmptyView()
                 .onAppear { skipTransientStep() }
@@ -150,7 +152,8 @@ extension SportOnboardingView {
             PaywallView(
                 onComplete: {
                     Task { await completeOnboarding() }
-                }
+                },
+                onBack: previousStep
             )
         case .complete:
             Color.clear

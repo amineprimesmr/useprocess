@@ -12,6 +12,14 @@ private enum CoachAttachmentSheet: Identifiable {
     }
 }
 
+private struct CoachBottomChromeHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 110
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct CoachChatView: View {
     @Binding var selectedSection: ProcessMainSection
     var onOpenProfile: () -> Void
@@ -25,13 +33,11 @@ struct CoachChatView: View {
     @State private var thinkingBlobStart = Date.now
     @State private var showAttachmentMenu = false
     @State private var activeAttachmentSheet: CoachAttachmentSheet?
-    @State private var showWelcomePlanPreview = false
-    @State private var welcomePlanPreviewID = UUID()
     @State private var messageContextMenu: CoachUserMessageContextState?
-    @State private var thinkingResponseAnchor: CGRect = .zero
     @State private var showFaceScan = false
     @State private var isSidebarExpanded = false
     @State private var planStore = WelcomePlanStore.shared
+    @State private var bottomChromeHeight: CGFloat = 110
 
     private let messageFont = Font.system(size: 17, weight: .regular)
     private let messageLineSpacing: CGFloat = 4
@@ -50,7 +56,7 @@ struct CoachChatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
-            guard completed, !showWelcomePlanPreview else { return }
+            guard completed else { return }
             Task {
                 viewModel.bind(profile: profileService.currentProfile)
                 await viewModel.loadThreadIfNeeded()
@@ -59,58 +65,77 @@ struct CoachChatView: View {
     }
 
     private func dismissWelcomePlanChat() {
-        if showWelcomePlanPreview {
-            WelcomePlanStore.shared.endPreviewSession(restore: true)
-            showWelcomePlanPreview = false
-            Task {
-                viewModel.bind(profile: profileService.currentProfile)
-                await viewModel.loadThreadIfNeeded()
-            }
-        } else {
-            Task {
-                viewModel.bind(profile: profileService.currentProfile)
-                await viewModel.loadThreadIfNeeded()
-            }
+        Task {
+            viewModel.bind(profile: profileService.currentProfile)
+            await viewModel.loadThreadIfNeeded()
         }
     }
 
     private let coachSidebarWidth: CGFloat = 300
 
-    /// Questionnaire accessible uniquement tant qu'aucun protocole n'existe encore.
-    private var showsWelcomePlanMenuEntry: Bool {
-        planStore.plan == nil && !planStore.isQuestionnaireComplete
-    }
-
-    private var welcomePlanMenuAction: (() -> Void)? {
-        guard showsWelcomePlanMenuEntry else { return nil }
-        return { openWelcomePlanPreview() }
-    }
-
-    private var hasWelcomePlan: Bool {
-        planStore.plan != nil
-    }
-
     private var coachMainContent: some View {
-        CustomSideMenu(
-            isEnabled: viewModel.isSidebarEnabled,
-            sideBarWidth: coachSidebarWidth,
-            isExpanded: $isSidebarExpanded
-        ) { _ in
-            coachSidebar
-        } content: { _ in
-            coachMainPane
+        ZStack(alignment: .bottom) {
+            CustomSideMenu(
+                isEnabled: viewModel.isSidebarEnabled,
+                sideBarWidth: coachSidebarWidth,
+                isExpanded: $isSidebarExpanded
+            ) { _ in
+                coachSidebar
+            } content: { _ in
+                chatScrollLayer
+            }
+            .overlay {
+                coachMessageContextOverlay
+            }
+            .ios26SafeAnimation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
+
+            coachBottomAccessoryView
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(key: CoachBottomChromeHeightKey.self, value: proxy.size.height)
+                    }
+                }
+                .zIndex(5)
         }
+        .onPreferenceChange(CoachBottomChromeHeightKey.self) { height in
+            if height > 0 {
+                bottomChromeHeight = height
+            }
+        }
+        .overlay {
+            if showAttachmentMenu,
+               !viewModel.showsHomeInsteadOfInput,
+               !viewModel.isVoiceRecording,
+               !viewModel.isVoiceExiting {
+                Color.black.opacity(0.001)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showAttachmentMenu = false
+                    }
+            }
+        }
+        .overlay(alignment: .bottomLeading) {
+            if showAttachmentMenu,
+               !viewModel.showsHomeInsteadOfInput,
+               !viewModel.isVoiceRecording,
+               !viewModel.isVoiceExiting {
+                CoachAttachmentGlassPopover { option in
+                    showAttachmentMenu = false
+                    handleAttachmentOption(option)
+                }
+                .padding(.leading, 28)
+                .padding(.bottom, bottomChromeHeight + 18)
+                .transition(
+                    .scale(scale: 0.88, anchor: .bottomLeading)
+                        .combined(with: .opacity)
+                )
+            }
+        }
+        .ios26SafeAnimation(ProcessGlass.spring, value: showAttachmentMenu)
         .onAppear {
             planStore.reloadForCurrentUser()
         }
-        .onChange(of: hasWelcomePlan) { _, hasPlan in
-            guard hasPlan, showWelcomePlanPreview else { return }
-            dismissWelcomePlanChat()
-        }
-        .overlay {
-            coachMessageContextOverlay
-        }
-        .animation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             viewModel.bind(profile: profileService.currentProfile)
@@ -134,6 +159,28 @@ struct CoachChatView: View {
             )
             .environmentObject(profileService)
         }
+        .fullScreenCover(item: $activeAttachmentSheet) { sheet in
+            switch sheet {
+            case .camera:
+                CoachChatCameraSheet(
+                    onCapture: { image in
+                        activeAttachmentSheet = nil
+                        viewModel.stageImageAttachment(image)
+                        isInputFocused = true
+                    },
+                    onCancel: { activeAttachmentSheet = nil }
+                )
+            case .photos:
+                CoachChatPhotoLibrarySheet(
+                    onSelect: { image in
+                        activeAttachmentSheet = nil
+                        viewModel.stageImageAttachment(image)
+                        isInputFocused = true
+                    },
+                    onCancel: { activeAttachmentSheet = nil }
+                )
+            }
+        }
     }
 
     private var coachSidebar: some View {
@@ -149,26 +196,12 @@ struct CoachChatView: View {
                 Task { await viewModel.createNewConversation() }
             },
             onDelete: { id in
+                messageContextMenu = nil
+                isInputFocused = false
                 Task { await viewModel.deleteConversation(id) }
             },
-            onOpenProfile: onOpenProfile,
-            onOpenWelcomePlan: welcomePlanMenuAction
+            onOpenProfile: onOpenProfile
         )
-    }
-
-    @ViewBuilder
-    private var coachMainPane: some View {
-        if showWelcomePlanPreview, showsWelcomePlanMenuEntry {
-            WelcomePlanChatView(
-                previewMode: true,
-                embeddedInMainApp: true,
-                selectedSection: $selectedSection,
-                onComplete: dismissWelcomePlanChat
-            )
-            .id(welcomePlanPreviewID)
-        } else {
-            chatContent
-        }
     }
 
     @ViewBuilder
@@ -197,7 +230,25 @@ struct CoachChatView: View {
         }
     }
 
-    private var chatContent: some View {
+    @ViewBuilder
+    private var coachBottomAccessoryView: some View {
+        CoachChatBottomAccessory(
+            showsContextualHome: viewModel.showsContextualHome,
+            suggestions: viewModel.homePrompt.suggestions,
+            homeActionsRevealed: viewModel.homeActionsRevealed,
+            skipHomeAnimation: viewModel.shouldSkipHomeAnimation,
+            showsHomeInsteadOfInput: viewModel.showsHomeInsteadOfInput,
+            isSending: viewModel.isSending,
+            onSelectSuggestion: { suggestion in
+                isInputFocused = false
+                Task { await viewModel.sendHomeSuggestion(suggestion) }
+            },
+            contextualHomeBottomBar: { contextualHomeBottomBar },
+            chatInputBar: { coachChatInputBar }
+        )
+    }
+
+    private var chatScrollLayer: some View {
         ZStack(alignment: .topLeading) {
             if viewModel.showsContextualHome {
                 CoachContextualHomeView(
@@ -223,79 +274,10 @@ struct CoachChatView: View {
                     )
             }
         }
-        .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.showsContextualHome)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            CoachChatBottomAccessory(
-                showsContextualHome: viewModel.showsContextualHome,
-                suggestions: viewModel.homePrompt.suggestions,
-                homeActionsRevealed: viewModel.homeActionsRevealed,
-                skipHomeAnimation: viewModel.shouldSkipHomeAnimation,
-                showsHomeInsteadOfInput: viewModel.showsHomeInsteadOfInput,
-                isSending: viewModel.isSending,
-                onSelectSuggestion: { suggestion in
-                    isInputFocused = false
-                    Task { await viewModel.sendHomeSuggestion(suggestion) }
-                },
-                contextualHomeBottomBar: { contextualHomeBottomBar },
-                chatInputBar: { coachChatInputBar }
-            )
+            Color.clear.frame(height: bottomChromeHeight)
         }
-        .overlay {
-            if showAttachmentMenu,
-               !viewModel.showsHomeInsteadOfInput,
-               !viewModel.isVoiceRecording,
-               !viewModel.isVoiceExiting {
-                Color.black.opacity(0.001)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(ProcessGlass.spring) {
-                            showAttachmentMenu = false
-                        }
-                    }
-            }
-        }
-        .overlay(alignment: .bottomLeading) {
-            if showAttachmentMenu,
-               !viewModel.showsHomeInsteadOfInput,
-               !viewModel.isVoiceRecording,
-               !viewModel.isVoiceExiting {
-                CoachAttachmentGlassPopover { option in
-                    withAnimation(ProcessGlass.spring) {
-                        showAttachmentMenu = false
-                    }
-                    handleAttachmentOption(option)
-                }
-                .padding(.leading, 28)
-                .padding(.bottom, 132)
-                .transition(
-                    .scale(scale: 0.88, anchor: .bottomLeading)
-                        .combined(with: .opacity)
-                )
-            }
-        }
-        .animation(ProcessGlass.spring, value: showAttachmentMenu)
-        .fullScreenCover(item: $activeAttachmentSheet) { sheet in
-            switch sheet {
-            case .camera:
-                CoachChatCameraSheet(
-                    onCapture: { image in
-                        activeAttachmentSheet = nil
-                        viewModel.stageImageAttachment(image)
-                        isInputFocused = true
-                    },
-                    onCancel: { activeAttachmentSheet = nil }
-                )
-            case .photos:
-                CoachChatPhotoLibrarySheet(
-                    onSelect: { image in
-                        activeAttachmentSheet = nil
-                        viewModel.stageImageAttachment(image)
-                        isInputFocused = true
-                    },
-                    onCancel: { activeAttachmentSheet = nil }
-                )
-            }
-        }
+        .ios26SafeAnimation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.showsContextualHome)
         .onChange(of: viewModel.activeConversationId) { _, _ in
             viewModel.onActiveConversationChanged()
         }
@@ -332,7 +314,7 @@ struct CoachChatView: View {
                                     .id("streaming")
                                     .coachMessageFadeIn()
                             } else if viewModel.isSending {
-                                CoachThinkingBlobPlaceholder()
+                                CoachChatThinkingBlobRow(start: thinkingBlobStart)
                                     .padding(.top, pendingAssistantReplySpacing)
                                     .id("thinking")
                             }
@@ -341,11 +323,10 @@ struct CoachChatView: View {
                                 .frame(height: scrollBottomInset)
                                 .id("bottom-spacer")
                         }
-                        .id(viewModel.activeConversationId)
+                        .id(viewModel.activeConversationId?.uuidString ?? "coach-no-conversation")
                         .padding(.leading, 16)
                         .padding(.trailing, 6)
                         .padding(.vertical, 12)
-                        .animation(.spring(response: 0.38, dampingFraction: 0.88), value: viewModel.messages.count)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .simultaneousGesture(
@@ -367,12 +348,9 @@ struct CoachChatView: View {
                     }
                     .onChange(of: viewModel.isSending) { wasSending, sending in
                         if sending, !wasSending {
-                            thinkingResponseAnchor = .zero
                             thinkingBlobStart = .now
                             isInputFocused = false
                             scrollToBottom(proxy, delay: 0.08)
-                        } else if !sending {
-                            thinkingResponseAnchor = .zero
                         }
                     }
                     .onChange(of: isInputFocused) { _, focused in
@@ -397,21 +375,6 @@ struct CoachChatView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(theme.background.ignoresSafeArea())
             .coordinateSpace(name: "coachChatRoot")
-            .onPreferenceChange(CoachResponseAnchorKey.self) { anchor in
-                thinkingResponseAnchor = anchor
-            }
-            .overlay(alignment: .topLeading) {
-                if viewModel.isSending,
-                   viewModel.streamingText.isEmpty,
-                   thinkingResponseAnchor.height > 0 {
-                    CoachEdgeBlobOverlay(
-                        mode: .thinking(start: thinkingBlobStart)
-                    )
-                    .padding(.top, CoachBlobLayout.overlayTopPadding(for: thinkingResponseAnchor))
-                    .zIndex(2)
-                }
-            }
-            .ignoresSafeArea(edges: .leading)
         }
     }
 
@@ -431,9 +394,7 @@ struct CoachChatView: View {
                 Task { await viewModel.sendCurrentMessage() }
             },
             onStartVoice: {
-                withAnimation(ProcessGlass.spring) {
-                    showAttachmentMenu = false
-                }
+                showAttachmentMenu = false
                 Task { await viewModel.startVoiceRecording() }
             },
             onCancelVoice: {
@@ -449,9 +410,7 @@ struct CoachChatView: View {
             },
             onOpenMenu: {
                 let keepKeyboard = isInputFocused
-                withAnimation(ProcessGlass.spring) {
-                    showAttachmentMenu.toggle()
-                }
+                showAttachmentMenu.toggle()
                 if keepKeyboard {
                     isInputFocused = true
                 }
@@ -462,8 +421,6 @@ struct CoachChatView: View {
         )
         .padding(.horizontal, 14)
         .padding(.bottom, 10)
-        .animation(ProcessGlass.spring, value: viewModel.isVoiceRecording)
-        .animation(ProcessGlass.spring, value: viewModel.isVoiceExiting)
     }
 
     private var contextualHomeBottomBar: some View {
@@ -480,9 +437,7 @@ struct CoachChatView: View {
                         .padding(.vertical, 16)
                         .contentShape(Capsule())
                 }
-                .buttonStyle(.plain)
-                .processGlassEffect(in: Capsule())
-                .buttonStyle(ProcessGlassPressStyle())
+                .processGlassButton(in: Capsule())
                 .onboardingChatAnswerReveal(isRevealed: viewModel.homeActionsRevealed)
             }
 
@@ -624,20 +579,6 @@ struct CoachChatView: View {
             .textSelection(.enabled)
         }
     }
-
-    private func openWelcomePlanPreview() {
-        guard showsWelcomePlanMenuEntry else { return }
-        if showWelcomePlanPreview {
-            dismissWelcomePlanChat()
-            return
-        }
-        WelcomePlanStore.shared.beginPreviewSession()
-        welcomePlanPreviewID = UUID()
-        withAnimation(ProcessGlass.spring) {
-            selectedSection = .coach
-            showWelcomePlanPreview = true
-        }
-    }
 }
 
 private struct CoachChatBottomAccessory<ContextualBar: View, InputBar: View>: View {
@@ -683,7 +624,6 @@ private struct CoachChatBottomAccessory<ContextualBar: View, InputBar: View>: Vi
                     )
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.88), value: showsContextualHome)
-        .animation(.spring(response: 0.4, dampingFraction: 0.88), value: showsHomeInsteadOfInput)
+        .ios26SafeAnimation(.spring(response: 0.4, dampingFraction: 0.88), value: showsHomeInsteadOfInput)
     }
 }

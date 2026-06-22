@@ -86,6 +86,7 @@ enum OnboardingStep: Int, CaseIterable {
     case programCreation = 57               // ✨ Création du programme (analyse habitudes, plan 13 semaines)
     case biometricAuth = 58                    // ✨ Authentification biométrique (empreinte digitale)
     case notificationPermission = 59           // ✨ Demande de permission notifications
+    case transformationPreview = 64            // ✨ Aperçu avant / après (slider) avant le paywall
     case payment = 60
     case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
     case referralReward = 62                   // ✨ Page de parrainage avec slider de gains
@@ -97,6 +98,7 @@ enum OnboardingStep: Int, CaseIterable {
         switch self {
         case .videoIntroduction, .faceAnalysis, .weightMotivation, .sportSelection,
              .healthKitPermissions, .biometricAuth, .notificationPermission,
+             .transformationPreview,
              .payment, .processWelcome, .referralReward, .featuresUnlock,
              .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
              .personalizedWelcome, .processResultsDurability,
@@ -179,6 +181,7 @@ enum OnboardingStep: Int, CaseIterable {
         .carryOverCalories,
         .biometricAuth,
         .notificationPermission,
+        .transformationPreview,
         .payment,
         .processWelcome,
         .referralReward,

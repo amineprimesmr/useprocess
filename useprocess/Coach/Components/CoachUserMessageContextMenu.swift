@@ -255,7 +255,7 @@ struct CoachUserMessageContextOverlay: View {
             .padding(.vertical, 11)
             .contentShape(Rectangle())
         }
-        .buttonStyle(CoachMessageContextRowPressStyle())
+        .processGlassMenuRowStyle()
     }
 
     private func menuY(bubbleMinY: CGFloat) -> CGFloat {
@@ -284,20 +284,11 @@ private struct CoachMessageContextGlassModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(ProcessGlass.regular, in: shape)
+            content.glassEffect(ProcessGlass.regularSurface, in: shape)
         } else {
             content
                 .background(.ultraThinMaterial, in: shape)
                 .overlay(shape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
-    }
-}
-
-private struct CoachMessageContextRowPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.62 : 1)
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }

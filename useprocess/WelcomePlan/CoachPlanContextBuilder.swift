@@ -18,6 +18,7 @@ enum CoachPlanContextBuilder {
             "• Objectif : \(plan.primaryFaceGoal)",
             "• Semaine \(weekNum)/13 — jour \(dayIdx + 1)/\(max(plan.calendar.totalDays, 1))",
             "• \(plan.trainingProtocol.sessionsPerWeek) séances/sem · Sommeil cible \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
+            "• Nutrition : \(plan.nutritionPlanType.label)",
             "• Zéro pilule — 100 % naturel",
             "• Tâches cochées : \(completed)"
         ]

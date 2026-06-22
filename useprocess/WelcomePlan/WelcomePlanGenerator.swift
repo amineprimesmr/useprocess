@@ -2,34 +2,52 @@ import Foundation
 
 enum WelcomePlanGenerator {
 
+    @MainActor
     static func generate(
         answers: [String: WelcomePlanAnswer],
         profile: UnifiedUserProfile?
     ) -> FaceOriginPlan {
         let userId = profile?.userId ?? UserScopedStorage.currentUserId() ?? "local-user"
+        let baselineScan = FaceScanHistoryStore.shared.latestResult?.markers
+            ?? OnboardingFaceMarkersStore.load()
+
+        let assessment = OriginUserAssessment.evaluate(
+            answers: answers,
+            profile: profile,
+            baselineScan: baselineScan
+        )
+
         let faceGoal = primaryGoalLabel(answers)
         let bodyFat = answers["body_fat_feel"]?.choiceIds.first
         let sleepQ = answers["sleep_quality"]?.choiceIds.first
         let supplements = answers["supplements_use"]?.choiceIds.first
-        let sessions = sessionsPerWeek(answers)
+        let sessions = assessment.recommendedSessions
         let gender = profile?.gender ?? .male
+        let targets = assessment.dailyTargets
+        let duration = assessment.duration
 
-        let pillarScores = computePillarScores(answers: answers)
-        let dailyHabits = buildDailyHabits(answers: answers, gender: gender)
-        let weeklyRhythm = buildWeeklyRhythm(sessions: sessions, answers: answers)
-        let duration = OriginPlanDuration.compute(from: answers)
-        let phaseRoadmap = buildPhaseRoadmap(duration: duration, sessions: sessions, answers: answers)
-        let nutrition = buildNutritionProtocol(answers: answers, bodyFat: bodyFat)
-        let sleep = buildSleepProtocol(answers: answers)
-        let training = buildTrainingProtocol(answers: answers, profile: profile, sessions: sessions, gender: gender)
-        let posture = buildPostureProtocol(answers: answers)
+        let pillarScores = computePillarScores(answers: answers, assessment: assessment.snapshot)
+        let dailyHabits = buildDailyHabits(answers: answers, gender: gender, targets: targets, snapshot: assessment.snapshot)
+        let weeklyRhythm = buildWeeklyRhythm(sessions: sessions, targets: targets)
+        let nutrition = buildNutritionProtocol(answers: answers, bodyFat: bodyFat, snapshot: assessment.snapshot, targets: targets)
+        let sleep = buildSleepProtocol(answers: answers, targets: targets)
+        let training = buildTrainingProtocol(
+            answers: answers,
+            profile: profile,
+            sessions: sessions,
+            gender: gender,
+            snapshot: assessment.snapshot,
+            location: assessment.trainingLocation
+        )
+        let posture = buildPostureProtocol(answers: answers, targets: targets)
 
         let summary = buildExecutiveSummary(
             faceGoal: faceGoal,
             answers: answers,
             sleepQ: sleepQ,
             sessions: sessions,
-            duration: duration
+            duration: duration,
+            assessment: assessment
         )
 
         var plan = FaceOriginPlan(
@@ -44,32 +62,58 @@ enum WelcomePlanGenerator {
             pillarScores: pillarScores,
             dailyHabits: dailyHabits,
             weeklyRhythm: weeklyRhythm,
-            phaseRoadmap: phaseRoadmap,
+            phaseRoadmap: assessment.phaseRoadmap,
             nutritionProtocol: nutrition,
             sleepProtocol: sleep,
             trainingProtocol: training,
             postureProtocol: posture,
-            faceProtocol: buildFaceProtocol(answers: answers, faceGoal: faceGoal, duration: duration),
-            mindsetNotes: buildMindsetNotes(answers: answers, supplements: supplements, duration: duration),
+            faceProtocol: buildFaceProtocol(
+                answers: answers,
+                faceGoal: faceGoal,
+                duration: duration,
+                targets: targets,
+                snapshot: assessment.snapshot
+            ),
+            mindsetNotes: buildMindsetNotes(
+                answers: answers,
+                supplements: supplements,
+                duration: duration,
+                snapshot: assessment.snapshot
+            ),
             totalWeeks: duration.totalWeeks,
             durationMinWeeks: duration.minWeeks,
             durationMaxWeeks: duration.maxWeeks,
             calendar: OriginProgramCalendar.empty,
             progress: OriginPlanProgress(),
-            lifestyleExtras: buildLifestyleExtras(answers: answers)
+            lifestyleExtras: buildLifestyleExtras(answers: answers, snapshot: assessment.snapshot),
+            assessmentSnapshot: assessment.snapshot,
+            successCriteria: assessment.successCriteria,
+            personalizedTargets: targets
         )
 
         plan.calendar = OriginPlanCalendarBuilder.build(from: plan, answers: answers, gender: gender)
         return plan
     }
 
-    private static func buildLifestyleExtras(answers: [String: WelcomePlanAnswer]) -> OriginLifestyleExtras {
+    private static func buildLifestyleExtras(
+        answers: [String: WelcomePlanAnswer],
+        snapshot: OriginPlanAssessmentSnapshot
+    ) -> OriginLifestyleExtras {
         var extras = OriginLifestyleExtras.default
         if choice("screen_before_bed", in: answers) == "yes" {
             extras.stressRegulation.append("Priorité : couper les écrans 60 min avant le coucher")
         }
         if multi("face_concerns", in: answers).contains("dark_circles") {
             extras.bonusProposals.insert("Cernes = sommeil + lymphe : marche + hydratation minérale avant crème", at: 0)
+        }
+        if choice("alcohol_frequency", in: answers) == "often" || choice("alcohol_frequency", in: answers) == "weekly" {
+            extras.stressRegulation.append("Alcool le soir = debloat garanti — réduire en phase 1")
+        }
+        if snapshot.primaryBlocker == .composition, let gap = snapshot.estimatedBodyFatPercent {
+            extras.bonusProposals.insert(
+                "Composition ~\(Int(gap.rounded())) % → cible ~\(Int(snapshot.targetBodyFatPercent)) % — densité alimentaire, pas famine",
+                at: 0
+            )
         }
         return extras
     }
@@ -105,7 +149,10 @@ enum WelcomePlanGenerator {
         }
     }
 
-    private static func computePillarScores(answers: [String: WelcomePlanAnswer]) -> [OriginPillarScore] {
+    private static func computePillarScores(
+        answers: [String: WelcomePlanAnswer],
+        assessment: OriginPlanAssessmentSnapshot
+    ) -> [OriginPillarScore] {
         var hormones = 70
         var training = 65
         var posture = 60
@@ -140,23 +187,37 @@ enum WelcomePlanGenerator {
         if exp == ExperienceLevel.debutant.rawValue { training -= 5 }
         if exp == ExperienceLevel.professionnel.rawValue { training += 10 }
 
+        if choice("alcohol_frequency", in: answers) == "often" { hormones -= 10 }
+        if choice("hydration_level", in: answers) == HydrationLevel.poor.rawValue
+            || choice("hydration_level", in: answers) == HydrationLevel.veryPoor.rawValue {
+            hormones -= 6; results -= 5
+        }
+
+        if assessment.bodyFatGap >= 8 { results -= 15 }
+        else if assessment.bodyFatGap >= 4 { results -= 8 }
+
         return [
             .init(pillar: "Hormones & système nerveux", score: clamp(hormones), focus: hormones < 60 ? "Sommeil + lumière + stress" : "Consolidation circadienne"),
-            .init(pillar: "Entraînement adapté", score: clamp(training), focus: "Progression \(sessionsPerWeek(answers))×/sem"),
+            .init(pillar: "Entraînement adapté", score: clamp(training), focus: "Progression \(OriginUserAssessment.sessionsFromAnswers(answers))×/sem"),
             .init(pillar: "Posture & fascias", score: clamp(posture), focus: posture < 55 ? "Chaîne postérieure + mewing" : "Maintenance fasciale"),
-            .init(pillar: "Résultats (visage)", score: clamp(results), focus: "Conséquence de la biologie en ordre")
+            .init(pillar: "Résultats (visage)", score: clamp(results), focus: assessment.blockerSummary)
         ]
     }
 
     private static func clamp(_ v: Int) -> Int { min(95, max(25, v)) }
 
-    private static func buildDailyHabits(answers: [String: WelcomePlanAnswer], gender: Gender) -> [OriginDailyHabit] {
+    private static func buildDailyHabits(
+        answers: [String: WelcomePlanAnswer],
+        gender: Gender,
+        targets: OriginPersonalizedDailyTargets,
+        snapshot: OriginPlanAssessmentSnapshot
+    ) -> [OriginDailyHabit] {
         var habits: [OriginDailyHabit] = [
-            .init(id: "sun", title: "Lumière matinale", detail: "\(ProcessDailyTargets.morningLightMinutes) min de lumière naturelle dans l'heure après le réveil.", pillar: "Hormones", timing: "Réveil"),
-            .init(id: "cold_face", title: "Eau froide sur le visage", detail: "\(ProcessDailyTargets.coldFaceRinseSeconds) sec au réveil — stimule la lymphe et dégonfle.", pillar: "Visage", timing: "Réveil"),
+            .init(id: "sun", title: "Lumière matinale", detail: "\(targets.morningLightMinutes) min de lumière naturelle dans l'heure après le réveil.", pillar: "Hormones", timing: "Réveil"),
+            .init(id: "cold_face", title: "Eau froide sur le visage", detail: "\(targets.coldFaceRinseSeconds) sec au réveil — stimule la lymphe et dégonfle.", pillar: "Visage", timing: "Réveil"),
             .init(id: "nutrition", title: "Alimentation parfaite", detail: "Repas denses, zéro ultra-transformé — valide ton repas du jour.", pillar: "Nutrition", timing: "Journée"),
-            .init(id: "walk", title: "Marche", detail: "\(ProcessDailyTargets.dailySteps) pas — mouvement quotidien.", pillar: "Posture", timing: "Journée"),
-            .init(id: "hydrate", title: ProcessHydrationGuide.dailyTaskTitle, detail: ProcessHydrationGuide.protocolGuide, pillar: "Nutrition", timing: "Journée")
+            .init(id: "walk", title: "Marche", detail: "\(targets.dailySteps) pas — mouvement quotidien.", pillar: "Posture", timing: "Journée"),
+            .init(id: "hydrate", title: ProcessHydrationGuide.dailyTaskTitle, detail: "Objectif \(targets.hydrationLabel) — répartis dans la journée.", pillar: "Nutrition", timing: "Journée")
         ]
 
         if gender == .female {
@@ -164,78 +225,29 @@ enum WelcomePlanGenerator {
         }
 
         if multi("face_concerns", in: answers).contains("dark_circles") {
-            habits.append(.init(id: "sleep_face", title: "Sommeil prioritaire visage", detail: "\(ProcessDailyTargets.sleepHours) h par nuit. Les cernes = cortisol + lymphe stagnante.", pillar: "Visage", timing: "Nuit"))
+            habits.append(.init(id: "sleep_face", title: "Sommeil prioritaire visage", detail: "\(Int(targets.sleepHours)) h par nuit. Les cernes = cortisol + lymphe stagnante.", pillar: "Visage", timing: "Nuit"))
+        }
+
+        if snapshot.archetype == .stressRecovery {
+            habits.insert(.init(id: "breath", title: "Respiration nasale", detail: "5 min respiration lente — active le parasympathique et baisse le cortisol.", pillar: "Hormones", timing: "Matin & soir"), at: 0)
         }
 
         return habits
     }
 
-    private static func buildWeeklyRhythm(sessions: Int, answers: [String: WelcomePlanAnswer]) -> [OriginWeeklyBlock] {
+    private static func buildWeeklyRhythm(sessions: Int, targets: OriginPersonalizedDailyTargets) -> [OriginWeeklyBlock] {
         [
             .init(id: "w1", title: "Structure hebdo", detail: "\(sessions) séances force + marche quotidienne"),
-            .init(id: "w2", title: "Récupération", detail: "\(ProcessDailyTargets.restDaysPerWeek) jours off complets. Sommeil > séance supplémentaire si fatigue."),
-            .init(id: "w3", title: "Soleil & nature", detail: "\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) sessions outdoor/sem — lumière + grounding pieds nus.")
-        ]
-    }
-
-    private static func buildPhaseRoadmap(
-        duration: OriginPlanDuration,
-        sessions: Int,
-        answers: [String: WelcomePlanAnswer]
-    ) -> [OriginPlanPhaseBlock] {
-        let ends = duration.phaseEnds
-        let total = duration.totalWeeks
-        return [
-            .init(
-                id: "p1",
-                weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: ends.p1),
-                title: "Fondations — Reset biologique",
-                objectives: [
-                    "Stabiliser le rythme circadien (coucher / réveil, marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min max)",
-                    "Alimentation dense sans ultra-transformé",
-                    "Mewing en permanence (voir section dédiée)"
-                ],
-                habits: ["Couvre-feu lumière bleue", "Repas protéinés denses", "Marche \(ProcessDailyTargets.dailySteps) pas"]
-            ),
-            .init(
-                id: "p2",
-                weeksRange: OriginPlanDuration.weeksRangeLabel(from: ends.p1 + 1, through: ends.p2),
-                title: "Hormones & digestion",
-                objectives: [
-                    "Optimiser la digestion (mastication, repas réguliers)",
-                    "Réduire le stress chronique (sommeil, marche)",
-                    "Hydratation \(ProcessHydrationGuide.dailyLiters)"
-                ],
-                habits: ["Minéraux naturels", "Routine soir sans écran", "Scan visage quotidien"]
-            ),
-            .init(
-                id: "p3",
-                weeksRange: OriginPlanDuration.weeksRangeLabel(from: ends.p2 + 1, through: ends.p3),
-                title: "Entraînement & composition",
-                objectives: [
-                    "\(sessions) séances progressive overload",
-                    "Ajustement calories via aliments entiers (pas de shake isolé)",
-                    "Travail chaîne postérieure + cou / trapèzes"
-                ],
-                habits: ["Séances loguées", "Sommeil \(ProcessDailyTargets.sleepHours) h minimum", "Scan visage régulier"]
-            ),
-            .init(
-                id: "p4",
-                weeksRange: OriginPlanDuration.weeksRangeLabel(from: ends.p3 + 1, through: total),
-                title: "Affinage visage & consolidation",
-                objectives: [
-                    "Affiner masse grasse si objectif",
-                    "Libération fascias maxillaire et nuque",
-                    "Ancrer les habitudes sur le long terme"
-                ],
-                habits: ["Bilan photos / scan", "Maintien 80 % des bases", "Plan après le protocole"]
-            )
+            .init(id: "w2", title: "Récupération", detail: "\(targets.restDaysPerWeek) jours off complets. Sommeil > séance supplémentaire si fatigue."),
+            .init(id: "w3", title: "Soleil & nature", detail: "\(targets.outdoorWalkSessionsPerWeek) sessions outdoor/sem — lumière + grounding.")
         ]
     }
 
     private static func buildNutritionProtocol(
         answers: [String: WelcomePlanAnswer],
-        bodyFat: String?
+        bodyFat: String?,
+        snapshot: OriginPlanAssessmentSnapshot,
+        targets: OriginPersonalizedDailyTargets
     ) -> OriginNutritionProtocol {
         let reduce: [String] = ["Ultra-transformés", "Huiles de graines industrielles", "Sucre ajouté quotidien"]
         var prioritize: [String] = ["Œufs", "Tubercules vapeur", "Fruits modérés"]
@@ -255,17 +267,25 @@ enum WelcomePlanGenerator {
             prioritize.removeAll { $0.contains("Laitiers") }
         }
 
-        if bodyFat == "soft" || bodyFat == "high" {
+        if bodyFat == "soft" || bodyFat == "high" || snapshot.bodyFatGap >= 4 {
             principles.append("Léger déficit via densité alimentaire — pas de famine (préserve le visage)")
-        } else if bodyFat == "very_lean" || bodyFat == "athletic" {
-            principles.append("Maintien ou léger surplus via laitiers / tubercules si prise de masse")
+        } else if bodyFat == "very_lean" || bodyFat == "athletic" || snapshot.bodyFatGap < 2 {
+            principles.append("Maintien ou léger surplus via laitiers / tubercules — pas de restriction")
+        }
+
+        if multi("animal_protein", in: answers).contains("none") {
+            principles.append("Protéines animales ou œufs à chaque repas principal — carences = peau terne")
+        }
+
+        if choice("alcohol_frequency", in: answers) == "often" {
+            principles.append("Alcool = debloat garanti — couper en semaine 1")
         }
 
         if choice("processed_food", in: answers) == "most_meals" || choice("processed_food", in: answers) == "daily" {
             principles.append("Priorité : remplacer l'industriel par des repas simples faits maison")
         }
 
-        return OriginNutritionProtocol(
+        var nutrition = OriginNutritionProtocol(
             principles: principles,
             dailyStructure: [
                 "Repas denses : protéines + tubercule ou légumes cuits",
@@ -275,15 +295,30 @@ enum WelcomePlanGenerator {
             ],
             foodsToPrioritize: prioritize,
             foodsToReduce: reduce,
-            hydrationGuide: ProcessHydrationGuide.protocolGuide,
+            hydrationGuide: "Objectif \(targets.hydrationLabel)/jour — répartis, pas d'excès le soir (debloat visage)",
             mealExamples: [],
+            mealPlanStyle: nil,
+            currentMealsPerDay: nil,
+            targetMealsPerDay: nil
         )
+        ProcessMealPlanConfiguration.enrichNutritionProtocol(&nutrition, answers: answers)
+
+        for rule in OriginScriptRulesEngine.nutritionPrinciples(snapshot: snapshot, answers: answers) {
+            if !nutrition.principles.contains(rule) {
+                nutrition.principles.insert(rule, at: 0)
+            }
+        }
+
+        return nutrition
     }
 
-    private static func buildSleepProtocol(answers: [String: WelcomePlanAnswer]) -> OriginSleepProtocol {
+    private static func buildSleepProtocol(
+        answers: [String: WelcomePlanAnswer],
+        targets: OriginPersonalizedDailyTargets
+    ) -> OriginSleepProtocol {
         let bedtime = answers["bedtime"]?.timeValue ?? "22:30"
         let wake = answers["wake_time"]?.timeValue ?? "07:00"
-        let hours = computedSleepHours(bedtime: bedtime, wake: wake)
+        let hours = max(targets.sleepHours, computedSleepHours(bedtime: bedtime, wake: wake))
 
         var evening: [String] = [
             "Lumière chaude / tamisée 2 h avant le coucher",
@@ -301,6 +336,10 @@ enum WelcomePlanGenerator {
             evening.insert("Mode avion ou téléphone hors chambre \(ProcessDailyTargets.screenCurfewMinutes) min avant", at: 0)
         }
 
+        if choice("caffeine_afternoon", in: answers) == "yes" {
+            evening.insert("Pas de caféine après \(ProcessDailyTargets.caffeineCutoffHour) h — impact direct sur le debloat matinal", at: 0)
+        }
+
         return OriginSleepProtocol(
             targetHours: hours,
             bedtimeWindow: "Cible \(bedtime) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
@@ -314,7 +353,9 @@ enum WelcomePlanGenerator {
         answers: [String: WelcomePlanAnswer],
         profile: UnifiedUserProfile?,
         sessions: Int,
-        gender: Gender
+        gender: Gender,
+        snapshot: OriginPlanAssessmentSnapshot,
+        location: String?
     ) -> OriginTrainingProtocol {
         let injuries = multi("injuries", in: answers)
         var template: [String] = []
@@ -339,77 +380,119 @@ enum WelcomePlanGenerator {
             template = ["Full body 2× mouvements composés + face pulls + marche"]
         }
 
-        var recovery = ["Sommeil > séance extra", "Deload semaine 4 et 8"]
+        var recovery = ["Sommeil > séance extra", "Deload aux fins de phase"]
         if injuries.contains("lower_back") {
             recovery.append("Éviter charges axiales lourdes — hip hinge technique d'abord")
+        }
+        if injuries.contains("knees") {
+            recovery.append("Genoux : privilégier hip thrust, RDL léger — pas de squat profond douloureux")
+        }
+        if injuries.contains("shoulders") || injuries.contains("neck") {
+            recovery.append("Épaules/nuque : face pulls et mobilité avant charges lourdes")
+        }
+        if snapshot.archetype == .stressRecovery || snapshot.archetype == .habitReset {
+            recovery.append("RPE 6–7 max — récupération prioritaire")
         }
         if choice("fatigue_frequency", in: answers) == FatigueFrequency.often.rawValue ||
             choice("fatigue_frequency", in: answers) == FatigueFrequency.always.rawValue {
             recovery.append("RPE 6–7 max — récupération prioritaire si fatigue fréquente")
         }
+        for rule in OriginScriptRulesEngine.trainingConstraints(snapshot: snapshot, answers: answers) {
+            if !recovery.contains(rule) { recovery.append(rule) }
+        }
+
+        let locationNote: String = {
+            switch location {
+            case "home": return "Maison — haltères / bandes / poids du corps"
+            case "gym": return "Salle — machines + libre"
+            case "outdoor": return "Extérieur — parc, anneaux, marche"
+            case "mixed": return "Mixte — adapter selon le jour"
+            default: return gender == .female
+                ? "1–2 séances intensité + marche — cycle menstruel respecté"
+                : "3–4 séances — accent clavicules, trapèzes, épaules, chaîne postérieure"
+            }
+        }()
 
         return OriginTrainingProtocol(
             sessionsPerWeek: sessions,
             sessionDurationMinutes: sessions <= 2 ? 55 : 45,
-            splitOverview: gender == .female
-                ? "1–2 séances intensité + marche — cycle menstruel respecté"
-                : "3–4 séances — accent clavicules, trapèzes, épaules, chaîne postérieure",
+            splitOverview: locationNote,
             weeklyTemplate: template,
             recoveryRules: recovery
         )
     }
 
-    private static func buildPostureProtocol(answers: [String: WelcomePlanAnswer]) -> OriginPostureProtocol {
+    private static func buildPostureProtocol(
+        answers: [String: WelcomePlanAnswer],
+        targets: OriginPersonalizedDailyTargets
+    ) -> OriginPostureProtocol {
         var checks: [String] = ProcessContinuousHabits.all.map { "\($0.title) — \($0.detail)" }
         if choice("forward_head", in: answers) == "yes" {
             checks.append("Rétraction cervicale chin tucks — 3×15 si tête en avant")
         }
 
+        if choice("mouth_breathing", in: answers) == "yes" {
+            checks.append("Respiration nasale en permanence — réduit le gonflement et le cortisol")
+        }
+        if choice("desk_job", in: answers) == "yes" {
+            checks.append("Pause posture toutes les 45 min — se redresser, chin tuck")
+        }
+
         return OriginPostureProtocol(
             dailyChecks: checks,
             mobilityBlocks: [],
-            breathingWork: [],
-            walkingTargets: "Objectif \(ProcessDailyTargets.dailySteps) pas — suivi automatique via Santé / HealthKit"
+            breathingWork: choice("mouth_breathing", in: answers) == "yes"
+                ? ["Respiration nasale lente 5 min matin et soir"]
+                : [],
+            walkingTargets: "Objectif \(targets.dailySteps) pas — suivi automatique via Santé / HealthKit"
         )
     }
 
     private static func buildFaceProtocol(
         answers: [String: WelcomePlanAnswer],
         faceGoal: String,
-        duration: OriginPlanDuration
+        duration: OriginPlanDuration,
+        targets: OriginPersonalizedDailyTargets,
+        snapshot: OriginPlanAssessmentSnapshot
     ) -> OriginFaceProtocol {
         var focus = [faceGoal]
         focus.append(contentsOf: multi("face_concerns", in: answers).map {
             WelcomePlanQuestionBank.choiceLabel(for: "face_concerns", choiceId: $0)
         })
 
-        let midScan = max(2, duration.totalWeeks / 3)
+        let midScan = max(1, duration.totalWeeks / 2)
         let finalScan = duration.totalWeeks
 
         return OriginFaceProtocol(
             focusAreas: Array(Set(focus)),
             jawAndTongueWork: [
-                "Mastication lente \(ProcessDailyTargets.chewsPerBite)× — viande ferme, aliments durs à mâcher"
+                "Mastication lente \(targets.chewsPerBite)× — viande ferme, aliments durs à mâcher"
             ],
             lymphAndFascia: [
-                "Eau froide sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) sec au réveil",
-                "Massage doux sous-orbital vers les oreilles — \(ProcessDailyTargets.lymphFaceMassageMinutes) min",
-                "Marche \(ProcessDailyTargets.dailySteps) pas + \(ProcessDailyTargets.hydrationLabel) = drainage lymphatique"
+                "Eau froide sur le visage \(targets.coldFaceRinseSeconds) sec au réveil",
+                "Massage doux sous-orbital — \(targets.lymphFaceMassageMinutes) min",
+                "Marche \(targets.dailySteps) pas + \(targets.hydrationLabel) = drainage lymphatique"
             ],
-            scanCadence: "Scan visage semaine 1, \(midScan), \(finalScan) — suivi dans Santé"
+            scanCadence: duration.totalWeeks <= 2
+                ? "Scan J1 et J\(finalScan) — comparer le debloat"
+                : "Scan semaine 1, \(midScan), \(finalScan) — suivi dans le profil"
         )
     }
 
     private static func buildMindsetNotes(
         answers: [String: WelcomePlanAnswer],
         supplements: String?,
-        duration: OriginPlanDuration
+        duration: OriginPlanDuration,
+        snapshot: OriginPlanAssessmentSnapshot
     ) -> [String] {
         var notes = [
-            "Ce n'est pas ta génétique — ce sont tes habitudes. \(duration.totalWeeks) semaines posent les fondations.",
+            "Profil : \(snapshot.archetype.label) — \(snapshot.blockerSummary)",
             "10 % des actions (sommeil, alimentation dense, mewing + posture) = 90 % du résultat visage.",
             "Pas de raccourci artificiel. La beauté est la conséquence d'une biologie en ordre."
         ]
+        if duration.totalWeeks <= 3 {
+            notes.insert("Protocole court : exécution stricte > perfection.", at: 1)
+        }
         if supplements == "many" || supplements == "basic" {
             notes.append("On remplace les compléments par des aliments entiers — œufs, laitiers, viande rouge.")
         }
@@ -424,11 +507,22 @@ enum WelcomePlanGenerator {
         answers: [String: WelcomePlanAnswer],
         sleepQ: String?,
         sessions: Int,
-        duration: OriginPlanDuration
+        duration: OriginPlanDuration,
+        assessment: OriginUserAssessment.Result
     ) -> String {
         var parts: [String] = []
+        let snapshot = assessment.snapshot
+
         parts.append("Priorités : \(faceGoal).")
-        parts.append("Protocole Origine sur \(duration.rangeLabel) (\(duration.totalWeeks) semaines calendrier) — 100 % naturel, zéro pilule.")
+        parts.append("\(snapshot.archetype.label) — \(duration.rangeLabel) (\(duration.totalWeeks) sem. calendrier).")
+        parts.append(snapshot.blockerSummary + ".")
+
+        if let bmi = snapshot.bmi {
+            parts.append(String(format: "Profil : %.1f m · %.0f kg · IMC %.1f.", (snapshot.heightCm ?? 0) / 100, snapshot.weightKg ?? 0, bmi))
+        }
+        if let bf = snapshot.estimatedBodyFatPercent {
+            parts.append(String(format: "Masse grasse estimée ~%.0f %% → cible ~%.0f %%.", bf, snapshot.targetBodyFatPercent))
+        }
 
         if sleepQ?.contains("Mauvais") == true || sleepQ?.contains("mauvais") == true {
             parts.append("Priorité #1 : sommeil et rythme circadien — sans ça, le visage reste gonflé.")
@@ -436,9 +530,12 @@ enum WelcomePlanGenerator {
         if choice("processed_food", in: answers) == "daily" || choice("processed_food", in: answers) == "most_meals" {
             parts.append("Alimentation industrielle détectée : transition vers repas denses faits maison.")
         }
+        let planType = ProcessMealPlanConfiguration.readTargetPlan(from: answers)
+        parts.append("Structure repas : \(planType.label).")
         parts.append("\(sessions) séances/semaine + marche (HealthKit) + mewing & travail maxillaire.")
-        let ends = duration.phaseEnds
-        parts.append("\(OriginPlanDuration.weeksRangeLabel(from: 1, through: ends.p1)) = fondations. Le visage suit la biologie, pas l'inverse.")
+        if let firstPhase = assessment.phaseRoadmap.first {
+            parts.append("\(firstPhase.weeksRange) : \(firstPhase.title). Le visage suit la biologie, pas l'inverse.")
+        }
 
         return parts.joined(separator: " ")
     }

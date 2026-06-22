@@ -5,71 +5,100 @@ struct OriginPlanDuration: Equatable {
     let minWeeks: Int
     let maxWeeks: Int
     let totalWeeks: Int
+    let archetype: OriginPlanArchetype?
 
-    var rangeLabel: String { "\(minWeeks) à \(maxWeeks) semaines" }
-
-    var headlineLabel: String { "Protocole Origine — \(totalWeeks) semaines" }
-
-    /// Bornes de phase pour le calendrier (fin inclusive de chaque phase).
-    var phaseEnds: (p1: Int, p2: Int, p3: Int) {
-        let p1 = max(2, Int((Double(totalWeeks) * 0.25).rounded()))
-        let p2 = min(totalWeeks, p1 + max(2, Int((Double(totalWeeks) * 0.25).rounded())))
-        let p3 = min(totalWeeks, p2 + max(3, Int((Double(totalWeeks) * 0.35).rounded())))
-        return (p1, p2, max(p3, p2 + 1))
+    var rangeLabel: String {
+        if minWeeks == maxWeeks { return "\(minWeeks) semaine\(minWeeks > 1 ? "s" : "")" }
+        return "\(minWeeks) à \(maxWeeks) semaines"
     }
 
-    static func compute(from answers: [String: WelcomePlanAnswer]) -> OriginPlanDuration {
-        var minW = 8
-        var maxW = 12
+    var headlineLabel: String {
+        if let archetype {
+            return "\(archetype.label) — \(totalWeeks) sem."
+        }
+        return "Protocole Origine — \(totalWeeks) semaines"
+    }
 
-        let consistency = answers["consistency_history"]?.choiceIds.first
-        let bodyFat = answers["body_fat_feel"]?.choiceIds.first
-        let concernCount = answers["face_concerns"]?.choiceIds.count ?? 0
-        let sleepQuality = answers["sleep_quality"]?.choiceIds.first ?? ""
-        let processed = answers["processed_food"]?.choiceIds.first
-
-        switch consistency {
-        case "weeks":
-            minW += 2
-            maxW += 4
-        case "first_time":
-            minW += 2
-            maxW += 3
-        case "long":
-            if bodyFat == "athletic" || bodyFat == "very_lean" {
-                minW = max(6, minW - 1)
-                maxW = max(minW + 3, maxW - 2)
-            }
-        default:
-            break
+    /// Fins de phase inclusives pour le calendrier (une entrée par phase).
+    var phaseWeekEnds: [Int] {
+        guard totalWeeks > 0 else { return [] }
+        let archetype = archetype ?? .foundationBuild
+        let phaseCount: Int
+        switch archetype {
+        case .habitReset: phaseCount = totalWeeks <= 1 ? 1 : 2
+        case .maintenancePolish: phaseCount = 2
+        case .stressRecovery: phaseCount = 3
+        case .recomposition, .foundationBuild: phaseCount = 4
         }
 
-        if bodyFat == "soft" || bodyFat == "high" {
-            minW += 1
-            maxW += 2
-        }
-        if concernCount >= 3 {
-            maxW += 2
-        }
-        if sleepQuality.contains("Mauvais") || sleepQuality.contains("mauvais") {
-            minW += 1
-            maxW += 2
-        }
-        if processed == "daily" || processed == "most_meals" {
-            minW += 1
-            maxW += 2
-        }
+        if phaseCount == 1 { return [totalWeeks] }
 
-        minW = min(max(6, minW), 16)
-        maxW = min(max(minW + 2, maxW), 20)
+        var ends: [Int] = []
+        var remaining = totalWeeks
+        var start = 1
+        for index in 0..<phaseCount {
+            let phasesLeft = phaseCount - index
+            let chunk = max(1, Int((Double(remaining) / Double(phasesLeft)).rounded()))
+            let end = min(totalWeeks, start + chunk - 1)
+            ends.append(end)
+            remaining = totalWeeks - end
+            start = end + 1
+            if end >= totalWeeks { break }
+        }
+        if ends.last != totalWeeks {
+            ends[ends.count - 1] = totalWeeks
+        }
+        return ends
+    }
 
-        let totalWeeks = min(maxW, max(minW, (minW + maxW + 1) / 2))
+    /// Legacy tuple pour compatibilité progressive.
+    var phaseEnds: (p1: Int, p2: Int, p3: Int) {
+        let ends = phaseWeekEnds
+        return (
+            ends.indices.contains(0) ? ends[0] : max(1, totalWeeks / 4),
+            ends.indices.contains(1) ? ends[1] : max(2, totalWeeks / 2),
+            ends.indices.contains(2) ? ends[2] : max(3, (totalWeeks * 3) / 4)
+        )
+    }
 
-        return OriginPlanDuration(minWeeks: minW, maxWeeks: maxW, totalWeeks: totalWeeks)
+    init(minWeeks: Int, maxWeeks: Int, totalWeeks: Int, archetype: OriginPlanArchetype? = nil) {
+        self.minWeeks = minWeeks
+        self.maxWeeks = maxWeeks
+        self.totalWeeks = totalWeeks
+        self.archetype = archetype
+    }
+
+    static func compute(from answers: [String: WelcomePlanAnswer], profile: UnifiedUserProfile? = nil) -> OriginPlanDuration {
+        OriginUserAssessment.evaluate(answers: answers, profile: profile, baselineScan: nil).duration
     }
 
     static func weeksRangeLabel(from start: Int, through end: Int) -> String {
         if start >= end { return "Semaine \(start)" }
         return "Semaines \(start)–\(end)"
+    }
+
+    func phaseBlock(for week: Int, roadmap: [OriginPlanPhaseBlock]) -> OriginPlanPhaseBlock {
+        for block in roadmap {
+            if weekMatches(week, weeksRange: block.weeksRange) {
+                return block
+            }
+        }
+        return roadmap.last ?? .init(
+            id: "default",
+            weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: totalWeeks),
+            title: "Protocole",
+            objectives: [],
+            habits: []
+        )
+    }
+
+    private func weekMatches(_ week: Int, weeksRange: String) -> Bool {
+        let digits = weeksRange.components(separatedBy: CharacterSet.decimalDigits.inverted)
+            .compactMap { Int($0) }
+        guard let first = digits.first else { return false }
+        if digits.count >= 2 {
+            return week >= first && week <= digits[1]
+        }
+        return week == first
     }
 }

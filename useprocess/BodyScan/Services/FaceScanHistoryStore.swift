@@ -38,6 +38,7 @@ final class FaceScanHistoryStore {
         if history.count > 90 { history = Array(history.prefix(90)) }
         persist()
         uploadToCloud(result)
+        FaceScanDataLifecycle.enforceRetention(for: self)
     }
 
     func update(_ result: FaceScanResult) {
@@ -85,8 +86,10 @@ final class FaceScanHistoryStore {
         }
 
         history = byId.values.sorted { $0.createdAt > $1.createdAt }
+        if history.count > 90 { history = Array(history.prefix(90)) }
         latestResult = history.first
         persist()
+        FaceScanDataLifecycle.enforceRetention(for: self)
     }
 
     private func uploadToCloud(_ result: FaceScanResult) {
@@ -189,5 +192,12 @@ final class FaceScanHistoryStore {
         didImportOnboarding = false
         latestResult = nil
         history = []
+    }
+
+    /// Remplace l’historique (rétention / purge).
+    func replaceHistory(_ items: [FaceScanResult]) {
+        history = items.sorted { $0.createdAt > $1.createdAt }
+        latestResult = history.first
+        persist()
     }
 }

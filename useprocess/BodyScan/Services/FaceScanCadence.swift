@@ -33,4 +33,38 @@ enum FaceScanCadence {
         if remaining == 1 { return "Prochain scan demain" }
         return "Prochain scan dans \(remaining) j"
     }
+
+    static func nextScanTarget(after lastScan: Date?, calendar: Calendar = .current) -> Date? {
+        guard let lastScan else { return nil }
+        return nextScanDate(after: lastScan, calendar: calendar)
+    }
+
+    static func timeUntilNextScan(since lastScan: Date?, now: Date = Date(), calendar: Calendar = .current) -> TimeInterval? {
+        guard let lastScan else { return nil }
+        let target = nextScanDate(after: lastScan, calendar: calendar)
+        return max(0, target.timeIntervalSince(now))
+    }
+
+    static func countdownLabel(since lastScan: Date?, now: Date = Date(), calendar: Calendar = .current) -> String {
+        guard let lastScan else { return "Premier scan à faire" }
+        if isScanDue(since: lastScan, now: now) { return "Scan disponible" }
+        guard let interval = timeUntilNextScan(since: lastScan, now: now, calendar: calendar) else {
+            return "Premier scan à faire"
+        }
+        return formatCountdown(interval)
+    }
+
+    static func formatCountdown(_ interval: TimeInterval) -> String {
+        let total = max(0, Int(interval.rounded(.down)))
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let seconds = total % 60
+        if hours > 0 {
+            return String(format: "%dh %02dm %02ds", hours, minutes, seconds)
+        }
+        if minutes > 0 {
+            return String(format: "%dm %02ds", minutes, seconds)
+        }
+        return String(format: "%ds", seconds)
+    }
 }

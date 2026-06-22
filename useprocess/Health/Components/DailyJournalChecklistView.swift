@@ -31,6 +31,7 @@ struct DailyJournalChecklistView: View {
     var showWeekStrip: Bool = true
 
     @State private var store = WelcomePlanStore.shared
+    @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var selectedDate = Date()
     @State private var isChecklistExpanded = true
     @EnvironmentObject private var healthManager: HealthManager
@@ -42,10 +43,6 @@ struct DailyJournalChecklistView: View {
         OriginPlanPresenter.journalDayAvailability(for: selectedDate, in: livePlan)
     }
 
-    private var isSelectedToday: Bool {
-        Calendar.current.isDateInToday(selectedDate)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             if showHeader {
@@ -55,6 +52,11 @@ struct DailyJournalChecklistView: View {
                 JournalWeekDayStrip(
                     selectedDate: $selectedDate,
                     plan: livePlan
+                )
+
+                PlanLastFaceScanSection(
+                    latest: faceHistoryStore.latestResult,
+                    isScanDue: faceHistoryStore.isScanDue
                 )
             }
 
@@ -80,11 +82,14 @@ struct DailyJournalChecklistView: View {
                 syncChecklistExpansion(for: day)
             }
         }
+        .onAppear {
+            faceHistoryStore = FaceScanHistoryStore.shared
+        }
     }
 
     private var journalHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Protocole")
+            Text("Journal")
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(theme.primaryText)
             Text(monthYearLabel(for: selectedDate))
@@ -139,56 +144,15 @@ struct DailyJournalChecklistView: View {
 
     @ViewBuilder
     private func checklistContent(for day: OriginProgramDay, isEditable: Bool) -> some View {
-        let sections = OriginPlanPresenter.journalSections(for: day, calendar: livePlan.calendar)
-
-        ForEach(sections) { section in
-            if !section.tasks.isEmpty {
-                journalSectionHeader(
-                    section.title,
-                    subtitle: sectionSubtitle(for: section)
-                )
-                VStack(spacing: 8) {
-                    ForEach(section.tasks) { task in
-                        JournalTaskRow(
-                            task: task,
-                            dayId: day.id,
-                            plan: livePlan,
-                            isEditable: isEditable,
-                            onStatusChange: { status in
-                                store.setJournalTaskStatus(status, taskId: task.id, dayId: day.id)
-                            }
-                        )
-                    }
-                }
+        PlanDayChronologicalTimeline(
+            day: day,
+            plan: livePlan,
+            selectedDate: selectedDate,
+            isEditable: isEditable,
+            onTaskStatusChange: { taskId, dayId, status in
+                store.setJournalTaskStatus(status, taskId: taskId, dayId: dayId)
             }
-        }
-
-        OriginMealSuggestionCard(plan: livePlan, day: day, isEditable: isEditable)
-            .environmentObject(UnifiedProfileService.shared)
-
-        if isSelectedToday {
-            journalSectionHeader("Automatique", subtitle: "Apple Santé")
-            VStack(spacing: 8) {
-                JournalAutoStepsRow(
-                    steps: healthManager.todaySnapshot.effort.steps,
-                    target: ProcessDailyTargets.dailySteps
-                )
-
-                if healthManager.todaySnapshot.effort.exerciseMinutes > 0 {
-                    JournalAutoExerciseRow(
-                        minutes: Int(healthManager.todaySnapshot.effort.exerciseMinutes),
-                        target: 30
-                    )
-                }
-            }
-        }
-
-        journalSectionHeader("24/7", subtitle: "En permanence — rien à cocher")
-        VStack(spacing: 8) {
-            ForEach(Array(ProcessContinuousHabits.all.enumerated()), id: \.offset) { _, habit in
-                JournalContinuousHabitRow(title: habit.title, detail: habit.detail)
-            }
-        }
+        )
     }
 
     private func journalFilledToken(for day: OriginProgramDay) -> String {
@@ -218,39 +182,6 @@ struct DailyJournalChecklistView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(theme.isDark ? JournalDesign.cardFill : theme.cardBackgroundStrong)
         )
-    }
-
-    private func journalSectionHeader(_ title: String, subtitle: String?) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
-                .textCase(.uppercase)
-            Spacer(minLength: 8)
-            if let subtitle {
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundStyle(theme.secondaryText.opacity(0.85))
-            }
-        }
-        .padding(.top, 4)
-    }
-
-    private func sectionSubtitle(for section: OriginPlanPresenter.JournalSection) -> String? {
-        if section.id == "lastNight" {
-            return lastNightRangeLabel(for: selectedDate)
-        }
-        return section.subtitle
-    }
-
-    private func lastNightRangeLabel(for date: Date) -> String? {
-        let cal = Calendar.current
-        let wakeDay = cal.startOfDay(for: date)
-        guard let bedEvening = cal.date(byAdding: .day, value: -1, to: wakeDay) else { return nil }
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "fr_FR")
-        df.setLocalizedDateFormatFromTemplate("EEE d MMM")
-        return "\(df.string(from: bedEvening)) → \(df.string(from: wakeDay))"
     }
 
     private func monthYearLabel(for date: Date) -> String {
@@ -362,7 +293,7 @@ private struct JournalWeekDayStrip: View {
     @Environment(\.appTheme) private var theme
 
     private var stripDates: [Date] {
-        OriginPlanPresenter.journalStripDates()
+        OriginPlanPresenter.journalStripDates(in: plan)
     }
 
     var body: some View {
@@ -427,7 +358,7 @@ private struct JournalWeekDayStrip: View {
         } else {
             false
         }
-        let dayNumber = cal.component(.day, from: date)
+        let programDayLabel = programDayNumberLabel(for: date)
 
         return Button {
             HapticManager.shared.impact(.light)
@@ -443,7 +374,7 @@ private struct JournalWeekDayStrip: View {
                 )
 
                 VStack(spacing: 8) {
-                    Text("\(dayNumber)")
+                    Text(programDayLabel)
                         .font(.system(size: 17, weight: isSelected ? .bold : .semibold, design: .rounded))
                         .foregroundStyle(isSelected ? theme.primaryText : theme.secondaryText.opacity(0.92))
                         .monospacedDigit()
@@ -453,15 +384,26 @@ private struct JournalWeekDayStrip: View {
                 }
             }
             .frame(width: JournalDesign.Strip.cellWidth, height: JournalDesign.Strip.cellHeight)
-            .scaleEffect(isSelected ? JournalDesign.Strip.selectedScale : 1, anchor: .center)
+            .scaleEffect(isSelected ? 1.03 : 1, anchor: .center)
             .animation(.spring(response: 0.32, dampingFraction: 0.78), value: isSelected)
         }
         .buttonStyle(JournalDayCellButtonStyle())
-        .accessibilityLabel(accessibilityLabel(for: date, isToday: isToday, isComplete: isComplete))
+        .accessibilityLabel(accessibilityLabel(for: date, programDay: programDayLabel, isToday: isToday, isComplete: isComplete))
     }
 
-    private func accessibilityLabel(for date: Date, isToday: Bool, isComplete: Bool) -> String {
-        var parts = [date.formatted(.dateTime.weekday(.wide).day().month(.wide))]
+    private func programDayNumberLabel(for date: Date) -> String {
+        guard let day = OriginPlanPresenter.programDay(in: plan, for: date) else {
+            return "·"
+        }
+        return "\(day.globalDayIndex + 1)"
+    }
+
+    private func accessibilityLabel(for date: Date, programDay: String, isToday: Bool, isComplete: Bool) -> String {
+        var parts: [String] = []
+        if programDay != "·" {
+            parts.append("Jour \(programDay) du protocole")
+        }
+        parts.append(date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
         if isToday { parts.append("aujourd'hui") }
         if isComplete { parts.append("complet") }
         return parts.joined(separator: ", ")
@@ -567,8 +509,8 @@ private struct JournalDayTileBackground: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                accent.opacity(isDark ? 0.34 : 0.22),
-                                accent.opacity(isDark ? 0.12 : 0.06)
+                                accent.opacity(isDark ? 0.24 : 0.16),
+                                accent.opacity(isDark ? 0.08 : 0.04)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -576,6 +518,7 @@ private struct JournalDayTileBackground: View {
                     )
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(alignment: .top) {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .strokeBorder(
@@ -602,12 +545,12 @@ private struct JournalDayTileBackground: View {
                     lineWidth: isSelected ? 1.25 : 0.5
                 )
         }
-        .shadow(color: .black.opacity(isDark ? 0.55 : 0.14), radius: isSelected ? 4 : 2, x: 0, y: isSelected ? 2 : 1)
+        .shadow(color: .black.opacity(isDark ? 0.55 : 0.14), radius: isSelected ? 3 : 2, x: 0, y: isSelected ? 2 : 1)
         .shadow(
             color: shadowColor,
-            radius: isSelected ? 12 : 7,
+            radius: isSelected ? 5 : 7,
             x: 0,
-            y: isSelected ? 6 : 4
+            y: isSelected ? 3 : 4
         )
     }
 
@@ -655,7 +598,7 @@ private struct JournalDayTileBackground: View {
 
     private var shadowColor: Color {
         if isSelected {
-            return accent.opacity(isDark ? 0.28 : 0.18)
+            return accent.opacity(isDark ? 0.14 : 0.10)
         }
         return .black.opacity(isDark ? 0.38 : 0.10)
     }

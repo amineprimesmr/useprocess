@@ -1,32 +1,51 @@
 import Foundation
 
-/// Marqueurs visage + mesh 3D capturés pendant l'onboarding.
+/// Marqueurs visage + mesh 3D capturés pendant l'onboarding (stockage local, scopé utilisateur).
 enum OnboardingFaceMarkersStore {
-    private static let markersKey = "useprocess.onboarding.face_markers"
-    private static let meshKey = "useprocess.onboarding.face_mesh"
-    private static let payloadKey = "useprocess.onboarding.face_scan_payload"
+    private static let legacyMarkersKey = "useprocess.onboarding.face_markers"
+    private static let legacyMeshKey = "useprocess.onboarding.face_mesh"
+    private static let legacyPayloadKey = "useprocess.onboarding.face_scan_payload"
+
+    private static func markersKey(for userId: String?) -> String {
+        UserScopedStorage.key("onboarding.face_markers", userId: userId ?? "anonymous")
+    }
+
+    private static func meshKey(for userId: String?) -> String {
+        UserScopedStorage.key("onboarding.face_mesh", userId: userId ?? "anonymous")
+    }
+
+    private static func payloadKey(for userId: String?) -> String {
+        UserScopedStorage.key("onboarding.face_scan_payload", userId: userId ?? "anonymous")
+    }
+
+    private static var currentUserId: String? {
+        UserScopedStorage.currentUserId()
+    }
 
     static func save(markers: FaceWellnessMarkers, mesh: FaceMesh3DData) {
+        let uid = currentUserId
         let payload = OnboardingFaceScanPayload(markers: markers, mesh: mesh)
         guard let data = try? JSONEncoder().encode(payload) else { return }
-        UserDefaults.standard.set(data, forKey: payloadKey)
-        saveMarkersOnly(markers)
+        UserDefaults.standard.set(data, forKey: payloadKey(for: uid))
+        saveMarkersOnly(markers, userId: uid)
         if let meshData = try? JSONEncoder().encode(mesh) {
-            UserDefaults.standard.set(meshData, forKey: meshKey)
+            UserDefaults.standard.set(meshData, forKey: meshKey(for: uid))
         }
     }
 
     static func save(_ markers: FaceWellnessMarkers) {
-        saveMarkersOnly(markers)
+        saveMarkersOnly(markers, userId: currentUserId)
     }
 
-    private static func saveMarkersOnly(_ markers: FaceWellnessMarkers) {
+    private static func saveMarkersOnly(_ markers: FaceWellnessMarkers, userId: String?) {
         guard let data = try? JSONEncoder().encode(markers) else { return }
-        UserDefaults.standard.set(data, forKey: markersKey)
+        UserDefaults.standard.set(data, forKey: markersKey(for: userId))
     }
 
     static func loadPayload() -> OnboardingFaceScanPayload? {
-        if let data = UserDefaults.standard.data(forKey: payloadKey),
+        migrateLegacyIfNeeded()
+        let uid = currentUserId
+        if let data = UserDefaults.standard.data(forKey: payloadKey(for: uid)),
            let payload = try? JSONDecoder().decode(OnboardingFaceScanPayload.self, from: data) {
             return payload
         }
@@ -42,7 +61,8 @@ enum OnboardingFaceMarkersStore {
         if let payload = loadPayload(), payload.mesh.isValid {
             return payload.mesh
         }
-        guard let data = UserDefaults.standard.data(forKey: meshKey),
+        migrateLegacyIfNeeded()
+        guard let data = UserDefaults.standard.data(forKey: meshKey(for: currentUserId)),
               let mesh = try? JSONDecoder().decode(FaceMesh3DData.self, from: data),
               mesh.isValid else {
             return nil
@@ -51,7 +71,8 @@ enum OnboardingFaceMarkersStore {
     }
 
     private static func loadMarkers() -> FaceWellnessMarkers? {
-        guard let data = UserDefaults.standard.data(forKey: markersKey),
+        migrateLegacyIfNeeded()
+        guard let data = UserDefaults.standard.data(forKey: markersKey(for: currentUserId)),
               let markers = try? JSONDecoder().decode(FaceWellnessMarkers.self, from: data) else {
             return nil
         }
@@ -59,8 +80,28 @@ enum OnboardingFaceMarkersStore {
     }
 
     static func clear() {
-        UserDefaults.standard.removeObject(forKey: markersKey)
-        UserDefaults.standard.removeObject(forKey: meshKey)
-        UserDefaults.standard.removeObject(forKey: payloadKey)
+        let uid = currentUserId
+        UserDefaults.standard.removeObject(forKey: markersKey(for: uid))
+        UserDefaults.standard.removeObject(forKey: meshKey(for: uid))
+        UserDefaults.standard.removeObject(forKey: payloadKey(for: uid))
+        UserDefaults.standard.removeObject(forKey: legacyMarkersKey)
+        UserDefaults.standard.removeObject(forKey: legacyMeshKey)
+        UserDefaults.standard.removeObject(forKey: legacyPayloadKey)
+    }
+
+    private static func migrateLegacyIfNeeded() {
+        let uid = currentUserId
+        guard UserDefaults.standard.data(forKey: payloadKey(for: uid)) == nil,
+              let legacy = UserDefaults.standard.data(forKey: legacyPayloadKey) else { return }
+        UserDefaults.standard.set(legacy, forKey: payloadKey(for: uid))
+        if let markers = UserDefaults.standard.data(forKey: legacyMarkersKey) {
+            UserDefaults.standard.set(markers, forKey: markersKey(for: uid))
+        }
+        if let mesh = UserDefaults.standard.data(forKey: legacyMeshKey) {
+            UserDefaults.standard.set(mesh, forKey: meshKey(for: uid))
+        }
+        UserDefaults.standard.removeObject(forKey: legacyMarkersKey)
+        UserDefaults.standard.removeObject(forKey: legacyMeshKey)
+        UserDefaults.standard.removeObject(forKey: legacyPayloadKey)
     }
 }

@@ -40,14 +40,10 @@ struct CoachHomeSuggestionBar: View {
                         .padding(.horizontal, 20)
                         .padding(.vertical, 14)
                         .contentShape(buttonShape)
-                        .background {
-                            suggestionGlassBackground
-                        }
                 }
-                .buttonStyle(CoachSuggestionPressStyle())
+                .processInvertedGlassEffect(in: buttonShape)
                 .disabled(isDisabled || !visible || isSelecting)
                 .opacity(rowOpacity(for: suggestion.id))
-                .scaleEffect(rowScale(for: suggestion.id))
                 .offset(y: rowOffset(for: suggestion.id))
                 .modifier(CoachSuggestionRevealStyle(isVisible: visible, animated: usesRevealAnimation))
             }
@@ -113,17 +109,6 @@ struct CoachHomeSuggestionBar: View {
         }
     }
 
-    @ViewBuilder
-    private var suggestionGlassBackground: some View {
-        if #available(iOS 26.0, *) {
-            buttonShape
-                .fill(.clear)
-                .glassEffect(ProcessGlass.filterSelected(invertedFill), in: buttonShape)
-        } else {
-            buttonShape.fill(invertedFill)
-        }
-    }
-
     @MainActor
     private func runStaggerReveal() async {
         guard isRevealed, !instantReveal else { return }
@@ -145,14 +130,6 @@ struct CoachHomeSuggestionBar: View {
                 revealedIDs.insert(suggestion.id)
             }
         }
-    }
-}
-
-private struct CoachSuggestionPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.988 : 1)
-            .animation(.spring(response: 0.22, dampingFraction: 0.84), value: configuration.isPressed)
     }
 }
 

@@ -118,7 +118,10 @@ final class CoachConversationLibraryStore {
 
     func deleteConversation(_ id: UUID) {
         library.conversations.removeAll { $0.id == id }
-        if library.activeConversationId == id {
+        library.sortByRecent()
+        if library.activeConversationId == id
+            || library.activeConversationId == nil
+            || !library.conversations.contains(where: { $0.id == library.activeConversationId }) {
             library.activeConversationId = library.conversations.first?.id
         }
         saveLocal()

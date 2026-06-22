@@ -415,6 +415,7 @@ enum CoachEngine {
     // MARK: - Private body scan
 
     private static func bodyScanVisionSummary(result: BodyScanResult) async -> String? {
+        guard ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI else { return nil }
         guard let capture = bestCaptureForVision(from: result.captures),
               let path = capture.imagePath,
               let image = BodyScanImageStore.load(filename: path),

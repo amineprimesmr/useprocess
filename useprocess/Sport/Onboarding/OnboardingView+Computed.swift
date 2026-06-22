@@ -175,7 +175,8 @@ var shouldAddTopPadding: Bool {
         || step == .hasSportActivity || step == .nutritionQuality
         || step == .weightManagementExperience || step == .weightFailureReasons
         || step == .sportSelection || step == .weightMotivation || step == .weightGoalIncompatible
-        || step == .biometricAuth || step == .notificationPermission || step == .healthKitPermissions {
+        || step == .biometricAuth || step == .notificationPermission || step == .transformationPreview
+        || step == .healthKitPermissions {
         return false
     }
 

@@ -2,15 +2,18 @@ import SwiftUI
 import UIKit
 
 enum ProcessMainChromeMetrics {
-    static var filterBarHeight: CGFloat { LayoutConstants.isIPad ? 72 : 58 }
-    static let dismissDistance: CGFloat = 100
-
     static var topSafeInset: CGFloat { UIApplication.safeAreaTop }
 
-    /// Espace réservé sous le menu sticky pour le contenu scrollable.
-    static var scrollTopInset: CGFloat { topSafeInset + filterBarHeight + 4 }
+    static var filterBarHeight: CGFloat { LayoutConstants.isIPad ? 52 : 40 }
 
-    static var blurHeight: CGFloat { topSafeInset + filterBarHeight + 10 }
+    /// Padding haut quand l’overlay ignore la safe area (une seule fois).
+    static var menuTopInset: CGFloat {
+        topSafeInset + (LayoutConstants.isIPad ? 4 : 2)
+    }
+
+    static var menuBottomInset: CGFloat { 0 }
+
+    static var scrollTopInset: CGFloat { menuTopInset + filterBarHeight + menuBottomInset }
 }
 
 struct CoachSidebarOffsetKey: PreferenceKey {
@@ -21,7 +24,6 @@ struct CoachSidebarOffsetKey: PreferenceKey {
     }
 }
 
-/// Progression du panneau latéral coach (0 = fermé, 1 = ouvert).
 struct CoachSidebarProgressKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 
@@ -39,75 +41,25 @@ struct ProfileSubrouteActiveKey: PreferenceKey {
 }
 
 extension View {
-    /// Masque le menu sticky principal (ex. écran « Modifier le profil »).
     func reportsProfileSubrouteActive(_ isActive: Bool) -> some View {
         preference(key: ProfileSubrouteActiveKey.self, value: isActive)
     }
 }
 
-struct ProcessMainScrollHeaderPreference: Equatable {
-    var section: ProcessMainSection
-    var headerProgress: CGFloat
-    var headerVisibility: CGFloat
-}
-
-struct ProcessMainScrollHeaderPreferenceKey: PreferenceKey {
-    static var defaultValue: ProcessMainScrollHeaderPreference?
-
-    static func reduce(value: inout ProcessMainScrollHeaderPreference?, nextValue: () -> ProcessMainScrollHeaderPreference?) {
-        if let next = nextValue() {
-            value = next
-        }
-    }
-}
-
-/// Remonte l'état « scroll vertical en cours » pour bloquer le swipe entre onglets.
-struct ProcessMainVerticalScrollLockPreferenceKey: PreferenceKey {
-    static var defaultValue: [ProcessMainSection: Bool] = [:]
-
-    static func reduce(value: inout [ProcessMainSection: Bool], nextValue: () -> [ProcessMainSection: Bool]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
-    }
-}
-
-/// Menu + blur sticky au-dessus des pages principales (une seule instance).
 struct ProcessMainStickyChromeOverlay: View {
     @Binding var selection: ProcessMainSection
     var lockedSections: Set<ProcessMainSection> = []
-    let headerProgress: CGFloat
-    let headerVisibility: CGFloat
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .top) {
-                ProcessMainTopScrollBlur(
-                    visibility: headerVisibility,
-                    height: ProcessMainChromeMetrics.blurHeight
-                )
-                .allowsHitTesting(false)
-
-                ProcessMainFilterBar(selection: $selection, lockedSections: lockedSections)
-                    .padding(.top, ProcessMainChromeMetrics.topSafeInset)
-                    .offset(y: headerProgress * -ProcessMainChromeMetrics.dismissDistance)
-                    .opacity(Double(headerVisibility))
-            }
-            .frame(height: ProcessMainChromeMetrics.scrollTopInset, alignment: .top)
-
-            Spacer(minLength: 0)
-                .allowsHitTesting(false)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ignoresSafeArea(edges: .top)
+        ProcessMainFilterBar(selection: $selection, lockedSections: lockedSections)
+            .padding(.top, ProcessMainChromeMetrics.menuTopInset)
     }
 }
 
-/// Couche sticky isolée — seule cette vue observe la progression sidebar.
 struct CoachMainStickyChromeLayer: View {
     @Binding var selection: ProcessMainSection
     var lockedSections: Set<ProcessMainSection> = []
     var profileSubrouteActive: Bool
-    let headerProgress: CGFloat
-    let headerVisibility: CGFloat
 
     @Bindable private var sidebar = CoachSidebarPresentation.shared
 
@@ -120,57 +72,11 @@ struct CoachMainStickyChromeLayer: View {
     var body: some View {
         ProcessMainStickyChromeOverlay(
             selection: $selection,
-            lockedSections: lockedSections,
-            headerProgress: headerProgress,
-            headerVisibility: headerVisibility
+            lockedSections: lockedSections
         )
+        .frame(maxWidth: .infinity, alignment: .top)
         .opacity(opacity)
         .allowsHitTesting(opacity > 0.05)
         .animation(.none, value: sidebar.progress)
-    }
-}
-
-struct ProcessMainTopScrollBlur: View {
-    let visibility: CGFloat
-    let height: CGFloat
-
-    var body: some View {
-        VariableBlurView(
-            maxBlurRadius: 10,
-            direction: .blurredTopClearBottom,
-            startOffset: -0.06
-        )
-        .frame(maxWidth: .infinity)
-        .frame(height: height)
-        .opacity(Double(visibility))
-        .ignoresSafeArea(edges: .top)
-        .allowsHitTesting(false)
-    }
-}
-
-extension View {
-    func reportsProcessMainScrollHeader(
-        section: ProcessMainSection,
-        headerProgress: CGFloat,
-        headerVisibility: CGFloat
-    ) -> some View {
-        preference(
-            key: ProcessMainScrollHeaderPreferenceKey.self,
-            value: ProcessMainScrollHeaderPreference(
-                section: section,
-                headerProgress: headerProgress,
-                headerVisibility: headerVisibility
-            )
-        )
-    }
-
-    func reportsProcessMainVerticalScrollLock(
-        section: ProcessMainSection,
-        isScrollingVertically: Bool
-    ) -> some View {
-        preference(
-            key: ProcessMainVerticalScrollLockPreferenceKey.self,
-            value: [section: isScrollingVertically]
-        )
     }
 }

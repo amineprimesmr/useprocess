@@ -41,6 +41,12 @@ enum FaceScanService {
         OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
         FaceScanHistoryStore.shared.push(result)
 
+        if var plan = WelcomePlanStore.shared.plan {
+            PlanRecalibrationService.applyBaselineScan(to: &plan, markers: markers)
+            _ = PlanRecalibrationService.recalibrate(plan: &plan, latestScan: result)
+            WelcomePlanStore.shared.savePlan(plan)
+        }
+
         if ClaudeConfiguration.isConfigured,
            ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI {
             if let enhanced = await CoachEngine.analyzeFaceScan(

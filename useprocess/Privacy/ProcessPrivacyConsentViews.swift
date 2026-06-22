@@ -172,7 +172,7 @@ struct FaceScanPrivacyConsentView: View {
                         title: "Données faciales collectées",
                         items: [
                             "Mesh 3D du visage (géométrie, traîté sur l'appareil)",
-                            "Photo JPEG et courte vidéo du scan",
+                            "Photo JPEG et courte vidéo locale du scan (jamais téléversées)",
                             "Scores wellness dérivés (gonflement, cernes, tension mâchoire, clarté peau)"
                         ]
                     )
@@ -180,8 +180,9 @@ struct FaceScanPrivacyConsentView: View {
                     disclosureSection(
                         title: "Stockage",
                         items: [
-                            "Sur ton iPhone (dossier sécurisé de l'app)",
-                            "Sur ton compte Firebase (Firestore) si tu es connecté — max. 90 scans",
+                            "Photos et vidéos : uniquement sur ton appareil (dossier sécurisé de l'app)",
+                            "Scores et métadonnées : synchronisés sur Firebase Firestore si tu es connecté — max. 90 scans (purge auto cloud + local)",
+                            "Révoquer dans Paramètres supprime scans, photos et données cloud",
                             "Suppression sous 30 jours après suppression du compte"
                         ]
                     )
@@ -283,7 +284,7 @@ struct FaceScanPrivacyGateView: View {
 
     @State private var consentStore = ProcessPrivacyConsentStore.shared
     @State private var showScanner = false
-    @State private var enableAIAnalysis = true
+    @State private var enableAIAnalysis = false
 
     var body: some View {
         Group {
@@ -321,7 +322,7 @@ struct FaceScanCapturePrivacyGateView: View {
 
     @State private var consentStore = ProcessPrivacyConsentStore.shared
     @State private var showScanner = false
-    @State private var enableAIAnalysis = true
+    @State private var enableAIAnalysis = false
 
     var body: some View {
         Group {

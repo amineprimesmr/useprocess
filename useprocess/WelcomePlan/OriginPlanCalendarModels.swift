@@ -6,15 +6,15 @@ struct OriginProgramCalendar: Codable, Equatable {
     var startedAt: Date?
     var weeks: [OriginProgramWeek]
     /// Incrémenté quand le schéma du calendrier change (ex. IDs stables des tâches).
-    var buildVersion: Int = 5
+    var buildVersion: Int = 6
 
-    static var empty: OriginProgramCalendar { OriginProgramCalendar(startedAt: nil, weeks: [], buildVersion: 5) }
+    static var empty: OriginProgramCalendar { OriginProgramCalendar(startedAt: nil, weeks: [], buildVersion: 6) }
 
     enum CodingKeys: String, CodingKey {
         case startedAt, weeks, buildVersion
     }
 
-    init(startedAt: Date?, weeks: [OriginProgramWeek], buildVersion: Int = 5) {
+    init(startedAt: Date?, weeks: [OriginProgramWeek], buildVersion: Int = 6) {
         self.startedAt = startedAt
         self.weeks = weeks
         self.buildVersion = buildVersion
@@ -162,13 +162,15 @@ struct OriginPlanProgress: Codable, Equatable {
     var validatedMeals: [String: String] = [:]
     /// Repas validés par créneau (`dayId` → slot → payload).
     var validatedMealsBySlot: [String: [String: String]] = [:]
+    /// Idées IA générées mais pas encore validées (`dayId` → slot → payload JSON).
+    var draftMealsBySlot: [String: [String: String]] = [:]
     var shoppingList: [MealShoppingItem] = []
     var mealHistory: [MealHistoryEntry] = []
     var mealFeedbacks: [MealFeedbackEntry] = []
 
     enum CodingKeys: String, CodingKey {
         case completedTaskIds, taskStatuses, completedDayIds, userNotes, modifications
-        case lastCoachSyncAt, validatedMeals, validatedMealsBySlot
+        case lastCoachSyncAt, validatedMeals, validatedMealsBySlot, draftMealsBySlot
         case shoppingList, mealHistory, mealFeedbacks
     }
 
@@ -181,6 +183,7 @@ struct OriginPlanProgress: Codable, Equatable {
         lastCoachSyncAt: Date? = nil,
         validatedMeals: [String: String] = [:],
         validatedMealsBySlot: [String: [String: String]] = [:],
+        draftMealsBySlot: [String: [String: String]] = [:],
         shoppingList: [MealShoppingItem] = [],
         mealHistory: [MealHistoryEntry] = [],
         mealFeedbacks: [MealFeedbackEntry] = []
@@ -193,6 +196,7 @@ struct OriginPlanProgress: Codable, Equatable {
         self.lastCoachSyncAt = lastCoachSyncAt
         self.validatedMeals = validatedMeals
         self.validatedMealsBySlot = validatedMealsBySlot
+        self.draftMealsBySlot = draftMealsBySlot
         self.shoppingList = shoppingList
         self.mealHistory = mealHistory
         self.mealFeedbacks = mealFeedbacks
@@ -208,6 +212,7 @@ struct OriginPlanProgress: Codable, Equatable {
         lastCoachSyncAt = try c.decodeIfPresent(Date.self, forKey: .lastCoachSyncAt)
         validatedMeals = try c.decodeIfPresent([String: String].self, forKey: .validatedMeals) ?? [:]
         validatedMealsBySlot = try c.decodeIfPresent([String: [String: String]].self, forKey: .validatedMealsBySlot) ?? [:]
+        draftMealsBySlot = try c.decodeIfPresent([String: [String: String]].self, forKey: .draftMealsBySlot) ?? [:]
         shoppingList = try c.decodeIfPresent([MealShoppingItem].self, forKey: .shoppingList) ?? []
         mealHistory = try c.decodeIfPresent([MealHistoryEntry].self, forKey: .mealHistory) ?? []
         mealFeedbacks = try c.decodeIfPresent([MealFeedbackEntry].self, forKey: .mealFeedbacks) ?? []
@@ -223,6 +228,7 @@ struct OriginPlanProgress: Codable, Equatable {
         try c.encodeIfPresent(lastCoachSyncAt, forKey: .lastCoachSyncAt)
         try c.encode(validatedMeals, forKey: .validatedMeals)
         try c.encode(validatedMealsBySlot, forKey: .validatedMealsBySlot)
+        try c.encode(draftMealsBySlot, forKey: .draftMealsBySlot)
         try c.encode(shoppingList, forKey: .shoppingList)
         try c.encode(mealHistory, forKey: .mealHistory)
         try c.encode(mealFeedbacks, forKey: .mealFeedbacks)

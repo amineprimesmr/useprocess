@@ -34,6 +34,7 @@ struct AppShellView: View {
         .environmentObject(DailyDataManager.shared)
         .task(id: session.hasCompletedOnboarding) {
             guard session.hasCompletedOnboarding else { return }
+            WelcomePlanStore.shared.reloadForCurrentUser()
             if AppConfiguration.firebaseConfigured {
                 _ = UserSessionCoordinator.shared
                 await UnifiedProfileService.shared.loadProfile()

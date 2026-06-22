@@ -35,6 +35,16 @@ enum HealthMedicalSources {
             id: "nih_sleep",
             title: "NIH — sommeil et santé",
             url: URL(string: "https://www.nhlbi.nih.gov/health/sleep")!
+        ),
+        .init(
+            id: "who_sodium_potassium",
+            title: "OMS — sel et potassium",
+            url: URL(string: "https://www.who.int/news/item/31-01-2013-who-issues-new-guidance-on-dietary-salt-and-potassium")!
+        ),
+        .init(
+            id: "ncbi_potassium",
+            title: "NCBI — apport en potassium",
+            url: URL(string: "https://www.ncbi.nlm.nih.gov/books/NBK132453/")!
         )
     ]
 }

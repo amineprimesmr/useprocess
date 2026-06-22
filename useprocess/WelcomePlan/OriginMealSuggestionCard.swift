@@ -205,6 +205,15 @@ final class OriginMealSuggestionViewModel {
         return content
     }
 
+    func restoreSuggestion(_ content: MealSuggestionContent) {
+        revealTask?.cancel()
+        comparisonCandidate = nil
+        itemAlternatives = []
+        currentSuggestion = content
+        revealedActionIDs = ["shopping", "validate", "modify", "another"]
+        phase = .suggestion(content)
+    }
+
     func resetToIdle() {
         revealTask?.cancel()
         revealedActionIDs = []
@@ -253,10 +262,15 @@ struct OriginMealSuggestionCard: View {
     @State private var showPhotoScan = false
     @State private var showFeedback = false
     @State private var showComparison = false
+    @State private var showNutritionGuide = false
     @State private var lastHistoryId: String?
 
     private var livePlan: FaceOriginPlan { store.plan ?? plan }
     private let answerShape = Capsule()
+
+    private var mealSlots: [MealTimeSlot] {
+        livePlan.configuredMealSlots
+    }
 
     private var validatedSlots: Set<MealTimeSlot> {
         guard let slots = store.plan?.progress.validatedMealsBySlot[day.id] else { return [] }
@@ -270,11 +284,15 @@ struct OriginMealSuggestionCard: View {
             if isEditable {
                 MealTimelineTabs(
                     selected: $selectedSlot,
+                    slots: mealSlots,
                     validatedSlots: validatedSlots,
                     theme: theme
                 )
                 .onChange(of: selectedSlot) { _, slot in
                     syncFromStore(slot: slot)
+                }
+                .onChange(of: mealSlots.map(\.rawValue).joined()) { _, _ in
+                    ensureSelectedSlotIsValid()
                 }
 
                 modeToolbar
@@ -291,9 +309,18 @@ struct OriginMealSuggestionCard: View {
         }
         .padding(14)
         .background(cardBackground)
-        .onAppear { syncFromStore(slot: selectedSlot) }
+        .onAppear {
+            ensureSelectedSlotIsValid()
+            syncFromStore(slot: selectedSlot)
+        }
         .onChange(of: store.plan?.progress.validatedMealsBySlot[day.id]) { _, _ in
             syncFromStore(slot: selectedSlot)
+        }
+        .onChange(of: store.plan?.progress.draftMealsBySlot[day.id]) { _, _ in
+            syncFromStore(slot: selectedSlot)
+        }
+        .onChange(of: viewModelPhaseToken) { _, _ in
+            persistDraftIfNeeded()
         }
         .sheet(item: $editingItem) { item in
             editSheet(for: item)
@@ -349,6 +376,40 @@ struct OriginMealSuggestionCard: View {
         }
         .onChange(of: viewModel.comparisonCandidate?.name) { _, name in
             showComparison = name != nil
+        }
+        .sheet(isPresented: $showNutritionGuide) {
+            NavigationStack {
+                ScrollView {
+                    HealthDebloatGuideView(initialPillar: .nutrition, showsPillarPicker: false)
+                        .padding()
+                }
+                .background(theme.background.ignoresSafeArea())
+                .navigationTitle("Nutrition & debloat")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Fermer") { showNutritionGuide = false }
+                    }
+                }
+            }
+            .presentationDetents([.large])
+        }
+    }
+
+    private var viewModelPhaseToken: String {
+        switch viewModel.phase {
+        case .idle: return "idle"
+        case .loading: return "loading"
+        case .suggestion(let c): return "suggestion|\(c.name)"
+        case .validated(let c): return "validated|\(c.name)"
+        case .quickPick(let meals): return "quickPick|\(meals.count)"
+        }
+    }
+
+    private func persistDraftIfNeeded() {
+        guard isEditable else { return }
+        if case .suggestion(let content) = viewModel.phase {
+            store.saveDraftMeal(dayId: day.id, meal: content, slot: selectedSlot)
         }
     }
 
@@ -437,8 +498,22 @@ struct OriginMealSuggestionCard: View {
                 Text("Hub repas IA")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
+                if let target = livePlan.nutritionProtocol.targetMealsPerDay {
+                    Text(livePlan.nutritionPlanType.label)
+                        .font(.caption2)
+                        .foregroundStyle(theme.onboardingAccent)
+                }
             }
             Spacer(minLength: 0)
+            Button {
+                showNutritionGuide = true
+            } label: {
+                Label("Debloat", systemImage: "book.fill")
+                    .font(.caption.weight(.semibold))
+                    .labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
         }
     }
 
@@ -532,6 +607,7 @@ struct OriginMealSuggestionCard: View {
 
     private func validate(_ content: MealSuggestionContent) {
         store.saveValidatedMeal(dayId: day.id, meal: content, slot: selectedSlot)
+        store.clearDraftMeal(dayId: day.id, slot: selectedSlot)
         _ = viewModel.validateCurrentMeal()
         lastHistoryId = store.recentMealHistory(limit: 1).first?.id
         promptFeedback()
@@ -585,6 +661,7 @@ struct OriginMealSuggestionCard: View {
             HapticManager.shared.impact(.medium)
             if onSecondaryClear {
                 store.clearValidatedMeal(dayId: day.id, slot: selectedSlot)
+                store.clearDraftMeal(dayId: day.id, slot: selectedSlot)
                 viewModel.resetToIdle()
             }
             Task {
@@ -605,9 +682,7 @@ struct OriginMealSuggestionCard: View {
             .padding(.vertical, 15)
             .contentShape(answerShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerShape)
         .disabled(viewModel.isLoading)
         .opacity(viewModel.isLoading ? 0.55 : 1)
     }
@@ -616,13 +691,22 @@ struct OriginMealSuggestionCard: View {
         HealthHubDesign.softCard(theme: theme)
     }
 
+    private func ensureSelectedSlotIsValid() {
+        guard !mealSlots.contains(selectedSlot), let first = mealSlots.first else { return }
+        selectedSlot = first
+    }
+
     private func syncFromStore(slot: MealTimeSlot) {
         guard !viewModel.isLoading else { return }
         if let payload = store.plan?.progress.validatedMealsBySlot[day.id]?[slot.rawValue] {
             viewModel.syncValidatedMeal(payload, slot: slot)
         } else if slot == .lunch, let fallback = store.validatedMeal(for: day.id) {
             viewModel.syncValidatedMeal(fallback, slot: slot)
+        } else if let draft = store.draftMealContent(for: day.id, slot: slot) {
+            viewModel.restoreSuggestion(draft)
         } else if case .validated = viewModel.phase {
+            viewModel.resetToIdle()
+        } else if case .suggestion = viewModel.phase {
             viewModel.resetToIdle()
         }
     }

@@ -28,15 +28,9 @@ struct CoachChatPhotoLibrarySheet: View {
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background {
-                        if #available(iOS 26.0, *) {
-                            Capsule().fill(.clear).glassEffect(ProcessGlass.regular, in: Capsule())
-                        } else {
-                            Capsule().fill(.regularMaterial)
-                        }
-                    }
+                    .contentShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .processGlassButton(in: Capsule())
             .padding(.leading, 18)
             .padding(.bottom, 92)
         }
@@ -103,7 +97,7 @@ struct CoachChatPhotoLibrarySheet: View {
             .frame(maxWidth: expanded ? .infinity : width)
             .background {
                 if #available(iOS 26.0, *) {
-                    Capsule().fill(.clear).glassEffect(ProcessGlass.regular, in: Capsule())
+                    Capsule().fill(.clear).glassEffect(ProcessGlass.regularSurface, in: Capsule())
                 } else {
                     Capsule().fill(.ultraThinMaterial)
                 }

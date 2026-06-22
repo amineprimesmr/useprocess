@@ -51,4 +51,35 @@ enum FaceScanImageStore {
     static func videoFileURL(filename: String) -> URL {
         directoryURL.appendingPathComponent(filename)
     }
+
+    /// Supprime toutes les photos et vidéos de scan visage stockées localement.
+    static func deleteAllStoredMedia() {
+        let folder = directoryURL
+        guard let files = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { return }
+        for name in files where name.hasSuffix("_face.jpg") || name.hasSuffix("_face.mp4") {
+            try? FileManager.default.removeItem(at: folder.appendingPathComponent(name))
+        }
+    }
+
+    static func deleteMedia(forScanId scanId: String) {
+        let folder = directoryURL
+        for suffix in ["_face.jpg", "_face.mp4"] {
+            let url = folder.appendingPathComponent("\(scanId)\(suffix)")
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
+    /// Supprime les médias dont l’identifiant n’est plus dans l’historique (rétention 90 scans).
+    static func deleteMedia(exceptScanIds keptIds: Set<String>) {
+        let folder = directoryURL
+        guard let files = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { return }
+        for name in files where name.hasSuffix("_face.jpg") || name.hasSuffix("_face.mp4") {
+            let scanId = name
+                .replacingOccurrences(of: "_face.jpg", with: "")
+                .replacingOccurrences(of: "_face.mp4", with: "")
+            if !keptIds.contains(scanId) {
+                try? FileManager.default.removeItem(at: folder.appendingPathComponent(name))
+            }
+        }
+    }
 }

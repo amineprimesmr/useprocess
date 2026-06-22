@@ -219,32 +219,16 @@ struct PaywallBevelFeatureRow: View {
     @Environment(\.colorScheme) private var colorScheme
     let item: PaywallFeatureItem
 
+    private var iconSize: CGFloat { 48 }
+    private var iconContainerSize: CGFloat { 62 }
+    private var iconCornerRadius: CGFloat {
+        max(item.assetCornerRadius ?? 0, 14)
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
-            Group {
-                if let assetName = item.assetName, !assetName.isEmpty {
-                    Image(assetName)
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                        .frame(
-                            width: (item.assetCornerRadius ?? 0) > 0 ? 32 : 28,
-                            height: (item.assetCornerRadius ?? 0) > 0 ? 32 : 28
-                        )
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: item.assetCornerRadius ?? 0,
-                                style: .continuous
-                            )
-                        )
-                } else {
-                    Image(systemName: item.symbol)
-                        .font(.system(size: 24, weight: .semibold))
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(item.symbolColors.first ?? .blue, item.symbolColors.last ?? .cyan)
-                }
-            }
-            .frame(width: 48, height: 48)
+            featureIcon
+                .frame(width: iconContainerSize, height: iconContainerSize)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
@@ -260,6 +244,45 @@ struct PaywallBevelFeatureRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 11)
+    }
+
+    @ViewBuilder
+    private var featureIcon: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(colorScheme == .dark ? 0.12 : 0.28),
+                            Color.white.opacity(colorScheme == .dark ? 0.04 : 0.10),
+                            .clear,
+                        ],
+                        center: .center,
+                        startRadius: iconSize * 0.16,
+                        endRadius: iconContainerSize * 0.50
+                    )
+                )
+                .frame(width: iconContainerSize, height: iconContainerSize)
+
+            if let assetName = item.assetName, !assetName.isEmpty {
+                Image(assetName)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: iconSize, height: iconSize)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: iconCornerRadius,
+                            style: .continuous
+                        )
+                    )
+            } else {
+                Image(systemName: item.symbol)
+                    .font(.system(size: 32, weight: .semibold))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(item.symbolColors.first ?? .blue, item.symbolColors.last ?? .cyan)
+            }
+        }
     }
 }
 
@@ -510,9 +533,14 @@ struct PaywallBevelPlanCard: View {
 struct PaywallBevelContinueButton: View {
     @Environment(\.colorScheme) private var colorScheme
     let title: String
+    var subtitle: String? = nil
     let isLoading: Bool
     let isEnabled: Bool
     let action: () -> Void
+
+    private var buttonHeight: CGFloat {
+        subtitle == nil ? 56 : 64
+    }
 
     var body: some View {
         Button(action: action) {
@@ -529,13 +557,23 @@ struct PaywallBevelContinueButton: View {
                         ProgressView()
                             .tint(paywallCTATextColor)
                     } else {
-                        Text(title)
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(paywallCTATextColor)
+                        VStack(spacing: 2) {
+                            Text(title)
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundStyle(paywallCTATextColor)
+
+                            if let subtitle {
+                                Text(subtitle)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(paywallCTATextColor.opacity(0.72))
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                        .padding(.horizontal, 16)
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 56)
+                .frame(height: buttonHeight)
                 .background {
                     paywallCTAGlassCapsule
                 }
@@ -600,48 +638,89 @@ private struct PaywallBevelPressStyle: ButtonStyle {
 // MARK: - Features Process
 
 enum PaywallBevelFeatureCatalog {
+    private static let iconCornerRadius: CGFloat = 11
+
     static let primary: [PaywallFeatureItem] = [
         PaywallFeatureItem(
-            id: "coach",
-            title: "Coach IA illimité",
-            subtitle: "Profite de séances personnalisées adaptées à tes objectifs.",
+            id: "habits",
+            title: "Suivez les habitudes et les symptômes",
+            subtitle: "Repère tes routines et ce qui change au quotidien.",
+            symbol: "list.bullet.clipboard.fill",
+            symbolColors: [Color(red: 0.28, green: 0.62, blue: 0.98), Color(red: 0.52, green: 0.82, blue: 1.0)],
+            assetName: "PaywallIconHabits",
+            assetCornerRadius: iconCornerRadius
+        ),
+        PaywallFeatureItem(
+            id: "stress",
+            title: "Identifiez les déclencheurs de stress",
+            subtitle: "Comprends ce qui te tire vers le bas et agis dessus.",
+            symbol: "bolt.heart.fill",
+            symbolColors: [Color(red: 0.95, green: 0.55, blue: 0.18), Color(red: 1.0, green: 0.78, blue: 0.42)],
+            assetName: "PaywallIconStress",
+            assetCornerRadius: iconCornerRadius
+        ),
+        PaywallFeatureItem(
+            id: "body",
+            title: "Optimisez votre corps",
+            subtitle: "Ajuste ton entraînement et ta récupération en continu.",
             symbol: "figure.strengthtraining.traditional",
-            symbolColors: [Color(red: 0.98, green: 0.34, blue: 0.42), Color(red: 1.0, green: 0.62, blue: 0.58)]
+            symbolColors: [Color(red: 0.98, green: 0.34, blue: 0.42), Color(red: 1.0, green: 0.62, blue: 0.58)],
+            assetName: "PaywallIconBody",
+            assetCornerRadius: iconCornerRadius
         ),
         PaywallFeatureItem(
-            id: "origin",
-            title: "Protocole Origine",
-            subtitle: "Programme sur mesure généré à partir de ton profil.",
+            id: "training",
+            title: "Plans d'entraînement personnalisés",
+            subtitle: "Des séances adaptées à ton niveau et à tes objectifs.",
+            symbol: "calendar.badge.clock",
+            symbolColors: [Color(red: 0.42, green: 0.48, blue: 0.98), Color(red: 0.68, green: 0.72, blue: 1.0)],
+            assetName: "PaywallIconTraining",
+            assetCornerRadius: iconCornerRadius
+        ),
+        PaywallFeatureItem(
+            id: "nutrition",
+            title: "Plan nutritionnel facile",
+            subtitle: "Des repères simples pour mieux manger sans prise de tête.",
+            symbol: "leaf.fill",
+            symbolColors: [Color(red: 0.22, green: 0.72, blue: 0.48), Color(red: 0.52, green: 0.88, blue: 0.62)],
+            assetName: "PaywallIconNutrition",
+            assetCornerRadius: iconCornerRadius
+        ),
+        PaywallFeatureItem(
+            id: "sleep",
+            title: "Améliorer la qualité du sommeil",
+            subtitle: "Repères concrets pour mieux dormir et récupérer.",
+            symbol: "moon.zzz.fill",
+            symbolColors: [Color(red: 0.55, green: 0.35, blue: 0.92), Color(red: 0.78, green: 0.62, blue: 1.0)],
+            assetName: "PaywallIconSleep",
+            assetCornerRadius: iconCornerRadius
+        ),
+        PaywallFeatureItem(
+            id: "intelligence",
+            title: "Process Intelligence",
+            subtitle: "Un coach IA illimité, adapté à ton profil et tes objectifs.",
             symbol: "sparkles",
-            symbolColors: [Color(red: 0.95, green: 0.55, blue: 0.18), Color(red: 1.0, green: 0.78, blue: 0.42)]
+            symbolColors: [Color(red: 0.98, green: 0.45, blue: 0.38), Color(red: 1.0, green: 0.72, blue: 0.55)],
+            assetName: "PaywallIconIntelligence",
+            assetCornerRadius: iconCornerRadius
         ),
         PaywallFeatureItem(
-            id: "scan",
-            title: "Scan visage & corps",
-            subtitle: "Suis ta progression avec l'analyse visuelle et l'historique.",
-            symbol: "face.smiling.fill",
-            symbolColors: [Color(red: 0.98, green: 0.45, blue: 0.38), Color(red: 1.0, green: 0.72, blue: 0.55)]
-        ),
-        PaywallFeatureItem(
-            id: "health",
-            title: "Tableau de bord santé",
-            subtitle: "Découvre les tendances dans tes indicateurs de bien-être.",
-            symbol: "heart.text.square.fill",
-            symbolColors: [Color(red: 0.28, green: 0.62, blue: 0.98), Color(red: 0.52, green: 0.82, blue: 1.0)]
-        ),
-        PaywallFeatureItem(
-            id: "voice",
-            title: "Messages vocaux au coach",
-            subtitle: "Parle naturellement, le coach transcrit et répond.",
-            symbol: "waveform.circle.fill",
-            symbolColors: [Color(red: 0.42, green: 0.48, blue: 0.98), Color(red: 0.68, green: 0.72, blue: 1.0)]
+            id: "scan360",
+            title: "Analyse visage 360°",
+            subtitle: "Suis ta progression avec une analyse visuelle complète.",
+            symbol: "viewfinder.circle.fill",
+            symbolColors: [Color(red: 0.98, green: 0.45, blue: 0.38), Color(red: 1.0, green: 0.72, blue: 0.55)],
+            assetName: "PaywallIconScanVisage",
+            assetCornerRadius: iconCornerRadius
         ),
         PaywallFeatureItem(
             id: "memory",
-            title: "Mémoire coach persistante",
-            subtitle: "Le coach retient ton contexte d'une session à l'autre.",
+            title: "Mémoire Claude illimitée",
+            subtitle: "Ton contexte est retenu d'une session à l'autre.",
             symbol: "brain.head.profile.fill",
-            symbolColors: [Color(red: 0.55, green: 0.35, blue: 0.92), Color(red: 0.78, green: 0.62, blue: 1.0)]
+            symbolColors: [Color(red: 0.55, green: 0.35, blue: 0.92), Color(red: 0.78, green: 0.62, blue: 1.0)],
+            assetName: "PaywallIconMemory",
+            assetCornerRadius: iconCornerRadius
         ),
     ]
 

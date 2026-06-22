@@ -158,9 +158,7 @@ struct OnboardingProfileChatSportPicker: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(buttonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: buttonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: buttonShape)
         .disabled(isSubmitting)
     }
 }

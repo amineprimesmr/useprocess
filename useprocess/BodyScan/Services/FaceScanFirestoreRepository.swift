@@ -38,4 +38,32 @@ final class FaceScanFirestoreRepository {
 
         return try snapshot.documents.compactMap { try $0.data(as: FaceScanResult.self) }
     }
+
+    func prune(userId: String, keeping keptIds: Set<String>) async throws {
+        let snapshot = try await db.collection("users")
+            .document(userId)
+            .collection("faceScans")
+            .getDocuments()
+
+        for doc in snapshot.documents where !keptIds.contains(doc.documentID) {
+            try await doc.reference.delete()
+        }
+    }
+
+    func deleteAll(userId: String) async throws {
+        let snapshot = try await db.collection("users")
+            .document(userId)
+            .collection("faceScans")
+            .getDocuments()
+
+        for doc in snapshot.documents {
+            try await doc.reference.delete()
+        }
+
+        try await db.collection("users").document(userId).setData([
+            "lastFaceScanId": FieldValue.delete(),
+            "lastFaceScanAt": FieldValue.delete(),
+            "lastFaceDayScore": FieldValue.delete()
+        ], merge: true)
+    }
 }

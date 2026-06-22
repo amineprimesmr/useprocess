@@ -1,17 +1,7 @@
 import AuthenticationServices
 import SwiftUI
 
-private enum ProfileConfirmation: Identifiable {
-    case removePin(SocialProfilePin)
-
-    var id: String {
-        switch self {
-        case .removePin(let pin): return "pin-\(pin.id)"
-        }
-    }
-}
-
-/// Page profil — hero edge-to-edge + menu sticky partagé (comme Coach / Santé / Scan).
+/// Page profil — identité + santé (données Apple Santé, scan visage).
 struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
 
@@ -20,11 +10,7 @@ struct ProcessProfileView: View {
     @State private var profileStore = SocialProfileStore.shared
     @State private var showEditProfile = false
     @State private var showShareSheet = false
-    @State private var showAddPin = false
     @State private var showPhotoFlow = false
-    @State private var newPinTitle = ""
-    @State private var newPinEmoji = "📌"
-    @State private var pendingConfirmation: ProfileConfirmation?
     @State private var pendingAccountConfirmation: AccountConfirmation?
     @State private var deleteAccountWhenSheetDismisses = false
 
@@ -42,6 +28,9 @@ struct ProcessProfileView: View {
         processProfileScrollableChrome(selectedSection: $selectedSection) {
             profileContent(resolvedProfile)
                 .frame(maxWidth: .infinity)
+        }
+        .refreshable {
+            await ProfileHealthSection.refreshAll(force: true)
         }
         .reportsProfileSubrouteActive(showEditProfile)
         .background(ProfileTheme.background.ignoresSafeArea())
@@ -113,40 +102,6 @@ struct ProcessProfileView: View {
                 showEditProfile = false
             }
         }
-        .sheet(isPresented: $showAddPin) {
-            ProfileAddPinSheet(title: $newPinTitle, emoji: $newPinEmoji) {
-                let title = newPinTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !title.isEmpty else { return }
-                withAnimation(ProfileTheme.spring) {
-                    profileStore.addPin(title: title, emoji: newPinEmoji.isEmpty ? "📌" : newPinEmoji)
-                }
-                newPinTitle = ""
-                newPinEmoji = "📌"
-            }
-        }
-        .confirmationDialog(
-            "Supprimer ce pin ?",
-            isPresented: Binding(
-                get: {
-                    if case .removePin = pendingConfirmation { return true }
-                    return false
-                },
-                set: { if !$0 { pendingConfirmation = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Supprimer", role: .destructive) {
-                if case .removePin(let pin) = pendingConfirmation {
-                    withAnimation(ProfileTheme.spring) {
-                        profileStore.removePin(pin.id)
-                    }
-                }
-                pendingConfirmation = nil
-            }
-            Button("Annuler", role: .cancel) {
-                pendingConfirmation = nil
-            }
-        }
         .task(id: profileService.currentProfile?.userId) {
             if profileService.currentProfile == nil {
                 await profileService.loadProfile()
@@ -175,7 +130,7 @@ struct ProcessProfileView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.985)))
         }
 
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 20) {
             if !profileStore.hasCoverPhoto {
                 ProfileIdentityBlock(
                     displayName: profile.displayName,
@@ -189,19 +144,13 @@ struct ProcessProfileView: View {
                 onEdit: { showEditProfile = true }
             )
 
-            WelcomePlanProfileSection()
-
             if let bio = profile.bio, !bio.isEmpty {
                 Text(bio)
                     .font(.system(size: 15))
                     .foregroundStyle(ProfileTheme.textSecondary)
             }
 
-            ProfilePinsSection(
-                pins: profile.pins,
-                onAdd: { showAddPin = true },
-                onRemove: { pin in pendingConfirmation = .removePin(pin) }
-            )
+            ProfileHealthSection()
         }
         .padding(.horizontal, ProfileTheme.horizontalPadding)
         .padding(.bottom, 32)

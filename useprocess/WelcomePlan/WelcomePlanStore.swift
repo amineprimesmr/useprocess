@@ -8,10 +8,6 @@ final class WelcomePlanStore {
     private(set) var questionnaire: WelcomePlanQuestionnaireState = WelcomePlanQuestionnaireState()
     private(set) var plan: FaceOriginPlan?
 
-    private var previewBackup: (questionnaire: WelcomePlanQuestionnaireState, plan: FaceOriginPlan?)?
-
-    var isPreviewSession: Bool { previewBackup != nil }
-
     private init() {
         reload()
     }
@@ -47,25 +43,28 @@ final class WelcomePlanStore {
 
     func saveAnswer(questionId: String, answer: WelcomePlanAnswer) {
         questionnaire.answers[questionId] = answer
-        if !isPreviewSession {
-            persistQuestionnaire()
+        persistQuestionnaire()
+    }
+
+    func removeAnswers(for questionIds: [String]) {
+        for questionId in questionIds {
+            questionnaire.answers.removeValue(forKey: questionId)
         }
+        persistQuestionnaire()
     }
 
     func markQuestionnaireComplete() {
         questionnaire.completedAt = Date()
-        if !isPreviewSession {
-            persistQuestionnaire()
-        }
+        persistQuestionnaire()
     }
 
     func savePlan(_ newPlan: FaceOriginPlan) {
         var enriched = newPlan
+        enriched.lastUpdated = Date()
         if enriched.calendar.startedAt == nil {
             enriched.calendar.startedAt = enriched.createdAt
         }
         plan = enriched
-        guard !isPreviewSession else { return }
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("welcome.plan", userId: uid)
         if let data = try? JSONEncoder().encode(enriched) {
@@ -101,8 +100,8 @@ final class WelcomePlanStore {
             current.lifestyleExtras = OriginLifestyleExtras.default
             changed = true
         }
-        if current.calendar.buildVersion < 5 {
-            CoachPlanEditor.regenerateCalendar(
+        if current.calendar.buildVersion < 6 || current.assessmentSnapshot == nil {
+            upgradePlanStructure(
                 plan: &current,
                 answers: answers ?? questionnaire.answers,
                 profile: profile
@@ -110,7 +109,35 @@ final class WelcomePlanStore {
             changed = true
         }
 
+        if current.nutritionProtocol.targetMealsPerDay == nil {
+            ProcessMealPlanConfiguration.enrichNutritionProtocol(
+                &current.nutritionProtocol,
+                answers: answers ?? questionnaire.answers
+            )
+            if let target = current.nutritionProtocol.targetMealsPerDay {
+                ProcessMealPlanConfiguration.applyTargetMeals(target, to: &current)
+                changed = true
+            }
+        }
+
         if changed { savePlan(current) }
+    }
+
+    /// Regénère structure, calendrier et assessment — conserve progrès et identité.
+    private func upgradePlanStructure(
+        plan: inout FaceOriginPlan,
+        answers: [String: WelcomePlanAnswer],
+        profile: UnifiedUserProfile?
+    ) {
+        let preservedProgress = plan.progress
+        let startedAt = plan.calendar.startedAt ?? plan.createdAt
+
+        let fresh = WelcomePlanGenerator.generate(answers: answers, profile: profile)
+        plan = plan.mergingUpgrade(
+            from: fresh,
+            progress: preservedProgress,
+            calendarStartedAt: startedAt
+        )
     }
 
     func setJournalTaskStatus(_ status: JournalTaskStatus?, taskId: String, dayId: String) {
@@ -144,8 +171,12 @@ final class WelcomePlanStore {
 
         if let slot {
             current.progress.validatedMealsBySlot[dayId]?.removeValue(forKey: slot.rawValue)
+            current.progress.draftMealsBySlot[dayId]?.removeValue(forKey: slot.rawValue)
             if current.progress.validatedMealsBySlot[dayId]?.isEmpty == true {
                 current.progress.validatedMealsBySlot.removeValue(forKey: dayId)
+            }
+            if current.progress.draftMealsBySlot[dayId]?.isEmpty == true {
+                current.progress.draftMealsBySlot.removeValue(forKey: dayId)
             }
             if slot == .lunch {
                 current.progress.validatedMeals.removeValue(forKey: dayId)
@@ -153,6 +184,7 @@ final class WelcomePlanStore {
         } else {
             current.progress.validatedMeals.removeValue(forKey: dayId)
             current.progress.validatedMealsBySlot.removeValue(forKey: dayId)
+            current.progress.draftMealsBySlot.removeValue(forKey: dayId)
         }
         savePlan(current)
     }
@@ -203,32 +235,8 @@ final class WelcomePlanStore {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.questionnaire", userId: uid))
         UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan", userId: uid))
-        previewBackup = nil
         questionnaire = WelcomePlanQuestionnaireState()
         plan = nil
-    }
-
-    /// Réinitialise le questionnaire pour rejouer le chat d'accueil (preview / debug).
-    func resetQuestionnaireForPreview() {
-        beginPreviewSession()
-    }
-
-    /// Sauvegarde l'état réel, puis démarre un questionnaire vierge en mémoire (sans écraser le compte).
-    func beginPreviewSession() {
-        if previewBackup == nil {
-            previewBackup = (questionnaire, plan)
-        }
-        questionnaire = WelcomePlanQuestionnaireState()
-    }
-
-    /// Restaure le questionnaire / plan réels après une preview abandonnée ou terminée.
-    func endPreviewSession(restore: Bool = true) {
-        guard let backup = previewBackup else { return }
-        if restore {
-            questionnaire = backup.questionnaire
-            plan = backup.plan
-        }
-        previewBackup = nil
     }
 
     private func persistQuestionnaire() {
@@ -288,9 +296,21 @@ final class WelcomePlanStore {
     }
 
     private func syncWelcomePlanCompletionFlag() {
-        guard AppSession.shared.hasCompletedOnboarding, plan != nil else { return }
-        if isQuestionnaireComplete || hasQuestionnaireAnswers {
-            AppSession.shared.completeWelcomePlanChat()
+        guard plan != nil else { return }
+        guard isQuestionnaireComplete || hasQuestionnaireAnswers else { return }
+
+        let uid = UserScopedStorage.currentUserId()
+            ?? UnifiedProfileService.shared.currentProfile?.userId
+            ?? "local-user"
+        let onboardingKey = UserScopedStorage.key("onboarding.completed", userId: uid)
+        guard UserDefaults.standard.bool(forKey: onboardingKey) else { return }
+
+        let welcomeKey = UserScopedStorage.key("welcome.plan.chat.completed", userId: uid)
+        UserDefaults.standard.set(true, forKey: welcomeKey)
+
+        Task { @MainActor in
+            guard AppSession.shared.hasCompletedOnboarding else { return }
+            AppSession.shared.setWelcomePlanChatCompleted(true)
         }
     }
 }

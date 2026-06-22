@@ -336,6 +336,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.notificationPermission.rawValue
             
         case .notificationPermission:
+            return OnboardingStep.transformationPreview.rawValue
+
+        case .transformationPreview:
             return OnboardingStep.payment.rawValue
 
         case .payment:
@@ -449,8 +452,11 @@ class OnboardingNavigationEngine {
         case .notificationPermission:
             return OnboardingStep.biometricAuth.rawValue
 
-        case .payment:
+        case .transformationPreview:
             return OnboardingStep.notificationPermission.rawValue
+
+        case .payment:
+            return OnboardingStep.transformationPreview.rawValue
             
         case .processWelcome, .referralReward, .featuresUnlock, .complete:
             return OnboardingStep.payment.rawValue

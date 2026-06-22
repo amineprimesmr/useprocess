@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Redirige vers le hub unifié (compatibilité anciens appels).
 struct OriginPlanProgramView: View {
     let plan: FaceOriginPlan
+    @Binding var selectedSection: ProcessMainSection
 
     var body: some View {
-        OriginPlanHubView(plan: plan)
+        PlanDashboardView(selectedSection: $selectedSection)
     }
 }

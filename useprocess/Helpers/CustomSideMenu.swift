@@ -45,7 +45,7 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
                     SideMenuPanelShape()
                         .ignoresSafeArea()
                 }
-                .compositingGroup()
+                // Pas de .compositingGroup() — casse le press natif liquid glass (iOS 26).
                 .shadow(color: .black.opacity(0.06 * progress), radius: 5, x: -10, y: 0)
                 .offset(x: xOffset)
         }

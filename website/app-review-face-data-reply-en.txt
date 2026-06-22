@@ -1,0 +1,99 @@
+Hello App Review Team,
+
+Thank you for your review. Below are complete answers regarding face data in Process AI (version 1.0, bundle com.useprocess).
+
+---
+
+1) WHAT FACE DATA DOES THE APP COLLECT?
+
+Process AI collects face-related data ONLY when the user explicitly starts the optional "Face Scan" feature (TrueDepth / front camera on supported devices). We do NOT use face data for identity recognition, Face ID login storage, advertising, or tracking.
+
+Data collected during an optional Face Scan:
+• 3D face mesh geometry (vertices, triangle indices) — processed on-device from TrueDepth; not uploaded to our servers
+• JPEG snapshot of the face during the scan — stored locally on device only
+• Short local MP4 recording of the scan session — stored locally on device only; never uploaded
+• Derived wellness scores (0–100): puffiness, under-eye fatigue, jaw tension, skin clarity, facial symmetry
+• Scan metadata: date/time, optional sleep/HRV context from Apple Health if the user authorized HealthKit
+• Optional AI-generated text analysis — only if the user explicitly enables the separate in-app toggle "AI analysis of my photo" on the Face Scan consent screen (default: OFF)
+
+The Face Scan is entirely optional. Users can use the full app without ever running a face scan.
+
+Note: Apple Face ID used for device unlock during onboarding is handled by iOS LocalAuthentication — Process does not store Face ID templates.
+
+---
+
+2) PLANNED USES OF COLLECTED FACE DATA
+
+• Personal wellness tracking and trend comparison over time (fatigue, recovery, debloat indicators)
+• Display in the Health tab and coach context (scores and trends; photos are not shown to third parties by default)
+• Sync scan history (scores + metadata only) across the user's devices when signed in
+• Optional: send the JPEG snapshot + derived scores to Anthropic Claude (via our Firebase Cloud Functions proxy) to generate personalized wellness coaching text — ONLY if the user explicitly enables the toggle on the Face Scan consent screen
+
+We do NOT use face data for: identity verification, advertising, cross-app tracking, or training third-party AI models.
+
+Body scan photos (separate optional feature) are NOT sent to AI unless the user has also enabled Face Scan AI photo consent (same toggle), because body photos may include the face.
+
+---
+
+3) THIRD-PARTY SHARING AND STORAGE
+
+On-device (iPhone/iPad):
+• Photos/videos: Application Support/FaceScans/ on the device
+• Mesh and wellness markers: local app storage (UserDefaults, scoped per user account)
+
+Cloud (only if user is signed in):
+• Google Firebase Firestore: users/{userId}/faceScans — wellness scores, metadata, optional AI text analysis
+• JPEG and MP4 files are NEVER uploaded (stripped before Firestore sync)
+• Maximum 90 scans retained per account; older records are automatically deleted from Firestore and local storage
+
+Third parties:
+• Anthropic (Claude): ONLY if user opts in on consent screen — JPEG snapshot + wellness scores sent via Firebase Cloud Functions for one-time analysis per scan. Anthropic API data is not used to train models per their commercial API terms.
+• NOT shared with advertisers or data brokers. NSPrivacyTracking = false.
+
+---
+
+4) RETENTION PERIOD
+
+• Local + cloud scan history: maximum 90 scans per account; older scans deleted automatically (implemented in app build 24+)
+• Local photos/videos: deleted when scan falls outside the 90-scan history or when user revokes consent in Settings → Privacy → "Revoke face scan"
+• Account deletion: all face data deleted within 30 days (immediate purge via Cloud Function + local wipe)
+• Anthropic: photo processed for the API request only; retention governed by Anthropic's API privacy policy; we store only the returned text analysis with the scan record
+
+---
+
+5) PRIVACY POLICY — WHERE FACE DATA IS EXPLAINED
+
+URL: https://useprocess.xyz/confidentialite
+Anchor: https://useprocess.xyz/confidentialite#donnees-faciales
+
+Sections:
+• Section 3 — Données faciales (TrueDepth)
+• 3.1 — Data collected
+• 3.2 — Uses
+• 3.3 — Sharing & storage
+• 3.4 — Retention & revocation
+• Section 4 — Third-party AI (Anthropic)
+• Section 6 — Legal basis (consent)
+
+In-app: before any scan, FaceScanPrivacyConsentView displays collected data types, local vs cloud storage, optional AI toggle (default off), and a link to the privacy policy face-data section.
+
+---
+
+6) QUOTED TEXT FROM PRIVACY POLICY (FACE DATA)
+
+Section 3 introduction:
+« Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra TrueDepth (capteur Face ID) pour estimer des indicateurs wellness. Aucune reconnaissance biométrique d'identité (déverrouillage, authentification biométrique du visage) n'est effectuée dans le cadre du scan wellness. »
+
+Section 3.3:
+« Sur votre iPhone : dossier sécurisé de l'Application (Application Support). Cloud : si vous êtes connecté, scores wellness et métadonnées synchronisés sur Google Firebase Firestore (collection faceScans). Les fichiers photo JPEG et vidéo ne sont pas téléversés — ils restent sur votre appareil. Anthropic (Claude) : uniquement si vous avez coché l'option d'analyse IA du scan. »
+
+Section 3.4 summary blockquote:
+« Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth, une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Les photos et vidéos restent sur votre appareil ; si vous êtes connecté, les scores et métadonnées sont synchronisés sur Firebase Firestore. Si vous autorisez explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ; suppression sous 30 jours après suppression du compte. »
+
+---
+
+We have updated the app to enforce 90-scan cloud purge, delete local media on consent revocation, and default the AI photo toggle to OFF. A demo video showing consent → scan → scores is available on request.
+
+Thank you for your consideration.
+
+Process AI Team

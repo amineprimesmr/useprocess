@@ -8,15 +8,11 @@ enum CoachEdgeBlobMode: Equatable {
 }
 
 struct CoachEdgeBlobOverlay: View {
-    @Environment(\.appTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     var mode: CoachEdgeBlobMode
 
-    private var fillColor: Color {
-        theme.isDark ? .white : .black
-    }
-
-    private var specularColor: Color {
-        theme.isDark ? Color.white.opacity(0.95) : Color.white.opacity(0.62)
+    private var blobFill: Color {
+        colorScheme == .dark ? .white : .black
     }
 
     /// Ralentit légèrement toute la séquence thinking (~6 %).
@@ -27,103 +23,56 @@ struct CoachEdgeBlobOverlay: View {
     private let flatHeight: CGFloat = 52
     private let flatProtrusionMin: CGFloat = 0.65
     private let flatProtrusionMax: CGFloat = 0.95
-    /// Éloignement max du bord une fois rond.
     private let detachGap: CGFloat = 13
     private let canvasWidth: CGFloat = 74
     private let canvasHeight: CGFloat = 96
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
             let frame = resolveFrame(at: timeline.date)
-
-            Canvas { context, size in
-                let midY = size.height * 0.5
-
-                switch frame.kind {
-                case .flat(let protrusion, let height):
-                    let path = flatShape(protrusion: protrusion, height: height, midY: midY)
-                    fillBlob(in: &context, path: path, opacity: frame.opacity)
-
-                case .morph(let protrusion, let roundness, let leadingX):
-                    let path = morphShape(
-                        protrusion: protrusion,
-                        roundness: roundness,
-                        leadingX: leadingX,
-                        midY: midY
-                    )
-                    fillBlob(in: &context, path: path, opacity: frame.opacity)
-
-                case .circle(let radius, let leadingX):
-                    let rect = CGRect(
-                        x: leadingX,
-                        y: midY - radius,
-                        width: radius * 2,
-                        height: radius * 2
-                    )
-                    fillBlob(in: &context, path: Path(ellipseIn: rect), opacity: frame.opacity)
-
-                case .dots(let dots):
-                    for dot in dots {
-                        let rect = CGRect(
-                            x: dot.x - dot.radius,
-                            y: midY - dot.radius,
-                            width: dot.radius * 2,
-                            height: dot.radius * 2
-                        )
-                        fillBlob(
-                            in: &context,
-                            path: Path(ellipseIn: rect),
-                            opacity: dot.opacity * frame.opacity
-                        )
-                    }
-                }
-            }
-            .frame(width: canvasWidth, height: canvasHeight, alignment: .leading)
+            blobLayer(for: frame, fill: blobFill)
         }
         .frame(width: canvasWidth, height: canvasHeight, alignment: .leading)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .id(theme.isDark)
+        .id(colorScheme)
     }
 
-    private func fillBlob(in context: inout GraphicsContext, path: Path, opacity: Double) {
-        let clampedOpacity = min(max(opacity, 0), 1)
-        guard clampedOpacity > 0.01 else { return }
+    @ViewBuilder
+    private func blobLayer(for frame: ResolvedFrame, fill: Color) -> some View {
+        let midY = canvasHeight * 0.5
 
-        let bounds = path.boundingRect
-        let highlight = CGPoint(
-            x: bounds.midX - bounds.width * 0.18,
-            y: bounds.midY - bounds.height * 0.22
-        )
+        switch frame.kind {
+        case .flat(let protrusion, let height):
+            CoachBlobFlatShape(protrusion: protrusion, height: height, midY: midY)
+                .fill(fill.opacity(frame.opacity))
 
-        if theme.isDark {
-            context.fill(
-                path,
-                with: .radialGradient(
-                    Gradient(stops: [
-                        .init(color: Color.white.opacity(clampedOpacity), location: 0.0),
-                        .init(color: Color.white.opacity(clampedOpacity * 0.82), location: 0.42),
-                        .init(color: Color.white.opacity(clampedOpacity * 0.34), location: 1.0)
-                    ]),
-                    center: highlight,
-                    startRadius: 0,
-                    endRadius: max(bounds.width, bounds.height) * 0.62
-                )
+        case .morph(let protrusion, let roundness, let leadingX):
+            CoachBlobMorphShape(
+                protrusion: protrusion,
+                roundness: roundness,
+                leadingX: leadingX,
+                midY: midY,
+                flatHeight: flatHeight,
+                circleRadius: circleRadius
             )
-        } else {
-            context.fill(
-                path,
-                with: .radialGradient(
-                    Gradient(stops: [
-                        .init(color: specularColor.opacity(clampedOpacity), location: 0.0),
-                        .init(color: fillColor.opacity(clampedOpacity * 0.96), location: 0.36),
-                        .init(color: fillColor.opacity(clampedOpacity * 0.62), location: 1.0)
-                    ]),
-                    center: highlight,
-                    startRadius: 0,
-                    endRadius: max(bounds.width, bounds.height) * 0.64
-                )
-            )
+            .fill(fill.opacity(frame.opacity))
+
+        case .circle(let radius, let leadingX):
+            Circle()
+                .fill(fill.opacity(frame.opacity))
+                .frame(width: radius * 2, height: radius * 2)
+                .position(x: leadingX + radius, y: midY)
+
+        case .dots(let dots):
+            ZStack {
+                ForEach(Array(dots.enumerated()), id: \.offset) { _, dot in
+                    Circle()
+                        .fill(fill.opacity(dot.opacity * frame.opacity))
+                        .frame(width: max(dot.radius * 2, 1), height: max(dot.radius * 2, 1))
+                        .position(x: dot.x, y: midY)
+                }
+            }
         }
     }
 
@@ -156,13 +105,6 @@ struct CoachEdgeBlobOverlay: View {
         }
     }
 
-    // Cycle thinking (~3.8 s)
-    // 1. Plat collé au bord
-    // 2. Détachement + arrondi progressif
-    // 3. Rond stable
-    // 4. Rond → point + 2 points
-    // 5. Animation chargement 3 points
-
     private func thinkingPhase(_ seconds: TimeInterval) -> TimeInterval {
         seconds * thinkingPace
     }
@@ -170,7 +112,6 @@ struct CoachEdgeBlobOverlay: View {
     private func thinkingFrame(elapsed: TimeInterval) -> ResolvedFrame {
         let cycle = thinkingPhase(3.8)
 
-        // Une seule intro (plat → goutte → 3 points), puis pulsation stable — pas de boucle.
         if elapsed >= cycle {
             let bouncePhase = (elapsed - thinkingPhase(2.05)) / thinkingPhase(1.55)
             return ResolvedFrame(
@@ -181,7 +122,6 @@ struct CoachEdgeBlobOverlay: View {
 
         let t = elapsed
 
-        // Plat au bord — fin et haut
         if t < thinkingPhase(0.35) {
             let p = WaterCurve.easeOut(t / thinkingPhase(0.35))
             return ResolvedFrame(
@@ -193,7 +133,6 @@ struct CoachEdgeBlobOverlay: View {
             )
         }
 
-        // Détachement : s'épaissit, s'arrondit et s'éloigne du bord avec l'arrondi
         if t < thinkingPhase(1.35) {
             let roundness = WaterCurve.detach((t - thinkingPhase(0.35)) / thinkingPhase(1.0))
             let leadingX = detachGap * WaterCurve.detachLift(roundness)
@@ -207,7 +146,6 @@ struct CoachEdgeBlobOverlay: View {
             )
         }
 
-        // Rond détaché du bord
         if t < thinkingPhase(1.65) {
             return ResolvedFrame(
                 kind: .circle(radius: circleRadius, leadingX: detachGap),
@@ -215,7 +153,6 @@ struct CoachEdgeBlobOverlay: View {
             )
         }
 
-        // Le rond devient le 1er point, les 2 autres apparaissent
         if t < thinkingPhase(2.05) {
             let p = WaterCurve.easeInOut((t - thinkingPhase(1.65)) / thinkingPhase(0.40))
             return ResolvedFrame(
@@ -224,7 +161,6 @@ struct CoachEdgeBlobOverlay: View {
             )
         }
 
-        // Animation de chargement — 3 points qui pulsent
         let bouncePhase = (t - thinkingPhase(2.05)) / thinkingPhase(1.55)
         return ResolvedFrame(
             kind: .dots(shrinkToThreeDots(progress: 1, bouncePhase: bouncePhase)),
@@ -328,11 +264,16 @@ struct CoachEdgeBlobOverlay: View {
         let opacity = 0.82 + 0.18 * wave
         return (scale, opacity)
     }
+}
 
-    // MARK: - Formes
+// MARK: - Shapes (SwiftUI natif — visible clair / sombre)
 
-    /// Plat collé au bord gauche — très fin et haut.
-    private func flatShape(protrusion: CGFloat, height: CGFloat, midY: CGFloat) -> Path {
+private struct CoachBlobFlatShape: Shape {
+    var protrusion: CGFloat
+    var height: CGFloat
+    var midY: CGFloat
+
+    func path(in rect: CGRect) -> Path {
         let w = max(protrusion, 0.3)
         let h = height
         var path = Path()
@@ -345,21 +286,41 @@ struct CoachEdgeBlobOverlay: View {
         path.closeSubpath()
         return path
     }
+}
 
-    /// Interpolation plat → cercle : reste haut/fin longtemps, se détache en s'arrondissant.
-    private func morphShape(
-        protrusion: CGFloat,
-        roundness: CGFloat,
-        leadingX: CGFloat,
-        midY: CGFloat
-    ) -> Path {
+private struct CoachBlobMorphShape: Shape {
+    var protrusion: CGFloat
+    var roundness: CGFloat
+    var leadingX: CGFloat
+    var midY: CGFloat
+    var flatHeight: CGFloat
+    var circleRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
         let r = min(max(roundness, 0), 1)
         let w = max(protrusion, 0.3)
         let h = flatHeight + (circleRadius * 2 - flatHeight) * pow(r, 1.45)
         let corner = min(w, h) * 0.5 * pow(r, 0.85) + w * 0.04 * (1 - r)
+        let box = CGRect(x: leadingX, y: midY - h * 0.5, width: w, height: h)
+        return Path(roundedRect: box, cornerRadius: corner)
+    }
+}
 
-        let rect = CGRect(x: leadingX, y: midY - h * 0.5, width: w, height: h)
-        return Path(roundedRect: rect, cornerRadius: corner)
+// MARK: - Ligne « coach réfléchit / machine à écrire »
+
+struct CoachChatThinkingBlobRow: View {
+    var start: Date
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            CoachEdgeBlobOverlay(mode: .thinking(start: start))
+                .offset(y: CoachBlobLayout.responseLineOffset - CoachBlobLayout.canvasHeight / 2)
+
+            Color.clear
+                .frame(height: 56)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityLabel("Réponse en cours")
     }
 }
 
@@ -381,7 +342,6 @@ private enum WaterCurve {
         return c < 0.5 ? 2 * c * c : 1 - pow(-2 * c + 2, 2) / 2
     }
 
-    /// Détachement lent au début, accélération quand le plat devient rond.
     static func detach(_ t: CGFloat) -> CGFloat {
         let c = min(max(t, 0), 1)
         if c < 0.45 {
@@ -391,7 +351,6 @@ private enum WaterCurve {
         return 0.38 + (1 - pow(1 - u, 2)) * 0.62
     }
 
-    /// Épaississement — lent tant que c'est plat.
     static func widen(_ t: CGFloat) -> CGFloat {
         let c = min(max(t, 0), 1)
         if c < 0.35 {
@@ -401,7 +360,6 @@ private enum WaterCurve {
         return 0.22 + (1 - pow(1 - u, 2.2)) * 0.78
     }
 
-    /// Glissement depuis le bord — lié à l'arrondi, accélère en fin de morph.
     static func detachLift(_ roundness: CGFloat) -> CGFloat {
         let c = min(max(roundness, 0), 1)
         if c < 0.12 { return 0 }
@@ -417,7 +375,6 @@ private enum WaterCurve {
 
 enum CoachBlobLayout {
     static let canvasHeight: CGFloat = 96
-    /// Alignement vertical sur la première ligne de texte assistant.
     static let responseLineOffset: CGFloat = 11
 
     static func overlayTopPadding(for anchor: CGRect) -> CGFloat {
@@ -429,12 +386,11 @@ struct CoachThinkingBlobPlaceholder: View {
     var body: some View {
         Color.clear
             .frame(height: 56)
-            .coachResponseAnchor()
-            .accessibilityLabel("Coach réfléchit")
+            .accessibilityHidden(true)
     }
 }
 
-// MARK: - Ancrage vertical de la goutte (alignée sur la réponse en cours)
+// MARK: - Ancrage vertical (legacy — streaming)
 
 struct CoachResponseAnchorKey: PreferenceKey {
     static var defaultValue: CGRect = .zero

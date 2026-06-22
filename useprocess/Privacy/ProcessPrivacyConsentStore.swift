@@ -91,12 +91,14 @@ final class ProcessPrivacyConsentStore {
         persistDate(faceScanCaptureAcceptedAt, key: "privacy.face_capture.date")
 
         if enableAIAnalysis {
-            hasAcceptedThirdPartyAI = true
-            thirdPartyAIAcceptedAt = Date()
-            persistBool(true, key: "privacy.ai_third_party")
-            persistDate(thirdPartyAIAcceptedAt, key: "privacy.ai_third_party.date")
             hasAcceptedFaceScanAI = true
             persistBool(true, key: "privacy.face_ai")
+            if !hasAcceptedThirdPartyAI {
+                hasAcceptedThirdPartyAI = true
+                thirdPartyAIAcceptedAt = Date()
+                persistBool(true, key: "privacy.ai_third_party")
+                persistDate(thirdPartyAIAcceptedAt, key: "privacy.ai_third_party.date")
+            }
         } else {
             hasAcceptedFaceScanAI = false
             persistBool(false, key: "privacy.face_ai")
@@ -118,6 +120,7 @@ final class ProcessPrivacyConsentStore {
         persistBool(false, key: "privacy.face_capture")
         persistBool(false, key: "privacy.face_ai")
         UserDefaults.standard.removeObject(forKey: storageKey("privacy.face_capture.date"))
+        Task { await FaceScanDataLifecycle.purgeAllForCurrentUser() }
     }
 
     private func revokeFaceScanAIOnly() {

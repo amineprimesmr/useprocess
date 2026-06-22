@@ -220,9 +220,7 @@ struct MealSuggestionCardView: View {
                 .padding(.vertical, 16)
                 .contentShape(answerShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerShape)
         .onboardingChatAnswerReveal(isRevealed: revealedActionIDs.isEmpty || revealedActionIDs.contains(id))
     }
 

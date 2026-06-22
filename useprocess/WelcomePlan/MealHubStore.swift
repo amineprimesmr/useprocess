@@ -15,6 +15,35 @@ extension WelcomePlanStore {
         return nil
     }
 
+    func draftMealContent(for dayId: String, slot: MealTimeSlot) -> MealSuggestionContent? {
+        guard let payload = plan?.progress.draftMealsBySlot[dayId]?[slot.rawValue] else { return nil }
+        return MealSuggestionContent.fromStored(payload)
+    }
+
+    func saveDraftMeal(dayId: String, meal: MealSuggestionContent, slot: MealTimeSlot) {
+        guard var current = plan else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+
+        let payload = meal.encodedForStorage()
+        var slots = current.progress.draftMealsBySlot[dayId] ?? [:]
+        slots[slot.rawValue] = payload
+        current.progress.draftMealsBySlot[dayId] = slots
+        savePlan(current)
+    }
+
+    func clearDraftMeal(dayId: String, slot: MealTimeSlot? = nil) {
+        guard var current = plan else { return }
+        if let slot {
+            current.progress.draftMealsBySlot[dayId]?.removeValue(forKey: slot.rawValue)
+            if current.progress.draftMealsBySlot[dayId]?.isEmpty == true {
+                current.progress.draftMealsBySlot.removeValue(forKey: dayId)
+            }
+        } else {
+            current.progress.draftMealsBySlot.removeValue(forKey: dayId)
+        }
+        savePlan(current)
+    }
+
     func saveValidatedMeal(
         dayId: String,
         meal: MealSuggestionContent,
@@ -30,6 +59,11 @@ extension WelcomePlanStore {
         var slots = current.progress.validatedMealsBySlot[dayId] ?? [:]
         slots[resolvedSlot.rawValue] = payload
         current.progress.validatedMealsBySlot[dayId] = slots
+
+        current.progress.draftMealsBySlot[dayId]?.removeValue(forKey: resolvedSlot.rawValue)
+        if current.progress.draftMealsBySlot[dayId]?.isEmpty == true {
+            current.progress.draftMealsBySlot.removeValue(forKey: dayId)
+        }
 
         appendMealHistory(dayId: dayId, meal: meal, slot: resolvedSlot, on: &current)
         mergeShoppingList(from: meal, dayId: dayId, on: &current)

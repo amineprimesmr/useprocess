@@ -52,6 +52,11 @@ final class AppSession {
         UserDefaults.standard.set(true, forKey: welcomePlanChatStorageKey)
     }
 
+    func setWelcomePlanChatCompleted(_ completed: Bool) {
+        hasCompletedWelcomePlanChat = completed
+        UserDefaults.standard.set(completed, forKey: welcomePlanChatStorageKey)
+    }
+
     func resetOnboarding() {
         let uid = UnifiedProfileService.shared.currentProfile?.userId
             ?? UserScopedStorage.currentUserId()
@@ -109,6 +114,8 @@ final class AppSession {
         SocialProfileStore.shared.resetForUser(userId: primaryUID)
         BodyScanHistoryStore.shared.clearForUser(userId: primaryUID)
         FaceScanHistoryStore.shared.clearForUser(userId: primaryUID)
+        FaceScanImageStore.deleteAllStoredMedia()
+        OnboardingFaceMarkersStore.clear()
 
         for uid in UserScopedStorage.likelyUserIds(primary: primaryUID) {
             UserScopedStorage.clearAllUserData(userId: uid)
@@ -131,11 +138,11 @@ final class AppSession {
         }
 
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
+        WelcomePlanStore.shared.reloadForCurrentUser()
         hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
             completedOnboarding: hasCompletedOnboarding,
             userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId
         )
-        WelcomePlanStore.shared.reloadForCurrentUser()
     }
 
     /// Détermine si le questionnaire Protocole Origine est vraiment terminé (évite la fausse complétion au relaunch).
@@ -145,25 +152,29 @@ final class AppSession {
         let uid = userId ?? "local-user"
         let welcomeKey = UserScopedStorage.key("welcome.plan.chat.completed", userId: uid)
         let questionnaire = loadPersistedQuestionnaire(userId: uid)
-        let hasCompletedQuestionnaire = questionnaire?.completedAt != nil
+        let isFullyAnswered = questionnaire.map {
+            WelcomePlanQuestionBank.isFullyAnswered(answers: $0.answers)
+        } ?? false
+        let hasCompletedQuestionnaire = questionnaire?.completedAt != nil && isFullyAnswered
         let hasSavedPlan = UserDefaults.standard.data(
             forKey: UserScopedStorage.key("welcome.plan", userId: uid)
         ) != nil
+        let hasValidCompletion = hasCompletedQuestionnaire && hasSavedPlan && isFullyAnswered
 
         if UserDefaults.standard.object(forKey: welcomeKey) != nil {
             let explicit = UserDefaults.standard.bool(forKey: welcomeKey)
-            if explicit, hasCompletedQuestionnaire || hasSavedPlan {
+            if explicit, hasValidCompletion {
                 return true
             }
             if explicit {
-                // Auto-migration erronée : flag true sans questionnaire/plan → réparer.
+                // Flag true sans configuration réellement terminée → réparer.
                 UserDefaults.standard.set(false, forKey: welcomeKey)
             }
             return false
         }
 
-        // Anciens comptes (avant le flag) : exemptés seulement s'ils ont déjà un plan sauvegardé.
-        if hasCompletedQuestionnaire || hasSavedPlan {
+        // Anciens comptes (avant le flag) : exemptés seulement s'ils ont un plan ET toutes les réponses.
+        if hasValidCompletion {
             UserDefaults.standard.set(true, forKey: welcomeKey)
             return true
         }

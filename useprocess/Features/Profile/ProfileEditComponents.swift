@@ -70,9 +70,7 @@ struct ProfileEditorHeader: View {
                             .padding(.horizontal, 18)
                             .padding(.vertical, 10)
                     }
-                    .buttonStyle(.plain)
-                    .processGlassEffect(in: Capsule())
-                    .buttonStyle(ProcessGlassPressStyle())
+                    .processGlassButton(in: Capsule())
                     .disabled(saveDisabled)
                     .opacity(saveDisabled ? 0.72 : 1)
                 } else {
@@ -123,9 +121,7 @@ struct ProfileEditorBottomSaveButton: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: shape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: shape)
         .disabled(disabled)
         .opacity(disabled ? 0.72 : 1)
         .padding(.horizontal, 16)
@@ -305,9 +301,7 @@ struct AccountDetailsGlassHeader: View {
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
             }
-            .buttonStyle(.plain)
-            .processGlassEffect(in: Capsule())
-            .buttonStyle(ProcessGlassPressStyle())
+            .processGlassButton(in: Capsule())
             .disabled(saveDisabled)
             .opacity(saveDisabled ? 0.72 : 1)
         }
@@ -401,19 +395,14 @@ struct AccountDetailsActionButton: View {
                 .foregroundStyle(destructive ? Color.red : Color.primary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .background {
-                    shape
-                        .fill(.clear)
-                        .processGlassEffect(in: shape, interactive: false)
-                        .overlay {
-                            if destructive {
-                                shape.fill(Color.red.opacity(0.07))
-                            }
-                        }
-                }
                 .contentShape(shape)
         }
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: shape)
+        .overlay {
+            if destructive {
+                shape.fill(Color.red.opacity(0.07))
+            }
+        }
     }
 }
 

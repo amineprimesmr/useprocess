@@ -171,8 +171,16 @@ struct OnboardingProfileChatView: View {
         let bottomPadding: CGFloat = chatViewModel.showsLetsGoButton ? 110 : 36
 
         VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
-            if let active = activeMessage {
-                depthMessageRow(active, distanceFromActive: 0)
+            HStack(alignment: .top, spacing: 0) {
+                if chatViewModel.isMessageAnimating {
+                    CoachThinkingDotsView()
+                        .frame(width: 36)
+                }
+
+                if let active = activeMessage {
+                    depthMessageRow(active, distanceFromActive: 0)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             if chatViewModel.showsAnswerOptions,
@@ -482,9 +490,7 @@ struct OnboardingProfileChatView: View {
                 .padding(.vertical, 16)
                 .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerButtonShape)
     }
 
     private func chatChoiceButton(
@@ -516,9 +522,7 @@ struct OnboardingProfileChatView: View {
             .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
             .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerButtonShape)
         .disabled(chatViewModel.isSubmittingAnswer)
     }
 
@@ -553,15 +557,13 @@ struct OnboardingProfileChatView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
+        .processGlassButton(in: answerButtonShape)
         .overlay {
             if isSelected {
                 answerButtonShape
                     .strokeBorder(OnboardingTheme.primaryText.opacity(0.22), lineWidth: 1)
             }
         }
-        .buttonStyle(ProcessGlassPressStyle())
         .opacity(isSelected ? 1 : 0.82)
         .disabled(chatViewModel.isSubmittingAnswer)
     }
@@ -585,9 +587,7 @@ struct OnboardingProfileChatView: View {
                 .padding(.vertical, 16)
                 .contentShape(answerButtonShape)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: answerButtonShape)
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: answerButtonShape)
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.55 : 1)
         .padding(.top, 4)

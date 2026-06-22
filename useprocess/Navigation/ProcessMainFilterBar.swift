@@ -2,13 +2,13 @@ import SwiftUI
 
 enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     case coach
-    case health
+    case plan
     case profile
 
     var id: String { rawValue }
 
     /// Onglets visibles dans le menu principal.
-    static let menuSections: [ProcessMainSection] = [.coach, .health, .profile]
+    static let menuSections: [ProcessMainSection] = [.coach, .plan, .profile]
 
     /// Ordre des onglets dans le pager principal.
     static let tabOrder: [ProcessMainSection] = menuSections
@@ -16,7 +16,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     var label: String {
         switch self {
         case .coach: "Coach"
-        case .health: "Santé"
+        case .plan: "Plan"
         case .profile: "Profil"
         }
     }
@@ -24,7 +24,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     var icon: String {
         switch self {
         case .coach: "sparkles"
-        case .health: "heart.text.square.fill"
+        case .plan: "calendar"
         case .profile: "person.crop.circle.fill"
         }
     }
@@ -41,9 +41,8 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 struct ProcessMainFilterBar: View {
     @Binding var selection: ProcessMainSection
     var lockedSections: Set<ProcessMainSection> = []
-    var glassAnimationsEnabled: Bool = true
-    @Namespace private var chipNamespace
     @Environment(\.colorScheme) private var colorScheme
+    @State private var profileStore = SocialProfileStore.shared
 
     private var isRegularLayout: Bool { LayoutConstants.isIPad }
 
@@ -74,7 +73,6 @@ struct ProcessMainFilterBar: View {
         .padding(.horizontal, horizontalInset)
         .padding(.vertical, 2)
         .frame(maxWidth: .infinity, alignment: isRegularLayout ? .center : .leading)
-        .animation(ProcessGlass.spring, value: selection)
     }
 
     private func filterChip(_ item: ProcessMainSection) -> some View {
@@ -88,9 +86,7 @@ struct ProcessMainFilterBar: View {
             } else {
                 HapticManager.shared.selection()
             }
-            withAnimation(ProcessGlass.spring) {
-                selection = item
-            }
+            selection = item
         } label: {
             HStack(spacing: isRegularLayout ? 9 : 7) {
                 if isLocked {
@@ -109,22 +105,20 @@ struct ProcessMainFilterBar: View {
             .opacity(isLocked && !isSelected ? 0.58 : 1)
             .padding(.horizontal, chipHorizontalPadding)
             .padding(.vertical, chipVerticalPadding)
-            .background {
-                ProcessFilterChipBackground(
-                    isSelected: isSelected,
-                    glassAnimationsEnabled: glassAnimationsEnabled,
-                    selectedFill: selectedFill,
-                    namespace: chipNamespace
-                )
-            }
+            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
-        .buttonStyle(ProcessGlassPressStyle())
+        .modifier(ProcessFilterChipGlass(isSelected: isSelected))
     }
 
     @ViewBuilder
     private func chipIcon(for item: ProcessMainSection, isSelected: Bool) -> some View {
-        if let asset = item.assetIconName {
+        if item == .profile, let image = profileStore.profilePhoto {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: chipAssetIconSize, height: chipAssetIconSize)
+                .clipShape(Circle())
+        } else if let asset = item.assetIconName {
             Image(asset)
                 .resizable()
                 .renderingMode(.original)
@@ -137,35 +131,15 @@ struct ProcessMainFilterBar: View {
     }
 }
 
-private struct ProcessFilterChipBackground: View {
+/// Glass sur le `Button` entier — pas dans `.background` du label (sinon pas de press natif).
+private struct ProcessFilterChipGlass: ViewModifier {
     let isSelected: Bool
-    let glassAnimationsEnabled: Bool
-    let selectedFill: Color
-    let namespace: Namespace.ID
 
-    var body: some View {
+    func body(content: Content) -> some View {
         if isSelected {
-            if #available(iOS 26.0, *) {
-                Capsule()
-                    .fill(.clear)
-                    .glassEffect(ProcessGlass.filterSelected(selectedFill), in: .capsule)
-                    .glassEffectID("filter-selection", in: namespace)
-            } else {
-                Capsule()
-                    .fill(selectedFill)
-                    .matchedGeometryEffect(id: "filter-selection", in: namespace)
-            }
-        } else if #available(iOS 26.0, *) {
-            Capsule()
-                .fill(.clear)
-                .glassEffect(ProcessGlass.regular, in: .capsule)
+            content.processInvertedGlassEffect(in: Capsule())
         } else {
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    Capsule()
-                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
-                }
+            content.processGlassButton(in: Capsule())
         }
     }
 }

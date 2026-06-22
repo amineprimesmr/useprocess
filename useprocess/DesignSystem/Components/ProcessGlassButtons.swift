@@ -2,11 +2,16 @@ import SwiftUI
 
 // MARK: - Press
 
+/// Sur iOS 26, le glass `.interactive()` gère déjà scale + shimmer — ne pas écraser avec un scale manuel.
 struct ProcessGlassPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.28, dampingFraction: 0.9), value: configuration.isPressed)
+        if #available(iOS 26.0, *) {
+            configuration.label
+        } else {
+            configuration.label
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
+        }
     }
 }
 
@@ -25,9 +30,7 @@ struct ProcessGlassIconButton: View {
                 .foregroundStyle(Color.primary)
                 .frame(width: size, height: size)
         }
-        .buttonStyle(.plain)
-        .processGlassCircle()
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassIconButtonStyle()
     }
 }
 
@@ -51,9 +54,9 @@ struct ProcessGlassWideButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 48)
         }
-        .buttonStyle(.plain)
-        .processGlassEffect(in: RoundedRectangle(cornerRadius: ProfileTheme.buttonCornerRadius, style: .continuous))
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(
+            in: RoundedRectangle(cornerRadius: ProfileTheme.buttonCornerRadius, style: .continuous)
+        )
     }
 }
 
@@ -66,7 +69,7 @@ enum ProcessGlass {
     @available(iOS 26.0, *)
     static var regular: Glass { .regular.interactive() }
 
-    /// Fond glass sans capture de toucher — boutons et lignes de formulaire.
+    /// Fond glass passif (barre de saisie, popovers).
     @available(iOS 26.0, *)
     static var regularSurface: Glass { .regular }
 

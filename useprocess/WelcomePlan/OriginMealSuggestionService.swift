@@ -196,6 +196,9 @@ enum OriginMealSuggestionService {
         let principles = day.nutrition.principles.joined(separator: " · ")
         let foods = day.nutrition.foodsToday.joined(separator: ", ")
         let slotLabel = slot?.rawValue ?? "Repas"
+        let planType = plan.nutritionPlanType
+        let mealStructure = planType.label
+        let slotHint = slot.map { planType.slotGuidance(for: $0) } ?? planType.aiStructureHint
 
         let userPrompt: String
         switch mode {
@@ -205,6 +208,8 @@ enum OriginMealSuggestionService {
 
             Jour protocole : \(day.title)
             Créneau cible : \(slotLabel)
+            Structure repas : \(mealStructure)
+            Consigne créneau : \(slotHint)
             Principes : \(principles)
             Aliments à privilégier : \(foods)
             Hydratation : \(day.nutrition.hydration)

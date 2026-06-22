@@ -158,6 +158,30 @@ enum WelcomePlanQuestionBank {
                 .init(id: $0.rawValue, label: $0.rawValue)
             }
         ),
+        WelcomePlanQuestion(
+            id: "current_meals_count",
+            phase: .nutrition,
+            kind: .singleChoice,
+            prompt: "Aujourd'hui, tu manges combien de repas par jour ?",
+            coachIntro: "Compte petit-déjeuner, déjeuner et dîner — pas les grignotages isolés.",
+            choices: [
+                .init(id: "1", label: "1 repas"),
+                .init(id: "2", label: "2 repas"),
+                .init(id: "3", label: "3 repas"),
+                .init(id: "4", label: "4 repas"),
+                .init(id: "5plus", label: "5 repas ou plus")
+            ]
+        ),
+        WelcomePlanQuestion(
+            id: "target_meals_count",
+            phase: .nutrition,
+            kind: .singleChoice,
+            prompt: "Quelle structure repas pour ton protocole debloat ?",
+            coachIntro: "On configure ton journal et les créneaux IA — 3 options, une seule à choisir.",
+            choices: NutritionPlanType.allCases.map { planType in
+                .init(id: "\(planType.targetMealsPerDay)", label: planType.label, detail: planType.subtitle)
+            }
+        ),
 
         // MARK: Posture & visage
         WelcomePlanQuestion(
@@ -291,6 +315,12 @@ enum WelcomePlanQuestionBank {
         guard !questions.isEmpty else { return 0 }
         let answered = questions.filter { answers[$0.id] != nil }.count
         return Double(answered) / Double(questions.count)
+    }
+
+    static func isFullyAnswered(answers: [String: WelcomePlanAnswer]) -> Bool {
+        let questions = activeQuestions(answers: answers)
+        guard !questions.isEmpty else { return false }
+        return questions.allSatisfy { answers[$0.id] != nil }
     }
 
     static func configurationStepLabel(answers: [String: WelcomePlanAnswer], isComplete: Bool) -> String {

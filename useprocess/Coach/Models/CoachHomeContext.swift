@@ -18,6 +18,11 @@ struct CoachHomePrompt: Equatable {
     /// Masque la barre de saisie au profit d’un bouton d’action.
     let replacesChatInput: Bool
     let suggestions: [CoachHomeSuggestion]
+
+    var requiresScanBeforeChat: Bool {
+        if case .scanDue = kind { return true }
+        return false
+    }
 }
 
 enum CoachHomeContext {
@@ -46,18 +51,12 @@ enum CoachHomeContext {
         let hasName = !trimmedName.isEmpty
         let scanDue = scanStore.isScanDue
         let hasPreviousScan = scanStore.latestResult != nil
-        let plan = WelcomePlanStore.shared.plan
-        let context = UserContextBuilder.build(profile: profile)
 
         let kind: CoachHomePromptKind = scanDue
             ? .scanDue(firstScan: !hasPreviousScan)
             : .greeting
 
-        let suggestions = buildSuggestions(
-            profile: profile,
-            context: context,
-            plan: plan
-        )
+        let suggestions: [CoachHomeSuggestion] = []
 
         if scanDue {
             let greeting: String
@@ -90,7 +89,11 @@ enum CoachHomeContext {
             greetingText: greeting,
             primaryActionTitle: nil,
             replacesChatInput: false,
-            suggestions: suggestions
+            suggestions: buildSuggestions(
+                profile: profile,
+                context: UserContextBuilder.build(profile: profile),
+                plan: WelcomePlanStore.shared.plan
+            )
         )
     }
 

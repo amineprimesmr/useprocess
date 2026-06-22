@@ -102,9 +102,6 @@ struct ProcessMainTopChrome: View {
     let pageSection: ProcessMainSection
 
     var body: some View {
-        ProcessMainFilterBar(
-            selection: $selectedSection,
-            glassAnimationsEnabled: pageSection == selectedSection
-        )
+        ProcessMainFilterBar(selection: $selectedSection)
     }
 }

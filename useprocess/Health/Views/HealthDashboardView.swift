@@ -1,197 +1,78 @@
 import SwiftUI
 
-struct HealthDashboardView: View {
-    @Binding var selectedSection: ProcessMainSection
-    var onOpenProfile: () -> Void
-
+/// Bloc Santé (ex-page dédiée) — intégré au profil.
+struct ProfileHealthSection: View {
     @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var dataManager: DailyDataManager
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
 
-    @State private var planStore = WelcomePlanStore.shared
-
     @State private var showFaceScan = false
     @State private var showFaceHistory = false
     @State private var selectedFaceScan: FaceScanResult?
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
-    @State private var isRestoringPlan = false
-    @State private var weeklyMealHistory: [MealHistoryEntry] = []
-    @State private var shoppingItems: [MealShoppingItem] = []
-    @State private var lastHealthRefresh: Date?
-
-    private var livePlan: FaceOriginPlan? { planStore.plan }
 
     var body: some View {
-        NavigationStack {
-            processMainScrollableChrome(
-                selectedSection: $selectedSection,
-                pageSection: .health
-            ) {
-                LazyVStack(spacing: 18) {
-                    healthContent
-                }
-                .padding()
-            }
-            .background(theme.background.ignoresSafeArea())
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .toolbar(.hidden, for: .navigationBar)
-            .refreshable { await refreshAll(force: true) }
-            .task(id: planStore.plan?.id) { await refreshAll(force: false) }
-            .fullScreenCover(isPresented: $showFaceScan) { faceScanCover }
-            .sheet(isPresented: $showFaceHistory) {
-                FaceScanHistoryView(history: faceHistoryStore.history) { scan in
-                    showFaceHistory = false
-                    selectedFaceScan = scan
-                }
-            }
-            .sheet(item: $selectedFaceScan) { scan in
-                FaceScanDetailView(
-                    result: scan,
-                    previous: faceHistoryStore.history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
+        VStack(alignment: .leading, spacing: 18) {
+            HealthPageSectionHeader(
+                title: "Santé",
+                subtitle: "Données du jour · Apple Santé"
+            )
+
+            if healthManager.readinessScore > 0 {
+                ReadinessScoreGaugeView(
+                    score: healthManager.readinessScore,
+                    label: healthManager.readinessLabel,
+                    subtitle: healthManager.readinessFactors.prefix(2).joined(separator: " · ")
                 )
             }
-            .onAppear {
-                planStore.reloadForCurrentUser()
-                faceHistoryStore = FaceScanHistoryStore.shared
-                refreshMealSections()
-            }
-            .onChange(of: planStore.plan?.lastUpdated) { _, _ in
-                refreshMealSections()
-            }
-        }
-    }
 
-    @ViewBuilder
-    private var healthContent: some View {
-        if let plan = livePlan {
-            DailyJournalChecklistView(plan: plan)
-
-            MealHistoryCarouselView(
-                entries: weeklyMealHistory,
-                theme: theme
+            FaceScanHealthCompact(
+                latest: faceHistoryStore.latestResult,
+                faceDayScore: healthManager.faceDayScore,
+                isScanDue: faceHistoryStore.isScanDue,
+                daysUntilNextScan: faceHistoryStore.daysUntilNextScan,
+                correlationHint: healthManager.faceCorrelations.first.map {
+                    OriginPlanPresenter.truncate($0.message, max: 90)
+                },
+                onScan: { showFaceScan = true },
+                onHistory: { showFaceHistory = true }
             )
 
-            MealShoppingListSection(
-                items: shoppingItems,
-                theme: theme,
-                onToggle: { id in planStore.toggleShoppingItem(id); refreshMealSections() },
-                onClearChecked: { planStore.clearCheckedShoppingItems(); refreshMealSections() }
+            HealthTodayMetricsCard()
+
+            HealthMedicalSourcesView(style: .compact)
+        }
+        .task { await ProfileHealthSection.refreshAll(force: false) }
+        .onAppear {
+            faceHistoryStore = FaceScanHistoryStore.shared
+        }
+        .fullScreenCover(isPresented: $showFaceScan) { faceScanCover }
+        .sheet(isPresented: $showFaceHistory) {
+            FaceScanHistoryView(history: faceHistoryStore.history) { scan in
+                showFaceHistory = false
+                selectedFaceScan = scan
+            }
+        }
+        .sheet(item: $selectedFaceScan) { scan in
+            FaceScanDetailView(
+                result: scan,
+                previous: faceHistoryStore.history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
             )
-        } else {
-            noPlanCard
-        }
-
-        FaceScanHealthCompact(
-            latest: faceHistoryStore.latestResult,
-            faceDayScore: healthManager.faceDayScore,
-            isScanDue: faceHistoryStore.isScanDue,
-            daysUntilNextScan: faceHistoryStore.daysUntilNextScan,
-            correlationHint: healthManager.faceCorrelations.first.map {
-                OriginPlanPresenter.truncate($0.message, max: 90)
-            },
-            onScan: { showFaceScan = true },
-            onHistory: { showFaceHistory = true }
-        )
-
-        HealthTodayMetricsCard()
-    }
-
-    private var noPlanCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Protocole Origine")
-                .font(.headline)
-
-            Text(noPlanMessage)
-                .font(.subheadline)
-                .foregroundStyle(theme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Button {
-                openWelcomePlanConfiguration()
-            } label: {
-                Label("Terminer la configuration", systemImage: "sparkles")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(theme.onboardingAccent)
-
-            if planStore.canRestorePlan {
-                Button {
-                    Task { await restorePlan() }
-                } label: {
-                    HStack(spacing: 8) {
-                        if isRestoringPlan {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                        Text(isRestoringPlan ? "Restauration…" : "Restaurer mon protocole")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .disabled(isRestoringPlan)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
-    }
-
-    private var noPlanMessage: String {
-        if planStore.canRestorePlan {
-            return "Tu as déjà répondu au questionnaire, mais ton programme n'a pas pu être chargé. Restaure-le en un clic ou reprends la configuration avec le coach."
-        }
-        return "Le chat Protocole Origine débloque ton journal, tes tâches du jour et ton suivi personnalisé."
-    }
-
-    private func openWelcomePlanConfiguration() {
-        HapticManager.shared.impact(.medium)
-        withAnimation(ProcessGlass.spring) {
-            selectedSection = .coach
         }
     }
 
-    private func restorePlan() async {
-        isRestoringPlan = true
-        defer { isRestoringPlan = false }
-        _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
-        planStore.reloadForCurrentUser()
-    }
+    private static var lastRefresh: Date?
 
-    // MARK: - Sheets
-
-    private var faceScanCover: some View {
-        FaceScanPrivacyGateView(
-            onDismiss: { showFaceScan = false },
-            onComplete: { _ in
-                faceHistoryStore = FaceScanHistoryStore.shared
-                showFaceScan = false
-                Task { await healthManager.performFullSync() }
-            }
-        )
-        .environmentObject(profileService)
-    }
-
-    // MARK: - Data
-
-    private func refreshMealSections() {
-        weeklyMealHistory = planStore.mealHistoryThisWeek()
-        shoppingItems = planStore.plan?.progress.shoppingList ?? []
-    }
-
-    private func refreshAll(force: Bool) async {
-        if !force, let last = lastHealthRefresh, Date().timeIntervalSince(last) < 120 {
+    static func refreshAll(force: Bool = true) async {
+        if !force, let last = lastRefresh, Date().timeIntervalSince(last) < 120 {
             return
         }
-        lastHealthRefresh = Date()
+        lastRefresh = Date()
 
-        if planStore.plan == nil {
-            planStore.reloadForCurrentUser()
-            _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
-        }
+        let healthManager = HealthManager.shared
+        let dataManager = DailyDataManager.shared
+
         if healthManager.isHealthDataAvailable && !healthManager.isAuthorized {
             await healthManager.requestAuthorizationAsync()
         } else if healthManager.isAuthorized {
@@ -199,162 +80,28 @@ struct HealthDashboardView: View {
             await dataManager.updateCurrentDayData(with: healthManager)
         }
     }
+
+    private var faceScanCover: some View {
+        FaceScanPrivacyGateView(
+            onDismiss: { showFaceScan = false },
+            onComplete: { _ in
+                faceHistoryStore = FaceScanHistoryStore.shared
+                showFaceScan = false
+                Task { await ProfileHealthSection.refreshAll(force: true) }
+            }
+        )
+        .environmentObject(profileService)
+    }
 }
 
-// MARK: - Métriques santé (résumé compact)
-
-private struct HealthTodayMetricsCard: View {
-    @EnvironmentObject private var healthManager: HealthManager
-    @EnvironmentObject private var profileService: UnifiedProfileService
-    @Environment(\.appTheme) private var theme
-
-    @State private var showDetails = false
-
-    private var snapshot: DailyHealthSnapshot { healthManager.todaySnapshot }
+/// Conservé pour compatibilité — redirige vers le contenu profil.
+struct HealthDashboardView: View {
+    @Binding var selectedSection: ProcessMainSection
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HealthHubDesign.sectionHeader("Suivi", subtitle: "Métriques", theme: theme)
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                metricChip("Pas", value: metricValue(snapshot.effort.steps), icon: "figure.walk")
-                metricChip("Sommeil", value: formatSleep(snapshot.sleep.sleepDuration), icon: "bed.double.fill")
-                metricChip("HRV", value: snapshot.vitals.hrv > 0 ? String(format: "%.0f", snapshot.vitals.hrv) : "—", icon: "waveform.path.ecg")
-                metricChip("Calories", value: snapshot.effort.activeEnergyBurned > 0 ? "\(Int(snapshot.effort.activeEnergyBurned))" : "—", icon: "flame.fill")
-                metricChip("Exercice", value: snapshot.effort.exerciseMinutes > 0 ? "\(Int(snapshot.effort.exerciseMinutes))m" : "—", icon: "figure.run")
-                metricChip("FC repos", value: snapshot.vitals.restingHeartRate > 0 ? "\(Int(snapshot.vitals.restingHeartRate))" : "—", icon: "heart.fill")
+        ProcessProfileView(selectedSection: $selectedSection)
+            .onAppear {
+                selectedSection = .profile
             }
-
-            if showDetails {
-                VStack(spacing: 8) {
-                    detailSection("Activité", icon: "figure.run") {
-                        let e = snapshot.effort
-                        detailRow("Effort Process", e.effortScore > 0 ? "\(Int(e.effortScore)) %" : "—")
-                        detailRow("Distance", formatDistance(e.distanceKm))
-                        detailRow("Séances", metricValue(e.workoutCount))
-                        detailRow("Étages", metricValue(e.flightsClimbed))
-                        detailRow("Heures debout", metricValue(snapshot.activity.standHours))
-                    }
-
-                    detailSection("Sommeil", icon: "bed.double.fill") {
-                        let s = snapshot.sleep
-                        detailRow("Profond", s.deepSleepHours > 0 ? String(format: "%.1f h", s.deepSleepHours) : "—")
-                        detailRow("REM", s.remSleepHours > 0 ? String(format: "%.1f h", s.remSleepHours) : "—")
-                        detailRow("Dette", s.sleepDebt > 0 ? String(format: "%.1f h", s.sleepDebt) : "Aucune")
-                        if let bed = s.bedtime {
-                            detailRow("Coucher", bed.formatted(date: .omitted, time: .shortened))
-                        }
-                        if let wake = s.wakeTime {
-                            detailRow("Réveil", wake.formatted(date: .omitted, time: .shortened))
-                        }
-                    }
-
-                    detailSection("Signes vitaux", icon: "heart.fill") {
-                        let v = snapshot.vitals
-                        let b = healthManager.baselines
-                        detailRow("FC moyenne", v.heartRate > 0 ? "\(Int(v.heartRate)) bpm" : "—")
-                        detailRow("SpO2", v.spo2 > 0 ? String(format: "%.0f %%", v.spo2) : "—")
-                        detailRow("Fréq. respiratoire", v.respiratoryRate > 0 ? String(format: "%.0f /min", v.respiratoryRate) : "—")
-                        detailRow("VO2 max", snapshot.activity.vo2Max > 0 ? String(format: "%.1f", snapshot.activity.vo2Max) : "—")
-                        if b.hrv > 0 { detailRow("HRV baseline", String(format: "%.0f ms", b.hrv)) }
-                        if b.restingHeartRate > 0 { detailRow("FC repos baseline", String(format: "%.0f bpm", b.restingHeartRate)) }
-                    }
-
-                    detailSection("Corps", icon: "figure.stand") {
-                        let v = snapshot.vitals
-                        let profile = profileService.currentProfile
-                        let weightKg = v.bodyMass > 0 ? v.bodyMass : (profile?.weight ?? 0)
-                        detailRow("Poids", weightKg > 0 ? String(format: "%.1f kg", weightKg) : "—")
-                        if let profile, profile.height > 0 {
-                            detailRow("Taille", "\(Int(profile.height)) cm")
-                        }
-                        detailRow("Masse grasse", v.bodyFatPercentage > 0 ? String(format: "%.1f %%", v.bodyFatPercentage) : "—")
-                    }
-
-                    detailSection("Nutrition", icon: "fork.knife") {
-                        let n = snapshot.nutrition
-                        detailRow("Calories", n.caloriesConsumed > 0 ? "\(Int(n.caloriesConsumed)) kcal" : "—")
-                        detailRow("Protéines", n.proteinGrams > 0 ? "\(Int(n.proteinGrams)) g" : "—")
-                        detailRow("Glucides", n.carbsGrams > 0 ? "\(Int(n.carbsGrams)) g" : "—")
-                        detailRow("Lipides", n.fatGrams > 0 ? "\(Int(n.fatGrams)) g" : "—")
-                        detailRow("Eau", n.waterLiters > 0 ? String(format: "%.1f L", n.waterLiters) : "—")
-                    }
-
-                    if healthManager.baselines.daysOfData > 0 {
-                        detailSection("Moyennes (14 j)", icon: "chart.line.uptrend.xyaxis") {
-                            let b = healthManager.baselines
-                            detailRow("Jours de données", "\(b.daysOfData)")
-                            detailRow("Sommeil cible", b.sleepNeedHours > 0 ? String(format: "%.1f h", b.sleepNeedHours) : "—")
-                            detailRow("Pas (14 j)", b.avgDailySteps > 0 ? "\(Int(b.avgDailySteps))" : "—")
-                            detailRow("Calories (14 j)", b.avgActiveCalories > 0 ? "\(Int(b.avgActiveCalories)) kcal" : "—")
-                        }
-                    }
-                }
-                .padding(.top, 4)
-            }
-
-            Button {
-                withAnimation(.easeInOut(duration: 0.22)) { showDetails.toggle() }
-            } label: {
-                Label(showDetails ? "Réduire" : "Plus de détails", systemImage: showDetails ? "chevron.up" : "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(theme.secondaryText)
-        }
-        .padding(14)
-        .background(HealthHubDesign.surfaceCard(theme: theme))
-    }
-
-    private func metricChip(_ title: String, value: String, icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundStyle(theme.secondaryText)
-            Text(value)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(theme.primaryText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(theme.secondaryText)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(theme.coachUserBubble.opacity(0.25), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private func detailSection(_ title: String, icon: String, @ViewBuilder rows: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: icon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.primaryText)
-            rows()
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.coachUserBubble.opacity(0.18), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private func detailRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label).font(.caption).foregroundStyle(theme.secondaryText)
-            Spacer()
-            Text(value).font(.caption.weight(.medium)).foregroundStyle(theme.primaryText)
-        }
-    }
-
-    private func metricValue(_ value: Int) -> String {
-        value > 0 ? "\(value)" : "—"
-    }
-
-    private func formatSleep(_ hours: Double) -> String {
-        hours > 0 ? String(format: "%.1f h", hours) : "—"
-    }
-
-    private func formatDistance(_ km: Double) -> String {
-        km > 0 ? String(format: "%.1f km", km) : "—"
     }
 }

@@ -1,7 +1,10 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Barre liquid glass — texte et vocal partagent le même conteneur
+// MARK: - Barre de saisie coach
+//
+// iOS 26 : le bouton envoyer/micro DOIT être un sibling du glass passif (pas enfant),
+// dans un GlassEffectContainer — sinon pas de press natif.
 
 struct CoachLiquidGlassInputBar: View {
     @Binding var text: String
@@ -21,6 +24,13 @@ struct CoachLiquidGlassInputBar: View {
     var onOpenMenu: () -> Void
     var onRemovePendingImage: () -> Void
 
+    private let barShape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+    private let actionButtonSize: CGFloat = 44
+    private let horizontalPadding: CGFloat = 16
+    private let bottomPadding: CGFloat = 10
+    private let topPaddingDefault: CGFloat = 10
+    private let topPaddingWithImage: CGFloat = 8
+
     private var trimmedEmpty: Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -33,40 +43,103 @@ struct CoachLiquidGlassInputBar: View {
         isRecording || isVoiceExiting
     }
 
+    private var topPadding: CGFloat {
+        pendingImage == nil || showsVoiceContent ? topPaddingDefault : topPaddingWithImage
+    }
+
     var body: some View {
+        Group {
+            if #available(iOS 26.0, *) {
+                ios26Bar
+            } else {
+                legacyBar
+            }
+        }
+    }
+
+    // MARK: - iOS 26
+
+    @available(iOS 26.0, *)
+    private var ios26Bar: some View {
+        GlassEffectContainer(spacing: 16) {
+            ZStack(alignment: .bottomTrailing) {
+                passiveGlassSurface
+
+                trailingGlassActionButton
+                    .padding(.trailing, horizontalPadding)
+                    .padding(.bottom, bottomPadding)
+            }
+        }
+    }
+
+    @available(iOS 26.0, *)
+    private var passiveGlassSurface: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !showsVoiceContent, let pendingImage {
                 pendingImagePreview(pendingImage)
             }
 
-            Group {
-                if showsVoiceContent {
-                    voiceContent
-                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
-                } else {
-                    typingContent
-                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
-                }
+            if showsVoiceContent {
+                voiceBody(includeTrailingAction: false)
+            } else {
+                typingBody(includeTrailingAction: false)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, pendingImage == nil || showsVoiceContent ? 10 : 8)
-        .padding(.bottom, 10)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.top, topPadding)
+        .padding(.bottom, bottomPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 84)
-        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .onTapGesture {
-            guard !isDisabled, !showsVoiceContent else { return }
-            isFocused = true
-        }
-        .modifier(CoachInputGlassModifier())
-        .animation(ProcessGlass.spring, value: showsVoiceContent)
+        .glassEffect(ProcessGlass.regularSurface, in: barShape)
     }
 
-    // MARK: - Texte
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var trailingGlassActionButton: some View {
+        if showsVoiceContent {
+            barGlassCircleButton(systemName: "checkmark", iconSize: 16, haptic: .medium) {
+                onConfirmVoice()
+            }
+        } else if canSend {
+            barGlassCircleButton(systemName: "arrow.up", iconSize: 16) {
+                onSend()
+            }
+            .disabled(isDisabled)
+        } else {
+            barGlassCircleButton(systemName: "mic", iconSize: 18, haptic: .medium) {
+                isFocused = false
+                onStartVoice()
+            }
+            .disabled(isDisabled)
+        }
+    }
+
+    // MARK: - Legacy
+
+    private var legacyBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !showsVoiceContent, let pendingImage {
+                pendingImagePreview(pendingImage)
+            }
+
+            if showsVoiceContent {
+                voiceBody(includeTrailingAction: true)
+            } else {
+                typingBody(includeTrailingAction: true)
+            }
+        }
+        .padding(.horizontal, horizontalPadding)
+        .padding(.top, topPadding)
+        .padding(.bottom, bottomPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 84)
+        .background { legacyBarBackground }
+    }
+
+    // MARK: - Contenu
 
     @ViewBuilder
-    private var typingContent: some View {
+    private func typingBody(includeTrailingAction: Bool) -> some View {
         TextField(
             "",
             text: $text,
@@ -89,57 +162,35 @@ struct CoachLiquidGlassInputBar: View {
         .frame(minHeight: 32, alignment: .topLeading)
 
         HStack(spacing: 8) {
-            Button {
-                HapticManager.shared.impact(.light)
+            barIconButton(systemName: "plus", size: 22, opacity: 0.72) {
                 onOpenMenu()
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.72))
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .disabled(isDisabled)
             .rotationEffect(.degrees(isAttachmentMenuOpen ? 45 : 0))
-            .animation(.spring(response: 0.34, dampingFraction: 0.78), value: isAttachmentMenuOpen)
 
             Spacer(minLength: 8)
 
-            if canSend {
-                Button {
-                    HapticManager.shared.impact(.light)
-                    isFocused = false
-                    onSend()
-                } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 32, height: 32)
+            if includeTrailingAction {
+                if canSend {
+                    barGlassCircleButton(systemName: "arrow.up", iconSize: 16) {
+                        onSend()
+                    }
+                    .disabled(isDisabled)
+                } else {
+                    barGlassCircleButton(systemName: "mic", iconSize: 18, haptic: .medium) {
+                        isFocused = false
+                        onStartVoice()
+                    }
+                    .disabled(isDisabled)
                 }
-                .buttonStyle(LiquidGlassPressStyle())
-                .disabled(isDisabled)
-                .opacity(isDisabled ? 0.45 : 1)
             } else {
-                Button {
-                    HapticManager.shared.impact(.medium)
-                    isFocused = false
-                    onStartVoice()
-                } label: {
-                    Image(systemName: "mic")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.7))
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-                .disabled(isDisabled)
+                Color.clear
+                    .frame(width: actionButtonSize, height: actionButtonSize)
             }
         }
     }
 
-    // MARK: - Vocal (même emplacements : gauche / centre / droite)
-
-    private var voiceContent: some View {
+    @ViewBuilder
+    private func voiceBody(includeTrailingAction: Bool) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             CoachVoiceWaveformDots(
                 audioLevel: voiceAudioLevel,
@@ -149,32 +200,69 @@ struct CoachLiquidGlassInputBar: View {
             .frame(maxWidth: .infinity)
 
             HStack(spacing: 8) {
-                Button {
-                    HapticManager.shared.impact(.light)
+                barIconButton(systemName: "xmark", size: 22, opacity: 0.72) {
                     onCancelVoice()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.72))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
 
                 Spacer(minLength: 8)
 
-                Button {
-                    HapticManager.shared.impact(.medium)
-                    onConfirmVoice()
-                } label: {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 32, height: 32)
+                if includeTrailingAction {
+                    barGlassCircleButton(systemName: "checkmark", iconSize: 16, haptic: .medium) {
+                        onConfirmVoice()
+                    }
+                } else {
+                    Color.clear
+                        .frame(width: actionButtonSize, height: actionButtonSize)
                 }
-                .buttonStyle(LiquidGlassPressStyle())
             }
         }
+    }
+
+    // MARK: - Boutons
+
+    private func barIconButton(
+        systemName: String,
+        size: CGFloat,
+        opacity: Double = 1,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: size, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(opacity))
+                .frame(width: actionButtonSize, height: actionButtonSize)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+    }
+
+    private func barGlassCircleButton(
+        systemName: String,
+        iconSize: CGFloat,
+        haptic: UIImpactFeedbackGenerator.FeedbackStyle = .light,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            HapticManager.shared.impact(haptic)
+            isFocused = false
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: iconSize, weight: .bold))
+                .frame(width: actionButtonSize, height: actionButtonSize)
+        }
+        .modifier(CoachBarGlassCircleStyle())
+    }
+
+    @ViewBuilder
+    private var legacyBarBackground: some View {
+        barShape
+            .fill(.ultraThinMaterial)
+            .overlay(barShape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
     private func pendingImagePreview(_ pendingImage: UIImage) -> some View {
@@ -203,13 +291,25 @@ struct CoachLiquidGlassInputBar: View {
     }
 }
 
-// MARK: - Waveform (contenu interne vocal)
+private struct CoachBarGlassCircleStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+        } else {
+            content.processGlassButton(in: Circle())
+        }
+    }
+}
+
+// MARK: - Waveform
 
 struct CoachVoiceWaveformDots: View {
     let audioLevel: CGFloat
     let audioLevels: [CGFloat]
 
-    private let dotCount = 40
+    private let dotCount = 20
 
     var body: some View {
         HStack(spacing: 4) {
@@ -218,7 +318,6 @@ struct CoachVoiceWaveformDots: View {
                     .fill(dotColor(at: index))
                     .frame(width: 5, height: 5)
                     .scaleEffect(dotScale(at: index))
-                    .animation(.spring(response: 0.16, dampingFraction: 0.68), value: audioLevel)
             }
         }
         .frame(height: 10)
@@ -232,7 +331,7 @@ struct CoachVoiceWaveformDots: View {
             samples.count - 1
         )
         let sample = samples[sampleIndex]
-        let centerBoost = 1 - abs(CGFloat(index) - CGFloat(dotCount) / 2) / (CGFloat(dotCount) / 2) * 0.2
+        let centerBoost = 1 - abs(CGFloat(index) / CGFloat(dotCount) - 0.5) / 0.5 * 0.2
         return min(max(sample * centerBoost + audioLevel * 0.1, 0.06), 1)
     }
 
@@ -246,30 +345,5 @@ struct CoachVoiceWaveformDots: View {
 
     private func dotScale(at index: Int) -> CGFloat {
         0.88 + dotLevel(at: index) * 0.28
-    }
-}
-
-// MARK: - Liquid glass (même rendu que les chips du menu)
-
-private struct CoachInputGlassModifier: ViewModifier {
-    private let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(ProcessGlass.regular, in: shape)
-        } else {
-            content
-                .background(.ultraThinMaterial, in: shape)
-                .overlay(shape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-        }
-    }
-}
-
-private struct LiquidGlassPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .opacity(configuration.isPressed ? 0.88 : 1)
-            .animation(ProcessGlass.pressSpring, value: configuration.isPressed)
     }
 }

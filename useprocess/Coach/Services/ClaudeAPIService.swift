@@ -146,6 +146,9 @@ enum CoachAPITransport {
         if task == .faceScanVision {
             return store.canSendFacePhotoToAI ? nil : .faceScanAINotAccepted
         }
+        if task == .bodyScanVision, imageBase64 != nil {
+            return store.canSendFacePhotoToAI ? nil : .faceScanAINotAccepted
+        }
         guard store.canUseThirdPartyAI else {
             return .thirdPartyAINotAccepted
         }

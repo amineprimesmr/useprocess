@@ -43,13 +43,14 @@ struct MealScoreBreakdownView: View {
 
 struct MealTimelineTabs: View {
     @Binding var selected: MealTimeSlot
+    var slots: [MealTimeSlot] = MealTimeSlot.allCases
     var validatedSlots: Set<MealTimeSlot>
     var theme: AppTheme
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(MealTimeSlot.allCases) { slot in
+                ForEach(slots) { slot in
                     Button {
                         HapticManager.shared.selection()
                         withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {

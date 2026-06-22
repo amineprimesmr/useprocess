@@ -124,131 +124,14 @@ struct ProfileActionButtons: View {
                     .foregroundStyle(Color.primary)
                     .frame(width: 48, height: 48)
             }
-            .buttonStyle(.plain)
-            .processGlassEffect(in: RoundedRectangle(cornerRadius: ProfileTheme.buttonCornerRadius, style: .continuous))
-            .buttonStyle(ProcessGlassPressStyle())
+            .processGlassButton(
+                in: RoundedRectangle(cornerRadius: ProfileTheme.buttonCornerRadius, style: .continuous)
+            )
         }
-    }
-}
-
-// MARK: - Pins
-
-struct ProfilePinsSection: View {
-    let pins: [SocialProfilePin]
-    var onAdd: () -> Void
-    var onRemove: (SocialProfilePin) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Pins")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(ProfileTheme.textPrimary)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ProfileAddPinTile(action: onAdd)
-
-                    ForEach(pins) { pin in
-                        ProfilePinTile(pin: pin) {
-                            onRemove(pin)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-struct ProfileAddPinTile: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [7, 5]))
-                .foregroundStyle(ProfileTheme.dashedBorder)
-                .frame(width: ProfileTheme.pinWidth, height: ProfileTheme.pinHeight)
-                .overlay {
-                    Image(systemName: "plus")
-                        .font(.system(size: 28, weight: .medium))
-                        .foregroundStyle(ProfileTheme.textPrimary)
-                }
-        }
-        .buttonStyle(ProfilePressStyle())
-    }
-}
-
-struct ProfilePinTile: View {
-    let pin: SocialProfilePin
-    var onLongPress: () -> Void
-
-    var body: some View {
-        VStack(spacing: 10) {
-            Text(pin.emoji)
-                .font(.system(size: 34))
-            Text(pin.title)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(ProfileTheme.textPrimary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-        }
-        .frame(width: ProfileTheme.pinWidth, height: ProfileTheme.pinHeight)
-        .processGlassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .onLongPressGesture { onLongPress() }
     }
 }
 
 // MARK: - Sheets
-
-struct ProfileAddPinSheet: View {
-    @Binding var title: String
-    @Binding var emoji: String
-    var onSave: () -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                ProfileTheme.background.ignoresSafeArea()
-                VStack(spacing: 16) {
-                    TextField("Titre du pin", text: $title)
-                        .font(.system(size: 17))
-                        .foregroundStyle(ProfileTheme.textPrimary)
-                        .padding(14)
-                        .background(ProfileTheme.surfaceElevated)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                    TextField("Emoji", text: $emoji)
-                        .font(.system(size: 17))
-                        .foregroundStyle(ProfileTheme.textPrimary)
-                        .padding(14)
-                        .background(ProfileTheme.surfaceElevated)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .padding(16)
-            }
-            .navigationTitle("Nouveau Pin")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Ajouter") {
-                        onSave()
-                        dismiss()
-                    }
-                    .foregroundStyle(Color.processPrimary)
-                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-            .toolbarBackground(ProfileTheme.background, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-        }
-        .presentationDetents([.medium])
-    }
-}
 
 struct ProfileShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -259,3 +142,4 @@ struct ProfileShareSheet: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
+

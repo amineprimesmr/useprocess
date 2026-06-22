@@ -125,6 +125,13 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
     var progress: OriginPlanProgress
     var lifestyleExtras: OriginLifestyleExtras
 
+    /// Diagnostic personnalisé à la génération (biométrie + questionnaire + scan).
+    var assessmentSnapshot: OriginPlanAssessmentSnapshot?
+    /// Objectifs mesurables (scan, composition, habitudes).
+    var successCriteria: [OriginSuccessCriterion]
+    /// Cibles journalières adaptées au profil.
+    var personalizedTargets: OriginPersonalizedDailyTargets?
+
     static let noSupplementsPhilosophy = """
     Zéro pilule, zéro complément isolé. Tout passe par l'alimentation dense, le sommeil, \
     la lumière, le mouvement et la posture. Les électrolytes viennent des aliments — pas des sachets.
@@ -154,7 +161,10 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         durationMaxWeeks: Int = 14,
         calendar: OriginProgramCalendar = .empty,
         progress: OriginPlanProgress = OriginPlanProgress(),
-        lifestyleExtras: OriginLifestyleExtras = .default
+        lifestyleExtras: OriginLifestyleExtras = .default,
+        assessmentSnapshot: OriginPlanAssessmentSnapshot? = nil,
+        successCriteria: [OriginSuccessCriterion] = [],
+        personalizedTargets: OriginPersonalizedDailyTargets? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -180,6 +190,9 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         self.calendar = calendar
         self.progress = progress
         self.lifestyleExtras = lifestyleExtras
+        self.assessmentSnapshot = assessmentSnapshot
+        self.successCriteria = successCriteria
+        self.personalizedTargets = personalizedTargets
     }
 
     init(from decoder: Decoder) throws {
@@ -208,6 +221,9 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         calendar = try c.decodeIfPresent(OriginProgramCalendar.self, forKey: .calendar) ?? .empty
         progress = try c.decodeIfPresent(OriginPlanProgress.self, forKey: .progress) ?? OriginPlanProgress()
         lifestyleExtras = try c.decodeIfPresent(OriginLifestyleExtras.self, forKey: .lifestyleExtras) ?? .default
+        assessmentSnapshot = try c.decodeIfPresent(OriginPlanAssessmentSnapshot.self, forKey: .assessmentSnapshot)
+        successCriteria = try c.decodeIfPresent([OriginSuccessCriterion].self, forKey: .successCriteria) ?? []
+        personalizedTargets = try c.decodeIfPresent(OriginPersonalizedDailyTargets.self, forKey: .personalizedTargets)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -236,6 +252,9 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         try c.encode(calendar, forKey: .calendar)
         try c.encode(progress, forKey: .progress)
         try c.encode(lifestyleExtras, forKey: .lifestyleExtras)
+        try c.encodeIfPresent(assessmentSnapshot, forKey: .assessmentSnapshot)
+        try c.encode(successCriteria, forKey: .successCriteria)
+        try c.encodeIfPresent(personalizedTargets, forKey: .personalizedTargets)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -244,6 +263,7 @@ struct FaceOriginPlan: Codable, Identifiable, Equatable {
         case nutritionProtocol, sleepProtocol, trainingProtocol, postureProtocol, faceProtocol, mindsetNotes
         case totalWeeks, durationMinWeeks, durationMaxWeeks
         case calendar, progress, lifestyleExtras
+        case assessmentSnapshot, successCriteria, personalizedTargets
     }
 }
 
@@ -285,6 +305,10 @@ struct OriginNutritionProtocol: Codable, Equatable {
     var hydrationGuide: String
     var mealExamples: [String]
     var mealPlanStyle: OriginMealPlanStyle?
+    /// Repas/jour actuellement (questionnaire).
+    var currentMealsPerDay: Int?
+    /// Repas/jour visés dans le protocole.
+    var targetMealsPerDay: Int?
 }
 
 struct OriginSleepProtocol: Codable, Equatable {

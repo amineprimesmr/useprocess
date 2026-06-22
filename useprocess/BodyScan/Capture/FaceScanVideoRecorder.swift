@@ -10,9 +10,11 @@ final class FaceScanVideoRecorder {
     private var outputURL: URL?
     private var sessionStarted = false
     private var firstTimestamp: TimeInterval?
-    private var lastAppendedFrameIndex = -1
+    private var lastSampledTargetIndex = -1
+    private var writtenFrameCount = -1
     private let queue = DispatchQueue(label: "process.facescan.video", qos: .userInitiated)
-    private let targetFPS: Double = 15
+    /// 24 fps — fluide à l’œil tout en restant léger pour le stockage local.
+    private let targetFPS: Double = 24
 
     var isRecording: Bool { assetWriter != nil }
 
@@ -72,11 +74,12 @@ final class FaceScanVideoRecorder {
         guard sessionStarted else { return }
 
         let elapsed = frame.timestamp - (firstTimestamp ?? frame.timestamp)
-        let frameIndex = Int(elapsed * targetFPS)
-        guard frameIndex > lastAppendedFrameIndex else { return }
-        lastAppendedFrameIndex = frameIndex
+        let targetFrameIndex = Int(elapsed * targetFPS)
+        guard targetFrameIndex > lastSampledTargetIndex else { return }
 
-        let presentationTime = CMTime(value: CMTimeValue(frameIndex), timescale: CMTimeScale(targetFPS))
+        writtenFrameCount += 1
+        lastSampledTargetIndex = targetFrameIndex
+        let presentationTime = CMTime(value: CMTimeValue(writtenFrameCount), timescale: CMTimeScale(targetFPS))
         adaptor.append(pixelBuffer, withPresentationTime: presentationTime)
     }
 
@@ -153,6 +156,7 @@ final class FaceScanVideoRecorder {
         outputURL = nil
         sessionStarted = false
         firstTimestamp = nil
-        lastAppendedFrameIndex = -1
+        lastSampledTargetIndex = -1
+        writtenFrameCount = -1
     }
 }

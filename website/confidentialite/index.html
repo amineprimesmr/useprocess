@@ -18,7 +18,7 @@
 
     <article class="card">
       <h1>Politique de confidentialité</h1>
-      <p class="meta">Dernière mise à jour : 19 juin 2026</p>
+      <p class="meta">Dernière mise à jour : 21 juin 2026</p>
 
       <p>
         La présente politique décrit comment <strong>Process AI</strong> (« l'Application », « nous »)
@@ -63,7 +63,7 @@
       <ul>
         <li><strong>Mesh 3D facial</strong> : géométrie du visage (vertices, triangles), traitée principalement sur l'appareil.</li>
         <li><strong>Photo JPEG</strong> : capture d'image du visage pendant le scan.</li>
-        <li><strong>Vidéo courte</strong> (optionnelle) : enregistrement local du scan.</li>
+        <li><strong>Vidéo courte</strong> : enregistrement local du scan (stocké uniquement sur l'appareil, non téléversé).</li>
         <li><strong>Scores wellness dérivés</strong> : gonflement, cernes/fatigue, tension mâchoire, clarté peau, symétrie (échelle 0–100).</li>
         <li><strong>Métadonnées</strong> : date du scan, scores, sommeil/HRV au moment du scan si HealthKit est autorisé.</li>
       </ul>
@@ -79,25 +79,27 @@
       <h3>3.3 Partage et stockage</h3>
       <ul>
         <li><strong>Sur votre iPhone</strong> : dossier sécurisé de l'Application (Application Support).</li>
-        <li><strong>Cloud</strong> : si vous êtes connecté, historique synchronisé sur <strong>Google Firebase Firestore</strong> (collection <code>faceScans</code>), rattaché à votre identifiant de compte.</li>
+        <li><strong>Cloud</strong> : si vous êtes connecté, scores wellness et métadonnées synchronisés sur <strong>Google Firebase Firestore</strong> (collection <code>faceScans</code>), rattachés à votre identifiant de compte. <strong>Les fichiers photo JPEG et vidéo ne sont pas téléversés</strong> — ils restent sur votre appareil.</li>
         <li><strong>Anthropic (Claude)</strong> : uniquement si vous avez coché l'option d'analyse IA du scan — la photo JPEG et les scores associés sont transmis via nos <strong>Firebase Cloud Functions</strong> (proxy). Anthropic traite ces données pour produire l'analyse textuelle demandée. Selon les conditions commerciales d'Anthropic, les données API ne sont pas utilisées pour entraîner leurs modèles.</li>
       </ul>
 
       <h3>3.4 Durée de conservation</h3>
       <ul>
-        <li><strong>Historique local et cloud</strong> : jusqu'à <strong>90 scans</strong> par compte (les plus anciens sont supprimés automatiquement).</li>
+        <li><strong>Historique local et cloud</strong> : jusqu'à <strong>90 scans</strong> par compte (les plus anciens sont supprimés automatiquement, y compris sur Firebase Firestore).</li>
+        <li><strong>Photos et vidéos locales</strong> : supprimées lorsque le scan sort de l'historique (90) ou lorsque vous révoquez le consentement scan visage dans les paramètres.</li>
         <li><strong>Suppression de compte</strong> : toutes les données faciales associées au compte sont supprimées sous <strong>30 jours</strong> après votre demande.</li>
+        <li><strong>Révocation du consentement</strong> : via Paramètres → Confidentialité → « Révoquer le scan visage » — supprime l'historique, les médias locaux et les données cloud associées.</li>
         <li><strong>Analyse IA</strong> : le texte d'analyse est stocké avec le scan ; la photo transmise à Anthropic est traitée pour la requête en cours (politique de rétention d'Anthropic applicable).</li>
       </ul>
 
       <blockquote>
         <strong>Extrait — collecte et usage des données faciales :</strong>
         « Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth,
-        une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Ces données sont
-        stockées sur votre appareil et, si vous êtes connecté, sur Firebase Firestore. Si vous autorisez
-        explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud
-        Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ;
-        suppression sous 30 jours après suppression du compte. »
+        une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Les photos et vidéos
+        restent sur votre appareil ; si vous êtes connecté, les scores et métadonnées sont synchronisés
+        sur Firebase Firestore. Si vous autorisez explicitement l'analyse IA, la photo peut être envoyée
+        à Anthropic (Claude) via Firebase Cloud Functions. Aucune reconnaissance d'identité n'est effectuée.
+        Conservation : max. 90 scans ; suppression sous 30 jours après suppression du compte. »
       </blockquote>
 
       <h2 id="intelligence-artificielle">4. Intelligence artificielle tierce (Anthropic Claude)</h2>

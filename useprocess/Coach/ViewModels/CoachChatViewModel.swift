@@ -12,7 +12,6 @@ final class CoachChatViewModel {
     var streamingText = ""
     var errorMessage: String?
     var claudeConfigured = ClaudeConfiguration.isConfigured
-    var transportLabel = ClaudeConfiguration.transportLabel
 
     var isVoiceRecording = false
     var isVoiceExiting = false
@@ -61,7 +60,6 @@ final class CoachChatViewModel {
     func bind(profile: UnifiedUserProfile?) {
         self.profile = profile
         claudeConfigured = ClaudeConfiguration.isConfigured
-        transportLabel = ClaudeConfiguration.transportLabel
         FaceScanHistoryStore.shared.reloadForUser(userId: profile?.userId)
     }
 
@@ -70,6 +68,12 @@ final class CoachChatViewModel {
         CoachConversationStore.stripInjectedProgramSummaryMessages()
         CoachConversationStore.stripLegacyWelcomeMessages()
         libraryStore.migrateLegacyThreadIfNeeded()
+
+        if CoachAppLaunchSession.consumeColdLaunchFreshConversation() {
+            await createNewConversation()
+            await consumePendingPlanPromptIfNeeded()
+            return
+        }
 
         guard let conversationId = libraryStore.activeConversationId else {
             await createNewConversation()
@@ -140,6 +144,18 @@ final class CoachChatViewModel {
 
     func deleteConversation(_ id: UUID) async {
         let wasActive = libraryStore.activeConversationId == id
+
+        if wasActive {
+            voiceTimerTask?.cancel()
+            resetVoiceStateImmediately()
+            clearPendingAttachment()
+            isSending = false
+            streamingText = ""
+            errorMessage = nil
+            messages = []
+            resetHomePresentation()
+        }
+
         await CoachSyncService.deleteConversation(id: id, userId: userId)
         libraryStore.deleteConversation(id)
 
@@ -477,6 +493,12 @@ final class CoachChatViewModel {
                 throw CoachRemoteError.incompleteStream
             }
 
+            guard libraryStore.activeConversationId == conversationId else {
+                isSending = false
+                streamingText = ""
+                return
+            }
+
             var planChanges: [String] = []
             if modIntent != nil || effectiveFocus?.mode == .modify, var plan = WelcomePlanStore.shared.plan {
                 planChanges = CoachPlanModificationService.apply(
@@ -582,6 +604,7 @@ final class CoachChatViewModel {
                 profile: profile,
                 history: messages
             )
+            guard libraryStore.activeConversationId == conversationId else { return }
             messages.append(reply)
             await CoachSyncService.appendMessage(
                 reply,

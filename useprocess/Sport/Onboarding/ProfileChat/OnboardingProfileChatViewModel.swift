@@ -292,6 +292,7 @@ final class OnboardingProfileChatViewModel {
         onboardingViewModel?.onboardingFaceMarkers = markers
         onboardingViewModel?.isFaceAnalysisCompleted = true
         OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
+        FaceScanImageStore.deleteMedia(forScanId: payload.scanId)
         Task { await advanceAfterFaceScanResponse() }
     }
 

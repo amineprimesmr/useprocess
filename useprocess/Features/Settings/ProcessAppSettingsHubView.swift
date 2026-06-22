@@ -138,21 +138,13 @@ struct ProcessAppSettingsHubView: View {
                         GroupedSettingsNavigationRow(
                             icon: "camera.fill",
                             title: "Révoquer le scan visage",
-                            subtitle: "Redemandera l'autorisation au prochain scan",
+                            subtitle: "Supprime scans, photos et scores locaux/cloud",
                             value: nil,
                             showsChevron: false
                         )
                     }
                     .buttonStyle(.plain)
                 }
-            }
-
-            GroupedSettingsCard {
-                GroupedSettingsInfoRow(
-                    icon: "cpu",
-                    title: "Modèle chat",
-                    value: ClaudeModel.preferred(for: .chat).displayName
-                )
             }
 
             GroupedSettingsCard {
@@ -172,6 +164,17 @@ struct ProcessAppSettingsHubView: View {
                         icon: "hand.raised",
                         title: "Politique de confidentialité",
                         subtitle: nil,
+                        value: nil,
+                        showsChevron: true
+                    )
+                }
+                .buttonStyle(.plain)
+                GroupedSettingsRowDivider()
+                Button { inAppSafariURL = ProcessLegalURLs.privacyPolicyFaceData } label: {
+                    GroupedSettingsNavigationRow(
+                        icon: "face.smiling",
+                        title: "Données faciales (TrueDepth)",
+                        subtitle: "Collecte, stockage et analyse IA",
                         value: nil,
                         showsChevron: true
                     )

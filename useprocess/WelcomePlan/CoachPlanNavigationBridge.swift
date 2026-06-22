@@ -8,6 +8,11 @@ final class CoachPlanNavigationBridge {
     var pendingPrompt: String?
     var pendingFocus: CoachPlanFocus?
     var shouldOpenCoach = false
+    var shouldOpenPlan = false
+
+    func openPlan() {
+        shouldOpenPlan = true
+    }
 
     func askCoachAboutPlan(focus: CoachPlanFocus) {
         pendingFocus = focus

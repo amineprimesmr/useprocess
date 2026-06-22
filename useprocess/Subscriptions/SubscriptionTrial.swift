@@ -19,11 +19,25 @@ struct SubscriptionTrialInfo: Equatable {
     }
 
     var shortLabel: String {
-        "\(days) jours gratuits"
+        "\(days) jours d'essai gratuits"
     }
 
     func ctaTitle(fallback: String = "Continuer") -> String {
-        isActiveOffer ? "Essayer \(days) jours gratuits" : fallback
+        isActiveOffer ? "Démarrer mon essai gratuit" : fallback
+    }
+
+    func ctaSubtitle(
+        for plan: SubscriptionBillingPlan,
+        displayPrice: String
+    ) -> String? {
+        guard isActiveOffer else { return nil }
+        let normalized = displayPrice.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch plan {
+        case .annual:
+            return "Aucun paiement aujourd'hui, puis \(normalized)/an"
+        case .monthly:
+            return "Aucun paiement aujourd'hui, puis \(normalized)/mois"
+        }
     }
 
     func cardSecondaryPrice(
@@ -32,12 +46,12 @@ struct SubscriptionTrialInfo: Equatable {
     ) -> String {
         switch plan {
         case .monthly:
-            return "Facturé mensuellement"
+            return "Annulable à tout moment."
         case .annual:
             if isActiveOffer {
-                return "\(days) jours gratuits · \(annualMonthlyEquivalent)/mois"
+                return "\(days) jours d'essai gratuits"
             }
-            return "Équivalent à \(annualMonthlyEquivalent) /mois"
+            return ""
         }
     }
 }
