@@ -327,7 +327,7 @@ struct PaywallBevelAutoScrollingFeatures: View {
 
     var body: some View {
         GeometryReader { geo in
-            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: isUserDragging)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: isUserDragging)) { timeline in
                 let block = loopBlockHeight
                 let autoDelta: CGFloat = {
                     guard !isUserDragging else { return 0 }

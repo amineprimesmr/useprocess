@@ -86,6 +86,7 @@ final class HealthManager: ObservableObject {
     func performFullSync() async {
         guard isHealthDataAvailable else { return }
         guard !AppSession.shared.isAccountWipeInProgress else { return }
+        guard !syncInProgress else { return }
         syncInProgress = true
         defer {
             syncInProgress = false
@@ -98,7 +99,8 @@ final class HealthManager: ObservableObject {
         let readiness = ReadinessScorer.score(
             snapshot: todaySnapshot,
             baselines: baselines,
-            faceMarkers: faceMarkers
+            faceMarkers: faceMarkers,
+            faceScoreOverride: faceScore(for: Date())
         )
         readinessScore = readiness.score
         readinessLabel = readiness.label
@@ -121,7 +123,8 @@ final class HealthManager: ObservableObject {
             let readiness = ReadinessScorer.score(
                 snapshot: snapshot,
                 baselines: baselines,
-                faceMarkers: faceMarkers
+                faceMarkers: faceMarkers,
+                faceScoreOverride: faceScore(for: date)
             )
             readinessScore = readiness.score
             readinessLabel = readiness.label
@@ -136,6 +139,12 @@ final class HealthManager: ObservableObject {
         guard let latest = FaceScanHistoryStore.shared.latestResult else { return nil }
         guard Calendar.current.isDate(latest.createdAt, inSameDayAs: date) else { return nil }
         return latest.markers
+    }
+
+    private func faceScore(for date: Date) -> Int? {
+        guard let latest = FaceScanHistoryStore.shared.latestResult else { return nil }
+        guard Calendar.current.isDate(latest.createdAt, inSameDayAs: date) else { return nil }
+        return latest.resolvedFaceDayScore
     }
 
     // MARK: - API onboarding (compat)
@@ -244,7 +253,8 @@ final class HealthManager: ObservableObject {
         let readiness = ReadinessScorer.score(
             snapshot: snapshot,
             baselines: baselines,
-            faceMarkers: faceMarkers
+            faceMarkers: faceMarkers,
+            faceScoreOverride: faceScore(for: date)
         )
         snapshot.recovery.recoveryScore = readiness.score
         snapshot.recovery.readinessLabel = readiness.label

@@ -24,7 +24,8 @@ enum OriginMealSuggestionService {
       "prepMinutes": 15,
       "prepSummary": "1 phrase préparation",
       "coachTip": "1 conseil",
-      "tags": ["tag1", "tag2"]
+      "tags": ["tag1", "tag2"],
+      "imageAssetName": "optionnel, nom asset si repas repris de la base Process"
     }
     """
 
@@ -63,6 +64,7 @@ enum OriginMealSuggestionService {
             if let index = updated.items.firstIndex(where: { $0.id == item.id }) {
                 updated.items[index].name = first
             }
+            updated.showsScore = true
             return updated
         case .fromPhoto(let photoSlot):
             throw MealHubError.photoRequired
@@ -199,6 +201,7 @@ enum OriginMealSuggestionService {
         let planType = plan.nutritionPlanType
         let mealStructure = planType.label
         let slotHint = slot.map { planType.slotGuidance(for: $0) } ?? planType.aiStructureHint
+        let processMealBase = ProcessDebloatMealLibrary.promptBlock(for: slot, planType: planType)
 
         let userPrompt: String
         switch mode {
@@ -214,7 +217,10 @@ enum OriginMealSuggestionService {
             Aliments à privilégier : \(foods)
             Hydratation : \(day.nutrition.hydration)
 
+            \(processMealBase)
+
             Propose une idée de repas pour \(slotLabel.lowercased()) aujourd'hui.
+            Priorité : reprends un repas de la base Process ou adapte-le légèrement au contexte utilisateur.
             """
         case .another(let previous):
             userPrompt = """
@@ -224,7 +230,9 @@ enum OriginMealSuggestionService {
             \(previous.encodedForStorage())
             \(excludeBlock(extraExclude))
 
-            Propose un AUTRE repas différent, créneau \(slotLabel).
+            \(processMealBase)
+
+            Propose un AUTRE repas différent, créneau \(slotLabel), en restant dans la logique debloat/potassium de la base Process.
             """
         case .modify(let current):
             userPrompt = """
@@ -233,7 +241,9 @@ enum OriginMealSuggestionService {
             Repas actuel :
             \(current.encodedForStorage())
 
-            Propose une VARIANTE ajustée — même esprit, légèrement modifié.
+            \(processMealBase)
+
+            Propose une VARIANTE ajustée — même esprit, légèrement modifié, sodium modéré et potassium naturel.
             """
         case .modifyItem(let current, let item, let instruction):
             userPrompt = """
@@ -245,7 +255,9 @@ enum OriginMealSuggestionService {
             Modification sur « \(item.name) (\(item.quantity)) » :
             \(instruction)
 
-            Regénère le repas complet en appliquant cette modification.
+            \(processMealBase)
+
+            Regénère le repas complet en appliquant cette modification, sans sortir des règles debloat Process.
             """
         case .batch, .itemAlternatives, .fromPhoto:
             userPrompt = ""
@@ -262,7 +274,9 @@ enum OriginMealSuggestionService {
 
     private static func decode(_ text: String) -> MealSuggestionContent {
         let sanitized = MealSuggestionParser.sanitize(text)
-        return MealSuggestionParser.parse(sanitized) ?? MealSuggestionParser.parseOrFallback(sanitized)
+        var meal = MealSuggestionParser.parse(sanitized) ?? MealSuggestionParser.parseOrFallback(sanitized)
+        meal.showsScore = true
+        return meal
     }
 
     private static func excludeBlock(_ names: [String]) -> String {

@@ -10,6 +10,7 @@ struct FaceScanRecordingMediaView: View {
     enum DisplayMode {
         case featured
         case thumbnail
+        case sidePanel
     }
 
     @State private var player: AVPlayer?
@@ -29,7 +30,7 @@ struct FaceScanRecordingMediaView: View {
                             player?.pause()
                             player = nil
                         }
-                case .thumbnail:
+                case .thumbnail, .sidePanel:
                     FaceScanVideoLoopView(url: url)
                 }
             } else if let image = snapshotImage {
@@ -40,14 +41,23 @@ struct FaceScanRecordingMediaView: View {
                 placeholder
             }
         }
-        .frame(height: height)
-        .frame(maxWidth: displayMode == .featured ? .infinity : nil)
+        .frame(height: displayMode == .sidePanel ? nil : height)
+        .frame(maxWidth: usesFullWidth ? .infinity : nil)
+        .frame(maxHeight: displayMode == .sidePanel ? .infinity : nil)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 
+    private var usesFullWidth: Bool {
+        displayMode == .featured || displayMode == .sidePanel
+    }
+
     private var cornerRadius: CGFloat {
-        displayMode == .thumbnail ? 10 : 14
+        switch displayMode {
+        case .thumbnail: 10
+        case .featured: 14
+        case .sidePanel: 0
+        }
     }
 
     @ViewBuilder
@@ -105,14 +115,11 @@ private struct FaceScanVideoLoopView: UIViewRepresentable {
             guard configuredURL != url else { return }
             teardown(from: view)
 
-            let item = AVPlayerItem(url: url)
-            item.preferredForwardBufferTime = 0
-
             let queuePlayer = AVQueuePlayer()
             queuePlayer.isMuted = true
             queuePlayer.automaticallyWaitsToMinimizeStalling = false
 
-            looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+            looper = AVPlayerLooper(player: queuePlayer, templateItem: AVPlayerItem(url: url))
             player = queuePlayer
             configuredURL = url
 

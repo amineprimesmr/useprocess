@@ -67,4 +67,55 @@ enum FaceScanCadence {
         }
         return String(format: "%ds", seconds)
     }
+
+    struct CountdownComponents: Equatable {
+        let hours: Int
+        let minutes: Int
+        let seconds: Int
+    }
+
+    static func countdownComponents(
+        since lastScan: Date?,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> CountdownComponents? {
+        guard let lastScan,
+              !isScanDue(since: lastScan, now: now),
+              let interval = timeUntilNextScan(since: lastScan, now: now, calendar: calendar)
+        else { return nil }
+
+        let total = max(0, Int(interval.rounded(.down)))
+        return CountdownComponents(
+            hours: total / 3600,
+            minutes: (total % 3600) / 60,
+            seconds: total % 60
+        )
+    }
+
+    static func intervalProgress(
+        since lastScan: Date,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Double {
+        let start = calendar.startOfDay(for: lastScan)
+        guard let end = calendar.date(byAdding: .day, value: intervalDays, to: start) else { return 1 }
+        let total = end.timeIntervalSince(start)
+        guard total > 0 else { return 1 }
+        return min(1, max(0, now.timeIntervalSince(start) / total))
+    }
+
+    static func nextScanHeadline(
+        since lastScan: Date?,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> String {
+        guard let lastScan else { return "Premier scan à faire" }
+        if isScanDue(since: lastScan, now: now) { return "Scan disponible" }
+        guard let target = nextScanTarget(after: lastScan, calendar: calendar) else {
+            return "Premier scan à faire"
+        }
+        if calendar.isDateInTomorrow(target) { return "Demain" }
+        if calendar.isDateInToday(target) { return "Plus tard aujourd'hui" }
+        return target.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
+    }
 }

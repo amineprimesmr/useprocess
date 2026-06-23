@@ -43,8 +43,8 @@ enum FaceScanCorrelationEngine {
         let good = withSleep.filter { ($0.sleepHoursAtScan ?? 0) >= 7 }
         guard short.count >= 2, good.count >= 2 else { return nil }
 
-        let shortAvg = average(short.map { Double($0.markers.underEyeFatigueScore) })
-        let goodAvg = average(good.map { Double($0.markers.underEyeFatigueScore) })
+        let shortAvg = average(short.map { Double(underEyeSignal($0)) })
+        let goodAvg = average(good.map { Double(underEyeSignal($0)) })
         guard shortAvg - goodAvg >= 8 else { return nil }
 
         return FaceScanCorrelationInsight(
@@ -61,8 +61,8 @@ enum FaceScanCorrelationEngine {
         let good = withSleep.filter { ($0.sleepHoursAtScan ?? 0) >= 7 }
         guard short.count >= 2, good.count >= 2 else { return nil }
 
-        let shortAvg = average(short.map { Double($0.markers.puffinessScore) })
-        let goodAvg = average(good.map { Double($0.markers.puffinessScore) })
+        let shortAvg = average(short.map { Double(puffinessSignal($0)) })
+        let goodAvg = average(good.map { Double(puffinessSignal($0)) })
         guard shortAvg - goodAvg >= 8 else { return nil }
 
         return FaceScanCorrelationInsight(
@@ -80,8 +80,8 @@ enum FaceScanCorrelationEngine {
         let highHRV = withHRV.filter { ($0.hrvAtScan ?? 0) >= median }
         guard lowHRV.count >= 2, highHRV.count >= 2 else { return nil }
 
-        let lowAvg = average(lowHRV.map { Double($0.markers.underEyeFatigueScore) })
-        let highAvg = average(highHRV.map { Double($0.markers.underEyeFatigueScore) })
+        let lowAvg = average(lowHRV.map { Double(underEyeSignal($0)) })
+        let highAvg = average(highHRV.map { Double(underEyeSignal($0)) })
         guard lowAvg - highAvg >= 7 else { return nil }
 
         return FaceScanCorrelationInsight(
@@ -97,7 +97,7 @@ enum FaceScanCorrelationEngine {
         let older = history.filter { $0.createdAt < weekAgo }
         guard recent.count >= 2, let oldestInWeek = recent.last, let before = older.first else { return nil }
 
-        let delta = oldestInWeek.markers.underEyeFatigueScore - before.markers.underEyeFatigueScore
+        let delta = underEyeSignal(oldestInWeek) - underEyeSignal(before)
         if delta >= 10 {
             return FaceScanCorrelationInsight(
                 message: "Cernes en hausse sur 7 jours (+\(delta) pts) — priorise le sommeil.",
@@ -116,6 +116,14 @@ enum FaceScanCorrelationEngine {
     private static func average(_ values: [Double]) -> Double {
         guard !values.isEmpty else { return 0 }
         return values.reduce(0, +) / Double(values.count)
+    }
+
+    private static func underEyeSignal(_ result: FaceScanResult) -> Int {
+        result.relativeSignals?.underEyeFatigueDelta ?? result.markers.underEyeFatigueScore
+    }
+
+    private static func puffinessSignal(_ result: FaceScanResult) -> Int {
+        result.relativeSignals?.puffinessDelta ?? result.markers.puffinessScore
     }
 
     private static func medianValue(_ values: [Double]) -> Double {

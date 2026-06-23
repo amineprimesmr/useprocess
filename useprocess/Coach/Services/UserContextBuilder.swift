@@ -53,12 +53,23 @@ struct CoachUserContext: Codable, Sendable {
         var underEyeFatigue: Int?
         var puffiness: Int?
         var jawTension: Int?
+        var relativeScore: Int? = nil
+        var confidence: Int? = nil
+        var baselineSamples: Int? = nil
+        var puffinessDelta: Int? = nil
+        var underEyeFatigueDelta: Int? = nil
+        var jawTensionDelta: Int? = nil
+        var skinClarityDelta: Int? = nil
     }
 
     struct FaceScanHistoryEntry: Codable, Sendable {
         var puffiness: Int
         var underEyeFatigue: Int
         var jawTension: Int
+        var relativeScore: Int?
+        var confidence: Int?
+        var puffinessDelta: Int?
+        var underEyeFatigueDelta: Int?
         var createdAt: String
     }
 
@@ -165,11 +176,19 @@ enum UserContextBuilder {
 
         if let latestFace = FaceScanHistoryStore.shared.latestResult {
             let m = latestFace.markers
+            let rel = latestFace.relativeSignals
             ctx.latestFaceScan = .init(
                 skinClarity: m.skinClarityScore,
                 underEyeFatigue: m.underEyeFatigueScore,
                 puffiness: m.puffinessScore,
-                jawTension: m.jawTensionScore
+                jawTension: m.jawTensionScore,
+                relativeScore: latestFace.relativeFaceDayScore,
+                confidence: latestFace.scanConfidence,
+                baselineSamples: latestFace.baselineSampleCount,
+                puffinessDelta: rel?.puffinessDelta,
+                underEyeFatigueDelta: rel?.underEyeFatigueDelta,
+                jawTensionDelta: rel?.jawTensionDelta,
+                skinClarityDelta: rel?.skinClarityDelta
             )
         }
 
@@ -180,6 +199,10 @@ enum UserContextBuilder {
                     puffiness: $0.markers.puffinessScore,
                     underEyeFatigue: $0.markers.underEyeFatigueScore,
                     jawTension: $0.markers.jawTensionScore,
+                    relativeScore: $0.relativeFaceDayScore,
+                    confidence: $0.scanConfidence,
+                    puffinessDelta: $0.relativeSignals?.puffinessDelta,
+                    underEyeFatigueDelta: $0.relativeSignals?.underEyeFatigueDelta,
                     createdAt: formatter.string(from: $0.createdAt)
                 )
             }
@@ -231,7 +254,13 @@ enum UserContextBuilder {
         }
 
         if let face = context.latestFaceScan {
-            lines.append("• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)")
+            if let relativeScore = face.relativeScore {
+                let puffinessDelta = face.puffinessDelta.map { signed($0) } ?? "n/a"
+                let fatigueDelta = face.underEyeFatigueDelta.map { signed($0) } ?? "n/a"
+                lines.append("• Visage relatif \(relativeScore)/100 : gonflement \(puffinessDelta), cernes \(fatigueDelta)")
+            } else {
+                lines.append("• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)")
+            }
         }
 
         lines.append(CoachPlanContextBuilder.compactBlock(
@@ -261,5 +290,9 @@ enum UserContextBuilder {
         \(json)
         ```
         """
+    }
+
+    private static func signed(_ value: Int) -> String {
+        value > 0 ? "+\(value)" : "\(value)"
     }
 }

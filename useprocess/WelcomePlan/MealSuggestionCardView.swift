@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Carte repas structurée
 
@@ -22,9 +23,12 @@ struct MealSuggestionCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             headerRow
-            scoreRow
-            if showsScoreBreakdown {
-                MealScoreBreakdownView(scores: content.resolvedSubScores, theme: theme)
+            mealImage
+            if content.showsScore {
+                scoreRow
+                if showsScoreBreakdown {
+                    MealScoreBreakdownView(scores: content.resolvedSubScores, theme: theme)
+                }
             }
             if !content.tags.isEmpty { tagsRow }
             itemsSection
@@ -41,6 +45,26 @@ struct MealSuggestionCardView: View {
     }
 
     // MARK: - Sections
+
+    @ViewBuilder
+    private var mealImage: some View {
+        let imageAssetName = resolvedMealImageAssetName
+        if ProcessAssetCatalog.contains(imageAssetName) {
+            OptionalAssetImage(
+                name: imageAssetName,
+                contentMode: .fit,
+                height: 180
+            )
+            .padding(10)
+            .frame(maxWidth: .infinity)
+            .background(theme.cardBackground.opacity(0.45))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+
+    private var resolvedMealImageAssetName: String {
+        MealNutritionCatalog.resolvedImageAsset(for: content)
+    }
 
     private var headerRow: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -452,7 +476,11 @@ struct CoachMealSuggestionMessageView: View {
     let content: MealSuggestionContent
 
     var body: some View {
-        MealSuggestionCardView(content: content, showsActions: false, showsScoreBreakdown: true)
+        MealSuggestionCardView(
+            content: content,
+            showsActions: false,
+            showsScoreBreakdown: content.showsScore
+        )
     }
 }
 

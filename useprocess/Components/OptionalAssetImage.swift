@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// Image asset avec repli SF Symbol si l'asset a été retiré du catalogue.
 struct OptionalAssetImage: View {
@@ -14,7 +13,7 @@ struct OptionalAssetImage: View {
 
     var body: some View {
         Group {
-            if UIImage(named: name) != nil {
+            if ProcessAssetCatalog.contains(name) {
                 Image(name)
                     .resizable()
                     .aspectRatio(contentMode: contentMode)

@@ -18,7 +18,7 @@
 
     <article class="card">
       <h1>Politique de confidentialité</h1>
-      <p class="meta">Dernière mise à jour : 21 juin 2026</p>
+      <p class="meta">Dernière mise à jour : 23 juin 2026</p>
 
       <p>
         La présente politique décrit comment <strong>Process AI</strong> (« l'Application », « nous »)
@@ -39,7 +39,7 @@
         <li><strong>Compte</strong> : identifiant Apple (Sign in with Apple), adresse e-mail relayée le cas échéant, prénom.</li>
         <li><strong>Profil</strong> : objectifs, préférences sport et nutrition, réponses d'onboarding.</li>
         <li><strong>Données santé</strong> (avec votre autorisation HealthKit) : activité, sommeil, fréquence cardiaque, calories, pas, etc.</li>
-        <li><strong>Données faciales</strong> (avec votre autorisation — voir section 3) : mesh 3D TrueDepth, photo, vidéo courte, scores wellness dérivés.</li>
+        <li><strong>Données faciales</strong> (avec votre autorisation — voir section 3) : mesh 3D TrueDepth local, photo locale, vidéo courte locale, scores wellness dérivés.</li>
         <li><strong>Activité physique</strong> (capteurs de mouvement, si autorisés).</li>
         <li><strong>Coach IA</strong> : messages échangés avec l'assistant (voir section 4).</li>
         <li><strong>Audio</strong> (si autorisé) : dictée vocale convertie en texte sur l'appareil.</li>
@@ -54,39 +54,40 @@
       <h2 id="donnees-faciales">3. Données faciales (TrueDepth)</h2>
       <p>
         Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra <strong>TrueDepth</strong>
-        (capteur Face ID) pour estimer des indicateurs wellness. <strong>Aucune reconnaissance biométrique
-        d'identité</strong> (déverrouillage, authentification biométrique du visage) n'est effectuée dans le cadre
-        du scan wellness.
+        (capteur Face ID) pour estimer des indicateurs wellness relatifs à votre propre baseline.
+        <strong>Aucune reconnaissance biométrique d'identité</strong> (déverrouillage, authentification
+        biométrique du visage, identification d'une personne, vérification d'identité) n'est effectuée
+        dans le cadre du scan wellness.
       </p>
 
       <h3>3.1 Données faciales collectées</h3>
       <ul>
-        <li><strong>Mesh 3D facial</strong> : géométrie du visage (vertices, triangles), traitée principalement sur l'appareil.</li>
-        <li><strong>Photo JPEG</strong> : capture d'image du visage pendant le scan.</li>
-        <li><strong>Vidéo courte</strong> : enregistrement local du scan (stocké uniquement sur l'appareil, non téléversé).</li>
-        <li><strong>Scores wellness dérivés</strong> : gonflement, cernes/fatigue, tension mâchoire, clarté peau, symétrie (échelle 0–100).</li>
+        <li><strong>Mesh 3D facial</strong> : géométrie du visage (vertices, triangles), traitée et conservée localement sur l'appareil pour afficher la baseline et les tendances.</li>
+        <li><strong>Photo JPEG</strong> : capture d'image du visage pendant le scan, stockée localement sur l'appareil.</li>
+        <li><strong>Vidéo courte</strong> : enregistrement local du scan, stocké uniquement sur l'appareil et non téléversé.</li>
+        <li><strong>Scores wellness dérivés</strong> : score relatif du jour, gonflement, cernes/fatigue, tension mâchoire, clarté peau, confiance du scan et repère technique d'alignement/symétrie (échelle 0–100, sans jugement de morphologie).</li>
         <li><strong>Métadonnées</strong> : date du scan, scores, sommeil/HRV au moment du scan si HealthKit est autorisé.</li>
       </ul>
 
       <h3>3.2 Utilisations</h3>
       <ul>
-        <li>Suivi wellness personnalisé et comparaison de tendances dans le temps.</li>
+        <li>Suivi wellness personnalisé et comparaison de tendances dans le temps, par rapport à votre baseline personnelle.</li>
         <li>Synchronisation entre vos appareils via votre compte.</li>
         <li>Enrichissement du contexte du coach (scores, pas la photo, sauf si vous autorisez l'analyse IA photo — voir 3.3).</li>
-        <li><strong>Analyse IA optionnelle</strong> : si vous activez explicitement l'option dans l'Application, la photo du scan peut être envoyée à Anthropic (Claude) pour générer un texte d'analyse wellness.</li>
+        <li><strong>Analyse IA optionnelle</strong> : si vous activez explicitement l'option dans l'Application (désactivée par défaut), la photo du scan peut être envoyée à Anthropic (Claude) pour générer un texte d'analyse wellness.</li>
       </ul>
 
       <h3>3.3 Partage et stockage</h3>
       <ul>
-        <li><strong>Sur votre iPhone</strong> : dossier sécurisé de l'Application (Application Support).</li>
-        <li><strong>Cloud</strong> : si vous êtes connecté, scores wellness et métadonnées synchronisés sur <strong>Google Firebase Firestore</strong> (collection <code>faceScans</code>), rattachés à votre identifiant de compte. <strong>Les fichiers photo JPEG et vidéo ne sont pas téléversés</strong> — ils restent sur votre appareil.</li>
+        <li><strong>Sur votre iPhone/iPad</strong> : mesh 3D, photo JPEG et vidéo courte sont stockés dans le dossier de l'Application (Application Support), exclus de la sauvegarde iCloud par l'Application et protégés par les protections de fichiers iOS.</li>
+        <li><strong>Cloud</strong> : si vous êtes connecté, seuls les scores wellness, métadonnées et éventuel texte d'analyse IA sont synchronisés sur <strong>Google Firebase Firestore</strong> (collection <code>faceScans</code>), rattachés à votre identifiant de compte. <strong>Le mesh 3D, les fichiers photo JPEG et vidéo ne sont pas téléversés vers Firebase</strong> — ils restent sur votre appareil.</li>
         <li><strong>Anthropic (Claude)</strong> : uniquement si vous avez coché l'option d'analyse IA du scan — la photo JPEG et les scores associés sont transmis via nos <strong>Firebase Cloud Functions</strong> (proxy). Anthropic traite ces données pour produire l'analyse textuelle demandée. Selon les conditions commerciales d'Anthropic, les données API ne sont pas utilisées pour entraîner leurs modèles.</li>
       </ul>
 
       <h3>3.4 Durée de conservation</h3>
       <ul>
         <li><strong>Historique local et cloud</strong> : jusqu'à <strong>90 scans</strong> par compte (les plus anciens sont supprimés automatiquement, y compris sur Firebase Firestore).</li>
-        <li><strong>Photos et vidéos locales</strong> : supprimées lorsque le scan sort de l'historique (90) ou lorsque vous révoquez le consentement scan visage dans les paramètres.</li>
+        <li><strong>Mesh, photos et vidéos locales</strong> : supprimés lorsque le scan sort de l'historique (90) ou lorsque vous révoquez le consentement scan visage dans les paramètres.</li>
         <li><strong>Suppression de compte</strong> : toutes les données faciales associées au compte sont supprimées sous <strong>30 jours</strong> après votre demande.</li>
         <li><strong>Révocation du consentement</strong> : via Paramètres → Confidentialité → « Révoquer le scan visage » — supprime l'historique, les médias locaux et les données cloud associées.</li>
         <li><strong>Analyse IA</strong> : le texte d'analyse est stocké avec le scan ; la photo transmise à Anthropic est traitée pour la requête en cours (politique de rétention d'Anthropic applicable).</li>
@@ -95,11 +96,13 @@
       <blockquote>
         <strong>Extrait — collecte et usage des données faciales :</strong>
         « Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth,
-        une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Les photos et vidéos
-        restent sur votre appareil ; si vous êtes connecté, les scores et métadonnées sont synchronisés
-        sur Firebase Firestore. Si vous autorisez explicitement l'analyse IA, la photo peut être envoyée
-        à Anthropic (Claude) via Firebase Cloud Functions. Aucune reconnaissance d'identité n'est effectuée.
-        Conservation : max. 90 scans ; suppression sous 30 jours après suppression du compte. »
+        une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Hors analyse IA
+        optionnelle explicitement activée, le mesh, les photos et les vidéos restent sur votre appareil ;
+        si vous êtes connecté, seuls les scores, métadonnées
+        et éventuel texte d'analyse IA sont synchronisés sur Firebase Firestore. Si vous autorisez
+        explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud
+        Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ;
+        suppression sous 30 jours après suppression du compte. »
       </blockquote>
 
       <h2 id="intelligence-artificielle">4. Intelligence artificielle tierce (Anthropic Claude)</h2>

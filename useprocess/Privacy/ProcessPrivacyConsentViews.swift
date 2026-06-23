@@ -171,16 +171,17 @@ struct FaceScanPrivacyConsentView: View {
                     disclosureSection(
                         title: "Données faciales collectées",
                         items: [
-                            "Mesh 3D du visage (géométrie, traîté sur l'appareil)",
-                            "Photo JPEG et courte vidéo locale du scan (jamais téléversées)",
-                            "Scores wellness dérivés (gonflement, cernes, tension mâchoire, clarté peau)"
+                            "Mesh 3D du visage (géométrie TrueDepth, stockée localement pour la baseline)",
+                            "Photo JPEG et courte vidéo du scan (stockées localement ; la photo peut être envoyée seulement si tu actives l'analyse IA)",
+                            "Scores wellness dérivés (gonflement, cernes, tension mâchoire, clarté peau)",
+                            "Aucune identification biométrique et aucun modèle Face ID n'est créé"
                         ]
                     )
 
                     disclosureSection(
                         title: "Stockage",
                         items: [
-                            "Photos et vidéos : uniquement sur ton appareil (dossier sécurisé de l'app)",
+                            "Mesh, photos et vidéos : uniquement sur ton appareil (stockage app protégé)",
                             "Scores et métadonnées : synchronisés sur Firebase Firestore si tu es connecté — max. 90 scans (purge auto cloud + local)",
                             "Révoquer dans Paramètres supprime scans, photos et données cloud",
                             "Suppression sous 30 jours après suppression du compte"
@@ -191,7 +192,7 @@ struct FaceScanPrivacyConsentView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Analyse IA de ma photo (Anthropic Claude)")
                                 .font(.subheadline.weight(.semibold))
-                            Text("Envoie la photo du scan à Anthropic via Firebase pour générer des conseils personnalisés. Désactivable : scores locaux uniquement.")
+                            Text("Option désactivée par défaut. Si tu l'actives, la photo JPEG du scan est envoyée à Anthropic via Firebase pour une analyse wellness ponctuelle.")
                                 .font(.caption)
                                 .foregroundStyle(theme.secondaryText)
                         }

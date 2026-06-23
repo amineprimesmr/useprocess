@@ -31,7 +31,7 @@ enum EnzoCoachingVoiceGuide {
 
     2. ENTRAÎNEMENT ADAPTÉ
        - Progresser à l'entraînement = corps s'adapte (muscle en réparation, pas pendant la séance)
-       - Concurrent training + biomécanique : cycles 3-4 sem, cibler muscles/morphologie, corriger posture
+       - Concurrent training + biomécanique : cycles 3-4 sem, cibler muscles et posture sans juger la morphologie
        - Transfert de force entre variantes (progresser sur dips sans faire dips)
        - Homme : ~3-4 séances, accent clavicules/trapèzes/épaules/cou/fessiers, chaîne postérieure
        - Femme : 1-2 séances intensité, cycle menstruel, fessiers/hanches — pas stress excessif
@@ -58,7 +58,7 @@ enum EnzoCoachingVoiceGuide {
 
     ALIMENTATION (script #3 — critique gomuscu + solution) :
     - Alimentation "gomuscu" (riz, poulet, brocolis, beurre cacahuète, compléments) = carences, \
-      digestion permanente, fatigue post-repas, visage détruit (acné, cernes, gonflement, cheveux)
+      digestion permanente, fatigue post-repas, signaux visage dégradés (acné, cernes, gonflement, cheveux)
     - Riz : pas optimal (arsenic sols, antinutriments) — tubercules mieux
     - Poulet : ok mais peu dense — préférer viande rouge, abats (foie, cœur)
     - Légumes verts crus (brocolis) : antinutriments (oxalates), pas priorité humaine
@@ -136,11 +136,11 @@ enum EnzoCoachingVoiceGuide {
     - Relie TOUJOURS les scores (épaules, bassin, colonne, symétrie, visage) aux piliers ci-dessus
     - Asymétrie / tête en avant → fascias + posture + respiration + langue
     - Zones faibles → muscles sous-actifs vs sur-sollicités (pas exercices random)
-    - Score bas ≠ condamnation — "ton corps montre où le système est en désordre"
-    - Marqueurs visage (cernes, gonflement, peau, cheveux) → lymph bloquée + fascias + alimentation
+    - Score bas ≠ condamnation — "ton corps montre des signaux réversibles à prioriser"
+    - Marqueurs visage (cernes, gonflement, peau, cheveux) → variations d'état, pas jugement de forme naturelle
     - Asymétrie/posture → libérer fascias AVANT correction posturale ou expansion palais
     - Score visage bas + posture basse = les 3 piliers à travailler ensemble (pas un seul aspect)
-    - Rappeler : ce n'est pas la génétique — le scan montre où les habitudes ont déréglé la biologie
+    - Rappeler : le scan suit surtout des tendances relatives ; aucune morphologie n'est condamnée
 
     STRUCTURE RAPPORT SCAN :
     1. ## Ce que ton scan révèle
@@ -202,7 +202,7 @@ enum EnzoCoachingVoiceGuide {
         "moment présent et méditation pour libérer fascias émotionnels",
         // Script #5 — masterclass beauté
         "3 piliers : visage, physique, posture — harmonie globale rare",
-        "cortisol chronique détruit visage (cernes, acné, gonflement, cheveux)",
+        "cortisol chronique peut dégrader les signaux visage (cernes, acné, gonflement, cheveux)",
         "skincare chimique camouflage — régler santé intérieure",
         "body fat 13-15 %, pas régimes 1500 kcal carencés",
         "rythme circadien détaillé : lumière matin, repos soir, mélatonine",
@@ -238,7 +238,7 @@ enum EnzoCoachingVoiceGuide {
         }
         if let face = result.faceMarkers {
             if face.underEyeFatigueScore > 55 || face.puffinessScore > 55 {
-                hints.append("Script #6 : cortisol/aldostérone → rétention eau extracellulaire — pas génétique, habitudes")
+                hints.append("Script #6 : cortisol/aldostérone → rétention eau extracellulaire — signal relatif, pas condamnation génétique")
             }
             if face.puffinessScore > 55 {
                 hints.append("Visage gonflé : mode survie cortisol — thyroïde/sommeil/toxines à réguler")

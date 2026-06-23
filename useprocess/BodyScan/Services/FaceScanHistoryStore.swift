@@ -10,6 +10,8 @@ final class FaceScanHistoryStore {
 
     private var userId: String?
     private var didImportOnboarding = false
+    private var didLoadLocal = false
+    private var remoteSyncTask: Task<Void, Never>?
 
     private var latestKey: String {
         UserScopedStorage.key("facescan.latest", userId: userId)
@@ -23,12 +25,17 @@ final class FaceScanHistoryStore {
         reloadForUser(userId: UserScopedStorage.currentUserId())
     }
 
-    func reloadForUser(userId: String?) {
-        self.userId = userId
+    func reloadForUser(userId newUserId: String?) {
+        guard !didLoadLocal || userId != newUserId else { return }
+
+        self.userId = newUserId
+        didLoadLocal = true
         didImportOnboarding = false
         loadFromDisk()
         importOnboardingSnapshotIfNeeded()
-        Task { await syncFromRemote() }
+
+        remoteSyncTask?.cancel()
+        remoteSyncTask = Task { await syncFromRemote() }
     }
 
     func push(_ result: FaceScanResult) {
@@ -54,12 +61,14 @@ final class FaceScanHistoryStore {
 
     func syncFromRemote() async {
         guard !AppSession.shared.isAccountWipeInProgress else { return }
+        guard ProcessPrivacyConsentStore.shared.canCaptureFaceScan else { return }
         guard AppConfiguration.firebaseConfigured,
               let uid = userId ?? AuthUser.current?.uid else { return }
 
         guard let remote = try? await FaceScanFirestoreRepository.shared.fetchHistory(userId: uid, limit: 90) else {
             return
         }
+        guard !Task.isCancelled else { return }
         mergeRemote(remote)
     }
 
@@ -94,6 +103,7 @@ final class FaceScanHistoryStore {
 
     private func uploadToCloud(_ result: FaceScanResult) {
         guard AppConfiguration.firebaseConfigured else { return }
+        guard ProcessPrivacyConsentStore.shared.canCaptureFaceScan else { return }
         Task {
             try? await FaceScanFirestoreRepository.shared.save(result)
         }
@@ -188,8 +198,11 @@ final class FaceScanHistoryStore {
             UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.latest", userId: userId))
             UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.history", userId: userId))
         }
+        remoteSyncTask?.cancel()
+        remoteSyncTask = nil
         self.userId = userId
         didImportOnboarding = false
+        didLoadLocal = false
         latestResult = nil
         history = []
     }

@@ -24,7 +24,8 @@ struct PlanDayChronologicalTimeline: View {
         OriginPlanPresenter.chronologicalPhases(
             for: day,
             calendar: plan.calendar,
-            includeAutoTracking: isSelectedToday
+            includeAutoTracking: isSelectedToday,
+            includeMeals: false
         )
     }
 

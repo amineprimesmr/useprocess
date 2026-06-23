@@ -1,6 +1,6 @@
 import Foundation
 
-/// Politique de session coach — une nouvelle conversation à chaque lancement froid (app retirée des récents).
+/// Politique de session coach — brouillon vierge au lancement froid, sans entrée dans l’historique tant qu’il n’y a pas de message utilisateur.
 enum CoachAppLaunchSession {
     private static var didStartFreshConversationThisProcess = false
 

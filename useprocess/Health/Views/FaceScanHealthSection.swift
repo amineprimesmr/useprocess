@@ -74,7 +74,19 @@ struct FaceScanHealthSection: View {
             }
 
             if let latest {
-                FaceScanMetricsRow(markers: latest.markers, trend: trend, theme: theme)
+                if let confidence = latest.scanConfidence {
+                    Text("\(FaceWellnessScore.confidenceLabel(for: confidence)) · score relatif à ta baseline, pas à ta forme de visage.")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                FaceScanMetricsRow(
+                    markers: latest.markers,
+                    relativeSignals: latest.relativeSignals,
+                    trend: trend,
+                    theme: theme
+                )
 
                 if analysis.isValid {
                     FaceScanAnalysisCard(analysis: analysis, theme: theme)

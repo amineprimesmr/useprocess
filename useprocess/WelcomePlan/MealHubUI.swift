@@ -127,9 +127,11 @@ private struct MealHistoryChip: View {
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(theme.onboardingAccent)
                 Spacer()
-                Text("\(entry.protocolScore)")
-                    .font(.caption.weight(.black))
-                    .foregroundStyle(theme.primaryText)
+                if content.showsScore {
+                    Text("\(entry.protocolScore)")
+                        .font(.caption.weight(.black))
+                        .foregroundStyle(theme.primaryText)
+                }
             }
             Text(content.name)
                 .font(.subheadline.weight(.semibold))
@@ -279,9 +281,11 @@ struct MealComparisonSheet: View {
             Text(meal.name)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(theme.primaryText)
-            Text("\(meal.protocolScore)/100")
-                .font(.title3.weight(.black))
-                .foregroundStyle(theme.primaryText)
+            if meal.showsScore {
+                Text("\(meal.protocolScore)/100")
+                    .font(.title3.weight(.black))
+                    .foregroundStyle(theme.primaryText)
+            }
             ForEach(meal.items.prefix(4)) { item in
                 Text("• \(item.name)")
                     .font(.caption2)

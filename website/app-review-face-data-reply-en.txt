@@ -9,10 +9,10 @@ Thank you for your review. Below are complete answers regarding face data in Pro
 Process AI collects face-related data ONLY when the user explicitly starts the optional "Face Scan" feature (TrueDepth / front camera on supported devices). We do NOT use face data for identity recognition, Face ID login storage, advertising, or tracking.
 
 Data collected during an optional Face Scan:
-• 3D face mesh geometry (vertices, triangle indices) — processed on-device from TrueDepth; not uploaded to our servers
-• JPEG snapshot of the face during the scan — stored locally on device only
+• 3D face mesh geometry (vertices, triangle indices) — processed and stored locally on-device for baseline/trend display; not uploaded to our servers
+• JPEG snapshot of the face during the scan — stored locally by default; sent to Anthropic only if the user explicitly enables the AI photo analysis toggle
 • Short local MP4 recording of the scan session — stored locally on device only; never uploaded
-• Derived wellness scores (0–100): puffiness, under-eye fatigue, jaw tension, skin clarity, facial symmetry
+• Derived wellness scores (0–100): relative face-day score, scan confidence, puffiness delta, under-eye fatigue delta, jaw tension delta, skin clarity delta, and a technical alignment/symmetry quality marker used only for wellness trend quality, not for identity or morphology judgment
 • Scan metadata: date/time, optional sleep/HRV context from Apple Health if the user authorized HealthKit
 • Optional AI-generated text analysis — only if the user explicitly enables the separate in-app toggle "AI analysis of my photo" on the Face Scan consent screen (default: OFF)
 
@@ -24,12 +24,12 @@ Note: Apple Face ID used for device unlock during onboarding is handled by iOS L
 
 2) PLANNED USES OF COLLECTED FACE DATA
 
-• Personal wellness tracking and trend comparison over time (fatigue, recovery, debloat indicators)
+• Personal wellness tracking and trend comparison over time against the user's own baseline (fatigue, recovery, debloat indicators)
 • Display in the Health tab and coach context (scores and trends; photos are not shown to third parties by default)
 • Sync scan history (scores + metadata only) across the user's devices when signed in
 • Optional: send the JPEG snapshot + derived scores to Anthropic Claude (via our Firebase Cloud Functions proxy) to generate personalized wellness coaching text — ONLY if the user explicitly enables the toggle on the Face Scan consent screen
 
-We do NOT use face data for: identity verification, advertising, cross-app tracking, or training third-party AI models.
+We do NOT use face data for: identity verification, biometric identification, advertising, cross-app tracking, data mining, or training third-party AI models.
 
 Body scan photos (separate optional feature) are NOT sent to AI unless the user has also enabled Face Scan AI photo consent (same toggle), because body photos may include the face.
 
@@ -38,12 +38,12 @@ Body scan photos (separate optional feature) are NOT sent to AI unless the user 
 3) THIRD-PARTY SHARING AND STORAGE
 
 On-device (iPhone/iPad):
-• Photos/videos: Application Support/FaceScans/ on the device
+• Photos/videos: Application Support/FaceScans/ on the device, excluded from iCloud backup by the app and protected with iOS file protection
 • Mesh and wellness markers: local app storage (UserDefaults, scoped per user account)
 
 Cloud (only if user is signed in):
 • Google Firebase Firestore: users/{userId}/faceScans — wellness scores, metadata, optional AI text analysis
-• JPEG and MP4 files are NEVER uploaded (stripped before Firestore sync)
+• 3D mesh, JPEG and MP4 files are NEVER uploaded to Firebase (media filenames are stripped before Firestore sync)
 • Maximum 90 scans retained per account; older records are automatically deleted from Firestore and local storage
 
 Third parties:
@@ -54,8 +54,8 @@ Third parties:
 
 4) RETENTION PERIOD
 
-• Local + cloud scan history: maximum 90 scans per account; older scans deleted automatically (implemented in app build 24+)
-• Local photos/videos: deleted when scan falls outside the 90-scan history or when user revokes consent in Settings → Privacy → "Revoke face scan"
+• Local + cloud scan history: maximum 90 scans per account; older scans deleted automatically in the current resubmission build
+• Local mesh/photos/videos: deleted when scan falls outside the 90-scan history or when user revokes consent in Settings → Privacy → "Revoke face scan"
 • Account deletion: all face data deleted within 30 days (immediate purge via Cloud Function + local wipe)
 • Anthropic: photo processed for the API request only; retention governed by Anthropic's API privacy policy; we store only the returned text analysis with the scan record
 
@@ -82,17 +82,17 @@ In-app: before any scan, FaceScanPrivacyConsentView displays collected data type
 6) QUOTED TEXT FROM PRIVACY POLICY (FACE DATA)
 
 Section 3 introduction:
-« Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra TrueDepth (capteur Face ID) pour estimer des indicateurs wellness. Aucune reconnaissance biométrique d'identité (déverrouillage, authentification biométrique du visage) n'est effectuée dans le cadre du scan wellness. »
+« Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra TrueDepth (capteur Face ID) pour estimer des indicateurs wellness relatifs à votre propre baseline. Aucune reconnaissance biométrique d'identité (déverrouillage, authentification biométrique du visage, identification d'une personne, vérification d'identité) n'est effectuée dans le cadre du scan wellness. »
 
 Section 3.3:
-« Sur votre iPhone : dossier sécurisé de l'Application (Application Support). Cloud : si vous êtes connecté, scores wellness et métadonnées synchronisés sur Google Firebase Firestore (collection faceScans). Les fichiers photo JPEG et vidéo ne sont pas téléversés — ils restent sur votre appareil. Anthropic (Claude) : uniquement si vous avez coché l'option d'analyse IA du scan. »
+« Sur votre iPhone/iPad : mesh 3D, photo JPEG et vidéo courte sont stockés dans le dossier de l'Application (Application Support), exclus de la sauvegarde iCloud par l'Application et protégés par les protections de fichiers iOS. Cloud : si vous êtes connecté, seuls les scores wellness, métadonnées et éventuel texte d'analyse IA sont synchronisés sur Google Firebase Firestore (collection faceScans). Le mesh 3D, les fichiers photo JPEG et vidéo ne sont pas téléversés vers Firebase — ils restent sur votre appareil. »
 
 Section 3.4 summary blockquote:
-« Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth, une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Les photos et vidéos restent sur votre appareil ; si vous êtes connecté, les scores et métadonnées sont synchronisés sur Firebase Firestore. Si vous autorisez explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ; suppression sous 30 jours après suppression du compte. »
+« Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth, une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Hors analyse IA optionnelle explicitement activée, le mesh, les photos et les vidéos restent sur votre appareil ; si vous êtes connecté, seuls les scores, métadonnées et éventuel texte d'analyse IA sont synchronisés sur Firebase Firestore. Si vous autorisez explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ; suppression sous 30 jours après suppression du compte. »
 
 ---
 
-We have updated the app to enforce 90-scan cloud purge, delete local media on consent revocation, and default the AI photo toggle to OFF. A demo video showing consent → scan → scores is available on request.
+We have updated the app to enforce 90-scan cloud purge, delete local face mesh/media on consent revocation, protect local media files, strip media/mesh before Firebase sync, and default the AI photo toggle to OFF. A demo video showing consent → scan → scores is available on request.
 
 Thank you for your consideration.
 

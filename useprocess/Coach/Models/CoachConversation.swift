@@ -52,6 +52,14 @@ struct CoachConversation: Identifiable, Codable, Equatable, Sendable {
 
     var messageCount: Int { messages.count }
 
+    /// Une conversation n’entre dans l’historique qu’après au moins un message utilisateur.
+    var hasUserMessages: Bool {
+        messages.contains { message in
+            guard message.role == .user else { return false }
+            return !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
     mutating func append(_ message: CoachMessage) {
         messages.append(message)
         updatedAt = Date()

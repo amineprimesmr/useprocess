@@ -1,56 +1,56 @@
 {
-  "images" : [
+  "images": [
     {
-      "filename" : "welcomepageipad.png",
-      "idiom" : "universal",
-      "scale" : "1x"
+      "filename": "welcomepageipad.jpg",
+      "idiom": "universal",
+      "scale": "1x"
     },
     {
-      "appearances" : [
+      "appearances": [
         {
-          "appearance" : "luminosity",
-          "value" : "dark"
+          "appearance": "luminosity",
+          "value": "dark"
         }
       ],
-      "filename" : "welcomepageipaddark.png",
-      "idiom" : "universal",
-      "scale" : "1x"
+      "filename": "welcomepageipaddark.jpg",
+      "idiom": "universal",
+      "scale": "1x"
     },
     {
-      "filename" : "welcomepageipad.png",
-      "idiom" : "universal",
-      "scale" : "2x"
+      "filename": "welcomepageipad.jpg",
+      "idiom": "universal",
+      "scale": "2x"
     },
     {
-      "appearances" : [
+      "appearances": [
         {
-          "appearance" : "luminosity",
-          "value" : "dark"
+          "appearance": "luminosity",
+          "value": "dark"
         }
       ],
-      "filename" : "welcomepageipaddark.png",
-      "idiom" : "universal",
-      "scale" : "2x"
+      "filename": "welcomepageipaddark.jpg",
+      "idiom": "universal",
+      "scale": "2x"
     },
     {
-      "filename" : "welcomepageipad.png",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename": "welcomepageipad.jpg",
+      "idiom": "universal",
+      "scale": "3x"
     },
     {
-      "appearances" : [
+      "appearances": [
         {
-          "appearance" : "luminosity",
-          "value" : "dark"
+          "appearance": "luminosity",
+          "value": "dark"
         }
       ],
-      "filename" : "welcomepageipaddark.png",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename": "welcomepageipaddark.jpg",
+      "idiom": "universal",
+      "scale": "3x"
     }
   ],
-  "info" : {
-    "author" : "xcode",
-    "version" : 1
+  "info": {
+    "author": "xcode",
+    "version": 1
   }
 }

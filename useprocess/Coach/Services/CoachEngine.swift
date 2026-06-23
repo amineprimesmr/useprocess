@@ -19,7 +19,6 @@ enum CoachEngine {
     }
 
     private static let planModificationPrompt = """
-    
     ⚡ MODE MODIFICATION DU PLAN — ACTIF :
     - L'utilisateur demande de MODIFIER son Protocole Origine dans l'app.
     - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier (91 jours).
@@ -270,20 +269,26 @@ enum CoachEngine {
         let context = UserContextBuilder.build(profile: profile)
         let historyBlock = faceScanHistoryBlock(history: history, current: result)
         let markers = result.markers
+        let relativeBlock = relativeFaceScanBlock(result)
 
         let prompt = """
         \(UserContextBuilder.compactPromptBlock(from: context))
 
-        Scores locaux (0-100, plus haut = signal plus marqué pour fatigue/gonflement/tension) :
+        Règle critique : ne juge jamais la forme naturelle du visage. Un visage large, fin, asymétrique ou avec traits marqués n'est jamais un défaut.
+        Interprète uniquement les variations d'état du jour : rétention d'eau, fatigue visible, tension, qualité de scan, tendance vs baseline personnelle.
+
+        Scores locaux bruts (0-100, plus haut = signal plus marqué pour fatigue/gonflement/tension ; clarté et alignement technique plus hauts = meilleure qualité de repère) :
         - Gonflement : \(markers.puffinessScore)
         - Cernes / fatigue : \(markers.underEyeFatigueScore)
         - Tension mâchoire : \(markers.jawTensionScore)
         - Clarté peau : \(markers.skinClarityScore)
-        - Symétrie : \(markers.facialSymmetryScore)
+        - Alignement technique du scan : \(markers.facialSymmetryScore) (ne jamais interpréter comme beauté, identité ou défaut morphologique)
+
+        \(relativeBlock)
 
         \(historyBlock)
 
-        Analyse cette photo + scores. Format EXACT :
+        Analyse cette photo + scores relatifs. Format EXACT :
 
         RESUME: [1 phrase — état global du visage aujourd'hui, max 18 mots]
         SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — ex: rétention eau, cortisol, cervicales]
@@ -334,10 +339,37 @@ enum CoachEngine {
 
         let lines = past.map { scan in
             let date = formatter.string(from: scan.createdAt)
-            let m = scan.markers
-            return "- \(date) : gonflement \(m.puffinessScore), cernes \(m.underEyeFatigueScore), mâchoire \(m.jawTensionScore)"
+            if let signals = scan.relativeSignals {
+                return "- \(date) : score relatif \(scan.resolvedFaceDayScore), gonflement \(signed(signals.puffinessDelta)), cernes \(signed(signals.underEyeFatigueDelta)), mâchoire \(signed(signals.jawTensionDelta))"
+            } else {
+                let m = scan.markers
+                return "- \(date) : scores bruts gonflement \(m.puffinessScore), cernes \(m.underEyeFatigueScore), mâchoire \(m.jawTensionScore)"
+            }
         }
         return "Historique récent :\n" + lines.joined(separator: "\n")
+    }
+
+    private static func relativeFaceScanBlock(_ result: FaceScanResult) -> String {
+        guard let confidence = result.scanConfidence,
+              let baselineCount = result.baselineSampleCount,
+              let signals = result.relativeSignals else {
+            return "Lecture relative : indisponible, utiliser les scores bruts avec prudence."
+        }
+
+        return """
+        Lecture relative anti-morphologie :
+        - Score relatif visage du jour : \(result.resolvedFaceDayScore)/100
+        - Confiance scan : \(confidence)/100 (\(FaceWellnessScore.confidenceLabel(for: confidence)))
+        - Baseline : \(signals.baselineLabel), \(baselineCount) scan(s)
+        - Delta gonflement vs baseline : \(signed(signals.puffinessDelta))
+        - Delta cernes/fatigue vs baseline : \(signed(signals.underEyeFatigueDelta))
+        - Delta mâchoire vs baseline : \(signed(signals.jawTensionDelta))
+        - Delta clarté peau vs baseline : \(signed(signals.skinClarityDelta))
+        """
+    }
+
+    private static func signed(_ value: Int) -> String {
+        value > 0 ? "+\(value)" : "\(value)"
     }
 
     // MARK: - Body Scan

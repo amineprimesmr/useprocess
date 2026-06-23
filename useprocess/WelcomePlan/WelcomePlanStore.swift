@@ -7,6 +7,10 @@ final class WelcomePlanStore {
 
     private(set) var questionnaire: WelcomePlanQuestionnaireState = WelcomePlanQuestionnaireState()
     private(set) var plan: FaceOriginPlan?
+    private var remoteSyncTask: Task<Void, Never>?
+    private var lastRemoteSyncAt: Date?
+    private var lastRemoteSyncUserId: String?
+    private let remoteSyncMinInterval: TimeInterval = 60
 
     private init() {
         reload()
@@ -23,10 +27,7 @@ final class WelcomePlanStore {
         CoachMemoryStore.shared.reloadForCurrentUser()
 
         if AppConfiguration.firebaseConfigured, uid != "local-user" {
-            Task {
-                await WelcomePlanFirestoreRepository.shared.syncFromRemote(userId: uid)
-                reloadLocalOnly(uid: uid)
-            }
+            scheduleRemoteSyncIfNeeded(uid: uid)
         }
     }
 
@@ -39,6 +40,25 @@ final class WelcomePlanStore {
 
     func reloadForCurrentUser() {
         reload()
+    }
+
+    private func scheduleRemoteSyncIfNeeded(uid: String) {
+        guard remoteSyncTask == nil else { return }
+        let isSameUser = lastRemoteSyncUserId == uid
+        if let lastRemoteSyncAt,
+           isSameUser,
+           Date().timeIntervalSince(lastRemoteSyncAt) < remoteSyncMinInterval {
+            return
+        }
+
+        lastRemoteSyncAt = Date()
+        lastRemoteSyncUserId = uid
+        remoteSyncTask = Task { @MainActor in
+            defer { remoteSyncTask = nil }
+            await WelcomePlanFirestoreRepository.shared.syncFromRemote(userId: uid)
+            guard !Task.isCancelled else { return }
+            reloadLocalOnly(uid: uid)
+        }
     }
 
     func saveAnswer(questionId: String, answer: WelcomePlanAnswer) {

@@ -13,7 +13,8 @@ enum ReadinessScorer {
     static func score(
         snapshot: DailyHealthSnapshot,
         baselines: UserHealthBaselines,
-        faceMarkers: FaceWellnessMarkers? = nil
+        faceMarkers: FaceWellnessMarkers? = nil,
+        faceScoreOverride: Int? = nil
     ) -> Result {
         var points = 50.0
         var factors: [String] = []
@@ -71,7 +72,7 @@ enum ReadinessScorer {
         var faceScore: Int?
         var faceLabel: String?
         if let faceMarkers {
-            faceScore = FaceWellnessScore.dayScore(from: faceMarkers)
+            faceScore = faceScoreOverride ?? FaceWellnessScore.dayScore(from: faceMarkers)
             faceLabel = FaceWellnessScore.label(for: faceScore!)
             let contribution = (Double(faceScore!) - 50) * 0.28
             points += contribution

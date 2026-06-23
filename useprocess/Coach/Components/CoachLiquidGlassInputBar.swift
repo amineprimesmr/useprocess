@@ -3,7 +3,7 @@ import UIKit
 
 // MARK: - Barre de saisie coach
 //
-// iOS 26 : le bouton envoyer/micro DOIT être un sibling du glass passif (pas enfant),
+// iOS 26 : le bouton envoyer/micro DOIT être un sibling du glass principal (pas enfant),
 // dans un GlassEffectContainer — sinon pas de press natif.
 
 struct CoachLiquidGlassInputBar: View {
@@ -90,7 +90,11 @@ struct CoachLiquidGlassInputBar: View {
         .padding(.bottom, bottomPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 84)
-        .glassEffect(ProcessGlass.regularSurface, in: barShape)
+        .contentShape(barShape)
+        .onTapGesture {
+            focusTextInputIfPossible()
+        }
+        .glassEffect(ProcessGlass.regular, in: barShape)
     }
 
     @available(iOS 26.0, *)
@@ -133,6 +137,10 @@ struct CoachLiquidGlassInputBar: View {
         .padding(.bottom, bottomPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 84)
+        .contentShape(barShape)
+        .onTapGesture {
+            focusTextInputIfPossible()
+        }
         .background { legacyBarBackground }
     }
 
@@ -240,6 +248,11 @@ struct CoachLiquidGlassInputBar: View {
         .disabled(isDisabled)
     }
 
+    private func focusTextInputIfPossible() {
+        guard !isDisabled, !showsVoiceContent else { return }
+        isFocused = true
+    }
+
     private func barGlassCircleButton(
         systemName: String,
         iconSize: CGFloat,
@@ -295,8 +308,7 @@ private struct CoachBarGlassCircleStyle: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
+                .processGlassButton(in: Circle())
         } else {
             content.processGlassButton(in: Circle())
         }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Shell principal — swipe horizontal + menu sticky overlay.
 struct MainAppView: View {
@@ -65,6 +66,14 @@ struct MainAppView: View {
             if !completed {
                 selectedSection = .coach
             }
+        }
+        .onChange(of: selectedSection) { _, _ in
+            UIApplication.shared.sendAction(
+                #selector(UIResponder.resignFirstResponder),
+                to: nil,
+                from: nil,
+                for: nil
+            )
         }
         .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
             profileSubrouteActive = active

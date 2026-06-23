@@ -48,9 +48,14 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
     var sleepHoursAtScan: Double?
     var hrvAtScan: Double?
     var faceDayScore: Int?
+    /// Version 2 : score relatif à la baseline personnelle, pas à la forme naturelle du visage.
+    var relativeFaceDayScore: Int?
+    var scanConfidence: Int?
+    var baselineSampleCount: Int?
+    var relativeSignals: FaceScanRelativeSignals?
 
     var resolvedFaceDayScore: Int {
-        faceDayScore ?? FaceWellnessScore.dayScore(from: markers)
+        relativeFaceDayScore ?? faceDayScore ?? FaceWellnessScore.dayScore(from: markers)
     }
 
     init(
@@ -65,7 +70,11 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
         source: FaceScanSource = .daily,
         sleepHoursAtScan: Double? = nil,
         hrvAtScan: Double? = nil,
-        faceDayScore: Int? = nil
+        faceDayScore: Int? = nil,
+        relativeFaceDayScore: Int? = nil,
+        scanConfidence: Int? = nil,
+        baselineSampleCount: Int? = nil,
+        relativeSignals: FaceScanRelativeSignals? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -79,6 +88,10 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
         self.sleepHoursAtScan = sleepHoursAtScan
         self.hrvAtScan = hrvAtScan
         self.faceDayScore = faceDayScore
+        self.relativeFaceDayScore = relativeFaceDayScore
+        self.scanConfidence = scanConfidence
+        self.baselineSampleCount = baselineSampleCount
+        self.relativeSignals = relativeSignals
     }
 
     func delta(from previous: FaceScanResult) -> FaceScanTrend {
@@ -89,6 +102,21 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
             skinClarity: markers.skinClarityScore - previous.markers.skinClarityScore,
             facialSymmetry: markers.facialSymmetryScore - previous.markers.facialSymmetryScore
         )
+    }
+}
+
+struct FaceScanRelativeSignals: Codable, Hashable {
+    var puffinessDelta: Int
+    var underEyeFatigueDelta: Int
+    var jawTensionDelta: Int
+    var skinClarityDelta: Int
+    var baselineLabel: String
+
+    var hasMeaningfulChange: Bool {
+        abs(puffinessDelta) >= 4
+            || abs(underEyeFatigueDelta) >= 4
+            || abs(jawTensionDelta) >= 4
+            || abs(skinClarityDelta) >= 4
     }
 }
 

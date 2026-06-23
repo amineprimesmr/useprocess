@@ -29,10 +29,10 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Icône asset custom (ex. ProcessIA pour le coach).
+    /// Icône asset custom.
     var assetIconName: String? {
         switch self {
-        case .coach: "ProcessIA"
+        case .coach: "caochiaicon"
         default: nil
         }
     }

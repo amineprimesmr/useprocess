@@ -54,7 +54,12 @@ struct FaceScanHistoryView: View {
                     }
                 }
 
-                FaceScanMetricsRow(markers: scan.markers, trend: trend, theme: theme)
+                FaceScanMetricsRow(
+                    markers: scan.markers,
+                    relativeSignals: scan.relativeSignals,
+                    trend: trend,
+                    theme: theme
+                )
 
                 if let text = scan.claudeAnalysis {
                     let parsed = CoachEngine.parsedFaceAnalysis(for: scan)
@@ -111,6 +116,11 @@ struct FaceScanDetailView: View {
                             Text(FaceWellnessScore.label(for: result.resolvedFaceDayScore))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(theme.primaryText)
+                            if let confidence = result.scanConfidence {
+                                Text("\(FaceWellnessScore.confidenceLabel(for: confidence)) · relatif à toi")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(theme.secondaryText)
+                            }
                         }
                         Spacer()
                         FaceWellnessScoreBadge(
@@ -122,6 +132,7 @@ struct FaceScanDetailView: View {
 
                     FaceScanMetricsRow(
                         markers: result.markers,
+                        relativeSignals: result.relativeSignals,
                         trend: previous.map { result.delta(from: $0) },
                         theme: theme
                     )

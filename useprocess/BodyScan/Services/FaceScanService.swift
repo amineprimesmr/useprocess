@@ -18,7 +18,12 @@ enum FaceScanService {
             snapshotFilename = FaceScanImageStore.save(image: snapshot, scanId: scanId)
         }
 
-        let dayScore = FaceWellnessScore.dayScore(from: markers)
+        let absoluteDayScore = FaceWellnessScore.dayScore(from: markers)
+        let relativeAssessment = FaceWellnessScore.relativeAssessment(
+            current: markers,
+            history: FaceScanHistoryStore.shared.history,
+            yawCoverage: payload.yawCoverage
+        )
         let sleepHours = health.todaySnapshot.sleep.sleepDuration > 0
             ? health.todaySnapshot.sleep.sleepDuration
             : nil
@@ -35,7 +40,11 @@ enum FaceScanService {
             source: .daily,
             sleepHoursAtScan: sleepHours,
             hrvAtScan: hrv,
-            faceDayScore: dayScore
+            faceDayScore: absoluteDayScore,
+            relativeFaceDayScore: relativeAssessment.score,
+            scanConfidence: relativeAssessment.confidence,
+            baselineSampleCount: relativeAssessment.baselineSampleCount,
+            relativeSignals: relativeAssessment.signals
         )
 
         OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)

@@ -190,7 +190,7 @@ enum FaceWellnessAnalyzer {
             notes.append("Profil compatible rétention d'eau + fatigue (cernes / gonflement).")
         }
         if jaw > 65 && symmetry < 58 {
-            notes.append("Mâchoire et asymétrie — bruxisme, posture ou stress chronique possibles.")
+            notes.append("Tension mâchoire + alignement de scan irrégulier — bruxisme, posture ou stress chronique possibles.")
         }
     }
 

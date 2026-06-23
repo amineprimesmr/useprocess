@@ -1,56 +1,56 @@
 {
-  "images" : [
+  "images": [
     {
-      "filename" : "welcomepage.png",
-      "idiom" : "universal",
-      "scale" : "1x"
+      "filename": "welcomepage.jpg",
+      "idiom": "universal",
+      "scale": "1x"
     },
     {
-      "appearances" : [
+      "appearances": [
         {
-          "appearance" : "luminosity",
-          "value" : "dark"
+          "appearance": "luminosity",
+          "value": "dark"
         }
       ],
-      "filename" : "welcomepagedark.png",
-      "idiom" : "universal",
-      "scale" : "1x"
+      "filename": "welcomepagedark.jpg",
+      "idiom": "universal",
+      "scale": "1x"
     },
     {
-      "filename" : "welcomepage.png",
-      "idiom" : "universal",
-      "scale" : "2x"
+      "filename": "welcomepage.jpg",
+      "idiom": "universal",
+      "scale": "2x"
     },
     {
-      "appearances" : [
+      "appearances": [
         {
-          "appearance" : "luminosity",
-          "value" : "dark"
+          "appearance": "luminosity",
+          "value": "dark"
         }
       ],
-      "filename" : "welcomepagedark.png",
-      "idiom" : "universal",
-      "scale" : "2x"
+      "filename": "welcomepagedark.jpg",
+      "idiom": "universal",
+      "scale": "2x"
     },
     {
-      "filename" : "welcomepage.png",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename": "welcomepage.jpg",
+      "idiom": "universal",
+      "scale": "3x"
     },
     {
-      "appearances" : [
+      "appearances": [
         {
-          "appearance" : "luminosity",
-          "value" : "dark"
+          "appearance": "luminosity",
+          "value": "dark"
         }
       ],
-      "filename" : "welcomepagedark.png",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename": "welcomepagedark.jpg",
+      "idiom": "universal",
+      "scale": "3x"
     }
   ],
-  "info" : {
-    "author" : "xcode",
-    "version" : 1
+  "info": {
+    "author": "xcode",
+    "version": 1
   }
 }

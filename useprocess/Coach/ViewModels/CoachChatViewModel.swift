@@ -24,6 +24,11 @@ final class CoachChatViewModel {
     private var profile: UnifiedUserProfile?
     private var userId: String? { profile?.userId.isEmpty == false ? profile?.userId : AuthUser.current?.uid }
     private var voiceTimerTask: Task<Void, Never>?
+    /// Fil brouillon en mémoire — non enregistré dans l’historique tant qu’aucun message utilisateur.
+    private var draftSessionId: UUID?
+    private var didInitialLoad = false
+    /// Garde le brouillon vierge du lancement froid malgré le rebind profil qui arrive souvent juste après.
+    private var shouldKeepColdLaunchDraft = false
 
     var conversations: [CoachConversation] {
         libraryStore.sortedConversations
@@ -58,55 +63,70 @@ final class CoachChatViewModel {
     private var activePlanFocus: CoachPlanFocus?
 
     func bind(profile: UnifiedUserProfile?) {
+        let previousUserId = userId
         self.profile = profile
+        let nextUserId = userId
         claudeConfigured = ClaudeConfiguration.isConfigured
         FaceScanHistoryStore.shared.reloadForUser(userId: profile?.userId)
+
+        let didSwitchUser = {
+            if let previousUserId, let nextUserId {
+                return previousUserId != nextUserId
+            }
+            return previousUserId != nil && nextUserId == nil
+        }()
+
+        if didSwitchUser {
+            didInitialLoad = false
+            draftSessionId = nil
+            shouldKeepColdLaunchDraft = false
+        }
     }
 
     func loadThreadIfNeeded() async {
+        if didInitialLoad {
+            await consumePendingPlanPromptIfNeeded()
+            return
+        }
+        didInitialLoad = true
+
         libraryStore.loadLocal()
         CoachConversationStore.stripInjectedProgramSummaryMessages()
         CoachConversationStore.stripLegacyWelcomeMessages()
         libraryStore.migrateLegacyThreadIfNeeded()
+        libraryStore.purgeEmptyConversations()
 
         if CoachAppLaunchSession.consumeColdLaunchFreshConversation() {
-            await createNewConversation()
+            shouldKeepColdLaunchDraft = true
+            await beginDraftSession()
             await consumePendingPlanPromptIfNeeded()
             return
         }
 
-        guard let conversationId = libraryStore.activeConversationId else {
-            await createNewConversation()
+        if shouldKeepColdLaunchDraft && !messages.contains(where: { $0.role == .user }) {
+            await beginDraftSession()
             await consumePendingPlanPromptIfNeeded()
             return
         }
 
-        let stored = await CoachSyncService.loadConversation(userId: userId, conversationId: conversationId)
-        let sanitized = Self.filteredCoachMessages(stored.messages)
-        if sanitized.isEmpty {
-            messages = []
-            libraryStore.setActiveMessages(messages)
-            syncHomePresentationFromCache()
-            if !stored.messages.isEmpty {
-                await CoachSyncService.replaceThread(
-                    CoachChatThread(messages: messages),
-                    userId: userId,
-                    conversationId: conversationId,
-                    title: libraryStore.activeConversation?.title
-                )
-            }
-        } else {
-            messages = sanitized
-            if messages.count != stored.messages.count {
-                libraryStore.setActiveMessages(messages)
-                await CoachSyncService.replaceThread(
-                    CoachChatThread(messages: messages),
-                    userId: userId,
-                    conversationId: conversationId,
-                    title: libraryStore.activeConversation?.title
-                )
-            }
+        if let activeId = libraryStore.activeConversationId,
+           let conversation = libraryStore.conversation(for: activeId),
+           conversation.hasUserMessages {
+            draftSessionId = nil
+            await reloadActiveConversation()
+            await consumePendingPlanPromptIfNeeded()
+            return
         }
+
+        if let recent = libraryStore.mostRecentConversationWithUserMessages() {
+            libraryStore.selectConversation(recent.id)
+            draftSessionId = nil
+            await reloadActiveConversation()
+            await consumePendingPlanPromptIfNeeded()
+            return
+        }
+
+        await beginDraftSession()
         await consumePendingPlanPromptIfNeeded()
     }
 
@@ -119,27 +139,42 @@ final class CoachChatViewModel {
 
     func selectConversation(_ id: UUID) async {
         guard id != libraryStore.activeConversationId else { return }
+        shouldKeepColdLaunchDraft = false
+        draftSessionId = nil
         libraryStore.selectConversation(id)
         await reloadActiveConversation()
     }
 
     func createNewConversation() async {
+        shouldKeepColdLaunchDraft = false
+        await beginDraftSession()
+    }
+
+    private func beginDraftSession() async {
         resetVoiceStateImmediately()
         clearPendingAttachment()
         isSending = false
         streamingText = ""
         errorMessage = nil
 
-        let id = libraryStore.createConversation()
+        draftSessionId = UUID()
+        libraryStore.clearActiveSelection()
         messages = []
         resetHomePresentation()
+    }
 
-        await CoachSyncService.replaceThread(
-            CoachChatThread(messages: []),
-            userId: userId,
-            conversationId: id,
-            title: "Nouvelle conversation"
-        )
+    private func ensurePersistedConversationId() async -> UUID {
+        if let activeId = libraryStore.activeConversationId,
+           libraryStore.conversation(for: activeId) != nil {
+            draftSessionId = nil
+            return activeId
+        }
+
+        let draftId = draftSessionId ?? UUID()
+        draftSessionId = nil
+        shouldKeepColdLaunchDraft = false
+        let conversationId = libraryStore.promoteDraftConversation(id: draftId)
+        return conversationId
     }
 
     func deleteConversation(_ id: UUID) async {
@@ -158,9 +193,10 @@ final class CoachChatViewModel {
 
         await CoachSyncService.deleteConversation(id: id, userId: userId)
         libraryStore.deleteConversation(id)
+        libraryStore.purgeEmptyConversations()
 
         if libraryStore.sortedConversations.isEmpty {
-            await createNewConversation()
+            await beginDraftSession()
             return
         }
 
@@ -171,7 +207,7 @@ final class CoachChatViewModel {
 
     private func reloadActiveConversation() async {
         guard let id = libraryStore.activeConversationId else {
-            await createNewConversation()
+            await beginDraftSession()
             return
         }
         resetVoiceStateImmediately()
@@ -201,7 +237,9 @@ final class CoachChatViewModel {
     }
 
     func homePresentationKey() -> String {
-        let conversationPart = activeConversationId?.uuidString ?? "none"
+        let conversationPart = libraryStore.activeConversationId?.uuidString
+            ?? draftSessionId?.uuidString
+            ?? "draft"
         return "\(conversationPart)|\(homePrompt.greetingText)"
     }
 
@@ -358,9 +396,16 @@ final class CoachChatViewModel {
             return
         }
         let prompt = tool.label
+        let conversationId = await ensurePersistedConversationId()
+        libraryStore.updateActiveConversation { $0.applyAutoTitle(from: prompt) }
         let userMsg = CoachMessage(role: .user, text: "🔹 \(prompt)")
         messages.append(userMsg)
-        await persistMessage(userMsg)
+        await CoachSyncService.appendMessage(
+            userMsg,
+            userId: userId,
+            conversationId: conversationId,
+            title: libraryStore.activeConversation?.title
+        )
         isSending = true
         streamingText = ""
         errorMessage = nil
@@ -369,7 +414,12 @@ final class CoachChatViewModel {
         do {
             let reply = try await CoachEngine.runTool(tool, profile: profile)
             messages.append(reply)
-            await persistMessage(reply)
+            await CoachSyncService.appendMessage(
+                reply,
+                userId: userId,
+                conversationId: conversationId,
+                title: libraryStore.activeConversation?.title
+            )
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -405,7 +455,13 @@ final class CoachChatViewModel {
             return
         }
 
-        guard let conversationId = libraryStore.activeConversationId else { return }
+        let conversationId: UUID
+        if persistUserMessage {
+            conversationId = await ensurePersistedConversationId()
+        } else {
+            guard let activeId = libraryStore.activeConversationId else { return }
+            conversationId = activeId
+        }
         let bubbleText: String = {
             if let userDisplayText,
                !userDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -572,7 +628,8 @@ final class CoachChatViewModel {
     }
 
     func sendImageAttachment(_ image: UIImage, caption: String = "") async {
-        guard !isSending, let conversationId = libraryStore.activeConversationId else { return }
+        guard !isSending else { return }
+        let conversationId = await ensurePersistedConversationId()
 
         let trimmedCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         let userText = trimmedCaption.isEmpty ? "📷 Photo" : trimmedCaption
@@ -584,6 +641,7 @@ final class CoachChatViewModel {
         inputText = ""
 
         let userMsg = CoachMessage(role: .user, text: userText)
+        libraryStore.updateActiveConversation { $0.applyAutoTitle(from: userText) }
         messages.append(userMsg)
         await CoachSyncService.appendMessage(
             userMsg,

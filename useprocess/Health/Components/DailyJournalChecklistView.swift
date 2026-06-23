@@ -62,6 +62,9 @@ struct DailyJournalChecklistView: View {
 
             switch dayAvailability {
             case .editable(let day, _):
+                PlanNutritionDaySection(plan: livePlan, day: day, isEditable: true)
+                    .environmentObject(UnifiedProfileService.shared)
+
                 journalSections(for: day, isEditable: true)
             case .future:
                 journalUnavailableCard(

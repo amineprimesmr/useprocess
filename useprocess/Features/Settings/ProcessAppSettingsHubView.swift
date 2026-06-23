@@ -99,8 +99,14 @@ struct ProcessAppSettingsHubView: View {
                 GroupedSettingsRowDivider()
                 GroupedSettingsInfoRow(
                     icon: "face.smiling",
-                    title: "Scan visage + IA",
-                    value: ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI ? "Autorisé" : "Local uniquement"
+                    title: "Scan visage",
+                    value: ProcessPrivacyConsentStore.shared.hasAcceptedFaceScanCapture ? "Autorisé" : "Non autorisé"
+                )
+                GroupedSettingsRowDivider()
+                GroupedSettingsInfoRow(
+                    icon: "wand.and.stars",
+                    title: "Photo visage vers IA",
+                    value: ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI ? "Autorisé" : "Désactivé"
                 )
                 GroupedSettingsRowDivider()
                 if ProcessPrivacyConsentStore.shared.canUseThirdPartyAI {

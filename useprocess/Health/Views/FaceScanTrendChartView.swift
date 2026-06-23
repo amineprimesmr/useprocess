@@ -29,6 +29,15 @@ enum FaceScanChartMetric: String, CaseIterable, Identifiable {
         }
     }
 
+    func relativeValue(from result: FaceScanResult) -> Int {
+        guard let signals = result.relativeSignals else { return value(from: result.markers) }
+        switch self {
+        case .puffiness: return signals.puffinessDelta
+        case .underEye: return signals.underEyeFatigueDelta
+        case .jaw: return signals.jawTensionDelta
+        }
+    }
+
     var color: Color {
         switch self {
         case .puffiness: return .orange
@@ -50,7 +59,7 @@ struct FaceScanTrendChartView: View {
         return history
             .filter { $0.createdAt >= cutoff }
             .sorted { $0.createdAt < $1.createdAt }
-            .map { ($0.createdAt, metric.value(from: $0.markers)) }
+            .map { ($0.createdAt, metric.relativeValue(from: $0)) }
     }
 
     var body: some View {
@@ -94,8 +103,8 @@ private struct FaceScanLineChart: View {
             let width = geo.size.width
             let height = geo.size.height
             let values = points.map { Double($0.value) }
-            let minV = max(0, (values.min() ?? 0) - 5)
-            let maxV = min(100, (values.max() ?? 100) + 5)
+            let minV = (values.min() ?? 0) - 5
+            let maxV = (values.max() ?? 100) + 5
             let range = max(maxV - minV, 1)
 
             ZStack {

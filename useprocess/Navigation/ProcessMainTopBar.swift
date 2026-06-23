@@ -22,7 +22,7 @@ struct ProcessWordmark: View {
 
     var body: some View {
         Group {
-            if UIImage(named: "ProcessWordmark") != nil {
+            if ProcessAssetCatalog.contains("ProcessWordmark") {
                 wordmarkImage
             } else {
                 Text("Process")

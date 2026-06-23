@@ -57,7 +57,8 @@ enum OriginPlanPresenter {
     static func chronologicalPhases(
         for day: OriginProgramDay,
         calendar: OriginProgramCalendar,
-        includeAutoTracking: Bool = false
+        includeAutoTracking: Bool = false,
+        includeMeals: Bool = true
     ) -> [PlanDayPhase] {
         let posture = day.posture.filter { !isAutomaticStepsTask($0) }
         var phases: [PlanDayPhase] = []
@@ -81,12 +82,14 @@ enum OriginPlanPresenter {
             ))
         }
 
-        phases.append(.init(
-            id: "meals",
-            title: "Repas",
-            timeHint: mealPhaseHint(for: day),
-            kind: .meals
-        ))
+        if includeMeals {
+            phases.append(.init(
+                id: "meals",
+                title: "Repas",
+                timeHint: mealPhaseHint(for: day),
+                kind: .meals
+            ))
+        }
 
         if let training = day.training {
             phases.append(.init(

@@ -98,7 +98,19 @@ struct FaceScanResultSheet: View {
                         )
                     }
 
-                    FaceScanMetricsRow(markers: result.markers, trend: nil, theme: theme)
+                    if let confidence = result.scanConfidence {
+                        Text("\(FaceWellnessScore.confidenceLabel(for: confidence)) · score relatif à toi, pas à ta morphologie")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    FaceScanMetricsRow(
+                        markers: result.markers,
+                        relativeSignals: result.relativeSignals,
+                        trend: nil,
+                        theme: theme
+                    )
 
                     if analysis.isValid {
                         FaceScanAnalysisCard(analysis: analysis, theme: theme)

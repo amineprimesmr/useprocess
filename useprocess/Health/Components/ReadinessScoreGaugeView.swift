@@ -180,7 +180,7 @@ private struct ReadinessGaugeCanvas: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 60)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { timeline in
             GeometryReader { proxy in
                 Canvas { context, size in
                     let time = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate

@@ -14,6 +14,7 @@ struct RotatingGlowAnimation: View {
     @State private var timer: Timer?
 
     let progress: Double // 0.0 à 1.0 - synchronisé avec la barre de progression
+    private let frameInterval: TimeInterval = 1.0 / 30.0
 
     // Vitesse cible de rotation (en degrés par seconde)
     // Commence à 30°/s, accélère jusqu'à 180°/s
@@ -81,8 +82,7 @@ struct RotatingGlowAnimation: View {
         // Arrêter le timer existant s'il y en a un
         timer?.invalidate()
 
-        // Timer pour animation fluide à 60 FPS
-        timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: frameInterval, repeats: true) { _ in
             // Calculer la vitesse cible basée sur la progression actuelle
             let targetSpeed = targetRotationSpeed(progress: progress)
 
@@ -91,7 +91,7 @@ struct RotatingGlowAnimation: View {
             currentSpeed += speedDiff * 0.1 // Ajustement progressif (10% par frame)
 
             // Calculer l'incrément d'angle basé sur la vitesse actuelle
-            let angleIncrement = currentSpeed * 0.016 // 60 FPS (0.016s = 1 frame)
+            let angleIncrement = currentSpeed * frameInterval
 
             // Mettre à jour l'angle
             rotationAngle += angleIncrement

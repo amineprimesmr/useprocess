@@ -31,6 +31,9 @@ struct MealSuggestionContent: Codable, Equatable {
     var coachTip: String
     var tags: [String]
     var subScores: MealSubScores?
+    var imageAssetName: String? = nil
+    /// Afficher le score uniquement après personnalisation IA (repas par défaut = 100/100 masqué).
+    var showsScore: Bool = false
 
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !items.isEmpty
@@ -69,11 +72,49 @@ struct MealSuggestionContent: Codable, Equatable {
 
         if trimmed.hasPrefix("{"),
            let data = trimmed.data(using: .utf8),
-           let decoded = try? JSONDecoder().decode(MealSuggestionContent.self, from: data) {
+           var decoded = try? JSONDecoder().decode(MealSuggestionContent.self, from: data) {
+            if !trimmed.contains("\"showsScore\"") {
+                decoded.showsScore = Self.inferShowsScore(
+                    protocolScore: decoded.protocolScore,
+                    scoreSummary: decoded.scoreSummary
+                )
+            }
             return decoded.isValid ? decoded : nil
         }
 
         return MealSuggestionParser.parse(trimmed)
+    }
+
+    static func inferShowsScore(protocolScore: Int, scoreSummary: String) -> Bool {
+        let summary = scoreSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+        return protocolScore < 100 || !summary.isEmpty
+    }
+
+    /// Repas catalogue Process — score parfait implicite, sans affichage UI.
+    static func asProcessDefault(
+        name: String,
+        mealType: String,
+        items: [MealSuggestionItem],
+        prepMinutes: Int,
+        prepSummary: String,
+        coachTip: String,
+        tags: [String],
+        imageAssetName: String?
+    ) -> MealSuggestionContent {
+        MealSuggestionContent(
+            name: name,
+            mealType: mealType,
+            protocolScore: 100,
+            scoreSummary: "",
+            items: items,
+            prepMinutes: prepMinutes,
+            prepSummary: prepSummary,
+            coachTip: coachTip,
+            tags: tags,
+            subScores: MealSubScores(protocolFit: 100, satiety: 100, antiBloat: 100),
+            imageAssetName: imageAssetName,
+            showsScore: false
+        )
     }
 }
 
@@ -112,6 +153,7 @@ enum MealSuggestionParser {
         guard raw.hasPrefix("{"), let data = raw.data(using: .utf8) else { return nil }
         guard var decoded = try? JSONDecoder().decode(MealSuggestionContent.self, from: data) else { return nil }
         decoded.protocolScore = min(100, max(0, decoded.protocolScore))
+        decoded.showsScore = true
         if decoded.subScores == nil {
             decoded.subScores = MealSubScores(
                 protocolFit: decoded.protocolScore,
@@ -193,7 +235,8 @@ enum MealSuggestionParser {
             prepSummary: prepSummary,
             coachTip: coachTip,
             tags: tags,
-            subScores: parseSubScores(from: raw, fallbackScore: score)
+            subScores: parseSubScores(from: raw, fallbackScore: score),
+            showsScore: true
         )
     }
 
@@ -233,7 +276,8 @@ enum MealSuggestionParser {
             prepSummary: cleaned,
             coachTip: "",
             tags: [],
-            subScores: .balanced
+            subScores: .balanced,
+            showsScore: true
         )
     }
 }

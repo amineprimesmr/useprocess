@@ -9,6 +9,7 @@ enum FaceScanImageStore {
         if !FileManager.default.fileExists(atPath: folder.path) {
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         }
+        protectLocalURL(folder, isDirectory: true)
         return folder
     }
 
@@ -17,7 +18,8 @@ enum FaceScanImageStore {
         let name = "\(scanId)_face.jpg"
         let url = directoryURL.appendingPathComponent(name)
         do {
-            try data.write(to: url, options: .atomic)
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            protectLocalURL(url, isDirectory: false)
             return name
         } catch {
             return nil
@@ -42,6 +44,7 @@ enum FaceScanImageStore {
                 try FileManager.default.removeItem(at: destination)
             }
             try FileManager.default.moveItem(at: sourceURL, to: destination)
+            protectLocalURL(destination, isDirectory: false)
             return name
         } catch {
             return nil
@@ -81,5 +84,18 @@ enum FaceScanImageStore {
                 try? FileManager.default.removeItem(at: folder.appendingPathComponent(name))
             }
         }
+    }
+
+    private static func protectLocalURL(_ url: URL, isDirectory: Bool) {
+        var protectedURL = url
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? protectedURL.setResourceValues(values)
+
+        let protection: FileProtectionType = isDirectory ? .completeUntilFirstUserAuthentication : .complete
+        try? FileManager.default.setAttributes(
+            [.protectionKey: protection],
+            ofItemAtPath: url.path
+        )
     }
 }

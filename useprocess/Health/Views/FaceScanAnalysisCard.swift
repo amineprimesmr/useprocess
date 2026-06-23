@@ -107,19 +107,63 @@ struct FaceScanAnalysisCard: View {
 
 struct FaceScanMetricsRow: View {
     let markers: FaceWellnessMarkers
+    var relativeSignals: FaceScanRelativeSignals?
     var trend: FaceScanTrend?
     var theme: AppTheme
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-            metric("Gonflement", markers.puffinessScore, trend?.puffiness, higherIsWorse: true)
-            metric("Cernes", markers.underEyeFatigueScore, trend?.underEyeFatigue, higherIsWorse: true)
-            metric("Mâchoire", markers.jawTensionScore, trend?.jawTension, higherIsWorse: true)
-            metric("Peau", markers.skinClarityScore, trend?.skinClarity, higherIsWorse: false)
+        VStack(alignment: .leading, spacing: 10) {
+            if let relativeSignals {
+                Text(relativeSignals.baselineLabel)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(theme.secondaryText)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                metric(
+                    "Gonflement",
+                    markers.puffinessScore,
+                    relativeSignals?.puffinessDelta ?? trend?.puffiness,
+                    higherIsWorse: true,
+                    deltaMode: relativeSignals == nil ? .previous : .baseline
+                )
+                metric(
+                    "Cernes",
+                    markers.underEyeFatigueScore,
+                    relativeSignals?.underEyeFatigueDelta ?? trend?.underEyeFatigue,
+                    higherIsWorse: true,
+                    deltaMode: relativeSignals == nil ? .previous : .baseline
+                )
+                metric(
+                    "Mâchoire",
+                    markers.jawTensionScore,
+                    relativeSignals?.jawTensionDelta ?? trend?.jawTension,
+                    higherIsWorse: true,
+                    deltaMode: relativeSignals == nil ? .previous : .baseline
+                )
+                metric(
+                    "Peau",
+                    markers.skinClarityScore,
+                    relativeSignals?.skinClarityDelta ?? trend?.skinClarity,
+                    higherIsWorse: false,
+                    deltaMode: relativeSignals == nil ? .previous : .baseline
+                )
+            }
         }
     }
 
-    private func metric(_ title: String, _ value: Int, _ delta: Int?, higherIsWorse: Bool) -> some View {
+    private enum DeltaMode {
+        case previous
+        case baseline
+    }
+
+    private func metric(
+        _ title: String,
+        _ value: Int,
+        _ delta: Int?,
+        higherIsWorse: Bool,
+        deltaMode: DeltaMode
+    ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.caption2)
@@ -133,7 +177,7 @@ struct FaceScanMetricsRow: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                 if let delta, delta != 0 {
-                    Text(deltaLabel(delta, higherIsWorse: higherIsWorse))
+                    Text(deltaLabel(delta, mode: deltaMode))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(deltaColor(delta, higherIsWorse: higherIsWorse))
                 }
@@ -145,8 +189,9 @@ struct FaceScanMetricsRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    private func deltaLabel(_ delta: Int, higherIsWorse: Bool) -> String {
-        delta > 0 ? "+\(delta)" : "\(delta)"
+    private func deltaLabel(_ delta: Int, mode: DeltaMode) -> String {
+        let prefix = mode == .baseline ? "base " : ""
+        return prefix + (delta > 0 ? "+\(delta)" : "\(delta)")
     }
 
     private func deltaColor(_ delta: Int, higherIsWorse: Bool) -> Color {

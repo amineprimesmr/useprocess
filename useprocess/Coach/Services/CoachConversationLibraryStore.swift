@@ -21,6 +21,7 @@ final class CoachConversationLibraryStore {
     func reloadForUser(userId newUserId: String?) {
         userId = newUserId
         loadLocal()
+        purgeEmptyConversations()
     }
 
     func loadLocal() {
@@ -60,11 +61,6 @@ final class CoachConversationLibraryStore {
             saveLocal()
             return
         }
-
-        let conversation = CoachConversation(title: "Nouvelle conversation", messages: [])
-        library.conversations = [conversation]
-        library.activeConversationId = conversation.id
-        saveLocal()
     }
 
     var activeConversation: CoachConversation? {
@@ -76,7 +72,48 @@ final class CoachConversationLibraryStore {
     }
 
     var sortedConversations: [CoachConversation] {
-        library.conversations.sorted { $0.updatedAt > $1.updatedAt }
+        library.conversations
+            .filter(\.hasUserMessages)
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    func mostRecentConversationWithUserMessages() -> CoachConversation? {
+        sortedConversations.first
+    }
+
+    /// Supprime les fils vides (aucun message utilisateur) — ne doivent pas apparaître dans l’historique.
+    func purgeEmptyConversations() {
+        let previousCount = library.conversations.count
+        library.conversations.removeAll { !$0.hasUserMessages }
+
+        if let activeId = library.activeConversationId,
+           !library.conversations.contains(where: { $0.id == activeId }) {
+            library.activeConversationId = library.conversations.first?.id
+        }
+
+        if library.conversations.count != previousCount {
+            saveLocal()
+        }
+    }
+
+    func clearActiveSelection() {
+        library.activeConversationId = nil
+        saveLocal()
+    }
+
+    @discardableResult
+    func promoteDraftConversation(id: UUID) -> UUID {
+        if let index = library.conversations.firstIndex(where: { $0.id == id }) {
+            library.activeConversationId = id
+            saveLocal()
+            return id
+        }
+
+        let conversation = CoachConversation(id: id, title: "Nouvelle conversation", messages: [])
+        library.conversations.insert(conversation, at: 0)
+        library.activeConversationId = id
+        saveLocal()
+        return id
     }
 
     func selectConversation(_ id: UUID) {
@@ -85,8 +122,15 @@ final class CoachConversationLibraryStore {
     }
 
     @discardableResult
-    func createConversation() -> UUID {
-        let conversation = CoachConversation(title: "Nouvelle conversation", messages: [])
+    func createConversation(id: UUID? = nil) -> UUID {
+        let conversationId = id ?? UUID()
+        if library.conversations.contains(where: { $0.id == conversationId }) {
+            library.activeConversationId = conversationId
+            saveLocal()
+            return conversationId
+        }
+
+        let conversation = CoachConversation(id: conversationId, title: "Nouvelle conversation", messages: [])
         library.conversations.insert(conversation, at: 0)
         library.activeConversationId = conversation.id
         saveLocal()
