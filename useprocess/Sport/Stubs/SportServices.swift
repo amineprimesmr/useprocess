@@ -101,11 +101,17 @@ final class AuthenticationManager: NSObject, ObservableObject {
 
     override private init() {
         super.init()
+        FirebaseBootstrap.configure()
+        guard AppConfiguration.firebaseConfigured else {
+            hasCompletedOnboarding = UserDefaults.standard.bool(
+                forKey: UserScopedStorage.key("onboarding.completed", userId: nil)
+            )
+            return
+        }
+
         hasCompletedOnboarding = UserDefaults.standard.bool(
             forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid)
         )
-
-        guard AppConfiguration.firebaseConfigured else { return }
 
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
