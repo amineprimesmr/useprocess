@@ -18,7 +18,7 @@
 
     <article class="card">
       <h1>Politique de confidentialité</h1>
-      <p class="meta">Dernière mise à jour : 23 juin 2026</p>
+      <p class="meta">Dernière mise à jour : 24 juin 2026</p>
 
       <p>
         La présente politique décrit comment <strong>Process AI</strong> (« l'Application », « nous »)
@@ -39,7 +39,7 @@
         <li><strong>Compte</strong> : identifiant Apple (Sign in with Apple), adresse e-mail relayée le cas échéant, prénom.</li>
         <li><strong>Profil</strong> : objectifs, préférences sport et nutrition, réponses d'onboarding.</li>
         <li><strong>Données santé</strong> (avec votre autorisation HealthKit) : activité, sommeil, fréquence cardiaque, calories, pas, etc.</li>
-        <li><strong>Données faciales</strong> (avec votre autorisation — voir section 3) : mesh 3D TrueDepth local, photo locale, vidéo courte locale, scores wellness dérivés.</li>
+        <li><strong>Données TrueDepth / faciales</strong> (avec votre autorisation — voir section 3) : géométrie faciale ARKit, coefficients faciaux temporaires, photo locale, vidéo courte locale, scores wellness dérivés.</li>
         <li><strong>Activité physique</strong> (capteurs de mouvement, si autorisés).</li>
         <li><strong>Coach IA</strong> : messages échangés avec l'assistant (voir section 4).</li>
         <li><strong>Audio</strong> (si autorisé) : dictée vocale convertie en texte sur l'appareil.</li>
@@ -51,20 +51,24 @@
         Aucune donnée de localisation n'est demandée ni transmise par l'application.
       </p>
 
-      <h2 id="donnees-faciales">3. Données faciales (TrueDepth)</h2>
+      <h2 id="donnees-faciales">3. Données TrueDepth / faciales</h2>
       <p>
-        Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra <strong>TrueDepth</strong>
-        (capteur Face ID) pour estimer des indicateurs wellness relatifs à votre propre baseline.
+        Si vous choisissez d'utiliser le scan visage, l'Application utilise <strong>ARKit Face Tracking</strong>
+        avec la caméra <strong>TrueDepth</strong> (capteur Face ID) pour estimer des indicateurs wellness
+        relatifs à votre propre baseline.
         <strong>Aucune reconnaissance biométrique d'identité</strong> (déverrouillage, authentification
         biométrique du visage, identification d'une personne, vérification d'identité) n'est effectuée
-        dans le cadre du scan wellness.
+        dans le cadre du scan wellness. L'Application n'accède pas aux modèles Face ID d'Apple et ne crée
+        pas de modèle biométrique d'identification.
       </p>
 
-      <h3>3.1 Données faciales collectées</h3>
+      <h3>3.1 Informations collectées via l'API TrueDepth</h3>
       <ul>
-        <li><strong>Mesh 3D facial</strong> : géométrie du visage (vertices, triangles), traitée et conservée localement sur l'appareil pour afficher la baseline et les tendances.</li>
-        <li><strong>Photo JPEG</strong> : capture d'image du visage pendant le scan, stockée localement sur l'appareil.</li>
-        <li><strong>Vidéo courte</strong> : enregistrement local du scan, stocké uniquement sur l'appareil et non téléversé.</li>
+        <li><strong>Géométrie faciale ARKit</strong> : positions de vertices, triangles et coordonnées de texture du mesh 3D du visage. Cette géométrie est traitée sur l'appareil ; seul le dernier mesh de référence peut être conservé localement pour afficher la baseline et les tendances.</li>
+        <li><strong>Coefficients faciaux ARKit temporaires</strong> : valeurs <code>blendShapes</code> utilisées pendant le scan (ex. joues, clignement/squint des yeux, sourcils, ouverture mâchoire, froncement de bouche) afin de calculer les scores wellness. Ces coefficients ne sont pas envoyés à Firebase ni stockés comme données brutes persistantes.</li>
+        <li><strong>Image caméra</strong> : une photo JPEG du visage pendant le scan, stockée localement sur l'appareil. Elle peut être envoyée à Anthropic uniquement si vous activez explicitement l'analyse IA photo.</li>
+        <li><strong>Vidéo courte</strong> : enregistrement local du scan, stocké uniquement sur l'appareil et non téléversé vers Firebase.</li>
+        <li><strong>Métadonnées de capture</strong> : couverture angulaire du scan, identifiant de scan, date/heure, qualité/confiance du scan.</li>
         <li><strong>Scores wellness dérivés</strong> : score relatif du jour, gonflement, cernes/fatigue, tension mâchoire, clarté peau, confiance du scan et repère technique d'alignement/symétrie (échelle 0–100, sans jugement de morphologie).</li>
         <li><strong>Métadonnées</strong> : date du scan, scores, sommeil/HRV au moment du scan si HealthKit est autorisé.</li>
       </ul>
@@ -79,7 +83,7 @@
 
       <h3>3.3 Partage et stockage</h3>
       <ul>
-        <li><strong>Sur votre iPhone/iPad</strong> : mesh 3D, photo JPEG et vidéo courte sont stockés dans le dossier de l'Application (Application Support), exclus de la sauvegarde iCloud par l'Application et protégés par les protections de fichiers iOS.</li>
+        <li><strong>Sur votre iPhone/iPad</strong> : le dernier mesh 3D de référence, la photo JPEG et la vidéo courte sont stockés dans le dossier de l'Application (Application Support), exclus de la sauvegarde iCloud par l'Application et protégés par les protections de fichiers iOS.</li>
         <li><strong>Cloud</strong> : si vous êtes connecté, seuls les scores wellness, métadonnées et éventuel texte d'analyse IA sont synchronisés sur <strong>Google Firebase Firestore</strong> (collection <code>faceScans</code>), rattachés à votre identifiant de compte. <strong>Le mesh 3D, les fichiers photo JPEG et vidéo ne sont pas téléversés vers Firebase</strong> — ils restent sur votre appareil.</li>
         <li><strong>Anthropic (Claude)</strong> : uniquement si vous avez coché l'option d'analyse IA du scan — la photo JPEG et les scores associés sont transmis via nos <strong>Firebase Cloud Functions</strong> (proxy). Anthropic traite ces données pour produire l'analyse textuelle demandée. Selon les conditions commerciales d'Anthropic, les données API ne sont pas utilisées pour entraîner leurs modèles.</li>
       </ul>
@@ -95,10 +99,10 @@
 
       <blockquote>
         <strong>Extrait — collecte et usage des données faciales :</strong>
-        « Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth,
-        une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Hors analyse IA
-        optionnelle explicitement activée, le mesh, les photos et les vidéos restent sur votre appareil ;
-        si vous êtes connecté, seuls les scores, métadonnées
+        « Si vous choisissez d'utiliser le scan visage, l'Application collecte via ARKit/TrueDepth
+        une géométrie faciale 3D, des coefficients faciaux temporaires, une photo JPEG, une vidéo courte
+        optionnelle et des scores wellness dérivés. Hors analyse IA optionnelle explicitement activée,
+        le mesh, les photos et les vidéos restent sur votre appareil ; si vous êtes connecté, seuls les scores, métadonnées
         et éventuel texte d'analyse IA sont synchronisés sur Firebase Firestore. Si vous autorisez
         explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud
         Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ;

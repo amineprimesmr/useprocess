@@ -113,8 +113,8 @@ Do not copy older face-data wording from this file. The canonical reply matches:
 
 --- END FACE DATA REPLY ---
 
-FICHIER RÉPONSE COMPLÈTE (copier-coller Resolution Center) :
-website/app-review-face-data-reply-en.txt
+FICHIER RÉPONSE COMPLÈTE POUR LE REFUS TRUEDEPTH API (copier-coller Resolution Center) :
+website/app-review-truedepth-api-reply-en.txt
 
 CHECKLIST APP STORE CONNECT :
 [ ] Reply dans Resolution Center (fichier ci-dessus)
