@@ -60,7 +60,10 @@ final class SubscriptionService: NSObject, ObservableObject {
         guard !isConfigured else { return }
         guard RevenueCatConfiguration.isConfigured, let apiKey = RevenueCatConfiguration.apiKey else {
             applyFallbackProducts()
-            subscriptionStatus = .notSubscribed
+            Task {
+                await loadSubscriptions()
+                await checkSubscriptionStatus()
+            }
             return
         }
 
@@ -107,15 +110,21 @@ final class SubscriptionService: NSObject, ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        guard isConfigured else {
-            applyFallbackProducts()
-            return
-        }
-
         let ids = [
             SubscriptionConfiguration.monthlyProductID,
             SubscriptionConfiguration.annualProductID
         ]
+
+        guard isConfigured else {
+            let storeKitProducts = await fetchDirectStoreKitProducts(ids: ids)
+            if storeKitProducts.isEmpty {
+                applyFallbackProducts()
+            } else {
+                applyDirectStoreKitProducts(storeKitProducts)
+                await refreshIntroOfferEligibility()
+            }
+            return
+        }
 
         do {
             let offerings = try await Purchases.shared.offerings()
@@ -155,7 +164,10 @@ final class SubscriptionService: NSObject, ObservableObject {
     // MARK: - Purchase
 
     func purchase(plan: SubscriptionBillingPlan = .annual) async throws {
-        guard isConfigured else { throw SubscriptionError.notConfigured }
+        guard isConfigured else {
+            try await purchaseWithStoreKit(plan: plan)
+            return
+        }
 
         let package: Package?
         let storeProduct: StoreProduct?
@@ -214,7 +226,12 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func restorePurchases() async throws {
-        guard isConfigured else { throw SubscriptionError.notConfigured }
+        guard isConfigured else {
+            try await AppStore.sync()
+            await checkSubscriptionStatus()
+            guard subscriptionStatus.isActive else { throw SubscriptionError.noActiveSubscription }
+            return
+        }
 
         let info = try await Purchases.shared.restorePurchases()
         applyCustomerInfo(info)
@@ -223,7 +240,7 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     func checkSubscriptionStatus() async {
         guard isConfigured else {
-            subscriptionStatus = .notSubscribed
+            await checkStoreKitSubscriptionStatus()
             return
         }
 
@@ -306,6 +323,14 @@ final class SubscriptionService: NSObject, ObservableObject {
         return lastProducts
     }
 
+    private func fetchDirectStoreKitProducts(ids: [String]) async -> [Product] {
+        do {
+            return try await Product.products(for: ids)
+        } catch {
+            return []
+        }
+    }
+
     private func applyFallbackProducts() {
         monthlyDisplay = .fallback(for: .monthly)
         annualDisplay = .fallback(for: .annual)
@@ -323,6 +348,21 @@ final class SubscriptionService: NSObject, ObservableObject {
                 annualStoreProductRC = product
                 annualDisplay = makeDisplay(from: product, plan: .annual)
                 annualStoreProduct = product.sk2Product
+            default:
+                break
+            }
+        }
+    }
+
+    private func applyDirectStoreKitProducts(_ products: [Product]) {
+        for product in products {
+            switch product.id {
+            case SubscriptionConfiguration.monthlyProductID:
+                monthlyStoreProduct = product
+                monthlyDisplay = makeDisplay(from: product, plan: .monthly)
+            case SubscriptionConfiguration.annualProductID:
+                annualStoreProduct = product
+                annualDisplay = makeDisplay(from: product, plan: .annual)
             default:
                 break
             }
@@ -409,12 +449,127 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
     }
 
+    private func makeDisplay(from product: Product, plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
+        let trialDays = trialDays(from: product, plan: plan)
+        let introEligible: Bool = {
+            switch plan {
+            case .monthly: return trialDays != nil && isIntroOfferEligible
+            case .annual: return isIntroOfferEligible
+            }
+        }()
+
+        return SubscriptionProductDisplay(
+            productID: product.id,
+            displayName: product.displayName.isEmpty ? plan.title : product.displayName,
+            displayPrice: product.displayPrice,
+            periodLabel: plan == .monthly ? "par mois" : "par an",
+            monthlyEquivalentPrice: plan == .annual ? monthlyEquivalent(from: product) : nil,
+            freeTrialDays: trialDays,
+            isIntroOfferEligible: introEligible
+        )
+    }
+
     private func monthlyEquivalent(from product: StoreProduct) -> String? {
         let monthly = product.price / 12
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.locale = product.priceFormatter?.locale ?? Locale(identifier: "fr_FR")
         return formatter.string(from: monthly as NSDecimalNumber)
+    }
+
+    private func monthlyEquivalent(from product: Product) -> String? {
+        let monthly = (product.price as NSDecimalNumber).doubleValue / 12.0
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale(identifier: "fr_FR")
+        return formatter.string(from: NSNumber(value: monthly))
+    }
+
+    private func trialDays(from product: Product, plan: SubscriptionBillingPlan) -> Int? {
+        guard let offer = product.subscription?.introductoryOffer,
+              offer.paymentMode == .freeTrial else {
+            return SubscriptionConfiguration.freeTrialDays(for: plan)
+        }
+
+        switch offer.period.unit {
+        case .day:
+            return offer.period.value
+        case .week:
+            return offer.period.value * 7
+        case .month:
+            return offer.period.value * 30
+        case .year:
+            return offer.period.value * 365
+        @unknown default:
+            return SubscriptionConfiguration.freeTrialDays(for: plan)
+        }
+    }
+
+    private func purchaseWithStoreKit(plan: SubscriptionBillingPlan) async throws {
+        let product: Product?
+        switch plan {
+        case .monthly:
+            product = monthlyStoreProduct
+        case .annual:
+            product = annualStoreProduct
+        }
+
+        guard let product else { throw SubscriptionError.productNotFound }
+
+        let result = try await product.purchase()
+        switch result {
+        case .success(let verification):
+            let transaction = try verified(verification)
+            await transaction.finish()
+            await checkStoreKitSubscriptionStatus()
+        case .userCancelled:
+            throw SubscriptionError.userCancelled
+        case .pending:
+            throw SubscriptionError.pending
+        @unknown default:
+            throw SubscriptionError.unknown
+        }
+    }
+
+    private func checkStoreKitSubscriptionStatus() async {
+        let premiumProductIDs: Set<String> = [
+            SubscriptionConfiguration.monthlyProductID,
+            SubscriptionConfiguration.annualProductID
+        ]
+
+        var activeExpirationDate: Date?
+        var hasActiveEntitlement = false
+        var isTrial = false
+
+        for await result in StoreKit.Transaction.currentEntitlements {
+            guard let transaction = try? verified(result),
+                  premiumProductIDs.contains(transaction.productID) else {
+                continue
+            }
+
+            hasActiveEntitlement = true
+            activeExpirationDate = transaction.expirationDate
+            isTrial = transaction.offer?.type == .introductory
+        }
+
+        isInFreeTrial = isTrial
+        trialExpirationDate = isTrial ? activeExpirationDate : nil
+
+        if hasActiveEntitlement {
+            subscriptionStatus = .subscribed
+        } else {
+            subscriptionStatus = .notSubscribed
+            trialExpirationDate = nil
+        }
+    }
+
+    private func verified<T>(_ result: StoreKit.VerificationResult<T>) throws -> T {
+        switch result {
+        case .verified(let value):
+            return value
+        case .unverified:
+            throw SubscriptionError.verificationFailed
+        }
     }
 }
 
