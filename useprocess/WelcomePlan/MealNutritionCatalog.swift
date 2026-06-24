@@ -44,23 +44,6 @@ enum MealNutritionCatalog {
         ]
     }
 
-    /// Pétales ingrédients — proche de la maquette: aliment + part visuelle du repas.
-    static func ingredientChartSegments(for meal: MealSuggestionContent) -> [MealChartSegment] {
-        let weightedItems = meal.items.map { item in
-            (item: item, weight: visualIngredientWeight(for: item))
-        }
-        let total = weightedItems.reduce(0) { $0 + $1.weight }
-        guard total > 0 else { return [] }
-
-        return weightedItems.map { item, weight in
-            MealChartSegment(
-                id: item.id,
-                name: shortIngredientName(item.name),
-                percentage: (weight / total) * 100
-            )
-        }
-    }
-
     static func resolvedImageAsset(for meal: MealSuggestionContent) -> String {
         let candidates = imageAssetCandidates(for: meal)
         for asset in candidates {
@@ -180,28 +163,6 @@ enum MealNutritionCatalog {
 
     private static func clampScore(_ value: Double, minimum: Double) -> Double {
         min(100, max(minimum, value))
-    }
-
-    private static func visualIngredientWeight(for item: MealSuggestionItem) -> Double {
-        let role = item.role.lowercased()
-        if role.contains("prot") { return 40 }
-        if role.contains("gluc") { return 30 }
-        if role.contains("lég") || role.contains("leg") { return 20 }
-        if role.contains("gras") { return 10 }
-        return 12
-    }
-
-    private static func shortIngredientName(_ name: String) -> String {
-        let lowered = name.lowercased()
-        if lowered.contains("poulet") { return "Poulet" }
-        if lowered.contains("patate") { return "Patate douce" }
-        if lowered.contains("courgette") { return "Courgettes" }
-        if lowered.contains("huile") { return "Huile d'olive" }
-        if lowered.contains("saumon") { return "Saumon" }
-        if lowered.contains("riz") { return "Riz" }
-        if lowered.contains("oeuf") || lowered.contains("œuf") { return "Oeufs" }
-        if lowered.contains("avocat") { return "Avocat" }
-        return name
     }
 
     private static func estimate(from meal: MealSuggestionContent) -> MealNutritionProfile {

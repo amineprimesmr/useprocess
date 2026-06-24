@@ -22,15 +22,23 @@ struct MealIngredientRadialChart: View {
             let size = min(geo.size.width, geo.size.height)
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
-            let centerRadius = size * 0.145
-            let petalWidth = size * 0.345
-            let petalLength = size * 0.405
-            let petalAnchorOverlap = size * 0.055
-            let labelDistance = centerRadius + petalLength * 0.74
+            let centerRadius = size * 0.148
+            let petalWidth = size * 0.455
+            let petalLength = size * 0.43
+            let petalAnchorOverlap = size * 0.155
+            let labelDistance = centerRadius + petalLength * 0.70
             let count = max(segments.count, 1)
             let step = 360.0 / Double(count)
 
             ZStack {
+                unifiedFlowerWash(
+                    petalWidth: petalWidth,
+                    petalLength: petalLength,
+                    centerRadius: centerRadius,
+                    petalAnchorOverlap: petalAnchorOverlap,
+                    step: step
+                )
+
                 centerGlow(radius: centerRadius)
 
                 ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
@@ -87,36 +95,73 @@ struct MealIngredientRadialChart: View {
     ) -> some View {
         let rotation = step * Double(index)
         let offsetY = -(centerRadius + petalLength / 2 - petalAnchorOverlap)
+        let intensity = colorIntensity(for: segment)
 
         ZStack {
             FlowerPetalShape()
                 .fill(ghostFill)
-                .scaleEffect(x: 1.10, y: 1.13, anchor: .bottom)
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+                .scaleEffect(x: 1.08, y: 1.10, anchor: .bottom)
+                .shadow(color: .black.opacity(0.045), radius: 8, x: 0, y: 4)
 
             FlowerPetalShape()
                 .fill(
                     RadialGradient(
                         colors: [
-                            centerPink.opacity(0.78),
-                            petalViolet.opacity(0.92),
-                            petalBlue
+                            centerPink.opacity(0.92 * intensity),
+                            petalViolet.opacity(0.96),
+                            petalBlue.opacity(0.98)
                         ],
                         center: .bottom,
                         startRadius: 2,
                         endRadius: petalLength * 0.86
                     )
                 )
+                .overlay {
+                    FlowerPetalShape()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.22),
+                                    Color.white.opacity(0.02)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .blendMode(.screen)
+                }
         }
         .frame(width: petalWidth, height: petalLength)
         .offset(y: offsetY)
         .rotationEffect(.degrees(rotation))
-        .scaleEffect(appeared ? visualScale(for: segment) : 0.58, anchor: .bottom)
+        .scaleEffect(appeared ? 1 : 0.74, anchor: .bottom)
         .opacity(appeared ? 1 : 0)
         .animation(petalSpring.delay(petalDelay(for: index)), value: appeared)
     }
 
     // MARK: - Centre
+
+    @ViewBuilder
+    private func unifiedFlowerWash(
+        petalWidth: CGFloat,
+        petalLength: CGFloat,
+        centerRadius: CGFloat,
+        petalAnchorOverlap: CGFloat,
+        step: Double
+    ) -> some View {
+        ZStack {
+            ForEach(0..<6, id: \.self) { index in
+                FlowerPetalShape()
+                    .fill(Color.white.opacity(0.88))
+                    .frame(width: petalWidth * 1.14, height: petalLength * 1.12)
+                    .offset(y: -(centerRadius + petalLength / 2 - petalAnchorOverlap))
+                    .rotationEffect(.degrees(step * Double(index)))
+            }
+        }
+        .blur(radius: 0.7)
+        .opacity(appeared ? 1 : 0)
+        .animation(.easeOut(duration: 0.32), value: appeared)
+    }
 
     @ViewBuilder
     private func centerGlow(radius: CGFloat) -> some View {
@@ -185,9 +230,9 @@ struct MealIngredientRadialChart: View {
         .spring(response: 0.82, dampingFraction: 0.78)
     }
 
-    private func visualScale(for segment: MealChartSegment) -> CGFloat {
-        let normalized = CGFloat(max(0, min(segment.percentage, 45)) / 45)
-        return 0.82 + normalized * 0.18
+    private func colorIntensity(for segment: MealChartSegment) -> CGFloat {
+        let normalized = CGFloat(max(0, min(segment.percentage, 100)) / 100)
+        return 0.58 + normalized * 0.42
     }
 
     private func petalDelay(for index: Int) -> Double {

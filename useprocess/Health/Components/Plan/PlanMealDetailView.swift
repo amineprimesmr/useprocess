@@ -19,7 +19,7 @@ struct PlanMealDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
                     MealIngredientRadialChart(
-                        segments: MealNutritionCatalog.ingredientChartSegments(for: meal),
+                        segments: MealNutritionCatalog.debloatChartSegments(for: profile),
                         imageAssetName: imageAsset
                     )
                     .padding(.top, 8)
