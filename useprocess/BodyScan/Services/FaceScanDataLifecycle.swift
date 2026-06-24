@@ -1,15 +1,16 @@
 import Foundation
 
 /// Purge, rétention 90 scans, révocation consentement — aligné politique §3.4.
+@MainActor
 enum FaceScanDataLifecycle {
-    @MainActor
-    static func enforceRetention(for store: FaceScanHistoryStore = .shared) {
+    static func enforceRetention(for store: FaceScanHistoryStore) {
         let keptIds = Set(store.history.map(\.id))
         FaceScanImageStore.deleteMedia(exceptScanIds: keptIds)
-        Task { await pruneCloud(keeping: keptIds) }
+        Task { @MainActor in
+            await pruneCloud(keeping: keptIds)
+        }
     }
 
-    @MainActor
     static func purgeAllForCurrentUser() async {
         let uid = UserScopedStorage.currentUserId()
         FaceScanHistoryStore.shared.clearForUser(userId: uid)
@@ -20,7 +21,6 @@ enum FaceScanDataLifecycle {
         }
     }
 
-    @MainActor
     private static func pruneCloud(keeping keptIds: Set<String>) async {
         guard AppConfiguration.firebaseConfigured,
               let uid = UserScopedStorage.currentUserId() else { return }

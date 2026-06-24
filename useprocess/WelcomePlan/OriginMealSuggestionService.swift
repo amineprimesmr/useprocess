@@ -66,7 +66,7 @@ enum OriginMealSuggestionService {
             }
             updated.showsScore = true
             return updated
-        case .fromPhoto(let photoSlot):
+        case .fromPhoto(_):
             throw MealHubError.photoRequired
         default:
             break
@@ -259,7 +259,7 @@ enum OriginMealSuggestionService {
 
             Regénère le repas complet en appliquant cette modification, sans sortir des règles debloat Process.
             """
-        case .batch, .itemAlternatives, .fromPhoto:
+        case .batch, .itemAlternatives, .fromPhoto(_):
             userPrompt = ""
         }
 

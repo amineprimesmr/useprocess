@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Graphique radial « fleur » — détail repas (pixel-perfect mockup)
+// MARK: - Graphique radial « fleur » — détail repas
 
 struct MealIngredientRadialChart: View {
     let segments: [MealChartSegment]
@@ -10,26 +10,23 @@ struct MealIngredientRadialChart: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
-    // Tokens couleurs mockup
-    private let innerPink = Color(red: 0.97, green: 0.34, blue: 0.60)
-    private let midViolet = Color(red: 0.74, green: 0.56, blue: 0.96)
-    private let outerBlue = Color(red: 0.48, green: 0.80, blue: 0.99)
-    private let ghostFill = Color.white
-    private let ghostStroke = Color(red: 0.90, green: 0.90, blue: 0.92)
-    private let labelPrimary = Color(red: 0.10, green: 0.10, blue: 0.12)
-    private let labelSecondary = Color(red: 0.42, green: 0.42, blue: 0.46)
+    private let centerPink = Color(red: 0.96, green: 0.45, blue: 0.86)
+    private let petalViolet = Color(red: 0.69, green: 0.64, blue: 0.98)
+    private let petalBlue = Color(red: 0.48, green: 0.78, blue: 0.96)
+    private let ghostFill = Color.white.opacity(0.96)
+    private let labelPrimary = Color(red: 0.06, green: 0.07, blue: 0.09)
+    private let labelSecondary = Color(red: 0.14, green: 0.15, blue: 0.19)
 
     var body: some View {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
-            // Proportions calibrées sur la maquette
-            let centerRadius = size * 0.168
-            let ringGap = size * 0.034
-            let petalWidth = size * 0.205
-            let maxPetalLength = size * 0.305
-            let labelDistance = centerRadius + ringGap + maxPetalLength * 0.90
+            let centerRadius = size * 0.145
+            let petalWidth = size * 0.345
+            let petalLength = size * 0.405
+            let petalAnchorOverlap = size * 0.055
+            let labelDistance = centerRadius + petalLength * 0.74
             let count = max(segments.count, 1)
             let step = 360.0 / Double(count)
 
@@ -42,9 +39,9 @@ struct MealIngredientRadialChart: View {
                         index: index,
                         step: step,
                         centerRadius: centerRadius,
-                        ringGap: ringGap,
                         petalWidth: petalWidth,
-                        maxPetalLength: maxPetalLength
+                        petalLength: petalLength,
+                        petalAnchorOverlap: petalAnchorOverlap
                     )
                 }
 
@@ -71,8 +68,8 @@ struct MealIngredientRadialChart: View {
                     .animation(.spring(response: 0.74, dampingFraction: 0.76).delay(0.06), value: appeared)
             }
         }
-        .frame(height: 372)
-        .padding(.horizontal, 4)
+        .frame(height: 356)
+        .padding(.horizontal, 0)
         .onAppear { triggerAppearance() }
     }
 
@@ -84,35 +81,38 @@ struct MealIngredientRadialChart: View {
         index: Int,
         step: Double,
         centerRadius: CGFloat,
-        ringGap: CGFloat,
         petalWidth: CGFloat,
-        maxPetalLength: CGFloat
+        petalLength: CGFloat,
+        petalAnchorOverlap: CGFloat
     ) -> some View {
         let rotation = step * Double(index)
-        let offsetY = -(centerRadius + ringGap + maxPetalLength / 2)
+        let offsetY = -(centerRadius + petalLength / 2 - petalAnchorOverlap)
 
         ZStack {
-            FlowerPetalShape(progress: 1)
+            FlowerPetalShape()
                 .fill(ghostFill)
-                .overlay {
-                    FlowerPetalShape(progress: 1)
-                        .stroke(ghostStroke, lineWidth: 1.2)
-                }
-                .shadow(color: .black.opacity(0.055), radius: 6, x: 0, y: 3)
+                .scaleEffect(x: 1.10, y: 1.13, anchor: .bottom)
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
 
-            FlowerPetalShape(progress: petalProgress(for: segment))
+            FlowerPetalShape()
                 .fill(
-                    LinearGradient(
-                        colors: [innerPink, midViolet, outerBlue],
-                        startPoint: UnitPoint(x: 0.5, y: 1.0),
-                        endPoint: UnitPoint(x: 0.5, y: 0.0)
+                    RadialGradient(
+                        colors: [
+                            centerPink.opacity(0.78),
+                            petalViolet.opacity(0.92),
+                            petalBlue
+                        ],
+                        center: .bottom,
+                        startRadius: 2,
+                        endRadius: petalLength * 0.86
                     )
                 )
-                .clipShape(FlowerPetalShape(progress: 1))
         }
-        .frame(width: petalWidth, height: maxPetalLength)
+        .frame(width: petalWidth, height: petalLength)
         .offset(y: offsetY)
         .rotationEffect(.degrees(rotation))
+        .scaleEffect(appeared ? visualScale(for: segment) : 0.58, anchor: .bottom)
+        .opacity(appeared ? 1 : 0)
         .animation(petalSpring.delay(petalDelay(for: index)), value: appeared)
     }
 
@@ -124,8 +124,8 @@ struct MealIngredientRadialChart: View {
             .fill(
                 RadialGradient(
                     colors: [
-                        innerPink.opacity(0.38),
-                        innerPink.opacity(0.14),
+                        centerPink.opacity(0.42),
+                        centerPink.opacity(0.20),
                         Color.clear
                     ],
                     center: .center,
@@ -142,18 +142,18 @@ struct MealIngredientRadialChart: View {
         ZStack {
             Circle()
                 .fill(Color.white)
-                .frame(width: radius * 2 + 8, height: radius * 2 + 8)
-                .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
+                .frame(width: radius * 2 + 16, height: radius * 2 + 16)
+                .shadow(color: .black.opacity(0.14), radius: 16, x: 0, y: 7)
 
             Circle()
-                .strokeBorder(Color.white, lineWidth: 3.5)
-                .frame(width: radius * 2, height: radius * 2)
+                .strokeBorder(Color.white, lineWidth: 5)
+                .frame(width: radius * 2 + 6, height: radius * 2 + 6)
 
             OptionalAssetImage(
                 name: imageAssetName,
                 contentMode: .fill,
-                width: radius * 2 - 1,
-                height: radius * 2 - 1,
+                width: radius * 2,
+                height: radius * 2,
                 foregroundStyle: Color.secondary
             )
             .clipShape(Circle())
@@ -165,13 +165,13 @@ struct MealIngredientRadialChart: View {
     private func label(for segment: MealChartSegment) -> some View {
         VStack(spacing: 2) {
             Text(segment.name)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(labelPrimary)
                 .lineLimit(2)
-                .minimumScaleFactor(0.72)
+                .minimumScaleFactor(0.62)
                 .multilineTextAlignment(.center)
             Text("\(Int(segment.percentage.rounded()))%")
-                .font(.system(size: 11, weight: .regular))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(labelSecondary)
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -182,12 +182,12 @@ struct MealIngredientRadialChart: View {
     // MARK: - Animation
 
     private var petalSpring: Animation {
-        .spring(response: 0.92, dampingFraction: 0.74)
+        .spring(response: 0.82, dampingFraction: 0.78)
     }
 
-    private func petalProgress(for segment: MealChartSegment) -> CGFloat {
-        let target = CGFloat(max(0.035, min(segment.percentage, 100) / 100))
-        return appeared ? target : 0.015
+    private func visualScale(for segment: MealChartSegment) -> CGFloat {
+        let normalized = CGFloat(max(0, min(segment.percentage, 45)) / 45)
+        return 0.82 + normalized * 0.18
     }
 
     private func petalDelay(for index: Int) -> Double {
@@ -208,43 +208,33 @@ struct MealIngredientRadialChart: View {
     }
 }
 
-// MARK: - Forme pétale (maquette)
+// MARK: - Forme pétale
 
 private struct FlowerPetalShape: Shape {
-    var progress: CGFloat
-
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
-    }
-
     func path(in rect: CGRect) -> Path {
-        let height = rect.height * max(0.015, min(progress, 1))
         let midX = rect.midX
-        let baseY = rect.maxY
-        let tipY = baseY - height
-
-        // Base étroite, ventre large, capuchon arrondi (comme maquette)
-        let baseHalf = rect.width * 0.065
-        let maxHalf = rect.width * 0.495
-        let bulgeY = baseY - height * 0.62
-        let capControl = height * 0.18
+        let topY = rect.minY + rect.height * 0.03
+        let bottomY = rect.maxY
+        let topHalf = rect.width * 0.40
+        let waistHalf = rect.width * 0.50
+        let baseHalf = rect.width * 0.08
 
         var path = Path()
-        path.move(to: CGPoint(x: midX - baseHalf, y: baseY))
-
+        path.move(to: CGPoint(x: midX - baseHalf, y: bottomY))
         path.addCurve(
-            to: CGPoint(x: midX, y: tipY),
-            control1: CGPoint(x: midX - maxHalf, y: bulgeY),
-            control2: CGPoint(x: midX - maxHalf * 0.22, y: tipY + capControl)
+            to: CGPoint(x: midX - topHalf, y: topY + rect.height * 0.24),
+            control1: CGPoint(x: midX - waistHalf, y: bottomY - rect.height * 0.38),
+            control2: CGPoint(x: midX - waistHalf, y: topY + rect.height * 0.12)
         )
-
+        path.addQuadCurve(
+            to: CGPoint(x: midX + topHalf, y: topY + rect.height * 0.24),
+            control: CGPoint(x: midX, y: topY - rect.height * 0.09)
+        )
         path.addCurve(
-            to: CGPoint(x: midX + baseHalf, y: baseY),
-            control1: CGPoint(x: midX + maxHalf * 0.22, y: tipY + capControl),
-            control2: CGPoint(x: midX + maxHalf, y: bulgeY)
+            to: CGPoint(x: midX + baseHalf, y: bottomY),
+            control1: CGPoint(x: midX + waistHalf, y: topY + rect.height * 0.12),
+            control2: CGPoint(x: midX + waistHalf, y: bottomY - rect.height * 0.38)
         )
-
         path.closeSubpath()
         return path
     }

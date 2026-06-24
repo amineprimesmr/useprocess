@@ -37,7 +37,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         view.scene = SCNScene()
         view.backgroundColor = .black
         view.rendersCameraGrain = false
-        view.preferredFramesPerSecond = 60
+        view.preferredFramesPerSecond = 30
         context.coordinator.arView = view
 
         guard ARFaceTrackingConfiguration.isSupported else {
@@ -122,8 +122,12 @@ struct FaceMeshScanView: UIViewRepresentable {
         private var lastRegisteredSector: Int?
         private var lastPublishedSectorSignature = 0
         private var lastUIUpdate: CFTimeInterval = 0
+        private var lastLightUIUpdate: CFTimeInterval = 0
+        private var lastProcessTime: CFTimeInterval = 0
         private var lastQualityFailureAt: Date?
-        private let uiUpdateMinInterval: CFTimeInterval = 1.0 / 30.0
+        private let uiUpdateMinInterval: CFTimeInterval = 1.0 / 20.0
+        private let lightUIUpdateMinInterval: CFTimeInterval = 1.0 / 15.0
+        private let processMinInterval: CFTimeInterval = 1.0 / 24.0
         private var didConfigurePortraitCamera = false
         private var faceRemovalWorkItem: DispatchWorkItem?
 
@@ -180,6 +184,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                 videoRecorder.append(frame: frame)
             }
 
+            let now = CACurrentMediaTime()
+            guard now - lastLightUIUpdate >= lightUIUpdateMinInterval else { return }
+            lastLightUIUpdate = now
+
             DispatchQueue.main.async {
                 if FaceScanScreenFlash.shared.isActive {
                     if !self.isLowLight { self.isLowLight = true }
@@ -234,6 +242,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                   let geometry = node.geometry as? ARSCNFaceGeometry else { return }
             geometry.update(from: faceAnchor.geometry)
             guard !completed, !isTornDown else { return }
+
+            let now = CACurrentMediaTime()
+            guard now - lastProcessTime >= processMinInterval else { return }
+            lastProcessTime = now
             process(faceAnchor: faceAnchor)
         }
 

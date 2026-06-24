@@ -58,7 +58,8 @@ enum OriginPlanPresenter {
         for day: OriginProgramDay,
         calendar: OriginProgramCalendar,
         includeAutoTracking: Bool = false,
-        includeMeals: Bool = true
+        includeMeals: Bool = true,
+        includeTraining: Bool = true
     ) -> [PlanDayPhase] {
         let posture = day.posture.filter { !isAutomaticStepsTask($0) }
         var phases: [PlanDayPhase] = []
@@ -91,7 +92,7 @@ enum OriginPlanPresenter {
             ))
         }
 
-        if let training = day.training {
+        if includeTraining, let training = day.training {
             phases.append(.init(
                 id: "training",
                 title: "Entraînement",

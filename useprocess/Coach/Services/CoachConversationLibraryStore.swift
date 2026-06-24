@@ -103,7 +103,7 @@ final class CoachConversationLibraryStore {
 
     @discardableResult
     func promoteDraftConversation(id: UUID) -> UUID {
-        if let index = library.conversations.firstIndex(where: { $0.id == id }) {
+        if library.conversations.contains(where: { $0.id == id }) {
             library.activeConversationId = id
             saveLocal()
             return id
@@ -138,18 +138,18 @@ final class CoachConversationLibraryStore {
     }
 
     func updateConversation(_ id: UUID, _ transform: (inout CoachConversation) -> Void) {
-        guard let index = library.conversations.firstIndex(where: { $0.id == id }) else { return }
-        transform(&library.conversations[index])
-        library.conversations[index].updatedAt = Date()
-        saveLocal()
+        for conversationIndex in library.conversations.indices {
+            guard library.conversations[conversationIndex].id == id else { continue }
+            transform(&library.conversations[conversationIndex])
+            library.conversations[conversationIndex].updatedAt = Date()
+            saveLocal()
+            return
+        }
     }
 
     func updateActiveConversation(_ transform: (inout CoachConversation) -> Void) {
-        guard let id = library.activeConversationId,
-              let index = library.conversations.firstIndex(where: { $0.id == id }) else { return }
-        transform(&library.conversations[index])
-        library.conversations[index].updatedAt = Date()
-        saveLocal()
+        guard let id = library.activeConversationId else { return }
+        updateConversation(id, transform)
     }
 
     func setActiveMessages(_ messages: [CoachMessage]) {

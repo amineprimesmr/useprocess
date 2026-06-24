@@ -30,14 +30,13 @@ struct DailyJournalChecklistView: View {
     var showHeader: Bool = true
     var showWeekStrip: Bool = true
 
-    @State private var store = WelcomePlanStore.shared
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var selectedDate = Date()
     @State private var isChecklistExpanded = true
     @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
 
-    private var livePlan: FaceOriginPlan { store.plan ?? plan }
+    private var livePlan: FaceOriginPlan { WelcomePlanStore.shared.plan ?? plan }
 
     private var dayAvailability: OriginPlanPresenter.JournalDayAvailability {
         OriginPlanPresenter.journalDayAvailability(for: selectedDate, in: livePlan)
@@ -53,6 +52,9 @@ struct DailyJournalChecklistView: View {
                     selectedDate: $selectedDate,
                     plan: livePlan
                 )
+                .padding(.top, -4)
+                .padding(.leading, -6)
+                .padding(.bottom, 8)
 
                 PlanLastFaceScanSection(
                     latest: faceHistoryStore.latestResult,
@@ -64,8 +66,16 @@ struct DailyJournalChecklistView: View {
             case .editable(let day, _):
                 PlanNutritionDaySection(plan: livePlan, day: day, isEditable: true)
                     .environmentObject(UnifiedProfileService.shared)
+                    .padding(.top, 14)
 
                 journalSections(for: day, isEditable: true)
+
+                PlanTrainingDaySection(
+                    plan: livePlan,
+                    day: day,
+                    selectedDate: selectedDate,
+                    isEditable: true
+                )
             case .future:
                 journalUnavailableCard(
                     title: "Jour à venir",
@@ -153,7 +163,7 @@ struct DailyJournalChecklistView: View {
             selectedDate: selectedDate,
             isEditable: isEditable,
             onTaskStatusChange: { taskId, dayId, status in
-                store.setJournalTaskStatus(status, taskId: taskId, dayId: dayId)
+                WelcomePlanStore.shared.setJournalTaskStatus(status, taskId: taskId, dayId: dayId)
             }
         )
     }
@@ -310,22 +320,15 @@ private struct JournalWeekDayStrip: View {
                                 width: JournalDesign.Strip.slotWidth,
                                 height: JournalDesign.Strip.slotHeight
                             )
-                            .visualEffect { content, geo in
-                                let frame = geo.frame(in: .scrollView(axis: .horizontal))
-                                let viewport = geo.bounds(of: .scrollView(axis: .horizontal))
-                                    ?? CGRect(x: 0, y: 0, width: 1, height: 1)
-                                let distance = abs(frame.midX - viewport.midX)
-                                let maxDistance = max(viewport.width * 0.45, 1)
-                                let t = min(distance / maxDistance, 1)
-                                let depth = 1 - t
-
-                                return content
-                                    .opacity(0.62 + depth * 0.38)
+                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                                content
+                                    .opacity(0.62 + (1 - min(abs(phase.value), 1)) * 0.38)
                             }
                     }
                 }
                 .scrollTargetLayout()
-                .padding(.horizontal, 18)
+                .padding(.leading, 6)
+                .padding(.trailing, 16)
                 .frame(height: JournalDesign.Strip.stripHeight)
             }
             .scrollTargetBehavior(.viewAligned)

@@ -25,7 +25,8 @@ struct PlanDayChronologicalTimeline: View {
             for: day,
             calendar: plan.calendar,
             includeAutoTracking: isSelectedToday,
-            includeMeals: false
+            includeMeals: false,
+            includeTraining: false
         )
     }
 

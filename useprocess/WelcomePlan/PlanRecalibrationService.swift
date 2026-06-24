@@ -14,12 +14,12 @@ enum PlanRecalibrationService {
         var messages: [String] = []
         let markers = latestScan.markers
 
-        guard var criteria = plan.successCriteria.nilIfEmpty else { return [] }
+        guard let criteria = plan.successCriteria.nilIfEmpty else { return [] }
 
-        for index in criteria.indices {
-            guard let key = criteria[index].metricKey,
-                  let baseline = criteria[index].baselineValue,
-                  let target = criteria[index].targetValue else { continue }
+        for criterion in criteria {
+            guard let key = criterion.metricKey,
+                  let baseline = criterion.baselineValue,
+                  let target = criterion.targetValue else { continue }
 
             let current: Int?
             switch key {
@@ -32,10 +32,10 @@ enum PlanRecalibrationService {
             guard let current else { continue }
 
             if current <= target {
-                messages.append("Objectif atteint : \(criteria[index].label)")
+                messages.append("Objectif atteint : \(criterion.label)")
             } else if current < baseline {
                 let delta = baseline - current
-                messages.append("\(criteria[index].label) : −\(delta) pts vs baseline")
+                messages.append("\(criterion.label) : −\(delta) pts vs baseline")
             }
         }
 

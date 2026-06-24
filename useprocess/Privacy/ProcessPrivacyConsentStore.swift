@@ -120,7 +120,9 @@ final class ProcessPrivacyConsentStore {
         persistBool(false, key: "privacy.face_capture")
         persistBool(false, key: "privacy.face_ai")
         UserDefaults.standard.removeObject(forKey: storageKey("privacy.face_capture.date"))
-        Task { await FaceScanDataLifecycle.purgeAllForCurrentUser() }
+        Task { @MainActor in
+            await FaceScanDataLifecycle.purgeAllForCurrentUser()
+        }
     }
 
     private func revokeFaceScanAIOnly() {

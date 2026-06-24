@@ -57,11 +57,15 @@ final class OnboardingProfileChatViewModel {
         analysisLetsGoUnlocked
     }
 
+    private func animate(_ animation: Animation, _ changes: () -> Void) {
+        withAnimation(animation, changes)
+    }
+
     func handleAnalysisPopupAnswer(_ answer: Bool) {
         let popupKind = analysisPopupKind
         let popupIndex = analysisPopupPhaseIndex
 
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+        animate(.spring(response: 0.5, dampingFraction: 0.8)) {
             self.analysisPopupOffset = 200
         }
 
@@ -70,7 +74,7 @@ final class OnboardingProfileChatViewModel {
             self.analysisPopupOffset = 200
         }
 
-        Task {
+        Task { @MainActor in
             if popupKind == .healthKit {
                 await handleHealthKitPopupAnswer(answer)
             }
@@ -81,7 +85,7 @@ final class OnboardingProfileChatViewModel {
             let phases = OnboardingAnalysisProgressConfig.phases
             guard popupIndex >= 0, popupIndex < phases.count else { return }
 
-            withAnimation(.easeInOut(duration: 0.35)) {
+            animate(.easeInOut(duration: 0.35)) {
                 self.analysisProgress = Double(popupIndex + 1) / Double(phases.count)
                 let percentagePerPhase = 100.0 / Double(phases.count)
                 let total = Int((Double(popupIndex + 1) * percentagePerPhase).rounded())
@@ -154,7 +158,7 @@ final class OnboardingProfileChatViewModel {
         pendingTypewriterMessageID = messageID
         pendingTypewriterText = question.prompt
 
-        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+        animate(OnboardingProfileChatDepthStyle.historySpring) {
             messages.append(
                 .init(
                     id: messageID,
@@ -270,7 +274,7 @@ final class OnboardingProfileChatViewModel {
         isQuestionReadyForAnswers = false
         currentQuestion = nil
 
-        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+        animate(OnboardingProfileChatDepthStyle.historySpring) {
             appendUserMessage("Lancer le scan")
         }
 
@@ -312,8 +316,10 @@ final class OnboardingProfileChatViewModel {
               questions[currentIndex].id == "face_scan_offer" else { return }
 
         if messages.last?.role == .user, messages.last?.text == "Lancer le scan" {
-            withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
-                messages.removeLast()
+            animate(OnboardingProfileChatDepthStyle.historySpring) {
+                if !messages.isEmpty {
+                    messages.removeLast()
+                }
             }
         }
 
@@ -367,7 +373,7 @@ final class OnboardingProfileChatViewModel {
 
         var shouldTypeNextQuestion = false
 
-        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+        animate(OnboardingProfileChatDepthStyle.historySpring) {
             appendUserMessage(display)
             shouldTypeNextQuestion = prepareNextQuestionMessage()
         }
@@ -413,7 +419,7 @@ final class OnboardingProfileChatViewModel {
         isMessageAnimating = true
         analysisLetsGoUnlocked = false
 
-        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+        animate(OnboardingProfileChatDepthStyle.historySpring) {
             analysisProgressPanelVisible = false
         }
 
@@ -424,7 +430,7 @@ final class OnboardingProfileChatViewModel {
         pendingTypewriterMessageID = messageID
         pendingTypewriterText = detail
 
-        withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
+        animate(OnboardingProfileChatDepthStyle.historySpring) {
             messages.append(
                 .init(
                     id: messageID,
@@ -440,7 +446,7 @@ final class OnboardingProfileChatViewModel {
         try? await Task.sleep(nanoseconds: 180_000_000)
         guard currentQuestion?.kind == .analysisProgress else { return }
 
-        withAnimation(OnboardingProfileChatAnswerReveal.spring) {
+        animate(OnboardingProfileChatAnswerReveal.spring) {
             analysisLetsGoUnlocked = true
         }
     }
@@ -491,7 +497,7 @@ final class OnboardingProfileChatViewModel {
                 analysisPopupOffset = 200
                 analysisShowPopup = true
 
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.75)) {
+                animate(.spring(response: 0.6, dampingFraction: 0.75)) {
                     analysisPopupOffset = 0
                 }
 
