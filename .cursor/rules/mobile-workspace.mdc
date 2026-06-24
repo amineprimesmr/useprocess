@@ -1,0 +1,44 @@
+---
+description: Canonical mobile workspace setup for useprocess
+alwaysApply: true
+---
+
+# useprocess Mobile Workspace Rules
+
+The canonical project location is:
+
+`/Users/amine/Developer/useprocess`
+
+Open and edit the iOS app from:
+
+`/Users/amine/Developer/useprocess/useprocess.xcodeproj`
+
+The Desktop path:
+
+`/Users/amine/Desktop/useprocess`
+
+is only a convenience symlink that points to the canonical Developer folder. Do not treat it as a separate copy.
+
+## What happened
+
+The previous Desktop/iCloud-backed project became unreliable and caused missing-working-directory confusion in Codex/Cursor. The clean source of truth was moved to `/Users/amine/Developer/useprocess`, and the Desktop entry was replaced with a symlink to that folder.
+
+Old broken folders can exist with names like:
+
+`/Users/amine/Desktop/DO_NOT_USE_iCloud_BROKEN_useprocess_*`
+
+Never open, index, edit, restore, or copy from those folders unless the user explicitly asks for forensic recovery.
+
+## Required behavior
+
+- Use `/Users/amine/Developer/useprocess` as the only working directory.
+- Do not create duplicate app folders on Desktop, in iCloud Drive, Downloads, or Projects.
+- Before editing, confirm `git status --short --branch` from `/Users/amine/Developer/useprocess`.
+- Keep generated Xcode data out of the repo: `DerivedData`, `Index.noindex`, `xcuserdata`, `SourcePackages`, `build`.
+- Prefer opening the Xcode project with the repo command: `./open-xcode.command`.
+- For Firebase/Auth changes, avoid direct `Auth.auth()` access before `FirebaseBootstrap.configure()` and a real `FirebaseApp.app()` check.
+- For subscription/paywall work, keep production purchase behavior real. Debug-only test bypasses must stay behind `#if DEBUG`.
+
+## Git
+
+Use the repo on `main` unless the user asks for a branch. After meaningful app changes, build or test when possible, then commit and push only from `/Users/amine/Developer/useprocess`.
