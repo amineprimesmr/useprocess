@@ -1,24 +1,15 @@
 import SwiftUI
 import UIKit
 
-/// Shell principal — swipe horizontal + menu sticky overlay.
+/// Shell principal — tab bar native iOS.
 struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .coach
-    @State private var profileSubrouteActive = false
     @State private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var session = AppSession.shared
     @Environment(\.appTheme) private var theme
 
     private var isWelcomePlanGating: Bool {
         !session.hasCompletedWelcomePlanChat
-    }
-
-    private var lockedSections: Set<ProcessMainSection> {
-        isWelcomePlanGating ? [.plan, .profile] : []
-    }
-
-    private var isHorizontalPagingLocked: Bool {
-        isWelcomePlanGating
     }
 
     var body: some View {
@@ -29,10 +20,16 @@ struct MainAppView: View {
             )
             .background(theme.background.ignoresSafeArea())
             .tag(ProcessMainSection.coach)
+            .tabItem {
+                Label(ProcessMainSection.coach.label, systemImage: ProcessMainSection.coach.icon)
+            }
 
             PlanDashboardView(selectedSection: $selectedSection)
                 .background(theme.background.ignoresSafeArea())
                 .tag(ProcessMainSection.plan)
+                .tabItem {
+                    Label(ProcessMainSection.plan.label, systemImage: ProcessMainSection.plan.icon)
+                }
                 .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
                     openWelcomePlanConfiguration()
                 }
@@ -40,21 +37,16 @@ struct MainAppView: View {
             ProcessProfileView(selectedSection: $selectedSection)
                 .background(theme.background.ignoresSafeArea())
                 .tag(ProcessMainSection.profile)
+                .tabItem {
+                    Label(ProcessMainSection.profile.label, systemImage: ProcessMainSection.profile.icon)
+                }
                 .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
                     openWelcomePlanConfiguration()
                 }
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .ignoresSafeArea(.container, edges: .bottom)
-        .overlay(alignment: .top) {
-            CoachMainStickyChromeLayer(
-                selection: $selectedSection,
-                lockedSections: lockedSections,
-                profileSubrouteActive: profileSubrouteActive
-            )
-            .ignoresSafeArea(edges: .top)
-        }
-        .processMainTabPaging(swipeDisabled: isHorizontalPagingLocked)
+        .tint(theme.primaryText)
+        .toolbarBackground(theme.background, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .background(theme.background.ignoresSafeArea())
         .onAppear {
             if isWelcomePlanGating {
@@ -74,9 +66,6 @@ struct MainAppView: View {
                 from: nil,
                 for: nil
             )
-        }
-        .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
-            profileSubrouteActive = active
         }
         .onChange(of: planBridge.shouldOpenCoach) { _, should in
             guard should else { return }

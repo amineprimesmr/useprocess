@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension View {
-    /// Scroll sous le menu sticky fixe (MainAppView) — inset haut constant.
+    /// Scroll principal sans chrome custom: la navigation globale est assurée par la tab bar native.
     func processMainScrollableChrome<ScrollContent: View>(
         selectedSection: Binding<ProcessMainSection>,
         pageSection: ProcessMainSection,
@@ -24,14 +24,9 @@ extension View {
             }
         }
         .scrollIndicators(.hidden)
-        .safeAreaInset(edge: .top, spacing: 0) {
-            Color.clear
-                .frame(height: ProcessMainChromeMetrics.scrollTopInset)
-                .allowsHitTesting(false)
-        }
     }
 
-    /// Profil : hero edge-to-edge derrière le menu sticky + status bar.
+    /// Profil : hero edge-to-edge sous la status bar native.
     func processProfileScrollableChrome<ScrollContent: View>(
         selectedSection: Binding<ProcessMainSection>,
         @ViewBuilder content: @escaping () -> ScrollContent
