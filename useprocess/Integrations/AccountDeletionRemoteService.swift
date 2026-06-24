@@ -1,11 +1,12 @@
 import FirebaseAuth
+import FirebaseCore
 import Foundation
 
 /// Suppression de compte via Cloud Function (Admin SDK) — fiable pour Apple Sign In + Firestore.
 enum AccountDeletionRemoteService {
 
     static func deleteViaCloudFunction() async throws {
-        guard AppConfiguration.firebaseConfigured else { return }
+        guard firebaseAuthReady else { return }
 
         guard let user = Auth.auth().currentUser else {
             throw AccountDeletionError.notSignedIn
@@ -47,6 +48,7 @@ enum AccountDeletionRemoteService {
 
     /// Suppression Auth côté client (après réauth Apple) — fallback si la Cloud Function échoue.
     static func deleteViaClientSDK() async throws {
+        guard firebaseAuthReady else { return }
         guard let user = Auth.auth().currentUser else {
             throw AccountDeletionError.notSignedIn
         }
@@ -69,6 +71,11 @@ enum AccountDeletionRemoteService {
         guard Auth.auth().currentUser == nil else {
             throw AccountDeletionError.remoteDeletionFailed("Firebase n'a pas supprimé le compte.")
         }
+    }
+
+    private static var firebaseAuthReady: Bool {
+        FirebaseBootstrap.configure()
+        return AppConfiguration.firebaseConfigured && FirebaseApp.app() != nil
     }
 
     private static func userMessage(for status: Int, body: String) -> String {

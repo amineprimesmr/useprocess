@@ -4,6 +4,7 @@ import HealthKit
 import UserNotifications
 import StoreKit
 import FirebaseAuth
+import FirebaseCore
 import AuthenticationServices
 
 // MARK: - Data
@@ -82,6 +83,16 @@ final class AuthenticationManager: NSObject, ObservableObject {
 
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
 
+    private var firebaseAuthReady: Bool {
+        FirebaseBootstrap.configure()
+        return AppConfiguration.firebaseConfigured && FirebaseApp.app() != nil
+    }
+
+    private var currentFirebaseUser: User? {
+        guard firebaseAuthReady else { return nil }
+        return Auth.auth().currentUser
+    }
+
     func startOnboarding() {
         isInOnboarding = true
         hasCompletedOnboarding = false
@@ -90,9 +101,10 @@ final class AuthenticationManager: NSObject, ObservableObject {
     func completeOnboarding() {
         isInOnboarding = false
         hasCompletedOnboarding = true
-        isAuthenticated = Auth.auth().currentUser != nil
+        let user = currentFirebaseUser
+        isAuthenticated = user != nil
         isLoading = false
-        UserDefaults.standard.set(true, forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid))
+        UserDefaults.standard.set(true, forKey: UserScopedStorage.key("onboarding.completed", userId: user?.uid))
     }
 
     func exitOnboarding() {
@@ -102,7 +114,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
     override private init() {
         super.init()
         FirebaseBootstrap.configure()
-        guard AppConfiguration.firebaseConfigured else {
+        guard firebaseAuthReady else {
             hasCompletedOnboarding = UserDefaults.standard.bool(
                 forKey: UserScopedStorage.key("onboarding.completed", userId: nil)
             )
@@ -110,7 +122,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
         }
 
         hasCompletedOnboarding = UserDefaults.standard.bool(
-            forKey: UserScopedStorage.key("onboarding.completed", userId: Auth.auth().currentUser?.uid)
+            forKey: UserScopedStorage.key("onboarding.completed", userId: currentFirebaseUser?.uid)
         )
 
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
@@ -125,25 +137,25 @@ final class AuthenticationManager: NSObject, ObservableObject {
                 }
             }
         }
-        isAuthenticated = Auth.auth().currentUser != nil
+        isAuthenticated = currentFirebaseUser != nil
     }
 
     func resetSession() {
         hasCompletedOnboarding = false
         isInOnboarding = false
         isAuthenticated = false
-        let uid = Auth.auth().currentUser?.uid
+        let uid = currentFirebaseUser?.uid
         UserDefaults.standard.set(false, forKey: UserScopedStorage.key("onboarding.completed", userId: uid))
-        if AppConfiguration.firebaseConfigured {
+        if firebaseAuthReady {
             try? Auth.auth().signOut()
         }
         UnifiedProfileService.shared.clearLocalProfile()
     }
 
     func deleteRemoteAccount() async throws {
-        guard AppConfiguration.firebaseConfigured else { return }
+        guard firebaseAuthReady else { return }
 
-        guard Auth.auth().currentUser != nil else {
+        guard currentFirebaseUser != nil else {
             throw AccountDeletionError.notSignedIn
         }
 
@@ -168,7 +180,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
     }
 
     private var usesAppleProvider: Bool {
-        Auth.auth().currentUser?.providerData.contains { $0.providerID == "apple.com" } == true
+        currentFirebaseUser?.providerData.contains { $0.providerID == "apple.com" } == true
     }
 
     private func reauthenticateWithApple() async throws {
@@ -215,14 +227,14 @@ final class AuthenticationManager: NSObject, ObservableObject {
         isInOnboarding = false
         hasCompletedOnboarding = false
         isLoading = false
-        if AppConfiguration.firebaseConfigured {
+        if firebaseAuthReady {
             try? Auth.auth().signOut()
         }
         UnifiedProfileService.shared.clearLocalProfile()
     }
 
     func signOut() {
-        if AppConfiguration.firebaseConfigured {
+        if firebaseAuthReady {
             try? Auth.auth().signOut()
         }
         UnifiedProfileService.shared.clearLocalProfile()
@@ -247,6 +259,16 @@ final class UnifiedProfileService: ObservableObject {
     @Published var isAuthenticated = false
 
     private init() {}
+
+    private var firebaseAuthReady: Bool {
+        FirebaseBootstrap.configure()
+        return AppConfiguration.firebaseConfigured && FirebaseApp.app() != nil
+    }
+
+    private var currentFirebaseUser: User? {
+        guard firebaseAuthReady else { return nil }
+        return Auth.auth().currentUser
+    }
 
     func clearLocalProfile() {
         currentProfile = nil
@@ -273,8 +295,7 @@ final class UnifiedProfileService: ObservableObject {
     }
 
     func loadProfile() async {
-        guard AppConfiguration.firebaseConfigured,
-              let userId = Auth.auth().currentUser?.uid else {
+        guard let user = currentFirebaseUser else {
             let userId = "local-user"
             if let cached = loadLocalProfile(userId: userId) {
                 currentProfile = cached
@@ -287,6 +308,7 @@ final class UnifiedProfileService: ObservableObject {
             }
             return
         }
+        let userId = user.uid
 
         isLoading = true
         defer { isLoading = false }
@@ -297,8 +319,8 @@ final class UnifiedProfileService: ObservableObject {
             } else if currentProfile == nil {
                 currentProfile = UnifiedUserProfile(
                     userId: userId,
-                    firstName: Auth.auth().currentUser?.displayName ?? "",
-                    email: Auth.auth().currentUser?.email
+                    firstName: user.displayName ?? "",
+                    email: user.email
                 )
             }
             isAuthenticated = true
@@ -313,8 +335,8 @@ final class UnifiedProfileService: ObservableObject {
                 currentProfile = loadLocalProfile(userId: userId)
                     ?? UnifiedUserProfile(
                         userId: userId,
-                        firstName: Auth.auth().currentUser?.displayName ?? "",
-                        email: Auth.auth().currentUser?.email
+                        firstName: user.displayName ?? "",
+                        email: user.email
                     )
             }
             isAuthenticated = true
@@ -331,8 +353,7 @@ final class UnifiedProfileService: ObservableObject {
         persistLocalProfile(profile)
         SocialProfileStore.shared.syncFromUnified(profile)
 
-        guard AppConfiguration.firebaseConfigured,
-              Auth.auth().currentUser != nil else {
+        guard currentFirebaseUser != nil else {
             return
         }
 

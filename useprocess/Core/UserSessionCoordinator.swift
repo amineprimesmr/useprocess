@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseAuth
+import FirebaseCore
 
 /// Recharge les caches locaux quand l'utilisateur Firebase change.
 @MainActor
@@ -11,7 +12,8 @@ final class UserSessionCoordinator {
     private var authListener: AuthStateDidChangeListenerHandle?
 
     private init() {
-        guard AppConfiguration.firebaseConfigured else {
+        FirebaseBootstrap.configure()
+        guard AppConfiguration.firebaseConfigured, FirebaseApp.app() != nil else {
             bind(userId: nil)
             return
         }

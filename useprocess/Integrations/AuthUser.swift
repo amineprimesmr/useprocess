@@ -1,4 +1,5 @@
 import FirebaseAuth
+import FirebaseCore
 import Foundation
 
 enum AuthUser {
@@ -8,7 +9,9 @@ enum AuthUser {
         let email: String?
 
         func createProfileChangeRequest() -> ProfileChangeRequestBridge? {
+            FirebaseBootstrap.configure()
             guard AppConfiguration.firebaseConfigured,
+                  FirebaseApp.app() != nil,
                   let user = Auth.auth().currentUser,
                   user.uid == uid else {
                 return nil
@@ -18,7 +21,10 @@ enum AuthUser {
     }
 
     static var current: Session? {
-        if AppConfiguration.firebaseConfigured, let user = Auth.auth().currentUser {
+        FirebaseBootstrap.configure()
+        if AppConfiguration.firebaseConfigured,
+           FirebaseApp.app() != nil,
+           let user = Auth.auth().currentUser {
             return Session(
                 uid: user.uid,
                 displayName: user.displayName,

@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseAuth
+import FirebaseCore
 
 enum CoachRemoteTask: String, Codable, Sendable {
     case chat
@@ -266,7 +267,9 @@ enum CoachRemoteService {
     }
 
     private static func idToken() async throws -> String {
+        FirebaseBootstrap.configure()
         guard AppConfiguration.firebaseConfigured,
+              FirebaseApp.app() != nil,
               let user = Auth.auth().currentUser else {
             throw CoachRemoteError.notAuthenticated
         }
