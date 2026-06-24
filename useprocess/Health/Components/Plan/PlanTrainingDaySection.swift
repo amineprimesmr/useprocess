@@ -7,7 +7,7 @@ private enum PlanTrainingVisuals {
     static let placeholderAsset = "dossport"
     /// Ratio largeur / hauteur de dossport (941×1672).
     static let fallbackAspectRatio: CGFloat = 941.0 / 1672.0
-    static let heroMaxHeight: CGFloat = 280
+    static let heroMaxHeight: CGFloat = 248
 
     static func resolvedAssetName(for entry: TrainingSessionCatalogEntry) -> String {
         if ProcessAssetCatalog.contains(placeholderAsset) {
@@ -77,6 +77,7 @@ struct PlanTrainingDaySection: View {
             onBookmark: { toggleBookmark(entry.id.rawValue) },
             onTap: openSessionDetail
         )
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private func restDayCard(entry: TrainingSessionCatalogEntry) -> some View {
@@ -91,6 +92,7 @@ struct PlanTrainingDaySection: View {
             showsBookmark: false,
             onTap: {}
         )
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private func openSessionDetail() {
@@ -242,10 +244,12 @@ private struct PlanTrainingFullBleedCard: View {
     @ViewBuilder
     private var cardFrame: some View {
         if let cardMaxHeight {
+            let maxCardWidth = max(UIScreen.main.bounds.width - 56, 220)
+            let cardWidth = min(cardMaxHeight * imageAspectRatio, maxCardWidth)
+            let cardHeight = cardWidth / max(imageAspectRatio, 0.1)
+
             Color.clear
-                .aspectRatio(imageAspectRatio, contentMode: .fit)
-                .frame(height: cardMaxHeight)
-                .frame(maxWidth: .infinity)
+                .frame(width: cardWidth, height: cardHeight)
         } else if let cardWidth {
             Color.clear
                 .aspectRatio(imageAspectRatio, contentMode: .fit)
