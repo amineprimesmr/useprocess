@@ -22,11 +22,11 @@ struct MealIngredientRadialChart: View {
             let size = min(geo.size.width, geo.size.height)
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
-            let centerRadius = size * 0.148
-            let petalWidth = size * 0.455
-            let petalLength = size * 0.43
-            let petalAnchorOverlap = size * 0.155
-            let labelDistance = centerRadius + petalLength * 0.70
+            let centerRadius = size * 0.112
+            let petalWidth = size * 0.375
+            let petalLength = size * 0.515
+            let petalAnchorOverlap = size * 0.238
+            let labelDistance = centerRadius + petalLength * 0.53
             let count = max(segments.count, 1)
             let step = 360.0 / Double(count)
 
@@ -56,7 +56,7 @@ struct MealIngredientRadialChart: View {
                 ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                     let angleRad = (step * Double(index) - 90) * .pi / 180
                     label(for: segment)
-                        .frame(width: petalWidth * 1.05)
+                        .frame(width: petalWidth * 0.92)
                         .position(
                             x: center.x + cos(angleRad) * labelDistance,
                             y: center.y + sin(angleRad) * labelDistance
@@ -76,7 +76,7 @@ struct MealIngredientRadialChart: View {
                     .animation(.spring(response: 0.74, dampingFraction: 0.76).delay(0.06), value: appeared)
             }
         }
-        .frame(height: 356)
+        .frame(height: 330)
         .padding(.horizontal, 0)
         .onAppear { triggerAppearance() }
     }
@@ -100,7 +100,7 @@ struct MealIngredientRadialChart: View {
         ZStack {
             FlowerPetalShape()
                 .fill(ghostFill)
-                .scaleEffect(x: 1.08, y: 1.10, anchor: .bottom)
+                .scaleEffect(x: 1.17, y: 1.12, anchor: .bottom)
                 .shadow(color: .black.opacity(0.045), radius: 8, x: 0, y: 4)
 
             FlowerPetalShape()
@@ -153,7 +153,7 @@ struct MealIngredientRadialChart: View {
             ForEach(0..<6, id: \.self) { index in
                 FlowerPetalShape()
                     .fill(Color.white.opacity(0.88))
-                    .frame(width: petalWidth * 1.14, height: petalLength * 1.12)
+                    .frame(width: petalWidth * 1.22, height: petalLength * 1.14)
                     .offset(y: -(centerRadius + petalLength / 2 - petalAnchorOverlap))
                     .rotationEffect(.degrees(step * Double(index)))
             }
@@ -178,8 +178,8 @@ struct MealIngredientRadialChart: View {
                     endRadius: radius * 1.55
                 )
             )
-            .frame(width: radius * 2.8, height: radius * 2.8)
-            .blur(radius: 8)
+            .frame(width: radius * 3.9, height: radius * 3.9)
+            .blur(radius: 10)
     }
 
     @ViewBuilder
@@ -187,12 +187,12 @@ struct MealIngredientRadialChart: View {
         ZStack {
             Circle()
                 .fill(Color.white)
-                .frame(width: radius * 2 + 16, height: radius * 2 + 16)
+                .frame(width: radius * 2 + 20, height: radius * 2 + 20)
                 .shadow(color: .black.opacity(0.14), radius: 16, x: 0, y: 7)
 
             Circle()
                 .strokeBorder(Color.white, lineWidth: 5)
-                .frame(width: radius * 2 + 6, height: radius * 2 + 6)
+                .frame(width: radius * 2 + 8, height: radius * 2 + 8)
 
             OptionalAssetImage(
                 name: imageAssetName,
@@ -258,27 +258,42 @@ struct MealIngredientRadialChart: View {
 private struct FlowerPetalShape: Shape {
     func path(in rect: CGRect) -> Path {
         let midX = rect.midX
-        let topY = rect.minY + rect.height * 0.03
         let bottomY = rect.maxY
-        let topHalf = rect.width * 0.40
-        let waistHalf = rect.width * 0.50
-        let baseHalf = rect.width * 0.08
+        let topY = rect.minY + rect.height * 0.045
+        let baseHalf = rect.width * 0.155
+        let topLeft = CGPoint(x: rect.minX + rect.width * 0.17, y: topY + rect.height * 0.05)
+        let topRight = CGPoint(x: rect.maxX - rect.width * 0.17, y: topY + rect.height * 0.05)
+        let leftShoulder = CGPoint(x: rect.minX + rect.width * 0.025, y: rect.minY + rect.height * 0.42)
+        let rightShoulder = CGPoint(x: rect.maxX - rect.width * 0.025, y: rect.minY + rect.height * 0.42)
+        let leftBase = CGPoint(x: midX - baseHalf, y: bottomY)
+        let rightBase = CGPoint(x: midX + baseHalf, y: bottomY)
 
         var path = Path()
-        path.move(to: CGPoint(x: midX - baseHalf, y: bottomY))
+        path.move(to: leftBase)
         path.addCurve(
-            to: CGPoint(x: midX - topHalf, y: topY + rect.height * 0.24),
-            control1: CGPoint(x: midX - waistHalf, y: bottomY - rect.height * 0.38),
-            control2: CGPoint(x: midX - waistHalf, y: topY + rect.height * 0.12)
-        )
-        path.addQuadCurve(
-            to: CGPoint(x: midX + topHalf, y: topY + rect.height * 0.24),
-            control: CGPoint(x: midX, y: topY - rect.height * 0.09)
+            to: leftShoulder,
+            control1: CGPoint(x: rect.minX + rect.width * 0.06, y: rect.maxY - rect.height * 0.12),
+            control2: CGPoint(x: rect.minX - rect.width * 0.02, y: rect.minY + rect.height * 0.58)
         )
         path.addCurve(
-            to: CGPoint(x: midX + baseHalf, y: bottomY),
-            control1: CGPoint(x: midX + waistHalf, y: topY + rect.height * 0.12),
-            control2: CGPoint(x: midX + waistHalf, y: bottomY - rect.height * 0.38)
+            to: topLeft,
+            control1: CGPoint(x: rect.minX + rect.width * 0.025, y: rect.minY + rect.height * 0.19),
+            control2: CGPoint(x: rect.minX + rect.width * 0.06, y: topY)
+        )
+        path.addCurve(
+            to: topRight,
+            control1: CGPoint(x: rect.minX + rect.width * 0.33, y: rect.minY - rect.height * 0.045),
+            control2: CGPoint(x: rect.maxX - rect.width * 0.33, y: rect.minY - rect.height * 0.045)
+        )
+        path.addCurve(
+            to: rightShoulder,
+            control1: CGPoint(x: rect.maxX - rect.width * 0.06, y: topY),
+            control2: CGPoint(x: rect.maxX - rect.width * 0.025, y: rect.minY + rect.height * 0.19)
+        )
+        path.addCurve(
+            to: rightBase,
+            control1: CGPoint(x: rect.maxX + rect.width * 0.02, y: rect.minY + rect.height * 0.58),
+            control2: CGPoint(x: rect.maxX - rect.width * 0.06, y: rect.maxY - rect.height * 0.12)
         )
         path.closeSubpath()
         return path
