@@ -80,6 +80,16 @@ struct FaceScanResultSheet: View {
         CoachEngine.parsedFaceAnalysis(for: result)
     }
 
+    private var unavailableAnalysisMessage: String {
+        if !ClaudeConfiguration.isConfigured {
+            return "Analyse Claude non configurée — tes scores locaux sont enregistrés."
+        }
+        if !ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI {
+            return "Analyse Claude désactivée dans Paramètres — tes scores locaux sont enregistrés."
+        }
+        return "Analyse Claude indisponible — tes scores locaux sont enregistrés."
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -119,7 +129,7 @@ struct FaceScanResultSheet: View {
                             .font(.subheadline)
                             .foregroundStyle(theme.primaryText)
                     } else {
-                        Text("Analyse Claude indisponible — tes scores locaux sont enregistrés.")
+                        Text(unavailableAnalysisMessage)
                             .font(.caption)
                             .foregroundStyle(theme.secondaryText)
                     }

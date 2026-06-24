@@ -105,6 +105,28 @@ final class ProcessPrivacyConsentStore {
         }
     }
 
+    func acceptFaceScanAI() {
+        hasAcceptedFaceScanCapture = true
+        hasAcceptedFaceScanAI = true
+        if faceScanCaptureAcceptedAt == nil {
+            faceScanCaptureAcceptedAt = Date()
+            persistDate(faceScanCaptureAcceptedAt, key: "privacy.face_capture.date")
+        }
+        persistBool(true, key: "privacy.face_capture")
+        persistBool(true, key: "privacy.face_ai")
+
+        if !hasAcceptedThirdPartyAI {
+            hasAcceptedThirdPartyAI = true
+            thirdPartyAIAcceptedAt = Date()
+            persistBool(true, key: "privacy.ai_third_party")
+            persistDate(thirdPartyAIAcceptedAt, key: "privacy.ai_third_party.date")
+        }
+    }
+
+    func revokeFaceScanAI() {
+        revokeFaceScanAIOnly()
+    }
+
     func revokeThirdPartyAI() {
         hasAcceptedThirdPartyAI = false
         thirdPartyAIAcceptedAt = nil

@@ -192,7 +192,7 @@ struct FaceScanPrivacyConsentView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Analyse IA de ma photo (Anthropic Claude)")
                                 .font(.subheadline.weight(.semibold))
-                            Text("Option désactivée par défaut. Si tu l'actives, la photo JPEG du scan est envoyée à Anthropic via Firebase pour une analyse wellness ponctuelle.")
+                            Text("Activée pour enrichir le scan avec Claude. Si tu la coupes, la photo reste locale et seuls les scores appareil sont enregistrés.")
                                 .font(.caption)
                                 .foregroundStyle(theme.secondaryText)
                         }
@@ -285,7 +285,7 @@ struct FaceScanPrivacyGateView: View {
 
     @State private var consentStore = ProcessPrivacyConsentStore.shared
     @State private var showScanner = false
-    @State private var enableAIAnalysis = false
+    @State private var enableAIAnalysis = true
 
     var body: some View {
         Group {
@@ -323,7 +323,7 @@ struct FaceScanCapturePrivacyGateView: View {
 
     @State private var consentStore = ProcessPrivacyConsentStore.shared
     @State private var showScanner = false
-    @State private var enableAIAnalysis = false
+    @State private var enableAIAnalysis = true
 
     var body: some View {
         Group {
