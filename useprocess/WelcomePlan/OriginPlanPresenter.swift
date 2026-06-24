@@ -61,7 +61,10 @@ enum OriginPlanPresenter {
         includeMeals: Bool = true,
         includeTraining: Bool = true
     ) -> [PlanDayPhase] {
-        let posture = day.posture.filter { !isAutomaticStepsTask($0) }
+        let morning = visibleJournalTasks(day.morning)
+        let posture = visibleJournalTasks(day.posture)
+        let face = visibleJournalTasks(day.face)
+        let evening = visibleJournalTasks(day.evening)
         var phases: [PlanDayPhase] = []
 
         let lastNight = lastNightJournalTasks(dayId: day.id)
@@ -74,12 +77,12 @@ enum OriginPlanPresenter {
             ))
         }
 
-        if !day.morning.isEmpty {
+        if !morning.isEmpty {
             phases.append(.init(
                 id: "morning",
                 title: "Matin",
                 timeHint: "Au réveil",
-                kind: .checklist(day.morning)
+                kind: .checklist(morning)
             ))
         }
 
@@ -119,21 +122,21 @@ enum OriginPlanPresenter {
             ))
         }
 
-        if !day.face.isEmpty {
+        if !face.isEmpty {
             phases.append(.init(
                 id: "face",
                 title: "Visage",
                 timeHint: "Routine",
-                kind: .checklist(day.face)
+                kind: .checklist(face)
             ))
         }
 
-        if !day.evening.isEmpty {
+        if !evening.isEmpty {
             phases.append(.init(
                 id: "evening",
                 title: "Soir",
                 timeHint: nightRangeLabel(for: day, calendar: calendar) ?? "Avant le coucher",
-                kind: .checklist(day.evening)
+                kind: .checklist(evening)
             ))
         }
 
@@ -152,12 +155,41 @@ enum OriginPlanPresenter {
     }
 
     static func manualJournalTasks(from day: OriginProgramDay) -> [OriginPlanTask] {
-        let posture = day.posture.filter { !isAutomaticStepsTask($0) }
-        return lastNightJournalTasks(dayId: day.id) + day.morning + posture + day.face + day.evening
+        visibleJournalTasks(
+            lastNightJournalTasks(dayId: day.id)
+            + day.morning
+            + day.posture
+            + day.face
+            + day.evening
+        )
     }
 
     static func isAutomaticStepsTask(_ task: OriginPlanTask) -> Bool {
-        task.title.lowercased().contains("marche")
+        let text = searchableText(for: task)
+        return text.contains("marche")
+            || text.contains("healthkit")
+            || text.contains("objectif \(ProcessDailyTargets.dailySteps) pas")
+            || text.contains("steps")
+    }
+
+    static func visibleJournalTasks(_ tasks: [OriginPlanTask]) -> [OriginPlanTask] {
+        tasks.filter { !isHiddenJournalChecklistTask($0) }
+    }
+
+    static func isHiddenJournalChecklistTask(_ task: OriginPlanTask) -> Bool {
+        let text = searchableText(for: task)
+        if isAutomaticStepsTask(task) { return true }
+        if text.contains("mewing") { return true }
+        if text.contains("mastication") || text.contains("machées") || text.contains("mâchées") { return true }
+        if text.contains("routine soir") { return true }
+        if (text.contains("dîner") || text.contains("diner")) && text.contains("debloat") { return true }
+        return false
+    }
+
+    private static func searchableText(for task: OriginPlanTask) -> String {
+        "\(task.title) \(task.detail) \(task.pillar)"
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
     }
 
     struct JournalSection: Identifiable {

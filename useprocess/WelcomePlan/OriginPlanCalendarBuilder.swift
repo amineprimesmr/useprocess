@@ -344,9 +344,7 @@ enum OriginPlanCalendarBuilder {
         targets: OriginPersonalizedDailyTargets,
         dayId: String
     ) -> [OriginPlanTask] {
-        var tasks = [
-            task("Marche", "Objectif \(targets.dailySteps) pas — HealthKit", "Posture", 30, dayId: dayId)
-        ]
+        var tasks: [OriginPlanTask] = []
         if let check = plan.postureProtocol.dailyChecks.first {
             tasks.append(task("Posture", check, "Posture", 5, dayId: dayId))
         }
@@ -362,13 +360,6 @@ enum OriginPlanCalendarBuilder {
         weekday: Int
     ) -> [OriginPlanTask] {
         var tasks: [OriginPlanTask] = [
-            task(
-                "Mewing & mastication",
-                plan.faceProtocol.jawAndTongueWork.first ?? "Mastication consciente",
-                "Visage",
-                nil,
-                dayId: dayId
-            ),
             task(
                 "Massage lymphatique",
                 "\(targets.lymphFaceMassageMinutes) min sous les yeux vers les oreilles",
@@ -401,20 +392,6 @@ enum OriginPlanCalendarBuilder {
         dayId: String
     ) -> [OriginPlanTask] {
         var tasks: [OriginPlanTask] = []
-
-        if let evening = plan.sleepProtocol.eveningRoutine.first {
-            tasks.append(task("Routine soir", evening, "Sommeil", nil, dayId: dayId))
-        }
-
-        tasks.append(
-            task(
-                "Dîner debloat",
-                "Protéines + légumes cuits — sel modéré (évite le gonflement demain)",
-                "Nutrition",
-                nil,
-                dayId: dayId
-            )
-        )
 
         if answers["screen_before_bed"]?.choiceIds.first == "yes" {
             tasks.append(

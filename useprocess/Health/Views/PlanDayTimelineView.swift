@@ -9,153 +9,24 @@ struct PlanDayChronologicalTimeline: View {
     var isEditable: Bool = true
     var onTaskStatusChange: (String, String, JournalTaskStatus?) -> Void
 
-    @EnvironmentObject private var healthManager: HealthManager
-    @Environment(\.appTheme) private var theme
-
-    @State private var selectedTraining: OriginDayTraining?
-    @State private var showTrainingDetail = false
-    @State private var showNutritionGuide = false
-
-    private var isSelectedToday: Bool {
-        Calendar.current.isDateInToday(selectedDate)
-    }
-
-    private var phases: [OriginPlanPresenter.PlanDayPhase] {
-        OriginPlanPresenter.chronologicalPhases(
-            for: day,
-            calendar: plan.calendar,
-            includeAutoTracking: isSelectedToday,
-            includeMeals: false,
-            includeTraining: false
-        )
+    private var checklistTasks: [OriginPlanTask] {
+        OriginPlanPresenter.manualJournalTasks(from: day)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            ForEach(phases) { phase in
-                PlanDayTimelinePhaseRow(
-                    phase: phase,
-                    day: day,
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(checklistTasks) { task in
+                JournalTaskRow(
+                    task: task,
+                    dayId: day.id,
                     plan: plan,
                     isEditable: isEditable,
-                    healthSnapshot: healthManager.todaySnapshot,
-                    onTaskStatusChange: onTaskStatusChange,
-                    onOpenTraining: {
-                        selectedTraining = $0
-                        showTrainingDetail = true
-                    },
-                    onOpenNutritionGuide: { showNutritionGuide = true }
+                    onStatusChange: { status in
+                        onTaskStatusChange(task.id, day.id, status)
+                    }
                 )
             }
         }
-        .sheet(isPresented: $showTrainingDetail) {
-            if let training = selectedTraining {
-                PlanTrainingDetailSheet(training: training, dayTitle: day.title)
-            }
-        }
-        .sheet(isPresented: $showNutritionGuide) {
-            PlanDebloatGuideSheet(initialPillar: .nutrition)
-        }
-    }
-}
-
-// MARK: - Ligne de phase
-
-private struct PlanDayTimelinePhaseRow: View {
-    let phase: OriginPlanPresenter.PlanDayPhase
-    let day: OriginProgramDay
-    let plan: FaceOriginPlan
-    var isEditable: Bool
-    var healthSnapshot: DailyHealthSnapshot
-    var onTaskStatusChange: (String, String, JournalTaskStatus?) -> Void
-    var onOpenTraining: (OriginDayTraining) -> Void
-    var onOpenNutritionGuide: () -> Void
-
-    @Environment(\.appTheme) private var theme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            phaseHeader
-            phaseContent
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var phaseHeader: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(phase.title)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(theme.primaryText)
-            if let hint = phase.timeHint {
-                Text(hint)
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var phaseContent: some View {
-        switch phase.kind {
-        case .checklist(let tasks):
-            VStack(spacing: 8) {
-                ForEach(tasks) { task in
-                    JournalTaskRow(
-                        task: task,
-                        dayId: day.id,
-                        plan: plan,
-                        isEditable: isEditable,
-                        onStatusChange: { status in
-                            onTaskStatusChange(task.id, day.id, status)
-                        }
-                    )
-                }
-            }
-
-        case .meals:
-            OriginMealSuggestionCard(plan: plan, day: day, isEditable: isEditable)
-                .environmentObject(UnifiedProfileService.shared)
-
-            PlanInfoLinkButton(
-                title: "Comprendre la nutrition debloat",
-                systemImage: "book.fill",
-                action: onOpenNutritionGuide
-            )
-
-        case .training(let training):
-            PlanTrainingSummaryCard(training: training) {
-                onOpenTraining(training)
-            }
-
-        case .autoTracking:
-            VStack(spacing: 8) {
-                PlanAutoMetricRow(
-                    emoji: "👟",
-                    title: "\(formatted(ProcessDailyTargets.dailySteps))+ pas",
-                    value: healthSnapshot.effort.steps > 0
-                        ? formatted(healthSnapshot.effort.steps) + " pas"
-                        : "—",
-                    progress: Double(healthSnapshot.effort.steps) / Double(max(ProcessDailyTargets.dailySteps, 1))
-                )
-
-                if healthSnapshot.effort.exerciseMinutes > 0 {
-                    PlanAutoMetricRow(
-                        emoji: "🏃",
-                        title: "Exercice",
-                        value: "\(Int(healthSnapshot.effort.exerciseMinutes)) min",
-                        progress: healthSnapshot.effort.exerciseMinutes / 30
-                    )
-                }
-            }
-        }
-    }
-
-    private func formatted(_ value: Int) -> String {
-        let nf = NumberFormatter()
-        nf.locale = Locale(identifier: "fr_FR")
-        nf.numberStyle = .decimal
-        nf.groupingSeparator = " "
-        return nf.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }
 
@@ -193,83 +64,6 @@ struct PlanInfoLinkButton: View {
         .buttonStyle(.plain)
     }
 }
-
-private struct PlanTrainingSummaryCard: View {
-    let training: OriginDayTraining
-    let onOpen: () -> Void
-
-    @Environment(\.appTheme) private var theme
-
-    var body: some View {
-        Button(action: onOpen) {
-            HStack(spacing: 14) {
-                Text("🏋️")
-                    .font(.system(size: 26))
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(training.sessionName)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
-                        .multilineTextAlignment(.leading)
-                    Text("\(training.exercises.count) exercices · \(training.durationMinutes) min")
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(theme.secondaryText)
-            }
-            .padding(14)
-            .background(planCardBackground)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var planCardBackground: some View {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(theme.isDark ? Color(red: 0.11, green: 0.11, blue: 0.12) : theme.cardBackgroundStrong)
-    }
-}
-
-private struct PlanAutoMetricRow: View {
-    let emoji: String
-    let title: String
-    let value: String
-    let progress: Double
-
-    @Environment(\.appTheme) private var theme
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Text(emoji)
-                .font(.system(size: 26))
-                .frame(width: 32, alignment: .center)
-
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(theme.primaryText)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(value)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(theme.secondaryText)
-                .monospacedDigit()
-
-            JournalCircularProgressRing(
-                progress: progress,
-                fillColor: progress >= 1 ? Color(red: 0.35, green: 0.78, blue: 0.45) : theme.secondaryText.opacity(0.5)
-            )
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 13)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(theme.isDark ? Color(red: 0.11, green: 0.11, blue: 0.12) : theme.cardBackgroundStrong)
-        )
-    }
-}
-
-// MARK: - Fiches détail
 
 struct PlanTrainingDetailSheet: View {
     let training: OriginDayTraining
