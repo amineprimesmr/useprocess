@@ -218,6 +218,12 @@ struct PaywallBevelBackdrop: View {
 struct PaywallBevelFeatureRow: View {
     @Environment(\.colorScheme) private var colorScheme
     let item: PaywallFeatureItem
+    let onNutritionSecretUnlock: (() -> Void)?
+
+    init(item: PaywallFeatureItem, onNutritionSecretUnlock: (() -> Void)? = nil) {
+        self.item = item
+        self.onNutritionSecretUnlock = onNutritionSecretUnlock
+    }
 
     private var iconSize: CGFloat { 48 }
     private var iconContainerSize: CGFloat { 62 }
@@ -231,10 +237,7 @@ struct PaywallBevelFeatureRow: View {
                 .frame(width: iconContainerSize, height: iconContainerSize)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(item.title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
-                    .multilineTextAlignment(.leading)
+                featureTitle
                 Text(item.subtitle)
                     .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
@@ -244,6 +247,29 @@ struct PaywallBevelFeatureRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 11)
+    }
+
+    @ViewBuilder
+    private var featureTitle: some View {
+        if item.id == "nutrition" {
+            HStack(spacing: 4) {
+                Text("Plan nutritionnel")
+                Text("facile")
+                    #if DEBUG
+                    .onTapGesture(count: 2) {
+                        onNutritionSecretUnlock?()
+                    }
+                    #endif
+            }
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
+            .multilineTextAlignment(.leading)
+        } else {
+            Text(item.title)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
+                .multilineTextAlignment(.leading)
+        }
     }
 
     @ViewBuilder
@@ -312,6 +338,17 @@ struct PaywallBevelAlsoIncludesDivider: View {
 struct PaywallBevelAutoScrollingFeatures: View {
     let primary: [PaywallFeatureItem]
     let alsoIncluded: [PaywallFeatureItem]
+    let onNutritionSecretUnlock: (() -> Void)?
+
+    init(
+        primary: [PaywallFeatureItem],
+        alsoIncluded: [PaywallFeatureItem],
+        onNutritionSecretUnlock: (() -> Void)? = nil
+    ) {
+        self.primary = primary
+        self.alsoIncluded = alsoIncluded
+        self.onNutritionSecretUnlock = onNutritionSecretUnlock
+    }
 
     private let pixelsPerSecond: CGFloat = 16
 
@@ -396,10 +433,14 @@ struct PaywallBevelAutoScrollingFeatures: View {
     @ViewBuilder
     private var featureStack: some View {
         VStack(spacing: 0) {
-            ForEach(primary) { PaywallBevelFeatureRow(item: $0) }
+            ForEach(primary) {
+                PaywallBevelFeatureRow(item: $0, onNutritionSecretUnlock: onNutritionSecretUnlock)
+            }
             if !alsoIncluded.isEmpty {
                 PaywallBevelAlsoIncludesDivider()
-                ForEach(alsoIncluded) { PaywallBevelFeatureRow(item: $0) }
+                ForEach(alsoIncluded) {
+                    PaywallBevelFeatureRow(item: $0, onNutritionSecretUnlock: onNutritionSecretUnlock)
+                }
             }
         }
         .padding(.horizontal, 22)

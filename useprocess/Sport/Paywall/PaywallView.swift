@@ -63,7 +63,8 @@ struct PaywallView: View {
 
                 PaywallBevelAutoScrollingFeatures(
                     primary: PaywallBevelFeatureCatalog.primary,
-                    alsoIncluded: PaywallBevelFeatureCatalog.alsoIncluded
+                    alsoIncluded: PaywallBevelFeatureCatalog.alsoIncluded,
+                    onNutritionSecretUnlock: activateDeveloperPremiumAccess
                 )
                 .padding(.top, 4)
                 .padding(.bottom, 12)
@@ -435,6 +436,15 @@ struct PaywallView: View {
                 purchaseError = "Impossible d'ouvrir la page de code promo."
             }
         }
+    }
+
+    private func activateDeveloperPremiumAccess() {
+        #if DEBUG
+        HapticManager.shared.notification(.success)
+        hasScheduledExitNotification = true
+        subscriptionService.activateDeveloperPremiumAccess()
+        completePaywallFlow()
+        #endif
     }
 
     private func scheduleExitNotificationIfNeeded() {

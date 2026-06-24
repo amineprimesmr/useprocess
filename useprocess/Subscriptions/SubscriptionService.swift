@@ -50,6 +50,14 @@ final class SubscriptionService: NSObject, ObservableObject {
         hasLiveMonthlyProduct || hasLiveAnnualProduct
     }
 
+    #if DEBUG
+    func activateDeveloperPremiumAccess() {
+        subscriptionStatus = .subscribed
+        isInFreeTrial = false
+        trialExpirationDate = nil
+    }
+    #endif
+
     private override init() {
         super.init()
     }
