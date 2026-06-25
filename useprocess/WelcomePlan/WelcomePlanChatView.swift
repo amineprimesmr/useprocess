@@ -180,16 +180,9 @@ struct WelcomePlanChatView: View {
     @ViewBuilder
     private func activeSlot(layout: ChatLayoutMetrics, bottomPadding: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
-            HStack(alignment: .top, spacing: 0) {
-                if viewModel.isMessageAnimating {
-                    CoachThinkingDotsView()
-                        .frame(width: 36)
-                }
-
-                if let active = activeMessage {
-                    depthMessageRow(active, distanceFromActive: 0)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+            if let active = activeMessage {
+                depthMessageRow(active, distanceFromActive: 0)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if viewModel.showsAnswerOptions, let question = viewModel.currentQuestion {

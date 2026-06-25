@@ -171,16 +171,9 @@ struct OnboardingProfileChatView: View {
         let bottomPadding: CGFloat = chatViewModel.showsLetsGoButton ? 110 : 36
 
         VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
-            HStack(alignment: .top, spacing: 0) {
-                if chatViewModel.isMessageAnimating {
-                    CoachThinkingDotsView()
-                        .frame(width: 36)
-                }
-
-                if let active = activeMessage {
-                    depthMessageRow(active, distanceFromActive: 0)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+            if let active = activeMessage {
+                depthMessageRow(active, distanceFromActive: 0)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if chatViewModel.showsAnswerOptions,
