@@ -38,6 +38,10 @@ struct MainAppView: View {
                 selectedSection = .plan
             }
             _ = UserSessionCoordinator.shared
+            CoachPresentationTracker.shared.isCoachPresented = isCoachPresented
+        }
+        .onChange(of: isCoachPresented) { _, presented in
+            CoachPresentationTracker.shared.isCoachPresented = presented
         }
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
             if !completed {

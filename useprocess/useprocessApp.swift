@@ -10,6 +10,7 @@ import FirebaseCore
 struct useprocessApp: App {
     init() {
         iOS26Stability.configureAtLaunch()
+        CoachIntelligenceNotificationService.configure()
         FirebaseBootstrap.configure()
         SubscriptionService.shared.configure()
     }

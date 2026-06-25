@@ -10,6 +10,10 @@ enum OriginPlanPresenter {
         return plan.calendar.day(globalIndex: index)
     }
 
+    static func todayDayTitle(in plan: FaceOriginPlan, date: Date = Date()) -> String? {
+        todayDay(in: plan, date: date)?.title
+    }
+
     static func todayChecklist(from day: OriginProgramDay, plan: FaceOriginPlan) -> [OriginPlanTask] {
         manualJournalTasks(from: day, plan: plan)
     }

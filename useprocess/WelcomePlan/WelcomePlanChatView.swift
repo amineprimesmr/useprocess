@@ -95,6 +95,9 @@ struct WelcomePlanChatView: View {
                 onComplete: { _ in showFaceScan = false }
             )
         }
+        .onDisappear {
+            WelcomePlanStore.shared.touchQuestionnaireProgress()
+        }
     }
 
     private var topChromeInset: CGFloat { 0 }

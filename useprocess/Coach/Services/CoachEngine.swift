@@ -85,6 +85,11 @@ enum CoachEngine {
             \(focus.sectionContent)
             """
         }
+
+        system += CoachIntelligencePromptBuilder.intelligenceBlock(
+            isModify: isModify,
+            isMeal: isMealQuestion(userText)
+        )
         return system
     }
 

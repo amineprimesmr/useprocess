@@ -7,11 +7,40 @@ final class CoachPlanNavigationBridge {
 
     var pendingPrompt: String?
     var pendingFocus: CoachPlanFocus?
+    var pendingConversationId: UUID?
+    var pendingCheckInPrompt: String?
     var shouldOpenCoach = false
     var shouldOpenPlan = false
+    var shouldOpenFaceScan = false
+    var shouldOpenTracking = false
+    var shouldOpenIntegration = false
 
     func openPlan() {
         shouldOpenPlan = true
+    }
+
+    func openCoach(conversationId: UUID? = nil) {
+        pendingConversationId = conversationId
+        shouldOpenCoach = true
+    }
+
+    func openCoachWithCheckIn(prompt: String) {
+        pendingCheckInPrompt = prompt
+        shouldOpenCoach = true
+    }
+
+    func openDeepLink(_ action: CoachDeepLinkAction) {
+        switch action {
+        case .plan, .journal:
+            shouldOpenPlan = true
+        case .scan:
+            shouldOpenFaceScan = true
+        case .streak:
+            shouldOpenTracking = true
+        case .integration:
+            shouldOpenIntegration = true
+        }
+        shouldOpenCoach = true
     }
 
     func askCoachAboutPlan(focus: CoachPlanFocus) {
@@ -29,6 +58,12 @@ final class CoachPlanNavigationBridge {
     func consumePendingPrompt() -> String? {
         let prompt = pendingPrompt
         pendingPrompt = nil
+        return prompt
+    }
+
+    func consumePendingCheckInPrompt() -> String? {
+        let prompt = pendingCheckInPrompt
+        pendingCheckInPrompt = nil
         return prompt
     }
 

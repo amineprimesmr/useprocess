@@ -66,7 +66,16 @@ final class WelcomePlanStore {
     }
 
     func saveAnswer(questionId: String, answer: WelcomePlanAnswer) {
+        let isFirstAnswer = questionnaire.answers.isEmpty
         questionnaire.answers[questionId] = answer
+        if isFirstAnswer {
+            questionnaire.startedAt = Date()
+        }
+        persistQuestionnaire()
+    }
+
+    /// Sauvegarde l'état courant du questionnaire (reprise après sortie).
+    func touchQuestionnaireProgress() {
         persistQuestionnaire()
     }
 

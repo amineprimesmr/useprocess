@@ -4,182 +4,223 @@ struct CoachConversationsSidebar: View {
     @Binding var isExpanded: Bool
     var conversations: [CoachConversation]
     var activeConversationId: UUID?
-    var profile: UnifiedUserProfile?
+    var integrationProgress: Double
+    var isIntegrationComplete: Bool
     var onSelect: (UUID) -> Void
     var onCreate: () -> Void
     var onDelete: (UUID) -> Void
-    var onOpenProfile: () -> Void
-    var onOpenWelcomePlan: (() -> Void)? = nil
+    var onOpenIntegration: () -> Void
+    var onDeleteAllConversations: () async -> Void
+    var onDeleteAllFiles: () -> Void
+    var onResyncHistory: () async -> Void
+
+    /// Ligne surlignée uniquement quand sa sheet / flow est ouvert(e).
+    var activeDestination: CoachSidebarDestination?
 
     @Environment(\.appTheme) private var theme
-    @State private var profileStore = SocialProfileStore.shared
+    @FocusState private var isSearchFocused: Bool
+
+    @State private var searchText = ""
     @State private var showSettings = false
+    @Binding var presentedSheet: CoachSidebarDestination?
 
-    private var resolvedSocialProfile: SocialProfile {
-        if let saved = profileStore.profile {
-            return saved
+    private let chromeShape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+
+    private var filteredConversations: [CoachConversation] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return conversations }
+        return conversations.filter {
+            $0.sidebarSubject.localizedCaseInsensitiveContains(query)
         }
-        if let unified = profile {
-            return SocialProfile.from(unified: unified)
-        }
-        return .guest
-    }
-
-    private var displayName: String {
-        let name = resolvedSocialProfile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return name.isEmpty ? "Profil" : name
-    }
-
-    private var handle: String {
-        "@\(resolvedSocialProfile.username)"
-    }
-
-    private var avatarInitials: String {
-        let parts = displayName.split(separator: " ")
-        let first = parts.first?.first.map(String.init) ?? "?"
-        let last = parts.dropFirst().first?.first.map(String.init) ?? ""
-        return (first + last).uppercased()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
+            topChrome
+                .padding(.bottom, 18)
 
-            conversationsList
-                .padding(.top, 12)
+            navigationSection
+                .padding(.bottom, 22)
 
-            Spacer(minLength: 0)
+            conversationsSection
 
-            if onOpenWelcomePlan != nil {
-                welcomePlanButton
-                    .padding(.top, 12)
-            }
+            Spacer(minLength: 12)
 
-            newConversationButton
-                .padding(.top, 12)
+            settingsFooter
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding(.horizontal, 15)
-        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 12)
+        .padding(.horizontal, 16)
+        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 10)
         .padding(.bottom, 20)
         .background(theme.background)
-        .onAppear {
-            profileStore.bind(unified: profile)
-        }
-        .onChange(of: profile?.userId) { _, _ in
-            profileStore.bind(unified: profile)
-        }
         .sheet(isPresented: $showSettings) {
-            NavigationStack {
-                ProcessSettingsView()
+            CoachIntelligenceSettingsView(
+                onDeleteAllConversations: onDeleteAllConversations,
+                onDeleteAllFiles: onDeleteAllFiles,
+                onResyncHistory: onResyncHistory
+            )
+        }
+        .sheet(item: $presentedSheet) { destination in
+            destinationSheet(for: destination)
+        }
+    }
+
+    // MARK: - Top chrome
+
+    private var topChrome: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(theme.secondaryText)
+
+                TextField("Rechercher", text: $searchText)
+                    .font(.body)
+                    .foregroundStyle(theme.primaryText)
+                    .focused($isSearchFocused)
+                    .submitLabel(.search)
+
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(theme.secondaryText)
+                            .frame(width: 20, height: 20)
+                            .background(Circle().fill(theme.secondaryText.opacity(0.18)))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .frame(maxWidth: .infinity)
+            .processGlassEffect(in: chromeShape, interactive: false)
+
+            Button {
+                isExpanded = false
+                onCreate()
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .frame(width: 40, height: 40)
+            }
+            .processGlassButton(in: chromeShape)
+            .accessibilityLabel("Nouvelle conversation")
+        }
+    }
+
+    // MARK: - Navigation
+
+    private var navigationSection: some View {
+        VStack(spacing: 2) {
+            ForEach(CoachSidebarDestination.allCases) { destination in
+                navigationRow(destination)
             }
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Button {
-                isExpanded = false
-                onOpenProfile()
-            } label: {
-                HStack(spacing: 12) {
-                    profileAvatar
+    private func navigationRow(_ destination: CoachSidebarDestination) -> some View {
+        let isHighlighted = activeDestination == destination
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(displayName)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(theme.primaryText)
-                        Text(handle)
-                            .font(.subheadline)
-                            .foregroundStyle(theme.secondaryText)
-                    }
+        return Button {
+            isExpanded = false
+            handleDestinationTap(destination)
+        } label: {
+            HStack(spacing: 12) {
+                if destination == .integration {
+                    CoachIntegrationProgressIcon(
+                        progress: integrationProgress,
+                        isComplete: isIntegrationComplete
+                    )
+                    .frame(width: 22, height: 22)
+                } else {
+                    Image(systemName: destination.icon)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(theme.primaryText.opacity(0.92))
+                        .frame(width: 22, height: 22)
                 }
-                .contentShape(Rectangle())
+
+                Text(destination.title)
+                    .font(.body.weight(isHighlighted ? .semibold : .regular))
+                    .foregroundStyle(theme.primaryText)
+
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
-
-            Spacer(minLength: 0)
-
-            ProcessGlassIconButton(systemName: "gearshape.fill", iconSize: 18) {
-                isExpanded = false
-                showSettings = true
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .background {
+                if isHighlighted {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(theme.primaryText.opacity(theme.isDark ? 0.1 : 0.06))
+                }
             }
         }
-        .padding(.bottom, 6)
+        .buttonStyle(.plain)
+    }
+
+    private func handleDestinationTap(_ destination: CoachSidebarDestination) {
+        switch destination {
+        case .integration:
+            onOpenIntegration()
+        case .healthRecords, .files, .tracking:
+            presentedSheet = destination
+        }
     }
 
     @ViewBuilder
-    private var profileAvatar: some View {
-        Group {
-            if let image = profileStore.profilePhoto {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                ZStack {
-                    Circle().fill(ProfileTheme.avatarAccent)
-                    Text(avatarInitials.prefix(2))
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-            }
-        }
-        .frame(width: 52, height: 52)
-        .clipShape(Circle())
-    }
-
-    private var welcomePlanButton: some View {
-        ProcessGlassWideButton(
-            title: "Protocole Origine",
-            icon: "leaf.fill"
-        ) {
-            isExpanded = false
-            onOpenWelcomePlan?()
+    private func destinationSheet(for destination: CoachSidebarDestination) -> some View {
+        switch destination {
+        case .healthRecords:
+            CoachHealthRecordsSheet()
+        case .files:
+            CoachFilesSheet()
+        case .tracking:
+            CoachTrackingSheet()
+        case .integration:
+            EmptyView()
         }
     }
 
-    private var newConversationButton: some View {
-        ProcessGlassWideButton(
-            title: "Nouvelle conversation",
-            icon: "square.and.pencil"
-        ) {
-            isExpanded = false
-            onCreate()
-        }
-    }
+    // MARK: - Conversations
 
-    private var conversationsList: some View {
+    private var conversationsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Historique")
+            Text("Conversations")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
-                .textCase(.uppercase)
-                .padding(.bottom, 8)
+                .padding(.bottom, 10)
 
-            Group {
+            if filteredConversations.isEmpty {
+                emptyConversationsState
+            } else {
                 ScrollView(.vertical, showsIndicators: false) {
-                    conversationRows
+                    LazyVStack(spacing: 2) {
+                        ForEach(filteredConversations) { conversation in
+                            conversationRow(conversation)
+                        }
+                    }
                 }
                 .scrollClipDisabled()
             }
         }
-        .frame(maxHeight: .infinity)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    private var conversationRows: some View {
-        LazyVStack(spacing: 4) {
-            if conversations.isEmpty {
-                Text("Aucune conversation")
-                    .font(.subheadline)
-                    .foregroundStyle(theme.secondaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 12)
-            } else {
-                ForEach(conversations) { conversation in
-                    conversationRow(conversation)
-                }
-            }
+    private var emptyConversationsState: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Aucune conversation pour l'instant.")
+                .font(.subheadline)
+                .foregroundStyle(theme.secondaryText)
+
+            Text("Commencez une conversation pour la voir ici.")
+                .font(.subheadline)
+                .foregroundStyle(theme.secondaryText.opacity(0.82))
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.top, 4)
     }
 
     private func conversationRow(_ conversation: CoachConversation) -> some View {
@@ -203,11 +244,11 @@ struct CoachConversationsSidebar: View {
                     .lineLimit(1)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.vertical, 9)
             .background {
                 if isActive {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(theme.isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.06))
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(theme.primaryText.opacity(theme.isDark ? 0.1 : 0.06))
                 }
             }
         }
@@ -217,6 +258,62 @@ struct CoachConversationsSidebar: View {
                 onDelete(conversation.id)
             } label: {
                 Label("Supprimer", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: - Settings footer
+
+    private var settingsFooter: some View {
+        Button {
+            isExpanded = false
+            showSettings = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(theme.primaryText.opacity(0.92))
+                    .frame(width: 22)
+
+                Text("Paramètres")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(theme.primaryText)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(theme.secondaryText.opacity(0.65))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Integration progress icon
+
+private struct CoachIntegrationProgressIcon: View {
+    let progress: Double
+    let isComplete: Bool
+
+    @Environment(\.appTheme) private var theme
+
+    var body: some View {
+        ZStack {
+            if isComplete {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Color.green.opacity(0.92))
+            } else {
+                Circle()
+                    .stroke(theme.secondaryText.opacity(0.28), lineWidth: 2)
+
+                Circle()
+                    .trim(from: 0.08, to: 0.08 + max(0.04, progress * 0.84))
+                    .stroke(theme.primaryText.opacity(0.9), lineWidth: 2)
+                    .rotationEffect(.degrees(-90))
             }
         }
     }

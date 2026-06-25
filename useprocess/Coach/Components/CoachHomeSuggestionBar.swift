@@ -14,12 +14,12 @@ struct CoachHomeSuggestionBar: View {
 
     private let selectSpring = Animation.spring(response: 0.34, dampingFraction: 0.86)
     private let dismissDelay: UInt64 = 220_000_000
-    private let cardWidth: CGFloat = 196
-    private let cardHeight: CGFloat = 132
+    private let cardWidth: CGFloat = min(UIScreen.main.bounds.width - 56, 248)
+    private let cardHeight: CGFloat = 54
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 ForEach(suggestions) { suggestion in
                     let visible = isButtonVisible(id: suggestion.id)
 
@@ -37,7 +37,7 @@ struct CoachHomeSuggestionBar: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 4)
+            .padding(.vertical, 2)
         }
         .padding(.horizontal, -20)
         .animation(selectSpring, value: selectedID)
@@ -132,42 +132,38 @@ private struct CoachHomeSuggestionCard: View {
 
     @Environment(\.appTheme) private var theme
 
-    private let cardShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+    private let cardShape = RoundedRectangle(cornerRadius: 14, style: .continuous)
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 8) {
                 Text(suggestion.icon)
-                    .font(.system(size: 28))
-                    .frame(width: 36, height: 36, alignment: .leading)
+                    .font(.system(size: 20))
+                    .frame(width: 26, alignment: .center)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(suggestion.label)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(theme.primaryText)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
 
                     Text(suggestion.subtitle)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(theme.secondaryText.opacity(0.88))
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
                 }
 
                 Spacer(minLength: 0)
             }
-            .frame(width: cardWidth, height: cardHeight, alignment: .topLeading)
-            .padding(16)
+            .frame(width: cardWidth, height: cardHeight)
+            .padding(.horizontal, 12)
             .contentShape(cardShape)
         }
         .buttonStyle(.plain)
         .processGlassEffect(in: cardShape, interactive: true)
         .disabled(isDisabled || !isVisible)
         .opacity(isVisible ? opacity : 0)
-        .offset(y: isVisible ? offsetY : 12)
-        .scaleEffect(isVisible ? 1 : 0.96)
+        .offset(y: isVisible ? offsetY : 8)
+        .scaleEffect(isVisible ? 1 : 0.97)
     }
 }

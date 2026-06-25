@@ -439,11 +439,10 @@ final class PermissionsManager: ObservableObject {
         return status == .authorized
     }
 
-    /// Remet la pastille à zéro — iOS peut conserver un badge d'une ancienne install ou d'un test.
+    /// Remet la pastille à zéro sans effacer les notifications planifiées (check-ins, brief matin, scan…).
     func clearAppBadge() async {
         let center = UNUserNotificationCenter.current()
         center.removeAllDeliveredNotifications()
-        center.removeAllPendingNotificationRequests()
         try? await center.setBadgeCount(0)
     }
 

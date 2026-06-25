@@ -3,6 +3,7 @@ import SwiftUI
 /// Racine SwiftUI — onboarding sport puis écran principal.
 struct AppShellView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     @Bindable private var session = AppSession.shared
 
     private var theme: AppTheme {
@@ -24,6 +25,9 @@ struct AppShellView: View {
             }
         }
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
+        .onChange(of: scenePhase) { _, phase in
+            CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
+        }
         .environment(\.appTheme, theme)
         .processThirdPartyAIConsentSheet()
         .preferredColorScheme(session.appearance.preferredColorScheme)
@@ -50,6 +54,13 @@ struct AppShellView: View {
                 profile: UnifiedProfileService.shared.currentProfile,
                 force: false
             )
+            CoachIntelligenceNotificationService.configure()
+            CoachCheckInStore.shared.reload()
+            CoachMyMemoryStore.shared.reload()
+            CoachProcessFilesStore.shared.reload()
+            CoachIntelligenceSettingsStore.shared.syncSubscriberCreditsIfNeeded()
+            await CoachCheckInScheduler.rescheduleAll()
+            await CoachDailyRhythmService.reschedule()
             if HealthManager.shared.isHealthDataAvailable, HealthManager.shared.isAuthorized {
                 await HealthManager.shared.performFullSync()
                 await DailyDataManager.shared.updateCurrentDayData(with: HealthManager.shared)

@@ -47,7 +47,9 @@ final class CoachChatViewModel {
     }
 
     var showsContextualHome: Bool {
-        !messages.contains(where: { $0.role == .user }) && !isSending
+        !messages.contains(where: { $0.role == .user })
+            && !isSending
+            && !isComposingMessage
     }
 
     var showsHomeInsteadOfInput: Bool {
@@ -56,6 +58,13 @@ final class CoachChatViewModel {
 
     var homeActionsRevealed = false
     var homeInputUnlocked = false
+
+    /// Vrai dès qu'une saisie est en cours — pas au simple focus du champ.
+    var isComposingMessage: Bool {
+        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || pendingAttachmentImage != nil
+            || isVoiceRecording
+    }
 
     /// Accueils déjà animés (par conversation + texte d’accueil).
     private var completedHomePresentationKeys: Set<String> = []
@@ -137,6 +146,28 @@ final class CoachChatViewModel {
         activePlanFocus = nil
     }
 
+    func consumePendingNavigationIfNeeded() async {
+        if let conversationId = CoachPlanNavigationBridge.shared.pendingConversationId {
+            CoachPlanNavigationBridge.shared.pendingConversationId = nil
+            if conversationId != libraryStore.activeConversationId {
+                await selectConversation(conversationId)
+            }
+        }
+        if let checkInPrompt = CoachPlanNavigationBridge.shared.consumePendingCheckInPrompt() {
+            await sendPrompt(checkInPrompt, persistUserMessage: true)
+            return
+        }
+        await consumePendingPlanPromptIfNeeded()
+    }
+
+    func enrichment(for message: CoachMessage) -> CoachMessageEnrichment? {
+        message.enrichment
+    }
+
+    func sendFollowUp(_ text: String) async {
+        await sendPrompt(text, persistUserMessage: true)
+    }
+
     func selectConversation(_ id: UUID) async {
         guard id != libraryStore.activeConversationId else { return }
         shouldKeepColdLaunchDraft = false
@@ -206,6 +237,20 @@ final class CoachChatViewModel {
         }
     }
 
+    func deleteAllConversations() async {
+        let ids = libraryStore.sortedConversations.map(\.id)
+        for id in ids {
+            await deleteConversation(id)
+        }
+    }
+
+    func resyncConversationHistory() async {
+        await CoachIntelligenceSettingsStore.shared.resyncConversationHistory()
+        if libraryStore.activeConversationId != nil {
+            await reloadActiveConversation()
+        }
+    }
+
     private func reloadActiveConversation() async {
         guard let id = libraryStore.activeConversationId else {
             await beginDraftSession()
@@ -270,7 +315,9 @@ final class CoachChatViewModel {
     }
 
     func unlockHomeChatInput() {
-        homeInputUnlocked = true
+        withAnimation(OnboardingProfileChatAnswerReveal.spring) {
+            homeInputUnlocked = true
+        }
     }
 
     private static func filteredCoachMessages(_ messages: [CoachMessage]) -> [CoachMessage] {
@@ -456,6 +503,12 @@ final class CoachChatViewModel {
             return
         }
 
+        if CoachIntelligenceSettingsStore.shared.isEnabled,
+           !CoachIntelligenceSettingsStore.shared.canSendCoachMessage {
+            errorMessage = CoachIntelligenceSettingsStore.shared.quotaExceededMessage
+            return
+        }
+
         let conversationId: UUID
         if persistUserMessage {
             conversationId = await ensurePersistedConversationId()
@@ -496,6 +549,7 @@ final class CoachChatViewModel {
         isSending = true
         streamingText = ""
         errorMessage = nil
+        CoachIntelligenceSettingsStore.shared.recordCoachMessageSent()
 
         do {
             let modIntent = CoachPlanModificationService.detectIntent(in: cleaned)
@@ -571,14 +625,21 @@ final class CoachChatViewModel {
                 assembled = CoachPlanModificationService.confirmationPrefix(changes: planChanges) + assembled
             }
 
+            let parsedReply = CoachResponseParser.parseFull(assembled)
+            let parsed = parsedReply.enrichment
             let model = ClaudeModel.preferred(for: .chat).rawValue
-            let reply = CoachMessage(role: .assistant, text: assembled, modelUsed: model)
+            let reply = CoachMessage.assistant(from: parsed, modelUsed: model)
             messages.append(reply)
             isSending = false
             streamingText = ""
+            CoachPostReplyService.applySideEffects(
+                parsed: parsedReply,
+                userText: cleaned,
+                rawAssistantText: assembled
+            )
             CoachMemoryStore.shared.recordExchange(
                 userText: cleaned,
-                assistantText: assembled,
+                assistantText: parsed.displayText,
                 conversationTitle: libraryStore.activeConversation?.title
             )
             CoachMemoryStore.shared.refreshConversationDigests(
@@ -595,10 +656,21 @@ final class CoachChatViewModel {
                 conversationId: conversationId,
                 title: libraryStore.activeConversation?.title
             )
+            notifyReplyIfNeeded(conversationId: conversationId, replyText: parsed.displayText)
         } catch {
             errorMessage = userFacingCoachError(error)
             isSending = false
             streamingText = ""
+        }
+    }
+
+    private func notifyReplyIfNeeded(conversationId: UUID, replyText: String) {
+        Task {
+            await CoachIntelligenceNotificationService.notifyReplyReady(
+                conversationId: conversationId,
+                replyText: replyText,
+                conversationTitle: libraryStore.conversation(for: conversationId)?.sidebarSubject
+            )
         }
     }
 
@@ -630,6 +702,13 @@ final class CoachChatViewModel {
 
     func sendImageAttachment(_ image: UIImage, caption: String = "") async {
         guard !isSending else { return }
+
+        if CoachIntelligenceSettingsStore.shared.isEnabled,
+           !CoachIntelligenceSettingsStore.shared.canSendCoachMessage {
+            errorMessage = CoachIntelligenceSettingsStore.shared.quotaExceededMessage
+            return
+        }
+
         let conversationId = await ensurePersistedConversationId()
 
         let trimmedCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -654,16 +733,35 @@ final class CoachChatViewModel {
         isSending = true
         streamingText = ""
         errorMessage = nil
+        CoachIntelligenceSettingsStore.shared.recordCoachMessageSent()
         defer { isSending = false; streamingText = "" }
 
         do {
-            let reply = try await CoachEngine.analyzeAttachedImage(
+            let rawReply = try await CoachEngine.analyzeAttachedImage(
                 image,
                 caption: analysisPrompt,
                 profile: profile,
                 history: messages
             )
             guard libraryStore.activeConversationId == conversationId else { return }
+            let parsedReply = CoachResponseParser.parseFull(rawReply.text)
+            let parsed = parsedReply.enrichment
+            let reply = CoachMessage(
+                id: rawReply.id,
+                role: .assistant,
+                text: parsed.displayText,
+                createdAt: rawReply.createdAt,
+                modelUsed: rawReply.modelUsed,
+                reasoning: parsed.reasoning,
+                followUps: parsed.followUps.isEmpty ? nil : parsed.followUps,
+                deepLinkAction: parsed.deepLink?.action.rawValue,
+                deepLinkLabel: parsed.deepLink?.label
+            )
+            CoachPostReplyService.applySideEffects(
+                parsed: parsedReply,
+                userText: analysisPrompt,
+                rawAssistantText: rawReply.text
+            )
             messages.append(reply)
             await CoachSyncService.appendMessage(
                 reply,
@@ -671,6 +769,7 @@ final class CoachChatViewModel {
                 conversationId: conversationId,
                 title: libraryStore.activeConversation?.title
             )
+            notifyReplyIfNeeded(conversationId: conversationId, replyText: parsed.displayText)
         } catch {
             errorMessage = error.localizedDescription
         }

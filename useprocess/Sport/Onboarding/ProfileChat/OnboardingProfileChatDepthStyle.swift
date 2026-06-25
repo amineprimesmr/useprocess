@@ -156,7 +156,14 @@ struct OnboardingChatAmbientHeader: View {
 
     private func logoTopOffset(safeTop: CGFloat) -> CGFloat {
         let anchor = topInset > 0 ? topInset : safeTop
-        return anchor - (compact ? 4 : 8)
+        return anchor + (compact ? 6 : 2)
+    }
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "EEE. d MMM"
+        return formatter.string(from: Date()).lowercased()
     }
 
     var body: some View {
@@ -167,15 +174,23 @@ struct OnboardingChatAmbientHeader: View {
                 topPurpleSpike(safeTop: safeTop)
 
                 if showsLogo {
-                    Image("caochiaicon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: logoSize, height: logoSize)
-                        .shadow(color: Self.ambientViolet.opacity(0.14), radius: 12, x: 0, y: 0)
-                        .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 4)
-                        .scaleEffect(isBreathing ? 1.02 : 0.992)
-                        .offset(y: logoTopOffset(safeTop: safeTop))
-                        .animation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true), value: isBreathing)
+                    VStack(spacing: 10) {
+                        Image("caochiaicon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: logoSize, height: logoSize)
+                            .shadow(color: Self.ambientViolet.opacity(0.14), radius: 12, x: 0, y: 0)
+                            .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 4)
+                            .scaleEffect(isBreathing ? 1.02 : 0.992)
+                            .animation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true), value: isBreathing)
+
+                        if compact {
+                            Text(formattedDate)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.primary.opacity(0.55))
+                        }
+                    }
+                    .offset(y: logoTopOffset(safeTop: safeTop))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
