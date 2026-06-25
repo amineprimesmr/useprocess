@@ -26,7 +26,15 @@ enum CoachMemorySummarizer {
 
         let planBlock: String
         if let plan = WelcomePlanStore.shared.plan {
-            planBlock = "Plan actif semaine \(plan.calendar.currentWeekNumber())/13 — \(plan.primaryFaceGoal)"
+            let meals = CoachPlanContextBuilder.todayMealsBlock(plan: plan)
+                .components(separatedBy: "\n")
+                .prefix(4)
+                .joined(separator: " ")
+            planBlock = """
+            Plan actif semaine \(plan.calendar.currentWeekNumber())/13 — \(plan.primaryFaceGoal).
+            \(meals)
+            Ajustements récents : \(CoachMemoryStore.shared.memory.planAdjustments.prefix(3).joined(separator: " | "))
+            """
         } else {
             planBlock = "Pas de plan actif"
         }

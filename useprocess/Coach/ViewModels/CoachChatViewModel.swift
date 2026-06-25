@@ -148,6 +148,7 @@ final class CoachChatViewModel {
     func createNewConversation() async {
         shouldKeepColdLaunchDraft = false
         await beginDraftSession()
+        onActiveConversationChanged()
     }
 
     private func beginDraftSession() async {
@@ -314,7 +315,7 @@ final class CoachChatViewModel {
             voiceElapsed = 0
             voiceTranscript = ""
             voiceAudioLevel = 0
-            voiceAudioLevels = Array(repeating: 0.06, count: 32)
+            voiceAudioLevels = Array(repeating: 0.06, count: 52)
             startVoiceTimer()
         } catch {
             errorMessage = error.localizedDescription
@@ -333,7 +334,7 @@ final class CoachChatViewModel {
             voiceElapsed = 0
             voiceTranscript = ""
             voiceAudioLevel = 0
-            voiceAudioLevels = Array(repeating: 0.06, count: 32)
+            voiceAudioLevels = Array(repeating: 0.06, count: 52)
         }
     }
 
@@ -348,7 +349,7 @@ final class CoachChatViewModel {
         voiceElapsed = 0
         voiceTranscript = ""
         voiceAudioLevel = 0
-        voiceAudioLevels = Array(repeating: 0.06, count: 32)
+        voiceAudioLevels = Array(repeating: 0.06, count: 52)
     }
 
     func confirmVoiceRecording() async -> Bool {
@@ -366,7 +367,7 @@ final class CoachChatViewModel {
         voiceElapsed = 0
         voiceTranscript = ""
         voiceAudioLevel = 0
-        voiceAudioLevels = Array(repeating: 0.06, count: 32)
+        voiceAudioLevels = Array(repeating: 0.06, count: 52)
 
         guard !finalText.isEmpty else {
             errorMessage = "Aucune voix détectée — réessaie."

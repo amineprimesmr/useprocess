@@ -27,11 +27,11 @@ private enum JournalDesign {
 
 struct DailyJournalChecklistView: View {
     let plan: FaceOriginPlan
+    @Binding var selectedDate: Date
     var showHeader: Bool = true
     var showWeekStrip: Bool = true
 
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
-    @State private var selectedDate = Date()
     @State private var isChecklistExpanded = true
     @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
@@ -55,20 +55,21 @@ struct DailyJournalChecklistView: View {
                 .padding(.top, -4)
                 .padding(.leading, -6)
                 .padding(.bottom, 8)
-
-                PlanLastFaceScanSection(
-                    latest: faceHistoryStore.latestResult,
-                    isScanDue: faceHistoryStore.isScanDue
-                )
             }
+
+            PlanLastFaceScanSection(
+                latest: faceHistoryStore.latestResult,
+                isScanDue: faceHistoryStore.isScanDue
+            )
+            .padding(.bottom, showWeekStrip ? 0 : 8)
 
             switch dayAvailability {
             case .editable(let day, _):
+                journalSections(for: day, isEditable: true)
+
                 PlanNutritionDaySection(plan: livePlan, day: day, isEditable: true)
                     .environmentObject(UnifiedProfileService.shared)
-                    .padding(.top, 14)
-
-                journalSections(for: day, isEditable: true)
+                    .padding(.top, 28)
 
                 PlanTrainingDaySection(
                     plan: livePlan,
@@ -169,7 +170,7 @@ struct DailyJournalChecklistView: View {
     }
 
     private func journalFilledToken(for day: OriginProgramDay) -> String {
-        let tasks = OriginPlanPresenter.manualJournalTasks(from: day)
+        let tasks = OriginPlanPresenter.manualJournalTasks(from: day, plan: livePlan)
         return tasks.map { task in
             "\(task.id):\(livePlan.progress.status(for: task.id, dayId: day.id)?.rawValue ?? "nil")"
         }.joined(separator: "|")
@@ -299,7 +300,7 @@ private struct JournalDayCompletionCard: View {
 
 // MARK: - Bandeau dates (relief 3D)
 
-private struct JournalWeekDayStrip: View {
+struct JournalWeekDayStrip: View {
     @Binding var selectedDate: Date
     let plan: FaceOriginPlan
 

@@ -19,17 +19,40 @@ enum ProfileTheme {
     static let emptyGradientEdge = ProcessColors.background
 
     static let emptyHeroIconSize: CGFloat = 26
-    static let emptyHeroTopClearance: CGFloat = 88
 
     static let horizontalPadding: CGFloat = 16
     static let heroBottomRadius: CGFloat = 32
     static let buttonCornerRadius: CGFloat = 14
     static let iconButtonSize: CGFloat = 44
-    static let heroHeight: CGFloat = 300
-    static let emptyHeroHeight: CGFloat = 260
-    /// Remonte le hero derrière le menu sticky + status bar.
-    static var heroMenuBleedInset: CGFloat { ProcessMainChromeMetrics.scrollTopInset }
+
+    /// Zone visible sous la status bar.
+    static let heroBodyHeight: CGFloat = 280
     static var heroTopInset: CGFloat { ProcessMainChromeMetrics.topSafeInset }
+    /// Hauteur totale peinte depuis le haut de l'écran (WYSIWYG crop + affichage).
+    static var heroCoverHeight: CGFloat { heroBodyHeight + heroTopInset }
+
+    static var heroCoverWidth: CGFloat { max(UIScreen.main.bounds.width, 320) }
+
+    /// Ratio largeur / hauteur du hero (recadrage WYSIWYG).
+    static var heroCoverAspectRatio: CGFloat {
+        heroCoverWidth / heroCoverHeight
+    }
+
+    /// Taille d'export = pixels exacts affichés sur l'appareil.
+    static var heroCoverExportSize: CGSize {
+        CGSize(width: heroCoverWidth, height: heroCoverHeight)
+    }
+
+    static func heroBottomShape(scale: CGFloat = 1) -> UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            topLeadingRadius: 0,
+            bottomLeadingRadius: heroBottomRadius * scale,
+            bottomTrailingRadius: heroBottomRadius * scale,
+            topTrailingRadius: 0,
+            style: .continuous
+        )
+    }
+
     static let pinWidth: CGFloat = 118
     static let pinHeight: CGFloat = 168
 
@@ -77,15 +100,7 @@ struct ProfileEmptyHeroBackground: View {
 }
 
 extension ProfileTheme {
-    static var heroBottomShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(
-            topLeadingRadius: 0,
-            bottomLeadingRadius: heroBottomRadius,
-            bottomTrailingRadius: heroBottomRadius,
-            topTrailingRadius: 0,
-            style: .continuous
-        )
-    }
+    static var heroBottomShape: UnevenRoundedRectangle { heroBottomShape(scale: 1) }
 }
 
 typealias ProfilePressStyle = ProcessGlassPressStyle

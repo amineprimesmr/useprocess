@@ -10,8 +10,8 @@ enum OriginPlanPresenter {
         return plan.calendar.day(globalIndex: index)
     }
 
-    static func todayChecklist(from day: OriginProgramDay) -> [OriginPlanTask] {
-        manualJournalTasks(from: day)
+    static func todayChecklist(from day: OriginProgramDay, plan: FaceOriginPlan) -> [OriginPlanTask] {
+        manualJournalTasks(from: day, plan: plan)
     }
 
     static func journalSections(for day: OriginProgramDay, calendar: OriginProgramCalendar) -> [JournalSection] {
@@ -67,7 +67,7 @@ enum OriginPlanPresenter {
         let evening = visibleJournalTasks(day.evening)
         var phases: [PlanDayPhase] = []
 
-        let lastNight = lastNightJournalTasks(dayId: day.id)
+        let lastNight = visibleJournalTasks(lastNightJournalTasks(dayId: day.id))
         if !lastNight.isEmpty {
             phases.append(.init(
                 id: "lastNight",
@@ -154,14 +154,124 @@ enum OriginPlanPresenter {
         return configured.joined(separator: " · ")
     }
 
-    static func manualJournalTasks(from day: OriginProgramDay) -> [OriginPlanTask] {
-        visibleJournalTasks(
+    static func manualJournalTasks(from day: OriginProgramDay, plan: FaceOriginPlan) -> [OriginPlanTask] {
+        let tasks = visibleJournalTasks(
             lastNightJournalTasks(dayId: day.id)
             + day.morning
             + day.posture
             + day.face
             + day.evening
         )
+        return sortedJournalTasks(tasks, dayId: day.id, plan: plan)
+    }
+
+    /// Tri debloat : impact physiologique, puis leviers faibles du plan, puis statut (à faire en premier).
+    static func sortedJournalTasks(
+        _ tasks: [OriginPlanTask],
+        dayId: String,
+        plan: FaceOriginPlan
+    ) -> [OriginPlanTask] {
+        tasks.sorted { lhs, rhs in
+            let leftPriority = journalTaskPriority(for: lhs, in: plan)
+            let rightPriority = journalTaskPriority(for: rhs, in: plan)
+            if leftPriority != rightPriority { return leftPriority < rightPriority }
+
+            let leftStatus = journalTaskStatusRank(plan.progress.status(for: lhs.id, dayId: dayId))
+            let rightStatus = journalTaskStatusRank(plan.progress.status(for: rhs.id, dayId: dayId))
+            if leftStatus != rightStatus { return leftStatus < rightStatus }
+
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+    }
+
+    /// Score bas = priorité haute. Hydratation d'abord, puis le reste du protocole debloat.
+    static func journalTaskPriority(for task: OriginPlanTask, in plan: FaceOriginPlan) -> Int {
+        let text = searchableText(for: task)
+        var score: Int
+
+        switch true {
+        case isHydrationJournalTask(task):
+            score = 0
+        case text.contains("repas tardif"):
+            score = 15
+        case text.contains("lumiere") || text.contains("lumière"):
+            score = 20
+        case text.contains("alcool"):
+            score = 25
+        case text.contains("eau froide"):
+            score = 30
+        case text.contains("lymph") || text.contains("massage"):
+            score = 35
+        case text.contains("posture"):
+            score = 40
+        case text.contains("ecran") || text.contains("écran") || text.contains("couvre-feu"):
+            score = 45
+        default:
+            score = 50
+        }
+
+        let weakPillars = impactPriorities(from: plan, limit: 3)
+        for (index, weak) in weakPillars.enumerated() {
+            if taskMatchesWeakPillar(task, weakPillar: weak.pillar) {
+                score -= (3 - index)
+                break
+            }
+        }
+
+        return score
+    }
+
+    private static func taskMatchesWeakPillar(_ task: OriginPlanTask, weakPillar: String) -> Bool {
+        let taskCategory = taskPillarCategory(for: task)
+        let weakCategory = weakPillarCategory(weakPillar)
+        return taskCategory == weakCategory
+    }
+
+    private static func taskPillarCategory(for task: OriginPlanTask) -> String {
+        let text = searchableText(for: task)
+        let pillar = task.pillar
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
+
+        if text.contains("hydrat") || text.contains("alcool") || text.contains("repas") {
+            return "nutrition"
+        }
+        if pillar.contains("sommeil") || text.contains("ecran") || text.contains("écran") || text.contains("couvre-feu") {
+            return "hormones"
+        }
+        if pillar.contains("hormone") || text.contains("lumiere") || text.contains("lumière") {
+            return "hormones"
+        }
+        if pillar.contains("visage") || text.contains("eau froide") || text.contains("lymph") || text.contains("massage") {
+            return "visage"
+        }
+        if pillar.contains("posture") {
+            return "posture"
+        }
+        if pillar.contains("entrain") {
+            return "training"
+        }
+        return pillar
+    }
+
+    private static func weakPillarCategory(_ pillar: String) -> String {
+        let normalized = pillar
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
+        if normalized.contains("hormone") { return "hormones" }
+        if normalized.contains("posture") || normalized.contains("fascia") { return "posture" }
+        if normalized.contains("visage") || normalized.contains("result") { return "visage" }
+        if normalized.contains("entrain") { return "training" }
+        if normalized.contains("nutrition") { return "nutrition" }
+        return normalized
+    }
+
+    private static func journalTaskStatusRank(_ status: JournalTaskStatus?) -> Int {
+        switch status {
+        case nil: return 0
+        case .failed: return 1
+        case .completed: return 2
+        }
     }
 
     static func isAutomaticStepsTask(_ task: OriginPlanTask) -> Bool {
@@ -183,7 +293,18 @@ enum OriginPlanPresenter {
         if text.contains("mastication") || text.contains("machées") || text.contains("mâchées") { return true }
         if text.contains("routine soir") { return true }
         if (text.contains("dîner") || text.contains("diner")) && text.contains("debloat") { return true }
+        if text.contains("telephone") && text.contains("lit") { return true }
+        if text.contains("alimentation parfaite") { return true }
+        if text.contains("scan visage") { return true }
         return false
+    }
+
+    static func isHydrationJournalTask(_ task: OriginPlanTask) -> Bool {
+        if task.id.contains("hydrate") { return true }
+        let text = searchableText(for: task)
+        if text.contains("hydrat") { return true }
+        if text.contains("boire") && text.contains("litre") { return true }
+        return task.title == ProcessHydrationGuide.dailyTaskTitle
     }
 
     private static func searchableText(for task: OriginPlanTask) -> String {
@@ -201,14 +322,6 @@ enum OriginPlanPresenter {
 
     static func lastNightJournalTasks(dayId: String) -> [OriginPlanTask] {
         [
-            OriginPlanTask(
-                id: "\(dayId).hier-soir.telephone-au-lit",
-                title: "Pas de téléphone au lit",
-                detail: "Pas de scroll au coucher ni téléphone dans le lit.",
-                pillar: "Sommeil",
-                durationMinutes: nil,
-                isOptional: false
-            ),
             OriginPlanTask(
                 id: "\(dayId).hier-soir.repas-tardif",
                 title: "Pas de repas tardif",
@@ -299,13 +412,13 @@ enum OriginPlanPresenter {
     }
 
     static func isDayJournalComplete(plan: FaceOriginPlan, day: OriginProgramDay) -> Bool {
-        let tasks = manualJournalTasks(from: day)
+        let tasks = manualJournalTasks(from: day, plan: plan)
         guard !tasks.isEmpty else { return false }
         return tasks.allSatisfy { plan.progress.status(for: $0.id, dayId: day.id) == .completed }
     }
 
     static func isDayJournalFilled(plan: FaceOriginPlan, day: OriginProgramDay) -> Bool {
-        let tasks = manualJournalTasks(from: day)
+        let tasks = manualJournalTasks(from: day, plan: plan)
         guard !tasks.isEmpty else { return false }
         return tasks.allSatisfy { plan.progress.status(for: $0.id, dayId: day.id) != nil }
     }
@@ -325,7 +438,7 @@ enum OriginPlanPresenter {
         day: OriginProgramDay,
         date: Date
     ) -> JournalDayCompletionSummary {
-        let tasks = manualJournalTasks(from: day)
+        let tasks = manualJournalTasks(from: day, plan: plan)
         let completed = tasks.filter { plan.progress.status(for: $0.id, dayId: day.id) == .completed }
         let failed = tasks.filter { plan.progress.status(for: $0.id, dayId: day.id) == .failed }
 
@@ -382,9 +495,6 @@ enum OriginPlanPresenter {
         if title.lowercased().contains("hydrat") {
             return ProcessHydrationGuide.dailyTaskTitle
         }
-        if title.lowercased().contains("drainage") || title.lowercased().contains("lymph") {
-            return "Alimentation parfaite"
-        }
         return title
     }
 
@@ -407,7 +517,7 @@ enum OriginPlanPresenter {
 
     static func todayTaskCount(in plan: FaceOriginPlan, date: Date = Date()) -> (done: Int, total: Int) {
         guard let day = programDay(in: plan, for: date) ?? todayDay(in: plan, date: date) else { return (0, 0) }
-        let tasks = manualJournalTasks(from: day)
+        let tasks = manualJournalTasks(from: day, plan: plan)
         let done = tasks.filter { plan.progress.status(for: $0.id, dayId: day.id) == .completed }.count
         return (done, tasks.count)
     }

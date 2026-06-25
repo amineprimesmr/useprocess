@@ -11,6 +11,7 @@
 		67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C62FD90001006422D /* FirebaseAuth */; };
 		67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C72FD90001006422D /* FirebaseFirestore */; };
 		67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = RC1A2B3C52FD90001006422D /* RevenueCat */; };
+		LT1A2B3C62FD90001006422D /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = LT1A2B3C52FD90001006422D /* Lottie */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 				67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */,
 				67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */,
 				67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */,
+				LT1A2B3C62FD90001006422D /* Lottie in Frameworks */,
 				67E2B31F2FDD8C240016422D /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -80,6 +82,7 @@
 				F1A2B3C62FD90001006422D /* FirebaseAuth */,
 				F1A2B3C72FD90001006422D /* FirebaseFirestore */,
 				RC1A2B3C52FD90001006422D /* RevenueCat */,
+				LT1A2B3C52FD90001006422D /* Lottie */,
 			);
 			productName = useprocess;
 			productReference = 67E2AE312FDD89E60016422D /* useprocess.app */;
@@ -112,6 +115,7 @@
 			packageReferences = (
 				F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				RC1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+				LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67E2AE322FDD89E60016422D /* Products */;
@@ -404,6 +408,14 @@
 				minimumVersion = 11.0.0;
 			};
 		};
+		LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.0;
+			};
+		};
 		RC1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
@@ -429,6 +441,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		LT1A2B3C52FD90001006422D /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
 		};
 		RC1A2B3C52FD90001006422D /* RevenueCat */ = {
 			isa = XCSwiftPackageProductDependency;

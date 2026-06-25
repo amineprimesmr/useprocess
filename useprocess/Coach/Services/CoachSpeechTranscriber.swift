@@ -22,8 +22,8 @@ final class CoachSpeechTranscriber {
     private(set) var audioLevels: [CGFloat] = Array(repeating: 0.06, count: 32)
 
     private var rawLevel: CGFloat = 0
-    private let levelSmoothing: CGFloat = 0.28
-    private let waveformCapacity = 32
+    private let levelSmoothing: CGFloat = 0.22
+    private let waveformCapacity = 52
 
     /// Transcription partielle en cours d'enregistrement.
     var partialTranscript: String { latestTranscript }
@@ -192,6 +192,16 @@ final class CoachSpeechTranscriber {
                 if rawLevel > 0.02 {
                     rawLevel *= 0.88
                     audioLevel = rawLevel
+                    if audioLevels.count >= waveformCapacity {
+                        audioLevels.removeFirst()
+                    }
+                    audioLevels.append(max(rawLevel, 0.06))
+                } else {
+                    audioLevel = 0.06
+                    if audioLevels.count >= waveformCapacity {
+                        audioLevels.removeFirst()
+                    }
+                    audioLevels.append(0.06)
                 }
             }
         }
@@ -208,7 +218,7 @@ final class CoachSpeechTranscriber {
                 sum += sample * sample
             }
             let rms = sqrt(sum / Float(count))
-            return CGFloat(min(max(rms * 14, 0), 1))
+            return CGFloat(min(max(rms * 18, 0), 1))
         }
 
         if let channel = buffer.int16ChannelData?[0] {
@@ -218,7 +228,7 @@ final class CoachSpeechTranscriber {
                 sum += sample * sample
             }
             let rms = sqrt(sum / Float(count))
-            return CGFloat(min(max(rms * 14, 0), 1))
+            return CGFloat(min(max(rms * 18, 0), 1))
         }
 
         return 0

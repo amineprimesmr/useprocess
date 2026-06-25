@@ -26,7 +26,8 @@ enum UserScopedStorage {
         "privacy.ai_third_party.date",
         "privacy.face_capture",
         "privacy.face_capture.date",
-        "privacy.face_ai"
+        "privacy.face_ai",
+        "process.streak"
     ]
 
     static func currentUserId() -> String? {

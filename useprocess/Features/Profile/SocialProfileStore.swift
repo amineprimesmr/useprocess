@@ -89,6 +89,7 @@ final class SocialProfileStore {
         }
         if activeUserID == unified.userId, profile != nil {
             syncFromUnified(unified)
+            migratePhotoAssetsIfNeeded()
             return
         }
         activeUserID = unified.userId
@@ -122,6 +123,32 @@ final class SocialProfileStore {
         }
         profile = current
         persist()
+        migratePhotoAssetsIfNeeded()
+    }
+
+    /// Anciennes versions stockaient un seul JPEG carré pour cover + avatar.
+    private func migratePhotoAssetsIfNeeded() {
+        guard var current = profile,
+              let coverName = current.coverPhotoFilename,
+              let cover = image(for: coverName) else { return }
+
+        let needsAvatarSplit =
+            current.profilePhotoFilename == nil
+            || current.profilePhotoFilename == current.coverPhotoFilename
+
+        guard needsAvatarSplit else { return }
+
+        let avatar = cover.profileAvatarSquareCrop()
+        guard let avatarFilename = saveImage(avatar, prefix: "avatar") else { return }
+
+        let previousAvatar = current.profilePhotoFilename
+        current.profilePhotoFilename = avatarFilename
+        profile = current
+        persist()
+
+        if let previousAvatar, previousAvatar != coverName {
+            deleteFile(previousAvatar)
+        }
     }
 
     func resetForUser(userId: String) {
@@ -144,6 +171,7 @@ final class SocialProfileStore {
             profile = .from(unified: unified)
             persist()
         }
+        migratePhotoAssetsIfNeeded()
     }
 
     func update(_ transform: (inout SocialProfile) -> Void) {
@@ -153,20 +181,34 @@ final class SocialProfileStore {
         persist()
     }
 
-    func applyPhotos(_ image: UIImage) {
-        guard let filename = saveImage(image, prefix: "cover") else { return }
-        let previous = profile?.coverPhotoFilename
+    func applyPhotos(_ coverImage: UIImage) {
+        let previousCover = profile?.coverPhotoFilename
+        let previousAvatar = profile?.profilePhotoFilename
+
+        guard let coverFilename = saveImage(coverImage, prefix: "cover") else { return }
+        let avatarImage = coverImage.profileAvatarSquareCrop()
+        guard let avatarFilename = saveImage(avatarImage, prefix: "avatar") else { return }
+
         update {
-            $0.profilePhotoFilename = filename
-            $0.coverPhotoFilename = filename
+            $0.coverPhotoFilename = coverFilename
+            $0.profilePhotoFilename = avatarFilename
         }
-        if let previous, previous != filename {
-            deleteFile(previous)
+
+        if let previousCover, previousCover != coverFilename {
+            deleteFile(previousCover)
+        }
+        if let previousAvatar,
+           previousAvatar != avatarFilename,
+           previousAvatar != previousCover {
+            deleteFile(previousAvatar)
         }
     }
 
     func removeAllPhotos() {
-        if let name = profile?.coverPhotoFilename { deleteFile(name) }
+        if let cover = profile?.coverPhotoFilename { deleteFile(cover) }
+        if let avatar = profile?.profilePhotoFilename, avatar != profile?.coverPhotoFilename {
+            deleteFile(avatar)
+        }
         update {
             $0.profilePhotoFilename = nil
             $0.coverPhotoFilename = nil
@@ -201,7 +243,11 @@ final class SocialProfileStore {
 
     var shareText: String {
         guard let profile else { return "Process" }
-        return "Profil Process — \(profile.displayName) (@\(profile.username))"
+        let tag = ProcessUsernameTag.display(profile.username)
+        if tag.isEmpty {
+            return "Profil Process — \(profile.displayName)"
+        }
+        return "Profil Process — \(profile.displayName) (\(tag))"
     }
 
     private func image(for filename: String?) -> UIImage? {

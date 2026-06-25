@@ -25,6 +25,8 @@ final class WelcomePlanStore {
             migratePlanIfNeeded(answers: questionnaire.answers, profile: UnifiedProfileService.shared.currentProfile)
         }
         CoachMemoryStore.shared.reloadForCurrentUser()
+        ProcessStreakStore.shared.reload()
+        ProcessStreakStore.shared.sync(from: plan)
 
         if AppConfiguration.firebaseConfigured, uid != "local-user" {
             scheduleRemoteSyncIfNeeded(uid: uid)
@@ -36,6 +38,8 @@ final class WelcomePlanStore {
         plan = loadPlan(userId: uid)
         repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
         CoachMemoryStore.shared.reloadForCurrentUser()
+        ProcessStreakStore.shared.reload()
+        ProcessStreakStore.shared.sync(from: plan)
     }
 
     func reloadForCurrentUser() {
@@ -90,6 +94,7 @@ final class WelcomePlanStore {
         if let data = try? JSONEncoder().encode(enriched) {
             UserDefaults.standard.set(data, forKey: key)
         }
+        ProcessStreakStore.shared.sync(from: enriched)
         Task {
             if uid != "local-user" {
                 await WelcomePlanFirestoreRepository.shared.savePlan(enriched, userId: uid)

@@ -1,10 +1,13 @@
 import SwiftUI
+import UIKit
 
 enum ProfileEditDestination: Hashable {
     case firstName
     case lastName
     case gender
     case birthDate
+    case username
+    case findUser
 }
 
 @ViewBuilder
@@ -30,6 +33,14 @@ func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
                 ?? Calendar.current.date(byAdding: .year, value: -25, to: Date())
                 ?? Date()
         )
+    case .username:
+        ProfileUsernameEditorView(
+            initialValue: SocialProfileStore.shared.profile?.username
+                ?? UnifiedProfileService.shared.currentProfile?.username
+                ?? ""
+        )
+    case .findUser:
+        ProcessFindUserByTagView()
     }
 }
 
@@ -290,9 +301,14 @@ struct ProfileBirthDateEditorView: View {
 
 struct ProfileUsernameEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var profileService: UnifiedProfileService
     @State private var profileStore = SocialProfileStore.shared
     @State private var username: String
+    @State private var availability: UsernameAvailability = .idle
+    @State private var saveError: String?
+    @State private var isSaving = false
     @FocusState private var isFocused: Bool
+    @State private var availabilityTask: Task<Void, Never>?
 
     init(initialValue: String) {
         _username = State(initialValue: initialValue)
@@ -303,26 +319,44 @@ struct ProfileUsernameEditorView: View {
             ProfileEditTheme.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: "Nom d'utilisateur", onDismiss: { dismiss() })
+                ProfileEditorHeader(title: "Tag Process", onDismiss: { dismiss() })
 
                 ProfileEditorHero(
                     headline: "Choisis ton @unique ✨",
                     subtitle: "C'est comme ça que les autres te trouveront sur Process."
                 )
 
-                TextField("", text: $username, prompt:
-                    Text("Ajoute ton pseudo")
-                        .foregroundStyle(ProfileEditTheme.placeholder)
+                HStack(spacing: 4) {
+                    Text("@")
                         .font(.system(size: 28, weight: .bold))
-                )
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color.primary)
-                .multilineTextAlignment(.center)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .focused($isFocused)
+                        .foregroundStyle(ProfileEditTheme.placeholder)
+
+                    TextField("", text: $username, prompt:
+                        Text("ton_tag")
+                            .foregroundStyle(ProfileEditTheme.placeholder)
+                            .font(.system(size: 28, weight: .bold))
+                    )
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(Color.primary)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+                }
                 .padding(.horizontal, 24)
                 .padding(.top, 36)
+
+                availabilityLabel
+                    .padding(.horizontal, 24)
+                    .padding(.top, 14)
+
+                if let saveError {
+                    Text(saveError)
+                        .font(.system(size: 14))
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 10)
+                }
 
                 Spacer(minLength: 0)
             }
@@ -330,11 +364,239 @@ struct ProfileUsernameEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ProfileEditorBottomSaveButton(
-                title: "Enregistrer",
-                disabled: cleanedUsername.isEmpty
+                title: isSaving ? "Enregistrement…" : "Enregistrer",
+                disabled: !canSave || isSaving
             ) {
-                save()
-                dismiss()
+                Task { await save() }
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                isFocused = true
+            }
+            scheduleAvailabilityCheck()
+        }
+        .onChange(of: username) { _, _ in
+            saveError = nil
+            scheduleAvailabilityCheck()
+        }
+        .onDisappear {
+            availabilityTask?.cancel()
+        }
+    }
+
+    @ViewBuilder
+    private var availabilityLabel: some View {
+        switch availability {
+        case .idle:
+            Text("Lettres, chiffres, _ et . — \(ProcessUsernameTag.minLength) à \(ProcessUsernameTag.maxLength) caractères.")
+                .font(.system(size: 14))
+                .foregroundStyle(ProfileEditTheme.placeholder)
+                .multilineTextAlignment(.center)
+        case .checking:
+            Text("Vérification…")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(ProfileEditTheme.placeholder)
+        case .available:
+            Label("Tag disponible", systemImage: "checkmark.circle.fill")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.green)
+        case .current:
+            Label("C'est ton tag actuel", systemImage: "person.crop.circle")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(ProfileEditTheme.placeholder)
+        case .taken:
+            Label("Tag déjà pris", systemImage: "xmark.circle.fill")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.red)
+        case .invalid(let message):
+            Text(message)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.orange)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    private var cleanedUsername: String {
+        ProcessUsernameTag.normalize(username)
+    }
+
+    private var currentUsername: String {
+        ProcessUsernameTag.normalize(
+            profileService.currentProfile?.username
+                ?? profileStore.profile?.username
+                ?? ""
+        )
+    }
+
+    private var canSave: Bool {
+        guard !cleanedUsername.isEmpty else { return false }
+        switch availability {
+        case .available, .current:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func scheduleAvailabilityCheck() {
+        availabilityTask?.cancel()
+        availabilityTask = Task {
+            try? await Task.sleep(nanoseconds: 320_000_000)
+            guard !Task.isCancelled else { return }
+            await refreshAvailability()
+        }
+    }
+
+    @MainActor
+    private func refreshAvailability() async {
+        let cleaned = cleanedUsername
+        guard !cleaned.isEmpty else {
+            availability = .idle
+            return
+        }
+
+        if cleaned == currentUsername {
+            availability = .current
+            return
+        }
+
+        do {
+            try ProcessUsernameTag.validate(cleaned)
+        } catch let error as ProcessUsernameError {
+            if case .invalid(let message) = error {
+                availability = .invalid(message)
+                return
+            }
+        } catch {
+            availability = .invalid(error.localizedDescription)
+            return
+        }
+
+        availability = .checking
+        let userId = profileService.currentProfile?.userId ?? "local-user"
+
+        do {
+            let available = try await ProcessUsernameRegistry.shared.isAvailable(cleaned, for: userId)
+            availability = available ? .available : .taken
+        } catch {
+            availability = .invalid(error.localizedDescription)
+        }
+    }
+
+    @MainActor
+    private func save() async {
+        guard canSave else { return }
+        isSaving = true
+        saveError = nil
+        defer { isSaving = false }
+
+        do {
+            try await profileService.updateUsername(cleanedUsername)
+            dismiss()
+        } catch {
+            saveError = error.localizedDescription
+            await refreshAvailability()
+        }
+    }
+
+    private enum UsernameAvailability {
+        case idle
+        case checking
+        case available
+        case current
+        case taken
+        case invalid(String)
+    }
+}
+
+struct ProcessFindUserByTagView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var profileService: UnifiedProfileService
+
+    @State private var query = ""
+    @State private var result: ProcessPublicUserTag?
+    @State private var errorMessage: String?
+    @State private var isSearching = false
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        ZStack {
+            ProfileEditTheme.background.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                ProfileEditorHeader(title: "Trouver un utilisateur", onDismiss: { dismiss() })
+
+                ProfileEditorHero(
+                    headline: "Recherche par @",
+                    subtitle: "Entre le tag Process de la personne que tu cherches."
+                )
+
+                HStack(spacing: 4) {
+                    Text("@")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(ProfileEditTheme.placeholder)
+
+                    TextField("", text: $query, prompt:
+                        Text("tag")
+                            .foregroundStyle(ProfileEditTheme.placeholder)
+                            .font(.system(size: 28, weight: .bold))
+                    )
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(Color.primary)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        Task { await search() }
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 36)
+
+                if isSearching {
+                    ProgressView()
+                        .padding(.top, 24)
+                } else if let result {
+                    VStack(spacing: 8) {
+                        Text(result.displayName)
+                            .font(.system(size: 22, weight: .bold))
+                        Text(result.formattedTag)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(ProfileEditTheme.placeholder)
+
+                        Button {
+                            UIPasteboard.general.string = result.formattedTag
+                            HapticManager.shared.notification(.success)
+                        } label: {
+                            Text("Copier le tag")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Color.processPrimary)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 8)
+                    }
+                    .padding(.top, 28)
+                } else if let errorMessage {
+                    Text(errorMessage)
+                        .font(.system(size: 14))
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 20)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            ProfileEditorBottomSaveButton(
+                title: "Rechercher",
+                disabled: ProcessUsernameTag.normalize(query).isEmpty || isSearching
+            ) {
+                Task { await search() }
             }
         }
         .onAppear {
@@ -344,13 +606,22 @@ struct ProfileUsernameEditorView: View {
         }
     }
 
-    private var cleanedUsername: String {
-        username.lowercased().filter { $0.isLetter || $0.isNumber || $0 == "_" || $0 == "." }
-    }
+    @MainActor
+    private func search() async {
+        let tag = ProcessUsernameTag.normalize(query)
+        guard !tag.isEmpty else { return }
 
-    private func save() {
-        guard !cleanedUsername.isEmpty else { return }
-        profileStore.update { $0.username = cleanedUsername }
+        isSearching = true
+        errorMessage = nil
+        result = nil
+        defer { isSearching = false }
+
+        do {
+            try ProcessUsernameTag.validate(tag)
+            result = try await profileService.lookupUser(byTag: tag)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
 

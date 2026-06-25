@@ -10,7 +10,7 @@ struct PlanDayChronologicalTimeline: View {
     var onTaskStatusChange: (String, String, JournalTaskStatus?) -> Void
 
     private var checklistTasks: [OriginPlanTask] {
-        OriginPlanPresenter.manualJournalTasks(from: day)
+        OriginPlanPresenter.manualJournalTasks(from: day, plan: plan)
     }
 
     var body: some View {

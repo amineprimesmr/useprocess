@@ -1,8 +1,10 @@
 import SwiftUI
 import UIKit
 
-/// Shell principal — tab bar native iOS en bas + coach plein écran.
+/// Shell principal — tab bar Bevel (liquid glass iOS 26 + fallback flottant).
 struct MainAppView: View {
+    @Namespace private var coachZoomNamespace
+
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var isCoachPresented = false
     @State private var tabBeforeCoach: ProcessMainSection = .plan
@@ -15,51 +17,22 @@ struct MainAppView: View {
     }
 
     var body: some View {
-        ZStack {
-            TabView(selection: $selectedSection) {
-                PlanDashboardView(selectedSection: $selectedSection)
-                    .background(theme.background.ignoresSafeArea())
-                    .tag(ProcessMainSection.plan)
-                    .tabItem {
-                        Image(systemName: ProcessMainSection.plan.icon)
-                    }
-                    .accessibilityLabel(ProcessMainSection.plan.label)
-
-                coachTabPlaceholder
-                    .tag(ProcessMainSection.coach)
-                    .tabItem {
-                        Image(systemName: ProcessMainSection.coach.icon)
-                    }
-                    .accessibilityLabel(ProcessMainSection.coach.label)
-
-                ProcessProfileView(selectedSection: $selectedSection)
-                    .background(theme.background.ignoresSafeArea())
-                    .tag(ProcessMainSection.profile)
-                    .tabItem {
-                        Image(systemName: ProcessMainSection.profile.icon)
-                    }
-                    .accessibilityLabel(ProcessMainSection.profile.label)
-                    .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
-                        openWelcomePlanConfiguration()
-                    }
-            }
-            .tint(theme.primaryText)
-            .toolbarBackground(theme.background, for: .tabBar)
-            .toolbarBackground(.visible, for: .tabBar)
-            .background(theme.background.ignoresSafeArea())
-
-            if isCoachPresented {
-                CoachFullScreenPresentationView(
-                    selectedSection: $selectedSection,
-                    onDismiss: dismissCoachPresentation,
-                    onOpenProfile: openProfileFromCoach,
-                    onOpenWelcomePlan: openWelcomePlanFromCoach
-                )
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-                .zIndex(1)
+        Group {
+            if #available(iOS 26.0, *) {
+                modernTabShell
+            } else {
+                legacyTabShell
             }
         }
-        .animation(.spring(response: 0.42, dampingFraction: 0.88), value: isCoachPresented)
+        .fullScreenCover(isPresented: $isCoachPresented) {
+            CoachFullScreenPresentationView(
+                selectedSection: $selectedSection,
+                onDismiss: dismissCoachPresentation,
+                onOpenProfile: openProfileFromCoach,
+                onOpenWelcomePlan: openWelcomePlanFromCoach
+            )
+            .processCoachZoomTransition(namespace: coachZoomNamespace)
+        }
         .onAppear {
             if isWelcomePlanGating {
                 selectedSection = .plan
@@ -72,12 +45,7 @@ struct MainAppView: View {
             }
         }
         .onChange(of: selectedSection) { oldValue, newValue in
-            resignFirstResponder()
-
-            guard newValue == .coach else { return }
-            tabBeforeCoach = oldValue == .coach ? tabBeforeCoach : oldValue
-            selectedSection = tabBeforeCoach
-            presentCoach()
+            handleSectionChange(from: oldValue, to: newValue)
         }
         .onChange(of: planBridge.shouldOpenCoach) { _, should in
             guard should else { return }
@@ -93,6 +61,73 @@ struct MainAppView: View {
         }
     }
 
+    // MARK: - iOS 26 native liquid glass
+
+    @available(iOS 26.0, *)
+    private var modernTabShell: some View {
+        TabView(selection: $selectedSection) {
+            Tab(ProcessMainSection.plan.label, systemImage: ProcessMainSection.plan.icon, value: ProcessMainSection.plan) {
+                planTabRoot
+            }
+
+            Tab(ProcessMainSection.coach.label, systemImage: ProcessMainSection.coach.icon, value: ProcessMainSection.coach) {
+                coachTabPlaceholder
+            }
+
+            Tab(ProcessMainSection.profile.label, systemImage: ProcessMainSection.profile.icon, value: ProcessMainSection.profile) {
+                profileTabRoot
+            }
+        }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .tabViewBottomAccessory {
+            if !isWelcomePlanGating {
+                ProcessCoachTabAccessory(namespace: coachZoomNamespace, onTap: openCoachFromAccessory)
+            }
+        }
+        .tint(theme.primaryText)
+    }
+
+    // MARK: - iOS 18–25 fallback
+
+    private var legacyTabShell: some View {
+        ProcessBevelLegacyTabShell(
+            selectedSection: $selectedSection,
+            coachZoomNamespace: coachZoomNamespace,
+            isWelcomePlanGating: isWelcomePlanGating,
+            onPresentCoach: openCoachFromAccessory
+        ) {
+            legacyTabContent
+                .coordinateSpace(name: "processMainScroll")
+        }
+    }
+
+    @ViewBuilder
+    private var legacyTabContent: some View {
+        switch selectedSection {
+        case .plan:
+            planTabRoot
+        case .profile:
+            profileTabRoot
+        case .coach:
+            coachTabPlaceholder
+        }
+    }
+
+    // MARK: - Tab roots
+
+    private var planTabRoot: some View {
+        PlanDashboardView(selectedSection: $selectedSection)
+            .background(theme.background.ignoresSafeArea())
+    }
+
+    private var profileTabRoot: some View {
+        ProcessProfileView(selectedSection: $selectedSection)
+            .background(theme.background.ignoresSafeArea())
+            .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
+                openWelcomePlanConfiguration()
+            }
+    }
+
     private var coachTabPlaceholder: some View {
         Color.clear
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -100,18 +135,37 @@ struct MainAppView: View {
             .accessibilityHidden(true)
     }
 
-    private func presentCoach() {
-        guard !isCoachPresented else { return }
-        HapticManager.shared.impact(.light)
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.88)) {
-            isCoachPresented = true
+    // MARK: - Navigation
+
+    private func handleSectionChange(from oldValue: ProcessMainSection, to newValue: ProcessMainSection) {
+        resignFirstResponder()
+
+        guard newValue == .coach else { return }
+        tabBeforeCoach = oldValue.isShellTab ? oldValue : tabBeforeCoach
+        selectedSection = tabBeforeCoach
+        openCoach()
+    }
+
+    private func openCoachFromAccessory() {
+        if selectedSection.isShellTab, selectedSection != .coach {
+            tabBeforeCoach = selectedSection
         }
+        openCoach()
+    }
+
+    private func openCoach() {
+        guard !isCoachPresented else { return }
+        resignFirstResponder()
+        HapticManager.shared.impact(.light)
+        isCoachPresented = true
+    }
+
+    private func presentCoach() {
+        openCoach()
     }
 
     private func dismissCoachPresentation() {
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
-            isCoachPresented = false
-        }
+        isCoachPresented = false
     }
 
     private func openProfileFromCoach() {

@@ -209,10 +209,55 @@ enum MealNutritionCatalog {
             potassiumMg: max(potassium, 650)
         )
     }
+
+    // MARK: - Balance K/Na (cartes repas)
+
+    static func electrolyteBalance(for meal: MealSuggestionContent) -> MealElectrolyteBalance {
+        MealElectrolyteBalance.from(profile: profile(for: meal))
+    }
+
+    static func isDebloatOptimized(_ profile: MealNutritionProfile) -> Bool {
+        knaRatioScore(profile) >= 68
+            && lowSodiumScore(profile) >= 68
+            && potassiumScore(profile) >= 62
+    }
+}
+
+struct MealElectrolyteBalance: Equatable {
+    let potassiumShare: Double
+    let sodiumShare: Double
+    let ratio: Double
+    let ratioLabel: String
+    let isDebloatOptimized: Bool
+
+    static func from(profile: MealNutritionProfile) -> MealElectrolyteBalance {
+        let ratio = profile.potassiumSodiumRatio
+        let potassiumShare = min(0.88, max(0.56, ratio / (ratio + 0.8)))
+        let rounded = (ratio * 10).rounded() / 10
+        let ratioLabel = rounded.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f:1", rounded)
+            : String(format: "%.1f:1", rounded)
+
+        return MealElectrolyteBalance(
+            potassiumShare: potassiumShare,
+            sodiumShare: 1 - potassiumShare,
+            ratio: ratio,
+            ratioLabel: ratioLabel,
+            isDebloatOptimized: MealNutritionCatalog.isDebloatOptimized(profile)
+        )
+    }
+}
+
+enum MealElectrolytePalette {
+    static let potassium = Color(red: 0.24, green: 0.70, blue: 0.46)
+    static let sodium = Color(red: 0.93, green: 0.52, blue: 0.30)
 }
 
 enum PlanMealSlotLabel {
-    static func carouselTitle(for slot: MealTimeSlot) -> String {
+    static func carouselTitle(for slot: MealTimeSlot, planType: NutritionPlanType = .threeMeals) -> String {
+        if planType == .omad, slot == .lunch {
+            return "Repas du jour"
+        }
         switch slot {
         case .breakfast: return "Ce matin"
         case .lunch: return "Ce midi"
@@ -223,10 +268,11 @@ enum PlanMealSlotLabel {
 
     static func preferredSlot(
         in slots: [MealTimeSlot],
+        planType: NutritionPlanType = .threeMeals,
         validated: Set<MealTimeSlot> = [],
         now: Date = Date()
     ) -> MealTimeSlot {
-        let timeSlot = preferredSlotByTime(in: slots, now: now)
+        let timeSlot = preferredSlotByTime(in: slots, planType: planType, now: now)
         guard validated.contains(timeSlot) else { return timeSlot }
 
         if let startIndex = slots.firstIndex(of: timeSlot) {
@@ -237,12 +283,29 @@ enum PlanMealSlotLabel {
         return slots.first { !validated.contains($0) } ?? timeSlot
     }
 
-    private static func preferredSlotByTime(in slots: [MealTimeSlot], now: Date) -> MealTimeSlot {
+    private static func preferredSlotByTime(
+        in slots: [MealTimeSlot],
+        planType: NutritionPlanType,
+        now: Date
+    ) -> MealTimeSlot {
         let hour = Calendar.current.component(.hour, from: now)
-        if slots.contains(.dinner), hour >= 17 { return .dinner }
-        if slots.contains(.lunch), hour >= 11, hour < 17 { return .lunch }
-        if slots.contains(.breakfast), hour < 11 { return .breakfast }
-        if slots.contains(.snack), hour >= 15, hour < 17 { return .snack }
-        return slots.last ?? .lunch
+        let minute = Calendar.current.component(.minute, from: now)
+        let minutesSinceMidnight = hour * 60 + minute
+
+        let ordered = slots.sorted { lhs, rhs in
+            let l = PlanMealSchedule.timing(for: lhs, planType: planType)?.windowEndHour ?? 0
+            let r = PlanMealSchedule.timing(for: rhs, planType: planType)?.windowEndHour ?? 0
+            return l < r
+        }
+
+        if let active = ordered.last(where: { slot in
+            guard let timing = PlanMealSchedule.timing(for: slot, planType: planType) else { return false }
+            let start = timing.windowStartHour * 60 + timing.windowStartMinute
+            return minutesSinceMidnight >= start
+        }) {
+            return active
+        }
+
+        return ordered.first ?? slots.last ?? .lunch
     }
 }

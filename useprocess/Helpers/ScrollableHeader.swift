@@ -12,33 +12,22 @@ extension View {
         Group {
             if let dismissesKeyboard {
                 ScrollView {
-                    content()
+                    scrollTrackedContent(content())
                 }
                 .scrollDisabled(scrollDisabled)
                 .scrollDismissesKeyboard(dismissesKeyboard)
             } else {
                 ScrollView {
-                    content()
+                    scrollTrackedContent(content())
                 }
                 .scrollDisabled(scrollDisabled)
             }
         }
+        .coordinateSpace(name: "processMainScroll")
         .scrollIndicators(.hidden)
     }
 
-    /// Profil : hero edge-to-edge sous la status bar native.
-    func processProfileScrollableChrome<ScrollContent: View>(
-        selectedSection: Binding<ProcessMainSection>,
-        @ViewBuilder content: @escaping () -> ScrollContent
-    ) -> some View {
-        processMainScrollableChrome(
-            selectedSection: selectedSection,
-            pageSection: .profile
-        ) {
-            content()
-        }
-        .scrollContentBackground(.hidden)
-        .scrollClipDisabled()
-        .contentMargins(.horizontal, 0, for: .scrollContent)
+    private func scrollTrackedContent<ScrollContent: View>(_ content: ScrollContent) -> some View {
+        content.processReportsTabBarScrollOffset()
     }
 }

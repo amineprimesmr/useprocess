@@ -1,26 +1,6 @@
 import SwiftUI
 import UIKit
 
-private enum CoachAttachmentSheet: Identifiable {
-    case camera
-    case photos
-
-    var id: String {
-        switch self {
-        case .camera: "camera"
-        case .photos: "photos"
-        }
-    }
-}
-
-private struct CoachBottomChromeHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 110
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
 struct CoachChatView: View {
     @Binding var selectedSection: ProcessMainSection
     var onOpenProfile: () -> Void
@@ -33,13 +13,12 @@ struct CoachChatView: View {
     @State private var viewModel = CoachChatViewModel()
     @FocusState private var isInputFocused: Bool
     @State private var thinkingBlobStart = Date.now
-    @State private var showAttachmentMenu = false
-    @State private var activeAttachmentSheet: CoachAttachmentSheet?
+    @State private var isCompactCameraPresented = false
+    @State private var attachmentFlyImage: UIImage?
     @State private var messageContextMenu: CoachUserMessageContextState?
     @State private var showFaceScan = false
     @State private var isSidebarExpanded = false
     @State private var planStore = WelcomePlanStore.shared
-    @State private var bottomChromeHeight: CGFloat = 110
 
     private let messageFont = Font.system(size: 17, weight: .regular)
     private let messageLineSpacing: CGFloat = 4
@@ -77,44 +56,21 @@ struct CoachChatView: View {
                 coachMessageContextOverlay
             }
         }
-        .ios26SafeAnimation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
-        .onPreferenceChange(CoachBottomChromeHeightKey.self) { height in
-            if height > 0 {
-                bottomChromeHeight = height
-            }
-        }
         .overlay {
-            if showAttachmentMenu,
-               !isCoachSidebarPresenting,
-               !viewModel.showsHomeInsteadOfInput,
-               !viewModel.isVoiceRecording,
-               !viewModel.isVoiceExiting {
-                Color.black.opacity(0.001)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        showAttachmentMenu = false
+            if let image = attachmentFlyImage {
+                CoachPhotoShrinkToInputAnimation(
+                    image: image,
+                    cameraPanelHeight: coachInlineCameraHeight,
+                    onComplete: {
+                        attachmentFlyImage = nil
+                        viewModel.stageImageAttachment(image)
+                        isInputFocused = true
                     }
-            }
-        }
-        .overlay(alignment: .bottomLeading) {
-            if showAttachmentMenu,
-               !isCoachSidebarPresenting,
-               !viewModel.showsHomeInsteadOfInput,
-               !viewModel.isVoiceRecording,
-               !viewModel.isVoiceExiting {
-                CoachAttachmentGlassPopover { option in
-                    showAttachmentMenu = false
-                    handleAttachmentOption(option)
-                }
-                .padding(.leading, 28)
-                .padding(.bottom, bottomChromeHeight + 18)
-                .transition(
-                    .scale(scale: 0.88, anchor: .bottomLeading)
-                        .combined(with: .opacity)
                 )
+                .zIndex(300)
             }
         }
-        .ios26SafeAnimation(ProcessGlass.spring, value: showAttachmentMenu)
+        .ios26SafeAnimation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
         .onAppear {
             planStore.reloadForCurrentUser()
         }
@@ -129,7 +85,7 @@ struct CoachChatView: View {
         }
         .onChange(of: isSidebarExpanded) { _, expanded in
             guard expanded else { return }
-            showAttachmentMenu = false
+            isCompactCameraPresented = false
             messageContextMenu = nil
             dismissCoachKeyboard()
         }
@@ -147,44 +103,53 @@ struct CoachChatView: View {
             )
             .environmentObject(profileService)
         }
-        .fullScreenCover(item: $activeAttachmentSheet) { sheet in
-            switch sheet {
-            case .camera:
-                CoachChatCameraSheet(
-                    onCapture: { image in
-                        activeAttachmentSheet = nil
-                        viewModel.stageImageAttachment(image)
-                        isInputFocused = true
-                    },
-                    onCancel: { activeAttachmentSheet = nil }
-                )
-            case .photos:
-                CoachChatPhotoLibrarySheet(
-                    onSelect: { image in
-                        activeAttachmentSheet = nil
-                        viewModel.stageImageAttachment(image)
-                        isInputFocused = true
-                    },
-                    onCancel: { activeAttachmentSheet = nil }
-                )
-            }
+    }
+
+    private func handleCapturedPhoto(_ image: UIImage) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+            isCompactCameraPresented = false
         }
+        attachmentFlyImage = image
+    }
+
+    private var coachInlineCameraHeight: CGFloat {
+        max(320, UIScreen.main.bounds.height * 0.55)
     }
 
     private var coachContentLayer: some View {
-        ZStack(alignment: .bottom) {
-            chatScrollLayer
-
-            coachBottomAccessoryView
-                .background {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .preference(key: CoachBottomChromeHeightKey.self, value: proxy.size.height)
-                    }
+        chatScrollLayer
+            .overlay {
+                if isCompactCameraPresented {
+                    Color.black.opacity(0.14)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
                 }
-                .zIndex(5)
-        }
-        .overlay(alignment: .topLeading) {
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if isCompactCameraPresented,
+                   !isCoachSidebarPresenting,
+                   !viewModel.showsHomeInsteadOfInput,
+                   !viewModel.isVoiceRecording,
+                   !viewModel.isVoiceExiting {
+                    CoachInlineBottomCameraPanel(
+                        panelHeight: coachInlineCameraHeight,
+                        onCapture: { image in
+                            handleCapturedPhoto(image)
+                        },
+                        onCancel: {
+                            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                                isCompactCameraPresented = false
+                            }
+                        }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    coachBottomAccessoryView
+                        .padding(.bottom, isInputFocused ? 12 : 8)
+                }
+            }
+            .ios26SafeAnimation(.spring(response: 0.34, dampingFraction: 0.86), value: isCompactCameraPresented)
+            .overlay(alignment: .topLeading) {
             if viewModel.isSidebarEnabled, !isCoachSidebarPresenting {
                 coachMenuButton
                     .padding(.top, ProcessMainChromeMetrics.topSafeInset + 2)
@@ -269,6 +234,11 @@ struct CoachChatView: View {
         )
     }
 
+    private var coachConversationTopInset: CGFloat {
+        let menuClearance: CGFloat = viewModel.isSidebarEnabled ? 44 : 0
+        return ProcessMainChromeMetrics.topSafeInset + menuClearance + 10
+    }
+
     private var chatScrollLayer: some View {
         ZStack(alignment: .topLeading) {
             if viewModel.showsContextualHome {
@@ -305,9 +275,6 @@ struct CoachChatView: View {
                     )
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear.frame(height: bottomChromeHeight)
-        }
         .contentShape(Rectangle())
         .simultaneousGesture(
             TapGesture().onEnded {
@@ -339,9 +306,9 @@ struct CoachChatView: View {
                                 configurationBanner
                             }
 
-                            ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
+                            ForEach(viewModel.messages) { message in
                                 messageRow(message)
-                                    .padding(.top, messageTopSpacing(at: index))
+                                    .padding(.top, messageTopSpacing(before: message))
                                     .id(message.id)
                             }
 
@@ -363,7 +330,11 @@ struct CoachChatView: View {
                         .id(viewModel.activeConversationId?.uuidString ?? "coach-no-conversation")
                         .padding(.leading, 16)
                         .padding(.trailing, 6)
-                        .padding(.vertical, 12)
+                        .padding(.bottom, 12)
+                    }
+                    .defaultScrollAnchor(.bottom)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        Color.clear.frame(height: coachConversationTopInset)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .simultaneousGesture(
@@ -423,7 +394,6 @@ struct CoachChatView: View {
             isDisabled: viewModel.isSending,
             isRecording: viewModel.isVoiceRecording,
             isVoiceExiting: viewModel.isVoiceExiting,
-            isAttachmentMenuOpen: showAttachmentMenu,
             voiceAudioLevel: viewModel.voiceAudioLevel,
             voiceAudioLevels: viewModel.voiceAudioLevels,
             onSend: {
@@ -431,7 +401,7 @@ struct CoachChatView: View {
                 Task { await viewModel.sendCurrentMessage() }
             },
             onStartVoice: {
-                showAttachmentMenu = false
+                isCompactCameraPresented = false
                 Task { await viewModel.startVoiceRecording() }
             },
             onCancelVoice: {
@@ -445,9 +415,11 @@ struct CoachChatView: View {
                     }
                 }
             },
-            onOpenMenu: {
-                showAttachmentMenu.toggle()
+            onOpenCamera: {
                 dismissCoachKeyboard()
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                    isCompactCameraPresented = true
+                }
             },
             onRemovePendingImage: {
                 viewModel.clearPendingAttachment()
@@ -455,6 +427,7 @@ struct CoachChatView: View {
         )
         .padding(.horizontal, 14)
         .padding(.bottom, 10)
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: viewModel.pendingAttachmentImage != nil)
         .animation(.easeInOut(duration: 0.22), value: isInputFocused)
     }
 
@@ -502,8 +475,13 @@ struct CoachChatView: View {
         viewModel.messages.last?.role == .user ? CoachMessageSpacing.userToAssistant : 0
     }
 
-    private func messageTopSpacing(at index: Int) -> CGFloat {
-        guard index > 0 else { return 0 }
+    private func messageTopSpacing(before message: CoachMessage) -> CGFloat {
+        guard let index = viewModel.messages.firstIndex(where: { $0.id == message.id }),
+              index > 0,
+              index < viewModel.messages.count else {
+            return 0
+        }
+
         let previous = viewModel.messages[index - 1]
         let current = viewModel.messages[index]
         if previous.role == .user, current.role == .assistant {
@@ -513,16 +491,6 @@ struct CoachChatView: View {
             return CoachMessageSpacing.assistantToUser
         }
         return 0
-    }
-
-    private func handleAttachmentOption(_ option: CoachAttachmentOption) {
-        dismissCoachKeyboard()
-        switch option {
-        case .camera:
-            activeAttachmentSheet = .camera
-        case .photos:
-            activeAttachmentSheet = .photos
-        }
     }
 
     private func dismissCoachKeyboard() {
@@ -535,7 +503,7 @@ struct CoachChatView: View {
         )
     }
 
-    private var scrollBottomInset: CGFloat { 12 }
+    private var scrollBottomInset: CGFloat { 20 }
 
     private func scrollToBottom(
         _ proxy: ScrollViewProxy,
@@ -648,7 +616,6 @@ private struct CoachChatBottomAccessory<ContextualBar: View, InputBar: View>: Vi
                     isDisabled: isSending,
                     onSelect: onSelectSuggestion
                 )
-                .padding(.horizontal, 20)
                 .transition(
                     .opacity
                         .combined(with: .offset(y: 10))

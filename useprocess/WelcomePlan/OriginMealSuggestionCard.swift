@@ -426,7 +426,7 @@ struct OriginMealSuggestionCard: View {
                         plan: livePlan, day: day,
                         profile: profileService.currentProfile,
                         slot: selectedSlot,
-                        mode: .modify(current: current)
+                        mode: .modify(current: current, instruction: nil)
                     )
                 }
             },
@@ -482,7 +482,7 @@ struct OriginMealSuggestionCard: View {
                                     day: day,
                                     profile: profileService.currentProfile,
                                     slot: selectedSlot,
-                                    mode: .modify(current: content)
+                                    mode: .modify(current: content, instruction: nil)
                                 )
                             }
                         }

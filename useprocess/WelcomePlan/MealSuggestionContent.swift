@@ -129,6 +129,11 @@ enum MealSuggestionParser {
         return labeled?.isValid == true ? labeled : nil
     }
 
+    static func looksLikeJSON(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("{") && trimmed.contains("\"name\"")
+    }
+
     static func parseOrFallback(_ raw: String) -> MealSuggestionContent {
         parse(raw) ?? fallback(from: raw)
     }
@@ -151,17 +156,99 @@ enum MealSuggestionParser {
 
     private static func parseJSON(_ raw: String) -> MealSuggestionContent? {
         guard raw.hasPrefix("{"), let data = raw.data(using: .utf8) else { return nil }
-        guard var decoded = try? JSONDecoder().decode(MealSuggestionContent.self, from: data) else { return nil }
-        decoded.protocolScore = min(100, max(0, decoded.protocolScore))
-        decoded.showsScore = true
-        if decoded.subScores == nil {
-            decoded.subScores = MealSubScores(
-                protocolFit: decoded.protocolScore,
-                satiety: min(100, decoded.protocolScore + 3),
-                antiBloat: max(45, decoded.protocolScore - 5)
+
+        if let decoded = try? JSONDecoder().decode(MealSuggestionContent.self, from: data) {
+            return normalize(decoded)
+        }
+
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        return parseJSONObject(object)
+    }
+
+    private static func parseJSONObject(_ object: [String: Any]) -> MealSuggestionContent? {
+        guard let name = stringValue(object["name"]),
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+
+        let itemsRaw = object["items"] as? [[String: Any]] ?? []
+        let items = itemsRaw.compactMap { itemObject -> MealSuggestionItem? in
+            guard let itemName = stringValue(itemObject["name"]),
+                  !itemName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return nil
+            }
+            return MealSuggestionItem(
+                name: itemName,
+                quantity: stringValue(itemObject["quantity"]) ?? "—",
+                role: stringValue(itemObject["role"]) ?? "Autre"
             )
         }
-        return decoded.isValid ? decoded : nil
+        guard !items.isEmpty else { return nil }
+
+        let protocolScore = intValue(object["protocolScore"]) ?? 75
+        var subScores: MealSubScores?
+        if let subObject = object["subScores"] as? [String: Any] {
+            subScores = MealSubScores(
+                protocolFit: intValue(subObject["protocolFit"]) ?? protocolScore,
+                satiety: intValue(subObject["satiety"]) ?? min(100, protocolScore + 3),
+                antiBloat: intValue(subObject["antiBloat"]) ?? max(45, protocolScore - 5)
+            )
+        }
+
+        let tags = (object["tags"] as? [Any])?
+            .compactMap { stringValue($0) }
+            .filter { !$0.isEmpty } ?? []
+
+        let meal = MealSuggestionContent(
+            name: name,
+            mealType: stringValue(object["mealType"]) ?? "Repas",
+            protocolScore: protocolScore,
+            scoreSummary: stringValue(object["scoreSummary"]) ?? "",
+            items: items,
+            prepMinutes: intValue(object["prepMinutes"]) ?? 15,
+            prepSummary: stringValue(object["prepSummary"]) ?? "",
+            coachTip: stringValue(object["coachTip"]) ?? "",
+            tags: tags,
+            subScores: subScores,
+            imageAssetName: stringValue(object["imageAssetName"]),
+            showsScore: true
+        )
+        return meal.isValid ? meal : nil
+    }
+
+    private static func normalize(_ decoded: MealSuggestionContent) -> MealSuggestionContent? {
+        var meal = decoded
+        meal.protocolScore = min(100, max(0, meal.protocolScore))
+        meal.showsScore = true
+        if meal.subScores == nil {
+            meal.subScores = MealSubScores(
+                protocolFit: meal.protocolScore,
+                satiety: min(100, meal.protocolScore + 3),
+                antiBloat: max(45, meal.protocolScore - 5)
+            )
+        }
+        return meal.isValid ? meal : nil
+    }
+
+    private static func intValue(_ value: Any?) -> Int? {
+        if let int = value as? Int { return int }
+        if let double = value as? Double { return Int(double.rounded()) }
+        if let string = value as? String {
+            return Int(string.filter(\.isNumber))
+        }
+        return nil
+    }
+
+    private static func stringValue(_ value: Any?) -> String? {
+        if let string = value as? String {
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let int = value as? Int { return String(int) }
+        if let double = value as? Double { return String(format: "%.0f", double) }
+        return nil
     }
 
     private static func parseSubScores(from raw: String, fallbackScore: Int) -> MealSubScores {
@@ -266,6 +353,22 @@ enum MealSuggestionParser {
 
     private static func fallback(from text: String) -> MealSuggestionContent {
         let cleaned = CoachFormattedText.plainText(from: text)
+        if looksLikeJSON(cleaned) {
+            return MealSuggestionContent(
+                name: "Repas à ajuster",
+                mealType: "Repas",
+                protocolScore: 70,
+                scoreSummary: "Réponse IA illisible — réessaie.",
+                items: [MealSuggestionItem(name: "Réessayer", quantity: "—", role: "Autre")],
+                prepMinutes: 15,
+                prepSummary: "",
+                coachTip: "",
+                tags: [],
+                subScores: .balanced,
+                showsScore: true
+            )
+        }
+
         return MealSuggestionContent(
             name: String(cleaned.prefix(48)),
             mealType: "Repas",

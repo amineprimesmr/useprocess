@@ -1,20 +1,21 @@
 import SwiftUI
 
-/// En-tête accueil Plan — salutation + cluster glass profil / réglages.
+/// En-tête accueil Plan — salutation + cluster glass streak / profil.
 struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
+    @Binding var selectedDate: Date
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
 
     @State private var profileStore = SocialProfileStore.shared
-    @State private var showSettings = false
+    @Bindable private var streakStore = ProcessStreakStore.shared
+    @Bindable private var planStore = WelcomePlanStore.shared
+    @State private var showStreakSheet = false
 
     private var greetingFirstName: String {
-        let raw = profileService.currentProfile?.firstName
+        profileService.currentProfile?.firstName
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !raw.isEmpty else { return "toi" }
-        return raw
     }
 
     private var avatarInitials: String {
@@ -41,54 +42,51 @@ struct PlanHomeTopChrome: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Text("Salut \(greetingFirstName)")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(theme.primaryText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
+        HStack(alignment: .top, spacing: 12) {
+            PlanHomeGreetingLabel(firstName: greetingFirstName)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 8)
-
-            profileSettingsCluster
+            profileStreakCluster
         }
+        .padding(.top, 14)
         .padding(.bottom, 4)
-        .sheet(isPresented: $showSettings) {
-            NavigationStack {
-                ProcessSettingsView()
-            }
-            .environmentObject(profileService)
-            .environmentObject(HealthManager.shared)
+        .fullScreenCover(isPresented: $showStreakSheet) {
+            ProcessStreakSheet(selectedDate: $selectedDate)
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
+            streakStore.sync(from: planStore.plan)
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             profileStore.bind(unified: profileService.currentProfile)
+            streakStore.reload()
+            streakStore.sync(from: planStore.plan)
+        }
+        .onChange(of: planStore.plan?.lastUpdated) { _, _ in
+            streakStore.sync(from: planStore.plan)
         }
     }
 
     private enum GlassClusterMetrics {
-        static let tileSize: CGFloat = 40
-        static let spacing: CGFloat = 20
-        static let mergeOffset: CGFloat = -20
-        static let iconSize: CGFloat = 18
-        static let initialsSize: CGFloat = 14
+        static let streakTileWidth: CGFloat = 54
+        static let tileSize: CGFloat = 50
+        static let photoSize: CGFloat = 36
+        static let spacing: CGFloat = 22
+        static let mergeOffset: CGFloat = -22
+        static let iconSize: CGFloat = 15
+        static let initialsSize: CGFloat = 13
     }
 
     @ViewBuilder
-    private var profileSettingsCluster: some View {
+    private var profileStreakCluster: some View {
         if #available(iOS 26.0, *) {
             GlassEffectContainer(spacing: GlassClusterMetrics.spacing) {
                 HStack(spacing: GlassClusterMetrics.spacing) {
-                    Button(action: openSettings) {
-                        Image(systemName: "gearshape.fill")
-                            .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
-                            .font(.system(size: GlassClusterMetrics.iconSize))
-                            .glassEffect()
+                    Button(action: openStreak) {
+                        streakGlassTile
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Réglages")
+                    .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
                     Button(action: openProfile) {
                         profileGlassTile
@@ -99,11 +97,12 @@ struct PlanHomeTopChrome: View {
                 }
             }
         } else {
-            HStack(spacing: 8) {
-                ProcessGlassIconButton(systemName: "gearshape.fill", iconSize: 17) {
-                    openSettings()
+            HStack(spacing: 10) {
+                Button(action: openStreak) {
+                    legacyStreakButton
                 }
-                .accessibilityLabel("Réglages")
+                .buttonStyle(.plain)
+                .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
                 legacyProfileButton
             }
@@ -111,37 +110,67 @@ struct PlanHomeTopChrome: View {
     }
 
     @available(iOS 26.0, *)
-    private var profileGlassTile: some View {
-        Group {
-            if let image = profileStore.profilePhoto {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                ZStack {
-                    Circle().fill(ProfileTheme.avatarAccent)
-                    Text(avatarInitials.prefix(2))
-                        .font(.system(size: GlassClusterMetrics.initialsSize, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.95))
-                }
-            }
+    private var streakGlassTile: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: GlassClusterMetrics.iconSize, weight: .semibold))
+                .foregroundStyle(streakFlameColor)
+
+            Text("\(streakStore.displayStreak)")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(theme.primaryText)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
-        .clipShape(Circle())
+        .frame(width: GlassClusterMetrics.streakTileWidth, height: GlassClusterMetrics.tileSize)
         .glassEffect()
+    }
+
+    @available(iOS 26.0, *)
+    private var profileGlassTile: some View {
+        profileAvatarContent(
+            size: GlassClusterMetrics.photoSize,
+            initialsSize: GlassClusterMetrics.initialsSize
+        )
+        .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
+        .glassEffect()
+    }
+
+    private var legacyStreakButton: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(streakFlameColor)
+            Text("\(streakStore.displayStreak)")
+                .font(.system(size: 15, weight: .bold))
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+        .processGlassCircle(interactive: true)
     }
 
     private var legacyProfileButton: some View {
         Button(action: openProfile) {
-            profileAvatar(size: 36)
+            profileAvatar(size: 40)
         }
         .buttonStyle(.plain)
         .processGlassCircle(interactive: true)
         .accessibilityLabel("Profil")
     }
 
+    private var streakFlameColor: Color {
+        streakStore.displayStreak > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
+    }
+
     @ViewBuilder
     private func profileAvatar(size: CGFloat) -> some View {
+        profileAvatarContent(size: size, initialsSize: size * 0.34)
+    }
+
+    @ViewBuilder
+    private func profileAvatarContent(size: CGFloat, initialsSize: CGFloat) -> some View {
         Group {
             if let image = profileStore.profilePhoto {
                 Image(uiImage: image)
@@ -151,7 +180,7 @@ struct PlanHomeTopChrome: View {
                 ZStack {
                     Circle().fill(ProfileTheme.avatarAccent)
                     Text(avatarInitials.prefix(2))
-                        .font(.system(size: size * 0.34, weight: .bold))
+                        .font(.system(size: initialsSize, weight: .bold))
                         .foregroundStyle(.white.opacity(0.95))
                 }
             }
@@ -167,8 +196,122 @@ struct PlanHomeTopChrome: View {
         }
     }
 
-    private func openSettings() {
+    private func openStreak() {
         HapticManager.shared.impact(.light)
-        showSettings = true
+        streakStore.sync(from: planStore.plan)
+        showStreakSheet = true
+    }
+}
+
+// MARK: - Salutation accueil
+
+private struct PlanHomeGreetingLabel: View {
+    let firstName: String
+
+    @Environment(\.appTheme) private var theme
+
+    @State private var displayedText = ""
+    @State private var showsEmoji = false
+    @State private var textVisible = false
+    @State private var animationTask: Task<Void, Never>?
+
+    private var fullGreeting: String {
+        let raw = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.isEmpty {
+            return "Prêt ?"
+        }
+        return "Prêt, \(raw) ?"
+    }
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 7) {
+            ZStack(alignment: .leading) {
+                Text(fullGreeting)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.clear)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .accessibilityHidden(true)
+
+                Text(displayedText)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(theme.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .opacity(textVisible ? 1 : 0)
+                    .offset(y: textVisible ? 0 : 8)
+                    .blur(radius: textVisible ? 0 : 6)
+            }
+
+            Text("👋")
+                .font(.system(size: 24))
+                .opacity(showsEmoji ? 1 : 0)
+                .scaleEffect(showsEmoji ? 1 : 0.35)
+                .rotationEffect(.degrees(showsEmoji ? 0 : -18))
+                .offset(y: showsEmoji ? 0 : 6)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(fullGreeting), salut")
+        .onAppear {
+            runGreetingAnimation()
+        }
+        .onChange(of: firstName) { _, _ in
+            runGreetingAnimation()
+        }
+        .onDisappear {
+            animationTask?.cancel()
+            animationTask = nil
+        }
+    }
+
+    private func runGreetingAnimation() {
+        animationTask?.cancel()
+        displayedText = ""
+        showsEmoji = false
+        textVisible = false
+
+        animationTask = Task {
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                withAnimation(.spring(response: 0.52, dampingFraction: 0.84)) {
+                    textVisible = true
+                }
+            }
+
+            let text = fullGreeting
+            for character in text {
+                guard !Task.isCancelled else { return }
+                try? await Task.sleep(nanoseconds: typingDelay(for: character))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    displayedText.append(character)
+                }
+            }
+
+            guard !Task.isCancelled else { return }
+            try? await Task.sleep(nanoseconds: 90_000_000)
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) {
+                    showsEmoji = true
+                }
+            }
+        }
+    }
+
+    private func typingDelay(for character: Character) -> UInt64 {
+        switch character {
+        case " ", "\n", "\t":
+            return 18_000_000
+        case "?", "!", ".":
+            return 72_000_000
+        case ",":
+            return 48_000_000
+        default:
+            return 30_000_000
+        }
     }
 }

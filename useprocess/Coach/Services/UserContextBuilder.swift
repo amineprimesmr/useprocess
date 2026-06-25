@@ -263,14 +263,11 @@ enum UserContextBuilder {
             }
         }
 
-        lines.append(CoachPlanContextBuilder.compactBlock(
+        lines.append(CoachPlanContextBuilder.unifiedPromptSections(
             plan: WelcomePlanStore.shared.plan,
-            memory: CoachMemoryStore.shared.memory
+            memory: CoachMemoryStore.shared.memory,
+            questionnaire: WelcomePlanStore.shared.questionnaire
         ))
-
-        if let plan = WelcomePlanStore.shared.plan {
-            lines.append(CoachPlanContextBuilder.todayDetailBlock(plan: plan))
-        }
 
         if lines.isEmpty {
             return "CONTEXTE : profil useprocess (données limitées)."

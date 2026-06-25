@@ -9,6 +9,8 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 
     static let tabOrder: [ProcessMainSection] = [.plan, .coach, .profile]
 
+    var isShellTab: Bool { true }
+
     var label: String {
         switch self {
         case .coach: "Coach"

@@ -328,6 +328,12 @@ final class UnifiedProfileService: ObservableObject {
             if let currentProfile {
                 persistLocalProfile(currentProfile)
                 SocialProfileStore.shared.syncFromUnified(currentProfile)
+                Task {
+                    await ProcessUsernameProvisioner.ensureUsernameClaimed(
+                        profile: currentProfile,
+                        profileService: self
+                    )
+                }
             }
         } catch {
             self.error = error
@@ -342,6 +348,12 @@ final class UnifiedProfileService: ObservableObject {
             isAuthenticated = true
             if let currentProfile {
                 SocialProfileStore.shared.syncFromUnified(currentProfile)
+                Task {
+                    await ProcessUsernameProvisioner.ensureUsernameClaimed(
+                        profile: currentProfile,
+                        profileService: self
+                    )
+                }
             }
         }
     }
@@ -364,6 +376,35 @@ final class UnifiedProfileService: ObservableObject {
         guard var profile = currentProfile else { return }
         profile.preferences = preferences
         try await saveProfile(profile)
+    }
+
+    func updateUsername(_ rawTag: String, displayName: String? = nil) async throws {
+        guard var profile = currentProfile else {
+            throw ProcessUsernameError.notAuthenticated
+        }
+
+        let normalized = ProcessUsernameTag.normalize(rawTag)
+        try ProcessUsernameTag.validate(normalized)
+
+        let trimmedDisplay = displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let trimmedFirst = profile.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let label = !trimmedDisplay.isEmpty ? trimmedDisplay : (!trimmedFirst.isEmpty ? trimmedFirst : normalized)
+
+        if currentFirebaseUser != nil {
+            try await ProcessUsernameRegistry.shared.claimUsername(
+                tag: normalized,
+                userId: profile.userId,
+                displayName: label,
+                previousTag: profile.username
+            )
+        }
+
+        profile.username = normalized
+        try await saveProfile(profile)
+    }
+
+    func lookupUser(byTag rawTag: String) async throws -> ProcessPublicUserTag {
+        try await ProcessUsernameRegistry.shared.lookup(tag: rawTag)
     }
 }
 

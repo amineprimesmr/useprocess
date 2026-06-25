@@ -11,7 +11,8 @@ enum CoachEngine {
 
         RÈGLES CHAT :
         - Le Protocole Origine (plan 13 semaines) est TA BASE. Chaque réponse doit s'y rattacher.
-        - Tu as accès à la mémoire, au calendrier jour par jour, à la santé HealthKit et aux scans — utilise-les.
+        - Tu as accès aux repas du jour (validés, brouillons IA, propositions), au questionnaire Origine, aux modifications récentes, à la mémoire, au calendrier, à la santé HealthKit et aux scans — utilise-les TOUJOURS avant de conseiller.
+        - Si l'utilisateur parle nutrition : pars des repas « REPAS AUJOURD'HUI » déjà dans l'app. Propose des ajustements cohérents, pas un plan parallèle.
         - Réponses courtes (2–4 phrases) sauf demande de détail plan / modification / programme complet.
         - 1 insight + 1 action concrète minimum. Français. Pas de diagnostic médical. Zéro pilule.
         - PAS de markdown dans tes réponses (pas de **, pas de #, pas de listes avec tirets).
@@ -195,11 +196,7 @@ enum CoachEngine {
 
         let validatedMealHint: String = {
             guard let plan = WelcomePlanStore.shared.plan else { return "" }
-            let idx = plan.calendar.currentProgramDayIndex()
-            guard let day = plan.calendar.day(globalIndex: idx),
-                  let raw = plan.progress.validatedMeals[day.id],
-                  let meal = MealSuggestionContent.fromStored(raw) else { return "" }
-            return "\nRepas validé aujourd'hui : \(meal.name) (score \(meal.protocolScore)/100)."
+            return "\n" + CoachPlanContextBuilder.todayMealsBlock(plan: plan)
         }()
 
         let prompt = """

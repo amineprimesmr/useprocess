@@ -6,7 +6,7 @@ enum OriginMealSuggestionService {
     enum RequestMode: Equatable {
         case fresh
         case another(previous: MealSuggestionContent)
-        case modify(current: MealSuggestionContent)
+        case modify(current: MealSuggestionContent, instruction: String?)
         case modifyItem(current: MealSuggestionContent, item: MealSuggestionItem, instruction: String)
         case batch(count: Int, slot: MealTimeSlot)
         case itemAlternatives(current: MealSuggestionContent, item: MealSuggestionItem)
@@ -79,7 +79,7 @@ enum OriginMealSuggestionService {
             mode: mode,
             slot: slot
         )
-        return decode(text)
+        return try decode(text)
     }
 
     @MainActor
@@ -108,7 +108,7 @@ enum OriginMealSuggestionService {
                 slot: slot,
                 extraExclude: exclude
             )
-            let meal = decode(text)
+            let meal = try decode(text)
             results.append(meal)
             exclude.append(meal.name)
         }
@@ -180,7 +180,7 @@ enum OriginMealSuggestionService {
             maxTokens: 520
         )
 
-        return decode(text)
+        return try decode(text)
     }
 
     // MARK: - Private
@@ -234,17 +234,35 @@ enum OriginMealSuggestionService {
 
             Propose un AUTRE repas différent, créneau \(slotLabel), en restant dans la logique debloat/potassium de la base Process.
             """
-        case .modify(let current):
-            userPrompt = """
-            \(UserContextBuilder.compactPromptBlock(from: context))
+        case .modify(let current, let instruction):
+            let trimmedInstruction = instruction?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if trimmedInstruction.isEmpty {
+                userPrompt = """
+                \(UserContextBuilder.compactPromptBlock(from: context))
 
-            Repas actuel :
-            \(current.encodedForStorage())
+                Repas actuel :
+                \(current.encodedForStorage())
 
-            \(processMealBase)
+                \(processMealBase)
 
-            Propose une VARIANTE ajustée — même esprit, légèrement modifié, sodium modéré et potassium naturel.
-            """
+                Propose une VARIANTE ajustée — même esprit, légèrement modifié, sodium modéré et potassium naturel.
+                """
+            } else {
+                userPrompt = """
+                \(UserContextBuilder.compactPromptBlock(from: context))
+
+                Repas actuel :
+                \(current.encodedForStorage())
+
+                Demande utilisateur :
+                \(trimmedInstruction)
+
+                \(processMealBase)
+
+                Regénère le repas complet en appliquant cette demande, sans sortir des règles debloat Process.
+                """
+            }
         case .modifyItem(let current, let item, let instruction):
             userPrompt = """
             \(UserContextBuilder.compactPromptBlock(from: context))
@@ -272,9 +290,11 @@ enum OriginMealSuggestionService {
         )
     }
 
-    private static func decode(_ text: String) -> MealSuggestionContent {
+    private static func decode(_ text: String) throws -> MealSuggestionContent {
         let sanitized = MealSuggestionParser.sanitize(text)
-        var meal = MealSuggestionParser.parse(sanitized) ?? MealSuggestionParser.parseOrFallback(sanitized)
+        guard var meal = MealSuggestionParser.parse(sanitized) else {
+            throw MealHubError.invalidResponse
+        }
         meal.showsScore = true
         return meal
     }
@@ -306,4 +326,5 @@ enum OriginMealSuggestionService {
 enum MealHubError: Error {
     case noAlternatives
     case photoRequired
+    case invalidResponse
 }

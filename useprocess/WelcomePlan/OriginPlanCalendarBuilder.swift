@@ -60,7 +60,7 @@ enum OriginPlanCalendarBuilder {
                         nutrition: nutrition,
                         training: training,
                         posture: postureTasks(plan: plan, targets: targets, dayId: dayId),
-                        face: faceTasks(plan: plan, week: weekNum, totalWeeks: totalWeeks, targets: targets, dayId: dayId, weekday: weekday),
+                        face: faceTasks(targets: targets, dayId: dayId),
                         evening: eveningTasks(plan: plan, answers: answers, targets: targets, dayId: dayId),
                         sleep: OriginDaySleep(
                             targetBedtime: bedtime,
@@ -321,22 +321,16 @@ enum OriginPlanCalendarBuilder {
         dayId: String
     ) -> [OriginPlanTask] {
         [
-            task("Lumière matinale", "\(targets.morningLightMinutes) min soleil ou lumière naturelle", "Hormones", targets.morningLightMinutes, dayId: dayId),
             task(ProcessHydrationGuide.dailyTaskTitle, "Objectif \(targets.hydrationLabel) dans la journée", "Nutrition", nil, dayId: dayId),
+            task("Lumière matinale", "\(targets.morningLightMinutes) min soleil ou lumière naturelle", "Hormones", targets.morningLightMinutes, dayId: dayId),
             task(
                 "Eau froide sur le visage",
                 "\(targets.coldFaceRinseSeconds) sec — front, joues, contour des yeux.",
                 "Visage",
                 nil,
                 dayId: dayId
-            ),
-            task("Alimentation parfaite", alimentationParfaiteDetail(plan: plan), "Nutrition", nil, dayId: dayId)
+            )
         ]
-    }
-
-    private static func alimentationParfaiteDetail(plan: FaceOriginPlan) -> String {
-        plan.nutritionProtocol.principles.prefix(2).joined(separator: " · ")
-            .nilIfEmpty ?? "Repas denses — valide ton repas du jour."
     }
 
     private static func postureTasks(
@@ -352,14 +346,10 @@ enum OriginPlanCalendarBuilder {
     }
 
     private static func faceTasks(
-        plan: FaceOriginPlan,
-        week: Int,
-        totalWeeks: Int,
         targets: OriginPersonalizedDailyTargets,
-        dayId: String,
-        weekday: Int
+        dayId: String
     ) -> [OriginPlanTask] {
-        var tasks: [OriginPlanTask] = [
+        [
             task(
                 "Massage lymphatique",
                 "\(targets.lymphFaceMassageMinutes) min sous les yeux vers les oreilles",
@@ -368,21 +358,6 @@ enum OriginPlanCalendarBuilder {
                 dayId: dayId
             )
         ]
-
-        let scanWeeks = scanWeeksForPlan(totalWeeks: totalWeeks)
-        if scanWeeks.contains(week), weekday == 0 {
-            tasks.insert(
-                task("Scan visage", "Photo debloat — compare avec le baseline", "Visage", 2, dayId: dayId),
-                at: 0
-            )
-        }
-        return tasks
-    }
-
-    private static func scanWeeksForPlan(totalWeeks: Int) -> Set<Int> {
-        if totalWeeks <= 1 { return [1] }
-        if totalWeeks <= 3 { return [1, totalWeeks] }
-        return [1, max(2, totalWeeks / 2), totalWeeks]
     }
 
     private static func eveningTasks(

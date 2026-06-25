@@ -40,8 +40,6 @@ struct ProfileHealthSection: View {
             )
 
             HealthTodayMetricsCard()
-
-            HealthMedicalSourcesView(style: .compact)
         }
         .task { await ProfileHealthSection.refreshAll(force: false) }
         .onAppear {

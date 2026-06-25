@@ -28,7 +28,7 @@ struct CoachFullScreenPresentationView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.86).delay(0.07), value: showsCloseButton)
         }
         .background(theme.background.ignoresSafeArea())
-        .ignoresSafeArea()
+        .ignoresSafeArea(edges: .top)
         .onAppear {
             showsCloseButton = true
         }

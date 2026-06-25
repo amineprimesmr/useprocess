@@ -5,6 +5,8 @@ import UIKit
 
 struct MealSuggestionCardView: View {
     let content: MealSuggestionContent
+    var mealScheduleTarget: String?
+    var mealScheduleWindow: String?
     var isValidated: Bool = false
     var showsActions: Bool = true
     var showsScoreBreakdown: Bool = true
@@ -73,6 +75,21 @@ struct MealSuggestionCardView: View {
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(theme.onboardingAccent)
                     .tracking(0.6)
+
+                if let mealScheduleTarget {
+                    HStack(spacing: 6) {
+                        Text(mealScheduleTarget)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(theme.onboardingAccent)
+                            .monospacedDigit()
+
+                        if let mealScheduleWindow {
+                            Text(mealScheduleWindow)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(theme.secondaryText)
+                        }
+                    }
+                }
 
                 Text(content.name)
                     .font(.title3.weight(.bold))

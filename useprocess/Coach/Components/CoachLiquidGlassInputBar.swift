@@ -13,7 +13,6 @@ struct CoachLiquidGlassInputBar: View {
     var isDisabled: Bool = false
     var isRecording: Bool = false
     var isVoiceExiting: Bool = false
-    var isAttachmentMenuOpen: Bool = false
     var voiceAudioLevel: CGFloat = 0
     var voiceAudioLevels: [CGFloat] = []
 
@@ -21,7 +20,7 @@ struct CoachLiquidGlassInputBar: View {
     var onStartVoice: () -> Void
     var onCancelVoice: () -> Void
     var onConfirmVoice: () -> Void
-    var onOpenMenu: () -> Void
+    var onOpenCamera: () -> Void
     var onRemovePendingImage: () -> Void
 
     private let barShape = RoundedRectangle(cornerRadius: 26, style: .continuous)
@@ -170,10 +169,9 @@ struct CoachLiquidGlassInputBar: View {
         .frame(minHeight: 32, alignment: .topLeading)
 
         HStack(spacing: 8) {
-            barIconButton(systemName: "plus", size: 22, opacity: 0.72) {
-                onOpenMenu()
+            barIconButton(systemName: "camera.fill", size: 17, opacity: 0.72) {
+                onOpenCamera()
             }
-            .rotationEffect(.degrees(isAttachmentMenuOpen ? 45 : 0))
 
             Spacer(minLength: 8)
 
@@ -301,6 +299,7 @@ struct CoachLiquidGlassInputBar: View {
             .offset(x: 6, y: -6)
         }
         .padding(.top, 2)
+        .transition(.scale(scale: 0.88).combined(with: .opacity))
     }
 }
 

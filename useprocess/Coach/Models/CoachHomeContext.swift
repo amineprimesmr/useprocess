@@ -3,6 +3,8 @@ import Foundation
 struct CoachHomeSuggestion: Identifiable, Equatable, Sendable {
     let id: String
     let label: String
+    let subtitle: String
+    let icon: String
     let prompt: String
 }
 
@@ -97,15 +99,28 @@ enum CoachHomeContext {
         )
     }
 
-    /// Question affichée dans le chat + prompt IA (question + contexte discret).
-    private static func suggestion(id: String, question: String, hint: String? = nil) -> CoachHomeSuggestion {
+    /// Carte affichée + prompt IA (question + contexte discret).
+    private static func suggestion(
+        id: String,
+        title: String,
+        subtitle: String,
+        icon: String,
+        question: String,
+        hint: String? = nil
+    ) -> CoachHomeSuggestion {
         let prompt: String
         if let hint, !hint.isEmpty {
             prompt = "\(question) Contexte : \(hint).\(answerStyle)"
         } else {
             prompt = "\(question)\(answerStyle)"
         }
-        return CoachHomeSuggestion(id: id, label: question, prompt: prompt)
+        return CoachHomeSuggestion(
+            id: id,
+            label: title,
+            subtitle: subtitle,
+            icon: icon,
+            prompt: prompt
+        )
     }
 
     @MainActor
@@ -131,6 +146,9 @@ enum CoachHomeContext {
             items.append(
                 suggestion(
                     id: "training",
+                    title: "Créez un modèle d'entraînement",
+                    subtitle: "Conçu pour vos objectifs",
+                    icon: "💪",
                     question: "C'est quoi ma séance aujourd'hui ?",
                     hint: "\(training.sessionName), \(training.durationMinutes) min, readiness \(context.health?.readinessScore.map(String.init) ?? "—")/100"
                 )
@@ -139,6 +157,9 @@ enum CoachHomeContext {
             items.append(
                 suggestion(
                     id: "training-rest",
+                    title: "Créez un programme d'entraînement",
+                    subtitle: "Personnalisé pour vous",
+                    icon: "📋",
                     question: "Pas de séance aujourd'hui, je fais quoi ?",
                     hint: "Jour protocole : \(day.title)"
                 )
@@ -152,6 +173,9 @@ enum CoachHomeContext {
         items.append(
             suggestion(
                 id: "meal",
+                title: "Enregistrer un aliment",
+                subtitle: "Suivez votre nutrition quotidienne",
+                icon: "🍽️",
                 question: mealQuestion,
                 hint: nutritionLine
             )
@@ -161,6 +185,9 @@ enum CoachHomeContext {
             items.append(
                 suggestion(
                     id: "nutrition-day",
+                    title: "Analyse d'images",
+                    subtitle: "Ce qui affecte ta forme",
+                    icon: "📸",
                     question: "Comment je mange parfaitement aujourd'hui ?",
                     hint: "Alimentation parfaite"
                 )
@@ -169,6 +196,9 @@ enum CoachHomeContext {
             items.append(
                 suggestion(
                     id: "sleep",
+                    title: "Faire un point de suivi",
+                    subtitle: "Planifiez des points réguliers",
+                    icon: "😴",
                     question: "Comment je prépare mon sommeil ce soir ?",
                     hint: "Coucher \(day.sleep.targetBedtime), réveil \(day.sleep.targetWake), \(String(format: "%.1f", day.sleep.targetHours)) h"
                 )
@@ -193,16 +223,25 @@ enum CoachHomeContext {
         return [
             suggestion(
                 id: "training",
+                title: "Créez un modèle d'entraînement",
+                subtitle: "Conçu pour vos objectifs",
+                icon: "💪",
                 question: "C'est quoi mon entraînement aujourd'hui ?",
                 hint: "\(sportsLine), \(sessions), objectif \(goal), readiness \(readiness)/100"
             ),
             suggestion(
                 id: "meal",
+                title: "Enregistrer un aliment",
+                subtitle: "Suivez votre nutrition quotidienne",
+                icon: "🍽️",
                 question: "Je mange quoi au prochain repas ?",
                 hint: "Objectif \(goal), habitudes \(nutrition)"
             ),
             suggestion(
                 id: "today",
+                title: "Faire un point de suivi",
+                subtitle: "Planifiez des points réguliers",
+                icon: "📊",
                 question: "Qu'est-ce que je fais aujourd'hui ?",
                 hint: "Readiness \(readiness)/100 (\(readinessWord)), sommeil récent \(sleepHours)"
             ),

@@ -5,8 +5,7 @@ import UIKit
 
 struct ProfileEmptyHeroSection: View {
     var onAddPhoto: () -> Void
-
-    private var totalHeight: CGFloat { ProfileTheme.emptyHeroHeight + ProfileTheme.heroMenuBleedInset }
+    var onOpenSettings: (() -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -28,13 +27,19 @@ struct ProfileEmptyHeroSection: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.top, ProfileTheme.heroMenuBleedInset + ProfileTheme.emptyHeroTopClearance * 0.35)
+            .padding(.top, ProfileTheme.heroTopInset + 48)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(height: totalHeight)
         .frame(maxWidth: .infinity)
+        .frame(height: ProfileTheme.heroCoverHeight)
         .clipShape(ProfileTheme.heroBottomShape)
-        .padding(.top, -ProfileTheme.heroMenuBleedInset)
+        .overlay(alignment: .topTrailing) {
+            if let onOpenSettings {
+                ProfileHeroSettingsButton(style: .plain, action: onOpenSettings)
+                    .padding(.top, ProfileTheme.heroTopInset + 10)
+                    .padding(.trailing, 14)
+            }
+        }
     }
 }
 
@@ -43,17 +48,18 @@ struct ProfileEmptyHeroSection: View {
 struct ProfileCoverPhotoSection: View {
     let image: UIImage
     let displayName: String
+    let username: String
     let isPrivate: Bool
-
-    private var totalHeight: CGFloat { ProfileTheme.heroHeight + ProfileTheme.heroMenuBleedInset }
+    var onChangePhoto: (() -> Void)? = nil
+    var onOpenSettings: (() -> Void)? = nil
+    var onEditUsername: (() -> Void)? = nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .frame(maxWidth: .infinity)
-                .frame(height: totalHeight)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
                 .overlay {
                     LinearGradient(
@@ -66,17 +72,74 @@ struct ProfileCoverPhotoSection: View {
 
             ProfileIdentityBlock(
                 displayName: displayName,
+                username: username,
                 isPrivate: isPrivate,
-                style: .overlay
+                style: .overlay,
+                onEditUsername: onEditUsername
             )
             .padding(.horizontal, ProfileTheme.horizontalPadding)
             .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: totalHeight)
+        .frame(height: ProfileTheme.heroCoverHeight)
         .clipShape(ProfileTheme.heroBottomShape)
         .contentShape(ProfileTheme.heroBottomShape)
-        .padding(.top, -ProfileTheme.heroMenuBleedInset)
+        .overlay(alignment: .topTrailing) {
+            HStack(spacing: 8) {
+                if let onChangePhoto {
+                    ProfileHeroIconButton(systemName: "camera.fill", action: onChangePhoto)
+                }
+                if let onOpenSettings {
+                    ProfileHeroSettingsButton(style: .overlay, action: onOpenSettings)
+                }
+            }
+            .padding(.top, ProfileTheme.heroTopInset + 10)
+            .padding(.trailing, 14)
+        }
+    }
+}
+
+private struct ProfileHeroSettingsButton: View {
+    enum Style {
+        case overlay
+        case plain
+    }
+
+    let style: Style
+    let action: () -> Void
+
+    var body: some View {
+        switch style {
+        case .overlay:
+            ProfileHeroIconButton(systemName: "gearshape.fill", action: action)
+                .accessibilityLabel("Paramètres")
+        case .plain:
+            Button(action: action) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(ProfileTheme.textPrimary)
+                    .frame(width: 40, height: 40)
+            }
+            .buttonStyle(.plain)
+            .processGlassCircle(interactive: true)
+            .accessibilityLabel("Paramètres")
+        }
+    }
+}
+
+private struct ProfileHeroIconButton: View {
+    let systemName: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(.black.opacity(0.35), in: Circle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -86,20 +149,34 @@ enum ProfileIdentityStyle {
 
 struct ProfileIdentityBlock: View {
     let displayName: String
+    let username: String
     let isPrivate: Bool
     var style: ProfileIdentityStyle = .inline
+    var onEditUsername: (() -> Void)? = nil
+
+    private var normalizedTag: String {
+        ProcessUsernameTag.normalize(username)
+    }
+
+    private var formattedTag: String {
+        normalizedTag.isEmpty ? "" : "@\(normalizedTag)"
+    }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(displayName)
-                .font(.system(size: style == .overlay ? 30 : 26, weight: .bold))
-                .foregroundStyle(style == .overlay ? .white : ProfileTheme.textPrimary)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Text(displayName)
+                    .font(.system(size: style == .overlay ? 30 : 26, weight: .bold))
+                    .foregroundStyle(style == .overlay ? .white : ProfileTheme.textPrimary)
 
-            if isPrivate {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(style == .overlay ? .white.opacity(0.9) : ProfileTheme.textSecondary)
+                if isPrivate {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(style == .overlay ? .white.opacity(0.9) : ProfileTheme.textSecondary)
+                }
             }
+
+            tagRow
         }
         .shadow(
             color: style == .overlay ? .black.opacity(0.35) : .clear,
@@ -107,6 +184,31 @@ struct ProfileIdentityBlock: View {
             y: 2
         )
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var tagRow: some View {
+        if normalizedTag.isEmpty {
+            if let onEditUsername {
+                Button(action: onEditUsername) {
+                    Text("Ajouter ton @")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(style == .overlay ? .white.opacity(0.82) : ProfileTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+        } else {
+            Button {
+                UIPasteboard.general.string = formattedTag
+                HapticManager.shared.notification(.success)
+            } label: {
+                Text(formattedTag)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(style == .overlay ? .white.opacity(0.88) : ProfileTheme.textSecondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Tag \(formattedTag), copier")
+        }
     }
 }
 
@@ -142,4 +244,3 @@ struct ProfileShareSheet: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
-

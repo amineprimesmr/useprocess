@@ -97,9 +97,41 @@ struct EditProfileView: View {
         }
     }
 
+    private var usernameDisplay: String? {
+        let tag = ProcessUsernameTag.normalize(
+            profileStore.profile?.username
+                ?? profile?.username
+                ?? ""
+        )
+        return tag.isEmpty ? nil : "@\(tag)"
+    }
+
     @ViewBuilder
     private var accountFieldsSection: some View {
         AccountDetailsCard {
+            NavigationLink(value: ProfileEditDestination.username) {
+                AccountDetailsGlassRow {
+                    ProfileEditListRow(
+                        label: "Tag Process",
+                        value: usernameDisplay,
+                        placeholder: "Choisir ton @",
+                        showsChevron: false
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink(value: ProfileEditDestination.findUser) {
+                AccountDetailsGlassRow {
+                    ProfileEditListRow(
+                        label: "Trouver un utilisateur",
+                        value: nil,
+                        placeholder: "Rechercher par @"
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+
             NavigationLink(value: ProfileEditDestination.firstName) {
                 AccountDetailsGlassRow {
                     ProfileEditListRow(

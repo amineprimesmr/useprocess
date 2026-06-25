@@ -54,7 +54,7 @@ struct ProfilePhotoFlowModifier: ViewModifier {
                     isPresented = false
                 }
             } message: {
-                Text("Ta photo de profil est visible par tous et permettra à tes amis de t'ajouter plus facilement.")
+                Text("Recadre ta photo comme sur ton profil. L’avatar rond sera généré automatiquement.")
             }
             .onChange(of: showSourceSheet) { _, visible in
                 guard !visible else { return }
@@ -162,7 +162,7 @@ struct ProfileImageCropView: View {
     @State private var baseZoom: CGFloat = 1
     @State private var offset: CGSize = .zero
     @State private var baseOffset: CGSize = .zero
-    @State private var cropSide: CGFloat = 300
+    @State private var cropSize: CGSize = CGSize(width: 320, height: 244)
 
     var body: some View {
         ZStack {
@@ -173,14 +173,21 @@ struct ProfileImageCropView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.top, 18)
+                    .padding(.bottom, 8)
+
+                Text("Ajuste le cadrage — la Dynamic Island montre l’aperçu sur ton profil.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.72))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
                     .padding(.bottom, 12)
 
                 GeometryReader { geo in
-                    let side = min(geo.size.width - 32, geo.size.height)
-                    cropCanvas(side: side)
+                    let size = coverCropSize(in: geo)
+                    cropCanvas(cropSize: size)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .onAppear { cropSide = side }
-                        .onChange(of: side) { _, newSide in cropSide = newSide }
+                        .onAppear { cropSize = size }
+                        .onChange(of: size) { _, newSize in cropSize = newSize }
                 }
 
                 HStack {
@@ -202,34 +209,55 @@ struct ProfileImageCropView: View {
         .statusBarHidden(false)
     }
 
+    private func coverCropSize(in geo: GeometryProxy) -> CGSize {
+        let width = min(ProfileTheme.heroCoverWidth, geo.size.width - 8)
+        let height = width / ProfileTheme.heroCoverAspectRatio
+        let maxHeight = max(180, geo.size.height - 8)
+        if height <= maxHeight {
+            return CGSize(width: width, height: height)
+        }
+        let fittedHeight = maxHeight
+        let fittedWidth = fittedHeight * ProfileTheme.heroCoverAspectRatio
+        return CGSize(width: fittedWidth, height: fittedHeight)
+    }
+
+    private func cropShapeScale(for cropSize: CGSize) -> CGFloat {
+        cropSize.width / ProfileTheme.heroCoverWidth
+    }
+
     @ViewBuilder
-    private func cropCanvas(side: CGFloat) -> some View {
+    private func cropCanvas(cropSize: CGSize) -> some View {
+        let shape = ProfileTheme.heroBottomShape(scale: cropShapeScale(for: cropSize))
+
         ZStack {
             Image(uiImage: sourceImage)
                 .resizable()
                 .scaledToFill()
                 .scaleEffect(userZoom)
                 .offset(offset)
-                .frame(width: side, height: side)
-                .clipped()
-                .overlay { cropMask(side: side) }
-                .gesture(dragGesture(side: side))
-                .simultaneousGesture(pinchGesture)
+                .frame(width: cropSize.width, height: cropSize.height)
+                .clipShape(shape)
+                .overlay { cropMask(cropSize: cropSize, shape: shape) }
+                .overlay {
+                    ProfileCropSystemChromePreview(cropSize: cropSize)
+                }
+                .gesture(dragGesture(cropSize: cropSize))
+                .simultaneousGesture(pinchGesture(cropSize: cropSize))
         }
     }
 
-    private func cropMask(side: CGFloat) -> some View {
+    private func cropMask(cropSize: CGSize, shape: UnevenRoundedRectangle) -> some View {
         ZStack {
             Color.black.opacity(0.62)
-            Rectangle()
-                .frame(width: side, height: side)
+            shape
+                .frame(width: cropSize.width, height: cropSize.height)
                 .blendMode(.destinationOut)
         }
         .compositingGroup()
         .allowsHitTesting(false)
     }
 
-    private func dragGesture(side: CGFloat) -> some Gesture {
+    private func dragGesture(cropSize: CGSize) -> some Gesture {
         DragGesture()
             .onChanged { value in
                 offset = CGSize(
@@ -238,32 +266,32 @@ struct ProfileImageCropView: View {
                 )
             }
             .onEnded { _ in
-                baseOffset = clampedOffset(offset, side: side)
+                baseOffset = clampedOffset(offset, cropSize: cropSize)
                 offset = baseOffset
             }
     }
 
-    private var pinchGesture: some Gesture {
+    private func pinchGesture(cropSize: CGSize) -> some Gesture {
         MagnificationGesture()
             .onChanged { value in
                 userZoom = max(1, min(4, baseZoom * value))
             }
             .onEnded { _ in
                 baseZoom = userZoom
-                baseOffset = clampedOffset(offset, side: cropSide)
+                baseOffset = clampedOffset(offset, cropSize: cropSize)
                 offset = baseOffset
             }
     }
 
-    private func clampedOffset(_ proposed: CGSize, side: CGFloat) -> CGSize {
+    private func clampedOffset(_ proposed: CGSize, cropSize: CGSize) -> CGSize {
         let imageSize = sourceImage.size
         guard imageSize.width > 0, imageSize.height > 0 else { return .zero }
 
-        let fillScale = max(side / imageSize.width, side / imageSize.height)
+        let fillScale = max(cropSize.width / imageSize.width, cropSize.height / imageSize.height)
         let displayW = imageSize.width * fillScale * userZoom
         let displayH = imageSize.height * fillScale * userZoom
-        let maxX = max(0, (displayW - side) / 2)
-        let maxY = max(0, (displayH - side) / 2)
+        let maxX = max(0, (displayW - cropSize.width) / 2)
+        let maxY = max(0, (displayH - cropSize.height) / 2)
 
         return CGSize(
             width: min(max(proposed.width, -maxX), maxX),
@@ -272,33 +300,42 @@ struct ProfileImageCropView: View {
     }
 
     private func renderCroppedImage() -> UIImage? {
-        let side = cropSide
-        let imageSize = sourceImage.size
-        guard side > 0, imageSize.width > 0, imageSize.height > 0 else { return nil }
+        guard let cropped = renderCroppedImage(for: cropSize) else { return nil }
+        return cropped.resizedExactly(to: ProfileTheme.heroCoverExportSize)
+    }
 
-        let fillScale = max(side / imageSize.width, side / imageSize.height)
+    private func renderCroppedImage(for outputSize: CGSize) -> UIImage? {
+        let crop = outputSize
+        let imageSize = sourceImage.size
+        guard crop.width > 0, crop.height > 0, imageSize.width > 0, imageSize.height > 0 else { return nil }
+
+        let previewScale = outputSize.width / max(cropSize.width, 1)
+        let scaledOffset = CGSize(
+            width: offset.width * previewScale,
+            height: offset.height * previewScale
+        )
+
+        let fillScale = max(crop.width / imageSize.width, crop.height / imageSize.height)
         let drawW = imageSize.width * fillScale * userZoom
         let drawH = imageSize.height * fillScale * userZoom
         let origin = CGPoint(
-            x: (side - drawW) / 2 + offset.width,
-            y: (side - drawH) / 2 + offset.height
+            x: (crop.width - drawW) / 2 + scaledOffset.width,
+            y: (crop.height - drawH) / 2 + scaledOffset.height
         )
 
-        // Convert the on-screen crop square into source-image coordinates (points),
-        // then crop pixels at native resolution — not at screen point size (was ~350 px).
         let uniformScale = drawW / imageSize.width
         var cropRect = CGRect(
             x: (-origin.x) / uniformScale,
             y: (-origin.y) / uniformScale,
-            width: side / uniformScale,
-            height: side / uniformScale
+            width: crop.width / uniformScale,
+            height: crop.height / uniformScale
         )
         cropRect = cropRect.intersection(CGRect(origin: .zero, size: imageSize))
         guard cropRect.width > 1, cropRect.height > 1 else { return nil }
 
         guard let cgImage = sourceImage.cgImage else {
             return renderCroppedImageLegacy(
-                side: side,
+                cropSize: crop,
                 drawW: drawW,
                 drawH: drawH,
                 origin: origin
@@ -316,20 +353,74 @@ struct ProfileImageCropView: View {
         return UIImage(cgImage: cropped, scale: sourceImage.scale, orientation: .up)
     }
 
-    /// Fallback when CGImage crop is unavailable.
     private func renderCroppedImageLegacy(
-        side: CGFloat,
+        cropSize: CGSize,
         drawW: CGFloat,
         drawH: CGFloat,
         origin: CGPoint
     ) -> UIImage? {
         let format = UIGraphicsImageRendererFormat()
         format.scale = sourceImage.scale
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format)
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: cropSize, format: format)
         return renderer.image { _ in
             sourceImage.draw(in: CGRect(origin: origin, size: CGSize(width: drawW, height: drawH)))
         }
     }
+}
+
+// MARK: - Aperçu Dynamic Island / encoche (non exporté)
+
+private struct ProfileCropSystemChromePreview: View {
+    let cropSize: CGSize
+
+    private var scale: CGFloat {
+        cropSize.width / ProfileTheme.heroCoverWidth
+    }
+
+    private var topSafeInset: CGFloat {
+        ProcessMainChromeMetrics.topSafeInset
+    }
+
+    private var showsDynamicIsland: Bool {
+        topSafeInset >= 59
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Group {
+                if showsDynamicIsland {
+                    Capsule(style: .continuous)
+                        .fill(Color.black)
+                        .frame(
+                            width: ProfileCropSystemChromePreview.dynamicIslandWidth * scale,
+                            height: ProfileCropSystemChromePreview.dynamicIslandHeight * scale
+                        )
+                        .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
+                } else if topSafeInset > 20 {
+                    RoundedRectangle(cornerRadius: 12 * scale, style: .continuous)
+                        .fill(Color.black)
+                        .frame(width: 154 * scale, height: 30 * scale)
+                        .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
+                }
+            }
+            .padding(.top, chromeTopPadding * scale)
+
+            Spacer(minLength: 0)
+        }
+        .frame(width: cropSize.width, height: cropSize.height, alignment: .top)
+        .allowsHitTesting(false)
+    }
+
+    private var chromeTopPadding: CGFloat {
+        if showsDynamicIsland {
+            return 11 + max(topSafeInset - 59, 0)
+        }
+        return 8
+    }
+
+    private static let dynamicIslandWidth: CGFloat = 126
+    private static let dynamicIslandHeight: CGFloat = 37
 }
 
 // MARK: - Camera
@@ -367,7 +458,7 @@ struct ProfileCameraPicker: UIViewControllerRepresentable {
     }
 }
 
-private extension UIImage {
+extension UIImage {
     func normalizedOrientation() -> UIImage {
         guard imageOrientation != .up else { return self }
         let format = UIGraphicsImageRendererFormat()
@@ -375,6 +466,38 @@ private extension UIImage {
         format.opaque = true
         return UIGraphicsImageRenderer(size: size, format: format).image { _ in
             draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    /// Extrait un carré centré pour l’avatar rond (Plan, Coach, édition profil).
+    func profileAvatarSquareCrop() -> UIImage {
+        let side = min(size.width, size.height)
+        let origin = CGPoint(x: (size.width - side) / 2, y: (size.height - side) / 2)
+        let cropRect = CGRect(origin: origin, size: CGSize(width: side, height: side))
+            .intersection(CGRect(origin: .zero, size: size))
+
+        guard let cgImage,
+              cropRect.width > 1,
+              cropRect.height > 1,
+              let cropped = cgImage.cropping(to: CGRect(
+                x: cropRect.origin.x * scale,
+                y: cropRect.origin.y * scale,
+                width: cropRect.width * scale,
+                height: cropRect.height * scale
+              ).integral) else {
+            return self
+        }
+
+        return UIImage(cgImage: cropped, scale: scale, orientation: .up)
+    }
+
+    func resizedExactly(to targetSize: CGSize) -> UIImage {
+        guard targetSize.width > 0, targetSize.height > 0 else { return self }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: targetSize, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: targetSize))
         }
     }
 }

@@ -9,6 +9,8 @@ struct ProcessProfileView: View {
     @Bindable private var session = AppSession.shared
     @State private var profileStore = SocialProfileStore.shared
     @State private var showEditProfile = false
+    @State private var showSettings = false
+    @State private var showUsernameEditor = false
     @State private var showShareSheet = false
     @State private var showPhotoFlow = false
     @State private var pendingAccountConfirmation: AccountConfirmation?
@@ -25,15 +27,23 @@ struct ProcessProfileView: View {
     }
 
     var body: some View {
-        processProfileScrollableChrome(selectedSection: $selectedSection) {
-            profileContent(resolvedProfile)
-                .frame(maxWidth: .infinity)
+        ScrollView {
+            VStack(spacing: 0) {
+                profileHero(resolvedProfile)
+
+                profileScrollContent(resolvedProfile)
+                    .frame(maxWidth: .infinity)
+            }
+            .processReportsTabBarScrollOffset()
         }
+        .scrollClipDisabled()
+        .ignoresSafeArea(edges: .top)
+        .scrollIndicators(.hidden)
         .refreshable {
             await ProfileHealthSection.refreshAll(force: true)
         }
-        .reportsProfileSubrouteActive(showEditProfile)
         .background(ProfileTheme.background.ignoresSafeArea())
+        .reportsProfileSubrouteActive(showEditProfile)
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
             hasExistingPhoto: profileStore.hasCoverPhoto,
@@ -50,6 +60,19 @@ struct ProcessProfileView: View {
         )
         .sheet(isPresented: $showShareSheet) {
             ProfileShareSheet(items: [profileStore.shareText])
+        }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                ProcessSettingsView()
+            }
+        }
+        .sheet(isPresented: $showUsernameEditor) {
+            NavigationStack {
+                ProfileUsernameEditorView(
+                    initialValue: resolvedProfile.username
+                )
+            }
+            .environmentObject(profileService)
         }
         .sheet(isPresented: $showEditProfile) {
             NavigationStack {
@@ -117,24 +140,36 @@ struct ProcessProfileView: View {
     }
 
     @ViewBuilder
-    private func profileContent(_ profile: SocialProfile) -> some View {
+    private func profileHero(_ profile: SocialProfile) -> some View {
         if profileStore.hasCoverPhoto, let cover = profileStore.coverPhoto {
             ProfileCoverPhotoSection(
                 image: cover,
                 displayName: profile.displayName,
-                isPrivate: profile.isPrivate
+                username: profile.username,
+                isPrivate: profile.isPrivate,
+                onChangePhoto: { showPhotoFlow = true },
+                onOpenSettings: { showSettings = true },
+                onEditUsername: { showUsernameEditor = true }
             )
             .transition(.opacity.combined(with: .scale(scale: 0.985)))
         } else {
-            ProfileEmptyHeroSection(onAddPhoto: { showPhotoFlow = true })
-                .transition(.opacity.combined(with: .scale(scale: 0.985)))
+            ProfileEmptyHeroSection(
+                onAddPhoto: { showPhotoFlow = true },
+                onOpenSettings: { showSettings = true }
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.985)))
         }
+    }
 
+    @ViewBuilder
+    private func profileScrollContent(_ profile: SocialProfile) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             if !profileStore.hasCoverPhoto {
                 ProfileIdentityBlock(
                     displayName: profile.displayName,
-                    isPrivate: profile.isPrivate
+                    username: profile.username,
+                    isPrivate: profile.isPrivate,
+                    onEditUsername: { showUsernameEditor = true }
                 )
                 .padding(.top, 8)
             }
@@ -151,8 +186,12 @@ struct ProcessProfileView: View {
             }
 
             ProfileHealthSection()
+
+            LiquidTransitionCard()
+                .padding(.top, 8)
         }
         .padding(.horizontal, ProfileTheme.horizontalPadding)
+        .padding(.top, 20)
         .padding(.bottom, 32)
         .safeAreaPadding(.bottom, 8)
     }

@@ -120,42 +120,43 @@ struct FirstNameInputStepView: View {
             .folding(options: .diacriticInsensitive, locale: .current)
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "-", with: "")
-        let username = baseUsername.isEmpty ? "user\(UUID().uuidString.prefix(8).lowercased())" : baseUsername
 
         do {
                 // ✅ SIMPLIFIÉ: Vérifier l'authentification sans attendre (non-bloquant)
                 guard let finalUserId = AuthUser.current?.uid else {
                     // Si pas authentifié, stocker temporairement pour sauvegarde différée
                     UserDefaults.standard.set(trimmedFirstName, forKey: "pending_firstname_to_save")
-                    UserDefaults.standard.set(username, forKey: "pending_username_to_save")
+                    UserDefaults.standard.set(baseUsername, forKey: "pending_username_to_save")
                     return
                 }
 
                 // ✅ NOUVEAU: Vérifier s'il y a un prénom en attente à sauvegarder
                 let pendingFirstName = UserDefaults.standard.string(forKey: "pending_firstname_to_save") ?? trimmedFirstName
-                let pendingUsername = UserDefaults.standard.string(forKey: "pending_username_to_save") ?? username
+                let pendingBase = UserDefaults.standard.string(forKey: "pending_username_to_save") ?? baseUsername
                 if UserDefaults.standard.string(forKey: "pending_firstname_to_save") != nil {
                     UserDefaults.standard.removeObject(forKey: "pending_firstname_to_save")
                     UserDefaults.standard.removeObject(forKey: "pending_username_to_save")
                 }
 
+                let pendingUsername = try await ProcessUsernameRegistry.shared.suggestAvailableUsername(
+                    base: pendingBase.isEmpty ? "user" : pendingBase,
+                    userId: finalUserId
+                )
+
                 var profile: UnifiedUserProfile
 
                 if let existingProfile = profileService.currentProfile {
-                    // Profil existe - mettre à jour
                     profile = existingProfile
                     profile.firstName = pendingFirstName
-                    profile.username = pendingUsername
                 } else {
-                    // ✅ CRITIQUE: Créer un nouveau profil avec le prénom
                     profile = UnifiedUserProfile(
                         userId: finalUserId,
-                        firstName: pendingFirstName,
-                        username: pendingUsername
+                        firstName: pendingFirstName
                     )
                 }
 
                 try await profileService.saveProfile(profile)
+                try await profileService.updateUsername(pendingUsername, displayName: pendingFirstName)
 
                 // ✅ CRITIQUE: Recharger le profil pour s'assurer que currentProfile est à jour
                 await profileService.loadProfile()

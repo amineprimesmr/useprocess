@@ -13,6 +13,7 @@ struct PlanDashboardView: View {
     @State private var weeklyMealHistory: [MealHistoryEntry] = []
     @State private var shoppingItems: [MealShoppingItem] = []
     @State private var activeResourceSheet: PlanResourceSheet?
+    @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
@@ -49,7 +50,10 @@ struct PlanDashboardView: View {
                 pageSection: .plan
             ) {
                 LazyVStack(alignment: .leading, spacing: 20) {
-                    PlanHomeTopChrome(selectedSection: $selectedSection)
+                    PlanHomeTopChrome(
+                        selectedSection: $selectedSection,
+                        selectedDate: $selectedPlanDate
+                    )
                     planContent
                 }
                 .padding()
@@ -76,8 +80,9 @@ struct PlanDashboardView: View {
         if let plan = livePlan {
             DailyJournalChecklistView(
                 plan: plan,
+                selectedDate: $selectedPlanDate,
                 showHeader: false,
-                showWeekStrip: true
+                showWeekStrip: false
             )
             .environmentObject(HealthManager.shared)
 

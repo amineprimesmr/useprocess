@@ -26,6 +26,10 @@ final class FirebaseProfileRepository {
     func deleteAllRemoteUserData(userId: String) async throws {
         let userRef = db.collection(collection).document(userId)
 
+        if let profile = try await loadProfile(userId: userId) {
+            try await ProcessUsernameRegistry.shared.releaseUsername(profile.username, userId: userId)
+        }
+
         try await deleteDocuments(in: userRef.collection("faceScans"))
         try await deleteDocuments(in: userRef.collection("scans"))
         try await deleteDocuments(in: userRef.collection("healthDaily"))
