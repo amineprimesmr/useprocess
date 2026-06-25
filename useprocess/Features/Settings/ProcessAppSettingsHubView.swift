@@ -103,42 +103,6 @@ struct ProcessAppSettingsHubView: View {
                     value: ProcessPrivacyConsentStore.shared.hasAcceptedFaceScanCapture ? "Autorisé" : "Non autorisé"
                 )
                 GroupedSettingsRowDivider()
-                GroupedSettingsInfoRow(
-                    icon: "wand.and.stars",
-                    title: "Photo visage vers IA",
-                    value: ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI ? "Autorisé" : "Désactivé"
-                )
-                GroupedSettingsRowDivider()
-                if ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI {
-                    Button {
-                        ProcessPrivacyConsentStore.shared.revokeFaceScanAI()
-                    } label: {
-                        GroupedSettingsNavigationRow(
-                            icon: "xmark.circle",
-                            title: "Désactiver photo visage vers IA",
-                            subtitle: "Les prochains scans resteront locaux",
-                            value: nil,
-                            showsChevron: false
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    GroupedSettingsRowDivider()
-                } else if ProcessPrivacyConsentStore.shared.canUseThirdPartyAI,
-                          ProcessPrivacyConsentStore.shared.hasAcceptedFaceScanCapture {
-                    Button {
-                        ProcessPrivacyConsentStore.shared.acceptFaceScanAI()
-                    } label: {
-                        GroupedSettingsNavigationRow(
-                            icon: "wand.and.stars",
-                            title: "Activer photo visage vers IA",
-                            subtitle: "Autoriser Claude pour les prochains scans",
-                            value: nil,
-                            showsChevron: false
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    GroupedSettingsRowDivider()
-                }
                 if ProcessPrivacyConsentStore.shared.canUseThirdPartyAI {
                     Button {
                         ProcessPrivacyConsentStore.shared.revokeThirdPartyAI()

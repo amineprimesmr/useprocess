@@ -134,7 +134,7 @@ enum OnboardingProfileChatQuestionBank {
             id: "face_scan_offer",
             prompt: faceScanPrompt(for: viewModel),
             kind: .faceScanOffer,
-            detailText: "Tu pourras le faire plus tard depuis l'onglet Scan."
+            detailText: "Faire plus tard"
         )
     }
 
@@ -237,8 +237,8 @@ enum OnboardingProfileChatQuestionBank {
     private static func faceScanPrompt(for viewModel: OnboardingViewModel) -> String {
         let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         if OnboardingViewModel.isRealUserFirstName(trimmed) {
-            return "\(trimmed), on peut scanner ton visage pour calibrer ton suivi — environ 30 secondes."
+            return "\(trimmed), fais ton scan visage pour calibrer ton suivi."
         }
-        return "On peut scanner ton visage pour calibrer ton suivi — environ 30 secondes."
+        return "Fais ton scan visage pour calibrer ton suivi."
     }
 }

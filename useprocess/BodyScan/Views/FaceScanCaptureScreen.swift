@@ -369,9 +369,8 @@ struct FaceScanCaptureScreen: View {
         FaceScanScreenFlash.shared.deactivate(animated: true)
         isFlashEnabled = false
 
-        withAnimation(.easeInOut(duration: 0.3)) {
-            phase = .completed
-        }
+        HapticManager.shared.notification(.success)
+        onContinue(payload, markers)
     }
 
     private func restartScan() {

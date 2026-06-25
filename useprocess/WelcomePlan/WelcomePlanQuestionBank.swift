@@ -291,10 +291,10 @@ enum WelcomePlanQuestionBank {
             id: "optional_face_scan",
             phase: .closing,
             kind: .singleChoice,
-            prompt: "Tu veux faire un scan visage maintenant pour calibrer ton plan ?",
+            prompt: "Fais ton scan visage pour calibrer ton plan.",
             choices: [
                 .init(id: "yes", label: "Maintenant"),
-                .init(id: "later", label: "Plus tard"),
+                .init(id: "later", label: "Faire plus tard"),
                 .init(id: "skip", label: "Non merci")
             ]
         )
