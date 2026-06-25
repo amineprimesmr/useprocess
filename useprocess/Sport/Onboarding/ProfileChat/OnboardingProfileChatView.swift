@@ -26,6 +26,9 @@ struct OnboardingProfileChatView: View {
             let layout = ChatLayoutMetrics(screenHeight: geometry.size.height)
 
             ZStack(alignment: .bottom) {
+                OnboardingChatAmbientHeader(topInset: OnboardingConstants.backOnlyContentTopInset)
+                    .zIndex(0)
+
                 if isSportSearchActive {
                     VStack(spacing: 0) {
                         Color.black.opacity(0.001)
@@ -51,6 +54,8 @@ struct OnboardingProfileChatView: View {
                 .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsLetsGoButton)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+                .mask(topFadeMask)
+                .zIndex(1)
 
                 if chatViewModel.showsLetsGoButton {
                     VStack(spacing: 10) {
@@ -65,6 +70,7 @@ struct OnboardingProfileChatView: View {
                     .padding(.horizontal, horizontalPadding)
                     .padding(.bottom, 50)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .zIndex(5)
                 }
 
                 if chatViewModel.analysisShowPopup {
@@ -82,7 +88,6 @@ struct OnboardingProfileChatView: View {
             .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsLetsGoButton)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnalysisSection)
             .padding(.top, OnboardingConstants.backOnlyContentTopInset)
-            .mask(topFadeMask)
             .clipped()
             .onChange(of: chatViewModel.shouldFinish) { _, should in
                 guard should else { return }
@@ -136,9 +141,9 @@ struct OnboardingProfileChatView: View {
 
         init(screenHeight: CGFloat) {
             self.screenHeight = screenHeight
-            activeAnchorY = screenHeight * 0.30
-            historySlotHeight = screenHeight * 0.16
-            slotSpacing = 12
+            activeAnchorY = screenHeight * 0.52
+            historySlotHeight = screenHeight * 0.29
+            slotSpacing = 10
             contentTopPadding = max(12, activeAnchorY - historySlotHeight - slotSpacing)
         }
 

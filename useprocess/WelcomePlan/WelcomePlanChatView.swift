@@ -35,6 +35,9 @@ struct WelcomePlanChatView: View {
             }()
 
             ZStack(alignment: .bottom) {
+                OnboardingChatAmbientHeader(topInset: topChromeInset, compact: embeddedInMainApp)
+                    .zIndex(0)
+
                 VStack(alignment: .leading, spacing: layout.slotSpacing) {
                     historySlot(height: layout.historySlotHeight)
                     activeSlot(layout: layout, bottomPadding: bottomContentPadding)
@@ -47,6 +50,8 @@ struct WelcomePlanChatView: View {
                 .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+                .mask(topFadeMask)
+                .zIndex(1)
 
                 if showsConfigurationProgress {
                     configurationProgressHeader
@@ -54,6 +59,7 @@ struct WelcomePlanChatView: View {
                         .padding(.top, max(0, topChromeInset - 6))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         .transition(.opacity)
+                        .zIndex(5)
                 }
 
                 if showsMultiChoiceValidate {
@@ -61,6 +67,7 @@ struct WelcomePlanChatView: View {
                         .padding(.horizontal, horizontalPadding)
                         .padding(.bottom, embeddedInMainApp ? 12 : 28)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .zIndex(5)
                 }
 
                 if viewModel.showsEnterButton {
@@ -68,12 +75,12 @@ struct WelcomePlanChatView: View {
                         .padding(.horizontal, horizontalPadding)
                         .padding(.bottom, embeddedInMainApp ? 28 : 50)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .zIndex(5)
                 }
             }
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsAnswerOptions)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsGenerationProgress)
-            .mask(topFadeMask)
             .clipped()
             .onChange(of: viewModel.currentQuestion?.id) { _, _ in
                 applyAnswerDraftIfNeeded()
@@ -138,11 +145,11 @@ struct WelcomePlanChatView: View {
             self.embedded = embedded
 
             if embedded {
-                activeAnchorY = screenHeight * 0.13
-                historySlotHeight = screenHeight * 0.09
+                activeAnchorY = screenHeight * 0.22
+                historySlotHeight = screenHeight * 0.13
             } else {
-                activeAnchorY = screenHeight * 0.30
-                historySlotHeight = screenHeight * 0.16
+                activeAnchorY = screenHeight * 0.52
+                historySlotHeight = screenHeight * 0.29
             }
             slotSpacing = 10
             contentTopPadding = max(4, activeAnchorY - historySlotHeight - slotSpacing)
