@@ -47,40 +47,25 @@ struct NotificationPermissionStepView: View {
 
                 Spacer()
 
-                VStack(spacing: 12) {
-                    Button {
-                        Task { await requestNotifications() }
-                    } label: {
-                        HStack(spacing: 12) {
-                            if isRequesting {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
-                                    .scaleEffect(0.8)
-                            }
-                            Text("Activer les notifications")
-                                .font(.system(size: 20, weight: .black))
+                Button {
+                    Task { await requestNotifications() }
+                } label: {
+                    HStack(spacing: 12) {
+                        if isRequesting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
+                                .scaleEffect(0.8)
                         }
-                        .foregroundStyle(OnboardingTheme.primaryText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
+                        Text("Continuer")
+                            .font(.system(size: 20, weight: .black))
                     }
-                    .glassStyle()
-                    .buttonBorderShape(.roundedRectangle(radius: 50))
-                    .disabled(isRequesting)
-
-                    Button {
-                        skipNotifications()
-                    } label: {
-                        Text("Plus tard")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(OnboardingTheme.bodyText)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                    }
-                    .glassStyle()
-                    .buttonBorderShape(.roundedRectangle(radius: 25))
-                    .disabled(isRequesting)
+                    .foregroundStyle(OnboardingTheme.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
                 }
+                .glassStyle()
+                .buttonBorderShape(.roundedRectangle(radius: 50))
+                .disabled(isRequesting)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
             }
@@ -109,12 +94,6 @@ struct NotificationPermissionStepView: View {
         isRequesting = false
 
         try? await Task.sleep(for: .milliseconds(250))
-        onComplete()
-    }
-
-    private func skipNotifications() {
-        guard !isRequesting else { return }
-        HapticManager.shared.impact(.light)
         onComplete()
     }
 }
