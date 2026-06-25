@@ -46,11 +46,8 @@ struct PlanLastFaceScanSection: View {
     private var scanSidePanel: some View {
         ZStack(alignment: .trailing) {
             if let latest {
-                FaceScanRecordingMediaView(
-                    result: latest,
-                    displayMode: .sidePanel
-                )
-                .accessibilityLabel("Vidéo du dernier scan visage")
+                PlanFaceScanMediaPanel(result: latest)
+                    .equatable()
             } else {
                 emptyScanPanel
             }
@@ -274,5 +271,24 @@ struct PlanLastFaceScanSection: View {
             dayLabel = date.formatted(.dateTime.day().month(.abbreviated))
         }
         return "\(dayLabel) · \(date.formatted(date: .omitted, time: .shortened))"
+    }
+}
+
+/// Panneau média isolé du compte à rebours pour éviter de recréer le lecteur vidéo chaque seconde.
+private struct PlanFaceScanMediaPanel: View, Equatable {
+    let result: FaceScanResult
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.result.id == rhs.result.id
+            && lhs.result.videoFilename == rhs.result.videoFilename
+            && lhs.result.snapshotFilename == rhs.result.snapshotFilename
+    }
+
+    var body: some View {
+        FaceScanRecordingMediaView(
+            result: result,
+            displayMode: .sidePanel
+        )
+        .accessibilityLabel("Vidéo du dernier scan visage")
     }
 }

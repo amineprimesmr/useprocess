@@ -29,13 +29,15 @@ struct WelcomePlanChatView: View {
             )
             let bottomContentPadding: CGFloat = {
                 if viewModel.showsEnterButton { return 120 }
-                if showsMultiChoiceValidate { return 72 }
                 if viewModel.showsGenerationProgress { return 28 }
-                return 28
+                return embeddedInMainApp ? 24 : 28
             }()
 
             ZStack(alignment: .bottom) {
-                OnboardingChatAmbientHeader(topInset: topChromeInset, compact: embeddedInMainApp)
+                OnboardingChatAmbientHeader(
+                    topInset: ambientLogoTopInset,
+                    compact: embeddedInMainApp
+                )
                     .zIndex(0)
 
                 VStack(alignment: .leading, spacing: layout.slotSpacing) {
@@ -45,7 +47,7 @@ struct WelcomePlanChatView: View {
                 }
                 .animation(OnboardingProfileChatDepthStyle.historySpring, value: viewModel.messages.count)
                 .padding(.horizontal, horizontalPadding)
-                .padding(.top, layout.contentTopPadding + topChromeInset + configurationProgressInset)
+                .padding(.top, layout.contentTopPadding + contentTopClearance)
                 .padding(.bottom, bottomContentPadding)
                 .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -56,17 +58,9 @@ struct WelcomePlanChatView: View {
                 if showsConfigurationProgress {
                     configurationProgressHeader
                         .padding(.horizontal, horizontalPadding)
-                        .padding(.top, max(0, topChromeInset - 6))
+                        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 8)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         .transition(.opacity)
-                        .zIndex(5)
-                }
-
-                if showsMultiChoiceValidate {
-                    multiChoiceValidateButton
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.bottom, embeddedInMainApp ? 12 : 28)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .zIndex(5)
                 }
 
@@ -81,7 +75,7 @@ struct WelcomePlanChatView: View {
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsAnswerOptions)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsGenerationProgress)
-            .clipped()
+            .ignoresSafeArea(edges: .top)
             .onChange(of: viewModel.currentQuestion?.id) { _, _ in
                 applyAnswerDraftIfNeeded()
             }
@@ -103,8 +97,21 @@ struct WelcomePlanChatView: View {
         }
     }
 
-    private var topChromeInset: CGFloat {
-        embeddedInMainApp ? ProcessMainChromeMetrics.scrollTopInset : 0
+    private var topChromeInset: CGFloat { 0 }
+
+    private var ambientLogoTopInset: CGFloat {
+        guard embeddedInMainApp else { return 0 }
+        let progressBand = showsConfigurationProgress
+            ? configurationProgressHeaderHeight + 10
+            : 0
+        return ProcessMainChromeMetrics.topSafeInset + progressBand
+    }
+
+    private var contentTopClearance: CGFloat {
+        if embeddedInMainApp {
+            return ambientLogoTopInset
+        }
+        return configurationProgressInset
     }
 
     // MARK: - Layout slots
@@ -114,7 +121,7 @@ struct WelcomePlanChatView: View {
     }
 
     private var configurationProgressInset: CGFloat {
-        showsConfigurationProgress ? configurationProgressHeaderHeight : 0
+        showsConfigurationProgress ? configurationProgressHeaderHeight + 8 : 0
     }
 
     private var configurationProgressHeader: some View {
@@ -124,10 +131,6 @@ struct WelcomePlanChatView: View {
             cornerRadius: 5
         )
         .animation(.easeInOut(duration: 0.25), value: viewModel.configurationProgress)
-    }
-
-    private var showsMultiChoiceValidate: Bool {
-        viewModel.showsAnswerOptions && viewModel.currentQuestion?.kind == .multiChoice
     }
 
     private struct ChatLayoutMetrics {
@@ -456,7 +459,7 @@ struct WelcomePlanChatView: View {
             case .multiChoice:
                 OnboardingChatScrollableAnswerStack(
                     choiceCount: question.choices.count,
-                    maxHeight: maxScrollHeight
+                    maxHeight: max(140, maxScrollHeight - 72)
                 ) {
                     ForEach(question.choices) { choice in
                         chatMultiChoiceButton(
@@ -472,6 +475,13 @@ struct WelcomePlanChatView: View {
                         .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed(choice.id))
                     }
                 }
+
+                chatPrimaryButton("Valider", disabled: multiSelection.isEmpty || viewModel.isSubmittingAnswer) {
+                    let selection = multiSelection
+                    multiSelection = []
+                    await viewModel.submitMultiChoice(selection)
+                }
+                .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("validate"))
 
             case .time:
                 WelcomePlanFiveMinuteTimePicker(selection: $timeDraft)
@@ -519,29 +529,6 @@ struct WelcomePlanChatView: View {
     }
 
     // MARK: - CTA
-
-    private var multiChoiceValidateButton: some View {
-        let isDisabled = multiSelection.isEmpty || viewModel.isSubmittingAnswer
-
-        return Button {
-            guard !isDisabled else { return }
-            HapticManager.shared.impact(.medium)
-            let selection = multiSelection
-            multiSelection = []
-            Task { await viewModel.submitMultiChoice(selection) }
-        } label: {
-            Text("Valider")
-                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
-                .foregroundStyle(isDisabled ? OnboardingTheme.mutedText : OnboardingTheme.actionButtonText)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .contentShape(answerButtonShape)
-        }
-        .processGlassButton(in: answerButtonShape)
-        .disabled(isDisabled)
-        .opacity(isDisabled ? 0.55 : 1)
-        .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("validate"))
-    }
 
     private var enterAppButton: some View {
         Button {

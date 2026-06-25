@@ -13,27 +13,31 @@ struct FaceScanRecordingMediaView: View {
         case sidePanel
     }
 
-    @State private var player: AVPlayer?
+    @State private var featuredPlayer: AVPlayer?
+    @State private var resolvedVideoURL: URL?
+    @State private var resolvedSnapshot: UIImage?
+    @State private var mediaRefreshToken = 0
 
     var body: some View {
         Group {
             if let url = resolvedVideoURL {
                 switch displayMode {
                 case .featured:
-                    VideoPlayer(player: player)
+                    VideoPlayer(player: featuredPlayer)
                         .onAppear {
-                            let newPlayer = AVPlayer(url: url)
-                            player = newPlayer
-                            newPlayer.play()
+                            guard featuredPlayer == nil else { return }
+                            let player = AVPlayer(url: url)
+                            featuredPlayer = player
+                            player.play()
                         }
                         .onDisappear {
-                            player?.pause()
-                            player = nil
+                            featuredPlayer?.pause()
+                            featuredPlayer = nil
                         }
                 case .thumbnail, .sidePanel:
                     FaceScanVideoLoopView(url: url)
                 }
-            } else if let image = snapshotImage {
+            } else if let image = resolvedSnapshot {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -46,6 +50,20 @@ struct FaceScanRecordingMediaView: View {
         .frame(maxHeight: displayMode == .sidePanel ? .infinity : nil)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .id("\(result.id)-\(displayMode)-\(mediaRefreshToken)")
+        .onAppear(perform: refreshResolvedMedia)
+        .onChange(of: result.id) { _, _ in
+            refreshResolvedMedia()
+        }
+        .onChange(of: result.videoFilename) { _, _ in
+            refreshResolvedMedia()
+        }
+        .onChange(of: result.snapshotFilename) { _, _ in
+            refreshResolvedMedia()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            refreshResolvedMedia()
+        }
     }
 
     private var usesFullWidth: Bool {
@@ -72,16 +90,17 @@ struct FaceScanRecordingMediaView: View {
             }
     }
 
-    private var resolvedVideoURL: URL? {
-        guard let filename = result.videoFilename else { return nil }
-        let url = FaceScanImageStore.videoFileURL(filename: filename)
-        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-        return url
-    }
-
-    private var snapshotImage: UIImage? {
-        guard let filename = result.snapshotFilename else { return nil }
-        return FaceScanImageStore.load(filename: filename)
+    private func refreshResolvedMedia() {
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+        resolvedVideoURL = FaceScanImageStore.resolvedVideoURL(for: reconciled)
+        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
+            resolvedSnapshot = FaceScanImageStore.load(filename: filename)
+        } else {
+            resolvedSnapshot = nil
+        }
+        if resolvedVideoURL == nil, resolvedSnapshot == nil {
+            mediaRefreshToken &+= 1
+        }
     }
 }
 
@@ -112,19 +131,25 @@ private struct FaceScanVideoLoopView: UIViewRepresentable {
         private var configuredURL: URL?
 
         func attach(to view: FaceScanVideoLoopContainerView, url: URL) {
-            guard configuredURL != url else { return }
+            if configuredURL == url, let player {
+                view.setPlayer(player)
+                view.resumePlaybackIfNeeded()
+                return
+            }
+
             teardown(from: view)
 
             let queuePlayer = AVQueuePlayer()
             queuePlayer.isMuted = true
             queuePlayer.automaticallyWaitsToMinimizeStalling = false
 
-            looper = AVPlayerLooper(player: queuePlayer, templateItem: AVPlayerItem(url: url))
+            let item = AVPlayerItem(url: url)
+            looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
             player = queuePlayer
             configuredURL = url
 
             view.setPlayer(queuePlayer)
-            queuePlayer.play()
+            view.resumePlaybackIfNeeded()
         }
 
         func teardown(from view: FaceScanVideoLoopContainerView) {
@@ -154,6 +179,11 @@ private final class FaceScanVideoLoopContainerView: UIView {
     }
 
     func setPlayer(_ player: AVPlayer) {
+        if playerLayer?.player === player {
+            playerLayer?.frame = bounds
+            return
+        }
+
         playerLayer?.removeFromSuperlayer()
 
         let layer = AVPlayerLayer(player: player)
@@ -169,8 +199,16 @@ private final class FaceScanVideoLoopContainerView: UIView {
         playerLayer = nil
     }
 
+    func resumePlaybackIfNeeded() {
+        guard bounds.width > 1, bounds.height > 1, let player = playerLayer?.player else { return }
+        if player.rate == 0 {
+            player.play()
+        }
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         playerLayer?.frame = bounds
+        resumePlaybackIfNeeded()
     }
 }

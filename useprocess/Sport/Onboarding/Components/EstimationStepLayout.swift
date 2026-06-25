@@ -15,6 +15,11 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
     @ViewBuilder let bottom: () -> Bottom
 
     private let continueButtonReserve: CGFloat = 148
+    private let dateChipCornerRadius: CGFloat = 12
+
+    private var dateChipShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: dateChipCornerRadius, style: .continuous)
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -35,23 +40,27 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
 
-                    HStack(spacing: 10) {
+                    HStack(spacing: 12) {
                         Button(action: {}) {
                             Text(displayDay)
-                                .font(.system(size: 24, weight: .bold))
+                                .font(.system(size: 32, weight: .bold))
                                 .foregroundStyle(OnboardingTheme.primaryText)
-                                .frame(width: 50, height: 28)
+                                .padding(.horizontal, 18)
+                                .frame(minWidth: 64, minHeight: 46)
                         }
-                        .glassStyle()
+                        .processGlassButton(in: dateChipShape, interactive: false)
+                        .buttonBorderShape(.roundedRectangle(radius: dateChipCornerRadius))
                         .controlSize(.large)
 
                         Button(action: {}) {
                             Text(displayMonth)
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: 22, weight: .bold))
                                 .foregroundStyle(OnboardingTheme.primaryText)
-                                .frame(height: 28)
+                                .padding(.horizontal, 20)
+                                .frame(minHeight: 46)
                         }
-                        .glassStyle()
+                        .processGlassButton(in: dateChipShape, interactive: false)
+                        .buttonBorderShape(.roundedRectangle(radius: dateChipCornerRadius))
                         .controlSize(.large)
                     }
                 }

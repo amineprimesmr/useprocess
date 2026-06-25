@@ -11,12 +11,12 @@ import UIKit
 struct OnboardingConstants {
     // MARK: - Header (retour, progression, langue)
 
-    static let backButtonSize: CGFloat = 34
-    static let headerHorizontalPadding: CGFloat = 20
+    static let backButtonSize: CGFloat = 46
+    static let headerHorizontalPadding: CGFloat = 24
     /// Espace entre la safe area et le haut du bouton retour.
-    static let backButtonOffsetBelowSafeArea: CGFloat = 8
+    static let backButtonOffsetBelowSafeArea: CGFloat = 6
     /// Espace entre la barre header et le titre.
-    static let spacingBelowHeaderBar: CGFloat = 16
+    static let spacingBelowHeaderBar: CGFloat = 18
 
     static var safeAreaTop: CGFloat {
         guard let window = UIApplication.shared.connectedScenes
@@ -76,7 +76,9 @@ enum OnboardingHeaderLayout {
     static func showsBackOnly(currentStep: Int, shouldShowBackButton: Bool) -> Bool {
         guard shouldShowBackButton else { return false }
         guard let step = OnboardingStep(rawValue: currentStep) else { return false }
-        if step == .videoIntroduction || isAfterQuestionnairePhase(step) { return false }
+        if step == .videoIntroduction { return false }
+        if showsBackOnlyOnboardingHeader(step) { return true }
+        if isAfterQuestionnairePhase(step) { return false }
         return isAfterFirstNameProgressPhase(step)
     }
 
@@ -91,7 +93,7 @@ enum OnboardingHeaderLayout {
         switch step {
         case .videoIntroduction, .faceAnalysis, .payment,
              .processWelcome, .featuresUnlock, .complete,
-             .healthKitPermissions, .programCreation, .sleepDataRecovery:
+             .healthKitPermissions, .sleepDataRecovery:
             return true
         default:
             return false

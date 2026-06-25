@@ -8,19 +8,33 @@
 import SwiftUI
 
 struct OnboardingAnalysisYesNoPopup: View {
+    let subtitle: String?
     let question: String
     let affirmativeTitle: String
     let negativeTitle: String
     let popupOffset: CGFloat
     let onAnswer: (Bool) -> Void
 
+    private let popupCornerRadius: CGFloat = 28
+    private let actionCornerRadius: CGFloat = 20
+
+    private var popupShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: popupCornerRadius, style: .continuous)
+    }
+
+    private var actionButtonShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: actionCornerRadius, style: .continuous)
+    }
+
     init(
+        subtitle: String? = nil,
         question: String,
         affirmativeTitle: String = "Oui",
         negativeTitle: String = "Non",
-        popupOffset: CGFloat,
+        popupOffset: CGFloat = 0,
         onAnswer: @escaping (Bool) -> Void
     ) {
+        self.subtitle = subtitle
         self.question = question
         self.affirmativeTitle = affirmativeTitle
         self.negativeTitle = negativeTitle
@@ -34,7 +48,14 @@ struct OnboardingAnalysisYesNoPopup: View {
             Spacer()
 
             Button(action: {}) {
-                VStack(spacing: 34) {
+                VStack(spacing: subtitle == nil ? 34 : 26) {
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(OnboardingTheme.mutedText.opacity(0.85))
+                            .multilineTextAlignment(.center)
+                    }
+
                     Text(question)
                         .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(OnboardingTheme.narrativeText)
@@ -60,15 +81,14 @@ struct OnboardingAnalysisYesNoPopup: View {
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 230)
             }
-            .glassStyle()
-            .buttonBorderShape(.roundedRectangle(radius: 18))
+            .processGlassButton(in: popupShape, interactive: false)
+            .buttonBorderShape(.roundedRectangle(radius: popupCornerRadius))
             .controlSize(.large)
             .padding(.horizontal, 12)
             .offset(y: popupOffset)
-            .scaleEffect(popupOffset == 0 ? 1.0 : 0.94)
-            .opacity(popupOffset == 0 ? 1.0 : 0.0)
         }
         .padding(.bottom, 34)
+        .allowsHitTesting(true)
     }
 
     private func popupButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
@@ -93,8 +113,8 @@ struct OnboardingAnalysisYesNoPopup: View {
                 endPoint: .trailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .buttonBorderShape(.roundedRectangle(radius: 22))
+        .clipShape(actionButtonShape)
+        .buttonBorderShape(.roundedRectangle(radius: actionCornerRadius))
         .controlSize(.large)
     }
 }

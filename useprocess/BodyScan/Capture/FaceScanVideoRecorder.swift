@@ -146,6 +146,7 @@ final class FaceScanVideoRecorder {
             try? FileManager.default.removeItem(at: url)
             return nil
         }
+        FaceScanImageStore.finalizeRecordedVideo(at: url)
         return url
     }
 

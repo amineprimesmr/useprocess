@@ -39,7 +39,7 @@ struct OnboardingHeaderChrome: View {
     @ViewBuilder
     private func onboardingHeaderBar(showsProgressAndLanguage: Bool) -> some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
+            HStack(spacing: 16) {
                 if shouldShowBackButton {
                     OnboardingBackButton(action: onPreviousStep)
                 } else {
@@ -53,7 +53,7 @@ struct OnboardingHeaderChrome: View {
                 if showsProgressAndLanguage {
                     OnboardingProgressBar(progress: flowProgress)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 4)
+                        .frame(height: 5)
 
                     LanguageSelectorView()
                 } else {
@@ -65,6 +65,7 @@ struct OnboardingHeaderChrome: View {
             .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
 
             Spacer(minLength: 0)
+                .allowsHitTesting(false)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(edges: .top)

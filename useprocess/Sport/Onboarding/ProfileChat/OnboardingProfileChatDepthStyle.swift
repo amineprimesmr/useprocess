@@ -6,9 +6,10 @@
 import SwiftUI
 
 enum OnboardingProfileChatDepthStyle {
-    static let userAnswerColor = Color(red: 0.58, green: 0.78, blue: 0.66)
+    static let chatAccentViolet = Color(hex: "aeb2fa")
+    static let userAnswerColor = chatAccentViolet
     static let activeFontSize: CGFloat = 21
-    static let answerFontSize: CGFloat = 18
+    static let answerFontSize: CGFloat = 19
     static let messageSpacing: CGFloat = 18
     static let maxVisibleMessages = 5
     static let historySpring = Animation.spring(response: 0.56, dampingFraction: 0.88)
@@ -121,74 +122,180 @@ enum OnboardingProfileChatDepthStyle {
     }
 }
 
+/// Triangle inversé : bord haut pleine largeur, pointe vers le bas au centre (forme « pique »).
+private struct OnboardingChatAmbientPeakShape: Shape {
+    var peakDepthRatio: CGFloat = 0.98
+
+    func path(in rect: CGRect) -> Path {
+        let peakY = min(rect.maxY, rect.height * peakDepthRatio)
+        var path = Path()
+        path.move(to: .zero)
+        path.addLine(to: CGPoint(x: rect.midX, y: peakY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: 0))
+        path.closeSubpath()
+        return path
+    }
+}
+
 struct OnboardingChatAmbientHeader: View {
     var topInset: CGFloat = 0
     var compact: Bool = false
+    var showsLogo: Bool = true
 
     @State private var isBreathing = false
-    @State private var haloShift: CGFloat = -14
 
-    private var headerHeight: CGFloat {
-        compact ? 176 : 318
+    private static let ambientViolet = OnboardingProfileChatDepthStyle.chatAccentViolet
+
+    private var baseHeaderHeight: CGFloat {
+        compact ? 300 : 380
     }
 
     private var logoSize: CGFloat {
-        compact ? 72 : 104
+        compact ? 50 : 64
+    }
+
+    private func logoTopOffset(safeTop: CGFloat) -> CGFloat {
+        let anchor = topInset > 0 ? topInset : safeTop
+        return anchor - (compact ? 4 : 8)
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0.44, green: 0.68, blue: 0.57).opacity(0.72), location: 0),
-                    .init(color: Color(red: 0.24, green: 0.42, blue: 0.34).opacity(0.42), location: 0.26),
-                    .init(color: .black.opacity(0), location: 1)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: headerHeight)
-            .overlay(alignment: .top) {
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.72, green: 0.93, blue: 0.78).opacity(0.34),
-                        Color(red: 0.40, green: 0.72, blue: 0.58).opacity(0.18),
-                        .clear
-                    ],
-                    center: .top,
-                    startRadius: 12,
-                    endRadius: compact ? 170 : 260
-                )
-                .frame(height: headerHeight)
-                .offset(y: haloShift)
-                .blur(radius: compact ? 20 : 34)
-            }
-            .mask(
-                LinearGradient(
-                    colors: [.black, .black.opacity(0.86), .black.opacity(0)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+        GeometryReader { geometry in
+            let safeTop = geometry.safeAreaInsets.top
 
-            Image("caochiaicon")
-                .resizable()
-                .scaledToFit()
-                .frame(width: logoSize, height: logoSize)
-                .shadow(color: Color(red: 0.64, green: 0.88, blue: 0.72).opacity(0.26), radius: 26, x: 0, y: 0)
-                .shadow(color: .black.opacity(0.28), radius: 18, x: 0, y: 12)
-                .scaleEffect(isBreathing ? 1.035 : 0.985)
-                .offset(y: topInset + (compact ? 44 : 116))
-                .animation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true), value: isBreathing)
+            ZStack(alignment: .top) {
+                topPurpleSpike(safeTop: safeTop)
+
+                if showsLogo {
+                    Image("caochiaicon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: logoSize, height: logoSize)
+                        .shadow(color: Self.ambientViolet.opacity(0.14), radius: 12, x: 0, y: 0)
+                        .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 4)
+                        .scaleEffect(isBreathing ? 1.02 : 0.992)
+                        .offset(y: logoTopOffset(safeTop: safeTop))
+                        .animation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true), value: isBreathing)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(edges: .top)
         .allowsHitTesting(false)
         .onAppear {
             isBreathing = true
-            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
-                haloShift = 8
+        }
+    }
+
+    private func topPurpleSpike(safeTop: CGFloat) -> some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let height = baseHeaderHeight + safeTop
+            let sideHaloWidth = width * 0.62
+            let sideHaloHeight = height * 0.92
+            let sideHaloEndY = compact ? 0.78 : 0.84
+
+            ZStack(alignment: .top) {
+                OnboardingChatAmbientPeakShape(peakDepthRatio: compact ? 0.96 : 0.98)
+                    .fill(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Self.ambientViolet.opacity(0.13), location: 0),
+                                .init(color: Self.ambientViolet.opacity(0.09), location: 0.22),
+                                .init(color: Self.ambientViolet.opacity(0.055), location: 0.48),
+                                .init(color: Self.ambientViolet.opacity(0.028), location: 0.68),
+                                .init(color: Self.ambientViolet.opacity(0.012), location: 0.84),
+                                .init(color: .clear, location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: width, height: height)
+                    .frame(maxWidth: .infinity)
+                    .blur(radius: compact ? 22 : 30)
+
+                sideHaloGradient(
+                    startPoint: .topLeading,
+                    endPoint: UnitPoint(x: 0.5, y: sideHaloEndY),
+                    width: sideHaloWidth,
+                    height: sideHaloHeight,
+                    alignment: .leading
+                )
+
+                sideHaloGradient(
+                    startPoint: .topTrailing,
+                    endPoint: UnitPoint(x: 0.5, y: sideHaloEndY),
+                    width: sideHaloWidth,
+                    height: sideHaloHeight,
+                    alignment: .trailing
+                )
+
+                RadialGradient(
+                    colors: [
+                        Self.ambientViolet.opacity(0.055),
+                        Self.ambientViolet.opacity(0.025),
+                        .clear
+                    ],
+                    center: UnitPoint(x: 0.5, y: 0.06),
+                    startRadius: 0,
+                    endRadius: width * 0.58
+                )
+                .frame(width: width, height: height * 0.82)
+                .frame(maxWidth: .infinity)
+                .blur(radius: compact ? 18 : 24)
             }
+            .offset(y: -safeTop)
+            .compositingGroup()
+            .blur(radius: compact ? 7 : 10)
+            .mask(ambientFeatherMask)
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+        .frame(height: baseHeaderHeight, alignment: .top)
+    }
+
+    private func sideHaloGradient(
+        startPoint: UnitPoint,
+        endPoint: UnitPoint,
+        width: CGFloat,
+        height: CGFloat,
+        alignment: Alignment
+    ) -> some View {
+        LinearGradient(
+            stops: [
+                .init(color: Self.ambientViolet.opacity(0.09), location: 0),
+                .init(color: Self.ambientViolet.opacity(0.045), location: 0.45),
+                .init(color: .clear, location: 1)
+            ],
+            startPoint: startPoint,
+            endPoint: endPoint
+        )
+        .frame(width: width, height: height)
+        .frame(maxWidth: .infinity, alignment: alignment)
+        .blur(radius: compact ? 20 : 26)
+    }
+
+    private var ambientFeatherMask: some View {
+        ZStack {
+            LinearGradient(
+                stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black, location: 0.42),
+                    .init(color: .black.opacity(0.82), location: 0.66),
+                    .init(color: .black.opacity(0.48), location: 0.82),
+                    .init(color: .black.opacity(0.18), location: 0.93),
+                    .init(color: .clear, location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.55), .black, .black.opacity(0.55), .clear],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .blendMode(.multiply)
         }
     }
 }

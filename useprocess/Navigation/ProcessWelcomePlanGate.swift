@@ -22,7 +22,7 @@ private struct WelcomePlanSectionGateModifier: ViewModifier {
                             Text("Termine la configuration\ndu Protocole Origine")
                                 .font(.subheadline.weight(.semibold))
                                 .multilineTextAlignment(.center)
-                            Text("Le coach te pose quelques questions pour débloquer Plan, Santé et Profil.")
+                            Text("Va sur l’onglet Plan pour répondre au questionnaire et débloquer ton profil.")
                                 .font(.caption)
                                 .multilineTextAlignment(.center)
                                 .foregroundStyle(.white.opacity(0.82))

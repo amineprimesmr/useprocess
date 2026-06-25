@@ -46,6 +46,7 @@ enum FaceScanService {
             baselineSampleCount: relativeAssessment.baselineSampleCount,
             relativeSignals: relativeAssessment.signals
         )
+        result = FaceScanImageStore.reconcileMediaMetadata(for: result)
 
         OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
         FaceScanHistoryStore.shared.push(result)

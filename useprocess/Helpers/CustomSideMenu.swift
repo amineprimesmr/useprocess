@@ -15,8 +15,9 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
     var body: some View {
         ZStack(alignment: .leading) {
             menuContent(progress)
-                .frame(width: sideBarWidth)
-                .frame(maxHeight: .infinity)
+                .frame(width: sideBarWidth, alignment: .leading)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .clipped()
                 .opacity(progress)
                 .scaleEffect(0.95 + (0.05 * progress), anchor: .leading)
 

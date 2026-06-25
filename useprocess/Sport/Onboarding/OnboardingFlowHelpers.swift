@@ -84,6 +84,16 @@ func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     }
 }
 
+/// Étapes finales qui gardent le header « retour seul » (sans barre ni drapeau).
+func showsBackOnlyOnboardingHeader(_ step: OnboardingStep) -> Bool {
+    switch step {
+    case .biometricAuth, .notificationPermission, .transformationPreview, .programCreation:
+        return true
+    default:
+        return false
+    }
+}
+
 /// Étapes après la page prénom — pas de barre de progression ni lueur header.
 func isAfterFirstNameProgressPhase(_ step: OnboardingStep) -> Bool {
     switch step {

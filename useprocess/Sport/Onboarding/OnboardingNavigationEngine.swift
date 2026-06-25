@@ -237,6 +237,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.firstNameInput.rawValue
             
         case .weightMotivation:
+            return OnboardingStep.programCreation.rawValue
+
+        case .programCreation:
             return OnboardingStep.weightEstimation.rawValue
             
         case .weightEstimation:
@@ -284,7 +287,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.biometricAuth.rawValue
 
         case .programCreation:
-            return OnboardingStep.biometricAuth.rawValue
+            return OnboardingStep.weightEstimation.rawValue
 
         case .nutritionPotential,
              .nutritionObstacles, .perfectNutritionBelief, .hasSufficientHydration, .hydrationLevel,
@@ -370,10 +373,10 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightMotivation.rawValue
             
         case .weightEstimation:
-            if viewModel.hasWeightObjective {
-                return OnboardingStep.weightMotivation.rawValue
-            }
-            return OnboardingStep.firstNameInput.rawValue
+            return OnboardingStep.programCreation.rawValue
+            
+        case .programCreation:
+            return OnboardingStep.weightMotivation.rawValue
             
         case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace, .eventDetails:
             return OnboardingStep.weightEstimation.rawValue
@@ -398,7 +401,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightEstimation.rawValue
 
         case .programCreation:
-            return OnboardingStep.weightEstimation.rawValue
+            return OnboardingStep.weightMotivation.rawValue
 
         case .biometricAuth:
             return OnboardingStep.weightEstimation.rawValue

@@ -147,8 +147,11 @@ extension SportOnboardingView {
         case .transformationPreview:
             TransformationPreviewStepView(onComplete: nextStep, onBack: previousStep)
         case .programCreation:
-            EmptyView()
-                .onAppear { skipTransientStep() }
+            OnboardingProgramCreationStepView(
+                viewModel: viewModel,
+                onComplete: nextStep,
+                onBack: previousStep
+            )
         case .payment:
             PaywallView(
                 onComplete: {

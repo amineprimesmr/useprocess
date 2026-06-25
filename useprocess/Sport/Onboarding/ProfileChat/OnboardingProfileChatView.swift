@@ -26,7 +26,7 @@ struct OnboardingProfileChatView: View {
             let layout = ChatLayoutMetrics(screenHeight: geometry.size.height)
 
             ZStack(alignment: .bottom) {
-                OnboardingChatAmbientHeader(topInset: OnboardingConstants.backOnlyContentTopInset)
+                OnboardingChatAmbientHeader(topInset: OnboardingConstants.headerBackButtonTopPadding)
                     .zIndex(0)
 
                 if isSportSearchActive {
@@ -49,15 +49,15 @@ struct OnboardingProfileChatView: View {
                 }
                 .animation(OnboardingProfileChatDepthStyle.historySpring, value: chatViewModel.messages.count)
                 .padding(.horizontal, horizontalPadding)
-                .padding(.top, layout.contentTopPadding)
-                .padding(.bottom, chatViewModel.showsLetsGoButton ? 110 : 36)
-                .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsLetsGoButton)
+                .padding(.top, layout.contentTopPadding + OnboardingConstants.backOnlyContentTopInset)
+                .padding(.bottom, chatViewModel.showsContinueAfterAnalysis ? 110 : 36)
+                .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
                 .mask(topFadeMask)
                 .zIndex(1)
 
-                if chatViewModel.showsLetsGoButton {
+                if chatViewModel.showsContinueAfterAnalysis {
                     VStack(spacing: 10) {
                         Text(HealthMedicalSources.disclaimer)
                             .font(.system(size: 11, weight: .regular))
@@ -65,28 +65,17 @@ struct OnboardingProfileChatView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 8)
 
-                        letsGoButton
+                        continueAfterAnalysisButton
                     }
                     .padding(.horizontal, horizontalPadding)
                     .padding(.bottom, 50)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                     .zIndex(5)
                 }
-
-                if chatViewModel.analysisShowPopup {
-                    OnboardingAnalysisYesNoPopup(
-                        question: chatViewModel.analysisPopupQuestion,
-                        affirmativeTitle: chatViewModel.analysisPopupAffirmativeTitle,
-                        negativeTitle: chatViewModel.analysisPopupNegativeTitle,
-                        popupOffset: chatViewModel.analysisPopupOffset,
-                        onAnswer: { chatViewModel.handleAnalysisPopupAnswer($0) }
-                    )
-                    .zIndex(30)
-                }
             }
-            .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsLetsGoButton)
+            .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnalysisSection)
-            .padding(.top, OnboardingConstants.backOnlyContentTopInset)
+            .ignoresSafeArea(edges: .top)
             .clipped()
             .onChange(of: chatViewModel.shouldFinish) { _, should in
                 guard should else { return }
@@ -140,10 +129,11 @@ struct OnboardingProfileChatView: View {
 
         init(screenHeight: CGFloat) {
             self.screenHeight = screenHeight
-            activeAnchorY = screenHeight * 0.52
-            historySlotHeight = screenHeight * 0.29
-            slotSpacing = 10
-            contentTopPadding = max(12, activeAnchorY - historySlotHeight - slotSpacing)
+            let chromeInset = OnboardingConstants.backOnlyContentTopInset
+            activeAnchorY = screenHeight * 0.36
+            historySlotHeight = screenHeight * 0.20
+            slotSpacing = 8
+            contentTopPadding = max(4, activeAnchorY - chromeInset - historySlotHeight - slotSpacing)
         }
 
         func answersScrollMaxHeight(bottomPadding: CGFloat) -> CGFloat {
@@ -172,7 +162,7 @@ struct OnboardingProfileChatView: View {
 
     @ViewBuilder
     private func activeSlot(layout: ChatLayoutMetrics) -> some View {
-        let bottomPadding: CGFloat = chatViewModel.showsLetsGoButton ? 110 : 36
+        let bottomPadding: CGFloat = chatViewModel.showsContinueAfterAnalysis ? 110 : 36
 
         VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
             if let active = activeMessage {
@@ -200,7 +190,7 @@ struct OnboardingProfileChatView: View {
             }
         }
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnalysisSection)
-        .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsLetsGoButton)
+        .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisProgress)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisDisplayedPercentage)
         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -283,7 +273,7 @@ struct OnboardingProfileChatView: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 110)
+            .frame(height: 48)
 
             Rectangle()
                 .fill(.black)
@@ -455,7 +445,7 @@ struct OnboardingProfileChatView: View {
                     }
                 }
 
-            case .analysisProgress:
+            case .answersAnalysis, .analysisProgress:
                 EmptyView()
             }
         }
@@ -466,8 +456,11 @@ struct OnboardingProfileChatView: View {
     private var analysisSection: some View {
         OnboardingProfileChatAnalysisPanel(
             phaseLabel: chatViewModel.analysisPhaseLabel,
+            phaseIndex: chatViewModel.analysisPhaseIndex,
             displayedPercentage: chatViewModel.analysisDisplayedPercentage,
             progress: chatViewModel.analysisProgress,
+            elapsedSeconds: chatViewModel.analysisElapsedSeconds,
+            isPaused: chatViewModel.analysisIsPaused,
             isVisible: chatViewModel.showsAnalysisSection
         )
         .padding(.top, 10)
@@ -475,16 +468,16 @@ struct OnboardingProfileChatView: View {
 
     // MARK: - Analysis & CTA
 
-    private var letsGoButton: some View {
+    private var continueAfterAnalysisButton: some View {
         Button {
             HapticManager.shared.impact(.medium)
-            chatViewModel.submitLetsGo()
+            chatViewModel.submitContinueAfterAnalysis()
         } label: {
-            Text("C'est parti")
+            Text("Continuer")
                 .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
                 .foregroundStyle(OnboardingTheme.actionButtonText)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 18)
                 .contentShape(answerButtonShape)
         }
         .processGlassButton(in: answerButtonShape)
@@ -515,7 +508,7 @@ struct OnboardingProfileChatView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.vertical, 18)
             .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
             .contentShape(answerButtonShape)
         }
@@ -550,7 +543,7 @@ struct OnboardingProfileChatView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.vertical, 18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(answerButtonShape)
         }
@@ -581,7 +574,7 @@ struct OnboardingProfileChatView: View {
                 .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
                 .foregroundStyle(isDisabled ? OnboardingTheme.mutedText : OnboardingTheme.actionButtonText)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 18)
                 .contentShape(answerButtonShape)
         }
         .processGlassButton(in: answerButtonShape)

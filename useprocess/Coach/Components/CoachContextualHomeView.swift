@@ -39,7 +39,7 @@ struct CoachContextualHomeView: View {
     }
 
     private var topContentPadding: CGFloat {
-        ProcessMainChromeMetrics.scrollTopInset + 8
+        ProcessMainChromeMetrics.topSafeInset + 72
     }
 
     private var typewriterText: some View {

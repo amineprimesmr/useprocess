@@ -16,7 +16,7 @@ struct OnboardingBackButton: View {
             action()
         }) {
             Image(systemName: "chevron.left")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.bodyText)
                 .frame(
                     width: OnboardingConstants.backButtonSize,

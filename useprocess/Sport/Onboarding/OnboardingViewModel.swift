@@ -270,7 +270,7 @@ class OnboardingViewModel: ObservableObject {
         case .faceAnalysis:
             return isFaceAnalysisCompleted
         case .programCreation:
-            return true
+            return isProgramCreationCompleted
         case .weightManagementExperience:
             if hasWeightGoal != true {
                 return true

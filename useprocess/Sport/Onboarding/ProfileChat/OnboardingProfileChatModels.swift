@@ -40,6 +40,7 @@ enum OnboardingProfileChatQuestionKind {
     case singleChoice
     case multiChoice
     case faceScanOffer
+    case answersAnalysis
     case analysisProgress
 }
 
@@ -142,7 +143,7 @@ enum OnboardingProfileChatQuestionBank {
         .init(
             id: "answers_analysis",
             prompt: "J'analyse tes réponses…",
-            kind: .analysisProgress,
+            kind: .answersAnalysis,
             detailText: analysisDetailText(for: viewModel)
         )
     }

@@ -24,10 +24,10 @@ private struct CoachBottomChromeHeightKey: PreferenceKey {
 struct CoachChatView: View {
     @Binding var selectedSection: ProcessMainSection
     var onOpenProfile: () -> Void
+    var onOpenWelcomePlan: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
-    @Bindable private var session = AppSession.shared
     @Bindable private var sidebarPresentation = CoachSidebarPresentation.shared
 
     @State private var viewModel = CoachChatViewModel()
@@ -49,39 +49,15 @@ struct CoachChatView: View {
     }
 
     var body: some View {
-        Group {
-            if !session.hasCompletedWelcomePlanChat {
-                WelcomePlanChatView(
-                    embeddedInMainApp: true,
-                    selectedSection: $selectedSection,
-                    onComplete: dismissWelcomePlanChat
-                )
-            } else {
-                coachMainContent
+        coachMainContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onChange(of: selectedSection) { _, section in
+                guard section != .coach else { return }
+                dismissCoachKeyboard()
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: selectedSection) { _, section in
-            guard section != .coach else { return }
-            dismissCoachKeyboard()
-        }
-        .onDisappear {
-            dismissCoachKeyboard()
-        }
-        .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
-            guard completed else { return }
-            Task {
-                viewModel.bind(profile: profileService.currentProfile)
-                await viewModel.loadThreadIfNeeded()
+            .onDisappear {
+                dismissCoachKeyboard()
             }
-        }
-    }
-
-    private func dismissWelcomePlanChat() {
-        Task {
-            viewModel.bind(profile: profileService.currentProfile)
-            await viewModel.loadThreadIfNeeded()
-        }
     }
 
     private let coachSidebarWidth: CGFloat = 300
@@ -208,6 +184,23 @@ struct CoachChatView: View {
                 }
                 .zIndex(5)
         }
+        .overlay(alignment: .topLeading) {
+            if viewModel.isSidebarEnabled, !isCoachSidebarPresenting {
+                coachMenuButton
+                    .padding(.top, ProcessMainChromeMetrics.topSafeInset + 2)
+                    .padding(.leading, 16)
+                    .zIndex(20)
+            }
+        }
+    }
+
+    private var coachMenuButton: some View {
+        ProcessGlassIconButton(systemName: "line.3.horizontal", size: 34, iconSize: 14) {
+            HapticManager.shared.impact(.light)
+            dismissCoachKeyboard()
+            isSidebarExpanded = true
+        }
+        .accessibilityLabel("Ouvrir le menu")
     }
 
     private var coachSidebar: some View {
@@ -227,7 +220,8 @@ struct CoachChatView: View {
                 isInputFocused = false
                 Task { await viewModel.deleteConversation(id) }
             },
-            onOpenProfile: onOpenProfile
+            onOpenProfile: onOpenProfile,
+            onOpenWelcomePlan: onOpenWelcomePlan
         )
     }
 
@@ -278,17 +272,27 @@ struct CoachChatView: View {
     private var chatScrollLayer: some View {
         ZStack(alignment: .topLeading) {
             if viewModel.showsContextualHome {
-                CoachContextualHomeView(
-                    prompt: viewModel.homePrompt,
-                    startsComplete: viewModel.shouldSkipHomeAnimation,
-                    onGreetingComplete: {
-                        Task { @MainActor in
-                            viewModel.onHomeGreetingComplete()
+                ZStack(alignment: .top) {
+                    OnboardingChatAmbientHeader(
+                        topInset: ProcessMainChromeMetrics.topSafeInset,
+                        compact: true
+                    )
+                    .zIndex(0)
+
+                    CoachContextualHomeView(
+                        prompt: viewModel.homePrompt,
+                        startsComplete: viewModel.shouldSkipHomeAnimation,
+                        onGreetingComplete: {
+                            Task { @MainActor in
+                                viewModel.onHomeGreetingComplete()
+                            }
                         }
-                    }
-                )
+                    )
+                    .zIndex(1)
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(theme.background.ignoresSafeArea())
+                .ignoresSafeArea(edges: .top)
                 .transition(
                     .opacity
                         .combined(with: .offset(y: 6))

@@ -74,7 +74,7 @@ struct OnboardingEstimationStepView: View {
             Image("check")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 16, height: 16)
+                .frame(width: 24, height: 24)
 
             Text(summaryLine)
                 .font(.system(size: 15, weight: .regular))

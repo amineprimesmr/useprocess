@@ -7,12 +7,12 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
-    static let tabOrder: [ProcessMainSection] = [.coach, .plan, .profile]
+    static let tabOrder: [ProcessMainSection] = [.plan, .coach, .profile]
 
     var label: String {
         switch self {
         case .coach: "Coach"
-        case .plan: "Plan"
+        case .plan: "Accueil"
         case .profile: "Profil"
         }
     }
@@ -20,7 +20,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     var icon: String {
         switch self {
         case .coach: "sparkles"
-        case .plan: "calendar"
+        case .plan: "house.fill"
         case .profile: "person.crop.circle.fill"
         }
     }

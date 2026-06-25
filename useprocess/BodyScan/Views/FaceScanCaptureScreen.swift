@@ -72,11 +72,11 @@ struct FaceScanCaptureScreen: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    header(safeArea: safeArea)
-                        .padding(.top, safeArea.top + 6)
+                    Spacer()
+                        .frame(height: OnboardingConstants.backOnlyContentTopInset)
 
                     cameraSection(viewportSize: viewportSize)
-                        .padding(.top, AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) ? 28 : 18)
+                        .padding(.top, AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) ? 12 : 8)
 
                     instructionBlock
                         .padding(.top, 22)
@@ -103,7 +103,11 @@ struct FaceScanCaptureScreen: View {
                 }
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
             }
+            .overlay(alignment: .top) {
+                scanHeader
+            }
         }
+        .ignoresSafeArea(.container, edges: .top)
         .onAppear {
             userFlashOverride = false
             isFlashEnabled = false
@@ -170,7 +174,7 @@ struct FaceScanCaptureScreen: View {
 
     // MARK: - Header
 
-    private func header(safeArea: EdgeInsets) -> some View {
+    private var scanHeader: some View {
         HStack(spacing: 12) {
             OnboardingBackButton(action: {
                 FaceScanScreenFlash.shared.deactivate()
@@ -187,6 +191,10 @@ struct FaceScanCaptureScreen: View {
             }
         }
         .padding(.horizontal, OnboardingConstants.headerHorizontalPadding)
+        .frame(height: OnboardingConstants.backButtonSize, alignment: .center)
+        .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
+        .frame(maxWidth: .infinity, alignment: .top)
+        .zIndex(10)
     }
 
     // MARK: - Camera

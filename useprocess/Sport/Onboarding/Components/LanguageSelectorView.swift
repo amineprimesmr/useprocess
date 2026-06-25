@@ -64,8 +64,11 @@ struct LanguageSelectorView: View {
         } label: {
             // Bouton avec le drapeau de la langue actuelle
             Text(currentLanguageFlag)
-                .font(.system(size: 18))
-                .frame(width: 34, height: 34)
+                .font(.system(size: 25))
+                .frame(
+                    width: OnboardingConstants.backButtonSize,
+                    height: OnboardingConstants.backButtonSize
+                )
         }
         .glassStyle()
 

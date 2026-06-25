@@ -31,6 +31,7 @@ final class FaceScanHistoryStore {
         self.userId = newUserId
         didLoadLocal = true
         didImportOnboarding = false
+        FaceScanImageStore.migrateExistingMediaProtectionIfNeeded()
         loadFromDisk()
         importOnboardingSnapshotIfNeeded()
 
@@ -39,24 +40,26 @@ final class FaceScanHistoryStore {
     }
 
     func push(_ result: FaceScanResult) {
-        latestResult = result
-        history.removeAll { $0.id == result.id }
-        history.insert(result, at: 0)
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+        latestResult = reconciled
+        history.removeAll { $0.id == reconciled.id }
+        history.insert(reconciled, at: 0)
         if history.count > 90 { history = Array(history.prefix(90)) }
         persist()
-        uploadToCloud(result)
+        uploadToCloud(reconciled)
         FaceScanDataLifecycle.enforceRetention(for: self)
     }
 
     func update(_ result: FaceScanResult) {
-        if latestResult?.id == result.id {
-            latestResult = result
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+        if latestResult?.id == reconciled.id {
+            latestResult = reconciled
         }
-        if let index = history.firstIndex(where: { $0.id == result.id }) {
-            history[index] = result
+        if let index = history.firstIndex(where: { $0.id == reconciled.id }) {
+            history[index] = reconciled
         }
         persist()
-        uploadToCloud(result)
+        uploadToCloud(reconciled)
     }
 
     func syncFromRemote() async {
@@ -88,9 +91,9 @@ final class FaceScanHistoryStore {
                     merged.claudeAnalysis = existing.claudeAnalysis
                     merged.aiEnhanced = true
                 }
-                byId[item.id] = merged
+                byId[item.id] = FaceScanImageStore.reconcileMediaMetadata(for: merged)
             } else {
-                byId[item.id] = item
+                byId[item.id] = FaceScanImageStore.reconcileMediaMetadata(for: item)
             }
         }
 
@@ -179,14 +182,17 @@ final class FaceScanHistoryStore {
     private func loadFromDisk() {
         if let data = UserDefaults.standard.data(forKey: historyKey),
            let items = try? JSONDecoder().decode([FaceScanResult].self, from: data) {
-            history = items.sorted { $0.createdAt > $1.createdAt }
+            history = items
+                .map { FaceScanImageStore.reconcileMediaMetadata(for: $0) }
+                .sorted { $0.createdAt > $1.createdAt }
             latestResult = history.first
             return
         }
         if let data = UserDefaults.standard.data(forKey: latestKey),
            let result = try? JSONDecoder().decode(FaceScanResult.self, from: data) {
-            latestResult = result
-            history = [result]
+            let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+            latestResult = reconciled
+            history = [reconciled]
             return
         }
         latestResult = nil

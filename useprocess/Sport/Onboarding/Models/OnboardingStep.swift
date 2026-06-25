@@ -98,7 +98,7 @@ enum OnboardingStep: Int, CaseIterable {
         switch self {
         case .videoIntroduction, .faceAnalysis, .weightMotivation, .sportSelection,
              .healthKitPermissions, .biometricAuth, .notificationPermission,
-             .transformationPreview,
+             .transformationPreview, .programCreation,
              .payment, .processWelcome, .referralReward, .featuresUnlock,
              .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
              .personalizedWelcome, .processResultsDurability,
@@ -133,6 +133,7 @@ enum OnboardingStep: Int, CaseIterable {
         .idealWeight,
         .weightGoalIncompatible,
         .weightMotivation,
+        .programCreation,
         .goalPace,
         .weightEstimation,
         .hasSportActivity,
@@ -163,7 +164,6 @@ enum OnboardingStep: Int, CaseIterable {
         .fatiguePeaks,
         .sleepNeed,
         .faceAnalysis,
-        .programCreation,
         .planGeneration,
         .healthKitPermissions,
         .sleepDataRecovery,
@@ -213,7 +213,7 @@ enum OnboardingStep: Int, CaseIterable {
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
              .personalizedWelcome, .processResultsDurability,
              .sleepDataRecovery, .primaryGoal, .goalProjection,
-             .healthKitPermissions, .programCreation:
+             .healthKitPermissions:
             return true
         default:
             return false

@@ -204,14 +204,14 @@ struct SportOnboardingView: View {
                 handleContinueButtonTap()
             }) {
                 Text("CONTINUER")
-                    .font(.system(size: 20, weight: .black))
+                    .font(.system(size: 22, weight: .black))
                     .foregroundStyle(OnboardingTheme.actionButtonText)
                     .id("continue_button_label_\(viewModel.currentStep)")
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 58)
             }
             .glassStyle()
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 34)
             .disabled(!canContinue)
 
             if shouldShowNoWeightGoalLink {

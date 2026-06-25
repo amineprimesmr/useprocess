@@ -59,7 +59,8 @@ struct CoachConversationsSidebar: View {
                 .padding(.top, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding([.horizontal, .top], 15)
+        .padding(.horizontal, 15)
+        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 12)
         .padding(.bottom, 20)
         .background(theme.background)
         .onAppear {
@@ -159,7 +160,6 @@ struct CoachConversationsSidebar: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     conversationRows
                 }
-                .mask { Rectangle().ignoresSafeArea() }
                 .scrollClipDisabled()
             }
         }
