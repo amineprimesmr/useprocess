@@ -9,6 +9,8 @@ final class CoachPlanNavigationBridge {
     var pendingFocus: CoachPlanFocus?
     var pendingConversationId: UUID?
     var pendingCheckInPrompt: String?
+    var pendingEveningChecklist = false
+    var eveningChecklistRefreshNonce = 0
     var shouldOpenCoach = false
     var shouldOpenPlan = false
     var shouldOpenFaceScan = false
@@ -27,6 +29,21 @@ final class CoachPlanNavigationBridge {
     func openCoachWithCheckIn(prompt: String) {
         pendingCheckInPrompt = prompt
         shouldOpenCoach = true
+    }
+
+    func openCoachWithEveningChecklist() {
+        pendingEveningChecklist = true
+        shouldOpenCoach = true
+    }
+
+    func consumePendingEveningChecklist() -> Bool {
+        let pending = pendingEveningChecklist
+        pendingEveningChecklist = false
+        return pending
+    }
+
+    func bumpEveningChecklistRefresh() {
+        eveningChecklistRefreshNonce += 1
     }
 
     func openDeepLink(_ action: CoachDeepLinkAction) {

@@ -3,20 +3,14 @@ import UIKit
 
 // MARK: - Visuels temporaires (même asset partout en attendant le catalogue complet)
 
-private enum PlanTrainingVisuals {
+enum PlanTrainingVisuals {
     static let placeholderAsset = "dossport"
     /// Ratio largeur / hauteur de dossport (941×1672).
     static let fallbackAspectRatio: CGFloat = 941.0 / 1672.0
     static let heroMaxHeight: CGFloat = 248
 
     static func resolvedAssetName(for entry: TrainingSessionCatalogEntry) -> String {
-        if ProcessAssetCatalog.contains(placeholderAsset) {
-            return placeholderAsset
-        }
-        if ProcessAssetCatalog.contains(entry.imageAssetName) {
-            return entry.imageAssetName
-        }
-        return placeholderAsset
+        TrainingAssetCatalog.resolvedHeroAsset(for: entry)
     }
 
     static func aspectRatio(for assetName: String) -> CGFloat {
@@ -39,6 +33,7 @@ struct PlanTrainingDaySection: View {
 
     @Environment(\.appTheme) private var theme
 
+    @Namespace private var trainingZoomNamespace
     @State private var detailTarget: PlanTrainingDetailTarget?
     @State private var bookmarkedSessionIDs: Set<String> = PlanTrainingBookmarks.load()
 
@@ -58,8 +53,9 @@ struct PlanTrainingDaySection: View {
                 restDayCard(entry: entry)
             }
         }
-        .sheet(item: $detailTarget) { target in
+        .fullScreenCover(item: $detailTarget) { target in
             PlanTrainingDetailSheet(training: target.training, dayTitle: target.dayTitle)
+                .processZoomTransition(id: .trainingDay, namespace: trainingZoomNamespace)
         }
     }
 
@@ -77,6 +73,7 @@ struct PlanTrainingDaySection: View {
             onBookmark: { toggleBookmark(entry.id.rawValue) },
             onTap: openSessionDetail
         )
+        .processZoomSource(id: .trainingDay, namespace: trainingZoomNamespace)
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
@@ -142,7 +139,7 @@ struct PlanTrainingDetailTarget: Identifiable, Equatable {
     var id: String { dayId }
 }
 
-private struct PlanTrainingFullBleedCard: View {
+struct PlanTrainingFullBleedCard: View {
     let assetName: String
     let headline: String
     let muscleTags: String
@@ -262,7 +259,7 @@ private struct PlanTrainingFullBleedCard: View {
     }
 }
 
-private struct PlanTrainingCardImage: View {
+struct PlanTrainingCardImage: View {
     let assetName: String
 
     var body: some View {

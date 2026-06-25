@@ -205,7 +205,23 @@ enum ClaudeLocalAPIService {
         model: ClaudeModel = .sonnet46,
         maxTokens: Int = 512
     ) async throws -> String {
-        let content: [[String: Any]] = [
+        try await completeWithImages(
+            system: system,
+            prompt: prompt,
+            jpegDatas: [jpegData],
+            model: model,
+            maxTokens: maxTokens
+        )
+    }
+
+    static func completeWithImages(
+        system: String,
+        prompt: String,
+        jpegDatas: [Data],
+        model: ClaudeModel = .sonnet46,
+        maxTokens: Int = 512
+    ) async throws -> String {
+        var content: [[String: Any]] = jpegDatas.map { jpegData in
             [
                 "type": "image",
                 "source": [
@@ -213,9 +229,9 @@ enum ClaudeLocalAPIService {
                     "media_type": "image/jpeg",
                     "data": jpegData.base64EncodedString()
                 ]
-            ],
-            ["type": "text", "text": prompt]
-        ]
+            ]
+        }
+        content.append(["type": "text", "text": prompt])
         return try await sendMessages(
             system: system,
             messages: [["role": "user", "content": content]],

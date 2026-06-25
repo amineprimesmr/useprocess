@@ -6,6 +6,7 @@ struct CoachMessageEnrichmentView: View {
     var showsFollowUps: Bool
     var onFollowUp: (String) -> Void
     var onDeepLink: (CoachDeepLink) -> Void
+    var onContextualAction: ((CoachContextualAction) -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
     @State private var isReasoningExpanded = false
@@ -18,6 +19,13 @@ struct CoachMessageEnrichmentView: View {
 
             if showsFollowUps, !enrichment.followUps.isEmpty {
                 followUpChips
+            }
+
+            if let onContextualAction, !enrichment.contextualActions.isEmpty {
+                CoachContextualActionButtons(
+                    actions: enrichment.contextualActions,
+                    onAction: onContextualAction
+                )
             }
 
             if let deepLink = enrichment.deepLink {
@@ -90,11 +98,25 @@ struct CoachMessageEnrichmentView: View {
     }
 
     private func deepLinkButton(_ link: CoachDeepLink) -> some View {
-        Button {
-            onDeepLink(link)
-        } label: {
+        CoachDeepLinkButton(
+            link: link,
+            theme: theme,
+            onTap: { onDeepLink(link) }
+        )
+    }
+}
+
+private struct CoachDeepLinkButton: View {
+    let link: CoachDeepLink
+    let theme: AppTheme
+    let onTap: () -> Void
+
+    private let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+
+    var body: some View {
+        Button(action: onTap) {
             HStack(spacing: 8) {
-                Image(systemName: deepLinkIcon(for: link.action))
+                Image(systemName: icon(for: link.action))
                     .font(.system(size: 13, weight: .semibold))
                 Text(link.label)
                     .font(.subheadline.weight(.semibold))
@@ -104,16 +126,14 @@ struct CoachMessageEnrichmentView: View {
             }
             .foregroundStyle(theme.primaryText)
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.88 : 0.95))
-            )
+            .padding(.vertical, 13)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(shape)
         }
-        .buttonStyle(.plain)
+        .processGlassButton(in: shape)
     }
 
-    private func deepLinkIcon(for action: CoachDeepLinkAction) -> String {
+    private func icon(for action: CoachDeepLinkAction) -> String {
         switch action {
         case .plan: return "calendar"
         case .journal: return "checklist"

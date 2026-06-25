@@ -30,7 +30,11 @@ struct CoachContextualHomeView: View {
                 return
             }
             await typewriter.run(text: prompt.greetingText)
+            guard !Task.isCancelled else { return }
             onGreetingComplete()
+        }
+        .onDisappear {
+            typewriter.reset()
         }
     }
 

@@ -11,6 +11,7 @@ struct CoachFirestoreMessage: Codable {
     let followUps: [String]?
     let deepLinkAction: String?
     let deepLinkLabel: String?
+    let contextualActions: [String]?
 
     init(from message: CoachMessage) {
         id = message.id.uuidString
@@ -22,6 +23,7 @@ struct CoachFirestoreMessage: Codable {
         followUps = message.followUps
         deepLinkAction = message.deepLinkAction
         deepLinkLabel = message.deepLinkLabel
+        contextualActions = message.contextualActions
     }
 
     func toCoachMessage() -> CoachMessage? {
@@ -35,7 +37,8 @@ struct CoachFirestoreMessage: Codable {
             reasoning: reasoning,
             followUps: followUps,
             deepLinkAction: deepLinkAction,
-            deepLinkLabel: deepLinkLabel
+            deepLinkLabel: deepLinkLabel,
+            contextualActions: contextualActions
         )
     }
 }

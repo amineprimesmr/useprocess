@@ -14,6 +14,7 @@ struct PlanDashboardView: View {
     @State private var shoppingItems: [MealShoppingItem] = []
     @State private var activeResourceSheet: PlanResourceSheet?
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
+    @Namespace private var planResourceZoomNamespace
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
@@ -69,8 +70,9 @@ struct PlanDashboardView: View {
             .onChange(of: planStore.plan?.lastUpdated) { _, _ in
                 refreshMealSections()
             }
-            .sheet(item: $activeResourceSheet) { sheet in
+            .fullScreenCover(item: $activeResourceSheet) { sheet in
                 resourceSheet(for: sheet)
+                    .processZoomTransition(id: .planResource(sheet), namespace: planResourceZoomNamespace)
             }
         }
     }
@@ -86,7 +88,10 @@ struct PlanDashboardView: View {
             )
             .environmentObject(HealthManager.shared)
 
-            PlanResourcesFooter(activeSheet: $activeResourceSheet)
+            PlanResourcesFooter(
+                activeSheet: $activeResourceSheet,
+                zoomNamespace: planResourceZoomNamespace
+            )
         } else {
             noPlanCard
         }

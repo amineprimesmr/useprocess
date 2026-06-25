@@ -85,11 +85,23 @@ struct CoachChatView: View {
         .onChange(of: viewModel.activeConversationId) { _, id in
             CoachPresentationTracker.shared.activeConversationId = id
         }
+        .onChange(of: viewModel.shouldOpenInlineCamera) { _, shouldOpen in
+            guard shouldOpen else { return }
+            viewModel.shouldOpenInlineCamera = false
+            dismissCoachKeyboard()
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                isCompactCameraPresented = true
+            }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             viewModel.bind(profile: profileService.currentProfile)
             await viewModel.loadThreadIfNeeded()
             await viewModel.consumePendingNavigationIfNeeded()
+            let delivered = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
+            if delivered {
+                await viewModel.reloadForEveningDelivery()
+            }
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             viewModel.bind(profile: profileService.currentProfile)
@@ -104,6 +116,9 @@ struct CoachChatView: View {
         .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenCoach) { _, should in
             guard should else { return }
             Task { await viewModel.consumePendingNavigationIfNeeded() }
+        }
+        .onChange(of: CoachPlanNavigationBridge.shared.eveningChecklistRefreshNonce) { _, _ in
+            Task { await viewModel.reloadForEveningDelivery() }
         }
         .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenFaceScan) { _, should in
             guard should else { return }
@@ -181,13 +196,6 @@ struct CoachChatView: View {
 
     private var coachContentLayer: some View {
         chatScrollLayer
-            .overlay {
-                if isCompactCameraPresented {
-                    Color.black.opacity(0.14)
-                        .allowsHitTesting(false)
-                        .transition(.opacity)
-                }
-            }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if isCompactCameraPresented,
                    !isCoachSidebarPresenting,
@@ -470,6 +478,14 @@ struct CoachChatView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 4)
             }
+
+            if let feedback = viewModel.lastActionFeedback {
+                Text(feedback)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(theme.onboardingAccent)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .coordinateSpace(name: "coachChatRoot")
@@ -487,7 +503,7 @@ struct CoachChatView: View {
         CoachLiquidGlassInputBar(
             text: $viewModel.inputText,
             isFocused: $isInputFocused,
-            pendingImage: viewModel.pendingAttachmentImage,
+            pendingImages: viewModel.pendingAttachmentImages,
             isDisabled: viewModel.isSending,
             isRecording: viewModel.isVoiceRecording,
             isVoiceExiting: viewModel.isVoiceExiting,
@@ -518,13 +534,13 @@ struct CoachChatView: View {
                     isCompactCameraPresented = true
                 }
             },
-            onRemovePendingImage: {
-                viewModel.clearPendingAttachment()
+            onRemovePendingImageAt: { index in
+                viewModel.removePendingAttachment(at: index)
             }
         )
         .padding(.horizontal, 14)
         .padding(.bottom, 10)
-        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: viewModel.pendingAttachmentImage != nil)
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: viewModel.pendingAttachmentImages.count)
         .animation(.easeInOut(duration: 0.22), value: isInputFocused)
     }
 
@@ -663,21 +679,30 @@ struct CoachChatView: View {
                     .combined(with: .scale(scale: 0.98, anchor: .bottomTrailing))
             )
         } else if let meal = CoachMealMessageDetector.mealContent(from: message.text) {
-            CoachMealSuggestionMessageView(content: meal)
+            CoachMealSuggestionMessageView(
+                content: meal,
+                contextualActions: viewModel.mealOnlyContextualActions(for: message),
+                onAction: { action in
+                    Task { await handleContextualAction(action, for: message) }
+                }
+            )
                 .transition(
                     .opacity
                         .combined(with: .offset(y: 8))
                 )
         } else {
             VStack(alignment: .leading, spacing: 0) {
-                CoachFormattedText(
+                CoachAssistantMessageBody(
                     text: message.text,
                     font: messageFont,
                     lineSpacing: messageLineSpacing,
                     color: theme.primaryText
                 )
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+
+                if CoachEveningChecklistService.isEveningMessage(message) {
+                    CoachEveningChecklistCard()
+                        .padding(.top, 10)
+                }
 
                 if let enrichment = viewModel.enrichment(for: message) {
                     CoachMessageEnrichmentView(
@@ -689,6 +714,9 @@ struct CoachChatView: View {
                         },
                         onDeepLink: { link in
                             handleCoachDeepLink(link)
+                        },
+                        onContextualAction: { action in
+                            Task { await handleContextualAction(action, for: message) }
                         }
                     )
                 }
@@ -714,6 +742,22 @@ struct CoachChatView: View {
             sidebarPresentedSheet = .tracking
         case .integration:
             showsIntegrationFlow = true
+        }
+    }
+
+    private func handleContextualAction(_ action: CoachContextualAction, for message: CoachMessage) async {
+        switch action.kind {
+        case .openPlan:
+            selectedSection = .plan
+            onOpenWelcomePlan?()
+        case .openJournal:
+            selectedSection = .plan
+            onOpenWelcomePlan?()
+        default:
+            await viewModel.executeContextualAction(action, for: message)
+            if action.kind == .modifyMeal || action.kind == .followUp {
+                isInputFocused = true
+            }
         }
     }
 }

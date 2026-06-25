@@ -9,6 +9,7 @@ struct FaceScanHealthCompact: View {
     let isScanDue: Bool
     let daysUntilNextScan: Int?
     var correlationHint: String?
+    var historyZoomNamespace: Namespace.ID? = nil
     var onScan: () -> Void
     var onHistory: () -> Void
 
@@ -67,6 +68,8 @@ struct FaceScanHealthCompact: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(theme.primaryText)
+                .processZoomSource(id: .faceScanHistory, namespace: historyZoomNamespace)
+                .accessibilityLabel("Historique des scans visage")
             }
         }
         .padding(14)

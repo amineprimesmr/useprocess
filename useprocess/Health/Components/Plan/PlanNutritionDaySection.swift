@@ -14,9 +14,6 @@ struct PlanDayMealEntry: Identifiable, Equatable {
     var scheduleTargetLabel: String? { PlanMealSchedule.targetLabel(for: slot, planType: planType) }
     var scheduleWindowLabel: String? { PlanMealSchedule.windowLabel(for: slot, planType: planType) }
     var scheduleNote: String? { PlanMealSchedule.timing(for: slot, planType: planType)?.debloatNote }
-    var electrolyteBalance: MealElectrolyteBalance {
-        MealNutritionCatalog.electrolyteBalance(for: meal)
-    }
 }
 
 enum PlanDayMealsProvider {
@@ -85,6 +82,7 @@ struct PlanNutritionDaySection: View {
     let plan: FaceOriginPlan
     let day: OriginProgramDay
     var isEditable: Bool = true
+    var mealZoomNamespace: Namespace.ID
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
@@ -131,7 +129,7 @@ struct PlanNutritionDaySection: View {
         .onChange(of: store.plan?.progress.validatedMealsBySlot[day.id]) { _, _ in
             refreshSelectedEntryIfNeeded()
         }
-        .sheet(item: $selectedEntry) { entry in
+        .fullScreenCover(item: $selectedEntry) { entry in
             PlanMealDetailView(
                 entry: refreshedEntry(entry),
                 plan: livePlan,
@@ -144,10 +142,12 @@ struct PlanNutritionDaySection: View {
                 onDismiss: { selectedEntry = nil }
             )
             .environmentObject(profileService)
+            .processZoomTransition(id: .mealDetail(entry.slot), namespace: mealZoomNamespace)
         }
         .sheet(isPresented: $showAllMeals) {
             PlanMealAllMealsSheet(
                 entries: entries,
+                mealZoomNamespace: mealZoomNamespace,
                 onSelect: { entry in
                     showAllMeals = false
                     selectedEntry = entry
@@ -181,9 +181,11 @@ struct PlanNutritionDaySection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(entries) { entry in
-                        PlanMealCarouselCard(entry: entry) {
-                            selectedEntry = entry
-                        }
+                        PlanMealCarouselCard(
+                            entry: entry,
+                            zoomNamespace: mealZoomNamespace,
+                            onTap: { selectedEntry = entry }
+                        )
                         .id(entry.slot)
                     }
                 }
@@ -221,28 +223,25 @@ private enum PlanMealCarouselLayout {
     static let cardWidth: CGFloat = 268
     static let imageAreaHeight: CGFloat = 124
     static let textBlockHeight: CGFloat = 104
-    static let balanceBarHeight: CGFloat = 38
-    static var cardHeight: CGFloat { imageAreaHeight + textBlockHeight + balanceBarHeight }
+    static var cardHeight: CGFloat { imageAreaHeight + textBlockHeight }
     static let cornerRadius: CGFloat = 26
 }
 
 private struct PlanMealCarouselCard: View {
     let entry: PlanDayMealEntry
+    let zoomNamespace: Namespace.ID
     var onTap: () -> Void
 
     @Environment(\.appTheme) private var theme
-
-    private var balance: MealElectrolyteBalance { entry.electrolyteBalance }
 
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 0) {
                 mealImageHeader
                 textBlock
-                electrolyteBalanceBar
             }
             .frame(width: PlanMealCarouselLayout.cardWidth, height: PlanMealCarouselLayout.cardHeight)
-            .background { splitCardBackground }
+            .background { cardBackground }
             .clipShape(RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
@@ -260,6 +259,7 @@ private struct PlanMealCarouselCard: View {
             .shadow(color: theme.primaryText.opacity(theme.isDark ? 0.18 : 0.07), radius: 18, y: 8)
         }
         .buttonStyle(.plain)
+        .processZoomSource(id: .mealDetail(entry.slot), namespace: zoomNamespace)
     }
 
     private var mealImageHeader: some View {
@@ -306,92 +306,9 @@ private struct PlanMealCarouselCard: View {
         .frame(height: PlanMealCarouselLayout.textBlockHeight)
     }
 
-    private var electrolyteBalanceBar: some View {
-        GeometryReader { geo in
-            let width = geo.size.width
-            let potassiumWidth = max(58, width * balance.potassiumShare)
-            let sodiumWidth = max(42, width - potassiumWidth)
-
-            HStack(spacing: 0) {
-                ZStack(alignment: .leading) {
-                    MealElectrolytePalette.potassium
-                    HStack(spacing: 4) {
-                        Text("K")
-                            .font(.system(size: 11, weight: .black))
-                        Text("Potassium")
-                            .font(.system(size: 10, weight: .semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-                    }
-                    .foregroundStyle(.white.opacity(0.95))
-                    .padding(.horizontal, 10)
-                }
-                .frame(width: potassiumWidth)
-
-                ZStack(alignment: .trailing) {
-                    MealElectrolytePalette.sodium
-                    HStack(spacing: 4) {
-                        Text("Na")
-                            .font(.system(size: 11, weight: .black))
-                        Text("Sodium")
-                            .font(.system(size: 10, weight: .semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-                    }
-                    .foregroundStyle(.white.opacity(0.95))
-                    .padding(.horizontal, 10)
-                }
-                .frame(width: sodiumWidth)
-            }
-            .overlay(alignment: .center) {
-                HStack(spacing: 5) {
-                    Text(balance.ratioLabel)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(theme.primaryText)
-                        .monospacedDigit()
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule(style: .continuous)
-                                .fill(theme.background.opacity(theme.isDark ? 0.88 : 0.92))
-                        )
-
-                    if balance.isDebloatOptimized {
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(MealElectrolytePalette.potassium)
-                            .accessibilityLabel("Repas optimisé debloat")
-                    }
-                }
-            }
-        }
-        .frame(height: PlanMealCarouselLayout.balanceBarHeight)
-    }
-
-    private var splitCardBackground: some View {
-        ZStack {
-            GeometryReader { geo in
-                HStack(spacing: 0) {
-                    MealElectrolytePalette.potassium
-                        .opacity(theme.isDark ? 0.36 : 0.30)
-                        .frame(width: geo.size.width * balance.potassiumShare)
-
-                    MealElectrolytePalette.sodium
-                        .opacity(theme.isDark ? 0.32 : 0.26)
-                        .frame(width: geo.size.width * balance.sodiumShare)
-                }
-            }
-
-            LinearGradient(
-                colors: [
-                    (theme.isDark ? theme.cardBackgroundStrong : theme.coachUserBubble).opacity(0.90),
-                    (theme.isDark ? theme.cardBackgroundStrong : theme.coachUserBubble).opacity(0.74),
-                    (theme.isDark ? Color.black : Color.white).opacity(theme.isDark ? 0.18 : 0.28)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
+    private var cardBackground: some View {
+        (theme.isDark ? theme.cardBackgroundStrong : theme.coachUserBubble)
+            .opacity(theme.isDark ? 0.92 : 1)
     }
 }
 
@@ -399,6 +316,7 @@ private struct PlanMealCarouselCard: View {
 
 private struct PlanMealAllMealsSheet: View {
     let entries: [PlanDayMealEntry]
+    let mealZoomNamespace: Namespace.ID
     var onSelect: (PlanDayMealEntry) -> Void
     var onDismiss: () -> Void
 
@@ -409,9 +327,11 @@ private struct PlanMealAllMealsSheet: View {
             ScrollView {
                 VStack(spacing: 16) {
                     ForEach(entries) { entry in
-                        PlanMealCarouselCard(entry: entry) {
-                            onSelect(entry)
-                        }
+                        PlanMealCarouselCard(
+                            entry: entry,
+                            zoomNamespace: mealZoomNamespace,
+                            onTap: { onSelect(entry) }
+                        )
                         .frame(maxWidth: .infinity)
                     }
                 }

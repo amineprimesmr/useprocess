@@ -440,7 +440,11 @@ enum WelcomePlanGenerator {
 
         return OriginPostureProtocol(
             dailyChecks: checks,
-            mobilityBlocks: [],
+            mobilityBlocks: [
+                "Chin tuck — 3×15 rétraction cervicale",
+                "Face pulls léger — 2×15 (câble ou élastique)",
+                "Mobilité épaules + hanches — 2 min"
+            ],
             breathingWork: choice("mouth_breathing", in: answers) == "yes"
                 ? ["Respiration nasale lente 5 min matin et soir"]
                 : [],

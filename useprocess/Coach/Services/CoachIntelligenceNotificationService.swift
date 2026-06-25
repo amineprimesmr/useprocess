@@ -210,6 +210,14 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
         }
 
         if kind == "coach_checkin" || kind == "daily_outlook" || kind == "daily_review" {
+            if kind == "daily_review" {
+                Task { @MainActor in
+                    let delivered = await CoachEveningChecklistService.deliverEveningMessageIfNeeded(force: true)
+                    if delivered {
+                        CoachPlanNavigationBridge.shared.bumpEveningChecklistRefresh()
+                    }
+                }
+            }
             if CoachPresentationTracker.shared.isCoachPresented {
                 completionHandler([])
                 return
@@ -242,9 +250,11 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
                     prompt: "Donne-moi mon brief matin : readiness, jour protocole et 1 action prioritaire."
                 )
             case "daily_review":
-                CoachPlanNavigationBridge.shared.openCoachWithCheckIn(
-                    prompt: "Fais mon bilan du jour : journal, streak et ce qu'il reste à faire."
-                )
+                let delivered = await CoachEveningChecklistService.deliverEveningMessageIfNeeded(force: true)
+                if delivered {
+                    CoachPlanNavigationBridge.shared.bumpEveningChecklistRefresh()
+                }
+                CoachPlanNavigationBridge.shared.openCoachWithEveningChecklist()
             default:
                 break
             }

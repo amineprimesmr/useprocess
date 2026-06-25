@@ -21,11 +21,11 @@ enum TrainingSessionID: String, CaseIterable, Identifiable {
         case .pullGym: "dossport"
         case .pushGym: "session_push"
         case .legsGym: "session_legs"
-        case .pushHome: "session_push_home"
-        case .pullHome: "session_pull_home"
-        case .legsHome: "session_legs_home"
-        case .femaleGlutes: "session_glutes"
-        case .femaleUpper: "session_upper_posture"
+        case .pushHome: "session_push"
+        case .pullHome: "dossport"
+        case .legsHome: "session_legs"
+        case .femaleGlutes: "session_legs"
+        case .femaleUpper: "session_posture"
         case .restDay: "session_rest"
         }
     }

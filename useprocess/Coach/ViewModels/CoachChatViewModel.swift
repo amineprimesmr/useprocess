@@ -7,7 +7,7 @@ import UIKit
 final class CoachChatViewModel {
     var messages: [CoachMessage] = []
     var inputText = ""
-    var pendingAttachmentImage: UIImage?
+    var pendingAttachmentImages: [UIImage] = []
     var isSending = false
     var streamingText = ""
     var errorMessage: String?
@@ -19,7 +19,10 @@ final class CoachChatViewModel {
     var voiceTranscript = ""
     var voiceAudioLevel: CGFloat = 0
     var voiceAudioLevels: [CGFloat] = Array(repeating: 0.06, count: 32)
+    var shouldOpenInlineCamera = false
+    var lastActionFeedback: String?
 
+    private var pendingPlanPatches: [UUID: PendingCoachPlanPatch] = [:]
     private let libraryStore = CoachConversationLibraryStore.shared
     private var profile: UnifiedUserProfile?
     private var userId: String? { profile?.userId.isEmpty == false ? profile?.userId : AuthUser.current?.uid }
@@ -47,9 +50,15 @@ final class CoachChatViewModel {
     }
 
     var showsContextualHome: Bool {
-        !messages.contains(where: { $0.role == .user })
+        !hasThreadContent
             && !isSending
             && !isComposingMessage
+    }
+
+    private var hasThreadContent: Bool {
+        messages.contains { message in
+            message.role == .user || CoachEveningChecklistService.isEveningMessage(message)
+        }
     }
 
     var showsHomeInsteadOfInput: Bool {
@@ -62,7 +71,7 @@ final class CoachChatViewModel {
     /// Vrai dès qu'une saisie est en cours — pas au simple focus du champ.
     var isComposingMessage: Bool {
         !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || pendingAttachmentImage != nil
+            || !pendingAttachmentImages.isEmpty
             || isVoiceRecording
     }
 
@@ -120,7 +129,16 @@ final class CoachChatViewModel {
 
         if let activeId = libraryStore.activeConversationId,
            let conversation = libraryStore.conversation(for: activeId),
-           conversation.hasUserMessages {
+           conversation.hasUserMessages
+               || conversation.messages.contains(where: { CoachEveningChecklistService.isEveningMessage($0) }) {
+            draftSessionId = nil
+            await reloadActiveConversation()
+            await consumePendingPlanPromptIfNeeded()
+            return
+        }
+
+        if let eveningConversation = libraryStore.conversationWithEveningMessageToday() {
+            libraryStore.selectConversation(eveningConversation.id)
             draftSessionId = nil
             await reloadActiveConversation()
             await consumePendingPlanPromptIfNeeded()
@@ -153,6 +171,11 @@ final class CoachChatViewModel {
                 await selectConversation(conversationId)
             }
         }
+        if CoachPlanNavigationBridge.shared.consumePendingEveningChecklist() {
+            _ = await CoachEveningChecklistService.deliverEveningMessageIfNeeded(force: true)
+            await reloadForEveningDelivery()
+            return
+        }
         if let checkInPrompt = CoachPlanNavigationBridge.shared.consumePendingCheckInPrompt() {
             await sendPrompt(checkInPrompt, persistUserMessage: true)
             return
@@ -160,8 +183,147 @@ final class CoachChatViewModel {
         await consumePendingPlanPromptIfNeeded()
     }
 
+    func reloadForEveningDelivery() async {
+        if let eveningConversation = libraryStore.conversationWithEveningMessageToday() {
+            if libraryStore.activeConversationId != eveningConversation.id {
+                await selectConversation(eveningConversation.id)
+            } else {
+                await reloadActiveConversation()
+            }
+            return
+        }
+        await reloadActiveConversation()
+    }
+
     func enrichment(for message: CoachMessage) -> CoachMessageEnrichment? {
-        message.enrichment
+        let resolvedActions = contextualActions(for: message)
+        let sanitizedFollowUps = CoachFollowUpSanitizer.sanitized(message.followUps ?? [])
+        let displayFollowUps = resolvedActions.isEmpty ? sanitizedFollowUps : []
+
+        if let base = message.enrichment {
+            var deepLink = base.deepLink
+            if resolvedActions.contains(where: { $0.kind == .openPlan || $0.kind == .openJournal }) {
+                deepLink = nil
+            }
+
+            return CoachMessageEnrichment(
+                displayText: base.displayText,
+                reasoning: base.reasoning,
+                followUps: displayFollowUps,
+                deepLink: deepLink,
+                contextualActions: resolvedActions
+            )
+        }
+
+        guard !resolvedActions.isEmpty || !displayFollowUps.isEmpty else { return nil }
+        return CoachMessageEnrichment(
+            displayText: message.text,
+            reasoning: nil,
+            followUps: displayFollowUps,
+            deepLink: nil,
+            contextualActions: resolvedActions
+        )
+    }
+
+    func contextualActions(for message: CoachMessage) -> [CoachContextualAction] {
+        let userText = precedingUserText(for: message)
+        let meal = CoachMealMessageDetector.mealContent(from: message.text)
+        return CoachContextualActionResolver.resolve(
+            userText: userText,
+            assistantText: message.text,
+            parsedActions: message.resolvedContextualActions,
+            meal: meal,
+            hasPendingPlanPatch: pendingPlanPatches[message.id] != nil
+        )
+    }
+
+    func mealOnlyContextualActions(for message: CoachMessage) -> [CoachContextualAction] {
+        let mealActions: Set<CoachContextualActionKind> = [
+            .validateMeal, .saveMealDraft, .modifyMeal, .anotherMeal, .addToShoppingList
+        ]
+        return contextualActions(for: message).filter { !mealActions.contains($0.kind) }
+    }
+
+    func executeContextualAction(_ action: CoachContextualAction, for message: CoachMessage) async {
+        lastActionFeedback = nil
+
+        switch action.kind {
+        case .validateMeal:
+            guard let meal = CoachMealMessageDetector.mealContent(from: message.text),
+                  meal.isValid,
+                  let plan = WelcomePlanStore.shared.plan,
+                  let day = OriginPlanPresenter.todayDay(in: plan) else {
+                errorMessage = "Impossible de valider ce repas pour aujourd'hui."
+                return
+            }
+            WelcomePlanStore.shared.saveValidatedMeal(dayId: day.id, meal: meal, slot: meal.timeSlot)
+            WelcomePlanStore.shared.clearDraftMeal(dayId: day.id, slot: meal.timeSlot)
+            lastActionFeedback = "✅ Repas ajouté à ton plan."
+
+        case .saveMealDraft:
+            guard let meal = CoachMealMessageDetector.mealContent(from: message.text),
+                  meal.isValid,
+                  let plan = WelcomePlanStore.shared.plan,
+                  let day = OriginPlanPresenter.todayDay(in: plan) else { return }
+            WelcomePlanStore.shared.saveDraftMeal(dayId: day.id, meal: meal, slot: meal.timeSlot)
+            lastActionFeedback = "Suggestion enregistrée."
+
+        case .modifyMeal:
+            let prompt = action.payload.map { "Je veux ajuster ce repas (\($0)) : " }
+                ?? "Je veux ajuster ce repas : "
+            inputText = prompt
+            return
+
+        case .anotherMeal:
+            let slot = action.payload ?? "ce créneau"
+            await sendFollowUp("Autre idée de repas pour \(slot).")
+
+        case .addToShoppingList:
+            guard let meal = CoachMealMessageDetector.mealContent(from: message.text),
+                  let plan = WelcomePlanStore.shared.plan,
+                  let day = OriginPlanPresenter.todayDay(in: plan) else { return }
+            WelcomePlanStore.shared.addMealToShoppingList(meal, dayId: day.id)
+            lastActionFeedback = "Ajouté à la liste de courses."
+
+        case .applyPlanChanges:
+            guard let patch = pendingPlanPatches[message.id],
+                  var plan = WelcomePlanStore.shared.plan else { return }
+            let changes = CoachPlanModificationService.apply(
+                userRequest: patch.userRequest,
+                coachResponse: patch.coachResponse,
+                focus: patch.focus,
+                plan: &plan
+            )
+            WelcomePlanStore.shared.savePlan(plan)
+            pendingPlanPatches.removeValue(forKey: message.id)
+            lastActionFeedback = changes.isEmpty
+                ? "Programme mis à jour."
+                : CoachPlanModificationService.confirmationPrefix(changes: changes).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        case .swapWorkout:
+            await sendFollowUp(action.payload ?? "Propose une autre séance adaptée à ma situation aujourd'hui.")
+
+        case .openPlan, .openJournal:
+            return
+
+        case .takePhoto:
+            shouldOpenInlineCamera = true
+            return
+
+        case .followUp:
+            if let payload = action.payload {
+                await sendFollowUp(payload)
+            } else {
+                inputText = action.label + " "
+            }
+        }
+    }
+
+    private func precedingUserText(for message: CoachMessage) -> String {
+        guard let index = messages.firstIndex(where: { $0.id == message.id }),
+              index > 0 else { return "" }
+        let previous = messages[index - 1]
+        return previous.role == .user ? previous.text : ""
     }
 
     func sendFollowUp(_ text: String) async {
@@ -185,6 +347,7 @@ final class CoachChatViewModel {
     private func beginDraftSession() async {
         resetVoiceStateImmediately()
         clearPendingAttachment()
+        pendingPlanPatches = [:]
         isSending = false
         streamingText = ""
         errorMessage = nil
@@ -258,6 +421,7 @@ final class CoachChatViewModel {
         }
         resetVoiceStateImmediately()
         clearPendingAttachment()
+        pendingPlanPatches = [:]
         isSending = false
         streamingText = ""
 
@@ -332,8 +496,8 @@ final class CoachChatViewModel {
         guard !isSending else { return }
 
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let image = pendingAttachmentImage {
-            await sendImageAttachment(image, caption: trimmed)
+        if !pendingAttachmentImages.isEmpty {
+            await sendImageAttachments(pendingAttachmentImages, caption: trimmed)
             return
         }
 
@@ -342,11 +506,16 @@ final class CoachChatViewModel {
     }
 
     func stageImageAttachment(_ image: UIImage) {
-        pendingAttachmentImage = image
+        pendingAttachmentImages.append(image)
     }
 
     func clearPendingAttachment() {
-        pendingAttachmentImage = nil
+        pendingAttachmentImages = []
+    }
+
+    func removePendingAttachment(at index: Int) {
+        guard pendingAttachmentImages.indices.contains(index) else { return }
+        pendingAttachmentImages.remove(at: index)
     }
 
     func startVoiceRecording() async {
@@ -612,7 +781,11 @@ final class CoachChatViewModel {
             }
 
             var planChanges: [String] = []
-            if modIntent != nil || effectiveFocus?.mode == .modify, var plan = WelcomePlanStore.shared.plan {
+            let shouldDeferPlanApply = modIntent != nil || effectiveFocus?.mode == .modify
+
+            if !shouldDeferPlanApply,
+               modIntent != nil || effectiveFocus?.mode == .modify,
+               var plan = WelcomePlanStore.shared.plan {
                 planChanges = CoachPlanModificationService.apply(
                     userRequest: cleaned,
                     coachResponse: assembled,
@@ -627,9 +800,23 @@ final class CoachChatViewModel {
             }
 
             let parsedReply = CoachResponseParser.parseFull(assembled)
-            let parsed = parsedReply.enrichment
+            var enrichment = parsedReply.enrichment
+            if shouldDeferPlanApply {
+                if !enrichment.contextualActions.contains(where: { $0.kind == .applyPlanChanges }) {
+                    enrichment.contextualActions.insert(CoachContextualAction(kind: .applyPlanChanges), at: 0)
+                }
+            }
+            let parsed = enrichment
             let model = ClaudeModel.preferred(for: .chat).rawValue
             let reply = CoachMessage.assistant(from: parsed, modelUsed: model)
+
+            if shouldDeferPlanApply {
+                pendingPlanPatches[reply.id] = PendingCoachPlanPatch(
+                    userRequest: cleaned,
+                    coachResponse: assembled,
+                    focus: effectiveFocus
+                )
+            }
 
             withAnimation(.spring(response: 0.44, dampingFraction: 0.86)) {
                 messages.append(reply)
@@ -704,8 +891,8 @@ final class CoachChatViewModel {
         await createNewConversation()
     }
 
-    func sendImageAttachment(_ image: UIImage, caption: String = "") async {
-        guard !isSending else { return }
+    func sendImageAttachments(_ images: [UIImage], caption: String = "") async {
+        guard !isSending, !images.isEmpty else { return }
 
         if CoachIntelligenceSettingsStore.shared.isEnabled,
            !CoachIntelligenceSettingsStore.shared.canSendCoachMessage {
@@ -716,12 +903,19 @@ final class CoachChatViewModel {
         let conversationId = await ensurePersistedConversationId()
 
         let trimmedCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
-        let userText = trimmedCaption.isEmpty ? "📷 Photo" : trimmedCaption
-        let analysisPrompt = trimmedCaption.isEmpty
-            ? "Analyse cette image en 2-3 phrases max. Contexte coach useprocess."
-            : trimmedCaption
+        let userText: String = {
+            if !trimmedCaption.isEmpty { return trimmedCaption }
+            return images.count == 1 ? "📷 Photo" : "📷 \(images.count) photos"
+        }()
+        let analysisPrompt: String = {
+            if !trimmedCaption.isEmpty { return trimmedCaption }
+            if images.count == 1 {
+                return "Analyse cette image en 2-3 phrases max. Contexte coach useprocess."
+            }
+            return "Analyse ces \(images.count) images en 2-4 phrases max. Contexte coach useprocess."
+        }()
 
-        pendingAttachmentImage = nil
+        pendingAttachmentImages = []
         inputText = ""
 
         let userMsg = CoachMessage(role: .user, text: userText)
@@ -741,8 +935,8 @@ final class CoachChatViewModel {
         defer { isSending = false; streamingText = "" }
 
         do {
-            let rawReply = try await CoachEngine.analyzeAttachedImage(
-                image,
+            let rawReply = try await CoachEngine.analyzeAttachedImages(
+                images,
                 caption: analysisPrompt,
                 profile: profile,
                 history: messages

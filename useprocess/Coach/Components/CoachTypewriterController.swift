@@ -7,25 +7,24 @@ final class CoachTypewriterController {
     private(set) var isRunning = false
     private(set) var isComplete = false
 
-    private var task: Task<Void, Never>?
+    func cancel() {
+        isRunning = false
+        HapticManager.shared.endTypewriterSession()
+    }
 
     func reset() {
-        task?.cancel()
-        task = nil
+        cancel()
         displayedText = ""
-        isRunning = false
         isComplete = false
     }
 
     func showImmediately(text: String) {
-        task?.cancel()
-        task = nil
+        cancel()
         displayedText = text
-        isRunning = false
         isComplete = true
     }
 
-    func run(text: String) async {
+    func run(text: String, leadingDelayNanoseconds: UInt64 = 260_000_000) async {
         reset()
         guard !text.isEmpty else {
             isComplete = true
@@ -33,32 +32,28 @@ final class CoachTypewriterController {
         }
 
         isRunning = true
-        try? await Task.sleep(nanoseconds: 260_000_000)
-        guard !Task.isCancelled else { return }
-
-        task = Task {
-            var buffer = ""
-            for character in Array(text) {
-                guard !Task.isCancelled else { return }
-
-                try? await Task.sleep(nanoseconds: delay(for: character))
-                guard !Task.isCancelled else { return }
-
-                buffer.append(character)
-                displayedText = buffer
-
-                if character != " " && character != "\n" {
-                    HapticManager.shared.impact(.soft)
-                }
-                if character == "!" || character == "." || character == "?" {
-                    HapticManager.shared.impact(.light)
-                }
+        defer {
+            isRunning = false
+            if !Task.isCancelled {
+                isComplete = true
             }
+            HapticManager.shared.endTypewriterSession()
         }
 
-        await task?.value
-        isRunning = false
-        isComplete = true
+        if leadingDelayNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: leadingDelayNanoseconds)
+            guard !Task.isCancelled else { return }
+        }
+
+        var buffer = ""
+        for character in Array(text) {
+            try? await Task.sleep(nanoseconds: delay(for: character))
+            guard !Task.isCancelled else { return }
+
+            buffer.append(character)
+            displayedText = buffer
+            HapticManager.shared.typewriterCharacter(character)
+        }
     }
 
     private func delay(for character: Character) -> UInt64 {

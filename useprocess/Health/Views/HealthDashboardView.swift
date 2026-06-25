@@ -7,6 +7,7 @@ struct ProfileHealthSection: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
 
+    @Namespace private var faceScanHistoryZoomNamespace
     @State private var showFaceScan = false
     @State private var showFaceHistory = false
     @State private var selectedFaceScan: FaceScanResult?
@@ -35,8 +36,12 @@ struct ProfileHealthSection: View {
                 correlationHint: healthManager.faceCorrelations.first.map {
                     OriginPlanPresenter.truncate($0.message, max: 90)
                 },
+                historyZoomNamespace: faceScanHistoryZoomNamespace,
                 onScan: { showFaceScan = true },
-                onHistory: { showFaceHistory = true }
+                onHistory: {
+                    HapticManager.shared.impact(.light)
+                    showFaceHistory = true
+                }
             )
 
             HealthTodayMetricsCard()
@@ -46,11 +51,12 @@ struct ProfileHealthSection: View {
             faceHistoryStore = FaceScanHistoryStore.shared
         }
         .fullScreenCover(isPresented: $showFaceScan) { faceScanCover }
-        .sheet(isPresented: $showFaceHistory) {
+        .fullScreenCover(isPresented: $showFaceHistory) {
             FaceScanHistoryView(history: faceHistoryStore.history) { scan in
                 showFaceHistory = false
                 selectedFaceScan = scan
             }
+            .processZoomTransition(id: .faceScanHistory, namespace: faceScanHistoryZoomNamespace)
         }
         .sheet(item: $selectedFaceScan) { scan in
             FaceScanDetailView(

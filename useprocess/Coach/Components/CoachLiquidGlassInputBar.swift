@@ -9,7 +9,7 @@ import UIKit
 struct CoachLiquidGlassInputBar: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
-    var pendingImage: UIImage?
+    var pendingImages: [UIImage] = []
     var isDisabled: Bool = false
     var isRecording: Bool = false
     var isVoiceExiting: Bool = false
@@ -21,7 +21,7 @@ struct CoachLiquidGlassInputBar: View {
     var onCancelVoice: () -> Void
     var onConfirmVoice: () -> Void
     var onOpenCamera: () -> Void
-    var onRemovePendingImage: () -> Void
+    var onRemovePendingImageAt: (Int) -> Void
 
     private let barShape = RoundedRectangle(cornerRadius: 26, style: .continuous)
     private let actionButtonSize: CGFloat = 44
@@ -35,7 +35,7 @@ struct CoachLiquidGlassInputBar: View {
     }
 
     private var canSend: Bool {
-        pendingImage != nil || !trimmedEmpty
+        !pendingImages.isEmpty || !trimmedEmpty
     }
 
     private var showsVoiceContent: Bool {
@@ -43,7 +43,7 @@ struct CoachLiquidGlassInputBar: View {
     }
 
     private var topPadding: CGFloat {
-        pendingImage == nil || showsVoiceContent ? topPaddingDefault : topPaddingWithImage
+        pendingImages.isEmpty || showsVoiceContent ? topPaddingDefault : topPaddingWithImage
     }
 
     var body: some View {
@@ -74,8 +74,8 @@ struct CoachLiquidGlassInputBar: View {
     @available(iOS 26.0, *)
     private var passiveGlassSurface: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if !showsVoiceContent, let pendingImage {
-                pendingImagePreview(pendingImage)
+            if !showsVoiceContent, !pendingImages.isEmpty {
+                pendingImagesPreview
             }
 
             if showsVoiceContent {
@@ -121,8 +121,8 @@ struct CoachLiquidGlassInputBar: View {
 
     private var legacyBar: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if !showsVoiceContent, let pendingImage {
-                pendingImagePreview(pendingImage)
+            if !showsVoiceContent, !pendingImages.isEmpty {
+                pendingImagesPreview
             }
 
             if showsVoiceContent {
@@ -276,7 +276,18 @@ struct CoachLiquidGlassInputBar: View {
             .overlay(barShape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
-    private func pendingImagePreview(_ pendingImage: UIImage) -> some View {
+    private var pendingImagesPreview: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(pendingImages.enumerated()), id: \.offset) { index, image in
+                    pendingImagePreview(image, at: index)
+                }
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func pendingImagePreview(_ pendingImage: UIImage, at index: Int) -> some View {
         ZStack(alignment: .topTrailing) {
             Image(uiImage: pendingImage)
                 .resizable()
@@ -286,7 +297,7 @@ struct CoachLiquidGlassInputBar: View {
 
             Button {
                 HapticManager.shared.impact(.light)
-                onRemovePendingImage()
+                onRemovePendingImageAt(index)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
@@ -298,7 +309,6 @@ struct CoachLiquidGlassInputBar: View {
             .buttonStyle(.plain)
             .offset(x: 6, y: -6)
         }
-        .padding(.top, 2)
         .transition(.scale(scale: 0.88).combined(with: .opacity))
     }
 }

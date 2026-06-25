@@ -1,7 +1,34 @@
 import SwiftUI
 
+/// Identifiants partagés entre `matchedTransitionSource` et `navigationTransition(.zoom)`.
+enum ProcessZoomTransitionID: Hashable {
+    case coach
+    case faceScanHistory
+    case streak
+    case mealDetail(MealTimeSlot)
+    case trainingDay
+    case planResource(PlanResourceSheet)
+
+    var sourceID: String {
+        switch self {
+        case .coach:
+            return "PROCESS_COACH"
+        case .faceScanHistory:
+            return "PROCESS_FACE_SCAN_HISTORY"
+        case .streak:
+            return "PROCESS_STREAK"
+        case .mealDetail(let slot):
+            return "PROCESS_MEAL_DETAIL_\(slot.rawValue)"
+        case .trainingDay:
+            return "PROCESS_TRAINING_DAY"
+        case .planResource(let sheet):
+            return "PROCESS_PLAN_RESOURCE_\(sheet.id)"
+        }
+    }
+}
+
 enum ProcessCoachZoomTransition {
-    static let sourceID = "PROCESS_COACH"
+    static let sourceID = ProcessZoomTransitionID.coach.sourceID
 }
 
 /// Style bouton source — glass + matchedTransitionSource + haptique (pattern FluidZoom).
@@ -56,11 +83,30 @@ private struct ProcessFluidZoomGlassModifier<S: InsettableShape>: ViewModifier {
 
 extension View {
     @ViewBuilder
-    func processCoachZoomTransition(namespace: Namespace.ID) -> some View {
-        if #available(iOS 18.0, *) {
-            navigationTransition(.zoom(sourceID: ProcessCoachZoomTransition.sourceID, in: namespace))
+    func processZoomSource(id: ProcessZoomTransitionID, namespace: Namespace.ID) -> some View {
+        matchedTransitionSource(id: id.sourceID, in: namespace)
+    }
+
+    @ViewBuilder
+    func processZoomSource(id: ProcessZoomTransitionID, namespace: Namespace.ID?) -> some View {
+        if let namespace {
+            processZoomSource(id: id, namespace: namespace)
         } else {
             self
         }
+    }
+
+    @ViewBuilder
+    func processZoomTransition(id: ProcessZoomTransitionID, namespace: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) {
+            navigationTransition(.zoom(sourceID: id.sourceID, in: namespace))
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func processCoachZoomTransition(namespace: Namespace.ID) -> some View {
+        processZoomTransition(id: .coach, namespace: namespace)
     }
 }

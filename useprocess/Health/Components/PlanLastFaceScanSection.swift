@@ -4,18 +4,67 @@ import SwiftUI
 struct PlanLastFaceScanSection: View {
     let latest: FaceScanResult?
     let isScanDue: Bool
+    var zoomNamespace: Namespace.ID? = nil
+    var onOpenHistory: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
+    @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
 
     private let videoWidthRatio: CGFloat = 0.38
     private let cardRadius: CGFloat = 16
+    private let expandedCardHeight: CGFloat = 148
+
+    /// Panneau vidéo uniquement quand un scan existe et l’aperçu visage est activé.
+    private var showsMediaColumn: Bool {
+        latest != nil && displayPreferences.showsVideo
+    }
 
     var body: some View {
+        Group {
+            if onOpenHistory != nil {
+                Button(action: openHistory) {
+                    cardContent
+                }
+                .buttonStyle(PlanFaceScanSectionButtonStyle())
+            } else {
+                cardContent
+            }
+        }
+        .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
+        .onAppear {
+            displayPreferences.reload()
+        }
+    }
+
+    private func openHistory() {
+        HapticManager.shared.impact(.light)
+        onOpenHistory?()
+    }
+
+    @ViewBuilder
+    private var cardContent: some View {
+        Group {
+            if showsMediaColumn {
+                expandedCardContent
+            } else {
+                compactCardContent
+            }
+        }
+        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: showsMediaColumn)
+        .contentShape(cardShape)
+        .contextMenu {
+            faceScanDisplayMenu
+        }
+    }
+
+  // MARK: - Layout avec vidéo
+
+    private var expandedCardContent: some View {
         GeometryReader { geo in
             let videoWidth = min(max(118, geo.size.width * videoWidthRatio), geo.size.width * 0.44)
 
             HStack(spacing: 0) {
-                scanSidePanel
+                videoSidePanel
                     .frame(width: videoWidth)
                     .frame(maxHeight: .infinity)
 
@@ -28,28 +77,18 @@ struct PlanLastFaceScanSection: View {
                 .padding(.trailing, 14)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, minHeight: 148, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: expandedCardHeight, alignment: .leading)
             .background(cardBackground)
             .clipShape(cardShape)
         }
-        .frame(height: 148)
-        .accessibilityElement(children: .contain)
+        .frame(height: expandedCardHeight)
     }
 
-    private var cardShape: some Shape {
-        RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
-    }
-
-    // MARK: - Vidéo gauche
-
-    @ViewBuilder
-    private var scanSidePanel: some View {
+    private var videoSidePanel: some View {
         ZStack(alignment: .trailing) {
             if let latest {
                 PlanFaceScanMediaPanel(result: latest)
                     .equatable()
-            } else {
-                emptyScanPanel
             }
 
             LinearGradient(
@@ -70,26 +109,103 @@ struct PlanLastFaceScanSection: View {
         .clipped()
     }
 
-    private var emptyScanPanel: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    theme.isDark ? Color.white.opacity(0.08) : theme.cardBackground.opacity(0.95),
-                    theme.isDark ? Color.white.opacity(0.03) : theme.coachUserBubble.opacity(0.8)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+    // MARK: - Layout compact (visage masqué ou pas de scan)
 
-            Image(systemName: "camera.fill")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(theme.secondaryText.opacity(0.7))
+    private var compactCardContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            compactHeaderRow
+            nextScanCountdownPanel
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityHidden(true)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+        .clipShape(cardShape)
     }
 
-    // MARK: - En-tête
+    private var compactHeaderRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            compactLeadingIcon
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Dernier scan visage")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(theme.primaryText)
+
+                Text(compactSubtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 4)
+
+            if let latest {
+                FaceWellnessScoreBadge(
+                    score: latest.resolvedFaceDayScore,
+                    theme: theme,
+                    style: .compact
+                )
+            }
+        }
+    }
+
+    private var compactSubtitle: String {
+        if let latest {
+            return "\(lastScanDateLabel(for: latest.createdAt)) · Aperçu masqué"
+        }
+        return "Aucun scan enregistré"
+    }
+
+    private var compactLeadingIcon: some View {
+        ZStack {
+            Circle()
+                .fill(compactIconFill.opacity(0.16))
+                .frame(width: 40, height: 40)
+
+            Image(systemName: latest == nil ? "camera.fill" : "eye.slash")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(compactIconFill)
+        }
+        .accessibilityLabel(compactIconAccessibilityLabel)
+    }
+
+    private var compactIconFill: Color {
+        if latest == nil {
+            return .orange
+        }
+        return theme.secondaryText.opacity(0.75)
+    }
+
+    private var compactIconAccessibilityLabel: String {
+        latest == nil ? "Aucun scan" : "Aperçu visage masqué"
+    }
+
+    @ViewBuilder
+    private var faceScanDisplayMenu: some View {
+        if latest != nil {
+            if displayPreferences.showsVideo {
+                Button {
+                    HapticManager.shared.selection()
+                    displayPreferences.setShowsVideo(false)
+                } label: {
+                    Label("Masquer mon visage", systemImage: "eye.slash")
+                }
+            } else {
+                Button {
+                    HapticManager.shared.selection()
+                    displayPreferences.setShowsVideo(true)
+                } label: {
+                    Label("Afficher la vidéo", systemImage: "video")
+                }
+            }
+        }
+    }
+
+    private var cardShape: some Shape {
+        RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
+    }
+
+    // MARK: - En-tête (layout vidéo)
 
     private var headerContent: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -103,10 +219,6 @@ struct PlanLastFaceScanSection: View {
                         .font(.caption.weight(.medium))
                         .foregroundStyle(theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Text("Aucun scan enregistré")
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
                 }
             }
 
@@ -137,13 +249,15 @@ struct PlanLastFaceScanSection: View {
 
     private var scanDuePanel: some View {
         HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill((latest == nil ? Color.orange : theme.onboardingAccent).opacity(0.16))
-                    .frame(width: 40, height: 40)
-                Image(systemName: "camera.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(latest == nil ? .orange : theme.onboardingAccent)
+            if showsMediaColumn {
+                ZStack {
+                    Circle()
+                        .fill((latest == nil ? Color.orange : theme.onboardingAccent).opacity(0.16))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "camera.fill")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(latest == nil ? .orange : theme.onboardingAccent)
+                }
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -271,6 +385,14 @@ struct PlanLastFaceScanSection: View {
             dayLabel = date.formatted(.dateTime.day().month(.abbreviated))
         }
         return "\(dayLabel) · \(date.formatted(date: .omitted, time: .shortened))"
+    }
+}
+
+private struct PlanFaceScanSectionButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.78), value: configuration.isPressed)
     }
 }
 

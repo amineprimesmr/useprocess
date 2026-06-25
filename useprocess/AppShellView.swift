@@ -27,6 +27,13 @@ struct AppShellView: View {
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
         .onChange(of: scenePhase) { _, phase in
             CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
+            guard phase == .active else { return }
+            Task { @MainActor in
+                let delivered = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
+                if delivered {
+                    CoachPlanNavigationBridge.shared.bumpEveningChecklistRefresh()
+                }
+            }
         }
         .environment(\.appTheme, theme)
         .processThirdPartyAIConsentSheet()

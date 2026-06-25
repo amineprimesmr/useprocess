@@ -28,7 +28,10 @@ enum CoachPostReplyService {
         }
 
         if parsed.foodLogged {
-            _ = CoachFoodLogService.tryLogMeal(from: rawAssistantText, userText: userText)
+            let hasStructuredMeal = CoachMealMessageDetector.mealContent(from: rawAssistantText)?.isValid == true
+            if !hasStructuredMeal {
+                _ = CoachFoodLogService.tryLogMeal(from: rawAssistantText, userText: userText)
+            }
         }
     }
 }
@@ -38,7 +41,7 @@ enum CoachFoodLogService {
 
     @discardableResult
     static func tryLogMeal(from assistantText: String, userText: String) -> Bool {
-        guard var plan = WelcomePlanStore.shared.plan,
+        guard let plan = WelcomePlanStore.shared.plan,
               let day = OriginPlanPresenter.todayDay(in: plan) else { return false }
         guard OriginPlanPresenter.isEditableJournalDay(dayId: day.id, in: plan) else { return false }
 

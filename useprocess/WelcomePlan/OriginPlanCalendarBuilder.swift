@@ -170,7 +170,7 @@ enum OriginPlanCalendarBuilder {
         return OriginDayTraining(
             sessionName: name,
             durationMinutes: plan.trainingProtocol.sessionDurationMinutes,
-            warmup: ["5 min marche ou vélo", "Mobilité épaules + hanches 5 min"],
+            warmup: ["5 min vélo ou tapis incliné (RPE 3–4)", "Mobilité épaules + hanches 5 min"],
             exercises: scaled,
             cooldown: ["Marche lente 3 min"],
             notes: note

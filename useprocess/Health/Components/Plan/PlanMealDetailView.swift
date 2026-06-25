@@ -288,7 +288,7 @@ struct PlanMealDetailView: View {
         CoachLiquidGlassInputBar(
             text: $assistant.inputText,
             isFocused: $isInputFocused,
-            pendingImage: assistant.pendingAttachmentImage,
+            pendingImages: assistant.pendingAttachmentImage.map { [$0] } ?? [],
             isDisabled: assistant.isSending,
             isRecording: assistant.isVoiceRecording,
             isVoiceExiting: assistant.isVoiceExiting,
@@ -319,7 +319,7 @@ struct PlanMealDetailView: View {
                     isCompactCameraPresented = true
                 }
             },
-            onRemovePendingImage: {
+            onRemovePendingImageAt: { _ in
                 assistant.clearPendingAttachment()
             }
         )

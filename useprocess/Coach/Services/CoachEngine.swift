@@ -28,6 +28,11 @@ enum CoachEngine {
     - Confirme en 2–3 phrases ce qui a changé.
     - Pour nutrition OMAD / 1 repas : écris « Repas unique: [contenu] » (pas PDJ/déj/dîner vides).
     - Tu peux ajouter 1 suggestion optionnelle à la fin (« Si tu veux, on peut aussi… ») — l'utilisateur n'est pas obligé de répondre.
+    - Fin de réponse : ACTION_1: applyPlanChanges|Appliquer au programme
+    - Pour une séance proposée, liste CHAQUE exercice sur sa propre ligne (pas en pavé) :
+      Développé haltères 3x10
+      Élévations latérales 3x12
+      Face pulls 3x15
     """
 
     private static let mealSuggestionPrompt = """
@@ -50,6 +55,11 @@ enum CoachEngine {
     SCORE_PROTOCOL: [0-100]
     SCORE_SATIETY: [0-100]
     SCORE_BLOAT: [0-100]
+
+    ACTIONS (obligatoire en fin, après les labels repas) :
+    ACTION_1: validateMeal|Valider dans mon plan|[MEAL_TYPE]
+    ACTION_2: modifyMeal|Ajuster ce repas|[MEAL_TYPE]
+    ACTION_3: anotherMeal|Autre idée|[MEAL_TYPE]
 
     - 3 à 5 items. Protocole Origine : dense, peu transformé, protéines + légumes/tubercules cuits.
     """
@@ -139,20 +149,61 @@ enum CoachEngine {
         profile: UnifiedUserProfile?,
         history: [CoachMessage]
     ) async throws -> CoachMessage {
-        guard let jpeg = image.jpegData(compressionQuality: 0.72) else {
+        try await analyzeAttachedImages(
+            [image],
+            caption: caption,
+            profile: profile,
+            history: history
+        )
+    }
+
+    static func analyzeAttachedImages(
+        _ images: [UIImage],
+        caption: String,
+        profile: UnifiedUserProfile?,
+        history: [CoachMessage]
+    ) async throws -> CoachMessage {
+        let jpegs = images.compactMap { $0.jpegData(compressionQuality: 0.72) }
+        guard !jpegs.isEmpty else {
             throw ClaudeAPIError.invalidResponse
         }
+
         let system = contextualSystem(profile: profile, planFocus: nil, userText: caption)
         let model = ClaudeModel.preferred(for: .chat)
-        let text = try await CoachAPITransport.complete(
-            task: .chat,
-            system: system,
-            userText: caption,
-            history: history,
-            model: model,
-            imageBase64: jpeg.base64EncodedString(),
-            maxTokens: 380
-        )
+        let maxTokens = min(380 + jpegs.count * 60, 900)
+
+        let text: String
+        if jpegs.count == 1 {
+            text = try await CoachAPITransport.complete(
+                task: .chat,
+                system: system,
+                userText: caption,
+                history: history,
+                model: model,
+                imageBase64: jpegs[0].base64EncodedString(),
+                maxTokens: maxTokens
+            )
+        } else if CoachAPITransport.activeMode == .remote {
+            let remoteCaption = caption + "\n(L'utilisateur a envoyé \(jpegs.count) photos.)"
+            text = try await CoachAPITransport.complete(
+                task: .chat,
+                system: system,
+                userText: remoteCaption,
+                history: history,
+                model: model,
+                imageBase64: jpegs[0].base64EncodedString(),
+                maxTokens: maxTokens
+            )
+        } else {
+            text = try await ClaudeLocalAPIService.completeWithImages(
+                system: system,
+                prompt: caption,
+                jpegDatas: jpegs,
+                model: model,
+                maxTokens: maxTokens
+            )
+        }
+
         return CoachMessage(role: .assistant, text: text, modelUsed: model.rawValue)
     }
 

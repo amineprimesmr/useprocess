@@ -81,10 +81,23 @@ final class CoachConversationLibraryStore {
         sortedConversations.first
     }
 
+    func conversationWithEveningMessageToday() -> CoachConversation? {
+        let calendar = Calendar.current
+        return library.conversations.first { conversation in
+            conversation.messages.contains { message in
+                CoachEveningChecklistService.isEveningMessage(message)
+                    && calendar.isDateInToday(message.createdAt)
+            }
+        }
+    }
+
     /// Supprime les fils vides (aucun message utilisateur) — ne doivent pas apparaître dans l’historique.
     func purgeEmptyConversations() {
         let previousCount = library.conversations.count
-        library.conversations.removeAll { !$0.hasUserMessages }
+        library.conversations.removeAll { conversation in
+            !conversation.hasUserMessages
+                && !conversation.messages.contains { CoachEveningChecklistService.isEveningMessage($0) }
+        }
 
         if let activeId = library.activeConversationId,
            !library.conversations.contains(where: { $0.id == activeId }) {

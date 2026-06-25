@@ -491,13 +491,33 @@ struct MealItemEditSheet: View {
 
 struct CoachMealSuggestionMessageView: View {
     let content: MealSuggestionContent
+    var contextualActions: [CoachContextualAction] = []
+    var onAction: ((CoachContextualAction) -> Void)? = nil
 
     var body: some View {
-        MealSuggestionCardView(
-            content: content,
-            showsActions: false,
-            showsScoreBreakdown: content.showsScore
-        )
+        VStack(alignment: .leading, spacing: 10) {
+            MealSuggestionCardView(
+                content: content,
+                showsActions: onAction != nil,
+                showsScoreBreakdown: content.showsScore,
+                onValidate: onAction.map { handler in
+                    { handler(CoachContextualAction(kind: .validateMeal, payload: content.timeSlot.rawValue)) }
+                },
+                onModify: onAction.map { handler in
+                    { handler(CoachContextualAction(kind: .modifyMeal, payload: content.timeSlot.rawValue)) }
+                },
+                onAnother: onAction.map { handler in
+                    { handler(CoachContextualAction(kind: .anotherMeal, payload: content.timeSlot.rawValue)) }
+                },
+                onAddToShoppingList: onAction.map { handler in
+                    { handler(CoachContextualAction(kind: .addToShoppingList, payload: content.timeSlot.rawValue)) }
+                }
+            )
+
+            if let onAction, !contextualActions.isEmpty {
+                CoachContextualActionButtons(actions: contextualActions, onAction: onAction)
+            }
+        }
     }
 }
 

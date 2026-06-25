@@ -82,33 +82,27 @@ struct PlanTrainingDetailSheet: View {
 
                     if !training.warmup.isEmpty {
                         blockTitle("Échauffement")
-                        bulletList(training.warmup)
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(training.warmup, id: \.self) { line in
+                                PlanTrainingBlockRow(line: line, fallbackSystemImage: "figure.run")
+                            }
+                        }
                     }
 
                     blockTitle("Exercices")
                     VStack(spacing: 10) {
                         ForEach(training.exercises) { exercise in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(exercise.name)
-                                    .font(.subheadline.weight(.semibold))
-                                Text("\(exercise.sets)×\(exercise.reps) · repos \(exercise.restSeconds)s")
-                                    .font(.caption)
-                                    .foregroundStyle(theme.secondaryText)
-                                if !exercise.coachingCue.isEmpty {
-                                    Text(exercise.coachingCue)
-                                        .font(.caption)
-                                        .foregroundStyle(theme.primaryText.opacity(0.85))
-                                }
-                            }
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(HealthHubDesign.softCard(theme: theme))
+                            PlanTrainingExerciseCard(exercise: exercise)
                         }
                     }
 
                     if !training.cooldown.isEmpty {
                         blockTitle("Retour au calme")
-                        bulletList(training.cooldown)
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(training.cooldown, id: \.self) { line in
+                                PlanTrainingBlockRow(line: line, fallbackSystemImage: "figure.walk")
+                            }
+                        }
                     }
 
                     if let notes = training.notes, !notes.isEmpty {
@@ -177,7 +171,7 @@ struct PlanDebloatGuideSheet: View {
 
 // MARK: - Ressources (hors timeline)
 
-enum PlanResourceSheet: Identifiable {
+enum PlanResourceSheet: Identifiable, Hashable {
     case debloatGuide
     case mealsHub
     case continuousHabits
@@ -193,6 +187,7 @@ enum PlanResourceSheet: Identifiable {
 
 struct PlanResourcesFooter: View {
     @Binding var activeSheet: PlanResourceSheet?
+    var zoomNamespace: Namespace.ID? = nil
 
     @Environment(\.appTheme) private var theme
 
@@ -204,18 +199,31 @@ struct PlanResourcesFooter: View {
                 .textCase(.uppercase)
                 .padding(.top, 8)
 
-            PlanInfoLinkButton(title: "Guide debloat complet", systemImage: "lightbulb.fill") {
-                activeSheet = .debloatGuide
-            }
+            resourceLink(
+                sheet: .debloatGuide,
+                title: "Guide debloat complet",
+                systemImage: "lightbulb.fill"
+            )
 
-            PlanInfoLinkButton(title: "Historique repas & courses", systemImage: "cart.fill") {
-                activeSheet = .mealsHub
-            }
+            resourceLink(
+                sheet: .mealsHub,
+                title: "Historique repas & courses",
+                systemImage: "cart.fill"
+            )
 
-            PlanInfoLinkButton(title: "Habitudes 24/7", systemImage: "infinity") {
-                activeSheet = .continuousHabits
-            }
+            resourceLink(
+                sheet: .continuousHabits,
+                title: "Habitudes 24/7",
+                systemImage: "infinity"
+            )
         }
+    }
+
+    private func resourceLink(sheet: PlanResourceSheet, title: String, systemImage: String) -> some View {
+        PlanInfoLinkButton(title: title, systemImage: systemImage) {
+            activeSheet = sheet
+        }
+        .processZoomSource(id: .planResource(sheet), namespace: zoomNamespace)
     }
 }
 

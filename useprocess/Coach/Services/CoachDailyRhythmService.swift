@@ -43,7 +43,7 @@ enum CoachDailyRhythmService {
         if eveningReviewEnabled {
             await schedule(
                 id: reviewID,
-                title: "Bilan du jour",
+                title: "Coachia — checklist du soir",
                 body: eveningReviewBody(),
                 hour: 21,
                 minute: 0
@@ -103,9 +103,9 @@ enum CoachDailyRhythmService {
     private static func eveningReviewBody() -> String {
         let streak = ProcessStreakStore.shared.snapshot.currentStreak
         if streak > 0 {
-            return "Streak \(streak) jour\(streak > 1 ? "s" : ""). Vérifie ton journal avant de dormir."
+            return "Streak \(streak) jour\(streak > 1 ? "s" : ""). Fais ta checklist dans le chat avant de dormir."
         }
-        return "Complète ton journal pour lancer ou garder ta streak."
+        return "Coachia t'attend dans le chat pour ta checklist du soir."
     }
 
     private static func settingsKey(_ suffix: String) -> String {

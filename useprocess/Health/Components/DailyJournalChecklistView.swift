@@ -31,8 +31,12 @@ struct DailyJournalChecklistView: View {
     var showHeader: Bool = true
     var showWeekStrip: Bool = true
 
+    @Namespace private var faceScanHistoryZoomNamespace
+    @Namespace private var mealZoomNamespace
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var isChecklistExpanded = true
+    @State private var showFaceScanHistory = false
+    @State private var selectedFaceScan: FaceScanResult?
     @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
 
@@ -59,7 +63,9 @@ struct DailyJournalChecklistView: View {
 
             PlanLastFaceScanSection(
                 latest: faceHistoryStore.latestResult,
-                isScanDue: faceHistoryStore.isScanDue
+                isScanDue: faceHistoryStore.isScanDue,
+                zoomNamespace: faceScanHistoryZoomNamespace,
+                onOpenHistory: { showFaceScanHistory = true }
             )
             .padding(.bottom, showWeekStrip ? 0 : 8)
 
@@ -67,7 +73,12 @@ struct DailyJournalChecklistView: View {
             case .editable(let day, _):
                 journalSections(for: day, isEditable: true)
 
-                PlanNutritionDaySection(plan: livePlan, day: day, isEditable: true)
+                PlanNutritionDaySection(
+                    plan: livePlan,
+                    day: day,
+                    isEditable: true,
+                    mealZoomNamespace: mealZoomNamespace
+                )
                     .environmentObject(UnifiedProfileService.shared)
                     .padding(.top, 28)
 
@@ -77,6 +88,9 @@ struct DailyJournalChecklistView: View {
                     selectedDate: selectedDate,
                     isEditable: true
                 )
+
+                PlanPostureDaySection(plan: livePlan)
+                    .padding(.top, 28)
             case .future:
                 journalUnavailableCard(
                     title: "Jour à venir",
@@ -90,6 +104,19 @@ struct DailyJournalChecklistView: View {
                     systemImage: "calendar.badge.exclamationmark"
                 )
             }
+        }
+        .fullScreenCover(isPresented: $showFaceScanHistory) {
+            FaceScanHistoryView(history: faceHistoryStore.history) { scan in
+                showFaceScanHistory = false
+                selectedFaceScan = scan
+            }
+            .processZoomTransition(id: .faceScanHistory, namespace: faceScanHistoryZoomNamespace)
+        }
+        .sheet(item: $selectedFaceScan) { scan in
+            FaceScanDetailView(
+                result: scan,
+                previous: faceHistoryStore.history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
+            )
         }
         .onChange(of: selectedDate) { _, _ in
             if case .editable(let day, _) = dayAvailability {

@@ -16,6 +16,7 @@ struct CoachMessage: Identifiable, Codable, Equatable, Sendable {
     var followUps: [String]?
     var deepLinkAction: String?
     var deepLinkLabel: String?
+    var contextualActions: [String]?
 
     init(
         id: UUID = UUID(),
@@ -26,7 +27,8 @@ struct CoachMessage: Identifiable, Codable, Equatable, Sendable {
         reasoning: String? = nil,
         followUps: [String]? = nil,
         deepLinkAction: String? = nil,
-        deepLinkLabel: String? = nil
+        deepLinkLabel: String? = nil,
+        contextualActions: [String]? = nil
     ) {
         self.id = id
         self.role = role
@@ -37,6 +39,11 @@ struct CoachMessage: Identifiable, Codable, Equatable, Sendable {
         self.followUps = followUps
         self.deepLinkAction = deepLinkAction
         self.deepLinkLabel = deepLinkLabel
+        self.contextualActions = contextualActions
+    }
+
+    var resolvedContextualActions: [CoachContextualAction] {
+        CoachContextualAction.decodeList(contextualActions ?? [])
     }
 }
 

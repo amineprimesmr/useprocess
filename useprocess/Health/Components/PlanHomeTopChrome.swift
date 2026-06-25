@@ -12,6 +12,7 @@ struct PlanHomeTopChrome: View {
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
     @State private var showStreakSheet = false
+    @Namespace private var streakZoomNamespace
 
     private var greetingFirstName: String {
         profileService.currentProfile?.firstName
@@ -43,7 +44,10 @@ struct PlanHomeTopChrome: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            PlanHomeGreetingLabel(firstName: greetingFirstName)
+            PlanHomeGreetingLabel(
+                firstName: greetingFirstName,
+                isActive: selectedSection == .plan
+            )
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             profileStreakCluster
@@ -52,6 +56,7 @@ struct PlanHomeTopChrome: View {
         .padding(.bottom, 4)
         .fullScreenCover(isPresented: $showStreakSheet) {
             ProcessStreakSheet(selectedDate: $selectedDate)
+                .processZoomTransition(id: .streak, namespace: streakZoomNamespace)
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
@@ -84,6 +89,7 @@ struct PlanHomeTopChrome: View {
                 HStack(spacing: GlassClusterMetrics.spacing) {
                     Button(action: openStreak) {
                         streakGlassTile
+                            .processZoomSource(id: .streak, namespace: streakZoomNamespace)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
@@ -100,6 +106,7 @@ struct PlanHomeTopChrome: View {
             HStack(spacing: 10) {
                 Button(action: openStreak) {
                     legacyStreakButton
+                        .processZoomSource(id: .streak, namespace: streakZoomNamespace)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
@@ -207,13 +214,14 @@ struct PlanHomeTopChrome: View {
 
 private struct PlanHomeGreetingLabel: View {
     let firstName: String
+    let isActive: Bool
 
     @Environment(\.appTheme) private var theme
 
-    @State private var displayedText = ""
+    @State private var typewriter = CoachTypewriterController()
     @State private var showsEmoji = false
     @State private var textVisible = false
-    @State private var animationTask: Task<Void, Never>?
+    @State private var hasPlayedLaunchGreeting = false
 
     private var fullGreeting: String {
         let raw = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -221,6 +229,10 @@ private struct PlanHomeGreetingLabel: View {
             return "Prêt ?"
         }
         return "Prêt, \(raw) ?"
+    }
+
+    private var greetingTaskID: String {
+        "\(isActive)|\(fullGreeting)|played:\(hasPlayedLaunchGreeting)"
     }
 
     var body: some View {
@@ -233,7 +245,7 @@ private struct PlanHomeGreetingLabel: View {
                     .minimumScaleFactor(0.82)
                     .accessibilityHidden(true)
 
-                Text(displayedText)
+                Text(typewriter.displayedText)
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(theme.primaryText)
                     .lineLimit(1)
@@ -249,69 +261,67 @@ private struct PlanHomeGreetingLabel: View {
                 .scaleEffect(showsEmoji ? 1 : 0.35)
                 .rotationEffect(.degrees(showsEmoji ? 0 : -18))
                 .offset(y: showsEmoji ? 0 : 6)
+                .animation(.spring(response: 0.42, dampingFraction: 0.62), value: showsEmoji)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(fullGreeting), salut")
-        .onAppear {
-            runGreetingAnimation()
-        }
-        .onChange(of: firstName) { _, _ in
-            runGreetingAnimation()
+        .task(id: greetingTaskID) {
+            guard isActive else {
+                stopGreetingAnimation()
+                return
+            }
+
+            if hasPlayedLaunchGreeting {
+                showGreetingImmediately()
+                return
+            }
+
+            await runLaunchGreetingAnimation()
+            if !Task.isCancelled && isActive {
+                hasPlayedLaunchGreeting = true
+            }
         }
         .onDisappear {
-            animationTask?.cancel()
-            animationTask = nil
+            stopGreetingAnimation()
         }
     }
 
-    private func runGreetingAnimation() {
-        animationTask?.cancel()
-        displayedText = ""
+    private func showGreetingImmediately() {
+        typewriter.showImmediately(text: fullGreeting)
+        textVisible = true
+        showsEmoji = true
+    }
+
+    private func stopGreetingAnimation() {
+        typewriter.reset()
+        HapticManager.shared.endTypewriterSession()
+    }
+
+    private func runLaunchGreetingAnimation() async {
         showsEmoji = false
         textVisible = false
+        typewriter.reset()
 
-        animationTask = Task {
-            try? await Task.sleep(nanoseconds: 120_000_000)
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                withAnimation(.spring(response: 0.52, dampingFraction: 0.84)) {
-                    textVisible = true
-                }
-            }
-
-            let text = fullGreeting
-            for character in text {
-                guard !Task.isCancelled else { return }
-                try? await Task.sleep(nanoseconds: typingDelay(for: character))
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    displayedText.append(character)
-                }
-            }
-
-            guard !Task.isCancelled else { return }
-            try? await Task.sleep(nanoseconds: 90_000_000)
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) {
-                    showsEmoji = true
-                }
-            }
+        if firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            try? await Task.sleep(nanoseconds: 280_000_000)
+            guard !Task.isCancelled, isActive else { return }
         }
-    }
 
-    private func typingDelay(for character: Character) -> UInt64 {
-        switch character {
-        case " ", "\n", "\t":
-            return 18_000_000
-        case "?", "!", ".":
-            return 72_000_000
-        case ",":
-            return 48_000_000
-        default:
-            return 30_000_000
+        withAnimation(.spring(response: 0.52, dampingFraction: 0.84)) {
+            textVisible = true
+        }
+
+        try? await Task.sleep(nanoseconds: 120_000_000)
+        guard !Task.isCancelled, isActive else { return }
+
+        await typewriter.run(text: fullGreeting, leadingDelayNanoseconds: 0)
+
+        guard !Task.isCancelled, isActive else { return }
+        try? await Task.sleep(nanoseconds: 90_000_000)
+        guard !Task.isCancelled, isActive else { return }
+
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) {
+            showsEmoji = true
         }
     }
 }

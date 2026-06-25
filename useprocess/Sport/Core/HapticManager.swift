@@ -16,6 +16,9 @@ class HapticManager: ObservableObject {
 
     private var hapticEngine: CHHapticEngine?
     private var isEngineReady = false
+    private var typewriterFeedback: UIImpactFeedbackGenerator?
+    private var lastTypewriterHapticTime: CFAbsoluteTime = 0
+    private let typewriterMinInterval: CFAbsoluteTime = 0.038
 
     private init() {}
 
@@ -120,5 +123,34 @@ class HapticManager: ObservableObject {
     /// Feedback d'erreur
     func error() {
         notification(.error)
+    }
+
+    /// Haptique synchronisé avec une animation typewriter (une impulsion max toutes les ~38 ms).
+    func typewriterCharacter(_ character: Character) {
+        guard character != " " && character != "\n" && character != "\t" else { return }
+
+        let now = CFAbsoluteTimeGetCurrent()
+        guard now - lastTypewriterHapticTime >= typewriterMinInterval else { return }
+        lastTypewriterHapticTime = now
+
+        if typewriterFeedback == nil {
+            typewriterFeedback = UIImpactFeedbackGenerator(style: .soft)
+        }
+        typewriterFeedback?.prepare()
+
+        let intensity: CGFloat
+        switch character {
+        case "!", ".", "?":
+            intensity = 0.62
+        default:
+            intensity = 0.38
+        }
+        typewriterFeedback?.impactOccurred(intensity: intensity)
+    }
+
+    /// Arrête la session typewriter (changement d’onglet, fermeture, annulation).
+    func endTypewriterSession() {
+        typewriterFeedback = nil
+        lastTypewriterHapticTime = 0
     }
 }

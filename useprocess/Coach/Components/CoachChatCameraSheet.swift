@@ -482,32 +482,32 @@ extension CoachSharedCameraSession: AVCapturePhotoCaptureDelegate {
             return
         }
 
-        let normalized = image.coachAttachmentNormalized()
         sessionQueue.async { [weak self] in
             self?.isCapturing = false
         }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.pendingCompletion?(normalized)
-            self.pendingCompletion = nil
             Task { @MainActor in
+                let normalized = CoachAttachmentImageNormalizer.normalize(image)
+                self.pendingCompletion?(normalized)
+                self.pendingCompletion = nil
                 self.scheduleStopIfIdle()
             }
         }
     }
 }
 
-private extension UIImage {
-    func coachAttachmentNormalized(maxPixel: CGFloat = 1200) -> UIImage {
-        let maxSide = max(size.width, size.height)
-        guard maxSide > maxPixel, maxSide > 0 else { return self }
+private enum CoachAttachmentImageNormalizer {
+    static func normalize(_ image: UIImage, maxPixel: CGFloat = 1200) -> UIImage {
+        let maxSide = max(image.size.width, image.size.height)
+        guard maxSide > maxPixel, maxSide > 0 else { return image }
 
         let scale = maxPixel / maxSide
-        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
-            draw(in: CGRect(origin: .zero, size: newSize))
+            image.draw(in: CGRect(origin: .zero, size: newSize))
         }
     }
 }
