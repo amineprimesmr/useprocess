@@ -22,11 +22,11 @@ struct MealIngredientRadialChart: View {
             let size = min(geo.size.width, geo.size.height)
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
-            let centerRadius = size * 0.112
-            let petalWidth = size * 0.375
-            let petalLength = size * 0.515
-            let petalAnchorOverlap = size * 0.238
-            let labelDistance = centerRadius + petalLength * 0.53
+            let centerRadius = size * 0.128
+            let petalWidth = size * 0.318
+            let petalLength = size * 0.475
+            let petalAnchorOverlap = size * 0.128
+            let labelDistance = centerRadius + petalLength * 0.62
             let count = max(segments.count, 1)
             let step = 360.0 / Double(count)
 
@@ -56,7 +56,7 @@ struct MealIngredientRadialChart: View {
                 ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                     let angleRad = (step * Double(index) - 90) * .pi / 180
                     label(for: segment)
-                        .frame(width: petalWidth * 0.92)
+                        .frame(width: petalWidth * 1.12)
                         .position(
                             x: center.x + cos(angleRad) * labelDistance,
                             y: center.y + sin(angleRad) * labelDistance
@@ -76,7 +76,7 @@ struct MealIngredientRadialChart: View {
                     .animation(.spring(response: 0.74, dampingFraction: 0.76).delay(0.06), value: appeared)
             }
         }
-        .frame(height: 330)
+        .frame(height: 338)
         .padding(.horizontal, 0)
         .onAppear { triggerAppearance() }
     }
@@ -100,7 +100,7 @@ struct MealIngredientRadialChart: View {
         ZStack {
             FlowerPetalShape()
                 .fill(ghostFill)
-                .scaleEffect(x: 1.17, y: 1.12, anchor: .bottom)
+                .scaleEffect(x: 1.10, y: 1.08, anchor: .bottom)
                 .shadow(color: .black.opacity(0.045), radius: 8, x: 0, y: 4)
 
             FlowerPetalShape()
@@ -153,7 +153,7 @@ struct MealIngredientRadialChart: View {
             ForEach(0..<6, id: \.self) { index in
                 FlowerPetalShape()
                     .fill(Color.white.opacity(0.88))
-                    .frame(width: petalWidth * 1.22, height: petalLength * 1.14)
+                    .frame(width: petalWidth * 1.13, height: petalLength * 1.09)
                     .offset(y: -(centerRadius + petalLength / 2 - petalAnchorOverlap))
                     .rotationEffect(.degrees(step * Double(index)))
             }
@@ -260,11 +260,11 @@ private struct FlowerPetalShape: Shape {
         let midX = rect.midX
         let bottomY = rect.maxY
         let topY = rect.minY + rect.height * 0.045
-        let baseHalf = rect.width * 0.155
-        let topLeft = CGPoint(x: rect.minX + rect.width * 0.17, y: topY + rect.height * 0.05)
-        let topRight = CGPoint(x: rect.maxX - rect.width * 0.17, y: topY + rect.height * 0.05)
-        let leftShoulder = CGPoint(x: rect.minX + rect.width * 0.025, y: rect.minY + rect.height * 0.42)
-        let rightShoulder = CGPoint(x: rect.maxX - rect.width * 0.025, y: rect.minY + rect.height * 0.42)
+        let baseHalf = rect.width * 0.18
+        let topLeft = CGPoint(x: rect.minX + rect.width * 0.16, y: topY + rect.height * 0.06)
+        let topRight = CGPoint(x: rect.maxX - rect.width * 0.16, y: topY + rect.height * 0.06)
+        let leftShoulder = CGPoint(x: rect.minX + rect.width * 0.075, y: rect.minY + rect.height * 0.44)
+        let rightShoulder = CGPoint(x: rect.maxX - rect.width * 0.075, y: rect.minY + rect.height * 0.44)
         let leftBase = CGPoint(x: midX - baseHalf, y: bottomY)
         let rightBase = CGPoint(x: midX + baseHalf, y: bottomY)
 
@@ -272,13 +272,13 @@ private struct FlowerPetalShape: Shape {
         path.move(to: leftBase)
         path.addCurve(
             to: leftShoulder,
-            control1: CGPoint(x: rect.minX + rect.width * 0.06, y: rect.maxY - rect.height * 0.12),
-            control2: CGPoint(x: rect.minX - rect.width * 0.02, y: rect.minY + rect.height * 0.58)
+            control1: CGPoint(x: rect.minX + rect.width * 0.11, y: rect.maxY - rect.height * 0.10),
+            control2: CGPoint(x: rect.minX + rect.width * 0.045, y: rect.minY + rect.height * 0.61)
         )
         path.addCurve(
             to: topLeft,
-            control1: CGPoint(x: rect.minX + rect.width * 0.025, y: rect.minY + rect.height * 0.19),
-            control2: CGPoint(x: rect.minX + rect.width * 0.06, y: topY)
+            control1: CGPoint(x: rect.minX + rect.width * 0.055, y: rect.minY + rect.height * 0.22),
+            control2: CGPoint(x: rect.minX + rect.width * 0.08, y: topY)
         )
         path.addCurve(
             to: topRight,
@@ -287,13 +287,13 @@ private struct FlowerPetalShape: Shape {
         )
         path.addCurve(
             to: rightShoulder,
-            control1: CGPoint(x: rect.maxX - rect.width * 0.06, y: topY),
-            control2: CGPoint(x: rect.maxX - rect.width * 0.025, y: rect.minY + rect.height * 0.19)
+            control1: CGPoint(x: rect.maxX - rect.width * 0.08, y: topY),
+            control2: CGPoint(x: rect.maxX - rect.width * 0.055, y: rect.minY + rect.height * 0.22)
         )
         path.addCurve(
             to: rightBase,
-            control1: CGPoint(x: rect.maxX + rect.width * 0.02, y: rect.minY + rect.height * 0.58),
-            control2: CGPoint(x: rect.maxX - rect.width * 0.06, y: rect.maxY - rect.height * 0.12)
+            control1: CGPoint(x: rect.maxX - rect.width * 0.045, y: rect.minY + rect.height * 0.61),
+            control2: CGPoint(x: rect.maxX - rect.width * 0.11, y: rect.maxY - rect.height * 0.10)
         )
         path.closeSubpath()
         return path
