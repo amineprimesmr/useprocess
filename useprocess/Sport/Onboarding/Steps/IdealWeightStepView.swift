@@ -13,6 +13,7 @@ struct IdealWeightStepView: View {
 
     @Binding var idealWeight: Double
     let currentWeight: Double
+    let recommendedIdealWeight: Double?
 
     var onValidationChanged: ((Bool) -> Void)?
     var onContinue: (() -> Void)?
@@ -61,12 +62,14 @@ struct IdealWeightStepView: View {
     init(
         idealWeight: Binding<Double>,
         currentWeight: Double,
+        recommendedIdealWeight: Double? = nil,
         onValidationChanged: ((Bool) -> Void)? = nil,
         onContinue: (() -> Void)? = nil,
         onPersistAnswers: (() -> Void)? = nil
     ) {
         self._idealWeight = idealWeight
         self.currentWeight = currentWeight
+        self.recommendedIdealWeight = recommendedIdealWeight
         self.onValidationChanged = onValidationChanged
         self.onContinue = onContinue
         self.onPersistAnswers = onPersistAnswers
@@ -192,6 +195,10 @@ struct IdealWeightStepView: View {
                   OnboardingViewModel.isPlausibleWeight(savedIdeal) {
             idealWeight = savedIdeal
             populateWeightString(from: savedIdeal)
+        } else if let recommendedIdealWeight,
+                  OnboardingViewModel.isPlausibleWeight(recommendedIdealWeight) {
+            idealWeight = recommendedIdealWeight
+            populateWeightString(from: recommendedIdealWeight)
         } else {
             idealWeight = 0
             weightString = ""

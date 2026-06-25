@@ -82,6 +82,7 @@ extension SportOnboardingView {
             IdealWeightStepView(
                 idealWeight: $viewModel.idealWeightValue,
                 currentWeight: viewModel.selectedWeight,
+                recommendedIdealWeight: viewModel.recommendedIdealWeight(),
                 onValidationChanged: { isValid in
                     viewModel.isIdealWeightEntered = isValid
                     if isValid {

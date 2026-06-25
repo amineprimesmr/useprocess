@@ -366,6 +366,30 @@ class OnboardingViewModel: ObservableObject {
         return nil
     }
 
+    func recommendedIdealWeight() -> Double? {
+        guard Self.isPlausibleWeight(selectedWeight),
+              selectedHeight >= 120,
+              selectedHeight <= 230,
+              let gender = selectedGender else {
+            return nil
+        }
+
+        let recommendation = PersonalizedIdealWeightCalculator.calculatePersonalizedIdealWeight(
+            currentWeight: selectedWeight,
+            height: selectedHeight,
+            age: selectedAge,
+            gender: gender,
+            weightGoal: selectedWeightGoal
+        )
+
+        guard Self.isPlausibleWeight(recommendation),
+              abs(recommendation - selectedWeight) >= 0.5 else {
+            return nil
+        }
+
+        return recommendation
+    }
+
     func isWeightGoalIncompatibleWithBMI() -> Bool {
         guard let goal = selectedWeightGoal ?? inferredWeightGoalFromIdealWeight() else { return false }
 
