@@ -76,7 +76,6 @@ struct OnboardingProfileChatView: View {
                 if chatViewModel.analysisShowPopup {
                     OnboardingAnalysisYesNoPopup(
                         question: chatViewModel.analysisPopupQuestion,
-                        subtitle: chatViewModel.analysisPopupSubtitle,
                         affirmativeTitle: chatViewModel.analysisPopupAffirmativeTitle,
                         negativeTitle: chatViewModel.analysisPopupNegativeTitle,
                         popupOffset: chatViewModel.analysisPopupOffset,

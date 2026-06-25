@@ -15,15 +15,6 @@ enum OnboardingAnalysisProgressConfig {
         let kind: PopupKind
         let question: String
 
-        var subtitle: String {
-            switch kind {
-            case .yesNo:
-                return "Pour pouvoir continuer, précise"
-            case .healthKit:
-                return "Tes données restent privées et servent uniquement à personnaliser ton analyse."
-            }
-        }
-
         var affirmativeTitle: String {
             switch kind {
             case .yesNo: return "Oui"

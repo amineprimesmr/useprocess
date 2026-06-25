@@ -27,7 +27,6 @@ final class OnboardingProfileChatViewModel {
     var analysisPhaseLabel = OnboardingAnalysisProgressConfig.phases[0]
     var analysisShowPopup = false
     var analysisPopupQuestion = ""
-    var analysisPopupSubtitle = OnboardingAnalysisProgressConfig.popups[0].subtitle
     var analysisPopupAffirmativeTitle = "Oui"
     var analysisPopupNegativeTitle = "Non"
     var analysisPopupKind = OnboardingAnalysisProgressConfig.PopupKind.yesNo
@@ -489,7 +488,6 @@ final class OnboardingProfileChatViewModel {
                 analysisIsPaused = true
                 let popup = popups[index]
                 analysisPopupQuestion = popup.question
-                analysisPopupSubtitle = popup.subtitle
                 analysisPopupAffirmativeTitle = popup.affirmativeTitle
                 analysisPopupNegativeTitle = popup.negativeTitle
                 analysisPopupKind = popup.kind
