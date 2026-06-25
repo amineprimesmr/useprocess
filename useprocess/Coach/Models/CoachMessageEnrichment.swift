@@ -45,12 +45,25 @@ struct CoachParsedReply: Equatable {
 
 enum CoachResponseParser {
 
+    private static let metadataLabels = [
+        "REASONING:",
+        "FOLLOW_UP_1:",
+        "FOLLOW_UP_2:",
+        "FOLLOW_UP_3:",
+        "DEEP_LINK:",
+        "MEMORY_UPDATE:",
+        "MEMORY_UPDATE_1:",
+        "MEMORY_UPDATE_2:",
+        "FOOD_LOG:",
+        "ARTIFACT:"
+    ]
+
     static func parse(_ raw: String) -> CoachMessageEnrichment {
         parseFull(raw).enrichment
     }
 
     static func parseFull(_ raw: String) -> CoachParsedReply {
-        var text = raw
+        var working = raw
         var reasoning: String?
         var followUps: [String] = []
         var deepLink: CoachDeepLink?
@@ -59,18 +72,17 @@ enum CoachResponseParser {
         var artifactTitle: String?
         var artifactBody: String?
 
-        if let match = extract(label: "REASONING:", from: &text) {
-            reasoning = match.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let match = extract(label: "REASONING:", from: &working) {
+            reasoning = match
         }
 
         for index in 1...3 {
-            if let match = extract(label: "FOLLOW_UP_\(index):", from: &text) {
-                let q = match.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !q.isEmpty { followUps.append(q) }
+            if let match = extract(label: "FOLLOW_UP_\(index):", from: &working) {
+                if !match.isEmpty { followUps.append(match) }
             }
         }
 
-        if let match = extract(label: "DEEP_LINK:", from: &text) {
+        if let match = extract(label: "DEEP_LINK:", from: &working) {
             let parts = match.split(separator: "|", maxSplits: 1).map(String.init)
             if let actionRaw = parts.first?.trimmingCharacters(in: .whitespacesAndNewlines),
                let action = CoachDeepLinkAction(rawValue: actionRaw) {
@@ -82,19 +94,19 @@ enum CoachResponseParser {
         }
 
         for index in 1...2 {
-            if let match = extract(label: "MEMORY_UPDATE_\(index):", from: &text) {
+            if let match = extract(label: "MEMORY_UPDATE_\(index):", from: &working) {
                 applyMemoryLine(match, into: &memoryUpdates)
             }
         }
-        if let match = extract(label: "MEMORY_UPDATE:", from: &text) {
+        if let match = extract(label: "MEMORY_UPDATE:", from: &working) {
             applyMemoryLine(match, into: &memoryUpdates)
         }
 
-        if extract(label: "FOOD_LOG:", from: &text) != nil {
+        if extract(label: "FOOD_LOG:", from: &working) != nil {
             foodLogged = true
         }
 
-        if let match = extract(label: "ARTIFACT:", from: &text) {
+        if let match = extract(label: "ARTIFACT:", from: &working) {
             let parts = match.split(separator: "|", maxSplits: 1).map(String.init)
             artifactTitle = parts.first?.trimmingCharacters(in: .whitespacesAndNewlines)
             if parts.count > 1 {
@@ -102,12 +114,13 @@ enum CoachResponseParser {
             }
         }
 
-        let display = text
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "\n\n\n", with: "\n\n")
+        var display = stripRemainingMetadata(from: working)
+        if display.isEmpty {
+            display = stripRemainingMetadata(from: raw)
+        }
 
         let enrichment = CoachMessageEnrichment(
-            displayText: display.isEmpty ? raw.trimmingCharacters(in: .whitespacesAndNewlines) : display,
+            displayText: display,
             reasoning: reasoning?.isEmpty == true ? nil : reasoning,
             followUps: followUps,
             deepLink: deepLink
@@ -119,6 +132,32 @@ enum CoachResponseParser {
             foodLogged: foodLogged,
             artifactTitle: artifactTitle,
             artifactBody: artifactBody
+        )
+    }
+
+    /// Re-parse un message assistant déjà stocké avec métadonnées visibles.
+    static func reparsedMessageIfNeeded(_ message: CoachMessage) -> CoachMessage {
+        guard message.role == .assistant else { return message }
+        if message.enrichment != nil { return message }
+
+        let raw = message.text
+        let hasMetadata = metadataLabels.contains {
+            raw.range(of: $0, options: .caseInsensitive) != nil
+        }
+        guard hasMetadata else { return message }
+
+        let parsed = parseFull(raw)
+        let rebuilt = CoachMessage.assistant(from: parsed.enrichment, modelUsed: message.modelUsed)
+        return CoachMessage(
+            id: message.id,
+            role: .assistant,
+            text: rebuilt.text,
+            createdAt: message.createdAt,
+            modelUsed: message.modelUsed,
+            reasoning: rebuilt.reasoning,
+            followUps: rebuilt.followUps,
+            deepLinkAction: rebuilt.deepLinkAction,
+            deepLinkLabel: rebuilt.deepLinkLabel
         )
     }
 
@@ -141,14 +180,62 @@ enum CoachResponseParser {
     }
 
     private static func extract(label: String, from text: inout String) -> String? {
-        guard let range = text.range(of: label, options: .caseInsensitive) else { return nil }
-        let after = text[range.upperBound...]
-        let lineEnd = after.firstIndex(of: "\n") ?? after.endIndex
-        let value = String(after[..<lineEnd])
-        text.removeSubrange(range.lowerBound..<lineEnd)
-        if lineEnd < after.endIndex, after[lineEnd] == "\n" {
-            text.remove(at: lineEnd)
+        guard let labelRange = text.range(of: label, options: .caseInsensitive) else { return nil }
+
+        var removeStart = labelRange.lowerBound
+        if removeStart > text.startIndex {
+            let before = text.index(before: removeStart)
+            if text[before] == " " {
+                removeStart = before
+            }
         }
-        return value
+
+        let valueStart = labelRange.upperBound
+        guard valueStart <= text.endIndex else { return nil }
+
+        let lineEnd = text[valueStart...].firstIndex(of: "\n") ?? text.endIndex
+        let value = String(text[valueStart..<lineEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var removeEnd = lineEnd
+        if removeEnd < text.endIndex, text[removeEnd] == "\n" {
+            removeEnd = text.index(after: removeEnd)
+        }
+
+        text.removeSubrange(removeStart..<removeEnd)
+        return value.isEmpty ? nil : value
+    }
+
+    private static func stripRemainingMetadata(from text: String) -> String {
+        var result = text
+
+        for label in metadataLabels {
+            while let range = result.range(of: label, options: .caseInsensitive) {
+                var removeStart = range.lowerBound
+                if removeStart > result.startIndex {
+                    let before = result.index(before: removeStart)
+                    if result[before] == " " {
+                        removeStart = before
+                    }
+                }
+
+                let tailStart = range.upperBound
+                var removeEnd = result.endIndex
+                let tail = result[tailStart...]
+                for other in metadataLabels where other.caseInsensitiveCompare(label) != .orderedSame {
+                    if let next = tail.range(of: other, options: .caseInsensitive) {
+                        let absolute = next.lowerBound
+                        if absolute < removeEnd {
+                            removeEnd = absolute
+                        }
+                    }
+                }
+
+                result.removeSubrange(removeStart..<removeEnd)
+            }
+        }
+
+        return result
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\n\n\n", with: "\n\n")
     }
 }

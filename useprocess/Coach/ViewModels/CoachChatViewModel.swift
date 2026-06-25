@@ -322,7 +322,9 @@ final class CoachChatViewModel {
 
     private static func filteredCoachMessages(_ messages: [CoachMessage]) -> [CoachMessage] {
         CoachHomeContext.sanitizedMessages(
-            messages.filter { !CoachConversationStore.shouldHideProgramSummaryMessage($0) }
+            messages
+                .filter { !CoachConversationStore.shouldHideProgramSummaryMessage($0) }
+                .map { CoachResponseParser.reparsedMessageIfNeeded($0) }
         )
     }
 
@@ -574,7 +576,6 @@ final class CoachChatViewModel {
                         planFocus: effectiveFocus
                     ) {
                         assembled += chunk
-                        streamingText = assembled
                     }
                     lastError = nil
                     break
@@ -629,7 +630,10 @@ final class CoachChatViewModel {
             let parsed = parsedReply.enrichment
             let model = ClaudeModel.preferred(for: .chat).rawValue
             let reply = CoachMessage.assistant(from: parsed, modelUsed: model)
-            messages.append(reply)
+
+            withAnimation(.spring(response: 0.44, dampingFraction: 0.86)) {
+                messages.append(reply)
+            }
             isSending = false
             streamingText = ""
             CoachPostReplyService.applySideEffects(
@@ -762,7 +766,9 @@ final class CoachChatViewModel {
                 userText: analysisPrompt,
                 rawAssistantText: rawReply.text
             )
-            messages.append(reply)
+            withAnimation(.spring(response: 0.44, dampingFraction: 0.86)) {
+                messages.append(reply)
+            }
             await CoachSyncService.appendMessage(
                 reply,
                 userId: userId,

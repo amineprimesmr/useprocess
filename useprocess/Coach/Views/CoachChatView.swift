@@ -350,11 +350,21 @@ struct CoachChatView: View {
                     }
                 )
                 .zIndex(1)
-                .transition(.opacity.combined(with: .offset(y: 6)))
+                .transition(
+                    .asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: 8)),
+                        removal: .opacity.combined(with: .scale(scale: 0.98, anchor: .top)).combined(with: .offset(y: -6))
+                    )
+                )
             } else {
                 activeConversationScroll
                     .zIndex(1)
-                    .transition(.opacity.combined(with: .offset(y: 8)))
+                    .transition(
+                        .asymmetric(
+                            insertion: .opacity.combined(with: .offset(y: 10)),
+                            removal: .opacity
+                        )
+                    )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -366,8 +376,8 @@ struct CoachChatView: View {
                 dismissCoachKeyboard()
             }
         )
-        .ios26SafeAnimation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.showsContextualHome)
-        .ios26SafeAnimation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.isComposingMessage)
+        .ios26SafeAnimation(.spring(response: 0.46, dampingFraction: 0.88), value: viewModel.showsContextualHome)
+        .ios26SafeAnimation(.spring(response: 0.4, dampingFraction: 0.9), value: viewModel.isComposingMessage)
         .onChange(of: viewModel.activeConversationId) { _, _ in
             viewModel.onActiveConversationChanged()
         }
@@ -397,15 +407,11 @@ struct CoachChatView: View {
                                 .id(message.id)
                         }
 
-                        if !viewModel.streamingText.isEmpty {
-                            streamingText
-                                .padding(.top, pendingAssistantReplySpacing)
-                                .id("streaming")
-                                .coachMessageFadeIn()
-                        } else if viewModel.isSending {
+                        if viewModel.isSending {
                             CoachChatThinkingBlobRow(start: thinkingBlobStart)
                                 .padding(.top, pendingAssistantReplySpacing)
                                 .id("thinking")
+                                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .leading)))
                         }
 
                         Color.clear
@@ -437,14 +443,13 @@ struct CoachChatView: View {
                 .onChange(of: viewModel.activeConversationId) { _, _ in
                     scrollToBottom(proxy, delay: 0.06, animated: false)
                 }
-                .onChange(of: viewModel.streamingText) { _, _ in
-                    scrollToBottom(proxy, delay: 0.02)
-                }
                 .onChange(of: viewModel.isSending) { wasSending, sending in
                     if sending, !wasSending {
                         thinkingBlobStart = .now
                         isInputFocused = false
                         scrollToBottom(proxy, delay: 0.08)
+                    } else if wasSending, !sending {
+                        scrollToBottom(proxy, delay: 0.05)
                     }
                 }
                 .onChange(of: isInputFocused) { _, focused in
@@ -632,17 +637,6 @@ struct CoachChatView: View {
         .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
-    private var streamingText: some View {
-        CoachFormattedText(
-            text: viewModel.streamingText,
-            font: messageFont,
-            lineSpacing: messageLineSpacing,
-            color: theme.primaryText
-        )
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .textSelection(.enabled)
-    }
-
     @ViewBuilder
     private func messageRow(_ message: CoachMessage) -> some View {
         let isUser = message.role == .user
@@ -699,6 +693,12 @@ struct CoachChatView: View {
                     )
                 }
             }
+            .coachMessageFadeIn()
+            .transition(
+                .opacity
+                    .combined(with: .offset(y: 10))
+                    .combined(with: .scale(scale: 0.98, anchor: .topLeading))
+            )
         }
     }
 
@@ -760,7 +760,7 @@ private struct CoachChatBottomAccessory<ContextualBar: View, InputBar: View>: Vi
                     )
             }
         }
-        .ios26SafeAnimation(.spring(response: 0.4, dampingFraction: 0.88), value: showsHomeInsteadOfInput)
-        .ios26SafeAnimation(.spring(response: 0.42, dampingFraction: 0.88), value: showsContextualHome)
+        .ios26SafeAnimation(.spring(response: 0.46, dampingFraction: 0.88), value: showsContextualHome)
+        .ios26SafeAnimation(.spring(response: 0.42, dampingFraction: 0.9), value: showsHomeInsteadOfInput)
     }
 }

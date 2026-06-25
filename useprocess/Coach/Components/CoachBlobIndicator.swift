@@ -423,9 +423,10 @@ struct CoachMessageFadeIn: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(visible ? 1 : 0)
-            .offset(y: visible ? 0 : 5)
+            .offset(y: visible ? 0 : 10)
+            .scaleEffect(visible ? 1 : 0.98, anchor: .topLeading)
             .onAppear {
-                withAnimation(.easeOut(duration: 0.18)) {
+                withAnimation(.spring(response: 0.44, dampingFraction: 0.86)) {
                     visible = true
                 }
             }
