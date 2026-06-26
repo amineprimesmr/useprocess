@@ -26,6 +26,23 @@ enum CoachPlanContextBuilder {
             "• Tâches cochées : \(completed)"
         ]
 
+        let face = plan.faceProtocol
+        if !face.focusAreas.isEmpty {
+            lines.append("• Visage : \(face.focusAreas.prefix(3).joined(separator: " · "))")
+        }
+        if let orofacial = face.jawAndTongueWork.first {
+            lines.append("  → Orofacial prioritaire : \(orofacial)")
+        }
+        if !plan.postureProtocol.mobilityBlocks.isEmpty {
+            lines.append("• Posture : \(plan.postureProtocol.mobilityBlocks.count) blocs mobilité quotidiens")
+        }
+        if let sleepStep = plan.sleepProtocol.eveningRoutine.first(where: { line in
+            let lower = line.lowercased()
+            return lower.contains("côté") || lower.contains("spot t") || lower.contains("langue")
+        }) {
+            lines.append("• Sommeil : \(sleepStep)")
+        }
+
         if let today {
             lines.append("• Aujourd'hui (\(today.weekdayLabel)) : \(today.title)")
             if let training = today.training {

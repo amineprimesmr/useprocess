@@ -59,15 +59,24 @@ enum OriginPlanCalendarBuilder {
                         morning: morningTasks(plan: plan, targets: targets, dayId: dayId),
                         nutrition: nutrition,
                         training: training,
-                        posture: postureTasks(plan: plan, targets: targets, dayId: dayId),
-                        face: faceTasks(targets: targets, dayId: dayId),
-                        evening: eveningTasks(plan: plan, answers: answers, targets: targets, dayId: dayId),
+                        posture: OriginPlanDailyTaskCatalog.postureTasks(plan: plan, dayId: dayId),
+                        face: OriginPlanDailyTaskCatalog.faceTasks(
+                            plan: plan,
+                            targets: targets,
+                            dayId: dayId,
+                            dayIndex: globalDay
+                        ),
+                        evening: OriginPlanDailyTaskCatalog.eveningTasks(
+                            plan: plan,
+                            answers: answers,
+                            dayId: dayId
+                        ),
                         sleep: OriginDaySleep(
                             targetBedtime: bedtime,
                             targetWake: wake,
                             targetHours: max(hours, targets.sleepHours),
-                            eveningActions: Array(plan.sleepProtocol.eveningRoutine.prefix(3)),
-                            morningActions: Array(plan.sleepProtocol.morningRoutine.prefix(3))
+                            eveningActions: sleepEveningActions(plan: plan, answers: answers),
+                            morningActions: Array(plan.sleepProtocol.morningRoutine.prefix(4))
                         ),
                         mindset: mindsetForWeek(weekNum, phase: phase, archetype: plan.assessmentSnapshot?.archetype)
                     )
@@ -87,7 +96,21 @@ enum OriginPlanCalendarBuilder {
             )
         }
 
-        return OriginProgramCalendar(startedAt: Date(), weeks: weeks, buildVersion: 6)
+        return OriginProgramCalendar(startedAt: Date(), weeks: weeks, buildVersion: 7)
+    }
+
+    private static func sleepEveningActions(
+        plan: FaceOriginPlan,
+        answers: [String: WelcomePlanAnswer]
+    ) -> [String] {
+        let checklist = SideSleepIntelligenceGuide.checklistEveningTasks(
+            answers: answers,
+            sleepProtocol: plan.sleepProtocol
+        )
+        if !checklist.isEmpty {
+            return checklist
+        }
+        return Array(plan.sleepProtocol.eveningRoutine.prefix(5))
     }
 
     // MARK: - Training
@@ -117,18 +140,20 @@ enum OriginPlanCalendarBuilder {
         let progression = progressionFactor(week: week)
 
         if gender == .female {
-            return femaleSession(
-                sessionIndex: sessionIndex,
-                week: week,
-                plan: plan,
-                note: intensityNote,
-                location: location,
-                progression: progression,
-                injuries: injuries
-            )
+        return femaleSession(
+            sessionIndex: sessionIndex,
+            weekday: weekday,
+            week: week,
+            plan: plan,
+            note: intensityNote,
+            location: location,
+            progression: progression,
+            injuries: injuries
+        )
         }
         return maleSession(
             sessionIndex: sessionIndex,
+            weekday: weekday,
             week: week,
             plan: plan,
             note: intensityNote,
@@ -154,6 +179,7 @@ enum OriginPlanCalendarBuilder {
 
     private static func maleSession(
         sessionIndex: Int,
+        weekday: Int,
         week: Int,
         plan: FaceOriginPlan,
         note: String?,
@@ -170,15 +196,27 @@ enum OriginPlanCalendarBuilder {
         return OriginDayTraining(
             sessionName: name,
             durationMinutes: plan.trainingProtocol.sessionDurationMinutes,
-            warmup: ["5 min vélo ou tapis incliné (RPE 3–4)", "Mobilité épaules + hanches 5 min"],
+            warmup: sprintWarmupIfNeeded(weekday: weekday, base: [
+                "5 min vélo ou tapis incliné (RPE 3–4)",
+                "Mobilité épaules + hanches 5 min"
+            ]),
             exercises: scaled,
             cooldown: ["Marche lente 3 min"],
             notes: note
         )
     }
 
+    private static func sprintWarmupIfNeeded(weekday: Int, base: [String]) -> [String] {
+        var warmup = base
+        if weekday == 2 {
+            warmup.append("Sprints fonctionnels — 8×15 s, repos 1m30 (option GH)")
+        }
+        return warmup
+    }
+
     private static func femaleSession(
         sessionIndex: Int,
+        weekday: Int,
         week: Int,
         plan: FaceOriginPlan,
         note: String?,
@@ -205,7 +243,10 @@ enum OriginPlanCalendarBuilder {
         return OriginDayTraining(
             sessionName: name,
             durationMinutes: min(plan.trainingProtocol.sessionDurationMinutes, 50),
-            warmup: ["Marche 5 min", "Activation fessiers 5 min"],
+            warmup: sprintWarmupIfNeeded(weekday: weekday, base: [
+                "Marche 5 min",
+                "Activation fessiers 5 min"
+            ]),
             exercises: scaleExercises(exercises, factor: progression, injuries: injuries),
             cooldown: ["Étirement fessiers 2 min"],
             notes: note
@@ -331,63 +372,6 @@ enum OriginPlanCalendarBuilder {
                 dayId: dayId
             )
         ]
-    }
-
-    private static func postureTasks(
-        plan: FaceOriginPlan,
-        targets: OriginPersonalizedDailyTargets,
-        dayId: String
-    ) -> [OriginPlanTask] {
-        var tasks: [OriginPlanTask] = []
-        if let check = plan.postureProtocol.dailyChecks.first {
-            tasks.append(task("Posture", check, "Posture", 5, dayId: dayId))
-        }
-        return tasks
-    }
-
-    private static func faceTasks(
-        targets: OriginPersonalizedDailyTargets,
-        dayId: String
-    ) -> [OriginPlanTask] {
-        [
-            task(
-                "Massage lymphatique",
-                "\(targets.lymphFaceMassageMinutes) min sous les yeux vers les oreilles",
-                "Visage",
-                targets.lymphFaceMassageMinutes,
-                dayId: dayId
-            )
-        ]
-    }
-
-    private static func eveningTasks(
-        plan: FaceOriginPlan,
-        answers: [String: WelcomePlanAnswer],
-        targets: OriginPersonalizedDailyTargets,
-        dayId: String
-    ) -> [OriginPlanTask] {
-        var tasks: [OriginPlanTask] = []
-
-        if answers["screen_before_bed"]?.choiceIds.first == "yes" {
-            tasks.append(
-                task(
-                    "Couvre-feu écrans",
-                    "\(ProcessDailyTargets.screenCurfewMinutes) min avant coucher — mode avion",
-                    "Sommeil",
-                    nil,
-                    dayId: dayId
-                )
-            )
-        }
-
-        if answers["alcohol_frequency"]?.choiceIds.first == "often"
-            || answers["alcohol_frequency"]?.choiceIds.first == "weekly" {
-            tasks.append(
-                task("Alcool", "Soir sans alcool — debloat visage garanti", "Nutrition", nil, dayId: dayId)
-            )
-        }
-
-        return tasks
     }
 
     private static func mindsetForWeek(

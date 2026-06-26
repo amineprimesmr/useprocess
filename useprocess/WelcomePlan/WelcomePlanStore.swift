@@ -134,7 +134,7 @@ final class WelcomePlanStore {
             current.lifestyleExtras = OriginLifestyleExtras.default
             changed = true
         }
-        if current.calendar.buildVersion < 6 || current.assessmentSnapshot == nil {
+        if current.calendar.buildVersion < 7 || current.assessmentSnapshot == nil {
             upgradePlanStructure(
                 plan: &current,
                 answers: answers ?? questionnaire.answers,

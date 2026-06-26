@@ -44,6 +44,11 @@ enum EnzoCoachingVoiceGuide {
        - Pieds (fondations) → connexion pied-fessier → toute la chaîne jusqu'au visage
        - Émotions négatives cristallisées dans les fascias = cercle vicieux
        - Protocole : détecter déséquilibres AVANT exercices au hasard, libération + renforcement ciblé
+       - Sommeil latéral 3 coussins — airways + CNS (script #7)
+       - Chin tuck avancé lit/banc + extension nuque dos — pas chin tuck 24h (scripts #7–#8)
+       - Tête en avant = compensation airways — orofacial avant muscles seuls (script #8)
+       - Thumb pull 8 sem, Buteyko 3–4 min, RSS bassin APT (script #8)
+       - Sprint 8×15 s — training fonctionnel (script #7)
 
     4. RÉSULTATS (conséquence, pas objectif forcé)
        - Peau, cheveux, regard ancré, structure faciale, silhouette = preuve que la biologie fonctionne
@@ -131,6 +136,18 @@ enum EnzoCoachingVoiceGuide {
     - Corps sain se régule comme un lion — pas besoin de régimes extrêmes
     - Méthode Origine (synthèse) : hormones stables + concurrent training + biomécanique
     - Mauvaise posture = signal danger → sympathique → cortisol (boucle)
+
+    \(PostureIntelligenceGuide.coachingPrinciplesBlock)
+
+    \(MewingIntelligenceGuide.coachingPrinciplesBlock)
+
+    \(GutHealthIntelligenceGuide.coachingPrinciplesBlock)
+
+    \(SkinHealthIntelligenceGuide.coachingPrinciplesBlock)
+
+    \(ChinRecessionIntelligenceGuide.coachingPrinciplesBlock)
+
+    \(SideSleepIntelligenceGuide.coachingPrinciplesBlock)
 
     LIEN AVEC LE SCAN CORPOREL useprocess :
     - Relie TOUJOURS les scores (épaules, bassin, colonne, symétrie, visage) aux piliers ci-dessus
@@ -222,7 +239,61 @@ enum EnzoCoachingVoiceGuide {
         "sommeil produit testo GH mélatonine — pas épuisement",
         "thyroïde hypo/hyper et skinny fat fat skinny",
         "méthode origine : hormones + concurrent training + biomécanique",
-        "posture mauvaise active sympathique et cortisol"
+        "posture mauvaise active sympathique et cortisol",
+        // Script #7 — posture fondation
+        "posture fondation — nuque droite, sommeil latéral, pieds nus, marche",
+        "chin tuck temporaire 2–3×12 — pas posture 24h",
+        "face pulls 2–3×10–12 rear delts posture épaules",
+        "sprints 8×15 s — training fonctionnel chaînes",
+        // Script #8 — tête en avant orofaciale
+        "tête en avant compensation airways — structure orofaciale",
+        "chin tuck avancé lit/banc 3×8–10 + extension nuque dos",
+        "thumb pull 8 semaines langue retainer palais",
+        "platysma stretch déglutition sourire yeux hauts",
+        "Buteyko 3–4 min sutures fascias posture nuque",
+        "APT RSS release stretch strengthen glutes",
+        "marche orteils dedans talons dehors abdos légers",
+        "dents contact léger langue tiers postérieur palais",
+        // Script #9 — mewing suction
+        "suction mew vide sur palais — pas pousser 24h",
+        "technique T spot sourire yeux déglutitions salive épuisée",
+        "rééducation semaine 1 rappel horaire suction mew",
+        "sommeil côté tapes zygomatique mentalis lip seal",
+        "tongue tie stretch T spot doigt 70% 30s x2",
+        "tongue chewing gomme mastic 10 min palais",
+        "langue 600g force expansion palais ostéoblastes tout âge",
+        // Script #10 — reset intestin
+        "intestin command center peau cerveau inflammation",
+        "antinutriments lectines oxalates phytates gluten grains légumes verts noix soja",
+        "lait A1 BCM-7 vs A2 cru bio",
+        "fast eau 24-48h autophagy sel celtique",
+        "bouillon d'os matin glycine proline reset muqueuse",
+        "probiotiques choucroute lait cru foie carottes crues endotoxines",
+        "fruits glucides principaux limiter féculents reset",
+        "alcool annule progrès intestin sommeil tight junctions",
+        // Script #11 — peau claire
+        "acné rosacea eczéma = santé interne pas skincare",
+        "pas type de peau cravings intestin leptine ghréline",
+        "viande œufs gras saturés stéroïdogenèse lait A2 cru",
+        "cuisson suif pas huiles graines filtre douche",
+        "pas crèmes commerciales suif coco crème coco crue",
+        "hydratation fruits lait pas litres eau sachets",
+        "peau claire 8 sem minimum 3-4 mois constant",
+        "crème soufre ponctuel spray sel celtique après douche",
+        // Script #12 — menton récessif / orthotropics
+        "menton récessif = habitudes myofonction pas génétique",
+        "fascias posture muscles os orthotropics mechanotransduction",
+        "hyoïde bas double menton sling digastrique super-hyoïdiens",
+        "neck curls souffle digastrique suction mew journée",
+        "mentalis tape kinésiologie X STTO nocturne tape zyg",
+        "mastication masseter rouler dents inférieures vers avant",
+        "spot T papille incisive 30 min tongue chewing pression langue",
+        // Script #13 — sommeil latéral posture langue
+        "dormir dos visage recule langue basse gravité 8h",
+        "langue palais maxillaire ligne frontale superficielle",
+        "sommeil côté position fœtale airways langue sur palais",
+        "spot T sourire 3 déglutitions tape zyg joues menton",
+        "coussin cuisses main sous tête respiration vers visage"
     ]
 
     /// Mapping scan → conseils Enzo (pour enrichir les prompts).
@@ -237,21 +308,56 @@ enum EnzoCoachingVoiceGuide {
             hints.append("Asymétrie : fascias bloqués créent tensions — libération ciblée, pas exercices au hasard")
         }
         if let face = result.faceMarkers {
+            hints.append(contentsOf: MewingIntelligenceGuide.pillarHints(
+                mouthBreathing: false,
+                forwardHead: result.metrics.spineAlignmentScore < 60,
+                faceScore: face.skinClarityScore
+            ))
             if face.underEyeFatigueScore > 55 || face.puffinessScore > 55 {
                 hints.append("Script #6 : cortisol/aldostérone → rétention eau extracellulaire — signal relatif, pas condamnation génétique")
             }
             if face.puffinessScore > 55 {
                 hints.append("Visage gonflé : mode survie cortisol — thyroïde/sommeil/toxines à réguler")
+                hints.append(contentsOf: GutHealthIntelligenceGuide.pillarHints(
+                    skinClarityLow: false,
+                    puffinessHigh: true,
+                    processedFoodHeavy: false
+                ))
             }
             if face.skinClarityScore < 60 {
                 hints.append("Peau/acné : carences + cortisol + ultra-transformé — alimentation dense, pas crèmes chimiques")
+                hints.append(contentsOf: GutHealthIntelligenceGuide.pillarHints(
+                    skinClarityLow: true,
+                    puffinessHigh: false,
+                    processedFoodHeavy: false
+                ))
+                hints.append(contentsOf: SkinHealthIntelligenceGuide.pillarHints(
+                    skinClarityScore: face.skinClarityScore,
+                    acneOrDull: true
+                ))
             }
             if face.underEyeFatigueScore > 55 {
                 hints.append("Cernes : régénération cellulaire bloquée (cortisol/sommeil) — rythme circadien + respiration nasale")
             }
+            let chinRecessedLikely = face.jawTensionScore > 55 || face.puffinessScore > 55
+            if chinRecessedLikely {
+                hints.append(contentsOf: ChinRecessionIntelligenceGuide.pillarHints(chinRecessedLikely: true))
+            }
+            if face.jawTensionScore > 55 || face.facialSymmetryScore < 65 {
+                hints.append(contentsOf: SideSleepIntelligenceGuide.pillarHints(sideSleepPriority: true))
+            }
         }
         if result.postureScore < 65 {
-            hints.append("Script #5 : mauvaise posture cache la beauté — SCM, chaîne ant/post, langue-palais")
+            hints.append("Script #5 + #8 : mauvaise posture cache la beauté — SCM, chaîne ant/post, langue-palais, orofacial")
+            hints.append("Chin tuck avancé + nuque arrière + thumb pull si tête en avant")
+            hints.append(contentsOf: SideSleepIntelligenceGuide.pillarHints(sideSleepPriority: true))
+        }
+        if result.metrics.spineAlignmentScore < 60 {
+            hints.append(contentsOf: PostureIntelligenceGuide.pillarHintsForwardHead(
+                forwardHeadLikely: true,
+                mouthBreathing: false,
+                postureScore: result.postureScore
+            ))
         }
         if result.metrics.shoulderAlignmentScore < 60 {
             hints.append("Épaules faibles : harmonie en V — amplitude sur point faible, pas pec/biceps seulement")

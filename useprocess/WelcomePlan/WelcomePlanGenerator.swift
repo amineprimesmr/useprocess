@@ -30,7 +30,7 @@ enum WelcomePlanGenerator {
         let dailyHabits = buildDailyHabits(answers: answers, gender: gender, targets: targets, snapshot: assessment.snapshot)
         let weeklyRhythm = buildWeeklyRhythm(sessions: sessions, targets: targets)
         let nutrition = buildNutritionProtocol(answers: answers, bodyFat: bodyFat, snapshot: assessment.snapshot, targets: targets)
-        let sleep = buildSleepProtocol(answers: answers, targets: targets)
+        let sleep = buildSleepProtocol(answers: answers, targets: targets, snapshot: assessment.snapshot)
         let training = buildTrainingProtocol(
             answers: answers,
             profile: profile,
@@ -39,7 +39,11 @@ enum WelcomePlanGenerator {
             snapshot: assessment.snapshot,
             location: assessment.trainingLocation
         )
-        let posture = buildPostureProtocol(answers: answers, targets: targets)
+        let posture = buildPostureProtocol(
+            answers: answers,
+            targets: targets,
+            snapshot: assessment.snapshot
+        )
 
         let summary = buildExecutiveSummary(
             faceGoal: faceGoal,
@@ -303,6 +307,17 @@ enum WelcomePlanGenerator {
         )
         ProcessMealPlanConfiguration.enrichNutritionProtocol(&nutrition, answers: answers)
 
+        GutHealthIntelligenceGuide.enrichNutritionProtocol(
+            &nutrition,
+            answers: answers,
+            snapshot: snapshot
+        )
+
+        SkinHealthIntelligenceGuide.enrichNutritionForSkin(
+            &nutrition,
+            answers: answers
+        )
+
         for rule in OriginScriptRulesEngine.nutritionPrinciples(snapshot: snapshot, answers: answers) {
             if !nutrition.principles.contains(rule) {
                 nutrition.principles.insert(rule, at: 0)
@@ -314,7 +329,8 @@ enum WelcomePlanGenerator {
 
     private static func buildSleepProtocol(
         answers: [String: WelcomePlanAnswer],
-        targets: OriginPersonalizedDailyTargets
+        targets: OriginPersonalizedDailyTargets,
+        snapshot: OriginPlanAssessmentSnapshot
     ) -> OriginSleepProtocol {
         let bedtime = answers["bedtime"]?.timeValue ?? "22:30"
         let wake = answers["wake_time"]?.timeValue ?? "07:00"
@@ -336,17 +352,29 @@ enum WelcomePlanGenerator {
             evening.insert("Mode avion ou téléphone hors chambre \(ProcessDailyTargets.screenCurfewMinutes) min avant", at: 0)
         }
 
+        if GutHealthIntelligenceGuide.needsGutReset(answers: answers, snapshot: snapshot) {
+            for note in GutHealthIntelligenceGuide.sleepNotesForGutReset() {
+                if !evening.contains(note) {
+                    evening.append(note)
+                }
+            }
+        }
+
         if choice("caffeine_afternoon", in: answers) == "yes" {
             evening.insert("Pas de caféine après \(ProcessDailyTargets.caffeineCutoffHour) h — impact direct sur le debloat matinal", at: 0)
         }
 
-        return OriginSleepProtocol(
+        var sleepProtocol = OriginSleepProtocol(
             targetHours: hours,
             bedtimeWindow: "Cible \(bedtime) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
             wakeWindow: "Cible \(wake) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
             eveningRoutine: evening,
             morningRoutine: morning
         )
+
+        SideSleepIntelligenceGuide.enrichSleepProtocol(&sleepProtocol, answers: answers)
+
+        return sleepProtocol
     }
 
     private static func buildTrainingProtocol(
@@ -400,6 +428,9 @@ enum WelcomePlanGenerator {
         for rule in OriginScriptRulesEngine.trainingConstraints(snapshot: snapshot, answers: answers) {
             if !recovery.contains(rule) { recovery.append(rule) }
         }
+        for rule in PostureIntelligenceGuide.trainingPostureNotes(for: answers) {
+            if !recovery.contains(rule) { recovery.append(rule) }
+        }
 
         let locationNote: String = {
             switch location {
@@ -424,32 +455,33 @@ enum WelcomePlanGenerator {
 
     private static func buildPostureProtocol(
         answers: [String: WelcomePlanAnswer],
-        targets: OriginPersonalizedDailyTargets
+        targets: OriginPersonalizedDailyTargets,
+        snapshot: OriginPlanAssessmentSnapshot
     ) -> OriginPostureProtocol {
-        var checks: [String] = ProcessContinuousHabits.all.map { "\($0.title) — \($0.detail)" }
-        if choice("forward_head", in: answers) == "yes" {
-            checks.append("Rétraction cervicale chin tucks — 3×15 si tête en avant")
-        }
+        let continuous = ProcessContinuousHabits.all.map { "\($0.title) — \($0.detail)" }
+        var checks = PostureIntelligenceGuide.dailyChecks(
+            answers: answers,
+            existingContinuous: continuous
+        )
 
-        if choice("mouth_breathing", in: answers) == "yes" {
-            checks.append("Respiration nasale en permanence — réduit le gonflement et le cortisol")
-        }
-        if choice("desk_job", in: answers) == "yes" {
-            checks.append("Pause posture toutes les 45 min — se redresser, chin tuck")
+        for rule in OriginScriptRulesEngine.posturePrinciples(snapshot: snapshot, answers: answers) {
+            if !checks.contains(rule) {
+                checks.append(rule)
+            }
         }
 
         return OriginPostureProtocol(
             dailyChecks: checks,
-            mobilityBlocks: [
-                "Chin tuck — 3×15 rétraction cervicale",
-                "Face pulls léger — 2×15 (câble ou élastique)",
-                "Mobilité épaules + hanches — 2 min"
-            ],
-            breathingWork: choice("mouth_breathing", in: answers) == "yes"
-                ? ["Respiration nasale lente 5 min matin et soir"]
-                : [],
-            walkingTargets: "Objectif \(targets.dailySteps) pas — suivi automatique via Santé / HealthKit"
+            mobilityBlocks: postureMobilityBlocks(for: answers),
+            breathingWork: PostureIntelligenceGuide.breathingWork(for: answers),
+            walkingTargets: "Objectif \(targets.dailySteps) pas + marche consciente (orteils dedans) — HealthKit"
         )
+    }
+
+    private static func postureMobilityBlocks(for answers: [String: WelcomePlanAnswer]) -> [String] {
+        var blocks = PostureIntelligenceGuide.mobilityBlocks(for: answers)
+        ChinRecessionIntelligenceGuide.enrichPostureMobility(&blocks, answers: answers)
+        return blocks
     }
 
     private static func buildFaceProtocol(
@@ -467,9 +499,9 @@ enum WelcomePlanGenerator {
         let midScan = max(1, duration.totalWeeks / 2)
         let finalScan = duration.totalWeeks
 
-        return OriginFaceProtocol(
+        var faceProtocol = OriginFaceProtocol(
             focusAreas: Array(Set(focus)),
-            jawAndTongueWork: [
+            jawAndTongueWork: PostureIntelligenceGuide.orofacialWork(for: answers) + [
                 "Mastication lente \(targets.chewsPerBite)× — viande ferme, aliments durs à mâcher"
             ],
             lymphAndFascia: [
@@ -481,6 +513,22 @@ enum WelcomePlanGenerator {
                 ? "Scan J1 et J\(finalScan) — comparer le debloat"
                 : "Scan semaine 1, \(midScan), \(finalScan) — suivi dans le profil"
         )
+
+        SkinHealthIntelligenceGuide.enrichFaceProtocol(
+            &faceProtocol,
+            answers: answers,
+            coldRinseSeconds: targets.coldFaceRinseSeconds,
+            lymphMinutes: targets.lymphFaceMassageMinutes,
+            dailySteps: targets.dailySteps,
+            hydrationLabel: targets.hydrationLabel
+        )
+
+        ChinRecessionIntelligenceGuide.enrichFaceProtocol(
+            &faceProtocol,
+            answers: answers
+        )
+
+        return faceProtocol
     }
 
     private static func buildMindsetNotes(

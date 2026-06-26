@@ -91,6 +91,9 @@ struct DailyJournalChecklistView: View {
 
                 PlanPostureDaySection(plan: livePlan)
                     .padding(.top, 28)
+
+                PlanFaceDaySection(plan: livePlan)
+                    .padding(.top, 28)
             case .future:
                 journalUnavailableCard(
                     title: "Jour à venir",

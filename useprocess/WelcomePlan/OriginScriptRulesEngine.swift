@@ -31,6 +31,12 @@ enum OriginScriptRulesEngine {
             rules.append("Reset debloat : sel modéré le soir + hydratation répartie = résultat visible en jours")
         }
 
+        for rule in GutHealthIntelligenceGuide.nutritionPrinciples(for: answers, snapshot: snapshot) {
+            if !rules.contains(rule) {
+                rules.insert(rule, at: 0)
+            }
+        }
+
         return rules
     }
 
@@ -50,6 +56,32 @@ enum OriginScriptRulesEngine {
 
         if choice("forward_head", in: answers) == "yes" {
             rules.append("Chaque séance : face pulls + travail chaîne postérieure avant charges lourdes")
+            rules.append("Tête en avant : chin tuck avancé + nuque arrière + orofacial (script #8)")
+        }
+
+        if choice("mouth_breathing", in: answers) == "yes" {
+            rules.append("Buteyko 3–4 min + respiration nasale avant intensité")
+        }
+
+        return rules
+    }
+
+    static func posturePrinciples(
+        snapshot: OriginPlanAssessmentSnapshot,
+        answers: [String: WelcomePlanAnswer]
+    ) -> [String] {
+        var rules: [String] = []
+
+        if snapshot.archetype == .stressRecovery || snapshot.primaryBlocker == .posture {
+            rules.append("Posture fondation — habitudes 24/7 avant exercices avancés (script #7)")
+        }
+
+        if choice("forward_head", in: answers) == "yes" {
+            rules.append("Thumb pull 8 semaines + langue tiers postérieur — pas seulement chin tuck")
+        }
+
+        if choice("desk_job", in: answers) == "yes" {
+            rules.append("Pause 45 min + marche consciente orteils dedans talons dehors")
         }
 
         return rules

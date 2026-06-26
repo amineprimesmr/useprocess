@@ -206,6 +206,10 @@ enum OriginPlanPresenter {
             score = 30
         case text.contains("lymph") || text.contains("massage"):
             score = 35
+        case text.contains("orofacial") || text.contains("langue") || text.contains("tape zyg"):
+            score = 32
+        case text.contains("sommeil") && text.contains("côté"):
+            score = 38
         case text.contains("posture"):
             score = 40
         case text.contains("ecran") || text.contains("écran") || text.contains("couvre-feu"):
@@ -240,7 +244,8 @@ enum OriginPlanPresenter {
         if text.contains("hydrat") || text.contains("alcool") || text.contains("repas") {
             return "nutrition"
         }
-        if pillar.contains("sommeil") || text.contains("ecran") || text.contains("écran") || text.contains("couvre-feu") {
+        if pillar.contains("sommeil") || text.contains("ecran") || text.contains("écran")
+            || text.contains("couvre-feu") || text.contains("langue sur palais") {
             return "hormones"
         }
         if pillar.contains("hormone") || text.contains("lumiere") || text.contains("lumière") {
@@ -514,6 +519,9 @@ enum OriginPlanPresenter {
         if t.contains("drainage") || t.contains("lymph") { return "💆" }
         if t.contains("marche") { return "👟" }
         if t.contains("écran") || t.contains("ecran") { return "📱" }
+        if t.contains("orofacial") || t.contains("langue") { return "👅" }
+        if t.contains("tape") { return "🩹" }
+        if t.contains("circuit posture") { return "🧘" }
         if t.contains("sommeil") || t.contains("routine") { return "🌙" }
         if t.contains("caféine") || t.contains("cafeine") { return "☕️" }
         return "✦"

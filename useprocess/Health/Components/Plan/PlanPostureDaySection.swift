@@ -9,11 +9,7 @@ struct PlanPostureDaySection: View {
     private var protocolBlocks: [String] {
         var lines = plan.postureProtocol.mobilityBlocks
         if lines.isEmpty {
-            lines = [
-                "Chin tuck — 3×15 rétraction cervicale",
-                "Face pulls léger — 2×15",
-                "Mobilité épaules + hanches — 2 min"
-            ]
+            lines = PostureIntelligenceGuide.defaultMobilityBlocks
         }
         return lines
     }
@@ -82,7 +78,7 @@ struct PlanPostureDaySection: View {
             headline: "💥 Posture — circuit quotidien",
             muscleTags: "DOS · NUQUE · MOBILITÉ",
             durationMinutes: 10,
-            footerLine: "\(protocolBlocks.count) blocs · habitudes orales 24/7",
+            footerLine: "\(protocolBlocks.count) blocs · orofacial + habitudes 24/7",
             isBookmarked: false,
             cardMaxHeight: PlanTrainingVisuals.heroMaxHeight,
             showsBookmark: false,
