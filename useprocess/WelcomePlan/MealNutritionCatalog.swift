@@ -44,14 +44,37 @@ enum MealNutritionCatalog {
         ]
     }
 
-    static func resolvedImageAsset(for meal: MealSuggestionContent) -> String {
-        let candidates = imageAssetCandidates(for: meal)
-        for asset in candidates {
-            if availableImageAssets.contains(asset) {
+    static func resolvedImageAsset(
+        for meal: MealSuggestionContent,
+        slot: MealTimeSlot? = nil,
+        dayIndex: Int = 0,
+        planType: NutritionPlanType = .threeMeals
+    ) -> String {
+        for asset in imageAssetCandidates(for: meal) {
+            if ProcessAssetCatalog.contains(asset) {
                 return asset
             }
         }
-        return ProcessDebloatMealLibrary.featuredImageAsset
+
+        if let inferred = inferImageAssetFromCatalog(for: meal),
+           ProcessAssetCatalog.contains(inferred) {
+            return inferred
+        }
+
+        let resolvedSlot = slot ?? meal.timeSlot
+        if let slotAsset = ProcessDebloatMealLibrary.meal(
+            for: resolvedSlot,
+            dayIndex: dayIndex,
+            planType: planType
+        ).imageAssetName,
+           ProcessAssetCatalog.contains(slotAsset) {
+            return slotAsset
+        }
+
+        if ProcessAssetCatalog.contains(ProcessDebloatMealLibrary.featuredImageAsset) {
+            return ProcessDebloatMealLibrary.featuredImageAsset
+        }
+        return imageAssetCandidates(for: meal).first ?? ProcessDebloatMealLibrary.featuredImageAsset
     }
 
     private static func imageAssetCandidates(for meal: MealSuggestionContent) -> [String] {
@@ -63,64 +86,163 @@ enum MealNutritionCatalog {
     }
 
     private static let legacyImageAliases: [String: String] = [
-        "meal_debloat_omelette_spinach_avocado": "epinardomelette"
+        "meal_debloat_omelette_spinach_avocado": "epinardomelette",
+        "meal_debloat_salmon_rice_zucchini": "meal_debloat_salmon_quinoa_salad",
+        "meal_debloat_beef_sweet_potato_zucchini": "meal_debloat_beef_rice_peppers",
+        "meal_debloat_steak_potato_zucchini": "meal_debloat_steak_salad_potato",
+        "meal_debloat_chicken_carrot_potato": "meal_debloat_chicken_salad_bowl",
+        "meal_debloat_turkey_rice_zucchini": "meal_debloat_turkey_broccoli_rice",
+        "meal_debloat_turkey_potato_spinach": "meal_debloat_turkey_potato_salad",
+        "meal_debloat_sweet_potato_avocado": "meal_debloat_omad_steak_sweet_potato",
+        "meal_debloat_chicken_sweet_potato_zucchini": "meal_debloat_chicken_sweet_potato",
+        "meal_debloat_chicken_sweet_potato_courgette": "meal_debloat_chicken_sweet_potato",
+        "meal_debloat_chicken_sweet_potato_broccoli": "meal_debloat_chicken_sweet_potato"
     ]
 
-    private static let availableImageAssets: Set<String> = [
-        ProcessDebloatMealLibrary.featuredImageAsset,
-        "epinardomelette"
-    ]
+    private static func inferImageAssetFromCatalog(for meal: MealSuggestionContent) -> String? {
+        let haystack = mealSearchText(for: meal)
+        var bestAsset: String?
+        var bestScore = 0
+
+        for catalogMeal in ProcessDebloatMealLibrary.allCatalogMeals {
+            guard let asset = catalogMeal.imageAssetName else { continue }
+            let score = catalogImageMatchScore(haystack: haystack, catalogMeal: catalogMeal)
+            if score > bestScore {
+                bestScore = score
+                bestAsset = asset
+            }
+        }
+
+        return bestScore >= 4 ? bestAsset : nil
+    }
+
+    private static func catalogImageMatchScore(
+        haystack: String,
+        catalogMeal: MealSuggestionContent
+    ) -> Int {
+        var score = 0
+        for token in catalogImageTokens(for: catalogMeal) {
+            if haystack.contains(token) {
+                score += tokenMatchWeight(token)
+            }
+        }
+        return score
+    }
+
+    private static func mealSearchText(for meal: MealSuggestionContent) -> String {
+        let parts = [meal.name] + meal.items.map(\.name)
+        return normalizeMealSearchText(parts.joined(separator: " "))
+    }
+
+    private static func catalogImageTokens(for meal: MealSuggestionContent) -> [String] {
+        let parts = [meal.name] + meal.items.map(\.name)
+        return tokenizeMealSearchText(parts.joined(separator: " "))
+    }
+
+    private static func normalizeMealSearchText(_ raw: String) -> String {
+        raw
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
+            .lowercased()
+            .replacingOccurrences(of: "œ", with: "oe")
+            .replacingOccurrences(of: "æ", with: "ae")
+    }
+
+    private static func tokenizeMealSearchText(_ raw: String) -> [String] {
+        let normalized = normalizeMealSearchText(raw)
+        let split = CharacterSet.alphanumerics.inverted
+        return normalized
+            .components(separatedBy: split)
+            .filter { $0.count >= 3 }
+    }
+
+    private static func tokenMatchWeight(_ token: String) -> Int {
+        switch token {
+        case "poulet", "dinde", "saumon", "cabillaud", "lieu", "steak", "boeuf", "oeufs", "oeuf":
+            return 4
+        case "avocat", "banane", "kiwi", "ananas", "quinoa":
+            return 3
+        case "patate", "douce", "courgette", "zucchini", "brocoli", "carotte", "carottes", "riz":
+            return 2
+        case "coco", "yaourt", "jambon":
+            return 2
+        default:
+            return token.count >= 5 ? 1 : 0
+        }
+    }
 
     private static let profilesByAsset: [String: MealNutritionProfile] = [
-        ProcessDebloatMealLibrary.featuredImageAsset: .init(
-            calories: 537,
-            proteinG: 48,
-            carbsG: 42,
-            fatsG: 16,
-            fiberG: 7.5,
-            sugarG: 8.2,
-            sodiumMg: 198,
-            potassiumMg: 1180
+        "meal_debloat_chicken_sweet_potato": .init(
+            calories: 530, proteinG: 48, carbsG: 40, fatsG: 16,
+            fiberG: 8.0, sugarG: 8.0, sodiumMg: 198, potassiumMg: 1150
         ),
-        "meal_debloat_salmon_rice_zucchini": .init(
-            calories: 612,
-            proteinG: 42,
-            carbsG: 58,
-            fatsG: 22,
-            fiberG: 6.2,
-            sugarG: 4.1,
-            sodiumMg: 210,
-            potassiumMg: 820
+        "meal_debloat_eggs_banana_kiwi": .init(
+            calories: 385, proteinG: 22, carbsG: 38, fatsG: 16,
+            fiberG: 6.5, sugarG: 22, sodiumMg: 420, potassiumMg: 780
         ),
-        "meal_debloat_eggs_sweet_potato": .init(
-            calories: 498,
-            proteinG: 32,
-            carbsG: 36,
-            fatsG: 26,
-            fiberG: 8.0,
-            sugarG: 5.5,
-            sodiumMg: 185,
-            potassiumMg: 960
+        "meal_debloat_eggs_avocado": .init(
+            calories: 445, proteinG: 28, carbsG: 12, fatsG: 34,
+            fiberG: 9.0, sugarG: 3.2, sodiumMg: 410, potassiumMg: 720
         ),
-        "meal_debloat_cod_asparagus_potato": .init(
-            calories: 465,
-            proteinG: 44,
-            carbsG: 38,
-            fatsG: 12,
-            fiberG: 6.8,
-            sugarG: 3.8,
-            sodiumMg: 165,
-            potassiumMg: 890
+        "meal_debloat_eggs_tomato_salad": .init(
+            calories: 320, proteinG: 18, carbsG: 14, fatsG: 22,
+            fiberG: 5.5, sugarG: 6.0, sodiumMg: 380, potassiumMg: 680
         ),
+        "meal_debloat_chicken_avocado_salad": .init(
+            calories: 480, proteinG: 44, carbsG: 18, fatsG: 26,
+            fiberG: 9.5, sugarG: 5.0, sodiumMg: 185, potassiumMg: 920
+        ),
+        "meal_debloat_salmon_quinoa_salad": .init(
+            calories: 580, proteinG: 40, carbsG: 48, fatsG: 24,
+            fiberG: 7.0, sugarG: 3.5, sodiumMg: 200, potassiumMg: 860
+        ),
+        "meal_debloat_turkey_potato_salad": .init(
+            calories: 520, proteinG: 40, carbsG: 48, fatsG: 16,
+            fiberG: 8.5, sugarG: 4.5, sodiumMg: 178, potassiumMg: 1080
+        ),
+        "meal_debloat_beef_rice_peppers": .init(
+            calories: 555, proteinG: 44, carbsG: 50, fatsG: 18,
+            fiberG: 6.8, sugarG: 6.5, sodiumMg: 192, potassiumMg: 780
+        ),
+        "meal_debloat_white_fish_green_salad": .init(
+            calories: 420, proteinG: 42, carbsG: 18, fatsG: 14,
+            fiberG: 7.5, sugarG: 4.0, sodiumMg: 165, potassiumMg: 820
+        ),
+        "meal_debloat_steak_salad_potato": .init(
+            calories: 520, proteinG: 44, carbsG: 36, fatsG: 22,
+            fiberG: 6.8, sugarG: 4.5, sodiumMg: 175, potassiumMg: 980
+        ),
+        "meal_debloat_chicken_salad_bowl": .init(
+            calories: 465, proteinG: 46, carbsG: 16, fatsG: 24,
+            fiberG: 8.0, sugarG: 5.5, sodiumMg: 168, potassiumMg: 900
+        ),
+        "meal_debloat_turkey_broccoli_rice": .init(
+            calories: 495, proteinG: 42, carbsG: 46, fatsG: 12,
+            fiberG: 7.2, sugarG: 3.8, sodiumMg: 170, potassiumMg: 820
+        ),
+        "meal_debloat_cod_carrot_salad": .init(
+            calories: 465, proteinG: 40, carbsG: 28, fatsG: 14,
+            fiberG: 7.8, sugarG: 8.0, sodiumMg: 168, potassiumMg: 920
+        ),
+        "meal_debloat_omad_steak_sweet_potato": .init(
+            calories: 780, proteinG: 52, carbsG: 58, fatsG: 36,
+            fiberG: 12.0, sugarG: 10.0, sodiumMg: 220, potassiumMg: 1400
+        ),
+        "meal_debloat_omad_chicken_quinoa_bowl": .init(
+            calories: 720, proteinG: 50, carbsG: 62, fatsG: 28,
+            fiberG: 11.0, sugarG: 6.0, sodiumMg: 210, potassiumMg: 1100
+        ),
+        "meal_debloat_coconut_banana": .init(
+            calories: 340, proteinG: 14, carbsG: 52, fatsG: 8,
+            fiberG: 5.0, sugarG: 38, sodiumMg: 120, potassiumMg: 920
+        ),
+        "meal_debloat_pineapple_turkey_snack": .init(
+            calories: 220, proteinG: 18, carbsG: 28, fatsG: 4,
+            fiberG: 4.5, sugarG: 22, sodiumMg: 280, potassiumMg: 420
+        ),
+        // Legacy — repas retirés du catalogue mais asset encore présent
         "epinardomelette": .init(
-            calories: 428,
-            proteinG: 26,
-            carbsG: 14,
-            fatsG: 30,
-            fiberG: 7.2,
-            sugarG: 4.5,
-            sodiumMg: 172,
-            potassiumMg: 1020
+            calories: 428, proteinG: 26, carbsG: 14, fatsG: 30,
+            fiberG: 7.2, sugarG: 4.5, sodiumMg: 172, potassiumMg: 1020
         )
     ]
 

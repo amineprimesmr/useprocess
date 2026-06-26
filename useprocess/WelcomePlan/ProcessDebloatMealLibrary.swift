@@ -1,19 +1,14 @@
 import Foundation
 
+/// Catalogue repas debloat Process — images : `WelcomePlan/MEAL_IMAGE_PROMPTS.md`
 enum ProcessDebloatMealLibrary {
     static let potassiumFoods = [
         "eau de coco sans sucre",
-        "banane",
-        "patate douce",
-        "pomme de terre vapeur",
-        "avocat",
-        "épinards cuits",
-        "courgettes",
-        "concombre",
-        "pastèque",
-        "haricots blancs",
-        "lentilles bien cuites",
-        "kiwi"
+        "banane", "kiwi", "melon", "ananas",
+        "patate douce", "pomme de terre fermière", "quinoa",
+        "avocat", "épinards", "roquette", "brocoli",
+        "concombre", "tomate", "poivron", "fenouil",
+        "haricots verts", "carottes", "pastèque"
     ]
 
     static let debloatFoods = [
@@ -23,7 +18,6 @@ enum ProcessDebloatMealLibrary {
         "citron",
         "menthe",
         "ananas",
-        "asperges",
         "céleri",
         "yaourt grec nature",
         "kéfir nature"
@@ -33,8 +27,11 @@ enum ProcessDebloatMealLibrary {
         "Sodium modéré, surtout le soir.",
         "Base potassium naturelle : patate douce, pomme de terre, banane, avocat, épinards ou eau de coco.",
         "Protéines simples à chaque repas : œufs, poulet, dinde, poisson, steak maigre, yaourt grec ou kéfir.",
-        "Légumes plutôt cuits si digestion sensible : courgettes, carottes, épinards, asperges.",
-        "Évite ultra-transformé, sauces salées, charcuterie, friture et gros repas tardif."
+        "Interdit absolu : porc et alcool — jamais dans le catalogue ni les suggestions.",
+        "Salades debloat : roquette, mâche, concombre, tomate, fenouil — vinaigrette citron/huile d'olive, pas sauce salade industrielle.",
+        "Légumes variés cuits ou rôtis : brocoli, carottes, poivrons, haricots verts, épinards.",
+        "Cuisson savoureuse (poêle, four, grill) : huile d'olive extra vierge, herbes, ail, citron — pas friture ni sauces industrielles salées.",
+        "Évite ultra-transformé, charcuterie salée et gros repas tardif."
     ]
 
     static let featuredImageAsset = "meal_debloat_chicken_sweet_potato"
@@ -44,9 +41,13 @@ enum ProcessDebloatMealLibrary {
     }
 
     static func meal(for slot: MealTimeSlot, dayIndex: Int, planType: NutritionPlanType) -> MealSuggestionContent {
-        if slot == .lunch { return featuredChickenMeal }
         let pool = mealPool(for: slot, planType: planType)
         return pool[abs(dayIndex) % max(pool.count, 1)]
+    }
+
+    /// Tous les repas catalogue — matching image pour repas IA / legacy persistés.
+    static var allCatalogMeals: [MealSuggestionContent] {
+        breakfastMeals + lunchMeals + dinnerMeals + omadMeals + snackMeals
     }
 
     static func promptBlock(for slot: MealTimeSlot?, planType: NutritionPlanType) -> String {
@@ -77,129 +78,231 @@ enum ProcessDebloatMealLibrary {
 
     private static let breakfastMeals: [MealSuggestionContent] = [
         makeMeal(
-            name: "Yaourt Grec Banane Kiwi",
+            name: "Œufs Banane Kiwi",
             slot: .breakfast,
-            score: 87,
-            summary: "Petit-déjeuner protéiné, potassium naturel et digestion légère.",
+            score: 88,
+            summary: "Hydratation, protéines et fruits potassium — rapide le matin.",
             items: [
-                item("Yaourt grec nature", "250 g", "Protéine"),
-                item("Banane", "1 moyenne", "Glucide"),
-                item("Kiwi", "1", "Glucide"),
-                item("Graines de chia", "10 g", "Gras")
+                item("Eau filtrée + pincée de sel marin", "400 ml", "Hydratation"),
+                item("Œufs plein air", "2", "Protéine"),
+                item("Banane bien mûre", "1", "Glucide"),
+                item("Kiwi", "1", "Glucide")
             ],
-            prep: "Bol froid prêt en 5 min.",
-            tip: "Garde le yaourt nature et évite granola industriel/sucre ajouté.",
+            prep: "Œufs brouillés dorés, fruits frais.",
+            tip: "Eau salée en premier — pas de pain blanc ni granola industriel.",
             tags: ["potassium", "simple"],
-            sub: .init(protocolFit: 88, satiety: 84, antiBloat: 88),
-            image: "meal_debloat_greek_yogurt_banana"
+            sub: .init(protocolFit: 89, satiety: 82, antiBloat: 88),
+            image: "meal_debloat_eggs_banana_kiwi"
         ),
         makeMeal(
-            name: "Oeufs Patate Douce Avocat",
+            name: "Œufs Avocat Citron",
             slot: .breakfast,
-            score: 90,
-            summary: "Dense, stable en énergie, riche en potassium et peu transformé.",
+            score: 89,
+            summary: "Protéines et lipides qualité — sans tubercule au matin.",
             items: [
-                item("Œufs", "3", "Protéine"),
-                item("Patate douce vapeur", "180 g", "Glucide"),
-                item("Avocat", "1/2", "Gras"),
-                item("Épinards cuits", "1 poignée", "Légume")
+                item("Eau filtrée + pincée de sel marin", "400 ml", "Hydratation"),
+                item("Œufs plein air", "3", "Protéine"),
+                item("Avocat mûr", "1/2", "Gras"),
+                item("Citron frais", "1/2", "Autre")
             ],
-            prep: "Œufs brouillés avec patate douce déjà cuite.",
-            tip: "Sale léger, ajoute citron/poivre plutôt qu’une sauce salée.",
-            tags: ["potassium", "satiété"],
-            sub: .init(protocolFit: 92, satiety: 91, antiBloat: 86),
-            image: "meal_debloat_eggs_sweet_potato"
+            prep: "Œufs brouillés, avocat, citron et poivre.",
+            tip: "Citron > sauce salée sur les œufs.",
+            tags: ["simple", "satiété"],
+            sub: .init(protocolFit: 90, satiety: 88, antiBloat: 87),
+            image: "meal_debloat_eggs_avocado"
+        ),
+        makeMeal(
+            name: "Œufs Tomates Salade Roquette",
+            slot: .breakfast,
+            score: 87,
+            summary: "Petit-déj salé + salade fraîche — change des fruits seuls.",
+            items: [
+                item("Eau filtrée + pincée de sel marin", "400 ml", "Hydratation"),
+                item("Œufs plein air", "2", "Protéine"),
+                item("Tomates cerises", "150 g", "Légume"),
+                item("Roquette + concombre", "120 g", "Légume")
+            ],
+            prep: "Œufs poêlés, salade roquette-concombre citron et huile d'olive.",
+            tip: "Tomates + roquette : fibres et potassium sans tubercule.",
+            tags: ["salade", "simple"],
+            sub: .init(protocolFit: 88, satiety: 80, antiBloat: 89),
+            image: "meal_debloat_eggs_tomato_salad"
         )
     ]
 
     private static let lunchMeals: [MealSuggestionContent] = [
         makeMeal(
-            name: "Bol Poulet Patate Douce Courgettes",
+            name: "Poulet Patate Douce Brocoli",
             slot: .lunch,
             score: 91,
-            summary: "Repas dense, potassium haut, sodium maîtrisé et légumes digestes.",
+            summary: "Classique dense — poulet doré, tubercule rôti et brocoli grillé.",
             items: [
-                item("Blanc de poulet", "180 g", "Protéine"),
-                item("Patate douce vapeur", "250 g", "Glucide"),
-                item("Courgettes vapeur", "200 g", "Légume"),
-                item("Huile d'olive", "1 c. à soupe", "Gras")
+                item("Blanc de poulet (label rouge)", "180 g", "Protéine"),
+                item("Patate douce rôtie", "220 g", "Glucide"),
+                item("Brocoli rôti ail-citron", "200 g", "Légume"),
+                item("Huile d'olive extra vierge", "1 c. à soupe", "Gras")
             ],
-            prep: "Bol chaud avec citron, poivre et herbes.",
-            tip: "Ajoute 250 ml d’eau de coco sans sucre si séance ou forte chaleur.",
+            prep: "Poulet poêlé herbes, patate et brocoli rôtis au four.",
+            tip: "Eau de coco sans sucre si sport ou chaleur.",
             tags: ["debloat", "potassium"],
             sub: .init(protocolFit: 92, satiety: 89, antiBloat: 91),
             image: "meal_debloat_chicken_sweet_potato"
         ),
         makeMeal(
-            name: "Saumon Riz Courgettes Gingembre",
-            slot: .lunch,
-            score: 89,
-            summary: "Oméga-3, glucides propres et gingembre pour une digestion plus légère.",
-            items: [
-                item("Saumon", "170 g", "Protéine"),
-                item("Riz basmati", "180 g cuit", "Glucide"),
-                item("Courgettes", "220 g", "Légume"),
-                item("Gingembre citron", "1 portion", "Autre")
-            ],
-            prep: "Saumon poêlé, riz simple, courgettes cuites.",
-            tip: "Évite sauce soja classique; si besoin prends citron + gingembre.",
-            tags: ["omega3", "anti-gonflement"],
-            sub: .init(protocolFit: 90, satiety: 88, antiBloat: 89),
-            image: "meal_debloat_salmon_rice_zucchini"
-        ),
-        makeMeal(
-            name: "Dinde Pommes de Terre Épinards",
+            name: "Salade Poulet Avocat Composée",
             slot: .lunch,
             score: 90,
-            summary: "Très bon ratio protéines/potassium avec un volume facile à digérer.",
+            summary: "Grande salade protéinée — avocat, concombre, roquette, tomate.",
+            items: [
+                item("Blanc de poulet grillé (label rouge)", "180 g", "Protéine"),
+                item("Avocat mûr", "1/2", "Gras"),
+                item("Roquette + tomates cerises", "150 g", "Légume"),
+                item("Concombre + citron + huile d'olive", "150 g", "Légume")
+            ],
+            prep: "Poulet grillé tranché sur salade — vinaigrette citron maison.",
+            tip: "Pas de sauce salade du commerce (sodium + sucre).",
+            tags: ["salade", "viande"],
+            sub: .init(protocolFit: 91, satiety: 86, antiBloat: 92),
+            image: "meal_debloat_chicken_avocado_salad"
+        ),
+        makeMeal(
+            name: "Saumon Quinoa Salade Concombre",
+            slot: .lunch,
+            score: 89,
+            summary: "Oméga-3, quinoa complet et salade fraîche menthe-citron.",
+            items: [
+                item("Pavé de saumon frais", "170 g", "Protéine"),
+                item("Quinoa cuit", "160 g", "Glucide"),
+                item("Salade concombre menthe", "200 g", "Légume"),
+                item("Huile d'olive + citron", "1 c. à soupe", "Gras")
+            ],
+            prep: "Saumon poêlé peau dorée, quinoa, salade concombre fraîche.",
+            tip: "Change du riz — quinoa + salade = variété et fibres.",
+            tags: ["omega3", "salade"],
+            sub: .init(protocolFit: 90, satiety: 87, antiBloat: 90),
+            image: "meal_debloat_salmon_quinoa_salad"
+        ),
+        makeMeal(
+            name: "Dinde Pommes Salade Verte",
+            slot: .lunch,
+            score: 90,
+            summary: "Dinde poêlée, pommes rôties et salade verte avocat.",
             items: [
                 item("Escalope de dinde", "180 g", "Protéine"),
-                item("Pommes de terre vapeur", "300 g", "Glucide"),
-                item("Épinards cuits", "180 g", "Légume"),
-                item("Beurre ou huile d'olive", "10 g", "Gras")
+                item("Pommes de terre fermières rôties", "250 g", "Glucide"),
+                item("Salade verte + avocat", "180 g", "Légume"),
+                item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Assiette chaude, herbes, citron, sel modéré.",
-            tip: "Parfait en déjeuner les jours où le visage marque la rétention.",
-            tags: ["potassium", "low-sodium"],
+            prep: "Dinde dorée, pommes rôties thym, salade avocat citron.",
+            tip: "Journée rétention : sel modéré, citron sur la dinde.",
+            tags: ["potassium", "salade"],
             sub: .init(protocolFit: 91, satiety: 90, antiBloat: 88),
-            image: "meal_debloat_turkey_potato_spinach"
+            image: "meal_debloat_turkey_potato_salad"
+        ),
+        makeMeal(
+            name: "Bœuf Haché Riz Poivrons",
+            slot: .lunch,
+            score: 90,
+            summary: "Bœuf 5% frais, riz basmati et poivrons rôtis — pas de patate douce.",
+            items: [
+                item("Bœuf haché 5% MG frais", "200 g", "Protéine"),
+                item("Riz basmati semi-complet", "180 g cuit", "Glucide"),
+                item("Poivrons + oignons rôtis", "220 g", "Légume"),
+                item("Huile d'olive extra vierge", "1 c. à soupe", "Gras")
+            ],
+            prep: "Bœuf poêlé doré, riz basmati, poivrons rôtis au four.",
+            tip: "Herbes fraîches, ail — pas de sauce taco ou tomate salée.",
+            tags: ["viande", "variété"],
+            sub: .init(protocolFit: 90, satiety: 91, antiBloat: 87),
+            image: "meal_debloat_beef_rice_peppers"
+        ),
+        makeMeal(
+            name: "Lieu Noir Haricots Salade Fenouil",
+            slot: .lunch,
+            score: 88,
+            summary: "Poisson blanc léger, haricots verts et salade fenouil-concombre.",
+            items: [
+                item("Filet de lieu noir frais", "190 g", "Protéine"),
+                item("Haricots verts poêlés", "200 g", "Légume"),
+                item("Salade fenouil + concombre", "150 g", "Légume"),
+                item("Huile d'olive + citron", "1 c. à soupe", "Gras")
+            ],
+            prep: "Lieu poêlé citron, haricots verts ail, salade fenouil croquante.",
+            tip: "Poisson blanc le soir aussi possible — très léger en sel.",
+            tags: ["poisson", "salade"],
+            sub: .init(protocolFit: 89, satiety: 84, antiBloat: 91),
+            image: "meal_debloat_white_fish_green_salad"
         )
     ]
 
     private static let dinnerMeals: [MealSuggestionContent] = [
         makeMeal(
-            name: "Cabillaud Asperges Pommes Vapeur",
+            name: "Steak Salade Roquette Pommes",
             slot: .dinner,
-            score: 92,
-            summary: "Dîner léger en sel, riche en potassium, idéal visage moins gonflé le matin.",
+            score: 91,
+            summary: "Steak grillé, salade roquette-tomate et pommes rôties — dîner viande + salade.",
             items: [
-                item("Cabillaud", "190 g", "Protéine"),
-                item("Pommes de terre vapeur", "220 g", "Glucide"),
-                item("Asperges", "180 g", "Légume"),
-                item("Huile d'olive citron", "1 c. à soupe", "Gras")
+                item("Steak maigre (rumsteck)", "200 g", "Protéine"),
+                item("Pommes de terre fermières rôties", "180 g", "Glucide"),
+                item("Salade roquette + tomates", "180 g", "Légume"),
+                item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Cuisson vapeur ou four doux, citron et herbes.",
-            tip: "Garde ce dîner simple si ton scan visage marque la rétention.",
-            tags: ["soir", "low-sodium"],
-            sub: .init(protocolFit: 93, satiety: 86, antiBloat: 94),
-            image: "meal_debloat_cod_asparagus_potato"
+            prep: "Steak grillé, pommes rôties, salade roquette vinaigrette citron.",
+            tip: "Sel léger le soir ; poivre et ail sur le steak.",
+            tags: ["soir", "viande", "salade"],
+            sub: .init(protocolFit: 92, satiety: 88, antiBloat: 90),
+            image: "meal_debloat_steak_salad_potato"
         ),
         makeMeal(
-            name: "Omelette Épinards Avocat Concombre",
+            name: "Poulet Rôti Salade Avocat",
+            slot: .dinner,
+            score: 90,
+            summary: "Poulet doré au four et grande salade avocat-concombre.",
+            items: [
+                item("Blanc de poulet label rouge", "200 g", "Protéine"),
+                item("Salade composée (roquette, concombre)", "200 g", "Légume"),
+                item("Avocat mûr", "1/2", "Gras"),
+                item("Tomates cerises", "120 g", "Légume")
+            ],
+            prep: "Poulet rôti herbes/ail, salade fraîche avocat citron.",
+            tip: "Marinade citron-herbes maison — pas marinade industrielle.",
+            tags: ["soir", "salade", "viande"],
+            sub: .init(protocolFit: 91, satiety: 86, antiBloat: 91),
+            image: "meal_debloat_chicken_salad_bowl"
+        ),
+        makeMeal(
+            name: "Dinde Brocoli Riz Basmati",
+            slot: .dinner,
+            score: 89,
+            summary: "Dinde poêlée, brocoli rôti et riz — dîner protéiné sans salade uniquement.",
+            items: [
+                item("Escalope de dinde", "190 g", "Protéine"),
+                item("Riz basmati semi-complet", "160 g cuit", "Glucide"),
+                item("Brocoli rôti ail-citron", "200 g", "Légume"),
+                item("Huile d'olive", "1 c. à soupe", "Gras")
+            ],
+            prep: "Dinde poêlée, brocoli rôti four, riz basmati.",
+            tip: "Alternative chaude quand tu ne veux pas de salade froide.",
+            tags: ["soir", "viande"],
+            sub: .init(protocolFit: 90, satiety: 88, antiBloat: 88),
+            image: "meal_debloat_turkey_broccoli_rice"
+        ),
+        makeMeal(
+            name: "Cabillaud Carottes Salade Mâche",
             slot: .dinner,
             score: 88,
-            summary: "Repas du soir rapide, minéraux naturels et charge digestive basse.",
+            summary: "Poisson blanc rôti, carottes fondantes et salade mâche citron.",
             items: [
-                item("Œufs", "3", "Protéine"),
-                item("Épinards cuits", "180 g", "Légume"),
-                item("Avocat", "1/2", "Gras"),
-                item("Concombre citron menthe", "150 g", "Légume")
+                item("Filet de cabillaud frais", "190 g", "Protéine"),
+                item("Carottes rôties au thym", "200 g", "Légume"),
+                item("Salade mâche + concombre", "150 g", "Légume"),
+                item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Omelette + assiette fraîche citronnée.",
-            tip: "Si faim forte, ajoute une petite pomme de terre vapeur plutôt que pain/sauce.",
-            tags: ["soir", "potassium"],
+            prep: "Cabillaud rôti four citron-herbes, carottes rôties, salade mâche fraîche.",
+            tip: "Poisson blanc le soir — sel modéré, citron sur le poisson.",
+            tags: ["soir", "poisson", "salade"],
             sub: .init(protocolFit: 89, satiety: 84, antiBloat: 91),
-            image: "epinardomelette"
+            image: "meal_debloat_cod_carrot_salad"
         )
     ]
 
@@ -208,18 +311,35 @@ enum ProcessDebloatMealLibrary {
             name: "Assiette OMAD Steak Patate Avocat",
             slot: .lunch,
             score: 90,
-            summary: "Repas unique dense, potassium élevé et protéines solides sans ultra-transformé.",
+            summary: "Repas unique dense — steak grillé, patate rôtie, avocat.",
             items: [
-                item("Steak maigre", "230 g", "Protéine"),
-                item("Patate douce", "320 g", "Glucide"),
-                item("Avocat", "1", "Gras"),
-                item("Courgettes + épinards cuits", "300 g", "Légume")
+                item("Steak maigre (rumsteck)", "230 g", "Protéine"),
+                item("Patate douce rôtie", "320 g", "Glucide"),
+                item("Avocat mûr", "1", "Gras"),
+                item("Salade roquette + concombre", "200 g", "Légume")
             ],
-            prep: "Grande assiette chaude, citron/herbes, sel contrôlé.",
-            tip: "Bois eau + éventuellement eau de coco sans sucre autour de la fenêtre repas.",
+            prep: "Steak grillé, patate rôtie, avocat et salade citron sur la même assiette.",
+            tip: "Eau + eau de coco sans sucre — sel contrôlé dans la fenêtre.",
             tags: ["omad", "potassium"],
             sub: .init(protocolFit: 91, satiety: 94, antiBloat: 86),
             image: "meal_debloat_omad_steak_sweet_potato"
+        ),
+        makeMeal(
+            name: "Bowl OMAD Poulet Quinoa Salade",
+            slot: .lunch,
+            score: 89,
+            summary: "OMAD salade-bowl — poulet grillé, quinoa, légumes variés et avocat.",
+            items: [
+                item("Blanc de poulet grillé", "220 g", "Protéine"),
+                item("Quinoa cuit", "200 g", "Glucide"),
+                item("Salade composée (roquette, tomate, concombre)", "250 g", "Légume"),
+                item("Avocat mûr", "1/2", "Gras")
+            ],
+            prep: "Grand bowl : poulet tranché, quinoa, salade et avocat vinaigrette citron.",
+            tip: "Tout en un bol dense — pas de sauce crémeuse industrielle.",
+            tags: ["omad", "salade"],
+            sub: .init(protocolFit: 90, satiety: 92, antiBloat: 88),
+            image: "meal_debloat_omad_chicken_quinoa_bowl"
         )
     ]
 
@@ -228,17 +348,33 @@ enum ProcessDebloatMealLibrary {
             name: "Eau de Coco Banane",
             slot: .snack,
             score: 82,
-            summary: "Collation hydratation/potassium simple, à garder ponctuelle.",
+            summary: "Hydratation + potassium post-sport.",
             items: [
-                item("Eau de coco sans sucre", "250 ml", "Autre"),
-                item("Banane", "1", "Glucide"),
-                item("Yaourt grec nature", "150 g", "Protéine")
+                item("Eau de coco sans sucre ajouté", "250 ml", "Autre"),
+                item("Banane bien mûre", "1", "Glucide"),
+                item("Yaourt grec 0% nature", "150 g", "Protéine")
             ],
-            prep: "À prendre froid, sans sucre ajouté.",
-            tip: "Utile après sport; évite d’en faire une habitude sucrée quotidienne.",
+            prep: "Frais — eau de coco pure, pas nectar.",
+            tip: "Après sport uniquement.",
             tags: ["hydratation", "potassium"],
             sub: .init(protocolFit: 82, satiety: 76, antiBloat: 86),
             image: "meal_debloat_coconut_banana"
+        ),
+        makeMeal(
+            name: "Ananas Jambon de Dinde",
+            slot: .snack,
+            score: 80,
+            summary: "Collation protéinée — ananas frais (bromélaïne) et dinde qualité.",
+            items: [
+                item("Ananas frais", "200 g", "Glucide"),
+                item("Jambon de dinde supérieur", "80 g", "Protéine"),
+                item("Concombre", "100 g", "Légume")
+            ],
+            prep: "Tranches ananas frais, jambon dinde sans nitrites si possible.",
+            tip: "Ponctuel — pas charcuterie industrielle quotidienne.",
+            tags: ["variété", "protéine"],
+            sub: .init(protocolFit: 80, satiety: 72, antiBloat: 85),
+            image: "meal_debloat_pineapple_turkey_snack"
         )
     ]
 

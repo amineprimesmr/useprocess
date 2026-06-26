@@ -22,7 +22,7 @@
 ### Solution — alimentation dense
 - Produits animaux qualité (cru si possible) : viande rouge, abats, poissons gras, œufs (moins blanc)
 - Laitiers **cru** (pas pasteurisé)
-- Tubercules cuits vapeur (sans peau)
+- Tubercules cuits (rôtis au four ou mijotés — pas friture)
 - Miel + fruits modérés (1 fruit/jour)
 - Qualité : pâturage, sauvage, bio, pas pesticides
 

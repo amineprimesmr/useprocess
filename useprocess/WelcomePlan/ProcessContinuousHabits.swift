@@ -19,11 +19,19 @@ enum ProcessContinuousHabits {
 
     static let sideSleepDetail = "Dormir sur le côté — coussin genoux + main sous tête ; dos = langue tombe, visage recule."
 
+    static let lipSealTitle = "Lèvres closes"
+    static let lipSealDetail = MewingIntelligenceGuide.lipSealDetail
+
+    static let nasalBreathingTitle = "Respiration nasale"
+    static let nasalBreathingDetail = "Bouche fermée au repos — air par le nez, jour et nuit."
+
     static var all: [(title: String, detail: String)] {
         [
             (mewingTitle, mewingDetail),
             (deglutitionTitle, deglutitionDetail),
             (masticationTitle, masticationDetail),
+            (lipSealTitle, lipSealDetail),
+            (nasalBreathingTitle, nasalBreathingDetail),
             (neckTitle, neckDetail),
             ("Sommeil côté", sideSleepDetail)
         ]

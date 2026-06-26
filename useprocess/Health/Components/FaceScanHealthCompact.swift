@@ -30,8 +30,12 @@ struct FaceScanHealthCompact: View {
             HStack {
                 HealthHubDesign.sectionHeader("Scan visage", subtitle: statusSubtitle, theme: theme)
                 Spacer()
-                if let faceDayScore {
-                    FaceWellnessScoreBadge(score: faceDayScore, theme: theme)
+                if let latest {
+                    FaceWellnessAppreciationBadge(
+                        appreciation: FaceWellnessScore.appreciation(for: latest),
+                        theme: theme,
+                        style: .compact
+                    )
                 }
             }
 

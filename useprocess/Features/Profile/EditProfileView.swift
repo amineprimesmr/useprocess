@@ -8,6 +8,10 @@ struct EditProfileView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @State private var profileStore = SocialProfileStore.shared
     @State private var showPhotoFlow = false
+    @State private var photoMenuAnchor = CGPoint(
+        x: UIScreen.main.bounds.midX,
+        y: UIScreen.main.bounds.height * 0.22
+    )
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
@@ -74,6 +78,7 @@ struct EditProfileView: View {
         .toolbar(.hidden, for: .navigationBar)
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
+            menuAnchor: photoMenuAnchor,
             hasExistingPhoto: profileStore.hasProfilePhoto,
             onApply: { image in
                 withAnimation(ProfileEditTheme.spring) {

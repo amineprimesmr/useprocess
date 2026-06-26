@@ -254,7 +254,7 @@ enum WelcomePlanGenerator {
         targets: OriginPersonalizedDailyTargets
     ) -> OriginNutritionProtocol {
         let reduce: [String] = ["Ultra-transformés", "Huiles de graines industrielles", "Sucre ajouté quotidien"]
-        var prioritize: [String] = ["Œufs", "Tubercules vapeur", "Fruits modérés"]
+        var prioritize: [String] = ["Œufs", "Tubercules cuits (rôtis/mijotés)", "Fruits modérés"]
         var principles: [String] = [
             "Alimentation dense = moins de volume, plus de nutriments — digestion légère",
             "Zéro complément isolé : cofacteurs viennent des aliments entiers",
@@ -501,9 +501,7 @@ enum WelcomePlanGenerator {
 
         var faceProtocol = OriginFaceProtocol(
             focusAreas: Array(Set(focus)),
-            jawAndTongueWork: PostureIntelligenceGuide.orofacialWork(for: answers) + [
-                "Mastication lente \(targets.chewsPerBite)× — viande ferme, aliments durs à mâcher"
-            ],
+            jawAndTongueWork: [],
             lymphAndFascia: [
                 "Eau froide sur le visage \(targets.coldFaceRinseSeconds) sec au réveil",
                 "Massage doux sous-orbital — \(targets.lymphFaceMassageMinutes) min",

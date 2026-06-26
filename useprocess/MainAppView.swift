@@ -70,17 +70,20 @@ struct MainAppView: View {
     @available(iOS 26.0, *)
     private var modernTabShell: some View {
         TabView(selection: $selectedSection) {
-            Tab(ProcessMainSection.plan.label, systemImage: ProcessMainSection.plan.icon, value: ProcessMainSection.plan) {
+            Tab("", systemImage: ProcessMainSection.plan.icon, value: ProcessMainSection.plan) {
                 planTabRoot
             }
+            .accessibilityLabel(ProcessMainSection.plan.label)
 
-            Tab(ProcessMainSection.coach.label, systemImage: ProcessMainSection.coach.icon, value: ProcessMainSection.coach) {
+            Tab("", systemImage: ProcessMainSection.coach.icon, value: ProcessMainSection.coach) {
                 coachTabPlaceholder
             }
+            .accessibilityLabel(ProcessMainSection.coach.label)
 
-            Tab(ProcessMainSection.profile.label, systemImage: ProcessMainSection.profile.icon, value: ProcessMainSection.profile) {
+            Tab("", systemImage: ProcessMainSection.profile.icon, value: ProcessMainSection.profile) {
                 profileTabRoot
             }
+            .accessibilityLabel(ProcessMainSection.profile.label)
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .tabViewBottomAccessory {

@@ -84,7 +84,8 @@ struct PlanDashboardView: View {
                 plan: plan,
                 selectedDate: $selectedPlanDate,
                 showHeader: false,
-                showWeekStrip: false
+                showWeekStrip: false,
+                showChecklist: false
             )
             .environmentObject(HealthManager.shared)
 

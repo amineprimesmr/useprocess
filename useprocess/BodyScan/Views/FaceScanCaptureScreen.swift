@@ -1,11 +1,18 @@
 import ARKit
 import SwiftUI
 
-/// Écran de capture TrueDepth — layout fixe, flash contrôlé, sans animation Dynamic Island.
+enum FaceScanCapturePresentation: Equatable {
+    case fullScreen
+    case embeddedCard(viewportDiameter: CGFloat)
+}
+
+/// Écran de capture TrueDepth — plein écran ou carte intégrée (accueil).
 struct FaceScanCaptureScreen: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.appTheme) private var appTheme
 
-    var onBack: () -> Void
+    var presentation: FaceScanCapturePresentation = .fullScreen
+    var onBack: () -> Void = {}
     var onSkip: (() -> Void)? = nil
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
@@ -58,7 +65,85 @@ struct FaceScanCaptureScreen: View {
         scanProgress > 0.005 || phase == .completed
     }
 
+    private var isEmbedded: Bool {
+        if case .embeddedCard = presentation { return true }
+        return false
+    }
+
     var body: some View {
+        Group {
+            switch presentation {
+            case .fullScreen:
+                fullScreenLayout
+            case .embeddedCard(let viewportDiameter):
+                embeddedCardLayout(viewportDiameter: viewportDiameter)
+            }
+        }
+        .onAppear {
+            userFlashOverride = false
+            isFlashEnabled = false
+            FaceScanScreenFlash.shared.deactivate(animated: false)
+        }
+        .onDisappear {
+            FaceScanScreenFlash.shared.deactivate()
+        }
+        .task {
+            guard isDeviceSupported else {
+                canSkipScan = true
+                return
+            }
+            try? await Task.sleep(for: .seconds(6))
+            guard phase != .completed else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                canSkipScan = true
+            }
+        }
+        .onChange(of: isDeviceSupported) { _, supported in
+            if !supported { canSkipScan = true }
+        }
+        .onChange(of: isLowLight) { _, low in
+            guard !userFlashOverride else { return }
+            guard low, !isFlashEnabled else { return }
+            isFlashEnabled = true
+        }
+        .onChange(of: isFaceDetected) { _, detected in
+            guard isDeviceSupported, phase != .completed else { return }
+            if !detected, phase == .scanning, scanProgress < 0.03 {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    phase = .positioning
+                }
+            }
+        }
+        .onChange(of: scanProgress) { oldValue, value in
+            if value > 0.005, phase == .positioning {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    phase = .scanning
+                }
+            }
+            if value >= 1, phase != .completed, capturedPayload != nil {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    phase = .completed
+                }
+            } else if value < 0.03, oldValue > 0.15, phase == .scanning {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    phase = .positioning
+                    capturedPayload = nil
+                    capturedMarkers = nil
+                }
+            }
+        }
+        .onChange(of: isFlashEnabled) { _, enabled in
+            if enabled {
+                FaceScanScreenFlash.shared.activate(animated: false)
+            } else {
+                FaceScanScreenFlash.shared.deactivate(animated: true)
+            }
+        }
+    }
+
+    // MARK: - Layouts
+
+    private var fullScreenLayout: some View {
         GeometryReader { geometry in
             let safeArea = geometry.safeAreaInsets
             let viewportSize = AdaptiveScreenLayout.faceScanViewportDiameter(
@@ -108,67 +193,147 @@ struct FaceScanCaptureScreen: View {
             }
         }
         .ignoresSafeArea(.container, edges: .top)
-        .onAppear {
-            userFlashOverride = false
-            isFlashEnabled = false
-            FaceScanScreenFlash.shared.deactivate(animated: false)
-        }
-        .onDisappear {
-            FaceScanScreenFlash.shared.deactivate()
-        }
-        .task {
-            guard isDeviceSupported else {
-                canSkipScan = true
-                return
-            }
-            try? await Task.sleep(for: .seconds(6))
-            guard phase != .completed else { return }
-            withAnimation(.easeInOut(duration: 0.25)) {
-                canSkipScan = true
-            }
-        }
-        .onChange(of: isDeviceSupported) { _, supported in
-            if !supported { canSkipScan = true }
-        }
-        .onChange(of: isLowLight) { _, low in
-            guard !userFlashOverride else { return }
-            // Auto ON uniquement — le flash éclaire la scène et fausse la détection lux.
-            // Ne jamais auto-OFF sinon boucle clignotante.
-            guard low, !isFlashEnabled else { return }
-            isFlashEnabled = true
-        }
-        .onChange(of: isFaceDetected) { _, detected in
-            guard isDeviceSupported, phase != .completed else { return }
-            if !detected, phase == .scanning, scanProgress < 0.03 {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    phase = .positioning
+    }
+
+    private func embeddedCardLayout(viewportDiameter: CGFloat) -> some View {
+        VStack(spacing: 14) {
+            ZStack(alignment: .topTrailing) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            isFlashEnabled
+                                ? Color.white
+                                : (appTheme.isDark ? Color(red: 0.07, green: 0.07, blue: 0.08) : Color(red: 0.94, green: 0.94, blue: 0.96))
+                        )
+                        .frame(width: viewportDiameter + 20, height: viewportDiameter + 20)
+                        .shadow(color: .black.opacity(appTheme.isDark ? 0.45 : 0.14), radius: 20, y: 10)
+
+                    cameraSection(viewportSize: viewportDiameter)
+                }
+
+                if isDeviceSupported, phase != .completed {
+                    embeddedFlashToggle
+                        .padding(.top, 6)
+                        .padding(.trailing, 6)
                 }
             }
+            .frame(maxWidth: .infinity)
+
+            VStack(spacing: 10) {
+                embeddedInstructionBlock
+
+                if let hint = frameHint, phase != .completed {
+                    FaceIDFrameHint(text: hint, isLightBackdrop: isFlashEnabled)
+                }
+
+                embeddedFlashStatusLabel
+
+                if phase == .scanning || scanProgress > 0.02 {
+                    embeddedProgressBar
+                }
+
+                embeddedRetryButton
+            }
+            .padding(.horizontal, 4)
         }
-        .onChange(of: scanProgress) { oldValue, value in
-            if value > 0.005, phase == .positioning {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    phase = .scanning
+    }
+
+    private var embeddedFlashToggle: some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            userFlashOverride = true
+            isFlashEnabled.toggle()
+        } label: {
+            Image(systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(isFlashEnabled ? Color(red: 0.95, green: 0.78, blue: 0.12) : appTheme.secondaryText)
+                .frame(width: 36, height: 36)
+                .background {
+                    Circle()
+                        .fill(appTheme.isDark ? Color.black.opacity(0.45) : Color.white.opacity(0.92))
+                        .overlay {
+                            Circle()
+                                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                        }
                 }
-            }
-            if value >= 1, phase != .completed, capturedPayload != nil {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    phase = .completed
-                }
-            } else if value < 0.03, oldValue > 0.15, phase == .scanning {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    phase = .positioning
-                    capturedPayload = nil
-                    capturedMarkers = nil
-                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isFlashEnabled ? "Désactiver le flash" : "Activer le flash")
+    }
+
+    private var embeddedInstructionBlock: some View {
+        Text(instruction)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(instructionForeground)
+            .multilineTextAlignment(.center)
+            .lineSpacing(3)
+            .padding(.horizontal, 12)
+            .animation(.easeInOut(duration: 0.2), value: instruction)
+    }
+
+    private var instructionForeground: Color {
+        if isEmbedded {
+            return isFlashEnabled ? Color.black.opacity(0.82) : appTheme.primaryText
+        }
+        return isFlashEnabled ? Color.black.opacity(0.88) : OnboardingTheme.primaryText
+    }
+
+    @ViewBuilder
+    private var embeddedFlashStatusLabel: some View {
+        if phase != .completed, isDeviceSupported {
+            if isFlashEnabled {
+                Label(
+                    userFlashOverride ? "Flash activé" : "Flash auto",
+                    systemImage: "bolt.fill"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.55) : appTheme.onboardingAccent)
+            } else if isLowLight {
+                Label("Environnement sombre", systemImage: "moon.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(appTheme.secondaryText)
             }
         }
-        .onChange(of: isFlashEnabled) { _, enabled in
-            if enabled {
-                FaceScanScreenFlash.shared.activate(animated: false)
-            } else {
-                FaceScanScreenFlash.shared.deactivate(animated: true)
+    }
+
+    private var embeddedProgressBar: some View {
+        VStack(spacing: 6) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(appTheme.isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.08))
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [appTheme.onboardingAccent, appTheme.glow],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(8, geo.size.width * scanProgress))
+                        .animation(.easeInOut(duration: 0.3), value: scanProgress)
+                }
             }
+            .frame(height: 5)
+
+            Text("\(Int(scanProgress * 100)) %")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(appTheme.secondaryText)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+        }
+        .padding(.horizontal, 8)
+    }
+
+    @ViewBuilder
+    private var embeddedRetryButton: some View {
+        if isDeviceSupported, scanProgress > 0.02, scanProgress < 1 {
+            Button(action: restartScan) {
+                Text("Recommencer")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(appTheme.onboardingAccent)
+            }
+            .buttonStyle(.plain)
         }
     }
 

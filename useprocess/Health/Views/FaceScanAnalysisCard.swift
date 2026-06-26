@@ -1,6 +1,67 @@
 import SwiftUI
 
-/// Badge score visage (0–100) — même présentation % que l'analyse scan.
+/// Badge appréciation visage — texte lisible (gonflé, fatigué…) plutôt que score %.
+struct FaceWellnessAppreciationBadge: View {
+    let appreciation: FaceWellnessScore.Appreciation
+    var theme: AppTheme
+    var style: Style = .compact
+
+    enum Style {
+        case compact
+        case prominent
+    }
+
+    var body: some View {
+        Text(appreciation.displayText)
+            .font(textFont)
+            .foregroundStyle(foregroundColor)
+            .lineLimit(style == .compact ? 2 : 3)
+            .multilineTextAlignment(style == .prominent ? .leading : .center)
+            .minimumScaleFactor(0.78)
+            .padding(.horizontal, style == .compact ? 10 : 14)
+            .padding(.vertical, style == .compact ? 6 : 10)
+            .background(backgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: style == .compact ? 10 : 12, style: .continuous))
+            .accessibilityLabel(appreciation.displayText)
+    }
+
+    private var textFont: Font {
+        switch style {
+        case .compact:
+            return .system(size: 13, weight: .bold)
+        case .prominent:
+            return .system(size: 22, weight: .bold)
+        }
+    }
+
+    private var foregroundColor: Color {
+        switch appreciation.tone {
+        case .excellent, .good:
+            return theme.primaryText
+        case .moderate:
+            return theme.primaryText
+        case .elevated:
+            return Color.orange
+        case .stressed:
+            return Color(red: 0.92, green: 0.42, blue: 0.28)
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch appreciation.tone {
+        case .excellent, .good:
+            return theme.cardBackground.opacity(style == .compact ? 0.8 : 0.6)
+        case .moderate:
+            return theme.cardBackground.opacity(0.75)
+        case .elevated:
+            return Color.orange.opacity(theme.isDark ? 0.18 : 0.12)
+        case .stressed:
+            return Color.red.opacity(theme.isDark ? 0.16 : 0.10)
+        }
+    }
+}
+
+/// Conservé pour compat — préférer `FaceWellnessAppreciationBadge`.
 struct FaceWellnessScoreBadge: View {
     let score: Int
     var theme: AppTheme
@@ -11,40 +72,16 @@ struct FaceWellnessScoreBadge: View {
         case prominent
     }
 
+    private var appreciation: FaceWellnessScore.Appreciation {
+        FaceWellnessScore.appreciation(forScore: score)
+    }
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: style == .compact ? 1 : 2) {
-            Text("\(score)")
-                .font(scoreFont)
-                .foregroundStyle(theme.primaryText)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-            Text("%")
-                .font(percentFont)
-                .foregroundStyle(theme.secondaryText)
-        }
-        .padding(.horizontal, style == .compact ? 10 : 14)
-        .padding(.vertical, style == .compact ? 5 : 8)
-        .background(theme.cardBackground.opacity(style == .compact ? 0.8 : 0.6))
-        .clipShape(RoundedRectangle(cornerRadius: style == .compact ? 10 : 12, style: .continuous))
-        .accessibilityLabel("Score visage \(score) pour cent")
-    }
-
-    private var scoreFont: Font {
-        switch style {
-        case .compact:
-            return .system(size: 15, weight: .bold)
-        case .prominent:
-            return .system(size: 28, weight: .black, design: .rounded)
-        }
-    }
-
-    private var percentFont: Font {
-        switch style {
-        case .compact:
-            return .system(size: 11, weight: .semibold)
-        case .prominent:
-            return .system(size: 14, weight: .semibold)
-        }
+        FaceWellnessAppreciationBadge(
+            appreciation: appreciation,
+            theme: theme,
+            style: style == .compact ? .compact : .prominent
+        )
     }
 }
 

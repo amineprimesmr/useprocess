@@ -150,6 +150,7 @@ struct FaceScanPrivacyGateView: View {
 
     var onDismiss: () -> Void
     var onComplete: (FaceScanResult) -> Void
+    var skipResultSheet: Bool = false
 
     @State private var consentStore = ProcessPrivacyConsentStore.shared
     @State private var showScanner = false
@@ -159,7 +160,8 @@ struct FaceScanPrivacyGateView: View {
             if showScanner || consentStore.canCaptureFaceScan {
                 FaceScanSessionView(
                     onDismiss: onDismiss,
-                    onComplete: onComplete
+                    onComplete: onComplete,
+                    skipResultSheet: skipResultSheet
                 )
             } else {
                 ProgressView()

@@ -69,7 +69,7 @@ enum EnzoCoachingVoiceGuide {
     - Légumes verts crus (brocolis) : antinutriments (oxalates), pas priorité humaine
     - Beurre cacahuète industriel : huiles de graines oxydées = vieillissement cellulaire (pas le soleil)
     - Compléments isolés ≠ nutriments naturels (pas cofacteurs/enzymes) + procédés toxiques
-    - Solution : produits animaux qualité (cru si possible), laitiers crus, tubercules vapeur, \
+    - Solution : produits animaux qualité (cru si possible), laitiers crus, tubercules cuits (rôtis/mijotés), \
       miel, fruits modérés (1/jour) — ultra dense, très digeste
     - Sèche : réduire laitiers crus ; Prise de masse : augmenter laitiers crus (crème crue)
     - Corps en abondance nutritive ≠ mode famine → sèche/prise de masse sans détruire le visage
@@ -203,7 +203,7 @@ enum EnzoCoachingVoiceGuide {
         "densité nutritionnelle vs carences chroniques",
         "viande rouge, abats, poissons gras, œufs (moins blanc)",
         "laitiers crus vs pasteurisé — digestion et hormones",
-        "tubercules vapeur, miel, fruits modérés",
+        "tubercules cuits, miel, fruits modérés",
         "huiles de graines oxydées = vieillissement (pas le soleil)",
         "compléments isolés ne remplacent pas aliments entiers",
         "sèche/prise de masse via laitiers crus sans casser le visage",

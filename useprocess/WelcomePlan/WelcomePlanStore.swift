@@ -143,6 +143,12 @@ final class WelcomePlanStore {
             changed = true
         }
 
+        if current.calendar.buildVersion < 8 {
+            repairStoredMealImageAssets(plan: &current)
+            current.calendar.buildVersion = 8
+            changed = true
+        }
+
         if current.nutritionProtocol.targetMealsPerDay == nil {
             ProcessMealPlanConfiguration.enrichNutritionProtocol(
                 &current.nutritionProtocol,
@@ -172,6 +178,41 @@ final class WelcomePlanStore {
             progress: preservedProgress,
             calendarStartedAt: startedAt
         )
+    }
+
+    /// Réaligne `imageAssetName` sur les repas draft/validés (legacy IA sans asset valide).
+    private func repairStoredMealImageAssets(plan: inout FaceOriginPlan) {
+        let days = plan.calendar.weeks.flatMap(\.days)
+        let planType = plan.nutritionPlanType
+
+        func repairPayload(_ payload: String, slot: MealTimeSlot, dayIndex: Int) -> String? {
+            guard var meal = MealSuggestionContent.fromStored(payload) else { return nil }
+            let resolved = MealNutritionCatalog.resolvedImageAsset(
+                for: meal,
+                slot: slot,
+                dayIndex: dayIndex,
+                planType: planType
+            )
+            guard meal.imageAssetName != resolved else { return nil }
+            meal.imageAssetName = resolved
+            return meal.encodedForStorage()
+        }
+
+        for day in days {
+            for slot in plan.configuredMealSlots {
+                if let payload = plan.progress.draftMealsBySlot[day.id]?[slot.rawValue],
+                   let repaired = repairPayload(payload, slot: slot, dayIndex: day.globalDayIndex) {
+                    plan.progress.draftMealsBySlot[day.id]?[slot.rawValue] = repaired
+                }
+                if let payload = plan.progress.validatedMealsBySlot[day.id]?[slot.rawValue],
+                   let repaired = repairPayload(payload, slot: slot, dayIndex: day.globalDayIndex) {
+                    plan.progress.validatedMealsBySlot[day.id]?[slot.rawValue] = repaired
+                    if slot == .lunch {
+                        plan.progress.validatedMeals[day.id] = repaired
+                    }
+                }
+            }
+        }
     }
 
     func setJournalTaskStatus(_ status: JournalTaskStatus?, taskId: String, dayId: String) {

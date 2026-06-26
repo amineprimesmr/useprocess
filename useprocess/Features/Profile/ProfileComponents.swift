@@ -1,17 +1,41 @@
 import SwiftUI
 import UIKit
 
+// MARK: - Stretchy hero (pull-down overscroll — scroll normal inchangé)
+
+/// Ancre le hero en haut et ne grandit que quand l’utilisateur tire la page vers le bas.
+struct ProfileStretchyHeroFrame<Content: View>: View {
+    let baseHeight: CGFloat
+    @ViewBuilder let content: (_ totalHeight: CGFloat, _ stretch: CGFloat) -> Content
+
+    var body: some View {
+        GeometryReader { geo in
+            let minY = geo.frame(in: .named("profileScroll")).minY
+            let stretch = max(0, minY)
+            let totalHeight = baseHeight + stretch
+
+            content(totalHeight, stretch)
+                .frame(width: geo.size.width, height: totalHeight, alignment: .top)
+                .offset(y: stretch > 0 ? -stretch : 0)
+        }
+        .frame(height: baseHeight)
+    }
+}
+
 // MARK: - Empty hero (gradient + placeholder)
 
 struct ProfileEmptyHeroSection: View {
-    var onAddPhoto: () -> Void
+    var onPhotoTap: (CGPoint) -> Void
     var onOpenSettings: (() -> Void)? = nil
 
     var body: some View {
-        ZStack {
-            ProfileEmptyHeroBackground()
+        ProfileStretchyHeroFrame(baseHeight: ProfileTheme.heroCoverHeight) { totalHeight, _ in
+            ZStack {
+                ProfileEmptyHeroBackground()
+                    .frame(height: totalHeight)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .clipped()
 
-            Button(action: onAddPhoto) {
                 VStack(spacing: 10) {
                     Image(systemName: "person.crop.rectangle.badge.plus")
                         .font(.system(size: ProfileTheme.emptyHeroIconSize, weight: .regular))
@@ -24,22 +48,28 @@ struct ProfileEmptyHeroSection: View {
                 }
                 .padding(.horizontal, 28)
                 .padding(.vertical, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 .contentShape(Rectangle())
+                .gesture(photoTapGesture)
             }
-            .buttonStyle(.plain)
-            .padding(.top, ProfileTheme.heroTopInset + 48)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: ProfileTheme.heroCoverHeight)
-        .clipShape(ProfileTheme.heroBottomShape)
-        .overlay(alignment: .topTrailing) {
-            if let onOpenSettings {
-                ProfileHeroSettingsButton(style: .plain, action: onOpenSettings)
-                    .padding(.top, ProfileTheme.heroTopInset + 10)
-                    .padding(.trailing, 14)
+            .frame(height: totalHeight)
+            .clipShape(ProfileTheme.heroBottomShape)
+            .overlay(alignment: .topTrailing) {
+                if let onOpenSettings {
+                    ProfileHeroSettingsButton(style: .plain, action: onOpenSettings)
+                        .padding(.top, ProfileTheme.heroTopInset + 10)
+                        .padding(.trailing, 14)
+                }
             }
         }
+    }
+
+    private var photoTapGesture: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onEnded { value in
+                HapticManager.shared.impact(.light)
+                onPhotoTap(value.location)
+            }
     }
 }
 
@@ -50,51 +80,66 @@ struct ProfileCoverPhotoSection: View {
     let displayName: String
     let username: String
     let isPrivate: Bool
-    var onChangePhoto: (() -> Void)? = nil
+    var onPhotoTap: ((CGPoint) -> Void)? = nil
     var onOpenSettings: (() -> Void)? = nil
     var onEditUsername: (() -> Void)? = nil
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .overlay {
-                    LinearGradient(
-                        colors: [.clear, .clear, .black.opacity(0.25), .black.opacity(0.68)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .allowsHitTesting(false)
+        ProfileStretchyHeroFrame(baseHeight: ProfileTheme.heroCoverHeight) { totalHeight, _ in
+            ZStack(alignment: .bottom) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: totalHeight, alignment: .top)
+                    .clipped()
+                    .overlay {
+                        LinearGradient(
+                            colors: [.clear, .clear, .black.opacity(0.25), .black.opacity(0.68)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .allowsHitTesting(false)
+                    }
+
+                if let onPhotoTap {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .frame(height: max(totalHeight * 0.58, 120))
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .gesture(
+                                DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                                    .onEnded { value in
+                                        HapticManager.shared.impact(.light)
+                                        onPhotoTap(value.location)
+                                    }
+                            )
+                        Spacer(minLength: 0)
+                    }
+                    .frame(height: totalHeight)
                 }
 
-            ProfileIdentityBlock(
-                displayName: displayName,
-                username: username,
-                isPrivate: isPrivate,
-                style: .overlay,
-                onEditUsername: onEditUsername
-            )
-            .padding(.horizontal, ProfileTheme.horizontalPadding)
-            .padding(.bottom, 20)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: ProfileTheme.heroCoverHeight)
-        .clipShape(ProfileTheme.heroBottomShape)
-        .contentShape(ProfileTheme.heroBottomShape)
-        .overlay(alignment: .topTrailing) {
-            HStack(spacing: 8) {
-                if let onChangePhoto {
-                    ProfileHeroIconButton(systemName: "camera.fill", action: onChangePhoto)
-                }
+                ProfileIdentityBlock(
+                    displayName: displayName,
+                    username: username,
+                    isPrivate: isPrivate,
+                    style: .overlay,
+                    onEditUsername: onEditUsername
+                )
+                .padding(.horizontal, ProfileTheme.horizontalPadding)
+                .padding(.bottom, 20)
+            }
+            .frame(height: totalHeight)
+            .clipShape(ProfileTheme.heroBottomShape)
+            .contentShape(ProfileTheme.heroBottomShape)
+            .overlay(alignment: .topTrailing) {
                 if let onOpenSettings {
                     ProfileHeroSettingsButton(style: .overlay, action: onOpenSettings)
+                        .padding(.top, ProfileTheme.heroTopInset + 10)
+                        .padding(.trailing, 14)
                 }
             }
-            .padding(.top, ProfileTheme.heroTopInset + 10)
-            .padding(.trailing, 14)
         }
     }
 }

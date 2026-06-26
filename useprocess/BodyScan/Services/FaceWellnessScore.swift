@@ -9,6 +9,170 @@ enum FaceWellnessScore {
         let signals: FaceScanRelativeSignals?
     }
 
+    enum Tone: Hashable {
+        case excellent
+        case good
+        case moderate
+        case elevated
+        case stressed
+    }
+
+    /// Appréciation globale lisible — remplace le score % dans l’UI scan.
+    struct Appreciation: Hashable {
+        let headline: String
+        let descriptors: [String]
+        let tone: Tone
+
+        var displayText: String {
+            if descriptors.isEmpty { return headline }
+            if descriptors.count == 1 { return descriptors[0] }
+            return descriptors.joined(separator: " · ")
+        }
+    }
+
+    static func appreciation(for result: FaceScanResult) -> Appreciation {
+        appreciation(
+            markers: result.markers,
+            relativeSignals: result.relativeSignals,
+            isBaselineScan: result.relativeSignals?.baselineLabel == "Premier scan de référence"
+        )
+    }
+
+    static func appreciation(
+        markers: FaceWellnessMarkers,
+        relativeSignals: FaceScanRelativeSignals?,
+        isBaselineScan: Bool = false
+    ) -> Appreciation {
+        if isBaselineScan {
+            let absolute = absoluteDescriptors(from: markers)
+            return Appreciation(
+                headline: "Référence enregistrée",
+                descriptors: absolute.isEmpty ? ["Premier scan"] : absolute,
+                tone: .good
+            )
+        }
+
+        let parts = relativeSignals.map { relativeDescriptors(from: $0, markers: markers) }
+            ?? absoluteDescriptors(from: markers)
+
+        let tone = tone(for: parts, markers: markers)
+        let headline = headline(for: parts, tone: tone)
+
+        return Appreciation(
+            headline: headline,
+            descriptors: parts,
+            tone: tone
+        )
+    }
+
+    // MARK: - Descripteurs
+
+    private static func absoluteDescriptors(from markers: FaceWellnessMarkers) -> [String] {
+        var parts: [String] = []
+        if let d = puffinessDescriptor(markers.puffinessScore) { parts.append(d) }
+        if let d = fatigueDescriptor(markers.underEyeFatigueScore) { parts.append(d) }
+        if let d = jawDescriptor(markers.jawTensionScore) { parts.append(d) }
+        if let d = skinDescriptor(markers.skinClarityScore) { parts.append(d) }
+        return parts
+    }
+
+    private static func relativeDescriptors(
+        from signals: FaceScanRelativeSignals,
+        markers: FaceWellnessMarkers
+    ) -> [String] {
+        var parts: [String] = []
+
+        if signals.puffinessDelta >= 10 { parts.append("Très gonflé") }
+        else if signals.puffinessDelta >= 5 { parts.append("Gonflé") }
+        else if signals.puffinessDelta <= -6 { parts.append("Moins gonflé") }
+        else if let d = puffinessDescriptor(markers.puffinessScore) { parts.append(d) }
+
+        if signals.underEyeFatigueDelta >= 10 { parts.append("Très fatigué") }
+        else if signals.underEyeFatigueDelta >= 5 { parts.append("Fatigué") }
+        else if signals.underEyeFatigueDelta <= -6 { parts.append("Cernes en baisse") }
+        else if let d = fatigueDescriptor(markers.underEyeFatigueScore) { parts.append(d) }
+
+        if signals.jawTensionDelta >= 8 { parts.append("Mâchoire tendue") }
+        else if let d = jawDescriptor(markers.jawTensionScore) { parts.append(d) }
+
+        if signals.skinClarityDelta <= -8 { parts.append("Peau terne") }
+        else if signals.skinClarityDelta >= 6 { parts.append("Peau plus nette") }
+        else if let d = skinDescriptor(markers.skinClarityScore) { parts.append(d) }
+
+        return dedupe(parts)
+    }
+
+    private static func puffinessDescriptor(_ value: Int) -> String? {
+        switch value {
+        case 78...: return "Très gonflé"
+        case 62..<78: return "Gonflé"
+        case 50..<62: return "Léger gonflement"
+        default: return nil
+        }
+    }
+
+    private static func fatigueDescriptor(_ value: Int) -> String? {
+        switch value {
+        case 78...: return "Très fatigué"
+        case 62..<78: return "Fatigué"
+        case 52..<62: return "Cernes visibles"
+        default: return nil
+        }
+    }
+
+    private static func jawDescriptor(_ value: Int) -> String? {
+        switch value {
+        case 72...: return "Mâchoire tendue"
+        case 58..<72: return "Tension légère"
+        default: return nil
+        }
+    }
+
+    private static func skinDescriptor(_ value: Int) -> String? {
+        switch value {
+        case ..<42: return "Peau très terne"
+        case 42..<55: return "Teint terne"
+        case 55..<68: return "Teint correct"
+        default: return nil
+        }
+    }
+
+    private static func headline(for descriptors: [String], tone: Tone) -> String {
+        switch tone {
+        case .excellent: return "Visage reposé"
+        case .good: return descriptors.isEmpty ? "État stable" : "Globalement ok"
+        case .moderate: return "Signaux à surveiller"
+        case .elevated: return "Rétention visible"
+        case .stressed: return "Visage en tension"
+        }
+    }
+
+    private static func tone(for descriptors: [String], markers: FaceWellnessMarkers) -> Tone {
+        let stressLoad = Double(markers.puffinessScore) * 0.45
+            + Double(markers.underEyeFatigueScore) * 0.55
+            + Double(markers.jawTensionScore) * 0.08
+
+        if descriptors.isEmpty && stressLoad < 42 && markers.skinClarityScore >= 68 {
+            return .excellent
+        }
+        if descriptors.count <= 1 && stressLoad < 52 {
+            return .good
+        }
+        if descriptors.count >= 2 || stressLoad >= 62 {
+            return descriptors.contains(where: { $0.contains("Très") }) ? .stressed : .elevated
+        }
+        return .moderate
+    }
+
+    private static func dedupe(_ parts: [String]) -> [String] {
+        var seen = Set<String>()
+        return parts.filter { part in
+            guard !seen.contains(part) else { return false }
+            seen.insert(part)
+            return true
+        }
+    }
+
     static func dayScore(from markers: FaceWellnessMarkers) -> Int {
         let stressLoad = Double(markers.puffinessScore) * 0.45
             + Double(markers.underEyeFatigueScore) * 0.55
@@ -75,12 +239,24 @@ enum FaceWellnessScore {
     }
 
     static func label(for score: Int) -> String {
-        switch score {
-        case 80...: return "Visage reposé"
-        case 60..<80: return "Visage correct"
-        case 40..<60: return "Fatigue visible"
-        default: return "Récupération visuelle faible"
-        }
+        appreciation(forScore: score).displayText
+    }
+
+    static func appreciation(forScore score: Int) -> Appreciation {
+        appreciation(markers: syntheticMarkers(forScore: score), relativeSignals: nil)
+    }
+
+    /// Pour readiness / coach quand seul le score est disponible.
+    private static func syntheticMarkers(forScore score: Int) -> FaceWellnessMarkers {
+        let stress = max(0, min(100, 100 - score))
+        return FaceWellnessMarkers(
+            puffinessScore: stress,
+            underEyeFatigueScore: stress,
+            jawTensionScore: max(35, stress - 8),
+            facialSymmetryScore: 72,
+            skinClarityScore: min(88, score + 6),
+            notes: []
+        )
     }
 
     static func confidenceLabel(for confidence: Int) -> String {

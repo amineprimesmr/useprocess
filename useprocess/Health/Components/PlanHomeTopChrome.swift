@@ -11,6 +11,7 @@ struct PlanHomeTopChrome: View {
     @State private var profileStore = SocialProfileStore.shared
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
+    @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var showStreakSheet = false
     @Namespace private var streakZoomNamespace
 
@@ -45,7 +46,7 @@ struct PlanHomeTopChrome: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             PlanHomeGreetingLabel(
-                firstName: greetingFirstName,
+                greeting: homeGreeting,
                 isActive: selectedSection == .plan
             )
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -61,15 +62,30 @@ struct PlanHomeTopChrome: View {
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
             streakStore.sync(from: planStore.plan)
+            faceHistoryStore = FaceScanHistoryStore.shared
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             profileStore.bind(unified: profileService.currentProfile)
             streakStore.reload()
             streakStore.sync(from: planStore.plan)
+            faceHistoryStore = FaceScanHistoryStore.shared
         }
         .onChange(of: planStore.plan?.lastUpdated) { _, _ in
             streakStore.sync(from: planStore.plan)
         }
+        .onChange(of: selectedDate) { _, _ in
+            faceHistoryStore = FaceScanHistoryStore.shared
+        }
+    }
+
+    private var homeGreeting: PlanHomeGreeting {
+        PlanHomeGreetingBuilder.make(
+            firstName: greetingFirstName,
+            selectedDate: selectedDate,
+            plan: planStore.plan,
+            isScanDue: faceHistoryStore.isScanDue,
+            hasAnyFaceScan: faceHistoryStore.latestResult != nil
+        )
     }
 
     private enum GlassClusterMetrics {
@@ -213,7 +229,7 @@ struct PlanHomeTopChrome: View {
 // MARK: - Salutation accueil
 
 private struct PlanHomeGreetingLabel: View {
-    let firstName: String
+    let greeting: PlanHomeGreeting
     let isActive: Bool
 
     @Environment(\.appTheme) private var theme
@@ -223,22 +239,16 @@ private struct PlanHomeGreetingLabel: View {
     @State private var textVisible = false
     @State private var hasPlayedLaunchGreeting = false
 
-    private var fullGreeting: String {
-        let raw = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if raw.isEmpty {
-            return "Prêt ?"
-        }
-        return "Prêt, \(raw) ?"
-    }
+    private var greetingLine: String { greeting.line }
 
     private var greetingTaskID: String {
-        "\(isActive)|\(fullGreeting)|played:\(hasPlayedLaunchGreeting)"
+        "\(isActive)|\(greetingLine)|\(greeting.emoji)|played:\(hasPlayedLaunchGreeting)"
     }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 7) {
             ZStack(alignment: .leading) {
-                Text(fullGreeting)
+                Text(greetingLine)
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.clear)
                     .lineLimit(1)
@@ -255,7 +265,7 @@ private struct PlanHomeGreetingLabel: View {
                     .blur(radius: textVisible ? 0 : 6)
             }
 
-            Text("👋")
+            Text(greeting.emoji)
                 .font(.system(size: 24))
                 .opacity(showsEmoji ? 1 : 0)
                 .scaleEffect(showsEmoji ? 1 : 0.35)
@@ -264,7 +274,7 @@ private struct PlanHomeGreetingLabel: View {
                 .animation(.spring(response: 0.42, dampingFraction: 0.62), value: showsEmoji)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(fullGreeting), salut")
+        .accessibilityLabel(greetingLine)
         .task(id: greetingTaskID) {
             guard isActive else {
                 stopGreetingAnimation()
@@ -287,7 +297,7 @@ private struct PlanHomeGreetingLabel: View {
     }
 
     private func showGreetingImmediately() {
-        typewriter.showImmediately(text: fullGreeting)
+        typewriter.showImmediately(text: greetingLine)
         textVisible = true
         showsEmoji = true
     }
@@ -302,10 +312,8 @@ private struct PlanHomeGreetingLabel: View {
         textVisible = false
         typewriter.reset()
 
-        if firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            try? await Task.sleep(nanoseconds: 280_000_000)
-            guard !Task.isCancelled, isActive else { return }
-        }
+        try? await Task.sleep(nanoseconds: 280_000_000)
+        guard !Task.isCancelled, isActive else { return }
 
         withAnimation(.spring(response: 0.52, dampingFraction: 0.84)) {
             textVisible = true
@@ -314,7 +322,7 @@ private struct PlanHomeGreetingLabel: View {
         try? await Task.sleep(nanoseconds: 120_000_000)
         guard !Task.isCancelled, isActive else { return }
 
-        await typewriter.run(text: fullGreeting, leadingDelayNanoseconds: 0)
+        await typewriter.run(text: greetingLine, leadingDelayNanoseconds: 0)
 
         guard !Task.isCancelled, isActive else { return }
         try? await Task.sleep(nanoseconds: 90_000_000)

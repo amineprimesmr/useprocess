@@ -6,11 +6,19 @@ struct PlanDayMealEntry: Identifiable, Equatable {
     let meal: MealSuggestionContent
     let isValidated: Bool
     let planType: NutritionPlanType
+    let dayIndex: Int
 
     var id: String { slot.rawValue }
 
     var carouselTitle: String { PlanMealSlotLabel.carouselTitle(for: slot, planType: planType) }
-    var imageAssetName: String { MealNutritionCatalog.resolvedImageAsset(for: meal) }
+    var imageAssetName: String {
+        MealNutritionCatalog.resolvedImageAsset(
+            for: meal,
+            slot: slot,
+            dayIndex: dayIndex,
+            planType: planType
+        )
+    }
     var scheduleTargetLabel: String? { PlanMealSchedule.targetLabel(for: slot, planType: planType) }
     var scheduleWindowLabel: String? { PlanMealSchedule.windowLabel(for: slot, planType: planType) }
     var scheduleNote: String? { PlanMealSchedule.timing(for: slot, planType: planType)?.debloatNote }
@@ -29,7 +37,8 @@ enum PlanDayMealsProvider {
                 slot: slot,
                 meal: meal,
                 isValidated: validated,
-                planType: plan.nutritionPlanType
+                planType: plan.nutritionPlanType,
+                dayIndex: day.globalDayIndex
             )
         }
     }
@@ -121,7 +130,9 @@ struct PlanNutritionDaySection: View {
         .onChange(of: entries.map(\.isValidated)) { _, _ in
             let target = focusedMealSlot
             guard scrollPosition != target else { return }
-            scrollPosition = target
+            withAnimation(.smooth(duration: 0.42)) {
+                scrollPosition = target
+            }
         }
         .onChange(of: store.plan?.progress.draftMealsBySlot[day.id]) { _, _ in
             refreshSelectedEntryIfNeeded()
@@ -174,31 +185,12 @@ struct PlanNutritionDaySection: View {
     }
 
     private var mealCarousel: some View {
-        GeometryReader { geo in
-            let cardWidth = PlanMealCarouselLayout.cardWidth
-            let sideInset = max(0, (geo.size.width - cardWidth) / 2)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(entries) { entry in
-                        PlanMealCarouselCard(
-                            entry: entry,
-                            zoomNamespace: mealZoomNamespace,
-                            onTap: { selectedEntry = entry }
-                        )
-                        .id(entry.slot)
-                    }
-                }
-                .scrollTargetLayout()
-                .padding(.horizontal, sideInset)
-                .padding(.top, 4)
-                .padding(.bottom, 8)
-            }
-            .scrollTargetBehavior(.viewAligned)
-            .scrollPosition(id: $scrollPosition, anchor: .center)
-            .scrollClipDisabled()
-        }
-        .frame(height: PlanMealCarouselLayout.cardHeight + 16)
+        PlanMealCoverFlowCarousel(
+            entries: entries,
+            scrollPosition: $scrollPosition,
+            mealZoomNamespace: mealZoomNamespace,
+            onSelect: { selectedEntry = $0 }
+        )
     }
 
     private func refreshedEntry(_ entry: PlanDayMealEntry) -> PlanDayMealEntry {
@@ -217,11 +209,104 @@ struct PlanNutritionDaySection: View {
     }
 }
 
+// MARK: - Cover flow carousel
+
+private struct PlanMealCoverFlowCarousel: View {
+    let entries: [PlanDayMealEntry]
+    @Binding var scrollPosition: MealTimeSlot?
+    let mealZoomNamespace: Namespace.ID
+    var onSelect: (PlanDayMealEntry) -> Void
+
+    private let cardSpacing: CGFloat = -42
+    private var carouselHeight: CGFloat {
+        PlanMealCarouselLayout.cardHeight + PlanMealCarouselLayout.imageTopBleed + 16
+    }
+
+    var body: some View {
+        GeometryReader { viewport in
+            let viewportWidth = max(viewport.size.width, 1)
+            let cardWidth = PlanMealCarouselLayout.cardWidth
+            let sideInset = max(0, (viewportWidth - cardWidth) / 2)
+            let viewportCenterX = viewportWidth / 2
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: cardSpacing) {
+                    ForEach(entries) { entry in
+                        PlanMealCoverFlowCardCell(
+                            entry: entry,
+                            viewportCenterX: viewportCenterX,
+                            cardWidth: cardWidth,
+                            zoomNamespace: mealZoomNamespace,
+                            onTap: { onSelect(entry) }
+                        )
+                        .id(entry.slot)
+                    }
+                }
+                .scrollTargetLayout()
+                .padding(.top, PlanMealCarouselLayout.imageTopBleed + 4)
+                .padding(.bottom, 8)
+            }
+            .contentMargins(.horizontal, sideInset, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $scrollPosition, anchor: .center)
+            .scrollClipDisabled()
+            .coordinateSpace(name: "mealCoverFlow")
+        }
+        .frame(height: carouselHeight)
+    }
+}
+
+private struct PlanMealCoverFlowCardCell: View {
+    let entry: PlanDayMealEntry
+    let viewportCenterX: CGFloat
+    let cardWidth: CGFloat
+    let zoomNamespace: Namespace.ID
+    var onTap: () -> Void
+
+    private var cardHeight: CGFloat {
+        PlanMealCarouselLayout.cardHeight + PlanMealCarouselLayout.imageTopBleed
+    }
+
+    var body: some View {
+        GeometryReader { cardGeo in
+            let cardMidX = cardGeo.frame(in: .named("mealCoverFlow")).midX
+            let distance = cardMidX - viewportCenterX
+            let span = max(cardWidth * 0.68, 1)
+            let normalized = distance / span
+            let clamped = min(1.25, max(-1.25, normalized))
+            let angle = Double(-clamped) * 54
+            let scale = max(0.82, 1.0 - abs(clamped) * 0.11)
+            let yOffset = abs(clamped) * 10
+            let opacity = max(0.75, 1.0 - abs(clamped) * 0.10)
+
+            PlanMealCarouselCard(
+                entry: entry,
+                zoomNamespace: zoomNamespace,
+                onTap: onTap
+            )
+            .scaleEffect(scale, anchor: .center)
+            .rotation3DEffect(
+                .degrees(angle),
+                axis: (x: 0, y: 1, z: 0),
+                anchor: .center,
+                perspective: 0.42
+            )
+            .offset(y: yOffset)
+            .opacity(opacity)
+            .zIndex(1_000 - abs(distance))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        }
+        .frame(width: cardWidth, height: cardHeight)
+    }
+}
+
 // MARK: - Carte carousel
 
 private enum PlanMealCarouselLayout {
     static let cardWidth: CGFloat = 268
     static let imageAreaHeight: CGFloat = 124
+    static let imageTopBleed: CGFloat = 14
+    static let imageOverlapIntoGray: CGFloat = 20
     static let textBlockHeight: CGFloat = 104
     static var cardHeight: CGFloat { imageAreaHeight + textBlockHeight }
     static let cornerRadius: CGFloat = 26
@@ -236,23 +321,20 @@ private struct PlanMealCarouselCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 0) {
+            ZStack(alignment: .top) {
+                grayCardBody
                 mealImageHeader
-                textBlock
             }
-            .frame(width: PlanMealCarouselLayout.cardWidth, height: PlanMealCarouselLayout.cardHeight)
-            .background { cardBackground }
-            .clipShape(RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
-                    .strokeBorder(theme.cardStroke, lineWidth: theme.isDark ? 0 : 0.5)
-            }
+            .frame(
+                width: PlanMealCarouselLayout.cardWidth,
+                height: PlanMealCarouselLayout.cardHeight + PlanMealCarouselLayout.imageTopBleed
+            )
             .overlay(alignment: .topTrailing) {
                 if entry.isValidated {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title3)
                         .foregroundStyle(.green)
-                        .padding(.top, 8)
+                        .padding(.top, PlanMealCarouselLayout.imageTopBleed + 4)
                         .padding(.trailing, 10)
                 }
             }
@@ -262,21 +344,41 @@ private struct PlanMealCarouselCard: View {
         .processZoomSource(id: .mealDetail(entry.slot), namespace: zoomNamespace)
     }
 
-    private var mealImageHeader: some View {
-        ZStack {
-            OptionalAssetImage(
-                name: entry.imageAssetName,
-                contentMode: .fit,
-                height: PlanMealCarouselLayout.imageAreaHeight - 16,
-                foregroundStyle: theme.secondaryText
-            )
-            .shadow(
-                color: theme.primaryText.opacity(theme.isDark ? 0.18 : 0.10),
-                radius: 10,
-                y: 4
-            )
+    private var grayCardBody: some View {
+        VStack(spacing: 0) {
+            Spacer()
+                .frame(height: PlanMealCarouselLayout.imageAreaHeight - PlanMealCarouselLayout.imageOverlapIntoGray)
+            textBlock
+                .frame(height: PlanMealCarouselLayout.textBlockHeight + PlanMealCarouselLayout.imageOverlapIntoGray)
+                .padding(.top, PlanMealCarouselLayout.imageOverlapIntoGray)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .background {
+            RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
+                .fill(cardBackgroundColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
+                .strokeBorder(theme.cardStroke, lineWidth: theme.isDark ? 0 : 0.5)
+        }
+        .padding(.top, PlanMealCarouselLayout.imageTopBleed)
+    }
+
+    private var mealImageHeader: some View {
+        OptionalAssetImage(
+            name: entry.imageAssetName,
+            contentMode: .fit,
+            height: PlanMealCarouselLayout.imageAreaHeight + PlanMealCarouselLayout.imageTopBleed,
+            foregroundStyle: theme.secondaryText
+        )
+        .shadow(
+            color: theme.primaryText.opacity(theme.isDark ? 0.18 : 0.10),
+            radius: 10,
+            y: 4
+        )
+        .offset(y: -PlanMealCarouselLayout.imageTopBleed)
         .frame(height: PlanMealCarouselLayout.imageAreaHeight)
+        .frame(maxWidth: .infinity)
         .accessibilityHidden(true)
     }
 
@@ -303,12 +405,12 @@ private struct PlanMealCarouselCard: View {
                 .frame(height: 40, alignment: .center)
         }
         .padding(.horizontal, 14)
-        .frame(height: PlanMealCarouselLayout.textBlockHeight)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    private var cardBackground: some View {
-        (theme.isDark ? theme.cardBackgroundStrong : theme.coachUserBubble)
-            .opacity(theme.isDark ? 0.92 : 1)
+    private var cardBackgroundColor: Color {
+        let base = theme.isDark ? theme.cardBackgroundStrong : theme.coachUserBubble
+        return base.opacity(theme.isDark ? 0.92 : 1)
     }
 }
 

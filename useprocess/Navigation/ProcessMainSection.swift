@@ -27,3 +27,26 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         }
     }
 }
+
+// MARK: - Tab bar icons
+
+struct ProcessMainTabIcon: View {
+    @Environment(\.appTheme) private var theme
+
+    let section: ProcessMainSection
+    var size: CGFloat = 22
+    var isSelected: Bool = true
+    /// Quand `false`, le rendu natif iOS 26 gère l’état sélectionné (tab bar système).
+    var appliesSelectionStyle: Bool = true
+
+    var body: some View {
+        Image(systemName: section.icon)
+            .font(.system(size: size, weight: .semibold))
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(
+                appliesSelectionStyle
+                    ? (isSelected ? theme.primaryText : theme.secondaryText)
+                    : theme.primaryText
+            )
+    }
+}

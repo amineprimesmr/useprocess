@@ -4,14 +4,7 @@ import SwiftUI
 struct ProfileHealthSection: View {
     @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var dataManager: DailyDataManager
-    @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
-
-    @Namespace private var faceScanHistoryZoomNamespace
-    @State private var showFaceScan = false
-    @State private var showFaceHistory = false
-    @State private var selectedFaceScan: FaceScanResult?
-    @State private var faceHistoryStore = FaceScanHistoryStore.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -28,42 +21,9 @@ struct ProfileHealthSection: View {
                 )
             }
 
-            FaceScanHealthCompact(
-                latest: faceHistoryStore.latestResult,
-                faceDayScore: healthManager.faceDayScore,
-                isScanDue: faceHistoryStore.isScanDue,
-                daysUntilNextScan: faceHistoryStore.daysUntilNextScan,
-                correlationHint: healthManager.faceCorrelations.first.map {
-                    OriginPlanPresenter.truncate($0.message, max: 90)
-                },
-                historyZoomNamespace: faceScanHistoryZoomNamespace,
-                onScan: { showFaceScan = true },
-                onHistory: {
-                    HapticManager.shared.impact(.light)
-                    showFaceHistory = true
-                }
-            )
-
             HealthTodayMetricsCard()
         }
         .task { await ProfileHealthSection.refreshAll(force: false) }
-        .onAppear {
-            faceHistoryStore = FaceScanHistoryStore.shared
-        }
-        .fullScreenCover(isPresented: $showFaceScan) { faceScanCover }
-        .fullScreenCover(isPresented: $showFaceHistory) {
-            FaceScanHistoryView(history: faceHistoryStore.history) { scan in
-                showFaceHistory = false
-                selectedFaceScan = scan
-            }
-            .processZoomTransition(id: .faceScanHistory, namespace: faceScanHistoryZoomNamespace)
-        }
-        .sheet(item: $selectedFaceScan) { scan in
-            FaceScanDetailView(
-                result: scan,
-                previous: faceHistoryStore.history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
-            )
-        }
     }
 
     private static var lastRefresh: Date?
@@ -83,18 +43,6 @@ struct ProfileHealthSection: View {
             await healthManager.performFullSync()
             await dataManager.updateCurrentDayData(with: healthManager)
         }
-    }
-
-    private var faceScanCover: some View {
-        FaceScanPrivacyGateView(
-            onDismiss: { showFaceScan = false },
-            onComplete: { _ in
-                faceHistoryStore = FaceScanHistoryStore.shared
-                showFaceScan = false
-                Task { await ProfileHealthSection.refreshAll(force: true) }
-            }
-        )
-        .environmentObject(profileService)
     }
 }
 

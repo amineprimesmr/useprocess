@@ -69,12 +69,11 @@ private enum BevelTabMetrics {
     static let horizontalInset: CGFloat = 16
     static let bottomInset: CGFloat = 8
     static let clusterSpacing: CGFloat = 10
-    static let tabCapsuleHeight: CGFloat = 62
+    static let tabCapsuleHeight: CGFloat = 52
     static let compactHeight: CGFloat = 50
     static let plusSize: CGFloat = 50
     static let accessoryHeight: CGFloat = 48
-    static let tabIconSize: CGFloat = 20
-    static let tabLabelSize: CGFloat = 10
+    static let tabIconSize: CGFloat = 22
     static let selectedCornerRadius: CGFloat = 14
     static let coachGlyphSize: CGFloat = 28
 }
@@ -322,22 +321,15 @@ struct ProcessBevelLegacyTabShell<Content: View>: View {
         isSelected: Bool,
         tabShape: RoundedRectangle
     ) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: section.icon)
-                .font(.system(size: BevelTabMetrics.tabIconSize, weight: .semibold))
-
-            Text(section.label)
-                .font(.system(size: BevelTabMetrics.tabLabelSize, weight: .medium))
-        }
-        .foregroundStyle(isSelected ? theme.primaryText : theme.secondaryText)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            if isSelected {
-                tabShape
-                    .fill(theme.primaryText.opacity(0.07))
-                    .padding(6)
+        ProcessMainTabIcon(section: section, size: BevelTabMetrics.tabIconSize, isSelected: isSelected)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .background {
+                if isSelected {
+                    tabShape
+                        .fill(theme.primaryText.opacity(0.07))
+                        .padding(8)
+                }
             }
-        }
     }
 
     private func legacySingleTabButton(for section: ProcessMainSection) -> some View {
@@ -346,9 +338,7 @@ struct ProcessBevelLegacyTabShell<Content: View>: View {
                 selectedSection = section
             }
         } label: {
-            Image(systemName: section.icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(theme.primaryText)
+            ProcessMainTabIcon(section: section, size: 20, isSelected: true)
                 .frame(width: BevelTabMetrics.plusSize, height: BevelTabMetrics.plusSize)
         }
         .buttonStyle(.plain)

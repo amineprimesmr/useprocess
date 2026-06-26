@@ -75,7 +75,7 @@ private extension UIView {
 }
 
 /// UILongPressGestureRecognizer — fonctionne dans un ScrollView SwiftUI.
-private struct CoachBubbleLongPressDetector: UIViewRepresentable {
+struct CoachBubbleLongPressDetector: UIViewRepresentable {
     var onLongPress: (CGRect) -> Void
 
     func makeCoordinator() -> Coordinator {

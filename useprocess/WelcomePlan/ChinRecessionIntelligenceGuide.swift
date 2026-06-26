@@ -31,23 +31,23 @@ enum ChinRecessionIntelligenceGuide {
         _ face: inout OriginFaceProtocol,
         answers: [String: WelcomePlanAnswer]
     ) {
-        guard hasChinConcern(answers) else { return }
+        guard hasChinConcern(answers: answers) else { return }
 
-        let routine = needsFullChinProtocol(answers) ? chinJawRoutine : lightChinRoutine
+        let routine = needsFullChinProtocol(answers: answers) ? chinJawRoutine : lightChinRoutine
         for line in routine {
-            if !face.jawAndTongueWork.contains(line) {
-                face.jawAndTongueWork.append(line)
+            if !face.lymphAndFascia.contains(line) {
+                face.lymphAndFascia.append(line)
             }
         }
 
         let fasciaNote = "Fascias + posture → muscles → os — chaîne orthotropics (pas excuses génétiques)"
-        if !face.jawAndTongueWork.contains(fasciaNote) {
-            face.jawAndTongueWork.insert(fasciaNote, at: 0)
+        if !face.lymphAndFascia.contains(fasciaNote) {
+            face.lymphAndFascia.insert(fasciaNote, at: 0)
         }
     }
 
     static func enrichPostureMobility(_ blocks: inout [String], answers: [String: WelcomePlanAnswer]) {
-        guard hasChinConcern(answers) else { return }
+        guard hasChinConcern(answers: answers) else { return }
         let neckCurl = "Neck curls — 3×10–12 (menton / super-hyoïdiens, script #12)"
         if !blocks.contains(where: { $0.localizedCaseInsensitiveContains("Neck curls") }) {
             blocks.append(neckCurl)
@@ -70,7 +70,7 @@ enum ChinRecessionIntelligenceGuide {
     }
 
     private static func needsFullChinProtocol(answers: [String: WelcomePlanAnswer]) -> Bool {
-        hasChinConcern(answers)
+        hasChinConcern(answers: answers)
             || choice("forward_head", in: answers) == "yes"
             || choice("mouth_breathing", in: answers) == "yes"
     }

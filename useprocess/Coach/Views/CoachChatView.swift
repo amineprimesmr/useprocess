@@ -139,10 +139,16 @@ struct CoachChatView: View {
         .fullScreenCover(isPresented: $showFaceScan) {
             FaceScanPrivacyGateView(
                 onDismiss: { showFaceScan = false },
-                onComplete: { _ in
+                onComplete: { result in
                     showFaceScan = false
                     FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
-                }
+                    Task {
+                        await viewModel.sendFaceScanHandoff(
+                            FaceScanCoachHandoffBuilder.make(from: result)
+                        )
+                    }
+                },
+                skipResultSheet: true
             )
             .environmentObject(profileService)
         }
@@ -658,26 +664,46 @@ struct CoachChatView: View {
         let isUser = message.role == .user
 
         if isUser {
-            CoachUserMessageBubbleView(
-                message: message,
-                profile: profileService.currentProfile,
-                font: messageFont,
-                lineSpacing: messageLineSpacing,
-                bubbleColor: theme.coachUserBubble,
-                textColor: theme.primaryText,
-                onLongPress: { frame in
-                    isInputFocused = false
-                    messageContextMenu = CoachUserMessageContextState(
-                        message: message,
-                        bubbleFrame: frame
-                    )
-                }
-            )
-            .transition(
-                .opacity
-                    .combined(with: .offset(y: 10))
-                    .combined(with: .scale(scale: 0.98, anchor: .bottomTrailing))
-            )
+            if let scanId = CoachFaceScanMessageMarker.scanId(from: message.text),
+               let result = FaceScanHistoryStore.shared.history.first(where: { $0.id == scanId }) {
+                CoachFaceScanUserMessageView(
+                    message: message,
+                    result: result,
+                    profile: profileService.currentProfile,
+                    font: messageFont,
+                    lineSpacing: messageLineSpacing,
+                    bubbleColor: theme.coachUserBubble,
+                    textColor: theme.primaryText,
+                    onLongPress: { frame in
+                        isInputFocused = false
+                        messageContextMenu = CoachUserMessageContextState(
+                            message: message,
+                            bubbleFrame: frame
+                        )
+                    }
+                )
+            } else {
+                CoachUserMessageBubbleView(
+                    message: message,
+                    profile: profileService.currentProfile,
+                    font: messageFont,
+                    lineSpacing: messageLineSpacing,
+                    bubbleColor: theme.coachUserBubble,
+                    textColor: theme.primaryText,
+                    onLongPress: { frame in
+                        isInputFocused = false
+                        messageContextMenu = CoachUserMessageContextState(
+                            message: message,
+                            bubbleFrame: frame
+                        )
+                    }
+                )
+                .transition(
+                    .opacity
+                        .combined(with: .offset(y: 10))
+                        .combined(with: .scale(scale: 0.98, anchor: .bottomTrailing))
+                )
+            }
         } else if let meal = CoachMealMessageDetector.mealContent(from: message.text) {
             CoachMealSuggestionMessageView(
                 content: meal,

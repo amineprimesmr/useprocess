@@ -1,7 +1,7 @@
 import AuthenticationServices
 import SwiftUI
 
-/// Page profil — identité + santé (données Apple Santé, scan visage).
+/// Page profil — identité + santé (données Apple Santé).
 struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
 
@@ -13,6 +13,7 @@ struct ProcessProfileView: View {
     @State private var showUsernameEditor = false
     @State private var showShareSheet = false
     @State private var showPhotoFlow = false
+    @State private var photoMenuAnchor: CGPoint = .zero
     @State private var pendingAccountConfirmation: AccountConfirmation?
     @State private var deleteAccountWhenSheetDismisses = false
 
@@ -36,6 +37,7 @@ struct ProcessProfileView: View {
             }
             .processReportsTabBarScrollOffset()
         }
+        .coordinateSpace(name: "profileScroll")
         .scrollClipDisabled()
         .ignoresSafeArea(edges: .top)
         .scrollIndicators(.hidden)
@@ -46,6 +48,7 @@ struct ProcessProfileView: View {
         .reportsProfileSubrouteActive(showEditProfile)
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
+            menuAnchor: photoMenuAnchor,
             hasExistingPhoto: profileStore.hasCoverPhoto,
             onApply: { image in
                 withAnimation(ProfileTheme.spring) {
@@ -139,6 +142,11 @@ struct ProcessProfileView: View {
         }
     }
 
+    private func presentPhotoMenu(at anchor: CGPoint) {
+        photoMenuAnchor = anchor
+        showPhotoFlow = true
+    }
+
     @ViewBuilder
     private func profileHero(_ profile: SocialProfile) -> some View {
         if profileStore.hasCoverPhoto, let cover = profileStore.coverPhoto {
@@ -147,14 +155,14 @@ struct ProcessProfileView: View {
                 displayName: profile.displayName,
                 username: profile.username,
                 isPrivate: profile.isPrivate,
-                onChangePhoto: { showPhotoFlow = true },
+                onPhotoTap: presentPhotoMenu,
                 onOpenSettings: { showSettings = true },
                 onEditUsername: { showUsernameEditor = true }
             )
             .transition(.opacity.combined(with: .scale(scale: 0.985)))
         } else {
             ProfileEmptyHeroSection(
-                onAddPhoto: { showPhotoFlow = true },
+                onPhotoTap: presentPhotoMenu,
                 onOpenSettings: { showSettings = true }
             )
             .transition(.opacity.combined(with: .scale(scale: 0.985)))

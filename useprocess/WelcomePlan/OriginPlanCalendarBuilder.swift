@@ -96,7 +96,7 @@ enum OriginPlanCalendarBuilder {
             )
         }
 
-        return OriginProgramCalendar(startedAt: Date(), weeks: weeks, buildVersion: 7)
+        return OriginProgramCalendar(startedAt: Date(), weeks: weeks, buildVersion: 8)
     }
 
     private static func sleepEveningActions(

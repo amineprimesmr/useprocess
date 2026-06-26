@@ -45,7 +45,7 @@ enum SkinHealthIntelligenceGuide {
         dailySteps: Int,
         hydrationLabel: String
     ) {
-        let skinFocus = hasSkinConcern(answers)
+        let skinFocus = hasSkinConcern(answers: answers)
 
         for line in lymphAndSkinRoutine {
             if !face.lymphAndFascia.contains(line) {
@@ -68,13 +68,8 @@ enum SkinHealthIntelligenceGuide {
                     "Marche \(dailySteps) pas + \(hydrationLabel) alimentaire = drainage + peau"
                 )
             }
-            if !face.jawAndTongueWork.contains(skinTimelineNote) {
-                face.jawAndTongueWork.append(skinTimelineNote)
-            }
-            for principle in dietPrinciplesForSkin {
-                if !face.jawAndTongueWork.contains(principle) {
-                    face.jawAndTongueWork.append(principle)
-                }
+            if !face.lymphAndFascia.contains(skinTimelineNote) {
+                face.lymphAndFascia.append(skinTimelineNote)
             }
         }
     }
@@ -83,7 +78,7 @@ enum SkinHealthIntelligenceGuide {
         _ nutrition: inout OriginNutritionProtocol,
         answers: [String: WelcomePlanAnswer]
     ) {
-        guard hasSkinConcern(answers) else { return }
+        guard hasSkinConcern(answers: answers) else { return }
 
         for principle in dietPrinciplesForSkin {
             if !nutrition.principles.contains(principle) {

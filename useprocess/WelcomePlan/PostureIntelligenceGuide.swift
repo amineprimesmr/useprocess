@@ -6,20 +6,21 @@ enum PostureIntelligenceGuide {
 
     // MARK: - Principes coach (injectés dans EnzoCoachingVoiceGuide)
 
-    static let coachingPrinciplesBlock = """
-    POSTURE — SCRIPTS #7 + #8 (fondation + tête en avant) :
-    - Posture = fondation visage + santé — chaîne pieds → bassin → dos → nuque → tête → maxillaire → respiration
-    - Tête en avant = compensation airways étroites (palais récessif) — pas seulement « muscles faibles »
-    - Chin tucks seuls insuffisants sans habitudes orofaciales (langue, déglution, respiration nasale)
-    - Nuque droite 24/7 (pas chin tuck permanent) — SCM sur-sollicité = boucle tête en avant
-  - Exercices : chin tuck avancé (lit/banc 3×8–10), extension nuque dos (3×10), face pulls (2–3×10–12)
-    - Corps : APT → RSS (release fascias, stretch hip flexors, strengthen glutes) ; marcher orteils dedans talons dehors
-    - Pieds nus ~30 min/j — muscles intrinsiques = fondation squelette
-    - Sommeil latéral : coussin tête + entre genoux + à hugger — airways ouvertes
-    - Langue tiers postérieur sur palais, dents en contact léger — 2 semaines conscience active
-    - Thumb pull 8 semaines + Buteyko 3–4 min pour sutures/fascias
-    - Ordre : muscles correctifs → structure (orofacial) → habitudes passives permanentes
-    """
+    static let coachingPrinciplesBlock =
+        """
+        POSTURE — SCRIPTS #7 + #8 (fondation + tête en avant) :
+        - Posture = fondation visage + santé — chaîne pieds → bassin → dos → nuque → tête → maxillaire → respiration
+        - Tête en avant = compensation airways étroites (palais récessif) — pas seulement « muscles faibles »
+        - Chin tucks seuls insuffisants sans habitudes orofaciales (langue, déglution, respiration nasale)
+        - Nuque droite 24/7 (pas chin tuck permanent) — SCM sur-sollicité = boucle tête en avant
+        - Exercices : chin tuck avancé (lit/banc 3×8–10), extension nuque dos (3×10), face pulls (2–3×10–12)
+        - Corps : APT → RSS (release fascias, stretch hip flexors, strengthen glutes) ; marcher orteils dedans talons dehors
+        - Pieds nus ~30 min/j — muscles intrinsiques = fondation squelette
+        - Sommeil latéral : coussin tête + entre genoux + à hugger — airways ouvertes
+        - Langue tiers postérieur sur palais, dents en contact léger — 2 semaines conscience active
+        - Thumb pull 8 semaines + Buteyko 3–4 min pour sutures/fascias
+        - Ordre : muscles correctifs → structure (orofacial) → habitudes passives permanentes
+        """
 
     // MARK: - Habitudes continues (complément ProcessContinuousHabits)
 

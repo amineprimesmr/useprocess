@@ -1,13 +1,13 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Visuels temporaires (même asset partout en attendant le catalogue complet)
+// MARK: - Visuels
 
 enum PlanTrainingVisuals {
     static let placeholderAsset = "dossport"
     /// Ratio largeur / hauteur de dossport (941×1672).
     static let fallbackAspectRatio: CGFloat = 941.0 / 1672.0
-    static let heroMaxHeight: CGFloat = 248
+    static let heroMaxHeight: CGFloat = 296
 
     static func resolvedAssetName(for entry: TrainingSessionCatalogEntry) -> String {
         TrainingAssetCatalog.resolvedHeroAsset(for: entry)
@@ -35,61 +35,57 @@ struct PlanTrainingDaySection: View {
 
     @Namespace private var trainingZoomNamespace
     @State private var detailTarget: PlanTrainingDetailTarget?
-    @State private var bookmarkedSessionIDs: Set<String> = PlanTrainingBookmarks.load()
+    @State private var selectedProtocolItem: PlanProtocolCarouselItem?
 
     private var training: OriginDayTraining? { day.training }
 
     var body: some View {
-        let entry = catalogEntry(for: day, training: training)
+        if let training {
+            let items = PlanProtocolCarouselBuilder.trainingItems(from: training)
 
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Entraînement du jour")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(theme.primaryText)
+            VStack(alignment: .leading, spacing: 14) {
+                PlanProtocolSectionHeader(
+                    title: "Entraînement du jour",
+                    trailing: trainingHeaderTrailing(for: training, itemCount: items.count)
+                )
 
-            if let training {
-                sessionHeroCard(training: training, entry: entry)
-            } else {
-                restDayCard(entry: entry)
+                if items.isEmpty {
+                    Text("Aucun exercice planifié pour cette séance.")
+                        .font(.subheadline)
+                        .foregroundStyle(theme.secondaryText)
+                } else {
+                    PlanDayProtocolCarousel(items: items) { item in
+                        selectedProtocolItem = item
+                    }
+                    .processZoomSource(id: .trainingDay, namespace: trainingZoomNamespace)
+                }
+            }
+            .sheet(item: $selectedProtocolItem) { item in
+                PlanProtocolItemDetailSheet(
+                    item: item,
+                    sessionActionTitle: "Voir toute la séance",
+                    onOpenSession: {
+                        selectedProtocolItem = nil
+                        openSessionDetail()
+                    }
+                )
+            }
+            .fullScreenCover(item: $detailTarget) { target in
+                PlanTrainingDetailSheet(training: target.training, dayTitle: target.dayTitle)
+                    .processZoomTransition(id: .trainingDay, namespace: trainingZoomNamespace)
             }
         }
-        .fullScreenCover(item: $detailTarget) { target in
-            PlanTrainingDetailSheet(training: target.training, dayTitle: target.dayTitle)
-                .processZoomTransition(id: .trainingDay, namespace: trainingZoomNamespace)
+    }
+
+    private func trainingHeaderTrailing(for training: OriginDayTraining, itemCount: Int) -> String {
+        var parts: [String] = []
+        if training.durationMinutes > 0 {
+            parts.append("\(training.durationMinutes) min")
         }
-    }
-
-    private func sessionHeroCard(training: OriginDayTraining, entry: TrainingSessionCatalogEntry) -> some View {
-        let isBookmarked = bookmarkedSessionIDs.contains(entry.id.rawValue)
-
-        return PlanTrainingFullBleedCard(
-            assetName: PlanTrainingVisuals.resolvedAssetName(for: entry),
-            headline: entry.headline,
-            muscleTags: entry.muscleTagsLabel,
-            durationMinutes: training.durationMinutes,
-            footerLine: "\(training.exercises.count) exercices · \(day.weekdayLabel)",
-            isBookmarked: isBookmarked,
-            cardMaxHeight: PlanTrainingVisuals.heroMaxHeight,
-            onBookmark: { toggleBookmark(entry.id.rawValue) },
-            onTap: openSessionDetail
-        )
-        .processZoomSource(id: .trainingDay, namespace: trainingZoomNamespace)
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
-    private func restDayCard(entry: TrainingSessionCatalogEntry) -> some View {
-        PlanTrainingFullBleedCard(
-            assetName: PlanTrainingVisuals.resolvedAssetName(for: entry),
-            headline: entry.headline,
-            muscleTags: entry.muscleTagsLabel,
-            durationMinutes: nil,
-            footerLine: "Marche \(formattedSteps)+ pas · mobilité légère",
-            isBookmarked: false,
-            cardMaxHeight: PlanTrainingVisuals.heroMaxHeight,
-            showsBookmark: false,
-            onTap: {}
-        )
-        .frame(maxWidth: .infinity, alignment: .center)
+        if itemCount > 0 {
+            parts.append("\(itemCount) ex.")
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func openSessionDetail() {
@@ -100,32 +96,6 @@ struct PlanTrainingDaySection: View {
             training: training,
             dayTitle: day.title
         )
-    }
-
-    private var formattedSteps: String {
-        let target = plan.personalizedTargets?.dailySteps ?? ProcessDailyTargets.dailySteps
-        let nf = NumberFormatter()
-        nf.locale = Locale(identifier: "fr_FR")
-        nf.numberStyle = .decimal
-        nf.groupingSeparator = " "
-        return nf.string(from: NSNumber(value: target)) ?? "\(target)"
-    }
-
-    private func toggleBookmark(_ id: String) {
-        if bookmarkedSessionIDs.contains(id) {
-            bookmarkedSessionIDs.remove(id)
-        } else {
-            bookmarkedSessionIDs.insert(id)
-        }
-        PlanTrainingBookmarks.save(bookmarkedSessionIDs)
-    }
-
-    @MainActor
-    private func catalogEntry(for day: OriginProgramDay, training: OriginDayTraining?) -> TrainingSessionCatalogEntry {
-        if let training {
-            return TrainingSessionCatalog.entry(for: training)
-        }
-        return TrainingSessionCatalog.entry(for: .restDay)
     }
 }
 
@@ -148,9 +118,9 @@ struct PlanTrainingFullBleedCard: View {
     var isBookmarked: Bool
     var cardWidth: CGFloat? = nil
     var cardMaxHeight: CGFloat? = nil
-    var cornerRadius: CGFloat = 26
+    var cornerRadius: CGFloat = 28
     var showsBookmark: Bool = true
-    var titleFontSize: CGFloat = 17
+    var titleFontSize: CGFloat = 18
     var onBookmark: (() -> Void)? = nil
     var onTap: () -> Void
 
@@ -161,87 +131,107 @@ struct PlanTrainingFullBleedCard: View {
     }
 
     var body: some View {
-        cardFrame
-            .overlay {
-                ZStack(alignment: .bottomLeading) {
-                    PlanTrainingCardImage(assetName: assetName)
+        Button {
+            HapticManager.shared.impact(.light)
+            onTap()
+        } label: {
+            cardFrame
+                .overlay { cardContent }
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay { PlanTrainingCardReliefOverlay(cornerRadius: cornerRadius, isDark: theme.isDark) }
+        }
+        .buttonStyle(PlanTrainingCard3DPressStyle())
+        .shadow(color: .black.opacity(theme.isDark ? 0.55 : 0.14), radius: 2, x: 0, y: 2)
+        .shadow(color: .black.opacity(theme.isDark ? 0.42 : 0.16), radius: 16, x: 0, y: 10)
+        .shadow(color: theme.onboardingAccent.opacity(theme.isDark ? 0.14 : 0.08), radius: 24, x: 0, y: 14)
+    }
 
-                    VStack {
-                        HStack(alignment: .top) {
-                            if showsBookmark {
-                                Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.92))
-                                    .frame(width: 34, height: 34)
-                                    .background(Circle().fill(Color.black.opacity(0.28)))
-                                    .contentShape(Circle())
-                                    .onTapGesture {
-                                        onBookmark?()
+    private var cardContent: some View {
+        ZStack(alignment: .bottomLeading) {
+            PlanTrainingCardImage(assetName: assetName, imageScale: 1.14)
+
+            VStack {
+                HStack(alignment: .top) {
+                    if showsBookmark {
+                        Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.94))
+                            .frame(width: 36, height: 36)
+                            .background {
+                                Circle()
+                                    .fill(.black.opacity(0.32))
+                                    .overlay {
+                                        Circle()
+                                            .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5)
                                     }
                             }
-
-                            Spacer(minLength: 0)
-
-                            if let durationMinutes {
-                                Text("\(durationMinutes) min")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(.white.opacity(0.92))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(Capsule().fill(Color.black.opacity(0.32)))
+                            .contentShape(Circle())
+                            .onTapGesture {
+                                HapticManager.shared.selection()
+                                onBookmark?()
                             }
-                        }
-                        .padding(14)
-
-                        Spacer(minLength: 0)
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(headline)
-                            .font(.system(size: titleFontSize, weight: .bold))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(3)
-                            .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
 
-                        Text(muscleTags)
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(Color.white.opacity(0.58))
-                            .lineLimit(2)
-
-                        if let footerLine, !footerLine.isEmpty {
-                            Text(footerLine)
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(Color.white.opacity(0.72))
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background {
-                        LinearGradient(
-                            colors: [.clear, .black.opacity(0.55), .black.opacity(0.88)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                    if let durationMinutes {
+                        Text("\(durationMinutes) min")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white.opacity(0.94))
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 6)
+                            .background {
+                                Capsule()
+                                    .fill(.black.opacity(0.36))
+                                    .overlay {
+                                        Capsule()
+                                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                                    }
+                            }
                     }
                 }
+                .padding(16)
+
+                Spacer(minLength: 0)
             }
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(headline)
+                    .font(.system(size: titleFontSize, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(muscleTags)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.62))
+                    .lineLimit(2)
+
+                if let footerLine, !footerLine.isEmpty {
+                    Text(footerLine)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color.white.opacity(0.78))
+                        .lineLimit(1)
+                }
             }
-            .shadow(color: .black.opacity(theme.isDark ? 0.42 : 0.16), radius: 18, y: 8)
-            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .onTapGesture(perform: onTap)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.42), .black.opacity(0.9)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        }
     }
 
     @ViewBuilder
     private var cardFrame: some View {
         if let cardMaxHeight {
-            let maxCardWidth = max(UIScreen.main.bounds.width - 56, 220)
+            let maxCardWidth = max(UIScreen.main.bounds.width - 28, 240)
             let cardWidth = min(cardMaxHeight * imageAspectRatio, maxCardWidth)
             let cardHeight = cardWidth / max(imageAspectRatio, 0.1)
 
@@ -261,6 +251,7 @@ struct PlanTrainingFullBleedCard: View {
 
 struct PlanTrainingCardImage: View {
     let assetName: String
+    var imageScale: CGFloat = 1.08
 
     var body: some View {
         Group {
@@ -268,6 +259,7 @@ struct PlanTrainingCardImage: View {
                 Image(assetName)
                     .resizable()
                     .scaledToFill()
+                    .scaleEffect(imageScale)
             } else {
                 Color(red: 0.09, green: 0.09, blue: 0.10)
             }
@@ -275,9 +267,9 @@ struct PlanTrainingCardImage: View {
         .overlay {
             LinearGradient(
                 colors: [
-                    Color.black.opacity(0.12),
-                    Color.black.opacity(0.22),
-                    Color.black.opacity(0.48)
+                    Color.black.opacity(0.08),
+                    Color.black.opacity(0.18),
+                    Color.black.opacity(0.45)
                 ],
                 startPoint: .top,
                 endPoint: .bottom

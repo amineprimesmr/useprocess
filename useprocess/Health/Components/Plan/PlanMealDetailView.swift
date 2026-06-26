@@ -54,7 +54,14 @@ struct PlanMealDetailView: View {
     }
 
     private var profile: MealNutritionProfile { MealNutritionCatalog.profile(for: meal) }
-    private var imageAsset: String { MealNutritionCatalog.resolvedImageAsset(for: meal) }
+    private var imageAsset: String {
+        MealNutritionCatalog.resolvedImageAsset(
+            for: meal,
+            slot: entry.slot,
+            dayIndex: day.globalDayIndex,
+            planType: plan.nutritionPlanType
+        )
+    }
 
     var body: some View {
         NavigationStack {

@@ -5,6 +5,7 @@ struct PlanLastFaceScanSection: View {
     let latest: FaceScanResult?
     let isScanDue: Bool
     var zoomNamespace: Namespace.ID? = nil
+    var onScan: (() -> Void)? = nil
     var onOpenHistory: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
@@ -21,8 +22,8 @@ struct PlanLastFaceScanSection: View {
 
     var body: some View {
         Group {
-            if onOpenHistory != nil {
-                Button(action: openHistory) {
+            if onOpenHistory != nil || onScan != nil {
+                Button(action: handlePrimaryTap) {
                     cardContent
                 }
                 .buttonStyle(PlanFaceScanSectionButtonStyle())
@@ -33,6 +34,15 @@ struct PlanLastFaceScanSection: View {
         .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
         .onAppear {
             displayPreferences.reload()
+        }
+    }
+
+    private func handlePrimaryTap() {
+        if (latest == nil || isScanDue), let onScan {
+            HapticManager.shared.impact(.medium)
+            onScan()
+        } else {
+            openHistory()
         }
     }
 
@@ -140,8 +150,8 @@ struct PlanLastFaceScanSection: View {
             Spacer(minLength: 4)
 
             if let latest {
-                FaceWellnessScoreBadge(
-                    score: latest.resolvedFaceDayScore,
+                FaceWellnessAppreciationBadge(
+                    appreciation: FaceWellnessScore.appreciation(for: latest),
                     theme: theme,
                     style: .compact
                 )
@@ -225,8 +235,8 @@ struct PlanLastFaceScanSection: View {
             Spacer(minLength: 4)
 
             if let latest {
-                FaceWellnessScoreBadge(
-                    score: latest.resolvedFaceDayScore,
+                FaceWellnessAppreciationBadge(
+                    appreciation: FaceWellnessScore.appreciation(for: latest),
                     theme: theme,
                     style: .compact
                 )

@@ -5,6 +5,8 @@ struct FaceScanSessionView: View {
 
     var onDismiss: () -> Void
     var onComplete: (FaceScanResult) -> Void
+    /// Passe directement au callback (coach handoff) sans sheet résultat.
+    var skipResultSheet: Bool = false
 
     @State private var isProcessing = false
     @State private var completedResult: FaceScanResult?
@@ -56,7 +58,12 @@ struct FaceScanSessionView: View {
             markers: markers,
             profile: profileService.currentProfile
         )
-        completedResult = result
+
+        if skipResultSheet {
+            onComplete(result)
+        } else {
+            completedResult = result
+        }
     }
 }
 
@@ -101,8 +108,8 @@ struct FaceScanResultSheet: View {
                             .font(.caption)
                             .foregroundStyle(theme.secondaryText)
                         Spacer()
-                        FaceWellnessScoreBadge(
-                            score: result.resolvedFaceDayScore,
+                        FaceWellnessAppreciationBadge(
+                            appreciation: FaceWellnessScore.appreciation(for: result),
                             theme: theme,
                             style: .compact
                         )

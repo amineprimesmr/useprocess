@@ -13,7 +13,8 @@ private struct ProfileCropPayload: Identifiable {
 @MainActor
 struct ProfilePhotoFlowModifier: ViewModifier {
     @Binding var isPresented: Bool
-    @State private var showSourceSheet = false
+    let menuAnchor: CGPoint
+    @State private var showSourceMenu = false
     @State private var cropPayload: ProfileCropPayload?
     @State private var showPhotoLibrary = false
     @State private var showCamera = false
@@ -27,36 +28,40 @@ struct ProfilePhotoFlowModifier: ViewModifier {
         content
             .onChange(of: isPresented) { _, visible in
                 if visible {
-                    showSourceSheet = true
+                    showSourceMenu = true
                 } else {
-                    showSourceSheet = false
+                    showSourceMenu = false
                     cropPayload = nil
                 }
             }
-            .confirmationDialog(
-                "Changer de photo de profil",
-                isPresented: $showSourceSheet,
-                titleVisibility: .visible
-            ) {
-                Button("Photothèque") {
-                    showPhotoLibrary = true
+            .overlay {
+                if showSourceMenu {
+                    ProfilePhotoSourceMenu(
+                        anchor: menuAnchor,
+                        hasExistingPhoto: hasExistingPhoto,
+                        onLibrary: {
+                            showSourceMenu = false
+                            showPhotoLibrary = true
+                        },
+                        onCamera: {
+                            showSourceMenu = false
+                            showCamera = true
+                        },
+                        onDelete: {
+                            showSourceMenu = false
+                            onDelete()
+                            isPresented = false
+                        },
+                        onDismiss: {
+                            showSourceMenu = false
+                            isPresented = false
+                        }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
                 }
-                Button("Appareil photo") {
-                    showCamera = true
-                }
-                if hasExistingPhoto {
-                    Button("Supprimer la photo de profil", role: .destructive) {
-                        onDelete()
-                        isPresented = false
-                    }
-                }
-                Button("Annuler", role: .cancel) {
-                    isPresented = false
-                }
-            } message: {
-                Text("Recadre ta photo comme sur ton profil. L’avatar rond sera généré automatiquement.")
             }
-            .onChange(of: showSourceSheet) { _, visible in
+            .animation(.spring(response: 0.32, dampingFraction: 0.86), value: showSourceMenu)
+            .onChange(of: showSourceMenu) { _, visible in
                 guard !visible else { return }
                 if !showPhotoLibrary && !showCamera && cropPayload == nil {
                     isPresented = false
@@ -136,6 +141,7 @@ struct ProfilePhotoFlowModifier: ViewModifier {
 extension View {
     func profilePhotoFlow(
         isPresented: Binding<Bool>,
+        menuAnchor: CGPoint,
         hasExistingPhoto: Bool,
         onApply: @escaping (UIImage) -> Void,
         onDelete: @escaping () -> Void
@@ -143,11 +149,114 @@ extension View {
         modifier(
             ProfilePhotoFlowModifier(
                 isPresented: isPresented,
+                menuAnchor: menuAnchor,
                 hasExistingPhoto: hasExistingPhoto,
                 onApply: onApply,
                 onDelete: onDelete
             )
         )
+    }
+}
+
+// MARK: - Menu ancré au tap
+
+private struct ProfilePhotoSourceMenu: View {
+    let anchor: CGPoint
+    let hasExistingPhoto: Bool
+    let onLibrary: () -> Void
+    let onCamera: () -> Void
+    let onDelete: () -> Void
+    let onDismiss: () -> Void
+
+    private let menuWidth: CGFloat = 232
+
+    var body: some View {
+        GeometryReader { geo in
+            let frame = geo.frame(in: .global)
+            let localX = anchor.x - frame.minX
+            let localY = anchor.y - frame.minY
+            let rowCount = hasExistingPhoto ? 3 : 2
+            let menuHeight = CGFloat(rowCount) * 48 + 12
+            let positionedY = clampedMenuY(
+                tapY: localY,
+                menuHeight: menuHeight,
+                containerHeight: geo.size.height
+            )
+            let positionedX = clampedMenuX(
+                tapX: localX,
+                containerWidth: geo.size.width
+            )
+
+            ZStack {
+                Color.black.opacity(0.18)
+                    .ignoresSafeArea()
+                    .onTapGesture { onDismiss() }
+
+                VStack(alignment: .leading, spacing: 0) {
+                    menuRow(title: "Photothèque", icon: "photo.on.rectangle", action: onLibrary)
+                    menuRow(title: "Appareil photo", icon: "camera.fill", action: onCamera)
+                    if hasExistingPhoto {
+                        menuRow(
+                            title: "Supprimer la photo",
+                            icon: "trash",
+                            isDestructive: true,
+                            action: onDelete
+                        )
+                    }
+                }
+                .frame(width: menuWidth)
+                .padding(.vertical, 6)
+                .processGlassEffect(
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous),
+                    interactive: false
+                )
+                .shadow(color: .black.opacity(0.28), radius: 22, y: 10)
+                .position(x: positionedX, y: positionedY)
+            }
+        }
+        .ignoresSafeArea()
+        .accessibilityAddTraits(.isModal)
+    }
+
+    private func menuRow(
+        title: String,
+        icon: String,
+        isDestructive: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 22)
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(isDestructive ? Color.red : Color.primary)
+            .padding(.horizontal, 14)
+            .frame(height: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func clampedMenuX(tapX: CGFloat, containerWidth: CGFloat) -> CGFloat {
+        let half = menuWidth / 2
+        let margin: CGFloat = 16
+        let width = max(containerWidth, menuWidth + margin * 2)
+        return min(max(tapX, half + margin), width - half - margin)
+    }
+
+    private func clampedMenuY(tapY: CGFloat, menuHeight: CGFloat, containerHeight: CGFloat) -> CGFloat {
+        let height = max(containerHeight, menuHeight + 40)
+        let below = tapY + menuHeight / 2 + 14
+        let above = tapY - menuHeight / 2 - 14
+        let margin: CGFloat = 20
+        if below + menuHeight / 2 <= height - margin {
+            return below
+        }
+        return max(above, margin + menuHeight / 2)
     }
 }
 
@@ -210,14 +319,16 @@ struct ProfileImageCropView: View {
     }
 
     private func coverCropSize(in geo: GeometryProxy) -> CGSize {
-        let width = min(ProfileTheme.heroCoverWidth, geo.size.width - 8)
+        let availableWidth = max(geo.size.width, 1)
+        let availableHeight = max(geo.size.height, 1)
+        let width = max(120, min(ProfileTheme.heroCoverWidth, availableWidth - 8))
         let height = width / ProfileTheme.heroCoverAspectRatio
-        let maxHeight = max(180, geo.size.height - 8)
+        let maxHeight = max(180, availableHeight - 8)
         if height <= maxHeight {
             return CGSize(width: width, height: height)
         }
         let fittedHeight = maxHeight
-        let fittedWidth = fittedHeight * ProfileTheme.heroCoverAspectRatio
+        let fittedWidth = max(120, fittedHeight * ProfileTheme.heroCoverAspectRatio)
         return CGSize(width: fittedWidth, height: fittedHeight)
     }
 

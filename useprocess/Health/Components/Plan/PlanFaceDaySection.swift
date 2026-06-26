@@ -1,96 +1,68 @@
 import SwiftUI
 
-/// Protocole visage complet — orofacial, lymphe, cadence scan.
+/// Protocole visage — routines du jour + habitudes orofaciales 24/7.
 struct PlanFaceDaySection: View {
     let plan: FaceOriginPlan
 
     @Environment(\.appTheme) private var theme
+    @State private var selectedProtocolItem: PlanProtocolCarouselItem?
 
     private var faceProtocol: OriginFaceProtocol { plan.faceProtocol }
-
-    private var jawLines: [String] {
-        faceProtocol.jawAndTongueWork
-    }
 
     private var lymphLines: [String] {
         faceProtocol.lymphAndFascia
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Protocole visage")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(theme.primaryText)
+    private var carouselItems: [PlanProtocolCarouselItem] {
+        var items = PlanProtocolCarouselBuilder.lineItems(
+            from: lymphLines,
+            idPrefix: "lymph",
+            fallback: "drop",
+            category: "Lymphe & fascias"
+        )
 
-            faceHeroCard
+        if !faceProtocol.scanCadence.isEmpty {
+            items += PlanProtocolCarouselBuilder.lineItems(
+                from: [faceProtocol.scanCadence],
+                idPrefix: "scan",
+                fallback: "camera.viewfinder",
+                category: "Scan visage"
+            )
+        }
+
+        return items
+    }
+
+    var body: some View {
+        let items = carouselItems
+
+        VStack(alignment: .leading, spacing: 14) {
+            PlanProtocolSectionHeader(
+                title: "Protocole visage",
+                trailing: items.isEmpty ? nil : "\(items.count) routines · ~15 min"
+            )
 
             if !faceProtocol.focusAreas.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Priorités")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(theme.secondaryText)
-                        .textCase(.uppercase)
-                    Text(faceProtocol.focusAreas.joined(separator: " · "))
-                        .font(.subheadline)
-                        .foregroundStyle(theme.primaryText)
+                Text(faceProtocol.focusAreas.joined(separator: " · "))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            PlanContinuousHabitsInlineSection()
+
+            if items.isEmpty {
+                Text("Aucune routine visage planifiée pour ce jour.")
+                    .font(.subheadline)
+                    .foregroundStyle(theme.secondaryText)
+            } else {
+                PlanDayProtocolCarousel(items: items) { item in
+                    selectedProtocolItem = item
                 }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(HealthHubDesign.softCard(theme: theme))
-            }
-
-            if !jawLines.isEmpty {
-                protocolBlock(title: "Mâchoire & langue", lines: jawLines, icon: "mouth")
-            }
-
-            if !lymphLines.isEmpty {
-                protocolBlock(title: "Lymphe & fascias", lines: lymphLines, icon: "drop")
-            }
-
-            if !faceProtocol.scanCadence.isEmpty {
-                PlanTrainingBlockRow(
-                    line: faceProtocol.scanCadence,
-                    fallbackSystemImage: "camera.viewfinder"
-                )
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(HealthHubDesign.softCard(theme: theme))
             }
         }
-    }
-
-    private var faceHeroCard: some View {
-        let assetName = TrainingAssetCatalog.resolvedHeroAsset(
-            for: TrainingSessionCatalog.entry(for: .femaleUpper)
-        )
-
-        return PlanTrainingFullBleedCard(
-            assetName: assetName,
-            headline: "✨ Visage — debloat & structure",
-            muscleTags: "OROFACIAL · LYMPHE · MEWING",
-            durationMinutes: 15,
-            footerLine: "\(jawLines.count) actions orofaciales · habitudes 24/7",
-            isBookmarked: false,
-            cardMaxHeight: PlanTrainingVisuals.heroMaxHeight,
-            showsBookmark: false,
-            onTap: {}
-        )
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
-    private func protocolBlock(title: String, lines: [String], icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
-                .textCase(.uppercase)
-
-            ForEach(lines, id: \.self) { line in
-                PlanTrainingBlockRow(line: line, fallbackSystemImage: icon)
-            }
+        .sheet(item: $selectedProtocolItem) { item in
+            PlanProtocolItemDetailSheet(item: item)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(HealthHubDesign.softCard(theme: theme))
     }
 }

@@ -30,11 +30,13 @@ struct DailyJournalChecklistView: View {
     @Binding var selectedDate: Date
     var showHeader: Bool = true
     var showWeekStrip: Bool = true
+    var showChecklist: Bool = true
 
     @Namespace private var faceScanHistoryZoomNamespace
     @Namespace private var mealZoomNamespace
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var isChecklistExpanded = true
+    @State private var showFaceScan = false
     @State private var showFaceScanHistory = false
     @State private var selectedFaceScan: FaceScanResult?
     @EnvironmentObject private var healthManager: HealthManager
@@ -65,13 +67,21 @@ struct DailyJournalChecklistView: View {
                 latest: faceHistoryStore.latestResult,
                 isScanDue: faceHistoryStore.isScanDue,
                 zoomNamespace: faceScanHistoryZoomNamespace,
-                onOpenHistory: { showFaceScanHistory = true }
+                onScan: {
+                    showFaceScan = true
+                },
+                onOpenHistory: {
+                    showFaceScanHistory = true
+                }
             )
+            .environmentObject(UnifiedProfileService.shared)
             .padding(.bottom, showWeekStrip ? 0 : 8)
 
             switch dayAvailability {
             case .editable(let day, _):
-                journalSections(for: day, isEditable: true)
+                if showChecklist {
+                    journalSections(for: day, isEditable: true)
+                }
 
                 PlanNutritionDaySection(
                     plan: livePlan,
@@ -95,11 +105,19 @@ struct DailyJournalChecklistView: View {
                 PlanFaceDaySection(plan: livePlan)
                     .padding(.top, 28)
             case .future:
-                journalUnavailableCard(
-                    title: "Jour à venir",
-                    message: "Tu pourras remplir ta checklist une fois cette journée commencée.",
-                    systemImage: "calendar.badge.clock"
-                )
+                if showChecklist {
+                    journalUnavailableCard(
+                        title: "Jour à venir",
+                        message: "Tu pourras remplir ta checklist une fois cette journée commencée.",
+                        systemImage: "calendar.badge.clock"
+                    )
+                } else {
+                    journalUnavailableCard(
+                        title: "Jour à venir",
+                        message: "Le contenu de cette journée sera disponible le jour J.",
+                        systemImage: "calendar.badge.clock"
+                    )
+                }
             case .outsidePlan:
                 journalUnavailableCard(
                     title: "Hors protocole",
@@ -108,11 +126,33 @@ struct DailyJournalChecklistView: View {
                 )
             }
         }
+        .fullScreenCover(isPresented: $showFaceScan) {
+            FaceScanPrivacyGateView(
+                onDismiss: { showFaceScan = false },
+                onComplete: { result in
+                    showFaceScan = false
+                    faceHistoryStore = FaceScanHistoryStore.shared
+                    FaceScanCoachHandoffCoordinator.deliver(result: result)
+                },
+                skipResultSheet: true
+            )
+            .environmentObject(UnifiedProfileService.shared)
+        }
         .fullScreenCover(isPresented: $showFaceScanHistory) {
-            FaceScanHistoryView(history: faceHistoryStore.history) { scan in
-                showFaceScanHistory = false
-                selectedFaceScan = scan
-            }
+            FaceScanHistoryView(
+                history: faceHistoryStore.history,
+                isScanDue: faceHistoryStore.isScanDue,
+                onSelect: { scan in
+                    showFaceScanHistory = false
+                    selectedFaceScan = scan
+                },
+                onScan: {
+                    showFaceScanHistory = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        showFaceScan = true
+                    }
+                }
+            )
             .processZoomTransition(id: .faceScanHistory, namespace: faceScanHistoryZoomNamespace)
         }
         .sheet(item: $selectedFaceScan) { scan in

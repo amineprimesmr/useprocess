@@ -30,8 +30,8 @@ enum CoachPlanContextBuilder {
         if !face.focusAreas.isEmpty {
             lines.append("• Visage : \(face.focusAreas.prefix(3).joined(separator: " · "))")
         }
-        if let orofacial = face.jawAndTongueWork.first {
-            lines.append("  → Orofacial prioritaire : \(orofacial)")
+        if ProcessContinuousHabits.all.first != nil {
+            lines.append("  → Habitudes 24/7 : \(ProcessContinuousHabits.all.map(\.title).joined(separator: ", "))")
         }
         if !plan.postureProtocol.mobilityBlocks.isEmpty {
             lines.append("• Posture : \(plan.postureProtocol.mobilityBlocks.count) blocs mobilité quotidiens")

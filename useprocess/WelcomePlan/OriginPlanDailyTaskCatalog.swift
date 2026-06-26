@@ -21,36 +21,6 @@ enum OriginPlanDailyTaskCatalog {
       )
     ]
 
-    let jawWork = plan.faceProtocol.jawAndTongueWork
-    if !jawWork.isEmpty {
-      let index = dayIndex % jawWork.count
-      let line = jawWork[index]
-      tasks.append(
-        journalTask(
-          id: "\(dayId).face.orofacial",
-          title: "Orofacial du jour",
-          detail: line,
-          pillar: "Visage",
-          minutes: 5
-        )
-      )
-    }
-
-    if plan.faceProtocol.jawAndTongueWork.contains(where: {
-      $0.localizedCaseInsensitiveContains("tape")
-    }) {
-      tasks.append(
-        journalTask(
-          id: "\(dayId).face.tape",
-          title: "Tape zyg / mentalis",
-          detail: "Joues + menton avant le coucher — lip seal nocturne",
-          pillar: "Visage",
-          minutes: 2,
-          optional: true
-        )
-      )
-    }
-
     return tasks
   }
 

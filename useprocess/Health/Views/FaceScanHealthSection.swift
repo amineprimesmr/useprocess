@@ -34,8 +34,12 @@ struct FaceScanHealthSection: View {
 
                 Spacer()
 
-                if let faceDayScore {
-                    FaceWellnessScoreBadge(score: faceDayScore, theme: theme)
+                if let latest {
+                    FaceWellnessAppreciationBadge(
+                        appreciation: FaceWellnessScore.appreciation(for: latest),
+                        theme: theme,
+                        style: .compact
+                    )
                 }
 
                 if streakDays > 0 {

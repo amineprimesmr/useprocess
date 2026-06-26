@@ -180,7 +180,30 @@ final class CoachChatViewModel {
             await sendPrompt(checkInPrompt, persistUserMessage: true)
             return
         }
+        if let handoff = CoachPlanNavigationBridge.shared.consumePendingFaceScanHandoff() {
+            await sendFaceScanHandoff(handoff)
+            return
+        }
         await consumePendingPlanPromptIfNeeded()
+    }
+
+    func sendFaceScanHandoff(_ handoff: FaceScanCoachHandoff) async {
+        guard let result = FaceScanHistoryStore.shared.history.first(where: { $0.id == handoff.resultId }) else {
+            await sendPrompt(handoff.analysisPrompt, userDisplayText: handoff.userMessageText, persistUserMessage: true)
+            return
+        }
+
+        let images = FaceScanCoachHandoffBuilder.previewImages(for: result)
+        if images.isEmpty {
+            await sendPrompt(handoff.analysisPrompt, userDisplayText: handoff.userMessageText, persistUserMessage: true)
+            return
+        }
+
+        await sendImageAttachments(
+            images,
+            caption: handoff.analysisPrompt,
+            userDisplayText: handoff.userMessageText
+        )
     }
 
     func reloadForEveningDelivery() async {
@@ -891,7 +914,11 @@ final class CoachChatViewModel {
         await createNewConversation()
     }
 
-    func sendImageAttachments(_ images: [UIImage], caption: String = "") async {
+    func sendImageAttachments(
+        _ images: [UIImage],
+        caption: String = "",
+        userDisplayText: String? = nil
+    ) async {
         guard !isSending, !images.isEmpty else { return }
 
         if CoachIntelligenceSettingsStore.shared.isEnabled,
@@ -904,6 +931,10 @@ final class CoachChatViewModel {
 
         let trimmedCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         let userText: String = {
+            if let userDisplayText,
+               !userDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return userDisplayText.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
             if !trimmedCaption.isEmpty { return trimmedCaption }
             return images.count == 1 ? "📷 Photo" : "📷 \(images.count) photos"
         }()

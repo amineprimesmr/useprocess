@@ -47,7 +47,7 @@
 
 1. **Mouvement** — myofascial (muscles + fascias), stimulation lymphatique
 2. **Étirements / mobilité douce** — glissement, pas forcer
-3. **Hydratation + alimentation dense** — animaux, laitiers, poissons, œufs, fruits, miel, tubercules vapeur
+3. **Hydratation + alimentation dense** — animaux, laitiers, poissons, œufs, fruits, miel, tubercules cuits (rôtis/mijotés)
 4. **Stress / émotions** — moment présent (pas passé/futur), respiration nasale lente (parasympathique), méditation
 
 ## Lien scan useprocess

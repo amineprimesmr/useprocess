@@ -16,6 +16,7 @@ final class CoachPlanNavigationBridge {
     var shouldOpenFaceScan = false
     var shouldOpenTracking = false
     var shouldOpenIntegration = false
+    var pendingFaceScanHandoff: FaceScanCoachHandoff?
 
     func openPlan() {
         shouldOpenPlan = true
@@ -34,6 +35,17 @@ final class CoachPlanNavigationBridge {
     func openCoachWithEveningChecklist() {
         pendingEveningChecklist = true
         shouldOpenCoach = true
+    }
+
+    func openCoachAfterFaceScan(result: FaceScanResult) {
+        pendingFaceScanHandoff = FaceScanCoachHandoffBuilder.make(from: result)
+        shouldOpenCoach = true
+    }
+
+    func consumePendingFaceScanHandoff() -> FaceScanCoachHandoff? {
+        let handoff = pendingFaceScanHandoff
+        pendingFaceScanHandoff = nil
+        return handoff
     }
 
     func consumePendingEveningChecklist() -> Bool {

@@ -59,7 +59,7 @@ enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .threeMeals:
             return [
-                "Petit-déjeuner (7–9 h) : protéines + fruit ou tubercule cuit",
+                "Petit-déjeuner (7–9 h) : eau salée + protéines + fruit",
                 "Déjeuner (12–14 h) : repas principal dense — protéines + féculent complet",
                 "Dîner (18–20 h) : protéines + légumes cuits — sel modéré le soir",
                 "Idées repas via l'IA sur chaque créneau"
@@ -85,8 +85,8 @@ enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .threeMeals:
             return [
-                "Petit-déj : œufs brouillés + patate douce + beurre",
-                "Déj : steak + patate vapeur + salade cuite",
+                "Petit-déj : grand verre d'eau salée + œufs + banane ou avocat",
+                "Déj : steak grillé + pommes de terre rôties + légumes poêlés",
                 "Dîner : poisson + courgettes + huile d'olive"
             ]
         case .twoMAD:
@@ -127,7 +127,7 @@ enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
         case .threeMeals:
             switch slot {
             case .breakfast:
-                return "Petit-déjeuner léger-dense : œufs, fromage entier ou yaourt + tubercule/fruit. Pas de céréales industrielles."
+                return "Petit-déjeuner simple : grand verre d'eau + pincée de sel, œufs + fruit ou avocat. Pas de céréales industrielles ni tubercule au matin."
             case .lunch:
                 return "Déjeuner = repas le plus copieux : protéine animale ou œufs + féculent complet + légumes cuits."
             case .dinner:
