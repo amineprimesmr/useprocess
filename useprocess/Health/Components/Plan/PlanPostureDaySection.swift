@@ -48,10 +48,10 @@ struct PlanPostureDaySection: View {
     var body: some View {
         let items = carouselItems
 
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
                 title: "Posture & circuit quotidien",
-                trailing: items.isEmpty ? nil : "\(items.count) ex. · ~10 min"
+                trailing: items.isEmpty ? nil : "~10 min"
             )
 
             if items.isEmpty {

@@ -580,12 +580,7 @@ final class WelcomePlanChatViewModel {
                 displayed.append(character)
                 updateMessage(id: messageID, text: displayed)
 
-                if character != " " && character != "\n" && character != "\t" {
-                    HapticManager.shared.impact(.soft)
-                }
-                if character == "!" || character == "." || character == "?" {
-                    HapticManager.shared.impact(.light)
-                }
+                // Pas de haptiques sur le flux Protocole Origine — réservé au coach visible.
             }
         }
 

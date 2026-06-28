@@ -62,21 +62,21 @@ enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
                 "Petit-déjeuner (7–9 h) : eau salée + protéines + fruit",
                 "Déjeuner (12–14 h) : repas principal dense — protéines + féculent complet",
                 "Dîner (18–20 h) : protéines + légumes cuits — sel modéré le soir",
-                "Idées repas via l'IA sur chaque créneau"
+                "Repas debloat via l'IA sur chaque créneau"
             ]
         case .twoMAD:
             return [
                 "Pas de petit-déjeuner — café ou thé après le premier repas si besoin",
                 "Déjeuner (12–14 h) : repas dense — protéines + tubercule ou riz complet",
                 "Dîner (18–20 h) : protéines + légumes cuits — plus léger en sel",
-                "Idées repas via l'IA sur déjeuner et dîner"
+                "Repas debloat via l'IA sur déjeuner et dîner"
             ]
         case .omad:
             return [
                 "1 repas dense par jour — fenêtre de 4 à 6 h (ex. 17 h–21 h)",
                 "Couvre protéines, tubercule/légumes et lipides en une assiette",
                 "Hydratation + minéraux en dehors de la fenêtre repas",
-                "Idée repas via l'IA sur le créneau principal"
+                "Repas debloat via l'IA sur le créneau principal"
             ]
         }
     }

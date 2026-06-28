@@ -144,7 +144,7 @@ struct FaceScanResultSheet: View {
                 .padding()
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Scan enregistré")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -156,6 +156,8 @@ struct FaceScanResultSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents(isRegularWidth ? [.medium, .large] : [.large])
         .presentationDragIndicator(.visible)
     }

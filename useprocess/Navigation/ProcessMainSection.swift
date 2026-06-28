@@ -7,9 +7,11 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
-    static let tabOrder: [ProcessMainSection] = [.plan, .coach, .profile]
+    static let tabOrder: [ProcessMainSection] = [.plan, .profile]
 
-    var isShellTab: Bool { true }
+    var isShellTab: Bool {
+        self == .plan || self == .profile
+    }
 
     var label: String {
         switch self {

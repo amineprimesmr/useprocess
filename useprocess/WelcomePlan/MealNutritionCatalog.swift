@@ -50,10 +50,18 @@ enum MealNutritionCatalog {
         dayIndex: Int = 0,
         planType: NutritionPlanType = .threeMeals
     ) -> String {
-        for asset in imageAssetCandidates(for: meal) {
-            if ProcessAssetCatalog.contains(asset) {
-                return asset
-            }
+        let resolvedSlot = slot ?? meal.timeSlot
+        let featuredAsset = ProcessDebloatMealLibrary.featuredImageAsset
+        let featuredName = ProcessDebloatMealLibrary.featuredChickenMeal.name
+
+        if let catalogMeal = ProcessDebloatMealLibrary.catalogMeal(
+            matchingName: meal.name,
+            slot: resolvedSlot,
+            planType: planType
+        ),
+           let asset = catalogMeal.imageAssetName,
+           ProcessAssetCatalog.contains(asset) {
+            return asset
         }
 
         if let inferred = inferImageAssetFromCatalog(for: meal),
@@ -61,20 +69,35 @@ enum MealNutritionCatalog {
             return inferred
         }
 
-        let resolvedSlot = slot ?? meal.timeSlot
-        if let slotAsset = ProcessDebloatMealLibrary.meal(
+        for asset in imageAssetCandidates(for: meal) {
+            guard ProcessAssetCatalog.contains(asset) else { continue }
+            if asset == featuredAsset && meal.name != featuredName {
+                continue
+            }
+            return asset
+        }
+
+        let slotMeal = ProcessDebloatMealLibrary.meal(
             for: resolvedSlot,
             dayIndex: dayIndex,
             planType: planType
-        ).imageAssetName,
+        )
+        if let slotAsset = slotMeal.imageAssetName,
            ProcessAssetCatalog.contains(slotAsset) {
             return slotAsset
         }
 
-        if ProcessAssetCatalog.contains(ProcessDebloatMealLibrary.featuredImageAsset) {
-            return ProcessDebloatMealLibrary.featuredImageAsset
+        for poolMeal in ProcessDebloatMealLibrary.mealsInPool(for: resolvedSlot, planType: planType) {
+            if let asset = poolMeal.imageAssetName,
+               ProcessAssetCatalog.contains(asset) {
+                return asset
+            }
         }
-        return imageAssetCandidates(for: meal).first ?? ProcessDebloatMealLibrary.featuredImageAsset
+
+        if ProcessAssetCatalog.contains(featuredAsset) {
+            return featuredAsset
+        }
+        return imageAssetCandidates(for: meal).first ?? featuredAsset
     }
 
     private static func imageAssetCandidates(for meal: MealSuggestionContent) -> [String] {
@@ -378,7 +401,7 @@ enum MealElectrolytePalette {
 enum PlanMealSlotLabel {
     static func carouselTitle(for slot: MealTimeSlot, planType: NutritionPlanType = .threeMeals) -> String {
         if planType == .omad, slot == .lunch {
-            return "Repas du jour"
+            return "Repas debloat"
         }
         switch slot {
         case .breakfast: return "Ce matin"

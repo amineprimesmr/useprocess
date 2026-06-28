@@ -84,7 +84,7 @@ struct WelcomePlanChatView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(OnboardingTheme.screenBackground.ignoresSafeArea())
+        .processClearUIKitHostingBackground()
         .task {
             viewModel.bind(profile: profileService.currentProfile)
             await viewModel.startIfNeeded()

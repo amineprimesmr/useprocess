@@ -12,7 +12,7 @@ struct AppShellView: View {
 
     var body: some View {
         ZStack {
-            theme.background.ignoresSafeArea()
+            ProcessScreenBackground()
 
             if session.hasCompletedOnboarding {
                 MainAppView()

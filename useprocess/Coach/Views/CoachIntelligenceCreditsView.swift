@@ -19,7 +19,7 @@ struct CoachIntelligenceCreditsView: View {
                 }
                 .padding(16)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Crédits coach")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -43,6 +43,7 @@ struct CoachIntelligenceCreditsView: View {
                 store.syncSubscriberCreditsIfNeeded()
             }
         }
+        .processAppPageBackground()
     }
 
     private var usageCard: some View {

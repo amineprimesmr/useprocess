@@ -45,33 +45,13 @@ enum SkinHealthIntelligenceGuide {
         dailySteps: Int,
         hydrationLabel: String
     ) {
-        let skinFocus = hasSkinConcern(answers: answers)
-
-        for line in lymphAndSkinRoutine {
-            if !face.lymphAndFascia.contains(line) {
-                face.lymphAndFascia.append(line)
-            }
-        }
-
-        if skinFocus {
-            if !face.lymphAndFascia.contains(where: { $0.contains("Eau froide") }) {
-                face.lymphAndFascia.insert(
-                    "Eau froide sur le visage \(coldRinseSeconds) sec au réveil",
-                    at: 0
-                )
-            }
-            if !face.lymphAndFascia.contains(where: { $0.contains("Massage") }) {
-                face.lymphAndFascia.append("Massage doux sous-orbital — \(lymphMinutes) min")
-            }
-            if !face.lymphAndFascia.contains(where: { $0.contains("Marche") }) {
-                face.lymphAndFascia.append(
-                    "Marche \(dailySteps) pas + \(hydrationLabel) alimentaire = drainage + peau"
-                )
-            }
-            if !face.lymphAndFascia.contains(skinTimelineNote) {
-                face.lymphAndFascia.append(skinTimelineNote)
-            }
-        }
+        _ = face
+        _ = answers
+        _ = coldRinseSeconds
+        _ = lymphMinutes
+        _ = dailySteps
+        _ = hydrationLabel
+        // Routine matinale = FaceMorningRoutineCatalog uniquement (pas de pollution lymphAndFascia).
     }
 
     static func enrichNutritionForSkin(

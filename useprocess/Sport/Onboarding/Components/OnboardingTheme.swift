@@ -3,7 +3,7 @@ import UIKit
 
 /// Couleurs sémantiques onboarding — s'adaptent au mode clair / sombre.
 enum OnboardingTheme {
-    static var screenBackground: Color { Color(.systemBackground) }
+    static var screenBackground: Color { ProcessColors.background }
     static var primaryText: Color { Color.primary }
     static var secondaryText: Color { Color.secondary }
 

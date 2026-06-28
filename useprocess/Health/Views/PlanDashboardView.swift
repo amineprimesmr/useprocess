@@ -10,11 +10,8 @@ struct PlanDashboardView: View {
 
     @State private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
-    @State private var weeklyMealHistory: [MealHistoryEntry] = []
-    @State private var shoppingItems: [MealShoppingItem] = []
-    @State private var activeResourceSheet: PlanResourceSheet?
+    @State private var showHomeLayoutEditor = false
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
-    @Namespace private var planResourceZoomNamespace
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
@@ -28,51 +25,61 @@ struct PlanDashboardView: View {
         }
         .animation(.spring(response: 0.44, dampingFraction: 0.88), value: session.hasCompletedWelcomePlanChat)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.background.ignoresSafeArea())
     }
 
     private var welcomePlanConfiguration: some View {
-        WelcomePlanChatView(
-            embeddedInMainApp: true,
-            selectedSection: $selectedSection,
-            onComplete: {
-                planStore.reloadForCurrentUser()
-                refreshMealSections()
-            }
-        )
+        ZStack {
+            ProcessScreenBackground()
+            WelcomePlanChatView(
+                embeddedInMainApp: true,
+                selectedSection: $selectedSection,
+                onComplete: {
+                    planStore.reloadForCurrentUser()
+                }
+            )
+        }
         .ignoresSafeArea(edges: .top)
         .toolbar(.hidden, for: .tabBar)
+        .processClearUIKitHostingBackground()
     }
 
     private var planDashboard: some View {
         NavigationStack {
-            processMainScrollableChrome(
-                selectedSection: $selectedSection,
-                pageSection: .plan
-            ) {
-                LazyVStack(alignment: .leading, spacing: 20) {
-                    PlanHomeTopChrome(
-                        selectedSection: $selectedSection,
-                        selectedDate: $selectedPlanDate
-                    )
-                    planContent
+            ZStack {
+                ProcessScreenBackground()
+
+                processMainScrollableChrome(
+                    selectedSection: $selectedSection,
+                    pageSection: .plan
+                ) {
+                    LazyVStack(alignment: .leading, spacing: 24) {
+                        PlanHomeTopChrome(
+                            selectedSection: $selectedSection,
+                            selectedDate: $selectedPlanDate
+                        )
+                        planContent
+
+                        if livePlan != nil {
+                            PlanHomeCustomizeFloatingButton {
+                                showHomeLayoutEditor = true
+                            }
+                            .padding(.top, 4)
+                            .padding(.bottom, 24)
+                        }
+                    }
+                    .padding()
                 }
-                .padding()
             }
-            .background(theme.background.ignoresSafeArea())
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
-            .refreshable { refreshMealSections(); planStore.reloadForCurrentUser() }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .processClearUIKitHostingBackground()
+            .refreshable { planStore.reloadForCurrentUser() }
             .onAppear {
                 planStore.reloadForCurrentUser()
-                refreshMealSections()
             }
-            .onChange(of: planStore.plan?.lastUpdated) { _, _ in
-                refreshMealSections()
-            }
-            .fullScreenCover(item: $activeResourceSheet) { sheet in
-                resourceSheet(for: sheet)
-                    .processZoomTransition(id: .planResource(sheet), namespace: planResourceZoomNamespace)
+            .sheet(isPresented: $showHomeLayoutEditor) {
+                PlanHomeLayoutEditorSheet()
             }
         }
     }
@@ -88,36 +95,8 @@ struct PlanDashboardView: View {
                 showChecklist: false
             )
             .environmentObject(HealthManager.shared)
-
-            PlanResourcesFooter(
-                activeSheet: $activeResourceSheet,
-                zoomNamespace: planResourceZoomNamespace
-            )
         } else {
             noPlanCard
-        }
-    }
-
-    @ViewBuilder
-    private func resourceSheet(for sheet: PlanResourceSheet) -> some View {
-        switch sheet {
-        case .debloatGuide:
-            PlanDebloatGuideSheet()
-        case .mealsHub:
-            PlanMealsHubSheet(
-                mealHistory: weeklyMealHistory,
-                shoppingItems: shoppingItems,
-                onToggleShopping: { id in
-                    planStore.toggleShoppingItem(id)
-                    refreshMealSections()
-                },
-                onClearChecked: {
-                    planStore.clearCheckedShoppingItems()
-                    refreshMealSections()
-                }
-            )
-        case .continuousHabits:
-            PlanContinuousHabitsSheet()
         }
     }
 
@@ -182,10 +161,5 @@ struct PlanDashboardView: View {
         defer { isRestoringPlan = false }
         _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
         planStore.reloadForCurrentUser()
-    }
-
-    private func refreshMealSections() {
-        weeklyMealHistory = planStore.mealHistoryThisWeek()
-        shoppingItems = planStore.plan?.progress.shoppingList ?? []
     }
 }

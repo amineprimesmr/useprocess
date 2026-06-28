@@ -1,6 +1,8 @@
 import SwiftUI
 
+/// Hub paramètres — catégories + sous-pages.
 struct EditProfileView: View {
+    var onShareProfile: () -> Void = {}
     var onLogout: () -> Void = {}
     var onDeleteConfirmed: () -> Void = {}
 
@@ -30,17 +32,10 @@ struct EditProfileView: View {
         return profileStore.profile?.displayName ?? "Mon profil"
     }
 
-    private var ageText: String? {
-        guard let profile, profile.age > 0 else { return nil }
-        return profile.ageFormatted
-    }
-
     var body: some View {
-        ZStack {
-            AccountDetailsTheme.pageBackground.ignoresSafeArea()
-
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
                 AccountDetailsGlassHeader(
+                    title: "Paramètres",
                     onBack: { dismiss() },
                     onSave: { dismiss() },
                     saveDisabled: true
@@ -55,8 +50,24 @@ struct EditProfileView: View {
                             onChangePhoto: { showPhotoFlow = true }
                         )
 
-                        accountFieldsSection
-                            .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                        ProfileSummarySectionHeader(title: "Sections")
+
+                        AccountDetailsCard {
+                            ForEach(Array(ProfileSettingsCategory.allCases.enumerated()), id: \.element.id) { index, category in
+                                Group {
+                                    if index > 0 {
+                                        Color.clear.frame(height: AccountDetailsTheme.rowSpacing)
+                                    }
+                                    NavigationLink(value: category) {
+                                        AccountDetailsGlassRow {
+                                            ProfileSettingsCategoryHubRow(category: category)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
 
                         VStack(spacing: AccountDetailsTheme.rowSpacing) {
                             AccountDetailsActionButton(title: "Se déconnecter") {
@@ -68,14 +79,17 @@ struct EditProfileView: View {
                             }
                         }
                         .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                        .padding(.top, 24)
+                        .padding(.top, 28)
                     }
                     .padding(.bottom, 32)
                 }
                 .scrollIndicators(.hidden)
-            }
+                .processTransparentScrollSurface()
         }
         .toolbar(.hidden, for: .navigationBar)
+        .navigationDestination(for: ProfileSettingsCategory.self) { category in
+            profileSettingsDetail(for: category, onShareProfile: onShareProfile)
+        }
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
             menuAnchor: photoMenuAnchor,
@@ -101,109 +115,4 @@ struct EditProfileView: View {
             profileStore.bind(unified: profileService.currentProfile)
         }
     }
-
-    private var usernameDisplay: String? {
-        let tag = ProcessUsernameTag.normalize(
-            profileStore.profile?.username
-                ?? profile?.username
-                ?? ""
-        )
-        return tag.isEmpty ? nil : "@\(tag)"
-    }
-
-    @ViewBuilder
-    private var accountFieldsSection: some View {
-        AccountDetailsCard {
-            NavigationLink(value: ProfileEditDestination.username) {
-                AccountDetailsGlassRow {
-                    ProfileEditListRow(
-                        label: "Tag Process",
-                        value: usernameDisplay,
-                        placeholder: "Choisir ton @",
-                        showsChevron: false
-                    )
-                }
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink(value: ProfileEditDestination.findUser) {
-                AccountDetailsGlassRow {
-                    ProfileEditListRow(
-                        label: "Trouver un utilisateur",
-                        value: nil,
-                        placeholder: "Rechercher par @"
-                    )
-                }
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink(value: ProfileEditDestination.firstName) {
-                AccountDetailsGlassRow {
-                    ProfileEditListRow(
-                        label: "Prénom",
-                        value: profile?.firstName,
-                        placeholder: "Non renseigné",
-                        showsChevron: false
-                    )
-                }
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink(value: ProfileEditDestination.lastName) {
-                AccountDetailsGlassRow {
-                    ProfileEditListRow(
-                        label: "Nom de famille",
-                        value: profile?.lastName,
-                        placeholder: "Non renseigné",
-                        showsChevron: false
-                    )
-                }
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink(value: ProfileEditDestination.gender) {
-                AccountDetailsGlassRow {
-                    ProfileEditListRow(
-                        label: "Sexe",
-                        value: profile?.gender.displayName,
-                        placeholder: "Non renseigné"
-                    )
-                }
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink(value: ProfileEditDestination.birthDate) {
-                AccountDetailsGlassRow {
-                    ProfileEditListRow(
-                        label: "Date de naissance",
-                        value: birthDateDisplay,
-                        placeholder: "Non renseigné"
-                    )
-                }
-            }
-            .buttonStyle(.plain)
-
-            AccountDetailsGlassRow {
-                ProfileEditListRow(
-                    label: "Âge",
-                    value: ageText,
-                    placeholder: "—",
-                    showsChevron: false,
-                    valueIsMuted: true
-                )
-            }
-        }
-    }
-
-    private var birthDateDisplay: String? {
-        guard let profile else { return nil }
-        return Self.birthDateFormatter.string(from: profile.birthDate)
-    }
-
-    private static let birthDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter
-    }()
 }

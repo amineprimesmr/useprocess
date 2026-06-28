@@ -25,7 +25,8 @@ struct BodyScanReportView: View {
             .padding(20)
             .padding(.bottom, 32)
         }
-        .background(theme.background.ignoresSafeArea())
+        .processTransparentScrollSurface()
+        .processAppPageBackground()
     }
 
     private var header: some View {

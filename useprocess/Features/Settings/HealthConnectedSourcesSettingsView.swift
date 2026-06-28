@@ -118,7 +118,7 @@ struct HealthConnectedSourcesSettingsView: View {
             .padding(.vertical, 16)
         }
         .scrollIndicators(.hidden)
-        .background(GroupedSettingsMetrics.pageBackground.ignoresSafeArea())
+        .processTransparentScrollSurface()
         .navigationTitle("Sources connectées")
         .navigationBarTitleDisplayMode(.inline)
         .task {

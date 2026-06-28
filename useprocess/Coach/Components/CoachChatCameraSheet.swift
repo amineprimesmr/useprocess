@@ -1,14 +1,16 @@
 import AVFoundation
+import PhotosUI
 import SwiftUI
 import UIKit
 
-/// Caméra intégrée au bas du chat — reste sur la même page, preview pleine largeur.
+/// Caméra intégrée au bas du chat — preview pleine largeur jusqu’au bord inférieur.
 struct CoachInlineBottomCameraPanel: View {
     let panelHeight: CGFloat
     var onCapture: (UIImage) -> Void
+    var onPickFromGallery: (UIImage) -> Void
     var onCancel: () -> Void
 
-    @State private var showOptions = false
+    @State private var showGalleryPicker = false
     @State private var flashMode: CoachCameraFlashMode = .off
 
     private var camera: CoachSharedCameraSession { .shared }
@@ -26,21 +28,33 @@ struct CoachInlineBottomCameraPanel: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            CoachCameraPreview(session: camera.session)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+        GeometryReader { geo in
+            ZStack(alignment: .bottom) {
+                CoachCameraPreview(session: camera.session)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) {
+                        HapticManager.shared.impact(.light)
+                        camera.flipCamera()
+                    }
 
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.55)],
-                startPoint: .center,
-                endPoint: .bottom
-            )
-            .allowsHitTesting(false)
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.55)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+                .allowsHitTesting(false)
 
-            cameraControls
+                CoachCameraControlsBar(
+                    dismissIcon: "chevron.down",
+                    onDismiss: onCancel,
+                    onCapture: capturePhoto,
+                    onOpenGallery: { showGalleryPicker = true }
+                )
                 .padding(.horizontal, 22)
-                .padding(.bottom, 12)
+                .padding(.bottom, max(geo.safeAreaInsets.bottom, 10) + 6)
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: panelHeight)
@@ -59,71 +73,24 @@ struct CoachInlineBottomCameraPanel: View {
         .onChange(of: flashMode) { _, mode in
             camera.setFlash(mode)
         }
-    }
-
-    private var cameraControls: some View {
-        HStack(alignment: .bottom) {
-            circleControl(icon: "chevron.down", size: 44) {
-                onCancel()
-            }
-
-            Spacer()
-
-            Button {
-                HapticManager.shared.impact(.medium)
-                camera.capturePhoto(flashMode: flashMode) { image in
-                    if let image {
-                        onCapture(image)
-                    }
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .strokeBorder(Color.white.opacity(0.95), lineWidth: 4)
-                        .frame(width: 74, height: 74)
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 62, height: 62)
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            if showOptions {
-                VStack(spacing: 14) {
-                    circleControl(icon: flashMode.icon, size: 44) {
-                        flashMode = flashMode.next
-                    }
-                    circleControl(icon: "arrow.triangle.2.circlepath.camera", size: 44) {
-                        camera.flipCamera()
-                    }
-                    circleControl(icon: "xmark", size: 44) {
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                            showOptions = false
-                        }
-                    }
-                }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else {
-                circleControl(icon: "ellipsis", size: 44) {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        showOptions = true
-                    }
-                }
-            }
+        .sheet(isPresented: $showGalleryPicker) {
+            CoachChatSingleImagePicker(
+                onSelect: { image in
+                    showGalleryPicker = false
+                    onPickFromGallery(image)
+                },
+                onCancel: { showGalleryPicker = false }
+            )
         }
     }
 
-    private func circleControl(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: size * 0.38, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: size, height: size)
-                .background(Color.black.opacity(0.45), in: Circle())
+    private func capturePhoto() {
+        HapticManager.shared.impact(.medium)
+        camera.capturePhoto(flashMode: flashMode) { image in
+            if let image {
+                onCapture(image)
+            }
         }
-        .buttonStyle(.plain)
     }
 }
 
@@ -188,10 +155,11 @@ struct CoachPhotoShrinkToInputAnimation: View {
 
 struct CoachChatCameraSheet: View {
     var onCapture: (UIImage) -> Void
+    var onPickFromGallery: ((UIImage) -> Void)? = nil
     var onCancel: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-    @State private var showOptions = false
+    @State private var showGalleryPicker = false
     @State private var flashMode: CoachCameraFlashMode = .off
 
     private var camera: CoachSharedCameraSession { .shared }
@@ -199,25 +167,46 @@ struct CoachChatCameraSheet: View {
     private let previewCornerRadius: CGFloat = 44
 
     var body: some View {
-        ZStack {
-            (colorScheme == .dark ? Color.black : Color.white)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                Spacer(minLength: 56)
+        GeometryReader { geo in
+            ZStack {
+                (colorScheme == .dark ? Color.black : Color(white: 0.08))
+                    .ignoresSafeArea()
 
                 ZStack(alignment: .bottom) {
                     CoachCameraPreview(session: camera.session)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: previewCornerRadius, style: .continuous))
+                        .padding(.horizontal, 8)
+                        .padding(.top, geo.safeAreaInsets.top + 6)
+                        .padding(.bottom, geo.safeAreaInsets.bottom + 4)
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) {
+                            HapticManager.shared.impact(.light)
+                            camera.flipCamera()
+                        }
 
-                    cameraControls
-                        .padding(.horizontal, 22)
-                        .padding(.bottom, 24)
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.5)],
+                        startPoint: .center,
+                        endPoint: .bottom
+                    )
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 4)
+                    .clipShape(RoundedRectangle(cornerRadius: previewCornerRadius, style: .continuous))
+                    .allowsHitTesting(false)
+
+                    CoachCameraControlsBar(
+                        dismissIcon: "chevron.left",
+                        onDismiss: onCancel,
+                        onCapture: capturePhoto,
+                        onOpenGallery: { showGalleryPicker = true }
+                    )
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 18)
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 18)
             }
         }
+        .ignoresSafeArea()
         .task {
             await camera.activate(flashMode: flashMode)
         }
@@ -227,24 +216,46 @@ struct CoachChatCameraSheet: View {
         .onChange(of: flashMode) { _, mode in
             camera.setFlash(mode)
         }
-    }
-
-    private var cameraControls: some View {
-        HStack(alignment: .bottom) {
-            circleControl(icon: "chevron.left", size: 44) {
-                onCancel()
-            }
-
-            Spacer()
-
-            Button {
-                HapticManager.shared.impact(.medium)
-                camera.capturePhoto(flashMode: flashMode) { image in
-                    if let image {
+        .sheet(isPresented: $showGalleryPicker) {
+            CoachChatSingleImagePicker(
+                onSelect: { image in
+                    showGalleryPicker = false
+                    if let onPickFromGallery {
+                        onPickFromGallery(image)
+                    } else {
                         onCapture(image)
                     }
-                }
-            } label: {
+                },
+                onCancel: { showGalleryPicker = false }
+            )
+        }
+    }
+
+    private func capturePhoto() {
+        HapticManager.shared.impact(.medium)
+        camera.capturePhoto(flashMode: flashMode) { image in
+            if let image {
+                onCapture(image)
+            }
+        }
+    }
+}
+
+// MARK: - Contrôles partagés
+
+private struct CoachCameraControlsBar: View {
+    let dismissIcon: String
+    var onDismiss: () -> Void
+    var onCapture: () -> Void
+    var onOpenGallery: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center) {
+            CoachCameraGlassButton(systemName: dismissIcon, action: onDismiss)
+
+            Spacer(minLength: 0)
+
+            Button(action: onCapture) {
                 ZStack {
                     Circle()
                         .strokeBorder(Color.white.opacity(0.95), lineWidth: 4)
@@ -256,42 +267,100 @@ struct CoachChatCameraSheet: View {
             }
             .buttonStyle(.plain)
 
-            Spacer()
+            Spacer(minLength: 0)
 
-            if showOptions {
-                VStack(spacing: 14) {
-                    circleControl(icon: flashMode.icon, size: 44) {
-                        flashMode = flashMode.next
-                    }
-                    circleControl(icon: "arrow.triangle.2.circlepath.camera", size: 44) {
-                        camera.flipCamera()
-                    }
-                    circleControl(icon: "xmark", size: 44) {
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                            showOptions = false
-                        }
-                    }
+            CoachCameraGlassButton(systemName: "photo.on.rectangle", action: onOpenGallery)
+        }
+    }
+}
+
+private struct CoachCameraGlassButton: View {
+    let systemName: String
+    let action: () -> Void
+
+    private let size: CGFloat = 44
+
+    var body: some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .contentShape(Circle())
+        }
+        .modifier(CoachCameraGlassButtonStyle())
+        .accessibilityLabel(systemName == "photo.on.rectangle" ? "Galerie" : "Retour")
+    }
+}
+
+private struct CoachCameraGlassButtonStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .buttonStyle(.plain)
+                .glassEffect(ProcessGlass.tinted(.white, opacity: 0.24), in: Circle())
+        } else {
+            content
+                .buttonStyle(.plain)
+                .background {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else {
-                circleControl(icon: "ellipsis", size: 44) {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        showOptions = true
-                    }
+                .buttonStyle(ProcessGlassPressStyle())
+        }
+    }
+}
+
+// MARK: - Galerie (une image)
+
+struct CoachChatSingleImagePicker: UIViewControllerRepresentable {
+    var onSelect: (UIImage) -> Void
+    var onCancel: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onSelect: onSelect, onCancel: onCancel)
+    }
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.filter = .images
+        config.selectionLimit = 1
+        config.preferredAssetRepresentationMode = .current
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let onSelect: (UIImage) -> Void
+        let onCancel: () -> Void
+
+        init(onSelect: @escaping (UIImage) -> Void, onCancel: @escaping () -> Void) {
+            self.onSelect = onSelect
+            self.onCancel = onCancel
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            guard let provider = results.first?.itemProvider, provider.canLoadObject(ofClass: UIImage.self) else {
+                onCancel()
+                return
+            }
+            provider.loadObject(ofClass: UIImage.self) { object, _ in
+                guard let image = object as? UIImage else {
+                    DispatchQueue.main.async { self.onCancel() }
+                    return
+                }
+                DispatchQueue.main.async {
+                    self.onSelect(CoachAttachmentImageNormalizer.normalize(image))
                 }
             }
         }
-    }
-
-    private func circleControl(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: size * 0.38, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: size, height: size)
-                .background(Color.black.opacity(0.45), in: Circle())
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -530,4 +599,9 @@ private struct CoachCameraPreview: UIViewRepresentable {
 private final class CoachCameraPreviewView: UIView {
     override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
     var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        previewLayer.frame = bounds
+    }
 }

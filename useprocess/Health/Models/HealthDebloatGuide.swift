@@ -9,6 +9,7 @@ enum HealthDebloatGuide {
         case training
         case sleep
         case face
+        case continuousHabits
 
         var id: String { rawValue }
 
@@ -18,6 +19,7 @@ enum HealthDebloatGuide {
             case .training: return "Entraînement"
             case .sleep: return "Sommeil"
             case .face: return "Visage"
+            case .continuousHabits: return "24/7"
             }
         }
 
@@ -27,6 +29,7 @@ enum HealthDebloatGuide {
             case .training: return "figure.run"
             case .sleep: return "bed.double.fill"
             case .face: return "face.smiling"
+            case .continuousHabits: return "infinity"
             }
         }
 
@@ -40,6 +43,8 @@ enum HealthDebloatGuide {
                 return "Qualité, position et timing — ce qui se joue la nuit."
             case .face:
                 return "Scan, froid et massage — mesurer et relancer la circulation."
+            case .continuousHabits:
+                return "Mewing, posture et respiration — la base orthotropics en continu."
             }
         }
     }
@@ -51,7 +56,23 @@ enum HealthDebloatGuide {
         let body: String
         let bullets: [String]
         let accent: TopicAccent
+        /// Pilier d’origine — affiché en label discret, pas un onglet.
+        let pillar: Pillar
     }
+
+    /// Tous les leviers debloat, ordonnés par impact physiologique (Process).
+    struct RankedTopic: Identifiable {
+        let rank: Int
+        let topic: Topic
+
+        var id: String { topic.id }
+    }
+
+    static let pageIntro = """
+    Un visage gonflé le matin, ce n’est pas toujours de la graisse — souvent c’est de l’eau retenue. \
+    Ce guide regroupe tout ce qui compte, du plus impactant au complémentaire. \
+    La régularité sur les premiers points change le visage plus vite que les « hacks ».
+    """
 
     enum TopicAccent {
         case sodiumPotassium
@@ -62,13 +83,6 @@ enum HealthDebloatGuide {
     }
 
     // MARK: - Nutrition (focus debloat visage)
-
-    static let nutritionIntro = """
-    Un visage gonflé le matin, ce n’est pas toujours de la graisse. \
-    Souvent, c’est de l’eau retenue dans les tissus — surtout autour des yeux et des joues. \
-    La bonne nouvelle : ce type de gonflement réagit vite à ce que tu manges et bois, \
-    surtout la veille et le soir.
-    """
 
     static let nutritionTopics: [Topic] = [
         Topic(
@@ -89,7 +103,8 @@ enum HealthDebloatGuide {
                 "L’effet se voit surtout 6 à 12 h après un repas très salé ou alcoolisé",
                 "Corriger l’équilibre alimentaire agit plus vite qu’un « hack » cosmétique"
             ],
-            accent: .sodiumPotassium
+            accent: .sodiumPotassium,
+            pillar: .nutrition
         ),
         Topic(
             id: "sodium-potassium",
@@ -108,7 +123,8 @@ enum HealthDebloatGuide {
                 "Pièges Na+ : charcuterie, plats préparés, sauces (soja, nuggets), restauration rapide",
                 "Lis les étiquettes : le sel se cache aussi dans le pain, les soupes, les fromages"
             ],
-            accent: .sodiumPotassium
+            accent: .sodiumPotassium,
+            pillar: .nutrition
         ),
         Topic(
             id: "hydration",
@@ -128,7 +144,8 @@ enum HealthDebloatGuide {
                 ProcessHydrationGuide.morningLine,
                 "Limite alcool et excès de caféine — ils déshydratent puis favorisent la rétention"
             ],
-            accent: .hydration
+            accent: .hydration,
+            pillar: .nutrition
         ),
         Topic(
             id: "triggers",
@@ -150,7 +167,8 @@ enum HealthDebloatGuide {
                 "Favorise glucides complexes le jour, pas un gros plat de pâtes/blé blanc tard",
                 "MSG et sauces industrielles = sodium concentré — même effet que le sel de table"
             ],
-            accent: .triggers
+            accent: .triggers,
+            pillar: .nutrition
         ),
         Topic(
             id: "daily-plan",
@@ -167,7 +185,8 @@ enum HealthDebloatGuide {
                 "Caféine coupée à \(ProcessDailyTargets.caffeineCutoffHour) h pour protéger le sommeil (lié au gonflement matinal)",
                 "\(ProcessDailyTargets.chewsPerBite) mâchées par bouchée — digestion lente = moins de ballonnements"
             ],
-            accent: .action
+            accent: .action,
+            pillar: .nutrition
         ),
         Topic(
             id: "myths",
@@ -186,7 +205,8 @@ enum HealthDebloatGuide {
                 "La graisse faciale ne disparaît pas en 48 h — elle suit la perte de masse grasse globale",
                 "Gonflement persistant, unilatéral ou brutal → consulter (thyroïde, rein, allergie…)"
             ],
-            accent: .myth
+            accent: .myth,
+            pillar: .nutrition
         )
     ]
 
@@ -203,7 +223,8 @@ enum HealthDebloatGuide {
                 "\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) sorties marche extérieure / semaine",
                 "\(ProcessDailyTargets.restDaysPerWeek) jours de repos actif / semaine"
             ],
-            accent: .action
+            accent: .action,
+            pillar: .training
         ),
         Topic(
             id: "lymph",
@@ -214,7 +235,8 @@ enum HealthDebloatGuide {
                 "\(ProcessDailyTargets.lymphFaceMassageMinutes) minute le matin, mouvements vers les oreilles puis le cou",
                 "Combine avec le scan et la douche froide pour un effet immédiat visible"
             ],
-            accent: .action
+            accent: .action,
+            pillar: .training
         )
     ]
 
@@ -228,7 +250,8 @@ enum HealthDebloatGuide {
                 "Cible : \(ProcessDailyTargets.sleepHours) h par nuit",
                 "Horaires de coucher/réveil réguliers, même le week-end"
             ],
-            accent: .action
+            accent: .action,
+            pillar: .sleep
         ),
         Topic(
             id: "position",
@@ -240,7 +263,8 @@ enum HealthDebloatGuide {
                 "Couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min avant le coucher",
                 "Température chambre ~\(ProcessDailyTargets.bedroomTempCelsius) °C"
             ],
-            accent: .action
+            accent: .action,
+            pillar: .sleep
         )
     ]
 
@@ -254,7 +278,8 @@ enum HealthDebloatGuide {
                 "\(ProcessDailyTargets.faceScanSeconds) s chaque matin, même lumière",
                 "Compare avec ton journal (sel, alcool, sommeil) pour comprendre tes déclencheurs"
             ],
-            accent: .action
+            accent: .action,
+            pillar: .face
         ),
         Topic(
             id: "cold",
@@ -265,9 +290,52 @@ enum HealthDebloatGuide {
                 "Rinçage visage \(ProcessDailyTargets.coldFaceRinseSeconds) s après le réveil",
                 "Combine avec \(ProcessDailyTargets.morningLightMinutes) min de lumière naturelle le matin"
             ],
-            accent: .action
+            accent: .action,
+            pillar: .face
         )
     ]
+
+    static let continuousHabitsTopic: Topic = {
+        let habitLines = ProcessContinuousHabits.all.map { habit in
+            "\(habit.title) — \(habit.detail)"
+        }
+        return Topic(
+            id: "continuous-habits",
+            title: "Habitudes 24/7",
+            summary: "Mewing, posture, respiration — pas des exercices à timer.",
+            body: """
+            Ces habitudes ne se cochent pas dans le journal : elles s'appliquent en continu, toute la journée. \
+            C'est la couche fondation (scripts mewing #9 et posture #7) — sans elle, le debloat reste fragile.
+
+            Priorité : langue en suction sur le palais, lèvres closes, respiration nasale, puis posture et sommeil.
+            """,
+            bullets: habitLines,
+            accent: .action,
+            pillar: .continuousHabits
+        )
+    }()
+
+    /// Ordre d’impact debloat — nutrition & sommeil d’abord, routines visage en complément.
+    static var rankedTopics: [RankedTopic] {
+        let ordered: [Topic] = [
+            nutritionTopics[0],  // mécanisme
+            nutritionTopics[1],  // Na/K
+            nutritionTopics[2],  // hydratation
+            nutritionTopics[3],  // triggers
+            sleepTopics[0],      // durée sommeil
+            sleepTopics[1],      // position
+            continuousHabitsTopic,
+            nutritionTopics[4],  // plan concret
+            trainingTopics[0],   // pas
+            faceTopics[1],       // froid (routine matinale)
+            faceTopics[0],       // scan
+            trainingTopics[1],   // lymph
+            nutritionTopics[5]  // mythes
+        ]
+        return ordered.enumerated().map { index, topic in
+            RankedTopic(rank: index + 1, topic: topic)
+        }
+    }
 
     static func topics(for pillar: Pillar) -> [Topic] {
         switch pillar {
@@ -275,6 +343,7 @@ enum HealthDebloatGuide {
         case .training: return trainingTopics
         case .sleep: return sleepTopics
         case .face: return faceTopics
+        case .continuousHabits: return [continuousHabitsTopic]
         }
     }
 

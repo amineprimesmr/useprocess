@@ -10,6 +10,24 @@ final class CoachPresentationTracker {
     var isCoachChatActive = false
     var activeConversationId: UUID?
     var applicationIsActive = true
+    private var mealDetailPresentationCount = 0
+
+    var isMealDetailPresented: Bool {
+        mealDetailPresentationCount > 0
+    }
+
+    func beginMealDetailPresentation() {
+        mealDetailPresentationCount += 1
+    }
+
+    func endMealDetailPresentation() {
+        mealDetailPresentationCount = max(0, mealDetailPresentationCount - 1)
+    }
+
+    /// Typewriter haptics uniquement quand le coach est réellement affiché.
+    var allowsTypewriterHaptics: Bool {
+        isCoachPresented
+    }
 
     private init() {}
 

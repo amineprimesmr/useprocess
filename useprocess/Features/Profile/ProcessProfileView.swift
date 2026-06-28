@@ -6,12 +6,13 @@ struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
 
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @EnvironmentObject private var healthManager: HealthManager
     @Bindable private var session = AppSession.shared
     @State private var profileStore = SocialProfileStore.shared
-    @State private var showEditProfile = false
     @State private var showSettings = false
     @State private var showUsernameEditor = false
-    @State private var showShareSheet = false
+    @State private var showShareSheetFromSettings = false
+    @State private var showReferral = false
     @State private var showPhotoFlow = false
     @State private var photoMenuAnchor: CGPoint = .zero
     @State private var pendingAccountConfirmation: AccountConfirmation?
@@ -28,24 +29,29 @@ struct ProcessProfileView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                profileHero(resolvedProfile)
+        ZStack {
+            ProcessScreenBackground()
 
-                profileScrollContent(resolvedProfile)
-                    .frame(maxWidth: .infinity)
+            ScrollView {
+                VStack(spacing: 0) {
+                    profileHeaderBlock(resolvedProfile)
+                        .id("profileTop")
+
+                    profileScrollContent(resolvedProfile)
+                }
+                .processReportsTabBarScrollOffset()
             }
-            .processReportsTabBarScrollOffset()
+            .coordinateSpace(name: "profileScroll")
+            .scrollClipDisabled()
+            .ignoresSafeArea(edges: .top)
+            .scrollIndicators(.hidden)
+            .processTransparentScrollSurface()
         }
-        .coordinateSpace(name: "profileScroll")
-        .scrollClipDisabled()
-        .ignoresSafeArea(edges: .top)
-        .scrollIndicators(.hidden)
         .refreshable {
             await ProfileHealthSection.refreshAll(force: true)
         }
-        .background(ProfileTheme.background.ignoresSafeArea())
-        .reportsProfileSubrouteActive(showEditProfile)
+        .processClearUIKitHostingBackground()
+        .reportsProfileSubrouteActive(showSettings)
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
             menuAnchor: photoMenuAnchor,
@@ -61,41 +67,45 @@ struct ProcessProfileView: View {
                 }
             }
         )
-        .sheet(isPresented: $showShareSheet) {
+        .sheet(isPresented: $showShareSheetFromSettings) {
             ProfileShareSheet(items: [profileStore.shareText])
+        }
+        .fullScreenCover(isPresented: $showReferral) {
+            ProcessReferralProgramView()
+                .environmentObject(profileService)
+                .processAppPresentationBackground()
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
-                ProcessSettingsView()
-            }
-        }
-        .sheet(isPresented: $showUsernameEditor) {
-            NavigationStack {
-                ProfileUsernameEditorView(
-                    initialValue: resolvedProfile.username
-                )
-            }
-            .environmentObject(profileService)
-        }
-        .sheet(isPresented: $showEditProfile) {
-            NavigationStack {
                 EditProfileView(
+                    onShareProfile: {
+                        showShareSheetFromSettings = true
+                    },
                     onLogout: { pendingAccountConfirmation = .logout },
                     onDeleteConfirmed: {
                         session.beginAccountDeletion()
                         deleteAccountWhenSheetDismisses = true
-                        showEditProfile = false
+                        showSettings = false
                     }
                 )
                 .navigationDestination(for: ProfileEditDestination.self) { destination in
                     profileFieldEditor(for: destination)
                 }
+                .navigationDestination(for: ProfileSettingsCategory.self) { category in
+                    profileSettingsDetail(for: category, onShareProfile: {
+                        showShareSheetFromSettings = true
+                    })
+                }
             }
+            .processAppPageBackground()
             .environmentObject(profileService)
             .environmentObject(AuthenticationManager.shared)
+            .environmentObject(healthManager)
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
-            .presentationBackground(AccountDetailsTheme.pageBackground)
+            .presentationBackground {
+                ProcessScreenBackground()
+            }
             .alert(
                 "Se déconnecter ?",
                 isPresented: Binding(
@@ -106,7 +116,7 @@ struct ProcessProfileView: View {
                 Button("Se déconnecter", role: .destructive) {
                     pendingAccountConfirmation = nil
                     AuthenticationManager.shared.signOut()
-                    showEditProfile = false
+                    showSettings = false
                 }
                 Button("Annuler", role: .cancel) {
                     pendingAccountConfirmation = nil
@@ -115,7 +125,17 @@ struct ProcessProfileView: View {
                 Text("Tu pourras te reconnecter à tout moment.")
             }
         }
-        .onChange(of: showEditProfile) { wasOpen, isOpen in
+        .sheet(isPresented: $showUsernameEditor) {
+            NavigationStack {
+                ProfileUsernameEditorView(
+                    initialValue: resolvedProfile.username
+                )
+            }
+            .processAppPageBackground()
+            .processAppPresentationBackground()
+            .environmentObject(profileService)
+        }
+        .onChange(of: showSettings) { wasOpen, isOpen in
             guard wasOpen, !isOpen, deleteAccountWhenSheetDismisses else { return }
             deleteAccountWhenSheetDismisses = false
             Task {
@@ -125,7 +145,7 @@ struct ProcessProfileView: View {
         }
         .onChange(of: session.hasCompletedOnboarding) { _, completed in
             if !completed {
-                showEditProfile = false
+                showSettings = false
             }
         }
         .task(id: profileService.currentProfile?.userId) {
@@ -142,6 +162,33 @@ struct ProcessProfileView: View {
         }
     }
 
+    private var profileTopChrome: some View {
+        HStack {
+            Spacer(minLength: 0)
+
+            ProfileTopChromeActionButton(
+                systemName: "gearshape.fill",
+                accessibilityLabel: "Paramètres"
+            ) {
+                HapticManager.shared.impact(.light)
+                showSettings = true
+            }
+        }
+        .padding(.horizontal, ProfileTopChromeMetrics.horizontalPadding)
+    }
+
+    @ViewBuilder
+    private func profileHeaderBlock(_ profile: SocialProfile) -> some View {
+        ZStack(alignment: .top) {
+            profileHero(profile)
+
+            profileTopChrome
+                .padding(.top, ProcessMainChromeMetrics.topSafeInset + ProfileTopChromeMetrics.topPadding)
+                .zIndex(1)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private func presentPhotoMenu(at anchor: CGPoint) {
         photoMenuAnchor = anchor
         showPhotoFlow = true
@@ -155,17 +202,15 @@ struct ProcessProfileView: View {
                 displayName: profile.displayName,
                 username: profile.username,
                 isPrivate: profile.isPrivate,
-                onPhotoTap: presentPhotoMenu,
-                onOpenSettings: { showSettings = true },
+                onPhotoTap: { point in
+                    presentPhotoMenu(at: point)
+                },
                 onEditUsername: { showUsernameEditor = true }
             )
-            .transition(.opacity.combined(with: .scale(scale: 0.985)))
         } else {
-            ProfileEmptyHeroSection(
-                onPhotoTap: presentPhotoMenu,
-                onOpenSettings: { showSettings = true }
-            )
-            .transition(.opacity.combined(with: .scale(scale: 0.985)))
+            ProfileEmptyHeroSection(onPhotoTap: { point in
+                presentPhotoMenu(at: point)
+            })
         }
     }
 
@@ -182,10 +227,7 @@ struct ProcessProfileView: View {
                 .padding(.top, 8)
             }
 
-            ProfileActionButtons(
-                onShare: { showShareSheet = true },
-                onEdit: { showEditProfile = true }
-            )
+            ProfileActionButtons(onReferral: { showReferral = true })
 
             if let bio = profile.bio, !bio.isEmpty {
                 Text(bio)

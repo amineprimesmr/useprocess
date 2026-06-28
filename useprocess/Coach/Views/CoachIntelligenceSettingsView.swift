@@ -38,7 +38,7 @@ struct CoachIntelligenceSettingsView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 32)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -100,6 +100,7 @@ struct CoachIntelligenceSettingsView: View {
                 }
             }
         }
+        .processAppPageBackground()
     }
 
     // MARK: - Hero
@@ -508,6 +509,8 @@ struct CoachIntelligenceSettingsView: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.medium])
     }
 }

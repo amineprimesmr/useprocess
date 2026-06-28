@@ -3,9 +3,16 @@ import SwiftUI
 // MARK: - Public card
 
 struct ReadinessScoreGaugeView: View {
+    enum Style {
+        case profileCard
+        case embedded
+    }
+
     let score: Int
     let label: String
     let subtitle: String
+    var statusLabel: String?
+    var style: Style = .profileCard
     var showsDetails: Bool = false
     var isLoadingDetails: Bool = false
     var onDetails: (() -> Void)?
@@ -14,24 +21,26 @@ struct ReadinessScoreGaugeView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var isDark: Bool { colorScheme == .dark }
+    private var metrics: ReadinessGaugeMetrics { style == .embedded ? .embedded : .profileCard }
 
     var body: some View {
         VStack(spacing: 0) {
             ZStack(alignment: .bottom) {
                 ReadinessGaugeCanvas(
                     score: score,
-                    isDark: isDark
+                    isDark: isDark,
+                    trackWidth: metrics.trackWidth
                 )
-                .frame(height: ReadinessGaugeMetrics.canvasHeight)
-                .padding(.horizontal, 8)
-                .padding(.top, 6)
-                .padding(.bottom, 10)
+                .frame(height: metrics.canvasHeight)
+                .padding(.horizontal, style == .embedded ? 4 : 8)
+                .padding(.top, style == .embedded ? 2 : 6)
+                .padding(.bottom, style == .embedded ? 4 : 10)
 
                 gaugeLabels
-                    .padding(.bottom, ReadinessGaugeMetrics.labelsBottomInset)
+                    .padding(.bottom, metrics.labelsBottomInset)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: ReadinessGaugeMetrics.totalHeight)
+            .frame(height: metrics.totalHeight)
 
             if showsDetails, let onDetails {
                 detailsButton(action: onDetails)
@@ -39,44 +48,48 @@ struct ReadinessScoreGaugeView: View {
                     .padding(.bottom, 18)
             }
         }
-        .background(cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: ReadinessGaugeMetrics.cardRadius, style: .continuous))
+        .background { if style == .profileCard { cardBackground } }
+        .clipShape(RoundedRectangle(cornerRadius: metrics.cardRadius, style: .continuous))
         .shadow(
-            color: .black.opacity(isDark ? 0.35 : 0.07),
+            color: style == .profileCard ? .black.opacity(isDark ? 0.35 : 0.07) : .clear,
             radius: isDark ? 18 : 22,
             x: 0,
             y: isDark ? 10 : 12
         )
         .overlay {
-            RoundedRectangle(cornerRadius: ReadinessGaugeMetrics.cardRadius, style: .continuous)
-                .strokeBorder(
-                    isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.04),
-                    lineWidth: 0.5
-                )
+            if style == .profileCard {
+                RoundedRectangle(cornerRadius: metrics.cardRadius, style: .continuous)
+                    .strokeBorder(
+                        isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.04),
+                        lineWidth: 0.5
+                    )
+            }
         }
     }
 
     private var gaugeLabels: some View {
-        VStack(spacing: ReadinessGaugeMetrics.labelSpacing) {
+        VStack(spacing: metrics.labelSpacing) {
             Text(displayScore)
-                .font(.system(size: ReadinessGaugeMetrics.scoreFontSize, weight: .bold, design: .rounded))
+                .font(.system(size: metrics.scoreFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(theme.primaryText)
                 .monospacedDigit()
                 .minimumScaleFactor(0.85)
-                .accessibilityLabel("Score readiness \(displayScore)")
+                .accessibilityLabel("Score \(displayScore)")
 
             Text(displayLabel)
-                .font(.system(size: ReadinessGaugeMetrics.statusFontSize, weight: .semibold))
+                .font(.system(size: metrics.statusFontSize, weight: .semibold))
                 .foregroundStyle(theme.primaryText)
                 .multilineTextAlignment(.center)
+                .lineLimit(style == .embedded ? 2 : 1)
+                .minimumScaleFactor(0.85)
 
             Text(subtitle)
-                .font(.system(size: ReadinessGaugeMetrics.subtitleFontSize, weight: .regular))
+                .font(.system(size: metrics.subtitleFontSize, weight: .regular))
                 .foregroundStyle(theme.secondaryText)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 28)
+                .padding(.horizontal, style == .embedded ? 16 : 28)
         }
     }
 
@@ -85,13 +98,16 @@ struct ReadinessScoreGaugeView: View {
     }
 
     private var displayLabel: String {
-        ReadinessGaugeCopy.displayStatusLabel(score: score, label: label)
+        if let statusLabel, !statusLabel.isEmpty {
+            return statusLabel
+        }
+        return ReadinessGaugeCopy.displayStatusLabel(score: score, label: label)
     }
 
     @ViewBuilder
     private var cardBackground: some View {
         if isDark {
-            RoundedRectangle(cornerRadius: ReadinessGaugeMetrics.cardRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: ReadinessGaugeMetrics.profileCard.cardRadius, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -103,7 +119,7 @@ struct ReadinessScoreGaugeView: View {
                     )
                 )
         } else {
-            RoundedRectangle(cornerRadius: ReadinessGaugeMetrics.cardRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: ReadinessGaugeMetrics.profileCard.cardRadius, style: .continuous)
                 .fill(Color.white)
         }
     }
@@ -153,18 +169,43 @@ enum ReadinessGaugeCopy {
 
 // MARK: - Layout metrics
 
-private enum ReadinessGaugeMetrics {
-    static let cardRadius: CGFloat = 28
-    static let canvasHeight: CGFloat = 242
-    static let totalHeight: CGFloat = 306
-    static let labelsBottomInset: CGFloat = 6
-    static let labelSpacing: CGFloat = 6
-    static let scoreFontSize: CGFloat = 64
-    static let statusFontSize: CGFloat = 22
-    static let subtitleFontSize: CGFloat = 15
-    static let trackWidth: CGFloat = 52
-    /// Portion du cercle complet (60 % → arc de 216°).
-    static let arcSweepFraction: Double = 0.60
+private struct ReadinessGaugeMetrics {
+    let cardRadius: CGFloat
+    let canvasHeight: CGFloat
+    let totalHeight: CGFloat
+    let labelsBottomInset: CGFloat
+    let labelSpacing: CGFloat
+    let scoreFontSize: CGFloat
+    let statusFontSize: CGFloat
+    let subtitleFontSize: CGFloat
+    let trackWidth: CGFloat
+    let arcSweepFraction: Double
+
+    static let profileCard = ReadinessGaugeMetrics(
+        cardRadius: 28,
+        canvasHeight: 242,
+        totalHeight: 306,
+        labelsBottomInset: 6,
+        labelSpacing: 6,
+        scoreFontSize: 64,
+        statusFontSize: 22,
+        subtitleFontSize: 15,
+        trackWidth: 52,
+        arcSweepFraction: 0.60
+    )
+
+    static let embedded = ReadinessGaugeMetrics(
+        cardRadius: 20,
+        canvasHeight: 128,
+        totalHeight: 164,
+        labelsBottomInset: 2,
+        labelSpacing: 4,
+        scoreFontSize: 40,
+        statusFontSize: 15,
+        subtitleFontSize: 12,
+        trackWidth: 36,
+        arcSweepFraction: 0.60
+    )
 }
 
 // MARK: - Canvas gauge
@@ -172,6 +213,9 @@ private enum ReadinessGaugeMetrics {
 private struct ReadinessGaugeCanvas: View {
     let score: Int
     let isDark: Bool
+    var trackWidth: CGFloat = ReadinessGaugeMetrics.profileCard.trackWidth
+    var arcSweepFraction: Double = ReadinessGaugeMetrics.profileCard.arcSweepFraction
+    var particleScale: CGFloat = 1
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -192,8 +236,12 @@ private struct ReadinessGaugeCanvas: View {
     }
 
     private func drawGauge(in context: inout GraphicsContext, size: CGSize, time: TimeInterval) {
-        let spec = ReadinessGaugeGeometry(size: size)
-        let palette = ReadinessGaugePalette(isDark: isDark)
+        let spec = ReadinessGaugeGeometry(
+            size: size,
+            trackWidth: trackWidth,
+            arcSweepFraction: arcSweepFraction
+        )
+        let palette = ReadinessGaugePalette(isDark: isDark, score: score)
         let clip = spec.effectClipPath
 
         context.drawLayer { layer in
@@ -272,7 +320,8 @@ private struct ReadinessGaugeCanvas: View {
         let filledSweep = spec.thetaLeft - endTheta
         guard filledSweep > 0.08 else { return }
 
-        let particleCount = max(12, min(34, Int(progress * 38)))
+        let scale = max(particleScale, 0.25)
+        let particleCount = max(Int(6 * scale), min(Int(34 * scale), Int(progress * 38 * scale)))
         let margin = spec.endpointTrim * 0.45
 
         context.drawLayer { layer in
@@ -293,7 +342,9 @@ private struct ReadinessGaugeCanvas: View {
                 let radius = spec.innerRadius + (spec.outerRadius - spec.innerRadius) * radialMix
 
                 let twinkle = 0.55 + 0.45 * sin(time * (1.85 + seed * 0.14) + seed * 1.1)
-                let size = CGFloat(2.2 + particleFract(seed * 0.89) * 3.2) * CGFloat(0.78 + twinkle * 0.32)
+                let size = CGFloat(2.2 + particleFract(seed * 0.89) * 3.2)
+                    * CGFloat(0.78 + twinkle * 0.32)
+                    * scale
                 let opacity = min(1, (palette.particleOpacityBase + 0.48 * particleFract(seed * 0.641)) * twinkle)
 
                 let center = spec.point(theta: theta, radius: radius)
@@ -573,23 +624,29 @@ private struct ReadinessGaugeGeometry {
         effectClipPath
     }
 
-    init(size: CGSize) {
+    init(
+        size: CGSize,
+        trackWidth: CGFloat = ReadinessGaugeMetrics.profileCard.trackWidth,
+        arcSweepFraction: Double = ReadinessGaugeMetrics.profileCard.arcSweepFraction
+    ) {
         self.size = size
-        trackWidth = ReadinessGaugeMetrics.trackWidth
-        totalSweep = 2 * .pi * ReadinessGaugeMetrics.arcSweepFraction
-        halfSweep = .pi * ReadinessGaugeMetrics.arcSweepFraction
+        self.trackWidth = trackWidth
+        totalSweep = 2 * .pi * arcSweepFraction
+        halfSweep = .pi * arcSweepFraction
         thetaLeft = .pi / 2 + halfSweep
         thetaRight = .pi / 2 - halfSweep
         endpointTrim = totalSweep * 0.055
 
-        let horizontalInset: CGFloat = 12
+        let isCompact = size.height < 50
+        let horizontalInset: CGFloat = isCompact ? 6 : 12
         let usableWidth = max(size.width - horizontalInset * 2, 1)
-        centerlineRadius = usableWidth * 0.36
+        let radiusFactor: CGFloat = isCompact ? 0.30 : 0.36
+        centerlineRadius = usableWidth * radiusFactor
         outerRadius = centerlineRadius + trackWidth * 0.5
         innerRadius = centerlineRadius - trackWidth * 0.5
 
         let endpointDrop = CGFloat(max(sin(halfSweep - .pi / 2), 0)) * centerlineRadius + trackWidth * 0.5
-        let bottomClearance: CGFloat = 14
+        let bottomClearance: CGFloat = isCompact ? 9 : 14
         baselineY = size.height - bottomClearance - endpointDrop
         center = CGPoint(x: size.width * 0.5, y: baselineY)
     }
@@ -659,6 +716,66 @@ private struct ReadinessGaugeGeometry {
     }
 }
 
+// MARK: - Score tier colors
+
+private enum ReadinessGaugeScoreTier {
+    case excellent
+    case stable
+    case moderate
+    case recovery
+    case pending
+
+    init(score: Int) {
+        switch score {
+        case 80...: self = .excellent
+        case 60..<80: self = .stable
+        case 40..<60: self = .moderate
+        case 1..<40: self = .recovery
+        default: self = .pending
+        }
+    }
+
+    func accentColors(isDark: Bool) -> (base: Color, mid: Color, deep: Color, glow: Color) {
+        switch self {
+        case .excellent:
+            return (
+                Color(red: 0.48, green: 0.84, blue: 0.68),
+                Color(red: 0.40, green: 0.78, blue: 0.60),
+                Color(red: 0.32, green: 0.70, blue: 0.52),
+                Color(red: 0.38, green: 0.78, blue: 0.58).opacity(isDark ? 0.40 : 0.32)
+            )
+        case .stable:
+            return (
+                Color(red: 0.66, green: 0.70, blue: 0.97),
+                Color(red: 0.60, green: 0.62, blue: 0.96),
+                Color(red: 0.56, green: 0.50, blue: 0.94),
+                Color(red: 0.55, green: 0.48, blue: 0.98).opacity(isDark ? 0.38 : 0.30)
+            )
+        case .moderate:
+            return (
+                Color(red: 0.98, green: 0.78, blue: 0.46),
+                Color(red: 0.95, green: 0.68, blue: 0.38),
+                Color(red: 0.90, green: 0.56, blue: 0.30),
+                Color(red: 0.95, green: 0.62, blue: 0.28).opacity(isDark ? 0.38 : 0.30)
+            )
+        case .recovery:
+            return (
+                Color(red: 0.98, green: 0.55, blue: 0.48),
+                Color(red: 0.92, green: 0.42, blue: 0.35),
+                Color(red: 0.85, green: 0.32, blue: 0.28),
+                Color(red: 0.92, green: 0.38, blue: 0.30).opacity(isDark ? 0.38 : 0.30)
+            )
+        case .pending:
+            return (
+                Color(red: 0.62, green: 0.64, blue: 0.72),
+                Color(red: 0.56, green: 0.58, blue: 0.66),
+                Color(red: 0.50, green: 0.52, blue: 0.60),
+                Color(red: 0.55, green: 0.56, blue: 0.64).opacity(isDark ? 0.28 : 0.22)
+            )
+        }
+    }
+}
+
 // MARK: - Palette
 
 private struct ReadinessGaugePalette {
@@ -684,15 +801,17 @@ private struct ReadinessGaugePalette {
     let innerRimHighlightGradient: Gradient
     let endpointCapGradient: Gradient
 
-    init(isDark: Bool) {
-        let baseBlue = Color(red: 0.66, green: 0.70, blue: 0.97)
-        let midBlue = Color(red: 0.60, green: 0.62, blue: 0.96)
-        let deepViolet = Color(red: 0.56, green: 0.50, blue: 0.94)
+    init(isDark: Bool, score: Int = 0) {
+        let tier = ReadinessGaugeScoreTier(score: score)
+        let accents = tier.accentColors(isDark: isDark)
+        let baseBlue = accents.base
+        let midBlue = accents.mid
+        let deepViolet = accents.deep
 
         if isDark {
             trackBase = Color(red: 0.20, green: 0.21, blue: 0.28)
             outerShadow = Color.black.opacity(0.45)
-            progressGlow = Color(red: 0.55, green: 0.48, blue: 0.98).opacity(0.38)
+            progressGlow = accents.glow
             tick = Color.white
             needle = Color.white.opacity(0.85)
             needleGlow = Color.white.opacity(0.35)
@@ -760,7 +879,7 @@ private struct ReadinessGaugePalette {
         } else {
             trackBase = Color(red: 0.88, green: 0.89, blue: 0.95)
             outerShadow = Color.black.opacity(0.10)
-            progressGlow = Color(red: 0.55, green: 0.48, blue: 0.95).opacity(0.30)
+            progressGlow = accents.glow
             tick = Color.black
             needle = Color(red: 0.38, green: 0.38, blue: 0.44)
             needleGlow = Color.black.opacity(0.12)
@@ -775,17 +894,17 @@ private struct ReadinessGaugePalette {
                 .init(color: Color.black.opacity(0.55), location: 1.0)
             ])
             progressConicGradient = Gradient(stops: [
-                .init(color: Color(red: 0.76, green: 0.81, blue: 0.99), location: 0.00),
-                .init(color: Color(red: 0.68, green: 0.72, blue: 0.98), location: 0.26),
-                .init(color: Color(red: 0.62, green: 0.60, blue: 0.97), location: 0.52),
-                .init(color: Color(red: 0.58, green: 0.54, blue: 0.95), location: 0.78),
-                .init(color: Color(red: 0.64, green: 0.68, blue: 0.98), location: 1.00)
+                .init(color: baseBlue.opacity(0.96), location: 0.00),
+                .init(color: midBlue.opacity(0.98), location: 0.26),
+                .init(color: deepViolet.opacity(0.99), location: 0.52),
+                .init(color: midBlue.opacity(0.97), location: 0.78),
+                .init(color: baseBlue.opacity(0.95), location: 1.00)
             ])
             progressLinearGradient = Gradient(colors: [
-                Color(red: 0.76, green: 0.81, blue: 0.99),
-                Color(red: 0.68, green: 0.72, blue: 0.98),
-                Color(red: 0.62, green: 0.60, blue: 0.97),
-                Color(red: 0.58, green: 0.54, blue: 0.95)
+                baseBlue.opacity(0.96),
+                midBlue.opacity(0.98),
+                deepViolet.opacity(0.99),
+                midBlue.opacity(0.96)
             ])
             trackTopShadowGradient = Gradient(colors: [
                 Color.black.opacity(0.14),
@@ -826,6 +945,44 @@ private struct ReadinessGaugePalette {
                 Color.black.opacity(0.06)
             ])
         }
+    }
+}
+
+// MARK: - Mini badge (plan scan card, profil compact)
+
+struct ReadinessScoreMiniBadge: View {
+    let score: Int
+
+    @Environment(\.appTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var isDark: Bool { colorScheme == .dark }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            ReadinessGaugeCanvas(
+                score: score,
+                isDark: isDark,
+                trackWidth: 9,
+                arcSweepFraction: 0.52,
+                particleScale: 0.42
+            )
+            .frame(width: 84, height: 50)
+            .allowsHitTesting(false)
+
+            Text(displayScore)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(theme.primaryText)
+                .monospacedDigit()
+                .offset(y: 6)
+        }
+        .frame(width: 88, height: 54, alignment: .bottom)
+        .padding(.top, 6)
+        .accessibilityLabel("Score du scan \(displayScore)")
+    }
+
+    private var displayScore: String {
+        score > 0 ? "\(score)" : "—"
     }
 }
 

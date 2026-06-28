@@ -15,7 +15,7 @@ struct AppTheme {
     var isDark: Bool { resolved == .dark }
 
     var background: Color {
-        resolved == .light ? Color(.systemBackground) : Color(.systemBackground)
+        ProcessColors.background
     }
 
     var primaryText: Color {

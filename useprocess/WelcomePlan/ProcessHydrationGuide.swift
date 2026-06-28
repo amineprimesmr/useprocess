@@ -7,6 +7,11 @@ enum ProcessHydrationGuide {
 
     static let morningLine = "500 ml d'eau + pincée de sel ou citron au réveil — pas de café immédiat."
 
+    /// Hydratation matinale recommandée avec chaque petit-déjeuner catalogue.
+    static let morningWaterMilliliters = 500
+    static var morningWaterLabel: String { "\(morningWaterMilliliters) ml" }
+    static let morningWaterItemName = "2 grands verres d'eau filtrée + pincée de sel marin"
+
     /// Classement eaux (minéraux naturels).
     static let rankedWaters: [(rank: Int, name: String, detail: String)] = [
         (1, "Rozana", "Minéraux équilibrés — meilleur rapport qualité/prix"),

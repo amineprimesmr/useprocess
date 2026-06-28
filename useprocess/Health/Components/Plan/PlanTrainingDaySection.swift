@@ -43,10 +43,10 @@ struct PlanTrainingDaySection: View {
         if let training {
             let items = PlanProtocolCarouselBuilder.trainingItems(from: training)
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
                 PlanProtocolSectionHeader(
                     title: "Entraînement du jour",
-                    trailing: trainingHeaderTrailing(for: training, itemCount: items.count)
+                    trailing: trainingHeaderTrailing(for: training)
                 )
 
                 if items.isEmpty {
@@ -77,15 +77,9 @@ struct PlanTrainingDaySection: View {
         }
     }
 
-    private func trainingHeaderTrailing(for training: OriginDayTraining, itemCount: Int) -> String {
-        var parts: [String] = []
-        if training.durationMinutes > 0 {
-            parts.append("\(training.durationMinutes) min")
-        }
-        if itemCount > 0 {
-            parts.append("\(itemCount) ex.")
-        }
-        return parts.joined(separator: " · ")
+    private func trainingHeaderTrailing(for training: OriginDayTraining) -> String? {
+        guard training.durationMinutes > 0 else { return nil }
+        return "\(training.durationMinutes) min"
     }
 
     private func openSessionDetail() {

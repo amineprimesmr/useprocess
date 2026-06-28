@@ -18,7 +18,9 @@ enum CoachIntelligencePromptBuilder {
             parts.append(followUpBlock())
         }
 
-        parts.append(deepLinkBlock())
+        if !isModify, !isMeal {
+            parts.append(deepLinkBlock())
+        }
         parts.append(contextualActionsBlock(isModify: isModify, isMeal: isMeal))
         parts.append(memoryUpdateBlock())
         parts.append(artifactBlock())
@@ -69,7 +71,8 @@ enum CoachIntelligencePromptBuilder {
         - Ne jamais inventer une métrique absente du contexte.
         - Pose tes questions à l'utilisateur DANS le texte de réponse visible, pas dans FOLLOW_UP.
         - FOLLOW_UP = seulement ce que l'utilisateur pourrait te demander ensuite (ex: "Autre idée de dîner").
-        - Préfère ACTION_* (boutons app) plutôt que FOLLOW_UP quand une action concrète existe.
+        - ACTION_* seulement pour une action concrète dans l'app (valider repas, photo frigo, changer séance) — pas pour un simple conseil ou avis.
+        - Si tu conseilles de ne rien changer (garde, trop tôt, pas maintenant) → aucun ACTION_* ni DEEP_LINK plan.
         - Si tu proposes une séance, liste chaque exercice sur une ligne (Nom 3x10) — pas tout en un bloc.
         - Réponse visible : 2–4 phrases max. Pas de markdown.
         - Cite au moins 1 data réelle quand disponible (readiness, sommeil, jour protocole, scan visage).
@@ -98,9 +101,10 @@ enum CoachIntelligencePromptBuilder {
 
     private static func deepLinkBlock() -> String {
         """
-        LIEN APP (1 seul, fin de réponse) :
+        LIEN APP (optionnel — seulement si navigation utile, 1 max, jamais en doublon avec ACTION openPlan) :
         DEEP_LINK: [plan|journal|scan|streak|integration]|[libellé bouton court]
-        Exemples : DEEP_LINK: plan|Voir mon journal · DEEP_LINK: scan|Faire mon scan
+        Exemples : DEEP_LINK: scan|Faire mon scan · DEEP_LINK: journal|Ouvrir mon journal
+        Ne mets pas DEEP_LINK: plan si tu ne renvoies pas explicitement vers le programme.
         """
     }
 
@@ -122,14 +126,18 @@ enum CoachIntelligencePromptBuilder {
             """
         }
         return """
-        ACTIONS CONTEXTUELLES (si une action concrète dans l'app est possible, max 3) :
+        ACTIONS CONTEXTUELLES (seulement si l'utilisateur peut agir dans l'app maintenant, max 2) :
         Format : ACTION_N: [kind]|[libellé court]|[payload optionnel]
         Kinds : validateMeal, saveMealDraft, modifyMeal, anotherMeal, addToShoppingList,
         applyPlanChanges, swapWorkout, openPlan, openJournal, takePhoto, followUp
+        Règles :
+        - JAMAIS applyPlanChanges pour une question d'avis ou si tu conseilles de ne pas changer.
+        - applyPlanChanges uniquement si tu proposes une modification précise du protocole à appliquer.
+        - openPlan uniquement si tu renvoies explicitement vers le plan/journal.
+        - Si aucune action pertinente → n'écris aucun ACTION_*.
         Exemples :
         ACTION_1: takePhoto|Photographier mes ingrédients
-        ACTION_2: followUp|Décrire mon frigo|Voici ce que j'ai :
-        ACTION_3: swapWorkout|Changer la séance
+        ACTION_2: swapWorkout|Changer la séance
         """
     }
 

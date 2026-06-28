@@ -154,19 +154,17 @@ enum OriginPlanPresenter {
             day.nutrition.lunch.isEmpty ? nil : "Déjeuner",
             day.nutrition.dinner.isEmpty ? nil : "Dîner"
         ].compactMap { $0 }
-        if configured.isEmpty { return "Valide tes repas du jour" }
+        if configured.isEmpty { return "Valide un repas debloat" }
         return configured.joined(separator: " · ")
     }
 
     static func manualJournalTasks(from day: OriginProgramDay, plan: FaceOriginPlan) -> [OriginPlanTask] {
-        let tasks = visibleJournalTasks(
-            lastNightJournalTasks(dayId: day.id)
-            + day.morning
-            + day.posture
-            + day.face
-            + day.evening
-        )
-        return sortedJournalTasks(tasks, dayId: day.id, plan: plan)
+        JournalCoreTaskCatalog.coreTasks(for: day.id)
+    }
+
+    /// Tâches bonus (posture…) — validées via « Tout valider », pas affichées dans la checklist.
+    static func extendedJournalTasks(from day: OriginProgramDay, plan: FaceOriginPlan) -> [OriginPlanTask] {
+        JournalCoreTaskCatalog.extendedTasks(day: day, plan: plan)
     }
 
     /// Tri debloat : impact physiologique, puis leviers faibles du plan, puis statut (à faire en premier).
@@ -509,8 +507,10 @@ enum OriginPlanPresenter {
 
     static func taskEmoji(for task: OriginPlanTask) -> String {
         let t = task.title.lowercased()
+        if t.contains("repas debloat") || t.contains("repas") { return "🍽️" }
+        if t.contains("routine matin") { return "☀️" }
+        if t.contains("sommeil debloat") || t.contains("sommeil") { return "🌙" }
         if t.contains("telephone") || t.contains("téléphone") { return "📱" }
-        if t.contains("repas") { return "🍽️" }
         if t.contains("lumière") || t.contains("lumiere") { return "☀️" }
         if t.contains("hydrat") { return "💧" }
         if t.contains("eau froide") { return "🧊" }

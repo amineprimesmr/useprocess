@@ -25,7 +25,7 @@ struct FaceScanHistoryView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 108)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Historique visage")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -45,6 +45,8 @@ struct FaceScanHistoryView: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
     }
 
     // MARK: - Empty
@@ -266,7 +268,7 @@ struct FaceScanDetailView: View {
                 }
                 .padding()
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Détail scan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -275,5 +277,6 @@ struct FaceScanDetailView: View {
                 }
             }
         }
+        .processAppPageBackground()
     }
 }

@@ -197,7 +197,7 @@ struct CoachChatView: View {
     }
 
     private var coachInlineCameraHeight: CGFloat {
-        max(320, UIScreen.main.bounds.height * 0.55)
+        max(420, UIScreen.main.bounds.height * 0.62)
     }
 
     private var coachContentLayer: some View {
@@ -213,12 +213,17 @@ struct CoachChatView: View {
                         onCapture: { image in
                             handleCapturedPhoto(image)
                         },
+                        onPickFromGallery: { image in
+                            handleCapturedPhoto(image)
+                        },
                         onCancel: {
                             withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
                                 isCompactCameraPresented = false
                             }
                         }
                     )
+                    .background(Color.black)
+                    .ignoresSafeArea(edges: .bottom)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     coachBottomAccessoryView
@@ -356,6 +361,7 @@ struct CoachChatView: View {
             if viewModel.showsContextualHome {
                 CoachContextualHomeView(
                     prompt: viewModel.homePrompt,
+                    mealHandoff: viewModel.activeMealHandoff,
                     startsComplete: viewModel.shouldSkipHomeAnimation,
                     onGreetingComplete: {
                         Task { @MainActor in
@@ -382,7 +388,7 @@ struct CoachChatView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.background.ignoresSafeArea())
+        .processScreenBackground()
         .ignoresSafeArea(edges: .top)
         .contentShape(Rectangle())
         .simultaneousGesture(
@@ -682,6 +688,42 @@ struct CoachChatView: View {
                         )
                     }
                 )
+            } else if let imageMessageId = CoachChatImageMessageMarker.messageId(from: message.text) {
+                let images = CoachChatAttachmentImageStore.load(messageId: imageMessageId)
+                if !images.isEmpty {
+                    CoachChatImageUserMessageView(
+                        message: message,
+                        images: images,
+                        profile: profileService.currentProfile,
+                        font: messageFont,
+                        lineSpacing: messageLineSpacing,
+                        bubbleColor: theme.coachUserBubble,
+                        textColor: theme.primaryText,
+                        onLongPress: { frame in
+                            isInputFocused = false
+                            messageContextMenu = CoachUserMessageContextState(
+                                message: message,
+                                bubbleFrame: frame
+                            )
+                        }
+                    )
+                } else {
+                    CoachUserMessageBubbleView(
+                        message: message,
+                        profile: profileService.currentProfile,
+                        font: messageFont,
+                        lineSpacing: messageLineSpacing,
+                        bubbleColor: theme.coachUserBubble,
+                        textColor: theme.primaryText,
+                        onLongPress: { frame in
+                            isInputFocused = false
+                            messageContextMenu = CoachUserMessageContextState(
+                                message: message,
+                                bubbleFrame: frame
+                            )
+                        }
+                    )
+                }
             } else {
                 CoachUserMessageBubbleView(
                     message: message,

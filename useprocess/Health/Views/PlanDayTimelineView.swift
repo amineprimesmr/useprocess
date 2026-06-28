@@ -8,13 +8,20 @@ struct PlanDayChronologicalTimeline: View {
     let selectedDate: Date
     var isEditable: Bool = true
     var onTaskStatusChange: (String, String, JournalTaskStatus?) -> Void
+    var onCompleteAll: (() -> Void)? = nil
+
+    @Environment(\.appTheme) private var theme
 
     private var checklistTasks: [OriginPlanTask] {
         OriginPlanPresenter.manualJournalTasks(from: day, plan: plan)
     }
 
+    private var coreCompletedCount: Int {
+        checklistTasks.filter { plan.progress.status(for: $0.id, dayId: day.id) == .completed }.count
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(checklistTasks) { task in
                 JournalTaskRow(
                     task: task,
@@ -26,7 +33,43 @@ struct PlanDayChronologicalTimeline: View {
                     }
                 )
             }
+
+            if isEditable {
+                completeAllButton
+            }
         }
+    }
+
+    private var completeAllButton: some View {
+        Button {
+            HapticManager.shared.notification(.success)
+            onCompleteAll?()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                Text("Tout valider")
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: 0)
+                Text("\(coreCompletedCount)/\(checklistTasks.count)")
+                    .font(.caption.weight(.bold))
+                    .monospacedDigit()
+                    .foregroundStyle(theme.secondaryText)
+            }
+            .foregroundStyle(theme.onboardingAccent)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(theme.onboardingAccent.opacity(theme.isDark ? 0.14 : 0.10))
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(theme.onboardingAccent.opacity(0.22), lineWidth: 0.5)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Tout valider — \(coreCompletedCount) sur \(checklistTasks.count)")
     }
 }
 
@@ -114,7 +157,7 @@ struct PlanTrainingDetailSheet: View {
                 }
                 .padding()
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle(training.sessionName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -123,6 +166,8 @@ struct PlanTrainingDetailSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.medium, .large])
     }
 
@@ -145,18 +190,16 @@ struct PlanTrainingDetailSheet: View {
 }
 
 struct PlanDebloatGuideSheet: View {
-    var initialPillar: HealthDebloatGuide.Pillar = .nutrition
-
     @Environment(\.appTheme) private var theme
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                HealthDebloatGuideView(initialPillar: initialPillar)
+                HealthDebloatGuideView()
                     .padding()
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Comprendre le debloat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -165,6 +208,8 @@ struct PlanDebloatGuideSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.large])
     }
 }
@@ -173,13 +218,11 @@ struct PlanDebloatGuideSheet: View {
 
 enum PlanResourceSheet: Identifiable, Hashable {
     case debloatGuide
-    case mealsHub
     case continuousHabits
 
     var id: String {
         switch self {
         case .debloatGuide: "debloat"
-        case .mealsHub: "meals"
         case .continuousHabits: "habits"
         }
     }
@@ -192,29 +235,13 @@ struct PlanResourcesFooter: View {
     @Environment(\.appTheme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Aller plus loin")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
-                .textCase(.uppercase)
-                .padding(.top, 8)
+        VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
+            PlanHomeSectionHeader(title: "Aller plus loin")
 
             resourceLink(
                 sheet: .debloatGuide,
-                title: "Guide debloat complet",
+                title: "Guide debloat & habitudes 24/7",
                 systemImage: "lightbulb.fill"
-            )
-
-            resourceLink(
-                sheet: .mealsHub,
-                title: "Historique repas & courses",
-                systemImage: "cart.fill"
-            )
-
-            resourceLink(
-                sheet: .continuousHabits,
-                title: "Habitudes 24/7",
-                systemImage: "infinity"
             )
         }
     }
@@ -224,42 +251,6 @@ struct PlanResourcesFooter: View {
             activeSheet = sheet
         }
         .processZoomSource(id: .planResource(sheet), namespace: zoomNamespace)
-    }
-}
-
-struct PlanMealsHubSheet: View {
-    let mealHistory: [MealHistoryEntry]
-    let shoppingItems: [MealShoppingItem]
-    var onToggleShopping: (String) -> Void
-    var onClearChecked: () -> Void
-
-    @Environment(\.appTheme) private var theme
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    MealHistoryCarouselView(entries: mealHistory, theme: theme)
-                    MealShoppingListSection(
-                        items: shoppingItems,
-                        theme: theme,
-                        onToggle: onToggleShopping,
-                        onClearChecked: onClearChecked
-                    )
-                }
-                .padding()
-            }
-            .background(theme.background.ignoresSafeArea())
-            .navigationTitle("Repas")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fermer") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.large])
     }
 }
 
@@ -291,7 +282,7 @@ struct PlanContinuousHabitsSheet: View {
                 }
                 .padding()
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Habitudes 24/7")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -300,6 +291,8 @@ struct PlanContinuousHabitsSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.medium, .large])
     }
 }

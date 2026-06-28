@@ -27,7 +27,7 @@ struct CoachMyMemoryView: View {
                 }
                 .padding(16)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Ma mémoire")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -42,6 +42,7 @@ struct CoachMyMemoryView: View {
                 }
             }
         }
+        .processAppPageBackground()
     }
 
     private var toggleCard: some View {

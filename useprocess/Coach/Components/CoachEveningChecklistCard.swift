@@ -21,8 +21,14 @@ struct CoachEveningChecklistCard: View {
                     isEditable: true,
                     onTaskStatusChange: { taskId, dayId, status in
                         WelcomePlanStore.shared.setJournalTaskStatus(status, taskId: taskId, dayId: dayId)
+                    },
+                    onCompleteAll: {
+                        WelcomePlanStore.shared.completeAllJournalTasks(dayId: day.id)
                     }
                 )
+                .onAppear {
+                    WelcomePlanStore.shared.syncCoreJournalTasks(dayId: day.id)
+                }
             }
             .padding(14)
             .background(cardBackground)

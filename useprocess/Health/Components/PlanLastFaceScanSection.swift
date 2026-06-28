@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Résumé scan visage — page Plan, sous le bandeau de jours.
+/// Résumé scan visage — page Plan (liquid glass, aligné cartes repas).
 struct PlanLastFaceScanSection: View {
     let latest: FaceScanResult?
     let isScanDue: Bool
@@ -9,28 +9,42 @@ struct PlanLastFaceScanSection: View {
     var onOpenHistory: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
+    @EnvironmentObject private var healthManager: HealthManager
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
 
     private let videoWidthRatio: CGFloat = 0.38
-    private let cardRadius: CGFloat = 16
-    private let expandedCardHeight: CGFloat = 148
+    private let cardRadius: CGFloat = 30
 
-    /// Panneau vidéo uniquement quand un scan existe et l’aperçu visage est activé.
+    private enum Layout {
+        static let cardPadding: CGFloat = 16
+        static let topMinHeight: CGFloat = 118
+        static let footerVerticalPadding: CGFloat = 14
+        static let blockSpacing: CGFloat = 8
+        static let videoTrailingRadius: CGFloat = 18
+    }
+
+    private var isInteractive: Bool {
+        onOpenHistory != nil || onScan != nil
+    }
+
     private var showsMediaColumn: Bool {
         latest != nil && displayPreferences.showsVideo
     }
 
     var body: some View {
         Group {
-            if onOpenHistory != nil || onScan != nil {
+            if isInteractive {
                 Button(action: handlePrimaryTap) {
                     cardContent
                 }
-                .buttonStyle(PlanFaceScanSectionButtonStyle())
+                .buttonStyle(.plain)
             } else {
                 cardContent
             }
         }
+        .processGlassButton(in: cardShape, interactive: isInteractive)
+        .clipShape(cardShape)
+        .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
         .onAppear {
             displayPreferences.reload()
@@ -53,12 +67,9 @@ struct PlanLastFaceScanSection: View {
 
     @ViewBuilder
     private var cardContent: some View {
-        Group {
-            if showsMediaColumn {
-                expandedCardContent
-            } else {
-                compactCardContent
-            }
+        VStack(spacing: 0) {
+            topSection
+            nextScanFooterBand
         }
         .animation(.spring(response: 0.38, dampingFraction: 0.86), value: showsMediaColumn)
         .contentShape(cardShape)
@@ -67,127 +78,139 @@ struct PlanLastFaceScanSection: View {
         }
     }
 
-  // MARK: - Layout avec vidéo
-
-    private var expandedCardContent: some View {
+    private var topSection: some View {
         GeometryReader { geo in
             let videoWidth = min(max(118, geo.size.width * videoWidthRatio), geo.size.width * 0.44)
 
-            HStack(spacing: 0) {
-                videoSidePanel
-                    .frame(width: videoWidth)
-                    .frame(maxHeight: .infinity)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    headerContent
-                    nextScanCountdownPanel
+            HStack(alignment: .top, spacing: 0) {
+                if showsMediaColumn {
+                    videoSidePanel
+                        .frame(width: videoWidth, height: Layout.topMinHeight, alignment: .topLeading)
                 }
-                .padding(.vertical, 14)
-                .padding(.leading, 14)
-                .padding(.trailing, 14)
-                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: Layout.blockSpacing) {
+                    if !showsMediaColumn {
+                        HStack(spacing: 10) {
+                            compactLeadingIcon
+                            scanCardHeader
+                        }
+                    } else {
+                        scanCardHeader
+                    }
+
+                    Text(preScanActionMessage)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(2)
+                }
+                .padding(Layout.cardPadding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, minHeight: expandedCardHeight, alignment: .leading)
-            .background(cardBackground)
-            .clipShape(cardShape)
+            .frame(maxWidth: .infinity, minHeight: Layout.topMinHeight, alignment: .leading)
         }
-        .frame(height: expandedCardHeight)
+        .frame(height: Layout.topMinHeight)
+    }
+
+    private var scanCardHeader: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("Dernier scan")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(theme.primaryText)
+
+            Spacer(minLength: 8)
+
+            if let latest {
+                ReadinessScoreMiniBadge(score: latest.resolvedFaceDayScore)
+                    .offset(y: -8)
+                    .padding(.trailing, -6)
+            }
+        }
+    }
+
+    private var preScanActionMessage: String {
+        let targets = WelcomePlanStore.shared.plan?.personalizedTargets ?? .default
+        return PlanFaceScanPreScanAction.message(
+            for: latest,
+            stepsToday: healthManager.todaySnapshot.effort.steps,
+            stepTarget: targets.dailySteps,
+            waterLitersToday: healthManager.todaySnapshot.nutrition.waterLiters,
+            waterTargetLiters: targets.hydrationLitersPerDay
+        )
+    }
+
+    private var nextScanFooterBand: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            PlanFaceScanNextScanFooter(
+                latest: latest,
+                isScanDue: isScanDue,
+                now: context.date,
+                theme: theme
+            )
+        }
+        .padding(.horizontal, Layout.cardPadding)
+        .padding(.vertical, Layout.footerVerticalPadding)
+    }
+
+    private var videoPanelShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            topLeadingRadius: cardRadius,
+            bottomLeadingRadius: 0,
+            bottomTrailingRadius: Layout.videoTrailingRadius,
+            topTrailingRadius: Layout.videoTrailingRadius,
+            style: .continuous
+        )
     }
 
     private var videoSidePanel: some View {
-        ZStack(alignment: .trailing) {
+        ZStack(alignment: .leading) {
             if let latest {
                 PlanFaceScanMediaPanel(result: latest)
                     .equatable()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
-            LinearGradient(
-                colors: [
-                    .clear,
-                    theme.isDark
-                        ? Color(red: 0.11, green: 0.11, blue: 0.12).opacity(0.35)
-                        : theme.cardBackgroundStrong.opacity(0.55),
-                    cardBackgroundColor.opacity(0.95)
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .frame(width: 44)
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        videoScrimColor.opacity(0.30),
+                        videoScrimColor.opacity(0.90)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 52)
+            }
             .allowsHitTesting(false)
         }
-        .frame(maxHeight: .infinity)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .clipShape(videoPanelShape)
     }
 
-    // MARK: - Layout compact (visage masqué ou pas de scan)
-
-    private var compactCardContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            compactHeaderRow
-            nextScanCountdownPanel
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardBackground)
-        .clipShape(cardShape)
-    }
-
-    private var compactHeaderRow: some View {
-        HStack(alignment: .top, spacing: 12) {
-            compactLeadingIcon
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Dernier scan visage")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
-
-                Text(compactSubtitle)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 4)
-
-            if let latest {
-                FaceWellnessAppreciationBadge(
-                    appreciation: FaceWellnessScore.appreciation(for: latest),
-                    theme: theme,
-                    style: .compact
-                )
-            }
-        }
-    }
-
-    private var compactSubtitle: String {
-        if let latest {
-            return "\(lastScanDateLabel(for: latest.createdAt)) · Aperçu masqué"
-        }
-        return "Aucun scan enregistré"
+    private var videoScrimColor: Color {
+        theme.isDark ? .black : .white
     }
 
     private var compactLeadingIcon: some View {
         ZStack {
             Circle()
-                .fill(compactIconFill.opacity(0.16))
-                .frame(width: 40, height: 40)
+                .fill(compactIconFill.opacity(0.14))
+                .frame(width: 36, height: 36)
 
-            Image(systemName: latest == nil ? "camera.fill" : "eye.slash")
+            Image(systemName: latest == nil ? "camera.fill" : "face.smiling")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(compactIconFill)
         }
-        .accessibilityLabel(compactIconAccessibilityLabel)
+        .accessibilityHidden(true)
     }
 
     private var compactIconFill: Color {
         if latest == nil {
             return .orange
         }
-        return theme.secondaryText.opacity(0.75)
-    }
-
-    private var compactIconAccessibilityLabel: String {
-        latest == nil ? "Aucun scan" : "Aperçu visage masqué"
+        return theme.onboardingAccent
     }
 
     @ViewBuilder
@@ -198,7 +221,7 @@ struct PlanLastFaceScanSection: View {
                     HapticManager.shared.selection()
                     displayPreferences.setShowsVideo(false)
                 } label: {
-                    Label("Masquer mon visage", systemImage: "eye.slash")
+                    Label("Masquer la vidéo", systemImage: "eye.slash")
                 }
             } else {
                 Button {
@@ -211,202 +234,195 @@ struct PlanLastFaceScanSection: View {
         }
     }
 
-    private var cardShape: some Shape {
+    private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
     }
+}
 
-    // MARK: - En-tête (layout vidéo)
+// MARK: - Messages courts (hydratation / marche — pas de routine)
 
-    private var headerContent: some View {
-        HStack(alignment: .top, spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Dernier scan visage")
+enum PlanFaceScanPreScanAction {
+    static func message(
+        for result: FaceScanResult?,
+        stepsToday: Int,
+        stepTarget: Int,
+        waterLitersToday: Double,
+        waterTargetLiters: Int
+    ) -> String {
+        guard result != nil else {
+            return "Fais ton premier scan — 30 secondes."
+        }
+
+        let waterTarget = max(1, waterTargetLiters)
+        let waterGap = max(0, Double(waterTarget) - waterLitersToday)
+        let stepsGap = max(0, stepTarget - stepsToday)
+        let hydrationTracked = waterLitersToday > 0.05
+        let hydrationLow = hydrationTracked && waterLitersToday < Double(waterTarget) * 0.6
+        let stepsLow = stepTarget > 0 && stepsToday < Int(Double(stepTarget) * 0.65)
+
+        if hydrationLow {
+            if waterGap >= 1 {
+                return String(format: "Encore %.1f L d'eau aujourd'hui.", waterGap)
+            }
+            return "Hydrate plus — il reste de l'eau à boire."
+        }
+
+        if stepsLow {
+            if stepsGap >= 2500 {
+                return "Peu de pas aujourd'hui — bouge un peu plus."
+            }
+            return "Encore \(formattedSteps(stepsGap)) pas aujourd'hui."
+        }
+
+        if !hydrationTracked {
+            return "N'oublie pas ton eau — cible \(waterTarget) L."
+        }
+
+        if let result, result.markers.puffinessScore >= 62 {
+            return "Gonflement visible — l'eau aide à dégonfler."
+        }
+
+        return "Bien hydraté et assez actif aujourd'hui."
+    }
+
+    private static func formattedSteps(_ value: Int) -> String {
+        let nf = NumberFormatter()
+        nf.locale = Locale(identifier: "fr_FR")
+        nf.numberStyle = .decimal
+        nf.groupingSeparator = " "
+        return nf.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+}
+
+// MARK: - Bande basse prochain scan
+
+private struct PlanFaceScanNextScanFooter: View {
+    let latest: FaceScanResult?
+    let isScanDue: Bool
+    let now: Date
+    let theme: AppTheme
+
+    private var progress: Double {
+        guard let latest else { return 0 }
+        return FaceScanCadence.intervalProgress(since: latest.createdAt, now: now)
+    }
+
+    private var headline: String {
+        if latest == nil { return "Premier scan" }
+        if isScanDue { return "Scan disponible" }
+        return "Prochain scan"
+    }
+
+    private var trailingLabel: String {
+        if latest == nil { return "À faire" }
+        if isScanDue { return "Maintenant" }
+        return FaceScanCadence.countdownLabel(since: latest?.createdAt, now: now)
+    }
+
+    private var statusIcon: String {
+        if latest == nil { return "camera.fill" }
+        if isScanDue { return "bell.badge.fill" }
+        return "clock.fill"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: statusIcon)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(trailingColor)
+                    .frame(width: 22, height: 22)
+                    .background(trailingColor.opacity(0.14), in: Circle())
+
+                Text(headline)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
 
-                if let latest {
-                    Text(lastScanDateLabel(for: latest.createdAt))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(theme.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Spacer(minLength: 8)
+
+                Text(trailingLabel)
+                    .font(.caption.weight(.bold))
+                    .monospacedDigit()
+                    .foregroundStyle(trailingColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(trailingColor.opacity(0.12), in: Capsule())
             }
 
-            Spacer(minLength: 4)
-
-            if let latest {
-                FaceWellnessAppreciationBadge(
-                    appreciation: FaceWellnessScore.appreciation(for: latest),
-                    theme: theme,
-                    style: .compact
-                )
-            }
+            PlanFaceScanProgressBar(
+                progress: progress,
+                isComplete: latest != nil && isScanDue,
+                isPending: latest == nil,
+                accent: theme.onboardingAccent,
+                track: Color.primary.opacity(theme.isDark ? 0.22 : 0.10)
+            )
         }
     }
 
-    // MARK: - Compte à rebours
+    private var trailingColor: Color {
+        if latest == nil { return .orange }
+        if isScanDue { return theme.onboardingAccent }
+        return theme.secondaryText
+    }
+}
 
-    @ViewBuilder
-    private var nextScanCountdownPanel: some View {
-        if latest == nil || isScanDue {
-            scanDuePanel
-        } else {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                activeCountdownPanel(now: context.date)
-            }
-        }
+private struct PlanFaceScanProgressBar: View {
+    let progress: Double
+    let isComplete: Bool
+    let isPending: Bool
+    let accent: Color
+    let track: Color
+
+    private var fillProgress: Double {
+        if isPending { return 0 }
+        if isComplete { return 1 }
+        return min(1, max(0, progress))
     }
 
-    private var scanDuePanel: some View {
-        HStack(spacing: 12) {
-            if showsMediaColumn {
-                ZStack {
-                    Circle()
-                        .fill((latest == nil ? Color.orange : theme.onboardingAccent).opacity(0.16))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: "camera.fill")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(latest == nil ? .orange : theme.onboardingAccent)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(latest == nil ? "Premier scan" : "C'est le moment")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(theme.secondaryText)
-                    .textCase(.uppercase)
-                Text(latest == nil ? "Lance ton premier scan" : "Scan disponible")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(latest == nil ? .orange : theme.onboardingAccent)
-            }
-
-            Spacer(minLength: 0)
+    private var fillGradient: LinearGradient {
+        if isComplete {
+            return LinearGradient(
+                colors: [accent, accent.opacity(0.75)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
         }
-        .padding(12)
-        .background(countdownSurface)
-    }
-
-    private func activeCountdownPanel(now: Date) -> some View {
-        let headline = FaceScanCadence.nextScanHeadline(since: latest?.createdAt, now: now)
-        let components = FaceScanCadence.countdownComponents(since: latest?.createdAt, now: now)
-        let progress = latest.map { FaceScanCadence.intervalProgress(since: $0.createdAt, now: now) } ?? 0
-
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Prochain scan")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(theme.secondaryText)
-                        .textCase(.uppercase)
-                    Text(headline)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(theme.primaryText)
-                }
-
-                Spacer(minLength: 4)
-
-                if let components {
-                    countdownDigits(components)
-                }
-            }
-
-            scanProgressBar(progress: progress)
-        }
-        .padding(12)
-        .background(countdownSurface)
-    }
-
-    private func countdownDigits(_ components: FaceScanCadence.CountdownComponents) -> some View {
-        HStack(spacing: 4) {
-            if components.hours > 0 {
-                countdownDigit(value: components.hours, unit: "h")
-            }
-            countdownDigit(value: components.minutes, unit: "m")
-            countdownDigit(value: components.seconds, unit: "s")
-        }
-        .accessibilityLabel(FaceScanCadence.countdownLabel(since: latest?.createdAt))
-    }
-
-    private func countdownDigit(value: Int, unit: String) -> some View {
-        VStack(spacing: 1) {
-            Text(String(format: "%02d", value))
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(theme.primaryText)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-            Text(unit)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(theme.secondaryText)
-        }
-        .frame(minWidth: 30)
-        .padding(.horizontal, 4)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(theme.isDark ? Color.white.opacity(0.07) : Color.white.opacity(0.82))
+        return LinearGradient(
+            colors: [accent.opacity(0.95), accent.opacity(0.55)],
+            startPoint: .leading,
+            endPoint: .trailing
         )
     }
 
-    private func scanProgressBar(progress: Double) -> some View {
+    var body: some View {
         GeometryReader { geo in
+            let width = geo.size.width
+            let fillWidth = max(10, width * fillProgress)
+
             ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(theme.isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.06))
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [theme.onboardingAccent.opacity(0.85), theme.glow.opacity(0.95)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: max(6, geo.size.width * progress))
-                    .animation(.easeInOut(duration: 0.35), value: progress)
+                Capsule(style: .continuous)
+                    .fill(track)
+
+                Capsule(style: .continuous)
+                    .fill(fillGradient)
+                    .frame(width: fillWidth)
+                    .animation(.spring(response: 0.55, dampingFraction: 0.82), value: fillProgress)
+
+                if isComplete {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundStyle(.white)
+                            .padding(.trailing, 6)
+                    }
+                }
             }
         }
-        .frame(height: 5)
-        .accessibilityLabel("Progression vers le prochain scan")
-        .accessibilityValue("\(Int(progress * 100)) pour cent")
-    }
-
-    // MARK: - Style
-
-    private var cardBackgroundColor: Color {
-        theme.isDark ? Color(red: 0.11, green: 0.11, blue: 0.12) : theme.cardBackgroundStrong
-    }
-
-    private var cardBackground: some View {
-        cardShape.fill(cardBackgroundColor)
-    }
-
-    private var countdownSurface: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(theme.isDark ? Color.white.opacity(0.05) : theme.cardBackground.opacity(0.88))
-    }
-
-    private func lastScanDateLabel(for date: Date) -> String {
-        let calendar = Calendar.current
-        let dayLabel: String
-        if calendar.isDateInToday(date) {
-            dayLabel = "Aujourd'hui"
-        } else if calendar.isDateInYesterday(date) {
-            dayLabel = "Hier"
-        } else {
-            dayLabel = date.formatted(.dateTime.day().month(.abbreviated))
-        }
-        return "\(dayLabel) · \(date.formatted(date: .omitted, time: .shortened))"
+        .frame(height: 11)
     }
 }
 
-private struct PlanFaceScanSectionButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.spring(response: 0.28, dampingFraction: 0.78), value: configuration.isPressed)
-    }
-}
-
-/// Panneau média isolé du compte à rebours pour éviter de recréer le lecteur vidéo chaque seconde.
 private struct PlanFaceScanMediaPanel: View, Equatable {
     let result: FaceScanResult
 
@@ -421,6 +437,6 @@ private struct PlanFaceScanMediaPanel: View, Equatable {
             result: result,
             displayMode: .sidePanel
         )
-        .accessibilityLabel("Vidéo du dernier scan visage")
+        .accessibilityLabel("Vidéo du dernier scan")
     }
 }

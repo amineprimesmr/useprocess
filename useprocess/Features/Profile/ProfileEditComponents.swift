@@ -284,26 +284,35 @@ extension View {
 }
 
 struct AccountDetailsGlassHeader: View {
+    var title: String? = nil
     let onBack: () -> Void
     let onSave: () -> Void
     var saveDisabled: Bool = true
 
     var body: some View {
-        HStack {
-            ProcessGlassIconButton(systemName: "chevron.down", size: 40, iconSize: 16, action: onBack)
-
-            Spacer()
-
-            Button(action: onSave) {
-                Text("Enregistrer")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
+        ZStack {
+            if let title {
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color.primary)
             }
-            .processGlassButton(in: Capsule())
-            .disabled(saveDisabled)
-            .opacity(saveDisabled ? 0.72 : 1)
+
+            HStack {
+                ProcessGlassIconButton(systemName: "chevron.down", size: 40, iconSize: 16, action: onBack)
+
+                Spacer()
+
+                Button(action: onSave) {
+                    Text("Enregistrer")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                }
+                .processGlassButton(in: Capsule())
+                .disabled(saveDisabled)
+                .opacity(saveDisabled ? 0.72 : 1)
+            }
         }
         .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
         .padding(.top, 12)

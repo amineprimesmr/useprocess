@@ -36,7 +36,7 @@ struct CoachHealthRecordsSheet: View {
     var body: some View {
         NavigationStack {
             HealthConnectedSourcesSettingsView()
-                .background(theme.background.ignoresSafeArea())
+                .processTransparentScrollSurface()
                 .navigationTitle("Dossiers de santé")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -45,6 +45,7 @@ struct CoachHealthRecordsSheet: View {
                     }
                 }
         }
+        .processAppPageBackground()
     }
 
     private var closeButton: some View {
@@ -162,6 +163,7 @@ struct CoachFilesSheet: View {
                 processFilesStore.reload()
             }
         }
+        .processAppPageBackground()
     }
 
     private var closeButton: some View {
@@ -204,7 +206,7 @@ struct CoachTrackingSheet: View {
                 }
                 .padding(16)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Points de suivi")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -216,6 +218,7 @@ struct CoachTrackingSheet: View {
                 streakStore.sync(from: planStore.plan)
             }
         }
+        .processAppPageBackground()
     }
 
     private var streakSummaryCard: some View {

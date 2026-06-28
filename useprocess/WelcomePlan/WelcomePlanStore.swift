@@ -149,6 +149,12 @@ final class WelcomePlanStore {
             changed = true
         }
 
+        if current.calendar.buildVersion < 9 {
+            repairStoredMealImageAssets(plan: &current)
+            current.calendar.buildVersion = 9
+            changed = true
+        }
+
         if current.nutritionProtocol.targetMealsPerDay == nil {
             ProcessMealPlanConfiguration.enrichNutritionProtocol(
                 &current.nutritionProtocol,
@@ -238,6 +244,38 @@ final class WelcomePlanStore {
         guard let current = plan else { return }
         let existing = current.progress.status(for: taskId, dayId: dayId)
         setJournalTaskStatus(existing == .completed ? nil : .completed, taskId: taskId, dayId: dayId)
+    }
+
+    /// Aligne la tâche « Repas debloat » si un repas est déjà validé.
+    func syncCoreJournalTasks(dayId: String) {
+        guard var current = plan else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+        guard JournalCoreTaskCatalog.isNutritionSatisfied(plan: current, dayId: dayId) else { return }
+
+        let taskId = JournalCoreTaskCatalog.nutritionTaskId(for: dayId)
+        guard current.progress.status(for: taskId, dayId: dayId) != .completed else { return }
+
+        let key = OriginPlanProgress.taskKey(dayId: dayId, taskId: taskId)
+        current.progress.taskStatuses[key] = .completed
+        current.progress.completedTaskIds.insert(taskId)
+        syncJournalDayCompletion(on: &current, dayId: dayId)
+        savePlan(current)
+    }
+
+    /// Valide les 4 leviers + tâches bonus (posture) en un tap.
+    func completeAllJournalTasks(dayId: String) {
+        guard var current = plan else { return }
+        guard let day = current.calendar.weeks.flatMap(\.days).first(where: { $0.id == dayId }) else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+
+        let tasks = JournalCoreTaskCatalog.allCompletableTasks(day: day, plan: current)
+        for task in tasks {
+            let key = OriginPlanProgress.taskKey(dayId: dayId, taskId: task.id)
+            current.progress.taskStatuses[key] = .completed
+            current.progress.completedTaskIds.insert(task.id)
+        }
+        syncJournalDayCompletion(on: &current, dayId: dayId)
+        savePlan(current)
     }
 
     func clearValidatedMeal(dayId: String, slot: MealTimeSlot? = nil) {

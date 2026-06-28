@@ -52,7 +52,7 @@ struct CoachConversationsSidebar: View {
         .padding(.horizontal, 16)
         .padding(.top, ProcessMainChromeMetrics.topSafeInset + 10)
         .padding(.bottom, 20)
-        .background(theme.background)
+        .background(Color.clear)
         .sheet(isPresented: $showSettings) {
             CoachIntelligenceSettingsView(
                 onDeleteAllConversations: onDeleteAllConversations,

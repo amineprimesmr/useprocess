@@ -73,12 +73,12 @@ enum CoachPlanContextBuilder {
             lines.append("• Mémoire IA globale :\n\(summary)")
         }
 
-        lines.append("Règle : ancre chaque réponse au plan ET aux repas du jour ci-dessous. Ne propose jamais un repas qui contredit les brouillons/validations déjà faits sans le dire.")
+        lines.append("Règle : ancre chaque réponse au plan ET aux repas debloat ci-dessous. Ne propose jamais un repas qui contredit les brouillons/validations déjà faits sans le dire.")
 
         return lines.joined(separator: "\n")
     }
 
-    // MARK: - Repas du jour (validés, brouillons IA, propositions)
+    // MARK: - Repas debloat (validés, brouillons IA, propositions)
 
     @MainActor
     static func todayMealsBlock(plan: FaceOriginPlan) -> String {

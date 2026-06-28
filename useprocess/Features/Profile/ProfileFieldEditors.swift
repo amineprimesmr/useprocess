@@ -3,7 +3,6 @@ import UIKit
 
 enum ProfileEditDestination: Hashable {
     case firstName
-    case lastName
     case gender
     case birthDate
     case username
@@ -18,10 +17,6 @@ func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
             initialValue: UnifiedProfileService.shared.currentProfile?.firstName
                 ?? SocialProfileStore.shared.profile?.displayName
                 ?? ""
-        )
-    case .lastName:
-        ProfileLastNameEditorView(
-            initialValue: UnifiedProfileService.shared.currentProfile?.lastName ?? ""
         )
     case .gender:
         ProfileGenderEditorView(
@@ -69,8 +64,6 @@ struct ProfileNameEditorView: View {
 
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(title: "Prénom", onDismiss: { dismiss() })
 
@@ -132,8 +125,6 @@ struct ProfileLastNameEditorView: View {
 
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(title: "Nom de famille", onDismiss: { dismiss() })
 
@@ -194,8 +185,6 @@ struct ProfileGenderEditorView: View {
 
     var body: some View {
         ZStack {
-            AccountDetailsTheme.pageBackground.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(
                     title: "Sexe",
@@ -257,8 +246,6 @@ struct ProfileBirthDateEditorView: View {
 
     var body: some View {
         ZStack {
-            AccountDetailsTheme.pageBackground.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(
                     title: "Date de naissance",
@@ -316,8 +303,6 @@ struct ProfileUsernameEditorView: View {
 
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(title: "Tag Process", onDismiss: { dismiss() })
 
@@ -522,8 +507,6 @@ struct ProcessFindUserByTagView: View {
 
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(title: "Trouver un utilisateur", onDismiss: { dismiss() })
 
@@ -639,8 +622,6 @@ struct ProfileBioEditorView: View {
 
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(
                     title: "Bio",
@@ -716,8 +697,6 @@ struct ProfileEducationEditorView: View {
 
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(title: "Éducation", onDismiss: { dismiss() })
 
@@ -795,8 +774,6 @@ struct ProfileInterestsEditorView: View {
 
     var body: some View {
         ZStack {
-            ProfileEditTheme.background.ignoresSafeArea()
-
             VStack(spacing: 0) {
                 ProfileEditorHeader(
                     title: "Intérêts",

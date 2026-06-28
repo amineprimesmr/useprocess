@@ -138,29 +138,27 @@ private struct ProcessCoachTabAccessoryContent: View {
     @Environment(\.appTheme) private var theme
 
     var body: some View {
-        HStack(spacing: 10) {
-            coachLogo
+        Button(action: onTap) {
+            HStack(spacing: 10) {
+                coachLogo
 
-            Text(prompt)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(theme.primaryText.opacity(0.68))
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                Text(prompt)
+                    .font(.system(size: isInlinePlacement ? 15 : 16, weight: .medium))
+                    .foregroundStyle(isInlinePlacement ? theme.secondaryText : theme.primaryText.opacity(0.68))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, isInlinePlacement ? 12 : 16)
+            .frame(height: BevelTabMetrics.accessoryHeight)
+            .frame(maxWidth: .infinity)
+            .contentShape(Capsule())
         }
-        .padding(.horizontal, 16)
-        .frame(height: BevelTabMetrics.accessoryHeight)
-        .frame(maxWidth: .infinity)
-        .contentShape(Capsule())
+        .buttonStyle(.plain)
         .modifier(ProcessCoachAccessoryChrome(isInline: isInlinePlacement))
         .matchedTransitionSource(id: ProcessCoachZoomTransition.sourceID, in: namespace)
-        .onTapGesture {
-            onTap()
-        }
-        .accessibilityElement(children: .ignore)
         .accessibilityLabel(prompt)
-        .accessibilityAddTraits(.isButton)
     }
 
     private var coachLogo: some View {
@@ -172,16 +170,17 @@ private struct ProcessCoachTabAccessoryContent: View {
     }
 }
 
-/// Glass aligné sur la tab bar — même matière que la capsule (expanded) ou le bouton flottant (inline).
+/// Glass aligné sur la tab bar — iOS 26 : pas de couche custom (teinte système).
 private struct ProcessCoachAccessoryChrome: ViewModifier {
     var isInline: Bool
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            // Tab bar native iOS 26 = glass interactif ; évite la pilule accessory trop claire.
-            content.processGlassEffect(in: Capsule(), interactive: true)
+            content
+        } else if isInline {
+            content
         } else {
-            content.processGlassEffect(in: Capsule(), interactive: isInline)
+            content.processGlassEffect(in: Capsule(), interactive: false)
         }
     }
 }
@@ -286,34 +285,15 @@ struct ProcessBevelLegacyTabShell<Content: View>: View {
         let isSelected = selectedSection == section
         let tabShape = RoundedRectangle(cornerRadius: BevelTabMetrics.selectedCornerRadius, style: .continuous)
 
-        if section == .coach {
-            Button {
-                withAnimation(ProcessGlass.spring) {
-                    selectedSection = section
-                }
-            } label: {
-                legacyTabLabel(section: section, isSelected: isSelected, tabShape: tabShape)
+        Button {
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = section
             }
-            .buttonStyle(
-                ProcessFluidZoomButtonStyle(
-                    id: ProcessCoachZoomTransition.sourceID,
-                    namespace: coachZoomNamespace,
-                    shape: tabShape,
-                    usesGlass: false
-                )
-            )
-            .accessibilityLabel(section.label)
-        } else {
-            Button {
-                withAnimation(ProcessGlass.spring) {
-                    selectedSection = section
-                }
-            } label: {
-                legacyTabLabel(section: section, isSelected: isSelected, tabShape: tabShape)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(section.label)
+        } label: {
+            legacyTabLabel(section: section, isSelected: isSelected, tabShape: tabShape)
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(section.label)
     }
 
     private func legacyTabLabel(

@@ -60,17 +60,8 @@ enum OriginPlanCalendarBuilder {
                         nutrition: nutrition,
                         training: training,
                         posture: OriginPlanDailyTaskCatalog.postureTasks(plan: plan, dayId: dayId),
-                        face: OriginPlanDailyTaskCatalog.faceTasks(
-                            plan: plan,
-                            targets: targets,
-                            dayId: dayId,
-                            dayIndex: globalDay
-                        ),
-                        evening: OriginPlanDailyTaskCatalog.eveningTasks(
-                            plan: plan,
-                            answers: answers,
-                            dayId: dayId
-                        ),
+                        face: [],
+                        evening: [],
                         sleep: OriginDaySleep(
                             targetBedtime: bedtime,
                             targetWake: wake,
@@ -362,12 +353,10 @@ enum OriginPlanCalendarBuilder {
         dayId: String
     ) -> [OriginPlanTask] {
         [
-            task(ProcessHydrationGuide.dailyTaskTitle, "Objectif \(targets.hydrationLabel) dans la journée", "Nutrition", nil, dayId: dayId),
-            task("Lumière matinale", "\(targets.morningLightMinutes) min soleil ou lumière naturelle", "Hormones", targets.morningLightMinutes, dayId: dayId),
             task(
-                "Eau froide sur le visage",
-                "\(targets.coldFaceRinseSeconds) sec — front, joues, contour des yeux.",
-                "Visage",
+                ProcessHydrationGuide.dailyTaskTitle,
+                "Objectif \(targets.hydrationLabel) dans la journée",
+                "Nutrition",
                 nil,
                 dayId: dayId
             )

@@ -12,15 +12,21 @@ enum CoachContextualActionResolver {
         hasPendingPlanPatch: Bool
     ) -> [CoachContextualAction] {
         if !parsedActions.isEmpty {
+            let filtered = filterPlanActions(
+                parsedActions,
+                userText: userText,
+                assistantText: assistantText,
+                hasPendingPlanPatch: hasPendingPlanPatch
+            )
             let lowerUser = userText.lowercased()
             let lowerAssistant = assistantText.lowercased()
             if isMealDiscussion(lowerUser, lowerAssistant) {
-                let mealFocused = parsedActions.filter { $0.kind != .swapWorkout }
+                let mealFocused = filtered.filter { $0.kind != .swapWorkout }
                 if !mealFocused.isEmpty {
                     return dedupe(mealFocused)
                 }
             }
-            return dedupe(parsedActions)
+            return dedupe(filtered)
         }
 
         var actions: [CoachContextualAction] = []
@@ -34,9 +40,20 @@ enum CoachContextualActionResolver {
             return dedupe(actions)
         }
 
-        if hasPendingPlanPatch {
+        if hasPendingPlanPatch,
+           CoachPlanModificationService.shouldOfferPlanApplyActions(
+               userText: userText,
+               assistantText: assistantText,
+               hasPendingPlanPatch: true
+           ) {
             actions.append(CoachContextualAction(kind: .applyPlanChanges))
-            actions.append(CoachContextualAction(kind: .openPlan))
+            if CoachPlanModificationService.shouldOfferOpenPlanAction(
+                userText: userText,
+                assistantText: assistantText,
+                hasPendingPlanPatch: true
+            ) {
+                actions.append(CoachContextualAction(kind: .openPlan))
+            }
             return dedupe(actions)
         }
 
@@ -63,7 +80,13 @@ enum CoachContextualActionResolver {
 
         if isTrainingContext(lowerUser, lowerAssistant) {
             actions.append(CoachContextualAction(kind: .swapWorkout))
-            actions.append(CoachContextualAction(kind: .openPlan))
+            if CoachPlanModificationService.shouldOfferOpenPlanAction(
+                userText: userText,
+                assistantText: assistantText,
+                hasPendingPlanPatch: hasPendingPlanPatch
+            ) {
+                actions.append(CoachContextualAction(kind: .openPlan))
+            }
             return dedupe(actions)
         }
 
@@ -81,6 +104,31 @@ enum CoachContextualActionResolver {
         }
 
         return []
+    }
+
+    private static func filterPlanActions(
+        _ actions: [CoachContextualAction],
+        userText: String,
+        assistantText: String,
+        hasPendingPlanPatch: Bool
+    ) -> [CoachContextualAction] {
+        let showApply = CoachPlanModificationService.shouldOfferPlanApplyActions(
+            userText: userText,
+            assistantText: assistantText,
+            hasPendingPlanPatch: hasPendingPlanPatch
+        )
+        let showOpenPlan = CoachPlanModificationService.shouldOfferOpenPlanAction(
+            userText: userText,
+            assistantText: assistantText,
+            hasPendingPlanPatch: hasPendingPlanPatch
+        )
+        return actions.filter { action in
+            switch action.kind {
+            case .applyPlanChanges: return showApply
+            case .openPlan: return showOpenPlan
+            default: return true
+            }
+        }
     }
 
     private static func dedupe(_ actions: [CoachContextualAction]) -> [CoachContextualAction] {

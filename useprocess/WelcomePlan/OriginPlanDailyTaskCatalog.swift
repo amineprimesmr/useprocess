@@ -11,17 +11,19 @@ enum OriginPlanDailyTaskCatalog {
     dayId: String,
     dayIndex: Int
   ) -> [OriginPlanTask] {
-    var tasks: [OriginPlanTask] = [
-      journalTask(
-        id: "\(dayId).face.lymph",
-        title: "Massage lymphatique",
-        detail: "\(targets.lymphFaceMassageMinutes) min sous les yeux vers les oreilles",
-        pillar: "Visage",
-        minutes: targets.lymphFaceMassageMinutes
-      )
-    ]
+    _ = plan
+    _ = dayIndex
 
-    return tasks
+    return FaceMorningRoutineCatalog.buildSteps(targets: targets).enumerated().map { index, line in
+      let parts = splitTitleAndDetail(line)
+      return journalTask(
+        id: "\(dayId).face.morning.\(index)",
+        title: parts.title,
+        detail: parts.detail.isEmpty ? line : parts.detail,
+        pillar: "Visage",
+        minutes: repMinutes(from: line, targets: targets)
+      )
+    }
   }
 
   // MARK: - Posture
@@ -123,6 +125,25 @@ enum OriginPlanDailyTaskCatalog {
       durationMinutes: minutes,
       isOptional: optional
     )
+  }
+
+  private static func splitTitleAndDetail(_ line: String) -> (title: String, detail: String) {
+    for separator in [" — ", " – ", " - "] {
+      if let range = line.range(of: separator) {
+        let title = String(line[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+        let detail = String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+        return (title, detail)
+      }
+    }
+    return (line.trimmingCharacters(in: .whitespaces), "")
+  }
+
+  private static func repMinutes(from line: String, targets: OriginPersonalizedDailyTargets) -> Int? {
+    let lower = line.lowercased()
+    if lower.contains("soleil") { return targets.morningLightMinutes }
+    if lower.contains("massage") { return targets.lymphFaceMassageMinutes }
+    if lower.contains("eau froide") { return 1 }
+    return nil
   }
 
   private static func checklistTitle(for line: String, index: Int) -> String {

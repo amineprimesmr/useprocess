@@ -21,9 +21,13 @@ enum CoachPlanModificationService {
         let lower = userText.lowercased()
             .folding(options: .diacriticInsensitive, locale: .current)
 
+        if isAdviceOrOpinionQuestion(lower), !hasExplicitApplyRequest(lower) {
+            return nil
+        }
+
         let modifySignals = [
             "modif", "change", "adapte", "ajuste", "ajoute", "supprime", "enleve",
-            "remplace", "mets ", "passer a", "je veux", "fais ", "applique", "mets-moi"
+            "remplace", "mets ", "passer a", "fais ", "applique", "mets-moi"
         ]
         let planSignals = [
             "programme", "plan", "protocole", "calendrier", "repas", "pdj",
@@ -32,12 +36,15 @@ enum CoachPlanModificationService {
         ]
 
         let hasModify = modifySignals.contains { lower.contains($0) }
+            || lower.contains("je veux")
         let hasPlan = planSignals.contains { lower.contains($0) }
         let explicitMeal = lower.contains("1 repas") || lower.contains("un repas")
             || lower.contains("un seul repas") || lower.contains("omad")
             || lower.contains("2 repas") || lower.contains("deux repas")
 
-        guard (hasModify && hasPlan) || explicitMeal else { return nil }
+        guard (hasModify && hasPlan)
+            || (explicitMeal && (hasExplicitApplyRequest(lower) || (hasModify && hasPlan)))
+        else { return nil }
 
         let section: String
         if lower.contains("repas") || lower.contains("pdj") || lower.contains("dejeuner")
@@ -165,5 +172,96 @@ enum CoachPlanModificationService {
         guard !changes.isEmpty else { return "" }
         let list = changes.map { "• \($0)" }.joined(separator: "\n")
         return "✅ Modifié dans ton programme\n\(list)\n\n"
+    }
+
+    // MARK: - Contextual actions
+
+    /// Question d'avis / conseil — pas une demande d'application dans le plan.
+    static func isAdviceOrOpinionQuestion(_ lower: String) -> Bool {
+        if lower.contains("?") { return true }
+        let signals = [
+            "conseil", "conseille", "conseilles", "recommand", "tu penses",
+            "t'en penses", "qu'en penses", "qu en penses", "ton avis",
+            "c'est bien", "cest bien", "est-ce bien", "est ce bien",
+            "est-ce que", "est ce que", "devrais-je", "devrais je",
+            "tu me conseil", "me conseille", "tu conseilles", "tu conseille"
+        ]
+        return signals.contains { lower.contains($0) }
+    }
+
+    static func hasExplicitApplyRequest(_ lower: String) -> Bool {
+        let signals = [
+            "applique", "mets-moi", "mets moi", "modifie mon", "change mon plan",
+            "adapte mon", "passe mon plan", "passer mon plan", "fais-le", "fais le",
+            "go pour", "ok pour", "mets en place", "mets-le", "mets le"
+        ]
+        return signals.contains { lower.contains($0) }
+    }
+
+    static func advisesKeepingCurrentPlan(in text: String) -> Bool {
+        let lower = text.lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+        let keepSignals = [
+            "garde tes", "garde ton", "garde ta", "garde le", "garde la",
+            "trop tot", "trop tôt", "pas maintenant", "pas encore",
+            "on peut regarder", "ne change pas", "reste sur", "continue avec",
+            "c'est trop tot", "c'est trop tôt"
+        ]
+        return keepSignals.contains { lower.contains($0) }
+    }
+
+    /// Vrai si la réponse décrit une modification concrète à appliquer dans l'app.
+    static func coachProposesApplyingChange(in text: String) -> Bool {
+        let lower = text.lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+
+        if advisesKeepingCurrentPlan(in: text) {
+            let overrides = [
+                "repas unique:", "repas unique :",
+                "modifié dans ton programme", "passons en", "on bascule"
+            ]
+            guard overrides.contains(where: { lower.contains($0) }) else { return false }
+        }
+
+        let changeSignals = [
+            "repas unique:", "repas unique :",
+            "modifié dans ton programme", "modifie pour", "passons en",
+            "on bascule", "j'ai adapté", "j'ai mis", "mise à jour",
+            "changement :", "nouveau programme", "voici ta nouvelle"
+        ]
+        return changeSignals.contains { lower.contains($0) }
+    }
+
+    static func shouldOfferPlanApplyActions(
+        userText: String,
+        assistantText: String,
+        hasPendingPlanPatch: Bool
+    ) -> Bool {
+        if coachProposesApplyingChange(in: assistantText) { return true }
+        if hasPendingPlanPatch, !advisesKeepingCurrentPlan(in: assistantText) {
+            return detectIntent(in: userText) != nil
+        }
+        return false
+    }
+
+    static func shouldOfferOpenPlanAction(
+        userText: String,
+        assistantText: String,
+        hasPendingPlanPatch: Bool
+    ) -> Bool {
+        if shouldOfferPlanApplyActions(
+            userText: userText,
+            assistantText: assistantText,
+            hasPendingPlanPatch: hasPendingPlanPatch
+        ) {
+            return true
+        }
+        let lower = assistantText.lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+        let navigationSignals = [
+            "ton plan", "ton journal", "dans l'app", "dans l app",
+            "regarde ton", "voir ton plan", "checklist"
+        ]
+        return navigationSignals.contains { lower.contains($0) }
     }
 }

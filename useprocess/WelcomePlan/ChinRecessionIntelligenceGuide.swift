@@ -31,19 +31,9 @@ enum ChinRecessionIntelligenceGuide {
         _ face: inout OriginFaceProtocol,
         answers: [String: WelcomePlanAnswer]
     ) {
-        guard hasChinConcern(answers: answers) else { return }
-
-        let routine = needsFullChinProtocol(answers: answers) ? chinJawRoutine : lightChinRoutine
-        for line in routine {
-            if !face.lymphAndFascia.contains(line) {
-                face.lymphAndFascia.append(line)
-            }
-        }
-
-        let fasciaNote = "Fascias + posture → muscles → os — chaîne orthotropics (pas excuses génétiques)"
-        if !face.lymphAndFascia.contains(fasciaNote) {
-            face.lymphAndFascia.insert(fasciaNote, at: 0)
-        }
+        _ = face
+        _ = answers
+        // Exercices mâchoire / menton → posture ou 24/7, pas la routine matinale visage.
     }
 
     static func enrichPostureMobility(_ blocks: inout [String], answers: [String: WelcomePlanAnswer]) {

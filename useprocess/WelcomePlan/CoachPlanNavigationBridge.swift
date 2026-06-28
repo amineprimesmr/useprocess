@@ -17,6 +17,7 @@ final class CoachPlanNavigationBridge {
     var shouldOpenTracking = false
     var shouldOpenIntegration = false
     var pendingFaceScanHandoff: FaceScanCoachHandoff?
+    var pendingMealHandoff: CoachMealHandoff?
 
     func openPlan() {
         shouldOpenPlan = true
@@ -45,6 +46,29 @@ final class CoachPlanNavigationBridge {
     func consumePendingFaceScanHandoff() -> FaceScanCoachHandoff? {
         let handoff = pendingFaceScanHandoff
         pendingFaceScanHandoff = nil
+        return handoff
+    }
+
+    func openCoachForMeal(
+        meal: MealSuggestionContent,
+        slot: MealTimeSlot,
+        day: OriginProgramDay,
+        prompt: String? = nil
+    ) {
+        pendingMealHandoff = CoachMealHandoff(
+            meal: meal,
+            slot: slot,
+            dayId: day.id,
+            dayTitle: day.title,
+            dayIndex: day.globalDayIndex
+        )
+        pendingPrompt = prompt
+        shouldOpenCoach = true
+    }
+
+    func consumePendingMealHandoff() -> CoachMealHandoff? {
+        let handoff = pendingMealHandoff
+        pendingMealHandoff = nil
         return handoff
     }
 

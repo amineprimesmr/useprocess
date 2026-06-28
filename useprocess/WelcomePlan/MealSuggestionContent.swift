@@ -384,3 +384,37 @@ enum MealSuggestionParser {
         )
     }
 }
+
+// MARK: - Préparation par étapes
+
+enum MealPreparationStepsParser {
+    static func steps(from prepSummary: String) -> [String] {
+        let trimmed = prepSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        if MealSuggestionParser.looksLikeJSON(trimmed) { return [] }
+
+        let normalized = trimmed
+            .replacingOccurrences(of: "; ", with: ". ")
+            .replacingOccurrences(of: " ;", with: ". ")
+
+        let sentenceParts = normalized
+            .split(separator: ".", omittingEmptySubsequences: true)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        if sentenceParts.count >= 2 {
+            return sentenceParts
+        }
+
+        let commaParts = trimmed
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        if commaParts.count >= 2 {
+            return commaParts
+        }
+
+        return [trimmed]
+    }
+}

@@ -6,7 +6,10 @@ extension WelcomePlanStore {
 
     func validatedMealContent(for dayId: String, slot: MealTimeSlot? = nil) -> MealSuggestionContent? {
         guard let plan else { return nil }
-        if let slot, let payload = plan.progress.validatedMealsBySlot[dayId]?[slot.rawValue] {
+        if let slot {
+            guard let payload = plan.progress.validatedMealsBySlot[dayId]?[slot.rawValue] else {
+                return nil
+            }
             return MealSuggestionContent.fromStored(payload)
         }
         if let payload = plan.progress.validatedMeals[dayId] {
@@ -68,6 +71,11 @@ extension WelcomePlanStore {
         appendMealHistory(dayId: dayId, meal: meal, slot: resolvedSlot, on: &current)
         mergeShoppingList(from: meal, dayId: dayId, on: &current)
         syncCoachOnMealValidation(meal: meal, dayId: dayId, on: &current)
+
+        let nutritionTaskId = JournalCoreTaskCatalog.nutritionTaskId(for: dayId)
+        let nutritionKey = OriginPlanProgress.taskKey(dayId: dayId, taskId: nutritionTaskId)
+        current.progress.taskStatuses[nutritionKey] = .completed
+        current.progress.completedTaskIds.insert(nutritionTaskId)
 
         syncJournalDayCompletion(on: &current, dayId: dayId)
         savePlan(current)

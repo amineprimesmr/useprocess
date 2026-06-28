@@ -109,4 +109,80 @@ enum PlanMealSchedule {
     static func windowEndHour(for slot: MealTimeSlot, planType: NutritionPlanType) -> Int? {
         timing(for: slot, planType: planType)?.windowEndHour
     }
+
+    static func windowStartDate(
+        for slot: MealTimeSlot,
+        planType: NutritionPlanType,
+        on dayDate: Date,
+        calendar: Calendar = .current
+    ) -> Date? {
+        guard let timing = timing(for: slot, planType: planType) else { return nil }
+        let dayStart = calendar.startOfDay(for: dayDate)
+        return calendar.date(
+            bySettingHour: timing.windowStartHour,
+            minute: timing.windowStartMinute,
+            second: 0,
+            of: dayStart
+        )
+    }
+
+    static func windowEndDate(
+        for slot: MealTimeSlot,
+        planType: NutritionPlanType,
+        on dayDate: Date,
+        calendar: Calendar = .current
+    ) -> Date? {
+        guard let timing = timing(for: slot, planType: planType) else { return nil }
+        let dayStart = calendar.startOfDay(for: dayDate)
+        return calendar.date(
+            bySettingHour: timing.windowEndHour,
+            minute: timing.windowEndMinute,
+            second: 0,
+            of: dayStart
+        )
+    }
+}
+
+// MARK: - Compte à rebours repas
+
+enum PlanMealCountdown {
+    enum Presentation: Equatable {
+        case validated
+        case active
+        case counting(seconds: TimeInterval)
+        case ended
+        case hidden
+    }
+
+    static func presentation(
+        slot: MealTimeSlot,
+        planType: NutritionPlanType,
+        dayDate: Date,
+        isValidated: Bool,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Presentation {
+        if isValidated { return .validated }
+
+        guard let windowStart = PlanMealSchedule.windowStartDate(for: slot, planType: planType, on: dayDate, calendar: calendar),
+              let windowEnd = PlanMealSchedule.windowEndDate(for: slot, planType: planType, on: dayDate, calendar: calendar)
+        else { return .hidden }
+
+        let dayStart = calendar.startOfDay(for: dayDate)
+        let todayStart = calendar.startOfDay(for: now)
+
+        if dayStart < todayStart { return .hidden }
+
+        if now >= windowEnd { return .ended }
+        if now >= windowStart { return .active }
+
+        let interval = windowStart.timeIntervalSince(now)
+        guard interval > 0 else { return .active }
+        return .counting(seconds: interval)
+    }
+
+    static func components(for seconds: TimeInterval) -> (hours: Int, minutes: Int, seconds: Int) {
+        let total = max(0, Int(seconds.rounded(.down)))
+        return (total / 3600, (total % 3600) / 60, total % 60)
+    }
 }

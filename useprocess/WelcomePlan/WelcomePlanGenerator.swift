@@ -496,20 +496,11 @@ enum WelcomePlanGenerator {
             WelcomePlanQuestionBank.choiceLabel(for: "face_concerns", choiceId: $0)
         })
 
-        let midScan = max(1, duration.totalWeeks / 2)
-        let finalScan = duration.totalWeeks
-
         var faceProtocol = OriginFaceProtocol(
             focusAreas: Array(Set(focus)),
             jawAndTongueWork: [],
-            lymphAndFascia: [
-                "Eau froide sur le visage \(targets.coldFaceRinseSeconds) sec au réveil",
-                "Massage doux sous-orbital — \(targets.lymphFaceMassageMinutes) min",
-                "Marche \(targets.dailySteps) pas + \(targets.hydrationLabel) = drainage lymphatique"
-            ],
-            scanCadence: duration.totalWeeks <= 2
-                ? "Scan J1 et J\(finalScan) — comparer le debloat"
-                : "Scan semaine 1, \(midScan), \(finalScan) — suivi dans le profil"
+            lymphAndFascia: FaceMorningRoutineCatalog.buildSteps(targets: targets),
+            scanCadence: ""
         )
 
         SkinHealthIntelligenceGuide.enrichFaceProtocol(
@@ -525,6 +516,8 @@ enum WelcomePlanGenerator {
             &faceProtocol,
             answers: answers
         )
+
+        faceProtocol.lymphAndFascia = FaceMorningRoutineCatalog.buildSteps(targets: targets)
 
         return faceProtocol
     }

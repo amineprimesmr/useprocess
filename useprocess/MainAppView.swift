@@ -8,7 +8,8 @@ struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var isCoachPresented = false
     @State private var tabBeforeCoach: ProcessMainSection = .plan
-    @State private var planBridge = CoachPlanNavigationBridge.shared
+    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
+    @Bindable private var coachTracker = CoachPresentationTracker.shared
     @Bindable private var session = AppSession.shared
     @Environment(\.appTheme) private var theme
 
@@ -17,21 +18,29 @@ struct MainAppView: View {
     }
 
     var body: some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                modernTabShell
-            } else {
-                legacyTabShell
+        ZStack {
+            ProcessScreenBackground()
+
+            Group {
+                if #available(iOS 26.0, *) {
+                    modernTabShell
+                } else {
+                    legacyTabShell
+                }
             }
+            .background(Color.clear)
+            .processClearUIKitHostingBackground()
         }
         .fullScreenCover(isPresented: $isCoachPresented) {
-            CoachFullScreenPresentationView(
-                selectedSection: $selectedSection,
-                onDismiss: dismissCoachPresentation,
-                onOpenProfile: openProfileFromCoach,
-                onOpenWelcomePlan: openWelcomePlanFromCoach
-            )
-            .processCoachZoomTransition(namespace: coachZoomNamespace)
+            if isCoachPresented {
+                CoachFullScreenPresentationView(
+                    selectedSection: $selectedSection,
+                    onDismiss: dismissCoachPresentation,
+                    onOpenProfile: openProfileFromCoach,
+                    onOpenWelcomePlan: openWelcomePlanFromCoach
+                )
+                .processCoachZoomTransition(namespace: coachZoomNamespace)
+            }
         }
         .onAppear {
             if isWelcomePlanGating {
@@ -42,6 +51,10 @@ struct MainAppView: View {
         }
         .onChange(of: isCoachPresented) { _, presented in
             CoachPresentationTracker.shared.isCoachPresented = presented
+            if !presented {
+                CoachPresentationTracker.shared.isCoachChatActive = false
+                HapticManager.shared.endTypewriterSession()
+            }
         }
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
             if !completed {
@@ -53,8 +66,12 @@ struct MainAppView: View {
         }
         .onChange(of: planBridge.shouldOpenCoach) { _, should in
             guard should else { return }
-            presentCoach()
             planBridge.shouldOpenCoach = false
+            queueCoachPresentationFromBridge()
+        }
+        .onChange(of: coachTracker.isMealDetailPresented) { _, mealDetailOpen in
+            guard !mealDetailOpen else { return }
+            flushQueuedCoachPresentationIfNeeded()
         }
         .onChange(of: planBridge.shouldOpenPlan) { _, should in
             guard should else { return }
@@ -75,16 +92,12 @@ struct MainAppView: View {
             }
             .accessibilityLabel(ProcessMainSection.plan.label)
 
-            Tab("", systemImage: ProcessMainSection.coach.icon, value: ProcessMainSection.coach) {
-                coachTabPlaceholder
-            }
-            .accessibilityLabel(ProcessMainSection.coach.label)
-
             Tab("", systemImage: ProcessMainSection.profile.icon, value: ProcessMainSection.profile) {
                 profileTabRoot
             }
             .accessibilityLabel(ProcessMainSection.profile.label)
         }
+        .background(Color.clear)
         .tabBarMinimizeBehavior(.onScrollDown)
         .tabViewBottomAccessory {
             if !isWelcomePlanGating {
@@ -116,7 +129,7 @@ struct MainAppView: View {
         case .profile:
             profileTabRoot
         case .coach:
-            coachTabPlaceholder
+            planTabRoot
         }
     }
 
@@ -124,22 +137,15 @@ struct MainAppView: View {
 
     private var planTabRoot: some View {
         PlanDashboardView(selectedSection: $selectedSection)
-            .background(theme.background.ignoresSafeArea())
+            .background(Color.clear)
     }
 
     private var profileTabRoot: some View {
         ProcessProfileView(selectedSection: $selectedSection)
-            .background(theme.background.ignoresSafeArea())
+            .background(Color.clear)
             .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
                 openWelcomePlanConfiguration()
             }
-    }
-
-    private var coachTabPlaceholder: some View {
-        Color.clear
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(theme.background.ignoresSafeArea())
-            .accessibilityHidden(true)
     }
 
     // MARK: - Navigation
@@ -154,21 +160,52 @@ struct MainAppView: View {
     }
 
     private func openCoachFromAccessory() {
-        if selectedSection.isShellTab, selectedSection != .coach {
+        if selectedSection.isShellTab {
             tabBeforeCoach = selectedSection
         }
-        openCoach()
+        presentCoachSurface()
     }
 
-    private func openCoach() {
-        guard !isCoachPresented else { return }
+    private func queueCoachPresentationFromBridge() {
+        if coachTracker.isMealDetailPresented {
+            planBridge.shouldOpenCoach = true
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            presentCoachSurface()
+        }
+    }
+
+    private func flushQueuedCoachPresentationIfNeeded() {
+        guard planBridge.shouldOpenCoach else { return }
+        planBridge.shouldOpenCoach = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+            presentCoachSurface()
+        }
+    }
+
+    private func presentCoachSurface() {
+        if coachTracker.isMealDetailPresented {
+            planBridge.shouldOpenCoach = true
+            return
+        }
+
         resignFirstResponder()
         HapticManager.shared.impact(.light)
+
+        if isCoachPresented {
+            return
+        }
+
         isCoachPresented = true
     }
 
+    private func openCoach() {
+        presentCoachSurface()
+    }
+
     private func presentCoach() {
-        openCoach()
+        presentCoachSurface()
     }
 
     private func dismissCoachPresentation() {

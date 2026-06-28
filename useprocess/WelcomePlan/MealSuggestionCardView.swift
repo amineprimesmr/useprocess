@@ -472,7 +472,7 @@ struct MealItemEditSheet: View {
                 }
                 .padding(20)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Modifier")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -482,6 +482,8 @@ struct MealItemEditSheet: View {
             }
             .onAppear { isFocused = true }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

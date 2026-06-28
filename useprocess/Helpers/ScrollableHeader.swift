@@ -16,11 +16,13 @@ extension View {
                 }
                 .scrollDisabled(scrollDisabled)
                 .scrollDismissesKeyboard(dismissesKeyboard)
+                .processTransparentScrollSurface()
             } else {
                 ScrollView {
                     scrollTrackedContent(content())
                 }
                 .scrollDisabled(scrollDisabled)
+                .processTransparentScrollSurface()
             }
         }
         .coordinateSpace(name: "processMainScroll")

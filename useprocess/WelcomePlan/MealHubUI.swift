@@ -153,8 +153,14 @@ private struct MealHistoryChip: View {
 struct MealShoppingListSection: View {
     let items: [MealShoppingItem]
     var theme: AppTheme
+    var maxVisibleItems: Int? = 20
     var onToggle: (String) -> Void
     var onClearChecked: () -> Void
+
+    private var displayedItems: [MealShoppingItem] {
+        guard let maxVisibleItems else { return items }
+        return Array(items.prefix(maxVisibleItems))
+    }
 
     private var activeCount: Int {
         items.filter { !$0.isChecked }.count
@@ -178,7 +184,7 @@ struct MealShoppingListSection: View {
                     .foregroundStyle(theme.secondaryText)
             } else {
                 LazyVStack(spacing: 6) {
-                    ForEach(items.prefix(20)) { item in
+                    ForEach(displayedItems) { item in
                         HStack(spacing: 10) {
                             Button {
                                 onToggle(item.id)
@@ -261,7 +267,7 @@ struct MealComparisonSheet: View {
                 }
                 .padding(20)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Comparaison")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -270,6 +276,8 @@ struct MealComparisonSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.large])
     }
 
@@ -468,7 +476,7 @@ struct MealFeedbackSheet: View {
                 }
                 .padding(20)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Feedback repas")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -477,6 +485,8 @@ struct MealFeedbackSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.medium, .large])
     }
 }

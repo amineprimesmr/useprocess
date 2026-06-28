@@ -52,7 +52,9 @@ final class CoachTypewriterController {
 
             buffer.append(character)
             displayedText = buffer
-            HapticManager.shared.typewriterCharacter(character)
+            if CoachPresentationTracker.shared.allowsTypewriterHaptics {
+                HapticManager.shared.typewriterCharacter(character)
+            }
         }
     }
 

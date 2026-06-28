@@ -42,12 +42,90 @@ enum ProcessDebloatMealLibrary {
 
     static func meal(for slot: MealTimeSlot, dayIndex: Int, planType: NutritionPlanType) -> MealSuggestionContent {
         let pool = mealPool(for: slot, planType: planType)
-        return pool[abs(dayIndex) % max(pool.count, 1)]
+        guard !pool.isEmpty else { return featuredChickenMeal }
+        return pool[abs(dayIndex) % pool.count]
+    }
+
+    static func mealsInPool(for slot: MealTimeSlot, planType: NutritionPlanType) -> [MealSuggestionContent] {
+        mealPool(for: slot, planType: planType)
+    }
+
+    /// Repas catalogue dont le nom correspond (slot prioritaire pour le matching image).
+    static func catalogMeal(
+        matchingName name: String,
+        slot: MealTimeSlot,
+        planType: NutritionPlanType
+    ) -> MealSuggestionContent? {
+        let normalized = normalizeCatalogName(name)
+        guard !normalized.isEmpty else { return nil }
+
+        let pool = mealPool(for: slot, planType: planType)
+        if let exact = pool.first(where: { normalizeCatalogName($0.name) == normalized }) {
+            return exact
+        }
+        return allCatalogMeals.first {
+            normalizeCatalogName($0.name) == normalized && $0.timeSlot == slot
+        }
     }
 
     /// Tous les repas catalogue — matching image pour repas IA / legacy persistés.
     static var allCatalogMeals: [MealSuggestionContent] {
         breakfastMeals + lunchMeals + dinnerMeals + omadMeals + snackMeals
+    }
+
+    struct CatalogSection: Identifiable, Equatable {
+        let slot: MealTimeSlot
+        let title: String
+        let meals: [MealSuggestionContent]
+        var id: String { slot.rawValue }
+    }
+
+    /// Sections catalogue debloat — filtrées par type de plan (3 repas, 2MAD, OMAD).
+    static func catalogSections(for planType: NutritionPlanType) -> [CatalogSection] {
+        planType.slots.map { slot in
+            CatalogSection(
+                slot: slot,
+                title: catalogSectionTitle(for: slot, planType: planType),
+                meals: mealsInPool(for: slot, planType: planType)
+            )
+        }
+    }
+
+    static func catalogMealCount(for planType: NutritionPlanType) -> Int {
+        planType.slots.reduce(0) { partial, slot in
+            partial + mealsInPool(for: slot, planType: planType).count
+        }
+    }
+
+    static func catalogPreviewImageAssets(for planType: NutritionPlanType, limit: Int = 3) -> [String] {
+        var assets: [String] = []
+        for slot in planType.slots {
+            for meal in mealsInPool(for: slot, planType: planType) {
+                let asset = meal.imageAssetName ?? featuredImageAsset
+                if !assets.contains(asset) {
+                    assets.append(asset)
+                }
+                if assets.count >= limit { return assets }
+            }
+        }
+        return assets
+    }
+
+    private static func catalogSectionTitle(for slot: MealTimeSlot, planType: NutritionPlanType) -> String {
+        if planType == .omad, slot == .lunch {
+            return "Repas OMAD"
+        }
+        return slot.rawValue
+    }
+
+    /// Sections catalogue debloat — petit-déj, midi, dîner, collation (tous types de plan).
+    static func catalogSections() -> [CatalogSection] {
+        [
+            CatalogSection(slot: .breakfast, title: "Petit-déjeuner", meals: breakfastMeals),
+            CatalogSection(slot: .lunch, title: "Déjeuner", meals: lunchMeals),
+            CatalogSection(slot: .dinner, title: "Dîner", meals: dinnerMeals),
+            CatalogSection(slot: .snack, title: "Collation", meals: snackMeals)
+        ]
     }
 
     static func promptBlock(for slot: MealTimeSlot?, planType: NutritionPlanType) -> String {
@@ -83,7 +161,7 @@ enum ProcessDebloatMealLibrary {
             score: 88,
             summary: "Hydratation, protéines et fruits potassium — rapide le matin.",
             items: [
-                item("Eau filtrée + pincée de sel marin", "400 ml", "Hydratation"),
+                item(ProcessHydrationGuide.morningWaterItemName, ProcessHydrationGuide.morningWaterLabel, "Hydratation"),
                 item("Œufs plein air", "2", "Protéine"),
                 item("Banane bien mûre", "1", "Glucide"),
                 item("Kiwi", "1", "Glucide")
@@ -100,7 +178,7 @@ enum ProcessDebloatMealLibrary {
             score: 89,
             summary: "Protéines et lipides qualité — sans tubercule au matin.",
             items: [
-                item("Eau filtrée + pincée de sel marin", "400 ml", "Hydratation"),
+                item(ProcessHydrationGuide.morningWaterItemName, ProcessHydrationGuide.morningWaterLabel, "Hydratation"),
                 item("Œufs plein air", "3", "Protéine"),
                 item("Avocat mûr", "1/2", "Gras"),
                 item("Citron frais", "1/2", "Autre")
@@ -117,7 +195,7 @@ enum ProcessDebloatMealLibrary {
             score: 87,
             summary: "Petit-déj salé + salade fraîche — change des fruits seuls.",
             items: [
-                item("Eau filtrée + pincée de sel marin", "400 ml", "Hydratation"),
+                item(ProcessHydrationGuide.morningWaterItemName, ProcessHydrationGuide.morningWaterLabel, "Hydratation"),
                 item("Œufs plein air", "2", "Protéine"),
                 item("Tomates cerises", "150 g", "Légume"),
                 item("Roquette + concombre", "120 g", "Légume")
@@ -377,6 +455,13 @@ enum ProcessDebloatMealLibrary {
             image: "meal_debloat_pineapple_turkey_snack"
         )
     ]
+
+    private static func normalizeCatalogName(_ name: String) -> String {
+        name
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
+            .lowercased()
+    }
 
     private static func item(_ name: String, _ quantity: String, _ role: String) -> MealSuggestionItem {
         MealSuggestionItem(name: name, quantity: quantity, role: role)

@@ -1,46 +1,23 @@
 import SwiftUI
 
-/// Hub éducatif debloat — segments Nutrition · Entraînement · Sommeil · Visage.
+/// Guide debloat unifié — une seule page, leviers classés par impact.
 struct HealthDebloatGuideView: View {
-    var initialPillar: HealthDebloatGuide.Pillar = .nutrition
-    var showsPillarPicker: Bool = true
     var showsOuterCard: Bool = true
 
     @Environment(\.appTheme) private var theme
     @Environment(\.openURL) private var openURL
 
-    @State private var selectedPillar: HealthDebloatGuide.Pillar = .nutrition
     @State private var expandedTopicIDs: Set<String> = ["mechanism"]
-
-    init(
-        initialPillar: HealthDebloatGuide.Pillar = .nutrition,
-        showsPillarPicker: Bool = true,
-        showsOuterCard: Bool = true
-    ) {
-        self.initialPillar = initialPillar
-        self.showsPillarPicker = showsPillarPicker
-        self.showsOuterCard = showsOuterCard
-        _selectedPillar = State(initialValue: initialPillar)
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if showsPillarPicker {
-                header
-                pillarPicker
-            }
+            introBlock
 
-            pillarIntro
+            priorityLegend
 
-            if selectedPillar == .nutrition {
-                nutritionIntroCard
-            }
+            rankedTopicList
 
-            topicList
-
-            if selectedPillar == .nutrition {
-                nutritionSourcesFooter
-            }
+            sourcesFooter
         }
         .padding(showsOuterCard ? 14 : 0)
         .background {
@@ -48,85 +25,27 @@ struct HealthDebloatGuideView: View {
                 HealthHubDesign.surfaceCard(theme: theme)
             }
         }
-        .animation(.easeInOut(duration: 0.22), value: selectedPillar)
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Comprendre le debloat")
-                .font(.headline)
-                .foregroundStyle(theme.primaryText)
-            Text("Ce qui compte vraiment — expliqué simplement, à la source.")
-                .font(.caption)
-                .foregroundStyle(theme.secondaryText)
-        }
-    }
-
-    private var pillarPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(HealthDebloatGuide.Pillar.allCases) { pillar in
-                    pillarChip(pillar)
-                }
-            }
-            .padding(.vertical, 2)
-        }
-    }
-
-    private func pillarChip(_ pillar: HealthDebloatGuide.Pillar) -> some View {
-        let isSelected = selectedPillar == pillar
-        return Button {
-            HapticManager.shared.impact(.light)
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                selectedPillar = pillar
-                expandedTopicIDs = [HealthDebloatGuide.topics(for: pillar).first?.id ?? ""]
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: pillar.icon)
-                    .font(.caption.weight(.semibold))
-                Text(pillar.title)
-                    .font(.caption.weight(.semibold))
-            }
-            .foregroundStyle(isSelected ? theme.primaryText : theme.secondaryText)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(isSelected
-                        ? theme.onboardingAccent.opacity(theme.isDark ? 0.22 : 0.14)
-                        : theme.coachUserBubble.opacity(0.35))
-            }
-            .overlay {
-                if isSelected {
-                    Capsule(style: .continuous)
-                        .strokeBorder(theme.onboardingAccent.opacity(0.45), lineWidth: 1)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var pillarIntro: some View {
-        Text(selectedPillar.tagline)
+    private var introBlock: some View {
+        Text(HealthDebloatGuide.pageIntro)
             .font(.subheadline)
             .foregroundStyle(theme.primaryText.opacity(0.92))
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private var nutritionIntroCard: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "drop.fill")
-                .font(.title3)
+    private var priorityLegend: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.onboardingAccent)
-                .frame(width: 28)
-
-            Text(HealthDebloatGuide.nutritionIntro)
-                .font(.subheadline)
-                .foregroundStyle(theme.primaryText)
+            Text("Du plus impactant (#1) au complémentaire — tout sur une page.")
+                .font(.caption)
+                .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -134,16 +53,19 @@ struct HealthDebloatGuideView: View {
         )
     }
 
-    private var topicList: some View {
+    private var rankedTopicList: some View {
         VStack(spacing: 8) {
-            ForEach(HealthDebloatGuide.topics(for: selectedPillar)) { topic in
-                topicCard(topic)
+            ForEach(HealthDebloatGuide.rankedTopics) { ranked in
+                rankedTopicCard(ranked)
             }
         }
     }
 
-    private func topicCard(_ topic: HealthDebloatGuide.Topic) -> some View {
+    private func rankedTopicCard(_ ranked: HealthDebloatGuide.RankedTopic) -> some View {
+        let topic = ranked.topic
         let isExpanded = expandedTopicIDs.contains(topic.id)
+        let isHighPriority = ranked.rank <= 4
+
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 HapticManager.shared.impact(.light)
@@ -156,21 +78,35 @@ struct HealthDebloatGuideView: View {
                 }
             } label: {
                 HStack(alignment: .top, spacing: 12) {
-                    topicIcon(topic.accent)
-                    VStack(alignment: .leading, spacing: 4) {
+                    priorityBadge(rank: ranked.rank, emphasized: isHighPriority)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Image(systemName: topic.pillar.icon)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(theme.secondaryText)
+                            Text(topic.pillar.title)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(theme.secondaryText)
+                        }
+
                         Text(topic.title)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(theme.primaryText)
                             .multilineTextAlignment(.leading)
+
                         Text(topic.summary)
                             .font(.caption)
                             .foregroundStyle(theme.secondaryText)
                             .multilineTextAlignment(.leading)
                     }
-                    Spacer(minLength: 8)
+
+                    Spacer(minLength: 4)
+
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
+                        .padding(.top, 4)
                 }
                 .padding(12)
             }
@@ -180,12 +116,17 @@ struct HealthDebloatGuideView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Divider().opacity(0.35)
 
-                    Text(topic.body)
-                        .font(.caption)
-                        .foregroundStyle(theme.primaryText.opacity(0.9))
-                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(alignment: .top, spacing: 10) {
+                        topicIcon(topic.accent)
+                        Text(topic.body)
+                            .font(.caption)
+                            .foregroundStyle(theme.primaryText.opacity(0.9))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
-                    if !topic.bullets.isEmpty {
+                    if topic.id == "continuous-habits" {
+                        continuousHabitsDetailBlock
+                    } else if !topic.bullets.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(topic.bullets, id: \.self) { bullet in
                                 HStack(alignment: .top, spacing: 8) {
@@ -208,8 +149,33 @@ struct HealthDebloatGuideView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(theme.coachUserBubble.opacity(theme.isDark ? 0.22 : 0.32))
+                .fill(
+                    isHighPriority
+                        ? theme.onboardingAccent.opacity(theme.isDark ? 0.10 : 0.06)
+                        : theme.coachUserBubble.opacity(theme.isDark ? 0.22 : 0.32)
+                )
         )
+        .overlay {
+            if isHighPriority {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(theme.onboardingAccent.opacity(0.22), lineWidth: 1)
+            }
+        }
+    }
+
+    private func priorityBadge(rank: Int, emphasized: Bool) -> some View {
+        Text("\(rank)")
+            .font(.system(size: emphasized ? 15 : 13, weight: .bold, design: .rounded))
+            .foregroundStyle(emphasized ? theme.primaryText : theme.secondaryText)
+            .frame(width: 32, height: 32)
+            .background {
+                Circle()
+                    .fill(
+                        emphasized
+                            ? theme.onboardingAccent.opacity(theme.isDark ? 0.35 : 0.22)
+                            : theme.coachUserBubble.opacity(0.5)
+                    )
+            }
     }
 
     private func topicIcon(_ accent: HealthDebloatGuide.TopicAccent) -> some View {
@@ -233,7 +199,29 @@ struct HealthDebloatGuideView: View {
             .frame(width: 24, height: 24)
     }
 
-    private var nutritionSourcesFooter: some View {
+    private var continuousHabitsDetailBlock: some View {
+        VStack(spacing: 8) {
+            ForEach(Array(ProcessContinuousHabits.all.enumerated()), id: \.offset) { _, habit in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(habit.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(theme.primaryText)
+                    Text(habit.detail)
+                        .font(.caption)
+                        .foregroundStyle(theme.primaryText.opacity(0.88))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(theme.coachUserBubble.opacity(theme.isDark ? 0.28 : 0.4))
+                )
+            }
+        }
+    }
+
+    private var sourcesFooter: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Sources")
                 .font(.caption.weight(.semibold))

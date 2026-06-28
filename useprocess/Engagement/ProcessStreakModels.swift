@@ -12,6 +12,10 @@ struct ProcessStreakDaySnapshot: Identifiable, Equatable {
     let isComplete: Bool
     let isToday: Bool
     let isFuture: Bool
+
+    var dayOfMonth: Int {
+        Calendar.current.component(.day, from: date)
+    }
 }
 
 struct ProcessStreakMilestone: Identifiable, Equatable {
@@ -38,9 +42,27 @@ struct ProcessStreakSnapshot: Equatable {
     let isTodayComplete: Bool
     let todayProgress: Double
     let week: [ProcessStreakDaySnapshot]
+    let calendarWeek: [ProcessStreakDaySnapshot]
     let month: [ProcessStreakDaySnapshot]
     let nextMilestone: ProcessStreakMilestone?
     let daysUntilNextMilestone: Int?
+
+    var streakTitle: String {
+        switch currentStreak {
+        case 0: return "Série"
+        case 1: return "1 jour de série"
+        default: return "\(currentStreak) jours de série"
+        }
+    }
+
+    func encouragement(firstName: String?) -> String {
+        let trimmed = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if trimmed.isEmpty { return headline }
+        if currentStreak >= 7 { return "Tu gères vraiment bien, \(trimmed) !" }
+        if currentStreak > 0 { return "Continue comme ça, \(trimmed) !" }
+        if isTodayComplete { return "Bien joué \(trimmed), reviens demain." }
+        return "Complète ta checklist pour lancer ta série, \(trimmed)."
+    }
 
     var headline: String {
         switch currentStreak {

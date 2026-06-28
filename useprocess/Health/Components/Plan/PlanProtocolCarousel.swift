@@ -370,7 +370,7 @@ struct PlanProtocolItemDetailSheet: View {
                 }
                 .padding(20)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Exercice")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -379,6 +379,8 @@ struct PlanProtocolItemDetailSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -437,22 +439,7 @@ struct PlanProtocolSectionHeader: View {
     let title: String
     var trailing: String?
 
-    @Environment(\.appTheme) private var theme
-
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title)
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(theme.primaryText)
-
-            Spacer(minLength: 8)
-
-            if let trailing {
-                Text(trailing)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(theme.secondaryText)
-                    .multilineTextAlignment(.trailing)
-            }
-        }
+        PlanHomeSectionHeader(title: title, trailingCaption: trailing)
     }
 }

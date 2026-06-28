@@ -31,6 +31,7 @@ struct DailyJournalChecklistView: View {
     var showHeader: Bool = true
     var showWeekStrip: Bool = true
     var showChecklist: Bool = true
+    var resourceZoomNamespace: Namespace.ID? = nil
 
     @Namespace private var faceScanHistoryZoomNamespace
     @Namespace private var mealZoomNamespace
@@ -39,6 +40,7 @@ struct DailyJournalChecklistView: View {
     @State private var showFaceScan = false
     @State private var showFaceScanHistory = false
     @State private var selectedFaceScan: FaceScanResult?
+    @Bindable private var layoutStore = PlanHomeLayoutStore.shared
     @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
 
@@ -49,9 +51,10 @@ struct DailyJournalChecklistView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 0) {
             if showHeader {
                 journalHeader
+                    .padding(.bottom, 18)
             }
             if showWeekStrip {
                 JournalWeekDayStrip(
@@ -63,67 +66,30 @@ struct DailyJournalChecklistView: View {
                 .padding(.bottom, 8)
             }
 
-            PlanLastFaceScanSection(
-                latest: faceHistoryStore.latestResult,
-                isScanDue: faceHistoryStore.isScanDue,
-                zoomNamespace: faceScanHistoryZoomNamespace,
-                onScan: {
-                    showFaceScan = true
-                },
-                onOpenHistory: {
-                    showFaceScanHistory = true
-                }
-            )
-            .environmentObject(UnifiedProfileService.shared)
-            .padding(.bottom, showWeekStrip ? 0 : 8)
+            ForEach(Array(layoutStore.visibleSections.enumerated()), id: \.element.id) { index, section in
+                homeSectionView(section)
+                    .padding(.top, sectionTopSpacing(for: section, index: index))
+            }
+            .animation(.spring(response: 0.44, dampingFraction: 0.86), value: layoutStore.visibleSectionIDs)
 
-            switch dayAvailability {
-            case .editable(let day, _):
-                if showChecklist {
-                    journalSections(for: day, isEditable: true)
-                }
-
-                PlanNutritionDaySection(
-                    plan: livePlan,
-                    day: day,
-                    isEditable: true,
-                    mealZoomNamespace: mealZoomNamespace
+            if case .future = dayAvailability, !showChecklist,
+               layoutStore.visibleSections.allSatisfy({ $0 != .faceScan }) {
+                journalUnavailableCard(
+                    title: "Jour à venir",
+                    message: "Le contenu de cette journée sera disponible le jour J.",
+                    systemImage: "calendar.badge.clock"
                 )
-                    .environmentObject(UnifiedProfileService.shared)
-                    .padding(.top, 28)
+                .padding(.top, 20)
+            }
 
-                PlanTrainingDaySection(
-                    plan: livePlan,
-                    day: day,
-                    selectedDate: selectedDate,
-                    isEditable: true
-                )
-
-                PlanPostureDaySection(plan: livePlan)
-                    .padding(.top, 28)
-
-                PlanFaceDaySection(plan: livePlan)
-                    .padding(.top, 28)
-            case .future:
-                if showChecklist {
-                    journalUnavailableCard(
-                        title: "Jour à venir",
-                        message: "Tu pourras remplir ta checklist une fois cette journée commencée.",
-                        systemImage: "calendar.badge.clock"
-                    )
-                } else {
-                    journalUnavailableCard(
-                        title: "Jour à venir",
-                        message: "Le contenu de cette journée sera disponible le jour J.",
-                        systemImage: "calendar.badge.clock"
-                    )
-                }
-            case .outsidePlan:
+            if case .outsidePlan = dayAvailability,
+               layoutStore.visibleSections.allSatisfy({ $0 != .faceScan }) {
                 journalUnavailableCard(
                     title: "Hors protocole",
                     message: "Cette date n'est pas couverte par ton calendrier Origine.",
                     systemImage: "calendar.badge.exclamationmark"
                 )
+                .padding(.top, 20)
             }
         }
         .fullScreenCover(isPresented: $showFaceScan) {
@@ -168,6 +134,103 @@ struct DailyJournalChecklistView: View {
         }
         .onAppear {
             faceHistoryStore = FaceScanHistoryStore.shared
+            layoutStore.reload()
+        }
+    }
+
+    private func sectionTopSpacing(for section: PlanHomeSectionKind, index: Int) -> CGFloat {
+        if index == 0 {
+            var spacing = showWeekStrip ? 0 : PlanHomeSectionDesign.firstSectionTopSpacing
+            if section == .faceScan {
+                spacing += PlanHomeSectionDesign.faceScanTopSpacing
+            }
+            return spacing
+        }
+        return PlanHomeSectionDesign.sectionSpacing
+    }
+
+    @ViewBuilder
+    private func homeSectionView(_ section: PlanHomeSectionKind) -> some View {
+        switch section {
+        case .faceScan:
+            PlanLastFaceScanSection(
+                latest: faceHistoryStore.latestResult,
+                isScanDue: faceHistoryStore.isScanDue,
+                zoomNamespace: faceScanHistoryZoomNamespace,
+                onScan: { showFaceScan = true },
+                onOpenHistory: { showFaceScanHistory = true }
+            )
+            .environmentObject(UnifiedProfileService.shared)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .top)),
+                removal: .opacity.combined(with: .scale(scale: 0.98))
+            ))
+
+        case .nutrition:
+            switch dayAvailability {
+            case .editable(let day, _):
+                if showChecklist {
+                    journalSections(for: day, isEditable: true)
+                        .padding(.bottom, PlanHomeSectionDesign.headerContentSpacing)
+                }
+
+                PlanNutritionDaySection(
+                    plan: livePlan,
+                    day: day,
+                    selectedDate: selectedDate,
+                    isEditable: true,
+                    mealZoomNamespace: mealZoomNamespace
+                )
+                .environmentObject(UnifiedProfileService.shared)
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .top)),
+                    removal: .opacity.combined(with: .scale(scale: 0.98))
+                ))
+            case .future where showChecklist:
+                journalUnavailableCard(
+                    title: "Jour à venir",
+                    message: "Tu pourras remplir ta checklist une fois cette journée commencée.",
+                    systemImage: "calendar.badge.clock"
+                )
+                .transition(.opacity)
+            default:
+                EmptyView()
+            }
+
+        case .training:
+            if case .editable(let day, _) = dayAvailability {
+                PlanTrainingDaySection(
+                    plan: livePlan,
+                    day: day,
+                    selectedDate: selectedDate,
+                    isEditable: true
+                )
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .top)),
+                    removal: .opacity.combined(with: .scale(scale: 0.98))
+                ))
+            }
+
+        case .posture:
+            if case .editable = dayAvailability {
+                PlanPostureDaySection(plan: livePlan)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity.combined(with: .scale(scale: 0.98))
+                    ))
+            }
+
+        case .faceRoutine:
+            if case .editable = dayAvailability {
+                PlanFaceDaySection(plan: livePlan)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity.combined(with: .scale(scale: 0.98))
+                    ))
+            }
+
+        case .resources:
+            EmptyView()
         }
     }
 
@@ -235,8 +298,14 @@ struct DailyJournalChecklistView: View {
             isEditable: isEditable,
             onTaskStatusChange: { taskId, dayId, status in
                 WelcomePlanStore.shared.setJournalTaskStatus(status, taskId: taskId, dayId: dayId)
-            }
+            },
+            onCompleteAll: isEditable ? {
+                WelcomePlanStore.shared.completeAllJournalTasks(dayId: day.id)
+            } : nil
         )
+        .onAppear {
+            WelcomePlanStore.shared.syncCoreJournalTasks(dayId: day.id)
+        }
     }
 
     private func journalFilledToken(for day: OriginProgramDay) -> String {
@@ -518,7 +587,7 @@ struct JournalWeekDayStrip: View {
     }
 }
 
-private struct JournalDayCellButtonStyle: ButtonStyle {
+struct JournalDayCellButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.94 : 1)
@@ -526,12 +595,13 @@ private struct JournalDayCellButtonStyle: ButtonStyle {
     }
 }
 
-private struct JournalDayTileBackground: View {
+struct JournalDayTileBackground: View {
+    var cornerRadius: CGFloat = 15
     let isDark: Bool
     var isSelected: Bool = false
     var accent: Color = .blue
 
-    private var radius: CGFloat { JournalDesign.Strip.cellRadius }
+    private var radius: CGFloat { cornerRadius }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -681,7 +751,7 @@ private struct JournalDayTileBackground: View {
     }
 }
 
-private struct JournalStripCurvedHighlight: View {
+struct JournalStripCurvedHighlight: View {
     let isDark: Bool
     var intensity: CGFloat = 1
 

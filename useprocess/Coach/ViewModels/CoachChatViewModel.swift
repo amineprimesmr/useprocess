@@ -46,7 +46,10 @@ final class CoachChatViewModel {
     }
 
     var homePrompt: CoachHomePrompt {
-        CoachHomeContext.resolve(profile: profile)
+        if let handoff = activeMealHandoff {
+            return CoachMealHandoffBuilder.homePrompt(for: handoff, profile: profile)
+        }
+        return CoachHomeContext.resolve(profile: profile)
     }
 
     var showsContextualHome: Bool {
@@ -79,6 +82,7 @@ final class CoachChatViewModel {
     private var completedHomePresentationKeys: Set<String> = []
 
     private var activePlanFocus: CoachPlanFocus?
+    var activeMealHandoff: CoachMealHandoff?
 
     func bind(profile: UnifiedUserProfile?) {
         let previousUserId = userId
@@ -103,7 +107,7 @@ final class CoachChatViewModel {
 
     func loadThreadIfNeeded() async {
         if didInitialLoad {
-            await consumePendingPlanPromptIfNeeded()
+            await consumePendingNavigationIfNeeded()
             return
         }
         didInitialLoad = true
@@ -184,6 +188,15 @@ final class CoachChatViewModel {
             await sendFaceScanHandoff(handoff)
             return
         }
+        if let handoff = CoachPlanNavigationBridge.shared.consumePendingMealHandoff() {
+            if let prompt = CoachPlanNavigationBridge.shared.consumePendingPrompt() {
+                await sendMealCoachPrompt(prompt, handoff: handoff)
+            } else {
+                activeMealHandoff = handoff
+                resetHomePresentation()
+            }
+            return
+        }
         await consumePendingPlanPromptIfNeeded()
     }
 
@@ -204,6 +217,12 @@ final class CoachChatViewModel {
             caption: handoff.analysisPrompt,
             userDisplayText: handoff.userMessageText
         )
+    }
+
+    func sendMealCoachPrompt(_ prompt: String, handoff: CoachMealHandoff) async {
+        let augmented = CoachMealHandoffBuilder.augmentedPrompt(prompt, handoff: handoff)
+        activeMealHandoff = nil
+        await sendPrompt(augmented, persistUserMessage: true)
     }
 
     func reloadForEveningDelivery() async {
@@ -227,6 +246,15 @@ final class CoachChatViewModel {
             var deepLink = base.deepLink
             if resolvedActions.contains(where: { $0.kind == .openPlan || $0.kind == .openJournal }) {
                 deepLink = nil
+            } else if let link = deepLink, link.action == .plan {
+                let userText = precedingUserText(for: message)
+                if !CoachPlanModificationService.shouldOfferOpenPlanAction(
+                    userText: userText,
+                    assistantText: message.text,
+                    hasPendingPlanPatch: pendingPlanPatches[message.id] != nil
+                ) {
+                    deepLink = nil
+                }
             }
 
             return CoachMessageEnrichment(
@@ -498,6 +526,7 @@ final class CoachChatViewModel {
 
     func onActiveConversationChanged() {
         homeInputUnlocked = false
+        activeMealHandoff = nil
         syncHomePresentationFromCache()
     }
 
@@ -525,7 +554,13 @@ final class CoachChatViewModel {
         }
 
         guard !trimmed.isEmpty else { return }
-        await sendPrompt(trimmed, persistUserMessage: true)
+        if let handoff = activeMealHandoff {
+            let augmented = CoachMealHandoffBuilder.augmentedPrompt(trimmed, handoff: handoff)
+            activeMealHandoff = nil
+            await sendPrompt(augmented, userDisplayText: trimmed, persistUserMessage: true)
+        } else {
+            await sendPrompt(trimmed, persistUserMessage: true)
+        }
     }
 
     func stageImageAttachment(_ image: UIImage) {
@@ -622,11 +657,17 @@ final class CoachChatViewModel {
 
     func sendHomeSuggestion(_ suggestion: CoachHomeSuggestion) async {
         guard !isSending else { return }
-        await sendPrompt(
-            suggestion.prompt,
-            userDisplayText: suggestion.label,
-            persistUserMessage: true
-        )
+        if let handoff = activeMealHandoff {
+            let augmented = CoachMealHandoffBuilder.augmentedPrompt(suggestion.prompt, handoff: handoff)
+            activeMealHandoff = nil
+            await sendPrompt(augmented, userDisplayText: suggestion.label, persistUserMessage: true)
+        } else {
+            await sendPrompt(
+                suggestion.prompt,
+                userDisplayText: suggestion.label,
+                persistUserMessage: true
+            )
+        }
     }
 
     func runTool(_ tool: CoachTool) async {
@@ -824,7 +865,10 @@ final class CoachChatViewModel {
 
             let parsedReply = CoachResponseParser.parseFull(assembled)
             var enrichment = parsedReply.enrichment
-            if shouldDeferPlanApply {
+            let proposesPlanChange = CoachPlanModificationService.coachProposesApplyingChange(
+                in: parsedReply.enrichment.displayText
+            )
+            if shouldDeferPlanApply, proposesPlanChange {
                 if !enrichment.contextualActions.contains(where: { $0.kind == .applyPlanChanges }) {
                     enrichment.contextualActions.insert(CoachContextualAction(kind: .applyPlanChanges), at: 0)
                 }
@@ -833,7 +877,7 @@ final class CoachChatViewModel {
             let model = ClaudeModel.preferred(for: .chat).rawValue
             let reply = CoachMessage.assistant(from: parsed, modelUsed: model)
 
-            if shouldDeferPlanApply {
+            if shouldDeferPlanApply, proposesPlanChange {
                 pendingPlanPatches[reply.id] = PendingCoachPlanPatch(
                     userRequest: cleaned,
                     coachResponse: assembled,
@@ -949,7 +993,14 @@ final class CoachChatViewModel {
         pendingAttachmentImages = []
         inputText = ""
 
-        let userMsg = CoachMessage(role: .user, text: userText)
+        let messageId = UUID()
+        CoachChatAttachmentImageStore.save(images: images, messageId: messageId)
+
+        let userMsg = CoachMessage(
+            id: messageId,
+            role: .user,
+            text: CoachChatImageMessageMarker.embed(messageId: messageId, displayText: userText)
+        )
         libraryStore.updateActiveConversation { $0.applyAutoTitle(from: userText) }
         messages.append(userMsg)
         await CoachSyncService.appendMessage(

@@ -3,6 +3,7 @@ import SwiftUI
 /// Accueil contextuel du coach — même rendu typewriter que le Protocole Origine.
 struct CoachContextualHomeView: View {
     let prompt: CoachHomePrompt
+    var mealHandoff: CoachMealHandoff? = nil
     var startsComplete: Bool = false
     var onGreetingComplete: () -> Void
 
@@ -15,9 +16,16 @@ struct CoachContextualHomeView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(alignment: .leading, spacing: 0) {
+                if let handoff = mealHandoff {
+                    CoachMealSuggestionMessageView(content: handoff.meal)
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, topContentPadding)
+                        .padding(.bottom, 18)
+                }
+
                 typewriterText
                     .padding(.horizontal, horizontalPadding)
-                    .padding(.top, topContentPadding)
+                    .padding(.top, mealHandoff == nil ? topContentPadding : 0)
 
                 Spacer(minLength: 0)
             }
@@ -35,11 +43,13 @@ struct CoachContextualHomeView: View {
         }
         .onDisappear {
             typewriter.reset()
+            HapticManager.shared.endTypewriterSession()
         }
     }
 
     private var presentationTaskID: String {
-        "\(prompt.greetingText)|complete:\(startsComplete)"
+        let mealPart = mealHandoff.map { "\($0.meal.name)|\($0.slot.rawValue)" } ?? "none"
+        return "\(mealPart)|\(prompt.greetingText)|complete:\(startsComplete)"
     }
 
     private var topContentPadding: CGFloat {

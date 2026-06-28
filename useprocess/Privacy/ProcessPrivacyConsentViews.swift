@@ -56,7 +56,7 @@ struct ThirdPartyAIConsentView: View {
                 .padding(20)
                 .padding(.bottom, 12)
             }
-            .background(theme.background.ignoresSafeArea())
+            .processTransparentScrollSurface()
             .navigationTitle("Coach IA")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -84,6 +84,7 @@ struct ThirdPartyAIConsentView: View {
                 .background(.ultraThinMaterial)
             }
         }
+        .processAppPageBackground()
         .sheet(isPresented: Binding(
             get: { safariURL != nil },
             set: { if !$0 { safariURL = nil } }

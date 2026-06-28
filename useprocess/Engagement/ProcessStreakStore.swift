@@ -62,6 +62,11 @@ final class ProcessStreakStore {
             completedKeys: state.completedDayKeys,
             calendar: calendar
         )
+        let calendarWeek = Self.calendarWeekSnapshots(
+            completedKeys: state.completedDayKeys,
+            now: now,
+            calendar: calendar
+        )
 
         let nextMilestone = ProcessStreakMilestone.catalog.first(where: { $0.days > current })
         let daysUntilNext = nextMilestone.map { $0.days - current }
@@ -73,6 +78,7 @@ final class ProcessStreakStore {
             isTodayComplete: isTodayComplete,
             todayProgress: todayProgress(plan: plan, now: now),
             week: week,
+            calendarWeek: calendarWeek,
             month: month,
             nextMilestone: nextMilestone,
             daysUntilNextMilestone: daysUntilNext
@@ -194,6 +200,37 @@ final class ProcessStreakStore {
             )
         }
     }
+
+    private static func calendarWeekSnapshots(
+        completedKeys: Set<String>,
+        now: Date,
+        calendar: Calendar
+    ) -> [ProcessStreakDaySnapshot] {
+        var weekCalendar = calendar
+        weekCalendar.locale = Locale(identifier: "fr_FR")
+        weekCalendar.firstWeekday = 2
+
+        let today = weekCalendar.startOfDay(for: now)
+        guard let interval = weekCalendar.dateInterval(of: .weekOfYear, for: today) else { return [] }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.setLocalizedDateFormatFromTemplate("EEEEE")
+
+        return (0..<7).compactMap { offset in
+            guard let date = weekCalendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
+            let dayStart = weekCalendar.startOfDay(for: date)
+            let key = dayKey(for: dayStart, calendar: weekCalendar)
+            return ProcessStreakDaySnapshot(
+                id: key,
+                date: dayStart,
+                weekdaySymbol: formatter.string(from: dayStart).uppercased(),
+                isComplete: completedKeys.contains(key),
+                isToday: weekCalendar.isDateInToday(dayStart),
+                isFuture: dayStart > today
+            )
+        }
+    }
 }
 
 private extension ProcessStreakSnapshot {
@@ -204,6 +241,7 @@ private extension ProcessStreakSnapshot {
         isTodayComplete: false,
         todayProgress: 0,
         week: [],
+        calendarWeek: [],
         month: [],
         nextMilestone: ProcessStreakMilestone.catalog.first,
         daysUntilNextMilestone: ProcessStreakMilestone.catalog.first?.days

@@ -49,7 +49,7 @@ struct FaceScanRecordingMediaView: View {
         .frame(maxWidth: usesFullWidth ? .infinity : nil)
         .frame(maxHeight: displayMode == .sidePanel ? .infinity : nil)
         .clipped()
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .modifier(FaceScanMediaCornerClip(radius: cornerRadius))
         .id("\(result.id)-\(displayMode)-\(mediaRefreshToken)")
         .onAppear(perform: refreshResolvedMedia)
         .onChange(of: result.id) { _, _ in
@@ -100,6 +100,18 @@ struct FaceScanRecordingMediaView: View {
         }
         if resolvedVideoURL == nil, resolvedSnapshot == nil {
             mediaRefreshToken &+= 1
+        }
+    }
+}
+
+private struct FaceScanMediaCornerClip: ViewModifier {
+    let radius: CGFloat
+
+    func body(content: Content) -> some View {
+        if radius > 0 {
+            content.clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        } else {
+            content
         }
     }
 }

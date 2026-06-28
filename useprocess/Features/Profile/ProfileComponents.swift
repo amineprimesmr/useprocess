@@ -26,7 +26,6 @@ struct ProfileStretchyHeroFrame<Content: View>: View {
 
 struct ProfileEmptyHeroSection: View {
     var onPhotoTap: (CGPoint) -> Void
-    var onOpenSettings: (() -> Void)? = nil
 
     var body: some View {
         ProfileStretchyHeroFrame(baseHeight: ProfileTheme.heroCoverHeight) { totalHeight, _ in
@@ -54,13 +53,6 @@ struct ProfileEmptyHeroSection: View {
             }
             .frame(height: totalHeight)
             .clipShape(ProfileTheme.heroBottomShape)
-            .overlay(alignment: .topTrailing) {
-                if let onOpenSettings {
-                    ProfileHeroSettingsButton(style: .plain, action: onOpenSettings)
-                        .padding(.top, ProfileTheme.heroTopInset + 10)
-                        .padding(.trailing, 14)
-                }
-            }
         }
     }
 
@@ -81,7 +73,6 @@ struct ProfileCoverPhotoSection: View {
     let username: String
     let isPrivate: Bool
     var onPhotoTap: ((CGPoint) -> Void)? = nil
-    var onOpenSettings: (() -> Void)? = nil
     var onEditUsername: (() -> Void)? = nil
 
     var body: some View {
@@ -133,58 +124,7 @@ struct ProfileCoverPhotoSection: View {
             .frame(height: totalHeight)
             .clipShape(ProfileTheme.heroBottomShape)
             .contentShape(ProfileTheme.heroBottomShape)
-            .overlay(alignment: .topTrailing) {
-                if let onOpenSettings {
-                    ProfileHeroSettingsButton(style: .overlay, action: onOpenSettings)
-                        .padding(.top, ProfileTheme.heroTopInset + 10)
-                        .padding(.trailing, 14)
-                }
-            }
         }
-    }
-}
-
-private struct ProfileHeroSettingsButton: View {
-    enum Style {
-        case overlay
-        case plain
-    }
-
-    let style: Style
-    let action: () -> Void
-
-    var body: some View {
-        switch style {
-        case .overlay:
-            ProfileHeroIconButton(systemName: "gearshape.fill", action: action)
-                .accessibilityLabel("Paramètres")
-        case .plain:
-            Button(action: action) {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(ProfileTheme.textPrimary)
-                    .frame(width: 40, height: 40)
-            }
-            .buttonStyle(.plain)
-            .processGlassCircle(interactive: true)
-            .accessibilityLabel("Paramètres")
-        }
-    }
-}
-
-private struct ProfileHeroIconButton: View {
-    let systemName: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
-                .background(.black.opacity(0.35), in: Circle())
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -258,22 +198,13 @@ struct ProfileIdentityBlock: View {
 }
 
 struct ProfileActionButtons: View {
-    var onShare: () -> Void
-    var onEdit: () -> Void
+    var onReferral: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            ProcessGlassWideButton(title: "Partager mon Profil", action: onShare)
+        VStack(spacing: 10) {
+            ProfileReferralInteractiveCard()
 
-            Button(action: onEdit) {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-                    .frame(width: 48, height: 48)
-            }
-            .processGlassButton(
-                in: RoundedRectangle(cornerRadius: ProfileTheme.buttonCornerRadius, style: .continuous)
-            )
+            ProcessGlassWideButton(title: "Voir les avantages", icon: "gift.fill", action: onReferral)
         }
     }
 }

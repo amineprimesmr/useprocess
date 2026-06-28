@@ -67,7 +67,17 @@ final class ProcessPrivacyConsentStore {
             forKey: UserScopedStorage.key("privacy.face_capture.date", userId: scoped)
         ) as? Date
 
-        if hasAcceptedFaceScanCapture && !hasAcceptedFaceScanAI {
+        ensureActiveConsents()
+    }
+
+    /// Coach IA et scan visage toujours actifs — pas de révocation dans l’app.
+    private func ensureActiveConsents() {
+        if !hasAcceptedThirdPartyAI {
+            acceptThirdPartyAI()
+        }
+        if !hasAcceptedFaceScanCapture {
+            acceptFaceScanCapture()
+        } else if !hasAcceptedFaceScanAI {
             hasAcceptedFaceScanAI = true
             persistBool(true, key: "privacy.face_ai")
         }
@@ -106,49 +116,7 @@ final class ProcessPrivacyConsentStore {
     }
 
     func acceptFaceScanAI() {
-        hasAcceptedFaceScanCapture = true
-        hasAcceptedFaceScanAI = true
-        if faceScanCaptureAcceptedAt == nil {
-            faceScanCaptureAcceptedAt = Date()
-            persistDate(faceScanCaptureAcceptedAt, key: "privacy.face_capture.date")
-        }
-        persistBool(true, key: "privacy.face_capture")
-        persistBool(true, key: "privacy.face_ai")
-
-        if !hasAcceptedThirdPartyAI {
-            hasAcceptedThirdPartyAI = true
-            thirdPartyAIAcceptedAt = Date()
-            persistBool(true, key: "privacy.ai_third_party")
-            persistDate(thirdPartyAIAcceptedAt, key: "privacy.ai_third_party.date")
-        }
-    }
-
-    func revokeFaceScanAI() {
-        acceptFaceScanAI()
-    }
-
-    func revokeThirdPartyAI() {
-        hasAcceptedThirdPartyAI = false
-        thirdPartyAIAcceptedAt = nil
-        persistBool(false, key: "privacy.ai_third_party")
-        UserDefaults.standard.removeObject(forKey: storageKey("privacy.ai_third_party.date"))
-    }
-
-    func revokeFaceScanConsents() {
-        hasAcceptedFaceScanCapture = false
-        hasAcceptedFaceScanAI = false
-        faceScanCaptureAcceptedAt = nil
-        persistBool(false, key: "privacy.face_capture")
-        persistBool(false, key: "privacy.face_ai")
-        UserDefaults.standard.removeObject(forKey: storageKey("privacy.face_capture.date"))
-        Task { @MainActor in
-            await FaceScanDataLifecycle.purgeAllForCurrentUser()
-        }
-    }
-
-    private func revokeFaceScanAIOnly() {
-        hasAcceptedFaceScanAI = false
-        persistBool(false, key: "privacy.face_ai")
+        acceptFaceScanCapture()
     }
 
     func clearForUser(userId: String?) {
@@ -168,10 +136,9 @@ final class ProcessPrivacyConsentStore {
 
     @discardableResult
     func presentThirdPartyAIConsentIfNeeded(then action: (() -> Void)? = nil) -> Bool {
-        guard !canUseThirdPartyAI else { return false }
-        pendingThirdPartyAIAction = action
-        isPresentingThirdPartyAIConsent = true
-        return true
+        ensureActiveConsents()
+        action?()
+        return false
     }
 
     func requireThirdPartyAI() throws {

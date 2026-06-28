@@ -11,9 +11,11 @@ struct PlanHomeTopChrome: View {
     @State private var profileStore = SocialProfileStore.shared
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
-    @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var showStreakSheet = false
+    @State private var showDatePicker = false
     @Namespace private var streakZoomNamespace
+
+    private static let frenchLocale = Locale(identifier: "fr_FR")
 
     private var greetingFirstName: String {
         profileService.currentProfile?.firstName
@@ -45,46 +47,129 @@ struct PlanHomeTopChrome: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            PlanHomeGreetingLabel(
-                greeting: homeGreeting,
-                isActive: selectedSection == .plan
-            )
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+                PlanHomeGreetingLabel(greeting: homeGreeting)
+
+                homeDatePickerButton
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             profileStreakCluster
         }
         .padding(.top, 14)
         .padding(.bottom, 4)
+        .sheet(isPresented: $showDatePicker) {
+            homeDatePickerSheet
+        }
         .fullScreenCover(isPresented: $showStreakSheet) {
             ProcessStreakSheet(selectedDate: $selectedDate)
+                .environmentObject(profileService)
                 .processZoomTransition(id: .streak, namespace: streakZoomNamespace)
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
             streakStore.sync(from: planStore.plan)
-            faceHistoryStore = FaceScanHistoryStore.shared
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             profileStore.bind(unified: profileService.currentProfile)
             streakStore.reload()
             streakStore.sync(from: planStore.plan)
-            faceHistoryStore = FaceScanHistoryStore.shared
         }
         .onChange(of: planStore.plan?.lastUpdated) { _, _ in
             streakStore.sync(from: planStore.plan)
         }
-        .onChange(of: selectedDate) { _, _ in
-            faceHistoryStore = FaceScanHistoryStore.shared
-        }
     }
 
     private var homeGreeting: PlanHomeGreeting {
-        PlanHomeGreetingBuilder.make(
-            firstName: greetingFirstName,
-            selectedDate: selectedDate,
-            plan: planStore.plan,
-            isScanDue: faceHistoryStore.isScanDue,
-            hasAnyFaceScan: faceHistoryStore.latestResult != nil
+        PlanHomeGreetingBuilder.make(firstName: greetingFirstName)
+    }
+
+    private var homeDateLabel: String {
+        let calendar = Calendar.current
+        let date = calendar.startOfDay(for: selectedDate)
+        return formattedWeekdayDayMonth(date)
+    }
+
+    private var homeDatePickerButton: some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            showDatePicker = true
+        } label: {
+            HStack(spacing: 5) {
+                Text(homeDateLabel)
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(theme.secondaryText)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Changer le jour affiché")
+        .accessibilityHint("Ouvre le sélecteur de date")
+    }
+
+  @ViewBuilder
+    private var homeDatePickerSheet: some View {
+        NavigationStack {
+            DatePicker(
+                "Jour",
+                selection: $selectedDate,
+                in: homeDatePickerRange,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .environment(\.locale, Self.frenchLocale)
+            .padding(.horizontal, 12)
+            .navigationTitle("Choisir un jour")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("OK") {
+                        normalizeSelectedDate()
+                        showDatePicker = false
+                    }
+                }
+            }
+            .onAppear {
+                normalizeSelectedDate()
+            }
+        }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
+        .presentationDetents([.medium, .large])
+    }
+
+    private var homeDatePickerRange: ClosedRange<Date> {
+        let dates: [Date] = {
+            guard let plan = planStore.plan else {
+                return OriginPlanPresenter.journalStripDates()
+            }
+            return OriginPlanPresenter.journalStripDates(in: plan)
+        }()
+        if let first = dates.first, let last = dates.last {
+            return first...last
+        }
+        let today = Calendar.current.startOfDay(for: Date())
+        return today...today
+    }
+
+    private func normalizeSelectedDate() {
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: selectedDate)
+        let range = homeDatePickerRange
+        if day < range.lowerBound {
+            selectedDate = range.lowerBound
+        } else if day > range.upperBound {
+            selectedDate = range.upperBound
+        } else {
+            selectedDate = day
+        }
+    }
+
+    private func formattedWeekdayDayMonth(_ date: Date) -> String {
+        date.formatted(
+            .dateTime.weekday(.wide).day().month(.wide)
+                .locale(Self.frenchLocale)
         )
     }
 
@@ -230,106 +315,37 @@ struct PlanHomeTopChrome: View {
 
 private struct PlanHomeGreetingLabel: View {
     let greeting: PlanHomeGreeting
-    let isActive: Bool
 
     @Environment(\.appTheme) private var theme
 
-    @State private var typewriter = CoachTypewriterController()
-    @State private var showsEmoji = false
-    @State private var textVisible = false
-    @State private var hasPlayedLaunchGreeting = false
-
-    private var greetingLine: String { greeting.line }
-
-    private var greetingTaskID: String {
-        "\(isActive)|\(greetingLine)|\(greeting.emoji)|played:\(hasPlayedLaunchGreeting)"
+    private var greetingGradient: LinearGradient {
+        if theme.isDark {
+            LinearGradient(
+                colors: [
+                    Color.white,
+                    Color.white.opacity(0.58)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        } else {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.92),
+                    Color.black.opacity(0.42)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 7) {
-            ZStack(alignment: .leading) {
-                Text(greetingLine)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(.clear)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                    .accessibilityHidden(true)
-
-                Text(typewriter.displayedText)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(theme.primaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                    .opacity(textVisible ? 1 : 0)
-                    .offset(y: textVisible ? 0 : 8)
-                    .blur(radius: textVisible ? 0 : 6)
-            }
-
-            Text(greeting.emoji)
-                .font(.system(size: 24))
-                .opacity(showsEmoji ? 1 : 0)
-                .scaleEffect(showsEmoji ? 1 : 0.35)
-                .rotationEffect(.degrees(showsEmoji ? 0 : -18))
-                .offset(y: showsEmoji ? 0 : 6)
-                .animation(.spring(response: 0.42, dampingFraction: 0.62), value: showsEmoji)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(greetingLine)
-        .task(id: greetingTaskID) {
-            guard isActive else {
-                stopGreetingAnimation()
-                return
-            }
-
-            if hasPlayedLaunchGreeting {
-                showGreetingImmediately()
-                return
-            }
-
-            await runLaunchGreetingAnimation()
-            if !Task.isCancelled && isActive {
-                hasPlayedLaunchGreeting = true
-            }
-        }
-        .onDisappear {
-            stopGreetingAnimation()
-        }
-    }
-
-    private func showGreetingImmediately() {
-        typewriter.showImmediately(text: greetingLine)
-        textVisible = true
-        showsEmoji = true
-    }
-
-    private func stopGreetingAnimation() {
-        typewriter.reset()
-        HapticManager.shared.endTypewriterSession()
-    }
-
-    private func runLaunchGreetingAnimation() async {
-        showsEmoji = false
-        textVisible = false
-        typewriter.reset()
-
-        try? await Task.sleep(nanoseconds: 280_000_000)
-        guard !Task.isCancelled, isActive else { return }
-
-        withAnimation(.spring(response: 0.52, dampingFraction: 0.84)) {
-            textVisible = true
-        }
-
-        try? await Task.sleep(nanoseconds: 120_000_000)
-        guard !Task.isCancelled, isActive else { return }
-
-        await typewriter.run(text: greetingLine, leadingDelayNanoseconds: 0)
-
-        guard !Task.isCancelled, isActive else { return }
-        try? await Task.sleep(nanoseconds: 90_000_000)
-        guard !Task.isCancelled, isActive else { return }
-
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) {
-            showsEmoji = true
-        }
+        Text(greeting.line)
+            .font(.system(size: 28, weight: .bold))
+            .foregroundStyle(greetingGradient)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

@@ -49,6 +49,8 @@ struct CoachConnectorsSheet: View {
                 }
             }
         }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

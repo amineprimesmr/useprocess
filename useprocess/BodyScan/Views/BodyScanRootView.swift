@@ -18,7 +18,7 @@ struct BodyScanRootView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                theme.background.ignoresSafeArea()
+                ProcessScreenBackground()
 
                 if let result = historyStore.latestResult {
                     processMainScrollableChrome(

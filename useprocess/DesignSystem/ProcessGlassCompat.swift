@@ -48,6 +48,16 @@ extension View {
         }
     }
 
+    /// Ombre des cartes glass Accueil — en clair le dégradé rend une drop shadow trop marquée.
+    @ViewBuilder
+    func processHomeGlassCardShadow(isDark: Bool) -> some View {
+        if isDark {
+            shadow(color: .black.opacity(0.24), radius: 12, y: 5)
+        } else {
+            self
+        }
+    }
+
     /// Icône circulaire seule.
     @ViewBuilder
     func processGlassIconButtonStyle() -> some View {
