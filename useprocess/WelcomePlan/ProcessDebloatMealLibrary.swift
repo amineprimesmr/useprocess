@@ -166,7 +166,7 @@ enum ProcessDebloatMealLibrary {
                 item("Banane bien mûre", "1", "Glucide"),
                 item("Kiwi", "1", "Glucide")
             ],
-            prep: "Œufs brouillés dorés, fruits frais.",
+            prep: "Verse l'eau salée tiède avant de manger. Bats les œufs et brouille 4 min à feu moyen en remuant. Coupe la banane et le kiwi, serve avec les œufs.",
             tip: "Eau salée en premier — pas de pain blanc ni granola industriel.",
             tags: ["potassium", "simple"],
             sub: .init(protocolFit: 89, satiety: 82, antiBloat: 88),
@@ -183,7 +183,7 @@ enum ProcessDebloatMealLibrary {
                 item("Avocat mûr", "1/2", "Gras"),
                 item("Citron frais", "1/2", "Autre")
             ],
-            prep: "Œufs brouillés, avocat, citron et poivre.",
+            prep: "Verse l'eau salée tiède. Bats les œufs et brouille jusqu'à texture crémeuse. Écrase l'avocat avec citron et poivre, serve à côté des œufs.",
             tip: "Citron > sauce salée sur les œufs.",
             tags: ["simple", "satiété"],
             sub: .init(protocolFit: 90, satiety: 88, antiBloat: 87),
@@ -200,7 +200,7 @@ enum ProcessDebloatMealLibrary {
                 item("Tomates cerises", "150 g", "Légume"),
                 item("Roquette + concombre", "120 g", "Légume")
             ],
-            prep: "Œufs poêlés, salade roquette-concombre citron et huile d'olive.",
+            prep: "Verse l'eau salée tiède. Poêle les œufs 3 min de chaque côté. Prépare la salade roquette, concombre, tomates et assaisonne citron-huile d'olive.",
             tip: "Tomates + roquette : fibres et potassium sans tubercule.",
             tags: ["salade", "simple"],
             sub: .init(protocolFit: 88, satiety: 80, antiBloat: 89),
@@ -220,7 +220,7 @@ enum ProcessDebloatMealLibrary {
                 item("Brocoli rôti ail-citron", "200 g", "Légume"),
                 item("Huile d'olive extra vierge", "1 c. à soupe", "Gras")
             ],
-            prep: "Poulet poêlé herbes, patate et brocoli rôtis au four.",
+            prep: "Coupe la patate douce et le brocoli, assaisonne huile, ail et herbes. Rôtis 22 min à 200°C. Poêle le poulet 6 min de chaque côté. Dresser poulet, patate et brocoli sur l'assiette.",
             tip: "Eau de coco sans sucre si sport ou chaleur.",
             tags: ["debloat", "potassium"],
             sub: .init(protocolFit: 92, satiety: 89, antiBloat: 91),
@@ -237,7 +237,7 @@ enum ProcessDebloatMealLibrary {
                 item("Roquette + tomates cerises", "150 g", "Légume"),
                 item("Concombre + citron + huile d'olive", "150 g", "Légume")
             ],
-            prep: "Poulet grillé tranché sur salade — vinaigrette citron maison.",
+            prep: "Grille le poulet 6 min de chaque côté, puis tranche. Compose la salade roquette, tomates et concombre. Arrose de vinaigrette citron et huile d'olive maison.",
             tip: "Pas de sauce salade du commerce (sodium + sucre).",
             tags: ["salade", "viande"],
             sub: .init(protocolFit: 91, satiety: 86, antiBloat: 92),
@@ -254,7 +254,7 @@ enum ProcessDebloatMealLibrary {
                 item("Salade concombre menthe", "200 g", "Légume"),
                 item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Saumon poêlé peau dorée, quinoa, salade concombre fraîche.",
+            prep: "Cuire le quinoa selon le paquet et laisser tiédir. Poêle le saumon 4 min peau vers le bas puis 2 min côté chair. Mélange concombre, menthe, citron et huile pour la salade. Dresser saumon, quinoa et salade.",
             tip: "Change du riz — quinoa + salade = variété et fibres.",
             tags: ["omega3", "salade"],
             sub: .init(protocolFit: 90, satiety: 87, antiBloat: 90),
@@ -271,7 +271,7 @@ enum ProcessDebloatMealLibrary {
                 item("Salade verte + avocat", "180 g", "Légume"),
                 item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Dinde dorée, pommes rôties thym, salade avocat citron.",
+            prep: "Coupe les pommes de terre, rôtis avec thym et huile 25 min à 200°C. Poêle la dinde 5 min de chaque côté. Prépare la salade verte et l'avocat, finis avec citron et huile d'olive.",
             tip: "Journée rétention : sel modéré, citron sur la dinde.",
             tags: ["potassium", "salade"],
             sub: .init(protocolFit: 91, satiety: 90, antiBloat: 88),
@@ -288,7 +288,7 @@ enum ProcessDebloatMealLibrary {
                 item("Poivrons + oignons rôtis", "220 g", "Légume"),
                 item("Huile d'olive extra vierge", "1 c. à soupe", "Gras")
             ],
-            prep: "Bœuf poêlé doré, riz basmati, poivrons rôtis au four.",
+            prep: "Cuire le riz basmati. Poêle le bœuf haché 6 min à feu vif sans casser les morceaux. Rôtis poivrons et oignons 18 min à 200°C. Serve riz, bœuf et légumes rôtis.",
             tip: "Herbes fraîches, ail — pas de sauce taco ou tomate salée.",
             tags: ["viande", "variété"],
             sub: .init(protocolFit: 90, satiety: 91, antiBloat: 87),
@@ -305,7 +305,7 @@ enum ProcessDebloatMealLibrary {
                 item("Salade fenouil + concombre", "150 g", "Légume"),
                 item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Lieu poêlé citron, haricots verts ail, salade fenouil croquante.",
+            prep: "Assaisonne le lieu avec citron, poêle 3 min de chaque côté. Poêle les haricots verts avec ail 5 min. Tranche fenouil et concombre, assaisonne pour la salade croquante.",
             tip: "Poisson blanc le soir aussi possible — très léger en sel.",
             tags: ["poisson", "salade"],
             sub: .init(protocolFit: 89, satiety: 84, antiBloat: 91),
@@ -325,7 +325,7 @@ enum ProcessDebloatMealLibrary {
                 item("Salade roquette + tomates", "180 g", "Légume"),
                 item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Steak grillé, pommes rôties, salade roquette vinaigrette citron.",
+            prep: "Grille le steak 3 min de chaque côté selon l'épaisseur. Rôtis les pommes de terre 25 min à 200°C. Prépare la salade roquette et tomates avec citron et huile d'olive.",
             tip: "Sel léger le soir ; poivre et ail sur le steak.",
             tags: ["soir", "viande", "salade"],
             sub: .init(protocolFit: 92, satiety: 88, antiBloat: 90),
@@ -342,7 +342,7 @@ enum ProcessDebloatMealLibrary {
                 item("Avocat mûr", "1/2", "Gras"),
                 item("Tomates cerises", "120 g", "Légume")
             ],
-            prep: "Poulet rôti herbes/ail, salade fraîche avocat citron.",
+            prep: "Marine le poulet citron-herbes-ail 10 min. Rôtis au four 22 min à 200°C. Compose salade roquette, concombre, tomates et avocat avec citron et huile d'olive.",
             tip: "Marinade citron-herbes maison — pas marinade industrielle.",
             tags: ["soir", "salade", "viande"],
             sub: .init(protocolFit: 91, satiety: 86, antiBloat: 91),
@@ -359,7 +359,7 @@ enum ProcessDebloatMealLibrary {
                 item("Brocoli rôti ail-citron", "200 g", "Légume"),
                 item("Huile d'olive", "1 c. à soupe", "Gras")
             ],
-            prep: "Dinde poêlée, brocoli rôti four, riz basmati.",
+            prep: "Cuire le riz basmati. Poêle la dinde 5 min de chaque côté. Rôtis le brocoli ail-citron 15 min à 200°C. Dresser dinde, riz et brocoli.",
             tip: "Alternative chaude quand tu ne veux pas de salade froide.",
             tags: ["soir", "viande"],
             sub: .init(protocolFit: 90, satiety: 88, antiBloat: 88),
@@ -376,7 +376,7 @@ enum ProcessDebloatMealLibrary {
                 item("Salade mâche + concombre", "150 g", "Légume"),
                 item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Cabillaud rôti four citron-herbes, carottes rôties, salade mâche fraîche.",
+            prep: "Assaisonne le cabillaud citron-herbes, rôtis 14 min à 190°C. Rôtis les carottes thym 20 min à 200°C. Prépare salade mâche et concombre avec citron et huile d'olive.",
             tip: "Poisson blanc le soir — sel modéré, citron sur le poisson.",
             tags: ["soir", "poisson", "salade"],
             sub: .init(protocolFit: 89, satiety: 84, antiBloat: 91),
@@ -396,7 +396,7 @@ enum ProcessDebloatMealLibrary {
                 item("Avocat mûr", "1", "Gras"),
                 item("Salade roquette + concombre", "200 g", "Légume")
             ],
-            prep: "Steak grillé, patate rôtie, avocat et salade citron sur la même assiette.",
+            prep: "Grille le steak 3 min de chaque côté. Rôtis la patate douce 22 min à 200°C. Prépare salade roquette-concombre et tranche l'avocat. Dresser tout sur une grande assiette.",
             tip: "Eau + eau de coco sans sucre — sel contrôlé dans la fenêtre.",
             tags: ["omad", "potassium"],
             sub: .init(protocolFit: 91, satiety: 94, antiBloat: 86),
@@ -413,7 +413,7 @@ enum ProcessDebloatMealLibrary {
                 item("Salade composée (roquette, tomate, concombre)", "250 g", "Légume"),
                 item("Avocat mûr", "1/2", "Gras")
             ],
-            prep: "Grand bowl : poulet tranché, quinoa, salade et avocat vinaigrette citron.",
+            prep: "Grille le poulet et tranche. Cuire le quinoa et laisser tiédir. Compose le bowl avec salade, tomates, concombre et avocat. Arrose de vinaigrette citron et huile d'olive.",
             tip: "Tout en un bol dense — pas de sauce crémeuse industrielle.",
             tags: ["omad", "salade"],
             sub: .init(protocolFit: 90, satiety: 92, antiBloat: 88),
@@ -432,7 +432,7 @@ enum ProcessDebloatMealLibrary {
                 item("Banane bien mûre", "1", "Glucide"),
                 item("Yaourt grec 0% nature", "150 g", "Protéine")
             ],
-            prep: "Frais — eau de coco pure, pas nectar.",
+            prep: "Verse l'eau de coco pure (pas de nectar). Coupe la banane en rondelles. Ouvre le yaourt grec et serve frais avec la banane.",
             tip: "Après sport uniquement.",
             tags: ["hydratation", "potassium"],
             sub: .init(protocolFit: 82, satiety: 76, antiBloat: 86),
@@ -448,7 +448,7 @@ enum ProcessDebloatMealLibrary {
                 item("Jambon de dinde supérieur", "80 g", "Protéine"),
                 item("Concombre", "100 g", "Légume")
             ],
-            prep: "Tranches ananas frais, jambon dinde sans nitrites si possible.",
+            prep: "Coupe l'ananas frais en tranches. Tranche le jambon de dinde qualité. Coupe le concombre en bâtonnets et serve le tout frais.",
             tip: "Ponctuel — pas charcuterie industrielle quotidienne.",
             tags: ["variété", "protéine"],
             sub: .init(protocolFit: 80, satiety: 72, antiBloat: 85),

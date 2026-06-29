@@ -1,14 +1,16 @@
 import SwiftUI
 import UIKit
 
-/// Tokens du fond app (mode clair — dégradé bleu / violet ultra léger).
+/// Tokens du fond app — dégradé bleu / violet en clair, fond uni en sombre.
 enum ProcessBackgroundPalette {
     static let lightBase = Color(red: 0.968, green: 0.972, blue: 0.988)
     static let lightBlueGlow = Color(red: 0.62, green: 0.80, blue: 1.0)
     static let lightVioletGlow = Color(red: 0.78, green: 0.70, blue: 0.98)
+
+    static let darkBase = Color(red: 0.07, green: 0.08, blue: 0.11)
 }
 
-/// Fond principal de l’app — dégradé subtil en clair, uni en sombre.
+/// Fond principal de l’app — dégradé subtil bleu / violet en clair, plat en sombre.
 struct ProcessScreenBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -21,7 +23,7 @@ struct ProcessScreenBackground: View {
             if usesLightGradient {
                 lightGradientBackground
             } else {
-                Color(.systemBackground)
+                ProcessBackgroundPalette.darkBase
             }
         }
         .ignoresSafeArea()
@@ -188,7 +190,90 @@ private final class ProcessUIKitTransparentSurfaceView: UIView {
     }
 }
 
+// MARK: - Scroll compatible fermeture zoom (détail repas, etc.)
+
+private enum ProcessScrollContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private enum ProcessScrollViewportHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct ProcessUIScrollViewBounceDisabler: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            guard let scrollView = uiView.processEnclosingScrollView else { return }
+            scrollView.alwaysBounceVertical = false
+        }
+    }
+}
+
+private extension UIView {
+    var processEnclosingScrollView: UIScrollView? {
+        var view: UIView? = self
+        while let current = view {
+            if let scroll = current as? UIScrollView { return scroll }
+            view = current.superview
+        }
+        return nil
+    }
+}
+
+private struct ProcessZoomDismissFriendlyScrollModifier: ViewModifier {
+    @State private var contentHeight: CGFloat = 0
+    @State private var viewportHeight: CGFloat = 0
+
+    private var needsScroll: Bool {
+        guard contentHeight > 0, viewportHeight > 0 else { return true }
+        return contentHeight > viewportHeight + 2
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(key: ProcessScrollViewportHeightKey.self, value: proxy.size.height)
+                }
+            }
+            .onPreferenceChange(ProcessScrollContentHeightKey.self) { contentHeight = $0 }
+            .onPreferenceChange(ProcessScrollViewportHeightKey.self) { viewportHeight = $0 }
+            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+            .scrollDisabled(!needsScroll)
+            .background(ProcessUIScrollViewBounceDisabler())
+    }
+}
+
 extension View {
+    /// Mesure la hauteur du contenu d’un `ScrollView` (pair avec `processZoomDismissFriendlyScroll()`).
+    func processReportsScrollContentHeight() -> some View {
+        background {
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(key: ProcessScrollContentHeightKey.self, value: proxy.size.height)
+            }
+        }
+    }
+
+    /// Pas de rebond vers le bas au top — tirer vers le bas ferme la cover zoom ; scroll seulement si le contenu dépasse.
+    func processZoomDismissFriendlyScroll() -> some View {
+        modifier(ProcessZoomDismissFriendlyScrollModifier())
+    }
+
     /// Contenu au-dessus du dégradé — ZStack (fiable vs `.background` sur NavigationStack).
     func processScreenBackground() -> some View {
         ZStack {

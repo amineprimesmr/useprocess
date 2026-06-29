@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - Design tokens (référence journal sombre)
 
@@ -31,6 +32,8 @@ struct DailyJournalChecklistView: View {
     var showHeader: Bool = true
     var showWeekStrip: Bool = true
     var showChecklist: Bool = true
+    var homeLayoutEditMode: Bool = false
+    var draggingSection: Binding<PlanHomeSectionKind?>? = nil
     var resourceZoomNamespace: Namespace.ID? = nil
 
     @Namespace private var faceScanHistoryZoomNamespace
@@ -39,7 +42,6 @@ struct DailyJournalChecklistView: View {
     @State private var isChecklistExpanded = true
     @State private var showFaceScan = false
     @State private var showFaceScanHistory = false
-    @State private var selectedFaceScan: FaceScanResult?
     @Bindable private var layoutStore = PlanHomeLayoutStore.shared
     @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
@@ -51,7 +53,7 @@ struct DailyJournalChecklistView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        LazyVStack(alignment: .leading, spacing: 0) {
             if showHeader {
                 journalHeader
                     .padding(.bottom, 18)
@@ -66,11 +68,19 @@ struct DailyJournalChecklistView: View {
                 .padding(.bottom, 8)
             }
 
-            ForEach(Array(layoutStore.visibleSections.enumerated()), id: \.element.id) { index, section in
-                homeSectionView(section)
-                    .padding(.top, sectionTopSpacing(for: section, index: index))
+            if homeLayoutEditMode {
+                ForEach(Array(layoutStore.orderedSections.enumerated()), id: \.element.id) { index, section in
+                    homeLayoutEditableSection(section, index: index)
+                        .padding(.top, sectionTopSpacing(for: section, index: index))
+                }
+                .animation(.spring(response: 0.42, dampingFraction: 0.86), value: layoutStore.orderedSections.map(\.rawValue))
+            } else {
+                ForEach(Array(layoutStore.visibleSections.enumerated()), id: \.element.id) { index, section in
+                    homeSectionView(section)
+                        .padding(.top, sectionTopSpacing(for: section, index: index))
+                }
+                .animation(.spring(response: 0.44, dampingFraction: 0.86), value: layoutStore.visibleSectionIDs)
             }
-            .animation(.spring(response: 0.44, dampingFraction: 0.86), value: layoutStore.visibleSectionIDs)
 
             if case .future = dayAvailability, !showChecklist,
                layoutStore.visibleSections.allSatisfy({ $0 != .faceScan }) {
@@ -95,12 +105,10 @@ struct DailyJournalChecklistView: View {
         .fullScreenCover(isPresented: $showFaceScan) {
             FaceScanPrivacyGateView(
                 onDismiss: { showFaceScan = false },
-                onComplete: { result in
+                onComplete: { _ in
                     showFaceScan = false
                     faceHistoryStore = FaceScanHistoryStore.shared
-                    FaceScanCoachHandoffCoordinator.deliver(result: result)
-                },
-                skipResultSheet: true
+                }
             )
             .environmentObject(UnifiedProfileService.shared)
         }
@@ -108,10 +116,6 @@ struct DailyJournalChecklistView: View {
             FaceScanHistoryView(
                 history: faceHistoryStore.history,
                 isScanDue: faceHistoryStore.isScanDue,
-                onSelect: { scan in
-                    showFaceScanHistory = false
-                    selectedFaceScan = scan
-                },
                 onScan: {
                     showFaceScanHistory = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -120,12 +124,6 @@ struct DailyJournalChecklistView: View {
                 }
             )
             .processZoomTransition(id: .faceScanHistory, namespace: faceScanHistoryZoomNamespace)
-        }
-        .sheet(item: $selectedFaceScan) { scan in
-            FaceScanDetailView(
-                result: scan,
-                previous: faceHistoryStore.history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
-            )
         }
         .onChange(of: selectedDate) { _, _ in
             if case .editable(let day, _) = dayAvailability {
@@ -138,7 +136,50 @@ struct DailyJournalChecklistView: View {
         }
     }
 
+    @ViewBuilder
+    private func homeLayoutEditableSection(_ section: PlanHomeSectionKind, index: Int) -> some View {
+        let isVisible = layoutStore.isVisible(section)
+        let isDragging = draggingSection?.wrappedValue == section
+
+        PlanHomeLayoutEditableSection(
+            section: section,
+            isVisible: isVisible,
+            isDragging: isDragging,
+            onToggleVisibility: {
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                    layoutStore.toggleVisibility(for: section)
+                }
+                HapticManager.shared.impact(.light)
+            },
+            content: {
+                homeSectionView(section)
+            }
+        )
+        .onDrag {
+            draggingSection?.wrappedValue = section
+            return NSItemProvider(object: section.rawValue as NSString)
+        }
+        .onDrop(
+            of: [.text],
+            delegate: PlanHomeSectionDropDelegate(
+                section: section,
+                layoutStore: layoutStore,
+                draggingSection: draggingSection ?? .constant(nil)
+            )
+        )
+        .transition(.asymmetric(
+            insertion: .opacity.combined(with: .move(edge: .top)),
+            removal: .opacity.combined(with: .scale(scale: 0.98))
+        ))
+    }
+
     private func sectionTopSpacing(for section: PlanHomeSectionKind, index: Int) -> CGFloat {
+        if homeLayoutEditMode {
+            if index == 0 {
+                return PlanHomeSectionDesign.firstSectionTopSpacing
+            }
+            return 18
+        }
         if index == 0 {
             var spacing = showWeekStrip ? 0 : PlanHomeSectionDesign.firstSectionTopSpacing
             if section == .faceScan {
@@ -156,6 +197,7 @@ struct DailyJournalChecklistView: View {
             PlanLastFaceScanSection(
                 latest: faceHistoryStore.latestResult,
                 isScanDue: faceHistoryStore.isScanDue,
+                isScanFlowActive: showFaceScan,
                 zoomNamespace: faceScanHistoryZoomNamespace,
                 onScan: { showFaceScan = true },
                 onOpenHistory: { showFaceScanHistory = true }
@@ -221,8 +263,8 @@ struct DailyJournalChecklistView: View {
             }
 
         case .faceRoutine:
-            if case .editable = dayAvailability {
-                PlanFaceDaySection(plan: livePlan)
+            if case .editable(let day, _) = dayAvailability {
+                PlanFaceDaySection(plan: livePlan, day: day)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .move(edge: .top)),
                         removal: .opacity.combined(with: .scale(scale: 0.98))

@@ -149,10 +149,10 @@ struct BodyScanReportView: View {
 
     private func faceSection(_ face: FaceWellnessMarkers) -> some View {
         section(title: "Visage & bien-être") {
-            metricTile("Clarté", face.skinClarityScore)
-            metricTile("Fatigue", face.underEyeFatigueScore)
-            metricTile("Gonflement", face.puffinessScore)
-            metricTile("Mâchoire", face.jawTensionScore)
+            metricTile("Clarté peau", face.skinClarityScore)
+            metricTile("Repos visage", max(0, min(100, 100 - face.underEyeFatigueScore)))
+            metricTile("Dégonflement", max(0, min(100, 100 - face.puffinessScore)))
+            metricTile("Relâchement mâchoire", max(0, min(100, 100 - face.jawTensionScore)))
             ForEach(face.notes, id: \.self) { note in
                 Text("• \(note)")
                     .font(.caption)

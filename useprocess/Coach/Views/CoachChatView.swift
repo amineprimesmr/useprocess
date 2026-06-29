@@ -78,6 +78,7 @@ struct CoachChatView: View {
             planStore.reloadForCurrentUser()
             CoachPresentationTracker.shared.isCoachChatActive = true
             CoachPresentationTracker.shared.activeConversationId = viewModel.activeConversationId
+            focusChatInputIfAppropriate()
         }
         .onDisappear {
             CoachPresentationTracker.shared.isCoachChatActive = false
@@ -102,10 +103,16 @@ struct CoachChatView: View {
             if delivered {
                 await viewModel.reloadForEveningDelivery()
             }
+            focusChatInputIfAppropriate(delay: 0.12)
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             viewModel.bind(profile: profileService.currentProfile)
             Task { await viewModel.loadThreadIfNeeded() }
+        }
+        .onChange(of: viewModel.showsHomeInsteadOfInput) { _, hidesInput in
+            if !hidesInput {
+                focusChatInputIfAppropriate(delay: 0.15)
+            }
         }
         .onChange(of: isSidebarExpanded) { _, expanded in
             guard expanded else { return }
@@ -626,6 +633,29 @@ struct CoachChatView: View {
             from: nil,
             for: nil
         )
+    }
+
+    /// Ouvre le clavier quand la barre de saisie est visible (après présentation plein écran).
+    private func focusChatInputIfAppropriate(delay: TimeInterval = 0.32) {
+        guard canPresentChatInputKeyboard else { return }
+
+        Task { @MainActor in
+            if delay > 0 {
+                let nanoseconds = UInt64(delay * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: nanoseconds)
+            }
+            guard canPresentChatInputKeyboard else { return }
+            isInputFocused = true
+        }
+    }
+
+    private var canPresentChatInputKeyboard: Bool {
+        CoachPresentationTracker.shared.isCoachChatActive
+            && !viewModel.showsHomeInsteadOfInput
+            && !isCompactCameraPresented
+            && !isSidebarExpanded
+            && !viewModel.isVoiceRecording
+            && !viewModel.isVoiceExiting
     }
 
     private var scrollBottomInset: CGFloat { 20 }

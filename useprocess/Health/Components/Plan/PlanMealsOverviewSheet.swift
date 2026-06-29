@@ -72,7 +72,6 @@ struct PlanMealsOverviewSheet: View {
                     entry: refreshedEntry(selection.entry, day: selection.day),
                     plan: livePlan,
                     day: selection.day,
-                    isEditable: isEditableDay(selection.day, date: selection.date),
                     onDismiss: { selectedDetail = nil }
                 )
                 .environmentObject(profileService)

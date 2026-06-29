@@ -9,6 +9,9 @@ struct FaceScanHistoryView: View {
     var onSelect: ((FaceScanResult) -> Void)?
     var onScan: (() -> Void)?
 
+    @Namespace private var detailZoomNamespace
+    @State private var selectedDetailScan: FaceScanResult?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -47,6 +50,13 @@ struct FaceScanHistoryView: View {
         }
         .processAppPageBackground()
         .processAppPresentationBackground()
+        .fullScreenCover(item: $selectedDetailScan) { scan in
+            FaceScanDetailView(
+                result: scan,
+                previous: history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
+            )
+            .processZoomTransition(id: .faceScanDetail(scan.id), namespace: detailZoomNamespace)
+        }
     }
 
     // MARK: - Empty
@@ -79,7 +89,11 @@ struct FaceScanHistoryView: View {
 
         return Button {
             HapticManager.shared.impact(.light)
-            onSelect?(scan)
+            if onSelect != nil {
+                onSelect?(scan)
+            } else {
+                selectedDetailScan = scan
+            }
         } label: {
             VStack(alignment: .leading, spacing: 0) {
                 videoHeader(scan)
@@ -142,6 +156,10 @@ struct FaceScanHistoryView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
+        .processZoomSource(
+            id: onSelect == nil ? .faceScanDetail(scan.id) : nil,
+            namespace: onSelect == nil ? detailZoomNamespace : nil
+        )
     }
 
     private func videoHeader(_ scan: FaceScanResult) -> some View {

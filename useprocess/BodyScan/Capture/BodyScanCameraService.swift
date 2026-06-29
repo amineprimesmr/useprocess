@@ -29,9 +29,9 @@ final class BodyScanCameraService: NSObject, ObservableObject {
     }
 
     @MainActor
-    func start(preferredPosition: AVCaptureDevice.Position = .front) {
+    func start(preferredPosition: AVCaptureDevice.Position = .front, deliversFrames: Bool = true) {
         sessionQueue.async { [weak self] in
-            self?.configureSession(position: preferredPosition)
+            self?.configureSession(position: preferredPosition, deliversFrames: deliversFrames)
             guard let self else { return }
             if !self.session.isRunning {
                 self.session.startRunning()
@@ -62,13 +62,17 @@ final class BodyScanCameraService: NSObject, ObservableObject {
         return UIImage(cgImage: cgImage, scale: 1, orientation: orientation)
     }
 
-    private func configureSession(position: AVCaptureDevice.Position) {
+    private func configureSession(position: AVCaptureDevice.Position, deliversFrames: Bool) {
         session.beginConfiguration()
         session.sessionPreset = .hd1280x720
 
         if let currentInput {
             session.removeInput(currentInput)
             self.currentInput = nil
+        }
+
+        if session.outputs.contains(videoOutput) {
+            session.removeOutput(videoOutput)
         }
 
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
@@ -81,7 +85,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
         session.addInput(input)
         currentInput = input
 
-        if !session.outputs.contains(videoOutput) {
+        if deliversFrames {
             videoOutput.videoSettings = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
             ]
@@ -90,16 +94,15 @@ final class BodyScanCameraService: NSObject, ObservableObject {
             if session.canAddOutput(videoOutput) {
                 session.addOutput(videoOutput)
             }
-        }
 
-        if let connection = videoOutput.connection(with: .video) {
-            if connection.isVideoRotationAngleSupported(90) {
-                connection.videoRotationAngle = 90
-            }
-            // Buffer brut (non miroir) — Vision .leftMirrored + aperçu miroir = repère cohérent.
-            if connection.isVideoMirroringSupported {
-                connection.automaticallyAdjustsVideoMirroring = false
-                connection.isVideoMirrored = false
+            if let connection = videoOutput.connection(with: .video) {
+                if connection.isVideoRotationAngleSupported(90) {
+                    connection.videoRotationAngle = 90
+                }
+                if connection.isVideoMirroringSupported {
+                    connection.automaticallyAdjustsVideoMirroring = false
+                    connection.isVideoMirrored = false
+                }
             }
         }
 

@@ -742,28 +742,28 @@ private enum ReadinessGaugeScoreTier {
                 Color(red: 0.48, green: 0.84, blue: 0.68),
                 Color(red: 0.40, green: 0.78, blue: 0.60),
                 Color(red: 0.32, green: 0.70, blue: 0.52),
-                Color(red: 0.38, green: 0.78, blue: 0.58).opacity(isDark ? 0.40 : 0.32)
+                Color(red: 0.38, green: 0.78, blue: 0.58).opacity(isDark ? 0.22 : 0.32)
             )
         case .stable:
             return (
                 Color(red: 0.66, green: 0.70, blue: 0.97),
                 Color(red: 0.60, green: 0.62, blue: 0.96),
                 Color(red: 0.56, green: 0.50, blue: 0.94),
-                Color(red: 0.55, green: 0.48, blue: 0.98).opacity(isDark ? 0.38 : 0.30)
+                Color(red: 0.55, green: 0.48, blue: 0.98).opacity(isDark ? 0.20 : 0.30)
             )
         case .moderate:
             return (
                 Color(red: 0.98, green: 0.78, blue: 0.46),
                 Color(red: 0.95, green: 0.68, blue: 0.38),
                 Color(red: 0.90, green: 0.56, blue: 0.30),
-                Color(red: 0.95, green: 0.62, blue: 0.28).opacity(isDark ? 0.38 : 0.30)
+                Color(red: 0.95, green: 0.62, blue: 0.28).opacity(isDark ? 0.20 : 0.30)
             )
         case .recovery:
             return (
                 Color(red: 0.98, green: 0.55, blue: 0.48),
                 Color(red: 0.92, green: 0.42, blue: 0.35),
                 Color(red: 0.85, green: 0.32, blue: 0.28),
-                Color(red: 0.92, green: 0.38, blue: 0.30).opacity(isDark ? 0.38 : 0.30)
+                Color(red: 0.92, green: 0.38, blue: 0.30).opacity(isDark ? 0.20 : 0.30)
             )
         case .pending:
             return (
@@ -808,6 +808,59 @@ private struct ReadinessGaugePalette {
         let midBlue = accents.mid
         let deepViolet = accents.deep
 
+        let sharedProgressLinear = Gradient(colors: [
+            baseBlue.opacity(0.96),
+            midBlue.opacity(0.98),
+            deepViolet.opacity(0.99),
+            midBlue.opacity(0.96)
+        ])
+        let sharedProgressConic = Gradient(stops: [
+            .init(color: baseBlue.opacity(0.96), location: 0.00),
+            .init(color: midBlue.opacity(0.98), location: 0.26),
+            .init(color: deepViolet.opacity(0.99), location: 0.52),
+            .init(color: midBlue.opacity(0.97), location: 0.78),
+            .init(color: baseBlue.opacity(0.95), location: 1.00)
+        ])
+        let darkProgressLinear = Gradient(colors: [
+            baseBlue.opacity(0.82),
+            midBlue.opacity(0.86),
+            deepViolet.opacity(0.88),
+            midBlue.opacity(0.84)
+        ])
+        let darkProgressConic = Gradient(stops: [
+            .init(color: baseBlue.opacity(0.82), location: 0.00),
+            .init(color: midBlue.opacity(0.86), location: 0.26),
+            .init(color: deepViolet.opacity(0.88), location: 0.52),
+            .init(color: midBlue.opacity(0.85), location: 0.78),
+            .init(color: baseBlue.opacity(0.80), location: 1.00)
+        ])
+        let sharedProgressSpot = Gradient(stops: [
+            .init(color: Color.white.opacity(1.0), location: 0.0),
+            .init(color: Color.white.opacity(0.62), location: 0.36),
+            .init(color: Color.white.opacity(0.16), location: 0.70),
+            .init(color: Color.clear, location: 1.0)
+        ])
+        let darkProgressSpot = Gradient(stops: [
+            .init(color: Color.white.opacity(0.55), location: 0.0),
+            .init(color: Color.white.opacity(0.28), location: 0.38),
+            .init(color: Color.white.opacity(0.08), location: 0.72),
+            .init(color: Color.clear, location: 1.0)
+        ])
+        let sharedSpecularRim = Gradient(stops: [
+            .init(color: Color.white.opacity(0.0), location: 0.0),
+            .init(color: Color.white.opacity(0.62), location: 0.28),
+            .init(color: Color.white.opacity(1.0), location: 0.50),
+            .init(color: Color.white.opacity(0.38), location: 0.76),
+            .init(color: Color.white.opacity(0.0), location: 1.0)
+        ])
+        let darkSpecularRim = Gradient(stops: [
+            .init(color: Color.white.opacity(0.0), location: 0.0),
+            .init(color: Color.white.opacity(0.28), location: 0.30),
+            .init(color: Color.white.opacity(0.48), location: 0.50),
+            .init(color: Color.white.opacity(0.18), location: 0.78),
+            .init(color: Color.white.opacity(0.0), location: 1.0)
+        ])
+
         if isDark {
             trackBase = Color(red: 0.20, green: 0.21, blue: 0.28)
             outerShadow = Color.black.opacity(0.45)
@@ -817,7 +870,7 @@ private struct ReadinessGaugePalette {
             needleGlow = Color.white.opacity(0.35)
             progressSeparator = Color.white.opacity(0.42)
             sparkle = Color.white
-            particleOpacityBase = 0.62
+            particleOpacityBase = 0.48
             particleSpecularOffset = CGPoint(x: 0.18, y: 0.22)
             particleSpecularRadius = 0.72
             particleGradient = Gradient(stops: [
@@ -825,19 +878,8 @@ private struct ReadinessGaugePalette {
                 .init(color: Color.white.opacity(0.88), location: 0.38),
                 .init(color: Color.white.opacity(0.28), location: 1.0)
             ])
-            progressConicGradient = Gradient(stops: [
-                .init(color: baseBlue.opacity(0.94), location: 0.00),
-                .init(color: midBlue.opacity(0.97), location: 0.26),
-                .init(color: deepViolet.opacity(0.99), location: 0.54),
-                .init(color: midBlue.opacity(0.95), location: 0.80),
-                .init(color: baseBlue.opacity(0.92), location: 1.00)
-            ])
-            progressLinearGradient = Gradient(colors: [
-                baseBlue.opacity(0.92),
-                midBlue.opacity(0.96),
-                deepViolet.opacity(0.98),
-                midBlue.opacity(0.94)
-            ])
+            progressConicGradient = darkProgressConic
+            progressLinearGradient = darkProgressLinear
             trackTopShadowGradient = Gradient(colors: [
                 Color.black.opacity(0.28),
                 Color.black.opacity(0.08),
@@ -845,27 +887,16 @@ private struct ReadinessGaugePalette {
             ])
             trackBottomGlowGradient = Gradient(colors: [
                 Color.clear,
-                Color.white.opacity(0.10),
-                Color.white.opacity(0.04)
+                Color.white.opacity(0.08),
+                Color.white.opacity(0.03)
             ])
-            progressSpotGradient = Gradient(stops: [
-                .init(color: Color.white.opacity(0.95), location: 0.0),
-                .init(color: Color.white.opacity(0.55), location: 0.38),
-                .init(color: Color.white.opacity(0.12), location: 0.72),
-                .init(color: Color.clear, location: 1.0)
-            ])
+            progressSpotGradient = darkProgressSpot
             progressBottomShadowGradient = Gradient(colors: [
                 Color.clear,
                 Color.black.opacity(0.22),
                 Color.black.opacity(0.35)
             ])
-            specularRimGradient = Gradient(stops: [
-                .init(color: Color.white.opacity(0.0), location: 0.0),
-                .init(color: Color.white.opacity(0.55), location: 0.30),
-                .init(color: Color.white.opacity(0.95), location: 0.50),
-                .init(color: Color.white.opacity(0.30), location: 0.78),
-                .init(color: Color.white.opacity(0.0), location: 1.0)
-            ])
+            specularRimGradient = darkSpecularRim
             innerRimHighlightGradient = Gradient(colors: [
                 Color.white.opacity(0.0),
                 Color.white.opacity(0.18),
@@ -893,19 +924,8 @@ private struct ReadinessGaugePalette {
                 .init(color: Color.black.opacity(0.92), location: 0.34),
                 .init(color: Color.black.opacity(0.55), location: 1.0)
             ])
-            progressConicGradient = Gradient(stops: [
-                .init(color: baseBlue.opacity(0.96), location: 0.00),
-                .init(color: midBlue.opacity(0.98), location: 0.26),
-                .init(color: deepViolet.opacity(0.99), location: 0.52),
-                .init(color: midBlue.opacity(0.97), location: 0.78),
-                .init(color: baseBlue.opacity(0.95), location: 1.00)
-            ])
-            progressLinearGradient = Gradient(colors: [
-                baseBlue.opacity(0.96),
-                midBlue.opacity(0.98),
-                deepViolet.opacity(0.99),
-                midBlue.opacity(0.96)
-            ])
+            progressConicGradient = sharedProgressConic
+            progressLinearGradient = sharedProgressLinear
             trackTopShadowGradient = Gradient(colors: [
                 Color.black.opacity(0.14),
                 Color.black.opacity(0.05),
@@ -916,24 +936,13 @@ private struct ReadinessGaugePalette {
                 Color.white.opacity(0.55),
                 Color.white.opacity(0.20)
             ])
-            progressSpotGradient = Gradient(stops: [
-                .init(color: Color.white.opacity(1.0), location: 0.0),
-                .init(color: Color.white.opacity(0.62), location: 0.36),
-                .init(color: Color.white.opacity(0.16), location: 0.70),
-                .init(color: Color.clear, location: 1.0)
-            ])
+            progressSpotGradient = sharedProgressSpot
             progressBottomShadowGradient = Gradient(colors: [
                 Color.clear,
                 Color.black.opacity(0.10),
                 Color.black.opacity(0.18)
             ])
-            specularRimGradient = Gradient(stops: [
-                .init(color: Color.white.opacity(0.0), location: 0.0),
-                .init(color: Color.white.opacity(0.62), location: 0.28),
-                .init(color: Color.white.opacity(1.0), location: 0.50),
-                .init(color: Color.white.opacity(0.38), location: 0.76),
-                .init(color: Color.white.opacity(0.0), location: 1.0)
-            ])
+            specularRimGradient = sharedSpecularRim
             innerRimHighlightGradient = Gradient(colors: [
                 Color.white.opacity(0.0),
                 Color.white.opacity(0.35),
@@ -959,7 +968,7 @@ struct ReadinessScoreMiniBadge: View {
     private var isDark: Bool { colorScheme == .dark }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             ReadinessGaugeCanvas(
                 score: score,
                 isDark: isDark,
@@ -974,9 +983,9 @@ struct ReadinessScoreMiniBadge: View {
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .foregroundStyle(theme.primaryText)
                 .monospacedDigit()
-                .offset(y: 6)
+                .offset(y: 2)
         }
-        .frame(width: 88, height: 54, alignment: .bottom)
+        .frame(width: 88, height: 50)
         .padding(.top, 6)
         .accessibilityLabel("Score du scan \(displayScore)")
     }

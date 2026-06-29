@@ -46,7 +46,7 @@ struct PlanTrainingDaySection: View {
             VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
                 PlanProtocolSectionHeader(
                     title: "Entraînement du jour",
-                    trailing: trainingHeaderTrailing(for: training)
+                    trailing: trainingHeaderTrailing(for: training, itemCount: items.count)
                 )
 
                 if items.isEmpty {
@@ -54,9 +54,12 @@ struct PlanTrainingDaySection: View {
                         .font(.subheadline)
                         .foregroundStyle(theme.secondaryText)
                 } else {
-                    PlanDayProtocolCarousel(items: items) { item in
-                        selectedProtocolItem = item
-                    }
+                    PlanDayProtocolCarousel(
+                        items: items,
+                        zoomNamespace: trainingZoomNamespace,
+                        zoomIDForItem: { .protocolItem($0.id) },
+                        onTap: { selectedProtocolItem = $0 }
+                    )
                     .processZoomSource(id: .trainingDay, namespace: trainingZoomNamespace)
                 }
             }
@@ -77,9 +80,15 @@ struct PlanTrainingDaySection: View {
         }
     }
 
-    private func trainingHeaderTrailing(for training: OriginDayTraining) -> String? {
-        guard training.durationMinutes > 0 else { return nil }
-        return "\(training.durationMinutes) min"
+    private func trainingHeaderTrailing(for training: OriginDayTraining, itemCount: Int) -> String? {
+        var parts: [String] = []
+        if training.durationMinutes > 0 {
+            parts.append("\(training.durationMinutes) min")
+        }
+        if itemCount > 0 {
+            parts.append("\(itemCount) ex.")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private func openSessionDetail() {

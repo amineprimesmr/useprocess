@@ -99,6 +99,7 @@ final class FaceScanHistoryStore {
 
         history = byId.values.sorted { $0.createdAt > $1.createdAt }
         if history.count > 90 { history = Array(history.prefix(90)) }
+        history = FaceWellnessScore.reconcileStoredScores(history)
         latestResult = history.first
         persist()
         FaceScanDataLifecycle.enforceRetention(for: self)
@@ -182,17 +183,20 @@ final class FaceScanHistoryStore {
     private func loadFromDisk() {
         if let data = UserDefaults.standard.data(forKey: historyKey),
            let items = try? JSONDecoder().decode([FaceScanResult].self, from: data) {
-            history = items
-                .map { FaceScanImageStore.reconcileMediaMetadata(for: $0) }
-                .sorted { $0.createdAt > $1.createdAt }
+            history = FaceWellnessScore.reconcileStoredScores(
+                items
+                    .map { FaceScanImageStore.reconcileMediaMetadata(for: $0) }
+                    .sorted { $0.createdAt > $1.createdAt }
+            )
             latestResult = history.first
+            persist()
             return
         }
         if let data = UserDefaults.standard.data(forKey: latestKey),
            let result = try? JSONDecoder().decode(FaceScanResult.self, from: data) {
             let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
-            latestResult = reconciled
-            history = [reconciled]
+            history = FaceWellnessScore.reconcileStoredScores([reconciled])
+            latestResult = history.first
             return
         }
         latestResult = nil

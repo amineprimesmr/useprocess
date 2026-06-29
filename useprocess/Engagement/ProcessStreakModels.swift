@@ -41,7 +41,6 @@ struct ProcessStreakSnapshot: Equatable {
     let totalCompletedDays: Int
     let isTodayComplete: Bool
     let todayProgress: Double
-    let week: [ProcessStreakDaySnapshot]
     let calendarWeek: [ProcessStreakDaySnapshot]
     let month: [ProcessStreakDaySnapshot]
     let nextMilestone: ProcessStreakMilestone?

@@ -1,4 +1,3 @@
-import ARKit
 import AVFoundation
 import CoreVideo
 
@@ -13,6 +12,8 @@ final class FaceScanVideoRecorder {
     private var lastSampledTargetIndex = -1
     private var writtenFrameCount = -1
     private let queue = DispatchQueue(label: "process.facescan.video", qos: .userInitiated)
+    private let pendingLock = NSLock()
+    private var appendPending = false
     /// 24 fps — fluide à l’œil tout en restant léger pour le stockage local.
     private let targetFPS: Double = 24
 
@@ -28,9 +29,22 @@ final class FaceScanVideoRecorder {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func append(frame: ARFrame) {
+    func append(pixelBuffer: CVPixelBuffer, timestamp: TimeInterval) {
+        pendingLock.lock()
+        guard !appendPending else {
+            pendingLock.unlock()
+            return
+        }
+        appendPending = true
+        pendingLock.unlock()
+
         queue.async { [weak self] in
-            self?.appendLocked(frame: frame)
+            defer {
+                self?.pendingLock.lock()
+                self?.appendPending = false
+                self?.pendingLock.unlock()
+            }
+            self?.appendLocked(pixelBuffer: pixelBuffer, timestamp: timestamp)
         }
     }
 
@@ -54,8 +68,7 @@ final class FaceScanVideoRecorder {
 
     // MARK: - Private
 
-    private func appendLocked(frame: ARFrame) {
-        let pixelBuffer = frame.capturedImage
+    private func appendLocked(pixelBuffer: CVPixelBuffer, timestamp: TimeInterval) {
         if assetWriter == nil {
             guard let url = outputURL else { return }
             guard startWriter(at: url, pixelBuffer: pixelBuffer) else { return }
@@ -66,26 +79,34 @@ final class FaceScanVideoRecorder {
         guard input.isReadyForMoreMediaData else { return }
 
         if firstTimestamp == nil {
-            firstTimestamp = frame.timestamp
+            firstTimestamp = timestamp
             writer.startSession(atSourceTime: .zero)
             sessionStarted = true
         }
 
         guard sessionStarted else { return }
 
-        let elapsed = frame.timestamp - (firstTimestamp ?? frame.timestamp)
+        let elapsed = timestamp - (firstTimestamp ?? timestamp)
         let targetFrameIndex = Int(elapsed * targetFPS)
         guard targetFrameIndex > lastSampledTargetIndex else { return }
 
         writtenFrameCount += 1
         lastSampledTargetIndex = targetFrameIndex
         let presentationTime = CMTime(value: CMTimeValue(writtenFrameCount), timescale: CMTimeScale(targetFPS))
-        adaptor.append(pixelBuffer, withPresentationTime: presentationTime)
+        guard adaptor.append(pixelBuffer, withPresentationTime: presentationTime) else {
+            assetWriter?.cancelWriting()
+            if let outputURL {
+                try? FileManager.default.removeItem(at: outputURL)
+            }
+            cleanup()
+            return
+        }
     }
 
     private func startWriter(at url: URL, pixelBuffer: CVPixelBuffer) -> Bool {
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
+        guard width > 0, height > 0 else { return false }
 
         do {
             let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)

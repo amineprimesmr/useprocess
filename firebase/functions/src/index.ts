@@ -2,39 +2,28 @@ import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import Anthropic from "@anthropic-ai/sdk";
+import {
+  httpStatusForError,
+  maxTokensForTask,
+  normalizeModel,
+  validateCoachBody,
+  type CoachCompleteBody,
+  type CoachStreamBody,
+  type CoachTask,
+} from "./coachValidation";
 
 admin.initializeApp();
 
 const anthropicApiKey = defineSecret("ANTHROPIC_API_KEY");
-
-type CoachTask =
-  | "chat"
-  | "dailyBrief"
-  | "readinessAnalysis"
-  | "bodyScanVision"
-  | "faceScanVision"
-  | "bodyScanReport"
-  | "programSummary"
-  | "tool";
-
-interface CoachCompleteBody {
-  task: CoachTask;
-  model: string;
-  system: string;
-  userText: string;
-  history?: Array<{ role: "user" | "assistant"; text: string }>;
-  imageBase64?: string;
-  maxTokens?: number;
-}
-
-interface CoachStreamBody extends CoachCompleteBody {
-  stream?: boolean;
-}
+const enforceAppCheck = process.env.ENFORCE_APP_CHECK === "true";
 
 function setCors(res: any) {
   res.set("Access-Control-Allow-Origin", "*");
   res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Firebase-AppCheck"
+  );
 }
 
 async function verifyFirebaseUser(req: any): Promise<string> {
@@ -47,25 +36,19 @@ async function verifyFirebaseUser(req: any): Promise<string> {
   return decoded.uid;
 }
 
-function normalizeModel(model: string): string {
-  switch (model) {
-    case "claude-sonnet-4-20250514":
-    case "claude-3-7-sonnet-20250219":
-    case "claude-3-5-sonnet-20240620":
-    case "claude-3-5-sonnet-20241022":
-    case "claude-sonnet-4-5-20250929":
-      return "claude-sonnet-4-6";
-    case "claude-opus-4-20250514":
-    case "claude-opus-4-1-20250805":
-    case "claude-opus-4-6":
-    case "claude-opus-4-7":
-    case "claude-opus-4-5-20251101":
-      return "claude-opus-4-8";
-    case "claude-3-5-haiku-20241022":
-    case "claude-3-haiku-20240307":
-      return "claude-haiku-4-5-20251001";
-    default:
-      return model;
+async function verifyAppAttestation(req: any): Promise<void> {
+  const token = req.header("X-Firebase-AppCheck") as string | undefined;
+  if (!token) {
+    if (enforceAppCheck) throw new Error("INVALID_APP_CHECK");
+    console.warn("[AppCheck] Missing token (monitoring mode)");
+    return;
+  }
+
+  try {
+    await admin.appCheck().verifyToken(token);
+  } catch (error) {
+    if (enforceAppCheck) throw new Error("INVALID_APP_CHECK");
+    console.warn("[AppCheck] Invalid token (monitoring mode)", error);
   }
 }
 
@@ -104,24 +87,6 @@ function buildMessages(body: CoachCompleteBody): Anthropic.MessageParam[] {
   ];
 }
 
-function maxTokensForTask(task: CoachTask, requested?: number): number {
-  if (requested && requested > 0) return Math.min(requested, 4096);
-  switch (task) {
-    case "dailyBrief":
-    case "readinessAnalysis":
-      return 400;
-    case "bodyScanVision":
-    case "faceScanVision":
-      return 450;
-    case "programSummary":
-      return 800;
-    case "bodyScanReport":
-      return 1600;
-    default:
-      return 1200;
-  }
-}
-
 async function sleep(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -157,48 +122,55 @@ async function withAnthropicRetry<T>(
   throw lastError;
 }
 
-async function deleteFirestoreCollection(
-  col: admin.firestore.CollectionReference,
-  batchSize = 100
-): Promise<void> {
-  const snapshot = await col.limit(batchSize).get();
-  if (snapshot.empty) {
-    return;
-  }
+async function enforceCoachRateLimit(uid: string): Promise<void> {
+  const db = admin.firestore();
+  const ref = db
+    .collection("users")
+    .doc(uid)
+    .collection("coachMeta")
+    .doc("rateLimit");
+  const now = Date.now();
+  const day = new Date(now).toISOString().slice(0, 10);
 
-  const batch = admin.firestore().batch();
-  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-  await batch.commit();
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const data = snapshot.data();
+    const count = data?.day === day ? Number(data?.count ?? 0) : 0;
+    const lastCallAt = data?.lastCallAt?.toMillis?.() ?? 0;
 
-  if (snapshot.size >= batchSize) {
-    await deleteFirestoreCollection(col, batchSize);
-  }
+    if (count >= 500 || now - lastCallAt < 750) {
+      throw new Error("RATE_LIMITED");
+    }
+
+    transaction.set(
+      ref,
+      {
+        day,
+        count: count + 1,
+        lastCallAt: admin.firestore.Timestamp.fromMillis(now),
+      },
+      { merge: true }
+    );
+  });
 }
 
 async function deleteAllUserFirestoreData(uid: string): Promise<void> {
   const db = admin.firestore();
   const userRef = db.collection("users").doc(uid);
 
-  const directSubcollections = [
-    "faceScans",
-    "scans",
-    "healthDaily",
-    "healthBaselines",
-    "welcomePlan",
-    "coachMeta",
-  ];
+  // Supprime le document et toutes ses sous-collections, y compris celles
+  // qui seront ajoutées plus tard au modèle de données.
+  await db.recursiveDelete(userRef);
 
-  for (const name of directSubcollections) {
-    await deleteFirestoreCollection(userRef.collection(name));
+  const usernames = await db
+    .collection("usernames")
+    .where("userId", "==", uid)
+    .get();
+  if (!usernames.empty) {
+    const batch = db.batch();
+    usernames.docs.forEach((document) => batch.delete(document.ref));
+    await batch.commit();
   }
-
-  const coachThreads = await userRef.collection("coachThreads").get();
-  for (const thread of coachThreads.docs) {
-    await deleteFirestoreCollection(thread.ref.collection("messages"));
-    await thread.ref.delete();
-  }
-
-  await userRef.delete();
 }
 
 export const deleteUserAccount = onRequest(
@@ -221,6 +193,11 @@ export const deleteUserAccount = onRequest(
 
     try {
       const uid = await verifyFirebaseUser(req);
+      await verifyAppAttestation(req);
+
+      // Les données sont effacées avant l'identité : aucune réponse positive
+      // n'est envoyée si le nettoyage des données personnelles échoue.
+      await deleteAllUserFirestoreData(uid);
 
       try {
         await admin.auth().deleteUser(uid);
@@ -230,13 +207,7 @@ export const deleteUserAccount = onRequest(
         }
       }
 
-      try {
-        await deleteAllUserFirestoreData(uid);
-      } catch (firestoreError) {
-        console.warn("[deleteUserAccount] Firestore cleanup failed", uid, firestoreError);
-      }
-
-      console.info("[deleteUserAccount] Deleted user", uid);
+      console.info("[deleteUserAccount] Deleted user and data", uid);
       res.status(200).json({ ok: true, uid });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
@@ -268,12 +239,15 @@ export const coachComplete = onRequest(
 
     try {
       const uid = await verifyFirebaseUser(req);
+      await verifyAppAttestation(req);
       const body = req.body as CoachCompleteBody;
 
-      if (!body?.system || !body?.userText || !body?.model) {
-        res.status(400).json({ error: "Missing system, userText or model" });
+      const validationError = validateCoachBody(body);
+      if (validationError) {
+        res.status(400).json({ error: validationError });
         return;
       }
+      await enforceCoachRateLimit(uid);
 
       const client = new Anthropic({ apiKey: anthropicApiKey.value() });
       const model = normalizeModel(body.model);
@@ -310,7 +284,7 @@ export const coachComplete = onRequest(
       res.status(200).json({ text, model, uid });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
-      const status = message === "UNAUTHORIZED" ? 401 : 500;
+      const status = httpStatusForError(message);
       console.error("[coachComplete]", message);
       res.status(status).json({ error: message });
     }
@@ -338,12 +312,15 @@ export const coachStream = onRequest(
 
     try {
       const uid = await verifyFirebaseUser(req);
+      await verifyAppAttestation(req);
       const body = req.body as CoachStreamBody;
 
-      if (!body?.system || !body?.userText || !body?.model) {
-        res.status(400).json({ error: "Missing system, userText or model" });
+      const validationError = validateCoachBody(body);
+      if (validationError) {
+        res.status(400).json({ error: validationError });
         return;
       }
+      await enforceCoachRateLimit(uid);
 
       res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache, no-transform");
@@ -427,7 +404,7 @@ export const coachStream = onRequest(
       const message = error?.message ?? "Unknown error";
       console.error("[coachStream]", message);
       if (!res.headersSent) {
-        res.status(message === "UNAUTHORIZED" ? 401 : 500).json({ error: message });
+        res.status(httpStatusForError(message)).json({ error: message });
       } else {
         res.write(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`);
         res.end();

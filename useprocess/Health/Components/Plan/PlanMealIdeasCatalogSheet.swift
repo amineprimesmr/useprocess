@@ -55,8 +55,6 @@ struct PlanMealIdeasCatalogSheet: View {
         }
         .processAppPageBackground()
         .processAppPresentationBackground()
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
     }
 
     private var catalogHeader: some View {

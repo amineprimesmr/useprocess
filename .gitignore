@@ -5,6 +5,8 @@
 **/RevenueCatSecrets.plist
 .secrets/
 firebase/functions/node_modules/
+.DS_Store
+**/.DS_Store
 
 # Xcode
 DerivedData/

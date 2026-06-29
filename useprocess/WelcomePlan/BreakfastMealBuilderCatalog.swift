@@ -231,7 +231,7 @@ enum BreakfastMealBuilderCatalog {
             quantity: "2",
             role: "Protéine",
             layer: "breakfast_layer_eggs_2",
-            preview: "breakfast_card_eggs_2",
+            preview: "breakfast_layer_eggs_2",
             calories: 140,
             placement: .init(x: 0.52, y: 0.48, scale: 0.88, zIndex: 3)
         ),
@@ -244,7 +244,7 @@ enum BreakfastMealBuilderCatalog {
             quantity: "3",
             role: "Protéine",
             layer: "breakfast_layer_eggs_3",
-            preview: "breakfast_card_eggs_3",
+            preview: "breakfast_layer_eggs_3",
             calories: 210,
             placement: .init(x: 0.52, y: 0.48, scale: 0.92, zIndex: 3)
         ),

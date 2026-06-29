@@ -4,6 +4,11 @@ import SwiftUI
 struct BodyScanCameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
     var mirrorFrontCamera: Bool = true
+    var isSessionRunning: Bool = false
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(mirrorFrontCamera: mirrorFrontCamera)
+    }
 
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
@@ -14,8 +19,20 @@ struct BodyScanCameraPreview: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: PreviewView, context: Context) {
+        context.coordinator.mirrorFrontCamera = mirrorFrontCamera
         uiView.previewLayer.session = session
         uiView.configureConnection(mirror: mirrorFrontCamera)
+        if isSessionRunning {
+            uiView.setNeedsLayout()
+        }
+    }
+
+    final class Coordinator {
+        var mirrorFrontCamera: Bool
+
+        init(mirrorFrontCamera: Bool) {
+            self.mirrorFrontCamera = mirrorFrontCamera
+        }
     }
 
     final class PreviewView: UIView {
@@ -28,7 +45,6 @@ struct BodyScanCameraPreview: UIViewRepresentable {
         override func layoutSubviews() {
             super.layoutSubviews()
             previewLayer.frame = bounds
-            configureConnection(mirror: true)
         }
 
         func configureConnection(mirror: Bool) {
@@ -40,6 +56,7 @@ struct BodyScanCameraPreview: UIViewRepresentable {
                 connection.automaticallyAdjustsVideoMirroring = false
                 connection.isVideoMirrored = mirror
             }
+            connection.isEnabled = true
         }
     }
 }

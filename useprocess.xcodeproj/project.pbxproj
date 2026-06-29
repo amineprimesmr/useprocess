@@ -11,6 +11,7 @@
 		67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C62FD90001006422D /* FirebaseAuth */; };
 		67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C72FD90001006422D /* FirebaseFirestore */; };
 		67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = RC1A2B3C52FD90001006422D /* RevenueCat */; };
+		67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C82FD90001006422D /* FirebaseAppCheck */; };
 		LT1A2B3C62FD90001006422D /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = LT1A2B3C52FD90001006422D /* Lottie */; };
 /* End PBXBuildFile section */
 
@@ -32,6 +33,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */,
+				67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */,
 				67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */,
 				67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */,
 				LT1A2B3C62FD90001006422D /* Lottie in Frameworks */,
@@ -81,6 +83,7 @@
 				F1A2B3C52FD90001006422D /* FirebaseCore */,
 				F1A2B3C62FD90001006422D /* FirebaseAuth */,
 				F1A2B3C72FD90001006422D /* FirebaseFirestore */,
+				F1A2B3C82FD90001006422D /* FirebaseAppCheck */,
 				RC1A2B3C52FD90001006422D /* RevenueCat */,
 				LT1A2B3C52FD90001006422D /* Lottie */,
 			);
@@ -306,7 +309,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.01;
 				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -360,7 +363,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.01;
 				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -405,7 +408,7 @@
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 11.0.0;
+				minimumVersion = 12.0.0;
 			};
 		};
 		LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
@@ -441,6 +444,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		F1A2B3C82FD90001006422D /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
 		};
 		LT1A2B3C52FD90001006422D /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;

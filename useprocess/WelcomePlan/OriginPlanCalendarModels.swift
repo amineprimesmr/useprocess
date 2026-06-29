@@ -286,7 +286,6 @@ struct OriginLifestyleExtras: Codable, Equatable {
             bonusProposals: [
                 ProcessContinuousHabits.masticationDetail,
                 ProcessContinuousHabits.mewingDetail,
-                ProcessContinuousHabits.deglutitionDetail,
                 "Chambre fraîche (\(ProcessDailyTargets.bedroomTempCelsius) °C) + obscurité totale"
             ]
         )

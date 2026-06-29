@@ -297,7 +297,11 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var embeddedProgressBar: some View {
-        VStack(spacing: 6) {
+        let safeProgress = scanProgress.isFinite
+            ? min(1, max(0, scanProgress))
+            : 0
+
+        return VStack(spacing: 6) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -310,13 +314,13 @@ struct FaceScanCaptureScreen: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: max(8, geo.size.width * scanProgress))
-                        .animation(.easeInOut(duration: 0.3), value: scanProgress)
+                        .frame(width: max(8, geo.size.width * safeProgress))
+                        .animation(.easeInOut(duration: 0.3), value: safeProgress)
                 }
             }
             .frame(height: 5)
 
-            Text("\(Int(scanProgress * 100)) %")
+            Text("\(Int(safeProgress * 100)) %")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(appTheme.secondaryText)
                 .monospacedDigit()

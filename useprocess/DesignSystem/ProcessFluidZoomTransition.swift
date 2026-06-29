@@ -4,9 +4,14 @@ import SwiftUI
 enum ProcessZoomTransitionID: Hashable {
     case coach
     case faceScanHistory
-    case streak
+    case faceScanDetail(String)
     case mealDetail(MealTimeSlot)
+    case mealCatalog
     case trainingDay
+    case postureCircuit
+    case protocolItem(String)
+    case homeLayoutEditor
+    case streakSheet
     case planResource(PlanResourceSheet)
 
     var sourceID: String {
@@ -15,12 +20,22 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_COACH"
         case .faceScanHistory:
             return "PROCESS_FACE_SCAN_HISTORY"
-        case .streak:
-            return "PROCESS_STREAK"
+        case .faceScanDetail(let scanID):
+            return "PROCESS_FACE_SCAN_DETAIL_\(scanID)"
         case .mealDetail(let slot):
             return "PROCESS_MEAL_DETAIL_\(slot.rawValue)"
+        case .mealCatalog:
+            return "PROCESS_MEAL_CATALOG"
         case .trainingDay:
             return "PROCESS_TRAINING_DAY"
+        case .postureCircuit:
+            return "PROCESS_POSTURE_CIRCUIT"
+        case .protocolItem(let itemID):
+            return "PROCESS_PROTOCOL_ITEM_\(itemID)"
+        case .homeLayoutEditor:
+            return "PROCESS_HOME_LAYOUT_EDITOR"
+        case .streakSheet:
+            return "PROCESS_STREAK_SHEET"
         case .planResource(let sheet):
             return "PROCESS_PLAN_RESOURCE_\(sheet.id)"
         }
@@ -90,6 +105,15 @@ extension View {
     @ViewBuilder
     func processZoomSource(id: ProcessZoomTransitionID, namespace: Namespace.ID?) -> some View {
         if let namespace {
+            processZoomSource(id: id, namespace: namespace)
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func processZoomSource(id: ProcessZoomTransitionID?, namespace: Namespace.ID?) -> some View {
+        if let id, let namespace {
             processZoomSource(id: id, namespace: namespace)
         } else {
             self

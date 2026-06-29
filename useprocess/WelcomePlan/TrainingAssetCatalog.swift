@@ -163,6 +163,9 @@ enum TrainingAssetCatalog {
         if key.contains("face pull") {
             return assetIfAvailable(Names.exerciseFacePulls)
         }
+        if let routine = RoutineAssetCatalog.asset(forRoutineLine: line) {
+            return routine
+        }
         if key.contains("respiration") || key.contains("nasale") {
             return nil
         }

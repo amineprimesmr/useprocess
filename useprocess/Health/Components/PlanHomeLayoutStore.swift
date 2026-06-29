@@ -39,6 +39,18 @@ final class PlanHomeLayoutStore {
         hiddenSectionIDs = Set(payload.hidden.filter { PlanHomeSectionKind(rawValue: $0) != nil })
     }
 
+    func moveSection(_ section: PlanHomeSectionKind, before target: PlanHomeSectionKind) {
+        guard section != target else { return }
+        let ordered = orderedSections
+        guard let from = ordered.firstIndex(of: section),
+              let to = ordered.firstIndex(of: target),
+              from != to else { return }
+        moveSections(
+            fromOffsets: IndexSet(integer: from),
+            toOffset: to > from ? to + 1 : to
+        )
+    }
+
     func moveSections(fromOffsets source: IndexSet, toOffset destination: Int) {
         var sections = orderedSections
         guard !source.isEmpty else { return }

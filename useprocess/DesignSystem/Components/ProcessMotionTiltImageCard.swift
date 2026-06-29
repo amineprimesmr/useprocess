@@ -53,11 +53,21 @@ final class ProcessDeviceMotionTiltModel: ObservableObject {
     @Published var isEngaged = false
 
     private let motionManager = CMMotionManager()
-    private let maxTiltDegrees: Double = 13
-    private let maxParallax: CGFloat = 9
-    private let tiltGain: Double = 2.4
+    private let maxTiltDegrees: Double
+    private let maxParallax: CGFloat
+    private let tiltGain: Double
     private let smoothing: Double = 0.16
     private var isRunning = false
+
+    init(
+        maxTiltDegrees: Double = 13,
+        maxParallax: CGFloat = 9,
+        tiltGain: Double = 2.4
+    ) {
+        self.maxTiltDegrees = maxTiltDegrees
+        self.maxParallax = maxParallax
+        self.tiltGain = tiltGain
+    }
 
     func start() {
         guard !isRunning, motionManager.isDeviceMotionAvailable else { return }

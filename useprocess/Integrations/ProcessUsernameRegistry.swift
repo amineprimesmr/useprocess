@@ -1,5 +1,4 @@
 import FirebaseAuth
-import FirebaseCore
 import FirebaseFirestore
 import Foundation
 
@@ -13,9 +12,7 @@ final class ProcessUsernameRegistry {
     private init() {}
 
     private var isCloudReady: Bool {
-        FirebaseBootstrap.configure()
-        return AppConfiguration.firebaseConfigured
-            && FirebaseApp.app() != nil
+        FirebaseBootstrap.isConfigured
             && Auth.auth().currentUser != nil
     }
 
@@ -139,13 +136,22 @@ final class ProcessUsernameRegistry {
     }
 }
 
+@MainActor
 enum ProcessUsernameProvisioner {
-    @MainActor
+    private static var lastAttemptByUserID: [String: Date] = [:]
+    private static let retryInterval: TimeInterval = 60
+
     static func ensureUsernameClaimed(
         profile: UnifiedUserProfile,
         profileService: UnifiedProfileService
     ) async {
         guard profile.userId != "local-user", profile.userId != "anonymous" else { return }
+        let now = Date()
+        if let lastAttempt = lastAttemptByUserID[profile.userId],
+           now.timeIntervalSince(lastAttempt) < retryInterval {
+            return
+        }
+        lastAttemptByUserID[profile.userId] = now
 
         let current = profile.username.map(ProcessUsernameTag.normalize) ?? ""
         let displayName = profile.firstName.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -5,7 +5,7 @@ struct PlanMealDetailView: View {
     let entry: PlanDayMealEntry
     let plan: FaceOriginPlan
     let day: OriginProgramDay
-    var isEditable: Bool
+    var isEditable: Bool = true
     var onDismiss: () -> Void
 
     @Environment(\.appTheme) private var theme
@@ -22,8 +22,11 @@ struct PlanMealDetailView: View {
         )
     }
 
-    private var preparationSteps: [String] {
-        MealPreparationStepsParser.steps(from: meal.prepSummary)
+    private var preparationPresentation: MealPreparationPresentation {
+        MealPreparationStepsParser.presentation(
+            from: meal.prepSummary,
+            prepMinutes: meal.prepMinutes
+        )
     }
 
     var body: some View {
@@ -45,7 +48,7 @@ struct PlanMealDetailView: View {
 
                     ingredientsSection
 
-                    if !preparationSteps.isEmpty {
+                    if preparationPresentation.hasContent {
                         preparationSection
                     }
 
@@ -130,13 +133,7 @@ struct PlanMealDetailView: View {
 
             VStack(spacing: 8) {
                 ForEach(meal.items) { item in
-                    MealSuggestionItemRow(
-                        item: item,
-                        theme: theme,
-                        isExpanded: true,
-                        isEditable: false,
-                        onTap: {}
-                    )
+                    ingredientRow(item)
                 }
             }
         }
@@ -145,28 +142,62 @@ struct PlanMealDetailView: View {
         .background(mealSurfaceCard)
     }
 
+    private func ingredientRow(_ item: MealSuggestionItem) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: item.roleIcon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(theme.onboardingAccent)
+                .frame(width: 22)
+
+            Text(item.ingredientDisplayLine)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(theme.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(theme.cardBackground.opacity(0.45))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
     private var preparationSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Préparation", systemImage: "list.number")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
+            HStack(spacing: 6) {
+                Label("Préparation", systemImage: "list.number")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(theme.secondaryText)
 
-            VStack(spacing: 12) {
-                ForEach(Array(preparationSteps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 12) {
-                        Text("\(index + 1)")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(theme.inverseText)
-                            .frame(width: 26, height: 26)
-                            .background(Circle().fill(theme.onboardingAccent))
+                if let minutes = preparationPresentation.estimatedMinutes {
+                    Text("~\(minutes) min")
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryText)
+                }
+            }
 
-                        Text(step)
-                            .font(.subheadline)
-                            .foregroundStyle(theme.primaryText)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
+            if !preparationPresentation.steps.isEmpty {
+                VStack(spacing: 12) {
+                    ForEach(preparationPresentation.steps) { step in
+                        HStack(alignment: .top, spacing: 12) {
+                            Text("\(step.index)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(theme.inverseText)
+                                .frame(width: 26, height: 26)
+                                .background(Circle().fill(theme.onboardingAccent))
+
+                            Text(step.text)
+                                .font(.subheadline)
+                                .foregroundStyle(theme.primaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
+            } else if let prose = preparationPresentation.proseFallback {
+                Text(prose)
+                    .font(.subheadline)
+                    .foregroundStyle(theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(16)
@@ -215,7 +246,7 @@ struct PlanMealDetailView: View {
     }
 
     private func scheduleCard(target: String, window: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             Label("Horaire debloat", systemImage: "clock.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
@@ -236,6 +267,25 @@ struct PlanMealDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(theme.primaryText.opacity(0.9))
                     .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "fork.knife")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(theme.onboardingAccent)
+                    .frame(width: 24, height: 24)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(ProcessContinuousHabits.masticationTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(theme.primaryText)
+                    Text(ProcessContinuousHabits.masticationDetail)
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
             }
         }
         .padding(16)

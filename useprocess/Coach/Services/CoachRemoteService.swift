@@ -1,6 +1,5 @@
 import Foundation
 import FirebaseAuth
-import FirebaseCore
 
 enum CoachRemoteTask: String, Codable, Sendable {
     case chat
@@ -119,6 +118,7 @@ enum CoachRemoteService {
         request.timeoutInterval = 120
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        await applyAppCheckHeader(to: &request)
 
         var payload: [String: Any] = [
             "task": task.rawValue,
@@ -195,6 +195,7 @@ enum CoachRemoteService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        await applyAppCheckHeader(to: &request)
 
         let payload: [String: Any] = [
             "task": CoachRemoteTask.chat.rawValue,
@@ -267,12 +268,15 @@ enum CoachRemoteService {
     }
 
     private static func idToken() async throws -> String {
-        FirebaseBootstrap.configure()
-        guard AppConfiguration.firebaseConfigured,
-              FirebaseApp.app() != nil,
+        guard FirebaseBootstrap.isConfigured,
               let user = Auth.auth().currentUser else {
             throw CoachRemoteError.notAuthenticated
         }
         return try await user.getIDToken()
+    }
+
+    private static func applyAppCheckHeader(to request: inout URLRequest) async {
+        guard let token = try? await FirebaseAppAttestation.token() else { return }
+        request.setValue(token, forHTTPHeaderField: "X-Firebase-AppCheck")
     }
 }

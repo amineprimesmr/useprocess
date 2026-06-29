@@ -5,6 +5,7 @@ import SwiftUI
 struct PlanProtocolCarouselItem: Identifiable, Equatable {
     let id: String
     let title: String
+    var subtitle: String? = nil
     let repBadge: String?
     /// Texte complet — affiché uniquement au tap sur la carte.
     let detailText: String
@@ -42,6 +43,46 @@ enum PlanProtocolLineParser {
 }
 
 enum PlanProtocolCarouselBuilder {
+    enum SummaryID {
+        static let trainingSession = "training-session-summary"
+        static let postureCircuit = "posture-circuit-summary"
+    }
+
+    static func trainingSessionSummary(from training: OriginDayTraining) -> PlanProtocolCarouselItem {
+        let entry = TrainingSessionCatalog.entry(for: training)
+        let badge = training.durationMinutes > 0 ? "\(training.durationMinutes) min" : nil
+        let musclePreview = entry.muscleTags.prefix(3).joined(separator: " · ")
+
+        return PlanProtocolCarouselItem(
+            id: SummaryID.trainingSession,
+            title: entry.sessionName,
+            subtitle: musclePreview.isEmpty ? nil : musclePreview.uppercased(),
+            repBadge: badge,
+            detailText: musclePreview,
+            assetName: entry.imageAssetName,
+            fallbackSystemImage: "figure.strengthtraining.traditional"
+        )
+    }
+
+    static func postureCircuitSummary(from plan: FaceOriginPlan) -> PlanProtocolCarouselItem {
+        PlanProtocolCarouselItem(
+            id: SummaryID.postureCircuit,
+            title: "Circuit posture",
+            subtitle: "MOBILITÉ · RESPIRATION",
+            repBadge: "~10 min",
+            detailText: "Mobilité · respiration · marche",
+            assetName: "session_posture",
+            fallbackSystemImage: "figure.mind.and.body"
+        )
+    }
+
+    static func trainingDaySummaryItems(
+        training: OriginDayTraining,
+        plan: FaceOriginPlan
+    ) -> [PlanProtocolCarouselItem] {
+        [trainingSessionSummary(from: training), postureCircuitSummary(from: plan)]
+    }
+
     static func trainingItems(from training: OriginDayTraining) -> [PlanProtocolCarouselItem] {
         var items: [PlanProtocolCarouselItem] = []
 
@@ -81,11 +122,12 @@ enum PlanProtocolCarouselBuilder {
         }
     }
 
-    private static func lineItem(
+    static func lineItem(
         _ line: String,
         id: String,
         fallback: String,
-        category: String? = nil
+        category: String? = nil,
+        assetName: String? = nil
     ) -> PlanProtocolCarouselItem {
         let parts = PlanProtocolLineParser.splitTitleAndDetail(line)
         let badge = PlanProtocolLineParser.repBadge(from: line)
@@ -105,7 +147,7 @@ enum PlanProtocolCarouselBuilder {
             title: parts.title,
             repBadge: badge,
             detailText: detailText,
-            assetName: TrainingAssetCatalog.blockAsset(for: line),
+            assetName: assetName ?? TrainingAssetCatalog.blockAsset(for: line),
             fallbackSystemImage: fallback
         )
     }
@@ -141,61 +183,182 @@ enum PlanProtocolCarouselLayout {
     static let cardHeight: CGFloat = 272
     static let cornerRadius: CGFloat = 22
     static let spacing: CGFloat = 12
+
+    private static var widthToHeightRatio: CGFloat { cardWidth / cardHeight }
+
+    /// Largeur utile des carousels Accueil (padding scroll 16 pt de chaque côté).
+    static var homeCarouselContentWidth: CGFloat {
+        UIScreen.main.bounds.width - 2 * PlanHomeSectionDesign.homeScrollPadding
+    }
+
+    static func fittedCardSize(itemCount: Int, containerWidth: CGFloat) -> CGSize {
+        let count = max(1, itemCount)
+        let totalSpacing = spacing * CGFloat(count - 1)
+        let width = (containerWidth - totalSpacing) / CGFloat(count)
+        let height = width / widthToHeightRatio
+        return CGSize(width: width, height: height)
+    }
 }
 
 // MARK: - Carousel
 
 struct PlanDayProtocolCarousel: View {
     let items: [PlanProtocolCarouselItem]
+    /// Deux cartes côte à côte qui remplissent la largeur (section entraînement).
+    var fillsAvailableWidth: Bool = false
+    var zoomNamespace: Namespace.ID? = nil
+    var zoomIDForItem: ((PlanProtocolCarouselItem) -> ProcessZoomTransitionID)? = nil
     var onTap: ((PlanProtocolCarouselItem) -> Void)? = nil
+    /// Maintien 5 s pour valider une routine du jour (journal éditable).
+    var routineDayId: String? = nil
+    var isRoutineItemCompleted: ((PlanProtocolCarouselItem) -> Bool)? = nil
+    var onRoutineValidate: ((PlanProtocolCarouselItem) -> Void)? = nil
+
+    private var routineValidationEnabled: Bool {
+        routineDayId != nil && onRoutineValidate != nil
+    }
+
+    private var defaultCardSize: CGSize {
+        CGSize(
+            width: PlanProtocolCarouselLayout.cardWidth,
+            height: PlanProtocolCarouselLayout.cardHeight
+        )
+    }
+
+    private var pairedRowEstimatedHeight: CGFloat {
+        let size = PlanProtocolCarouselLayout.fittedCardSize(
+            itemCount: max(items.count, 1),
+            containerWidth: PlanProtocolCarouselLayout.homeCarouselContentWidth
+        )
+        return size.height + 8
+    }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: PlanProtocolCarouselLayout.spacing) {
-                ForEach(items) { item in
-                    PlanProtocolCarouselCard(
-                        item: item,
-                        onTap: onTap.map { handler in { handler(item) } }
+        Group {
+            if fillsAvailableWidth {
+                GeometryReader { geo in
+                    let size = PlanProtocolCarouselLayout.fittedCardSize(
+                        itemCount: max(items.count, 1),
+                        containerWidth: geo.size.width
                     )
-                    .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                        content
-                            .scaleEffect(phase.isIdentity ? 1 : 0.92)
-                            .opacity(phase.isIdentity ? 1 : 0.76)
+
+                    HStack(spacing: PlanProtocolCarouselLayout.spacing) {
+                        ForEach(items) { item in
+                            PlanProtocolCarouselCard(
+                                item: item,
+                                cardWidth: size.width,
+                                cardHeight: size.height,
+                                layoutStyle: .paired,
+                                zoomNamespace: zoomNamespace,
+                                zoomTransitionID: zoomIDForItem?(item),
+                                onTap: onTap.map { handler in { handler(item) } },
+                                routineValidationEnabled: routineValidationEnabled,
+                                isRoutineCompleted: isRoutineItemCompleted?(item) ?? false,
+                                onRoutineValidate: onRoutineValidate.map { handler in { handler(item) } }
+                            )
+                        }
                     }
+                    .frame(width: geo.size.width, height: size.height, alignment: .leading)
                 }
+                .frame(height: pairedRowEstimatedHeight)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: PlanProtocolCarouselLayout.spacing) {
+                        ForEach(items) { item in
+                            PlanProtocolCarouselCard(
+                                item: item,
+                                cardWidth: defaultCardSize.width,
+                                cardHeight: defaultCardSize.height,
+                                layoutStyle: .carousel,
+                                zoomNamespace: zoomNamespace,
+                                zoomTransitionID: zoomIDForItem?(item),
+                                onTap: onTap.map { handler in { handler(item) } },
+                                routineValidationEnabled: routineValidationEnabled,
+                                isRoutineCompleted: isRoutineItemCompleted?(item) ?? false,
+                                onRoutineValidate: onRoutineValidate.map { handler in { handler(item) } }
+                            )
+                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                                content
+                                    .scaleEffect(phase.isIdentity ? 1 : 0.92)
+                                    .opacity(phase.isIdentity ? 1 : 0.76)
+                            }
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .padding(.vertical, 4)
+                }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollClipDisabled()
+                .frame(height: defaultCardSize.height + 8)
             }
-            .scrollTargetLayout()
-            .padding(.vertical, 4)
         }
-        .scrollTargetBehavior(.viewAligned)
-        .scrollClipDisabled()
+        .padding(.vertical, 4)
     }
 }
 
 // MARK: - Carte
 
+enum PlanProtocolCarouselCardLayoutStyle {
+    /// Carousel horizontal scrollable (routine matinale…).
+    case carousel
+    /// Deux cartes fixes côte à côte (entraînement du jour).
+    case paired
+}
+
 struct PlanProtocolCarouselCard: View {
     let item: PlanProtocolCarouselItem
+    var cardWidth: CGFloat = PlanProtocolCarouselLayout.cardWidth
+    var cardHeight: CGFloat = PlanProtocolCarouselLayout.cardHeight
+    var layoutStyle: PlanProtocolCarouselCardLayoutStyle = .carousel
+    var zoomNamespace: Namespace.ID? = nil
+    var zoomTransitionID: ProcessZoomTransitionID? = nil
     var onTap: (() -> Void)? = nil
+    var routineValidationEnabled: Bool = false
+    var isRoutineCompleted: Bool = false
+    var onRoutineValidate: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
 
+    private var isLargeCard: Bool {
+        cardWidth > PlanProtocolCarouselLayout.cardWidth + 8
+    }
+
     var body: some View {
         Group {
-            if let onTap {
+            if routineValidationEnabled, let onRoutineValidate {
+                PlanRoutineHoldValidateOverlay(
+                    accent: theme.onboardingAccent,
+                    cornerRadius: PlanProtocolCarouselLayout.cornerRadius,
+                    isCompleted: isRoutineCompleted,
+                    isEnabled: true,
+                    onShortTap: { onTap?() },
+                    onValidate: onRoutineValidate
+                ) {
+                    cardBody
+                }
+            } else if let onTap {
                 Button {
                     HapticManager.shared.impact(.light)
                     onTap()
                 } label: {
                     cardBody
                 }
-                .buttonStyle(PlanTrainingCard3DPressStyle(restTilt: 4))
+                .modifier(PlanProtocolCarouselCardPressStyleModifier(layoutStyle: layoutStyle))
             } else {
                 cardBody
             }
         }
-        .shadow(color: .black.opacity(theme.isDark ? 0.45 : 0.12), radius: 2, y: 2)
-        .shadow(color: .black.opacity(theme.isDark ? 0.38 : 0.14), radius: 12, y: 7)
+        .shadow(
+            color: .black.opacity(theme.isDark ? 0.45 : 0.12),
+            radius: layoutStyle == .paired ? 3 : 2,
+            y: 2
+        )
+        .shadow(
+            color: .black.opacity(theme.isDark ? 0.38 : 0.14),
+            radius: layoutStyle == .paired ? 14 : 12,
+            y: layoutStyle == .paired ? 8 : 7
+        )
+        .processZoomSource(id: zoomTransitionID, namespace: zoomNamespace)
     }
 
     private var cardBody: some View {
@@ -203,12 +366,9 @@ struct PlanProtocolCarouselCard: View {
             previewImage
 
             LinearGradient(
-                colors: [
-                    .black.opacity(0.06),
-                    .clear,
-                    .black.opacity(0.35),
-                    .black.opacity(0.88)
-                ],
+                colors: layoutStyle == .paired
+                    ? [.clear, .black.opacity(0.22), .black.opacity(0.82)]
+                    : [.black.opacity(0.06), .clear, .black.opacity(0.35), .black.opacity(0.88)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -238,57 +398,87 @@ struct PlanProtocolCarouselCard: View {
 
                 Spacer(minLength: 0)
 
-                Text(item.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 14)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(.system(size: isLargeCard ? 16 : 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let subtitle = item.subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.system(size: isLargeCard ? 10 : 9, weight: .semibold))
+                            .foregroundStyle(Color.white.opacity(0.62))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+                .padding(.horizontal, isLargeCard ? 14 : 12)
+                .padding(.bottom, isLargeCard ? 16 : 14)
             }
         }
-        .frame(width: PlanProtocolCarouselLayout.cardWidth, height: PlanProtocolCarouselLayout.cardHeight)
+        .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: PlanProtocolCarouselLayout.cornerRadius, style: .continuous))
         .overlay {
-            PlanTrainingCardReliefOverlay(
-                cornerRadius: PlanProtocolCarouselLayout.cornerRadius,
-                isDark: theme.isDark
-            )
+            if layoutStyle == .carousel {
+                PlanTrainingCardReliefOverlay(
+                    cornerRadius: PlanProtocolCarouselLayout.cornerRadius,
+                    isDark: theme.isDark
+                )
+            } else {
+                RoundedRectangle(cornerRadius: PlanProtocolCarouselLayout.cornerRadius, style: .continuous)
+                    .strokeBorder(Color.white.opacity(theme.isDark ? 0.14 : 0.22), lineWidth: 0.5)
+                    .allowsHitTesting(false)
+            }
         }
     }
 
     @ViewBuilder
     private var previewImage: some View {
-        let size = CGSize(
-            width: PlanProtocolCarouselLayout.cardWidth,
-            height: PlanProtocolCarouselLayout.cardHeight
-        )
+        let size = CGSize(width: cardWidth, height: cardHeight)
 
         Group {
-            if let assetName = item.assetName, ProcessAssetCatalog.contains(assetName) {
+            if let assetName = item.assetName {
                 Image(assetName)
                     .resizable()
                     .scaledToFill()
                     .frame(width: size.width, height: size.height, alignment: .top)
             } else {
-                ZStack {
-                    LinearGradient(
-                        colors: [
-                            theme.coachUserBubble.opacity(theme.isDark ? 0.42 : 0.62),
-                            theme.onboardingAccent.opacity(theme.isDark ? 0.22 : 0.14)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    Image(systemName: item.fallbackSystemImage)
-                        .font(.system(size: 32, weight: .semibold))
-                        .foregroundStyle(theme.onboardingAccent)
-                }
+                fallbackPreview(size: size)
             }
         }
         .frame(width: size.width, height: size.height)
         .clipped()
+    }
+
+    private func fallbackPreview(size: CGSize) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    theme.coachUserBubble.opacity(theme.isDark ? 0.42 : 0.62),
+                    theme.onboardingAccent.opacity(theme.isDark ? 0.22 : 0.14)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Image(systemName: item.fallbackSystemImage)
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundStyle(theme.onboardingAccent)
+        }
+    }
+}
+
+private struct PlanProtocolCarouselCardPressStyleModifier: ViewModifier {
+    let layoutStyle: PlanProtocolCarouselCardLayoutStyle
+
+    func body(content: Content) -> some View {
+        switch layoutStyle {
+        case .carousel:
+            content.buttonStyle(PlanTrainingCard3DPressStyle(restTilt: 4))
+        case .paired:
+            content.buttonStyle(PlanTrainingCardPairedPressStyle())
+        }
     }
 }
 
@@ -308,7 +498,7 @@ struct PlanProtocolItemDetailSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     ZStack(alignment: .bottomLeading) {
                         Group {
-                            if let assetName = item.assetName, ProcessAssetCatalog.contains(assetName) {
+                            if let assetName = item.assetName {
                                 Image(assetName)
                                     .resizable()
                                     .scaledToFill()
@@ -381,8 +571,6 @@ struct PlanProtocolItemDetailSheet: View {
         }
         .processAppPageBackground()
         .processAppPresentationBackground()
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 }
 

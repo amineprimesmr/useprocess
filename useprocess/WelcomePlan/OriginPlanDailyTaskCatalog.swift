@@ -142,7 +142,7 @@ enum OriginPlanDailyTaskCatalog {
     let lower = line.lowercased()
     if lower.contains("soleil") { return targets.morningLightMinutes }
     if lower.contains("massage") { return targets.lymphFaceMassageMinutes }
-    if lower.contains("eau froide") { return 1 }
+    if lower.contains("glacon") || lower.contains("glaçon") || lower.contains("eau froide") { return 1 }
     return nil
   }
 

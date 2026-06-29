@@ -4,7 +4,6 @@ import HealthKit
 import UserNotifications
 import StoreKit
 import FirebaseAuth
-import FirebaseCore
 import AuthenticationServices
 
 // MARK: - Data
@@ -84,8 +83,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
 
     private var firebaseAuthReady: Bool {
-        FirebaseBootstrap.configure()
-        return AppConfiguration.firebaseConfigured && FirebaseApp.app() != nil
+        FirebaseBootstrap.isConfigured
     }
 
     private var currentFirebaseUser: User? {
@@ -261,8 +259,7 @@ final class UnifiedProfileService: ObservableObject {
     private init() {}
 
     private var firebaseAuthReady: Bool {
-        FirebaseBootstrap.configure()
-        return AppConfiguration.firebaseConfigured && FirebaseApp.app() != nil
+        FirebaseBootstrap.isConfigured
     }
 
     private var currentFirebaseUser: User? {

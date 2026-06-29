@@ -64,7 +64,7 @@ struct PlanHomeTopChrome: View {
         .fullScreenCover(isPresented: $showStreakSheet) {
             ProcessStreakSheet(selectedDate: $selectedDate)
                 .environmentObject(profileService)
-                .processZoomTransition(id: .streak, namespace: streakZoomNamespace)
+                .processZoomTransition(id: .streakSheet, namespace: streakZoomNamespace)
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
@@ -190,9 +190,9 @@ struct PlanHomeTopChrome: View {
                 HStack(spacing: GlassClusterMetrics.spacing) {
                     Button(action: openStreak) {
                         streakGlassTile
-                            .processZoomSource(id: .streak, namespace: streakZoomNamespace)
                     }
                     .buttonStyle(.plain)
+                    .processZoomSource(id: .streakSheet, namespace: streakZoomNamespace)
                     .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
                     Button(action: openProfile) {
@@ -207,9 +207,9 @@ struct PlanHomeTopChrome: View {
             HStack(spacing: 10) {
                 Button(action: openStreak) {
                     legacyStreakButton
-                        .processZoomSource(id: .streak, namespace: streakZoomNamespace)
                 }
                 .buttonStyle(.plain)
+                .processZoomSource(id: .streakSheet, namespace: streakZoomNamespace)
                 .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
                 legacyProfileButton

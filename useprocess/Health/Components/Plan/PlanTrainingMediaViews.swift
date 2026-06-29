@@ -264,6 +264,77 @@ struct PlanTrainingCardReliefOverlay: View {
     }
 }
 
+// MARK: - Carte contenu élevée (détail repas, blocs protocole)
+
+struct PlanTrainingSurfaceCard<Content: View>: View {
+    var cornerRadius: CGFloat = 26
+    var contentPadding: CGFloat = 16
+    @ViewBuilder var content: () -> Content
+
+    @Environment(\.appTheme) private var theme
+
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
+
+    var body: some View {
+        content()
+            .padding(contentPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                cardShape
+                    .fill(.clear)
+                    .processGlassEffect(in: cardShape, interactive: false)
+            }
+            .clipShape(cardShape)
+            .overlay {
+                cardShape
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(theme.isDark ? 0.24 : 0.42),
+                                Color.white.opacity(theme.isDark ? 0.06 : 0.14),
+                                Color.black.opacity(theme.isDark ? 0.22 : 0.06)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.5
+                    )
+                    .allowsHitTesting(false)
+            }
+            .shadow(color: .black.opacity(theme.isDark ? 0.32 : 0.10), radius: 3, x: 0, y: 2)
+            .shadow(color: .black.opacity(theme.isDark ? 0.28 : 0.12), radius: 14, x: 0, y: 8)
+            .processHomeGlassCardShadow(isDark: theme.isDark)
+    }
+}
+
+/// Tuile inset glass — lignes ingrédients / étapes dans une carte 3D.
+struct PlanGlassInsetTile<Content: View>: View {
+    var cornerRadius: CGFloat = 14
+    @ViewBuilder var content: () -> Content
+
+    @Environment(\.appTheme) private var theme
+
+    private var tileShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
+
+    var body: some View {
+        content()
+            .background {
+                tileShape
+                    .fill(.clear)
+                    .processGlassEffect(in: tileShape, interactive: false)
+            }
+            .overlay {
+                tileShape
+                    .strokeBorder(Color.white.opacity(theme.isDark ? 0.10 : 0.22), lineWidth: 0.5)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
 struct PlanTrainingCard3DPressStyle: ButtonStyle {
     var restTilt: Double = 5.5
 
@@ -277,5 +348,14 @@ struct PlanTrainingCard3DPressStyle: ButtonStyle {
                 perspective: 0.48
             )
             .animation(.spring(response: 0.32, dampingFraction: 0.74), value: configuration.isPressed)
+    }
+}
+
+/// Press léger pour les deux cartes entraînement côte à côte (pas de tilt 3D).
+struct PlanTrainingCardPairedPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.82), value: configuration.isPressed)
     }
 }

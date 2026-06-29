@@ -53,15 +53,20 @@ struct ProcessMainScrollOffsetKey: PreferenceKey {
 }
 
 extension View {
+    @ViewBuilder
     func processReportsTabBarScrollOffset() -> some View {
-        background(
-            GeometryReader { proxy in
-                Color.clear.preference(
-                    key: ProcessMainScrollOffsetKey.self,
-                    value: proxy.frame(in: .named("processMainScroll")).minY
-                )
-            }
-        )
+        if #available(iOS 26.0, *) {
+            self
+        } else {
+            background(
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: ProcessMainScrollOffsetKey.self,
+                        value: proxy.frame(in: .named("processMainScroll")).minY
+                    )
+                }
+            )
+        }
     }
 }
 

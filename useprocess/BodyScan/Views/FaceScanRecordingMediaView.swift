@@ -167,10 +167,10 @@ private struct FaceScanVideoLoopView: UIViewRepresentable {
         func teardown(from view: FaceScanVideoLoopContainerView) {
             player?.pause()
             looper?.disableLooping()
+            view.clearPlayer()
             looper = nil
             player = nil
             configuredURL = nil
-            view.clearPlayer()
         }
     }
 }
@@ -206,7 +206,6 @@ private final class FaceScanVideoLoopContainerView: UIView {
     }
 
     func clearPlayer() {
-        playerLayer?.player = nil
         playerLayer?.removeFromSuperlayer()
         playerLayer = nil
     }

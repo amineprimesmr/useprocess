@@ -5,13 +5,19 @@
 
 import SwiftUI
 import FirebaseCore
+import UIKit
+
+final class ProcessAppDelegate: NSObject, UIApplicationDelegate {}
 
 @main
 struct useprocessApp: App {
+    @UIApplicationDelegateAdaptor(ProcessAppDelegate.self) private var appDelegate
+
     init() {
         iOS26Stability.configureAtLaunch()
-        CoachIntelligenceNotificationService.configure()
         FirebaseBootstrap.configure()
+        ProcessMetricKitMonitor.shared.start()
+        CoachIntelligenceNotificationService.configure()
         SubscriptionService.shared.configure()
     }
 

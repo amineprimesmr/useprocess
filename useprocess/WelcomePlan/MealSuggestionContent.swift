@@ -18,6 +18,93 @@ struct MealSuggestionItem: Codable, Equatable, Identifiable, Hashable {
         default: return "circle.fill"
         }
     }
+
+    /// Nom seul pour la liste détail (sans rôle nutritionnel).
+    var ingredientDisplayName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Quantité formatée pour affichage (nil si absente ou déjà intégrée au libellé comptage).
+    var ingredientDisplayQuantity: String? {
+        MealSuggestionItemDisplay.trailingQuantity(quantity: quantity, name: name)
+    }
+
+    /// Ligne complète « 2 œufs », « 180 g poulet » — pour listes compactes.
+    var ingredientDisplayLine: String {
+        MealSuggestionItemDisplay.fullLine(quantity: quantity, name: name)
+    }
+}
+
+enum MealSuggestionItemDisplay {
+    static func fullLine(quantity: String, name: String) -> String {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedQty = quantity.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedName.isEmpty else { return trimmedQty }
+        guard !isMissingQuantity(trimmedQty) else { return trimmedName }
+        if nameAlreadyIncludesQuantity(trimmedName, quantity: trimmedQty) { return trimmedName }
+
+        if isCountQuantity(trimmedQty) {
+            return "\(trimmedQty) \(trimmedName)"
+        }
+        return "\(trimmedQty) \(trimmedName)"
+    }
+
+    static func trailingQuantity(quantity: String, name: String) -> String? {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedQty = quantity.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !isMissingQuantity(trimmedQty) else { return nil }
+        guard !nameAlreadyIncludesQuantity(trimmedName, quantity: trimmedQty) else { return nil }
+        guard isUnitQuantity(trimmedQty) else { return nil }
+
+        return trimmedQty
+    }
+
+    static func primaryName(quantity: String, name: String) -> String {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedQty = quantity.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedName.isEmpty else { return trimmedQty }
+        guard !isMissingQuantity(trimmedQty) else { return trimmedName }
+        if nameAlreadyIncludesQuantity(trimmedName, quantity: trimmedQty) { return trimmedName }
+
+        if isCountQuantity(trimmedQty) {
+            return "\(trimmedQty) \(trimmedName)"
+        }
+        return trimmedName
+    }
+
+    private static func isMissingQuantity(_ quantity: String) -> Bool {
+        let normalized = quantity
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        return normalized.isEmpty
+            || normalized == "—"
+            || normalized == "-"
+            || normalized == "n/a"
+            || normalized == "na"
+    }
+
+    /// Comptage unitaire : 1, 2, 1/2, 1-2
+    private static func isCountQuantity(_ quantity: String) -> Bool {
+        quantity.range(
+            of: #"^\d+(?:[.,/\-]\d+)?$"#,
+            options: .regularExpression
+        ) != nil
+    }
+
+    /// Mesure avec unité : 180 g, 250 ml, 1 c. à soupe
+    private static func isUnitQuantity(_ quantity: String) -> Bool {
+        !isCountQuantity(quantity)
+    }
+
+    private static func nameAlreadyIncludesQuantity(_ name: String, quantity: String) -> Bool {
+        let lowerName = name.lowercased()
+        let lowerQty = quantity.lowercased()
+        return lowerName.hasPrefix(lowerQty + " ")
+            || lowerName.contains("(\(lowerQty))")
+    }
 }
 
 struct MealSuggestionContent: Codable, Equatable {
@@ -387,34 +474,194 @@ enum MealSuggestionParser {
 
 // MARK: - Préparation par étapes
 
-enum MealPreparationStepsParser {
-    static func steps(from prepSummary: String) -> [String] {
-        let trimmed = prepSummary.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return [] }
-        if MealSuggestionParser.looksLikeJSON(trimmed) { return [] }
+struct MealPreparationStep: Identifiable, Equatable {
+    let index: Int
+    let text: String
 
-        let normalized = trimmed
+    var id: Int { index }
+}
+
+struct MealPreparationPresentation: Equatable {
+    let steps: [MealPreparationStep]
+    let proseFallback: String?
+    let estimatedMinutes: Int?
+
+    var hasContent: Bool {
+        !steps.isEmpty || (proseFallback?.isEmpty == false)
+    }
+
+    static let empty = MealPreparationPresentation(steps: [], proseFallback: nil, estimatedMinutes: nil)
+}
+
+enum MealPreparationStepsParser {
+    static func presentation(from prepSummary: String, prepMinutes: Int = 0) -> MealPreparationPresentation {
+        let trimmed = prepSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return .empty }
+        if MealSuggestionParser.looksLikeJSON(trimmed) { return .empty }
+
+        let minutes = prepMinutes > 0 ? prepMinutes : nil
+        let parsed = parseSteps(from: trimmed)
+
+        if !parsed.isEmpty {
+            return MealPreparationPresentation(
+                steps: parsed,
+                proseFallback: nil,
+                estimatedMinutes: minutes
+            )
+        }
+
+        return MealPreparationPresentation(
+            steps: [],
+            proseFallback: trimmed,
+            estimatedMinutes: minutes
+        )
+    }
+
+    static func steps(from prepSummary: String) -> [String] {
+        presentation(from: prepSummary).steps.map(\.text)
+    }
+
+    private static func parseSteps(from text: String) -> [MealPreparationStep] {
+        let normalized = normalizeSeparators(text)
+
+        if let numbered = extractNumberedSteps(from: normalized) {
+            return indexed(numbered)
+        }
+
+        let lineParts = normalized
+            .components(separatedBy: .newlines)
+            .map(cleanStep)
+            .filter { !$0.isEmpty }
+
+        if lineParts.count >= 2 {
+            return indexed(lineParts)
+        }
+
+        if let dashed = extractDashSeparatedSteps(from: normalized), dashed.count >= 2 {
+            return indexed(dashed)
+        }
+
+        let sentences = extractSentences(from: normalized)
+        if !sentences.isEmpty {
+            return indexed(sentences)
+        }
+
+        let single = cleanStep(normalized)
+        guard !single.isEmpty else { return [] }
+        return [MealPreparationStep(index: 1, text: single)]
+    }
+
+    private static func indexed(_ parts: [String]) -> [MealPreparationStep] {
+        parts.enumerated().map { MealPreparationStep(index: $0.offset + 1, text: $0.element) }
+    }
+
+    private static func normalizeSeparators(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .replacingOccurrences(of: " ; ", with: ". ")
             .replacingOccurrences(of: "; ", with: ". ")
             .replacingOccurrences(of: " ;", with: ". ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
-        let sentenceParts = normalized
-            .split(separator: ".", omittingEmptySubsequences: true)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private static func extractNumberedSteps(from text: String) -> [String]? {
+        let pattern = #"(?:^|\n)\s*\d+[\.)]\s*"#
+        guard text.range(of: pattern, options: .regularExpression) != nil else { return nil }
+
+        let pieces = text
+            .components(separatedBy: .newlines)
+            .flatMap { line -> [String] in
+                splitNumberedLine(line)
+            }
+            .map(cleanStep)
             .filter { !$0.isEmpty }
 
-        if sentenceParts.count >= 2 {
-            return sentenceParts
+        return pieces.isEmpty ? nil : pieces
+    }
+
+    private static func splitNumberedLine(_ line: String) -> [String] {
+        let pattern = #"\d+[\.)]\s*"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [line] }
+
+        let nsLine = line as NSString
+        let matches = regex.matches(in: line, range: NSRange(location: 0, length: nsLine.length))
+        guard matches.count >= 2 else {
+            if let match = matches.first {
+                let start = match.range.location + match.range.length
+                let remainder = nsLine.substring(from: start).trimmingCharacters(in: .whitespacesAndNewlines)
+                return remainder.isEmpty ? [] : [remainder]
+            }
+            return [line]
         }
 
-        let commaParts = trimmed
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        var parts: [String] = []
+        for (idx, match) in matches.enumerated() {
+            let start = match.range.location + match.range.length
+            let end = idx + 1 < matches.count ? matches[idx + 1].range.location : nsLine.length
+            let chunk = nsLine.substring(with: NSRange(location: start, length: end - start))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !chunk.isEmpty {
+                parts.append(chunk)
+            }
+        }
+        return parts
+    }
+
+    private static func extractDashSeparatedSteps(from text: String) -> [String]? {
+        guard text.contains("—") || text.contains("–") else { return nil }
+
+        let parts = text
+            .replacingOccurrences(of: " – ", with: " — ")
+            .replacingOccurrences(of: "–", with: "—")
+            .split(separator: "—", omittingEmptySubsequences: true)
+            .map { cleanStep(String($0)) }
             .filter { !$0.isEmpty }
 
-        if commaParts.count >= 2 {
-            return commaParts
+        guard parts.count >= 2 else { return nil }
+        guard parts.allSatisfy({ $0.count >= 12 }) else { return nil }
+        return parts
+    }
+
+    private static func extractSentences(from text: String) -> [String] {
+        var rawParts: [String] = []
+        var current = ""
+
+        for character in text {
+            current.append(character)
+            if character == "." || character == "!" || character == "?" {
+                let piece = current.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !piece.isEmpty {
+                    rawParts.append(piece)
+                }
+                current = ""
+            }
         }
 
-        return [trimmed]
+        let tail = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !tail.isEmpty {
+            rawParts.append(tail)
+        }
+
+        let cleaned = rawParts
+            .map(cleanStep)
+            .filter { $0.count >= 6 }
+
+        return cleaned
+    }
+
+    private static func cleanStep(_ raw: String) -> String {
+        var step = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        step = step.replacingOccurrences(of: #"^\d+[\.)]\s*"#, with: "", options: .regularExpression)
+        step = step.trimmingCharacters(in: CharacterSet(charactersIn: ".… "))
+        guard !step.isEmpty else { return "" }
+
+        if let first = step.first {
+            step = first.uppercased() + step.dropFirst()
+        }
+        if !step.hasSuffix(".") && !step.hasSuffix("!") && !step.hasSuffix("?") {
+            step += "."
+        }
+        return step
     }
 }

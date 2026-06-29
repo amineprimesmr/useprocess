@@ -349,7 +349,7 @@ struct MealSuggestionItemRow: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
                     if isExpanded {
-                        Text("\(item.quantity) · \(item.role)")
+                        Text(item.ingredientDisplayLine)
                             .font(.caption)
                             .foregroundStyle(theme.secondaryText)
                     }

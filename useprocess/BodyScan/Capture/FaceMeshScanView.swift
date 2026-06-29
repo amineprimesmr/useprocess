@@ -3,6 +3,15 @@ import SceneKit
 import SwiftUI
 import UIKit
 
+private final class FaceMeshSceneView: ARSCNView {
+    var onViewportSizeChange: ((CGSize) -> Void)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        onViewportSizeChange?(bounds.size)
+    }
+}
+
 /// Scan visage TrueDepth — mesh 3D invisible, flash piloté par l'écran parent.
 struct FaceMeshScanView: UIViewRepresentable {
     @Binding var progress: Double
@@ -30,7 +39,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> ARSCNView {
-        let view = ARSCNView(frame: .zero)
+        let view = FaceMeshSceneView(frame: .zero)
         view.delegate = context.coordinator
         view.session.delegate = context.coordinator
         view.automaticallyUpdatesLighting = true
@@ -39,6 +48,9 @@ struct FaceMeshScanView: UIViewRepresentable {
         view.rendersCameraGrain = false
         view.preferredFramesPerSecond = 30
         context.coordinator.arView = view
+        view.onViewportSizeChange = { [weak coordinator = context.coordinator] size in
+            coordinator?.updateViewportSize(size)
+        }
 
         guard ARFaceTrackingConfiguration.isSupported else {
             DispatchQueue.main.async {
@@ -61,11 +73,14 @@ struct FaceMeshScanView: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: ARSCNView, context: Context) {}
+    func updateUIView(_ uiView: ARSCNView, context: Context) {
+        context.coordinator.updateViewportSize(uiView.bounds.size)
+    }
 
     static func dismantleUIView(_ uiView: ARSCNView, coordinator: Coordinator) {
         coordinator.tearDown()
         uiView.session.pause()
+        (uiView as? FaceMeshSceneView)?.onViewportSizeChange = nil
         coordinator.arView = nil
         coordinator.faceNode = nil
     }
@@ -124,12 +139,15 @@ struct FaceMeshScanView: UIViewRepresentable {
         private var lastUIUpdate: CFTimeInterval = 0
         private var lastLightUIUpdate: CFTimeInterval = 0
         private var lastProcessTime: CFTimeInterval = 0
+        private var lastMediaSampleTime: CFTimeInterval = 0
         private var lastQualityFailureAt: Date?
         private let uiUpdateMinInterval: CFTimeInterval = 1.0 / 20.0
         private let lightUIUpdateMinInterval: CFTimeInterval = 1.0 / 15.0
         private let processMinInterval: CFTimeInterval = 1.0 / 24.0
         private var didConfigurePortraitCamera = false
         private var faceRemovalWorkItem: DispatchWorkItem?
+        private let viewportLock = NSLock()
+        private var viewportSize: CGSize = .zero
 
         init(
             progress: Binding<Double>,
@@ -159,6 +177,18 @@ struct FaceMeshScanView: UIViewRepresentable {
             videoRecorder.cancel()
         }
 
+        func updateViewportSize(_ size: CGSize) {
+            viewportLock.lock()
+            viewportSize = size
+            viewportLock.unlock()
+        }
+
+        private func currentViewportSize() -> CGSize {
+            viewportLock.lock()
+            defer { viewportLock.unlock() }
+            return viewportSize
+        }
+
         func startSession(on view: ARSCNView) {
             let config = ARFaceTrackingConfiguration()
             config.isLightEstimationEnabled = true
@@ -175,13 +205,15 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         func session(_ session: ARSession, didUpdate frame: ARFrame) {
             guard !completed, !isTornDown else { return }
-            configurePortraitCameraIfNeeded()
             let intensity = frame.lightEstimate?.ambientIntensity ?? 1000
             currentAmbientIntensity = intensity
             let low = FaceScanQualityValidator.isLowLight(ambientIntensity: intensity)
 
             if scanStartTime != nil {
-                videoRecorder.append(frame: frame)
+                videoRecorder.append(
+                    pixelBuffer: frame.capturedImage,
+                    timestamp: frame.timestamp
+                )
             }
 
             let now = CACurrentMediaTime()
@@ -242,11 +274,12 @@ struct FaceMeshScanView: UIViewRepresentable {
                   let geometry = node.geometry as? ARSCNFaceGeometry else { return }
             geometry.update(from: faceAnchor.geometry)
             guard !completed, !isTornDown else { return }
+            configurePortraitCameraIfNeeded()
 
             let now = CACurrentMediaTime()
             guard now - lastProcessTime >= processMinInterval else { return }
             lastProcessTime = now
-            process(faceAnchor: faceAnchor)
+            process(faceAnchor: faceAnchor, renderer: renderer)
         }
 
         func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
@@ -325,6 +358,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 sampledMeshes.removeAll()
                 blendShapeAccumulators.removeAll()
                 bestSnapshot = nil
+                lastMediaSampleTime = 0
                 videoRecorder.cancel()
                 activeScanId = UUID().uuidString
             }
@@ -351,7 +385,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
         }
 
-        private func process(faceAnchor: ARFaceAnchor) {
+        private func process(faceAnchor: ARFaceAnchor, renderer: SCNSceneRenderer) {
             guard faceAnchor.isTracked else {
                 markFaceLost(force: false)
                 return
@@ -364,7 +398,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             stableFrameCount += 1
 
             let z = faceAnchor.transform.columns.3.z
-            let fillRatio = projectedFaceFillRatio(faceAnchor: faceAnchor)
+            let fillRatio = projectedFaceFillRatio(
+                faceAnchor: faceAnchor,
+                renderer: renderer
+            )
             let distanceFeedback = FaceScanQualityValidator.distanceFeedback(
                 z: z,
                 screenFillRatio: fillRatio
@@ -415,12 +452,17 @@ struct FaceMeshScanView: UIViewRepresentable {
             let tickProgress = Double(filledTickSectors.count) / Double(tickCount)
             let combinedProgress = progressValue(elapsed: elapsed, tickProgress: tickProgress)
 
-            if elapsed > 0.35, sampledMeshes.count < 60 {
+            let mediaSampleTime = CACurrentMediaTime()
+            if elapsed > 0.35,
+               mediaSampleTime - lastMediaSampleTime >= 0.25,
+               sampledMeshes.count < 24 {
+                lastMediaSampleTime = mediaSampleTime
                 sampledMeshes.append(extractMesh(from: faceAnchor.geometry))
                 if let snap = arView?.snapshot() {
-                    if bestSnapshot == nil
-                        || FaceScanQualityValidator.averageLuminance(of: snap)
-                        > FaceScanQualityValidator.averageLuminance(of: bestSnapshot!) {
+                    if bestSnapshot.map({
+                        FaceScanQualityValidator.averageLuminance(of: snap)
+                            > FaceScanQualityValidator.averageLuminance(of: $0)
+                    }) ?? true {
                         bestSnapshot = snap
                     }
                 }
@@ -459,7 +501,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             let bestMesh = resolveBestMesh()
             if qualityReady(elapsed: elapsed, tickProgress: tickProgress),
                FaceScanQualityValidator.meshIsSolid(bestMesh) {
-                finishScan(bestMesh: bestMesh)
+                finishScan()
             } else if elapsed >= scanDuration * 1.25 {
                 handleQualityFailure()
             }
@@ -479,10 +521,9 @@ struct FaceMeshScanView: UIViewRepresentable {
             guard FaceScanQualityValidator.headSpreadIsSufficient(angleSamples) else { return false }
 
             let flashActive = FaceScanScreenFlash.shared.isActive
-            let snap = bestSnapshot ?? arView?.snapshot()
             let minLuma: CGFloat = flashActive ? 0.08 : (isLowLight ? 0.14 : 0.10)
             return FaceScanQualityValidator.snapshotIsUsable(
-                snap,
+                bestSnapshot,
                 minimumLuminance: minLuma,
                 screenFlashActive: flashActive
             )
@@ -496,9 +537,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                 return "Fais de plus grands mouvements de tête."
             }
             let flashActive = FaceScanScreenFlash.shared.isActive
-            let snap = bestSnapshot ?? arView?.snapshot()
             if !FaceScanQualityValidator.snapshotIsUsable(
-                snap,
+                bestSnapshot,
                 minimumLuminance: flashActive ? 0.08 : (isLowLight ? 0.14 : 0.10),
                 screenFlashActive: flashActive
             ) {
@@ -549,7 +589,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 ?? .empty
         }
 
-        private func finishScan(bestMesh: FaceMesh3DData) {
+        private func finishScan() {
             let mesh = resolveBestMesh()
             guard FaceScanQualityValidator.meshIsSolid(mesh) else {
                 handleQualityFailure()
@@ -559,7 +599,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             completed = true
             let shapes = blendShapeAccumulators.mapValues { $0.sum / Float($0.count) }
             let scanId = activeScanId
-            let snapshot = bestSnapshot ?? arView?.snapshot()
+            let snapshot = bestSnapshot
 
             Task {
                 let videoURL = await videoRecorder.finish()
@@ -697,10 +737,12 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
         }
 
-        private func projectedFaceFillRatio(faceAnchor: ARFaceAnchor) -> CGFloat? {
-            guard let view = arView else { return nil }
-            let bounds = view.bounds
-            guard bounds.width > 1, bounds.height > 1 else { return nil }
+        private func projectedFaceFillRatio(
+            faceAnchor: ARFaceAnchor,
+            renderer: SCNSceneRenderer
+        ) -> CGFloat? {
+            let viewport = currentViewportSize()
+            guard viewport.width > 1, viewport.height > 1 else { return nil }
 
             let transform = faceAnchor.transform
             var minX = CGFloat.infinity
@@ -712,7 +754,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             let vertices = faceAnchor.geometry.vertices
             for (index, vertex) in vertices.enumerated() where index.isMultiple(of: 4) {
                 let local = transform * SIMD4<Float>(vertex.x, vertex.y, vertex.z, 1)
-                let projected = view.projectPoint(SCNVector3(local.x, local.y, local.z))
+                let projected = renderer.projectPoint(SCNVector3(local.x, local.y, local.z))
                 guard projected.z > 0, projected.z < 1 else { continue }
 
                 let point = CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
@@ -726,7 +768,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             guard projectedCount >= 10 else { return nil }
             let faceArea = (maxX - minX) * (maxY - minY)
             guard faceArea > 1 else { return nil }
-            return faceArea / (bounds.width * bounds.height)
+            return faceArea / (viewport.width * viewport.height)
         }
 
         private func extractMesh(from geometry: ARFaceGeometry) -> FaceMesh3DData {

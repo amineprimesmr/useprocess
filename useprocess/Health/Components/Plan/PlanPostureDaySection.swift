@@ -1,71 +1,119 @@
 import SwiftUI
 
-/// Circuit posture quotidien — carousel horizontal des blocs du jour.
-struct PlanPostureDaySection: View {
-    let plan: FaceOriginPlan
-
-    @Environment(\.appTheme) private var theme
-    @State private var selectedProtocolItem: PlanProtocolCarouselItem?
-
-    private var protocolBlocks: [String] {
-        var lines = plan.postureProtocol.mobilityBlocks
-        if lines.isEmpty {
-            lines = PostureIntelligenceGuide.defaultMobilityBlocks
+enum PlanPostureCircuitContent {
+    static func mobilityBlocks(for plan: FaceOriginPlan) -> [String] {
+        let blocks = plan.postureProtocol.mobilityBlocks
+        if blocks.isEmpty {
+            return PostureIntelligenceGuide.defaultMobilityBlocks
         }
-        return lines
+        return blocks
     }
 
-    private var breathingLines: [String] {
+    static func breathingLines(for plan: FaceOriginPlan) -> [String] {
         plan.postureProtocol.breathingWork
     }
 
-    private var carouselItems: [PlanProtocolCarouselItem] {
-        var items = PlanProtocolCarouselBuilder.lineItems(
-            from: protocolBlocks,
-            idPrefix: "posture",
-            fallback: "figure.cooldown"
-        )
+    static func walkingTarget(for plan: FaceOriginPlan) -> String? {
+        let target = plan.postureProtocol.walkingTargets.trimmingCharacters(in: .whitespacesAndNewlines)
+        return target.isEmpty ? nil : target
+    }
 
-        items += PlanProtocolCarouselBuilder.lineItems(
-            from: breathingLines,
-            idPrefix: "breathing",
-            fallback: "wind",
-            category: "Respiration"
-        )
+    static func dailyChecks(for plan: FaceOriginPlan) -> [String] {
+        plan.postureProtocol.dailyChecks
+    }
+}
 
-        if !plan.postureProtocol.walkingTargets.isEmpty {
-            items += PlanProtocolCarouselBuilder.lineItems(
-                from: [plan.postureProtocol.walkingTargets],
-                idPrefix: "walking",
-                fallback: "figure.walk",
-                category: "Marche"
-            )
-        }
+/// Section posture dédiée — le circuit est présenté dans « Entraînement du jour ».
+struct PlanPostureDaySection: View {
+    let plan: FaceOriginPlan
 
-        return items
+    var body: some View {
+        EmptyView()
+    }
+}
+
+struct PlanPostureDetailSheet: View {
+    let plan: FaceOriginPlan
+    var dayTitle: String?
+
+    @Environment(\.appTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+
+    private var mobilityBlocks: [String] {
+        PlanPostureCircuitContent.mobilityBlocks(for: plan)
+    }
+
+    private var breathingLines: [String] {
+        PlanPostureCircuitContent.breathingLines(for: plan)
+    }
+
+    private var walkingTarget: String? {
+        PlanPostureCircuitContent.walkingTarget(for: plan)
+    }
+
+    private var dailyChecks: [String] {
+        PlanPostureCircuitContent.dailyChecks(for: plan)
     }
 
     var body: some View {
-        let items = carouselItems
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let dayTitle, !dayTitle.isEmpty {
+                        Text(dayTitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(theme.secondaryText)
+                    }
 
-        VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
-            PlanProtocolSectionHeader(
-                title: "Posture & circuit quotidien",
-                trailing: items.isEmpty ? nil : "~10 min"
-            )
+                    blockTitle("Mobilité & correctifs")
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(mobilityBlocks, id: \.self) { line in
+                            PlanTrainingBlockRow(line: line, fallbackSystemImage: "figure.cooldown")
+                        }
+                    }
 
-            if items.isEmpty {
-                Text("Circuit posture en cours de configuration.")
-                    .font(.subheadline)
-                    .foregroundStyle(theme.secondaryText)
-            } else {
-                PlanDayProtocolCarousel(items: items) { item in
-                    selectedProtocolItem = item
+                    if !breathingLines.isEmpty {
+                        blockTitle("Respiration")
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(breathingLines, id: \.self) { line in
+                                PlanTrainingBlockRow(line: line, fallbackSystemImage: "wind")
+                            }
+                        }
+                    }
+
+                    if let walkingTarget {
+                        blockTitle("Marche")
+                        PlanTrainingBlockRow(line: walkingTarget, fallbackSystemImage: "figure.walk")
+                    }
+
+                    if !dailyChecks.isEmpty {
+                        blockTitle("Checks posture 24/7")
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(dailyChecks, id: \.self) { line in
+                                PlanTrainingBlockRow(line: line, fallbackSystemImage: "checkmark.circle")
+                            }
+                        }
+                    }
+                }
+                .padding()
+            }
+            .processTransparentScrollSurface()
+            .navigationTitle("Circuit posture")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Fermer") { dismiss() }
                 }
             }
         }
-        .sheet(item: $selectedProtocolItem) { item in
-            PlanProtocolItemDetailSheet(item: item)
-        }
+        .processAppPageBackground()
+        .processAppPresentationBackground()
+    }
+
+    private func blockTitle(_ title: String) -> some View {
+        Text(title)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(theme.secondaryText)
+            .textCase(.uppercase)
     }
 }

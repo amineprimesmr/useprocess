@@ -1,63 +1,72 @@
 import SwiftUI
 
-/// Routine matinale visage — carousel des 3 actions prioritaires.
+/// Routine quotidienne — carousel matin + habitudes 24/7.
 struct PlanFaceDaySection: View {
     let plan: FaceOriginPlan
+    let day: OriginProgramDay
 
+    @Bindable private var planStore = WelcomePlanStore.shared
     @Environment(\.appTheme) private var theme
+    @Namespace private var protocolZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
 
-    private var faceProtocol: OriginFaceProtocol { plan.faceProtocol }
-
-    private var targets: OriginPersonalizedDailyTargets {
-        plan.personalizedTargets ?? .default
+    private var livePlan: FaceOriginPlan {
+        planStore.plan ?? plan
     }
 
-    private var morningRoutineLines: [String] {
-        FaceMorningRoutineCatalog.displaySteps(
-            storedLines: faceProtocol.lymphAndFascia,
-            targets: targets
-        )
+    private var targets: OriginPersonalizedDailyTargets {
+        livePlan.personalizedTargets ?? .default
     }
 
     private var carouselItems: [PlanProtocolCarouselItem] {
-        PlanProtocolCarouselBuilder.lineItems(
-            from: morningRoutineLines,
-            idPrefix: "morning",
-            fallback: "sun.max.fill",
-            category: "Routine matinale"
-        )
+        FaceMorningRoutineCatalog.carouselItems(targets: targets)
+    }
+
+    private var isEditableToday: Bool {
+        OriginPlanPresenter.isEditableJournalDay(dayId: day.id, in: livePlan)
     }
 
     var body: some View {
         let items = carouselItems
-        let estimatedMinutes = FaceMorningRoutineCatalog.estimatedMinutes(targets: targets)
+        let morningMinutes = FaceMorningRoutineCatalog.estimatedMinutes(targets: targets)
 
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Routine matinale",
-                trailing: items.isEmpty ? nil : "\(items.count) étapes · ~\(estimatedMinutes) min"
+                title: "Routine quotidienne",
+                trailing: items.isEmpty
+                    ? nil
+                    : "\(items.count) actions · ~\(morningMinutes) min au réveil"
             )
 
-            if !faceProtocol.focusAreas.isEmpty {
-                Text(faceProtocol.focusAreas.joined(separator: " · "))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
             if items.isEmpty {
-                Text("Aucune étape matinale planifiée.")
+                Text("Aucune action quotidienne planifiée.")
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             } else {
-                PlanDayProtocolCarousel(items: items) { item in
-                    selectedProtocolItem = item
-                }
+                PlanDayProtocolCarousel(
+                    items: items,
+                    zoomNamespace: protocolZoomNamespace,
+                    zoomIDForItem: { .protocolItem($0.id) },
+                    onTap: { selectedProtocolItem = $0 },
+                    routineDayId: isEditableToday ? day.id : nil,
+                    isRoutineItemCompleted: { item in
+                        planStore.isDailyRoutineItemCompleted(
+                            carouselItemId: item.id,
+                            dayId: day.id
+                        )
+                    },
+                    onRoutineValidate: { item in
+                        planStore.completeDailyRoutineItem(
+                            carouselItemId: item.id,
+                            dayId: day.id
+                        )
+                    }
+                )
             }
         }
-        .sheet(item: $selectedProtocolItem) { item in
+        .fullScreenCover(item: $selectedProtocolItem) { item in
             PlanProtocolItemDetailSheet(item: item)
+                .processZoomTransition(id: .protocolItem(item.id), namespace: protocolZoomNamespace)
         }
     }
 }

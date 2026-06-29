@@ -87,9 +87,6 @@ struct EditProfileView: View {
                 .processTransparentScrollSurface()
         }
         .toolbar(.hidden, for: .navigationBar)
-        .navigationDestination(for: ProfileSettingsCategory.self) { category in
-            profileSettingsDetail(for: category, onShareProfile: onShareProfile)
-        }
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
             menuAnchor: photoMenuAnchor,

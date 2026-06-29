@@ -307,7 +307,7 @@ enum HealthDebloatGuide {
             Ces habitudes ne se cochent pas dans le journal : elles s'appliquent en continu, toute la journée. \
             C'est la couche fondation (scripts mewing #9 et posture #7) — sans elle, le debloat reste fragile.
 
-            Priorité : langue en suction sur le palais, lèvres closes, respiration nasale, puis posture et sommeil.
+            Priorité : mewing (langue + bouche fermée + air par le nez), lèvres closes, puis posture et sommeil.
             """,
             bullets: habitLines,
             accent: .action,

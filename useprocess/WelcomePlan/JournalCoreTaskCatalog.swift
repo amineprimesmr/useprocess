@@ -57,9 +57,9 @@ enum JournalCoreTaskCatalog {
         journalTask(
             id: "\(dayId).core.morning",
             title: "Routine matin visage",
-            detail: "\(ProcessDailyTargets.morningLightMinutes) min lumière · eau froide \(ProcessDailyTargets.coldFaceRinseSeconds) s · massage lymphatique \(ProcessDailyTargets.lymphFaceMassageMinutes) min",
+            detail: "\(ProcessDailyTargets.morningLightMinutes) min lumière · glaçons sur le visage",
             pillar: "Visage",
-            minutes: ProcessDailyTargets.morningLightMinutes + ProcessDailyTargets.lymphFaceMassageMinutes + 1
+            minutes: ProcessDailyTargets.morningLightMinutes + 1
         )
     }
 

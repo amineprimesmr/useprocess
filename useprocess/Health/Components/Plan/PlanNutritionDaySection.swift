@@ -170,7 +170,7 @@ struct PlanNutritionDaySection: View {
             .environmentObject(profileService)
             .processZoomTransition(id: .mealDetail(entry.slot), namespace: mealZoomNamespace)
         }
-        .sheet(isPresented: $showMealIdeasCatalog) {
+        .fullScreenCover(isPresented: $showMealIdeasCatalog) {
             PlanMealIdeasCatalogSheet(
                 plan: livePlan,
                 day: day,
@@ -178,13 +178,12 @@ struct PlanNutritionDaySection: View {
                 mealZoomNamespace: mealZoomNamespace
             )
             .environmentObject(profileService)
+            .processZoomTransition(id: .mealCatalog, namespace: mealZoomNamespace)
         }
     }
 
     private var headerRow: some View {
-        Text("Repas debloat")
-            .font(.system(size: 22, weight: .bold))
-            .foregroundStyle(theme.primaryText)
+        PlanHomeSectionHeader(title: "Repas debloat")
     }
 
     private var mealCarousel: some View {
@@ -227,39 +226,44 @@ private struct PlanMealCoverFlowCarousel: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: cardSpacing) {
-                ForEach(entries) { entry in
-                    PlanMealCarouselCard(
-                        entry: entry,
-                        zoomNamespace: mealZoomNamespace,
-                        onTap: { onSelect(entry) }
-                    )
-                    .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                        content
-                            .scaleEffect(phase.isIdentity ? 1 : 0.9)
-                            .opacity(phase.isIdentity ? 1 : 0.78)
-                    }
-                    .id(entry.slot)
-                }
+            carouselContent
+        }
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $scrollPosition, anchor: .center)
+        .frame(height: PlanMealCarouselLayout.cardHeight + 8)
+    }
 
-                PlanMealCatalogBrowseCard(
-                    catalogCount: catalogCount,
-                    previewImageAssets: previewImageAssets,
-                    onTap: onBrowseCatalog
+    private var carouselContent: some View {
+        LazyHStack(spacing: cardSpacing) {
+            ForEach(entries) { entry in
+                PlanMealCarouselCard(
+                    entry: entry,
+                    zoomNamespace: mealZoomNamespace,
+                    onTap: { onSelect(entry) }
                 )
                 .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                     content
                         .scaleEffect(phase.isIdentity ? 1 : 0.9)
                         .opacity(phase.isIdentity ? 1 : 0.78)
                 }
+                .id(entry.slot)
             }
-            .scrollTargetLayout()
-            .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
-            .padding(.vertical, 4)
+
+            PlanMealCatalogBrowseCard(
+                catalogCount: catalogCount,
+                previewImageAssets: previewImageAssets,
+                zoomNamespace: mealZoomNamespace,
+                onTap: onBrowseCatalog
+            )
+            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                content
+                    .scaleEffect(phase.isIdentity ? 1 : 0.9)
+                    .opacity(phase.isIdentity ? 1 : 0.78)
+            }
         }
-        .scrollTargetBehavior(.viewAligned)
-        .scrollPosition(id: $scrollPosition, anchor: .center)
-        .frame(height: PlanMealCarouselLayout.cardHeight + 8)
+        .scrollTargetLayout()
+        .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
+        .padding(.vertical, 4)
     }
 }
 
@@ -268,6 +272,7 @@ private struct PlanMealCoverFlowCarousel: View {
 private struct PlanMealCatalogBrowseCard: View {
     let catalogCount: Int
     let previewImageAssets: [String]
+    var zoomNamespace: Namespace.ID? = nil
     var onTap: () -> Void
 
     @Environment(\.appTheme) private var theme
@@ -320,6 +325,7 @@ private struct PlanMealCatalogBrowseCard: View {
         .processGlassButton(in: cardShape)
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
+        .processZoomSource(id: .mealCatalog, namespace: zoomNamespace)
         .accessibilityLabel("Voir tous les repas debloat du catalogue")
     }
 

@@ -197,7 +197,7 @@ enum FaceWellnessScore {
 
         guard let baselineMarkers = baseline.markers else {
             return RelativeAssessment(
-                score: baselineReferenceScore(confidence: confidence),
+                score: 100,
                 confidence: confidence,
                 baselineSampleCount: 0,
                 signals: FaceScanRelativeSignals(
@@ -215,12 +215,12 @@ enum FaceWellnessScore {
         let jawDelta = markers.jawTensionScore - baselineMarkers.jawTensionScore
         let clarityDelta = markers.skinClarityScore - baselineMarkers.skinClarityScore
 
-        let stressDelta = Double(puffinessDelta) * 0.42
-            + Double(fatigueDelta) * 0.46
-            + Double(jawDelta) * 0.10
-            - Double(clarityDelta) * 0.20
-        let confidencePenalty = Double(max(0, 70 - confidence)) * 0.12
-        let score = clampedInt(82 - stressDelta - confidencePenalty, min: 35, max: 96)
+        let stressDelta = Double(puffinessDelta) * 0.40
+            + Double(fatigueDelta) * 0.42
+            + Double(jawDelta) * 0.12
+        let clarityBonus = Double(clarityDelta) * 0.22
+        let wellnessShift = -stressDelta + clarityBonus
+        let score = clampedInt(100.0 + wellnessShift, min: 0, max: 100)
 
         return RelativeAssessment(
             score: score,
@@ -303,11 +303,43 @@ enum FaceWellnessScore {
         score += min(24, Int((yawCoverage * 24).rounded()))
         score += min(18, baselineSampleCount * 4)
         score += markers.skinClarityScore >= 62 ? 10 : max(0, (markers.skinClarityScore - 40) / 3)
-        return clampedInt(Double(score), min: 35, max: 96)
+        return clampedInt(Double(score), min: 0, max: 100)
     }
 
-    private static func baselineReferenceScore(confidence: Int) -> Int {
-        clampedInt(76 + Double(confidence - 70) * 0.08, min: 70, max: 82)
+    /// Recalcule les scores stockés (échelle 0–100, plus haut = mieux).
+    static func reconcileStoredScores(_ history: [FaceScanResult]) -> [FaceScanResult] {
+        let chronological = history.sorted { $0.createdAt < $1.createdAt }
+        var priorDaily: [FaceScanResult] = []
+
+        let reconciled = chronological.map { scan -> FaceScanResult in
+            guard scan.source == .daily else { return scan }
+
+            let assessment = relativeAssessment(
+                current: scan.markers,
+                history: priorDaily,
+                yawCoverage: estimatedYawCoverage(from: scan)
+            )
+            var updated = scan
+            updated.faceDayScore = dayScore(from: scan.markers)
+            updated.relativeFaceDayScore = assessment.score
+            updated.scanConfidence = assessment.confidence
+            updated.baselineSampleCount = assessment.baselineSampleCount
+            updated.relativeSignals = assessment.signals
+            priorDaily.append(updated)
+            return updated
+        }
+
+        return reconciled.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private static func estimatedYawCoverage(from scan: FaceScanResult) -> Double {
+        for note in scan.markers.notes {
+            if let percent = note.split(separator: " ").compactMap({ Int($0) }).first,
+               note.contains("%") {
+                return min(1, max(0, Double(percent) / 100))
+            }
+        }
+        return 0.72
     }
 
     private static func average(_ values: [Int]) -> Int {

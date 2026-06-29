@@ -1,5 +1,4 @@
 import FirebaseAuth
-import FirebaseCore
 import Foundation
 
 /// Suppression de compte via Cloud Function (Admin SDK) — fiable pour Apple Sign In + Firestore.
@@ -23,6 +22,9 @@ enum AccountDeletionRemoteService {
         request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let appCheckToken = try? await FirebaseAppAttestation.token(forcingRefresh: true) {
+            request.setValue(appCheckToken, forHTTPHeaderField: "X-Firebase-AppCheck")
+        }
         request.httpBody = Data("{}".utf8)
         request.timeoutInterval = 90
 
@@ -74,8 +76,7 @@ enum AccountDeletionRemoteService {
     }
 
     private static var firebaseAuthReady: Bool {
-        FirebaseBootstrap.configure()
-        return AppConfiguration.firebaseConfigured && FirebaseApp.app() != nil
+        FirebaseBootstrap.isConfigured
     }
 
     private static func userMessage(for status: Int, body: String) -> String {

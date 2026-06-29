@@ -246,6 +246,34 @@ final class WelcomePlanStore {
         setJournalTaskStatus(existing == .completed ? nil : .completed, taskId: taskId, dayId: dayId)
     }
 
+    func isDailyRoutineItemCompleted(carouselItemId: String, dayId: String) -> Bool {
+        guard let plan else { return false }
+        return DailyRoutineCompletionCatalog.isCompleted(
+            plan: plan,
+            dayId: dayId,
+            carouselItemId: carouselItemId
+        )
+    }
+
+    /// Valide une carte routine (maintien 5 s) et aligne les leviers journal agrégés.
+    func completeDailyRoutineItem(carouselItemId: String, dayId: String) {
+        guard var current = plan else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+
+        let taskId = DailyRoutineCompletionCatalog.taskId(
+            dayId: dayId,
+            carouselItemId: carouselItemId
+        )
+        let key = OriginPlanProgress.taskKey(dayId: dayId, taskId: taskId)
+        guard current.progress.taskStatuses[key] != .completed else { return }
+
+        current.progress.taskStatuses[key] = .completed
+        current.progress.completedTaskIds.insert(taskId)
+        DailyRoutineCompletionCatalog.syncAggregatedJournalTasks(on: &current, dayId: dayId)
+        syncJournalDayCompletion(on: &current, dayId: dayId)
+        savePlan(current)
+    }
+
     /// Aligne la tâche « Repas debloat » si un repas est déjà validé.
     func syncCoreJournalTasks(dayId: String) {
         guard var current = plan else { return }

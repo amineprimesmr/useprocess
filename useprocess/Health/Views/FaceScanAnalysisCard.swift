@@ -201,22 +201,25 @@ struct FaceScanMetricsRow: View {
         higherIsWorse: Bool,
         deltaMode: DeltaMode
     ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let displayValue = wellnessValue(value, higherIsWorse: higherIsWorse)
+        let displayDelta = wellnessDelta(delta, higherIsWorse: higherIsWorse)
+
+        return VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(theme.secondaryText)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("\(value)")
+                Text("\(displayValue)")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(theme.primaryText)
                     .monospacedDigit()
                 Text("%")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
-                if let delta, delta != 0 {
-                    Text(deltaLabel(delta, mode: deltaMode))
+                if let displayDelta, displayDelta != 0 {
+                    Text(deltaLabel(displayDelta, mode: deltaMode))
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(deltaColor(delta, higherIsWorse: higherIsWorse))
+                        .foregroundStyle(deltaColor(displayDelta, higherIsWorse: false))
                 }
             }
         }
@@ -224,6 +227,15 @@ struct FaceScanMetricsRow: View {
         .padding(10)
         .background(theme.cardBackground.opacity(0.6))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func wellnessValue(_ value: Int, higherIsWorse: Bool) -> Int {
+        higherIsWorse ? max(0, min(100, 100 - value)) : value
+    }
+
+    private func wellnessDelta(_ delta: Int?, higherIsWorse: Bool) -> Int? {
+        guard let delta else { return nil }
+        return higherIsWorse ? -delta : delta
     }
 
     private func deltaLabel(_ delta: Int, mode: DeltaMode) -> String {

@@ -21,7 +21,8 @@ class HapticManager: ObservableObject {
     private let typewriterMinInterval: CFAbsoluteTime = 0.038
     private var cardHoldTimer: Timer?
     private var cardHoldFeedback: UIImpactFeedbackGenerator?
-    private let cardHoldInterval: TimeInterval = 0.022
+    /// Reste sous la limite système de 32 messages/s observée sur appareil réel.
+    private let cardHoldInterval: TimeInterval = 0.04
 
     private init() {}
 

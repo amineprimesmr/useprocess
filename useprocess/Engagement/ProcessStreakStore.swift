@@ -31,9 +31,12 @@ final class ProcessStreakStore {
             keys.insert(Self.dayKey(for: date))
         }
 
-        state.completedDayKeys = keys
-        state.longestStreak = max(state.longestStreak, Self.longestStreak(in: keys))
-        persist()
+        let longest = max(state.longestStreak, Self.longestStreak(in: keys))
+        if state.completedDayKeys != keys || state.longestStreak != longest {
+            state.completedDayKeys = keys
+            state.longestStreak = longest
+            persist()
+        }
         refreshSnapshot(plan: plan, now: now)
     }
 
@@ -50,12 +53,6 @@ final class ProcessStreakStore {
         let isTodayComplete = state.completedDayKeys.contains(todayKey)
 
         let current = Self.currentStreak(completedKeys: state.completedDayKeys, today: today, calendar: calendar)
-        let week = Self.daySnapshots(
-            endingAt: today,
-            dayCount: 7,
-            completedKeys: state.completedDayKeys,
-            calendar: calendar
-        )
         let month = Self.daySnapshots(
             endingAt: today,
             dayCount: 28,
@@ -71,18 +68,20 @@ final class ProcessStreakStore {
         let nextMilestone = ProcessStreakMilestone.catalog.first(where: { $0.days > current })
         let daysUntilNext = nextMilestone.map { $0.days - current }
 
-        snapshot = ProcessStreakSnapshot(
+        let updatedSnapshot = ProcessStreakSnapshot(
             currentStreak: current,
             longestStreak: max(state.longestStreak, current),
             totalCompletedDays: state.completedDayKeys.count,
             isTodayComplete: isTodayComplete,
             todayProgress: todayProgress(plan: plan, now: now),
-            week: week,
             calendarWeek: calendarWeek,
             month: month,
             nextMilestone: nextMilestone,
             daysUntilNextMilestone: daysUntilNext
         )
+        if snapshot != updatedSnapshot {
+            snapshot = updatedSnapshot
+        }
     }
 
     private func todayProgress(plan: FaceOriginPlan?, now: Date) -> Double {
@@ -240,7 +239,6 @@ private extension ProcessStreakSnapshot {
         totalCompletedDays: 0,
         isTodayComplete: false,
         todayProgress: 0,
-        week: [],
         calendarWeek: [],
         month: [],
         nextMilestone: ProcessStreakMilestone.catalog.first,

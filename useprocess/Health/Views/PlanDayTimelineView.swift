@@ -168,7 +168,6 @@ struct PlanTrainingDetailSheet: View {
         }
         .processAppPageBackground()
         .processAppPresentationBackground()
-        .presentationDetents([.medium, .large])
     }
 
     private func blockTitle(_ title: String) -> some View {
@@ -293,6 +292,5 @@ struct PlanContinuousHabitsSheet: View {
         }
         .processAppPageBackground()
         .processAppPresentationBackground()
-        .presentationDetents([.medium, .large])
     }
 }

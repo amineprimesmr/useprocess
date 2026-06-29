@@ -12,6 +12,7 @@ struct PlanDashboardView: View {
     @State private var isRestoringPlan = false
     @State private var showHomeLayoutEditor = false
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
+    @Namespace private var homeChromeZoomNamespace
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
@@ -60,9 +61,10 @@ struct PlanDashboardView: View {
                         planContent
 
                         if livePlan != nil {
-                            PlanHomeCustomizeFloatingButton {
-                                showHomeLayoutEditor = true
-                            }
+                            PlanHomeCustomizeFloatingButton(
+                                zoomNamespace: homeChromeZoomNamespace,
+                                action: { showHomeLayoutEditor = true }
+                            )
                             .padding(.top, 4)
                             .padding(.bottom, 24)
                         }
@@ -78,8 +80,16 @@ struct PlanDashboardView: View {
             .onAppear {
                 planStore.reloadForCurrentUser()
             }
-            .sheet(isPresented: $showHomeLayoutEditor) {
-                PlanHomeLayoutEditorSheet()
+            .fullScreenCover(isPresented: $showHomeLayoutEditor) {
+                if let plan = livePlan {
+                    PlanHomeLayoutEditorSheet(
+                        plan: plan,
+                        selectedDate: $selectedPlanDate,
+                        selectedSection: $selectedSection
+                    )
+                    .environmentObject(profileService)
+                    .processZoomTransition(id: .homeLayoutEditor, namespace: homeChromeZoomNamespace)
+                }
             }
         }
     }

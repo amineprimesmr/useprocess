@@ -10,13 +10,33 @@ service cloud.firestore {
     }
 
     match /usernames/{tag} {
-      allow read: if request.auth != null;
+      function validUsernameDocument() {
+        return request.resource.data.keys().hasOnly([
+            'userId', 'displayName', 'updatedAt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'userId', 'displayName', 'updatedAt'
+          ])
+          && request.resource.data.userId is string
+          && request.resource.data.displayName is string
+          && request.resource.data.displayName.size() <= 80
+          && request.resource.data.updatedAt == request.time
+          && tag.size() >= 3
+          && tag.size() <= 24;
+      }
+
+      // La recherche exacte d'un tag reste possible, mais l'énumération
+      // complète de tous les utilisateurs est interdite.
+      allow get: if request.auth != null;
+      allow list: if false;
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
-        && !exists(/databases/$(database)/documents/usernames/$(tag));
+        && !exists(/databases/$(database)/documents/usernames/$(tag))
+        && validUsernameDocument();
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && validUsernameDocument();
       allow delete: if request.auth != null
         && resource.data.userId == request.auth.uid;
     }

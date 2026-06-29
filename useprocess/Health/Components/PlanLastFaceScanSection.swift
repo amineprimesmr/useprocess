@@ -1,9 +1,11 @@
+import AVFoundation
 import SwiftUI
 
 /// Résumé scan visage — page Plan (liquid glass, aligné cartes repas).
 struct PlanLastFaceScanSection: View {
     let latest: FaceScanResult?
     let isScanDue: Bool
+    var isScanFlowActive: Bool = false
     var zoomNamespace: Namespace.ID? = nil
     var onScan: (() -> Void)? = nil
     var onOpenHistory: (() -> Void)? = nil
@@ -18,31 +20,60 @@ struct PlanLastFaceScanSection: View {
     private enum Layout {
         static let cardPadding: CGFloat = 16
         static let topMinHeight: CGFloat = 118
+        static let scanAvailableHeight: CGFloat = 118
         static let footerVerticalPadding: CGFloat = 14
         static let blockSpacing: CGFloat = 8
         static let videoTrailingRadius: CGFloat = 18
     }
 
+    private var isFirstScanPending: Bool {
+        latest == nil
+    }
+
+    private var needsLiveCameraPreview: Bool {
+        isFirstScanPending || isScanDue
+    }
+
+    private var isScanAvailable: Bool {
+        needsLiveCameraPreview
+    }
+
     private var isInteractive: Bool {
-        onOpenHistory != nil || onScan != nil
+        if isScanAvailable {
+            return false
+        }
+        return onOpenHistory != nil || onScan != nil
     }
 
     private var showsMediaColumn: Bool {
-        latest != nil && displayPreferences.showsVideo
+        if needsLiveCameraPreview {
+            return true
+        }
+        return latest != nil && displayPreferences.showsVideo
+    }
+
+    private var livePreviewActive: Bool {
+        needsLiveCameraPreview && !isScanFlowActive
     }
 
     var body: some View {
         Group {
-            if isInteractive {
+            if isScanAvailable {
+                scanAvailableContent
+            } else if isInteractive {
                 Button(action: handlePrimaryTap) {
-                    cardContent
+                    postScanCardContent
                 }
                 .buttonStyle(.plain)
             } else {
-                cardContent
+                postScanCardContent
             }
         }
-        .processGlassButton(in: cardShape, interactive: isInteractive)
+        .background {
+            cardShape
+                .fill(.clear)
+                .processGlassEffect(in: cardShape, interactive: isInteractive)
+        }
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
@@ -52,12 +83,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private func handlePrimaryTap() {
-        if (latest == nil || isScanDue), let onScan {
-            HapticManager.shared.impact(.medium)
-            onScan()
-        } else {
-            openHistory()
-        }
+        openHistory()
     }
 
     private func openHistory() {
@@ -66,7 +92,60 @@ struct PlanLastFaceScanSection: View {
     }
 
     @ViewBuilder
-    private var cardContent: some View {
+    private var scanAvailableContent: some View {
+        GeometryReader { geo in
+            let videoWidth = min(max(118, geo.size.width * videoWidthRatio), geo.size.width * 0.44)
+
+            HStack(alignment: .center, spacing: 0) {
+                videoSidePanel
+                    .frame(width: videoWidth, height: Layout.scanAvailableHeight, alignment: .topLeading)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(scanAvailableTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(theme.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer(minLength: 0)
+
+                    scanAvailableButton
+                }
+                .padding(Layout.cardPadding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, minHeight: Layout.scanAvailableHeight, alignment: .leading)
+        }
+        .frame(height: Layout.scanAvailableHeight)
+        .contentShape(cardShape)
+    }
+
+    private var scanAvailableTitle: String {
+        if isFirstScanPending {
+            return "Premier scan disponible"
+        }
+        return "Scan du jour disponible"
+    }
+
+    @ViewBuilder
+    private var scanAvailableButton: some View {
+        if let onScan {
+            Button {
+                HapticManager.shared.impact(.medium)
+                onScan()
+            } label: {
+                Label("Faire mon scan", systemImage: "camera.fill")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(theme.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+            }
+            .processGlassButton(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityLabel("Faire mon scan")
+        }
+    }
+
+    @ViewBuilder
+    private var postScanCardContent: some View {
         VStack(spacing: 0) {
             topSection
             nextScanFooterBand
@@ -129,6 +208,12 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var preScanActionMessage: String {
+        if isFirstScanPending {
+            return "Fais ton premier scan — 30 secondes."
+        }
+        if isScanDue {
+            return "Ton scan du jour est disponible."
+        }
         let targets = WelcomePlanStore.shared.plan?.personalizedTargets ?? .default
         return PlanFaceScanPreScanAction.message(
             for: latest,
@@ -153,9 +238,10 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var videoPanelShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(
+        let bottomLeadingRadius = isScanAvailable ? cardRadius : 0
+        return UnevenRoundedRectangle(
             topLeadingRadius: cardRadius,
-            bottomLeadingRadius: 0,
+            bottomLeadingRadius: bottomLeadingRadius,
             bottomTrailingRadius: Layout.videoTrailingRadius,
             topTrailingRadius: Layout.videoTrailingRadius,
             style: .continuous
@@ -164,7 +250,10 @@ struct PlanLastFaceScanSection: View {
 
     private var videoSidePanel: some View {
         ZStack(alignment: .leading) {
-            if let latest {
+            if needsLiveCameraPreview {
+                PlanFaceScanLiveCameraPanel(isActive: livePreviewActive)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let latest {
                 PlanFaceScanMediaPanel(result: latest)
                     .equatable()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -207,9 +296,6 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var compactIconFill: Color {
-        if latest == nil {
-            return .orange
-        }
         return theme.onboardingAccent
     }
 
@@ -440,3 +526,72 @@ private struct PlanFaceScanMediaPanel: View, Equatable {
         .accessibilityLabel("Vidéo du dernier scan")
     }
 }
+
+// MARK: - Aperçu caméra frontale (premier scan)
+
+private struct PlanFaceScanLiveCameraPanel: View {
+    var isActive: Bool
+
+    @Environment(\.appTheme) private var theme
+    @StateObject private var camera = BodyScanCameraService()
+
+    var body: some View {
+        Group {
+            switch camera.authorizationStatus {
+            case .authorized:
+                BodyScanCameraPreview(
+                    session: camera.session,
+                    mirrorFrontCamera: true,
+                    isSessionRunning: camera.isRunning
+                )
+                .background(Color.black)
+            case .denied, .restricted:
+                liveCameraPlaceholder(systemImage: "camera.fill", message: "Caméra refusée")
+            default:
+                liveCameraPlaceholder(systemImage: "camera.fill", message: nil)
+            }
+        }
+        .task(id: isActive) {
+            guard isActive else {
+                camera.stop()
+                return
+            }
+            await startCameraIfNeeded()
+        }
+        .onDisappear {
+            camera.stop()
+        }
+        .accessibilityLabel("Aperçu caméra frontale")
+    }
+
+    private func liveCameraPlaceholder(systemImage: String, message: String?) -> some View {
+        ZStack {
+            Color(red: 0.09, green: 0.09, blue: 0.10)
+
+            VStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.orange.opacity(0.9))
+
+                if let message {
+                    Text(message)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(theme.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func startCameraIfNeeded() async {
+        camera.refreshAuthorizationStatus()
+        if camera.authorizationStatus == .notDetermined {
+            guard await camera.requestAccess() else { return }
+        }
+        guard camera.authorizationStatus == .authorized else { return }
+        camera.start(preferredPosition: .front, deliversFrames: false)
+    }
+}
+

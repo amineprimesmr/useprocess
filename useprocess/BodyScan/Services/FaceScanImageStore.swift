@@ -156,7 +156,13 @@ enum FaceScanImageStore {
     }
 
     private static func isReadableFile(at url: URL) -> Bool {
-        FileManager.default.isReadableFile(atPath: url.path)
+        guard FileManager.default.isReadableFile(atPath: url.path),
+              let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+              values.isRegularFile == true else { return false }
+        if url.pathExtension.lowercased() == "mp4" {
+            return (values.fileSize ?? 0) > 1_024
+        }
+        return (values.fileSize ?? 0) > 0
     }
 
     private static func protectLocalURL(_ url: URL, isDirectory: Bool) {
