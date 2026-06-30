@@ -30,6 +30,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
 
     @MainActor
     func start(preferredPosition: AVCaptureDevice.Position = .front, deliversFrames: Bool = true) {
+        ProcessAudioSession.configureForMixingWithOthersIfIdle()
         sessionQueue.async { [weak self] in
             self?.configureSession(position: preferredPosition, deliversFrames: deliversFrames)
             guard let self else { return }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct IdealWeightStepView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var profileService: UnifiedProfileService
 
     @Binding var idealWeight: Double
@@ -21,6 +22,7 @@ struct IdealWeightStepView: View {
 
     @State private var unit: WeightUnit = .kg
     @State private var weightString: String = ""
+    @State private var didBootstrap = false
     @FocusState private var isTextFieldFocused: Bool
 
     enum WeightUnit {
@@ -76,78 +78,78 @@ struct IdealWeightStepView: View {
     }
 
     var body: some View {
-        ScrollView {
-            ZStack {
-                VStack(spacing: 0) {
-                    Spacer()
-                        .frame(height: OnboardingConstants.titleAreaHeight)
+        ZStack {
+            VStack(spacing: 0) {
+                Spacer()
+                    .frame(height: OnboardingConstants.titleAreaHeight)
 
-                    Spacer()
-                        .frame(height: OnboardingConstants.titleToContentSpacing)
+                Spacer()
+                    .frame(height: OnboardingConstants.titleToContentSpacing)
 
-                    OnboardingUnitSegmentToggle(
-                        leftLabel: "KG",
-                        rightLabel: "LBS",
-                        isLeftSelected: Binding(
-                            get: { unit == .kg },
-                            set: { unit = $0 ? .kg : .lbs }
-                        )
+                OnboardingUnitSegmentToggle(
+                    leftLabel: "KG",
+                    rightLabel: "LBS",
+                    isLeftSelected: Binding(
+                        get: { unit == .kg },
+                        set: { unit = $0 ? .kg : .lbs }
                     )
-                    .padding(.bottom, 60)
-                    .onChange(of: unit) { _, _ in
-                        convertWeight()
-                    }
+                )
+                .padding(.bottom, 60)
+                .onChange(of: unit) { _, _ in
+                    convertWeight()
+                }
 
-                    ZStack {
-                        TextField("", text: $weightString)
-                            .font(.system(size: 56, weight: .bold))
-                            .foregroundColor(.clear)
-                            .multilineTextAlignment(.center)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .focused($isTextFieldFocused)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled(true)
-                            .onSubmit {
-                                handleContinue()
-                            }
-
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(displayWeightString)
-                                .font(.system(size: 56, weight: .bold))
-                                .foregroundStyle(OnboardingTheme.primaryText)
-                                .onboardingValueGlow(colorScheme: colorScheme)
-                                .contentTransition(.numericText())
-                                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
-
-                            Text(unit == .kg ? "kg" : "lbs")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundStyle(OnboardingTheme.bodyText)
+                ZStack {
+                    TextField("", text: $weightString)
+                        .font(.system(size: 56, weight: .bold))
+                        .foregroundColor(.clear)
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.decimalPad)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .focused($isTextFieldFocused)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                        .onSubmit {
+                            handleContinue()
                         }
-                        .allowsHitTesting(false)
-                    }
-                    .padding(.horizontal, 40)
-                    .onTapGesture {
-                        isTextFieldFocused = true
-                    }
 
-                    Spacer()
-                }
-                .frame(minHeight: ScreenMetrics.height)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(displayWeightString)
+                            .font(.system(size: 56, weight: .bold))
+                            .foregroundStyle(OnboardingTheme.primaryText)
+                            .onboardingValueGlow(colorScheme: colorScheme)
+                            .contentTransition(.numericText())
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
 
-                VStack {
-                    OnboardingTitleView("Quel est ton poids idéal ?")
-                        .padding(.top, OnboardingConstants.titleTopPadding)
-                    Spacer()
+                        Text(unit == .kg ? "kg" : "lbs")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(OnboardingTheme.bodyText)
+                    }
+                    .allowsHitTesting(false)
                 }
+                .padding(.horizontal, 40)
+                .onTapGesture {
+                    isTextFieldFocused = true
+                }
+
+                Spacer()
             }
+
+            OnboardingTitleView("Quel est ton poids idéal ?")
+                .onboardingTitleOverlay()
         }
-        .scrollDisabled(true)
-        .scrollDismissesKeyboard(.never)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            loadExistingWeight()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isTextFieldFocused = true
+            bootstrapIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                restoreWeightStringIfNeeded()
+            case .inactive, .background:
+                resignKeyboard()
+            default:
+                break
             }
         }
         .onChange(of: weightString) { _, newValue in
@@ -176,15 +178,40 @@ struct IdealWeightStepView: View {
 
         HapticManager.shared.impact(.medium)
 
-        isTextFieldFocused = false
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-
+        resignKeyboard()
         onContinue?()
 
         idealWeight = displayWeight
         Task.detached(priority: .background) {
             await saveIdealWeight()
         }
+    }
+
+    private func bootstrapIfNeeded() {
+        guard !didBootstrap else { return }
+        didBootstrap = true
+        loadExistingWeight()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isTextFieldFocused = true
+        }
+    }
+
+    private func restoreWeightStringIfNeeded() {
+        guard weightString.isEmpty else { return }
+        if OnboardingViewModel.isPlausibleWeight(idealWeight) {
+            populateWeightString(from: idealWeight)
+            onValidationChanged?(isValidWeight)
+        }
+    }
+
+    private func resignKeyboard() {
+        isTextFieldFocused = false
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 
     private func loadExistingWeight() {

@@ -34,7 +34,7 @@ struct FaceScanCoachHandoff: Equatable {
 
 enum FaceScanCoachHandoffBuilder {
     static func make(from result: FaceScanResult) -> FaceScanCoachHandoff {
-        let score = result.resolvedFaceDayScore
+        let score = result.displayWellnessScore
         let display = CoachFaceScanMessageMarker.embed(
             scanId: result.id,
             displayText: "Scan visage du jour · \(score)%"
@@ -44,8 +44,9 @@ enum FaceScanCoachHandoffBuilder {
         let prompt = """
         Analyse mon scan visage quotidien (vidéo / capture jointe).
 
-        Score du jour : \(score)%.
-        Signaux locaux : gonflement \(markers.puffinessScore), cernes \(markers.underEyeFatigueScore), mâchoire \(markers.jawTensionScore), peau \(markers.skinClarityScore).
+        Score wellness du jour : \(score)% (moyenne des 5 indicateurs).
+        Score relatif vs baseline : \(result.resolvedFaceDayScore)/100.
+        Signaux locaux : rétention \(markers.puffinessScore), récupération \(markers.underEyeFatigueScore), peau \(markers.skinClarityScore), définition \(FaceScanIndicators.definitionScore(from: markers)), charge stress \(FaceScanIndicators.stressLoad(for: result)).
 
         Compare avec mes scans précédents si tu les as dans le contexte.
         Donne une lecture debloat / visage claire, puis 3 actions concrètes pour aujourd'hui dans mon protocole Origine.

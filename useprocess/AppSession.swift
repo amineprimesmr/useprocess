@@ -72,6 +72,7 @@ final class AppSession {
 
         OnboardingProgressService.shared.resetProgress()
         WelcomePlanStore.shared.resetForCurrentUser()
+        WelcomePlanCoachPresentation.resetForCurrentUser()
         AuthenticationManager.shared.hasCompletedOnboarding = false
     }
 
@@ -92,6 +93,7 @@ final class AppSession {
 
         OnboardingProgressService.shared.resetProgress()
         WelcomePlanStore.shared.resetForCurrentUser()
+        WelcomePlanCoachPresentation.resetForCurrentUser()
 
         AuthenticationManager.shared.applyPostAccountDeletion()
         AuthenticationManager.shared.startOnboarding()

@@ -53,9 +53,7 @@ final class CoachSpeechTranscriber {
 
         stopInternal(discard: true)
 
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers, .defaultToSpeaker])
-        try session.setActive(true, options: .notifyOthersOnDeactivation)
+        try ProcessAudioSession.configureForVoiceCapture()
 
         latestTranscript = ""
         committedTranscript = ""
@@ -250,9 +248,7 @@ final class CoachSpeechTranscriber {
         recognitionTask = nil
         isRecording = false
 
-        if discard {
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        }
+        ProcessAudioSession.endVoiceCaptureAndRestoreMixing()
     }
 }
 

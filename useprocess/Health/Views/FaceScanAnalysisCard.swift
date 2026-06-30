@@ -85,27 +85,30 @@ struct FaceWellnessScoreBadge: View {
     }
 }
 
+/// Analyse Claude — résumé et signaux uniquement (pas de conseils).
 struct FaceScanAnalysisCard: View {
     let analysis: FaceScanAnalysisContent
     var theme: AppTheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(analysis.summary)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
 
             if !analysis.signals.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(analysis.signals, id: \.self) { signal in
                         HStack(alignment: .top, spacing: 8) {
                             Circle()
-                                .fill(Color.orange.opacity(0.85))
+                                .fill(theme.onboardingAccent.opacity(0.85))
                                 .frame(width: 6, height: 6)
                                 .padding(.top, 6)
                             Text(signal)
                                 .font(.caption)
                                 .foregroundStyle(theme.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
@@ -115,28 +118,7 @@ struct FaceScanAnalysisCard: View {
                 Text(analysis.evolution)
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
-            }
-
-            if !analysis.tips.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Conseils")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(theme.secondaryText)
-                        .textCase(.uppercase)
-
-                    ForEach(Array(analysis.tips.enumerated()), id: \.offset) { index, tip in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("\(index + 1)")
-                                .font(.caption2.weight(.bold))
-                                .frame(width: 18, height: 18)
-                                .background(theme.cardStroke.opacity(0.5))
-                                .clipShape(Circle())
-                            Text(tip)
-                                .font(.caption)
-                                .foregroundStyle(theme.primaryText)
-                        }
-                    }
-                }
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -148,105 +130,62 @@ struct FaceScanMetricsRow: View {
     var trend: FaceScanTrend?
     var theme: AppTheme
 
+    private var displayResult: FaceScanResult {
+        FaceScanResult(
+            userId: "",
+            markers: markers,
+            relativeSignals: relativeSignals
+        )
+    }
+
+    private var previousResult: FaceScanResult? {
+        guard let trend else { return nil }
+        return FaceScanResult(
+            userId: "",
+            markers: FaceWellnessMarkers(
+                puffinessScore: markers.puffinessScore - trend.puffiness,
+                underEyeFatigueScore: markers.underEyeFatigueScore - trend.underEyeFatigue,
+                jawTensionScore: markers.jawTensionScore - trend.jawTension,
+                facialSymmetryScore: markers.facialSymmetryScore - trend.facialSymmetry,
+                skinClarityScore: markers.skinClarityScore - trend.skinClarity,
+                notes: []
+            )
+        )
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let relativeSignals {
-                Text(relativeSignals.baselineLabel)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.secondaryText)
-            }
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                metric(
-                    "Gonflement",
-                    markers.puffinessScore,
-                    relativeSignals?.puffinessDelta ?? trend?.puffiness,
-                    higherIsWorse: true,
-                    deltaMode: relativeSignals == nil ? .previous : .baseline
-                )
-                metric(
-                    "Cernes",
-                    markers.underEyeFatigueScore,
-                    relativeSignals?.underEyeFatigueDelta ?? trend?.underEyeFatigue,
-                    higherIsWorse: true,
-                    deltaMode: relativeSignals == nil ? .previous : .baseline
-                )
-                metric(
-                    "Mâchoire",
-                    markers.jawTensionScore,
-                    relativeSignals?.jawTensionDelta ?? trend?.jawTension,
-                    higherIsWorse: true,
-                    deltaMode: relativeSignals == nil ? .previous : .baseline
-                )
-                metric(
-                    "Peau",
-                    markers.skinClarityScore,
-                    relativeSignals?.skinClarityDelta ?? trend?.skinClarity,
-                    higherIsWorse: false,
-                    deltaMode: relativeSignals == nil ? .previous : .baseline
-                )
-            }
-        }
-    }
-
-    private enum DeltaMode {
-        case previous
-        case baseline
-    }
-
-    private func metric(
-        _ title: String,
-        _ value: Int,
-        _ delta: Int?,
-        higherIsWorse: Bool,
-        deltaMode: DeltaMode
-    ) -> some View {
-        let displayValue = wellnessValue(value, higherIsWorse: higherIsWorse)
-        let displayDelta = wellnessDelta(delta, higherIsWorse: higherIsWorse)
-
-        return VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(theme.secondaryText)
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("\(displayValue)")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(theme.primaryText)
-                    .monospacedDigit()
-                Text("%")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.secondaryText)
-                if let displayDelta, displayDelta != 0 {
-                    Text(deltaLabel(displayDelta, mode: deltaMode))
+        VStack(spacing: 8) {
+            ForEach(FaceScanMetricDisplay.items(for: displayResult, previous: previousResult)) { item in
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(theme.primaryText)
+                        Text(item.subtitle)
+                            .font(.caption2)
+                            .foregroundStyle(theme.secondaryText.opacity(0.85))
+                        Text(item.status)
+                            .font(.caption2)
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                    Spacer(minLength: 8)
+                    Text(item.comparison)
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(deltaColor(displayDelta, higherIsWorse: false))
+                        .foregroundStyle(comparisonColor(item.comparisonKind))
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(theme.cardBackground.opacity(0.55))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(theme.cardBackground.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    private func wellnessValue(_ value: Int, higherIsWorse: Bool) -> Int {
-        higherIsWorse ? max(0, min(100, 100 - value)) : value
-    }
-
-    private func wellnessDelta(_ delta: Int?, higherIsWorse: Bool) -> Int? {
-        guard let delta else { return nil }
-        return higherIsWorse ? -delta : delta
-    }
-
-    private func deltaLabel(_ delta: Int, mode: DeltaMode) -> String {
-        let prefix = mode == .baseline ? "base " : ""
-        return prefix + (delta > 0 ? "+\(delta)" : "\(delta)")
-    }
-
-    private func deltaColor(_ delta: Int, higherIsWorse: Bool) -> Color {
-        let improved = higherIsWorse ? delta < 0 : delta > 0
-        if improved { return .green }
-        if delta == 0 { return theme.secondaryText }
-        return .orange
+    private func comparisonColor(_ kind: FaceScanMetricDisplay.ComparisonKind) -> Color {
+        switch kind {
+        case .better: return .green
+        case .worse: return .orange
+        case .stable, .reference: return theme.secondaryText
+        }
     }
 }

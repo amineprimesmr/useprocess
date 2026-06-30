@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - Identifiants stables (1 image par séance)
+// MARK: - Identifiants stables (métadonnées séance — pas d’image hero)
 
 enum TrainingSessionID: String, CaseIterable, Identifiable {
     case pullGym = "pull_gym"
@@ -14,21 +14,6 @@ enum TrainingSessionID: String, CaseIterable, Identifiable {
     case restDay = "rest_day"
 
     var id: String { rawValue }
-
-    /// Nom du fichier PNG à déposer dans Assets.xcassets/<asset>.imageset/
-    nonisolated var imageAssetName: String {
-        switch self {
-        case .pullGym: "dossport"
-        case .pushGym: "session_push"
-        case .legsGym: "session_legs"
-        case .pushHome: "session_push"
-        case .pullHome: "dossport"
-        case .legsHome: "session_legs"
-        case .femaleGlutes: "session_legs"
-        case .femaleUpper: "session_posture"
-        case .restDay: "session_rest"
-        }
-    }
 }
 
 struct TrainingSessionCatalogEntry: Identifiable, Equatable {
@@ -38,8 +23,6 @@ struct TrainingSessionCatalogEntry: Identifiable, Equatable {
     let muscleTags: [String]
     let location: TrainingSessionLocation
     let gender: TrainingSessionGender
-
-    nonisolated var imageAssetName: String { id.imageAssetName }
 
     nonisolated var muscleTagsLabel: String {
         muscleTags.map { $0.uppercased() }.joined(separator: " · ")
@@ -149,12 +132,6 @@ enum TrainingSessionCatalog {
 
     nonisolated static func entry(for id: TrainingSessionID) -> TrainingSessionCatalogEntry {
         allEntries.first { $0.id == id } ?? allEntries[0]
-    }
-
-    nonisolated static var imageAssetsToCreate: [(asset: String, session: String, muscles: String)] {
-        allEntries.map { entry in
-            (entry.imageAssetName, entry.sessionName, entry.muscleTagsLabel)
-        }
     }
 
     // MARK: - Private

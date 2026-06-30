@@ -2,13 +2,14 @@
 //  WeightStepView.swift
 //
 //  ✨ Page de saisie du poids avec clavier numérique natif et toggle KG/LBS
-//  Structure IDENTIQUE à FirstNameInputStepView pour éviter les mouvements avec le clavier
+//  Structure IDENTIQUE à HeightStepView pour éviter les mouvements avec le clavier
 //
 
 import SwiftUI
 
 struct WeightStepView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var profileService: UnifiedProfileService
 
     @Binding var selectedWeight: Double  // en kg
@@ -17,6 +18,7 @@ struct WeightStepView: View {
 
     @State private var unit: WeightUnit = .kg
     @State private var weightString: String = ""
+    @State private var didBootstrap = false
     @FocusState private var isTextFieldFocused: Bool
 
     enum WeightUnit {
@@ -41,112 +43,93 @@ struct WeightStepView: View {
 
     private var displayWeightString: String {
         if weightString.isEmpty {
-            return "" // Pas de 0 par défaut, champ vide
+            return ""
         }
         return weightString
     }
 
-    private var isValidWeight: Bool {
-        !weightString.isEmpty && (Double(weightString) ?? 0) > 0
-    }
-
     var body: some View {
-        // ✅ ScrollView désactivée = empêche le scroll automatique quand le clavier apparaît
-        ScrollView {
-            ZStack {
-                // ✅ Le fond noir et la lueur animée sont gérés par OnboardingView
+        ZStack {
+            VStack(spacing: 0) {
+                Spacer()
+                    .frame(height: OnboardingConstants.titleAreaHeight)
 
-                // ✅ Structure FIXE - Les éléments ne bougent pas avec le clavier
-                VStack(spacing: 0) {
-                    // Espace pour le titre en overlay
-                    Spacer()
-                        .frame(height: OnboardingConstants.titleAreaHeight)
+                Spacer()
+                    .frame(height: OnboardingConstants.titleToContentSpacing)
 
-                    // Espacement entre titre et contenu (aligné avec HeightStepView)
-                    Spacer()
-                        .frame(height: OnboardingConstants.titleToContentSpacing)
-
-                    // ✅ Toggle KG/LBS
-                    OnboardingUnitSegmentToggle(
-                        leftLabel: "KG",
-                        rightLabel: "LBS",
-                        isLeftSelected: Binding(
-                            get: { unit == .kg },
-                            set: { unit = $0 ? .kg : .lbs }
-                        )
+                OnboardingUnitSegmentToggle(
+                    leftLabel: "KG",
+                    rightLabel: "LBS",
+                    isLeftSelected: Binding(
+                        get: { unit == .kg },
+                        set: { unit = $0 ? .kg : .lbs }
                     )
-                    .padding(.bottom, 60)
-                    .onChange(of: unit) { _, _ in
-                        convertWeight()
-                    }
+                )
+                .padding(.bottom, 60)
+                .onChange(of: unit) { _, _ in
+                    convertWeight()
+                }
 
-                    // ✅ Affichage du poids avec TextField invisible
-                    ZStack {
-                        // TextField transparent pour la saisie
-                        TextField("", text: $weightString)
-                            .font(.system(size: 56, weight: .bold))
-                            .foregroundColor(.clear)
-                            .multilineTextAlignment(.center)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .focused($isTextFieldFocused)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled(true)
-                            .onSubmit {
-                                handleContinue()
-                            }
-
-                        // Affichage du poids (visible)
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(displayWeightString)
-                                .font(.system(size: 56, weight: .bold))
-                                .foregroundStyle(OnboardingTheme.primaryText)
-                                .onboardingValueGlow(colorScheme: colorScheme)
-                                .contentTransition(.numericText())
-                                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
-
-                            Text(unit == .kg ? "kg" : "lbs")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundStyle(OnboardingTheme.bodyText)
+                ZStack {
+                    TextField("", text: $weightString)
+                        .font(.system(size: 56, weight: .bold))
+                        .foregroundColor(.clear)
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.decimalPad)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .focused($isTextFieldFocused)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                        .onSubmit {
+                            handleContinue()
                         }
-                        .allowsHitTesting(false)
-                    }
-                    .padding(.horizontal, 40)
-                    .onTapGesture {
-                        isTextFieldFocused = true
-                    }
 
-                    // ✅ Le bouton CONTINUER est maintenant géré globalement par OnboardingView
-                    Spacer()
-                }
-                .frame(minHeight: ScreenMetrics.height)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(displayWeightString)
+                            .font(.system(size: 56, weight: .bold))
+                            .foregroundStyle(OnboardingTheme.primaryText)
+                            .onboardingValueGlow(colorScheme: colorScheme)
+                            .contentTransition(.numericText())
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
 
-                // ✅ Titre en OVERLAY - Position ABSOLUE
-                VStack {
-                    OnboardingTitleView("Quel est ton poids ?")
-                        .padding(.top, OnboardingConstants.titleTopPadding)
-                    Spacer()
+                        Text(unit == .kg ? "kg" : "lbs")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(OnboardingTheme.bodyText)
+                    }
+                    .allowsHitTesting(false)
                 }
+                .padding(.horizontal, 40)
+                .onTapGesture {
+                    isTextFieldFocused = true
+                }
+
+                Spacer()
             }
+
+            OnboardingTitleView("Quel est ton poids ?")
+                .onboardingTitleOverlay()
         }
-        .scrollDisabled(true) // ✅ CRITIQUE: Désactiver le scroll = pas de mouvement avec le clavier
-        .scrollDismissesKeyboard(.never) // ✅ Ne pas fermer le clavier en scrollant
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            loadExistingWeight()
-            // Activer le clavier automatiquement
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isTextFieldFocused = true
+            bootstrapIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                restoreWeightStringIfNeeded()
+            case .inactive, .background:
+                resignKeyboard()
+            default:
+                break
             }
         }
         .onChange(of: weightString) { _, newValue in
-            // Filtrer pour n'accepter que les chiffres et un point décimal
             let filtered = newValue.filter { $0.isNumber || $0 == "." }
             if filtered != newValue {
                 weightString = filtered
                 return
             }
 
-            // Valider quand le poids change
             let weightValue = Double(newValue) ?? 0
             onValidationChanged?(!newValue.isEmpty && weightValue > 0)
             selectedWeight = displayWeight
@@ -156,15 +139,40 @@ struct WeightStepView: View {
         }
     }
 
+    private func bootstrapIfNeeded() {
+        guard !didBootstrap else { return }
+        didBootstrap = true
+        loadExistingWeight()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isTextFieldFocused = true
+        }
+    }
+
+    private func restoreWeightStringIfNeeded() {
+        guard weightString.isEmpty else { return }
+        if OnboardingViewModel.isPlausibleWeight(selectedWeight) {
+            populateWeightString(from: selectedWeight)
+            onValidationChanged?(true)
+        }
+    }
+
+    private func resignKeyboard() {
+        isTextFieldFocused = false
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
     private func handleContinue() {
         let trimmed = weightString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, Double(trimmed) ?? 0 > 0 else { return }
 
         HapticManager.shared.impact(.medium)
 
-        isTextFieldFocused = false
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-
+        resignKeyboard()
         onContinue?()
 
         selectedWeight = displayWeight

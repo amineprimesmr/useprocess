@@ -158,6 +158,8 @@ struct FaceWellnessMarkers: Codable, Hashable {
     var jawTensionScore: Int
     var facialSymmetryScore: Int
     var skinClarityScore: Int
+    /// Score 0–100 — plus haut = visage plus défini (mâchoire / pommettes vs rétention).
+    var faceDefinitionScore: Int? = nil
     var notes: [String]
 }
 

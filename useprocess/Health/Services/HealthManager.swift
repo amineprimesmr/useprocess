@@ -144,7 +144,7 @@ final class HealthManager: ObservableObject {
     private func faceScore(for date: Date) -> Int? {
         guard let latest = FaceScanHistoryStore.shared.latestResult else { return nil }
         guard Calendar.current.isDate(latest.createdAt, inSameDayAs: date) else { return nil }
-        return latest.resolvedFaceDayScore
+        return latest.displayWellnessScore
     }
 
     // MARK: - API onboarding (compat)

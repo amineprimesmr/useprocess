@@ -195,19 +195,13 @@ private struct ProcessCoachAccessoryChrome: ViewModifier {
 struct ProcessBevelLegacyTabShell<Content: View>: View {
     @Binding var selectedSection: ProcessMainSection
     var coachZoomNamespace: Namespace.ID
-    let isWelcomePlanGating: Bool
     let onPresentCoach: () -> Void
     @ViewBuilder let content: () -> Content
 
     @Environment(\.appTheme) private var theme
     @State private var scrollState = ProcessTabBarScrollState()
 
-    private var showsChrome: Bool {
-        !isWelcomePlanGating
-    }
-
     private var chromeBottomInset: CGFloat {
-        guard showsChrome else { return 0 }
         if scrollState.isMinimized {
             return BevelTabMetrics.compactHeight + BevelTabMetrics.bottomInset + UIApplication.safeAreaBottom + 12
         }
@@ -231,12 +225,10 @@ struct ProcessBevelLegacyTabShell<Content: View>: View {
                     scrollState.reset()
                 }
 
-            if showsChrome {
-                legacyChrome
-                    .padding(.horizontal, BevelTabMetrics.horizontalInset)
-                    .padding(.bottom, BevelTabMetrics.bottomInset + UIApplication.safeAreaBottom)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            legacyChrome
+                .padding(.horizontal, BevelTabMetrics.horizontalInset)
+                .padding(.bottom, BevelTabMetrics.bottomInset + UIApplication.safeAreaBottom)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 

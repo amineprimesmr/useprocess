@@ -28,6 +28,7 @@ struct AppShellView: View {
         .onChange(of: scenePhase) { _, phase in
             CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
             guard phase == .active else { return }
+            ProcessAudioSession.configureForMixingWithOthersIfIdle()
             Task { @MainActor in
                 let delivered = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
                 if delivered {

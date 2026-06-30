@@ -423,6 +423,20 @@ enum ProcessDebloatMealLibrary {
 
     private static let snackMeals: [MealSuggestionContent] = [
         makeMeal(
+            name: "Eau de Coco Vita Coco",
+            slot: .snack,
+            score: 88,
+            summary: "Hydratation debloat — potassium naturel, sodium minimal, sans sucre ajouté.",
+            items: [
+                item("Eau de coco Vita Coco 100% pure", "330 ml", "Autre")
+            ],
+            prep: "Serve bien frais — directement depuis la brique ou la bouteille. Choisis la version pure, pas nectar ni aromatisée.",
+            tip: "Excellent post-sport ou après un repas salé — le ratio potassium/sodium aide à dégonfler.",
+            tags: ["hydratation", "potassium", "debloat"],
+            sub: .init(protocolFit: 90, satiety: 55, antiBloat: 94),
+            image: "vitacoco"
+        ),
+        makeMeal(
             name: "Eau de Coco Banane",
             slot: .snack,
             score: 82,

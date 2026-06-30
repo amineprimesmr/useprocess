@@ -38,36 +38,30 @@ struct OnboardingHeaderChrome: View {
 
     @ViewBuilder
     private func onboardingHeaderBar(showsProgressAndLanguage: Bool) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 16) {
-                if shouldShowBackButton {
-                    OnboardingBackButton(action: onPreviousStep)
-                } else {
-                    Color.clear
-                        .frame(
-                            width: OnboardingConstants.backButtonSize,
-                            height: OnboardingConstants.backButtonSize
-                        )
-                }
-
-                if showsProgressAndLanguage {
-                    OnboardingProgressBar(progress: flowProgress)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 5)
-
-                    LanguageSelectorView()
-                } else {
-                    Spacer(minLength: 0)
-                }
+        HStack(spacing: 16) {
+            if shouldShowBackButton {
+                OnboardingBackButton(action: onPreviousStep)
+            } else {
+                Color.clear
+                    .frame(
+                        width: OnboardingConstants.backButtonSize,
+                        height: OnboardingConstants.backButtonSize
+                    )
             }
-            .padding(.horizontal, OnboardingConstants.headerHorizontalPadding)
-            .frame(height: OnboardingConstants.backButtonSize, alignment: .center)
-            .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
 
-            Spacer(minLength: 0)
-                .allowsHitTesting(false)
+            if showsProgressAndLanguage {
+                OnboardingProgressBar(progress: flowProgress)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 5)
+
+                LanguageSelectorView()
+            } else {
+                Spacer(minLength: 0)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ignoresSafeArea(edges: .top)
+        .padding(.horizontal, OnboardingConstants.headerHorizontalPadding)
+        .frame(height: OnboardingConstants.backButtonSize, alignment: .center)
+        .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 }

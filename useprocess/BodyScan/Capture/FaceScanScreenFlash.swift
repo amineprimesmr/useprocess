@@ -1,6 +1,7 @@
 import UIKit
 
-/// Flash écran avant (style Snap / TikTok) — luminosité max + restauration à la sortie.
+/// Flash écran avant (style Snap / TikTok) — luminosité max + fond blanc plein écran.
+@Observable
 @MainActor
 final class FaceScanScreenFlash {
     static let shared = FaceScanScreenFlash()

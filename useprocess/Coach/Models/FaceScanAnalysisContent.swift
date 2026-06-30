@@ -17,6 +17,15 @@ enum FaceScanAnalysisParser {
 
     static func sanitize(_ raw: String) -> String {
         raw
+            .components(separatedBy: .newlines)
+            .filter { line in
+                let upper = line.trimmingCharacters(in: .whitespaces).uppercased()
+                guard !upper.isEmpty else { return false }
+                return !upper.hasPrefix("CONSEIL")
+                    && !upper.hasPrefix("TIP:")
+                    && !upper.hasPrefix("CONSEIL:")
+            }
+            .joined(separator: "\n")
             .replacingOccurrences(of: "**", with: "")
             .replacingOccurrences(of: "__", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)

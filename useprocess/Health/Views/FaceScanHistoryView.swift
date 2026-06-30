@@ -53,7 +53,8 @@ struct FaceScanHistoryView: View {
         .fullScreenCover(item: $selectedDetailScan) { scan in
             FaceScanDetailView(
                 result: scan,
-                previous: history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt })
+                previous: history.first(where: { $0.id != scan.id && $0.createdAt < scan.createdAt }),
+                history: history
             )
             .processZoomTransition(id: .faceScanDetail(scan.id), namespace: detailZoomNamespace)
         }
@@ -120,11 +121,10 @@ struct FaceScanHistoryView: View {
 
                         Spacer(minLength: 8)
 
-                        FaceWellnessAppreciationBadge(
-                            appreciation: FaceWellnessScore.appreciation(for: scan),
-                            theme: theme,
-                            style: .compact
-                        )
+                        Text("\(scan.displayWellnessScore)")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(theme.primaryText)
+                            .monospacedDigit()
                     }
 
                     FaceScanMetricsRow(
@@ -228,73 +228,15 @@ private extension Array {
 }
 
 struct FaceScanDetailView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.appTheme) private var theme
-
     let result: FaceScanResult
     var previous: FaceScanResult?
-
-    private var appreciation: FaceWellnessScore.Appreciation {
-        FaceWellnessScore.appreciation(for: result)
-    }
+    var history: [FaceScanResult] = []
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    FaceScanRecordingMediaView(result: result, height: 280)
-
-                    HStack(alignment: .center) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(result.createdAt.formatted(date: .abbreviated, time: .shortened))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(theme.primaryText)
-                            if appreciation.headline != appreciation.displayText {
-                                Text(appreciation.headline)
-                                    .font(.caption.weight(.medium))
-                                    .foregroundStyle(theme.secondaryText)
-                            }
-                            if let confidence = result.scanConfidence {
-                                Text("\(FaceWellnessScore.confidenceLabel(for: confidence)) · relatif à toi")
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(theme.secondaryText)
-                            }
-                        }
-                        Spacer()
-                        FaceWellnessAppreciationBadge(
-                            appreciation: appreciation,
-                            theme: theme,
-                            style: .prominent
-                        )
-                    }
-
-                    FaceScanMetricsRow(
-                        markers: result.markers,
-                        relativeSignals: result.relativeSignals,
-                        trend: previous.map { result.delta(from: $0) },
-                        theme: theme
-                    )
-
-                    let analysis = CoachEngine.parsedFaceAnalysis(for: result)
-                    if analysis.isValid {
-                        FaceScanAnalysisCard(analysis: analysis, theme: theme)
-                    } else if let raw = result.claudeAnalysis {
-                        Text(raw)
-                            .font(.subheadline)
-                            .foregroundStyle(theme.primaryText)
-                    }
-                }
-                .padding()
-            }
-            .processTransparentScrollSurface()
-            .navigationTitle("Détail scan")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
-                }
-            }
-        }
-        .processAppPageBackground()
+        FaceScanWhoopAnalysisScreen(
+            result: result,
+            previous: previous,
+            history: history
+        )
     }
 }

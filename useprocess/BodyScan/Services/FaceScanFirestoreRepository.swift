@@ -24,7 +24,7 @@ final class FaceScanFirestoreRepository {
         try await db.collection("users").document(result.userId).setData([
             "lastFaceScanId": result.id,
             "lastFaceScanAt": Timestamp(date: result.createdAt),
-            "lastFaceDayScore": result.resolvedFaceDayScore
+            "lastFaceDayScore": result.displayWellnessScore
         ], merge: true)
     }
 

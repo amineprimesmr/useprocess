@@ -28,7 +28,7 @@ struct WelcomePlanChatView: View {
                 embedded: embeddedInMainApp
             )
             let bottomContentPadding: CGFloat = {
-                if viewModel.showsEnterButton { return 120 }
+                if viewModel.showsEnterButton || showsFillAllCircuitsButton { return 120 }
                 if viewModel.showsGenerationProgress { return 28 }
                 return embeddedInMainApp ? 24 : 28
             }()
@@ -71,8 +71,17 @@ struct WelcomePlanChatView: View {
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .zIndex(5)
                 }
+
+                if showsFillAllCircuitsButton {
+                    fillAllCircuitsButton
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.bottom, embeddedInMainApp ? 28 : 50)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .zIndex(5)
+                }
             }
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
+            .animation(OnboardingProfileChatAnswerReveal.spring, value: showsFillAllCircuitsButton)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsAnswerOptions)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsGenerationProgress)
             .ignoresSafeArea(edges: .top)
@@ -121,6 +130,10 @@ struct WelcomePlanChatView: View {
 
     private var showsConfigurationProgress: Bool {
         !viewModel.showsEnterButton && !viewModel.isGenerating
+    }
+
+    private var showsFillAllCircuitsButton: Bool {
+        !viewModel.showsEnterButton && !viewModel.isGenerating && !viewModel.isComplete
     }
 
     private var configurationProgressInset: CGFloat {
@@ -532,6 +545,25 @@ struct WelcomePlanChatView: View {
     }
 
     // MARK: - CTA
+
+    private var fillAllCircuitsButton: some View {
+        Button {
+            HapticManager.shared.impact(.medium)
+            Task {
+                await viewModel.fillAllCircuitsAndGenerate()
+            }
+        } label: {
+            Text("Ajouter tous les circuits")
+                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
+                .foregroundStyle(OnboardingTheme.primaryText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .contentShape(answerButtonShape)
+        }
+        .processGlassButton(in: answerButtonShape)
+        .disabled(viewModel.isSubmittingAnswer || viewModel.isGenerating)
+        .opacity(viewModel.isSubmittingAnswer || viewModel.isGenerating ? 0.55 : 1)
+    }
 
     private var enterAppButton: some View {
         Button {

@@ -236,7 +236,7 @@ struct FaceIDTickProgressRing: View {
 
     @ViewBuilder
     private func tickView(for index: Int) -> some View {
-        let isActive = isComplete || activeSectors.contains(index)
+        let isActive = activeSectors.contains(index)
         let length = isActive ? activeTickLength : inactiveTickLength
         let radialOffset = cameraRadius + gapFromCircle + length / 2
 

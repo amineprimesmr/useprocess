@@ -205,6 +205,8 @@ enum FaceWellnessScore {
                     underEyeFatigueDelta: 0,
                     jawTensionDelta: 0,
                     skinClarityDelta: 0,
+                    faceDefinitionDelta: 0,
+                    stressLoadDelta: 0,
                     baselineLabel: "Premier scan de référence"
                 )
             )
@@ -214,12 +216,17 @@ enum FaceWellnessScore {
         let fatigueDelta = markers.underEyeFatigueScore - baselineMarkers.underEyeFatigueScore
         let jawDelta = markers.jawTensionScore - baselineMarkers.jawTensionScore
         let clarityDelta = markers.skinClarityScore - baselineMarkers.skinClarityScore
+        let definitionDelta = FaceScanIndicators.definitionScore(from: markers)
+            - FaceScanIndicators.definitionScore(from: baselineMarkers)
+        let stressDelta = FaceScanIndicators.stressLoad(from: markers)
+            - FaceScanIndicators.stressLoad(from: baselineMarkers)
 
-        let stressDelta = Double(puffinessDelta) * 0.40
+        let stressShift = Double(puffinessDelta) * 0.40
             + Double(fatigueDelta) * 0.42
             + Double(jawDelta) * 0.12
         let clarityBonus = Double(clarityDelta) * 0.22
-        let wellnessShift = -stressDelta + clarityBonus
+        let definitionBonus = Double(definitionDelta) * 0.12
+        let wellnessShift = -stressShift + clarityBonus + definitionBonus
         let score = clampedInt(100.0 + wellnessShift, min: 0, max: 100)
 
         return RelativeAssessment(
@@ -231,6 +238,8 @@ enum FaceWellnessScore {
                 underEyeFatigueDelta: fatigueDelta,
                 jawTensionDelta: jawDelta,
                 skinClarityDelta: clarityDelta,
+                faceDefinitionDelta: definitionDelta,
+                stressLoadDelta: stressDelta,
                 baselineLabel: baseline.sampleCount >= 4
                     ? "Comparé à ta moyenne récente"
                     : "Comparé à tes premiers scans"
@@ -280,6 +289,7 @@ enum FaceWellnessScore {
         let jaw = average(samples.map(\.markers.jawTensionScore))
         let symmetry = average(samples.map(\.markers.facialSymmetryScore))
         let clarity = average(samples.map(\.markers.skinClarityScore))
+        let definition = average(samples.map { FaceScanIndicators.definitionScore(from: $0.markers) })
 
         return (
             FaceWellnessMarkers(
@@ -288,6 +298,7 @@ enum FaceWellnessScore {
                 jawTensionScore: jaw,
                 facialSymmetryScore: symmetry,
                 skinClarityScore: clarity,
+                faceDefinitionScore: definition,
                 notes: []
             ),
             count

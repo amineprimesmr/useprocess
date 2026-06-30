@@ -670,8 +670,7 @@ enum OriginUserAssessment {
                 title: "Sommeil & cortisol",
                 objectives: [
                     "Priorité absolue : \(Int(dailyTargets.sleepHours)) h de sommeil",
-                    "Couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min",
-                    "Respiration nasale lente"
+                    "Couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min"
                 ],
                 habits: ["Pas de caféine après \(ProcessDailyTargets.caffeineCutoffHour) h", "Chambre \(ProcessDailyTargets.bedroomTempCelsius) °C", "Scan visage"]
             ),

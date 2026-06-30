@@ -1,4 +1,4 @@
-import AVKit
+import AVFoundation
 import SwiftUI
 
 /// Aperçu du scan enregistré — vidéo caméra brute (sans mesh), repli sur photo si besoin.
@@ -13,7 +13,6 @@ struct FaceScanRecordingMediaView: View {
         case sidePanel
     }
 
-    @State private var featuredPlayer: AVPlayer?
     @State private var resolvedVideoURL: URL?
     @State private var resolvedSnapshot: UIImage?
     @State private var mediaRefreshToken = 0
@@ -21,22 +20,7 @@ struct FaceScanRecordingMediaView: View {
     var body: some View {
         Group {
             if let url = resolvedVideoURL {
-                switch displayMode {
-                case .featured:
-                    VideoPlayer(player: featuredPlayer)
-                        .onAppear {
-                            guard featuredPlayer == nil else { return }
-                            let player = AVPlayer(url: url)
-                            featuredPlayer = player
-                            player.play()
-                        }
-                        .onDisappear {
-                            featuredPlayer?.pause()
-                            featuredPlayer = nil
-                        }
-                case .thumbnail, .sidePanel:
-                    FaceScanVideoLoopView(url: url)
-                }
+                FaceScanSilentVideoLoopView(url: url)
             } else if let image = resolvedSnapshot {
                 Image(uiImage: image)
                     .resizable()
@@ -116,7 +100,8 @@ private struct FaceScanMediaCornerClip: ViewModifier {
     }
 }
 
-private struct FaceScanVideoLoopView: UIViewRepresentable {
+/// Boucle vidéo muette — AVPlayerLayer (pas VideoPlayer) pour ne pas couper la musique.
+struct FaceScanSilentVideoLoopView: UIViewRepresentable {
     let url: URL
 
     func makeCoordinator() -> Coordinator {
@@ -151,8 +136,10 @@ private struct FaceScanVideoLoopView: UIViewRepresentable {
 
             teardown(from: view)
 
+            ProcessAudioSession.configureForMixingWithOthers()
+
             let queuePlayer = AVQueuePlayer()
-            queuePlayer.isMuted = true
+            ProcessAudioSession.configurePlayerForSilentPlayback(queuePlayer)
             queuePlayer.automaticallyWaitsToMinimizeStalling = false
 
             let item = AVPlayerItem(url: url)
@@ -175,7 +162,7 @@ private struct FaceScanVideoLoopView: UIViewRepresentable {
     }
 }
 
-private final class FaceScanVideoLoopContainerView: UIView {
+final class FaceScanVideoLoopContainerView: UIView {
     private var playerLayer: AVPlayerLayer?
 
     override init(frame: CGRect) {
@@ -211,10 +198,18 @@ private final class FaceScanVideoLoopContainerView: UIView {
     }
 
     func resumePlaybackIfNeeded() {
-        guard bounds.width > 1, bounds.height > 1, let player = playerLayer?.player else { return }
+        guard window != nil,
+              bounds.width > 1,
+              bounds.height > 1,
+              let player = playerLayer?.player else { return }
         if player.rate == 0 {
             player.play()
         }
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        resumePlaybackIfNeeded()
     }
 
     override func layoutSubviews() {

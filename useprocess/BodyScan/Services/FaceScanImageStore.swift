@@ -71,6 +71,11 @@ enum FaceScanImageStore {
         protectLocalURL(url, isDirectory: false)
     }
 
+    static func resolvedVideoURL(forScanId scanId: String) -> URL? {
+        let url = videoURL(for: scanId)
+        return isReadableFile(at: url) ? url : nil
+    }
+
     static func resolvedVideoURL(for result: FaceScanResult) -> URL? {
         let candidates = videoFilenameCandidates(for: result)
         for filename in candidates {

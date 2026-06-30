@@ -68,6 +68,16 @@ struct OnboardingTitleView: View {
             .padding(.trailing, 20)
     }
 
+    /// Overlay titre fixe — laisse passer les taps (toggle, champs, boutons).
+    func onboardingTitleOverlay() -> some View {
+        VStack {
+            self
+                .padding(.top, OnboardingConstants.titleTopPadding)
+            Spacer()
+        }
+        .allowsHitTesting(false)
+    }
+
     /// Vue avec positionnement absolu depuis le haut de l'écran (à utiliser en overlay)
     func positioned() -> some View {
         GeometryReader { geometry in

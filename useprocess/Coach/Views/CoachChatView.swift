@@ -79,6 +79,7 @@ struct CoachChatView: View {
             CoachPresentationTracker.shared.isCoachChatActive = true
             CoachPresentationTracker.shared.activeConversationId = viewModel.activeConversationId
             focusChatInputIfAppropriate()
+            presentWelcomePlanConfigurationOnFirstCoachOpenIfNeeded()
         }
         .onDisappear {
             CoachPresentationTracker.shared.isCoachChatActive = false
@@ -856,6 +857,17 @@ struct CoachChatView: View {
             if action.kind == .modifyMeal || action.kind == .followUp {
                 isInputFocused = true
             }
+        }
+    }
+
+    private func presentWelcomePlanConfigurationOnFirstCoachOpenIfNeeded() {
+        guard !isIntegrationComplete else { return }
+        guard !WelcomePlanCoachPresentation.hasAutoPresentedConfiguration else { return }
+
+        WelcomePlanCoachPresentation.markConfigurationAutoPresented()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            guard !isIntegrationComplete else { return }
+            showsIntegrationFlow = true
         }
     }
 }

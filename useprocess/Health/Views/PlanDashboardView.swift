@@ -17,31 +17,9 @@ struct PlanDashboardView: View {
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
     var body: some View {
-        Group {
-            if !session.hasCompletedWelcomePlanChat {
-                welcomePlanConfiguration
-            } else {
-                planDashboard
-            }
-        }
-        .animation(.spring(response: 0.44, dampingFraction: 0.88), value: session.hasCompletedWelcomePlanChat)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var welcomePlanConfiguration: some View {
-        ZStack {
-            ProcessScreenBackground()
-            WelcomePlanChatView(
-                embeddedInMainApp: true,
-                selectedSection: $selectedSection,
-                onComplete: {
-                    planStore.reloadForCurrentUser()
-                }
-            )
-        }
-        .ignoresSafeArea(edges: .top)
-        .toolbar(.hidden, for: .tabBar)
-        .processClearUIKitHostingBackground()
+        planDashboard
+            .animation(.spring(response: 0.44, dampingFraction: 0.88), value: session.hasCompletedWelcomePlanChat)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var planDashboard: some View {
@@ -156,14 +134,12 @@ struct PlanDashboardView: View {
         if planStore.canRestorePlan {
             return "Tu as déjà répondu au questionnaire, mais ton programme n'a pas pu être chargé. Restaure-le en un clic ou reprends la configuration avec le coach."
         }
-        return "Le questionnaire Protocole Origine sur cet onglet débloque ton journal, tes repas IA et un plan calibré sur ton profil."
+        return "Ouvre le coach IA une première fois pour configurer ton protocole, ou reprends le questionnaire depuis le menu du coach."
     }
 
     private func openWelcomePlanConfiguration() {
         HapticManager.shared.impact(.medium)
-        withAnimation(ProcessGlass.spring) {
-            selectedSection = .plan
-        }
+        CoachPlanNavigationBridge.shared.shouldOpenCoach = true
     }
 
     private func restorePlan() async {

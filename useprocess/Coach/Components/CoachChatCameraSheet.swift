@@ -417,6 +417,7 @@ private final class CoachSharedCameraSession: NSObject, @unchecked Sendable {
         }
 
         await runOnSessionQueue {
+            ProcessAudioSession.configureForMixingWithOthers()
             self.configureIfNeeded(flashMode: flashMode)
             guard self.isConfigured, !self.session.isRunning else { return }
             self.session.startRunning()

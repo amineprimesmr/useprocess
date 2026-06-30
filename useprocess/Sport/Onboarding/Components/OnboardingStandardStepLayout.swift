@@ -50,11 +50,8 @@ struct OnboardingStandardStepLayout<Content: View>: View {
             }
 
             if let titleView {
-                VStack {
-                    titleView
-                        .padding(.top, OnboardingConstants.titleTopPadding)
-                    Spacer()
-                }
+                titleView
+                    .onboardingTitleOverlay()
             }
         }
     }

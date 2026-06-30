@@ -241,6 +241,38 @@ final class WelcomePlanChatViewModel {
         onComplete()
     }
 
+    /// Remplit toutes les réponses par défaut et génère le protocole (circuits posture, training, etc.).
+    func fillAllCircuitsAndGenerate() async {
+        guard !isGenerating, generatedPlan == nil else { return }
+
+        isSubmittingAnswer = true
+        typewriterTask?.cancel()
+        isMessageAnimating = false
+        pendingTypewriterMessageID = nil
+        pendingTypewriterText = nil
+        isQuestionReadyForAnswers = false
+        currentQuestion = nil
+
+        let prefilled = WelcomePlanQuestionBank.prefillAnswers(profile: profile)
+        for (questionId, answer) in prefilled {
+            answers[questionId] = answer
+            WelcomePlanStore.shared.saveAnswer(questionId: questionId, answer: answer)
+        }
+
+        if answers["optional_face_scan"]?.choiceIds.first == "yes" {
+            pendingFaceScan = true
+        } else {
+            pendingFaceScan = false
+        }
+
+        activeQuestions = WelcomePlanQuestionBank.activeQuestions(answers: answers)
+        currentIndex = activeQuestions.count
+
+        appendAssistantMessageInstant("Parfait — j'ajoute tous les circuits à ton protocole.")
+        isSubmittingAnswer = false
+        await generatePlan()
+    }
+
     // MARK: - Private
 
     private func restoreConversationHistory() {

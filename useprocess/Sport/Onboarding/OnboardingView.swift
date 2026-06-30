@@ -82,34 +82,37 @@ struct SportOnboardingView: View {
 
             continueButtonOverlay
                 .opacity(shouldShowGlobalContinueButton ? continueButtonOpacity : 0)
-                .allowsHitTesting(shouldShowGlobalContinueButton && canContinue && continueButtonHitTestingEnabled)
                 .accessibilityHidden(!shouldShowGlobalContinueButton)
                 .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
 
             if !isImmersiveOnboardingStep,
                isOnboardingRestoreComplete,
-               !OnboardingHeaderLayout.usesDedicatedFullScreenChrome(currentStep: viewModel.currentStep) {
-            if OnboardingHeaderLayout.showsAnyHeader(
-                currentStep: viewModel.currentStep,
-                shouldShowBackButton: shouldShowBackButton
-            ) {
+               !OnboardingHeaderLayout.usesDedicatedFullScreenChrome(currentStep: viewModel.currentStep),
+               OnboardingHeaderLayout.showsProgressAndLanguage(currentStep: viewModel.currentStep) {
+                AnimatedOnboardingGlow(
+                    currentStep: viewModel.currentStep,
+                    visitedStepsCount: flowGlowProgressCount,
+                    totalStepsForFlow: flowTotalSteps
+                )
+                .ignoresSafeArea(.all)
+                .allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .top) {
+            if !isImmersiveOnboardingStep,
+               isOnboardingRestoreComplete,
+               !OnboardingHeaderLayout.usesDedicatedFullScreenChrome(currentStep: viewModel.currentStep),
+               OnboardingHeaderLayout.showsAnyHeader(
+                   currentStep: viewModel.currentStep,
+                   shouldShowBackButton: shouldShowBackButton
+               ) {
                 OnboardingHeaderChrome(
                     viewModel: viewModel,
                     shouldShowBackButton: shouldShowBackButton,
                     flowProgress: flowProgress,
                     onPreviousStep: previousStep
                 )
-            }
-
-            if OnboardingHeaderLayout.showsProgressAndLanguage(currentStep: viewModel.currentStep) {
-                AnimatedOnboardingGlow(
-                    currentStep: viewModel.currentStep,
-                    visitedStepsCount: flowGlowProgressCount,
-                    totalStepsForFlow: flowTotalSteps
-                )
-                    .ignoresSafeArea(.all)
-                    .allowsHitTesting(false)
-            }
+                .ignoresSafeArea(edges: .top)
             }
         }
         .ignoresSafeArea(.all)
@@ -213,6 +216,11 @@ struct SportOnboardingView: View {
             .glassStyle()
             .padding(.horizontal, 34)
             .disabled(!canContinue)
+            .allowsHitTesting(
+                shouldShowGlobalContinueButton
+                    && continueButtonHitTestingEnabled
+                    && canContinue
+            )
 
             if shouldShowNoWeightGoalLink {
                 Button(action: skipWeightGoalFromIdealWeight) {

@@ -42,7 +42,8 @@ enum WelcomePlanGenerator {
         let posture = buildPostureProtocol(
             answers: answers,
             targets: targets,
-            snapshot: assessment.snapshot
+            snapshot: assessment.snapshot,
+            gender: gender
         )
 
         let summary = buildExecutiveSummary(
@@ -230,10 +231,6 @@ enum WelcomePlanGenerator {
 
         if multi("face_concerns", in: answers).contains("dark_circles") {
             habits.append(.init(id: "sleep_face", title: "Sommeil prioritaire visage", detail: "\(Int(targets.sleepHours)) h par nuit. Les cernes = cortisol + lymphe stagnante.", pillar: "Visage", timing: "Nuit"))
-        }
-
-        if snapshot.archetype == .stressRecovery {
-            habits.insert(.init(id: "breath", title: "Respiration nasale", detail: "5 min respiration lente — active le parasympathique et baisse le cortisol.", pillar: "Hormones", timing: "Matin & soir"), at: 0)
         }
 
         return habits
@@ -456,7 +453,8 @@ enum WelcomePlanGenerator {
     private static func buildPostureProtocol(
         answers: [String: WelcomePlanAnswer],
         targets: OriginPersonalizedDailyTargets,
-        snapshot: OriginPlanAssessmentSnapshot
+        snapshot: OriginPlanAssessmentSnapshot,
+        gender: Gender
     ) -> OriginPostureProtocol {
         let continuous = ProcessContinuousHabits.all.map { "\($0.title) — \($0.detail)" }
         var checks = PostureIntelligenceGuide.dailyChecks(
@@ -472,14 +470,14 @@ enum WelcomePlanGenerator {
 
         return OriginPostureProtocol(
             dailyChecks: checks,
-            mobilityBlocks: postureMobilityBlocks(for: answers),
+            mobilityBlocks: postureMobilityBlocks(for: answers, gender: gender),
             breathingWork: PostureIntelligenceGuide.breathingWork(for: answers),
             walkingTargets: "Objectif \(targets.dailySteps) pas + marche consciente (orteils dedans) — HealthKit"
         )
     }
 
-    private static func postureMobilityBlocks(for answers: [String: WelcomePlanAnswer]) -> [String] {
-        var blocks = PostureIntelligenceGuide.mobilityBlocks(for: answers)
+    private static func postureMobilityBlocks(for answers: [String: WelcomePlanAnswer], gender: Gender) -> [String] {
+        var blocks = PostureIntelligenceGuide.mobilityBlocks(for: answers, gender: gender)
         ChinRecessionIntelligenceGuide.enrichPostureMobility(&blocks, answers: answers)
         return blocks
     }

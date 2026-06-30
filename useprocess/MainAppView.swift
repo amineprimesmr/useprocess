@@ -11,15 +11,20 @@ struct MainAppView: View {
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var coachTracker = CoachPresentationTracker.shared
     @Bindable private var session = AppSession.shared
+    @Bindable private var screenFlash = FaceScanScreenFlash.shared
     @Environment(\.appTheme) private var theme
-
-    private var isWelcomePlanGating: Bool {
-        !session.hasCompletedWelcomePlanChat
-    }
 
     var body: some View {
         ZStack {
-            ProcessScreenBackground()
+            Group {
+                if screenFlash.isActive {
+                    Color.white
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                } else {
+                    ProcessScreenBackground()
+                }
+            }
 
             Group {
                 if #available(iOS 26.0, *) {
@@ -31,6 +36,7 @@ struct MainAppView: View {
             .background(Color.clear)
             .processClearUIKitHostingBackground()
         }
+        .animation(.easeInOut(duration: 0.22), value: screenFlash.isActive)
         .fullScreenCover(isPresented: $isCoachPresented) {
             if isCoachPresented {
                 CoachFullScreenPresentationView(
@@ -43,9 +49,6 @@ struct MainAppView: View {
             }
         }
         .onAppear {
-            if isWelcomePlanGating {
-                selectedSection = .plan
-            }
             _ = UserSessionCoordinator.shared
             CoachPresentationTracker.shared.isCoachPresented = isCoachPresented
         }
@@ -57,8 +60,8 @@ struct MainAppView: View {
             }
         }
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
-            if !completed {
-                selectedSection = .plan
+            if completed {
+                WelcomePlanStore.shared.reloadForCurrentUser()
             }
         }
         .onChange(of: selectedSection) { oldValue, newValue in
@@ -100,9 +103,7 @@ struct MainAppView: View {
         .background(Color.clear)
         .tabBarMinimizeBehavior(.onScrollDown)
         .tabViewBottomAccessory {
-            if !isWelcomePlanGating {
-                ProcessCoachTabAccessory(namespace: coachZoomNamespace, onTap: openCoachFromAccessory)
-            }
+            ProcessCoachTabAccessory(namespace: coachZoomNamespace, onTap: openCoachFromAccessory)
         }
         .tint(theme.primaryText)
     }
@@ -113,7 +114,6 @@ struct MainAppView: View {
         ProcessBevelLegacyTabShell(
             selectedSection: $selectedSection,
             coachZoomNamespace: coachZoomNamespace,
-            isWelcomePlanGating: isWelcomePlanGating,
             onPresentCoach: openCoachFromAccessory
         ) {
             legacyTabContent
@@ -143,9 +143,6 @@ struct MainAppView: View {
     private var profileTabRoot: some View {
         ProcessProfileView(selectedSection: $selectedSection)
             .background(Color.clear)
-            .welcomePlanSectionGate(isLocked: isWelcomePlanGating) {
-                openWelcomePlanConfiguration()
-            }
     }
 
     // MARK: - Navigation

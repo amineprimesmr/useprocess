@@ -2,15 +2,25 @@ import SwiftUI
 
 // MARK: - Modèle
 
+struct PlanStepsProgress: Equatable {
+    let current: Int
+    let target: Int
+
+    var fraction: Double {
+        guard target > 0 else { return 0 }
+        return Double(current) / Double(target)
+    }
+}
+
 struct PlanProtocolCarouselItem: Identifiable, Equatable {
     let id: String
     let title: String
-    var subtitle: String? = nil
     let repBadge: String?
     /// Texte complet — affiché uniquement au tap sur la carte.
     let detailText: String
     let assetName: String?
     let fallbackSystemImage: String
+    var stepsProgress: PlanStepsProgress? = nil
 }
 
 enum PlanProtocolLineParser {
@@ -44,43 +54,134 @@ enum PlanProtocolLineParser {
 
 enum PlanProtocolCarouselBuilder {
     enum SummaryID {
-        static let trainingSession = "training-session-summary"
-        static let postureCircuit = "posture-circuit-summary"
+        static let seeAllTraining = "training-see-all"
     }
 
-    static func trainingSessionSummary(from training: OriginDayTraining) -> PlanProtocolCarouselItem {
-        let entry = TrainingSessionCatalog.entry(for: training)
-        let badge = training.durationMinutes > 0 ? "\(training.durationMinutes) min" : nil
-        let musclePreview = entry.muscleTags.prefix(3).joined(separator: " · ")
+    static let compactPostureItemLimit = 4
+
+    static func compactPostureItems(
+        from plan: FaceOriginPlan,
+        stepsToday: Int
+    ) -> [PlanProtocolCarouselItem] {
+        let hasWalking = PlanPostureCircuitContent.hasWalkingTarget(for: plan)
+        let lineLimit = hasWalking ? compactPostureItemLimit - 1 : compactPostureItemLimit
+        var items = PlanPostureCircuitContent.compactLines(
+            for: plan,
+            limit: lineLimit,
+            includeWalking: false
+        )
+        .enumerated()
+        .map { index, line in
+            lineItem(
+                line,
+                id: "posture-\(index)",
+                fallback: postureFallback(for: line),
+                category: "Circuit posture"
+            )
+        }
+
+        if hasWalking {
+            items.append(walkingStepsItem(
+                current: stepsToday,
+                target: PlanPostureCircuitContent.dailyStepTarget(for: plan),
+                plan: plan
+            ))
+        }
+
+        return items
+    }
+
+    static func trainingDayCarouselItems(
+        training: OriginDayTraining,
+        plan: FaceOriginPlan,
+        stepsToday: Int
+    ) -> [PlanProtocolCarouselItem] {
+        let items = trainingItems(from: training) + compactPostureItems(from: plan, stepsToday: stepsToday)
+        return items + [seeAllTrainingCard(training: training, plan: plan, previewItemCount: items.count)]
+    }
+
+    static func restDayCarouselItems(
+        plan: FaceOriginPlan,
+        stepsToday: Int
+    ) -> [PlanProtocolCarouselItem] {
+        let hasWalking = PlanPostureCircuitContent.hasWalkingTarget(for: plan)
+        var items: [PlanProtocolCarouselItem] = []
+
+        if hasWalking {
+            items.append(walkingStepsItem(
+                current: stepsToday,
+                target: PlanPostureCircuitContent.dailyStepTarget(for: plan),
+                plan: plan
+            ))
+        }
+
+        let lineLimit = hasWalking ? compactPostureItemLimit - 1 : compactPostureItemLimit
+        items += PlanPostureCircuitContent.compactLines(
+            for: plan,
+            limit: lineLimit,
+            isRestDay: true,
+            includeWalking: false
+        )
+        .enumerated()
+        .map { index, line in
+            lineItem(
+                line,
+                id: "rest-\(index)",
+                fallback: postureFallback(for: line),
+                category: "Circuit posture"
+            )
+        }
+
+        return items + [seeAllTrainingCard(training: nil, plan: plan, previewItemCount: items.count)]
+    }
+
+    static func walkingStepsItem(
+        current: Int,
+        target: Int,
+        plan: FaceOriginPlan
+    ) -> PlanProtocolCarouselItem {
+        let detail = PlanPostureCircuitContent.walkingTarget(for: plan)
+            ?? "Objectif \(PlanStepsProgressFormatter.formatted(target)) pas aujourd'hui — HealthKit"
 
         return PlanProtocolCarouselItem(
-            id: SummaryID.trainingSession,
-            title: entry.sessionName,
-            subtitle: musclePreview.isEmpty ? nil : musclePreview.uppercased(),
-            repBadge: badge,
-            detailText: musclePreview,
-            assetName: entry.imageAssetName,
-            fallbackSystemImage: "figure.strengthtraining.traditional"
+            id: "walking-steps",
+            title: "Marche",
+            repBadge: nil,
+            detailText: detail,
+            assetName: TrainingAssetCatalog.blockAsset(for: "Marche"),
+            fallbackSystemImage: "figure.walk",
+            stepsProgress: PlanStepsProgress(current: current, target: target)
         )
     }
 
-    static func postureCircuitSummary(from plan: FaceOriginPlan) -> PlanProtocolCarouselItem {
-        PlanProtocolCarouselItem(
-            id: SummaryID.postureCircuit,
-            title: "Circuit posture",
-            subtitle: "MOBILITÉ · RESPIRATION",
-            repBadge: "~10 min",
-            detailText: "Mobilité · respiration · marche",
-            assetName: "session_posture",
-            fallbackSystemImage: "figure.mind.and.body"
-        )
-    }
+    static func seeAllTrainingCard(
+        training: OriginDayTraining?,
+        plan: FaceOriginPlan,
+        previewItemCount: Int
+    ) -> PlanProtocolCarouselItem {
+        let postureCount = PlanPostureCircuitContent.mobilityBlocks(for: plan).count
+        let sessionBlockCount: Int
+        if let training {
+            sessionBlockCount = training.warmup.count + training.exercises.count + training.cooldown.count
+        } else {
+            sessionBlockCount = max(previewItemCount, 1)
+        }
 
-    static func trainingDaySummaryItems(
-        training: OriginDayTraining,
-        plan: FaceOriginPlan
-    ) -> [PlanProtocolCarouselItem] {
-        [trainingSessionSummary(from: training), postureCircuitSummary(from: plan)]
+        let detailText: String
+        if let training {
+            detailText = "\(sessionBlockCount) blocs séance · \(postureCount) blocs posture · échauffement, exercices, retour au calme et circuit complet."
+        } else {
+            detailText = "Repos actif · \(postureCount) blocs posture · marche et mobilité."
+        }
+
+        return PlanProtocolCarouselItem(
+            id: SummaryID.seeAllTraining,
+            title: "Voir tout",
+            repBadge: training.map { "\($0.durationMinutes) min" },
+            detailText: detailText,
+            assetName: TrainingAssetCatalog.seeAllTrainingAssetName,
+            fallbackSystemImage: "square.grid.2x2.fill"
+        )
     }
 
     static func trainingItems(from training: OriginDayTraining) -> [PlanProtocolCarouselItem] {
@@ -150,6 +251,13 @@ enum PlanProtocolCarouselBuilder {
             assetName: assetName ?? TrainingAssetCatalog.blockAsset(for: line),
             fallbackSystemImage: fallback
         )
+    }
+
+    private static func postureFallback(for line: String) -> String {
+        let lower = line.lowercased()
+        if lower.contains("buteyko") || lower.contains("respiration") { return "wind" }
+        if lower.contains("marche") || lower.contains("pas") { return "figure.walk" }
+        return "figure.mind.and.body"
     }
 
     private static func exerciseItem(_ exercise: OriginExercise) -> PlanProtocolCarouselItem {
@@ -377,7 +485,13 @@ struct PlanProtocolCarouselCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Spacer(minLength: 0)
-                    if let repBadge = item.repBadge {
+                    if let stepsProgress = item.stepsProgress {
+                        PlanStepsProgressRing(
+                            progress: stepsProgress.fraction,
+                            size: isLargeCard ? 38 : 34
+                        )
+                        .padding(10)
+                    } else if let repBadge = item.repBadge {
                         Text(repBadge)
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.white.opacity(0.96))
@@ -406,12 +520,14 @@ struct PlanProtocolCarouselCard: View {
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    if let subtitle = item.subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.system(size: isLargeCard ? 10 : 9, weight: .semibold))
-                            .foregroundStyle(Color.white.opacity(0.62))
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
+                    if let stepsProgress = item.stepsProgress {
+                        Text(PlanStepsProgressFormatter.stepsRatio(
+                            current: stepsProgress.current,
+                            target: stepsProgress.target
+                        ))
+                        .font(.system(size: isLargeCard ? 14 : 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.92))
+                        .monospacedDigit()
                     }
                 }
                 .padding(.horizontal, isLargeCard ? 14 : 12)
@@ -523,7 +639,22 @@ struct PlanProtocolItemDetailSheet: View {
                         .allowsHitTesting(false)
 
                         VStack(alignment: .leading, spacing: 6) {
-                            if let repBadge = item.repBadge {
+                            if let stepsProgress = item.stepsProgress {
+                                HStack(spacing: 12) {
+                                    PlanStepsProgressRing(
+                                        progress: stepsProgress.fraction,
+                                        lineWidth: 6,
+                                        size: 44
+                                    )
+                                    Text(PlanStepsProgressFormatter.stepsRatio(
+                                        current: stepsProgress.current,
+                                        target: stepsProgress.target
+                                    ))
+                                    .font(.title3.weight(.bold))
+                                    .foregroundStyle(.white)
+                                    .monospacedDigit()
+                                }
+                            } else if let repBadge = item.repBadge {
                                 Text(repBadge)
                                     .font(.caption.weight(.bold))
                                     .foregroundStyle(.white.opacity(0.92))
@@ -629,5 +760,53 @@ struct PlanProtocolSectionHeader: View {
 
     var body: some View {
         PlanHomeSectionHeader(title: title, trailingCaption: trailing)
+    }
+}
+
+// MARK: - Pas / marche
+
+enum PlanStepsProgressFormatter {
+    private static let numberFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = " "
+        return formatter
+    }()
+
+    static func formatted(_ value: Int) -> String {
+        numberFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
+    static func stepsRatio(current: Int, target: Int) -> String {
+        "\(formatted(current)) / \(formatted(target))"
+    }
+}
+
+struct PlanStepsProgressRing: View {
+    /// Vert pétant ultra clair — lisible sur photo sombre du carousel.
+    private static let brightGreen = Color(red: 0.72, green: 1.0, blue: 0.62)
+
+    var progress: Double
+    var lineWidth: CGFloat = 5
+    var size: CGFloat = 34
+    var trackColor: Color = Color.white.opacity(0.28)
+    var fillColor: Color = PlanStepsProgressRing.brightGreen
+
+    private var clampedProgress: Double {
+        min(max(progress, 0), 1)
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(trackColor, lineWidth: lineWidth)
+            Circle()
+                .trim(from: 0, to: clampedProgress)
+                .stroke(fillColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: size, height: size)
+        .shadow(color: fillColor.opacity(0.55), radius: 4, y: 0)
     }
 }

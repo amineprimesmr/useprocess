@@ -118,7 +118,7 @@ struct CoachFilesSheet: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Scan du \(scan.createdAt.formatted(date: .abbreviated, time: .omitted))")
                                         .font(.body.weight(.medium))
-                                    Text("Score \(scan.resolvedFaceDayScore)/100")
+                                    Text("Score \(scan.displayWellnessScore)/100")
                                         .font(.caption)
                                         .foregroundStyle(theme.secondaryText)
                                 }

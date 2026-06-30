@@ -15,6 +15,7 @@ struct useprocessApp: App {
 
     init() {
         iOS26Stability.configureAtLaunch()
+        ProcessAudioSession.configureForMixingWithOthers()
         FirebaseBootstrap.configure()
         ProcessMetricKitMonitor.shared.start()
         CoachIntelligenceNotificationService.configure()

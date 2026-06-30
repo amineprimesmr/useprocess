@@ -13,6 +13,7 @@ struct OnboardingProfileChatAnalysisPanel: View {
     let elapsedSeconds: Int
     let isPaused: Bool
     let isVisible: Bool
+    let steps: [OnboardingAnalysisProgressConfig.ProgressStep]
 
     init(
         phaseLabel: String,
@@ -21,24 +22,22 @@ struct OnboardingProfileChatAnalysisPanel: View {
         progress: Double,
         elapsedSeconds: Int = 0,
         isPaused: Bool = false,
-        isVisible: Bool
+        isVisible: Bool,
+        steps: [OnboardingAnalysisProgressConfig.ProgressStep] = OnboardingAnalysisProgressConfig.answersAnalysisSteps
     ) {
+        self.steps = steps
         self.phaseLabel = phaseLabel
         self.phaseIndex = phaseIndex
-            ?? OnboardingAnalysisProgressConfig.stepIndex(forPhaseLabel: phaseLabel)
+            ?? steps.firstIndex(where: { $0.phaseLabel == phaseLabel })
             ?? min(
-                OnboardingAnalysisProgressConfig.answersAnalysisSteps.count - 1,
-                Int(progress * Double(OnboardingAnalysisProgressConfig.answersAnalysisSteps.count))
+                steps.count - 1,
+                Int(progress * Double(steps.count))
             )
         self.displayedPercentage = displayedPercentage
         self.progress = progress
         self.elapsedSeconds = elapsedSeconds
         self.isPaused = isPaused
         self.isVisible = isVisible
-    }
-
-    private var steps: [OnboardingAnalysisProgressConfig.ProgressStep] {
-        OnboardingAnalysisProgressConfig.answersAnalysisSteps
     }
 
     private var isComplete: Bool {

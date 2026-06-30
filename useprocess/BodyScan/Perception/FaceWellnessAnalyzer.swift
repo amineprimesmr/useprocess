@@ -46,12 +46,24 @@ enum FaceWellnessAnalyzer {
             symmetry: symmetry, clarity: clarity, mesh: mesh, into: &notes
         )
 
+        let meshContext = FaceScanIndicators.MeshContext(
+            cheekHollowness: meshCheekHollowness(mesh),
+            jawWidthRatio: meshWidthRatio(mesh, atY: -0.08)
+        )
+        let definition = FaceScanIndicators.computeDefinition(
+            puffiness: puffiness,
+            jawTension: jaw,
+            skinClarity: clarity,
+            mesh: meshContext
+        )
+
         return markers(
             puffiness: puffiness,
             fatigue: fatigue,
             jaw: jaw,
             symmetry: symmetry,
             clarity: clarity,
+            definition: definition,
             notes: notes
         )
     }
@@ -89,7 +101,14 @@ enum FaceWellnessAnalyzer {
         let puffiness = estimatePuffiness(pose: pose, clarity: clarity)
         let jaw = estimateJawTension(symmetry: symmetryScore)
 
-        return markers(puffiness: puffiness, fatigue: fatigue, jaw: jaw, symmetry: symmetryScore, clarity: clarity, notes: notes)
+        let definition = FaceScanIndicators.computeDefinition(
+            puffiness: puffiness,
+            jawTension: jaw,
+            skinClarity: clarity,
+            mesh: nil
+        )
+
+        return markers(puffiness: puffiness, fatigue: fatigue, jaw: jaw, symmetry: symmetryScore, clarity: clarity, definition: definition, notes: notes)
     }
 
     static func analyze(from mesh: FaceMesh3DData, pose: ScanPoseKind = .faceMesh) -> FaceWellnessMarkers {
@@ -222,7 +241,8 @@ enum FaceWellnessAnalyzer {
     }
 
     private static func markers(
-        puffiness: Int, fatigue: Int, jaw: Int, symmetry: Int, clarity: Int, notes: [String]
+        puffiness: Int, fatigue: Int, jaw: Int, symmetry: Int, clarity: Int,
+        definition: Int? = nil, notes: [String]
     ) -> FaceWellnessMarkers {
         FaceWellnessMarkers(
             puffinessScore: puffiness,
@@ -230,6 +250,7 @@ enum FaceWellnessAnalyzer {
             jawTensionScore: jaw,
             facialSymmetryScore: symmetry,
             skinClarityScore: clarity,
+            faceDefinitionScore: definition,
             notes: notes
         )
     }

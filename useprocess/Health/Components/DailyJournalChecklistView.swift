@@ -102,16 +102,6 @@ struct DailyJournalChecklistView: View {
                 .padding(.top, 20)
             }
         }
-        .fullScreenCover(isPresented: $showFaceScan) {
-            FaceScanPrivacyGateView(
-                onDismiss: { showFaceScan = false },
-                onComplete: { _ in
-                    showFaceScan = false
-                    faceHistoryStore = FaceScanHistoryStore.shared
-                }
-            )
-            .environmentObject(UnifiedProfileService.shared)
-        }
         .fullScreenCover(isPresented: $showFaceScanHistory) {
             FaceScanHistoryView(
                 history: faceHistoryStore.history,
@@ -119,7 +109,12 @@ struct DailyJournalChecklistView: View {
                 onScan: {
                     showFaceScanHistory = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        showFaceScan = true
+                        if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
+                            ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
+                        }
+                        withAnimation(.spring(response: 0.56, dampingFraction: 0.84)) {
+                            showFaceScan = true
+                        }
                     }
                 }
             )
@@ -197,16 +192,15 @@ struct DailyJournalChecklistView: View {
             PlanLastFaceScanSection(
                 latest: faceHistoryStore.latestResult,
                 isScanDue: faceHistoryStore.isScanDue,
-                isScanFlowActive: showFaceScan,
+                isScanFlowActive: $showFaceScan,
                 zoomNamespace: faceScanHistoryZoomNamespace,
-                onScan: { showFaceScan = true },
-                onOpenHistory: { showFaceScanHistory = true }
+                onScan: {},
+                onOpenHistory: { showFaceScanHistory = true },
+                onScanComplete: { _ in
+                    faceHistoryStore = FaceScanHistoryStore.shared
+                }
             )
             .environmentObject(UnifiedProfileService.shared)
-            .transition(.asymmetric(
-                insertion: .opacity.combined(with: .move(edge: .top)),
-                removal: .opacity.combined(with: .scale(scale: 0.98))
-            ))
 
         case .nutrition:
             switch dayAvailability {

@@ -13,8 +13,8 @@ enum PostureIntelligenceGuide {
         - Tête en avant = compensation airways étroites (palais récessif) — pas seulement « muscles faibles »
         - Chin tucks seuls insuffisants sans habitudes orofaciales (langue, déglution, respiration nasale)
         - Nuque droite 24/7 (pas chin tuck permanent) — SCM sur-sollicité = boucle tête en avant
-        - Exercices : chin tuck avancé (lit/banc 3×8–10), extension nuque dos (3×10), face pulls (2–3×10–12)
-        - Corps : APT → RSS (release fascias, stretch hip flexors, strengthen glutes) ; marcher orteils dedans talons dehors
+        - Exercices maison : chin tuck (mur/lit), neck curls (tête dans le vide), extension nuque au sol, rétraction scapulaire au mur
+        - Corps : APT → étirement fléchisseurs hanche, pont fessier, marche consciente (orteils dedans)
         - Pieds nus ~30 min/j — muscles intrinsiques = fondation squelette
         - Sommeil latéral : coussin tête + entre genoux + à hugger — airways ouvertes
         - Langue tiers postérieur sur palais, dents en contact léger — 2 semaines conscience active
@@ -40,25 +40,61 @@ enum PostureIntelligenceGuide {
         "Pieds nus ou chaussures barefoot ~30 min/j — activation muscles intrinsiques des pieds."
     }
 
-    // MARK: - Blocs mobilité / correctifs (circuit quotidien Plan)
+    // MARK: - Circuit maison (sans salle — faisable partout)
 
-    static let defaultMobilityBlocks: [String] = [
-        "Chin tuck avancé — tête hors lit/banc, 3×8–10, maintien 2–3 s au fond",
-        "Extension nuque (dos) — sur ventre, 3×10 résistance mains ou plaque légère",
-        "Face pulls — 2–3×10–12 (câble ou élastique)",
-        "Mobilité épaules + hanches — 2 min"
+    static let maleHomeMobilityBlocks: [String] = [
+        "Chin tuck — dos au mur ou tête hors lit, 3×10, maintien 2–3 s",
+        "Neck curls — buste sur lit ou canapé, tête dans le vide, menton vers poitrine, 3×10–12",
+        "Extension nuque (face au sol) — mains au front, 3×10 sans charge",
+        "Rétraction scapulaire au mur — bras en Y, omoplates serrées, 2×12",
+        "Pont fessier + étirement fléchisseurs hanche — 2×15 + 45 s/jambe"
     ]
 
-    static let lightMobilityBlocks: [String] = [
-        "Chin tuck classique — 2–3×12, maintien 2–3 s (pas 24h/24)",
-        "Face pulls léger — 2×12",
-        "Mobilité épaules — 1–2 min"
+    static let femaleHomeMobilityBlocks: [String] = [
+        "Chin tuck — assis ou debout, menton rentré, 3×10, maintien 2–3 s",
+        "Neck curls — buste sur lit ou canapé, tête dans le vide, menton vers poitrine, 3×10–12",
+        "Wall angels — dos au mur, bras en W→Y, 2×10",
+        "Pont fessier + clamshell — 2×15 + 12/côté (bassin stable)",
+        "Ouverture thoracique au sol — serviette roulée sous omoplates, 2 min"
     ]
 
-    static let aptBodyBlocks: [String] = [
-        "RSS bassin — tennis ball fascias pieds/fessiers, étirement fléchisseurs hanche, activation fessiers",
+    static let neutralHomeMobilityBlocks: [String] = [
+        "Chin tuck — debout ou allongé, 3×10, maintien 2–3 s",
+        "Neck curls — buste sur lit/canapé, tête dans le vide, 3×10–12",
+        "Rétraction scapulaire + wall angels — 2×12",
+        "Pont fessier + mobilité hanches — 2×15"
+    ]
+
+    static let lightMaleHomeBlocks: [String] = [
+        "Chin tuck classique — 2×12, maintien 2–3 s",
+        "Neck curls légers — tête hors lit ou canapé, 2×12",
+        "Mobilité épaules debout — cercles + rétraction, 2 min"
+    ]
+
+    static let lightFemaleHomeBlocks: [String] = [
+        "Chin tuck classique — 2×12",
+        "Neck curls légers — tête hors lit ou canapé, 2×12",
+        "Chat-vache + respiration nasale — 2 min"
+    ]
+
+    static let lightNeutralHomeBlocks: [String] = [
+        "Chin tuck classique — 2×12",
+        "Neck curls légers — tête hors lit ou canapé, 2×12",
+        "Mobilité nuque + épaules — 2 min"
+    ]
+
+    /// Fallback affichage quand le plan n’a pas encore de blocs persistés.
+    static let defaultMobilityBlocks: [String] = maleHomeMobilityBlocks
+
+    static let lightMobilityBlocks: [String] = lightMaleHomeBlocks
+
+    static let aptBodyHomeBlocks: [String] = [
+        "Étirement fléchisseurs hanche — fente basse genou au sol, 45 s/jambe",
+        "Pont fessier — 2×15, serrer fessiers 2 s en haut",
         "Marche consciente — orteils dedans, talons dehors, abdos légers"
     ]
+
+    static let aptBodyBlocks: [String] = aptBodyHomeBlocks
 
     // MARK: - Orofacial (lié face protocol)
 
@@ -70,14 +106,12 @@ enum PostureIntelligenceGuide {
     ]
 
     static let lightOrofacialRoutine: [String] = [
-        "Langue sur palais + déglutition correcte à chaque repas",
-        "Respiration nasale lente 5 min matin et soir"
+        "Langue sur palais + déglutition correcte à chaque repas"
     ]
 
     // MARK: - Respiration
 
     static let buteykoLine = "Buteyko — 3–4 min : exhale complet, apnée, inspire 1 s, apnée 1 s, cycle répété"
-    static let nasalBreathingLine = "Respiration nasale lente 5 min matin et soir — posture et cage thoracique"
 
     // MARK: - Sommeil posture
 
@@ -85,21 +119,44 @@ enum PostureIntelligenceGuide {
 
     // MARK: - Génération protocole
 
-    static func mobilityBlocks(for answers: [String: WelcomePlanAnswer]) -> [String] {
+    static func mobilityBlocks(for answers: [String: WelcomePlanAnswer], gender: Gender = .male) -> [String] {
         let forwardHead = choice("forward_head", in: answers) == "yes"
         let desk = choice("desk_job", in: answers) == "yes"
         let mouth = choice("mouth_breathing", in: answers) == "yes"
+        let useFull = forwardHead || desk
 
-        var blocks = forwardHead || desk ? defaultMobilityBlocks : lightMobilityBlocks
+        var blocks = homeMobilityBlocks(gender: gender, full: useFull)
+
         if forwardHead || desk {
-            blocks.append(contentsOf: aptBodyBlocks)
-        }
-        if mouth {
-            if !blocks.contains(where: { $0.localizedCaseInsensitiveContains("Buteyko") }) {
-                blocks.append(buteykoLine)
+            if useFull {
+                if !blocks.contains(where: { $0.localizedCaseInsensitiveContains("fascia") || $0.localizedCaseInsensitiveContains("tennis") }) {
+                    blocks.append("Release fascia pieds — balle ou tennis, 1 min/pied")
+                }
+            } else {
+                blocks.append(contentsOf: aptBodyHomeBlocks.filter { line in
+                    !blocks.contains(where: { existing in
+                        existing.localizedCaseInsensitiveContains("Pont fessier") && line.localizedCaseInsensitiveContains("Pont fessier")
+                    })
+                })
             }
         }
+
+        if mouth, !blocks.contains(where: { $0.localizedCaseInsensitiveContains("Buteyko") }) {
+            blocks.append(buteykoLine)
+        }
+
         return blocks
+    }
+
+    private static func homeMobilityBlocks(gender: Gender, full: Bool) -> [String] {
+        switch gender {
+        case .female:
+            return full ? femaleHomeMobilityBlocks : lightFemaleHomeBlocks
+        case .male:
+            return full ? maleHomeMobilityBlocks : lightMaleHomeBlocks
+        case .other, .preferNotToSay:
+            return full ? neutralHomeMobilityBlocks : lightNeutralHomeBlocks
+        }
     }
 
     static func dailyChecks(
@@ -133,14 +190,8 @@ enum PostureIntelligenceGuide {
     }
 
     static func breathingWork(for answers: [String: WelcomePlanAnswer]) -> [String] {
-        var work: [String] = []
-        if choice("mouth_breathing", in: answers) == "yes" {
-            work.append(nasalBreathingLine)
-            work.append(buteykoLine)
-        } else if choice("forward_head", in: answers) == "yes" {
-            work.append(nasalBreathingLine)
-        }
-        return work
+        _ = answers
+        return []
     }
 
     static func orofacialWork(for answers: [String: WelcomePlanAnswer]) -> [String] {
@@ -168,7 +219,7 @@ enum PostureIntelligenceGuide {
     static func trainingPostureNotes(for answers: [String: WelcomePlanAnswer]) -> [String] {
         var notes: [String] = []
         if choice("forward_head", in: answers) == "yes" {
-            notes.append("Chaque séance : face pulls + chaîne postérieure avant charges lourdes")
+            notes.append("Chaque séance : mobilité nuque + rétraction scapulaire avant les charges")
         }
         notes.append("Sprints fonctionnels — 8×15 s, repos 1m30 (option matin pour GH)")
         return notes

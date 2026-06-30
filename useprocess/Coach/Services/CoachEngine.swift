@@ -329,25 +329,24 @@ enum CoachEngine {
 
         Règle critique : ne juge jamais la forme naturelle du visage. Un visage large, fin, asymétrique ou avec traits marqués n'est jamais un défaut.
         Interprète uniquement les variations d'état du jour : rétention d'eau, fatigue visible, tension, qualité de scan, tendance vs baseline personnelle.
+        Interdiction absolue de donner des conseils, actions, recommandations ou protocole. Analyse descriptive uniquement.
 
-        Scores locaux bruts (0-100, plus haut = signal plus marqué pour fatigue/gonflement/tension ; clarté et alignement technique plus hauts = meilleure qualité de repère) :
-        - Gonflement : \(markers.puffinessScore)
-        - Cernes / fatigue : \(markers.underEyeFatigueScore)
-        - Tension mâchoire : \(markers.jawTensionScore)
-        - Clarté peau : \(markers.skinClarityScore)
-        - Alignement technique du scan : \(markers.facialSymmetryScore) (ne jamais interpréter comme beauté, identité ou défaut morphologique)
+        Scores locaux (0-100). Plus haut = signal plus marqué pour rétention, récupération, charge stress ; plus haut = mieux pour peau et définition :
+        - Rétention d'eau : \(markers.puffinessScore)
+        - Récupération (cernes / fatigue) : \(markers.underEyeFatigueScore)
+        - Peau : \(markers.skinClarityScore)
+        - Définition (mâchoire / pommettes) : \(FaceScanIndicators.definitionScore(from: markers))
+        - Charge stress (cortisol estimé) : \(FaceScanIndicators.stressLoad(for: result))
 
         \(relativeBlock)
 
         \(historyBlock)
 
-        Analyse cette photo + scores relatifs. Format EXACT :
+        Analyse cette photo + scores relatifs. Format EXACT — aucune ligne CONSEIL :
 
-        RESUME: [1 phrase — état global du visage aujourd'hui, max 18 mots]
-        SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — ex: rétention eau, cortisol, cervicales]
+        RESUME: [1 phrase — état global du visage aujourd'hui, max 18 mots, factuel]
+        SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — observation factuelle]
         EVOLUTION: [1 phrase vs scan précédent si historique, sinon "Premier scan de référence."]
-        CONSEIL_1: [action concrète aujourd'hui]
-        CONSEIL_2: [action demain matin]
         """
 
         do {
@@ -365,7 +364,7 @@ enum CoachEngine {
                 userText: prompt,
                 model: ClaudeModel.preferred(for: .faceScanVision),
                 imageBase64: jpeg?.base64EncodedString(),
-                maxTokens: 320
+                maxTokens: 220
             )
 
             var updated = result
@@ -414,10 +413,11 @@ enum CoachEngine {
         - Score relatif visage du jour : \(result.resolvedFaceDayScore)/100
         - Confiance scan : \(confidence)/100 (\(FaceWellnessScore.confidenceLabel(for: confidence)))
         - Baseline : \(signals.baselineLabel), \(baselineCount) scan(s)
-        - Delta gonflement vs baseline : \(signed(signals.puffinessDelta))
-        - Delta cernes/fatigue vs baseline : \(signed(signals.underEyeFatigueDelta))
-        - Delta mâchoire vs baseline : \(signed(signals.jawTensionDelta))
-        - Delta clarté peau vs baseline : \(signed(signals.skinClarityDelta))
+        - Delta rétention vs baseline : \(signed(signals.puffinessDelta))
+        - Delta récupération vs baseline : \(signed(signals.underEyeFatigueDelta))
+        - Delta peau vs baseline : \(signed(signals.skinClarityDelta))
+        - Delta définition vs baseline : \(signed(signals.faceDefinitionDelta ?? 0))
+        - Delta charge stress vs baseline : \(signed(signals.stressLoadDelta ?? 0))
         """
     }
 

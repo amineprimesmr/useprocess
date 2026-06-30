@@ -4,6 +4,8 @@ import SwiftUI
 enum FaceScanCapturePresentation: Equatable {
     case fullScreen
     case embeddedCard(viewportDiameter: CGFloat)
+    /// Scan intégré à la carte « Dernier scan » sur l’accueil Plan.
+    case inlineHome(viewportDiameter: CGFloat)
 }
 
 /// Écran de capture TrueDepth — plein écran ou carte intégrée (accueil).
@@ -12,6 +14,9 @@ struct FaceScanCaptureScreen: View {
     @Environment(\.appTheme) private var appTheme
 
     var presentation: FaceScanCapturePresentation = .fullScreen
+    var showsInlineHeader: Bool = true
+    var matchedCameraID: String? = nil
+    var matchedCameraNamespace: Namespace.ID? = nil
     var onBack: () -> Void = {}
     var onSkip: (() -> Void)? = nil
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
@@ -31,6 +36,9 @@ struct FaceScanCaptureScreen: View {
     @State private var canSkipScan = false
     @State private var isFlashEnabled = false
     @State private var userFlashOverride = false
+    @State private var showGalleryPicker = false
+    @State private var isImportingMedia = false
+    @State private var importErrorMessage: String?
 
     private var cameraZoom: CGFloat {
         AdaptiveScreenLayout.faceScanCameraZoom(horizontalSizeClass: horizontalSizeClass)
@@ -66,7 +74,16 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var isEmbedded: Bool {
-        if case .embeddedCard = presentation { return true }
+        switch presentation {
+        case .embeddedCard, .inlineHome:
+            return true
+        case .fullScreen:
+            return false
+        }
+    }
+
+    private var isInlineHome: Bool {
+        if case .inlineHome = presentation { return true }
         return false
     }
 
@@ -77,6 +94,8 @@ struct FaceScanCaptureScreen: View {
                 fullScreenLayout
             case .embeddedCard(let viewportDiameter):
                 embeddedCardLayout(viewportDiameter: viewportDiameter)
+            case .inlineHome(let viewportDiameter):
+                inlineHomeSectionLayout(viewportDiameter: viewportDiameter)
             }
         }
         .onAppear {
@@ -139,6 +158,48 @@ struct FaceScanCaptureScreen: View {
                 FaceScanScreenFlash.shared.deactivate(animated: true)
             }
         }
+        .sheet(isPresented: $showGalleryPicker) {
+            FaceScanGalleryImportPicker(
+                onImage: { image in
+                    showGalleryPicker = false
+                    importImage(image)
+                },
+                onVideoURL: { url in
+                    showGalleryPicker = false
+                    importVideo(from: url)
+                },
+                onCancel: {
+                    showGalleryPicker = false
+                }
+            )
+            .ignoresSafeArea()
+        }
+        .alert(
+            "Import impossible",
+            isPresented: Binding(
+                get: { importErrorMessage != nil },
+                set: { if !$0 { importErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                importErrorMessage = nil
+            }
+        } message: {
+            Text(importErrorMessage ?? "Réessaie avec un autre fichier.")
+        }
+        .overlay {
+            if isImportingMedia {
+                Color.black.opacity(0.55).ignoresSafeArea()
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .tint(.white)
+                        .controlSize(.large)
+                    Text("Analyse du média…")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                }
+            }
+        }
     }
 
     // MARK: - Layouts
@@ -180,6 +241,10 @@ struct FaceScanCaptureScreen: View {
                         retryScanButton
                             .padding(.horizontal, 24)
                             .padding(.bottom, 8)
+
+                        importMediaButton
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 8)
                     }
 
                     bottomAction
@@ -219,34 +284,133 @@ struct FaceScanCaptureScreen: View {
             }
             .frame(maxWidth: .infinity)
 
-            VStack(spacing: 10) {
-                embeddedInstructionBlock
-
-                if let hint = frameHint, phase != .completed {
-                    FaceIDFrameHint(text: hint, isLightBackdrop: isFlashEnabled)
-                }
-
-                embeddedFlashStatusLabel
-
-                if phase == .scanning || scanProgress > 0.02 {
-                    embeddedProgressBar
-                }
-
-                embeddedRetryButton
-            }
-            .padding(.horizontal, 4)
+            embeddedControlsBlock
         }
     }
 
+    private func inlineHomeSectionLayout(viewportDiameter: CGFloat) -> some View {
+        VStack(spacing: 14) {
+            if showsInlineHeader {
+                inlineHomeScanHeader
+            }
+
+            ZStack(alignment: .top) {
+                cameraSection(viewportSize: viewportDiameter)
+                    .frame(width: viewportDiameter, height: viewportDiameter)
+                    .frame(maxWidth: .infinity)
+
+                HStack(alignment: .top) {
+                    if !showsInlineHeader, phase != .completed {
+                        inlineDismissToggle
+                            .padding(.top, 8)
+                            .padding(.leading, 8)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if isDeviceSupported, phase != .completed {
+                        embeddedFlashToggle
+                            .padding(.top, 8)
+                            .padding(.trailing, 8)
+                    }
+                }
+            }
+
+            embeddedControlsBlock
+        }
+        .frame(maxWidth: .infinity)
+        .background {
+            if isFlashEnabled {
+                Color.white
+            }
+        }
+    }
+
+    private var inlineHomeScanHeader: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Scan du jour")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(appTheme.primaryText)
+                Text(phase == .completed ? "Terminé" : "Cadre ton visage")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(appTheme.secondaryText)
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                HapticManager.shared.impact(.light)
+                FaceScanScreenFlash.shared.deactivate()
+                onBack()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(appTheme.primaryText)
+                    .frame(width: 34, height: 34)
+                    .background {
+                        Circle()
+                            .fill(appTheme.isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.06))
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Fermer le scan")
+        }
+    }
+
+    private var embeddedControlsBlock: some View {
+        VStack(spacing: 10) {
+            embeddedInstructionBlock
+
+            if let hint = frameHint, phase != .completed {
+                FaceIDFrameHint(text: hint, isLightBackdrop: isFlashEnabled)
+            }
+
+            embeddedFlashStatusLabel
+
+            if phase == .scanning || scanProgress > 0.02 {
+                embeddedProgressBar
+            }
+
+            embeddedRetryButton
+        }
+        .padding(.horizontal, 4)
+    }
+
     private var embeddedFlashToggle: some View {
-        Button {
+        inlineChromeIconButton(
+            systemImage: isFlashEnabled ? "bolt.fill" : "bolt.slash",
+            tint: isFlashEnabled ? Color(red: 0.95, green: 0.78, blue: 0.12) : appTheme.secondaryText,
+            accessibilityLabel: isFlashEnabled ? "Désactiver le flash" : "Activer le flash"
+        ) {
             HapticManager.shared.impact(.light)
             userFlashOverride = true
             isFlashEnabled.toggle()
-        } label: {
-            Image(systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash")
+        }
+    }
+
+    private var inlineDismissToggle: some View {
+        inlineChromeIconButton(
+            systemImage: "xmark",
+            tint: appTheme.secondaryText,
+            accessibilityLabel: "Fermer le scan"
+        ) {
+            HapticManager.shared.impact(.light)
+            FaceScanScreenFlash.shared.deactivate()
+            onBack()
+        }
+    }
+
+    private func inlineChromeIconButton(
+        systemImage: String,
+        tint: Color,
+        accessibilityLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(isFlashEnabled ? Color(red: 0.95, green: 0.78, blue: 0.12) : appTheme.secondaryText)
+                .foregroundStyle(tint)
                 .frame(width: 36, height: 36)
                 .background {
                     Circle()
@@ -258,7 +422,7 @@ struct FaceScanCaptureScreen: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isFlashEnabled ? "Désactiver le flash" : "Activer le flash")
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private var embeddedInstructionBlock: some View {
@@ -369,7 +533,7 @@ struct FaceScanCaptureScreen: View {
     // MARK: - Camera
 
     private func cameraSection(viewportSize: CGFloat) -> some View {
-        ZStack {
+        let core = ZStack {
             if isDeviceSupported {
                 FaceScannerViewport(
                     size: CGSize(width: viewportSize, height: viewportSize),
@@ -419,20 +583,34 @@ struct FaceScanCaptureScreen: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .animation(.interpolatingSpring(duration: 0.55, bounce: 0.08), value: viewportMorph)
+        .animation(.interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
         .animation(.easeInOut(duration: 0.25), value: phase)
         .animation(.easeInOut(duration: 0.2), value: showsFrameCorners)
         .animation(.easeInOut(duration: 0.2), value: showsScanRing)
+
+        return Group {
+            if let matchedCameraID, let matchedCameraNamespace {
+                core.matchedGeometryEffect(id: matchedCameraID, in: matchedCameraNamespace)
+            } else {
+                core
+            }
+        }
     }
 
     @ViewBuilder
     private func scannerOverlay(cameraDiameter: CGFloat) -> some View {
-        FaceIDTickProgressRing(
-            activeSectors: activeTickSectors,
-            cameraDiameter: cameraDiameter,
-            isComplete: phase == .completed,
-            isLightBackdrop: isFlashEnabled
-        )
+        ZStack {
+            FaceIDTickProgressRing(
+                activeSectors: activeTickSectors,
+                cameraDiameter: cameraDiameter,
+                isLightBackdrop: isFlashEnabled
+            )
+
+            if phase == .completed {
+                FaceIDSuccessRing(diameter: cameraDiameter)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
     }
 
     // MARK: - Copy
@@ -463,6 +641,28 @@ struct FaceScanCaptureScreen: View {
                     .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.5) : OnboardingTheme.mutedText)
             }
         }
+    }
+
+    @ViewBuilder
+    private var importMediaButton: some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            showGalleryPicker = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.system(size: 16, weight: .semibold))
+                Text("Importer photo ou vidéo")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.82) : OnboardingTheme.primaryText)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+        }
+        .glassStyle()
+        .buttonBorderShape(.roundedRectangle(radius: 50))
+        .disabled(isImportingMedia)
+        .opacity(isImportingMedia ? 0.55 : 1)
     }
 
     @ViewBuilder
@@ -521,10 +721,12 @@ struct FaceScanCaptureScreen: View {
             Text("TrueDepth requis")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.primaryText)
-            Text("Utilise un appareil avec Face ID\n(iPhone ou iPad Pro).")
+            Text("Utilise un appareil avec Face ID\n(iPhone ou iPad Pro), ou importe une photo / vidéo.")
                 .font(.system(size: 15))
                 .foregroundStyle(OnboardingTheme.footnoteText)
                 .multilineTextAlignment(.center)
+            importMediaButton
+                .padding(.top, 4)
             skipScanButton
                 .padding(.top, 8)
         }
@@ -547,6 +749,56 @@ struct FaceScanCaptureScreen: View {
         isFlashEnabled = false
 
         HapticManager.shared.notification(.success)
+
+        withAnimation(.easeInOut(duration: 0.28)) {
+            phase = .completed
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(isInlineHome ? 520 : 380))
+            guard capturedPayload?.scanId == payload.scanId else { return }
+            onContinue(payload, markers)
+        }
+    }
+
+    private func importImage(_ image: UIImage) {
+        isImportingMedia = true
+        Task { @MainActor in
+            defer { isImportingMedia = false }
+            do {
+                let result = try FaceScanMediaImport.process(image: image)
+                submitImportedMedia(result.0, markers: result.1)
+            } catch {
+                importErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func importVideo(from url: URL) {
+        isImportingMedia = true
+        Task { @MainActor in
+            defer {
+                isImportingMedia = false
+                try? FileManager.default.removeItem(at: url)
+            }
+            do {
+                let result = try await FaceScanMediaImport.process(videoSourceURL: url)
+                submitImportedMedia(result.0, markers: result.1)
+            } catch {
+                importErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func submitImportedMedia(_ payload: FaceScanCapturePayload, markers: FaceWellnessMarkers) {
+        capturedPayload = payload
+        capturedMarkers = markers
+        FaceScanScreenFlash.shared.deactivate(animated: true)
+        isFlashEnabled = false
+        HapticManager.shared.notification(.success)
+        withAnimation(.easeInOut(duration: 0.25)) {
+            phase = .completed
+        }
         onContinue(payload, markers)
     }
 

@@ -92,20 +92,23 @@ struct FaceScanHealthSection: View {
                     theme: theme
                 )
 
-                if analysis.isValid {
-                    FaceScanAnalysisCard(analysis: analysis, theme: theme)
-                } else if let raw = latest.claudeAnalysis {
-                    Text(raw)
+            if analysis.isValid {
+                FaceScanAnalysisCard(analysis: analysis, theme: theme)
+            } else if let raw = latest.claudeAnalysis {
+                let cleaned = FaceScanAnalysisParser.sanitize(raw)
+                if !cleaned.isEmpty {
+                    Text(cleaned)
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .lineLimit(4)
                 }
+            }
 
                 Text("Dernier scan : \(latest.createdAt.formatted(date: .abbreviated, time: .shortened))")
                     .font(.caption2)
                     .foregroundStyle(theme.secondaryText)
             } else {
-                Text("Scanne ton visage chaque jour pour suivre gonflement, cernes, cortisol et récupération.")
+                Text("Scanne ton visage chaque jour pour suivre rétention, récupération, peau, définition et charge stress.")
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             }

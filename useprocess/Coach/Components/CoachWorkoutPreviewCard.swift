@@ -35,10 +35,17 @@ struct CoachWorkoutPreviewCard: View {
         .processGlassEffect(in: cardShape, interactive: false)
     }
 
+    private var headerThumbAsset: String? {
+        workout.exercises.lazy
+            .compactMap { TrainingAssetCatalog.exerciseAsset(for: $0.name) }
+            .first
+    }
+
     private var headerRow: some View {
         HStack(spacing: 10) {
             PlanTrainingMediaThumb(
-                assetName: TrainingAssetCatalog.resolvedHeroAsset(forSessionTitle: workout.title),
+                assetName: headerThumbAsset,
+                fallbackSystemImage: "figure.strengthtraining.traditional",
                 size: 36
             )
 

@@ -15,34 +15,48 @@ enum FaceScanChartPeriod: String, CaseIterable, Identifiable {
 }
 
 enum FaceScanChartMetric: String, CaseIterable, Identifiable {
-    case puffiness = "Gonflement"
-    case underEye = "Cernes"
-    case jaw = "Mâchoire"
+    case retention = "Rétention"
+    case recovery = "Récupération"
+    case skin = "Peau"
+    case definition = "Définition"
+    case stress = "Stress"
 
     var id: String { rawValue }
 
-    func value(from markers: FaceWellnessMarkers) -> Int {
+    private var kind: FaceScanIndicators.Kind {
         switch self {
-        case .puffiness: return markers.puffinessScore
-        case .underEye: return markers.underEyeFatigueScore
-        case .jaw: return markers.jawTensionScore
+        case .retention: return .retention
+        case .recovery: return .recovery
+        case .skin: return .skin
+        case .definition: return .definition
+        case .stress: return .stressLoad
         }
     }
 
+    func value(from markers: FaceWellnessMarkers) -> Int {
+        FaceScanIndicators.rawValue(for: kind, markers: markers)
+    }
+
     func relativeValue(from result: FaceScanResult) -> Int {
-        guard let signals = result.relativeSignals else { return value(from: result.markers) }
-        switch self {
-        case .puffiness: return signals.puffinessDelta
-        case .underEye: return signals.underEyeFatigueDelta
-        case .jaw: return signals.jawTensionDelta
+        guard let signals = result.relativeSignals else {
+            return FaceScanIndicators.rawValue(for: kind, result: result)
+        }
+        switch kind {
+        case .retention: return signals.puffinessDelta
+        case .recovery: return signals.underEyeFatigueDelta
+        case .skin: return signals.skinClarityDelta
+        case .definition: return signals.faceDefinitionDelta ?? 0
+        case .stressLoad: return signals.stressLoadDelta ?? 0
         }
     }
 
     var color: Color {
         switch self {
-        case .puffiness: return .orange
-        case .underEye: return .purple
-        case .jaw: return .blue
+        case .retention: return .orange
+        case .recovery: return .purple
+        case .skin: return .mint
+        case .definition: return .cyan
+        case .stress: return .red.opacity(0.85)
         }
     }
 }
@@ -52,7 +66,7 @@ struct FaceScanTrendChartView: View {
     var theme: AppTheme
 
     @State private var period: FaceScanChartPeriod = .week
-    @State private var metric: FaceScanChartMetric = .puffiness
+    @State private var metric: FaceScanChartMetric = .retention
 
     private var dataPoints: [(date: Date, value: Int)] {
         let cutoff = Calendar.current.date(byAdding: .day, value: -period.dayCount, to: Date()) ?? Date()

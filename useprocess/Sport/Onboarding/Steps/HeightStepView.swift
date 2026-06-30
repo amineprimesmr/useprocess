@@ -135,6 +135,7 @@ struct HeightStepView: View {
                     .padding(.top, OnboardingConstants.titleTopPadding)
                 Spacer()
             }
+            .allowsHitTesting(false)
         }
         .onAppear {
             if selectedHeight <= 0 {

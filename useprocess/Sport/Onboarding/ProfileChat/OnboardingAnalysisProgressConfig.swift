@@ -52,6 +52,52 @@ enum OnboardingAnalysisProgressConfig {
         let sources: [SourcePill]
     }
 
+    static let faceScanAnalysisSteps: [ProgressStep] = [
+        .init(
+            id: "mesh",
+            phaseLabel: "Mesh facial",
+            query: "Reconstruction 3D du visage…",
+            resultCount: nil,
+            sources: [
+                .init(id: "truedepth", systemImage: "faceid", label: "TrueDepth"),
+                .init(id: "arkit", systemImage: "cube.transparent", label: "Mesh ARKit")
+            ]
+        ),
+        .init(
+            id: "markers",
+            phaseLabel: "Biomarqueurs",
+            query: "Calcul des indicateurs faciaux…",
+            resultCount: 5,
+            sources: [
+                .init(id: "process", imageName: "caochiaicon", label: "Process AI"),
+                .init(id: "symmetry", systemImage: "person.crop.circle", label: "Symétrie"),
+                .init(id: "skin", systemImage: "sparkles", label: "Peau")
+            ]
+        ),
+        .init(
+            id: "healthkit",
+            phaseLabel: "Données Santé",
+            query: "Lecture de tes données dans l’app Santé…",
+            resultCount: 4,
+            sources: [
+                .init(id: "health", imageName: "healthapple", label: "Santé"),
+                .init(id: "sleep", systemImage: "bed.double.fill", label: "Sommeil"),
+                .init(id: "heart", systemImage: "heart.fill", label: "Fréquence"),
+                .init(id: "activity", systemImage: "figure.run", label: "Activité")
+            ]
+        ),
+        .init(
+            id: "claude",
+            phaseLabel: "Réflexion IA",
+            query: "Analyse avec Claude de ton scan…",
+            resultCount: nil,
+            sources: [
+                .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
+                .init(id: "coach", imageName: "caochiaicon", label: "Coach Process")
+            ]
+        )
+    ]
+
     static let answersAnalysisSteps: [ProgressStep] = [
         .init(
             id: "responses",

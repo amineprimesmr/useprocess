@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct FirstNameInputStepView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var profileService: UnifiedProfileService
     @Binding var firstName: String
     @State private var isTextFieldFocused = false
+    @State private var didBootstrap = false
     @FocusState private var isTextFieldFocusedState: Bool
 
     // Callback pour passer à la page suivante
@@ -72,10 +74,17 @@ struct FirstNameInputStepView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            loadExistingFirstName()
-            // Activer le clavier automatiquement après un court délai
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isTextFieldFocusedState = true
+            bootstrapIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .inactive || phase == .background {
+                isTextFieldFocusedState = false
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
             }
         }
         .onChange(of: isTextFieldFocusedState) { _, newValue in
@@ -88,6 +97,15 @@ struct FirstNameInputStepView: View {
         }
         .onDisappear {
             isTextFieldFocusedState = false
+        }
+    }
+
+    private func bootstrapIfNeeded() {
+        guard !didBootstrap else { return }
+        didBootstrap = true
+        loadExistingFirstName()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isTextFieldFocusedState = true
         }
     }
 

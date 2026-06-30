@@ -58,6 +58,12 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
         relativeFaceDayScore ?? faceDayScore ?? FaceWellnessScore.dayScore(from: markers)
     }
 
+    /// Score global unique affiché dans l’UI (accueil, historique, anneau WHOOP).
+    /// Moyenne pondérée des 5 indicateurs wellness — aligné sur l’écran d’analyse.
+    var displayWellnessScore: Int {
+        FaceScanIndicators.compositeWellnessScore(for: self)
+    }
+
     init(
         id: String = UUID().uuidString,
         userId: String,
@@ -110,6 +116,8 @@ struct FaceScanRelativeSignals: Codable, Hashable {
     var underEyeFatigueDelta: Int
     var jawTensionDelta: Int
     var skinClarityDelta: Int
+    var faceDefinitionDelta: Int? = nil
+    var stressLoadDelta: Int? = nil
     var baselineLabel: String
 
     var hasMeaningfulChange: Bool {
@@ -117,6 +125,8 @@ struct FaceScanRelativeSignals: Codable, Hashable {
             || abs(underEyeFatigueDelta) >= 4
             || abs(jawTensionDelta) >= 4
             || abs(skinClarityDelta) >= 4
+            || abs(faceDefinitionDelta ?? 0) >= 4
+            || abs(stressLoadDelta ?? 0) >= 4
     }
 }
 

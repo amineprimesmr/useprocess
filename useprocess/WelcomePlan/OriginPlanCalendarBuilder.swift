@@ -178,7 +178,7 @@ enum OriginPlanCalendarBuilder {
         progression: Double,
         injuries: [String]
     ) -> OriginDayTraining {
-        let useHome = location == "home" || location == "outdoor"
+        let useHome = usesHomeTrainingTemplates(location: location)
         let templates: [(String, [OriginExercise])] = useHome ? homeMaleTemplates() : gymMaleTemplates()
         let idx = sessionIndex % templates.count
         let (name, exercises) = templates[idx]
@@ -401,6 +401,14 @@ enum OriginPlanCalendarBuilder {
         if weekday == 6 { return "Semaine \(week) — Récupération" }
         if hasTraining { return "Semaine \(week) — \(weekdayLabels[weekday]) · Séance" }
         return "Semaine \(week) — \(weekdayLabels[weekday]) · Récup active"
+    }
+
+    private static func usesHomeTrainingTemplates(location: String?) -> Bool {
+        guard let location else { return false }
+        if location == "home" || location == "outdoor" { return true }
+        return location == TrainingLocation.home.rawValue
+            || location == TrainingLocation.outdoor.rawValue
+            || location == TrainingLocation.mixed.rawValue
     }
 }
 

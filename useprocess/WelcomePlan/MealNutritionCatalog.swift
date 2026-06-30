@@ -258,6 +258,10 @@ enum MealNutritionCatalog {
             calories: 340, proteinG: 14, carbsG: 52, fatsG: 8,
             fiberG: 5.0, sugarG: 38, sodiumMg: 120, potassiumMg: 920
         ),
+        "vitacoco": .init(
+            calories: 55, proteinG: 0.5, carbsG: 11, fatsG: 0,
+            fiberG: 0, sugarG: 9, sodiumMg: 35, potassiumMg: 620
+        ),
         "meal_debloat_pineapple_turkey_snack": .init(
             calories: 220, proteinG: 18, carbsG: 28, fatsG: 4,
             fiberG: 4.5, sugarG: 22, sodiumMg: 280, potassiumMg: 420

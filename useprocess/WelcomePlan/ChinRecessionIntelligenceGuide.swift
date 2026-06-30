@@ -15,7 +15,7 @@ enum ChinRecessionIntelligenceGuide {
     """
 
     static let chinJawRoutine: [String] = [
-        "Neck curls — 3×10–12, active super-hyoïdiens (sous-mâchoire)",
+        "Neck curls — 3×10–12, buste sur lit/canapé tête dans le vide, super-hyoïdiens (sous-mâchoire)",
         "Souffle / expiration forcée — digastrique, peau sous mâchoire (type AeroPit si dispo)",
         "Mastication masseter — mordre puis rouler mâchoire inférieure vers l'avant lentement",
         "Pression langue spot T — ~30 min/j (tongue chewing ou pression sur papille incisive)",
@@ -38,9 +38,10 @@ enum ChinRecessionIntelligenceGuide {
 
     static func enrichPostureMobility(_ blocks: inout [String], answers: [String: WelcomePlanAnswer]) {
         guard hasChinConcern(answers: answers) else { return }
-        let neckCurl = "Neck curls — 3×10–12 (menton / super-hyoïdiens, script #12)"
-        if !blocks.contains(where: { $0.localizedCaseInsensitiveContains("Neck curls") }) {
-            blocks.append(neckCurl)
+
+        let souffle = "Souffle digastrique — expiration forcée 2×10 (sous-mâchoire, maison)"
+        if !blocks.contains(where: { $0.localizedCaseInsensitiveContains("digastrique") || $0.localizedCaseInsensitiveContains("Souffle") }) {
+            blocks.append(souffle)
         }
     }
 

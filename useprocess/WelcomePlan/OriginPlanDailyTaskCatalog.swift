@@ -42,19 +42,6 @@ enum OriginPlanDailyTaskCatalog {
       )
     ]
 
-    if !plan.postureProtocol.breathingWork.isEmpty {
-      let breathing = plan.postureProtocol.breathingWork.first ?? ""
-      tasks.append(
-        journalTask(
-          id: "\(dayId).posture.breath",
-          title: "Respiration nasale",
-          detail: breathing,
-          pillar: "Posture",
-          minutes: 5
-        )
-      )
-    }
-
     return tasks
   }
 
