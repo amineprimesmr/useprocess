@@ -100,13 +100,10 @@ final class AppSession {
     /// Suppression complète du compte : Firebase d'abord, puis données locales + retour onboarding.
     func deleteAccount() async throws {
         accountDeletionErrorMessage = nil
-
-        // Phase 1 — suppression distante sans overlay (Face ID / Apple Sign In doivent rester utilisables).
-        try await AuthenticationManager.shared.deleteRemoteAccount()
-
-        // Phase 2 — effacement local avec overlay court.
         isAccountWipeInProgress = true
         defer { isAccountWipeInProgress = false }
+
+        try await AuthenticationManager.shared.deleteRemoteAccount()
 
         let primaryUID = UserScopedStorage.currentUserId()
             ?? UnifiedProfileService.shared.currentProfile?.userId

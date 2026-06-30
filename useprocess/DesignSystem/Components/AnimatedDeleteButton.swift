@@ -189,6 +189,10 @@ private struct DeleteButtonConfirmationView<Content: View>: View {
     }
 
     private func dismiss(confirmed: Bool) {
+        if confirmed {
+            action(confirmed)
+        }
+
         withAnimation(animation, completionCriteria: .removed) {
             properties.animate = false
         } completion: {
@@ -196,7 +200,9 @@ private struct DeleteButtonConfirmationView<Content: View>: View {
                 properties.sourceView = nil
                 properties.showDeleteView = false
             }
-            action(confirmed)
+            if !confirmed {
+                action(confirmed)
+            }
         }
 
         Task {

@@ -80,7 +80,7 @@ struct AppShellView: View {
                     VStack(spacing: 14) {
                         ProgressView()
                             .controlSize(.large)
-                        Text("Effacement des données…")
+                        Text("Suppression du compte…")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.primary)
                     }
