@@ -151,14 +151,14 @@ final class AuthenticationManager: NSObject, ObservableObject {
     }
 
     func deleteRemoteAccount() async throws {
-        guard firebaseAuthReady else { return }
+        guard firebaseAuthReady else {
+            throw AccountDeletionError.remoteDeletionFailed("Firebase non configuré.")
+        }
 
         guard currentFirebaseUser != nil else {
             throw AccountDeletionError.notSignedIn
         }
 
-        // La Cloud Function utilise l'Admin SDK : pas besoin de réauth Apple.
-        // (La réauth échouait systématiquement avec ASAuthorizationError 1001.)
         do {
             try await AccountDeletionRemoteService.deleteViaCloudFunction()
             #if DEBUG
@@ -169,6 +169,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
             #if DEBUG
             print("[Auth] Cloud delete failed, trying client SDK: \(error.localizedDescription)")
             #endif
+            if case AccountDeletionError.cancelled = error { throw error }
         }
 
         if usesAppleProvider {

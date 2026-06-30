@@ -177,8 +177,8 @@ export const deleteUserAccount = onRequest(
   {
     invoker: "public",
     cors: true,
-    timeoutSeconds: 120,
-    memory: "512MiB",
+    timeoutSeconds: 180,
+    memory: "1GiB",
   },
   async (req, res) => {
     setCors(res);

@@ -17,6 +17,7 @@ struct ProcessProfileView: View {
     @State private var photoMenuAnchor: CGPoint = .zero
     @State private var pendingAccountConfirmation: AccountConfirmation?
     @State private var deleteAccountWhenSheetDismisses = false
+    @State private var isDeletingAccount = false
 
     private var resolvedProfile: SocialProfile {
         if let profile = profileStore.profile {
@@ -51,6 +52,23 @@ struct ProcessProfileView: View {
             await ProfileHealthSection.refreshAll(force: true)
         }
         .processClearUIKitHostingBackground()
+        .overlay {
+            if isDeletingAccount {
+                ZStack {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                    VStack(spacing: 14) {
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Suppression du compte…")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(28)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                .allowsHitTesting(false)
+            }
+        }
         .reportsProfileSubrouteActive(showSettings)
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
@@ -83,7 +101,6 @@ struct ProcessProfileView: View {
                     },
                     onLogout: { pendingAccountConfirmation = .logout },
                     onDeleteConfirmed: {
-                        session.beginAccountDeletion()
                         deleteAccountWhenSheetDismisses = true
                         showSettings = false
                     }
@@ -248,15 +265,15 @@ struct ProcessProfileView: View {
 
     private func performAccountDeletion() async {
         session.accountDeletionErrorMessage = nil
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
 
         do {
             try await session.deleteAccount()
         } catch let error as AccountDeletionError {
-            session.cancelAccountDeletion()
             if case .cancelled = error { return }
             session.accountDeletionErrorMessage = error.localizedDescription
         } catch {
-            session.cancelAccountDeletion()
             session.accountDeletionErrorMessage = error.localizedDescription
         }
     }
