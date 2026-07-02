@@ -5,10 +5,17 @@ enum FaceScanCapturePresentation: Equatable {
     case fullScreen
     case embeddedCard(viewportDiameter: CGFloat)
     /// Scan intégré à la carte « Dernier scan » sur l’accueil Plan.
-    case inlineHome(viewportDiameter: CGFloat)
+    case inlineHome(viewportDiameter: CGFloat, phase: InlineHomePhase = .active)
+
+    enum InlineHomePhase: Equatable {
+        /// Aperçu compact — caméra AR live sans lancer le scan.
+        case preview
+        /// Scan actif avec contrôles.
+        case active
+    }
 }
 
-/// Écran de capture TrueDepth — plein écran ou carte intégrée (accueil).
+/// Écran de capture scan visage — plein écran ou carte intégrée (accueil).
 struct FaceScanCaptureScreen: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.appTheme) private var appTheme
@@ -57,7 +64,8 @@ struct FaceScanCaptureScreen: View {
 
     /// Une fois le scan lancé, on garde le cercle — les rotations faussent parfois le cadrage.
     private var usesCircularViewport: Bool {
-        phase == .scanning || phase == .completed || isPositioningWellFramed
+        if isInlinePreview { return false }
+        return phase == .scanning || phase == .completed || isPositioningWellFramed
     }
 
     /// 0 = carré arrondi, 1 = cercle.
@@ -66,11 +74,11 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var showsFrameCorners: Bool {
-        phase == .positioning && !isPositioningWellFramed
+        !isInlinePreview && phase == .positioning && !isPositioningWellFramed
     }
 
     private var showsScanRing: Bool {
-        scanProgress > 0.005 || phase == .completed
+        !isInlinePreview && (scanProgress > 0.005 || phase == .completed)
     }
 
     private var isEmbedded: Bool {
@@ -87,6 +95,13 @@ struct FaceScanCaptureScreen: View {
         return false
     }
 
+    private var isInlinePreview: Bool {
+        if case .inlineHome(_, let phase) = presentation, phase == .preview {
+            return true
+        }
+        return false
+    }
+
     var body: some View {
         Group {
             switch presentation {
@@ -94,8 +109,8 @@ struct FaceScanCaptureScreen: View {
                 fullScreenLayout
             case .embeddedCard(let viewportDiameter):
                 embeddedCardLayout(viewportDiameter: viewportDiameter)
-            case .inlineHome(let viewportDiameter):
-                inlineHomeSectionLayout(viewportDiameter: viewportDiameter)
+            case .inlineHome(let viewportDiameter, let phase):
+                inlineHomeSectionLayout(viewportDiameter: viewportDiameter, phase: phase)
             }
         }
         .onAppear {
@@ -288,42 +303,59 @@ struct FaceScanCaptureScreen: View {
         }
     }
 
-    private func inlineHomeSectionLayout(viewportDiameter: CGFloat) -> some View {
-        VStack(spacing: 14) {
-            if showsInlineHeader {
-                inlineHomeScanHeader
-            }
-
-            ZStack(alignment: .top) {
-                cameraSection(viewportSize: viewportDiameter)
-                    .frame(width: viewportDiameter, height: viewportDiameter)
-                    .frame(maxWidth: .infinity)
-
-                HStack(alignment: .top) {
-                    if !showsInlineHeader, phase != .completed {
-                        inlineDismissToggle
-                            .padding(.top, 8)
-                            .padding(.leading, 8)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    if isDeviceSupported, phase != .completed {
-                        embeddedFlashToggle
-                            .padding(.top, 8)
-                            .padding(.trailing, 8)
-                    }
-                }
-            }
-
-            embeddedControlsBlock
-        }
-        .frame(maxWidth: .infinity)
-        .background {
+    private func inlineHomeSectionLayout(viewportDiameter: CGFloat, phase: FaceScanCapturePresentation.InlineHomePhase) -> some View {
+        ZStack {
             if isFlashEnabled {
                 Color.white
             }
+
+            VStack(spacing: 14) {
+                if phase == .active, showsInlineHeader {
+                    inlineHomeScanHeader
+                }
+
+                ZStack(alignment: .top) {
+                    if isFlashEnabled {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: viewportDiameter + 24, height: viewportDiameter + 24)
+                    }
+
+                    cameraSection(viewportSize: viewportDiameter)
+                        .frame(width: viewportDiameter, height: viewportDiameter)
+                        .frame(maxWidth: .infinity)
+
+                    if phase == .active {
+                        HStack(alignment: .top) {
+                            if !showsInlineHeader, self.phase != .completed {
+                                inlineDismissToggle
+                                    .padding(.top, 8)
+                                    .padding(.leading, 8)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            if isDeviceSupported, self.phase != .completed {
+                                embeddedFlashToggle
+                                    .padding(.top, 8)
+                                    .padding(.trailing, 8)
+                            }
+                        }
+                    }
+                }
+
+                if phase == .active {
+                    embeddedControlsBlock
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                    Spacer(minLength: 0)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .animation(.spring(response: 0.52, dampingFraction: 0.86), value: phase)
+        .animation(.easeInOut(duration: 0.22), value: isFlashEnabled)
     }
 
     private var inlineHomeScanHeader: some View {
@@ -548,6 +580,7 @@ struct FaceScanCaptureScreen: View {
                             isFaceDetected: $isFaceDetected,
                             isDeviceSupported: $isDeviceSupported,
                             isLowLight: $isLowLight,
+                            isPreviewOnly: isInlinePreview,
                             onComplete: handleCapture
                         )
                         .id(scanSessionID)
@@ -563,9 +596,9 @@ struct FaceScanCaptureScreen: View {
                         )
                 }
                 .shadow(
-                    color: .black.opacity(isFlashEnabled ? 0.12 : 0.35),
-                    radius: 14,
-                    y: 4
+                    color: .black.opacity(isFlashEnabled ? (isInlineHome ? 0 : 0.12) : 0.35),
+                    radius: isFlashEnabled && isInlineHome ? 0 : 14,
+                    y: isFlashEnabled && isInlineHome ? 0 : 4
                 )
 
                 if showsFrameCorners {
@@ -718,7 +751,7 @@ struct FaceScanCaptureScreen: View {
             Image(systemName: "faceid")
                 .font(.system(size: 48))
                 .foregroundStyle(OnboardingTheme.mutedText)
-            Text("TrueDepth requis")
+            Text("Caméra avant requise")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.primaryText)
             Text("Utilise un appareil avec Face ID\n(iPhone ou iPad Pro), ou importe une photo / vidéo.")

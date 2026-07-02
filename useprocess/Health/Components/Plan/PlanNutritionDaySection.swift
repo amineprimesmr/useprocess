@@ -427,8 +427,8 @@ private struct PlanMealCarouselCard: View {
 
     @Environment(\.appTheme) private var theme
 
-    private var profile: MealNutritionProfile {
-        MealNutritionCatalog.profile(for: entry.meal)
+    private var assessment: MealDebloatAssessment {
+        MealNutritionCatalog.debloatAssessment(for: entry.meal)
     }
 
     private var cardShape: RoundedRectangle {
@@ -450,7 +450,7 @@ private struct PlanMealCarouselCard: View {
                 ZStack(alignment: .bottom) {
                     mealImageCircle
 
-                    caloriesPill
+                    debloatScorePill
                         .padding(.bottom, 2)
                 }
                 .frame(height: PlanMealCarouselLayout.imageDiameter + 10)
@@ -503,26 +503,7 @@ private struct PlanMealCarouselCard: View {
         }
     }
 
-    private var caloriesPill: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "flame.fill")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(Color.orange)
-
-            Text("\(profile.calories) Kcal")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(theme.primaryText)
-                .monospacedDigit()
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background {
-            Capsule(style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    Capsule(style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
-                }
-        }
+    private var debloatScorePill: some View {
+        MealDebloatScorePill(assessment: assessment)
     }
 }

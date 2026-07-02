@@ -44,7 +44,7 @@ enum FaceScanCoachHandoffBuilder {
         let prompt = """
         Analyse mon scan visage quotidien (vidéo / capture jointe).
 
-        Score wellness du jour : \(score)% (moyenne des 5 indicateurs).
+        Score du jour : \(score)% (moyenne des 5 indicateurs).
         Score relatif vs baseline : \(result.resolvedFaceDayScore)/100.
         Signaux locaux : rétention \(markers.puffinessScore), récupération \(markers.underEyeFatigueScore), peau \(markers.skinClarityScore), définition \(FaceScanIndicators.definitionScore(from: markers)), charge stress \(FaceScanIndicators.stressLoad(for: result)).
 

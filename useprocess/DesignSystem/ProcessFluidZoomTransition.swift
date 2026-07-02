@@ -11,7 +11,6 @@ enum ProcessZoomTransitionID: Hashable {
     case postureCircuit
     case protocolItem(String)
     case homeLayoutEditor
-    case streakSheet
     case planResource(PlanResourceSheet)
 
     var sourceID: String {
@@ -34,8 +33,6 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_PROTOCOL_ITEM_\(itemID)"
         case .homeLayoutEditor:
             return "PROCESS_HOME_LAYOUT_EDITOR"
-        case .streakSheet:
-            return "PROCESS_STREAK_SHEET"
         case .planResource(let sheet):
             return "PROCESS_PLAN_RESOURCE_\(sheet.id)"
         }

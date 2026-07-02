@@ -126,21 +126,21 @@ enum OriginPlanCalendarBuilder {
         guard slots.contains(weekday) else { return nil }
 
         let isDeload = phaseEnds.contains(week)
-        let intensityNote = isDeload ? "Semaine deload — RPE 5–6, pas de failure." : nil
+        let intensityNote = isDeload ? "Semaine deload — charge légère, arrête-toi avant l'échec." : nil
         let sessionIndex = slots.firstIndex(of: weekday) ?? 0
         let progression = progressionFactor(week: week)
 
         if gender == .female {
-        return femaleSession(
-            sessionIndex: sessionIndex,
-            weekday: weekday,
-            week: week,
-            plan: plan,
-            note: intensityNote,
-            location: location,
-            progression: progression,
-            injuries: injuries
-        )
+            return femaleSession(
+                sessionIndex: sessionIndex,
+                weekday: weekday,
+                week: week,
+                plan: plan,
+                note: intensityNote,
+                location: location,
+                progression: progression,
+                injuries: injuries
+            )
         }
         return maleSession(
             sessionIndex: sessionIndex,
@@ -179,30 +179,24 @@ enum OriginPlanCalendarBuilder {
         injuries: [String]
     ) -> OriginDayTraining {
         let useHome = usesHomeTrainingTemplates(location: location)
-        let templates: [(String, [OriginExercise])] = useHome ? homeMaleTemplates() : gymMaleTemplates()
+        let templates = useHome ? TrainingProgramCatalog.homeSessions() : TrainingProgramCatalog.gymSessions()
         let idx = sessionIndex % templates.count
-        let (name, exercises) = templates[idx]
-        let scaled = scaleExercises(exercises, factor: progression, injuries: injuries)
+        let template = templates[idx]
+        let scaled = scaleExercises(template.exercises, factor: progression, injuries: injuries)
 
         return OriginDayTraining(
-            sessionName: name,
+            sessionName: template.sessionName,
             durationMinutes: plan.trainingProtocol.sessionDurationMinutes,
-            warmup: sprintWarmupIfNeeded(weekday: weekday, base: [
-                "5 min vélo ou tapis incliné (RPE 3–4)",
-                "Mobilité épaules + hanches 5 min"
-            ]),
+            warmup: TrainingProgramCatalog.warmupForSessionIndex(
+                sessionIndex,
+                weekday: weekday,
+                useFemale: false,
+                useHome: useHome
+            ),
             exercises: scaled,
-            cooldown: ["Marche lente 3 min"],
+            cooldown: TrainingProgramCatalog.cooldownForSession(useFemale: false),
             notes: note
         )
-    }
-
-    private static func sprintWarmupIfNeeded(weekday: Int, base: [String]) -> [String] {
-        var warmup = base
-        if weekday == 2 {
-            warmup.append("Sprints fonctionnels — 8×15 s, repos 1m30 (option GH)")
-        }
-        return warmup
     }
 
     private static func femaleSession(
@@ -215,79 +209,17 @@ enum OriginPlanCalendarBuilder {
         progression: Double,
         injuries: [String]
     ) -> OriginDayTraining {
-        let templates: [(String, [OriginExercise])] = [
-            ("Fessiers + hanches", [
-                ex("Hip thrust", sets: 4, reps: "10–12", group: "Fessiers"),
-                ex("Fentes marchées", sets: 3, reps: "10/jambe", group: "Jambes"),
-                ex("Abduction hanche", sets: 3, reps: "15", group: "Fessiers"),
-                ex("Planche", sets: 3, reps: "45 s", group: "Core")
-            ]),
-            ("Haut du corps + posture", [
-                ex("Tirage vertical", sets: 3, reps: "10–12", group: "Dos"),
-                ex("Push-ups inclinés", sets: 3, reps: "8–12", group: "Pecs"),
-                ex("Face pulls", sets: 3, reps: "15", group: "Posture"),
-                ex("Dead bug", sets: 3, reps: "10/côté", group: "Core")
-            ])
-        ]
+        let templates = TrainingProgramCatalog.femaleSessions()
         let idx = sessionIndex % templates.count
-        let (name, exercises) = templates[idx]
+        let template = templates[idx]
         return OriginDayTraining(
-            sessionName: name,
+            sessionName: template.sessionName,
             durationMinutes: min(plan.trainingProtocol.sessionDurationMinutes, 50),
-            warmup: sprintWarmupIfNeeded(weekday: weekday, base: [
-                "Marche 5 min",
-                "Activation fessiers 5 min"
-            ]),
-            exercises: scaleExercises(exercises, factor: progression, injuries: injuries),
-            cooldown: ["Étirement fessiers 2 min"],
+            warmup: TrainingProgramCatalog.warmupForSessionIndex(sessionIndex, weekday: weekday, useFemale: true),
+            exercises: scaleExercises(template.exercises, factor: progression, injuries: injuries),
+            cooldown: TrainingProgramCatalog.cooldownForSession(useFemale: true),
             notes: note
         )
-    }
-
-    private static func gymMaleTemplates() -> [(String, [OriginExercise])] {
-        [
-            ("Push — épaules, trapèzes, pec", [
-                ex("Développé haltères", sets: 4, reps: "8–10", group: "Épaules"),
-                ex("Élévations latérales", sets: 3, reps: "12–15", group: "Deltoïdes"),
-                ex("Face pulls", sets: 3, reps: "15–20", group: "Posture"),
-                ex("Shrugs", sets: 3, reps: "12–15", group: "Trapèzes")
-            ]),
-            ("Pull — dos, rear delts", [
-                ex("Tractions / tirage", sets: 4, reps: "6–10", group: "Dos"),
-                ex("Rowing", sets: 3, reps: "8–12", group: "Dos"),
-                ex("Face pulls", sets: 3, reps: "15", group: "Posture"),
-                ex("Curl marteau", sets: 2, reps: "12", group: "Biceps")
-            ]),
-            ("Jambes + chaîne postérieure", [
-                ex("Squat / goblet squat", sets: 4, reps: "8–10", group: "Jambes"),
-                ex("Romanian deadlift", sets: 3, reps: "8–10", group: "Fessiers"),
-                ex("Hip thrust", sets: 3, reps: "10–12", group: "Fessiers"),
-                ex("Mollets debout", sets: 3, reps: "15", group: "Mollets")
-            ])
-        ]
-    }
-
-    private static func homeMaleTemplates() -> [(String, [OriginExercise])] {
-        [
-            ("Push maison", [
-                ex("Pompes inclinées", sets: 4, reps: "10–15", group: "Pecs"),
-                ex("Pike push-ups", sets: 3, reps: "8–12", group: "Épaules"),
-                ex("Élévations bouteilles", sets: 3, reps: "15", group: "Deltoïdes"),
-                ex("Face pulls élastique", sets: 3, reps: "15", group: "Posture")
-            ]),
-            ("Pull maison", [
-                ex("Tractions / row élastique", sets: 4, reps: "8–12", group: "Dos"),
-                ex("Reverse fly élastique", sets: 3, reps: "15", group: "Posture"),
-                ex("Superman hold", sets: 3, reps: "30 s", group: "Dos"),
-                ex("Planche", sets: 3, reps: "45 s", group: "Core")
-            ]),
-            ("Jambes maison", [
-                ex("Goblet squat", sets: 4, reps: "12–15", group: "Jambes"),
-                ex("Fentes", sets: 3, reps: "10/jambe", group: "Jambes"),
-                ex("Hip thrust au sol", sets: 3, reps: "15", group: "Fessiers"),
-                ex("Mollets marche", sets: 3, reps: "20", group: "Mollets")
-            ])
-        ]
     }
 
     private static func scaleExercises(
@@ -307,18 +239,6 @@ enum OriginPlanCalendarBuilder {
             }
             return copy
         }
-    }
-
-    private static func ex(_ name: String, sets: Int, reps: String, group: String) -> OriginExercise {
-        OriginExercise(
-            id: UUID().uuidString,
-            name: name,
-            sets: sets,
-            reps: reps,
-            restSeconds: 90,
-            coachingCue: "Contrôle > ego",
-            muscleGroup: group
-        )
     }
 
     // MARK: - Nutrition

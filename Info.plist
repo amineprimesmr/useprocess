@@ -13,7 +13,7 @@
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>La caméra TrueDepth et la caméra arrière permettent le scan visage wellness local, l'analyse de posture et le scan corps. Une photo n'est envoyée à Anthropic Claude que si tu actives explicitement l'analyse IA.</string>
+	<string>La caméra avant et la caméra arrière permettent le scan visage local, l'analyse de posture et le scan corps. Une photo n'est envoyée à Anthropic Claude que si tu actives explicitement l'analyse IA.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>La photothèque permet de choisir une photo de profil ou d'envoyer une image au coach.</string>
 	<key>NSHealthShareUsageDescription</key>
@@ -21,7 +21,7 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Process peut enregistrer tes séances et données d'activité dans Santé pour centraliser ton suivi sportif.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>TrueDepth est utilisé pour le scan visage wellness local (mesh facial et indicateurs). Process ne crée pas de modèle d'identification faciale.</string>
+	<string>La caméra avant est utilisée pour le scan visage local (mesh facial et indicateurs). Process ne crée pas de modèle d'identification faciale.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Process utilise les capteurs de mouvement pour estimer ton activité quotidienne et compléter les données Santé. Exemple : compter tes pas quand tu marches sans Apple Watch.</string>
 	<key>NSUserNotificationsUsageDescription</key>

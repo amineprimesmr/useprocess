@@ -8,16 +8,17 @@ struct PlanLastFaceScanSection: View {
     @Binding var isScanFlowActive: Bool
     var zoomNamespace: Namespace.ID? = nil
     var onScan: (() -> Void)? = nil
-    var onOpenHistory: (() -> Void)? = nil
     var onScanComplete: ((FaceScanResult) -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
+    @Bindable private var screenFlash = FaceScanScreenFlash.shared
 
     @State private var scanCaptureSessionID = UUID()
     @State private var analysisSession: InlineFaceScanAnalysisSession?
+    @State private var latestAnalysisScan: FaceScanResult?
 
     @Namespace private var scanCameraNamespace
 
@@ -35,11 +36,18 @@ struct PlanLastFaceScanSection: View {
     private enum Layout {
         static let cardPadding: CGFloat = 16
         static let topMinHeight: CGFloat = 118
+        static let postScanTopMinHeight: CGFloat = 92
         static let scanAvailableHeight: CGFloat = 118
         static let footerVerticalPadding: CGFloat = 14
+        static let postScanFooterVerticalPadding: CGFloat = 10
         static let blockSpacing: CGFloat = 8
         static let videoTrailingRadius: CGFloat = 18
         static let inlineControlsHeight: CGFloat = 118
+        static let postScanFooterContentHeight: CGFloat = 44
+    }
+
+    private var isPostScanComplete: Bool {
+        latest != nil && !isScanDue
     }
 
     private var inlineViewportDiameter: CGFloat {
@@ -68,7 +76,7 @@ struct PlanLastFaceScanSection: View {
         if isScanAvailable {
             return false
         }
-        return onOpenHistory != nil || onScan != nil
+        return latest != nil
     }
 
     private var showsMediaColumn: Bool {
@@ -86,6 +94,10 @@ struct PlanLastFaceScanSection: View {
         isScanAvailable || isScanFlowActive
     }
 
+    private var usesFlashCardBackdrop: Bool {
+        isScanFlowActive && screenFlash.isActive
+    }
+
     var body: some View {
         Group {
             if showsUnifiedScanCard {
@@ -100,14 +112,19 @@ struct PlanLastFaceScanSection: View {
             }
         }
         .background {
-            cardShape
-                .fill(.clear)
-                .processGlassEffect(in: cardShape, interactive: isInteractive && !isScanFlowActive)
+            if usesFlashCardBackdrop {
+                cardShape.fill(Color.white)
+            } else {
+                cardShape
+                    .fill(.clear)
+                    .processGlassEffect(in: cardShape, interactive: isInteractive && !isScanFlowActive)
+            }
         }
         .clipShape(cardShape)
-        .processHomeGlassCardShadow(isDark: theme.isDark)
+        .processHomeGlassCardShadow(isDark: theme.isDark && !usesFlashCardBackdrop)
         .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
         .animation(.spring(response: 0.58, dampingFraction: 0.86), value: isScanFlowActive)
+        .animation(.easeInOut(duration: 0.22), value: usesFlashCardBackdrop)
         .onAppear {
             displayPreferences.reload()
         }
@@ -126,15 +143,31 @@ struct PlanLastFaceScanSection: View {
                 }
             )
         }
+        .fullScreenCover(item: $latestAnalysisScan) { scan in
+            latestAnalysisCover(for: scan)
+        }
     }
 
     private func handlePrimaryTap() {
-        openHistory()
+        guard let latest else { return }
+        HapticManager.shared.impact(.light)
+        latestAnalysisScan = latest
     }
 
-    private func openHistory() {
-        HapticManager.shared.impact(.light)
-        onOpenHistory?()
+    @ViewBuilder
+    private func latestAnalysisCover(for scan: FaceScanResult) -> some View {
+        let store = FaceScanHistoryStore.shared
+        let content = FaceScanResultContent(
+            result: scan,
+            previous: store.previousResult,
+            history: store.history
+        )
+
+        if let zoomNamespace {
+            content.processZoomTransition(id: .faceScanHistory, namespace: zoomNamespace)
+        } else {
+            content
+        }
     }
 
     @ViewBuilder
@@ -186,28 +219,6 @@ struct PlanLastFaceScanSection: View {
         .id(scanCaptureSessionID)
     }
 
-    private func compactScanDueTrailingColumn(compactVideoWidth: CGFloat) -> some View {
-        HStack(alignment: .center, spacing: 0) {
-            Color.clear
-                .frame(width: compactVideoWidth, height: Layout.scanAvailableHeight)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 12) {
-                Text(scanAvailableTitle)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Spacer(minLength: 0)
-
-                scanAvailableButton
-            }
-            .padding(Layout.cardPadding)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, minHeight: Layout.scanAvailableHeight, alignment: .leading)
-    }
-
     private func compactScanPreviewPanel(width: CGFloat) -> some View {
         ZStack(alignment: .leading) {
             PlanFaceScanLiveCameraPanel(isActive: livePreviewActive)
@@ -230,6 +241,28 @@ struct PlanLastFaceScanSection: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .clipShape(videoPanelShape(spansFullCardHeight: false))
+    }
+
+    private func compactScanDueTrailingColumn(compactVideoWidth: CGFloat) -> some View {
+        HStack(alignment: .center, spacing: 0) {
+            Color.clear
+                .frame(width: compactVideoWidth, height: Layout.scanAvailableHeight)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text(scanAvailableTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 0)
+
+                scanAvailableButton
+            }
+            .padding(Layout.cardPadding)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, minHeight: Layout.scanAvailableHeight, alignment: .leading)
     }
 
     @MainActor
@@ -304,11 +337,14 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var postScanCardMinHeight: CGFloat {
-        Layout.topMinHeight + Layout.footerVerticalPadding * 2 + 52
+        let top = isPostScanComplete ? Layout.postScanTopMinHeight : Layout.topMinHeight
+        let footerPad = isPostScanComplete ? Layout.postScanFooterVerticalPadding : Layout.footerVerticalPadding
+        let footerBody = isPostScanComplete ? Layout.postScanFooterContentHeight : 52
+        return top + footerPad * 2 + footerBody
     }
 
     private var postScanTextColumn: some View {
-        VStack(alignment: .leading, spacing: Layout.blockSpacing) {
+        VStack(alignment: .leading, spacing: isPostScanComplete ? 0 : Layout.blockSpacing) {
             if !showsMediaColumn {
                 HStack(spacing: 10) {
                     compactLeadingIcon
@@ -318,16 +354,22 @@ struct PlanLastFaceScanSection: View {
                 scanCardHeader
             }
 
-            Text(preScanActionMessage)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(theme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-                .lineLimit(2)
+            if !isPostScanComplete {
+                Text(preScanActionMessage)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
         }
-        .padding(Layout.cardPadding)
-        .frame(maxWidth: .infinity, minHeight: Layout.topMinHeight, alignment: .leading)
+        .padding(isPostScanComplete ? 12 : Layout.cardPadding)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: isPostScanComplete ? Layout.postScanTopMinHeight : Layout.topMinHeight,
+            alignment: .leading
+        )
     }
 
     private var scanCardHeader: some View {
@@ -369,11 +411,12 @@ struct PlanLastFaceScanSection: View {
                 latest: latest,
                 isScanDue: isScanDue,
                 now: context.date,
-                theme: theme
+                theme: theme,
+                isCompact: isPostScanComplete
             )
         }
-        .padding(.horizontal, Layout.cardPadding)
-        .padding(.vertical, Layout.footerVerticalPadding)
+        .padding(.horizontal, isPostScanComplete ? 12 : Layout.cardPadding)
+        .padding(.vertical, isPostScanComplete ? Layout.postScanFooterVerticalPadding : Layout.footerVerticalPadding)
     }
 
     private func videoPanelShape(spansFullCardHeight: Bool) -> UnevenRoundedRectangle {
@@ -532,6 +575,10 @@ private struct PlanFaceScanNextScanFooter: View {
     let isScanDue: Bool
     let now: Date
     let theme: AppTheme
+    var isCompact: Bool = false
+
+    private var rowSpacing: CGFloat { isCompact ? 7 : 10 }
+    private var progressBarHeight: CGFloat { isCompact ? 9 : 11 }
 
     private var progress: Double {
         guard let latest else { return 0 }
@@ -557,16 +604,16 @@ private struct PlanFaceScanNextScanFooter: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: rowSpacing) {
             HStack(alignment: .center, spacing: 8) {
                 Image(systemName: statusIcon)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(trailingColor)
-                    .frame(width: 22, height: 22)
+                    .frame(width: isCompact ? 20 : 22, height: isCompact ? 20 : 22)
                     .background(trailingColor.opacity(0.14), in: Circle())
 
                 Text(headline)
-                    .font(.subheadline.weight(.semibold))
+                    .font(isCompact ? .footnote.weight(.semibold) : .subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
 
                 Spacer(minLength: 8)
@@ -575,8 +622,8 @@ private struct PlanFaceScanNextScanFooter: View {
                     .font(.caption.weight(.bold))
                     .monospacedDigit()
                     .foregroundStyle(trailingColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .padding(.horizontal, isCompact ? 8 : 10)
+                    .padding(.vertical, isCompact ? 4 : 5)
                     .background(trailingColor.opacity(0.12), in: Capsule())
             }
 
@@ -585,7 +632,8 @@ private struct PlanFaceScanNextScanFooter: View {
                 isComplete: latest != nil && isScanDue,
                 isPending: latest == nil,
                 accent: theme.onboardingAccent,
-                track: Color.primary.opacity(theme.isDark ? 0.22 : 0.10)
+                track: Color.primary.opacity(theme.isDark ? 0.22 : 0.10),
+                barHeight: progressBarHeight
             )
         }
     }
@@ -603,6 +651,7 @@ private struct PlanFaceScanProgressBar: View {
     let isPending: Bool
     let accent: Color
     let track: Color
+    var barHeight: CGFloat = 11
 
     private var fillProgress: Double {
         if isPending { return 0 }
@@ -650,7 +699,7 @@ private struct PlanFaceScanProgressBar: View {
                 }
             }
         }
-        .frame(height: 11)
+        .frame(height: barHeight)
     }
 }
 
@@ -739,4 +788,6 @@ private struct PlanFaceScanLiveCameraPanel: View {
         camera.start(preferredPosition: .front, deliversFrames: false)
     }
 }
+
+
 

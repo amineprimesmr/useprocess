@@ -1,12 +1,12 @@
 {
-  "images": [
+  "images" : [
     {
-      "filename": "cardio_marche.png",
-      "idiom": "universal"
+      "filename" : "ChatGPT Image Jun 30, 2026, 11_22_32 PM.png",
+      "idiom" : "universal"
     }
   ],
-  "info": {
-    "author": "xcode",
-    "version": 1
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
   }
 }

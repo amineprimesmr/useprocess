@@ -5,12 +5,12 @@ enum ProcessHydrationGuide {
 
     static var dailyLiters: String { ProcessDailyTargets.hydrationLabel }
 
-    static let morningLine = "500 ml d'eau + pincée de sel ou citron au réveil — pas de café immédiat."
+    static let morningLine = "500 ml d'eau au réveil, citron facultatif — électrolytes seulement après forte transpiration."
 
     /// Hydratation matinale recommandée avec chaque petit-déjeuner catalogue.
     static let morningWaterMilliliters = 500
     static var morningWaterLabel: String { "\(morningWaterMilliliters) ml" }
-    static let morningWaterItemName = "2 grands verres d'eau filtrée + pincée de sel marin"
+    static let morningWaterItemName = "2 grands verres d'eau filtrée, citron facultatif"
 
     /// Classement eaux (minéraux naturels).
     static let rankedWaters: [(rank: Int, name: String, detail: String)] = [
@@ -28,6 +28,6 @@ enum ProcessHydrationGuide {
 
     static var protocolGuide: String {
         let brands = rankedWaters.map { "\($0.rank). \($0.name) — \($0.detail)" }.joined(separator: " ")
-        return "\(dailyLiters) (\(ProcessDailyTargets.hydrationLitersPerDay * 1000) ml). \(brands) Sel de qualité."
+        return "\(dailyLiters) (\(ProcessDailyTargets.hydrationLitersPerDay * 1000) ml). \(brands) Électrolytes uniquement selon chaleur, sport et transpiration."
     }
 }

@@ -12,7 +12,7 @@ private final class FaceMeshSceneView: ARSCNView {
     }
 }
 
-/// Scan visage TrueDepth — mesh 3D invisible, flash piloté par l'écran parent.
+/// Scan visage — mesh 3D invisible, flash piloté par l'écran parent.
 struct FaceMeshScanView: UIViewRepresentable {
     @Binding var progress: Double
     @Binding var ringProgress: Double
@@ -22,6 +22,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     @Binding var isFaceDetected: Bool
     @Binding var isDeviceSupported: Bool
     @Binding var isLowLight: Bool
+    var isPreviewOnly: Bool = false
     var onComplete: (FaceScanCapturePayload) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -55,7 +56,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         guard ARFaceTrackingConfiguration.isSupported else {
             DispatchQueue.main.async {
                 context.coordinator.isDeviceSupported = false
-                instruction = "TrueDepth requis — utilise un appareil avec Face ID."
+                instruction = "Caméra avant requise — utilise un iPhone avec Face ID."
                 frameHint = nil
                 isFaceDetected = false
                 progress = 0
@@ -74,6 +75,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: ARSCNView, context: Context) {
+        context.coordinator.isPreviewOnly = isPreviewOnly
         context.coordinator.updateViewportSize(uiView.bounds.size)
     }
 
@@ -113,6 +115,7 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         var completed = false
         var isTornDown = false
+        var isPreviewOnly = false
         var scanStartTime: Date?
         var trackedFrameCount = 0
         var stableFrameCount = 0
@@ -366,7 +369,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         private func beginScan(with faceAnchor: ARFaceAnchor) {
-            guard scanStartTime == nil else { return }
+            guard scanStartTime == nil, !isPreviewOnly else { return }
 
             activeScanId = UUID().uuidString
             videoRecorder.start(at: videoRecorder.prepareOutputURL(scanId: activeScanId))
@@ -419,6 +422,15 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
 
             distanceOkFrameCount += 1
+
+            if isPreviewOnly {
+                publishUI(force: false) {
+                    self.isFaceDetected = self.trackedFrameCount >= 4
+                    self.instruction = ""
+                    self.frameHint = nil
+                }
+                return
+            }
 
             if scanStartTime == nil {
                 guard trackedFrameCount >= minTrackedFramesBeforeScan else {

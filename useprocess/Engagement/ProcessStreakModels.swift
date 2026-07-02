@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct ProcessStreakState: Codable, Equatable {
     var completedDayKeys: Set<String> = []
@@ -78,5 +79,20 @@ struct ProcessStreakSnapshot: Equatable {
         default:
             return "Tu es en mode Process."
         }
+    }
+}
+
+enum ProcessStreakPalette {
+    static let flame = Color(red: 1.0, green: 0.45, blue: 0.12)
+
+    static var flameGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 1.0, green: 0.62, blue: 0.18),
+                Color(red: 1.0, green: 0.34, blue: 0.08)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }

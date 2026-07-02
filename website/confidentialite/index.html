@@ -39,7 +39,7 @@
         <li><strong>Compte</strong> : identifiant Apple (Sign in with Apple), adresse e-mail relayée le cas échéant, prénom.</li>
         <li><strong>Profil</strong> : objectifs, préférences sport et nutrition, réponses d'onboarding.</li>
         <li><strong>Données santé</strong> (avec votre autorisation HealthKit) : activité, sommeil, fréquence cardiaque, calories, pas, etc.</li>
-        <li><strong>Données TrueDepth / faciales</strong> (avec votre autorisation — voir section 3) : géométrie faciale ARKit, coefficients faciaux temporaires, photo locale, vidéo courte locale, scores wellness dérivés.</li>
+        <li><strong>Données faciales</strong> (avec votre autorisation — voir section 3) : géométrie faciale ARKit, coefficients faciaux temporaires, photo locale, vidéo courte locale, scores dérivés.</li>
         <li><strong>Activité physique</strong> (capteurs de mouvement, si autorisés).</li>
         <li><strong>Coach IA</strong> : messages échangés avec l'assistant (voir section 4).</li>
         <li><strong>Audio</strong> (si autorisé) : dictée vocale convertie en texte sur l'appareil.</li>
@@ -51,18 +51,18 @@
         Aucune donnée de localisation n'est demandée ni transmise par l'application.
       </p>
 
-      <h2 id="donnees-faciales">3. Données TrueDepth / faciales</h2>
+      <h2 id="donnees-faciales">3. Données faciales</h2>
       <p>
         Si vous choisissez d'utiliser le scan visage, l'Application utilise <strong>ARKit Face Tracking</strong>
-        avec la caméra <strong>TrueDepth</strong> (capteur Face ID) pour estimer des indicateurs wellness
+        avec la caméra avant (capteur Face ID) pour estimer des indicateurs
         relatifs à votre propre baseline.
         <strong>Aucune reconnaissance biométrique d'identité</strong> (déverrouillage, authentification
         biométrique du visage, identification d'une personne, vérification d'identité) n'est effectuée
-        dans le cadre du scan wellness. L'Application n'accède pas aux modèles Face ID d'Apple et ne crée
+        dans le cadre du scan visage. L'Application n'accède pas aux modèles Face ID d'Apple et ne crée
         pas de modèle biométrique d'identification.
       </p>
 
-      <h3>3.1 Informations collectées via l'API TrueDepth</h3>
+      <h3>3.1 Informations collectées via ARKit Face Tracking</h3>
       <ul>
         <li><strong>Géométrie faciale ARKit</strong> : positions de vertices, triangles et coordonnées de texture du mesh 3D du visage. Cette géométrie est traitée sur l'appareil ; seul le dernier mesh de référence peut être conservé localement pour afficher la baseline et les tendances.</li>
         <li><strong>Coefficients faciaux ARKit temporaires</strong> : valeurs <code>blendShapes</code> utilisées pendant le scan (ex. joues, clignement/squint des yeux, sourcils, ouverture mâchoire, froncement de bouche) afin de calculer les scores wellness. Ces coefficients ne sont pas envoyés à Firebase ni stockés comme données brutes persistantes.</li>
@@ -99,7 +99,7 @@
 
       <blockquote>
         <strong>Extrait — collecte et usage des données faciales :</strong>
-        « Si vous choisissez d'utiliser le scan visage, l'Application collecte via ARKit/TrueDepth
+        « Si vous choisissez d'utiliser le scan visage, l'Application collecte via ARKit Face Tracking
         une géométrie faciale 3D, des coefficients faciaux temporaires, une photo JPEG, une vidéo courte
         optionnelle et des scores wellness dérivés. Hors analyse IA optionnelle explicitement activée,
         le mesh, les photos et les vidéos restent sur votre appareil ; si vous êtes connecté, seuls les scores, métadonnées
@@ -169,7 +169,7 @@
       <h2>6. Bases légales (RGPD)</h2>
       <ul>
         <li><strong>Exécution du contrat</strong> : fourniture de l'Application et de l'abonnement.</li>
-        <li><strong>Consentement</strong> : HealthKit, caméra/TrueDepth, notifications, micro, <strong>coach IA Anthropic</strong>, <strong>analyse IA photo du scan visage</strong>.</li>
+        <li><strong>Consentement</strong> : HealthKit, caméra avant / scan visage, notifications, micro, <strong>coach IA Anthropic</strong>, <strong>analyse IA photo du scan visage</strong>.</li>
         <li><strong>Intérêt légitime</strong> : sécurité, prévention de la fraude, amélioration du service.</li>
       </ul>
 

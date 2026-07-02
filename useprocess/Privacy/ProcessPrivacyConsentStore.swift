@@ -17,7 +17,7 @@ enum ProcessPrivacyConsentError: LocalizedError {
     }
 }
 
-/// Consentements privacy App Store — IA tierce (Anthropic) et données faciales (TrueDepth).
+/// Consentements privacy App Store — IA tierce (Anthropic) et données faciales (scan visage).
 @MainActor
 @Observable
 final class ProcessPrivacyConsentStore {

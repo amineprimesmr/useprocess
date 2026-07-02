@@ -29,11 +29,15 @@ struct PlanBreakfastBuilderSection: View {
         BreakfastMealBuilderCatalog.buildMeal(from: selections)
     }
 
+    private var assessment: MealDebloatAssessment {
+        MealNutritionCatalog.debloatAssessment(for: builtMeal)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
                 title: "Petit-déjeuner",
-                trailing: "~\(selections.estimatedCalories) kcal"
+                trailing: "Score Debloat \(assessment.scoreText)"
             )
 
             Text("Compose ton assiette — fond fixe + aliments PNG. Swipe pour changer chaque catégorie.")
@@ -145,7 +149,13 @@ struct PlanBreakfastBuilderHeroCard: View {
 
     @Environment(\.appTheme) private var theme
 
-    private var calories: Int { selections.estimatedCalories }
+    private var builtMeal: MealSuggestionContent {
+        BreakfastMealBuilderCatalog.buildMeal(from: selections)
+    }
+
+    private var assessment: MealDebloatAssessment {
+        MealNutritionCatalog.debloatAssessment(for: builtMeal)
+    }
 
     var body: some View {
         Button {
@@ -220,20 +230,10 @@ struct PlanBreakfastBuilderHeroCard: View {
 
     private var heroChrome: some View {
         VStack(spacing: 0) {
-            Text("\(calories) kcal")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.white.opacity(0.96))
-                .monospacedDigit()
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background {
-                    Capsule()
-                        .fill(.black.opacity(0.38))
-                        .overlay {
-                            Capsule()
-                                .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5)
-                        }
-                }
+            MealDebloatScorePill(
+                assessment: assessment,
+                usesDarkImageStyle: true
+            )
                 .padding(.top, 16)
 
             Spacer(minLength: 0)
@@ -248,12 +248,20 @@ struct PlanBreakfastBuilderHeroCard: View {
 
     private var heroActionBar: some View {
         HStack(spacing: 0) {
-            Text("\(calories) kcal")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.95))
-                .monospacedDigit()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 18)
+            HStack(spacing: 7) {
+                Image(systemName: "drop.degreesign.fill")
+                    .font(.caption.weight(.bold))
+                Text(assessment.scoreText)
+                    .font(.subheadline.weight(.heavy))
+                    .monospacedDigit()
+                Text(assessment.label)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 18)
 
             Button {
                 onValidate()

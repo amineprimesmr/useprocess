@@ -6,7 +6,7 @@ Thank you for your review. Below are complete answers regarding face data in Pro
 
 1) WHAT FACE DATA DOES THE APP COLLECT?
 
-Process AI collects face-related data ONLY when the user explicitly starts the optional "Face Scan" feature (TrueDepth / front camera on supported devices). We do NOT use face data for identity recognition, Face ID login storage, advertising, or tracking.
+Process AI collects face-related data ONLY when the user explicitly starts the optional "Face Scan" feature (front camera / ARKit Face Tracking on supported devices). We do NOT use face data for identity recognition, Face ID login storage, advertising, or tracking.
 
 Data collected during an optional Face Scan:
 • 3D face mesh geometry (vertices, triangle indices) — processed and stored locally on-device for baseline/trend display; not uploaded to our servers
@@ -67,7 +67,7 @@ URL: https://useprocess.xyz/confidentialite
 Anchor: https://useprocess.xyz/confidentialite#donnees-faciales
 
 Sections:
-• Section 3 — Données faciales (TrueDepth)
+• Section 3 — Données faciales
 • 3.1 — Data collected
 • 3.2 — Uses
 • 3.3 — Sharing & storage
@@ -82,13 +82,13 @@ In-app: before any scan, FaceScanPrivacyConsentView displays collected data type
 6) QUOTED TEXT FROM PRIVACY POLICY (FACE DATA)
 
 Section 3 introduction:
-« Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra TrueDepth (capteur Face ID) pour estimer des indicateurs wellness relatifs à votre propre baseline. Aucune reconnaissance biométrique d'identité (déverrouillage, authentification biométrique du visage, identification d'une personne, vérification d'identité) n'est effectuée dans le cadre du scan wellness. »
+« Si vous choisissez d'utiliser le scan visage, l'Application utilise la caméra avant (capteur Face ID) et ARKit Face Tracking pour estimer des indicateurs relatifs à votre propre baseline. Aucune reconnaissance biométrique d'identité (déverrouillage, authentification biométrique du visage, identification d'une personne, vérification d'identité) n'est effectuée dans le cadre du scan visage. »
 
 Section 3.3:
 « Sur votre iPhone/iPad : mesh 3D, photo JPEG et vidéo courte sont stockés dans le dossier de l'Application (Application Support), exclus de la sauvegarde iCloud par l'Application et protégés par les protections de fichiers iOS. Cloud : si vous êtes connecté, seuls les scores wellness, métadonnées et éventuel texte d'analyse IA sont synchronisés sur Google Firebase Firestore (collection faceScans). Le mesh 3D, les fichiers photo JPEG et vidéo ne sont pas téléversés vers Firebase — ils restent sur votre appareil. »
 
 Section 3.4 summary blockquote:
-« Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D TrueDepth, une photo JPEG, une vidéo courte optionnelle et des scores wellness dérivés. Hors analyse IA optionnelle explicitement activée, le mesh, les photos et les vidéos restent sur votre appareil ; si vous êtes connecté, seuls les scores, métadonnées et éventuel texte d'analyse IA sont synchronisés sur Firebase Firestore. Si vous autorisez explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ; suppression sous 30 jours après suppression du compte. »
+« Si vous choisissez d'utiliser le scan visage, l'Application collecte un mesh 3D facial, une photo JPEG, une vidéo courte optionnelle et des scores dérivés. Hors analyse IA optionnelle explicitement activée, le mesh, les photos et les vidéos restent sur votre appareil ; si vous êtes connecté, seuls les scores, métadonnées et éventuel texte d'analyse IA sont synchronisés sur Firebase Firestore. Si vous autorisez explicitement l'analyse IA, la photo peut être envoyée à Anthropic (Claude) via Firebase Cloud Functions. Aucune reconnaissance d'identité n'est effectuée. Conservation : max. 90 scans ; suppression sous 30 jours après suppression du compte. »
 
 ---
 

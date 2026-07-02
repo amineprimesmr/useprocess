@@ -289,8 +289,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Process AI";
-				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra TrueDepth et la caméra arrière permettent le scan visage wellness, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "TrueDepth est utilisé pour le scan visage wellness (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra avant et la caméra arrière permettent le scan visage, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "La caméra avant est utilisée pour le scan visage (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Le micro permet d'enregistrer des messages vocaux convertis en texte pour le coach. Le texte peut être envoyé au service IA Anthropic (Claude) si tu l'autorises.";
@@ -343,8 +343,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Process AI";
-				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra TrueDepth et la caméra arrière permettent le scan visage wellness, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "TrueDepth est utilisé pour le scan visage wellness (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra avant et la caméra arrière permettent le scan visage, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "La caméra avant est utilisée pour le scan visage (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Le micro permet d'enregistrer des messages vocaux convertis en texte pour le coach. Le texte peut être envoyé au service IA Anthropic (Claude) si tu l'autorises.";

@@ -160,18 +160,13 @@ enum PlanProtocolCarouselBuilder {
         previewItemCount: Int
     ) -> PlanProtocolCarouselItem {
         let postureCount = PlanPostureCircuitContent.mobilityBlocks(for: plan).count
-        let sessionBlockCount: Int
-        if let training {
-            sessionBlockCount = training.warmup.count + training.exercises.count + training.cooldown.count
-        } else {
-            sessionBlockCount = max(previewItemCount, 1)
-        }
+        let sessionCount = TrainingProgramCatalog.allSessionTemplates().count
 
         let detailText: String
         if let training {
-            detailText = "\(sessionBlockCount) blocs séance · \(postureCount) blocs posture · échauffement, exercices, retour au calme et circuit complet."
+            detailText = "Programme complet · \(sessionCount) séances · \(postureCount) blocs posture · \(training.sessionName) aujourd'hui."
         } else {
-            detailText = "Repos actif · \(postureCount) blocs posture · marche et mobilité."
+            detailText = "Programme complet · \(sessionCount) séances · \(postureCount) blocs posture · repos actif aujourd'hui."
         }
 
         return PlanProtocolCarouselItem(
@@ -469,8 +464,12 @@ struct PlanProtocolCarouselCard: View {
         .processZoomSource(id: zoomTransitionID, namespace: zoomNamespace)
     }
 
+    private var isSeeAllCard: Bool {
+        item.id == PlanProtocolCarouselBuilder.SummaryID.seeAllTraining
+    }
+
     private var cardBody: some View {
-        ZStack(alignment: .bottomLeading) {
+        ZStack {
             previewImage
 
             LinearGradient(
@@ -482,56 +481,10 @@ struct PlanProtocolCarouselCard: View {
             )
             .allowsHitTesting(false)
 
-            VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Spacer(minLength: 0)
-                    if let stepsProgress = item.stepsProgress {
-                        PlanStepsProgressRing(
-                            progress: stepsProgress.fraction,
-                            size: isLargeCard ? 38 : 34
-                        )
-                        .padding(10)
-                    } else if let repBadge = item.repBadge {
-                        Text(repBadge)
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.96))
-                            .monospacedDigit()
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background {
-                                Capsule()
-                                    .fill(.black.opacity(0.45))
-                                    .overlay {
-                                        Capsule()
-                                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
-                                    }
-                            }
-                            .padding(10)
-                    }
-                }
-
-                Spacer(minLength: 0)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title)
-                        .font(.system(size: isLargeCard ? 16 : 15, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if let stepsProgress = item.stepsProgress {
-                        Text(PlanStepsProgressFormatter.stepsRatio(
-                            current: stepsProgress.current,
-                            target: stepsProgress.target
-                        ))
-                        .font(.system(size: isLargeCard ? 14 : 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.92))
-                        .monospacedDigit()
-                    }
-                }
-                .padding(.horizontal, isLargeCard ? 14 : 12)
-                .padding(.bottom, isLargeCard ? 16 : 14)
+            if isSeeAllCard {
+                seeAllCardChrome
+            } else {
+                standardCardChrome
             }
         }
         .frame(width: cardWidth, height: cardHeight)
@@ -547,6 +500,107 @@ struct PlanProtocolCarouselCard: View {
                     .strokeBorder(Color.white.opacity(theme.isDark ? 0.14 : 0.22), lineWidth: 0.5)
                     .allowsHitTesting(false)
             }
+        }
+    }
+
+    private var seeAllCardChrome: some View {
+        ZStack {
+            seeAllCenterGlassLabel
+
+            VStack(spacing: 0) {
+                HStack {
+                    Spacer(minLength: 0)
+                    if let repBadge = item.repBadge {
+                        Text(repBadge)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white.opacity(0.96))
+                            .monospacedDigit()
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background {
+                                Capsule()
+                                    .fill(.black.opacity(0.45))
+                                    .overlay {
+                                        Capsule()
+                                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                                    }
+                            }
+                    }
+                }
+                .padding(10)
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var seeAllCenterGlassLabel: some View {
+        Text("Voir tout")
+            .font(.system(size: isLargeCard ? 15 : 14, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.96))
+            .padding(.horizontal, isLargeCard ? 22 : 18)
+            .padding(.vertical, isLargeCard ? 12 : 10)
+            .processGlassEffect(in: Capsule(), interactive: false)
+            .overlay {
+                Capsule()
+                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5)
+                    .allowsHitTesting(false)
+            }
+            .shadow(color: .black.opacity(0.32), radius: 10, y: 5)
+            .allowsHitTesting(false)
+    }
+
+    private var standardCardChrome: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Spacer(minLength: 0)
+                if let stepsProgress = item.stepsProgress {
+                    PlanStepsProgressRing(
+                        progress: stepsProgress.fraction,
+                        size: isLargeCard ? 38 : 34
+                    )
+                    .padding(10)
+                } else if let repBadge = item.repBadge {
+                    Text(repBadge)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.96))
+                        .monospacedDigit()
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background {
+                            Capsule()
+                                .fill(.black.opacity(0.45))
+                                .overlay {
+                                    Capsule()
+                                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                                }
+                        }
+                        .padding(10)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.title)
+                    .font(.system(size: isLargeCard ? 16 : 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let stepsProgress = item.stepsProgress {
+                    Text(PlanStepsProgressFormatter.stepsRatio(
+                        current: stepsProgress.current,
+                        target: stepsProgress.target
+                    ))
+                    .font(.system(size: isLargeCard ? 14 : 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .monospacedDigit()
+                }
+            }
+            .padding(.horizontal, isLargeCard ? 14 : 12)
+            .padding(.bottom, isLargeCard ? 16 : 14)
         }
     }
 

@@ -19,18 +19,18 @@ enum ProcessDebloatMealLibrary {
         "menthe",
         "ananas",
         "céleri",
-        "yaourt grec nature",
-        "kéfir nature"
+        "yaourt grec sans lactose si sensible",
+        "kéfir nature selon tolérance"
     ]
 
     static let rules = [
         "Sodium modéré, surtout le soir.",
         "Base potassium naturelle : patate douce, pomme de terre, banane, avocat, épinards ou eau de coco.",
-        "Protéines simples à chaque repas : œufs, poulet, dinde, poisson, steak maigre, yaourt grec ou kéfir.",
+        "Protéines simples à chaque repas : œufs, poulet, dinde, poisson, steak maigre, yaourt sans lactose ou kéfir selon tolérance.",
         "Interdit absolu : porc et alcool — jamais dans le catalogue ni les suggestions.",
         "Salades debloat : roquette, mâche, concombre, tomate, fenouil — vinaigrette citron/huile d'olive, pas sauce salade industrielle.",
         "Légumes variés cuits ou rôtis : brocoli, carottes, poivrons, haricots verts, épinards.",
-        "Cuisson savoureuse (poêle, four, grill) : huile d'olive extra vierge, herbes, ail, citron — pas friture ni sauces industrielles salées.",
+        "Cuisson savoureuse (poêle, four, grill) : huile d'olive extra vierge, herbes, citron et huile infusée à l'ail — pas friture ni sauces industrielles salées.",
         "Évite ultra-transformé, charcuterie salée et gros repas tardif."
     ]
 
@@ -163,11 +163,11 @@ enum ProcessDebloatMealLibrary {
             items: [
                 item(ProcessHydrationGuide.morningWaterItemName, ProcessHydrationGuide.morningWaterLabel, "Hydratation"),
                 item("Œufs plein air", "2", "Protéine"),
-                item("Banane bien mûre", "1", "Glucide"),
+                item("Banane jaune peu tachetée", "1", "Glucide"),
                 item("Kiwi", "1", "Glucide")
             ],
-            prep: "Verse l'eau salée tiède avant de manger. Bats les œufs et brouille 4 min à feu moyen en remuant. Coupe la banane et le kiwi, serve avec les œufs.",
-            tip: "Eau salée en premier — pas de pain blanc ni granola industriel.",
+            prep: "Bois l'eau nature ou citronnée avant de manger. Bats les œufs et brouille 4 min à feu moyen en remuant. Coupe la banane et le kiwi, puis sers avec les œufs.",
+            tip: "Eau nature en premier — électrolytes seulement après forte transpiration.",
             tags: ["potassium", "simple"],
             sub: .init(protocolFit: 89, satiety: 82, antiBloat: 88),
             image: "meal_debloat_eggs_banana_kiwi"
@@ -183,7 +183,7 @@ enum ProcessDebloatMealLibrary {
                 item("Avocat mûr", "1/2", "Gras"),
                 item("Citron frais", "1/2", "Autre")
             ],
-            prep: "Verse l'eau salée tiède. Bats les œufs et brouille jusqu'à texture crémeuse. Écrase l'avocat avec citron et poivre, serve à côté des œufs.",
+            prep: "Bois l'eau nature ou citronnée. Bats les œufs et brouille jusqu'à texture crémeuse. Écrase l'avocat avec citron et poivre, puis sers à côté des œufs.",
             tip: "Citron > sauce salée sur les œufs.",
             tags: ["simple", "satiété"],
             sub: .init(protocolFit: 90, satiety: 88, antiBloat: 87),
@@ -200,7 +200,7 @@ enum ProcessDebloatMealLibrary {
                 item("Tomates cerises", "150 g", "Légume"),
                 item("Roquette + concombre", "120 g", "Légume")
             ],
-            prep: "Verse l'eau salée tiède. Poêle les œufs 3 min de chaque côté. Prépare la salade roquette, concombre, tomates et assaisonne citron-huile d'olive.",
+            prep: "Bois l'eau nature ou citronnée. Poêle les œufs 3 min de chaque côté. Prépare la salade roquette, concombre, tomates et assaisonne citron-huile d'olive.",
             tip: "Tomates + roquette : fibres et potassium sans tubercule.",
             tags: ["salade", "simple"],
             sub: .init(protocolFit: 88, satiety: 80, antiBloat: 89),
@@ -217,10 +217,10 @@ enum ProcessDebloatMealLibrary {
             items: [
                 item("Blanc de poulet (label rouge)", "180 g", "Protéine"),
                 item("Patate douce rôtie", "220 g", "Glucide"),
-                item("Brocoli rôti ail-citron", "200 g", "Légume"),
+                item("Brocoli + courgette, huile infusée à l'ail", "100 g + 100 g", "Légume"),
                 item("Huile d'olive extra vierge", "1 c. à soupe", "Gras")
             ],
-            prep: "Coupe la patate douce et le brocoli, assaisonne huile, ail et herbes. Rôtis 22 min à 200°C. Poêle le poulet 6 min de chaque côté. Dresser poulet, patate et brocoli sur l'assiette.",
+            prep: "Coupe la patate douce, le brocoli et la courgette. Assaisonne avec huile infusée à l'ail et herbes. Rôtis 22 min à 200°C. Poêle le poulet 6 min de chaque côté, puis dresse.",
             tip: "Eau de coco sans sucre si sport ou chaleur.",
             tags: ["debloat", "potassium"],
             sub: .init(protocolFit: 92, satiety: 89, antiBloat: 91),
@@ -285,11 +285,11 @@ enum ProcessDebloatMealLibrary {
             items: [
                 item("Bœuf haché 5% MG frais", "200 g", "Protéine"),
                 item("Riz basmati semi-complet", "180 g cuit", "Glucide"),
-                item("Poivrons + oignons rôtis", "220 g", "Légume"),
+                item("Poivrons + fenouil rôtis", "220 g", "Légume"),
                 item("Huile d'olive extra vierge", "1 c. à soupe", "Gras")
             ],
-            prep: "Cuire le riz basmati. Poêle le bœuf haché 6 min à feu vif sans casser les morceaux. Rôtis poivrons et oignons 18 min à 200°C. Serve riz, bœuf et légumes rôtis.",
-            tip: "Herbes fraîches, ail — pas de sauce taco ou tomate salée.",
+            prep: "Cuire le riz basmati. Poêle le bœuf haché 6 min à feu vif. Rôtis poivrons et fenouil 18 min à 200°C. Sers avec des herbes fraîches.",
+            tip: "Herbes et huile infusée à l'ail — pas de sauce taco ou tomate salée.",
             tags: ["viande", "variété"],
             sub: .init(protocolFit: 90, satiety: 91, antiBloat: 87),
             image: "meal_debloat_beef_rice_peppers"
@@ -305,7 +305,7 @@ enum ProcessDebloatMealLibrary {
                 item("Salade fenouil + concombre", "150 g", "Légume"),
                 item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
-            prep: "Assaisonne le lieu avec citron, poêle 3 min de chaque côté. Poêle les haricots verts avec ail 5 min. Tranche fenouil et concombre, assaisonne pour la salade croquante.",
+            prep: "Assaisonne le lieu avec citron, poêle 3 min de chaque côté. Poêle les haricots verts avec huile infusée à l'ail 5 min. Tranche fenouil et concombre pour la salade croquante.",
             tip: "Poisson blanc le soir aussi possible — très léger en sel.",
             tags: ["poisson", "salade"],
             sub: .init(protocolFit: 89, satiety: 84, antiBloat: 91),
@@ -326,7 +326,7 @@ enum ProcessDebloatMealLibrary {
                 item("Huile d'olive + citron", "1 c. à soupe", "Gras")
             ],
             prep: "Grille le steak 3 min de chaque côté selon l'épaisseur. Rôtis les pommes de terre 25 min à 200°C. Prépare la salade roquette et tomates avec citron et huile d'olive.",
-            tip: "Sel léger le soir ; poivre et ail sur le steak.",
+            tip: "Sel léger le soir ; poivre, herbes et huile infusée à l'ail sur le steak.",
             tags: ["soir", "viande", "salade"],
             sub: .init(protocolFit: 92, satiety: 88, antiBloat: 90),
             image: "meal_debloat_steak_salad_potato"
@@ -342,7 +342,7 @@ enum ProcessDebloatMealLibrary {
                 item("Avocat mûr", "1/2", "Gras"),
                 item("Tomates cerises", "120 g", "Légume")
             ],
-            prep: "Marine le poulet citron-herbes-ail 10 min. Rôtis au four 22 min à 200°C. Compose salade roquette, concombre, tomates et avocat avec citron et huile d'olive.",
+            prep: "Marine le poulet avec citron, herbes et huile infusée à l'ail 10 min. Rôtis au four 22 min à 200°C. Compose salade roquette, concombre, tomates et avocat.",
             tip: "Marinade citron-herbes maison — pas marinade industrielle.",
             tags: ["soir", "salade", "viande"],
             sub: .init(protocolFit: 91, satiety: 86, antiBloat: 91),
@@ -356,10 +356,10 @@ enum ProcessDebloatMealLibrary {
             items: [
                 item("Escalope de dinde", "190 g", "Protéine"),
                 item("Riz basmati semi-complet", "160 g cuit", "Glucide"),
-                item("Brocoli rôti ail-citron", "200 g", "Légume"),
+                item("Brocoli + courgette, huile infusée à l'ail", "100 g + 100 g", "Légume"),
                 item("Huile d'olive", "1 c. à soupe", "Gras")
             ],
-            prep: "Cuire le riz basmati. Poêle la dinde 5 min de chaque côté. Rôtis le brocoli ail-citron 15 min à 200°C. Dresser dinde, riz et brocoli.",
+            prep: "Cuire le riz basmati. Poêle la dinde 5 min de chaque côté. Rôtis le brocoli et la courgette avec citron et huile infusée à l'ail 15 min à 200°C. Dresse avec le riz.",
             tip: "Alternative chaude quand tu ne veux pas de salade froide.",
             tags: ["soir", "viande"],
             sub: .init(protocolFit: 90, satiety: 88, antiBloat: 88),
@@ -393,7 +393,7 @@ enum ProcessDebloatMealLibrary {
             items: [
                 item("Steak maigre (rumsteck)", "230 g", "Protéine"),
                 item("Patate douce rôtie", "320 g", "Glucide"),
-                item("Avocat mûr", "1", "Gras"),
+                item("Avocat mûr", "1/2", "Gras"),
                 item("Salade roquette + concombre", "200 g", "Légume")
             ],
             prep: "Grille le steak 3 min de chaque côté. Rôtis la patate douce 22 min à 200°C. Prépare salade roquette-concombre et tranche l'avocat. Dresser tout sur une grande assiette.",
@@ -431,7 +431,7 @@ enum ProcessDebloatMealLibrary {
                 item("Eau de coco Vita Coco 100% pure", "330 ml", "Autre")
             ],
             prep: "Serve bien frais — directement depuis la brique ou la bouteille. Choisis la version pure, pas nectar ni aromatisée.",
-            tip: "Excellent post-sport ou après un repas salé — le ratio potassium/sodium aide à dégonfler.",
+            tip: "Utile après transpiration pour son potassium — cela ne compense pas un excès de sel.",
             tags: ["hydratation", "potassium", "debloat"],
             sub: .init(protocolFit: 90, satiety: 55, antiBloat: 94),
             image: "vitacoco"
@@ -443,27 +443,27 @@ enum ProcessDebloatMealLibrary {
             summary: "Hydratation + potassium post-sport.",
             items: [
                 item("Eau de coco sans sucre ajouté", "250 ml", "Autre"),
-                item("Banane bien mûre", "1", "Glucide"),
-                item("Yaourt grec 0% nature", "150 g", "Protéine")
+                item("Banane jaune peu tachetée", "1", "Glucide"),
+                item("Skyr nature sans lactose", "150 g", "Protéine")
             ],
-            prep: "Verse l'eau de coco pure (pas de nectar). Coupe la banane en rondelles. Ouvre le yaourt grec et serve frais avec la banane.",
+            prep: "Verse l'eau de coco pure. Coupe la banane en rondelles et sers avec le skyr sans lactose.",
             tip: "Après sport uniquement.",
             tags: ["hydratation", "potassium"],
             sub: .init(protocolFit: 82, satiety: 76, antiBloat: 86),
             image: "meal_debloat_coconut_banana"
         ),
         makeMeal(
-            name: "Ananas Jambon de Dinde",
+            name: "Ananas Dinde Rôtie",
             slot: .snack,
             score: 80,
-            summary: "Collation protéinée — ananas frais (bromélaïne) et dinde qualité.",
+            summary: "Collation protéinée — ananas frais, concombre et dinde maison.",
             items: [
                 item("Ananas frais", "200 g", "Glucide"),
-                item("Jambon de dinde supérieur", "80 g", "Protéine"),
+                item("Dinde rôtie maison froide", "80 g", "Protéine"),
                 item("Concombre", "100 g", "Légume")
             ],
-            prep: "Coupe l'ananas frais en tranches. Tranche le jambon de dinde qualité. Coupe le concombre en bâtonnets et serve le tout frais.",
-            tip: "Ponctuel — pas charcuterie industrielle quotidienne.",
+            prep: "Coupe l'ananas frais en tranches. Émince la dinde rôtie maison. Coupe le concombre en bâtonnets et sers le tout frais.",
+            tip: "La dinde maison évite le sodium élevé des charcuteries.",
             tags: ["variété", "protéine"],
             sub: .init(protocolFit: 80, satiety: 72, antiBloat: 85),
             image: "meal_debloat_pineapple_turkey_snack"

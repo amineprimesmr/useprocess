@@ -55,7 +55,9 @@ struct PlanMealCatalogCard: View {
 
     @Environment(\.appTheme) private var theme
 
-    private var profile: MealNutritionProfile { MealNutritionCatalog.profile(for: meal) }
+    private var assessment: MealDebloatAssessment {
+        MealNutritionCatalog.debloatAssessment(for: meal)
+    }
     private var imageAsset: String {
         MealNutritionCatalog.resolvedImageAsset(
             for: meal,
@@ -86,7 +88,7 @@ struct PlanMealCatalogCard: View {
                 .allowsHitTesting(false)
 
                 VStack(spacing: 0) {
-                    caloriesPill
+                    scorePill
                         .padding(.top, 14)
 
                     Spacer(minLength: 0)
@@ -95,7 +97,7 @@ struct PlanMealCatalogCard: View {
                         .padding(.horizontal, 14)
                         .padding(.bottom, 10)
 
-                    caloriesFooter
+                    scoreFooter
                         .padding(.horizontal, 12)
                         .padding(.bottom, 12)
                 }
@@ -140,21 +142,8 @@ struct PlanMealCatalogCard: View {
         .clipped()
     }
 
-    private var caloriesPill: some View {
-        Text("\(profile.calories) kcal")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(.white.opacity(0.96))
-            .monospacedDigit()
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background {
-                Capsule()
-                    .fill(.black.opacity(0.38))
-                    .overlay {
-                        Capsule()
-                            .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5)
-                    }
-            }
+    private var scorePill: some View {
+        MealDebloatScorePill(assessment: assessment, usesDarkImageStyle: true)
     }
 
     private var titleBlock: some View {
@@ -168,30 +157,7 @@ struct PlanMealCatalogCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var caloriesFooter: some View {
-        Text("\(profile.calories) kcal")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.95))
-            .monospacedDigit()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .frame(height: 48)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.38, green: 0.58, blue: 0.98),
-                                Color(red: 0.52, green: 0.44, blue: 0.96)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5)
-                    }
-            }
+    private var scoreFooter: some View {
+        MealDebloatScoreFooter(assessment: assessment)
     }
 }

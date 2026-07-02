@@ -41,7 +41,7 @@ SANTÉ ET RÉCUPÉRATION
 - Tableau de bord sommeil, signes vitaux et nutrition
 
 SCAN VISAGE
-- Scan TrueDepth pour suivre des indicateurs bien-être (fatigue, récupération)
+- Scan visage pour suivre des indicateurs bien-être (fatigue, récupération)
 - Historique et tendances sur plusieurs semaines
 - Complément au suivi santé - ne remplace pas un avis médical
 
@@ -97,9 +97,9 @@ Subscription title, duration, price and legal links are visible on the paywall b
 Health/medical sources with external links are in Health tab and Settings → Sources santé.
 
 Demo account: [FILL IN IF AVAILABLE]
-Demo video (recommended): screen recording on physical iPad/iPhone showing: (1) Face Scan consent screen, (2) optional AI toggle, (3) TrueDepth scan, (4) wellness scores. Upload link in reply if requested.
+Demo video (recommended): screen recording on physical iPad/iPhone showing: (1) Face Scan consent screen, (2) optional AI toggle, (3) face scan capture, (4) face scores. Upload link in reply if requested.
 
---- FACE DATA / TRUEDEPTH — COPY-PASTE REPLY TO APPLE (English) ---
+--- FACE DATA — COPY-PASTE REPLY TO APPLE (English) ---
 
 Use the canonical, up-to-date response in:
 website/app-review-face-data-reply-en.txt
@@ -113,8 +113,8 @@ Do not copy older face-data wording from this file. The canonical reply matches:
 
 --- END FACE DATA REPLY ---
 
-FICHIER RÉPONSE COMPLÈTE POUR LE REFUS TRUEDEPTH API (copier-coller Resolution Center) :
-website/app-review-truedepth-api-reply-en.txt
+FICHIER RÉPONSE COMPLÈTE POUR LE REFUS API SCAN VISAGE (copier-coller Resolution Center) :
+website/app-review-face-tracking-api-reply-en.txt
 
 CHECKLIST APP STORE CONNECT :
 [ ] Reply dans Resolution Center (fichier ci-dessus)

@@ -41,7 +41,6 @@ struct DailyJournalChecklistView: View {
     @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var isChecklistExpanded = true
     @State private var showFaceScan = false
-    @State private var showFaceScanHistory = false
     @Bindable private var layoutStore = PlanHomeLayoutStore.shared
     @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
@@ -101,24 +100,6 @@ struct DailyJournalChecklistView: View {
                 )
                 .padding(.top, 20)
             }
-        }
-        .fullScreenCover(isPresented: $showFaceScanHistory) {
-            FaceScanHistoryView(
-                history: faceHistoryStore.history,
-                isScanDue: faceHistoryStore.isScanDue,
-                onScan: {
-                    showFaceScanHistory = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
-                            ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
-                        }
-                        withAnimation(.spring(response: 0.56, dampingFraction: 0.84)) {
-                            showFaceScan = true
-                        }
-                    }
-                }
-            )
-            .processZoomTransition(id: .faceScanHistory, namespace: faceScanHistoryZoomNamespace)
         }
         .onChange(of: selectedDate) { _, _ in
             if case .editable(let day, _) = dayAvailability {
@@ -195,7 +176,6 @@ struct DailyJournalChecklistView: View {
                 isScanFlowActive: $showFaceScan,
                 zoomNamespace: faceScanHistoryZoomNamespace,
                 onScan: {},
-                onOpenHistory: { showFaceScanHistory = true },
                 onScanComplete: { _ in
                     faceHistoryStore = FaceScanHistoryStore.shared
                 }

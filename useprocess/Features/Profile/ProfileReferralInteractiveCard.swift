@@ -8,7 +8,7 @@ struct ProfileReferralInteractiveCard: View {
     @State private var parallaxY: CGFloat = 0
     @State private var isInteracting = false
 
-    private let cardShape = RoundedRectangle(cornerRadius: ProfileTheme.buttonCornerRadius, style: .continuous)
+    private let cardShape = RoundedRectangle(cornerRadius: 28, style: .continuous)
     private let maxTiltDegrees: Double = 13
     private let maxParallax: CGFloat = 9
 

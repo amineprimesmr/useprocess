@@ -36,10 +36,10 @@ struct CoachHomeSuggestionBar: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
             .padding(.vertical, 2)
         }
-        .padding(.horizontal, -20)
+        .contentMargins(.horizontal, 28, for: .scrollContent)
+        .padding(.top, 6)
         .animation(selectSpring, value: selectedID)
         .animation(selectSpring, value: isSelecting)
         .task(id: staggerRevealTaskID) {

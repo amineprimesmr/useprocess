@@ -884,7 +884,7 @@ private struct CoachChatBottomAccessory<ContextualBar: View, InputBar: View>: Vi
     @ViewBuilder var chatInputBar: () -> InputBar
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             if showsContextualHome, !suggestions.isEmpty {
                 CoachHomeSuggestionBar(
                     suggestions: suggestions,

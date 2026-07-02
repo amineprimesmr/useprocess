@@ -12,7 +12,9 @@ struct PlanMealDetailView: View {
 
     private var meal: MealSuggestionContent { entry.meal }
 
-    private var profile: MealNutritionProfile { MealNutritionCatalog.profile(for: meal) }
+    private var assessment: MealDebloatAssessment {
+        MealNutritionCatalog.debloatAssessment(for: meal)
+    }
     private var imageAsset: String {
         MealNutritionCatalog.resolvedImageAsset(
             for: meal,
@@ -40,6 +42,8 @@ struct PlanMealDetailView: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(theme.primaryText)
                         .padding(.horizontal, 24)
+
+                    MealDebloatScoreDetailCard(assessment: assessment)
 
                     if let scheduleTarget = entry.scheduleTargetLabel,
                        let scheduleWindow = entry.scheduleWindowLabel {
@@ -101,25 +105,7 @@ struct PlanMealDetailView: View {
                     .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
             }
 
-            HStack(spacing: 4) {
-                Image(systemName: "flame.fill")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.orange)
-                Text("\(profile.calories) Kcal")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(theme.primaryText)
-                    .monospacedDigit()
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
-                    }
-            }
+            MealDebloatScorePill(assessment: assessment)
             .offset(y: 10)
         }
         .padding(.top, 8)

@@ -308,7 +308,7 @@ enum CoachEngine {
     // MARK: - Scan visage
 
     private static let faceScanSystemPrompt = """
-    Tu es le coach Process AI — analyse visage wellness (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
+    Tu es le coach Process AI — analyse visage (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
     Tu t'adresses à UNE personne (tu). Jamais « les gars ». Pas de diagnostic médical.
     """
 

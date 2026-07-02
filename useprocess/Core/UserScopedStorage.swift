@@ -28,6 +28,7 @@ enum UserScopedStorage {
         "privacy.face_capture.date",
         "privacy.face_ai",
         "process.streak",
+        "process.activity.status",
         "plan.home.layout",
         "referral.program"
     ]

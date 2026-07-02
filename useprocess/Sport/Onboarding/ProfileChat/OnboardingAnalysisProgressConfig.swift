@@ -59,7 +59,7 @@ enum OnboardingAnalysisProgressConfig {
             query: "Reconstruction 3D du visage…",
             resultCount: nil,
             sources: [
-                .init(id: "truedepth", systemImage: "faceid", label: "TrueDepth"),
+                .init(id: "faceScan", systemImage: "faceid", label: "Scan visage"),
                 .init(id: "arkit", systemImage: "cube.transparent", label: "Mesh ARKit")
             ]
         ),

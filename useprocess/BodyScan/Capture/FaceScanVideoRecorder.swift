@@ -1,7 +1,7 @@
 import AVFoundation
 import CoreVideo
 
-/// Enregistre la caméra AR (TrueDepth) pendant le scan — stockage local uniquement.
+/// Enregistre la caméra AR pendant le scan — stockage local uniquement.
 final class FaceScanVideoRecorder {
     private var assetWriter: AVAssetWriter?
     private var videoInput: AVAssetWriterInput?

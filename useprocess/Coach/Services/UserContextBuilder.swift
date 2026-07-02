@@ -90,6 +90,8 @@ struct CoachUserContext: Codable, Sendable {
     var planDayTitle: String?
     var planWeek: Int?
     var planProgressTasks: Int?
+    var activityStatus: String?
+    var activityStatusGuidance: String?
 }
 
 enum UserContextBuilder {
@@ -226,6 +228,12 @@ enum UserContextBuilder {
             ctx.planDayTitle = plan.calendar.day(globalIndex: idx)?.title
         }
 
+        let activityStatus = ProcessActivityStatusStore.shared.status(for: Date())
+        ctx.activityStatus = activityStatus.title
+        if activityStatus != .active {
+            ctx.activityStatusGuidance = activityStatus.trainingGuidance
+        }
+
         return ctx
     }
 
@@ -247,6 +255,11 @@ enum UserContextBuilder {
                 health += ", sommeil \(String(format: "%.1f", sleep))h"
             }
             lines.append(health)
+        }
+
+        if let status = context.activityStatus, status != ProcessActivityStatus.active.title {
+            let guidance = context.activityStatusGuidance ?? ""
+            lines.append("• Statut du jour : \(status)\(guidance.isEmpty ? "" : " — \(guidance)")")
         }
 
         if let scan = context.lastBodyScan, let score = scan.postureScore {

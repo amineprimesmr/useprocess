@@ -323,7 +323,7 @@ struct ProfileSettingsLegalDetailView: View {
                 AccountDetailsCard {
                     legalRow(title: "Conditions d'utilisation", url: ProcessLegalURLs.termsOfUse)
                     legalRow(title: "Politique de confidentialité", url: ProcessLegalURLs.privacyPolicy)
-                    legalRow(title: "Données faciales (TrueDepth)", url: ProcessLegalURLs.privacyPolicyFaceData)
+                    legalRow(title: "Données faciales", url: ProcessLegalURLs.privacyPolicyFaceData)
                     legalRow(title: "Mentions légales", url: ProcessLegalURLs.legalNotice)
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)

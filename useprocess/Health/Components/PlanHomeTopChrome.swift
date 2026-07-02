@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// En-tête accueil Plan — salutation + cluster glass streak / profil.
+/// En-tête accueil Plan — salutation + cluster glass streak / statut d'activité.
 struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
     @Binding var selectedDate: Date
@@ -8,12 +8,17 @@ struct PlanHomeTopChrome: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
 
-    @State private var profileStore = SocialProfileStore.shared
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
-    @State private var showStreakSheet = false
+    @Bindable private var activityStatusStore = ProcessActivityStatusStore.shared
+    @State private var showStreakToast = false
+    @State private var streakToast = DynamicIslandToastMessage.streak(
+        snapshot: ProcessStreakStore.shared.snapshot,
+        firstName: nil
+    )
+    @State private var streakToastDismissTask: Task<Void, Never>?
     @State private var showDatePicker = false
-    @Namespace private var streakZoomNamespace
+    @State private var showActivityStatusSheet = false
 
     private static let frenchLocale = Locale(identifier: "fr_FR")
 
@@ -22,27 +27,8 @@ struct PlanHomeTopChrome: View {
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
-    private var avatarInitials: String {
-        let name: String = {
-            if let displayName = profileStore.profile?.displayName,
-               !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                return displayName
-            }
-            if let profile = profileService.currentProfile {
-                let parts = [profile.firstName, profile.lastName ?? ""]
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty }
-                if !parts.isEmpty {
-                    return parts.joined(separator: " ")
-                }
-            }
-            return "?"
-        }()
-
-        let parts = name.split(separator: " ")
-        let first = parts.first?.first.map(String.init) ?? "?"
-        let last = parts.dropFirst().first?.first.map(String.init) ?? ""
-        return (first + last).uppercased()
+    private var currentActivityStatus: ProcessActivityStatus {
+        activityStatusStore.status(for: selectedDate)
     }
 
     var body: some View {
@@ -51,33 +37,77 @@ struct PlanHomeTopChrome: View {
                 PlanHomeGreetingLabel(greeting: homeGreeting)
 
                 homeDatePickerButton
+
+                homeActivityStatusChip
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            profileStreakCluster
+            headerActionsCluster
         }
         .padding(.top, 14)
         .padding(.bottom, 4)
         .sheet(isPresented: $showDatePicker) {
             homeDatePickerSheet
         }
-        .fullScreenCover(isPresented: $showStreakSheet) {
-            ProcessStreakSheet(selectedDate: $selectedDate)
-                .environmentObject(profileService)
-                .processZoomTransition(id: .streakSheet, namespace: streakZoomNamespace)
+        .sheet(isPresented: $showActivityStatusSheet) {
+            ProcessActivityStatusSheet(selectedDate: $selectedDate)
         }
+        .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast)
         .onAppear {
-            profileStore.bind(unified: profileService.currentProfile)
             streakStore.sync(from: planStore.plan)
+            activityStatusStore.reload()
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
-            profileStore.bind(unified: profileService.currentProfile)
             streakStore.reload()
             streakStore.sync(from: planStore.plan)
+            activityStatusStore.reload()
         }
         .onChange(of: planStore.plan?.lastUpdated) { _, _ in
             streakStore.sync(from: planStore.plan)
         }
+        .onChange(of: selectedDate) { _, _ in
+            activityStatusStore.reload()
+        }
+    }
+
+    private var homeActivityStatusChip: some View {
+        Button(action: openActivityStatus) {
+            HStack(spacing: 8) {
+                ProcessActivityStatusBadge(
+                    status: currentActivityStatus,
+                    size: 28,
+                    iconSize: 13
+                )
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(currentActivityStatus.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(theme.primaryText)
+
+                    Text("Jusqu'à modification")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(theme.secondaryText)
+                }
+
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(theme.secondaryText.opacity(0.8))
+            }
+            .padding(.leading, 6)
+            .padding(.trailing, 12)
+            .padding(.vertical, 6)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.72))
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .strokeBorder(Color.primary.opacity(theme.isDark ? 0.10 : 0.06), lineWidth: 1)
+                    }
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 8)
+        .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
     }
 
     private var homeGreeting: PlanHomeGreeting {
@@ -176,15 +206,14 @@ struct PlanHomeTopChrome: View {
     private enum GlassClusterMetrics {
         static let streakTileWidth: CGFloat = 54
         static let tileSize: CGFloat = 50
-        static let photoSize: CGFloat = 36
+        static let statusIconSize: CGFloat = 34
         static let spacing: CGFloat = 22
         static let mergeOffset: CGFloat = -22
         static let iconSize: CGFloat = 15
-        static let initialsSize: CGFloat = 13
     }
 
     @ViewBuilder
-    private var profileStreakCluster: some View {
+    private var headerActionsCluster: some View {
         if #available(iOS 26.0, *) {
             GlassEffectContainer(spacing: GlassClusterMetrics.spacing) {
                 HStack(spacing: GlassClusterMetrics.spacing) {
@@ -192,15 +221,14 @@ struct PlanHomeTopChrome: View {
                         streakGlassTile
                     }
                     .buttonStyle(.plain)
-                    .processZoomSource(id: .streakSheet, namespace: streakZoomNamespace)
                     .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
-                    Button(action: openProfile) {
-                        profileGlassTile
+                    Button(action: openActivityStatus) {
+                        activityStatusGlassTile
                     }
                     .buttonStyle(.plain)
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0.0)
-                    .accessibilityLabel("Profil")
+                    .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
                 }
             }
         } else {
@@ -209,10 +237,13 @@ struct PlanHomeTopChrome: View {
                     legacyStreakButton
                 }
                 .buttonStyle(.plain)
-                .processZoomSource(id: .streakSheet, namespace: streakZoomNamespace)
                 .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
-                legacyProfileButton
+                Button(action: openActivityStatus) {
+                    legacyActivityStatusButton
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
             }
         }
     }
@@ -236,10 +267,11 @@ struct PlanHomeTopChrome: View {
     }
 
     @available(iOS 26.0, *)
-    private var profileGlassTile: some View {
-        profileAvatarContent(
-            size: GlassClusterMetrics.photoSize,
-            initialsSize: GlassClusterMetrics.initialsSize
+    private var activityStatusGlassTile: some View {
+        ProcessActivityStatusBadge(
+            status: currentActivityStatus,
+            size: GlassClusterMetrics.statusIconSize,
+            iconSize: 15
         )
         .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
         .glassEffect()
@@ -259,55 +291,39 @@ struct PlanHomeTopChrome: View {
         .processGlassCircle(interactive: true)
     }
 
-    private var legacyProfileButton: some View {
-        Button(action: openProfile) {
-            profileAvatar(size: 40)
-        }
-        .buttonStyle(.plain)
+    private var legacyActivityStatusButton: some View {
+        ProcessActivityStatusBadge(
+            status: currentActivityStatus,
+            size: 36,
+            iconSize: 16
+        )
+        .frame(width: 44, height: 44)
         .processGlassCircle(interactive: true)
-        .accessibilityLabel("Profil")
     }
 
     private var streakFlameColor: Color {
         streakStore.displayStreak > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
     }
 
-    @ViewBuilder
-    private func profileAvatar(size: CGFloat) -> some View {
-        profileAvatarContent(size: size, initialsSize: size * 0.34)
-    }
-
-    @ViewBuilder
-    private func profileAvatarContent(size: CGFloat, initialsSize: CGFloat) -> some View {
-        Group {
-            if let image = profileStore.profilePhoto {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                ZStack {
-                    Circle().fill(ProfileTheme.avatarAccent)
-                    Text(avatarInitials.prefix(2))
-                        .font(.system(size: initialsSize, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.95))
-                }
-            }
-        }
-        .frame(width: size, height: size)
-        .clipShape(Circle())
-    }
-
-    private func openProfile() {
+    private func openActivityStatus() {
         HapticManager.shared.impact(.light)
-        withAnimation(ProcessGlass.spring) {
-            selectedSection = .profile
-        }
+        showActivityStatusSheet = true
     }
 
     private func openStreak() {
         HapticManager.shared.impact(.light)
         streakStore.sync(from: planStore.plan)
-        showStreakSheet = true
+        streakToastDismissTask?.cancel()
+        streakToast = .streak(
+            snapshot: streakStore.snapshot,
+            firstName: greetingFirstName.isEmpty ? nil : greetingFirstName
+        )
+        showStreakToast = true
+        streakToastDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3.8))
+            guard !Task.isCancelled else { return }
+            showStreakToast = false
+        }
     }
 }
 

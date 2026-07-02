@@ -59,7 +59,7 @@ enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .threeMeals:
             return [
-                "Petit-déjeuner (7–9 h) : eau salée + protéines + fruit",
+                "Petit-déjeuner (7–9 h) : eau nature + protéines + fruit",
                 "Déjeuner (12–14 h) : repas principal dense — protéines + féculent complet",
                 "Dîner (18–20 h) : protéines + légumes cuits — sel modéré le soir",
                 "Repas debloat via l'IA sur chaque créneau"
@@ -85,18 +85,18 @@ enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .threeMeals:
             return [
-                "Petit-déj : grand verre d'eau salée + œufs + banane ou avocat",
+                "Petit-déj : grand verre d'eau + œufs + banane ou avocat",
                 "Déj : steak grillé + pommes de terre rôties + légumes poêlés",
                 "Dîner : poisson + courgettes + huile d'olive"
             ]
         case .twoMAD:
             return [
                 "Déj : poulet rôti + riz complet + légumes cuits",
-                "Dîner : saumon + brocoli + beurre — sel léger"
+                "Dîner : saumon + courgette + huile d'olive — sel léger"
             ]
         case .omad:
             return [
-                "Repas unique : steak 250 g + grande patate + salade + beurre + fruit"
+                "Repas unique : steak 250 g + grande patate + salade + huile d'olive + fruit"
             ]
         }
     }
@@ -127,13 +127,13 @@ enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
         case .threeMeals:
             switch slot {
             case .breakfast:
-                return "Petit-déjeuner simple : grand verre d'eau + pincée de sel, œufs + fruit ou avocat. Pas de céréales industrielles ni tubercule au matin."
+                return "Petit-déjeuner simple : grand verre d'eau nature, œufs + fruit ou avocat. Électrolytes seulement après forte transpiration."
             case .lunch:
                 return "Déjeuner = repas le plus copieux : protéine animale ou œufs + féculent complet + légumes cuits."
             case .dinner:
                 return "Dîner plus léger en sel : protéines + légumes cuits. Éviter festin salé tardif (debloat visage)."
             case .snack:
-                return "Collation rare — fruit ou fromage entier si faim réelle."
+                return "Collation rare — fruit ou skyr sans lactose si faim réelle."
             }
         case .twoMAD:
             switch slot {

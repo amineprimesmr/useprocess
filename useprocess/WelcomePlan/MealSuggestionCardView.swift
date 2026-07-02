@@ -21,16 +21,20 @@ struct MealSuggestionCardView: View {
     @State private var showsIngredients = false
 
     private let answerShape = Capsule()
+    private var debloatAssessment: MealDebloatAssessment {
+        MealNutritionCatalog.debloatAssessment(for: content)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             headerRow
             mealImage
-            if content.showsScore {
-                scoreRow
-                if showsScoreBreakdown {
-                    MealScoreBreakdownView(scores: content.resolvedSubScores, theme: theme)
-                }
+            scoreRow
+            if showsScoreBreakdown {
+                MealDebloatScoreBreakdownView(
+                    assessment: debloatAssessment,
+                    compact: true
+                )
             }
             if !content.tags.isEmpty { tagsRow }
             itemsSection
@@ -110,13 +114,13 @@ struct MealSuggestionCardView: View {
 
     private var scoreRow: some View {
         HStack(spacing: 12) {
-            MealProtocolScoreRing(score: content.protocolScore, theme: theme)
+            MealProtocolScoreRing(score: debloatAssessment.score, theme: theme)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Score protocole")
+                Text("Score Debloat")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
-                Text(content.scoreSummary.isEmpty ? scoreLabel(for: content.protocolScore) : content.scoreSummary)
+                Text(debloatAssessment.summary)
                     .font(.caption)
                     .foregroundStyle(theme.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -274,14 +278,6 @@ struct MealSuggestionCardView: View {
             }
     }
 
-    private func scoreLabel(for score: Int) -> String {
-        switch score {
-        case 85...: return "Excellent alignement avec ton protocole Origine."
-        case 70..<85: return "Bon choix — dense, peu transformé."
-        case 50..<70: return "Correct — quelques ajustements possibles."
-        default: return "À optimiser pour ton objectif visage."
-        }
-    }
 }
 
 // MARK: - Score ring
@@ -319,7 +315,7 @@ struct MealProtocolScoreRing: View {
             }
         }
         .frame(width: 54, height: 54)
-        .accessibilityLabel("Score protocole \(score) sur 100")
+        .accessibilityLabel("Score Debloat \(score) sur 100")
     }
 }
 

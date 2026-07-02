@@ -22,6 +22,22 @@ struct MealNutritionProfile: Hashable {
     }
 }
 
+struct MealDebloatAssessment: Equatable {
+    let score: Int
+    let electrolyteScore: Int
+    let digestiveScore: Int
+    let foodQualityScore: Int
+    let balance: MealElectrolyteBalance
+    let label: String
+    let summary: String
+    let caution: String?
+    let isEstimated: Bool
+
+    var scoreText: String {
+        isEstimated ? "≈\(score)" : "\(score)"
+    }
+}
+
 enum MealNutritionCatalog {
     static func profile(for meal: MealSuggestionContent) -> MealNutritionProfile {
         for asset in imageAssetCandidates(for: meal) {
@@ -32,15 +48,57 @@ enum MealNutritionCatalog {
         return estimate(from: meal)
     }
 
-    /// 6 pétales — indicateurs debloat 80/20 (scores 0…100).
+    /// Score Debloat global : équilibre hydrique 50 %, confort digestif 30 %,
+    /// qualité nutritionnelle 20 %. Il s'agit d'une estimation, pas d'un diagnostic.
+    static func debloatAssessment(for meal: MealSuggestionContent) -> MealDebloatAssessment {
+        let nutrition = profile(for: meal)
+        let ratio = potassiumSodiumRatioScore(nutrition)
+        let sodium = lowSodiumScore(nutrition)
+        let potassium = potassiumScore(nutrition)
+        let electrolyte = ratio * 0.30 + sodium * 0.38 + potassium * 0.32
+
+        let tolerance = digestiveToleranceScore(for: meal)
+        let fiber = fiberComfortScore(nutrition)
+        let fats = fatComfortScore(nutrition)
+        let portion = portionComfortScore(nutrition)
+        let digestive = tolerance.score * 0.38 + fiber * 0.24 + fats * 0.23 + portion * 0.15
+
+        let quality = foodQualityScore(for: meal, profile: nutrition)
+        let overall = Int((electrolyte * 0.50 + digestive * 0.30 + quality * 0.20).rounded())
+        let clamped = min(100, max(0, overall))
+        let label = scoreLabel(clamped)
+        let balance = MealElectrolyteBalance.from(profile: nutrition)
+        let summary = summary(
+            score: clamped,
+            electrolyte: Int(electrolyte.rounded()),
+            digestive: Int(digestive.rounded()),
+            balance: balance
+        )
+
+        return MealDebloatAssessment(
+            score: clamped,
+            electrolyteScore: Int(electrolyte.rounded()),
+            digestiveScore: Int(digestive.rounded()),
+            foodQualityScore: Int(quality.rounded()),
+            balance: balance,
+            label: label,
+            summary: summary,
+            caution: tolerance.caution,
+            // Même les profils catalogue reposent sur des quantités nutritionnelles
+            // moyennes : la marque, la cuisson et le sel ajouté font varier le résultat.
+            isEstimated: true
+        )
+    }
+
+    /// 6 pétales — lecture scientifique du repas, sans faire des calories le score.
     static func debloatChartSegments(for profile: MealNutritionProfile) -> [MealChartSegment] {
         [
-            .init(id: "kna", name: "K / Na", percentage: knaRatioScore(profile)),
+            .init(id: "kna", name: "Équilibre K/Na", percentage: potassiumSodiumRatioScore(profile)),
             .init(id: "potassium", name: "Potassium", percentage: potassiumScore(profile)),
             .init(id: "sodium", name: "Sodium bas", percentage: lowSodiumScore(profile)),
-            .init(id: "fiber", name: "Fibres", percentage: fiberScore(profile)),
-            .init(id: "protein", name: "Protéines", percentage: proteinScore(profile)),
-            .init(id: "sugar", name: "Sucres", percentage: lowSugarScore(profile))
+            .init(id: "fiber", name: "Fibres tolérées", percentage: fiberComfortScore(profile)),
+            .init(id: "fats", name: "Charge lipidique", percentage: fatComfortScore(profile)),
+            .init(id: "portion", name: "Portion digeste", percentage: portionComfortScore(profile))
         ]
     }
 
@@ -200,15 +258,15 @@ enum MealNutritionCatalog {
         ),
         "meal_debloat_eggs_banana_kiwi": .init(
             calories: 385, proteinG: 22, carbsG: 38, fatsG: 16,
-            fiberG: 6.5, sugarG: 22, sodiumMg: 420, potassiumMg: 780
+            fiberG: 6.5, sugarG: 22, sodiumMg: 180, potassiumMg: 880
         ),
         "meal_debloat_eggs_avocado": .init(
-            calories: 445, proteinG: 28, carbsG: 12, fatsG: 34,
-            fiberG: 9.0, sugarG: 3.2, sodiumMg: 410, potassiumMg: 720
+            calories: 405, proteinG: 27, carbsG: 12, fatsG: 26,
+            fiberG: 7.0, sugarG: 3.2, sodiumMg: 220, potassiumMg: 720
         ),
         "meal_debloat_eggs_tomato_salad": .init(
             calories: 320, proteinG: 18, carbsG: 14, fatsG: 22,
-            fiberG: 5.5, sugarG: 6.0, sodiumMg: 380, potassiumMg: 680
+            fiberG: 5.5, sugarG: 6.0, sodiumMg: 190, potassiumMg: 680
         ),
         "meal_debloat_chicken_avocado_salad": .init(
             calories: 480, proteinG: 44, carbsG: 18, fatsG: 26,
@@ -247,8 +305,8 @@ enum MealNutritionCatalog {
             fiberG: 7.8, sugarG: 8.0, sodiumMg: 168, potassiumMg: 920
         ),
         "meal_debloat_omad_steak_sweet_potato": .init(
-            calories: 780, proteinG: 52, carbsG: 58, fatsG: 36,
-            fiberG: 12.0, sugarG: 10.0, sodiumMg: 220, potassiumMg: 1400
+            calories: 690, proteinG: 52, carbsG: 58, fatsG: 27,
+            fiberG: 10.0, sugarG: 10.0, sodiumMg: 220, potassiumMg: 1250
         ),
         "meal_debloat_omad_chicken_quinoa_bowl": .init(
             calories: 720, proteinG: 50, carbsG: 62, fatsG: 28,
@@ -264,7 +322,7 @@ enum MealNutritionCatalog {
         ),
         "meal_debloat_pineapple_turkey_snack": .init(
             calories: 220, proteinG: 18, carbsG: 28, fatsG: 4,
-            fiberG: 4.5, sugarG: 22, sodiumMg: 280, potassiumMg: 420
+            fiberG: 4.5, sugarG: 22, sodiumMg: 95, potassiumMg: 520
         ),
         // Legacy — repas retirés du catalogue mais asset encore présent
         "epinardomelette": .init(
@@ -275,43 +333,149 @@ enum MealNutritionCatalog {
 
     // MARK: - Scores debloat (0…100)
 
-    /// Ratio K/Na — levier #1 rétention d'eau (cible alimentaire ~2:1 ou plus).
-    private static func knaRatioScore(_ profile: MealNutritionProfile) -> Double {
+    /// Le ratio est utile, mais ne remplace jamais les quantités absolues.
+    /// Cible population OMS : environ 3510 mg K / <2000 mg Na par jour.
+    private static func potassiumSodiumRatioScore(_ profile: MealNutritionProfile) -> Double {
         let ratio = profile.potassiumSodiumRatio
-        return clampScore((ratio / 2.5) * 100, minimum: 10)
+        if ratio >= 2.0 { return 100 }
+        if ratio >= 1.0 { return 58 + (ratio - 1.0) * 42 }
+        return 12 + ratio * 46
     }
 
-    /// Potassium par repas — cible ~800 mg+ (3400 mg/jour répartis).
+    /// Repère par repas principal : environ 900–1100 mg de potassium.
     private static func potassiumScore(_ profile: MealNutritionProfile) -> Double {
-        clampScore((profile.potassiumMg / 850) * 100, minimum: 8)
+        if profile.potassiumMg >= 950 { return 100 }
+        if profile.potassiumMg >= 500 {
+            return 55 + ((profile.potassiumMg - 500) / 450) * 45
+        }
+        return clampScore((profile.potassiumMg / 500) * 55, minimum: 8)
     }
 
-    /// Sodium bas — cible <500 mg/repas (<2300 mg/jour).
+    /// Repère par repas principal : idéalement <=450 mg, pénalité progressive.
     private static func lowSodiumScore(_ profile: MealNutritionProfile) -> Double {
-        if profile.sodiumMg <= 350 { return 100 }
-        if profile.sodiumMg >= 900 { return 12 }
-        return clampScore(100 - ((profile.sodiumMg - 350) / 550) * 88, minimum: 12)
+        if profile.sodiumMg <= 450 { return 100 }
+        if profile.sodiumMg >= 1_100 { return 10 }
+        return 100 - ((profile.sodiumMg - 450) / 650) * 90
     }
 
-    /// Fibres — motilité intestinale, cible ~8 g/repas.
-    private static func fiberScore(_ profile: MealNutritionProfile) -> Double {
-        clampScore((profile.fiberG / 8) * 100, minimum: 8)
+    /// Courbe en cloche : trop peu aide peu le transit, trop d'un coup peut fermenter.
+    private static func fiberComfortScore(_ profile: MealNutritionProfile) -> Double {
+        switch profile.fiberG {
+        case 4...9: return 100
+        case 0..<4: return 45 + (profile.fiberG / 4) * 55
+        case 9..<13: return 100 - ((profile.fiberG - 9) / 4) * 28
+        default: return max(38, 72 - (profile.fiberG - 13) * 5)
+        }
     }
 
-    /// Protéines — satiété, repas dense sans ultra-transformé.
-    private static func proteinScore(_ profile: MealNutritionProfile) -> Double {
-        clampScore((profile.proteinG / 35) * 100, minimum: 8)
+    /// Les lipides sont essentiels ; seule une charge très élevée est pénalisée ici
+    /// car elle peut accentuer lourdeur et ballonnement chez certaines personnes.
+    private static func fatComfortScore(_ profile: MealNutritionProfile) -> Double {
+        let fatCalories = profile.fatsG * 9
+        let share = fatCalories / Double(max(profile.calories, 1))
+        if share <= 0.34 { return 100 }
+        if share <= 0.45 { return 100 - ((share - 0.34) / 0.11) * 25 }
+        if share <= 0.58 { return 75 - ((share - 0.45) / 0.13) * 30 }
+        return 38
     }
 
-    /// Sucres bas — moins de fermentation / pics glycémiques.
-    private static func lowSugarScore(_ profile: MealNutritionProfile) -> Double {
-        if profile.sugarG <= 5 { return 100 }
-        if profile.sugarG >= 22 { return 15 }
-        return clampScore(100 - ((profile.sugarG - 5) / 17) * 85, minimum: 15)
+    /// Les calories ne définissent pas le debloat ; elles servent uniquement à
+    /// repérer une portion très volumineuse susceptible de distendre l'estomac.
+    private static func portionComfortScore(_ profile: MealNutritionProfile) -> Double {
+        if profile.calories <= 620 { return 100 }
+        if profile.calories <= 800 {
+            return 100 - (Double(profile.calories - 620) / 180) * 22
+        }
+        return max(55, 78 - Double(profile.calories - 800) / 12)
     }
 
     private static func clampScore(_ value: Double, minimum: Double) -> Double {
         min(100, max(minimum, value))
+    }
+
+    private static func digestiveToleranceScore(
+        for meal: MealSuggestionContent
+    ) -> (score: Double, caution: String?) {
+        let itemLines = meal.items.map { "\($0.name) \($0.quantity)" }
+        let text = normalizeMealSearchText(([meal.name] + itemLines).joined(separator: " "))
+        var penalty = 0.0
+        var triggers: [String] = []
+
+        func flag(_ tokens: [String], penalty value: Double, label: String) {
+            guard tokens.contains(where: { text.contains($0) }) else { return }
+            penalty += value
+            if !triggers.contains(label) { triggers.append(label) }
+        }
+
+        flag(["oignon", "echalote"], penalty: 20, label: "oignon")
+        if text.contains("ail"),
+           !text.contains("huile infusee a l'ail"),
+           !text.contains("huile infusee a l ail") {
+            penalty += 12
+            triggers.append("ail")
+        }
+        flag(["haricot sec", "lentille", "pois chiche"], penalty: 18, label: "légumineuses")
+        flag(["yaourt", "lait", "creme"], penalty: 12, label: "lactose possible")
+        flag(["brocoli", "chou fleur"], penalty: 8, label: "crucifères")
+        flag(["avocat"], penalty: 6, label: "avocat")
+        flag(["banane bien mure"], penalty: 7, label: "banane très mûre")
+        flag(["sorbitol", "xylitol", "erythritol", "maltitol"], penalty: 25, label: "polyols")
+
+        let score = max(35, 100 - penalty)
+        let caution = triggers.isEmpty
+            ? nil
+            : "Tolérance individuelle à vérifier : \(triggers.prefix(3).joined(separator: ", "))."
+        return (score, caution)
+    }
+
+    private static func foodQualityScore(
+        for meal: MealSuggestionContent,
+        profile: MealNutritionProfile
+    ) -> Double {
+        let text = normalizeMealSearchText(
+            ([meal.name] + meal.items.map(\.name)).joined(separator: " ")
+        )
+        var score = 96.0
+
+        if text.contains("jambon") || text.contains("charcuterie") { score -= 28 }
+        if text.contains("sauce industrielle") || text.contains("frit") { score -= 22 }
+        if text.contains("nectar") || text.contains("sirop") { score -= 18 }
+        if profile.proteinG < 15, meal.timeSlot != .snack { score -= 8 }
+        if profile.sugarG > 25 { score -= 6 }
+        if meal.items.contains(where: { normalizeMealSearchText($0.role).contains("legume") }) {
+            score += 4
+        }
+        return min(100, max(30, score))
+    }
+
+    private static func scoreLabel(_ score: Int) -> String {
+        switch score {
+        case 88...100: return "Excellent équilibre"
+        case 76..<88: return "Très bon choix"
+        case 64..<76: return "Équilibre correct"
+        case 50..<64: return "À ajuster"
+        default: return "Peu adapté"
+        }
+    }
+
+    private static func summary(
+        score: Int,
+        electrolyte: Int,
+        digestive: Int,
+        balance: MealElectrolyteBalance
+    ) -> String {
+        if electrolyte >= 88, digestive >= 78 {
+            return "Très bon équilibre K/Na et charge digestive maîtrisée."
+        }
+        if electrolyte < digestive {
+            return "Électrolytes à améliorer, surtout sodium et potassium."
+        }
+        if digestive < 70 {
+            return "Équilibre minéral correct, mais tolérance digestive à surveiller."
+        }
+        return score >= 76
+            ? "Repas cohérent pour limiter rétention et lourdeur."
+            : "Quelques ajustements peuvent améliorer le confort après le repas."
     }
 
     private static func estimate(from meal: MealSuggestionContent) -> MealNutritionProfile {
@@ -366,7 +530,7 @@ enum MealNutritionCatalog {
     }
 
     static func isDebloatOptimized(_ profile: MealNutritionProfile) -> Bool {
-        knaRatioScore(profile) >= 68
+        potassiumSodiumRatioScore(profile) >= 68
             && lowSodiumScore(profile) >= 68
             && potassiumScore(profile) >= 62
     }

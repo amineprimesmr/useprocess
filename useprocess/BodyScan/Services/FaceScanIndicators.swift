@@ -75,15 +75,40 @@ enum FaceScanIndicators {
         }
     }
 
-    /// Pourcentage « wellness » affiché à droite (100 = état optimal pour cet indicateur).
+    /// Pourcentage « wellness » pour le score global (100 = optimal). Cortisol : toujours inversé (100 − charge).
     static func wellnessPercent(for kind: Kind, result: FaceScanResult) -> Int {
         let raw = rawValue(for: kind, result: result)
         let normalized = kind.higherIsWorse ? (100 - raw) : raw
         return Int(Swift.max(0, Swift.min(100, Double(normalized))))
     }
 
+    /// Pourcentage affiché sur l'écran scan. Cortisol : charge brute (% élevé = cortisol élevé = défavorable).
+    static func displayPercent(for kind: Kind, result: FaceScanResult) -> Int {
+        let raw = rawValue(for: kind, result: result)
+        if kind == .stressLoad {
+            return Int(Swift.max(0, Swift.min(100, raw)))
+        }
+        return wellnessPercent(for: kind, result: result)
+    }
+
     static func wellnessZone(for kind: Kind, result: FaceScanResult) -> WellnessZone {
-        wellnessZone(forPercent: wellnessPercent(for: kind, result: result))
+        displayZone(for: kind, result: result)
+    }
+
+    /// Zone WHOOP affichée — cortisol : % élevé = insuffisant ; autres : % élevé = optimal.
+    static func displayZone(for kind: Kind, result: FaceScanResult) -> WellnessZone {
+        if kind == .stressLoad {
+            return stressLoadDisplayZone(for: rawValue(for: kind, result: result))
+        }
+        return wellnessZone(forPercent: wellnessPercent(for: kind, result: result))
+    }
+
+    private static func stressLoadDisplayZone(for load: Int) -> WellnessZone {
+        switch load {
+        case ..<45: return .optimal
+        case 45..<72: return .sufficient
+        default: return .insufficient
+        }
     }
 
     static func wellnessZone(forPercent percent: Int) -> WellnessZone {
