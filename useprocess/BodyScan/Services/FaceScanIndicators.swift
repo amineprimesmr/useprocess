@@ -68,24 +68,26 @@ enum FaceScanIndicators {
 
         var title: String {
             switch self {
-            case .insufficient: return "Insuffisant"
-            case .sufficient: return "Suffisant"
+            case .insufficient: return "Médiocre"
+            case .sufficient: return "Dégradé"
             case .optimal: return "Optimal"
             }
         }
     }
 
-    /// Pourcentage « wellness » pour le score global (100 = optimal). Cortisol : toujours inversé (100 − charge).
+    /// Pourcentage « wellness » pour le score global (100 = optimal). Signaux défavorables inversés (100 − charge).
     static func wellnessPercent(for kind: Kind, result: FaceScanResult) -> Int {
         let raw = rawValue(for: kind, result: result)
         let normalized = kind.higherIsWorse ? (100 - raw) : raw
         return Int(Swift.max(0, Swift.min(100, Double(normalized))))
     }
 
-    /// Pourcentage affiché sur l'écran scan. Cortisol : charge brute (% élevé = cortisol élevé = défavorable).
+    /// Pourcentage affiché sur l'écran scan.
+    /// Signaux défavorables (rétention, récup, cortisol) : charge brute — % élevé = signal marqué.
+    /// Peau / mâchoire : % élevé = optimal.
     static func displayPercent(for kind: Kind, result: FaceScanResult) -> Int {
         let raw = rawValue(for: kind, result: result)
-        if kind == .stressLoad {
+        if kind.higherIsWorse {
             return Int(Swift.max(0, Swift.min(100, raw)))
         }
         return wellnessPercent(for: kind, result: result)
@@ -95,27 +97,71 @@ enum FaceScanIndicators {
         displayZone(for: kind, result: result)
     }
 
-    /// Zone WHOOP affichée — cortisol : % élevé = insuffisant ; autres : % élevé = optimal.
+    /// Zone WHOOP affichée — signaux défavorables : % élevé = médiocre ; peau / mâchoire : % élevé = optimal.
     static func displayZone(for kind: Kind, result: FaceScanResult) -> WellnessZone {
-        if kind == .stressLoad {
-            return stressLoadDisplayZone(for: rawValue(for: kind, result: result))
+        if kind.higherIsWorse {
+            return adverseSignalDisplayZone(
+                for: rawValue(for: kind, result: result),
+                kind: kind
+            )
         }
         return wellnessZone(forPercent: wellnessPercent(for: kind, result: result))
     }
 
-    private static func stressLoadDisplayZone(for load: Int) -> WellnessZone {
-        switch load {
-        case ..<45: return .optimal
-        case 45..<72: return .sufficient
-        default: return .insufficient
+    /// Zone pour rétention, récupération et cortisol (% affiché = intensité du signal).
+    private static func adverseSignalDisplayZone(for load: Int, kind: Kind) -> WellnessZone {
+        switch kind {
+        case .retention, .recovery:
+            switch load {
+            case ..<48: return .optimal
+            case 48..<78: return .sufficient
+            default: return .insufficient
+            }
+        case .stressLoad:
+            switch load {
+            case ..<42: return .optimal
+            case 42..<78: return .sufficient
+            default: return .insufficient
+            }
+        case .skin, .definition:
+            return wellnessZone(forPercent: load)
         }
     }
 
     static func wellnessZone(forPercent percent: Int) -> WellnessZone {
         switch percent {
-        case 70...: return .optimal
-        case 45..<70: return .sufficient
+        case 68...: return .optimal
+        case 42..<68: return .sufficient
         default: return .insufficient
+        }
+    }
+
+    /// Libellé visage pour rétention, récupération et cortisol — calibré sur le % affiché (intensité du signal).
+    static func adverseFacePhrase(for kind: Kind, load: Int) -> String {
+        switch kind {
+        case .retention:
+            switch load {
+            case ..<48: return "peu de rétention visible"
+            case 48..<62: return "gonflement modéré"
+            case 62..<78: return "visage nettement gonflé"
+            default: return "rétention d'eau très marquée"
+            }
+        case .recovery:
+            switch load {
+            case ..<48: return "regard reposé"
+            case 48..<62: return "fatigue légère"
+            case 62..<78: return "fatigue visible"
+            default: return "récupération très insuffisante"
+            }
+        case .stressLoad:
+            switch load {
+            case ..<42: return "charge stress basse"
+            case 42..<62: return "tension modérée"
+            case 62..<78: return "charge stress élevée"
+            default: return "cortisol très actif"
+            }
+        case .skin, .definition:
+            return ""
         }
     }
 
@@ -272,7 +318,7 @@ enum FaceScanIndicators {
             switch value {
             case 78...: return "Très marquée"
             case 62..<78: return "Marquée"
-            case 50..<62: return "Légère"
+            case 50..<62: return "Modérée"
             default: return "Faible"
             }
         case .recovery:

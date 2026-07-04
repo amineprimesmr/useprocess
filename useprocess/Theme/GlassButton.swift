@@ -34,6 +34,21 @@ private struct GlassCapsuleFallbackStyle: ButtonStyle {
     }
 }
 
+private struct OnboardingPrimaryActionModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if colorScheme == .light {
+            content
+                .buttonStyle(.plain)
+                .background(Color.black, in: Capsule())
+        } else {
+            content.glassStyle()
+        }
+    }
+}
+
 extension View {
     @ViewBuilder
     func glassStyle() -> some View {
@@ -72,5 +87,9 @@ extension View {
             buttonStyle(.plain)
                 .background(Capsule().fill(tint))
         }
+    }
+
+    func onboardingPrimaryActionStyle() -> some View {
+        modifier(OnboardingPrimaryActionModifier())
     }
 }

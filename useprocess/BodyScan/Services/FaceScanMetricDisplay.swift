@@ -20,7 +20,6 @@ enum FaceScanMetricDisplay {
     }
 
     static func items(for result: FaceScanResult, previous: FaceScanResult? = nil) -> [Item] {
-        let markers = result.markers
         let trend = previous.map { result.delta(from: $0) }
 
         return FaceScanIndicators.Kind.allCases.map { kind in

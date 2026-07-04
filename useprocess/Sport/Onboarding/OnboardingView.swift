@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SportOnboardingView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var profileService: UnifiedProfileService
     @EnvironmentObject var healthManager: HealthManager
     @EnvironmentObject var permissionsManager: PermissionsManager
@@ -63,10 +64,15 @@ struct SportOnboardingView: View {
                     if let step = OnboardingStep(rawValue: viewModel.currentStep) {
                         onboardingStepContent(for: step)
                     } else {
-                        OnboardingWelcomeStepView(onComplete: nextStep)
+                        GenderSelectionStepView(
+                            selectedGender: $viewModel.selectedGender,
+                            onValidationChanged: { isValid in
+                                viewModel.isGenderSelected = isValid
+                            }
+                        )
                             .task {
-                                viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
-                                viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
+                                viewModel.currentStep = OnboardingStep.genderSelection.rawValue
+                                viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
                             }
                     }
                 }
@@ -123,7 +129,7 @@ struct SportOnboardingView: View {
                 }
                 checkPermissions()
 
-                if profileService.currentProfile == nil {
+                if AuthUser.current != nil, profileService.currentProfile == nil {
                     await profileService.loadProfile()
                 }
 
@@ -196,6 +202,16 @@ struct SportOnboardingView: View {
             viewModel.saveProgress()
             OnboardingProgressService.shared.flush()
         }
+        .alert("Finalisation impossible", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 
     private var continueButtonOverlay: some View {
@@ -208,12 +224,12 @@ struct SportOnboardingView: View {
             }) {
                 Text("CONTINUER")
                     .font(.system(size: 22, weight: .black))
-                    .foregroundStyle(OnboardingTheme.actionButtonText)
+                    .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                     .id("continue_button_label_\(viewModel.currentStep)")
                 .frame(maxWidth: .infinity)
                 .frame(height: 58)
             }
-            .glassStyle()
+            .onboardingPrimaryActionStyle()
             .padding(.horizontal, 34)
             .disabled(!canContinue)
             .allowsHitTesting(
@@ -224,7 +240,7 @@ struct SportOnboardingView: View {
 
             if shouldShowNoWeightGoalLink {
                 Button(action: skipWeightGoalFromIdealWeight) {
-                    Text("Je n'ai pas d'objectif de poids")
+                    Text("Pas d'objectif de poids")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(OnboardingTheme.mutedText.opacity(0.75))
                         .padding(.top, 8)

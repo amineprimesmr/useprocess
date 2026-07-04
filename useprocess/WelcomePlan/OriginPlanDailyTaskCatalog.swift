@@ -32,7 +32,7 @@ enum OriginPlanDailyTaskCatalog {
     let blocks = plan.postureProtocol.mobilityBlocks
     guard !blocks.isEmpty else { return [] }
 
-    var tasks: [OriginPlanTask] = [
+    let tasks: [OriginPlanTask] = [
       journalTask(
         id: "\(dayId).posture.circuit",
         title: "Circuit posture",

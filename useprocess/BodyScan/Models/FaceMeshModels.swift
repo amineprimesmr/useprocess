@@ -35,7 +35,7 @@ enum FaceScanSource: String, Codable {
     case daily
 }
 
-struct FaceScanResult: Codable, Identifiable, Hashable {
+struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked Sendable {
     let id: String
     let userId: String
     let createdAt: Date
@@ -44,6 +44,9 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
     var videoFilename: String?
     var claudeAnalysis: String?
     var aiEnhanced: Bool
+    /// Message coach complet (Process Intelligence) — affiché instantanément à l'ouverture du chat.
+    var coachInsightMessage: String?
+    var coachInsightModel: String?
     var source: FaceScanSource
     var sleepHoursAtScan: Double?
     var hrvAtScan: Double?
@@ -73,6 +76,8 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
         videoFilename: String? = nil,
         claudeAnalysis: String? = nil,
         aiEnhanced: Bool = false,
+        coachInsightMessage: String? = nil,
+        coachInsightModel: String? = nil,
         source: FaceScanSource = .daily,
         sleepHoursAtScan: Double? = nil,
         hrvAtScan: Double? = nil,
@@ -90,6 +95,8 @@ struct FaceScanResult: Codable, Identifiable, Hashable {
         self.videoFilename = videoFilename
         self.claudeAnalysis = claudeAnalysis
         self.aiEnhanced = aiEnhanced
+        self.coachInsightMessage = coachInsightMessage
+        self.coachInsightModel = coachInsightModel
         self.source = source
         self.sleepHoursAtScan = sleepHoursAtScan
         self.hrvAtScan = hrvAtScan

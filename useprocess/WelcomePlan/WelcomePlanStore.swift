@@ -8,16 +8,21 @@ final class WelcomePlanStore {
     private(set) var questionnaire: WelcomePlanQuestionnaireState = WelcomePlanQuestionnaireState()
     private(set) var plan: FaceOriginPlan?
     private var remoteSyncTask: Task<Void, Never>?
+    private var planSideEffectsTask: Task<Void, Never>?
     private var lastRemoteSyncAt: Date?
     private var lastRemoteSyncUserId: String?
+    private var loadedUserId: String?
+    private var persistenceGeneration: UInt64 = 0
     private let remoteSyncMinInterval: TimeInterval = 60
 
     private init() {
-        reload()
+        reload(force: true)
     }
 
-    func reload() {
+    func reload(force: Bool = false) {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
+        guard force || loadedUserId != uid else { return }
+        loadedUserId = uid
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
         plan = loadPlan(userId: uid)
         repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
@@ -42,8 +47,8 @@ final class WelcomePlanStore {
         ProcessStreakStore.shared.sync(from: plan)
     }
 
-    func reloadForCurrentUser() {
-        reload()
+    func reloadForCurrentUser(force: Bool = false) {
+        reload(force: force)
     }
 
     private func scheduleRemoteSyncIfNeeded(uid: String) {
@@ -91,20 +96,62 @@ final class WelcomePlanStore {
         persistQuestionnaire()
     }
 
-    func savePlan(_ newPlan: FaceOriginPlan) {
+    func savePlan(_ newPlan: FaceOriginPlan, structureChanged: Bool = false) {
         var enriched = newPlan
         enriched.lastUpdated = Date()
         if enriched.calendar.startedAt == nil {
             enriched.calendar.startedAt = enriched.createdAt
         }
+        let previous = plan
+        let shouldRefreshStreak = previous == nil
+            || previous?.calendar.startedAt != enriched.calendar.startedAt
+            || previous?.calendar.totalDays != enriched.calendar.totalDays
+            || previous?.progress.taskStatuses != enriched.progress.taskStatuses
+            || previous?.progress.completedTaskIds != enriched.progress.completedTaskIds
         plan = enriched
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
-        let key = UserScopedStorage.key("welcome.plan", userId: uid)
-        if let data = try? JSONEncoder().encode(enriched) {
-            UserDefaults.standard.set(data, forKey: key)
+        let planKey = UserScopedStorage.key("welcome.plan", userId: uid)
+        let progressKey = UserScopedStorage.key("welcome.plan.progress", userId: uid)
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        let shouldPersistStructure = structureChanged || previous == nil || previous?.id != enriched.id
+        let structureSnapshot: FaceOriginPlan? = if shouldPersistStructure {
+            {
+                var snapshot = enriched
+                snapshot.progress = OriginPlanProgress()
+                return snapshot
+            }()
+        } else {
+            nil
         }
-        ProcessStreakStore.shared.sync(from: enriched)
-        Task {
+        let progressSnapshot = StoredOriginPlanProgress(
+            progress: enriched.progress,
+            lastUpdated: enriched.lastUpdated
+        )
+        Task.detached(priority: .utility) {
+            if let structureSnapshot {
+                await ProcessPersistenceWriter.shared.store(
+                    structureSnapshot,
+                    forKey: planKey,
+                    generation: generation
+                )
+            }
+            await ProcessPersistenceWriter.shared.store(
+                progressSnapshot,
+                forKey: progressKey,
+                generation: generation
+            )
+        }
+        if shouldRefreshStreak {
+            ProcessStreakStore.shared.sync(from: enriched)
+        }
+
+        // Une rafale de mutations (création des repas par défaut, checklist…)
+        // ne doit produire qu'un seul upload et une seule replanification.
+        planSideEffectsTask?.cancel()
+        planSideEffectsTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(750))
+            guard !Task.isCancelled else { return }
             if uid != "local-user" {
                 await WelcomePlanFirestoreRepository.shared.savePlan(enriched, userId: uid)
             }
@@ -115,7 +162,7 @@ final class WelcomePlanStore {
     func ensureCalendarIfMissing(answers: [String: WelcomePlanAnswer], profile: UnifiedUserProfile?) {
         guard var current = plan, current.calendar.weeks.isEmpty else { return }
         CoachPlanEditor.regenerateCalendarIfNeeded(plan: &current, answers: answers, profile: profile)
-        savePlan(current)
+        savePlan(current, structureChanged: true)
     }
 
     func migratePlanIfNeeded(answers: [String: WelcomePlanAnswer]?, profile: UnifiedUserProfile?) {
@@ -166,7 +213,7 @@ final class WelcomePlanStore {
             }
         }
 
-        if changed { savePlan(current) }
+        if changed { savePlan(current, structureChanged: true) }
     }
 
     /// Regénère structure, calendrier et assessment — conserve progrès et identité.
@@ -374,8 +421,29 @@ final class WelcomePlanStore {
 
     func resetForCurrentUser() {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
-        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.questionnaire", userId: uid))
-        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan", userId: uid))
+        let questionnaireKey = UserScopedStorage.key("welcome.questionnaire", userId: uid)
+        let planKey = UserScopedStorage.key("welcome.plan", userId: uid)
+        let progressKey = UserScopedStorage.key("welcome.plan.progress", userId: uid)
+        planSideEffectsTask?.cancel()
+        UserDefaults.standard.removeObject(forKey: questionnaireKey)
+        UserDefaults.standard.removeObject(forKey: planKey)
+        UserDefaults.standard.removeObject(forKey: progressKey)
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.removeValue(
+                forKey: questionnaireKey,
+                generation: generation
+            )
+            await ProcessPersistenceWriter.shared.removeValue(
+                forKey: planKey,
+                generation: generation
+            )
+            await ProcessPersistenceWriter.shared.removeValue(
+                forKey: progressKey,
+                generation: generation
+            )
+        }
         questionnaire = WelcomePlanQuestionnaireState()
         plan = nil
     }
@@ -383,11 +451,18 @@ final class WelcomePlanStore {
     private func persistQuestionnaire() {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("welcome.questionnaire", userId: uid)
-        if let data = try? JSONEncoder().encode(questionnaire) {
-            UserDefaults.standard.set(data, forKey: key)
+        let snapshot = questionnaire
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.store(
+                snapshot,
+                forKey: key,
+                generation: generation
+            )
         }
         if uid != "local-user" {
-            Task { await WelcomePlanFirestoreRepository.shared.saveQuestionnaire(questionnaire, userId: uid) }
+            Task { await WelcomePlanFirestoreRepository.shared.saveQuestionnaire(snapshot, userId: uid) }
         }
     }
 
@@ -400,7 +475,19 @@ final class WelcomePlanStore {
     private func loadPlan(userId: String) -> FaceOriginPlan? {
         let key = UserScopedStorage.key("welcome.plan", userId: userId)
         guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
-        return try? JSONDecoder().decode(FaceOriginPlan.self, from: data)
+        guard var decoded = try? JSONDecoder().decode(FaceOriginPlan.self, from: data) else {
+            return nil
+        }
+        let progressKey = UserScopedStorage.key("welcome.plan.progress", userId: userId)
+        if let progressData = UserDefaults.standard.data(forKey: progressKey) {
+            if let stored = try? JSONDecoder().decode(StoredOriginPlanProgress.self, from: progressData) {
+                decoded.progress = stored.progress
+                decoded.lastUpdated = max(decoded.lastUpdated, stored.lastUpdated)
+            } else if let progress = try? JSONDecoder().decode(OriginPlanProgress.self, from: progressData) {
+                decoded.progress = progress
+            }
+        }
+        return decoded
     }
 
     private func importPersistedDataFromLikelyUsers() {
@@ -421,7 +508,7 @@ final class WelcomePlanStore {
         if plan == nil {
             for sourceUid in UserScopedStorage.likelyUserIds(primary: targetUid) {
                 guard sourceUid != targetUid, let imported = loadPlan(userId: sourceUid) else { continue }
-                savePlan(imported)
+                savePlan(imported, structureChanged: true)
                 break
             }
         }
@@ -433,7 +520,7 @@ final class WelcomePlanStore {
         if !isQuestionnaireComplete {
             markQuestionnaireComplete()
         }
-        savePlan(regenerated)
+        savePlan(regenerated, structureChanged: true)
     }
 
     private func syncWelcomePlanCompletionFlag() {

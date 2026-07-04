@@ -85,7 +85,7 @@ struct WelcomePlanAnswer: Codable, Equatable {
     }
 }
 
-struct WelcomePlanQuestionnaireState: Codable, Equatable {
+struct WelcomePlanQuestionnaireState: nonisolated Codable, Equatable, @unchecked Sendable {
     var answers: [String: WelcomePlanAnswer] = [:]
     var completedAt: Date?
     var startedAt: Date = Date()
@@ -93,7 +93,7 @@ struct WelcomePlanQuestionnaireState: Codable, Equatable {
 
 // MARK: - Plan généré (Protocole Origine — 100 % naturel)
 
-struct FaceOriginPlan: Codable, Identifiable, Equatable {
+struct FaceOriginPlan: nonisolated Codable, Identifiable, Equatable, @unchecked Sendable {
     let id: String
     let userId: String
     let createdAt: Date

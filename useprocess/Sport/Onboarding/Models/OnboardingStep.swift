@@ -8,7 +8,7 @@
 import Foundation
 
 enum OnboardingStep: Int, CaseIterable {
-    case videoIntroduction = 0              // Welcome + connexion Apple / démo
+    case videoIntroduction = 0              // Compat ancienne sauvegarde — page supprimée, saut auto
     case genderSelection = 1
     case ageSelection = 2
     case height = 3                         // ✨ Taille (nouvelle page séparée)
@@ -196,7 +196,7 @@ enum OnboardingStep: Int, CaseIterable {
     /// Étapes sautées automatiquement — absentes de l'historique retour.
     var isTransientSkippedStep: Bool {
         switch self {
-        case .heightWeight, .bodyScan, .weightGoal, .sportClub, .experienceLevel, .hardestMeal,
+        case .videoIntroduction, .heightWeight, .bodyScan, .weightGoal, .sportClub, .experienceLevel, .hardestMeal,
              .appleSignIn,
              .yearsOfExperience, .deadlineSelection, .eventDetails,
              .potentialPace, .trainingFrequency, .nutritionScanFeature,

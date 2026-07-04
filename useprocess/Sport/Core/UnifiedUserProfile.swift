@@ -63,6 +63,9 @@ struct UnifiedUserProfile: Codable, Identifiable, Equatable {
     var sessionDuration: Int?
     var trainingLocation: TrainingLocation?
     var availableEquipment: [PlanEquipment]?
+    var onboardingPrimaryFocus: OnboardingPrimaryFocus?
+    var onboardingDebloatDrivers: [OnboardingDebloatDriver]
+    var onboardingRoutineChallenges: [OnboardingRoutineChallenge]
 
     // MARK: - Préférences utilisateur
     var preferences: UserPreferences
@@ -118,6 +121,9 @@ struct UnifiedUserProfile: Codable, Identifiable, Equatable {
         self.taxResidence = "France"
         self.professionalSituation = nil
         self.otherServices = nil
+        self.onboardingPrimaryFocus = nil
+        self.onboardingDebloatDrivers = []
+        self.onboardingRoutineChallenges = []
         // ✅ CORRECTION : Utiliser la vraie date de téléchargement ou la récupérer
         self.downloadDate = downloadDate ?? UnifiedUserProfile.getActualDownloadDate()
         self.birthDate = birthDate
@@ -346,6 +352,18 @@ struct UnifiedUserProfile: Codable, Identifiable, Equatable {
         sessionDuration = try container.decodeIfPresent(Int.self, forKey: .sessionDuration)
         trainingLocation = try container.decodeIfPresent(TrainingLocation.self, forKey: .trainingLocation)
         availableEquipment = try container.decodeIfPresent([PlanEquipment].self, forKey: .availableEquipment)
+        onboardingPrimaryFocus = try container.decodeIfPresent(OnboardingPrimaryFocus.self, forKey: .onboardingPrimaryFocus)
+        if let drivers = try container.decodeIfPresent([OnboardingDebloatDriver].self, forKey: .onboardingDebloatDrivers) {
+            onboardingDebloatDrivers = drivers
+        } else if let legacy = try container.decodeIfPresent(OnboardingDebloatDriver.self, forKey: .onboardingDebloatDriver) {
+            onboardingDebloatDrivers = [legacy]
+        } else {
+            onboardingDebloatDrivers = []
+        }
+        onboardingRoutineChallenges = try container.decodeIfPresent(
+            [OnboardingRoutineChallenge].self,
+            forKey: .onboardingRoutineChallenges
+        ) ?? []
         preferences = try container.decodeIfPresent(UserPreferences.self, forKey: .preferences) ?? UserPreferences()
         version = try container.decodeIfPresent(String.self, forKey: .version) ?? "2.0"
         isAnonymous = try container.decodeIfPresent(Bool.self, forKey: .isAnonymous) ?? false
@@ -357,6 +375,61 @@ struct UnifiedUserProfile: Codable, Identifiable, Equatable {
 
         // ✅ CORRECTION : isFounder avec valeur par défaut pour compatibilité backward
         isFounder = try container.decodeIfPresent(Bool.self, forKey: .isFounder) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(userId, forKey: .userId)
+        try container.encode(firstName, forKey: .firstName)
+        try container.encodeIfPresent(lastName, forKey: .lastName)
+        try container.encodeIfPresent(username, forKey: .username)
+        try container.encodeIfPresent(email, forKey: .email)
+        try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        try container.encodeIfPresent(birthPlace, forKey: .birthPlace)
+        try container.encodeIfPresent(address, forKey: .address)
+        try container.encodeIfPresent(accountObjective, forKey: .accountObjective)
+        try container.encodeIfPresent(taxResidence, forKey: .taxResidence)
+        try container.encodeIfPresent(professionalSituation, forKey: .professionalSituation)
+        try container.encodeIfPresent(otherServices, forKey: .otherServices)
+        try container.encode(downloadDate, forKey: .downloadDate)
+        try container.encode(birthDate, forKey: .birthDate)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(lastUpdated, forKey: .lastUpdated)
+        try container.encode(age, forKey: .age)
+        try container.encode(gender, forKey: .gender)
+        try container.encode(height, forKey: .height)
+        try container.encode(weight, forKey: .weight)
+        try container.encodeIfPresent(idealWeight, forKey: .idealWeight)
+        try container.encodeIfPresent(profilePictureURL, forKey: .profilePictureURL)
+        try container.encodeIfPresent(backgroundImageURL, forKey: .backgroundImageURL)
+        try container.encode(sports, forKey: .sports)
+        try container.encode(activityLevel, forKey: .activityLevel)
+        try container.encodeIfPresent(mainGoal, forKey: .mainGoal)
+        try container.encodeIfPresent(weightGoal, forKey: .weightGoal)
+        try container.encodeIfPresent(goalDeadline, forKey: .goalDeadline)
+        try container.encodeIfPresent(goalPace, forKey: .goalPace)
+        try container.encodeIfPresent(nutritionProfile, forKey: .nutritionProfile)
+        try container.encodeIfPresent(sleepProfile, forKey: .sleepProfile)
+        try container.encodeIfPresent(experienceLevel, forKey: .experienceLevel)
+        try container.encodeIfPresent(yearsOfExperience, forKey: .yearsOfExperience)
+        try container.encodeIfPresent(sessionsPerWeek, forKey: .sessionsPerWeek)
+        try container.encodeIfPresent(sessionDuration, forKey: .sessionDuration)
+        try container.encodeIfPresent(trainingLocation, forKey: .trainingLocation)
+        try container.encodeIfPresent(availableEquipment, forKey: .availableEquipment)
+        try container.encodeIfPresent(onboardingPrimaryFocus, forKey: .onboardingPrimaryFocus)
+        try container.encode(onboardingDebloatDrivers, forKey: .onboardingDebloatDrivers)
+        try container.encode(onboardingRoutineChallenges, forKey: .onboardingRoutineChallenges)
+        try container.encode(preferences, forKey: .preferences)
+        try container.encode(version, forKey: .version)
+        try container.encode(isAnonymous, forKey: .isAnonymous)
+        try container.encodeIfPresent(appleUserId, forKey: .appleUserId)
+        try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
+        try container.encode(isPremium, forKey: .isPremium)
+        try container.encodeIfPresent(subscriptionExpiresAt, forKey: .subscriptionExpiresAt)
+        try container.encodeIfPresent(subscriptionStatus, forKey: .subscriptionStatus)
+        try container.encode(isFounder, forKey: .isFounder)
     }
 
     // MARK: - CodingKeys
@@ -400,6 +473,10 @@ struct UnifiedUserProfile: Codable, Identifiable, Equatable {
         case sessionDuration
         case trainingLocation
         case availableEquipment
+        case onboardingPrimaryFocus
+        case onboardingDebloatDrivers
+        case onboardingDebloatDriver
+        case onboardingRoutineChallenges
         case preferences
         case version
         case isAnonymous
@@ -724,4 +801,3 @@ extension UnifiedUserProfile {
         UserDefaults.standard.removeObject(forKey: "actualDownloadDate")
     }
 }
-

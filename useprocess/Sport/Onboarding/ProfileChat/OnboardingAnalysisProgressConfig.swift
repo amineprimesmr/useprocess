@@ -101,48 +101,46 @@ enum OnboardingAnalysisProgressConfig {
     static let answersAnalysisSteps: [ProgressStep] = [
         .init(
             id: "responses",
-            phaseLabel: "Analyse des réponses",
-            query: "Synthèse de tes réponses…",
+            phaseLabel: "Tes objectifs",
+            query: "Analyse de tes objectifs et de ton ressenti…",
             resultCount: nil,
             sources: [
-                .init(id: "process", imageName: "caochiaicon", label: "Process AI"),
-                .init(id: "profile", systemImage: "person.crop.circle", label: "Profil")
+                .init(id: "profile", systemImage: "person.crop.circle", label: "Objectif"),
+                .init(id: "habits", systemImage: "list.bullet.clipboard", label: "Habitudes")
             ]
         ),
         .init(
             id: "healthkit",
-            phaseLabel: "Données Santé",
-            query: "Lecture de tes données dans l’app Santé…",
-            resultCount: 4,
+            phaseLabel: "Ton équilibre",
+            query: "Croisement de tes habitudes et données Santé…",
+            resultCount: nil,
             sources: [
                 .init(id: "health", imageName: "healthapple", label: "Santé"),
-                .init(id: "activity", systemImage: "figure.run", label: "Activité"),
+                .init(id: "hydration", systemImage: "drop.fill", label: "Hydratation"),
                 .init(id: "sleep", systemImage: "bed.double.fill", label: "Sommeil"),
-                .init(id: "heart", systemImage: "heart.fill", label: "Fréquence")
+                .init(id: "activity", systemImage: "figure.walk", label: "Mouvement")
             ]
         ),
         .init(
-            id: "claude",
-            phaseLabel: "Réflexion IA",
-            query: "Réflexion avec Claude sur ton profil…",
+            id: "debloat",
+            phaseLabel: "Phase Debloat",
+            query: "Préparation de ta première phase…",
             resultCount: nil,
             sources: [
-                .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
-                .init(id: "coach", imageName: "caochiaicon", label: "Coach Process")
+                .init(id: "nutrition", systemImage: "fork.knife", label: "Nutrition"),
+                .init(id: "recovery", systemImage: "moon.zzz.fill", label: "Récupération"),
+                .init(id: "coach", imageName: "caochiaicon", label: "Process")
             ]
         )
     ]
 
     static let progressBarLabels = [
-        "Analyse des habitudes",
-        "Génération du plan de 13 semaines"
+        "Connexion à l'app Santé",
+        "Analyse de ton profil",
+        "Génération de ton plan personnalisé"
     ]
 
-    static let phases = [
-        progressBarLabels[0],
-        progressBarLabels[1],
-        "Finalisation du programme"
-    ]
+    static let phases = progressBarLabels
 
     static let steps: [ProgressStep] = [
         .init(
@@ -181,8 +179,11 @@ enum OnboardingAnalysisProgressConfig {
     ]
 
     static let popups: [Popup] = [
+        .init(
+            kind: .healthKit,
+            question: "Connecte l'app Santé pour personnaliser ton plan avec tes vraies données."
+        ),
         .init(kind: .yesNo, question: "Sais-tu ce qui impact réellement ta récupération ?"),
-        .init(kind: .healthKit, question: "Autorises-tu l'accès à Santé Apple pour analyser tes données ?"),
         .init(kind: .yesNo, question: "As-tu déjà téléchargé une application de tracking personnalisé ?")
     ]
 

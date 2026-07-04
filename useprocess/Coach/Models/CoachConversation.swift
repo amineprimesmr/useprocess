@@ -103,7 +103,7 @@ struct CoachConversation: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
-struct CoachConversationLibrary: Codable, Sendable {
+struct CoachConversationLibrary: nonisolated Codable, Sendable {
     var conversations: [CoachConversation]
     var activeConversationId: UUID?
 

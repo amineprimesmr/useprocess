@@ -112,22 +112,69 @@ struct OnboardingEstimationGraphView: View {
                 .drawingGroup()
             }
 
-            HStack {
-                Text("Aujourd'hui")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(OnboardingTheme.footnoteText)
-                    .padding(.leading, 4)
-                Spacer()
-                Text(formatMonth(snapshot.projectedDate))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(OnboardingTheme.footnoteText)
-                    .padding(.trailing, 20)
-            }
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
+            graphDateAxis
         }
         .padding(.horizontal, 40)
         .animation(nil, value: curveAnimationProgress)
+    }
+
+    private var graphDateAxis: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let weightX = width * CGFloat(OnboardingEstimationContext.weightMilestoneFraction)
+            let endX = max(width - 4, width * 0.96)
+
+            ZStack(alignment: .topLeading) {
+                axisDateLabel(
+                    caption: "Aujourd'hui",
+                    dateText: formatGraphDate(snapshot.referenceDate),
+                    alignment: .leading
+                )
+                .frame(width: 88, alignment: .leading)
+                .position(x: 44, y: 14)
+
+                if let weightDate = snapshot.weightMilestoneDate {
+                    axisDateLabel(
+                        caption: snapshot.weightMilestoneLabel ?? "Poids atteint",
+                        dateText: formatGraphDate(weightDate),
+                        alignment: .center
+                    )
+                    .frame(width: 96, alignment: .center)
+                    .position(x: weightX, y: 14)
+                }
+
+                axisDateLabel(
+                    caption: "100 % potentiel",
+                    dateText: formatGraphDate(snapshot.projectedDate),
+                    alignment: .trailing
+                )
+                .frame(width: 104, alignment: .trailing)
+                .position(x: endX - 52, y: 14)
+            }
+        }
+        .frame(height: 40)
+        .padding(.horizontal, 8)
+        .padding(.top, 8)
+    }
+
+    private func axisDateLabel(
+        caption: String,
+        dateText: String,
+        alignment: HorizontalAlignment
+    ) -> some View {
+        VStack(alignment: alignment, spacing: 2) {
+            Text(caption)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(OnboardingTheme.mutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(dateText)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(OnboardingTheme.footnoteText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
     }
 
     @ViewBuilder
@@ -294,10 +341,10 @@ struct OnboardingEstimationGraphView: View {
         return points.last
     }
 
-    private func formatMonth(_ date: Date) -> String {
+    private func formatGraphDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "MMMM"
-        return formatter.string(from: date).capitalized
+        formatter.dateFormat = "d MMM"
+        return formatter.string(from: date)
     }
 }

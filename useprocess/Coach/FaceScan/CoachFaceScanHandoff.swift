@@ -28,38 +28,10 @@ enum CoachFaceScanMessageMarker {
 
 struct FaceScanCoachHandoff: Equatable {
     let resultId: String
-    let userMessageText: String
-    let analysisPrompt: String
+    let assistantMessage: CoachMessage
 }
 
 enum FaceScanCoachHandoffBuilder {
-    static func make(from result: FaceScanResult) -> FaceScanCoachHandoff {
-        let score = result.displayWellnessScore
-        let display = CoachFaceScanMessageMarker.embed(
-            scanId: result.id,
-            displayText: "Scan visage du jour · \(score)%"
-        )
-
-        let markers = result.markers
-        let prompt = """
-        Analyse mon scan visage quotidien (vidéo / capture jointe).
-
-        Score du jour : \(score)% (moyenne des 5 indicateurs).
-        Score relatif vs baseline : \(result.resolvedFaceDayScore)/100.
-        Signaux locaux : rétention \(markers.puffinessScore), récupération \(markers.underEyeFatigueScore), peau \(markers.skinClarityScore), définition \(FaceScanIndicators.definitionScore(from: markers)), charge stress \(FaceScanIndicators.stressLoad(for: result)).
-
-        Compare avec mes scans précédents si tu les as dans le contexte.
-        Donne une lecture debloat / visage claire, puis 3 actions concrètes pour aujourd'hui dans mon protocole Origine.
-        Réponds en français, coach Process, pas de jargon médical.
-        """
-
-        return FaceScanCoachHandoff(
-            resultId: result.id,
-            userMessageText: display,
-            analysisPrompt: prompt
-        )
-    }
-
     static func previewImages(for result: FaceScanResult) -> [UIImage] {
         var images: [UIImage] = []
         if let filename = result.snapshotFilename,
@@ -72,8 +44,29 @@ enum FaceScanCoachHandoffBuilder {
 
 @MainActor
 enum FaceScanCoachHandoffCoordinator {
-    static func deliver(result: FaceScanResult) {
-        HapticManager.shared.notification(.success)
-        CoachPlanNavigationBridge.shared.openCoachAfterFaceScan(result: result)
+    static func deliver(result: FaceScanResult, insight: FaceScanAIInsight? = nil) {
+        HapticManager.shared.impact(.light)
+
+        let resolvedInsight = insight ?? FaceScanAIInsightBuilder.insight(
+            for: result,
+            context: FaceScanInsightContext.fromTodayHealth()
+        )
+
+        let message = FaceScanCoachInsightService.immediateCoachMessage(
+            for: result,
+            insight: resolvedInsight
+        )
+
+        CoachPlanNavigationBridge.shared.openCoachAfterFaceScan(
+            handoff: FaceScanCoachHandoff(resultId: result.id, assistantMessage: message)
+        )
+
+        Task {
+            _ = await FaceScanCoachInsightService.ensureCoachMessage(
+                for: result,
+                insight: resolvedInsight,
+                profile: UnifiedProfileService.shared.currentProfile
+            )
+        }
     }
 }

@@ -116,8 +116,7 @@ struct PlanTrainingExercisePreviewCard: View {
             }
         }
         .buttonStyle(PlanTrainingCard3DPressStyle(restTilt: 4))
-        .shadow(color: .black.opacity(theme.isDark ? 0.45 : 0.12), radius: 2, y: 2)
-        .shadow(color: .black.opacity(theme.isDark ? 0.38 : 0.14), radius: 12, y: 7)
+        .shadow(color: .black.opacity(theme.isDark ? 0.34 : 0.11), radius: 9, y: 5)
     }
 
     @ViewBuilder

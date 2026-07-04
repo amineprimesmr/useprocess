@@ -49,7 +49,6 @@ struct AppShellView: View {
             WelcomePlanStore.shared.reloadForCurrentUser()
             if AppConfiguration.firebaseConfigured {
                 _ = UserSessionCoordinator.shared
-                await UnifiedProfileService.shared.loadProfile()
             }
         }
         .task(id: session.hasCompletedWelcomePlanChat) {
@@ -69,10 +68,6 @@ struct AppShellView: View {
             CoachIntelligenceSettingsStore.shared.syncSubscriberCreditsIfNeeded()
             await CoachCheckInScheduler.rescheduleAll()
             await CoachDailyRhythmService.reschedule()
-            if HealthManager.shared.isHealthDataAvailable, HealthManager.shared.isAuthorized {
-                await HealthManager.shared.performFullSync()
-                await DailyDataManager.shared.updateCurrentDayData(with: HealthManager.shared)
-            }
         }
         .overlay {
             if session.isAccountWipeInProgress {

@@ -20,6 +20,8 @@ enum FaceIDScanColors {
 
 enum FaceScanViewportMetrics {
     static let roundedCornerRadius: CGFloat = 30
+    /// Débordement de l’anneau de ticks autour du cercle caméra (gap + trait actif, par côté × 2).
+    static let tickRingOverflow: CGFloat = 42
 }
 
 struct FaceMorphClipShape: InsettableShape {

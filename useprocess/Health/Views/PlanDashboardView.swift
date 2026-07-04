@@ -24,40 +24,34 @@ struct PlanDashboardView: View {
 
     private var planDashboard: some View {
         NavigationStack {
-            ZStack {
-                ProcessScreenBackground()
+            processMainScrollableChrome(
+                selectedSection: $selectedSection,
+                pageSection: .plan
+            ) {
+                LazyVStack(alignment: .leading, spacing: 24) {
+                    PlanHomeTopChrome(
+                        selectedSection: $selectedSection,
+                        selectedDate: $selectedPlanDate,
+                        zoomNamespace: homeChromeZoomNamespace
+                    )
+                    planContent
 
-                processMainScrollableChrome(
-                    selectedSection: $selectedSection,
-                    pageSection: .plan
-                ) {
-                    LazyVStack(alignment: .leading, spacing: 24) {
-                        PlanHomeTopChrome(
-                            selectedSection: $selectedSection,
-                            selectedDate: $selectedPlanDate
+                    if livePlan != nil {
+                        PlanHomeCustomizeFloatingButton(
+                            zoomNamespace: homeChromeZoomNamespace,
+                            action: { showHomeLayoutEditor = true }
                         )
-                        planContent
-
-                        if livePlan != nil {
-                            PlanHomeCustomizeFloatingButton(
-                                zoomNamespace: homeChromeZoomNamespace,
-                                action: { showHomeLayoutEditor = true }
-                            )
-                            .padding(.top, 4)
-                            .padding(.bottom, 24)
-                        }
+                        .padding(.top, 4)
+                        .padding(.bottom, 24)
                     }
-                    .padding()
                 }
+                .padding()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
             .toolbarBackground(.hidden, for: .navigationBar)
             .processClearUIKitHostingBackground()
-            .refreshable { planStore.reloadForCurrentUser() }
-            .onAppear {
-                planStore.reloadForCurrentUser()
-            }
+            .refreshable { planStore.reloadForCurrentUser(force: true) }
             .fullScreenCover(isPresented: $showHomeLayoutEditor) {
                 if let plan = livePlan {
                     PlanHomeLayoutEditorSheet(
@@ -146,6 +140,6 @@ struct PlanDashboardView: View {
         isRestoringPlan = true
         defer { isRestoringPlan = false }
         _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
-        planStore.reloadForCurrentUser()
+        planStore.reloadForCurrentUser(force: true)
     }
 }

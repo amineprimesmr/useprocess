@@ -7,6 +7,8 @@ final class CoachConversationLibraryStore {
 
     private(set) var library = CoachConversationLibrary()
     private var userId: String?
+    private var hasLoadedLocal = false
+    private var persistenceGeneration: UInt64 = 0
 
     private var libraryKey: String {
         UserScopedStorage.key("coach.conversations.library", userId: userId)
@@ -20,11 +22,14 @@ final class CoachConversationLibraryStore {
 
     func reloadForUser(userId newUserId: String?) {
         userId = newUserId
-        loadLocal()
+        hasLoadedLocal = false
+        loadLocal(force: true)
         purgeEmptyConversations()
     }
 
-    func loadLocal() {
+    func loadLocal(force: Bool = false) {
+        guard force || !hasLoadedLocal else { return }
+        hasLoadedLocal = true
         guard let data = UserDefaults.standard.data(forKey: libraryKey),
               let decoded = try? JSONDecoder().decode(CoachConversationLibrary.self, from: data) else {
             library = CoachConversationLibrary()
@@ -36,8 +41,17 @@ final class CoachConversationLibraryStore {
 
     func saveLocal() {
         library.sortByRecent()
-        guard let data = try? JSONEncoder().encode(library) else { return }
-        UserDefaults.standard.set(data, forKey: libraryKey)
+        let snapshot = library
+        let key = libraryKey
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.store(
+                snapshot,
+                forKey: key,
+                generation: generation
+            )
+        }
     }
 
     func migrateLegacyThreadIfNeeded() {
@@ -74,7 +88,6 @@ final class CoachConversationLibraryStore {
     var sortedConversations: [CoachConversation] {
         library.conversations
             .filter(\.hasUserMessages)
-            .sorted { $0.updatedAt > $1.updatedAt }
     }
 
     func mostRecentConversationWithUserMessages() -> CoachConversation? {
@@ -189,9 +202,18 @@ final class CoachConversationLibraryStore {
     }
 
     func clearStoredData(userId: String) {
-        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("coach.conversations.library", userId: userId))
-        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("coach.thread", userId: userId))
+        let libraryKey = UserScopedStorage.key("coach.conversations.library", userId: userId)
+        let threadKey = UserScopedStorage.key("coach.thread", userId: userId)
+        UserDefaults.standard.removeObject(forKey: libraryKey)
+        UserDefaults.standard.removeObject(forKey: threadKey)
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.removeValue(forKey: libraryKey, generation: generation)
+            await ProcessPersistenceWriter.shared.removeValue(forKey: threadKey, generation: generation)
+        }
         library = CoachConversationLibrary()
         self.userId = nil
+        hasLoadedLocal = false
     }
 }

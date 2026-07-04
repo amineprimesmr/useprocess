@@ -11,20 +11,6 @@ struct ProfileSettingsProfileDetailView: View {
         ScrollView {
             VStack(spacing: 0) {
                 ProfileSummarySectionHeader(title: "Profil")
-
-                AccountDetailsCard {
-                    AccountDetailsGlassRow {
-                        Button(action: onShareProfile) {
-                            ProfileEditListRow(
-                                label: "Partager mon profil",
-                                value: nil,
-                                placeholder: "Lien et @tag"
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
             }
             .padding(.bottom, 32)
         }

@@ -12,7 +12,8 @@ extension SportOnboardingView {
     func onboardingStepContent(for step: OnboardingStep) -> some View {
         switch step {
         case .videoIntroduction:
-            OnboardingWelcomeStepView(onComplete: nextStep)
+            EmptyView()
+                .onAppear { skipTransientStep() }
         case .genderSelection:
             GenderSelectionStepView(
                 selectedGender: $viewModel.selectedGender,

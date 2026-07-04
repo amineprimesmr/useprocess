@@ -26,6 +26,10 @@ struct FaceScanCaptureScreen: View {
     var matchedCameraNamespace: Namespace.ID? = nil
     var onBack: () -> Void = {}
     var onSkip: (() -> Void)? = nil
+    var showsMediaImport: Bool = true
+    var compactSkipAction: Bool = false
+    var skipButtonTitle: String = "Continuer sans scan"
+    var allowsScreenFlash: Bool = true
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
     @State private var scanProgress: Double = 0
@@ -74,7 +78,7 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var showsFrameCorners: Bool {
-        !isInlinePreview && phase == .positioning && !isPositioningWellFramed
+        !isInlinePreview && phase == .positioning && !isPositioningWellFramed && !scanBlockedByLighting
     }
 
     private var showsScanRing: Bool {
@@ -136,9 +140,16 @@ struct FaceScanCaptureScreen: View {
             if !supported { canSkipScan = true }
         }
         .onChange(of: isLowLight) { _, low in
+            guard allowsScreenFlash else { return }
             guard !userFlashOverride else { return }
             guard low, !isFlashEnabled else { return }
             isFlashEnabled = true
+        }
+        .onChange(of: scanBlockedByLighting) { _, blocked in
+            guard blocked, phase == .scanning else { return }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                phase = .positioning
+            }
         }
         .onChange(of: isFaceDetected) { _, detected in
             guard isDeviceSupported, phase != .completed else { return }
@@ -148,7 +159,19 @@ struct FaceScanCaptureScreen: View {
                 }
             }
         }
+        .onChange(of: isInlinePreview) { _, isPreview in
+            guard isInlineHome else { return }
+            if isPreview {
+                userFlashOverride = false
+                isFlashEnabled = false
+                FaceScanScreenFlash.shared.deactivate()
+                resetCaptureState(instruction: "")
+            } else {
+                resetCaptureState(instruction: "Rapproche-toi pour que ton visage remplisse le cadre.")
+            }
+        }
         .onChange(of: scanProgress) { oldValue, value in
+            guard !isInlinePreview else { return }
             if value > 0.005, phase == .positioning {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     phase = .scanning
@@ -257,9 +280,11 @@ struct FaceScanCaptureScreen: View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 8)
 
-                        importMediaButton
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 8)
+                        if showsMediaImport {
+                            importMediaButton
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 8)
+                        }
                     }
 
                     bottomAction
@@ -291,7 +316,7 @@ struct FaceScanCaptureScreen: View {
                     cameraSection(viewportSize: viewportDiameter)
                 }
 
-                if isDeviceSupported, phase != .completed {
+                if isDeviceSupported, phase != .completed, allowsScreenFlash {
                     embeddedFlashToggle
                         .padding(.top, 6)
                         .padding(.trailing, 6)
@@ -300,62 +325,64 @@ struct FaceScanCaptureScreen: View {
             .frame(maxWidth: .infinity)
 
             embeddedControlsBlock
+
+            if onSkip != nil, phase != .completed {
+                skipScanButton
+                    .padding(.top, 2)
+            }
         }
     }
 
     private func inlineHomeSectionLayout(viewportDiameter: CGFloat, phase: FaceScanCapturePresentation.InlineHomePhase) -> some View {
-        ZStack {
-            if isFlashEnabled {
-                Color.white
+        let isPreview = phase == .preview
+        let ringOverflow = FaceScanViewportMetrics.tickRingOverflow
+        let cameraBlockSize = isPreview ? viewportDiameter : viewportDiameter + ringOverflow
+
+        return VStack(spacing: isPreview ? 0 : 16) {
+            if !isPreview, showsInlineHeader {
+                inlineHomeScanHeader
             }
 
-            VStack(spacing: 14) {
-                if phase == .active, showsInlineHeader {
-                    inlineHomeScanHeader
-                }
+            ZStack(alignment: .center) {
+                cameraSection(viewportSize: viewportDiameter)
 
-                ZStack(alignment: .top) {
-                    if isFlashEnabled {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: viewportDiameter + 24, height: viewportDiameter + 24)
-                    }
+                if !isPreview {
+                    HStack(alignment: .top) {
+                        if !showsInlineHeader, self.phase != .completed {
+                            inlineDismissToggle
+                                .padding(.top, 8)
+                                .padding(.leading, 8)
+                        }
 
-                    cameraSection(viewportSize: viewportDiameter)
-                        .frame(width: viewportDiameter, height: viewportDiameter)
-                        .frame(maxWidth: .infinity)
+                        Spacer(minLength: 0)
 
-                    if phase == .active {
-                        HStack(alignment: .top) {
-                            if !showsInlineHeader, self.phase != .completed {
-                                inlineDismissToggle
-                                    .padding(.top, 8)
-                                    .padding(.leading, 8)
-                            }
-
-                            Spacer(minLength: 0)
-
-                            if isDeviceSupported, self.phase != .completed {
-                                embeddedFlashToggle
-                                    .padding(.top, 8)
-                                    .padding(.trailing, 8)
-                            }
+                        if isDeviceSupported, self.phase != .completed {
+                            embeddedFlashToggle
+                                .padding(.top, 8)
+                                .padding(.trailing, 8)
                         }
                     }
-                }
-
-                if phase == .active {
-                    embeddedControlsBlock
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-
-                    Spacer(minLength: 0)
+                    .frame(width: viewportDiameter, height: viewportDiameter)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(width: cameraBlockSize, height: cameraBlockSize)
+            .frame(maxWidth: .infinity, alignment: isPreview ? .leading : .center)
+
+            if !isPreview {
+                embeddedControlsBlock
+                    .padding(.horizontal, Layout.cardPadding)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                Spacer(minLength: 0)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .animation(.spring(response: 0.52, dampingFraction: 0.86), value: phase)
+        .animation(.spring(response: 0.52, dampingFraction: 0.86), value: isPreview)
         .animation(.easeInOut(duration: 0.22), value: isFlashEnabled)
+    }
+
+    private enum Layout {
+        static let cardPadding: CGFloat = 16
     }
 
     private var inlineHomeScanHeader: some View {
@@ -390,21 +417,29 @@ struct FaceScanCaptureScreen: View {
         }
     }
 
+    private var scanBlockedByLighting: Bool {
+        !allowsScreenFlash && isLowLight && phase != .completed
+    }
+
     private var embeddedControlsBlock: some View {
         VStack(spacing: 10) {
             embeddedInstructionBlock
 
-            if let hint = frameHint, phase != .completed {
+            if let hint = frameHint, phase != .completed, !scanBlockedByLighting {
                 FaceIDFrameHint(text: hint, isLightBackdrop: isFlashEnabled)
             }
 
-            embeddedFlashStatusLabel
+            if allowsScreenFlash {
+                embeddedFlashStatusLabel
+            }
 
-            if phase == .scanning || scanProgress > 0.02 {
+            if (phase == .scanning || scanProgress > 0.02), !scanBlockedByLighting {
                 embeddedProgressBar
             }
 
-            embeddedRetryButton
+            if allowsScreenFlash {
+                embeddedRetryButton
+            }
         }
         .padding(.horizontal, 4)
     }
@@ -477,17 +512,23 @@ struct FaceScanCaptureScreen: View {
     @ViewBuilder
     private var embeddedFlashStatusLabel: some View {
         if phase != .completed, isDeviceSupported {
-            if isFlashEnabled {
+            if allowsScreenFlash, isFlashEnabled {
                 Label(
                     userFlashOverride ? "Flash activé" : "Flash auto",
                     systemImage: "bolt.fill"
                 )
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.55) : appTheme.onboardingAccent)
-            } else if isLowLight {
-                Label("Environnement sombre", systemImage: "moon.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(appTheme.secondaryText)
+            } else if isLowLight, allowsScreenFlash {
+                Text(
+                    allowsScreenFlash
+                        ? "Environnement sombre"
+                        : "Pas assez de lumière — place-toi face à une fenêtre ou une lampe."
+                )
+                .font(.caption.weight(.medium))
+                .foregroundStyle(appTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -569,7 +610,7 @@ struct FaceScanCaptureScreen: View {
             if isDeviceSupported {
                 FaceScannerViewport(
                     size: CGSize(width: viewportSize, height: viewportSize),
-                    morphToCircle: viewportMorph,
+                    morphToCircle: scanBlockedByLighting ? 1 : viewportMorph,
                     camera: {
                         FaceMeshScanView(
                             progress: $scanProgress,
@@ -581,24 +622,34 @@ struct FaceScanCaptureScreen: View {
                             isDeviceSupported: $isDeviceSupported,
                             isLowLight: $isLowLight,
                             isPreviewOnly: isInlinePreview,
+                            allowsScreenFlash: allowsScreenFlash,
                             onComplete: handleCapture
                         )
                         .id(scanSessionID)
                         .scaleEffect(cameraZoom)
+                        .blur(radius: scanBlockedByLighting ? 7 : 0)
                     },
                     overlay: { EmptyView() }
                 )
                 .overlay {
-                    FaceMorphClipShape(morph: viewportMorph)
+                    if scanBlockedByLighting {
+                        FaceMorphClipShape(morph: 1)
+                            .fill(Color.black.opacity(0.14))
+                            .allowsHitTesting(false)
+                    }
+                }
+                .overlay {
+                    FaceMorphClipShape(morph: scanBlockedByLighting ? 1 : viewportMorph)
                         .strokeBorder(
                             isFlashEnabled ? Color.black.opacity(0.08) : Color.white.opacity(0.18),
                             lineWidth: 1.5
                         )
                 }
+                .animation(.easeInOut(duration: 0.28), value: scanBlockedByLighting)
                 .shadow(
                     color: .black.opacity(isFlashEnabled ? (isInlineHome ? 0 : 0.12) : 0.35),
-                    radius: isFlashEnabled && isInlineHome ? 0 : 14,
-                    y: isFlashEnabled && isInlineHome ? 0 : 4
+                    radius: isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 14,
+                    y: isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 4
                 )
 
                 if showsFrameCorners {
@@ -606,7 +657,7 @@ struct FaceScanCaptureScreen: View {
                         .transition(.opacity)
                 }
 
-                if showsScanRing {
+                if showsScanRing, !scanBlockedByLighting {
                     scannerOverlay(cameraDiameter: viewportSize)
                         .transition(.opacity)
                 }
@@ -615,14 +666,16 @@ struct FaceScanCaptureScreen: View {
                     .frame(width: viewportSize)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: isInlinePreview ? .leading : .center)
         .animation(.interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
         .animation(.easeInOut(duration: 0.25), value: phase)
         .animation(.easeInOut(duration: 0.2), value: showsFrameCorners)
         .animation(.easeInOut(duration: 0.2), value: showsScanRing)
 
         return Group {
-            if let matchedCameraID, let matchedCameraNamespace {
+            if isInlinePreview {
+                core
+            } else if let matchedCameraID, let matchedCameraNamespace {
                 core.matchedGeometryEffect(id: matchedCameraID, in: matchedCameraNamespace)
             } else {
                 core
@@ -731,18 +784,23 @@ struct FaceScanCaptureScreen: View {
     private var skipScanButton: some View {
         if let onSkip {
             Button(action: {
-                HapticManager.shared.impact(.medium)
+                HapticManager.shared.impact(.light)
                 FaceScanScreenFlash.shared.deactivate()
                 onSkip()
             }) {
-                Text("CONTINUER SANS SCAN")
-                    .font(.system(size: 17, weight: .black))
-                    .foregroundStyle(isFlashEnabled ? Color.black : OnboardingTheme.actionButtonText)
+                Text(skipButtonTitle)
+                    .font(.system(size: compactSkipAction ? 13 : 17, weight: compactSkipAction ? .regular : .black))
+                    .foregroundStyle(
+                        compactSkipAction
+                            ? OnboardingTheme.mutedText.opacity(isFlashEnabled ? 0.62 : 0.52)
+                            : (isFlashEnabled ? Color.black : OnboardingTheme.actionButtonText)
+                    )
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50)
+                    .frame(height: compactSkipAction ? nil : 50)
+                    .padding(.vertical, compactSkipAction ? 6 : 0)
             }
-            .glassStyle()
-            .buttonBorderShape(.roundedRectangle(radius: 50))
+            .buttonStyle(.plain)
+            .modifier(SkipScanButtonChromeModifier(compact: compactSkipAction, isFlashEnabled: isFlashEnabled))
         }
     }
 
@@ -754,12 +812,18 @@ struct FaceScanCaptureScreen: View {
             Text("Caméra avant requise")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.primaryText)
-            Text("Utilise un appareil avec Face ID\n(iPhone ou iPad Pro), ou importe une photo / vidéo.")
+            Text(
+                showsMediaImport
+                    ? "Utilise un appareil avec Face ID\n(iPhone ou iPad Pro), ou importe une photo / vidéo."
+                    : "Utilise un appareil avec Face ID\n(iPhone ou iPad Pro)."
+            )
                 .font(.system(size: 15))
                 .foregroundStyle(OnboardingTheme.footnoteText)
                 .multilineTextAlignment(.center)
-            importMediaButton
-                .padding(.top, 4)
+            if showsMediaImport {
+                importMediaButton
+                    .padding(.top, 4)
+            }
             skipScanButton
                 .padding(.top, 8)
         }
@@ -837,16 +901,45 @@ struct FaceScanCaptureScreen: View {
 
     private func restartScan() {
         scanSessionID = UUID()
+        resetCaptureState(instruction: "Place ton visage dans le cadre.")
+        withAnimation(.easeInOut(duration: 0.2)) {
+            phase = .positioning
+        }
+    }
+
+    private func resetInlinePreviewState() {
+        FaceScanScreenFlash.shared.deactivate()
+        userFlashOverride = false
+        isFlashEnabled = false
+        resetCaptureState(instruction: "")
+    }
+
+    private func resetCaptureState(instruction: String) {
         scanProgress = 0
         ringProgress = 0
         activeTickSectors = []
         isFaceDetected = false
         frameHint = nil
-        instruction = "Place ton visage dans le cadre."
+        self.instruction = instruction
         capturedPayload = nil
         capturedMarkers = nil
         withAnimation(.easeInOut(duration: 0.2)) {
             phase = .positioning
+        }
+    }
+}
+
+private struct SkipScanButtonChromeModifier: ViewModifier {
+    let compact: Bool
+    let isFlashEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if compact {
+            content
+        } else {
+            content
+                .glassStyle()
+                .buttonBorderShape(.roundedRectangle(radius: 50))
         }
     }
 }

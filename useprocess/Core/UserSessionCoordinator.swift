@@ -44,8 +44,11 @@ final class UserSessionCoordinator {
                 await SubscriptionService.shared.syncAppUserID(userId)
                 await UnifiedProfileService.shared.loadProfile()
                 SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
-                await FaceScanHistoryStore.shared.syncFromRemote()
-                await HealthManager.shared.performFullSync()
+                if AppSession.shared.hasCompletedOnboarding,
+                   !AuthenticationManager.shared.isInOnboarding {
+                    await FaceScanHistoryStore.shared.syncFromRemote()
+                    await HealthManager.shared.performFullSync()
+                }
             }
         } else if AppSession.shared.isAccountWipeInProgress {
             return

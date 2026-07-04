@@ -184,11 +184,14 @@ struct FaceScanPrivacyGateView: View {
     }
 }
 
-/// Gate onboarding / welcome plan — capture directe sans session complète.
+/// Gate onboarding — même session que l’app (capture + analyse WHOOP + résultats).
 struct FaceScanCapturePrivacyGateView: View {
-    var onBack: () -> Void
+    @EnvironmentObject private var profileService: UnifiedProfileService
+
+    var onDismiss: () -> Void
+    var onCancelCapture: () -> Void
     var onSkip: () -> Void
-    var onCapture: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
+    var onComplete: (FaceScanResult) -> Void
 
     @State private var consentStore = ProcessPrivacyConsentStore.shared
     @State private var showScanner = false
@@ -196,10 +199,13 @@ struct FaceScanCapturePrivacyGateView: View {
     var body: some View {
         Group {
             if showScanner || consentStore.canCaptureFaceScan {
-                FaceScanCaptureScreen(
-                    onBack: onBack,
-                    onSkip: onSkip,
-                    onContinue: onCapture
+                FaceScanSessionView(
+                    onDismiss: onDismiss,
+                    onComplete: onComplete,
+                    onCancelCapture: onCancelCapture,
+                    onSkipCapture: onSkip,
+                    showsMediaImport: false,
+                    compactSkipAction: true
                 )
             } else {
                 ProgressView()

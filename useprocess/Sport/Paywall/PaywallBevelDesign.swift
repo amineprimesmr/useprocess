@@ -470,6 +470,7 @@ struct PaywallBevelPlanCard: View {
     @Environment(\.colorScheme) private var colorScheme
     let title: String
     let primaryPrice: String
+    var compareAtPrice: String? = nil
     let secondaryPrice: String
     let isSelected: Bool
     let savingsBadge: String?
@@ -481,39 +482,50 @@ struct PaywallBevelPlanCard: View {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .center, spacing: 8) {
                         Text(title)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme).opacity(0.92))
                         Spacer(minLength: 0)
                         planRadio
                     }
-                    .padding(.bottom, 7)
+                    .padding(.bottom, 10)
 
-                    Text(primaryPrice)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme).opacity(0.94))
-                        .padding(.bottom, 2)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        if let compareAtPrice {
+                            Text(compareAtPrice)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.72))
+                                .strikethrough(true, color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.55))
+                        }
 
-                    Text(secondaryPrice)
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.82))
-                        .fixedSize(horizontal: false, vertical: true)
+                        Text(primaryPrice)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme).opacity(0.94))
+                    }
+                    .padding(.bottom, secondaryPrice.isEmpty ? 0 : 4)
+
+                    if !secondaryPrice.isEmpty {
+                        Text(secondaryPrice)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.82))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 14)
-                .padding(.bottom, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, 18)
+                .padding(.bottom, 16)
+                .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
                 .background {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .fill(.clear)
                 }
-                .processGlassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .processGlassEffect(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .shadow(
                     color: PaywallBevelTheme.cardShadow(for: colorScheme, selected: isSelected),
                     radius: isSelected ? 8 : 4,
                     y: 2
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .strokeBorder(
                             PaywallBevelTheme.cardBorder(for: colorScheme, selected: isSelected),
                             lineWidth: isSelected ? 1.5 : 0.75
@@ -522,10 +534,10 @@ struct PaywallBevelPlanCard: View {
 
                 if let savingsBadge {
                     Text(savingsBadge)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(PaywallBevelTheme.badgeText(for: colorScheme))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 5)
                         .background(
                             Capsule()
                                 .fill(PaywallBevelTheme.badgeFill(for: colorScheme))
@@ -546,7 +558,7 @@ struct PaywallBevelPlanCard: View {
             }
         }
         .buttonStyle(.plain)
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var planRadio: some View {
@@ -556,13 +568,13 @@ struct PaywallBevelPlanCard: View {
                     isSelected ? Color.clear : PaywallBevelTheme.radioStroke(for: colorScheme),
                     lineWidth: 1.5
                 )
-                .frame(width: 22, height: 22)
+                .frame(width: 24, height: 24)
             if isSelected {
                 Circle()
                     .fill(PaywallBevelTheme.radioSelectedFill(for: colorScheme))
-                    .frame(width: 22, height: 22)
+                    .frame(width: 24, height: 24)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(PaywallBevelTheme.radioSelectedCheck(for: colorScheme))
             }
         }
@@ -574,14 +586,9 @@ struct PaywallBevelPlanCard: View {
 struct PaywallBevelContinueButton: View {
     @Environment(\.colorScheme) private var colorScheme
     let title: String
-    var subtitle: String? = nil
     let isLoading: Bool
     let isEnabled: Bool
     let action: () -> Void
-
-    private var buttonHeight: CGFloat {
-        subtitle == nil ? 56 : 64
-    }
 
     var body: some View {
         Button(action: action) {
@@ -598,23 +605,14 @@ struct PaywallBevelContinueButton: View {
                         ProgressView()
                             .tint(paywallCTATextColor)
                     } else {
-                        VStack(spacing: 2) {
-                            Text(title)
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(paywallCTATextColor)
-
-                            if let subtitle {
-                                Text(subtitle)
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(paywallCTATextColor.opacity(0.72))
-                                    .multilineTextAlignment(.center)
-                            }
-                        }
-                        .padding(.horizontal, 16)
+                        Text(title)
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(paywallCTATextColor)
+                            .padding(.horizontal, 16)
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: buttonHeight)
+                .frame(height: 56)
                 .background {
                     paywallCTAGlassCapsule
                 }

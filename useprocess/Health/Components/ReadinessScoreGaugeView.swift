@@ -217,21 +217,16 @@ private struct ReadinessGaugeCanvas: View {
     var arcSweepFraction: Double = ReadinessGaugeMetrics.profileCard.arcSweepFraction
     var particleScale: CGFloat = 1
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     private var progress: CGFloat {
         CGFloat(min(max(score, 0), 100)) / 100
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { timeline in
-            GeometryReader { proxy in
-                Canvas { context, size in
-                    let time = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
-                    drawGauge(in: &context, size: size, time: time)
-                }
-                .frame(width: proxy.size.width, height: proxy.size.height)
+        GeometryReader { proxy in
+            Canvas { context, size in
+                drawGauge(in: &context, size: size, time: 0)
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }
 

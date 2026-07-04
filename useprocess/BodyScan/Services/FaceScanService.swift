@@ -54,24 +54,36 @@ enum FaceScanService {
         if var plan = WelcomePlanStore.shared.plan {
             PlanRecalibrationService.applyBaselineScan(to: &plan, markers: markers)
             _ = PlanRecalibrationService.recalibrate(plan: &plan, latestScan: result)
-            WelcomePlanStore.shared.savePlan(plan)
+            WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
         }
 
-        if ClaudeConfiguration.isConfigured,
-           ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI {
-            if let enhanced = await CoachEngine.analyzeFaceScan(
-                result: result,
-                profile: profile,
-                history: FaceScanHistoryStore.shared.recentResults(limit: 14)
-            ) {
-                result = enhanced
-                FaceScanHistoryStore.shared.update(result)
-            }
-        }
-
-        await health.performFullSync()
-        await FaceScanReminderService.scheduleNextReminder(after: result.createdAt)
+        enqueuePostScanEnhancements(for: result, profile: profile)
 
         return result
+    }
+
+    /// Travail réseau / IA — ne bloque pas l’écran d’analyse ni les résultats WHOOP.
+    private static func enqueuePostScanEnhancements(
+        for result: FaceScanResult,
+        profile: UnifiedUserProfile?
+    ) {
+        Task { @MainActor in
+            var enhanced = result
+
+            if ClaudeConfiguration.isConfigured,
+               ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI,
+               let aiResult = await CoachEngine.analyzeFaceScan(
+                   result: enhanced,
+                   profile: profile,
+                   history: FaceScanHistoryStore.shared.recentResults(limit: 14)
+               ) {
+                enhanced = aiResult
+                FaceScanHistoryStore.shared.update(enhanced)
+            }
+
+            await HealthManager.shared.performFullSync()
+            await FaceScanReminderService.scheduleNextReminder(after: enhanced.createdAt)
+            FaceScanCoachInsightService.pregenerate(for: enhanced, profile: profile)
+        }
     }
 }

@@ -8,6 +8,7 @@ struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var isCoachPresented = false
     @State private var tabBeforeCoach: ProcessMainSection = .plan
+    @State private var coachViewModel = CoachChatViewModel()
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var coachTracker = CoachPresentationTracker.shared
     @Bindable private var session = AppSession.shared
@@ -22,7 +23,7 @@ struct MainAppView: View {
                         .ignoresSafeArea()
                         .transition(.opacity)
                 } else {
-                    ProcessScreenBackground()
+                    Color.clear
                 }
             }
 
@@ -41,6 +42,7 @@ struct MainAppView: View {
             if isCoachPresented {
                 CoachFullScreenPresentationView(
                     selectedSection: $selectedSection,
+                    viewModel: coachViewModel,
                     onDismiss: dismissCoachPresentation,
                     onOpenProfile: openProfileFromCoach,
                     onOpenWelcomePlan: openWelcomePlanFromCoach
@@ -150,6 +152,9 @@ struct MainAppView: View {
     private func handleSectionChange(from oldValue: ProcessMainSection, to newValue: ProcessMainSection) {
         resignFirstResponder()
 
+        if newValue == .profile {
+            ProcessPerformanceTrace.beginProfileOpen()
+        }
         guard newValue == .coach else { return }
         tabBeforeCoach = oldValue.isShellTab ? oldValue : tabBeforeCoach
         selectedSection = tabBeforeCoach
@@ -168,7 +173,8 @@ struct MainAppView: View {
             planBridge.shouldOpenCoach = true
             return
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+        let delay: TimeInterval = planBridge.hasPendingFaceScanHandoff ? 0 : 0.12
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             presentCoachSurface()
         }
     }
@@ -194,6 +200,7 @@ struct MainAppView: View {
             return
         }
 
+        ProcessPerformanceTrace.beginCoachOpen()
         isCoachPresented = true
     }
 

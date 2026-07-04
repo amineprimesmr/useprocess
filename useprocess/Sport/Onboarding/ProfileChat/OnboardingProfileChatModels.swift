@@ -36,6 +36,7 @@ struct OnboardingProfileChatMessage: Identifiable, Equatable {
 
 enum OnboardingProfileChatQuestionKind {
     case infoContinue
+    case autoPlanCreation
     case yesNo
     case singleChoice
     case multiChoice
@@ -83,51 +84,28 @@ struct OnboardingProfileChatQuestion: Identifiable, Equatable {
 
 enum OnboardingProfileChatQuestionBank {
     static func questions(for viewModel: OnboardingViewModel) -> [OnboardingProfileChatQuestion] {
-        var items: [OnboardingProfileChatQuestion] = []
-
-        if viewModel.hasWeightObjective {
-            items.append(
-                .init(
-                    id: "goal_pace",
-                    prompt: pacePrompt(for: viewModel),
-                    kind: .singleChoice,
-                    choices: paceChoices
-                )
-            )
-        }
-
-        items.append(
+        [
             .init(
-                id: "sport_activity",
-                prompt: "Tu fais du sport en ce moment ?",
-                kind: .yesNo
-            )
-        )
-
-        if viewModel.hasWeightObjective {
-            items.append(
-                .init(
-                    id: "weight_experience",
-                    prompt: experiencePrompt(for: viewModel),
-                    kind: .singleChoice,
-                    choices: experienceChoices
-                )
-            )
-        }
-
-        items.append(
+                id: "primary_focus",
+                prompt: "Qu'est-ce que tu veux améliorer en premier ?",
+                kind: .singleChoice,
+                choices: primaryFocusChoices
+            ),
+            .init(
+                id: "debloat_driver",
+                prompt: "D'après toi, qu'est-ce qui te déséquilibre le plus au quotidien ?",
+                kind: .multiChoice,
+                choices: debloatDriverChoices
+            ),
             .init(
                 id: "nutrition_quality",
-                prompt: "Comment manges-tu au quotidien ?",
+                prompt: "Ton alimentation ressemble plutôt à quoi ?",
                 kind: .singleChoice,
                 choices: nutritionChoices
-            )
-        )
-
-        items.append(faceScanQuestion(for: viewModel))
-        items.append(analysisQuestion(for: viewModel))
-
-        return items
+            ),
+            faceScanQuestion(for: viewModel),
+            scanExplanationQuestion(for: viewModel)
+        ]
     }
 
     static func faceScanQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
@@ -135,25 +113,16 @@ enum OnboardingProfileChatQuestionBank {
             id: "face_scan_offer",
             prompt: faceScanPrompt(for: viewModel),
             kind: .faceScanOffer,
-            detailText: "Faire plus tard"
+            detailText: "Faire mon scan plus tard"
         )
     }
 
-    static func analysisQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
+    static func scanExplanationQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
         .init(
-            id: "answers_analysis",
-            prompt: "J'analyse tes réponses…",
-            kind: .answersAnalysis,
-            detailText: analysisDetailText(for: viewModel)
+            id: "scan_explanation",
+            prompt: scanExplanationText(for: viewModel),
+            kind: .autoPlanCreation
         )
-    }
-
-    static func analysisDetailText(for viewModel: OnboardingViewModel) -> String {
-        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if OnboardingViewModel.isRealUserFirstName(trimmed) {
-            return "\(trimmed), tout est prêt. On prépare ton plan sur mesure."
-        }
-        return "Tout est prêt. On prépare ton plan sur mesure."
     }
 
     static func openingLine(for viewModel: OnboardingViewModel) -> String {
@@ -164,75 +133,97 @@ enum OnboardingProfileChatQuestionBank {
         return "Salut 👋 Quelques questions pour calibrer ton plan."
     }
 
-    static func sportQuestion() -> OnboardingProfileChatQuestion {
-        .init(
-            id: "sport_pick",
-            prompt: "C'est quoi ton sport ?",
-            kind: .singleChoice,
-            choices: OnboardingSportCatalog.featuredChoices
-        )
-    }
-
-    static func failureReasonsQuestion() -> OnboardingProfileChatQuestion {
-        .init(
-            id: "weight_obstacles",
-            prompt: "Qu'est-ce qui t'a le plus freiné ?",
-            kind: .multiChoice,
-            choices: obstacleChoices
-        )
-    }
-
     // MARK: - Choices
 
-    private static let paceChoices: [OnboardingProfileChatChoice] = [
-        .init(id: GoalPace.asFastAsPossible.rawValue, label: "Très vite", emoji: "⚡️"),
-        .init(id: GoalPace.aggressive.rawValue, label: "Vite", emoji: "🔥"),
-        .init(id: GoalPace.moderate.rawValue, label: "Progressivement", emoji: "📈"),
-        .init(id: GoalPace.relaxed.rawValue, label: "À mon rythme", emoji: "🐢"),
-        .init(id: GoalPace.noRush.rawValue, label: "Sans pression", emoji: "🌿")
+    private static let primaryFocusChoices: [OnboardingProfileChatChoice] = [
+        .init(id: OnboardingPrimaryFocus.face.rawValue, label: "Dégonfler mon visage", emoji: "💧"),
+        .init(id: OnboardingPrimaryFocus.weight.rawValue, label: "Perdre du poids", emoji: "⚖️"),
+        .init(id: OnboardingPrimaryFocus.health.rawValue, label: "Améliorer ma santé", emoji: "🌿"),
+        .init(id: OnboardingPrimaryFocus.energy.rawValue, label: "Avoir plus d'énergie", emoji: "⚡️")
     ]
 
-    private static let experienceChoices: [OnboardingProfileChatChoice] = [
-        .init(id: WeightManagementExperience.neverTried.rawValue, label: "Jamais"),
-        .init(id: WeightManagementExperience.triedMultiple.rawValue, label: "Plusieurs fois"),
-        .init(id: WeightManagementExperience.currentlyTrying.rawValue, label: "En ce moment"),
-        .init(id: WeightManagementExperience.succeeded.rawValue, label: "Déjà réussi")
+    private static let debloatDriverChoices: [OnboardingProfileChatChoice] = [
+        .init(id: OnboardingDebloatDriver.sleep.rawValue, label: "Manque de sommeil", emoji: "😴"),
+        .init(id: OnboardingDebloatDriver.nutrition.rawValue, label: "Alimentation (sel, fast-food…)", emoji: "🥡"),
+        .init(id: OnboardingDebloatDriver.stress.rawValue, label: "Stress", emoji: "😰"),
+        .init(id: OnboardingDebloatDriver.sedentary.rawValue, label: "Peu d'activité", emoji: "🛋️"),
+        .init(id: OnboardingDebloatDriver.unknown.rawValue, label: "Je ne sais pas trop", emoji: "🤷")
     ]
 
     private static let nutritionChoices: [OnboardingProfileChatChoice] = [
-        .init(id: NutritionQuality.poor.rawValue, label: "Pas terrible", emoji: "🍔"),
-        .init(id: NutritionQuality.average.rawValue, label: "Correcte", emoji: "🍝"),
-        .init(id: NutritionQuality.excellent.rawValue, label: "Plutôt saine", emoji: "🥗")
+        .init(id: NutritionQuality.excellent.rawValue, label: "Assez équilibrée", emoji: "🥗"),
+        .init(id: NutritionQuality.average.rawValue, label: "Irrégulière", emoji: "🍝"),
+        .init(id: NutritionQuality.poor.rawValue, label: "Souvent prise rapidement", emoji: "🥡"),
+        .init(id: "snacking", label: "Beaucoup de grignotage", emoji: "🍪"),
+        .init(id: "unknown", label: "Difficile à évaluer")
     ]
 
-    private static let obstacleChoices: [OnboardingProfileChatChoice] = [
-        .init(id: NutritionObstacle.snacking.rawValue, label: "Grignotage"),
-        .init(id: NutritionObstacle.lackOfTime.rawValue, label: "Pas le temps de cuisiner"),
-        .init(id: NutritionObstacle.lackOfMotivation.rawValue, label: "Motivation"),
-        .init(id: NutritionObstacle.emotionalEating.rawValue, label: "Manger par émotion"),
-        .init(id: NutritionObstacle.socialPressure.rawValue, label: "Repas / sorties")
-    ]
+    private static func scanExplanationText(for viewModel: OnboardingViewModel) -> String {
+        guard let markers = viewModel.onboardingFaceMarkers else {
+            return """
+            Pas de scan pour l'instant — je pars surtout de tes réponses pour calibrer ton plan.
 
-    // MARK: - Prompts
+            Tu pourras lancer un scan plus tard dans l'app pour affiner ton suivi.
+            """
+        }
 
-    private static func weightGoal(for viewModel: OnboardingViewModel) -> WeightGoal? {
-        if let goal = viewModel.selectedWeightGoal { return goal }
-        guard viewModel.hasWeightObjective,
-              OnboardingViewModel.isPlausibleWeight(viewModel.selectedWeight),
-              OnboardingViewModel.isPlausibleWeight(viewModel.idealWeightValue) else { return nil }
-        if viewModel.idealWeightValue < viewModel.selectedWeight { return .lose }
-        if viewModel.idealWeightValue > viewModel.selectedWeight { return .gain }
-        return nil
+        let result = FaceScanHistoryStore.shared.latestResult
+            ?? FaceScanResult(userId: "local", markers: markers)
+        let problems = scanProblemPhrases(for: result, limit: 3)
+
+        let problemsBlock: String
+        if problems.isEmpty {
+            problemsBlock = "Ton scan est plutôt équilibré aujourd'hui — pas de signal très marqué."
+        } else if problems.count == 1 {
+            problemsBlock = "Ton scan montre surtout \(problems[0])."
+        } else {
+            let head = problems.dropLast().joined(separator: ", ")
+            problemsBlock = "Ton scan montre surtout \(head) et \(problems.last!)."
+        }
+
+        let nextBlock = "Je croise ça avec tes réponses et je te prépare un plan adapté à toi."
+
+        return [problemsBlock, nextBlock].joined(separator: "\n\n")
     }
 
-    private static func pacePrompt(for viewModel: OnboardingViewModel) -> String {
-        let action = weightGoal(for: viewModel) == .gain ? "prendre" : "perdre"
-        return "À quel rythme veux-tu \(action) du poids ?"
+    private static func scanProblemPhrases(
+        for result: FaceScanResult,
+        limit: Int
+    ) -> [String] {
+        FaceScanIndicators.Kind.allCases
+            .map { kind in
+                (
+                    kind: kind,
+                    zone: FaceScanIndicators.displayZone(for: kind, result: result),
+                    percent: FaceScanIndicators.displayPercent(for: kind, result: result)
+                )
+            }
+            .filter { $0.zone != .optimal }
+            .sorted { metricSeverity(kind: $0.kind, percent: $0.percent) > metricSeverity(kind: $1.kind, percent: $1.percent) }
+            .prefix(limit)
+            .map { simpleProblemPhrase(kind: $0.kind, zone: $0.zone) }
     }
 
-    private static func experiencePrompt(for viewModel: OnboardingViewModel) -> String {
-        let action = weightGoal(for: viewModel) == .gain ? "prendre" : "perdre"
-        return "Déjà tenté de \(action) du poids ?"
+    private static func simpleProblemPhrase(
+        kind: FaceScanIndicators.Kind,
+        zone: FaceScanIndicators.WellnessZone
+    ) -> String {
+        switch kind {
+        case .retention:
+            return zone == .insufficient ? "une rétention d'eau marquée" : "un léger gonflement"
+        case .recovery:
+            return zone == .insufficient ? "une récupération insuffisante" : "des signes de fatigue"
+        case .stressLoad:
+            return zone == .insufficient ? "une charge de stress élevée" : "une tension modérée"
+        case .skin:
+            return zone == .insufficient ? "une peau terne" : "une peau qui manque un peu d'éclat"
+        case .definition:
+            return zone == .insufficient ? "une mâchoire peu marquée" : "une définition faciale moyenne"
+        }
+    }
+
+    private static func metricSeverity(kind: FaceScanIndicators.Kind, percent: Int) -> Int {
+        kind.higherIsWorse ? percent : (100 - percent)
     }
 
     private static func faceScanPrompt(for viewModel: OnboardingViewModel) -> String {

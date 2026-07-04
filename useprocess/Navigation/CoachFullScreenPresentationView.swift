@@ -4,6 +4,7 @@ import UIKit
 /// Présentation plein écran du coach — sans tab bar, fermeture via la croix.
 struct CoachFullScreenPresentationView: View {
     @Binding var selectedSection: ProcessMainSection
+    let viewModel: CoachChatViewModel
     var onDismiss: () -> Void
     var onOpenProfile: () -> Void
     var onOpenWelcomePlan: () -> Void
@@ -15,6 +16,7 @@ struct CoachFullScreenPresentationView: View {
         ZStack(alignment: .topTrailing) {
             CoachChatView(
                 selectedSection: $selectedSection,
+                viewModel: viewModel,
                 onOpenProfile: onOpenProfile,
                 onOpenWelcomePlan: onOpenWelcomePlan
             )
@@ -30,6 +32,7 @@ struct CoachFullScreenPresentationView: View {
         .processScreenBackground()
         .ignoresSafeArea(edges: .top)
         .onAppear {
+            ProcessPerformanceTrace.endCoachOpen()
             showsCloseButton = true
         }
     }

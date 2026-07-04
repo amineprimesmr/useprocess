@@ -10,7 +10,7 @@ struct CoachChatView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Bindable private var sidebarPresentation = CoachSidebarPresentation.shared
 
-    @State private var viewModel = CoachChatViewModel()
+    @Bindable var viewModel: CoachChatViewModel
     @FocusState private var isInputFocused: Bool
     @State private var thinkingBlobStart = Date.now
     @State private var isCompactCameraPresented = false
@@ -25,6 +25,18 @@ struct CoachChatView: View {
 
     private let messageFont = Font.system(size: 17, weight: .regular)
     private let messageLineSpacing: CGFloat = 4
+
+    init(
+        selectedSection: Binding<ProcessMainSection>,
+        viewModel: CoachChatViewModel,
+        onOpenProfile: @escaping () -> Void,
+        onOpenWelcomePlan: (() -> Void)? = nil
+    ) {
+        _selectedSection = selectedSection
+        self.viewModel = viewModel
+        self.onOpenProfile = onOpenProfile
+        self.onOpenWelcomePlan = onOpenWelcomePlan
+    }
 
     private var isCoachSidebarPresenting: Bool {
         isSidebarExpanded || sidebarPresentation.progress > 0.01
@@ -75,7 +87,6 @@ struct CoachChatView: View {
         }
         .ios26SafeAnimation(.spring(response: 0.32, dampingFraction: 0.86), value: messageContextMenu != nil)
         .onAppear {
-            planStore.reloadForCurrentUser()
             CoachPresentationTracker.shared.isCoachChatActive = true
             CoachPresentationTracker.shared.activeConversationId = viewModel.activeConversationId
             focusChatInputIfAppropriate()
@@ -99,10 +110,8 @@ struct CoachChatView: View {
         .task {
             viewModel.bind(profile: profileService.currentProfile)
             await viewModel.loadThreadIfNeeded()
-            await viewModel.consumePendingNavigationIfNeeded()
-            let delivered = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
-            if delivered {
-                await viewModel.reloadForEveningDelivery()
+            if !viewModel.messages.contains(where: FaceScanCoachInsightService.isCoachInsightMessage) {
+                _ = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
             }
             focusChatInputIfAppropriate(delay: 0.12)
         }
@@ -125,8 +134,8 @@ struct CoachChatView: View {
             guard should else { return }
             Task { await viewModel.consumePendingNavigationIfNeeded() }
         }
-        .onChange(of: CoachPlanNavigationBridge.shared.eveningChecklistRefreshNonce) { _, _ in
-            Task { await viewModel.reloadForEveningDelivery() }
+        .onChange(of: CoachPlanNavigationBridge.shared.coachNavigationNonce) { _, _ in
+            Task { await viewModel.consumePendingNavigationIfNeeded() }
         }
         .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenFaceScan) { _, should in
             guard should else { return }
@@ -151,9 +160,7 @@ struct CoachChatView: View {
                     showFaceScan = false
                     FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
                     Task {
-                        await viewModel.sendFaceScanHandoff(
-                            FaceScanCoachHandoffBuilder.make(from: result)
-                        )
+                        await viewModel.sendFaceScanHandoff(for: result)
                     }
                 },
                 skipResultSheet: true
@@ -396,7 +403,6 @@ struct CoachChatView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .processScreenBackground()
         .ignoresSafeArea(edges: .top)
         .contentShape(Rectangle())
         .simultaneousGesture(
@@ -416,7 +422,9 @@ struct CoachChatView: View {
     }
 
     private var activeConversationScroll: some View {
-        VStack(spacing: 0) {
+        let topSpacings = messageTopSpacings
+
+        return VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 processMainScrollableChrome(
                     selectedSection: $selectedSection,
@@ -424,14 +432,14 @@ struct CoachChatView: View {
                     dismissesKeyboard: .interactively,
                     scrollDisabled: messageContextMenu != nil
                 ) {
-                    VStack(alignment: .leading, spacing: 14) {
+                    LazyVStack(alignment: .leading, spacing: 14) {
                         if !viewModel.claudeConfigured {
                             configurationBanner
                         }
 
                         ForEach(viewModel.messages) { message in
                             messageRow(message)
-                                .padding(.top, messageTopSpacing(before: message))
+                                .padding(.top, topSpacings[message.id] ?? 0)
                                 .id(message.id)
                         }
 
@@ -608,22 +616,20 @@ struct CoachChatView: View {
         viewModel.messages.last?.role == .user ? CoachMessageSpacing.userToAssistant : 0
     }
 
-    private func messageTopSpacing(before message: CoachMessage) -> CGFloat {
-        guard let index = viewModel.messages.firstIndex(where: { $0.id == message.id }),
-              index > 0,
-              index < viewModel.messages.count else {
-            return 0
-        }
+    private var messageTopSpacings: [UUID: CGFloat] {
+        var result: [UUID: CGFloat] = [:]
+        guard viewModel.messages.count > 1 else { return result }
 
-        let previous = viewModel.messages[index - 1]
-        let current = viewModel.messages[index]
-        if previous.role == .user, current.role == .assistant {
-            return CoachMessageSpacing.userToAssistant
+        for index in 1..<viewModel.messages.count {
+            let previous = viewModel.messages[index - 1]
+            let current = viewModel.messages[index]
+            if previous.role == .user, current.role == .assistant {
+                result[current.id] = CoachMessageSpacing.userToAssistant
+            } else if previous.role == .assistant, current.role == .user {
+                result[current.id] = CoachMessageSpacing.assistantToUser
+            }
         }
-        if previous.role == .assistant, current.role == .user {
-            return CoachMessageSpacing.assistantToUser
-        }
-        return 0
+        return result
     }
 
     private func dismissCoachKeyboard() {

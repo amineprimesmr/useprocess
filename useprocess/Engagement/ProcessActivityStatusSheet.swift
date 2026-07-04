@@ -10,6 +10,7 @@ struct ProcessActivityStatusSheet: View {
 
     @State private var draft: ProcessActivityStatus
     @State private var phase: Phase
+    @State private var openedFromIntro: Bool
 
     private enum Phase {
         case intro
@@ -26,8 +27,10 @@ struct ProcessActivityStatusSheet: View {
     init(selectedDate: Binding<Date>) {
         _selectedDate = selectedDate
         let current = ProcessActivityStatusStore.shared.status(for: selectedDate.wrappedValue)
+        let showsIntro = !ProcessActivityStatusStore.shared.hasSeenIntro
         _draft = State(initialValue: current)
-        _phase = State(initialValue: ProcessActivityStatusStore.shared.hasSeenIntro ? .picker : .intro)
+        _phase = State(initialValue: showsIntro ? .intro : .picker)
+        _openedFromIntro = State(initialValue: showsIntro)
     }
 
     var body: some View {
@@ -35,10 +38,13 @@ struct ProcessActivityStatusSheet: View {
             switch phase {
             case .intro:
                 introContent
+                    .transition(.opacity)
             case .picker:
                 pickerContent
+                    .transition(.opacity)
             }
         }
+        .animation(.spring(response: 0.45, dampingFraction: 0.86), value: phase)
         .processAppPageBackground()
         .processAppPresentationBackground()
         .presentationDetents([sheetDetent])
@@ -134,15 +140,22 @@ struct ProcessActivityStatusSheet: View {
             HStack(spacing: 12) {
                 Button {
                     HapticManager.shared.impact(.light)
-                    dismiss()
+                    if openedFromIntro {
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) {
+                            phase = .intro
+                        }
+                    } else {
+                        dismiss()
+                    }
                 } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .bold))
+                    Image(systemName: openedFromIntro ? "chevron.left" : "xmark")
+                        .font(.system(size: openedFromIntro ? 14 : 13, weight: .bold))
                         .foregroundStyle(theme.primaryText)
                         .frame(width: 34, height: 34)
                         .processGlassCircle(interactive: true)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(openedFromIntro ? "Retour" : "Fermer")
 
                 Spacer()
 
@@ -195,9 +208,10 @@ struct ProcessActivityStatusSheet: View {
 
     private func confirmIntroSelection() {
         HapticManager.shared.impact(.medium)
-        store.setStatus(draft, for: selectedDate)
         store.markIntroSeen()
-        dismiss()
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) {
+            phase = .picker
+        }
     }
 
     private func applySelection() {

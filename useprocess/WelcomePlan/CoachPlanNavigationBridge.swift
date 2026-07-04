@@ -18,6 +18,13 @@ final class CoachPlanNavigationBridge {
     var shouldOpenIntegration = false
     var pendingFaceScanHandoff: FaceScanCoachHandoff?
     var pendingMealHandoff: CoachMealHandoff?
+    /// Incrémenté à chaque demande d'ouverture coach avec payload en attente (handoff déjà ouvert inclus).
+    var coachNavigationNonce = 0
+
+    private func requestCoachNavigation() {
+        coachNavigationNonce += 1
+        shouldOpenCoach = true
+    }
 
     func openPlan() {
         shouldOpenPlan = true
@@ -38,15 +45,19 @@ final class CoachPlanNavigationBridge {
         shouldOpenCoach = true
     }
 
-    func openCoachAfterFaceScan(result: FaceScanResult) {
-        pendingFaceScanHandoff = FaceScanCoachHandoffBuilder.make(from: result)
-        shouldOpenCoach = true
+    func openCoachAfterFaceScan(handoff: FaceScanCoachHandoff) {
+        pendingFaceScanHandoff = handoff
+        requestCoachNavigation()
     }
 
     func consumePendingFaceScanHandoff() -> FaceScanCoachHandoff? {
         let handoff = pendingFaceScanHandoff
         pendingFaceScanHandoff = nil
         return handoff
+    }
+
+    var hasPendingFaceScanHandoff: Bool {
+        pendingFaceScanHandoff != nil
     }
 
     func openCoachForMeal(

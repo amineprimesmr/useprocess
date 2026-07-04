@@ -6,16 +6,21 @@
 import SwiftUI
 
 struct OnboardingProfileChatView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var onboardingViewModel: OnboardingViewModel
     @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var permissionsManager: PermissionsManager
+    @EnvironmentObject private var authManager: AuthenticationManager
+    @EnvironmentObject private var profileService: UnifiedProfileService
     var onComplete: () -> Void
 
     @State private var chatViewModel = OnboardingProfileChatViewModel()
     @State private var multiSelection: Set<String> = []
     @State private var isSportSearchActive = false
     @State private var revealedAnswerIDs: Set<String> = []
-    @State private var showFaceScan = false
+    @State private var isSigningIn = false
+    @State private var signInError: String?
+    @State private var faceScanScrollProxy: ScrollViewProxy?
 
     private let messageLineSpacing: CGFloat = 7
     private let horizontalPadding: CGFloat = 28
@@ -42,26 +47,14 @@ struct OnboardingProfileChatView: View {
                     .ignoresSafeArea()
                 }
 
-                VStack(alignment: .leading, spacing: layout.slotSpacing) {
-                    historySlot(height: layout.historySlotHeight)
-                    activeSlot(layout: layout)
-                    Spacer(minLength: 0)
-                }
-                .animation(OnboardingProfileChatDepthStyle.historySpring, value: chatViewModel.messages.count)
-                .padding(.horizontal, horizontalPadding)
-                .padding(.top, layout.contentTopPadding + OnboardingConstants.backOnlyContentTopInset)
-                .padding(.bottom, chatViewModel.showsContinueAfterAnalysis ? 110 : 36)
-                .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
-                .mask(topFadeMask)
-                .zIndex(1)
+                standardChatLayout(layout: layout)
+                    .zIndex(1)
 
                 if chatViewModel.showsContinueAfterAnalysis {
                     VStack(spacing: 10) {
-                        Text(HealthMedicalSources.disclaimer)
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundStyle(OnboardingTheme.mutedText.opacity(0.85))
+                        Text("Connecte-toi pour sauvegarder tes réponses et retrouver ton programme sur tous tes appareils.")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundStyle(OnboardingTheme.mutedText.opacity(0.9))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 8)
 
@@ -86,26 +79,27 @@ struct OnboardingProfileChatView: View {
                 isSportSearchActive = false
                 revealedAnswerIDs = []
             }
+            .onChange(of: chatViewModel.faceScanInlinePhase) { _, phase in
+                guard phase != .idle else { return }
+                scrollFaceScanFlow(to: phase)
+            }
+            .onChange(of: chatViewModel.inlineFaceScanResultsUnlocked) { _, unlocked in
+                guard unlocked else { return }
+                scrollFaceScanFlow(to: .results, preferContinueButton: true)
+            }
+            .onChange(of: chatViewModel.inlineFaceScanPhaseIndex) { _, _ in
+                guard chatViewModel.faceScanInlinePhase == .analyzing else { return }
+                scrollFaceScanFlow(to: .analyzing)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .fullScreenCover(isPresented: $showFaceScan) {
-            FaceScanCapturePrivacyGateView(
-                onBack: {
-                    showFaceScan = false
-                    chatViewModel.faceScanDidCancel()
-                },
-                onSkip: {
-                    showFaceScan = false
-                    chatViewModel.faceScanDidSkip()
-                },
-                onCapture: { payload, markers in
-                    showFaceScan = false
-                    chatViewModel.faceScanDidComplete(payload: payload, markers: markers)
-                }
-            )
-        }
-        .onChange(of: chatViewModel.shouldPresentFaceScan) { _, should in
-            if should { showFaceScan = true }
+        .alert("Connexion impossible", isPresented: Binding(
+            get: { signInError != nil },
+            set: { if !$0 { signInError = nil } }
+        )) {
+            Button("OK", role: .cancel) { signInError = nil }
+        } message: {
+            Text(signInError ?? "")
         }
         .task(id: onboardingViewModel.currentStep) {
             chatViewModel.bind(
@@ -118,12 +112,37 @@ struct OnboardingProfileChatView: View {
         }
     }
 
+    // MARK: - Layout modes
+
+    @ViewBuilder
+    private func standardChatLayout(layout: ChatLayoutMetrics) -> some View {
+        VStack(alignment: .leading, spacing: layout.slotSpacing) {
+            historySlot(
+                height: chatViewModel.showsInlineFaceScanFlow
+                    ? layout.compactHistorySlotHeight
+                    : layout.historySlotHeight
+            )
+            activeSlot(layout: layout, bottomPadding: chatViewModel.showsContinueAfterAnalysis ? 110 : 36)
+            Spacer(minLength: 0)
+        }
+        .animation(OnboardingProfileChatDepthStyle.historySpring, value: chatViewModel.messages.count)
+        .animation(OnboardingProfileChatDepthStyle.historySpring, value: chatViewModel.showsInlineFaceScanFlow)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.top, layout.contentTopPadding + OnboardingConstants.backOnlyContentTopInset)
+        .padding(.bottom, chatViewModel.showsContinueAfterAnalysis ? 110 : 36)
+        .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+        .mask(topFadeMask)
+    }
+
     // MARK: - Layout slots
 
     private struct ChatLayoutMetrics {
         let screenHeight: CGFloat
         let activeAnchorY: CGFloat
         let historySlotHeight: CGFloat
+        let compactHistorySlotHeight: CGFloat
         let slotSpacing: CGFloat
         let contentTopPadding: CGFloat
 
@@ -132,6 +151,7 @@ struct OnboardingProfileChatView: View {
             let chromeInset = OnboardingConstants.backOnlyContentTopInset
             activeAnchorY = screenHeight * 0.36
             historySlotHeight = screenHeight * 0.20
+            compactHistorySlotHeight = min(72, historySlotHeight * 0.42)
             slotSpacing = 8
             contentTopPadding = max(4, activeAnchorY - chromeInset - historySlotHeight - slotSpacing)
         }
@@ -144,6 +164,46 @@ struct OnboardingProfileChatView: View {
                 slotSpacing: slotSpacing,
                 bottomPadding: bottomPadding
             )
+        }
+
+        func faceScanActiveScrollMaxHeight(bottomPadding: CGFloat) -> CGFloat {
+            let chrome = contentTopPadding + OnboardingConstants.backOnlyContentTopInset + bottomPadding
+            return max(300, screenHeight - chrome - compactHistorySlotHeight - slotSpacing - 8)
+        }
+    }
+
+    private func scrollFaceScanFlow(
+        to phase: OnboardingProfileChatViewModel.FaceScanInlinePhase,
+        preferContinueButton: Bool = false,
+        proxy: ScrollViewProxy? = nil,
+        animated: Bool = true
+    ) {
+        let activeProxy = proxy ?? faceScanScrollProxy
+        guard let activeProxy else { return }
+
+        let target: String = {
+            if preferContinueButton { return FaceScanThreadAnchor.continueButton }
+            switch phase {
+            case .capturing: return FaceScanThreadAnchor.capturing
+            case .analyzing: return FaceScanThreadAnchor.analyzing
+            case .results: return FaceScanThreadAnchor.results
+            case .idle: return FaceScanThreadAnchor.idle
+            }
+        }()
+
+        let anchor: UnitPoint = (phase == .results || preferContinueButton) ? .bottom : .top
+
+        let scrollAction = {
+            activeProxy.scrollTo(target, anchor: anchor)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            scrollAction()
+            if phase == .results || preferContinueButton {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                    activeProxy.scrollTo(FaceScanThreadAnchor.bottom, anchor: .bottom)
+                }
+            }
         }
     }
 
@@ -161,26 +221,59 @@ struct OnboardingProfileChatView: View {
     }
 
     @ViewBuilder
-    private func activeSlot(layout: ChatLayoutMetrics) -> some View {
-        let bottomPadding: CGFloat = chatViewModel.showsContinueAfterAnalysis ? 110 : 36
+    private func activeSlot(layout: ChatLayoutMetrics, bottomPadding: CGFloat) -> some View {
+        let slotBody = activeSlotBody(layout: layout, bottomPadding: bottomPadding)
 
+        if chatViewModel.showsInlineFaceScanFlow {
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    slotBody
+                        .padding(.bottom, 28)
+                    Color.clear
+                        .frame(height: 1)
+                        .id(FaceScanThreadAnchor.bottom)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .frame(maxHeight: layout.faceScanActiveScrollMaxHeight(bottomPadding: bottomPadding))
+                .onAppear {
+                    faceScanScrollProxy = proxy
+                    scrollFaceScanFlow(
+                        to: chatViewModel.faceScanInlinePhase,
+                        proxy: proxy,
+                        animated: false
+                    )
+                }
+            }
+        } else {
+            slotBody
+        }
+    }
+
+    @ViewBuilder
+    private func activeSlotBody(layout: ChatLayoutMetrics, bottomPadding: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: OnboardingProfileChatDepthStyle.messageSpacing) {
             if let active = activeMessage {
                 depthMessageRow(active, distanceFromActive: 0)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            if chatViewModel.showsAnswerOptions,
-               let question = chatViewModel.currentQuestion {
+            if let question = chatViewModel.currentQuestion,
+               chatViewModel.showsAnswerOptions || chatViewModel.showsInlineFaceScanSection {
                 answerSection(
                     for: question,
                     maxScrollHeight: layout.answersScrollMaxHeight(bottomPadding: bottomPadding)
                 )
-                    .id("answers_\(question.id)")
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                     .task(id: answerRevealTaskID(for: question)) {
+                        guard question.id != "face_scan_offer" || chatViewModel.faceScanInlinePhase == .idle else { return }
                         await runAnswerReveal(for: question)
                     }
+            }
+
+            if chatViewModel.showsProgramCreationSection {
+                programCreationSection
+                    .id("plan_creation_progress")
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             if chatViewModel.showsAnalysisSection {
@@ -189,10 +282,16 @@ struct OnboardingProfileChatView: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
+        .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsProgramCreationSection)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnalysisSection)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
+        .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.faceScanInlinePhase)
+        .animation(.easeInOut(duration: 0.2), value: chatViewModel.programCreationProgress)
+        .animation(.easeInOut(duration: 0.2), value: chatViewModel.programCreationDisplayedPercentage)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisProgress)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisDisplayedPercentage)
+        .animation(.easeInOut(duration: 0.2), value: chatViewModel.inlineFaceScanProgress)
+        .animation(.easeInOut(duration: 0.2), value: chatViewModel.inlineFaceScanDisplayedPercentage)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .animation(nil, value: chatViewModel.messages.last?.text)
     }
@@ -353,6 +452,9 @@ struct OnboardingProfileChatView: View {
                 }
                 .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("continue"))
 
+            case .autoPlanCreation:
+                EmptyView()
+
             case .yesNo:
                 HStack(spacing: 12) {
                     chatChoiceButton(title: "Oui", emoji: nil, centered: true) {
@@ -413,7 +515,7 @@ struct OnboardingProfileChatView: View {
                         .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed(choice.id))
                     }
                 }
-                chatPrimaryButton("Valider", disabled: multiSelection.isEmpty) {
+                chatPrimaryButton("Valider", disabled: multiSelection.isEmpty, filled: true) {
                     let selection = multiSelection
                     multiSelection = []
                     await chatViewModel.submitMultiChoice(selection)
@@ -421,29 +523,32 @@ struct OnboardingProfileChatView: View {
                 .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("validate"))
 
             case .faceScanOffer:
-                VStack(alignment: .leading, spacing: 10) {
-                    chatPrimaryButton("Lancer le scan") {
+                OnboardingProfileChatInlineFaceScanSection(
+                    phase: chatViewModel.faceScanInlinePhase,
+                    analysisProgress: chatViewModel.inlineFaceScanProgress,
+                    analysisPhaseIndex: chatViewModel.inlineFaceScanPhaseIndex,
+                    analysisPhaseLabel: chatViewModel.inlineFaceScanPhaseLabel,
+                    analysisDisplayedPercentage: chatViewModel.inlineFaceScanDisplayedPercentage,
+                    analysisElapsedSeconds: chatViewModel.inlineFaceScanElapsedSeconds,
+                    scanResult: chatViewModel.inlineFaceScanResult,
+                    resultsUnlocked: chatViewModel.inlineFaceScanResultsUnlocked,
+                    isSubmitting: chatViewModel.isSubmittingAnswer,
+                    skipLabel: question.detailText,
+                    isScanRevealed: isAnswerRevealed("scan"),
+                    capturedPayload: chatViewModel.inlineFaceScanCapturedPayload,
+                    onLaunchScan: {
                         await chatViewModel.submitFaceScanNow()
+                    },
+                    onSkip: {
+                        await chatViewModel.submitFaceScanLater()
+                    },
+                    onCapture: { payload, markers in
+                        chatViewModel.faceScanCaptureCompleted(payload: payload, markers: markers)
+                    },
+                    onContinueResults: {
+                        chatViewModel.submitFaceScanResultsContinue()
                     }
-                    .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("scan"))
-
-                    if let detail = question.detailText {
-                        Button {
-                            guard !chatViewModel.isSubmittingAnswer else { return }
-                            HapticManager.shared.selection()
-                            Task { await chatViewModel.submitFaceScanLater() }
-                        } label: {
-                            Text(detail)
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundStyle(OnboardingTheme.mutedText.opacity(0.72))
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.top, 2)
-                        }
-                        .buttonStyle(.plain)
-                        .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("later_hint"))
-                    }
-                }
+                )
 
             case .answersAnalysis, .analysisProgress:
                 EmptyView()
@@ -451,6 +556,15 @@ struct OnboardingProfileChatView: View {
         }
         .padding(.top, 10)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnswerOptions)
+    }
+
+    private var programCreationSection: some View {
+        OnboardingProfileChatPlanCreationPanel(
+            progress: chatViewModel.programCreationProgress,
+            displayedPercentage: chatViewModel.programCreationDisplayedPercentage,
+            isVisible: chatViewModel.showsProgramCreationSection
+        )
+        .padding(.top, 10)
     }
 
     private var analysisSection: some View {
@@ -470,17 +584,56 @@ struct OnboardingProfileChatView: View {
 
     private var continueAfterAnalysisButton: some View {
         Button {
+            guard !isSigningIn else { return }
             HapticManager.shared.impact(.medium)
-            chatViewModel.submitContinueAfterAnalysis()
+            Task { await authenticateAndContinue() }
         } label: {
-            Text("Continuer")
-                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
-                .foregroundStyle(OnboardingTheme.actionButtonText)
+            HStack(spacing: 10) {
+                if isSigningIn {
+                    ProgressView()
+                        .tint(.black)
+                } else if AuthUser.current == nil {
+                    Image(systemName: "apple.logo")
+                        .font(.system(size: 20, weight: .semibold))
+                    Text("Continuer avec Apple")
+                        .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
+                } else {
+                    Text("Continuer")
+                        .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
+                }
+            }
+                .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
                 .contentShape(answerButtonShape)
         }
-        .processGlassButton(in: answerButtonShape)
+        .onboardingPrimaryActionStyle()
+        .disabled(isSigningIn)
+        .opacity(isSigningIn ? 0.72 : 1)
+    }
+
+    @MainActor
+    private func authenticateAndContinue() async {
+        guard !isSigningIn else { return }
+        isSigningIn = true
+        signInError = nil
+        chatViewModel.prepareAnswersForAuthentication()
+        onboardingViewModel.saveProgress()
+
+        do {
+            try await OnboardingAppleAuth.authenticateAndMigrate(
+                authManager: authManager,
+                profileService: profileService,
+                viewModel: onboardingViewModel
+            )
+            HapticManager.shared.notification(.success)
+            isSigningIn = false
+            chatViewModel.submitContinueAfterAnalysis()
+        } catch {
+            HapticManager.shared.notification(.error)
+            signInError = error.localizedDescription
+            isSigningIn = false
+        }
     }
 
     private func chatChoiceButton(
@@ -561,6 +714,7 @@ struct OnboardingProfileChatView: View {
     private func chatPrimaryButton(
         _ title: String,
         disabled: Bool = false,
+        filled: Bool = false,
         action: @escaping () async -> Void
     ) -> some View {
         let isDisabled = disabled || chatViewModel.isSubmittingAnswer
@@ -572,14 +726,33 @@ struct OnboardingProfileChatView: View {
         } label: {
             Text(title)
                 .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
-                .foregroundStyle(isDisabled ? OnboardingTheme.mutedText : OnboardingTheme.actionButtonText)
+                .foregroundStyle(
+                    isDisabled
+                        ? OnboardingTheme.mutedText
+                        : (filled
+                            ? OnboardingTheme.onboardingPrimaryActionText(for: colorScheme)
+                            : OnboardingTheme.actionButtonText)
+                )
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
                 .contentShape(answerButtonShape)
         }
-        .processGlassButton(in: answerButtonShape)
+        .modifier(ChatPrimaryButtonStyleModifier(filled: filled, shape: answerButtonShape))
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.55 : 1)
         .padding(.top, 4)
+    }
+}
+
+private struct ChatPrimaryButtonStyleModifier<S: InsettableShape>: ViewModifier {
+    let filled: Bool
+    let shape: S
+
+    func body(content: Content) -> some View {
+        if filled {
+            content.onboardingPrimaryActionStyle()
+        } else {
+            content.processGlassButton(in: shape)
+        }
     }
 }

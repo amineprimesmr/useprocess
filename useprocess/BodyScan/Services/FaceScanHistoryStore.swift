@@ -12,6 +12,7 @@ final class FaceScanHistoryStore {
     private var didImportOnboarding = false
     private var didLoadLocal = false
     private var remoteSyncTask: Task<Void, Never>?
+    private var persistenceGeneration: UInt64 = 0
 
     private var latestKey: String {
         UserScopedStorage.key("facescan.latest", userId: userId)
@@ -90,6 +91,12 @@ final class FaceScanHistoryStore {
                 if !merged.aiEnhanced, existing.aiEnhanced {
                     merged.claudeAnalysis = existing.claudeAnalysis
                     merged.aiEnhanced = true
+                }
+                if merged.coachInsightMessage == nil {
+                    merged.coachInsightMessage = existing.coachInsightMessage
+                }
+                if merged.coachInsightModel == nil {
+                    merged.coachInsightModel = existing.coachInsightModel
                 }
                 byId[item.id] = FaceScanImageStore.reconcileMediaMetadata(for: merged)
             } else {
@@ -172,11 +179,31 @@ final class FaceScanHistoryStore {
     }
 
     private func persist() {
-        if let latest = latestResult, let data = try? JSONEncoder().encode(latest) {
-            UserDefaults.standard.set(data, forKey: latestKey)
-        }
-        if let data = try? JSONEncoder().encode(history) {
-            UserDefaults.standard.set(data, forKey: historyKey)
+        let latest = latestResult
+        let historySnapshot = history
+        let latestStorageKey = latestKey
+        let historyStorageKey = historyKey
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+
+        Task.detached(priority: .utility) {
+            if let latest {
+                await ProcessPersistenceWriter.shared.store(
+                    latest,
+                    forKey: latestStorageKey,
+                    generation: generation
+                )
+            } else {
+                await ProcessPersistenceWriter.shared.removeValue(
+                    forKey: latestStorageKey,
+                    generation: generation
+                )
+            }
+            await ProcessPersistenceWriter.shared.store(
+                historySnapshot,
+                forKey: historyStorageKey,
+                generation: generation
+            )
         }
     }
 
@@ -189,7 +216,9 @@ final class FaceScanHistoryStore {
                     .sorted { $0.createdAt > $1.createdAt }
             )
             latestResult = history.first
-            persist()
+            if history != items {
+                persist()
+            }
             return
         }
         if let data = UserDefaults.standard.data(forKey: latestKey),
@@ -205,8 +234,22 @@ final class FaceScanHistoryStore {
 
     func clearForUser(userId: String?) {
         if let userId {
-            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.latest", userId: userId))
-            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.history", userId: userId))
+            let latestStorageKey = UserScopedStorage.key("facescan.latest", userId: userId)
+            let historyStorageKey = UserScopedStorage.key("facescan.history", userId: userId)
+            UserDefaults.standard.removeObject(forKey: latestStorageKey)
+            UserDefaults.standard.removeObject(forKey: historyStorageKey)
+            persistenceGeneration &+= 1
+            let generation = persistenceGeneration
+            Task.detached(priority: .utility) {
+                await ProcessPersistenceWriter.shared.removeValue(
+                    forKey: latestStorageKey,
+                    generation: generation
+                )
+                await ProcessPersistenceWriter.shared.removeValue(
+                    forKey: historyStorageKey,
+                    generation: generation
+                )
+            }
         }
         remoteSyncTask?.cancel()
         remoteSyncTask = nil

@@ -14,12 +14,14 @@ struct CustomSideMenu<MenuContent: View, Content: View>: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
-            menuContent(progress)
-                .frame(width: sideBarWidth, alignment: .leading)
-                .frame(maxHeight: .infinity, alignment: .top)
-                .clipped()
-                .opacity(progress)
-                .scaleEffect(0.95 + (0.05 * progress), anchor: .leading)
+            if progress > 0.001 || isExpanded {
+                menuContent(progress)
+                    .frame(width: sideBarWidth, alignment: .leading)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .clipped()
+                    .opacity(progress)
+                    .scaleEffect(0.95 + (0.05 * progress), anchor: .leading)
+            }
 
             content(progress)
                 .containerRelativeFrame(.horizontal)

@@ -6,9 +6,9 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct IdealWeightStepView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var profileService: UnifiedProfileService
 
@@ -50,6 +50,13 @@ struct IdealWeightStepView: View {
             return ""
         }
         return weightString
+    }
+
+    private var numericFieldWidth: CGFloat {
+        let sample = displayWeightString.isEmpty ? "0" : displayWeightString
+        let font = UIFont.systemFont(ofSize: 56, weight: .bold)
+        let measured = (sample as NSString).size(withAttributes: [.font: font]).width
+        return ceil(max(42, measured + 10))
     }
 
     private var isValidWeight: Bool {
@@ -99,13 +106,15 @@ struct IdealWeightStepView: View {
                     convertWeight()
                 }
 
-                ZStack {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     TextField("", text: $weightString)
                         .font(.system(size: 56, weight: .bold))
-                        .foregroundColor(.clear)
+                        .foregroundStyle(OnboardingTheme.primaryText)
+                        .tint(OnboardingTheme.primaryText)
                         .multilineTextAlignment(.center)
                         .keyboardType(.decimalPad)
                         .textFieldStyle(PlainTextFieldStyle())
+                        .frame(width: numericFieldWidth)
                         .focused($isTextFieldFocused)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
@@ -113,20 +122,11 @@ struct IdealWeightStepView: View {
                             handleContinue()
                         }
 
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(displayWeightString)
-                            .font(.system(size: 56, weight: .bold))
-                            .foregroundStyle(OnboardingTheme.primaryText)
-                            .onboardingValueGlow(colorScheme: colorScheme)
-                            .contentTransition(.numericText())
-                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: weightString)
-
-                        Text(unit == .kg ? "kg" : "lbs")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(OnboardingTheme.bodyText)
-                    }
-                    .allowsHitTesting(false)
+                    Text(unit == .kg ? "kg" : "lbs")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(OnboardingTheme.bodyText)
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 40)
                 .onTapGesture {
                     isTextFieldFocused = true

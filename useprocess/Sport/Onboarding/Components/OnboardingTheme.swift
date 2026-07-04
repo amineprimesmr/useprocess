@@ -69,6 +69,10 @@ enum OnboardingTheme {
         colorScheme == .dark ? .black : .white
     }
 
+    static func onboardingPrimaryActionText(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .light ? .white : .primary
+    }
+
     static func filledButtonBackground(for colorScheme: ColorScheme) -> Color {
         colorScheme == .dark ? .white : .black
     }

@@ -18,8 +18,6 @@ struct useprocessApp: App {
         ProcessAudioSession.configureForMixingWithOthers()
         FirebaseBootstrap.configure()
         ProcessMetricKitMonitor.shared.start()
-        CoachIntelligenceNotificationService.configure()
-        SubscriptionService.shared.configure()
     }
 
     var body: some Scene {
@@ -30,6 +28,9 @@ struct useprocessApp: App {
                     await FaceScanReminderService.scheduleNextReminder(
                         after: FaceScanHistoryStore.shared.latestResult?.createdAt
                     )
+                    try? await Task.sleep(for: .milliseconds(350))
+                    CoachIntelligenceNotificationService.configure()
+                    SubscriptionService.shared.configure()
                 }
                 .onAppear {
                     AppIntegrations.shared.refresh()

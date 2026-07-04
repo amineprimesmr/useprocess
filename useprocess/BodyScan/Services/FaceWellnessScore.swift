@@ -105,8 +105,8 @@ enum FaceWellnessScore {
     private static func puffinessDescriptor(_ value: Int) -> String? {
         switch value {
         case 78...: return "Très gonflé"
-        case 62..<78: return "Gonflé"
-        case 50..<62: return "Léger gonflement"
+        case 62..<78: return "Nettement gonflé"
+        case 50..<62: return "Gonflement modéré"
         default: return nil
         }
     }

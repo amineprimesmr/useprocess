@@ -45,7 +45,7 @@ class OnboardingNavigationEngine {
         defer { stepForNavigation = nil }
 
         var path: [Int] = []
-        var step = OnboardingStep.videoIntroduction.rawValue
+        var step = OnboardingStep.genderSelection.rawValue
         var visited = Set<Int>()
 
         for _ in 0..<100 {
@@ -156,7 +156,7 @@ class OnboardingNavigationEngine {
         // Flow initial inversé
         switch current {
         case .genderSelection:
-            return OnboardingStep.videoIntroduction.rawValue
+            return nil
         case .ageSelection:
             return OnboardingStep.genderSelection.rawValue
         case .height:
@@ -204,7 +204,7 @@ class OnboardingNavigationEngine {
             .map(\.rawValue)
         guard let currentIndex = orderedSteps.firstIndex(of: viewModel.currentStep),
               currentIndex > 0 else {
-            return OnboardingStep.videoIntroduction.rawValue
+            return nil
         }
         return orderedSteps[currentIndex - 1]
     }

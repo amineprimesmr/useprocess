@@ -45,12 +45,7 @@ struct SubscriptionTrialInfo: Equatable {
         annualMonthlyEquivalent: String
     ) -> String {
         switch plan {
-        case .monthly:
-            return "Annulable à tout moment."
-        case .annual:
-            if isActiveOffer {
-                return "\(days) jours d'essai gratuits"
-            }
+        case .monthly, .annual:
             return ""
         }
     }

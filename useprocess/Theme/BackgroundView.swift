@@ -305,13 +305,13 @@ extension View {
         .processClearUIKitHostingBackground()
     }
 
-    /// Sheets / covers — dégradé clair identique à l’accueil.
+    /// Les pages présentées dessinent déjà leur propre fond avec
+    /// `processAppPageBackground`. La surface UIKit reste transparente pour
+    /// éviter de rasteriser une seconde copie plein écran du dégradé.
     @ViewBuilder
     func processAppPresentationBackground() -> some View {
         if #available(iOS 16.4, *) {
-            presentationBackground {
-                ProcessScreenBackground()
-            }
+            presentationBackground(.clear)
         } else {
             self
         }

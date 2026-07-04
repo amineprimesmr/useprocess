@@ -92,6 +92,10 @@ class OnboardingViewModel: ObservableObject {
     
     // MARK: - Referral
     @Published var referralCode: String? = nil // Code de parrainage utilisé à l'inscription
+    @Published var completedProfileChatQuestionIDs: Set<String> = []
+    @Published var onboardingPrimaryFocus: OnboardingPrimaryFocus?
+    @Published var onboardingDebloatDrivers: Set<OnboardingDebloatDriver> = []
+    @Published var onboardingRoutineChallenges: Set<OnboardingRoutineChallenge> = []
     
     // MARK: - Initialization
     
@@ -118,25 +122,32 @@ class OnboardingViewModel: ObservableObject {
                 visitedSteps = [savedStep]
             }
         } else {
+            currentStep = OnboardingStep.genderSelection.rawValue
             if !savedVisitedSteps.isEmpty {
                 visitedSteps = savedVisitedSteps.filter {
                     guard let step = OnboardingStep(rawValue: $0) else { return false }
                     return !step.isTransientSkippedStep
                 }
+                if visitedSteps.isEmpty {
+                    visitedSteps = [OnboardingStep.genderSelection.rawValue]
+                }
             } else {
-                visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
+                visitedSteps = [OnboardingStep.genderSelection.rawValue]
             }
         }
 
+        let shouldRestoreFaceScan = isFaceAnalysisCompleted
+            || hasReachedFaceScanStep(
+                savedStep: OnboardingProgressService.shared.loadCurrentStep(),
+                visited: OnboardingProgressService.shared.loadVisitedSteps()
+            )
         if let payload = OnboardingFaceMarkersStore.loadPayload(),
-           hasReachedFaceScanStep(savedStep: OnboardingProgressService.shared.loadCurrentStep(),
-                                 visited: OnboardingProgressService.shared.loadVisitedSteps()) {
+           shouldRestoreFaceScan {
             onboardingFaceMarkers = payload.markers
             onboardingFaceMesh = payload.mesh.isValid ? payload.mesh : nil
             isFaceAnalysisCompleted = true
         } else if let markers = OnboardingFaceMarkersStore.load(),
-                  hasReachedFaceScanStep(savedStep: OnboardingProgressService.shared.loadCurrentStep(),
-                                       visited: OnboardingProgressService.shared.loadVisitedSteps()) {
+                  shouldRestoreFaceScan {
             onboardingFaceMarkers = markers
             onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
             isFaceAnalysisCompleted = true
@@ -429,6 +440,7 @@ class OnboardingViewModel: ObservableObject {
             hasWeightGoal: hasWeightGoal,
             selectedPrimaryGoals: selectedPrimaryGoals.sorted { $0.rawValue < $1.rawValue },
             selectedWeightGoal: selectedWeightGoal,
+            goalDeadline: goalDeadline,
             selectedGoalPace: selectedGoalPace,
             hasSportActivity: hasSportActivity,
             isInClub: isInClub,
@@ -439,10 +451,16 @@ class OnboardingViewModel: ObservableObject {
             selectedSessionDuration: selectedSessionDuration,
             selectedTrainingLocation: selectedTrainingLocation,
             selectedEquipment: selectedEquipment.sorted { $0.rawValue < $1.rawValue },
+            selectedSports: OnboardingDataModel.shared.selectedSports.sorted(),
             nutritionProfile: nutritionProfile,
             hasDietaryRestrictions: hasDietaryRestrictions,
             otherDietaryRestriction: otherDietaryRestriction,
             sleepProfile: sleepProfile,
+            referralCode: referralCode,
+            completedProfileChatQuestionIDs: completedProfileChatQuestionIDs.sorted(),
+            onboardingPrimaryFocus: onboardingPrimaryFocus,
+            onboardingDebloatDrivers: onboardingDebloatDrivers.sorted { $0.rawValue < $1.rawValue },
+            onboardingRoutineChallenges: onboardingRoutineChallenges.sorted { $0.rawValue < $1.rawValue },
             isGenderSelected: isGenderSelected,
             isAgeSelected: isAgeSelected,
             isHeightWeightSelected: isHeightWeightSelected,
@@ -451,9 +469,26 @@ class OnboardingViewModel: ObservableObject {
             isWeightGoalSelected: isWeightGoalSelected,
             isIdealWeightEntered: isIdealWeightEntered,
             isSportsSelected: isSportsSelected,
+            isExperienceLevelSelected: isExperienceLevelSelected,
+            isTrainingFrequencySelected: isTrainingFrequencySelected,
+            isDeadlineSelected: isDeadlineSelected,
             isGoalPaceSelected: isGoalPaceSelected,
             isNutritionQualitySelected: isNutritionQualitySelected,
+            isHasDietaryRestrictionsSelected: isHasDietaryRestrictionsSelected,
+            isWhichRestrictionsSelected: isWhichRestrictionsSelected,
+            isNutritionObstaclesSelected: isNutritionObstaclesSelected,
             isWeightManagementExperienceSelected: isWeightManagementExperienceSelected,
+            isHasSufficientHydrationSelected: isHasSufficientHydrationSelected,
+            isHydrationLevelSelected: isHydrationLevelSelected,
+            isSleepQualitySelected: isSleepQualitySelected,
+            isFatigueFrequencySelected: isFatigueFrequencySelected,
+            isFatiguePeaksSelected: isFatiguePeaksSelected,
+            isPersonalizedWelcomeCompleted: isPersonalizedWelcomeCompleted,
+            isWeightMotivationCompleted: isWeightMotivationCompleted,
+            isWeightEstimationCompleted: isWeightEstimationCompleted,
+            isGoalProjectionCompleted: isGoalProjectionCompleted,
+            isFaceAnalysisCompleted: isFaceAnalysisCompleted,
+            isProgramCreationCompleted: isProgramCreationCompleted,
             hasDoneFirstGoalPace: hasDoneFirstGoalPace
         )
     }
@@ -486,6 +521,9 @@ class OnboardingViewModel: ObservableObject {
         if let value = snapshot.selectedWeightGoal {
             selectedWeightGoal = value
         }
+        if let value = snapshot.goalDeadline {
+            goalDeadline = value
+        }
         if let value = snapshot.selectedGoalPace {
             selectedGoalPace = value
         }
@@ -516,6 +554,9 @@ class OnboardingViewModel: ObservableObject {
         if let equipment = snapshot.selectedEquipment {
             selectedEquipment = Set(equipment)
         }
+        if let sports = snapshot.selectedSports {
+            OnboardingDataModel.shared.selectedSports = Set(sports)
+        }
         if let value = snapshot.nutritionProfile {
             nutritionProfile = value
         }
@@ -528,6 +569,23 @@ class OnboardingViewModel: ObservableObject {
         if let value = snapshot.sleepProfile {
             sleepProfile = value
         }
+        if let value = snapshot.referralCode {
+            referralCode = value
+        }
+        if let ids = snapshot.completedProfileChatQuestionIDs {
+            completedProfileChatQuestionIDs = Set(ids)
+        }
+        if let value = snapshot.onboardingPrimaryFocus {
+            onboardingPrimaryFocus = value
+        }
+        if let values = snapshot.onboardingDebloatDrivers {
+            onboardingDebloatDrivers = Set(values)
+        } else if let value = snapshot.onboardingDebloatDriver {
+            onboardingDebloatDrivers = [value]
+        }
+        if let values = snapshot.onboardingRoutineChallenges {
+            onboardingRoutineChallenges = Set(values)
+        }
 
         if let value = snapshot.isGenderSelected { isGenderSelected = value }
         if let value = snapshot.isAgeSelected { isAgeSelected = value }
@@ -537,13 +595,47 @@ class OnboardingViewModel: ObservableObject {
         if let value = snapshot.isWeightGoalSelected { isWeightGoalSelected = value }
         if let value = snapshot.isIdealWeightEntered { isIdealWeightEntered = value }
         if let value = snapshot.isSportsSelected { isSportsSelected = value }
+        if let value = snapshot.isExperienceLevelSelected { isExperienceLevelSelected = value }
+        if let value = snapshot.isTrainingFrequencySelected { isTrainingFrequencySelected = value }
+        if let value = snapshot.isDeadlineSelected { isDeadlineSelected = value }
         if let value = snapshot.isGoalPaceSelected { isGoalPaceSelected = value }
         isNutritionQualitySelected = nutritionProfile.nutritionQuality != nil
             || (snapshot.isNutritionQualitySelected ?? false)
+        if let value = snapshot.isHasDietaryRestrictionsSelected {
+            isHasDietaryRestrictionsSelected = value
+        }
+        if let value = snapshot.isWhichRestrictionsSelected { isWhichRestrictionsSelected = value }
+        if let value = snapshot.isNutritionObstaclesSelected { isNutritionObstaclesSelected = value }
         if let value = snapshot.isWeightManagementExperienceSelected {
             isWeightManagementExperienceSelected = value
         }
+        if let value = snapshot.isHasSufficientHydrationSelected {
+            isHasSufficientHydrationSelected = value
+        }
+        if let value = snapshot.isHydrationLevelSelected { isHydrationLevelSelected = value }
+        if let value = snapshot.isSleepQualitySelected { isSleepQualitySelected = value }
+        if let value = snapshot.isFatigueFrequencySelected { isFatigueFrequencySelected = value }
+        if let value = snapshot.isFatiguePeaksSelected { isFatiguePeaksSelected = value }
+        if let value = snapshot.isPersonalizedWelcomeCompleted {
+            isPersonalizedWelcomeCompleted = value
+        }
+        if let value = snapshot.isWeightMotivationCompleted {
+            isWeightMotivationCompleted = value
+        }
+        if let value = snapshot.isWeightEstimationCompleted {
+            isWeightEstimationCompleted = value
+        }
+        if let value = snapshot.isGoalProjectionCompleted { isGoalProjectionCompleted = value }
+        if let value = snapshot.isFaceAnalysisCompleted {
+            isFaceAnalysisCompleted = value
+        }
+        if let value = snapshot.isProgramCreationCompleted { isProgramCreationCompleted = value }
         if let value = snapshot.hasDoneFirstGoalPace { hasDoneFirstGoalPace = value }
+    }
+
+    func markProfileChatQuestionCompleted(_ questionID: String) {
+        completedProfileChatQuestionIDs.insert(questionID)
+        saveProgress()
     }
 
     private func hasReachedFaceScanStep(savedStep: Int, visited: [Int]) -> Bool {

@@ -74,16 +74,58 @@ enum ProcessDebloatMealLibrary {
     }
 
     struct CatalogSection: Identifiable, Equatable {
+        let sectionKey: String
         let slot: MealTimeSlot
         let title: String
         let meals: [MealSuggestionContent]
-        var id: String { slot.rawValue }
+        var id: String { sectionKey }
     }
 
-    /// Sections catalogue debloat — filtrées par type de plan (3 repas, 2MAD, OMAD).
+    /// Catalogue complet — toutes les sections, indépendamment du plan (OMAD, 2MAD, etc.).
+    static func fullCatalogSections() -> [CatalogSection] {
+        [
+            CatalogSection(sectionKey: "breakfast", slot: .breakfast, title: "Petit-déjeuner", meals: breakfastMeals),
+            CatalogSection(sectionKey: "lunch", slot: .lunch, title: "Déjeuner", meals: lunchMeals),
+            CatalogSection(sectionKey: "dinner", slot: .dinner, title: "Dîner", meals: dinnerMeals),
+            CatalogSection(sectionKey: "omad", slot: .lunch, title: "Repas OMAD", meals: omadMeals),
+            CatalogSection(sectionKey: "snack", slot: .snack, title: "Collation", meals: snackMeals)
+        ]
+        .filter { !$0.meals.isEmpty }
+    }
+
+    /// Toutes les propositions d'un créneau — pour swiper dans le détail repas.
+    static func catalogMeals(for slot: MealTimeSlot) -> [MealSuggestionContent] {
+        switch slot {
+        case .breakfast: return breakfastMeals
+        case .lunch: return lunchMeals + omadMeals
+        case .dinner: return dinnerMeals
+        case .snack: return snackMeals
+        }
+    }
+
+    static func fullCatalogMealCount() -> Int {
+        fullCatalogSections().reduce(0) { $0 + $1.meals.count }
+    }
+
+    static func fullCatalogPreviewImageAssets(limit: Int = 3) -> [String] {
+        var assets: [String] = []
+        for section in fullCatalogSections() {
+            for meal in section.meals {
+                let asset = meal.imageAssetName ?? featuredImageAsset
+                if !assets.contains(asset) {
+                    assets.append(asset)
+                }
+                if assets.count >= limit { return assets }
+            }
+        }
+        return assets
+    }
+
+    /// Sections catalogue debloat — filtrées par type de plan (carousel du jour).
     static func catalogSections(for planType: NutritionPlanType) -> [CatalogSection] {
         planType.slots.map { slot in
             CatalogSection(
+                sectionKey: slot.rawValue,
                 slot: slot,
                 title: catalogSectionTitle(for: slot, planType: planType),
                 meals: mealsInPool(for: slot, planType: planType)
@@ -118,14 +160,9 @@ enum ProcessDebloatMealLibrary {
         return slot.rawValue
     }
 
-    /// Sections catalogue debloat — petit-déj, midi, dîner, collation (tous types de plan).
+    /// Sections catalogue debloat — petit-déj, midi, dîner, OMAD, collation.
     static func catalogSections() -> [CatalogSection] {
-        [
-            CatalogSection(slot: .breakfast, title: "Petit-déjeuner", meals: breakfastMeals),
-            CatalogSection(slot: .lunch, title: "Déjeuner", meals: lunchMeals),
-            CatalogSection(slot: .dinner, title: "Dîner", meals: dinnerMeals),
-            CatalogSection(slot: .snack, title: "Collation", meals: snackMeals)
-        ]
+        fullCatalogSections()
     }
 
     static func promptBlock(for slot: MealTimeSlot?, planType: NutritionPlanType) -> String {

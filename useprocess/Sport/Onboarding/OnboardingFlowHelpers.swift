@@ -45,7 +45,7 @@ func findLastValidOnboardingStepIndex(visitedSteps: [Int], viewModel: Onboarding
             return stepValue
         }
     }
-    return OnboardingStep.videoIntroduction.rawValue
+    return OnboardingStep.genderSelection.rawValue
 }
 
 // MARK: - Progression barre / lueur
@@ -204,7 +204,7 @@ func rebuildVisitedStepsPrefix(
         return [targetStep]
     }
 
-    return visiblePath.isEmpty ? [OnboardingStep.videoIntroduction.rawValue] : [visiblePath[0]]
+    return visiblePath.isEmpty ? [OnboardingStep.genderSelection.rawValue] : [visiblePath[0]]
 }
 
 /// Normalise la pile : étapes visibles uniquement, dernière = étape courante.

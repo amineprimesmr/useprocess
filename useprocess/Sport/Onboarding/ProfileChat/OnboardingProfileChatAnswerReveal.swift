@@ -14,6 +14,8 @@ enum OnboardingProfileChatAnswerReveal {
         switch question.kind {
         case .infoContinue:
             return ["continue"]
+        case .autoPlanCreation:
+            return []
         case .yesNo:
             return ["yes", "no"]
         case .singleChoice where question.id == "sport_pick":
@@ -23,7 +25,7 @@ enum OnboardingProfileChatAnswerReveal {
         case .multiChoice:
             return question.choices.map(\.id) + ["validate"]
         case .faceScanOffer:
-            return ["scan", "later_hint"]
+            return ["scan"]
         case .answersAnalysis, .analysisProgress:
             return ["analysis_progress", "analysis_detail"]
         }

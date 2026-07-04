@@ -16,7 +16,7 @@ struct PlanMealIdeasCatalogSheet: View {
 
     private var livePlan: FaceOriginPlan { store.plan ?? plan }
     private var sections: [ProcessDebloatMealLibrary.CatalogSection] {
-        ProcessDebloatMealLibrary.catalogSections(for: livePlan.nutritionPlanType)
+        ProcessDebloatMealLibrary.fullCatalogSections()
     }
 
     var body: some View {
@@ -64,7 +64,7 @@ struct PlanMealIdeasCatalogSheet: View {
                 .foregroundStyle(theme.primaryText)
 
             Text(
-                "Tous nos repas debloat — ingrédients et préparation pour chaque recette. " +
+                "Tous nos repas debloat — petit-déjeuner, déjeuner, dîner, OMAD et collations. " +
                 "Les suggestions du carousel changent chaque jour du protocole."
             )
             .font(.subheadline)

@@ -11,6 +11,7 @@ import SwiftUI
 import HealthKit
 
 struct HealthDataAnimationStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var healthManager: HealthManager
     @EnvironmentObject var dataManager: DataManager
     /// `internal` : utilisés par `HealthDataAnimationStepView+AnimationLogic`.
@@ -143,11 +144,11 @@ struct HealthDataAnimationStepView: View {
                 }) {
                     Text("Continuer")
                         .font(.system(size: 20, weight: .black))
-                        .foregroundStyle(OnboardingTheme.primaryText)
+                        .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
-                .glassStyle()
+                .onboardingPrimaryActionStyle()
                 .buttonBorderShape(.roundedRectangle(radius: 50))
                 .padding(.horizontal, 40)
                 .padding(.bottom, 40)

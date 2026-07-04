@@ -30,41 +30,33 @@ struct FirstNameInputStepView: View {
                 Spacer()
                     .frame(height: OnboardingConstants.titleToContentSpacing + 72)
 
-                ZStack {
-                    TextField("", text: $firstName)
-                        .font(.system(size: firstName.isEmpty ? 22 : 36, weight: .medium))
-                        .foregroundColor(.clear)
-                        .multilineTextAlignment(.center)
-                        .textFieldStyle(.plain)
-                        .focused($isTextFieldFocusedState)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled(true)
-                        .textContentType(.givenName)
-                        .onSubmit {
-                            let trimmed = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-                            guard !trimmed.isEmpty else { return }
+                TextField(
+                    "",
+                    text: $firstName,
+                    prompt: Text(OnboardingCopy.text("Comment devons-nous t'appeler ?", blank: "Saisie libre"))
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(OnboardingTheme.mutedText)
+                )
+                .font(.system(size: 36, weight: .medium))
+                .foregroundStyle(OnboardingTheme.primaryText)
+                .tint(OnboardingTheme.primaryText)
+                .multilineTextAlignment(.center)
+                .textFieldStyle(.plain)
+                .focused($isTextFieldFocusedState)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled(true)
+                .textContentType(.givenName)
+                .submitLabel(.continue)
+                .onSubmit {
+                    let trimmed = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
 
-                            HapticManager.shared.impact(.medium)
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                            onComplete?()
+                    HapticManager.shared.impact(.medium)
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    onComplete?()
 
-                            Task.detached(priority: .background) {
-                                await saveFirstNameAndContinue()
-                            }
-                        }
-
-                    if firstName.isEmpty {
-                        Text(OnboardingCopy.text("Comment devons-nous t'appeler ?", blank: "Saisie libre"))
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundStyle(OnboardingTheme.mutedText)
-                            .multilineTextAlignment(.center)
-                            .allowsHitTesting(false)
-                    } else {
-                        Text(firstName)
-                            .font(.system(size: 36, weight: .medium))
-                            .foregroundStyle(OnboardingTheme.primaryText)
-                            .multilineTextAlignment(.center)
-                            .allowsHitTesting(false)
+                    Task.detached(priority: .background) {
+                        await saveFirstNameAndContinue()
                     }
                 }
                 .padding(.horizontal, 40)

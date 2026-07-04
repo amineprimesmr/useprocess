@@ -7,6 +7,10 @@ struct FaceScanSessionView: View {
     var onComplete: (FaceScanResult) -> Void
     /// Passe directement au callback (coach handoff) sans écran résultat.
     var skipResultSheet: Bool = false
+    var onCancelCapture: (() -> Void)? = nil
+    var onSkipCapture: (() -> Void)? = nil
+    var showsMediaImport: Bool = true
+    var compactSkipAction: Bool = false
 
     @State private var phase: Phase = .capturing
 
@@ -19,7 +23,18 @@ struct FaceScanSessionView: View {
         Group {
             switch phase {
             case .capturing:
-                FaceScanCaptureScreen(onBack: onDismiss) { payload, markers in
+                FaceScanCaptureScreen(
+                    onBack: {
+                        if let onCancelCapture {
+                            onCancelCapture()
+                        } else {
+                            onDismiss()
+                        }
+                    },
+                    onSkip: onSkipCapture,
+                    showsMediaImport: showsMediaImport,
+                    compactSkipAction: compactSkipAction
+                ) { payload, markers in
                     withAnimation(.easeInOut(duration: 0.28)) {
                         phase = .analysis(payload, markers)
                     }

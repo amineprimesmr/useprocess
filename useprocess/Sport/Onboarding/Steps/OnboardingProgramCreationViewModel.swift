@@ -27,7 +27,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     @Published private(set) var progressPanelVisible = false
     @Published private(set) var progress: Double = 0
     @Published private(set) var displayedPercentage = 0
-    @Published private(set) var barProgresses: [Double] = [0, 0]
+    @Published private(set) var barProgresses: [Double] = [0, 0, 0]
     @Published var activePopup: OnboardingProgramCreationPopupModel?
     @Published private(set) var continueUnlocked = false
     @Published private(set) var detailMessage = ""
@@ -41,12 +41,12 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     private var permissionsManager: PermissionsManager?
     private var progressTask: Task<Void, Never>?
 
-    var progressBarLabels: [String] {
-        OnboardingAnalysisProgressConfig.progressBarLabels
+    private var phaseCount: Int {
+        OnboardingAnalysisProgressConfig.phases.count
     }
 
-    var showsSecondProgressBar: Bool {
-        barProgresses[0] >= 0.999
+    var progressBarLabels: [String] {
+        OnboardingAnalysisProgressConfig.progressBarLabels
     }
 
     var badgeStyle: OnboardingProgramCreationBadge.Style {
@@ -102,17 +102,16 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
                 await handleHealthKitPopupAnswer(answer)
             }
 
-            let phases = OnboardingAnalysisProgressConfig.phases
-            guard popupIndex < phases.count else { return }
+            guard popupIndex < phaseCount else { return }
 
-            let nextProgress = Double(popupIndex + 1) / Double(phases.count)
-            let percentagePerPhase = 100.0 / Double(phases.count)
+            let nextProgress = Double(popupIndex + 1) / Double(phaseCount)
+            let percentagePerPhase = 100.0 / Double(phaseCount)
             let nextPercentage = min(Int((Double(popupIndex + 1) * percentagePerPhase).rounded()), 100)
 
             withAnimation(.easeInOut(duration: 0.45)) {
                 progress = nextProgress
                 displayedPercentage = nextPercentage
-                syncBarProgresses(phaseIndex: popupIndex + 1, segmentProgress: 0, phasesCount: phases.count)
+                syncBarProgresses(phaseIndex: popupIndex, segmentProgress: 0, phasesCount: phaseCount)
             }
         }
     }
@@ -134,7 +133,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         phase = .running
         progress = 0
         displayedPercentage = 0
-        barProgresses = [0, 0]
+        barProgresses = Array(repeating: 0, count: phaseCount)
         progressPanelVisible = true
         isPaused = false
         activePopup = nil
@@ -157,21 +156,13 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
             for index in 0..<phases.count {
                 guard !Task.isCancelled else { return }
 
-                var segmentProgress = 0.0
-                while segmentProgress < 0.5 {
-                    try? await waitWhilePaused()
-                    guard !Task.isCancelled else { return }
-
-                    try? await Task.sleep(nanoseconds: tickInterval)
-                    segmentProgress += segmentStep
-                    applyProgress(phaseIndex: index, segmentProgress: segmentProgress, phasesCount: phases.count)
-                }
-
+                applyProgress(phaseIndex: index, segmentProgress: 0, phasesCount: phases.count)
                 await presentPopup(popups[index], phaseIndex: index)
 
                 try? await waitWhilePaused()
                 guard !Task.isCancelled else { return }
 
+                var segmentProgress = 0.0
                 while segmentProgress < 1.0 {
                     try? await waitWhilePaused()
                     guard !Task.isCancelled else { return }
@@ -186,7 +177,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
             HapticManager.shared.notification(.success)
             progress = 1
             displayedPercentage = 100
-            barProgresses = [1, 1]
+            barProgresses = Array(repeating: 1, count: phaseCount)
             phase = .complete
 
             try? await Task.sleep(nanoseconds: 600_000_000)
@@ -206,6 +197,12 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     }
 
     private func presentPopup(_ popup: OnboardingAnalysisProgressConfig.Popup, phaseIndex: Int) async {
+        if popup.kind == .healthKit, healthManager?.isAuthorized == true {
+            popupPhaseIndex = phaseIndex
+            onboardingViewModel?.healthKitGranted = true
+            return
+        }
+
         popupPhaseIndex = phaseIndex
         isPaused = true
 
@@ -231,7 +228,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         if phaseIndex == phasesCount - 1 && segmentProgress >= 1.0 {
             displayedPercentage = 100
             progress = 1
-            barProgresses = [1, 1]
+            barProgresses = Array(repeating: 1, count: phasesCount)
         } else {
             displayedPercentage = min(rawPercentage, 99)
             syncBarProgresses(phaseIndex: phaseIndex, segmentProgress: segmentProgress, phasesCount: phasesCount)
@@ -239,17 +236,14 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     }
 
     private func syncBarProgresses(phaseIndex: Int, segmentProgress: Double, phasesCount: Int) {
-        let firstPhaseEnd = 1.0 / Double(phasesCount)
-
-        if phaseIndex == 0 {
-            barProgresses = [min(1, segmentProgress), 0]
-            return
+        var bars = Array(repeating: 0.0, count: phasesCount)
+        for index in 0..<phaseIndex {
+            bars[index] = 1
         }
-
-        let bar1Span = 1.0 - firstPhaseEnd
-        let elapsedAfterFirst = (Double(phaseIndex) + segmentProgress) / Double(phasesCount) - firstPhaseEnd
-        let bar1 = min(1, max(0, elapsedAfterFirst / bar1Span))
-        barProgresses = [1, bar1]
+        if phaseIndex < phasesCount {
+            bars[phaseIndex] = min(1, segmentProgress)
+        }
+        barProgresses = bars
     }
 
     private func handleHealthKitPopupAnswer(_ answer: Bool) async {

@@ -23,6 +23,9 @@ final class ProcessMetricKitMonitor: NSObject, MXMetricManagerSubscriber {
 
     func didReceive(_ payloads: [MXMetricPayload]) {
         logger.info("MetricKit received \(payloads.count, privacy: .public) metric payload(s)")
+        if let payload = payloads.last {
+            persist(payload.jsonRepresentation(), filename: "latest-metrics.json")
+        }
     }
 
     func didReceive(_ payloads: [MXDiagnosticPayload]) {
@@ -32,5 +35,23 @@ final class ProcessMetricKitMonitor: NSObject, MXMetricManagerSubscriber {
         logger.error(
             "MetricKit received \(payloads.count, privacy: .public) diagnostic payload(s), \(crashCount, privacy: .public) crash(es)"
         )
+        if let payload = payloads.last {
+            persist(payload.jsonRepresentation(), filename: "latest-diagnostics.json")
+        }
+    }
+
+    private func persist(_ data: Data, filename: String) {
+        DispatchQueue.global(qos: .utility).async {
+            let directory = FileManager.default.urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            ).first?.appendingPathComponent("Performance", isDirectory: true)
+            guard let directory else { return }
+            try? FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true
+            )
+            try? data.write(to: directory.appendingPathComponent(filename), options: .atomic)
+        }
     }
 }

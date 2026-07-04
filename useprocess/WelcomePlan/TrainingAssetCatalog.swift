@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 /// Catalogue visuel entraînement Process — exercices, cardio, posture, routines (cartes carousel 9:16).
 enum TrainingAssetCatalog {
@@ -76,7 +76,6 @@ enum TrainingAssetCatalog {
 
     // MARK: - Résolution exercice
 
-    @MainActor
     static func exerciseAsset(for name: String) -> String? {
         let key = normalize(name)
         guard let asset = exerciseAssetMap.first(where: { key.contains($0.key) })?.value else {
@@ -119,7 +118,6 @@ enum TrainingAssetCatalog {
 
     // MARK: - Échauffement / cooldown / bloc posture
 
-    @MainActor
     static func blockAsset(for line: String) -> String? {
         let key = normalize(line)
         if key.contains("hiit") || key.contains("interval") || key.contains("assault") {
@@ -223,14 +221,12 @@ enum TrainingAssetCatalog {
         return nil
     }
 
-    @MainActor
     private static func assetIfAvailable(_ name: String) -> String? {
         assetExists(name) ? name : nil
     }
 
-    @MainActor
     private static func assetExists(_ name: String) -> Bool {
-        UIImage(named: name) != nil
+        ProcessAssetCatalog.contains(name)
     }
 
     private static func normalize(_ value: String) -> String {

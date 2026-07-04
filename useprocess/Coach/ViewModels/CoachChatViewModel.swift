@@ -30,8 +30,6 @@ final class CoachChatViewModel {
     /// Fil brouillon en mémoire — non enregistré dans l’historique tant qu’aucun message utilisateur.
     private var draftSessionId: UUID?
     private var didInitialLoad = false
-    /// Garde le brouillon vierge du lancement froid malgré le rebind profil qui arrive souvent juste après.
-    private var shouldKeepColdLaunchDraft = false
 
     var conversations: [CoachConversation] {
         libraryStore.sortedConversations
@@ -53,14 +51,17 @@ final class CoachChatViewModel {
     }
 
     var showsContextualHome: Bool {
-        !hasThreadContent
+        guard !CoachPlanNavigationBridge.shared.hasPendingFaceScanHandoff else { return false }
+        return !hasThreadContent
             && !isSending
             && !isComposingMessage
     }
 
     private var hasThreadContent: Bool {
         messages.contains { message in
-            message.role == .user || CoachEveningChecklistService.isEveningMessage(message)
+            message.role == .user
+                || CoachEveningChecklistService.isEveningMessage(message)
+                || FaceScanCoachInsightService.isCoachInsightMessage(message)
         }
     }
 
@@ -101,7 +102,6 @@ final class CoachChatViewModel {
         if didSwitchUser {
             didInitialLoad = false
             draftSessionId = nil
-            shouldKeepColdLaunchDraft = false
         }
     }
 
@@ -118,47 +118,26 @@ final class CoachChatViewModel {
         libraryStore.migrateLegacyThreadIfNeeded()
         libraryStore.purgeEmptyConversations()
 
-        if CoachAppLaunchSession.consumeColdLaunchFreshConversation() {
-            shouldKeepColdLaunchDraft = true
-            await beginDraftSession()
-            await consumePendingPlanPromptIfNeeded()
+        let bridge = CoachPlanNavigationBridge.shared
+
+        if bridge.hasPendingFaceScanHandoff {
+            await consumePendingNavigationIfNeeded()
             return
         }
 
-        if shouldKeepColdLaunchDraft && !messages.contains(where: { $0.role == .user }) {
-            await beginDraftSession()
-            await consumePendingPlanPromptIfNeeded()
-            return
-        }
-
-        if let activeId = libraryStore.activeConversationId,
-           let conversation = libraryStore.conversation(for: activeId),
-           conversation.hasUserMessages
-               || conversation.messages.contains(where: { CoachEveningChecklistService.isEveningMessage($0) }) {
+        // Notif / deeplink : ouvrir la conversation demandée.
+        if let conversationId = bridge.pendingConversationId,
+           libraryStore.conversation(for: conversationId) != nil {
             draftSessionId = nil
+            libraryStore.selectConversation(conversationId)
             await reloadActiveConversation()
-            await consumePendingPlanPromptIfNeeded()
+            await consumePendingNavigationIfNeeded()
             return
         }
 
-        if let eveningConversation = libraryStore.conversationWithEveningMessageToday() {
-            libraryStore.selectConversation(eveningConversation.id)
-            draftSessionId = nil
-            await reloadActiveConversation()
-            await consumePendingPlanPromptIfNeeded()
-            return
-        }
-
-        if let recent = libraryStore.mostRecentConversationWithUserMessages() {
-            libraryStore.selectConversation(recent.id)
-            draftSessionId = nil
-            await reloadActiveConversation()
-            await consumePendingPlanPromptIfNeeded()
-            return
-        }
-
+        // Ouverture normale : accueil vierge. L’historique reste dans la sidebar.
         await beginDraftSession()
-        await consumePendingPlanPromptIfNeeded()
+        await consumePendingNavigationIfNeeded()
     }
 
     func consumePendingPlanPromptIfNeeded() async {
@@ -185,7 +164,7 @@ final class CoachChatViewModel {
             return
         }
         if let handoff = CoachPlanNavigationBridge.shared.consumePendingFaceScanHandoff() {
-            await sendFaceScanHandoff(handoff)
+            await deliverCoachFirstFaceScanAnalysis(handoff)
             return
         }
         if let handoff = CoachPlanNavigationBridge.shared.consumePendingMealHandoff() {
@@ -200,23 +179,85 @@ final class CoachChatViewModel {
         await consumePendingPlanPromptIfNeeded()
     }
 
-    func sendFaceScanHandoff(_ handoff: FaceScanCoachHandoff) async {
-        guard let result = FaceScanHistoryStore.shared.history.first(where: { $0.id == handoff.resultId }) else {
-            await sendPrompt(handoff.analysisPrompt, userDisplayText: handoff.userMessageText, persistUserMessage: true)
-            return
+    func deliverCoachFirstFaceScanAnalysis(_ handoff: FaceScanCoachHandoff) async {
+        draftSessionId = nil
+        resetVoiceStateImmediately()
+        clearPendingAttachment()
+        pendingPlanPatches = [:]
+        isSending = false
+        streamingText = ""
+        errorMessage = nil
+        activeMealHandoff = nil
+
+        let reply = handoff.assistantMessage
+        let conversationId = libraryStore.createConversation()
+        libraryStore.selectConversation(conversationId)
+        libraryStore.updateActiveConversation { conversation in
+            conversation.applyAutoTitle(from: "Scan visage du jour")
+            conversation.messages = [reply]
         }
 
-        let images = FaceScanCoachHandoffBuilder.previewImages(for: result)
-        if images.isEmpty {
-            await sendPrompt(handoff.analysisPrompt, userDisplayText: handoff.userMessageText, persistUserMessage: true)
-            return
-        }
+        // État UI atomique — jamais d’accueil « Salut… » entre-temps.
+        messages = [reply]
+        homeActionsRevealed = true
+        homeInputUnlocked = false
+        completedHomePresentationKeys.insert(homePresentationKey())
 
-        await sendImageAttachments(
-            images,
-            caption: handoff.analysisPrompt,
-            userDisplayText: handoff.userMessageText
+        await persistPreGeneratedAssistantMessage(reply, conversationId: conversationId)
+    }
+
+    func sendFaceScanHandoff(for result: FaceScanResult, insight: FaceScanAIInsight? = nil) async {
+        let resolvedInsight = insight ?? FaceScanAIInsightBuilder.insight(
+            for: result,
+            context: FaceScanInsightContext.fromTodayHealth()
         )
+        let message = FaceScanCoachInsightService.immediateCoachMessage(
+            for: result,
+            insight: resolvedInsight
+        )
+
+        await deliverCoachFirstFaceScanAnalysis(
+            FaceScanCoachHandoff(resultId: result.id, assistantMessage: message)
+        )
+
+        Task {
+            _ = await FaceScanCoachInsightService.ensureCoachMessage(
+                for: result,
+                insight: resolvedInsight,
+                profile: profile
+            )
+        }
+    }
+
+    private func persistPreGeneratedAssistantMessage(_ reply: CoachMessage, conversationId: UUID) async {
+        guard libraryStore.activeConversationId == conversationId else { return }
+
+        let title = libraryStore.activeConversation?.title
+        await CoachSyncService.appendMessage(
+            reply,
+            userId: userId,
+            conversationId: conversationId,
+            title: title
+        )
+
+        let parsedReply = CoachResponseParser.parseFull(reply.text)
+        CoachPostReplyService.applySideEffects(
+            parsed: parsedReply,
+            userText: "",
+            rawAssistantText: reply.text
+        )
+        CoachMemoryStore.shared.recordExchange(
+            userText: "Scan visage du jour",
+            assistantText: reply.text,
+            conversationTitle: title
+        )
+        CoachMemoryStore.shared.refreshConversationDigests(
+            excludingActiveId: libraryStore.activeConversationId
+        )
+
+        Task {
+            await CoachMemorySummarizer.refreshIfNeeded(profile: profile)
+        }
     }
 
     func sendMealCoachPrompt(_ prompt: String, handoff: CoachMealHandoff) async {
@@ -238,13 +279,16 @@ final class CoachChatViewModel {
     }
 
     func enrichment(for message: CoachMessage) -> CoachMessageEnrichment? {
-        let resolvedActions = contextualActions(for: message)
+        let isFaceScanInsight = FaceScanCoachInsightService.isCoachInsightMessage(message)
+        let resolvedActions = isFaceScanInsight ? [] : contextualActions(for: message)
         let sanitizedFollowUps = CoachFollowUpSanitizer.sanitized(message.followUps ?? [])
-        let displayFollowUps = resolvedActions.isEmpty ? sanitizedFollowUps : []
+        let displayFollowUps = (resolvedActions.isEmpty && !isFaceScanInsight) ? sanitizedFollowUps : []
 
         if let base = message.enrichment {
             var deepLink = base.deepLink
-            if resolvedActions.contains(where: { $0.kind == .openPlan || $0.kind == .openJournal }) {
+            if isFaceScanInsight {
+                deepLink = nil
+            } else if resolvedActions.contains(where: { $0.kind == .openPlan || $0.kind == .openJournal }) {
                 deepLink = nil
             } else if let link = deepLink, link.action == .plan {
                 let userText = precedingUserText(for: message)
@@ -277,6 +321,9 @@ final class CoachChatViewModel {
     }
 
     func contextualActions(for message: CoachMessage) -> [CoachContextualAction] {
+        if FaceScanCoachInsightService.isCoachInsightMessage(message) {
+            return []
+        }
         let userText = precedingUserText(for: message)
         let meal = CoachMealMessageDetector.mealContent(from: message.text)
         return CoachContextualActionResolver.resolve(
@@ -345,7 +392,7 @@ final class CoachChatViewModel {
                 focus: patch.focus,
                 plan: &plan
             )
-            WelcomePlanStore.shared.savePlan(plan)
+            WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
             pendingPlanPatches.removeValue(forKey: message.id)
             lastActionFeedback = changes.isEmpty
                 ? "Programme mis à jour."
@@ -383,14 +430,12 @@ final class CoachChatViewModel {
 
     func selectConversation(_ id: UUID) async {
         guard id != libraryStore.activeConversationId else { return }
-        shouldKeepColdLaunchDraft = false
         draftSessionId = nil
         libraryStore.selectConversation(id)
         await reloadActiveConversation()
     }
 
     func createNewConversation() async {
-        shouldKeepColdLaunchDraft = false
         await beginDraftSession()
         onActiveConversationChanged()
     }
@@ -418,7 +463,6 @@ final class CoachChatViewModel {
 
         let draftId = draftSessionId ?? UUID()
         draftSessionId = nil
-        shouldKeepColdLaunchDraft = false
         let conversationId = libraryStore.promoteDraftConversation(id: draftId)
         return conversationId
     }
@@ -441,13 +485,8 @@ final class CoachChatViewModel {
         libraryStore.deleteConversation(id)
         libraryStore.purgeEmptyConversations()
 
-        if libraryStore.sortedConversations.isEmpty {
-            await beginDraftSession()
-            return
-        }
-
         if wasActive {
-            await reloadActiveConversation()
+            await beginDraftSession()
         }
     }
 
@@ -856,7 +895,7 @@ final class CoachChatViewModel {
                     focus: effectiveFocus,
                     plan: &plan
                 )
-                WelcomePlanStore.shared.savePlan(plan)
+                WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
             }
 
             if !planChanges.isEmpty {

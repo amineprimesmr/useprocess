@@ -10,7 +10,7 @@ struct ProfileStretchyHeroFrame<Content: View>: View {
 
     var body: some View {
         GeometryReader { geo in
-            let minY = geo.frame(in: .named("profileScroll")).minY
+            let minY = geo.frame(in: .named("processMainScroll")).minY
             let stretch = max(0, minY)
             let totalHeight = baseHeight + stretch
 
@@ -67,6 +67,35 @@ struct ProfileEmptyHeroSection: View {
 
 // MARK: - Cover hero (with photo)
 
+private struct ProfileHeroBottomLightGlow: View {
+    var height: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            RadialGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color.white.opacity(0.04),
+                    .clear
+                ],
+                center: UnitPoint(x: 0.5, y: 1.05),
+                startRadius: 0,
+                endRadius: height * 1.15
+            )
+
+            LinearGradient(
+                colors: [.clear, Color.white.opacity(0.05)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: height * 0.5)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .allowsHitTesting(false)
+    }
+}
+
 struct ProfileCoverPhotoSection: View {
     let image: UIImage
     let displayName: String
@@ -85,11 +114,15 @@ struct ProfileCoverPhotoSection: View {
                     .frame(height: totalHeight, alignment: .top)
                     .clipped()
                     .overlay {
-                        LinearGradient(
-                            colors: [.clear, .clear, .black.opacity(0.25), .black.opacity(0.68)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                        ZStack(alignment: .bottom) {
+                            LinearGradient(
+                                colors: [.clear, .clear, .black.opacity(0.25), .black.opacity(0.68)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+
+                            ProfileHeroBottomLightGlow(height: min(totalHeight * 0.26, 96))
+                        }
                         .allowsHitTesting(false)
                     }
 

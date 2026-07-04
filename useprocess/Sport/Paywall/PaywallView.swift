@@ -194,10 +194,11 @@ struct PaywallView: View {
 
     private var bottomSection: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 PaywallBevelPlanCard(
                     title: "Annuel",
                     primaryPrice: annualPrimaryPrice,
+                    compareAtPrice: SubscriptionConfiguration.annualCompareAtPrice,
                     secondaryPrice: annualSecondaryPrice,
                     isSelected: selectedBillingPlan == .annual,
                     savingsBadge: annualSavingsBadge
@@ -217,15 +218,20 @@ struct PaywallView: View {
 
             PaywallBevelContinueButton(
                 title: paywallContinueButtonTitle,
-                subtitle: selectedTrialInfo.isActiveOffer
-                    ? "Aucun paiement aujourd'hui, sans engagement."
-                    : nil,
                 isLoading: isPurchasing,
                 isEnabled: paywallContinueButtonEnabled
             ) {
                 Task { await purchaseSubscription() }
             }
             .padding(.top, -4)
+
+            if let paywallDisclaimerText {
+                Text(paywallDisclaimerText)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 2)
+            }
 
             if !subscriptionService.isLoading, !selectedPlanAvailableOnStore {
                 Text("Cette offre n'est pas encore disponible sur l'App Store. Réessayez dans quelques minutes.")
@@ -282,7 +288,7 @@ struct PaywallView: View {
     }
 
     private var annualSavingsBadge: String? {
-        "Économisez +50%"
+        "\(SubscriptionConfiguration.freeTrialDays) jours gratuits"
     }
 
     private var paywallContinueButtonTitle: String {
@@ -291,6 +297,17 @@ struct PaywallView: View {
 
     private var paywallContinueButtonEnabled: Bool {
         selectedPlanAvailableOnStore && !subscriptionService.isLoading && !isPurchasing
+    }
+
+    private var paywallDisclaimerText: String? {
+        switch selectedBillingPlan {
+        case .annual:
+            return selectedTrialInfo.isActiveOffer
+                ? "Aucun paiement aujourd'hui, sans engagement."
+                : nil
+        case .monthly:
+            return "Sans engagement, annulable à tout moment."
+        }
     }
 
     private func normalizePrice(_ raw: String) -> String {

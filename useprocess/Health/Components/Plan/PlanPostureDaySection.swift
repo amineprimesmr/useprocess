@@ -9,12 +9,12 @@ enum PlanPostureCircuitContent {
         return blocks.map(sanitizeLegacyHomeLine).filter { !shouldHideProtocolLine($0) }
     }
 
-    private static func shouldHideProtocolLine(_ line: String) -> Bool {
+    nonisolated private static func shouldHideProtocolLine(_ line: String) -> Bool {
         let lower = line.lowercased()
         return lower.contains("respiration nasale lente") && lower.contains("5 min")
     }
 
-    private static func sanitizeLegacyHomeLine(_ line: String) -> String {
+    nonisolated private static func sanitizeLegacyHomeLine(_ line: String) -> String {
         let lower = line.lowercased()
         if lower.contains("neck curl") && !lower.contains("vide") && !lower.contains("lit") && !lower.contains("canapé") {
             return "Neck curls — buste sur lit ou canapé, tête dans le vide, menton vers poitrine, 3×10–12"

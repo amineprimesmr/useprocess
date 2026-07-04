@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Page détail repas — ingrédients et préparation.
+/// Page détail repas — swipe latéral entre propositions du même créneau.
 struct PlanMealDetailView: View {
     let entry: PlanDayMealEntry
     let plan: FaceOriginPlan
@@ -10,60 +10,91 @@ struct PlanMealDetailView: View {
 
     @Environment(\.appTheme) private var theme
 
-    private var meal: MealSuggestionContent { entry.meal }
+    @State private var displayedMeal: MealSuggestionContent
+    @State private var assessment: MealDebloatAssessment
+    @State private var preparationPresentation: MealPreparationPresentation
+    @State private var draftSaveTask: Task<Void, Never>?
+    private let alternatives: [MealSuggestionContent]
 
-    private var assessment: MealDebloatAssessment {
-        MealNutritionCatalog.debloatAssessment(for: meal)
-    }
-    private var imageAsset: String {
-        MealNutritionCatalog.resolvedImageAsset(
-            for: meal,
-            slot: entry.slot,
-            dayIndex: day.globalDayIndex,
-            planType: plan.nutritionPlanType
-        )
-    }
-
-    private var preparationPresentation: MealPreparationPresentation {
-        MealPreparationStepsParser.presentation(
-            from: meal.prepSummary,
-            prepMinutes: meal.prepMinutes
+    init(
+        entry: PlanDayMealEntry,
+        plan: FaceOriginPlan,
+        day: OriginProgramDay,
+        isEditable: Bool = true,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.entry = entry
+        self.plan = plan
+        self.day = day
+        self.isEditable = isEditable
+        self.onDismiss = onDismiss
+        _displayedMeal = State(initialValue: entry.meal)
+        var pool = ProcessDebloatMealLibrary.catalogMeals(for: entry.slot)
+        if !pool.contains(where: { $0.name == entry.meal.name }) {
+            pool.insert(entry.meal, at: 0)
+        }
+        alternatives = pool
+        _assessment = State(initialValue: entry.assessment)
+        _preparationPresentation = State(
+            initialValue: MealPreparationStepsParser.presentation(
+                from: entry.meal.prepSummary,
+                prepMinutes: entry.meal.prepMinutes
+            )
         )
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 22) {
-                    mealHeroHeader
-
-                    Text(meal.name)
-                        .font(.system(size: 26, weight: .bold))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(theme.primaryText)
-                        .padding(.horizontal, 24)
-
-                    MealDebloatScoreDetailCard(assessment: assessment)
-
-                    if let scheduleTarget = entry.scheduleTargetLabel,
-                       let scheduleWindow = entry.scheduleWindowLabel {
-                        scheduleCard(target: scheduleTarget, window: scheduleWindow)
-                    }
-
-                    ingredientsSection
-
-                    if preparationPresentation.hasContent {
-                        preparationSection
-                    }
-
-                    if isEditable {
-                        shoppingListBar
-                    }
+            VStack(spacing: 0) {
+                if alternatives.count > 1 {
+                    PlanMealDetailAlternativesHero(
+                        alternatives: alternatives,
+                        slot: entry.slot,
+                        plan: plan,
+                        day: day,
+                        selectedMeal: $displayedMeal
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 6)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 22) {
+                        if alternatives.count == 1 {
+                            singleMealHeroHeader
+                        }
+
+                        Text(displayedMeal.name)
+                            .font(.system(size: 26, weight: .bold))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(theme.primaryText)
+                            .padding(.horizontal, 4)
+                            .id("meal-title-\(displayedMeal.name)")
+
+                        MealDebloatScoreDetailCard(assessment: assessment)
+                            .id("meal-score-\(displayedMeal.name)")
+
+                        if let scheduleTarget = entry.scheduleTargetLabel,
+                           let scheduleWindow = entry.scheduleWindowLabel {
+                            scheduleCard(target: scheduleTarget, window: scheduleWindow)
+                        }
+
+                        ingredientsSection
+
+                        if preparationPresentation.hasContent {
+                            preparationSection
+                        }
+
+                        if isEditable {
+                            shoppingListBar
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
+                }
+                .processTransparentScrollSurface()
             }
-            .processTransparentScrollSurface()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -71,18 +102,31 @@ struct PlanMealDetailView: View {
                 }
             }
             .onAppear {
+                ProcessPerformanceTrace.endMealOpen()
                 CoachPresentationTracker.shared.beginMealDetailPresentation()
             }
             .onDisappear {
+                draftSaveTask?.cancel()
+                persistDraftIfNeeded()
                 CoachPresentationTracker.shared.endMealDetailPresentation()
+            }
+            .onChange(of: displayedMeal.name) { _, _ in
+                refreshDerivedPresentation()
+                scheduleDraftPersistence()
             }
         }
         .processAppPageBackground()
-        .processAppPresentationBackground()
     }
 
-    private var mealHeroHeader: some View {
-        ZStack(alignment: .bottom) {
+    private var singleMealHeroHeader: some View {
+        let imageAsset = MealNutritionCatalog.resolvedImageAsset(
+            for: displayedMeal,
+            slot: entry.slot,
+            dayIndex: day.globalDayIndex,
+            planType: plan.nutritionPlanType
+        )
+
+        return ZStack(alignment: .bottom) {
             Group {
                 if ProcessAssetCatalog.contains(imageAsset) {
                     Image(imageAsset)
@@ -105,8 +149,8 @@ struct PlanMealDetailView: View {
                     .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
             }
 
-            MealDebloatScorePill(assessment: assessment)
-            .offset(y: 10)
+            MealDebloatScoreGlassPill(assessment: assessment)
+                .offset(y: 10)
         }
         .padding(.top, 8)
     }
@@ -118,7 +162,7 @@ struct PlanMealDetailView: View {
                 .foregroundStyle(theme.secondaryText)
 
             VStack(spacing: 8) {
-                ForEach(meal.items) { item in
+                ForEach(displayedMeal.items) { item in
                     ingredientRow(item)
                 }
             }
@@ -126,6 +170,7 @@ struct PlanMealDetailView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(mealSurfaceCard)
+        .id("meal-ingredients-\(displayedMeal.name)")
     }
 
     private func ingredientRow(_ item: MealSuggestionItem) -> some View {
@@ -189,12 +234,13 @@ struct PlanMealDetailView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(mealSurfaceCard)
+        .id("meal-prep-\(displayedMeal.name)")
     }
 
     private var shoppingListBar: some View {
         Button {
             HapticManager.shared.impact(.medium)
-            WelcomePlanStore.shared.addMealToShoppingList(meal, dayId: day.id)
+            WelcomePlanStore.shared.addMealToShoppingList(displayedMeal, dayId: day.id)
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "cart.fill")
@@ -287,5 +333,28 @@ struct PlanMealDetailView: View {
                     .strokeBorder(theme.cardStroke, lineWidth: theme.isDark ? 0 : 0.5)
             }
             .shadow(color: theme.primaryText.opacity(theme.isDark ? 0.12 : 0.04), radius: 10, y: 3)
+    }
+
+    private func persistDraftIfNeeded() {
+        guard isEditable else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: day.id, in: plan) else { return }
+        WelcomePlanStore.shared.saveDraftMeal(dayId: day.id, meal: displayedMeal, slot: entry.slot)
+    }
+
+    private func scheduleDraftPersistence() {
+        draftSaveTask?.cancel()
+        draftSaveTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            persistDraftIfNeeded()
+        }
+    }
+
+    private func refreshDerivedPresentation() {
+        assessment = MealNutritionCatalog.debloatAssessment(for: displayedMeal)
+        preparationPresentation = MealPreparationStepsParser.presentation(
+            from: displayedMeal.prepSummary,
+            prepMinutes: displayedMeal.prepMinutes
+        )
     }
 }

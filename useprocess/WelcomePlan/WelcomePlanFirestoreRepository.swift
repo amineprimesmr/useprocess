@@ -23,7 +23,9 @@ final class WelcomePlanFirestoreRepository {
     func savePlan(_ plan: FaceOriginPlan, userId: String) async {
         guard !AppSession.shared.isAccountWipeInProgress else { return }
         guard AppConfiguration.firebaseConfigured, userId != "local-user", !userId.isEmpty else { return }
-        guard let json = encode(plan) else { return }
+        guard let json = await Task.detached(priority: .utility, operation: {
+            Self.encode(plan)
+        }).value else { return }
         try? await docRef(userId: userId).setData([
             "planJSON": json,
             "updatedAt": Timestamp(date: Date())
@@ -32,8 +34,9 @@ final class WelcomePlanFirestoreRepository {
 
     func saveQuestionnaire(_ questionnaire: WelcomePlanQuestionnaireState, userId: String) async {
         guard AppConfiguration.firebaseConfigured, userId != "local-user", !userId.isEmpty else { return }
-        guard let data = try? JSONEncoder().encode(questionnaire),
-              let json = String(data: data, encoding: .utf8) else { return }
+        guard let json = await Task.detached(priority: .utility, operation: {
+            Self.encode(questionnaire)
+        }).value else { return }
         try? await docRef(userId: userId).setData([
             "questionnaireJSON": json,
             "updatedAt": Timestamp(date: Date())
@@ -68,11 +71,23 @@ final class WelcomePlanFirestoreRepository {
 
         if let planJSON = remote.planJSON,
            let data = planJSON.data(using: .utf8),
-           let remotePlan = try? JSONDecoder().decode(FaceOriginPlan.self, from: data) {
+           let remotePlan = await Task.detached(priority: .utility, operation: {
+               try? JSONDecoder().decode(FaceOriginPlan.self, from: data)
+           }).value {
             let localKey = UserScopedStorage.key("welcome.plan", userId: userId)
-            let localUpdated = localPlanUpdatedAt(userId: userId)
+            let localUpdated = await localPlanUpdatedAt(userId: userId)
             if remotePlan.lastUpdated > localUpdated {
                 UserDefaults.standard.set(data, forKey: localKey)
+                let storedProgress = StoredOriginPlanProgress(
+                    progress: remotePlan.progress,
+                    lastUpdated: remotePlan.lastUpdated
+                )
+                if let progressData = try? JSONEncoder().encode(storedProgress) {
+                    UserDefaults.standard.set(
+                        progressData,
+                        forKey: UserScopedStorage.key("welcome.plan.progress", userId: userId)
+                    )
+                }
             }
         }
 
@@ -103,16 +118,25 @@ final class WelcomePlanFirestoreRepository {
         }
     }
 
-    private func localPlanUpdatedAt(userId: String) -> Date {
+    private func localPlanUpdatedAt(userId: String) async -> Date {
         let key = UserScopedStorage.key("welcome.plan", userId: userId)
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let plan = try? JSONDecoder().decode(FaceOriginPlan.self, from: data) else {
-            return .distantPast
-        }
-        return plan.lastUpdated
+        let progressKey = UserScopedStorage.key("welcome.plan.progress", userId: userId)
+        let planData = UserDefaults.standard.data(forKey: key)
+        let progressData = UserDefaults.standard.data(forKey: progressKey)
+        let dates = await Task.detached(priority: .utility) {
+            let planDate = planData
+                .flatMap { try? JSONDecoder().decode(FaceOriginPlan.self, from: $0) }?
+                .lastUpdated ?? .distantPast
+            let progressDate = progressData
+                .flatMap { try? JSONDecoder().decode(StoredOriginPlanProgress.self, from: $0) }?
+                .lastUpdated ?? .distantPast
+            return (planDate, progressDate)
+        }.value
+        let (planDate, progressDate) = dates
+        return max(planDate, progressDate)
     }
 
-    private func encode<T: Encodable>(_ value: T) -> String? {
+    nonisolated private static func encode<T: Encodable>(_ value: T) -> String? {
         guard let data = try? JSONEncoder().encode(value) else { return nil }
         return String(data: data, encoding: .utf8)
     }

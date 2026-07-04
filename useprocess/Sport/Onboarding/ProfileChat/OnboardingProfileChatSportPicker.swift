@@ -87,6 +87,7 @@ struct OnboardingProfileChatSportPicker: View {
                 TextField("Rechercher un sport…", text: $searchText)
                     .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize, weight: .medium))
                     .foregroundStyle(OnboardingTheme.primaryText)
+                    .tint(OnboardingTheme.primaryText)
                     .focused($isSearchFocused)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()

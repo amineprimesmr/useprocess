@@ -23,6 +23,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     @Binding var isDeviceSupported: Bool
     @Binding var isLowLight: Bool
     var isPreviewOnly: Bool = false
+    var allowsScreenFlash: Bool = true
     var onComplete: (FaceScanCapturePayload) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -35,6 +36,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             isFaceDetected: $isFaceDetected,
             isDeviceSupported: $isDeviceSupported,
             isLowLight: $isLowLight,
+            allowsScreenFlash: allowsScreenFlash,
             onComplete: onComplete
         )
     }
@@ -75,8 +77,13 @@ struct FaceMeshScanView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: ARSCNView, context: Context) {
+        let wasPreview = context.coordinator.isPreviewOnly
         context.coordinator.isPreviewOnly = isPreviewOnly
+        context.coordinator.allowsScreenFlash = allowsScreenFlash
         context.coordinator.updateViewportSize(uiView.bounds.size)
+        if isPreviewOnly, !wasPreview {
+            context.coordinator.enterPreviewMode()
+        }
     }
 
     static func dismantleUIView(_ uiView: ARSCNView, coordinator: Coordinator) {
@@ -96,6 +103,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         @Binding var isFaceDetected: Bool
         @Binding var isDeviceSupported: Bool
         @Binding var isLowLight: Bool
+        var allowsScreenFlash: Bool
         let onComplete: (FaceScanCapturePayload) -> Void
 
         weak var arView: ARSCNView?
@@ -161,6 +169,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             isFaceDetected: Binding<Bool>,
             isDeviceSupported: Binding<Bool>,
             isLowLight: Binding<Bool>,
+            allowsScreenFlash: Bool,
             onComplete: @escaping (FaceScanCapturePayload) -> Void
         ) {
             _progress = progress
@@ -171,6 +180,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             _isFaceDetected = isFaceDetected
             _isDeviceSupported = isDeviceSupported
             _isLowLight = isLowLight
+            self.allowsScreenFlash = allowsScreenFlash
             self.onComplete = onComplete
         }
 
@@ -178,6 +188,13 @@ struct FaceMeshScanView: UIViewRepresentable {
             isTornDown = true
             faceRemovalWorkItem?.cancel()
             videoRecorder.cancel()
+        }
+
+        func enterPreviewMode() {
+            guard !isTornDown else { return }
+            completed = false
+            scanExhausted = false
+            resetScanTracking(soft: false)
         }
 
         func updateViewportSize(_ size: CGSize) {
@@ -228,7 +245,15 @@ struct FaceMeshScanView: UIViewRepresentable {
                 if FaceScanScreenFlash.shared.isActive {
                     if !self.isLowLight { self.isLowLight = true }
                 } else {
+                    let wasLow = self.isLowLight
                     self.isLowLight = low
+                    if !self.allowsScreenFlash {
+                        if low {
+                            self.enforceInsufficientLightLock()
+                        } else if wasLow {
+                            self.clearInsufficientLightLock()
+                        }
+                    }
                 }
             }
         }
@@ -336,7 +361,35 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.progress = 0
                 self.ringProgress = 0
                 self.activeTickSectors = []
-                self.instruction = "Place ton visage dans le cadre."
+                if !self.allowsScreenFlash && self.isLowLight {
+                    self.instruction = "Pas assez de lumière pour lancer le scan."
+                    self.frameHint = "Place-toi face à une fenêtre ou une lampe."
+                } else {
+                    self.instruction = "Place ton visage dans le cadre."
+                    self.frameHint = nil
+                }
+            }
+        }
+
+        private func enforceInsufficientLightLock(faceVisible: Bool = false) {
+            guard !completed, !isTornDown, !isPreviewOnly else { return }
+            if scanStartTime != nil {
+                resetScanTracking(soft: false)
+            }
+            publishUI(ring: 0, progress: 0, force: true) {
+                if faceVisible {
+                    self.isFaceDetected = true
+                }
+                self.instruction = "Pas assez de lumière pour lancer le scan."
+                self.frameHint = "Place-toi face à une fenêtre ou une lampe."
+                self.activeTickSectors = []
+            }
+        }
+
+        private func clearInsufficientLightLock() {
+            guard !completed, !isTornDown, !isPreviewOnly, scanStartTime == nil else { return }
+            publishUI(force: true) {
+                self.instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
                 self.frameHint = nil
             }
         }
@@ -370,6 +423,10 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         private func beginScan(with faceAnchor: ARFaceAnchor) {
             guard scanStartTime == nil, !isPreviewOnly else { return }
+            guard !( !allowsScreenFlash && isLowLight ) else {
+                enforceInsufficientLightLock()
+                return
+            }
 
             activeScanId = UUID().uuidString
             videoRecorder.start(at: videoRecorder.prepareOutputURL(scanId: activeScanId))
@@ -392,6 +449,11 @@ struct FaceMeshScanView: UIViewRepresentable {
         private func process(faceAnchor: ARFaceAnchor, renderer: SCNSceneRenderer) {
             guard faceAnchor.isTracked else {
                 markFaceLost(force: false)
+                return
+            }
+
+            if !allowsScreenFlash && isLowLight {
+                enforceInsufficientLightLock(faceVisible: true)
                 return
             }
 
@@ -557,7 +619,11 @@ struct FaceMeshScanView: UIViewRepresentable {
             ) {
                 return flashActive
                     ? "Garde le visage centré face à l'écran."
-                    : (isLowLight ? "Active le flash ou rapproche-toi." : "Cherche plus de lumière.")
+                    : (isLowLight
+                        ? (allowsScreenFlash
+                            ? "Active le flash ou rapproche-toi."
+                            : "Pas assez de lumière — rapproche-toi d'une source lumineuse.")
+                        : "Cherche plus de lumière.")
             }
             if elapsed < scanDuration * 0.90 {
                 return "Encore quelques secondes…"
@@ -575,7 +641,9 @@ struct FaceMeshScanView: UIViewRepresentable {
                 if !scanExhausted {
                     scanExhausted = true
                     publishUI(force: true) {
-                        self.instruction = "Scan difficile — active le flash et réessaie."
+                        self.instruction = self.allowsScreenFlash
+                            ? "Scan difficile — active le flash et réessaie."
+                            : "Scan difficile — cherche plus de lumière et réessaie."
                         self.frameHint = "Rapproche-toi puis replace ton visage dans le cadre."
                     }
                     HapticManager.shared.notification(.warning)
@@ -589,7 +657,9 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.ringProgress = 0
                 self.activeTickSectors = []
                 self.instruction = "On recommence — tourne la tête plus lentement."
-                self.frameHint = self.isLowLight ? "Environnement sombre" : nil
+                self.frameHint = self.isLowLight
+                    ? (self.allowsScreenFlash ? "Environnement sombre" : "Pas assez de lumière")
+                    : nil
                 HapticManager.shared.notification(.warning)
             }
         }

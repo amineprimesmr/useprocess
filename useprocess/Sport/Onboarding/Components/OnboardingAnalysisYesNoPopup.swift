@@ -9,6 +9,7 @@ import SwiftUI
 
 struct OnboardingAnalysisYesNoPopup: View {
     let subtitle: String?
+    let headerImageName: String?
     let question: String
     let affirmativeTitle: String
     let negativeTitle: String
@@ -28,6 +29,7 @@ struct OnboardingAnalysisYesNoPopup: View {
 
     init(
         subtitle: String? = nil,
+        headerImageName: String? = nil,
         question: String,
         affirmativeTitle: String = "Oui",
         negativeTitle: String = "Non",
@@ -35,6 +37,7 @@ struct OnboardingAnalysisYesNoPopup: View {
         onAnswer: @escaping (Bool) -> Void
     ) {
         self.subtitle = subtitle
+        self.headerImageName = headerImageName
         self.question = question
         self.affirmativeTitle = affirmativeTitle
         self.negativeTitle = negativeTitle
@@ -48,7 +51,16 @@ struct OnboardingAnalysisYesNoPopup: View {
             Spacer()
 
             Button(action: {}) {
-                VStack(spacing: subtitle == nil ? 34 : 26) {
+                VStack(spacing: headerSpacing) {
+                    if let headerImageName {
+                        Image(headerImageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 58, height: 58)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    }
+
                     if let subtitle {
                         Text(subtitle)
                             .font(.system(size: 14, weight: .medium))
@@ -57,7 +69,7 @@ struct OnboardingAnalysisYesNoPopup: View {
                     }
 
                     Text(question)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: headerImageName == nil ? 24 : 22, weight: .bold))
                         .foregroundStyle(OnboardingTheme.narrativeText)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
@@ -79,7 +91,7 @@ struct OnboardingAnalysisYesNoPopup: View {
                 .padding(.vertical, 38)
                 .padding(.horizontal, 34)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 230)
+                .frame(minHeight: headerImageName == nil ? 230 : 250)
             }
             .processGlassButton(in: popupShape, interactive: false)
             .buttonBorderShape(.roundedRectangle(radius: popupCornerRadius))
@@ -89,6 +101,13 @@ struct OnboardingAnalysisYesNoPopup: View {
         }
         .padding(.bottom, 34)
         .allowsHitTesting(true)
+    }
+
+    private var headerSpacing: CGFloat {
+        if headerImageName != nil {
+            return subtitle == nil ? 22 : 18
+        }
+        return subtitle == nil ? 34 : 26
     }
 
     private func popupButton(title: String, icon: String, action: @escaping () -> Void) -> some View {

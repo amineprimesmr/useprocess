@@ -57,6 +57,40 @@ struct MealDebloatScorePill: View {
     }
 }
 
+/// Pill score Debloat — liquid glass (hero repas, détail).
+struct MealDebloatScoreGlassPill: View {
+    let assessment: MealDebloatAssessment
+
+    @Environment(\.appTheme) private var theme
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "drop.degreesign.fill")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MealDebloatScorePalette.color(for: assessment.score))
+
+            Text(assessment.scoreText)
+                .font(.caption.weight(.heavy))
+                .monospacedDigit()
+
+            Text("Debloat")
+                .font(.caption2.weight(.semibold))
+                .opacity(0.72)
+        }
+        .foregroundStyle(theme.primaryText)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background {
+            Capsule(style: .continuous)
+                .fill(.clear)
+                .processGlassEffect(in: Capsule(style: .continuous), interactive: false)
+        }
+        .shadow(color: .black.opacity(theme.isDark ? 0.30 : 0.10), radius: 10, y: 4)
+        .accessibilityLabel("Score Debloat \(assessment.score) sur 100")
+        .accessibilityHint(assessment.isEstimated ? "Estimation nutritionnelle" : assessment.label)
+    }
+}
+
 struct MealDebloatScoreFooter: View {
     let assessment: MealDebloatAssessment
 
@@ -176,26 +210,9 @@ struct MealDebloatScoreDetailCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             HStack(alignment: .center, spacing: 13) {
-                ZStack {
-                    Circle()
-                        .stroke(theme.cardStroke.opacity(0.45), lineWidth: 6)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(assessment.score) / 100)
-                        .stroke(
-                            MealDebloatScorePalette.color(for: assessment.score),
-                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                    Text(assessment.scoreText)
-                        .font(.system(size: 18, weight: .heavy, design: .rounded))
-                        .foregroundStyle(theme.primaryText)
-                }
-                .frame(width: 62, height: 62)
+                MealDebloatScoreGlassPill(assessment: assessment)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Score Debloat")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(theme.secondaryText)
                     Text(assessment.label)
                         .font(.headline.weight(.bold))
                         .foregroundStyle(theme.primaryText)

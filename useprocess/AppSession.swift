@@ -141,7 +141,7 @@ final class AppSession {
         }
 
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
-        WelcomePlanStore.shared.reloadForCurrentUser()
+        WelcomePlanStore.shared.reloadForCurrentUser(force: true)
         hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
             completedOnboarding: hasCompletedOnboarding,
             userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId

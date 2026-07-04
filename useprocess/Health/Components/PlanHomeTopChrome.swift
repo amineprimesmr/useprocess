@@ -4,6 +4,7 @@ import SwiftUI
 struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
     @Binding var selectedDate: Date
+    var zoomNamespace: Namespace.ID? = nil
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
@@ -37,8 +38,6 @@ struct PlanHomeTopChrome: View {
                 PlanHomeGreetingLabel(greeting: homeGreeting)
 
                 homeDatePickerButton
-
-                homeActivityStatusChip
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -54,7 +53,6 @@ struct PlanHomeTopChrome: View {
         }
         .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast)
         .onAppear {
-            streakStore.sync(from: planStore.plan)
             activityStatusStore.reload()
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
@@ -62,52 +60,6 @@ struct PlanHomeTopChrome: View {
             streakStore.sync(from: planStore.plan)
             activityStatusStore.reload()
         }
-        .onChange(of: planStore.plan?.lastUpdated) { _, _ in
-            streakStore.sync(from: planStore.plan)
-        }
-        .onChange(of: selectedDate) { _, _ in
-            activityStatusStore.reload()
-        }
-    }
-
-    private var homeActivityStatusChip: some View {
-        Button(action: openActivityStatus) {
-            HStack(spacing: 8) {
-                ProcessActivityStatusBadge(
-                    status: currentActivityStatus,
-                    size: 28,
-                    iconSize: 13
-                )
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(currentActivityStatus.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
-
-                    Text("Jusqu'à modification")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(theme.secondaryText)
-                }
-
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(theme.secondaryText.opacity(0.8))
-            }
-            .padding(.leading, 6)
-            .padding(.trailing, 12)
-            .padding(.vertical, 6)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.72))
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(Color.primary.opacity(theme.isDark ? 0.10 : 0.06), lineWidth: 1)
-                    }
-            }
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 8)
-        .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
     }
 
     private var homeGreeting: PlanHomeGreeting {
@@ -206,10 +158,15 @@ struct PlanHomeTopChrome: View {
     private enum GlassClusterMetrics {
         static let streakTileWidth: CGFloat = 54
         static let tileSize: CGFloat = 50
+        static let tileCornerRadius: CGFloat = 25
         static let statusIconSize: CGFloat = 34
         static let spacing: CGFloat = 22
         static let mergeOffset: CGFloat = -22
         static let iconSize: CGFloat = 15
+
+        static var tileShape: RoundedRectangle {
+            RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
+        }
     }
 
     @ViewBuilder
@@ -220,13 +177,13 @@ struct PlanHomeTopChrome: View {
                     Button(action: openStreak) {
                         streakGlassTile
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(ProcessGlassPressStyle())
                     .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
                     Button(action: openActivityStatus) {
                         activityStatusGlassTile
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(ProcessGlassPressStyle())
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0.0)
                     .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
                 }
@@ -236,13 +193,13 @@ struct PlanHomeTopChrome: View {
                 Button(action: openStreak) {
                     legacyStreakButton
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ProcessGlassPressStyle())
                 .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
                 Button(action: openActivityStatus) {
                     legacyActivityStatusButton
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ProcessGlassPressStyle())
                 .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
             }
         }
@@ -263,7 +220,7 @@ struct PlanHomeTopChrome: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(width: GlassClusterMetrics.streakTileWidth, height: GlassClusterMetrics.tileSize)
-        .glassEffect()
+        .glassEffect(ProcessGlass.regular, in: GlassClusterMetrics.tileShape)
     }
 
     @available(iOS 26.0, *)
@@ -274,7 +231,7 @@ struct PlanHomeTopChrome: View {
             iconSize: 15
         )
         .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
-        .glassEffect()
+        .glassEffect(ProcessGlass.regular, in: Circle())
     }
 
     private var legacyStreakButton: some View {

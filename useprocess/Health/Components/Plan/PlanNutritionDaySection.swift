@@ -7,18 +7,13 @@ struct PlanDayMealEntry: Identifiable, Equatable {
     let isValidated: Bool
     let planType: NutritionPlanType
     let dayIndex: Int
+    let resolvedImageAssetName: String
+    let assessment: MealDebloatAssessment
 
     var id: String { slot.rawValue }
 
     var carouselTitle: String { PlanMealSlotLabel.carouselTitle(for: slot, planType: planType) }
-    var imageAssetName: String {
-        MealNutritionCatalog.resolvedImageAsset(
-            for: meal,
-            slot: slot,
-            dayIndex: dayIndex,
-            planType: planType
-        )
-    }
+    var imageAssetName: String { resolvedImageAssetName }
     var scheduleTargetLabel: String? { PlanMealSchedule.targetLabel(for: slot, planType: planType) }
     var scheduleWindowLabel: String? { PlanMealSchedule.windowLabel(for: slot, planType: planType) }
     var scheduleNote: String? { PlanMealSchedule.timing(for: slot, planType: planType)?.debloatNote }
@@ -37,7 +32,14 @@ struct PlanDayMealEntry: Identifiable, Equatable {
             meal: meal,
             isValidated: validated,
             planType: plan.nutritionPlanType,
-            dayIndex: day.globalDayIndex
+            dayIndex: day.globalDayIndex,
+            resolvedImageAssetName: MealNutritionCatalog.resolvedImageAsset(
+                for: meal,
+                slot: slot,
+                dayIndex: day.globalDayIndex,
+                planType: plan.nutritionPlanType
+            ),
+            assessment: MealNutritionCatalog.debloatAssessment(for: meal)
         )
     }
 }
@@ -56,7 +58,14 @@ enum PlanDayMealsProvider {
                 meal: meal,
                 isValidated: validated,
                 planType: plan.nutritionPlanType,
-                dayIndex: day.globalDayIndex
+                dayIndex: day.globalDayIndex,
+                resolvedImageAssetName: MealNutritionCatalog.resolvedImageAsset(
+                    for: meal,
+                    slot: slot,
+                    dayIndex: day.globalDayIndex,
+                    planType: plan.nutritionPlanType
+                ),
+                assessment: MealNutritionCatalog.debloatAssessment(for: meal)
             )
         }
     }
@@ -88,18 +97,15 @@ enum PlanDayMealsProvider {
     ) {
         guard OriginPlanPresenter.isEditableJournalDay(dayId: day.id, in: plan) else { return }
 
+        var defaults: [MealTimeSlot: MealSuggestionContent] = [:]
         for slot in plan.configuredMealSlots {
-            let hasValidated = store.plan?.progress.validatedMealsBySlot[day.id]?[slot.rawValue] != nil
-            let hasDraft = store.draftMealContent(for: day.id, slot: slot) != nil
-            guard !hasValidated, !hasDraft else { continue }
-
-            let meal = ProcessDebloatMealLibrary.meal(
+            defaults[slot] = ProcessDebloatMealLibrary.meal(
                 for: slot,
                 dayIndex: day.globalDayIndex,
                 planType: plan.nutritionPlanType
             )
-            store.saveDraftMeal(dayId: day.id, meal: meal, slot: slot)
         }
+        store.saveMissingDraftMeals(dayId: day.id, mealsBySlot: defaults)
     }
 }
 
@@ -189,13 +195,14 @@ struct PlanNutritionDaySection: View {
     private var mealCarousel: some View {
         PlanMealCoverFlowCarousel(
             entries: entries,
-            catalogCount: ProcessDebloatMealLibrary.catalogMealCount(for: livePlan.nutritionPlanType),
-            previewImageAssets: ProcessDebloatMealLibrary.catalogPreviewImageAssets(
-                for: livePlan.nutritionPlanType
-            ),
+            catalogCount: ProcessDebloatMealLibrary.fullCatalogMealCount(),
+            previewImageAssets: ProcessDebloatMealLibrary.fullCatalogPreviewImageAssets(),
             scrollPosition: $scrollPosition,
             mealZoomNamespace: mealZoomNamespace,
-            onSelect: { selectedEntry = $0 },
+            onSelect: {
+                ProcessPerformanceTrace.beginMealOpen()
+                selectedEntry = $0
+            },
             onBrowseCatalog: { showMealIdeasCatalog = true }
         )
         .padding(.horizontal, -PlanHomeSectionDesign.homeScrollPadding)
@@ -427,10 +434,6 @@ private struct PlanMealCarouselCard: View {
 
     @Environment(\.appTheme) private var theme
 
-    private var assessment: MealDebloatAssessment {
-        MealNutritionCatalog.debloatAssessment(for: entry.meal)
-    }
-
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
     }
@@ -504,6 +507,6 @@ private struct PlanMealCarouselCard: View {
     }
 
     private var debloatScorePill: some View {
-        MealDebloatScorePill(assessment: assessment)
+        MealDebloatScorePill(assessment: entry.assessment)
     }
 }

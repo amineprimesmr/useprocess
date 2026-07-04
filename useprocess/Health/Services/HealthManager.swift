@@ -34,20 +34,20 @@ final class HealthManager: ObservableObject {
         }
     }
 
-    @Published private(set) var isAuthorized = false
-    @Published private(set) var isHealthDataAvailable = false
-    @Published private(set) var baselines = UserHealthBaselines()
-    @Published private(set) var todaySnapshot = DailyHealthSnapshot(date: Date())
-    @Published private(set) var readinessScore = 0
-    @Published private(set) var readinessLabel = "—"
-    @Published private(set) var readinessFactors: [String] = []
-    @Published private(set) var faceDayScore: Int?
-    @Published private(set) var faceDayLabel: String?
-    @Published private(set) var faceCorrelations: [FaceScanCorrelationInsight] = []
-    @Published private(set) var connectedSources: [String] = []
-    @Published private(set) var hasAppleWatch = false
-    @Published private(set) var lastSyncDate: Date?
-    @Published private(set) var syncInProgress = false
+    private(set) var isAuthorized = false
+    private(set) var isHealthDataAvailable = false
+    private(set) var baselines = UserHealthBaselines()
+    private(set) var todaySnapshot = DailyHealthSnapshot(date: Date())
+    private(set) var readinessScore = 0
+    private(set) var readinessLabel = "—"
+    private(set) var readinessFactors: [String] = []
+    private(set) var faceDayScore: Int?
+    private(set) var faceDayLabel: String?
+    private(set) var faceCorrelations: [FaceScanCorrelationInsight] = []
+    private(set) var connectedSources: [String] = []
+    private(set) var hasAppleWatch = false
+    private(set) var lastSyncDate: Date?
+    private(set) var syncInProgress = false
 
     let healthStore = HKHealthStore()
     private lazy var queryService = HealthKitQueryService(store: healthStore)
@@ -62,6 +62,7 @@ final class HealthManager: ObservableObject {
 
     func requestAuthorizationAsync() async {
         guard isHealthDataAvailable else {
+            objectWillChange.send()
             isAuthorized = false
             return
         }
@@ -69,16 +70,21 @@ final class HealthManager: ObservableObject {
         do {
             try await healthStore.requestAuthorization(toShare: HealthKitTypes.writeTypes, read: HealthKitTypes.readTypes)
             isAuthorized = true
-            await refreshConnectedSources()
+            await refreshConnectedSources(publish: false)
+            objectWillChange.send()
             enableBackgroundObservers()
             await performFullSync()
         } catch {
             isAuthorized = false
+            objectWillChange.send()
         }
     }
 
     func refreshAuthorizationStatus() {
-        isHealthDataAvailable = HKHealthStore.isHealthDataAvailable()
+        let available = HKHealthStore.isHealthDataAvailable()
+        guard available != isHealthDataAvailable else { return }
+        objectWillChange.send()
+        isHealthDataAvailable = available
     }
 
     // MARK: - Sync
@@ -87,38 +93,49 @@ final class HealthManager: ObservableObject {
         guard isHealthDataAvailable else { return }
         guard !AppSession.shared.isAccountWipeInProgress else { return }
         guard !syncInProgress else { return }
+        objectWillChange.send()
         syncInProgress = true
         defer {
+            objectWillChange.send()
             syncInProgress = false
             lastSyncDate = Date()
         }
 
-        baselines = await BaselineCalculator.computeFromHealthManager(self, days: 14)
-        todaySnapshot = await buildSnapshot(for: Date())
+        let refreshedBaselines = await BaselineCalculator.computeFromHealthManager(self, days: 14)
+        let refreshedSnapshot = await buildSnapshot(
+            for: Date(),
+            baselineOverride: refreshedBaselines
+        )
         let faceMarkers = faceMarkers(for: Date())
         let readiness = ReadinessScorer.score(
-            snapshot: todaySnapshot,
-            baselines: baselines,
+            snapshot: refreshedSnapshot,
+            baselines: refreshedBaselines,
             faceMarkers: faceMarkers,
             faceScoreOverride: faceScore(for: Date())
         )
+        let correlations = FaceScanCorrelationEngine.insights(from: FaceScanHistoryStore.shared.history)
+
+        // Publication atomique : toutes les vues Santé ne sont invalidées
+        // qu'une fois pour le nouveau snapshot complet.
+        objectWillChange.send()
+        baselines = refreshedBaselines
+        todaySnapshot = refreshedSnapshot
         readinessScore = readiness.score
         readinessLabel = readiness.label
         readinessFactors = readiness.factors
         faceDayScore = readiness.faceScore
         faceDayLabel = readiness.faceLabel
-        faceCorrelations = FaceScanCorrelationEngine.insights(from: FaceScanHistoryStore.shared.history)
+        faceCorrelations = correlations
 
         if AppConfiguration.firebaseConfigured, let uid = AuthUser.current?.uid {
-            try? await HealthFirestoreRepository.shared.saveBaselines(baselines, userId: uid)
-            try? await HealthFirestoreRepository.shared.saveDailySnapshot(todaySnapshot, userId: uid)
+            try? await HealthFirestoreRepository.shared.saveBaselines(refreshedBaselines, userId: uid)
+            try? await HealthFirestoreRepository.shared.saveDailySnapshot(refreshedSnapshot, userId: uid)
         }
     }
 
     func syncHealthDataForDate(_ date: Date) async {
         let snapshot = await buildSnapshot(for: date)
         if Calendar.current.isDateInToday(date) {
-            todaySnapshot = snapshot
             let faceMarkers = faceMarkers(for: date)
             let readiness = ReadinessScorer.score(
                 snapshot: snapshot,
@@ -126,12 +143,15 @@ final class HealthManager: ObservableObject {
                 faceMarkers: faceMarkers,
                 faceScoreOverride: faceScore(for: date)
             )
+            let correlations = FaceScanCorrelationEngine.insights(from: FaceScanHistoryStore.shared.history)
+            objectWillChange.send()
+            todaySnapshot = snapshot
             readinessScore = readiness.score
             readinessLabel = readiness.label
             readinessFactors = readiness.factors
             faceDayScore = readiness.faceScore
             faceDayLabel = readiness.faceLabel
-            faceCorrelations = FaceScanCorrelationEngine.insights(from: FaceScanHistoryStore.shared.history)
+            faceCorrelations = correlations
         }
     }
 
@@ -190,8 +210,12 @@ final class HealthManager: ObservableObject {
 
     // MARK: - Snapshot builder
 
-    func buildSnapshot(for date: Date) async -> DailyHealthSnapshot {
+    func buildSnapshot(
+        for date: Date,
+        baselineOverride: UserHealthBaselines? = nil
+    ) async -> DailyHealthSnapshot {
         var snapshot = DailyHealthSnapshot(date: date)
+        let scoringBaselines = baselineOverride ?? baselines
 
         async let steps = queryService.sumQuantity(.stepCount, unit: .count(), on: date)
         async let calories = queryService.sumQuantity(.activeEnergyBurned, unit: .kilocalorie(), on: date)
@@ -241,7 +265,7 @@ final class HealthManager: ObservableObject {
         snapshot.sleep.wakeTime = sleepData.wake
         snapshot.sleep.deepSleepHours = sleepData.deep
         snapshot.sleep.remSleepHours = sleepData.rem
-        snapshot.sleep.sleepDebt = max(0, baselines.sleepNeedHours - sleepData.duration)
+        snapshot.sleep.sleepDebt = max(0, scoringBaselines.sleepNeedHours - sleepData.duration)
 
         snapshot.nutrition.caloriesConsumed = await nutritionCal
         snapshot.nutrition.proteinGrams = await protein
@@ -252,7 +276,7 @@ final class HealthManager: ObservableObject {
         let faceMarkers = faceMarkers(for: date)
         let readiness = ReadinessScorer.score(
             snapshot: snapshot,
-            baselines: baselines,
+            baselines: scoringBaselines,
             faceMarkers: faceMarkers,
             faceScoreOverride: faceScore(for: date)
         )
@@ -268,10 +292,13 @@ final class HealthManager: ObservableObject {
         return snapshot
     }
 
-    func refreshConnectedSources() async {
-        connectedSources = await queryService.connectedSourceNames()
-        hasAppleWatch = await queryService.hasAppleWatchSource()
-        AppleWatchService.shared.updateFromHealthSources(connectedSources)
+    func refreshConnectedSources(publish: Bool = true) async {
+        let sources = await queryService.connectedSourceNames()
+        let watch = await queryService.hasAppleWatchSource()
+        if publish { objectWillChange.send() }
+        connectedSources = sources
+        hasAppleWatch = watch
+        AppleWatchService.shared.updateFromHealthSources(sources)
     }
 
     // MARK: - Background
@@ -314,5 +341,57 @@ final class HealthManager: ObservableObject {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: date)
+    }
+
+    func fetchBodyMassHistory(days: Int = 90) async -> [ProfileAnalyticsPoint] {
+        guard isHealthDataAvailable else { return [] }
+
+        if !isAuthorized {
+            await requestAuthorizationAsync()
+        }
+
+        let samples = await queryService.dailyLatestBodyMass(days: days)
+        return samples.map { sample in
+            ProfileAnalyticsPoint(
+                id: dateKey(sample.day),
+                date: sample.day,
+                value: sample.kilograms
+            )
+        }
+    }
+
+    func fetchSleepHistory(days: Int = 90) async -> [ProfileAnalyticsPoint] {
+        guard isHealthDataAvailable else { return [] }
+
+        if !isAuthorized {
+            await requestAuthorizationAsync()
+        }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        return await withTaskGroup(of: ProfileAnalyticsPoint?.self) { group in
+            for offset in 0..<days {
+                group.addTask { [queryService] in
+                    guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+                    let metrics = await queryService.sleepMetrics(for: date)
+                    guard metrics.duration > 0 else { return nil }
+                    let day = calendar.startOfDay(for: date)
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd"
+                    return ProfileAnalyticsPoint(
+                        id: formatter.string(from: day),
+                        date: day,
+                        value: metrics.duration
+                    )
+                }
+            }
+
+            var points: [ProfileAnalyticsPoint] = []
+            for await point in group {
+                if let point { points.append(point) }
+            }
+            return points.sorted { $0.date < $1.date }
+        }
     }
 }

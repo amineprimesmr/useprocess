@@ -27,7 +27,6 @@ struct ScrollOffsetPreferenceKey: PreferenceKey {
 }
 
 struct AgeWheelPicker: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Binding var selectedAge: Int
     let minAge: Int
     let maxAge: Int
@@ -51,27 +50,6 @@ struct AgeWheelPicker: View {
             let centerY = geometry.size.height / 2
 
             ZStack {
-                // Masques de dégradé en haut et en bas pour effet fade
-                VStack {
-                    LinearGradient(
-                        colors: OnboardingTheme.wheelFadeGradient(from: colorScheme, reversed: false),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: itemHeight * 2)
-                    .allowsHitTesting(false)
-
-                    Spacer()
-
-                    LinearGradient(
-                        colors: OnboardingTheme.wheelFadeGradient(from: colorScheme, reversed: true),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: itemHeight * 2)
-                    .allowsHitTesting(false)
-                }
-
                 // ScrollView avec les âges
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
@@ -107,6 +85,18 @@ struct AgeWheelPicker: View {
                         )
                     }
                     .coordinateSpace(name: "scroll")
+                    .mask {
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .black, location: 0.20),
+                                .init(color: .black, location: 0.80),
+                                .init(color: .clear, location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
                     .scrollDismissesKeyboard(.never)
                     .onPreferenceChange(ItemPositionPreferenceKey.self) { positions in
                         // Mettre à jour toutes les positions

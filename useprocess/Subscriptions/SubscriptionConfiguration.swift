@@ -37,6 +37,7 @@ enum SubscriptionConfiguration {
     static let fallbackMonthlyPrice = "5,99 €"
     static let fallbackAnnualPrice = "29,99 €"
     static let fallbackAnnualMonthlyEquivalent = "2,50 €"
+    static let annualCompareAtPrice = "70,99 €"
 }
 
 enum SubscriptionBillingPlan: String, CaseIterable, Identifiable {

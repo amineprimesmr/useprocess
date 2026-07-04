@@ -33,10 +33,12 @@ struct OnboardingEstimationContext {
 
 /// Données figées du graphique — calculées une seule fois pour éviter les sauts pendant l'animation.
 struct OnboardingEstimationGraphSnapshot {
+    let referenceDate: Date
     let projectedDate: Date
     let countdownDays: Int
     let normalizedValues: [Double]
     let weightMilestoneLabel: String?
+    let weightMilestoneDate: Date?
 
     static func make(
         context: OnboardingEstimationContext,
@@ -48,6 +50,16 @@ struct OnboardingEstimationGraphSnapshot {
             0,
             calendar.dateComponents([.day], from: referenceDate, to: projectedDate).day ?? 0
         )
+
+        let weightMilestoneDate: Date?
+        if context.weightMilestoneLabel != nil {
+            let milestoneDays = Int(
+                round(Double(countdownDays) * OnboardingEstimationContext.weightMilestoneFraction)
+            )
+            weightMilestoneDate = calendar.date(byAdding: .day, value: milestoneDays, to: referenceDate)
+        } else {
+            weightMilestoneDate = nil
+        }
 
         let curveData = GoalProjectionService.shared.generateProgressCurveData(
             startDate: referenceDate,
@@ -69,10 +81,12 @@ struct OnboardingEstimationGraphSnapshot {
         }
 
         return OnboardingEstimationGraphSnapshot(
+            referenceDate: referenceDate,
             projectedDate: projectedDate,
             countdownDays: countdownDays,
             normalizedValues: normalizedValues,
-            weightMilestoneLabel: context.weightMilestoneLabel
+            weightMilestoneLabel: context.weightMilestoneLabel,
+            weightMilestoneDate: weightMilestoneDate
         )
     }
 }

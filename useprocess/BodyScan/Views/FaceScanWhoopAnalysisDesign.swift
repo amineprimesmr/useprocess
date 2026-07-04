@@ -9,7 +9,7 @@ enum FaceScanWhoopPalette {
     static let label = Color.white.opacity(0.92)
     static let secondary = Color.white.opacity(0.55)
     static let insufficient = Color(red: 0.93, green: 0.52, blue: 0.28)
-    static let sufficient = Color(red: 0.42, green: 0.44, blue: 0.47)
+    static let sufficient = Color(red: 0.95, green: 0.78, blue: 0.22)
     static let optimal = Color(red: 0.36, green: 0.78, blue: 0.58)
     static let segmentIdle = Color.white.opacity(0.14)
 
@@ -32,10 +32,22 @@ struct FaceScanWhoopAnalysisScreen: View {
     var onDone: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
+    @Bindable private var historyStore = FaceScanHistoryStore.shared
     @State private var showsAnalysisInfo = false
 
     private var analysis: FaceScanAnalysisContent {
         CoachEngine.parsedFaceAnalysis(for: result)
+    }
+
+    private var displayResult: FaceScanResult {
+        historyStore.history.first(where: { $0.id == result.id }) ?? result
+    }
+
+    private var todayInsight: FaceScanAIInsight {
+        FaceScanAIInsightBuilder.insight(
+            for: displayResult,
+            context: FaceScanInsightContext.fromTodayHealth()
+        )
     }
 
     var body: some View {
@@ -54,6 +66,19 @@ struct FaceScanWhoopAnalysisScreen: View {
 
                     FaceScanWhoopMetricsCard(result: result)
                         .padding(.horizontal, 16)
+
+                    FaceScanAIInsightCard(
+                        insight: todayInsight,
+                        style: .whoopDark,
+                        onTap: {
+                            FaceScanCoachHandoffCoordinator.deliver(
+                                result: displayResult,
+                                insight: todayInsight
+                            )
+                        }
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
 
                     FaceScanWhoopIndicatorTrendsSection(history: history)
                         .padding(.horizontal, 16)
@@ -122,32 +147,88 @@ struct FaceScanWhoopAnalysisScreen: View {
     }
 }
 
+enum FaceScanWhoopResultsStyle {
+    case immersive
+    case chatThread
+}
+
 /// Corps résultats WHOOP — réutilisable dans le flux d'analyse inline.
 struct FaceScanWhoopInlineResults: View {
     let result: FaceScanResult
     var history: [FaceScanResult] = []
+    var allowsCoachHandoff: Bool = true
+    var showsInsight: Bool = true
+    var showsTrends: Bool = true
+    var ringScale: CGFloat = 1
+    var style: FaceScanWhoopResultsStyle = .immersive
+
+    @Bindable private var historyStore = FaceScanHistoryStore.shared
+
+    private var displayResult: FaceScanResult {
+        historyStore.history.first(where: { $0.id == result.id }) ?? result
+    }
+
+    private var todayInsight: FaceScanAIInsight {
+        FaceScanAIInsightBuilder.insight(
+            for: displayResult,
+            context: FaceScanInsightContext.fromTodayHealth()
+        )
+    }
+
+    private var metricsHorizontalPadding: CGFloat {
+        style == .chatThread ? 0 : 16
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             FaceScanWhoopScoreRing(result: result)
-                .padding(.bottom, 22)
+                .scaleEffect(ringScale)
+                .padding(.bottom, 22 * ringScale)
 
-            FaceScanWhoopMetricsCard(result: result)
+            FaceScanWhoopMetricsCard(result: result, style: style)
+                .padding(.horizontal, metricsHorizontalPadding)
+
+            if showsInsight {
+                FaceScanAIInsightCard(
+                    insight: todayInsight,
+                    style: .whoopDark,
+                    animateReveal: true,
+                    onTap: allowsCoachHandoff
+                        ? {
+                            FaceScanCoachHandoffCoordinator.deliver(
+                                result: displayResult,
+                                insight: todayInsight
+                            )
+                        }
+                        : nil
+                )
                 .padding(.horizontal, 16)
+                .padding(.top, 14)
+            }
 
-            FaceScanWhoopIndicatorTrendsSection(history: history)
-                .padding(.horizontal, 16)
-                .padding(.top, 28)
+            if showsTrends {
+                FaceScanWhoopIndicatorTrendsSection(history: history)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 28)
+            }
 
-            Spacer(minLength: 40)
+            Spacer(minLength: showsTrends ? 40 : (style == .chatThread ? 0 : 12))
         }
+        .environment(\.faceScanResultsAnimateReveal, true)
     }
 }
 
 // MARK: - Anneau + photo
 
 private struct FaceScanWhoopScoreRing: View {
+    @Environment(\.faceScanResultsAnimateReveal) private var animateReveal
+
     let result: FaceScanResult
+
+    @State private var animatedProgress: Double = 0
+    @State private var displayedScore: Int = 0
+    @State private var contentVisible = true
+    @State private var scoreCountTask: Task<Void, Never>?
 
     private let ringSize: CGFloat = 300
     private let strokeWidth: CGFloat = 11
@@ -188,10 +269,11 @@ private struct FaceScanWhoopScoreRing: View {
                     .clipShape(Circle())
 
                     VStack(spacing: 2) {
-                        Text("\(displayScore)%")
+                        Text("\(displayedScore)%")
                             .font(.system(size: 46, weight: .bold))
                             .foregroundStyle(.white)
                             .monospacedDigit()
+                            .contentTransition(.numericText())
 
                         Text("SCORE GLOBAL")
                             .font(.system(size: 10, weight: .semibold))
@@ -208,7 +290,7 @@ private struct FaceScanWhoopScoreRing: View {
                     .frame(width: ringSize, height: ringSize)
 
                 Circle()
-                    .trim(from: 0, to: progress)
+                    .trim(from: 0, to: animatedProgress)
                     .stroke(
                         ringProgressColor,
                         style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
@@ -217,8 +299,56 @@ private struct FaceScanWhoopScoreRing: View {
                     .rotationEffect(.degrees(-90))
             }
             .frame(width: ringSize, height: ringSize)
+            .scaleEffect(contentVisible ? 1 : 0.96)
+            .opacity(contentVisible ? 1 : 0)
         }
         .frame(maxWidth: .infinity)
+        .onAppear(perform: syncRevealState)
+        .onChange(of: result.id) { _, _ in
+            syncRevealState()
+        }
+        .onDisappear {
+            scoreCountTask?.cancel()
+        }
+    }
+
+    private func syncRevealState() {
+        scoreCountTask?.cancel()
+
+        guard animateReveal else {
+            animatedProgress = progress
+            displayedScore = displayScore
+            contentVisible = true
+            return
+        }
+
+        animatedProgress = 0
+        displayedScore = 0
+        contentVisible = false
+
+        withAnimation(FaceScanWhoopRevealTiming.contentEase) {
+            contentVisible = true
+        }
+
+        withAnimation(FaceScanWhoopRevealTiming.ringSpring) {
+            animatedProgress = progress
+        }
+
+        scoreCountTask = Task {
+            let target = displayScore
+            let steps = max(12, min(28, target / 3 + 8))
+            for step in 1...steps {
+                try? await Task.sleep(nanoseconds: FaceScanWhoopRevealTiming.scoreStepMs * 1_000_000)
+                guard !Task.isCancelled else { return }
+                let value = Int((Double(target) * Double(step) / Double(steps)).rounded())
+                await MainActor.run {
+                    displayedScore = value
+                }
+            }
+            await MainActor.run {
+                displayedScore = target
+            }
+        }
     }
 }
 
@@ -291,49 +421,133 @@ private struct FaceScanWhoopCircularPhoto: View {
 
 private struct FaceScanWhoopMetricsCard: View {
     @Environment(\.appTheme) private var theme
+    @Environment(\.faceScanResultsAnimateReveal) private var animateReveal
 
     let result: FaceScanResult
+    var style: FaceScanWhoopResultsStyle = .immersive
+
+    @State private var cardVisible = true
+    @State private var revealedMetricCount = FaceScanIndicators.Kind.allCases.count
+    @State private var revealTask: Task<Void, Never>?
 
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: 30, style: .continuous)
     }
 
+    private var metricKinds: [FaceScanIndicators.Kind] {
+        FaceScanIndicators.Kind.allCases
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(FaceScanIndicators.Kind.allCases.enumerated()), id: \.element.id) { index, kind in
+            ForEach(Array(metricKinds.enumerated()), id: \.element.id) { index, kind in
                 FaceScanWhoopMetricRow(
                     kind: kind,
-                    result: result
+                    result: result,
+                    style: style,
+                    isRevealed: !animateReveal || index < revealedMetricCount,
+                    animatesCount: animateReveal
                 )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, style == .chatThread ? 0 : 16)
+                .padding(.vertical, style == .chatThread ? 11 : 14)
+                .opacity(index < revealedMetricCount ? 1 : 0)
+                .offset(y: index < revealedMetricCount ? 0 : (style == .chatThread ? 14 : 10))
+                .scaleEffect(
+                    index < revealedMetricCount ? 1 : (style == .chatThread ? 0.97 : 1),
+                    anchor: .leading
+                )
+                .animation(
+                    FaceScanWhoopRevealTiming.contentEase,
+                    value: revealedMetricCount
+                )
 
-                if index < FaceScanIndicators.Kind.allCases.count - 1 {
+                if index < metricKinds.count - 1 {
                     Divider()
-                        .overlay(Color.white.opacity(0.08))
-                        .padding(.leading, 52)
+                        .overlay(dividerColor)
+                        .padding(.leading, style == .chatThread ? 34 : 52)
+                        .opacity(index < revealedMetricCount ? 1 : 0)
                 }
             }
 
-            legend
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 16)
+            if style == .immersive {
+                legend
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
+                    .padding(.bottom, 16)
+                    .opacity(cardVisible ? 1 : 0)
+            }
         }
-        .background {
+        .background { metricsBackground }
+        .clipShape(RoundedRectangle(cornerRadius: style == .immersive ? 30 : 0, style: .continuous))
+        .modifier(FaceScanWhoopMetricsCardChrome(style: style, isDark: theme.isDark))
+        .opacity(cardVisible ? 1 : 0)
+        .offset(y: cardVisible ? 0 : (style == .chatThread ? 8 : 14))
+        .onAppear(perform: syncRevealState)
+        .onChange(of: result.id) { _, _ in
+            syncRevealState()
+        }
+        .onDisappear {
+            revealTask?.cancel()
+        }
+    }
+
+    private var dividerColor: Color {
+        style == .chatThread
+            ? OnboardingTheme.softBorder.opacity(0.35)
+            : Color.white.opacity(0.08)
+    }
+
+    @ViewBuilder
+    private var metricsBackground: some View {
+        if style == .immersive {
             cardShape
                 .fill(.clear)
                 .processGlassEffect(in: cardShape, interactive: false)
         }
-        .clipShape(cardShape)
-        .processHomeGlassCardShadow(isDark: theme.isDark)
+    }
+
+    private func syncRevealState() {
+        revealTask?.cancel()
+
+        guard animateReveal else {
+            cardVisible = true
+            revealedMetricCount = metricKinds.count
+            return
+        }
+
+        cardVisible = false
+        revealedMetricCount = 0
+
+        let startDelay = FaceScanWhoopRevealTiming.metricsStartDelay(for: style)
+        let stagger = FaceScanWhoopRevealTiming.metricStagger(for: style)
+
+        revealTask = Task {
+            try? await Task.sleep(for: .milliseconds(Int(startDelay * 1000)))
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                withAnimation(FaceScanWhoopRevealTiming.contentEase) {
+                    cardVisible = true
+                }
+            }
+
+            for index in 1...metricKinds.count {
+                try? await Task.sleep(nanoseconds: UInt64(stagger * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    withAnimation(FaceScanWhoopRevealTiming.contentEase) {
+                        revealedMetricCount = index
+                    }
+                }
+            }
+        }
     }
 
     private var legend: some View {
         HStack(spacing: 18) {
-            legendItem(color: FaceScanWhoopPalette.insufficient, title: "Insuffisant")
-            legendItem(color: FaceScanWhoopPalette.sufficient, title: "Suffisant")
-            legendItem(color: FaceScanWhoopPalette.optimal, title: "Optimal")
+            legendItem(color: FaceScanWhoopPalette.insufficient, title: FaceScanIndicators.WellnessZone.insufficient.title)
+            legendItem(color: FaceScanWhoopPalette.sufficient, title: FaceScanIndicators.WellnessZone.sufficient.title)
+            legendItem(color: FaceScanWhoopPalette.optimal, title: FaceScanIndicators.WellnessZone.optimal.title)
             Spacer(minLength: 0)
         }
     }
@@ -350,9 +564,29 @@ private struct FaceScanWhoopMetricsCard: View {
     }
 }
 
+private struct FaceScanWhoopMetricsCardChrome: ViewModifier {
+    let style: FaceScanWhoopResultsStyle
+    let isDark: Bool
+
+    func body(content: Content) -> some View {
+        if style == .immersive {
+            content.processHomeGlassCardShadow(isDark: isDark)
+        } else {
+            content
+        }
+    }
+}
+
 private struct FaceScanWhoopMetricRow: View {
     let kind: FaceScanIndicators.Kind
     let result: FaceScanResult
+    var style: FaceScanWhoopResultsStyle = .immersive
+    var isRevealed: Bool = true
+    var animatesCount: Bool = false
+
+    @State private var displayedPercent: Int = 0
+    @State private var zoneBarProgress: Double = 1
+    @State private var didAnimateRow = false
 
     private var percent: Int {
         FaceScanIndicators.displayPercent(for: kind, result: result)
@@ -362,35 +596,103 @@ private struct FaceScanWhoopMetricRow: View {
         FaceScanIndicators.displayZone(for: kind, result: result)
     }
 
+    private var iconColor: Color {
+        style == .chatThread
+            ? OnboardingTheme.primaryText.opacity(0.78)
+            : FaceScanWhoopPalette.label.opacity(0.88)
+    }
+
+    private var labelColor: Color {
+        style == .chatThread
+            ? OnboardingTheme.primaryText
+            : FaceScanWhoopPalette.label.opacity(0.88)
+    }
+
+    private var valueColor: Color {
+        if style == .chatThread {
+            return FaceScanWhoopPalette.ringColor(for: zone)
+        }
+        return FaceScanWhoopPalette.label
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: kind.systemImage)
                 .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.88))
+                .foregroundStyle(iconColor)
                 .frame(width: 22)
 
             Text(kind.whoopLabel)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.88))
+                .font(.system(size: style == .chatThread ? 12 : 11, weight: .semibold))
+                .foregroundStyle(labelColor)
                 .tracking(0.3)
                 .lineLimit(2)
                 .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            FaceScanWhoopZoneBar(activeZone: zone)
+            FaceScanWhoopZoneBar(activeZone: zone, style: style)
                 .frame(width: 92)
+                .opacity(zoneBarProgress)
 
-            Text("\(percent)%")
+            Text("\(displayedPercent)%")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label)
+                .foregroundStyle(valueColor)
                 .monospacedDigit()
+                .contentTransition(.numericText())
                 .frame(width: 44, alignment: .trailing)
+        }
+        .onAppear(perform: syncDisplayedValues)
+        .onChange(of: isRevealed) { _, revealed in
+            guard revealed else { return }
+            syncDisplayedValues()
+        }
+        .onChange(of: result.id) { _, _ in
+            didAnimateRow = false
+            syncDisplayedValues()
+        }
+    }
+
+    private func syncDisplayedValues() {
+        guard isRevealed else {
+            displayedPercent = 0
+            zoneBarProgress = 0.35
+            return
+        }
+
+        guard animatesCount, !didAnimateRow else {
+            displayedPercent = percent
+            zoneBarProgress = 1
+            return
+        }
+
+        didAnimateRow = true
+        displayedPercent = 0
+        zoneBarProgress = 0.35
+
+        withAnimation(FaceScanWhoopRevealTiming.contentEase) {
+            zoneBarProgress = 1
+        }
+
+        let target = percent
+        Task {
+            let steps = 10
+            for step in 1...steps {
+                try? await Task.sleep(nanoseconds: 18_000_000)
+                let value = Int((Double(target) * Double(step) / Double(steps)).rounded())
+                await MainActor.run {
+                    displayedPercent = value
+                }
+            }
+            await MainActor.run {
+                displayedPercent = target
+            }
         }
     }
 }
 
 private struct FaceScanWhoopZoneBar: View {
     let activeZone: FaceScanIndicators.WellnessZone
+    var style: FaceScanWhoopResultsStyle = .immersive
 
     private let segmentHeight: CGFloat = 4
     private let spacing: CGFloat = 2
@@ -407,9 +709,15 @@ private struct FaceScanWhoopZoneBar: View {
     private func segment(for zone: FaceScanIndicators.WellnessZone) -> some View {
         let isActive = zone == activeZone
         RoundedRectangle(cornerRadius: 2, style: .continuous)
-            .fill(isActive ? color(for: zone) : FaceScanWhoopPalette.segmentIdle)
-            .frame(height: segmentHeight)
+            .fill(isActive ? color(for: zone) : idleColor)
+            .frame(height: isActive ? segmentHeight + 1 : segmentHeight)
             .frame(maxWidth: .infinity)
+    }
+
+    private var idleColor: Color {
+        style == .chatThread
+            ? OnboardingTheme.softBorder.opacity(0.35)
+            : FaceScanWhoopPalette.segmentIdle
     }
 
     private func color(for zone: FaceScanIndicators.WellnessZone) -> Color {
@@ -425,8 +733,11 @@ private struct FaceScanWhoopZoneBar: View {
 
 private struct FaceScanWhoopIndicatorTrendsSection: View {
     @Environment(\.appTheme) private var theme
+    @Environment(\.faceScanResultsAnimateReveal) private var animateReveal
 
     let history: [FaceScanResult]
+
+    @State private var sectionVisible = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -440,12 +751,36 @@ private struct FaceScanWhoopIndicatorTrendsSection: View {
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
             }
 
-            ForEach(FaceScanIndicators.Kind.allCases) { kind in
+            ForEach(Array(FaceScanIndicators.Kind.allCases.enumerated()), id: \.element.id) { index, kind in
                 FaceScanWhoopIndicatorTrendCard(
                     kind: kind,
                     history: history,
                     theme: theme
                 )
+                .opacity(sectionVisible ? 1 : 0)
+                .offset(y: sectionVisible ? 0 : 12)
+                .animation(
+                    FaceScanWhoopRevealTiming.contentEase.delay(Double(index) * 0.04),
+                    value: sectionVisible
+                )
+            }
+        }
+        .onAppear(perform: syncRevealState)
+    }
+
+    private func syncRevealState() {
+        guard animateReveal else {
+            sectionVisible = true
+            return
+        }
+
+        sectionVisible = false
+        Task {
+            try? await Task.sleep(for: .milliseconds(Int(FaceScanWhoopRevealTiming.trendsStartDelay * 1000)))
+            await MainActor.run {
+                withAnimation(FaceScanWhoopRevealTiming.contentEase) {
+                    sectionVisible = true
+                }
             }
         }
     }

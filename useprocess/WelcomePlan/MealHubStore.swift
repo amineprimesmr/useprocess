@@ -29,7 +29,32 @@ extension WelcomePlanStore {
 
         let payload = meal.encodedForStorage()
         var slots = current.progress.draftMealsBySlot[dayId] ?? [:]
+        guard slots[slot.rawValue] != payload else { return }
         slots[slot.rawValue] = payload
+        current.progress.draftMealsBySlot[dayId] = slots
+        savePlan(current)
+    }
+
+    /// Insère plusieurs brouillons en une seule mutation et une seule
+    /// persistance du plan. Utilisé au premier affichage d'une journée.
+    func saveMissingDraftMeals(
+        dayId: String,
+        mealsBySlot: [MealTimeSlot: MealSuggestionContent]
+    ) {
+        guard var current = plan else { return }
+        guard OriginPlanPresenter.isEditableJournalDay(dayId: dayId, in: current) else { return }
+
+        var slots = current.progress.draftMealsBySlot[dayId] ?? [:]
+        let validated = current.progress.validatedMealsBySlot[dayId] ?? [:]
+        var changed = false
+
+        for (slot, meal) in mealsBySlot {
+            guard validated[slot.rawValue] == nil, slots[slot.rawValue] == nil else { continue }
+            slots[slot.rawValue] = meal.encodedForStorage()
+            changed = true
+        }
+
+        guard changed else { return }
         current.progress.draftMealsBySlot[dayId] = slots
         savePlan(current)
     }

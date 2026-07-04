@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct OnboardingProgramCreationStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var viewModel: OnboardingViewModel
     @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var permissionsManager: PermissionsManager
@@ -53,8 +54,7 @@ struct OnboardingProgramCreationStepView: View {
                     if creationViewModel.progressPanelVisible {
                         OnboardingProgramCreationProgressBars(
                             labels: creationViewModel.progressBarLabels,
-                            progresses: creationViewModel.barProgresses,
-                            showsSecondBar: creationViewModel.showsSecondProgressBar
+                            progresses: creationViewModel.barProgresses
                         )
                         .padding(.horizontal, 28)
                     }
@@ -74,7 +74,8 @@ struct OnboardingProgramCreationStepView: View {
 
                 if let popup = creationViewModel.activePopup {
                     OnboardingAnalysisYesNoPopup(
-                        subtitle: "Pour pouvoir continuer, précise",
+                        subtitle: popupSubtitle(for: popup.kind),
+                        headerImageName: popup.kind == .healthKit ? "healthapple" : nil,
                         question: popup.question,
                         affirmativeTitle: popup.affirmativeTitle,
                         negativeTitle: popup.negativeTitle,
@@ -85,7 +86,6 @@ struct OnboardingProgramCreationStepView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .task {
             viewModel.isProgramCreationCompleted = false
             creationViewModel.bind(
@@ -105,7 +105,7 @@ struct OnboardingProgramCreationStepView: View {
             if !creationViewModel.detailMessage.isEmpty {
                 Text(creationViewModel.detailMessage)
                     .font(.system(size: 18, weight: .regular))
-                    .foregroundStyle(Color.white.opacity(0.82))
+                    .foregroundStyle(OnboardingTheme.bodyText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
             }
@@ -117,13 +117,22 @@ struct OnboardingProgramCreationStepView: View {
             } label: {
                 Text("C'est parti")
                     .font(.system(size: 20, weight: .black))
-                    .foregroundStyle(Color.black)
+                    .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
                     .frame(maxWidth: .infinity)
                     .frame(height: 58)
-                    .background(Color.white)
+                    .background(OnboardingTheme.filledButtonBackground(for: colorScheme))
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    private func popupSubtitle(for kind: OnboardingAnalysisProgressConfig.PopupKind) -> String? {
+        switch kind {
+        case .healthKit:
+            return "Pour calibrer ton plan personnalisé"
+        case .yesNo:
+            return "Pour pouvoir continuer, précise"
         }
     }
 }

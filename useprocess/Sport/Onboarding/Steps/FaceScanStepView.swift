@@ -1,27 +1,29 @@
 import SwiftUI
 
-/// Scan visage onboarding — wrapper autour de `FaceScanCaptureScreen`.
+/// Scan visage onboarding — même session que l’app (capture + analyse WHOOP + résultats).
 struct FaceScanStepView: View {
     @ObservedObject var viewModel: OnboardingViewModel
+    @EnvironmentObject private var profileService: UnifiedProfileService
     var onComplete: () -> Void
     var onBack: () -> Void
 
     var body: some View {
         FaceScanCapturePrivacyGateView(
-            onBack: onBack,
+            onDismiss: {},
+            onCancelCapture: onBack,
             onSkip: {
                 viewModel.onboardingFaceMesh = nil
                 viewModel.onboardingFaceMarkers = nil
                 viewModel.isFaceAnalysisCompleted = true
                 onComplete()
             },
-            onCapture: { payload, markers in
-                viewModel.onboardingFaceMesh = payload.mesh
-                viewModel.onboardingFaceMarkers = markers
+            onComplete: { result in
+                viewModel.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
+                viewModel.onboardingFaceMarkers = result.markers
                 viewModel.isFaceAnalysisCompleted = true
-                OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
                 onComplete()
             }
         )
+        .environmentObject(profileService)
     }
 }

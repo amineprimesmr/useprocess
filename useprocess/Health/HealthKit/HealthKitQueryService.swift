@@ -239,4 +239,38 @@ final class HealthKitQueryService {
 
         return values
     }
+
+    // MARK: - Body mass history
+
+    func dailyLatestBodyMass(days: Int) async -> [(day: Date, kilograms: Double)] {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .bodyMass) else { return [] }
+        let unit = HKUnit.gramUnit(with: .kilo)
+        let today = calendar.startOfDay(for: Date())
+        guard let start = calendar.date(byAdding: .day, value: -(max(days, 1) - 1), to: today) else { return [] }
+        let end = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+
+        let samples: [HKQuantitySample] = await withCheckedContinuation { continuation in
+            let predicate = HKQuery.predicateForSamples(withStart: start, end: end)
+            let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sort]
+            ) { _, results, _ in
+                continuation.resume(returning: (results as? [HKQuantitySample]) ?? [])
+            }
+            store.execute(query)
+        }
+
+        var latestByDay: [Date: Double] = [:]
+        for sample in samples {
+            let day = calendar.startOfDay(for: sample.endDate)
+            let kg = sample.quantity.doubleValue(for: unit)
+            guard kg > 0 else { continue }
+            latestByDay[day] = kg
+        }
+
+        return latestByDay.keys.sorted().map { ($0, latestByDay[$0]!) }
+    }
 }

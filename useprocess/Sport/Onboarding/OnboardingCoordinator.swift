@@ -51,6 +51,13 @@ class OnboardingCoordinator {
 
             // ✅ CRITIQUE: Ajouter les sports au nouveau profil
             newProfile.sports = sportsArray
+            newProfile.onboardingPrimaryFocus = viewModel.onboardingPrimaryFocus
+            newProfile.onboardingDebloatDrivers = viewModel.onboardingDebloatDrivers.sorted {
+                $0.rawValue < $1.rawValue
+            }
+            newProfile.onboardingRoutineChallenges = viewModel.onboardingRoutineChallenges.sorted {
+                $0.rawValue < $1.rawValue
+            }
 
             try await profileService.saveProfile(newProfile)
 
@@ -140,6 +147,13 @@ class OnboardingCoordinator {
             currentProfile.sessionDuration = viewModel.selectedSessionDuration
             currentProfile.trainingLocation = viewModel.selectedTrainingLocation
             currentProfile.availableEquipment = Array(viewModel.selectedEquipment)
+            currentProfile.onboardingPrimaryFocus = viewModel.onboardingPrimaryFocus
+            currentProfile.onboardingDebloatDrivers = viewModel.onboardingDebloatDrivers.sorted {
+                $0.rawValue < $1.rawValue
+            }
+            currentProfile.onboardingRoutineChallenges = viewModel.onboardingRoutineChallenges.sorted {
+                $0.rawValue < $1.rawValue
+            }
 
             // ✅ CRITIQUE: Mettre à jour lastUpdated avant sauvegarde
             currentProfile.updateLastUpdated()

@@ -230,7 +230,7 @@ final class WelcomePlanChatViewModel {
     func finishAndEnterApp(onComplete: @escaping () -> Void) async {
         guard let plan = generatedPlan else { return }
         WelcomePlanStore.shared.markQuestionnaireComplete()
-        WelcomePlanStore.shared.savePlan(plan)
+        WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
         await WelcomePlanProfileSync.apply(
             answers: answers,
             plan: plan,

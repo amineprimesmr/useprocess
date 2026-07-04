@@ -452,14 +452,9 @@ struct PlanProtocolCarouselCard: View {
             }
         }
         .shadow(
-            color: .black.opacity(theme.isDark ? 0.45 : 0.12),
-            radius: layoutStyle == .paired ? 3 : 2,
-            y: 2
-        )
-        .shadow(
-            color: .black.opacity(theme.isDark ? 0.38 : 0.14),
-            radius: layoutStyle == .paired ? 14 : 12,
-            y: layoutStyle == .paired ? 8 : 7
+            color: .black.opacity(theme.isDark ? 0.34 : 0.11),
+            radius: layoutStyle == .paired ? 10 : 9,
+            y: layoutStyle == .paired ? 6 : 5
         )
         .processZoomSource(id: zoomTransitionID, namespace: zoomNamespace)
     }

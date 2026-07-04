@@ -1,19 +1,18 @@
 {
   "images": [
     {
-      "filename": "BED (1) 2.png",
-      "idiom": "universal",
-      "scale": "1x"
+      "filename": "notifclair.png",
+      "idiom": "universal"
     },
     {
-      "filename": "BED (1) 2.png",
-      "idiom": "universal",
-      "scale": "2x"
-    },
-    {
-      "filename": "BED (1) 2.png",
-      "idiom": "universal",
-      "scale": "3x"
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ],
+      "filename": "notifdark.png",
+      "idiom": "universal"
     }
   ],
   "info": {

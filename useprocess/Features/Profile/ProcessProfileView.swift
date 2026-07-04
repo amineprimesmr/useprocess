@@ -1,7 +1,7 @@
 import AuthenticationServices
 import SwiftUI
 
-/// Profil performance — identité, progression Process et activité du programme.
+/// Profil — hero photo, poids, rétention et parrainage.
 struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
 
@@ -12,19 +12,14 @@ struct ProcessProfileView: View {
     @State private var profileStore = SocialProfileStore.shared
 
     @State private var showSettings = false
-    @State private var showUsernameEditor = false
-    @State private var showShareSheet = false
     @State private var showReferral = false
+    @State private var showUsernameEditor = false
     @State private var showPhotoFlow = false
     @State private var photoMenuAnchor: CGPoint = .zero
     @State private var pendingAccountConfirmation: AccountConfirmation?
-    @State private var selectedRange: ProfileAnalyticsRange = .week
-    @State private var weekOffset = 0
-    @State private var profileScrollOffset: CGFloat = 0
 
-    private var avatarCollapseProgress: CGFloat {
-        min(1, max(0, -profileScrollOffset / 160))
-    }
+    @State private var weightHistory: [ProfileAnalyticsPoint] = []
+    @State private var retentionHistory: [ProfileAnalyticsPoint] = []
 
     private var resolvedProfile: SocialProfile {
         if let profile = profileStore.profile {
@@ -36,105 +31,31 @@ struct ProcessProfileView: View {
         return .guest
     }
 
-    private var visiblePoints: [ProfileAnalyticsPoint] {
-        let all = streakStore.snapshot.month.map { day in
-            ProfileAnalyticsPoint(
-                id: day.id,
-                date: day.date,
-                value: day.isComplete
-                    ? 100
-                    : (day.isToday ? streakStore.snapshot.todayProgress * 100 : 0)
-            )
-        }
-
-        switch selectedRange {
-        case .week:
-            let end = max(0, all.count - weekOffset * 7)
-            let start = max(0, end - 7)
-            return Array(all[start..<end])
-        case .month, .all:
-            return all
-        }
-    }
-
-    private var averageRegularity: Int {
-        guard !visiblePoints.isEmpty else { return 0 }
-        return Int((visiblePoints.map(\.value).reduce(0, +) / Double(visiblePoints.count)).rounded())
-    }
-
-    private var previousPeriodAverage: Int? {
-        guard selectedRange == .week else { return nil }
-        let all = streakStore.snapshot.month
-        let currentEnd = max(0, all.count - weekOffset * 7)
-        let previousEnd = max(0, currentEnd - 7)
-        let previousStart = max(0, previousEnd - 7)
-        guard previousEnd - previousStart == 7 else { return nil }
-        let values = all[previousStart..<previousEnd].map { $0.isComplete ? 100.0 : 0.0 }
-        return Int((values.reduce(0, +) / Double(values.count)).rounded())
-    }
-
     var body: some View {
         ZStack(alignment: .top) {
-            ProfilePerformanceBackground()
-
             ScrollView {
-                LazyVStack(spacing: 0) {
-                    ProfileScrollOffsetReader()
+                VStack(spacing: 0) {
+                    profileHero(resolvedProfile)
+                        .animation(ProfileTheme.spring, value: profileStore.profile?.coverPhotoFilename)
 
-                    ProfilePerformanceHero(
-                        profile: resolvedProfile,
-                        totalDays: streakStore.snapshot.totalCompletedDays,
-                        streak: streakStore.snapshot.currentStreak,
-                        healthScore: healthManager.readinessScore
-                    )
-
-                    ProfileRegularitySection(
-                        selectedRange: $selectedRange,
-                        points: visiblePoints,
-                        average: averageRegularity,
-                        comparison: previousPeriodAverage.map { averageRegularity - $0 },
-                        canGoForward: weekOffset > 0,
-                        canGoBackward: selectedRange == .week && weekOffset < 3,
-                        onBackward: { moveWeek(by: 1) },
-                        onForward: { moveWeek(by: -1) }
-                    )
-                    .padding(.top, 34)
-
-                    ProfileReferralSection(onOpen: { showReferral = true })
-                        .padding(.top, 48)
-                        .padding(.bottom, 38)
+                    profileScrollContent(resolvedProfile)
                 }
                 .processReportsTabBarScrollOffset()
             }
-            .coordinateSpace(name: "profileScroll")
+            .coordinateSpace(name: "processMainScroll")
+            .scrollClipDisabled()
             .ignoresSafeArea(edges: .top)
             .scrollIndicators(.hidden)
-            .scrollClipDisabled()
             .processTransparentScrollSurface()
-            .onPreferenceChange(ProfileScrollOffsetPreferenceKey.self) { value in
-                profileScrollOffset = value
-            }
-            .refreshable {
-                await refreshProfile()
-            }
 
-            ProfilePerformanceStickyTopBar(
-                collapseProgress: avatarCollapseProgress,
-                onShare: { showShareSheet = true },
-                onSettings: {
-                    HapticManager.shared.impact(.light)
-                    showSettings = true
-                }
-            )
-
-            ProfilePerformanceFloatingAvatar(
-                image: profileStore.profilePhoto,
-                collapseProgress: avatarCollapseProgress,
-                onPhotoTap: presentPhotoMenu
-            )
+            profileTopChrome
+                .padding(.top, ProcessMainChromeMetrics.topSafeInset + ProfileTopChromeMetrics.topPadding)
         }
-        .preferredColorScheme(.dark)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .processClearUIKitHostingBackground()
+        .refreshable {
+            await refreshProfile(forceHealthRefresh: true)
+        }
         .reportsProfileSubrouteActive(showSettings)
         .profilePhotoFlow(
             isPresented: $showPhotoFlow,
@@ -151,9 +72,6 @@ struct ProcessProfileView: View {
                 }
             }
         )
-        .sheet(isPresented: $showShareSheet) {
-            ProfileShareSheet(items: [profileStore.shareText])
-        }
         .fullScreenCover(isPresented: $showReferral) {
             ProcessReferralProgramView()
                 .environmentObject(profileService)
@@ -170,13 +88,6 @@ struct ProcessProfileView: View {
             .processAppPresentationBackground()
             .environmentObject(profileService)
         }
-        .onChange(of: selectedRange) { _, newRange in
-            weekOffset = 0
-            HapticManager.shared.selection()
-            if newRange != .week {
-                weekOffset = 0
-            }
-        }
         .onChange(of: session.hasCompletedOnboarding) { _, completed in
             if !completed {
                 showSettings = false
@@ -187,22 +98,86 @@ struct ProcessProfileView: View {
                 await profileService.loadProfile()
             }
             profileStore.bind(unified: profileService.currentProfile)
-            await refreshProfile()
+            await refreshProfile(forceHealthRefresh: false)
         }
         .onAppear {
-            profileStore.bind(unified: profileService.currentProfile)
-            streakStore.reload()
-            streakStore.sync(from: WelcomePlanStore.shared.plan)
+            ProcessPerformanceTrace.endProfileOpen()
+            Task { await reloadChartHistories() }
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             profileStore.bind(unified: profileService.currentProfile)
         }
     }
 
+    @ViewBuilder
+    private func profileHero(_ profile: SocialProfile) -> some View {
+        if profileStore.hasCoverPhoto, let cover = profileStore.coverPhoto {
+            ProfileCoverPhotoSection(
+                image: cover,
+                displayName: profile.displayName,
+                username: profile.username,
+                isPrivate: profile.isPrivate,
+                onPhotoTap: { presentPhotoMenu(at: $0) },
+                onEditUsername: { showUsernameEditor = true }
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.985)))
+        } else {
+            ProfileEmptyHeroSection(onPhotoTap: { presentPhotoMenu(at: $0) })
+                .transition(.opacity.combined(with: .scale(scale: 0.985)))
+        }
+    }
+
+    private var profileTopChrome: some View {
+        HStack {
+            Spacer(minLength: 0)
+
+            ProfileTopChromeActionButton(
+                systemName: "gearshape.fill",
+                accessibilityLabel: "Paramètres"
+            ) {
+                openSettings()
+            }
+        }
+        .padding(.horizontal, ProfileTopChromeMetrics.horizontalPadding)
+    }
+
+    @ViewBuilder
+    private func profileScrollContent(_ profile: SocialProfile) -> some View {
+        VStack(alignment: .leading, spacing: 24) {
+            if !profileStore.hasCoverPhoto {
+                ProfileIdentityBlock(
+                    displayName: profile.displayName,
+                    username: profile.username,
+                    isPrivate: profile.isPrivate,
+                    onEditUsername: { showUsernameEditor = true }
+                )
+            }
+
+            ProfileMetricChartSection(
+                metric: .weight,
+                points: chartPoints(for: .weight),
+                latestValue: latestValue(for: .weight),
+                deltaVsPrevious: deltaVsPrevious(for: .weight)
+            )
+
+            ProfileMetricChartSection(
+                metric: .retention,
+                points: chartPoints(for: .retention),
+                latestValue: latestValue(for: .retention),
+                deltaVsPrevious: deltaVsPrevious(for: .retention)
+            )
+
+            ProfileActionButtons(onReferral: { showReferral = true })
+        }
+        .padding(.horizontal, ProfileTheme.horizontalPadding)
+        .padding(.top, 20)
+        .padding(.bottom, 32)
+        .safeAreaPadding(.bottom, 8)
+    }
+
     private var settingsSheet: some View {
         NavigationStack {
             EditProfileView(
-                onShareProfile: { showShareSheet = true },
                 onLogout: { pendingAccountConfirmation = .logout },
                 onDeleteConfirmed: {
                     Task { @MainActor in
@@ -216,9 +191,7 @@ struct ProcessProfileView: View {
                 profileFieldEditor(for: destination)
             }
             .navigationDestination(for: ProfileSettingsCategory.self) { category in
-                profileSettingsDetail(for: category, onShareProfile: {
-                    showShareSheet = true
-                })
+                profileSettingsDetail(for: category, onShareProfile: {})
             }
         }
         .processAppPageBackground()
@@ -250,25 +223,122 @@ struct ProcessProfileView: View {
         }
     }
 
+    private func history(for metric: ProfileChartMetric) -> [ProfileAnalyticsPoint] {
+        switch metric {
+        case .weight: return weightHistory
+        case .retention: return retentionHistory
+        }
+    }
+
+    private func chartPoints(for metric: ProfileChartMetric) -> [ProfileAnalyticsPoint] {
+        let points = ProfileChartHistoryBuilder.visiblePoints(
+            history: history(for: metric),
+            range: .profileDefault,
+            weekOffset: 0
+        )
+        if !points.isEmpty { return points }
+        return fallbackChartPoints(for: metric)
+    }
+
+    private func fallbackChartPoints(for metric: ProfileChartMetric) -> [ProfileAnalyticsPoint] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        switch metric {
+        case .weight:
+            if healthManager.todaySnapshot.vitals.bodyMass > 0 {
+                return [
+                    ProfileAnalyticsPoint(
+                        id: "weight-today",
+                        date: today,
+                        value: healthManager.todaySnapshot.vitals.bodyMass
+                    )
+                ]
+            }
+            let profileWeight = profileService.currentProfile?.weight ?? 0
+            if profileWeight > 0 {
+                return [
+                    ProfileAnalyticsPoint(
+                        id: "profile-weight",
+                        date: today,
+                        value: profileWeight
+                    )
+                ]
+            }
+
+        case .retention:
+            if let latest = FaceScanHistoryStore.shared.latestResult {
+                let value = Double(FaceScanIndicators.displayPercent(for: .retention, result: latest))
+                if value > 0 {
+                    return [
+                        ProfileAnalyticsPoint(
+                            id: "retention-latest",
+                            date: calendar.startOfDay(for: latest.createdAt),
+                            value: value
+                        )
+                    ]
+                }
+            }
+        }
+
+        return []
+    }
+
+    private func latestValue(for metric: ProfileChartMetric) -> Double? {
+        chartPoints(for: metric).last?.value
+    }
+
+    private func deltaVsPrevious(for metric: ProfileChartMetric) -> Double? {
+        let currentAverage = ProfileChartHistoryBuilder.average(
+            in: ProfileChartHistoryBuilder.visiblePoints(
+                history: history(for: metric),
+                range: .week,
+                weekOffset: 0
+            )
+        )
+        let previousAverage = ProfileChartHistoryBuilder.previousPeriodAverage(
+            history: history(for: metric),
+            range: .week,
+            weekOffset: 0
+        )
+
+        guard let currentAverage, let previousAverage else { return nil }
+        return currentAverage - previousAverage
+    }
+
+    private func openSettings() {
+        HapticManager.shared.impact(.light)
+        showSettings = true
+    }
+
     private func presentPhotoMenu(at point: CGPoint) {
         photoMenuAnchor = point
         HapticManager.shared.impact(.light)
         showPhotoFlow = true
     }
 
-    private func moveWeek(by delta: Int) {
-        let next = min(3, max(0, weekOffset + delta))
-        guard next != weekOffset else { return }
-        HapticManager.shared.selection()
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
-            weekOffset = next
-        }
-    }
-
-    private func refreshProfile() async {
+    private func refreshProfile(forceHealthRefresh: Bool) async {
         streakStore.reload()
         streakStore.sync(from: WelcomePlanStore.shared.plan)
-        await ProfileHealthSection.refreshAll(force: true)
+        if forceHealthRefresh {
+            await ProfileHealthSection.refreshAll(force: true)
+        }
+        await reloadChartHistories()
+    }
+
+    private func reloadChartHistories() async {
+        FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
+
+        let weightSamples = await healthManager.fetchBodyMassHistory(days: 90)
+        let profileWeight = profileService.currentProfile?.weight ?? 0
+
+        weightHistory = ProfileChartHistoryBuilder.mergeWithProfileFallback(
+            history: weightSamples,
+            profileWeight: profileWeight
+        )
+        retentionHistory = ProfileChartHistoryBuilder.retentionHistory(
+            from: FaceScanHistoryStore.shared.history
+        )
     }
 
     private func performAccountDeletion() async {

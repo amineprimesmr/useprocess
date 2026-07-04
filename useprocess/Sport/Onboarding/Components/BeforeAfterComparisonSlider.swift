@@ -11,7 +11,7 @@ struct BeforeAfterComparisonSlider: View {
     let beforeImageName: String
     let afterImageName: String
 
-    @State private var sliderPosition: CGFloat = 0.5
+    @State private var sliderPosition: CGFloat = 0.92
     @State private var didTriggerDragHaptic = false
 
     private let handleSize: CGFloat = 44
@@ -50,6 +50,7 @@ struct BeforeAfterComparisonSlider: View {
 
                 sliderHandle
                     .position(x: dividerX, y: height / 2)
+                    .gesture(sliderDragGesture(width: width))
 
                 VStack {
                     HStack {
@@ -61,21 +62,6 @@ struct BeforeAfterComparisonSlider: View {
                     Spacer(minLength: 0)
                 }
             }
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        if !didTriggerDragHaptic {
-                            didTriggerDragHaptic = true
-                            HapticManager.shared.impact(.light)
-                        }
-                        let normalized = value.location.x / width
-                        sliderPosition = min(max(normalized, 0.04), 0.96)
-                    }
-                    .onEnded { _ in
-                        didTriggerDragHaptic = false
-                    }
-            )
         }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
@@ -98,8 +84,25 @@ struct BeforeAfterComparisonSlider: View {
             .foregroundStyle(Color.primary.opacity(0.65))
         }
         .frame(width: handleSize, height: handleSize)
+        .contentShape(Circle())
         .accessibilityLabel("Curseur avant après")
         .accessibilityAddTraits(.allowsDirectInteraction)
+    }
+
+    private func sliderDragGesture(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                if !didTriggerDragHaptic {
+                    didTriggerDragHaptic = true
+                    HapticManager.shared.impact(.light)
+                }
+                let normalized = value.location.x / width
+                sliderPosition = min(max(normalized, 0.04), 0.96)
+            }
+            .onEnded { _ in
+                didTriggerDragHaptic = false
+            }
     }
 
     private func comparisonBadge(_ title: String) -> some View {

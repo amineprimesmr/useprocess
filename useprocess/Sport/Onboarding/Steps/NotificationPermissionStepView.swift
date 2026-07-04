@@ -9,6 +9,7 @@ import SwiftUI
 import UserNotifications
 
 struct NotificationPermissionStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var permissionsManager: PermissionsManager
 
     let onComplete: () -> Void
@@ -53,20 +54,23 @@ struct NotificationPermissionStepView: View {
                     HStack(spacing: 12) {
                         if isRequesting {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: OnboardingTheme.primaryText))
+                                .progressViewStyle(
+                                    CircularProgressViewStyle(
+                                        tint: OnboardingTheme.onboardingPrimaryActionText(for: colorScheme)
+                                    )
+                                )
                                 .scaleEffect(0.8)
                         }
-                        Text("Continuer")
-                            .font(.system(size: 20, weight: .black))
+                        Text("CONTINUER")
+                            .font(.system(size: 22, weight: .black))
                     }
-                    .foregroundStyle(OnboardingTheme.primaryText)
+                    .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50)
+                    .frame(height: 58)
                 }
-                .glassStyle()
-                .buttonBorderShape(.roundedRectangle(radius: 50))
+                .onboardingPrimaryActionStyle()
                 .disabled(isRequesting)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 34)
                 .padding(.bottom, 50)
             }
         }

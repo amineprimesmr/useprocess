@@ -11,6 +11,7 @@ enum ProcessZoomTransitionID: Hashable {
     case postureCircuit
     case protocolItem(String)
     case homeLayoutEditor
+    case activityStatus
     case planResource(PlanResourceSheet)
 
     var sourceID: String {
@@ -33,6 +34,8 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_PROTOCOL_ITEM_\(itemID)"
         case .homeLayoutEditor:
             return "PROCESS_HOME_LAYOUT_EDITOR"
+        case .activityStatus:
+            return "PROCESS_ACTIVITY_STATUS"
         case .planResource(let sheet):
             return "PROCESS_PLAN_RESOURCE_\(sheet.id)"
         }
@@ -121,6 +124,15 @@ extension View {
     func processZoomTransition(id: ProcessZoomTransitionID, namespace: Namespace.ID) -> some View {
         if #available(iOS 18.0, *) {
             navigationTransition(.zoom(sourceID: id.sourceID, in: namespace))
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func processZoomTransition(id: ProcessZoomTransitionID, namespace: Namespace.ID?) -> some View {
+        if let namespace {
+            processZoomTransition(id: id, namespace: namespace)
         } else {
             self
         }

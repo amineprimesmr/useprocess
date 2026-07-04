@@ -69,6 +69,7 @@ final class SocialProfileStore {
     private(set) var profile: SocialProfile?
     private var activeUserID: String?
     private let fileManager = FileManager.default
+    private let imageCache = NSCache<NSString, UIImage>()
 
     private var photosDirectory: URL {
         let base = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -252,9 +253,14 @@ final class SocialProfileStore {
 
     private func image(for filename: String?) -> UIImage? {
         guard let filename else { return nil }
+        if let cached = imageCache.object(forKey: filename as NSString) {
+            return cached
+        }
         let url = photosDirectory.appendingPathComponent(filename)
         guard fileManager.fileExists(atPath: url.path) else { return nil }
-        return UIImage(contentsOfFile: url.path)
+        guard let image = UIImage(contentsOfFile: url.path) else { return nil }
+        imageCache.setObject(image, forKey: filename as NSString)
+        return image
     }
 
     private func loadPersistedProfile(userId: String) -> SocialProfile? {
@@ -319,7 +325,7 @@ final class SocialProfileStore {
 
     private enum PhotoStorage {
         /// Cover hero pleine largeur (Retina 3× ~430 pt → ~1290 px, marge pour zoom/crop).
-        static let coverMaxPixelDimension: CGFloat = 2560
+        static let coverMaxPixelDimension: CGFloat = 1600
         static let jpegQuality: CGFloat = 0.92
     }
 
@@ -330,6 +336,7 @@ final class SocialProfileStore {
         let url = photosDirectory.appendingPathComponent(filename)
         do {
             try data.write(to: url, options: .atomic)
+            imageCache.setObject(prepared, forKey: filename as NSString)
             return filename
         } catch {
             return nil
@@ -337,6 +344,7 @@ final class SocialProfileStore {
     }
 
     private func deleteFile(_ filename: String) {
+        imageCache.removeObject(forKey: filename as NSString)
         let url = photosDirectory.appendingPathComponent(filename)
         try? fileManager.removeItem(at: url)
     }

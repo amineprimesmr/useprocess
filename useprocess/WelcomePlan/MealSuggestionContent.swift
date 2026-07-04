@@ -650,7 +650,7 @@ enum MealPreparationStepsParser {
         return cleaned
     }
 
-    private static func cleanStep(_ raw: String) -> String {
+    nonisolated private static func cleanStep(_ raw: String) -> String {
         var step = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         step = step.replacingOccurrences(of: #"^\d+[\.)]\s*"#, with: "", options: .regularExpression)
         step = step.trimmingCharacters(in: CharacterSet(charactersIn: ".… "))

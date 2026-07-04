@@ -18,6 +18,7 @@ struct OnboardingAnswersSnapshot: Codable, Equatable {
     var hasWeightGoal: Bool?
     var selectedPrimaryGoals: [PrimaryGoal]?
     var selectedWeightGoal: WeightGoal?
+    var goalDeadline: GoalDeadline?
     var selectedGoalPace: GoalPace?
 
     var hasSportActivity: Bool?
@@ -29,11 +30,19 @@ struct OnboardingAnswersSnapshot: Codable, Equatable {
     var selectedSessionDuration: Int?
     var selectedTrainingLocation: TrainingLocation?
     var selectedEquipment: [PlanEquipment]?
+    var selectedSports: [String]?
 
     var nutritionProfile: NutritionProfile?
     var hasDietaryRestrictions: Bool?
     var otherDietaryRestriction: String?
     var sleepProfile: SleepProfile?
+    var referralCode: String?
+    var completedProfileChatQuestionIDs: [String]?
+    var onboardingPrimaryFocus: OnboardingPrimaryFocus?
+    var onboardingDebloatDrivers: [OnboardingDebloatDriver]?
+    /// Ancien format single-choice — migration lecture seule.
+    var onboardingDebloatDriver: OnboardingDebloatDriver?
+    var onboardingRoutineChallenges: [OnboardingRoutineChallenge]?
 
     var isGenderSelected: Bool?
     var isAgeSelected: Bool?
@@ -43,8 +52,25 @@ struct OnboardingAnswersSnapshot: Codable, Equatable {
     var isWeightGoalSelected: Bool?
     var isIdealWeightEntered: Bool?
     var isSportsSelected: Bool?
+    var isExperienceLevelSelected: Bool?
+    var isTrainingFrequencySelected: Bool?
+    var isDeadlineSelected: Bool?
     var isGoalPaceSelected: Bool?
     var isNutritionQualitySelected: Bool?
+    var isHasDietaryRestrictionsSelected: Bool?
+    var isWhichRestrictionsSelected: Bool?
+    var isNutritionObstaclesSelected: Bool?
     var isWeightManagementExperienceSelected: Bool?
+    var isHasSufficientHydrationSelected: Bool?
+    var isHydrationLevelSelected: Bool?
+    var isSleepQualitySelected: Bool?
+    var isFatigueFrequencySelected: Bool?
+    var isFatiguePeaksSelected: Bool?
+    var isPersonalizedWelcomeCompleted: Bool?
+    var isWeightMotivationCompleted: Bool?
+    var isWeightEstimationCompleted: Bool?
+    var isGoalProjectionCompleted: Bool?
+    var isFaceAnalysisCompleted: Bool?
+    var isProgramCreationCompleted: Bool?
     var hasDoneFirstGoalPace: Bool?
 }

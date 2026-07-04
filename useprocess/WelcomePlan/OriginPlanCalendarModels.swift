@@ -151,7 +151,7 @@ enum JournalTaskStatus: String, Codable, Equatable {
     case completed
 }
 
-struct OriginPlanProgress: Codable, Equatable {
+struct OriginPlanProgress: nonisolated Codable, Equatable, @unchecked Sendable {
     var completedTaskIds: Set<String> = []
     var taskStatuses: [String: JournalTaskStatus] = [:]
     var completedDayIds: Set<String> = []
@@ -244,6 +244,12 @@ struct OriginPlanProgress: Codable, Equatable {
         if completedTaskIds.contains(taskId) { return .completed }
         return nil
     }
+}
+
+/// Enveloppe locale séparant la progression du calendrier volumineux.
+struct StoredOriginPlanProgress: nonisolated Codable, Sendable {
+    let progress: OriginPlanProgress
+    let lastUpdated: Date
 }
 
 struct OriginPlanModification: Codable, Identifiable, Equatable {

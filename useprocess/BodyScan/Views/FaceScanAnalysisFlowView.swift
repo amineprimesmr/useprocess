@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Session post-capture : animation d'analyse (Claude, HealthKit…) puis écran résultats WHOOP.
 struct FaceScanAnalysisFlowView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let payload: FaceScanCapturePayload
     let markers: FaceWellnessMarkers
     var profile: UnifiedUserProfile?
@@ -24,7 +26,7 @@ struct FaceScanAnalysisFlowView: View {
 
     var body: some View {
         ZStack {
-            FaceScanWhoopPalette.canvas.ignoresSafeArea()
+            analysisBackground.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: completedResult == nil ? 28 : 0) {
@@ -38,7 +40,7 @@ struct FaceScanAnalysisFlowView: View {
                             result: result,
                             history: FaceScanHistoryStore.shared.history
                         )
-                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                        .transition(.opacity)
                     } else {
                         FaceScanAnalysisHeroView(payload: payload)
                         .padding(.horizontal, 24)
@@ -59,7 +61,6 @@ struct FaceScanAnalysisFlowView: View {
             }
         }
         .animation(.easeInOut(duration: 0.38), value: completedResult?.id)
-        .preferredColorScheme(.dark)
         .task {
             await runAnalysis()
         }
@@ -69,25 +70,24 @@ struct FaceScanAnalysisFlowView: View {
         }
     }
 
+    private var analysisBackground: Color {
+        colorScheme == .dark ? FaceScanWhoopPalette.canvas : OnboardingTheme.screenBackground
+    }
+
+    private var headerForeground: Color {
+        colorScheme == .dark ? FaceScanWhoopPalette.label : OnboardingTheme.primaryText
+    }
+
     private var headerBar: some View {
         HStack {
-            Button(action: {
-                if let result = completedResult {
-                    onComplete(result)
-                }
-                onDismiss()
-            }) {
-                Image(systemName: completedResult == nil ? "xmark" : "chevron.left")
-                    .font(.system(size: completedResult == nil ? 16 : 17, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.label)
-                    .frame(width: 44, height: 44, alignment: .leading)
-            }
+            Color.clear
+                .frame(width: 44, height: 44)
 
             Spacer(minLength: 0)
 
             Text(completedResult == nil ? "ANALYSE DU SCAN" : formattedHeaderDate)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label)
+                .foregroundStyle(headerForeground)
                 .tracking(0.6)
 
             Spacer(minLength: 0)
@@ -100,7 +100,7 @@ struct FaceScanAnalysisFlowView: View {
                     onDismiss()
                 }
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label)
+                .foregroundStyle(headerForeground)
                 .frame(minWidth: 44, alignment: .trailing)
             } else {
                 Color.clear
@@ -122,6 +122,8 @@ struct FaceScanAnalysisFlowView: View {
         startElapsedTimer()
         startProgressAnimation()
 
+        let analysisStartedAt = Date()
+
         let result = await FaceScanService.recordScan(
             payload: payload,
             markers: markers,
@@ -130,7 +132,15 @@ struct FaceScanAnalysisFlowView: View {
 
         FaceScanHistoryStore.shared.reloadForUser(userId: profile?.userId)
 
+        let minimumAnalysisDuration: TimeInterval = 7.5
+        let elapsed = Date().timeIntervalSince(analysisStartedAt)
+        if elapsed < minimumAnalysisDuration {
+            try? await Task.sleep(nanoseconds: UInt64((minimumAnalysisDuration - elapsed) * 1_000_000_000))
+        }
+
+        analysisTask?.cancel()
         await finishProgressAnimation()
+        elapsedTask?.cancel()
         HapticManager.shared.notification(.success)
 
         try? await Task.sleep(for: .milliseconds(420))
@@ -168,7 +178,7 @@ struct FaceScanAnalysisFlowView: View {
 
             while !Task.isCancelled {
                 let elapsed = Date().timeIntervalSince(startTime)
-                let normalized = min(0.88, elapsed / leadDuration)
+                let normalized = min(0.92, elapsed / leadDuration)
                 let eased = 1.0 - pow(1.0 - normalized, 2.1)
                 let stepIndex = min(steps.count - 1, Int(eased * Double(steps.count)))
 
@@ -179,7 +189,7 @@ struct FaceScanAnalysisFlowView: View {
                     analysisPhaseLabel = steps[stepIndex].phaseLabel
                 }
 
-                if normalized >= 0.88 { break }
+                if normalized >= 0.92 { break }
                 try? await Task.sleep(nanoseconds: tickInterval)
             }
         }

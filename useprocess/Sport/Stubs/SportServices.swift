@@ -14,19 +14,23 @@ typealias DataManager = DailyDataManager
 final class DailyDataManager: ObservableObject {
     static let shared = DailyDataManager()
 
-    @Published var isLoadingData = false
-    @Published var currentRecoveryData: DailyRecoveryData?
-    @Published var currentEffortData: DailyEffortData?
-    @Published var currentSleepData: DailySleepData?
-    @Published var currentActivityData: DailyActivityData?
-    @Published var currentHealthMetricsData: DailyHealthMetricsData?
-    @Published var currentNutritionData: DailyNutritionData?
+    private(set) var isLoadingData = false
+    private(set) var currentRecoveryData: DailyRecoveryData?
+    private(set) var currentEffortData: DailyEffortData?
+    private(set) var currentSleepData: DailySleepData?
+    private(set) var currentActivityData: DailyActivityData?
+    private(set) var currentHealthMetricsData: DailyHealthMetricsData?
+    private(set) var currentNutritionData: DailyNutritionData?
 
     private init() {}
 
     func getDataForDate(_ date: Date) async {
+        objectWillChange.send()
         isLoadingData = true
-        defer { isLoadingData = false }
+        defer {
+            objectWillChange.send()
+            isLoadingData = false
+        }
         await HealthManager.shared.syncHealthDataForDate(date)
         await updateCurrentDayData(with: HealthManager.shared)
     }
@@ -37,6 +41,7 @@ final class DailyDataManager: ObservableObject {
 
     func updateCurrentDayData(with healthManager: HealthManager) async {
         let snapshot = healthManager.todaySnapshot
+        objectWillChange.send()
         currentRecoveryData = snapshot.recovery
         currentEffortData = snapshot.effort
         currentSleepData = snapshot.sleep
@@ -308,13 +313,22 @@ final class UnifiedProfileService: ObservableObject {
         }
         let userId = user.uid
 
+        // Hydrate immédiatement l'interface depuis le cache, puis évite que les
+        // listeners Auth et Session lancent deux requêtes identiques.
+        if currentProfile?.userId != userId, let cached = loadLocalProfile(userId: userId) {
+            currentProfile = cached
+            isAuthenticated = true
+            SocialProfileStore.shared.syncFromUnified(cached)
+        }
+        guard !isLoading else { return }
+
         isLoading = true
         defer { isLoading = false }
 
         do {
             if let profile = try await FirebaseProfileRepository.shared.loadProfile(userId: userId) {
                 currentProfile = profile
-            } else if currentProfile == nil {
+            } else if currentProfile?.userId != userId {
                 currentProfile = UnifiedUserProfile(
                     userId: userId,
                     firstName: user.displayName ?? "",

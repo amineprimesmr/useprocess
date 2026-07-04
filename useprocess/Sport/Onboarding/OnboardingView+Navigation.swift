@@ -215,8 +215,15 @@ func restoreOnboardingProgressFromSavedState() {
     let savedStep = OnboardingProgressService.shared.loadCurrentStep()
 
     guard let step = OnboardingStep(rawValue: savedStep), savedStep >= 0, savedStep < totalSteps else {
-        viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
-        viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
+        viewModel.currentStep = OnboardingStep.genderSelection.rawValue
+        viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
+        viewModel.saveProgress()
+        return
+    }
+
+    if step == .videoIntroduction {
+        viewModel.currentStep = OnboardingStep.genderSelection.rawValue
+        viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
         viewModel.saveProgress()
         return
     }
@@ -243,10 +250,10 @@ func restoreOnboardingProgressFromSavedState() {
         }
     } else {
         if viewModel.visitedSteps.isEmpty {
-            viewModel.visitedSteps = [OnboardingStep.videoIntroduction.rawValue]
+            viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
         }
         if viewModel.currentStep == 0 {
-            viewModel.currentStep = OnboardingStep.videoIntroduction.rawValue
+            viewModel.currentStep = OnboardingStep.genderSelection.rawValue
         }
     }
 
@@ -303,13 +310,12 @@ func checkPermissions() {
             let coordinator = OnboardingCoordinator(viewModel: viewModel, profileService: profileService)
             try await coordinator.saveAllOnboardingData()
             try await OnboardingService.shared.completeOnboarding()
+            OnboardingProgressService.shared.resetProgress()
             AppSession.shared.completeOnboarding()
             HapticManager.shared.notification(.success)
         } catch {
             HapticManager.shared.notification(.error)
             viewModel.errorMessage = "Erreur lors de la finalisation. Veuillez réessayer."
-            // Même en cas d'erreur Firestore, débloquer l'accès à l'app.
-            AppSession.shared.completeOnboarding()
         }
 
         viewModel.isCompleting = false
