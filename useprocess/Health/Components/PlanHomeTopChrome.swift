@@ -4,6 +4,8 @@ import SwiftUI
 struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
     @Binding var selectedDate: Date
+    @Binding var showSettings: Bool
+    var onOpenStreak: () -> Void
     var zoomNamespace: Namespace.ID? = nil
 
     @EnvironmentObject private var profileService: UnifiedProfileService
@@ -12,14 +14,7 @@ struct PlanHomeTopChrome: View {
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
     @Bindable private var activityStatusStore = ProcessActivityStatusStore.shared
-    @State private var showStreakToast = false
-    @State private var streakToast = DynamicIslandToastMessage.streak(
-        snapshot: ProcessStreakStore.shared.snapshot,
-        firstName: nil
-    )
-    @State private var streakToastDismissTask: Task<Void, Never>?
     @State private var showDatePicker = false
-    @State private var showActivityStatusSheet = false
 
     private static let frenchLocale = Locale(identifier: "fr_FR")
 
@@ -48,10 +43,6 @@ struct PlanHomeTopChrome: View {
         .sheet(isPresented: $showDatePicker) {
             homeDatePickerSheet
         }
-        .sheet(isPresented: $showActivityStatusSheet) {
-            ProcessActivityStatusSheet(selectedDate: $selectedDate)
-        }
-        .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast)
         .onAppear {
             activityStatusStore.reload()
         }
@@ -176,31 +167,41 @@ struct PlanHomeTopChrome: View {
                 HStack(spacing: GlassClusterMetrics.spacing) {
                     Button(action: openStreak) {
                         streakGlassTile
+                            .contentShape(GlassClusterMetrics.tileShape)
                     }
                     .buttonStyle(ProcessGlassPressStyle())
+                    .zIndex(1)
                     .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
-                    Button(action: openActivityStatus) {
+                    Button(action: openSettings) {
                         activityStatusGlassTile
+                            .contentShape(Circle())
                     }
                     .buttonStyle(ProcessGlassPressStyle())
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0.0)
-                    .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
+                    .zIndex(0)
+                    .processZoomSource(id: .activityStatus, namespace: zoomNamespace)
+                    .accessibilityLabel("Paramètres, statut \(currentActivityStatus.title)")
                 }
             }
         } else {
             HStack(spacing: 10) {
                 Button(action: openStreak) {
                     legacyStreakButton
+                        .contentShape(Capsule(style: .continuous))
                 }
                 .buttonStyle(ProcessGlassPressStyle())
+                .zIndex(1)
                 .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
 
-                Button(action: openActivityStatus) {
+                Button(action: openSettings) {
                     legacyActivityStatusButton
+                        .contentShape(Circle())
                 }
                 .buttonStyle(ProcessGlassPressStyle())
-                .accessibilityLabel("Statut d'activité, \(currentActivityStatus.title)")
+                .zIndex(0)
+                .processZoomSource(id: .activityStatus, namespace: zoomNamespace)
+                .accessibilityLabel("Paramètres, statut \(currentActivityStatus.title)")
             }
         }
     }
@@ -262,25 +263,13 @@ struct PlanHomeTopChrome: View {
         streakStore.displayStreak > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
     }
 
-    private func openActivityStatus() {
+    private func openSettings() {
         HapticManager.shared.impact(.light)
-        showActivityStatusSheet = true
+        showSettings = true
     }
 
     private func openStreak() {
-        HapticManager.shared.impact(.light)
-        streakStore.sync(from: planStore.plan)
-        streakToastDismissTask?.cancel()
-        streakToast = .streak(
-            snapshot: streakStore.snapshot,
-            firstName: greetingFirstName.isEmpty ? nil : greetingFirstName
-        )
-        showStreakToast = true
-        streakToastDismissTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(3.8))
-            guard !Task.isCancelled else { return }
-            showStreakToast = false
-        }
+        onOpenStreak()
     }
 }
 

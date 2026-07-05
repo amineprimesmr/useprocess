@@ -224,10 +224,8 @@ struct MainAppView: View {
     }
 
     private func openWelcomePlanFromCoach() {
-        dismissCoachPresentation()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            openWelcomePlanConfiguration()
-        }
+        CoachPlanNavigationBridge.shared.shouldOpenIntegration = true
+        presentCoachSurface()
     }
 
     private func openProfile() {
@@ -237,9 +235,8 @@ struct MainAppView: View {
     }
 
     private func openWelcomePlanConfiguration() {
-        withAnimation(ProcessGlass.spring) {
-            selectedSection = .plan
-        }
+        CoachPlanNavigationBridge.shared.shouldOpenIntegration = true
+        presentCoachSurface()
     }
 
     private func resignFirstResponder() {

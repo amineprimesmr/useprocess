@@ -10,6 +10,34 @@ import Foundation
 @MainActor
 class PersonalizedIdealWeightCalculator {
 
+    /// Infère perdre / prendre quand l'utilisateur n'a pas encore choisi son poids idéal.
+    static func inferredWeightGoal(
+        currentWeight: Double,
+        height: Double,
+        age: Int,
+        gender: Gender?
+    ) -> WeightGoal? {
+        guard currentWeight > 0, height >= 120 else { return nil }
+
+        let heightM = height / 100.0
+        let bmi = currentWeight / (heightM * heightM)
+        let isMale = gender != .female
+
+        if isMale {
+            if bmi >= 22.0 { return .lose }
+            if bmi < 19.0 { return .gain }
+        } else {
+            if bmi >= 21.5 { return .lose }
+            if bmi < 18.5 { return .gain }
+        }
+
+        if age <= 30 {
+            return .lose
+        }
+
+        return nil
+    }
+
     /// Calcule le poids idéal personnalisé basé sur la morphologie réelle
     /// 
     /// - Parameters:
@@ -33,6 +61,13 @@ class PersonalizedIdealWeightCalculator {
         leanBodyMass: Double? = nil,
         bodyComposition: BodyComposition? = nil
     ) -> Double {
+        let resolvedGoal = weightGoal
+            ?? inferredWeightGoal(
+                currentWeight: currentWeight,
+                height: height,
+                age: age,
+                gender: gender
+            )
 
         // ✅ ÉTAPE 1 : Estimer ou récupérer la masse maigre actuelle
         let currentLeanMass: Double
@@ -64,40 +99,84 @@ class PersonalizedIdealWeightCalculator {
             height: height,
             gender: gender,
             age: age,
-            weightGoal: weightGoal
+            weightGoal: resolvedGoal
         )
 
         // ✅ ÉTAPE 3 : Calculer le poids idéal basé sur la masse maigre et le % graisse cible
-        // Formule : Poids idéal = Masse maigre / (1 - % graisse cible / 100)
-        // Cela garantit qu'on conserve la masse maigre et qu'on ajuste seulement la graisse
-        let idealWeight = currentLeanMass / (1.0 - targetBodyFatPercentage / 100.0)
+        let compositionIdeal = currentLeanMass / (1.0 - targetBodyFatPercentage / 100.0)
+        let leanAnchor = leanAthleticAnchorWeight(height: height, gender: gender, age: age)
+        let idealWeight = compositionIdeal * 0.65 + leanAnchor * 0.35
 
         // ✅ ÉTAPE 4 : Vérifier que le poids idéal est réaliste et dans la plage IMC saine
         let heightInMeters = height / 100.0
         let idealBMI = idealWeight / (heightInMeters * heightInMeters)
 
-        // Ajuster si nécessaire pour rester dans une plage IMC raisonnable
         var adjustedIdealWeight = idealWeight
 
-        // Si IMC < 18.5 : trop maigre, ajuster pour IMC minimum 19.0
-        if idealBMI < 18.5 {
-            let minHealthyBMI = 19.0
+        let minHealthyBMI = gender == .male ? 19.0 : 18.5
+        if idealBMI < minHealthyBMI {
             adjustedIdealWeight = max(idealWeight, minHealthyBMI * heightInMeters * heightInMeters)
         }
 
-        // Si IMC > 25.0 : possiblement trop élevé si beaucoup de masse musculaire, mais acceptable
-        // On garde le poids calculé mais on s'assure qu'il reste raisonnable (< IMC 27 pour sportifs)
-        if idealBMI > 27.0 {
-            // Si très élevé, c'est peut-être que la masse maigre estimée est trop élevée
-            // Limiter à IMC 26 pour être sûr
-            let maxReasonableBMI = 26.0
+        let maxReasonableBMI = gender == .male ? 26.0 : 25.5
+        if idealBMI > maxReasonableBMI {
             adjustedIdealWeight = min(idealWeight, maxReasonableBMI * heightInMeters * heightInMeters)
         }
 
-        return adjustedIdealWeight
+        if resolvedGoal == .lose {
+            adjustedIdealWeight = min(adjustedIdealWeight, currentWeight - 0.5)
+
+            let currentBMI = currentWeight / (heightInMeters * heightInMeters)
+            if currentBMI >= 21.5, currentWeight - adjustedIdealWeight < 2.0 {
+                let motivatedTarget = min(currentWeight - 1.0, max(leanAnchor, adjustedIdealWeight))
+                adjustedIdealWeight = motivatedTarget
+            }
+
+            let absoluteMin = minHealthyBMI * heightInMeters * heightInMeters
+            adjustedIdealWeight = max(adjustedIdealWeight, absoluteMin)
+        } else if resolvedGoal == .gain {
+            adjustedIdealWeight = max(adjustedIdealWeight, currentWeight + 0.5)
+        }
+
+        return (adjustedIdealWeight * 2).rounded() / 2
     }
 
     // MARK: - Calculs auxiliaires
+
+    /// Poids de référence « fit & sec » selon la taille — pas un poids « normal » médical.
+    private static func leanAthleticAnchorWeight(height: Double, gender: Gender, age: Int) -> Double {
+        let heightM = height / 100.0
+        let baseBMI: Double
+
+        switch gender {
+        case .male:
+            if age <= 25 {
+                baseBMI = 21.8
+            } else if age <= 35 {
+                baseBMI = 22.2
+            } else {
+                baseBMI = 22.6
+            }
+        case .female:
+            if age <= 25 {
+                baseBMI = 20.8
+            } else if age <= 35 {
+                baseBMI = 21.2
+            } else {
+                baseBMI = 21.6
+            }
+        case .other, .preferNotToSay:
+            if age <= 25 {
+                baseBMI = 21.3
+            } else if age <= 35 {
+                baseBMI = 21.7
+            } else {
+                baseBMI = 22.1
+            }
+        }
+
+        return baseBMI * heightM * heightM
+    }
 
     /// Estime la masse maigre actuelle si aucune donnée n'est disponible
     private static func estimateLeanBodyMass(
@@ -162,39 +241,32 @@ class PersonalizedIdealWeightCalculator {
 
         // ✅ Calculer le % graisse cible selon l'objectif
         guard let goal = weightGoal else {
-            // Pas d'objectif : viser % graisse optimal pour santé (15-18% hommes, 22-25% femmes)
-            return gender == .male ? 16.0 : 23.0
+            return gender == .male
+                ? (age <= 30 ? 12.5 : 14.0)
+                : (age <= 30 ? 20.0 : 22.0)
         }
 
         switch goal {
         case .lose:
-            // ✅ OBJECTIF : Perdre du poids
-
-            // Si morphologie musclée : objectif plus conservateur (préserver la masse musculaire)
             if isMuscularBuild {
-                // Pour personnes musclées : viser 12-15% (hommes) ou 18-22% (femmes)
-                // Ne pas descendre trop bas pour préserver la masse musculaire
                 if currentBMI >= 30.0 {
-                    // Obésité : permettre descente à 10-12% (hommes) ou 16-20% (femmes)
                     return gender == .male ? 12.0 : 18.0
                 } else if currentBMI >= 25.0 {
-                    // Surpoids : viser 12-13% (hommes) ou 18-20% (femmes)
                     return gender == .male ? 13.0 : 19.0
+                } else if age <= 30 {
+                    return gender == .male ? 12.0 : 19.5
                 } else {
-                    // IMC normal mais veut perdre : descente légère 13-15% (hommes) ou 20-22% (femmes)
                     return gender == .male ? 14.0 : 21.0
                 }
             } else {
-                // Morphologie normale : objectif standard
                 if currentBMI >= 30.0 {
-                    // Obésité : viser 10-12% (hommes) ou 18-20% (femmes)
                     return gender == .male ? 11.0 : 19.0
                 } else if currentBMI >= 25.0 {
-                    // Surpoids : viser 12-14% (hommes) ou 20-22% (femmes)
-                    return gender == .male ? 13.0 : 21.0
+                    return gender == .male ? 12.0 : 20.0
+                } else if age <= 30 {
+                    return gender == .male ? 12.5 : 20.5
                 } else {
-                    // IMC normal : descente légère 14-16% (hommes) ou 22-24% (femmes)
-                    return gender == .male ? 15.0 : 23.0
+                    return gender == .male ? 14.5 : 22.5
                 }
             }
 

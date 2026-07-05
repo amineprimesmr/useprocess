@@ -24,7 +24,7 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
     var body: some View {
         GeometryReader { geometry in
             let bottomReserve = continueButtonReserve + geometry.safeAreaInsets.bottom
-            let graphHeight = min(200, geometry.size.height * 0.24)
+            let graphHeight = min(280, geometry.size.height * 0.34)
 
             VStack(spacing: 20) {
                 VStack(spacing: 18) {
@@ -74,9 +74,11 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
                     .frame(height: graphHeight)
                     .clipped()
 
-                bottom()
-
                 Spacer(minLength: 0)
+
+                bottom()
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 4)
             }
             .padding(.bottom, bottomReserve)
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)

@@ -13,6 +13,7 @@ private struct DynamicIslandToastViewModifier: ViewModifier {
 
     @State private var overlayWindow: DynamicIslandPassThroughWindow?
     @State private var overlayController: DynamicIslandToastHostingController?
+    @State private var pendingPresentation = false
 
     func body(content: Content) -> some View {
         content
@@ -20,12 +21,7 @@ private struct DynamicIslandToastViewModifier: ViewModifier {
                 createOverlayWindow(mainWindow)
             })
             .onChange(of: isPresented, initial: true) { _, newValue in
-                guard let overlayWindow else { return }
-                if newValue {
-                    overlayWindow.toast = value
-                }
-                overlayWindow.isPresented = newValue
-                overlayController?.isStatusBarHidden = newValue
+                applyPresentation(newValue)
             }
             .onChange(of: value.id) { _, _ in
                 overlayWindow?.toast = value
@@ -39,22 +35,45 @@ private struct DynamicIslandToastViewModifier: ViewModifier {
             }
     }
 
+    private func applyPresentation(_ presented: Bool) {
+        guard let overlayWindow else {
+            if presented {
+                pendingPresentation = true
+            }
+            return
+        }
+
+        pendingPresentation = false
+        overlayWindow.isUserInteractionEnabled = presented
+        if presented {
+            overlayWindow.toast = value
+        }
+        overlayWindow.isPresented = presented
+        overlayController?.isStatusBarHidden = presented
+    }
+
     private func createOverlayWindow(_ mainWindow: UIWindow) {
         guard let windowScene = mainWindow.windowScene else { return }
 
         if let window = windowScene.windows.first(where: { $0.tag == 1009 }) as? DynamicIslandPassThroughWindow {
             overlayWindow = window
             overlayController = window.rootViewController as? DynamicIslandToastHostingController
+            if pendingPresentation || isPresented {
+                applyPresentation(isPresented)
+            }
             return
         }
 
         let overlayWindow = DynamicIslandPassThroughWindow(windowScene: windowScene)
         overlayWindow.backgroundColor = .clear
         overlayWindow.isHidden = false
-        overlayWindow.isUserInteractionEnabled = true
+        overlayWindow.isUserInteractionEnabled = false
         overlayWindow.tag = 1009
         createRootController(overlayWindow)
         self.overlayWindow = overlayWindow
+        if pendingPresentation || isPresented {
+            applyPresentation(isPresented)
+        }
     }
 
     private func createRootController(_ window: DynamicIslandPassThroughWindow) {

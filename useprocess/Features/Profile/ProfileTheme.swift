@@ -21,6 +21,11 @@ enum ProfileTheme {
     static let emptyHeroIconSize: CGFloat = 26
 
     static let horizontalPadding: CGFloat = 16
+    static let avatarCropExportSide: CGFloat = 360
+    static var avatarCropExportSize: CGSize {
+        CGSize(width: avatarCropExportSide, height: avatarCropExportSide)
+    }
+
     static let heroBottomRadius: CGFloat = 32
     static let buttonCornerRadius: CGFloat = 14
     static let iconButtonSize: CGFloat = 44
@@ -62,40 +67,7 @@ enum ProfileTheme {
 
 struct ProfileEmptyHeroBackground: View {
     var body: some View {
-        ZStack {
-            ProfileTheme.background
-
-            RadialGradient(
-                colors: [
-                    ProfileTheme.emptyGradientCore,
-                    ProfileTheme.emptyGradientMid,
-                    ProfileTheme.emptyGradientEdge
-                ],
-                center: UnitPoint(x: 0.5, y: 0.48),
-                startRadius: 12,
-                endRadius: 150
-            )
-
-            LinearGradient(
-                colors: [
-                    ProfileTheme.emptyGradientEdge,
-                    ProfileTheme.emptyGradientEdge.opacity(0.35),
-                    Color.clear
-                ],
-                startPoint: .top,
-                endPoint: UnitPoint(x: 0.5, y: 0.34)
-            )
-
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    ProfileTheme.emptyGradientEdge.opacity(0.28),
-                    ProfileTheme.emptyGradientEdge
-                ],
-                startPoint: UnitPoint(x: 0.5, y: 0.68),
-                endPoint: .bottom
-            )
-        }
+        ProfileTheme.background
     }
 }
 

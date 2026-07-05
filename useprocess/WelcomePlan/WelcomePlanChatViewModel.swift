@@ -229,6 +229,7 @@ final class WelcomePlanChatViewModel {
 
     func finishAndEnterApp(onComplete: @escaping () -> Void) async {
         guard let plan = generatedPlan else { return }
+        guard WelcomePlanQuestionBank.isFullyAnswered(answers: answers) else { return }
         WelcomePlanStore.shared.markQuestionnaireComplete()
         WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
         await WelcomePlanProfileSync.apply(
@@ -242,6 +243,7 @@ final class WelcomePlanChatViewModel {
     }
 
     /// Remplit toutes les réponses par défaut et génère le protocole (circuits posture, training, etc.).
+    #if DEBUG
     func fillAllCircuitsAndGenerate() async {
         guard !isGenerating, generatedPlan == nil else { return }
 
@@ -272,6 +274,7 @@ final class WelcomePlanChatViewModel {
         isSubmittingAnswer = false
         await generatePlan()
     }
+    #endif
 
     // MARK: - Private
 

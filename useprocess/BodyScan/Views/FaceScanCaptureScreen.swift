@@ -140,7 +140,7 @@ struct FaceScanCaptureScreen: View {
             if !supported { canSkipScan = true }
         }
         .onChange(of: isLowLight) { _, low in
-            guard allowsScreenFlash else { return }
+            guard allowsScreenFlash, !isInlinePreview else { return }
             guard !userFlashOverride else { return }
             guard low, !isFlashEnabled else { return }
             isFlashEnabled = true
@@ -191,6 +191,10 @@ struct FaceScanCaptureScreen: View {
         }
         .onChange(of: isFlashEnabled) { _, enabled in
             if enabled {
+                guard allowsScreenFlash, !isInlinePreview else {
+                    FaceScanScreenFlash.shared.deactivate(animated: true)
+                    return
+                }
                 FaceScanScreenFlash.shared.activate(animated: false)
             } else {
                 FaceScanScreenFlash.shared.deactivate(animated: true)

@@ -22,9 +22,23 @@ enum OnboardingFaceMarkersStore {
         UserScopedStorage.currentUserId()
     }
 
-    static func save(markers: FaceWellnessMarkers, mesh: FaceMesh3DData) {
+    static func save(
+        markers: FaceWellnessMarkers,
+        mesh: FaceMesh3DData,
+        scanId: String? = nil,
+        snapshotFilename: String? = nil,
+        videoFilename: String? = nil,
+        capturedAt: Date? = nil
+    ) {
         let uid = currentUserId
-        let payload = OnboardingFaceScanPayload(markers: markers, mesh: mesh)
+        let payload = OnboardingFaceScanPayload(
+            markers: markers,
+            mesh: mesh,
+            scanId: scanId,
+            snapshotFilename: snapshotFilename,
+            videoFilename: videoFilename,
+            capturedAt: capturedAt
+        )
         guard let data = try? JSONEncoder().encode(payload) else { return }
         UserDefaults.standard.set(data, forKey: payloadKey(for: uid))
         saveMarkersOnly(markers, userId: uid)
@@ -87,6 +101,27 @@ enum OnboardingFaceMarkersStore {
         UserDefaults.standard.removeObject(forKey: legacyMarkersKey)
         UserDefaults.standard.removeObject(forKey: legacyMeshKey)
         UserDefaults.standard.removeObject(forKey: legacyPayloadKey)
+    }
+
+    /// Copie les données capturées pendant l'onboarding (souvent sous `anonymous`) vers l'uid connecté.
+    static func migrateFromLikelyUsers(to userId: String) {
+        guard UserDefaults.standard.data(forKey: payloadKey(for: userId)) == nil else { return }
+
+        for sourceUid in UserScopedStorage.likelyUserIds(primary: userId) where sourceUid != userId {
+            guard let payloadData = UserDefaults.standard.data(forKey: payloadKey(for: sourceUid)) else {
+                continue
+            }
+
+            UserDefaults.standard.set(payloadData, forKey: payloadKey(for: userId))
+
+            if let markersData = UserDefaults.standard.data(forKey: markersKey(for: sourceUid)) {
+                UserDefaults.standard.set(markersData, forKey: markersKey(for: userId))
+            }
+            if let meshData = UserDefaults.standard.data(forKey: meshKey(for: sourceUid)) {
+                UserDefaults.standard.set(meshData, forKey: meshKey(for: userId))
+            }
+            return
+        }
     }
 
     private static func migrateLegacyIfNeeded() {

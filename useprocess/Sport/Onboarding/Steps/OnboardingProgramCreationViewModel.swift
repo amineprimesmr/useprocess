@@ -23,14 +23,20 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         case complete
     }
 
+    enum DisplayMode: Equatable {
+        case loading
+        case success
+    }
+
     @Published private(set) var phase: Phase = .idle
+    @Published private(set) var displayMode: DisplayMode = .loading
     @Published private(set) var progressPanelVisible = false
     @Published private(set) var progress: Double = 0
     @Published private(set) var displayedPercentage = 0
     @Published private(set) var barProgresses: [Double] = [0, 0, 0]
     @Published var activePopup: OnboardingProgramCreationPopupModel?
     @Published private(set) var continueUnlocked = false
-    @Published private(set) var detailMessage = ""
+    @Published private(set) var successContentRevealed = false
 
     private var popupPhaseIndex = -1
     private var isPaused = false
@@ -60,7 +66,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     }
 
     var showsContinueButton: Bool {
-        continueUnlocked
+        continueUnlocked && displayMode == .success
     }
 
     func bind(
@@ -71,13 +77,6 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         onboardingViewModel = viewModel
         self.healthManager = healthManager
         self.permissionsManager = permissionsManager
-
-        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if OnboardingViewModel.isRealUserFirstName(trimmed) {
-            detailMessage = "\(trimmed), tout est prêt. On prépare ton plan sur mesure."
-        } else {
-            detailMessage = "Tout est prêt. On prépare ton plan sur mesure."
-        }
     }
 
     func startIfNeeded() {
@@ -88,30 +87,15 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     }
 
     func handlePopupAnswer(_ answer: Bool) {
-        guard popupPhaseIndex >= 0 else { return }
-
-        let kind = OnboardingAnalysisProgressConfig.popups[popupPhaseIndex].kind
-        let popupIndex = popupPhaseIndex
+        guard popupPhaseIndex >= 0, let popupKind = activePopup?.kind else { return }
 
         isPaused = false
         activePopup = nil
         popupPhaseIndex = -1
 
         Task { @MainActor in
-            if kind == .healthKit {
+            if popupKind == .healthKit {
                 await handleHealthKitPopupAnswer(answer)
-            }
-
-            guard popupIndex < phaseCount else { return }
-
-            let nextProgress = Double(popupIndex + 1) / Double(phaseCount)
-            let percentagePerPhase = 100.0 / Double(phaseCount)
-            let nextPercentage = min(Int((Double(popupIndex + 1) * percentagePerPhase).rounded()), 100)
-
-            withAnimation(.easeInOut(duration: 0.45)) {
-                progress = nextProgress
-                displayedPercentage = nextPercentage
-                syncBarProgresses(phaseIndex: popupIndex, segmentProgress: 0, phasesCount: phaseCount)
             }
         }
     }
@@ -131,6 +115,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
 
     private func beginProgressPanel() {
         phase = .running
+        displayMode = .loading
         progress = 0
         displayedPercentage = 0
         barProgresses = Array(repeating: 0, count: phaseCount)
@@ -139,15 +124,13 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         activePopup = nil
         popupPhaseIndex = -1
         continueUnlocked = false
+        successContentRevealed = false
     }
 
     private func startProgressAnimation() {
         progressTask?.cancel()
 
         let phases = OnboardingAnalysisProgressConfig.phases
-        let popups = OnboardingAnalysisProgressConfig.popups
-        let tickInterval = OnboardingAnalysisProgressConfig.programCreationTickIntervalNs
-        let segmentStep = OnboardingAnalysisProgressConfig.programCreationSegmentStep
 
         progressTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: OnboardingAnalysisProgressConfig.programCreationStartDelayNs)
@@ -156,37 +139,68 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
             for index in 0..<phases.count {
                 guard !Task.isCancelled else { return }
 
-                applyProgress(phaseIndex: index, segmentProgress: 0, phasesCount: phases.count)
-                await presentPopup(popups[index], phaseIndex: index)
+                await animatePhaseIrregularly(index: index, phasesCount: phases.count)
 
+                if index == phases.count - 1 {
+                    guard !Task.isCancelled else { return }
+                    await revealSuccessScreen()
+                    return
+                }
+
+                await presentPhaseEndPopupIfNeeded(phaseIndex: index)
                 try? await waitWhilePaused()
                 guard !Task.isCancelled else { return }
-
-                var segmentProgress = 0.0
-                while segmentProgress < 1.0 {
-                    try? await waitWhilePaused()
-                    guard !Task.isCancelled else { return }
-
-                    try? await Task.sleep(nanoseconds: tickInterval)
-                    segmentProgress += segmentStep
-                    applyProgress(phaseIndex: index, segmentProgress: segmentProgress, phasesCount: phases.count)
-                }
-            }
-
-            guard !Task.isCancelled else { return }
-            HapticManager.shared.notification(.success)
-            progress = 1
-            displayedPercentage = 100
-            barProgresses = Array(repeating: 1, count: phaseCount)
-            phase = .complete
-
-            try? await Task.sleep(nanoseconds: 600_000_000)
-            guard !Task.isCancelled else { return }
-
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
-                continueUnlocked = true
             }
         }
+    }
+
+    private func animatePhaseIrregularly(index: Int, phasesCount: Int) async {
+        let milestones = Self.irregularMilestones(forPhase: index)
+
+        for (stepIndex, milestone) in milestones.enumerated() {
+            try? await waitWhilePaused()
+            guard !Task.isCancelled else { return }
+
+            try? await Task.sleep(nanoseconds: milestone.delayNs)
+
+            withAnimation(.easeInOut(duration: milestone.animationDuration)) {
+                applyProgress(
+                    phaseIndex: index,
+                    segmentProgress: milestone.value,
+                    phasesCount: phasesCount
+                )
+            }
+
+            if stepIndex % 6 == 3, milestone.value > 0.15, milestone.value < 0.95 {
+                HapticManager.shared.selection()
+            }
+        }
+    }
+
+    private func revealSuccessScreen() async {
+        HapticManager.shared.notification(.success)
+        progress = 1
+        displayedPercentage = 100
+        barProgresses = Array(repeating: 1, count: phaseCount)
+        phase = .complete
+
+        try? await Task.sleep(nanoseconds: 280_000_000)
+        guard !Task.isCancelled else { return }
+
+        withAnimation(.spring(response: 0.62, dampingFraction: 0.84)) {
+            progressPanelVisible = false
+            displayMode = .success
+        }
+
+        try? await Task.sleep(nanoseconds: 140_000_000)
+        guard !Task.isCancelled else { return }
+
+        withAnimation(.spring(response: 0.58, dampingFraction: 0.82)) {
+            successContentRevealed = true
+            continueUnlocked = true
+        }
+
+        HapticManager.shared.impact(.light)
     }
 
     private func waitWhilePaused() async throws {
@@ -196,9 +210,13 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         }
     }
 
+    private func presentPhaseEndPopupIfNeeded(phaseIndex: Int) async {
+        guard let popup = OnboardingAnalysisProgressConfig.phaseEndPopup(for: phaseIndex) else { return }
+        await presentPopup(popup, phaseIndex: phaseIndex)
+    }
+
     private func presentPopup(_ popup: OnboardingAnalysisProgressConfig.Popup, phaseIndex: Int) async {
         if popup.kind == .healthKit, healthManager?.isAuthorized == true {
-            popupPhaseIndex = phaseIndex
             onboardingViewModel?.healthKitGranted = true
             return
         }
@@ -261,5 +279,59 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
 
         onboardingViewModel.healthKitGranted = healthManager.isAuthorized
         onboardingViewModel.isRequestingHealthKit = false
+    }
+}
+
+// MARK: - Irregular progress curves
+
+private extension OnboardingProgramCreationViewModel {
+    struct ProgressMilestone {
+        let value: Double
+        let delayNs: UInt64
+        let animationDuration: Double
+    }
+
+    static func irregularMilestones(forPhase phase: Int) -> [ProgressMilestone] {
+        let stepCount = 18 + phase * 3
+        var milestones: [ProgressMilestone] = []
+
+        for step in 1...stepCount {
+            let normalized = Double(step) / Double(stepCount)
+            let eased = easeInOutIrregular(normalized, phaseSeed: phase)
+            let previous = milestones.last?.value ?? 0
+            let value = max(previous, min(1, eased))
+
+            let baseDelay = UInt64.random(in: 72_000_000...130_000_000)
+            let stallMultiplier: UInt64 = (step % 7 == 0) ? 2 : 1
+            let delayNs = baseDelay * stallMultiplier
+            let animationDuration = Double.random(in: 0.32...0.52)
+
+            milestones.append(
+                ProgressMilestone(
+                    value: value,
+                    delayNs: delayNs,
+                    animationDuration: animationDuration
+                )
+            )
+        }
+
+        milestones.append(
+            ProgressMilestone(
+                value: 1,
+                delayNs: 180_000_000,
+                animationDuration: 0.38
+            )
+        )
+
+        return milestones
+    }
+
+    static func easeInOutIrregular(_ t: Double, phaseSeed: Int) -> Double {
+        let seed = Double(phaseSeed + 1)
+        let base = t < 0.5
+            ? 2 * t * t
+            : 1 - pow(-2 * t + 2, 2) / 2
+        let wave = sin(t * .pi * (1.8 + seed * 0.2)) * 0.018
+        return min(1, max(0, base + wave))
     }
 }

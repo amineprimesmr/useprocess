@@ -8,7 +8,10 @@
 import SwiftUI
 
 struct OnboardingEstimationStepView: View {
+    @Environment(\.scenePhase) private var scenePhase
+
     let context: OnboardingEstimationContext
+    let isAlreadyCompleted: Bool
     var onValidationChanged: ((Bool) -> Void)?
 
     @State private var projectedDate: Date?
@@ -21,6 +24,7 @@ struct OnboardingEstimationStepView: View {
     @State private var curveAnimationProgress: Double = 0
     @State private var isCountdownFinished = false
     @State private var animationTask: Task<Void, Never>?
+    @State private var fallbackUnlockTask: Task<Void, Never>?
 
     private let mainAnimationDuration: TimeInterval = 3.5
 
@@ -44,11 +48,30 @@ struct OnboardingEstimationStepView: View {
             }
         )
         .onAppear {
-            prepareAndAnimate()
+            ensureHydrated()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            guard isAlreadyCompleted else { return }
+            ensureHydrated()
+        }
+        .onChange(of: isAlreadyCompleted) { _, completed in
+            if completed {
+                presentCompletedState()
+            }
         }
         .onDisappear {
-            cancelAllAnimations()
+            cancelRunningTasks()
+            resetForNextVisit()
         }
+    }
+
+    private func resetForNextVisit() {
+        isCountdownFinished = false
+        curveAnimationProgress = 0
+        displayedDay = ""
+        displayedMonth = ""
+        onValidationChanged?(false)
     }
 
     private var currentDisplayDay: String {
@@ -75,37 +98,78 @@ struct OnboardingEstimationStepView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 24, height: 24)
+                .padding(.top, 1)
 
             Text(summaryLine)
                 .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(OnboardingTheme.bodyText)
+                .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 40)
-        .padding(.top, 8)
         .opacity(summaryLine.isEmpty ? 0 : 1)
     }
 
-    // MARK: - Animation
+    // MARK: - Hydration / restore
 
-    private func prepareAndAnimate() {
-        cancelAllAnimations()
+    private func ensureHydrated() {
+        let needsContent = projectedDate == nil || graphSnapshot == nil || summaryLine.isEmpty
 
-        curveAnimationProgress = 0
-        isCountdownFinished = false
-        onValidationChanged?(false)
+        if isAlreadyCompleted {
+            if needsContent {
+                hydrateContent()
+            }
+            presentCompletedState()
+            return
+        }
 
+        if needsContent {
+            hydrateContent()
+        }
+
+        startCountdownAnimation()
+    }
+
+    private func hydrateContent() {
         let referenceDate = Date()
-        let finalDate = engine.computePotentialDate(for: context, now: referenceDate)
+        let timeline = engine.computeTimeline(for: context, now: referenceDate)
+        let finalDate = timeline.potentialDate
+
         projectedDate = finalDate
         graphSnapshot = OnboardingEstimationGraphSnapshot.make(
             context: context,
-            projectedDate: finalDate,
+            timeline: timeline,
             referenceDate: referenceDate
         )
         summaryLine = engine.summaryLine(for: context)
         updateDateDisplay(date: finalDate)
+    }
+
+    private func presentCompletedState() {
+        guard let finalDate = projectedDate else {
+            hydrateContent()
+            guard let resolvedDate = projectedDate else { return }
+            applyDateDisplay(for: resolvedDate)
+            updateDateDisplay(date: resolvedDate)
+            curveAnimationProgress = 1.0
+            finishAnimation()
+            return
+        }
+
+        applyDateDisplay(for: finalDate)
+        updateDateDisplay(date: finalDate)
+        curveAnimationProgress = 1.0
+        finishAnimation()
+    }
+
+    private func startCountdownAnimation() {
+        cancelRunningTasks()
+
+        guard let finalDate = projectedDate else { return }
+
+        curveAnimationProgress = 0
+        isCountdownFinished = false
+        onValidationChanged?(false)
 
         animationTask = Task { @MainActor in
             await runAnimation(to: finalDate)
@@ -113,25 +177,33 @@ struct OnboardingEstimationStepView: View {
             finishAnimation()
         }
 
-        Task { @MainActor in
+        fallbackUnlockTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 6_000_000_000)
-            if !isCountdownFinished {
-                finishAnimation()
-            }
+            guard !Task.isCancelled, !isCountdownFinished else { return }
+            finishAnimation()
         }
     }
+
+    // MARK: - Animation
 
     private func runAnimation(to final: Date) async {
         let calendar = Calendar.current
         let now = Date()
         let daysDifference = max(1, calendar.dateComponents([.day], from: now, to: final).day ?? 30)
-        let initialDays = Int(Double(daysDifference) * 1.2)
-        let startDate = calendar.date(byAdding: .day, value: initialDays, to: now) ?? final
+        let overshootDays = max(daysDifference + 7, Int(ceil(Double(daysDifference) * 1.15)))
+        let startDate = calendar.date(byAdding: .day, value: overshootDays, to: now) ?? final
 
         try? await Task.sleep(nanoseconds: 300_000_000)
         guard !Task.isCancelled else { return }
 
         let totalDayDelta = abs(calendar.dateComponents([.day], from: startDate, to: final).day ?? 0)
+        guard totalDayDelta > 0 else {
+            applyDateDisplay(for: final)
+            updateDateDisplay(date: final)
+            curveAnimationProgress = 1.0
+            return
+        }
+
         let direction = final >= startDate ? 1 : -1
         var lastHapticDay = calendar.component(.day, from: startDate)
         var lastHapticMonth = calendar.component(.month, from: startDate)
@@ -171,9 +243,11 @@ struct OnboardingEstimationStepView: View {
         curveAnimationProgress = 1.0
     }
 
-    private func cancelAllAnimations() {
+    private func cancelRunningTasks() {
         animationTask?.cancel()
         animationTask = nil
+        fallbackUnlockTask?.cancel()
+        fallbackUnlockTask = nil
     }
 
     private func applyDateDisplay(for date: Date) {
@@ -191,6 +265,7 @@ struct OnboardingEstimationStepView: View {
     private func finishAnimation() {
         guard !isCountdownFinished else { return }
         isCountdownFinished = true
+        cancelRunningTasks()
         onValidationChanged?(true)
         HapticManager.shared.notification(.success)
     }

@@ -5,6 +5,7 @@ struct WelcomePlanChatView: View {
     var embeddedInMainApp: Bool = false
     var selectedSection: Binding<ProcessMainSection>?
     var onComplete: () -> Void
+    var onDismissLater: (() -> Void)? = nil
 
     @EnvironmentObject private var profileService: UnifiedProfileService
 
@@ -79,6 +80,14 @@ struct WelcomePlanChatView: View {
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .zIndex(5)
                 }
+
+                if showsDismissLaterButton {
+                    dismissLaterButton
+                        .padding(.trailing, horizontalPadding + 46)
+                        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 10)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                        .zIndex(6)
+                }
             }
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: showsFillAllCircuitsButton)
@@ -133,7 +142,41 @@ struct WelcomePlanChatView: View {
     }
 
     private var showsFillAllCircuitsButton: Bool {
+        #if DEBUG
         !viewModel.showsEnterButton && !viewModel.isGenerating && !viewModel.isComplete
+        #else
+        false
+        #endif
+    }
+
+    private var showsDismissLaterButton: Bool {
+        embeddedInMainApp
+            && onDismissLater != nil
+            && !viewModel.showsEnterButton
+            && !viewModel.isGenerating
+            && !viewModel.isComplete
+    }
+
+    private var dismissLaterButton: some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            onDismissLater?()
+        } label: {
+            Text("Continuer plus tard")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(OnboardingTheme.bodyText)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(
+                    Capsule()
+                        .fill(OnboardingTheme.cardBackground.opacity(0.92))
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(OnboardingTheme.softBorder, lineWidth: 1)
+                        )
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     private var configurationProgressInset: CGFloat {
@@ -590,7 +633,10 @@ struct WelcomePlanChatView: View {
     }
 
     private var enterButtonTitle: String {
-        viewModel.pendingFaceScan ? "Entrer & lancer le scan" : "Entrer dans Process"
+        if embeddedInMainApp {
+            return viewModel.pendingFaceScan ? "Terminer & lancer le scan" : "Terminer la configuration"
+        }
+        return viewModel.pendingFaceScan ? "Entrer & lancer le scan" : "Entrer dans Process"
     }
 
     // MARK: - Buttons

@@ -115,6 +115,25 @@ struct BackgroundView: View {
     }
 }
 
+/// Voile léger au-dessus de la page parente (accueil visible en transparence).
+struct ProcessTranslucentOverlayBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+
+            if colorScheme == .dark {
+                Color.black.opacity(0.16)
+            } else {
+                Color.white.opacity(0.24)
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
 /// Force les UIScrollView / UINavigationController parents à rester transparents (TabView + NavigationStack).
 private struct ProcessUIKitTransparentSurface: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
@@ -301,6 +320,17 @@ extension View {
         ZStack {
             ProcessScreenBackground()
             self
+        }
+        .processClearUIKitHostingBackground()
+    }
+
+    /// Fond semi-transparent — la page sous-jacente reste visible (paramètres depuis l'accueil).
+    func processTranslucentOverlayBackground() -> some View {
+        ZStack {
+            self
+        }
+        .background {
+            ProcessTranslucentOverlayBackground()
         }
         .processClearUIKitHostingBackground()
     }

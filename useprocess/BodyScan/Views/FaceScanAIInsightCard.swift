@@ -594,7 +594,7 @@ struct FaceScanAIInsightFooter: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(insight.title). \(insight.body)")
-        .accessibilityHint("Approfondir avec le coach Process")
+        .accessibilityHint("Ouvrir l'analyse du dernier scan")
     }
 
     private var topGlowLine: some View {
@@ -615,33 +615,32 @@ struct FaceScanAIInsightFooter: View {
     }
 
     private var content: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(insight.emoji)
-                .font(.system(size: 18))
-                .padding(.top, 1)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(insight.title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(theme.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Spacer(minLength: 4)
-
-                    Image(systemName: "arrow.up.forward")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(theme.secondaryText.opacity(0.72))
-                }
-
-                Text(insight.body)
-                    .font(.system(size: 13.5, weight: .regular))
-                    .foregroundStyle(theme.secondaryText)
-                    .lineSpacing(3)
-                    .multilineTextAlignment(.leading)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(insight.emoji) \(insight.title)")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 4)
+
+                Image(systemName: "arrow.up.forward")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(theme.secondaryText.opacity(0.72))
+                    .alignmentGuide(.firstTextBaseline) { dimensions in
+                        dimensions[.bottom] - 1
+                    }
             }
+
+            Text(insight.body)
+                .font(.system(size: 13.5, weight: .regular))
+                .foregroundStyle(theme.secondaryText)
+                .lineSpacing(3)
+                .multilineTextAlignment(.leading)
+                .lineLimit(3)
+                .truncationMode(.tail)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 14)
@@ -686,7 +685,7 @@ struct FaceScanAIInsightCard: View {
         }
         .background(cardBackground)
         .clipShape(cardShape)
-        .processHomeGlassCardShadow(isDark: style == .whoopDark ? true : theme.isDark)
+        .processHomeGlassCardShadow(isDark: theme.isDark)
     }
 
     private var topGlowLine: some View {
@@ -740,7 +739,13 @@ struct FaceScanAIInsightCard: View {
     private var cardBackground: some View {
         switch style {
         case .whoopDark:
-            cardShape.fill(FaceScanWhoopPalette.card.opacity(0.92))
+            if theme.isDark {
+                cardShape.fill(FaceScanWhoopPalette.card.opacity(0.92))
+            } else {
+                cardShape
+                    .fill(.clear)
+                    .processGlassEffect(in: cardShape, interactive: false)
+            }
         }
     }
 

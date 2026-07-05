@@ -10,18 +10,29 @@ import SwiftUI
 struct BeforeAfterComparisonSlider: View {
     let beforeImageName: String
     let afterImageName: String
+    var durationWeeks: Int = 8
+    var playsIntroHint: Bool = false
 
-    @State private var sliderPosition: CGFloat = 0.92
+    @State private var sliderPosition: CGFloat = 0.74
     @State private var didTriggerDragHaptic = false
+    @State private var hasPlayedIntroHint = false
+    @State private var isUserDragging = false
+    @State private var introHintTask: Task<Void, Never>?
 
     private let handleSize: CGFloat = 44
     private let dividerWidth: CGFloat = 3
+    private let labelBottomInset: CGFloat = 52
+    private let defaultSliderPosition: CGFloat = 0.74
 
     var body: some View {
         GeometryReader { geometry in
             let width = max(geometry.size.width, 1)
             let height = geometry.size.height
             let dividerX = width * sliderPosition
+            let beforeLabelX = max(dividerX * 0.5, 48)
+            let afterRegionWidth = width - dividerX
+            let afterLabelX = dividerX + max(afterRegionWidth * 0.5, afterRegionWidth - 40)
+            let labelY = height - labelBottomInset
 
             ZStack(alignment: .leading) {
                 Image(afterImageName)
@@ -29,7 +40,16 @@ struct BeforeAfterComparisonSlider: View {
                     .scaledToFill()
                     .frame(width: width, height: height)
                     .clipped()
-                    .accessibilityLabel("Après")
+                    .accessibilityLabel("Semaine \(durationWeeks)")
+
+                comparisonBadge("Semaine \(durationWeeks)")
+                    .position(x: afterLabelX, y: labelY)
+                    .mask(alignment: .leading) {
+                        Rectangle()
+                            .frame(width: max(width - dividerX, 0), height: height)
+                            .offset(x: dividerX)
+                    }
+                    .allowsHitTesting(false)
 
                 Image(beforeImageName)
                     .resizable()
@@ -40,7 +60,15 @@ struct BeforeAfterComparisonSlider: View {
                         Rectangle()
                             .frame(width: dividerX, height: height)
                     }
-                    .accessibilityLabel("Avant")
+                    .accessibilityLabel("Semaine 1")
+
+                comparisonBadge("Semaine 1")
+                    .position(x: beforeLabelX, y: labelY)
+                    .mask(alignment: .leading) {
+                        Rectangle()
+                            .frame(width: dividerX, height: height)
+                    }
+                    .allowsHitTesting(false)
 
                 Rectangle()
                     .fill(.white)
@@ -51,22 +79,19 @@ struct BeforeAfterComparisonSlider: View {
                 sliderHandle
                     .position(x: dividerX, y: height / 2)
                     .gesture(sliderDragGesture(width: width))
-
-                VStack {
-                    HStack {
-                        comparisonBadge("Avant")
-                        Spacer(minLength: 0)
-                        comparisonBadge("Après")
-                    }
-                    .padding(14)
-                    Spacer(minLength: 0)
-                }
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+        .onAppear {
+            scheduleIntroHintIfNeeded()
+        }
+        .onDisappear {
+            introHintTask?.cancel()
+            introHintTask = nil
         }
     }
 
@@ -92,6 +117,8 @@ struct BeforeAfterComparisonSlider: View {
     private func sliderDragGesture(width: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 8)
             .onChanged { value in
+                cancelIntroHint()
+                isUserDragging = true
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 if !didTriggerDragHaptic {
                     didTriggerDragHaptic = true
@@ -102,15 +129,56 @@ struct BeforeAfterComparisonSlider: View {
             }
             .onEnded { _ in
                 didTriggerDragHaptic = false
+                isUserDragging = false
             }
+    }
+
+    private func scheduleIntroHintIfNeeded() {
+        guard playsIntroHint, !hasPlayedIntroHint else { return }
+
+        introHintTask?.cancel()
+        introHintTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled, !isUserDragging, !hasPlayedIntroHint else { return }
+
+            withAnimation(.easeInOut(duration: 0.85)) {
+                sliderPosition = 0.55
+            }
+
+            try? await Task.sleep(for: .milliseconds(950))
+            guard !Task.isCancelled, !isUserDragging else { return }
+
+            withAnimation(.spring(response: 0.62, dampingFraction: 0.84)) {
+                sliderPosition = defaultSliderPosition
+            }
+
+            hasPlayedIntroHint = true
+            introHintTask = nil
+        }
+    }
+
+    private func cancelIntroHint() {
+        introHintTask?.cancel()
+        introHintTask = nil
+        hasPlayedIntroHint = true
     }
 
     private func comparisonBadge(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 12, weight: .bold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 12)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .shadow(color: .black.opacity(0.55), radius: 6, y: 2)
+            .padding(.horizontal, 11)
             .padding(.vertical, 6)
-            .background(.black.opacity(0.45), in: Capsule())
+            .background {
+                Capsule(style: .continuous)
+                    .fill(.black.opacity(0.28))
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
+                    }
+            }
     }
 }

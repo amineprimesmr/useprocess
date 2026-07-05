@@ -31,13 +31,15 @@ enum FaceScanService {
             ? health.todaySnapshot.vitals.hrv
             : nil
 
+        let scanSource: FaceScanSource = AppSession.shared.hasCompletedOnboarding ? .daily : .onboarding
+
         var result = FaceScanResult(
             id: scanId,
             userId: userId,
             markers: markers,
             snapshotFilename: snapshotFilename,
             videoFilename: payload.videoFilename,
-            source: .daily,
+            source: scanSource,
             sleepHoursAtScan: sleepHours,
             hrvAtScan: hrv,
             faceDayScore: absoluteDayScore,
@@ -48,7 +50,14 @@ enum FaceScanService {
         )
         result = FaceScanImageStore.reconcileMediaMetadata(for: result)
 
-        OnboardingFaceMarkersStore.save(markers: markers, mesh: payload.mesh)
+        OnboardingFaceMarkersStore.save(
+            markers: markers,
+            mesh: payload.mesh,
+            scanId: scanId,
+            snapshotFilename: result.snapshotFilename,
+            videoFilename: result.videoFilename,
+            capturedAt: result.createdAt
+        )
         FaceScanHistoryStore.shared.push(result)
 
         if var plan = WelcomePlanStore.shared.plan {

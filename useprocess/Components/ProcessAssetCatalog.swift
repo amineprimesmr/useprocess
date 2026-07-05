@@ -49,6 +49,7 @@ enum ProcessAssetCatalog {
         "carte15",
         "carteparrainage",
         "check",
+        "check3D",
         "claudeLogo",
         "epinardomelette",
         "exercise_curl_marteau",

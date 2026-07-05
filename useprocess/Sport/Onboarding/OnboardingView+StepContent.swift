@@ -117,9 +117,13 @@ extension SportOnboardingView {
                     viewModel: viewModel,
                     selectedSports: OnboardingDataModel.shared.selectedSports
                 ),
+                isAlreadyCompleted: viewModel.isWeightEstimationCompleted,
                 onValidationChanged: { isValid in
                     viewModel.isWeightEstimationCompleted = isValid
                     viewModel.isGoalProjectionCompleted = isValid
+                    if isValid {
+                        viewModel.saveProgress()
+                    }
                 }
             )
         case .healthKitPermissions:

@@ -3,43 +3,95 @@ import SwiftUI
 
 enum ProfileChartMetric: String, CaseIterable, Identifiable {
     case weight = "Poids"
+    case cortisol = "Cortisol"
+    case recovery = "Récupération"
     case retention = "Rétention"
+    case definition = "Mâchoire & pommettes"
+    case skin = "Peau"
+    case effort = "Effort"
 
     var id: String { rawValue }
+
+    static let profileDisplayOrder: [ProfileChartMetric] = [
+        // .weight, // Temporairement masqué
+        .cortisol,
+        .recovery,
+        .retention,
+        .definition,
+        .skin
+        // .effort // Temporairement masqué
+    ]
+
+    var faceScanKind: FaceScanIndicators.Kind? {
+        switch self {
+        case .retention: return .retention
+        case .recovery: return .recovery
+        case .cortisol: return .stressLoad
+        case .definition: return .definition
+        case .skin: return .skin
+        default: return nil
+        }
+    }
 
     var summarySubtitle: String {
         switch self {
         case .weight: return "poids actuel"
+        case .cortisol: return "cortisol estimé"
+        case .recovery: return "récupération visage"
         case .retention: return "rétention d'eau"
+        case .definition: return "définition faciale"
+        case .skin: return "qualité de peau"
+        case .effort: return "score d'activité"
         }
     }
 
     var emptySinglePointMessage: String {
         switch self {
         case .weight: return "Une seule pesée — refais une mesure pour voir la courbe."
-        case .retention: return "Un seul scan — refais un scan pour voir la courbe."
+        case .effort: return "Un seul jour d'activité — continue pour voir la courbe."
+        default: return "Un seul scan — refais un scan pour voir la courbe."
         }
     }
 
     var emptyNoDataMessage: String {
         switch self {
         case .weight: return "Ajoute ton poids dans Santé ou ton profil."
-        case .retention: return "Fais ton scan visage pour démarrer la courbe."
+        case .effort: return "Active Apple Santé pour suivre ton effort."
+        default: return "Fais ton scan visage pour démarrer la courbe."
         }
     }
 
     var emptyPeriodTitle: String {
         switch self {
         case .weight: return "Aucune pesée"
-        case .retention: return "Aucun scan"
+        case .effort: return "Aucune activité"
+        default: return "Aucun scan"
         }
     }
 
     var syncHint: String {
         switch self {
         case .weight: return "Synchronisé depuis Apple Santé ou ton profil."
-        case .retention: return "Basé sur tes scans visage Process."
+        case .effort: return "Synchronisé depuis Apple Santé."
+        default: return "Basé sur tes scans visage Process."
         }
+    }
+}
+
+enum ProfileChartVisualStyle {
+    case splineGlow
+    case lineArea
+    case barTrend
+    case dashedLine
+}
+
+extension FaceScanIndicators.WellnessZone {
+    var profileBadgeLabel: String {
+        title.uppercased(with: Locale(identifier: "fr_FR"))
+    }
+
+    var profileBadgeColor: Color {
+        FaceScanWhoopPalette.ringColor(for: self)
     }
 }
 
@@ -121,42 +173,122 @@ extension ProfileChartMetric {
     var axisStyle: ProfileChartAxisStyle {
         switch self {
         case .weight: return .kilograms
-        case .retention: return .percent
+        case .effort: return .percent
+        default: return .percent
         }
     }
 
     /// Pour l'affichage couleur delta : true = baisse favorable.
-    var lowerDeltaIsPositive: Bool { true }
+    var lowerDeltaIsPositive: Bool {
+        switch self {
+        case .weight, .retention, .recovery, .cortisol: return true
+        case .definition, .skin, .effort: return false
+        }
+    }
 
     var showsChartArea: Bool {
         switch self {
         case .weight: return false
-        case .retention: return true
+        default: return true
         }
     }
 
     var chartLineIsDashed: Bool {
+        self == .weight
+    }
+
+    var deltaThreshold: Double {
         switch self {
-        case .weight: return true
-        case .retention: return false
+        case .weight: return 0.1
+        default: return 1
         }
+    }
+
+    func visualStyle(pointCount: Int) -> ProfileChartVisualStyle {
+        switch self {
+        case .weight: return .dashedLine
+        case .cortisol: return .lineArea
+        case .recovery: return .splineGlow
+        case .retention: return .barTrend
+        case .definition: return .splineGlow
+        case .skin: return .splineGlow
+        case .effort: return .lineArea
+        }
+    }
+
+    func formattedChartValue(_ value: Double) -> (main: String, unit: String) {
+        switch axisStyle {
+        case .kilograms:
+            let text = String(format: "%.1f", value).replacingOccurrences(of: ".", with: ",")
+            return (text, "kg")
+        case .percent:
+            return ("\(Int(value.rounded()))", "%")
+        case .hours:
+            return (formattedHoursParts(value).main, formattedHoursParts(value).unit)
+        }
+    }
+
+    private func formattedHoursParts(_ value: Double) -> (main: String, unit: String) {
+        let totalMinutes = Int((value * 60).rounded())
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if minutes == 0 { return ("\(hours)", "h") }
+        return ("\(hours) h \(String(format: "%02d", minutes))", "")
+    }
+
+    func wellnessZone(for value: Double?) -> FaceScanIndicators.WellnessZone? {
+        guard let value else { return nil }
+        let percent = Int(value.rounded())
+
+        if let kind = faceScanKind {
+            if kind.higherIsWorse {
+                switch kind {
+                case .retention, .recovery:
+                    switch percent {
+                    case ..<48: return .optimal
+                    case 48..<78: return .sufficient
+                    default: return .insufficient
+                    }
+                case .stressLoad:
+                    switch percent {
+                    case ..<42: return .optimal
+                    case 42..<78: return .sufficient
+                    default: return .insufficient
+                    }
+                case .skin, .definition:
+                    break
+                }
+            } else {
+                return FaceScanIndicators.wellnessZone(forPercent: percent)
+            }
+        }
+
+        if self == .effort {
+            switch percent {
+            case 70...: return .optimal
+            case 40..<70: return .sufficient
+            default: return .insufficient
+            }
+        }
+
+        return nil
     }
 
     func chartLineColor(theme: AppTheme) -> Color {
         switch self {
         case .weight: return ProfileChartColors.weightViolet
+        case .cortisol: return ProfileChartColors.cortisolOrange
+        case .recovery: return ProfileChartColors.recoveryViolet
         case .retention: return ProfileChartColors.retentionBlue
+        case .definition: return ProfileChartColors.definitionGold
+        case .skin: return ProfileChartColors.skinRose
+        case .effort: return ProfileChartColors.effortGreen
         }
     }
 
     func chartLineGradient(theme: AppTheme) -> LinearGradient {
+        let base = chartLineColor(theme: theme)
         switch self {
-        case .weight:
-            return LinearGradient(
-                colors: [ProfileChartColors.weightViolet, ProfileChartColors.weightViolet.opacity(0.82)],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
         case .retention:
             return LinearGradient(
                 colors: [
@@ -167,14 +299,21 @@ extension ProfileChartMetric {
                 startPoint: .leading,
                 endPoint: .trailing
             )
+        default:
+            return LinearGradient(
+                colors: [base, base.opacity(0.82)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
         }
     }
 
     func chartAreaGradient(theme: AppTheme) -> LinearGradient {
-        LinearGradient(
+        let base = chartLineColor(theme: theme)
+        return LinearGradient(
             colors: [
-                ProfileChartColors.retentionBlue.opacity(theme.isDark ? 0.28 : 0.22),
-                ProfileChartColors.retentionBlueLight.opacity(theme.isDark ? 0.10 : 0.08),
+                base.opacity(theme.isDark ? 0.28 : 0.22),
+                base.opacity(theme.isDark ? 0.10 : 0.08),
                 .clear
             ],
             startPoint: .top,
@@ -188,6 +327,11 @@ enum ProfileChartColors {
     static let retentionBlueDeep = Color(red: 0.18, green: 0.52, blue: 0.98)
     static let retentionBlue = Color(red: 0.33, green: 0.72, blue: 1.0)
     static let retentionBlueLight = Color(red: 0.55, green: 0.84, blue: 1.0)
+    static let cortisolOrange = Color(red: 1.0, green: 0.55, blue: 0.35)
+    static let recoveryViolet = Color(red: 0.55, green: 0.45, blue: 0.95)
+    static let definitionGold = Color(red: 0.95, green: 0.78, blue: 0.35)
+    static let skinRose = Color(red: 1.0, green: 0.65, blue: 0.72)
+    static let effortGreen = Color(red: 0.35, green: 0.82, blue: 0.55)
 }
 
 enum ProfileChartHistoryBuilder {
@@ -213,7 +357,10 @@ enum ProfileChartHistoryBuilder {
         mergeWeightWithProfileFallback(history: history, profileWeight: profileWeight)
     }
 
-    static func retentionHistory(from scans: [FaceScanResult]) -> [ProfileAnalyticsPoint] {
+    static func faceScanIndicatorHistory(
+        from scans: [FaceScanResult],
+        kind: FaceScanIndicators.Kind
+    ) -> [ProfileAnalyticsPoint] {
         let calendar = Calendar.current
         var latestByDay: [Date: FaceScanResult] = [:]
 
@@ -223,15 +370,20 @@ enum ProfileChartHistoryBuilder {
             latestByDay[day] = scan
         }
 
-        return latestByDay.keys.sorted().map { day in
-            let scan = latestByDay[day]!
-            let value = Double(FaceScanIndicators.displayPercent(for: .retention, result: scan))
+        return latestByDay.keys.sorted().compactMap { day in
+            guard let scan = latestByDay[day] else { return nil }
+            let value = Double(FaceScanIndicators.displayPercent(for: kind, result: scan))
+            guard value > 0 else { return nil }
             return ProfileAnalyticsPoint(
-                id: "retention-\(dayKey(day))",
+                id: "\(kind.rawValue)-\(dayKey(day))",
                 date: day,
                 value: value
             )
         }
+    }
+
+    static func retentionHistory(from scans: [FaceScanResult]) -> [ProfileAnalyticsPoint] {
+        faceScanIndicatorHistory(from: scans, kind: .retention)
     }
 
     static func visiblePoints(

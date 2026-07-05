@@ -394,4 +394,40 @@ final class HealthManager: ObservableObject {
             return points.sorted { $0.date < $1.date }
         }
     }
+
+    func fetchEffortHistory(days: Int = 90) async -> [ProfileAnalyticsPoint] {
+        guard isHealthDataAvailable else { return [] }
+
+        if !isAuthorized {
+            await requestAuthorizationAsync()
+        }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        return await withTaskGroup(of: ProfileAnalyticsPoint?.self) { group in
+            for offset in 0..<days {
+                group.addTask { @MainActor [weak self] in
+                    guard let self,
+                          let date = calendar.date(byAdding: .day, value: -offset, to: today) else {
+                        return nil
+                    }
+                    let score = await self.getEffortScoreForDate(date)
+                    guard score > 0 else { return nil }
+                    let day = calendar.startOfDay(for: date)
+                    return ProfileAnalyticsPoint(
+                        id: self.dateKey(day),
+                        date: day,
+                        value: score
+                    )
+                }
+            }
+
+            var points: [ProfileAnalyticsPoint] = []
+            for await point in group {
+                if let point { points.append(point) }
+            }
+            return points.sorted { $0.date < $1.date }
+        }
+    }
 }

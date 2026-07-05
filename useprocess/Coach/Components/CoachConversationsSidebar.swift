@@ -116,9 +116,18 @@ struct CoachConversationsSidebar: View {
 
     private var navigationSection: some View {
         VStack(spacing: 2) {
-            ForEach(CoachSidebarDestination.allCases) { destination in
+            ForEach(visibleDestinations) { destination in
                 navigationRow(destination)
             }
+        }
+    }
+
+    private var visibleDestinations: [CoachSidebarDestination] {
+        CoachSidebarDestination.allCases.filter { destination in
+            if destination == .integration {
+                return !isIntegrationComplete
+            }
+            return true
         }
     }
 

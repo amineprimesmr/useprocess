@@ -103,12 +103,10 @@ struct PlanLastFaceScanSection: View {
     }
 
     @MainActor
-    private func openCoachInsight(for result: FaceScanResult) {
+    private func openLatestScanAnalysis() {
+        guard let latest else { return }
         HapticManager.shared.impact(.light)
-        FaceScanCoachHandoffCoordinator.deliver(
-            result: result,
-            insight: todayInsight(for: result)
-        )
+        latestAnalysisScan = latest
     }
 
     var body: some View {
@@ -129,7 +127,7 @@ struct PlanLastFaceScanSection: View {
             if showsTodayInsight, let latest {
                 FaceScanAIInsightFooter(
                     insight: todayInsight(for: latest),
-                    onTap: { openCoachInsight(for: latest) }
+                    onTap: { openLatestScanAnalysis() }
                 )
                 .zIndex(1)
             }
@@ -169,9 +167,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private func handlePrimaryTap() {
-        guard let latest else { return }
-        HapticManager.shared.impact(.light)
-        latestAnalysisScan = latest
+        openLatestScanAnalysis()
     }
 
     @ViewBuilder
@@ -241,6 +237,7 @@ struct PlanLastFaceScanSection: View {
             ),
             showsInlineHeader: false,
             onBack: closeInlineScan,
+            allowsScreenFlash: isScanFlowActive,
             onContinue: { payload, markers in
                 withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
                     isScanFlowActive = false

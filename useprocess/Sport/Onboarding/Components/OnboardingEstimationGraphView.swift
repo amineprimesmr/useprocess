@@ -24,7 +24,7 @@ struct OnboardingEstimationGraphView: View {
                     height: height
                 )
                 let milestonePoint = Self.pointOnCurve(
-                    atFraction: OnboardingEstimationContext.weightMilestoneFraction,
+                    atFraction: snapshot.weightMilestoneFraction,
                     points: points
                 )
 
@@ -104,7 +104,7 @@ struct OnboardingEstimationGraphView: View {
                                 height: height
                             )
                             .opacity(
-                                curveAnimationProgress >= OnboardingEstimationContext.weightMilestoneFraction ? 1 : 0
+                                curveAnimationProgress >= snapshot.weightMilestoneFraction ? 1 : 0
                             )
                         }
                     }
@@ -121,8 +121,7 @@ struct OnboardingEstimationGraphView: View {
     private var graphDateAxis: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
-            let weightX = width * CGFloat(OnboardingEstimationContext.weightMilestoneFraction)
-            let endX = max(width - 4, width * 0.96)
+            let weightX = width * CGFloat(snapshot.weightMilestoneFraction)
 
             ZStack(alignment: .topLeading) {
                 axisDateLabel(
@@ -142,14 +141,6 @@ struct OnboardingEstimationGraphView: View {
                     .frame(width: 96, alignment: .center)
                     .position(x: weightX, y: 14)
                 }
-
-                axisDateLabel(
-                    caption: "100 % potentiel",
-                    dateText: formatGraphDate(snapshot.projectedDate),
-                    alignment: .trailing
-                )
-                .frame(width: 104, alignment: .trailing)
-                .position(x: endX - 52, y: 14)
             }
         }
         .frame(height: 40)
@@ -196,7 +187,7 @@ struct OnboardingEstimationGraphView: View {
         width: CGFloat,
         height: CGFloat
     ) -> some View {
-        let markerX = width * CGFloat(OnboardingEstimationContext.weightMilestoneFraction)
+        let markerX = width * CGFloat(snapshot.weightMilestoneFraction)
 
         ZStack {
             Path { path in

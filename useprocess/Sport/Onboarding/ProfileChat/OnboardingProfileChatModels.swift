@@ -133,6 +133,67 @@ enum OnboardingProfileChatQuestionBank {
         return "Salut 👋 Quelques questions pour calibrer ton plan."
     }
 
+    static func resolvedQuestion(
+        _ question: OnboardingProfileChatQuestion,
+        for viewModel: OnboardingViewModel
+    ) -> OnboardingProfileChatQuestion {
+        switch question.id {
+        case "face_scan_offer":
+            return faceScanQuestion(for: viewModel)
+        case "scan_explanation":
+            return scanExplanationQuestion(for: viewModel)
+        default:
+            return question
+        }
+    }
+
+    /// Réponse utilisateur persistée — pour reconstruire l'historique après relance.
+    static func savedAnswerDisplay(
+        for questionID: String,
+        viewModel: OnboardingViewModel
+    ) -> String? {
+        switch questionID {
+        case "primary_focus":
+            guard let focus = viewModel.onboardingPrimaryFocus else { return nil }
+            return primaryFocusChoices.first(where: { $0.id == focus.rawValue })?.label
+
+        case "debloat_driver":
+            guard !viewModel.onboardingDebloatDrivers.isEmpty else { return nil }
+            return viewModel.onboardingDebloatDrivers
+                .sorted { $0.rawValue < $1.rawValue }
+                .compactMap { driver in
+                    debloatDriverChoices.first(where: { $0.id == driver.rawValue })?.label
+                }
+                .joined(separator: ", ")
+
+        case "nutrition_quality":
+            let profile = viewModel.nutritionProfile
+            if profile.nutritionObstacles.contains(.snacking) {
+                return nutritionChoices.first(where: { $0.id == "snacking" })?.label
+            }
+            if let quality = profile.nutritionQuality {
+                if let match = nutritionChoices.first(where: { $0.id == quality.rawValue }) {
+                    return match.label
+                }
+            }
+            return nutritionChoices.first(where: { $0.id == "unknown" })?.label
+
+        case "face_scan_offer":
+            guard viewModel.completedProfileChatQuestionIDs.contains(questionID) else { return nil }
+            if viewModel.onboardingFaceMarkers != nil {
+                return "Lancer le scan"
+            }
+            return "Faire mon scan plus tard"
+
+        case "sport_pick":
+            guard let sport = OnboardingDataModel.shared.selectedSports.first else { return nil }
+            return OnboardingSportCatalog.nameWithoutEmoji(sport)
+
+        default:
+            return nil
+        }
+    }
+
     // MARK: - Choices
 
     private static let primaryFocusChoices: [OnboardingProfileChatChoice] = [
@@ -210,11 +271,11 @@ enum OnboardingProfileChatQuestionBank {
     ) -> String {
         switch kind {
         case .retention:
-            return zone == .insufficient ? "une rétention d'eau marquée" : "un léger gonflement"
+            return zone == .insufficient ? "une rétention d'eau marquée 💧" : "un léger gonflement 💧"
         case .recovery:
-            return zone == .insufficient ? "une récupération insuffisante" : "des signes de fatigue"
+            return zone == .insufficient ? "une récupération insuffisante 😴" : "des signes de fatigue 😴"
         case .stressLoad:
-            return zone == .insufficient ? "une charge de stress élevée" : "une tension modérée"
+            return zone == .insufficient ? "une charge de stress élevée 😰" : "une tension modérée 😰"
         case .skin:
             return zone == .insufficient ? "une peau terne" : "une peau qui manque un peu d'éclat"
         case .definition:

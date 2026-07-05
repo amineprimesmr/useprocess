@@ -15,5 +15,11 @@ struct WindowExtractor: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            if let window = uiView.window {
+                result(window)
+            }
+        }
+    }
 }

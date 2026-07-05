@@ -11,6 +11,13 @@ struct PlanDashboardView: View {
     @State private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
     @State private var showHomeLayoutEditor = false
+    @State private var showSettings = false
+    @State private var showStreakToast = false
+    @State private var streakToast = DynamicIslandToastMessage.streak(
+        snapshot: ProcessStreakStore.shared.snapshot,
+        firstName: nil
+    )
+    @State private var streakToastDismissTask: Task<Void, Never>?
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
     @Namespace private var homeChromeZoomNamespace
 
@@ -32,11 +39,13 @@ struct PlanDashboardView: View {
                     PlanHomeTopChrome(
                         selectedSection: $selectedSection,
                         selectedDate: $selectedPlanDate,
+                        showSettings: $showSettings,
+                        onOpenStreak: presentStreakToast,
                         zoomNamespace: homeChromeZoomNamespace
                     )
                     planContent
 
-                    if livePlan != nil {
+                    if livePlan != nil, session.hasCompletedWelcomePlanChat {
                         PlanHomeCustomizeFloatingButton(
                             zoomNamespace: homeChromeZoomNamespace,
                             action: { showHomeLayoutEditor = true }
@@ -63,6 +72,14 @@ struct PlanDashboardView: View {
                     .processZoomTransition(id: .homeLayoutEditor, namespace: homeChromeZoomNamespace)
                 }
             }
+            .fullScreenCover(isPresented: $showSettings) {
+                ProcessSettingsFullScreenView()
+                    .environmentObject(profileService)
+                    .environmentObject(HealthManager.shared)
+                    .environmentObject(AuthenticationManager.shared)
+                    .processZoomTransition(id: .activityStatus, namespace: homeChromeZoomNamespace)
+            }
+            .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast)
         }
     }
 
@@ -92,16 +109,6 @@ struct PlanDashboardView: View {
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button {
-                openWelcomePlanConfiguration()
-            } label: {
-                Label("Terminer la configuration", systemImage: "sparkles")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(theme.onboardingAccent)
-
             if planStore.canRestorePlan {
                 Button {
                     Task { await restorePlan() }
@@ -128,12 +135,7 @@ struct PlanDashboardView: View {
         if planStore.canRestorePlan {
             return "Tu as déjà répondu au questionnaire, mais ton programme n'a pas pu être chargé. Restaure-le en un clic ou reprends la configuration avec le coach."
         }
-        return "Ouvre le coach IA une première fois pour configurer ton protocole, ou reprends le questionnaire depuis le menu du coach."
-    }
-
-    private func openWelcomePlanConfiguration() {
-        HapticManager.shared.impact(.medium)
-        CoachPlanNavigationBridge.shared.shouldOpenCoach = true
+        return "Ouvre le coach pour personnaliser ton protocole quand tu es prêt."
     }
 
     private func restorePlan() async {
@@ -141,5 +143,39 @@ struct PlanDashboardView: View {
         defer { isRestoringPlan = false }
         _ = planStore.repairAccessIfNeeded(profile: profileService.currentProfile)
         planStore.reloadForCurrentUser(force: true)
+    }
+
+    private func presentStreakToast() {
+        HapticManager.shared.impact(.light)
+
+        let streakStore = ProcessStreakStore.shared
+        streakStore.sync(from: planStore.plan)
+
+        let firstName = profileService.currentProfile?.firstName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        streakToastDismissTask?.cancel()
+        streakToast = .streak(
+            snapshot: streakStore.snapshot,
+            firstName: firstName?.isEmpty == false ? firstName : nil
+        )
+
+        if showStreakToast {
+            showStreakToast = false
+            DispatchQueue.main.async {
+                showStreakToast = true
+                scheduleStreakToastDismiss()
+            }
+        } else {
+            showStreakToast = true
+            scheduleStreakToastDismiss()
+        }
+    }
+
+    private func scheduleStreakToastDismiss() {
+        streakToastDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3.8))
+            guard !Task.isCancelled else { return }
+            showStreakToast = false
+        }
     }
 }

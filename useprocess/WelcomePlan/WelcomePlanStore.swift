@@ -516,6 +516,7 @@ final class WelcomePlanStore {
 
     private func regeneratePlanFromQuestionnaire(profile: UnifiedUserProfile?) {
         guard hasQuestionnaireAnswers else { return }
+        guard WelcomePlanQuestionBank.isFullyAnswered(answers: questionnaire.answers) else { return }
         let regenerated = WelcomePlanGenerator.generate(answers: questionnaire.answers, profile: profile)
         if !isQuestionnaireComplete {
             markQuestionnaireComplete()
@@ -523,9 +524,22 @@ final class WelcomePlanStore {
         savePlan(regenerated, structureChanged: true)
     }
 
+    /// Génère un aperçu du plan (repas / training / routines) sans valider le protocole.
+    func seedPreviewPlanIfNeeded(profile: UnifiedUserProfile?) {
+        guard AppSession.shared.hasCompletedOnboarding else { return }
+        guard !AppSession.shared.hasCompletedWelcomePlanChat else { return }
+        guard plan == nil else { return }
+        guard questionnaire.answers.isEmpty else { return }
+
+        let previewAnswers = WelcomePlanQuestionBank.prefillAnswersFromOnboarding(profile: profile)
+        let previewPlan = WelcomePlanGenerator.generate(answers: previewAnswers, profile: profile)
+        savePlan(previewPlan, structureChanged: true)
+    }
+
     private func syncWelcomePlanCompletionFlag() {
         guard plan != nil else { return }
-        guard isQuestionnaireComplete || hasQuestionnaireAnswers else { return }
+        guard questionnaire.completedAt != nil else { return }
+        guard WelcomePlanQuestionBank.isFullyAnswered(answers: questionnaire.answers) else { return }
 
         let uid = UserScopedStorage.currentUserId()
             ?? UnifiedProfileService.shared.currentProfile?.userId

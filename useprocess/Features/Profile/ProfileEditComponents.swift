@@ -298,7 +298,15 @@ struct AccountDetailsGlassHeader: View {
             }
 
             HStack {
-                ProcessGlassIconButton(systemName: "chevron.down", size: 40, iconSize: 16, action: onBack)
+                Button(action: onBack) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                }
+                .processGlassButton(in: Capsule())
+                .accessibilityLabel("Fermer")
 
                 Spacer()
 
@@ -321,45 +329,43 @@ struct AccountDetailsGlassHeader: View {
 }
 
 struct AccountDetailsAvatarSection: View {
-    let fullName: String
+    let displayName: String
     let initials: String
     let image: UIImage?
     let onChangePhoto: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
-            Group {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    ZStack {
-                        Circle().fill(ProfileTheme.avatarAccent)
-                        Text(initials.prefix(1).uppercased())
-                            .font(.system(size: 52, weight: .bold))
-                            .foregroundStyle(.white)
+            Button(action: onChangePhoto) {
+                Group {
+                    if let image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        ZStack {
+                            Circle().fill(ProfileTheme.avatarAccent)
+                            Text(initials.prefix(1).uppercased())
+                                .font(.system(size: 52, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
                     }
                 }
+                .frame(width: 110, height: 110)
+                .clipShape(Circle())
             }
-            .frame(width: 110, height: 110)
-            .clipShape(Circle())
+            .buttonStyle(.plain)
+            .accessibilityLabel("Photo de profil")
+            .accessibilityHint("Modifier la photo")
 
-            Text(fullName)
+            Text(displayName)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(Color.primary)
                 .multilineTextAlignment(.center)
-
-            Button(action: onChangePhoto) {
-                Text("Modifier la photo")
-                    .font(.system(size: 15))
-                    .foregroundStyle(AccountDetailsTheme.linkText)
-            }
-            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
-        .padding(.bottom, 22)
+        .padding(.bottom, 14)
     }
 }
 
@@ -412,6 +418,17 @@ struct AccountDetailsActionButton: View {
                 shape.fill(Color.red.opacity(0.07))
             }
         }
+    }
+}
+
+private struct ProfileAccountDeletionHandlerKey: EnvironmentKey {
+    static let defaultValue: (() -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    var profileAccountDeletionHandler: (() -> Void)? {
+        get { self[ProfileAccountDeletionHandlerKey.self] }
+        set { self[ProfileAccountDeletionHandlerKey.self] = newValue }
     }
 }
 

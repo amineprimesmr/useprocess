@@ -2,41 +2,14 @@ import SafariServices
 import SwiftUI
 import UIKit
 
-// MARK: - Profil
-
-struct ProfileSettingsProfileDetailView: View {
-    var onShareProfile: () -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: "Profil")
-            }
-            .padding(.bottom, 32)
-        }
-        .scrollIndicators(.hidden)
-        .processTransparentScrollSurface()
-        .navigationTitle("Profil")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
 // MARK: - Compte
 
 struct ProfileSettingsAccountDetailView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @Environment(\.profileAccountDeletionHandler) private var onDeleteConfirmed
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
-    }
-
-    private var usernameDisplay: String? {
-        let tag = ProcessUsernameTag.normalize(
-            SocialProfileStore.shared.profile?.username
-                ?? profile?.username
-                ?? ""
-        )
-        return tag.isEmpty ? nil : "@\(tag)"
     }
 
     private var ageText: String? {
@@ -50,29 +23,6 @@ struct ProfileSettingsAccountDetailView: View {
                 ProfileSummarySectionHeader(title: "Identité")
 
                 AccountDetailsCard {
-                    NavigationLink(value: ProfileEditDestination.username) {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: "Tag Process",
-                                value: usernameDisplay,
-                                placeholder: "Choisir ton @",
-                                showsChevron: false
-                            )
-                        }
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink(value: ProfileEditDestination.findUser) {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: "Trouver un utilisateur",
-                                value: nil,
-                                placeholder: "Rechercher par @"
-                            )
-                        }
-                    }
-                    .buttonStyle(.plain)
-
                     NavigationLink(value: ProfileEditDestination.firstName) {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
@@ -157,6 +107,12 @@ struct ProfileSettingsAccountDetailView: View {
                     }
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+
+                if let onDeleteConfirmed {
+                    AccountDeleteAnimatedButton(onConfirm: onDeleteConfirmed)
+                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                        .padding(.top, 28)
+                }
             }
             .padding(.bottom, 32)
         }

@@ -142,7 +142,7 @@ struct OnboardingProgramCreationProgressBars: View {
                 barRow(label: label, progress: progresses[safe: index] ?? 0)
             }
         }
-        .animation(.easeInOut(duration: 0.35), value: progresses)
+        .animation(.spring(response: 0.42, dampingFraction: 0.82), value: progresses)
     }
 
     private func barRow(label: String, progress: Double) -> some View {
@@ -179,5 +179,186 @@ struct OnboardingProgramCreationProgressBars: View {
 private extension Array {
     subscript(safe index: Int) -> Element? {
         indices.contains(index) ? self[index] : nil
+    }
+}
+
+// MARK: - Confetti
+
+private struct ProgramCreationConfettiPiece: Identifiable {
+    let id = UUID()
+    let xRatio: CGFloat
+    let delay: Double
+    let duration: Double
+    let color: Color
+    let width: CGFloat
+    let height: CGFloat
+    let spin: Double
+}
+
+struct OnboardingProgramCreationConfettiView: View {
+    let isActive: Bool
+
+    @State private var pieces: [ProgramCreationConfettiPiece] = []
+    @State private var started = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                ForEach(pieces) { piece in
+                    ConfettiPieceView(
+                        piece: piece,
+                        containerWidth: geometry.size.width,
+                        containerHeight: geometry.size.height,
+                        isActive: isActive && started
+                    )
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .onAppear {
+            pieces = Self.makePieces(count: 52)
+            started = true
+        }
+    }
+
+    private static func makePieces(count: Int) -> [ProgramCreationConfettiPiece] {
+        let palette: [Color] = [
+            Color(red: 0.55, green: 0.78, blue: 0.98),
+            Color(red: 0.98, green: 0.62, blue: 0.78),
+            Color(red: 0.98, green: 0.86, blue: 0.45),
+            Color(red: 0.72, green: 0.62, blue: 0.98),
+            Color(red: 0.58, green: 0.88, blue: 0.72)
+        ]
+
+        return (0..<count).map { index in
+            ProgramCreationConfettiPiece(
+                xRatio: CGFloat.random(in: 0.04...0.96),
+                delay: Double(index) * 0.045 + Double.random(in: 0...0.35),
+                duration: Double.random(in: 2.8...4.6),
+                color: palette[index % palette.count].opacity(Double.random(in: 0.55...0.9)),
+                width: CGFloat.random(in: 7...12),
+                height: CGFloat.random(in: 14...22),
+                spin: Double.random(in: -220...220)
+            )
+        }
+    }
+}
+
+private struct ConfettiPieceView: View {
+    let piece: ProgramCreationConfettiPiece
+    let containerWidth: CGFloat
+    let containerHeight: CGFloat
+    let isActive: Bool
+
+    @State private var offsetY: CGFloat = -30
+    @State private var rotation: Double = 0
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2, style: .continuous)
+            .fill(piece.color)
+            .frame(width: piece.width, height: piece.height)
+            .rotationEffect(.degrees(rotation))
+            .position(x: piece.xRatio * containerWidth, y: offsetY)
+            .onAppear {
+                guard isActive else { return }
+                startFalling()
+            }
+            .onChange(of: isActive) { _, active in
+                guard active else { return }
+                startFalling()
+            }
+    }
+
+    private func startFalling() {
+        offsetY = -30
+        rotation = 0
+
+        withAnimation(
+            .linear(duration: piece.duration)
+            .repeatForever(autoreverses: false)
+            .delay(piece.delay)
+        ) {
+            offsetY = containerHeight + 40
+            rotation = piece.spin
+        }
+    }
+}
+
+// MARK: - Success screen
+
+struct OnboardingProgramCreationSuccessView: View {
+    let isRevealed: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            successCheckmark
+                .padding(.bottom, 34)
+
+            VStack(spacing: 10) {
+                Text("Tout est prêt.")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(OnboardingTheme.primaryText)
+
+                Text("Merci pour vos réponses.")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(OnboardingTheme.primaryText)
+            }
+            .multilineTextAlignment(.center)
+            .opacity(isRevealed ? 1 : 0)
+            .offset(y: isRevealed ? 0 : 18)
+            .animation(
+                .spring(response: 0.58, dampingFraction: 0.84).delay(0.08),
+                value: isRevealed
+            )
+
+            Spacer()
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var successCheckmark: some View {
+        Image("check3D")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 120, height: 120)
+            .scaleEffect(isRevealed ? 1 : 0.35)
+            .opacity(isRevealed ? 1 : 0)
+            .animation(.spring(response: 0.56, dampingFraction: 0.72), value: isRevealed)
+    }
+}
+
+struct OnboardingProgramCreationSuccessFooter: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let isRevealed: Bool
+    let onContinue: () -> Void
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Button(action: onContinue) {
+                Text("Commencer")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(OnboardingTheme.filledButtonBackground(for: colorScheme))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .opacity(isRevealed ? 1 : 0)
+            .offset(y: isRevealed ? 0 : 28)
+            .animation(.spring(response: 0.55, dampingFraction: 0.86).delay(0.14), value: isRevealed)
+
+            Text("Process ne remplace pas les conseils d'un médecin. Consulte toujours ton médecin en premier lieu.")
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(OnboardingTheme.mutedText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .opacity(isRevealed ? 1 : 0)
+                .animation(.easeOut(duration: 0.35).delay(0.22), value: isRevealed)
+        }
     }
 }

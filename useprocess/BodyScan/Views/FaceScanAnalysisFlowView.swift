@@ -71,11 +71,11 @@ struct FaceScanAnalysisFlowView: View {
     }
 
     private var analysisBackground: Color {
-        colorScheme == .dark ? FaceScanWhoopPalette.canvas : OnboardingTheme.screenBackground
+        FaceScanWhoopPalette.canvas
     }
 
     private var headerForeground: Color {
-        colorScheme == .dark ? FaceScanWhoopPalette.label : OnboardingTheme.primaryText
+        FaceScanWhoopPalette.label
     }
 
     private var headerBar: some View {
@@ -223,6 +223,7 @@ struct FaceScanAnalysisFlowView: View {
 
 struct FaceScanAnalysisHeroView: View {
     let payload: FaceScanCapturePayload
+    var showsAnalysisSweep: Bool = true
 
     private let heroDiameter: CGFloat = 248
 
@@ -233,6 +234,12 @@ struct FaceScanAnalysisHeroView: View {
             mediaLayer
                 .frame(width: heroDiameter, height: heroDiameter)
                 .clipShape(Circle())
+
+            if showsAnalysisSweep {
+                FaceScanAnalysisSweepOverlay(diameter: heroDiameter)
+                    .frame(width: heroDiameter, height: heroDiameter)
+                    .clipShape(Circle())
+            }
 
             Circle()
                 .strokeBorder(Color.white.opacity(0.16), lineWidth: 1.5)
@@ -273,5 +280,97 @@ struct FaceScanAnalysisHeroView: View {
             }
             try? await Task.sleep(for: .milliseconds(180))
         }
+    }
+}
+
+// MARK: - Sweep analyse
+
+struct FaceScanAnalysisSweepOverlay: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let diameter: CGFloat
+
+    private let cycleDuration: TimeInterval = 2.85
+    private let maskBandHeightRatio: CGFloat = 0.26
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { context in
+            let elapsed = context.date.timeIntervalSinceReferenceDate
+            let phase = elapsed.truncatingRemainder(dividingBy: cycleDuration) / cycleDuration
+            let sweepProgress = smoothPingPong(phase)
+
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let height = geometry.size.height
+                let y = height * sweepProgress
+                let maskHeight = max(44, height * maskBandHeightRatio)
+
+                ZStack {
+                    Rectangle()
+                        .fill(maskGradient)
+                        .frame(width: width, height: maskHeight)
+                        .blur(radius: 7)
+                        .position(x: width * 0.5, y: y)
+
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    lineColor.opacity(0),
+                                    lineColor.opacity(colorScheme == .dark ? 0.92 : 0.98),
+                                    lineColor.opacity(0)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: width * 0.92, height: 1.6)
+                        .shadow(color: lineGlow.opacity(0.55), radius: 5, y: 0)
+                        .position(x: width * 0.5, y: y)
+
+                    Rectangle()
+                        .fill(lineColor.opacity(colorScheme == .dark ? 0.42 : 0.34))
+                        .frame(width: width * 0.72, height: 0.8)
+                        .blur(radius: 0.4)
+                        .position(x: width * 0.5, y: y)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var lineColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.78, green: 0.96, blue: 1.0)
+            : .white
+    }
+
+    private var lineGlow: Color {
+        colorScheme == .dark
+            ? Color(red: 0.35, green: 0.92, blue: 1.0)
+            : Color.white
+    }
+
+    private var maskGradient: LinearGradient {
+        let peak = colorScheme == .dark ? 0.24 : 0.30
+        return LinearGradient(
+            colors: [
+                lineGlow.opacity(0),
+                lineGlow.opacity(peak * 0.45),
+                lineGlow.opacity(peak),
+                lineGlow.opacity(peak * 0.45),
+                lineGlow.opacity(0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private func smoothPingPong(_ phase: Double) -> CGFloat {
+        let wave = sin((phase * 2 * .pi) - (.pi / 2))
+        let normalized = (wave + 1) * 0.5
+        let inset = 0.1
+        return CGFloat(inset + normalized * (1 - inset * 2))
     }
 }

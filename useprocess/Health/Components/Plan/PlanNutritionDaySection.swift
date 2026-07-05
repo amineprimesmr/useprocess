@@ -189,7 +189,14 @@ struct PlanNutritionDaySection: View {
     }
 
     private var headerRow: some View {
-        PlanHomeSectionHeader(title: "Repas debloat")
+        PlanHomeSectionHeader(
+            title: "Repas debloat",
+            actionTitle: "Voir tout",
+            action: {
+                HapticManager.shared.impact(.light)
+                showMealIdeasCatalog = true
+            }
+        )
     }
 
     private var mealCarousel: some View {
@@ -317,12 +324,6 @@ private struct PlanMealCatalogBrowseCard: View {
                 width: PlanMealCarouselLayout.cardWidth,
                 height: PlanMealCarouselLayout.cardHeight
             )
-            .overlay(alignment: .topTrailing) {
-                Image(systemName: "square.grid.2x2.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(theme.onboardingAccent)
-                    .padding(12)
-            }
         }
         .buttonStyle(.plain)
         .frame(

@@ -33,10 +33,11 @@ final class UserSessionCoordinator {
         }
 
         if let userId {
+            FaceScanHistoryStore.shared.reloadForUser(userId: userId)
+            PostOnboardingActivationService.migrateOnboardingFaceScanData()
             AppSession.shared.reloadForCurrentUser()
             ProcessPrivacyConsentStore.shared.reloadForUser(userId: userId)
             BodyScanHistoryStore.shared.reloadForUser(userId: userId)
-            FaceScanHistoryStore.shared.reloadForUser(userId: userId)
             CoachConversationStore.reloadForUser(userId: userId)
             SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
 

@@ -13,7 +13,7 @@ enum CoachDeepLinkAction: String, Codable, Equatable {
         case .journal: return "Ouvrir le journal"
         case .scan: return "Faire mon scan"
         case .streak: return "Voir ma streak"
-        case .integration: return "Continuer l'intégration"
+        case .integration: return "Configurer mon protocole"
         }
     }
 }

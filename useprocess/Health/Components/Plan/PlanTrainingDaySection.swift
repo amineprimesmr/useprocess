@@ -13,37 +13,23 @@ struct PlanTrainingDaySection: View {
 
     @Namespace private var trainingZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
-    @State private var showsDayOverview = false
-
-    private var training: OriginDayTraining? { day.training }
 
     private var stepsToday: Int {
         healthManager.todaySnapshot.effort.steps
     }
 
+    /// Temporaire : uniquement le circuit posture & étirements (pas de séance du jour).
     private var carouselItems: [PlanProtocolCarouselItem] {
-        if let training {
-            return PlanProtocolCarouselBuilder.trainingDayCarouselItems(
-                training: training,
-                plan: plan,
-                stepsToday: stepsToday
-            )
-        }
-        return PlanProtocolCarouselBuilder.restDayCarouselItems(
-            plan: plan,
+        PlanProtocolCarouselBuilder.compactPostureItems(
+            from: plan,
             stepsToday: stepsToday
         )
-    }
-
-    /// Cartes affichées sans la carte « Voir tout » (compteur header).
-    private var previewCarouselItems: [PlanProtocolCarouselItem] {
-        carouselItems.filter { $0.id != PlanProtocolCarouselBuilder.SummaryID.seeAllTraining }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Entraînement du jour",
+                title: "Circuit posture & étirements",
                 trailing: sectionHeaderTrailing
             )
 
@@ -51,52 +37,23 @@ struct PlanTrainingDaySection: View {
                 items: carouselItems,
                 zoomNamespace: trainingZoomNamespace,
                 zoomIDForItem: { zoomID(for: $0) },
-                onTap: handleCarouselTap
+                onTap: { selectedProtocolItem = $0 }
             )
-            .processZoomSource(id: .trainingDay, namespace: trainingZoomNamespace)
+            .processZoomSource(id: .postureCircuit, namespace: trainingZoomNamespace)
         }
         .sheet(item: $selectedProtocolItem) { item in
             PlanProtocolItemDetailSheet(item: item)
         }
-        .fullScreenCover(isPresented: $showsDayOverview) {
-            PlanTrainingDayOverviewSheet(plan: plan, day: day)
-                .processZoomTransition(id: .trainingDay, namespace: trainingZoomNamespace)
-        }
-    }
-
-    private func handleCarouselTap(_ item: PlanProtocolCarouselItem) {
-        if item.id == PlanProtocolCarouselBuilder.SummaryID.seeAllTraining {
-            HapticManager.shared.impact(.light)
-            showsDayOverview = true
-        } else {
-            selectedProtocolItem = item
-        }
     }
 
     private var sectionHeaderTrailing: String? {
-        if let training {
-            return trainingHeaderTrailing(for: training)
-        }
-        return "Repos actif · \(previewCarouselItems.count) blocs"
-    }
-
-    private func trainingHeaderTrailing(for training: OriginDayTraining) -> String? {
-        var parts: [String] = []
-        if training.durationMinutes > 0 {
-            parts.append("\(training.durationMinutes) min")
-        }
-        let exerciseCount = training.exercises.count
-        if exerciseCount > 0 {
-            parts.append("\(exerciseCount) ex.")
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        let count = carouselItems.count
+        guard count > 0 else { return nil }
+        return "\(count) blocs"
     }
 
     private func zoomID(for item: PlanProtocolCarouselItem) -> ProcessZoomTransitionID {
-        if item.id == PlanProtocolCarouselBuilder.SummaryID.seeAllTraining {
-            return .trainingDay
-        }
-        if item.id.hasPrefix("posture-") {
+        if item.id == "walking-steps" || item.id.hasPrefix("posture-") {
             return .postureCircuit
         }
         return .protocolItem(item.id)

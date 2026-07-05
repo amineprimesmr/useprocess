@@ -136,8 +136,90 @@ final class OnboardingProfileChatViewModel {
     func startIfNeeded() async {
         guard !hasStarted else { return }
         hasStarted = true
-        await presentOpeningLine()
-        await presentFirstQuestionAfterOpening()
+
+        guard let viewModel = onboardingViewModel else { return }
+        let hasSavedProgress = !viewModel.completedProfileChatQuestionIDs.isEmpty
+
+        if hasSavedProgress {
+            restoreConversationFromSavedProgress()
+            await resumeFromSavedProgress()
+        } else {
+            await presentOpeningLine()
+            await presentFirstQuestionAfterOpening()
+        }
+    }
+
+    private func restoreConversationFromSavedProgress() {
+        guard let viewModel = onboardingViewModel else { return }
+        let completed = viewModel.completedProfileChatQuestionIDs
+
+        messages.removeAll(keepingCapacity: true)
+        appendAssistantMessageInstant(OnboardingProfileChatQuestionBank.openingLine(for: viewModel))
+
+        for question in questions where completed.contains(question.id) {
+            let resolved = OnboardingProfileChatQuestionBank.resolvedQuestion(question, for: viewModel)
+            appendAssistantMessageInstant(resolved.prompt)
+            if let answer = OnboardingProfileChatQuestionBank.savedAnswerDisplay(
+                for: resolved.id,
+                viewModel: viewModel
+            ) {
+                appendUserMessage(answer)
+            }
+        }
+    }
+
+    private func resumeFromSavedProgress() async {
+        guard let viewModel = onboardingViewModel else { return }
+        let completed = viewModel.completedProfileChatQuestionIDs
+        let allQuestionIDs = Set(questions.map(\.id))
+
+        if allQuestionIDs.isSubset(of: completed) {
+            analysisLetsGoUnlocked = true
+            currentQuestion = nil
+            isQuestionReadyForAnswers = false
+            isMessageAnimating = false
+            return
+        }
+
+        guard currentIndex < questions.count else { return }
+
+        let question = OnboardingProfileChatQuestionBank.resolvedQuestion(
+            questions[currentIndex],
+            for: viewModel
+        )
+        questions[currentIndex] = question
+        currentQuestion = question
+        isQuestionReadyForAnswers = false
+        isMessageAnimating = false
+
+        appendAssistantMessageInstant(question.prompt)
+
+        switch question.kind {
+        case .autoPlanCreation:
+            await beginProgramCreationFlow()
+        case .answersAnalysis:
+            isQuestionReadyForAnswers = true
+            beginAnswersAnalysisPanel()
+            startAnswersAnalysisAnimation()
+            await analysisTask?.value
+            if analysisPhase == .complete {
+                await presentAnalysisDetailMessage()
+            }
+        case .faceScanOffer:
+            isQuestionReadyForAnswers = true
+        default:
+            isQuestionReadyForAnswers = true
+        }
+    }
+
+    private func appendAssistantMessageInstant(_ text: String) {
+        messages.append(
+            .init(
+                role: .assistant,
+                text: text,
+                layoutAnchorText: text
+            )
+        )
     }
 
     private func presentFirstQuestionAfterOpening() async {

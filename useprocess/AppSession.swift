@@ -45,6 +45,7 @@ final class AppSession {
         // Le Protocole Origine reste obligatoire après l'onboarding.
         hasCompletedWelcomePlanChat = false
         UserDefaults.standard.set(false, forKey: welcomePlanChatStorageKey)
+        WelcomePlanCoachPresentation.resetForCurrentUser()
     }
 
     func completeWelcomePlanChat() {

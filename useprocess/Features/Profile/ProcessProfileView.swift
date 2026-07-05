@@ -1,25 +1,19 @@
 import AuthenticationServices
 import SwiftUI
 
-/// Profil — hero photo, poids, rétention et parrainage.
+/// Profil — scans visage, métriques et identité.
 struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @EnvironmentObject private var healthManager: HealthManager
-    @Bindable private var session = AppSession.shared
     @Bindable private var streakStore = ProcessStreakStore.shared
+    @Bindable private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var profileStore = SocialProfileStore.shared
 
-    @State private var showSettings = false
-    @State private var showReferral = false
-    @State private var showUsernameEditor = false
-    @State private var showPhotoFlow = false
-    @State private var photoMenuAnchor: CGPoint = .zero
-    @State private var pendingAccountConfirmation: AccountConfirmation?
+    @State private var selectedAnalysisScan: FaceScanResult?
 
-    @State private var weightHistory: [ProfileAnalyticsPoint] = []
-    @State private var retentionHistory: [ProfileAnalyticsPoint] = []
+    @State private var chartHistories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
 
     private var resolvedProfile: SocialProfile {
         if let profile = profileStore.profile {
@@ -32,66 +26,30 @@ struct ProcessProfileView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            ScrollView {
-                VStack(spacing: 0) {
-                    profileHero(resolvedProfile)
-                        .animation(ProfileTheme.spring, value: profileStore.profile?.coverPhotoFilename)
+        ScrollView {
+            VStack(spacing: 0) {
+                ProfileScanEvolutionHero(
+                    historyStore: faceHistoryStore,
+                    onOpenScan: { selectedAnalysisScan = $0 }
+                )
 
-                    profileScrollContent(resolvedProfile)
-                }
-                .processReportsTabBarScrollOffset()
+                profileScrollContent(resolvedProfile)
             }
-            .coordinateSpace(name: "processMainScroll")
-            .scrollClipDisabled()
-            .ignoresSafeArea(edges: .top)
-            .scrollIndicators(.hidden)
-            .processTransparentScrollSurface()
-
-            profileTopChrome
-                .padding(.top, ProcessMainChromeMetrics.topSafeInset + ProfileTopChromeMetrics.topPadding)
+            .processReportsTabBarScrollOffset()
         }
+        .coordinateSpace(name: "processMainScroll")
+        .scrollClipDisabled()
+        .ignoresSafeArea(edges: .top)
+        .scrollIndicators(.hidden)
+        .processTransparentScrollSurface()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .processClearUIKitHostingBackground()
-        .refreshable {
-            await refreshProfile(forceHealthRefresh: true)
-        }
-        .reportsProfileSubrouteActive(showSettings)
-        .profilePhotoFlow(
-            isPresented: $showPhotoFlow,
-            menuAnchor: photoMenuAnchor,
-            hasExistingPhoto: profileStore.hasCoverPhoto,
-            onApply: { image in
-                withAnimation(ProfileTheme.spring) {
-                    profileStore.applyPhotos(image)
-                }
-            },
-            onDelete: {
-                withAnimation(ProfileTheme.spring) {
-                    profileStore.removeAllPhotos()
-                }
-            }
-        )
-        .fullScreenCover(isPresented: $showReferral) {
-            ProcessReferralProgramView()
-                .environmentObject(profileService)
-                .processAppPresentationBackground()
-        }
-        .sheet(isPresented: $showSettings) {
-            settingsSheet
-        }
-        .sheet(isPresented: $showUsernameEditor) {
-            NavigationStack {
-                ProfileUsernameEditorView(initialValue: resolvedProfile.username)
-            }
-            .processAppPageBackground()
-            .processAppPresentationBackground()
-            .environmentObject(profileService)
-        }
-        .onChange(of: session.hasCompletedOnboarding) { _, completed in
-            if !completed {
-                showSettings = false
-            }
+        .fullScreenCover(item: $selectedAnalysisScan) { scan in
+            FaceScanResultContent(
+                result: scan,
+                previous: previousScan(before: scan),
+                history: faceHistoryStore.history
+            )
         }
         .task(id: profileService.currentProfile?.userId) {
             if profileService.currentProfile == nil {
@@ -110,64 +68,14 @@ struct ProcessProfileView: View {
     }
 
     @ViewBuilder
-    private func profileHero(_ profile: SocialProfile) -> some View {
-        if profileStore.hasCoverPhoto, let cover = profileStore.coverPhoto {
-            ProfileCoverPhotoSection(
-                image: cover,
-                displayName: profile.displayName,
-                username: profile.username,
-                isPrivate: profile.isPrivate,
-                onPhotoTap: { presentPhotoMenu(at: $0) },
-                onEditUsername: { showUsernameEditor = true }
-            )
-            .transition(.opacity.combined(with: .scale(scale: 0.985)))
-        } else {
-            ProfileEmptyHeroSection(onPhotoTap: { presentPhotoMenu(at: $0) })
-                .transition(.opacity.combined(with: .scale(scale: 0.985)))
-        }
-    }
-
-    private var profileTopChrome: some View {
-        HStack {
-            Spacer(minLength: 0)
-
-            ProfileTopChromeActionButton(
-                systemName: "gearshape.fill",
-                accessibilityLabel: "Paramètres"
-            ) {
-                openSettings()
-            }
-        }
-        .padding(.horizontal, ProfileTopChromeMetrics.horizontalPadding)
-    }
-
-    @ViewBuilder
     private func profileScrollContent(_ profile: SocialProfile) -> some View {
         VStack(alignment: .leading, spacing: 24) {
-            if !profileStore.hasCoverPhoto {
-                ProfileIdentityBlock(
-                    displayName: profile.displayName,
-                    username: profile.username,
-                    isPrivate: profile.isPrivate,
-                    onEditUsername: { showUsernameEditor = true }
-                )
-            }
-
-            ProfileMetricChartSection(
-                metric: .weight,
-                points: chartPoints(for: .weight),
-                latestValue: latestValue(for: .weight),
-                deltaVsPrevious: deltaVsPrevious(for: .weight)
+            ProfileIdentityBlock(
+                displayName: profile.displayName,
+                isPrivate: profile.isPrivate
             )
 
-            ProfileMetricChartSection(
-                metric: .retention,
-                points: chartPoints(for: .retention),
-                latestValue: latestValue(for: .retention),
-                deltaVsPrevious: deltaVsPrevious(for: .retention)
-            )
-
-            ProfileActionButtons(onReferral: { showReferral = true })
+            profileChartsSection
         }
         .padding(.horizontal, ProfileTheme.horizontalPadding)
         .padding(.top, 20)
@@ -175,59 +83,21 @@ struct ProcessProfileView: View {
         .safeAreaPadding(.bottom, 8)
     }
 
-    private var settingsSheet: some View {
-        NavigationStack {
-            EditProfileView(
-                onLogout: { pendingAccountConfirmation = .logout },
-                onDeleteConfirmed: {
-                    Task { @MainActor in
-                        showSettings = false
-                        try? await Task.sleep(for: .milliseconds(450))
-                        await performAccountDeletion()
-                    }
-                }
-            )
-            .navigationDestination(for: ProfileEditDestination.self) { destination in
-                profileFieldEditor(for: destination)
+    private var profileChartsSection: some View {
+        VStack(spacing: 16) {
+            ForEach(ProfileChartMetric.profileDisplayOrder) { metric in
+                ProfileMetricChartSection(
+                    metric: metric,
+                    points: chartPoints(for: metric),
+                    latestValue: latestValue(for: metric),
+                    deltaVsPrevious: deltaVsPrevious(for: metric)
+                )
             }
-            .navigationDestination(for: ProfileSettingsCategory.self) { category in
-                profileSettingsDetail(for: category, onShareProfile: {})
-            }
-        }
-        .processAppPageBackground()
-        .environmentObject(profileService)
-        .environmentObject(AuthenticationManager.shared)
-        .environmentObject(healthManager)
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-        .presentationBackground {
-            ProcessScreenBackground()
-        }
-        .alert(
-            "Se déconnecter ?",
-            isPresented: Binding(
-                get: { pendingAccountConfirmation == .logout },
-                set: { if !$0 { pendingAccountConfirmation = nil } }
-            )
-        ) {
-            Button("Se déconnecter", role: .destructive) {
-                pendingAccountConfirmation = nil
-                AuthenticationManager.shared.signOut()
-                showSettings = false
-            }
-            Button("Annuler", role: .cancel) {
-                pendingAccountConfirmation = nil
-            }
-        } message: {
-            Text("Tu pourras te reconnecter à tout moment.")
         }
     }
 
     private func history(for metric: ProfileChartMetric) -> [ProfileAnalyticsPoint] {
-        switch metric {
-        case .weight: return weightHistory
-        case .retention: return retentionHistory
-        }
+        chartHistories[metric] ?? []
     }
 
     private func chartPoints(for metric: ProfileChartMetric) -> [ProfileAnalyticsPoint] {
@@ -266,18 +136,31 @@ struct ProcessProfileView: View {
                 ]
             }
 
-        case .retention:
-            if let latest = FaceScanHistoryStore.shared.latestResult {
-                let value = Double(FaceScanIndicators.displayPercent(for: .retention, result: latest))
+        case .retention, .recovery, .cortisol, .definition, .skin:
+            if let latest = FaceScanHistoryStore.shared.latestResult,
+               let kind = metric.faceScanKind {
+                let value = Double(FaceScanIndicators.displayPercent(for: kind, result: latest))
                 if value > 0 {
                     return [
                         ProfileAnalyticsPoint(
-                            id: "retention-latest",
+                            id: "\(kind.rawValue)-latest",
                             date: calendar.startOfDay(for: latest.createdAt),
                             value: value
                         )
                     ]
                 }
+            }
+
+        case .effort:
+            let effortScore = healthManager.todaySnapshot.effort.effortScore
+            if effortScore > 0 {
+                return [
+                    ProfileAnalyticsPoint(
+                        id: "effort-today",
+                        date: today,
+                        value: effortScore
+                    )
+                ]
             }
         }
 
@@ -306,17 +189,6 @@ struct ProcessProfileView: View {
         return currentAverage - previousAverage
     }
 
-    private func openSettings() {
-        HapticManager.shared.impact(.light)
-        showSettings = true
-    }
-
-    private func presentPhotoMenu(at point: CGPoint) {
-        photoMenuAnchor = point
-        HapticManager.shared.impact(.light)
-        showPhotoFlow = true
-    }
-
     private func refreshProfile(forceHealthRefresh: Bool) async {
         streakStore.reload()
         streakStore.sync(from: WelcomePlanStore.shared.plan)
@@ -329,28 +201,33 @@ struct ProcessProfileView: View {
     private func reloadChartHistories() async {
         FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
 
+        let scans = FaceScanHistoryStore.shared.history
         let weightSamples = await healthManager.fetchBodyMassHistory(days: 90)
+        let effortSamples = await healthManager.fetchEffortHistory(days: 90)
         let profileWeight = profileService.currentProfile?.weight ?? 0
 
-        weightHistory = ProfileChartHistoryBuilder.mergeWithProfileFallback(
+        var histories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
+        histories[.weight] = ProfileChartHistoryBuilder.mergeWithProfileFallback(
             history: weightSamples,
             profileWeight: profileWeight
         )
-        retentionHistory = ProfileChartHistoryBuilder.retentionHistory(
-            from: FaceScanHistoryStore.shared.history
-        )
+        histories[.effort] = effortSamples
+
+        for metric in ProfileChartMetric.profileDisplayOrder {
+            guard let kind = metric.faceScanKind else { continue }
+            histories[metric] = ProfileChartHistoryBuilder.faceScanIndicatorHistory(
+                from: scans,
+                kind: kind
+            )
+        }
+
+        chartHistories = histories
     }
 
-    private func performAccountDeletion() async {
-        session.accountDeletionErrorMessage = nil
-
-        do {
-            try await session.deleteAccount()
-        } catch let error as AccountDeletionError {
-            if case .cancelled = error { return }
-            session.accountDeletionErrorMessage = error.localizedDescription
-        } catch {
-            session.accountDeletionErrorMessage = error.localizedDescription
-        }
+    private func previousScan(before scan: FaceScanResult) -> FaceScanResult? {
+        let ordered = faceHistoryStore.history
+        guard let index = ordered.firstIndex(where: { $0.id == scan.id }),
+              index + 1 < ordered.count else { return nil }
+        return ordered[index + 1]
     }
 }

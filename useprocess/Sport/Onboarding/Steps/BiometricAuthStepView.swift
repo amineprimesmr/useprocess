@@ -9,6 +9,7 @@ import SwiftUI
 import LocalAuthentication
 
 struct BiometricAuthStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var profileService: UnifiedProfileService
 
     let onComplete: () -> Void
@@ -153,6 +154,7 @@ struct BiometricAuthStepView: View {
         GeometryReader { geometry in
             let side = AdaptiveScreenLayout.biometricZoneSize(containerWidth: geometry.size.width)
             let ringSide = side * (210.0 / 380.0)
+            let lightModeRingYOffset: CGFloat = colorScheme == .light ? -7 : 0
 
             ZStack {
                 Image("fingerprint")
@@ -184,6 +186,7 @@ struct BiometricAuthStepView: View {
                         .blur(radius: 1)
                         .animation(.easeInOut(duration: 0.1), value: progress)
                 }
+                .offset(y: lightModeRingYOffset)
             }
             .frame(width: side, height: side)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)

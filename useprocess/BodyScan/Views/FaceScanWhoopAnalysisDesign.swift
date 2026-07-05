@@ -3,15 +3,45 @@ import SwiftUI
 // MARK: - Tokens WHOOP
 
 enum FaceScanWhoopPalette {
-    static let canvas = Color(red: 0.04, green: 0.04, blue: 0.045)
-    static let card = Color(red: 0.11, green: 0.11, blue: 0.115)
-    static let ringTrack = Color.white.opacity(0.10)
-    static let label = Color.white.opacity(0.92)
-    static let secondary = Color.white.opacity(0.55)
+    static let canvas = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.04, green: 0.04, blue: 0.045, alpha: 1)
+            : UIColor(red: 0.968, green: 0.972, blue: 0.988, alpha: 1)
+    })
+
+    static let card = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.11, green: 0.11, blue: 0.115, alpha: 1)
+            : UIColor.secondarySystemGroupedBackground
+    })
+
+    static let ringTrack = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.10)
+            : UIColor.label.withAlphaComponent(0.12)
+    })
+
+    static let label = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.92)
+            : UIColor.label.withAlphaComponent(0.92)
+    })
+
+    static let secondary = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.55)
+            : UIColor.secondaryLabel.withAlphaComponent(0.88)
+    })
+
+    static let segmentIdle = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.14)
+            : UIColor.label.withAlphaComponent(0.12)
+    })
+
     static let insufficient = Color(red: 0.93, green: 0.52, blue: 0.28)
     static let sufficient = Color(red: 0.95, green: 0.78, blue: 0.22)
     static let optimal = Color(red: 0.36, green: 0.78, blue: 0.58)
-    static let segmentIdle = Color.white.opacity(0.14)
 
     static func ringColor(for zone: FaceScanIndicators.WellnessZone) -> Color {
         switch zone {
@@ -88,7 +118,6 @@ struct FaceScanWhoopAnalysisScreen: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .sheet(isPresented: $showsAnalysisInfo) {
             FaceScanWhoopAnalysisInfoSheet(
                 result: result,
@@ -494,7 +523,7 @@ private struct FaceScanWhoopMetricsCard: View {
     private var dividerColor: Color {
         style == .chatThread
             ? OnboardingTheme.softBorder.opacity(0.35)
-            : Color.white.opacity(0.08)
+            : (theme.isDark ? Color.white.opacity(0.08) : Color.primary.opacity(0.08))
     }
 
     @ViewBuilder
@@ -1127,7 +1156,6 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(FaceScanWhoopPalette.canvas, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Fermer") { dismiss() }
@@ -1135,7 +1163,6 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 }
 

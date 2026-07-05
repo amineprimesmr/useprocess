@@ -286,8 +286,6 @@ struct OnboardingProfileChatView: View {
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnalysisSection)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.faceScanInlinePhase)
-        .animation(.easeInOut(duration: 0.2), value: chatViewModel.programCreationProgress)
-        .animation(.easeInOut(duration: 0.2), value: chatViewModel.programCreationDisplayedPercentage)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisProgress)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisDisplayedPercentage)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.inlineFaceScanProgress)
@@ -560,8 +558,6 @@ struct OnboardingProfileChatView: View {
 
     private var programCreationSection: some View {
         OnboardingProfileChatPlanCreationPanel(
-            progress: chatViewModel.programCreationProgress,
-            displayedPercentage: chatViewModel.programCreationDisplayedPercentage,
             isVisible: chatViewModel.showsProgramCreationSection
         )
         .padding(.top, 10)

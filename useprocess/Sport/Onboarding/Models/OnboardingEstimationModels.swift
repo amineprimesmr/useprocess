@@ -17,18 +17,18 @@ struct OnboardingEstimationContext {
     let yearsOfExperience: Int
     let selectedSports: Set<String>
     let trainingFrequency: String?
+    let age: Int
+    let height: Double?
+    let gender: Gender?
 
     var titleMessage: String {
-        "Tu auras atteint ton plein potentiel le"
+        "Tu auras atteint ton plein potentiel le..."
     }
 
     var weightMilestoneLabel: String? {
         guard hasWeightGoal, let ideal = idealWeight else { return nil }
         return "\(Int(ideal.rounded())) kg"
     }
-
-    /// Position horizontale du jalon poids sur le graphique (0…1).
-    static let weightMilestoneFraction: Double = 2.0 / 3.0
 }
 
 /// Données figées du graphique — calculées une seule fois pour éviter les sauts pendant l'animation.
@@ -39,35 +39,27 @@ struct OnboardingEstimationGraphSnapshot {
     let normalizedValues: [Double]
     let weightMilestoneLabel: String?
     let weightMilestoneDate: Date?
+    let weightMilestoneFraction: Double
 
     static func make(
         context: OnboardingEstimationContext,
-        projectedDate: Date,
+        timeline: OnboardingEstimationTimeline,
         referenceDate: Date = Date()
     ) -> OnboardingEstimationGraphSnapshot {
         let calendar = Calendar.current
+        let projectedDate = timeline.potentialDate
         let countdownDays = max(
             0,
             calendar.dateComponents([.day], from: referenceDate, to: projectedDate).day ?? 0
         )
-
-        let weightMilestoneDate: Date?
-        if context.weightMilestoneLabel != nil {
-            let milestoneDays = Int(
-                round(Double(countdownDays) * OnboardingEstimationContext.weightMilestoneFraction)
-            )
-            weightMilestoneDate = calendar.date(byAdding: .day, value: milestoneDays, to: referenceDate)
-        } else {
-            weightMilestoneDate = nil
-        }
 
         let curveData = GoalProjectionService.shared.generateProgressCurveData(
             startDate: referenceDate,
             endDate: projectedDate,
             currentValue: 0,
             targetValue: 100,
-            isWeightGoal: false,
-            weightGoal: nil
+            isWeightGoal: context.hasWeightGoal,
+            weightGoal: context.weightGoal
         )
 
         let normalizedValues: [Double]
@@ -86,7 +78,8 @@ struct OnboardingEstimationGraphSnapshot {
             countdownDays: countdownDays,
             normalizedValues: normalizedValues,
             weightMilestoneLabel: context.weightMilestoneLabel,
-            weightMilestoneDate: weightMilestoneDate
+            weightMilestoneDate: timeline.weightGoalDate,
+            weightMilestoneFraction: timeline.weightMilestoneFraction
         )
     }
 }
@@ -102,12 +95,21 @@ extension OnboardingEstimationContext {
             hasWeightGoal: hasWeightGoal,
             currentWeight: OnboardingViewModel.isPlausibleWeight(viewModel.selectedWeight) ? viewModel.selectedWeight : nil,
             idealWeight: hasWeightGoal ? viewModel.idealWeightValue : nil,
-            weightGoal: viewModel.selectedWeightGoal,
+            weightGoal: viewModel.selectedWeightGoal
+                ?? PersonalizedIdealWeightCalculator.inferredWeightGoal(
+                    currentWeight: viewModel.selectedWeight,
+                    height: viewModel.selectedHeight,
+                    age: viewModel.selectedAge,
+                    gender: viewModel.selectedGender
+                ),
             goalPace: viewModel.selectedGoalPace,
             experienceLevel: viewModel.selectedExperienceLevel,
             yearsOfExperience: viewModel.selectedYearsOfExperience,
             selectedSports: selectedSports,
-            trainingFrequency: viewModel.selectedTrainingFrequency
+            trainingFrequency: viewModel.selectedTrainingFrequency,
+            age: viewModel.selectedAge,
+            height: viewModel.selectedHeight,
+            gender: viewModel.selectedGender
         )
     }
 }

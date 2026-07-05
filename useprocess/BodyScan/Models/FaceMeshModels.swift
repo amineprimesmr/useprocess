@@ -16,6 +16,11 @@ struct FaceMesh3DData: Codable, Hashable {
 struct OnboardingFaceScanPayload: Codable, Hashable {
     var markers: FaceWellnessMarkers
     var mesh: FaceMesh3DData
+    /// Identifiant du scan capturé — sert à retrouver la vidéo locale (`{scanId}_face.mp4`).
+    var scanId: String?
+    var snapshotFilename: String?
+    var videoFilename: String?
+    var capturedAt: Date?
 }
 
 /// Données brutes capturées à la fin du scan Face ID.

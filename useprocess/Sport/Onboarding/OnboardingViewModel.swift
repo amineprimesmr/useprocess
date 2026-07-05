@@ -391,6 +391,12 @@ class OnboardingViewModel: ObservableObject {
             age: selectedAge,
             gender: gender,
             weightGoal: selectedWeightGoal
+                ?? PersonalizedIdealWeightCalculator.inferredWeightGoal(
+                    currentWeight: selectedWeight,
+                    height: selectedHeight,
+                    age: selectedAge,
+                    gender: gender
+                )
         )
 
         guard Self.isPlausibleWeight(recommendation),

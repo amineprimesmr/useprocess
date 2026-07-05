@@ -165,17 +165,140 @@ final class FaceScanHistoryStore {
     private func importOnboardingSnapshotIfNeeded() {
         guard !didImportOnboarding else { return }
         didImportOnboarding = true
-        guard history.isEmpty, let markers = OnboardingFaceMarkersStore.load() else { return }
+
+        if let latest = latestResult,
+           hasResolvableMedia(for: latest) {
+            return
+        }
+
+        guard let payload = OnboardingFaceMarkersStore.loadPayload() else { return }
 
         let uid = userId ?? UserScopedStorage.currentUserId() ?? "local-user"
+        let scanId = payload.scanId ?? "onboarding-\(uid)"
+
+        if let existing = latestResult,
+           existing.id == scanId,
+           hasResolvableMedia(for: existing) {
+            return
+        }
+
         let imported = FaceScanResult(
-            id: "onboarding-\(uid)",
+            id: scanId,
             userId: uid,
-            createdAt: UnifiedUserProfile.getActualDownloadDate(),
-            markers: markers,
+            createdAt: payload.capturedAt ?? UnifiedUserProfile.getActualDownloadDate(),
+            markers: payload.markers,
+            snapshotFilename: payload.snapshotFilename,
+            videoFilename: payload.videoFilename,
             source: .onboarding
         )
-        push(imported)
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: imported)
+
+        if let existing = latestResult,
+           existing.source == .onboarding,
+           existing.id != reconciled.id,
+           !hasResolvableMedia(for: existing) {
+            history.removeAll { $0.id == existing.id }
+            if latestResult?.id == existing.id {
+                latestResult = nil
+            }
+        }
+
+        push(reconciled)
+    }
+
+    /// Importe un scan onboarding stocké sous un autre uid (anonymous / local-user).
+    func migrateOnboardingDataFromLikelyUsers(to userId: String) {
+        OnboardingFaceMarkersStore.migrateFromLikelyUsers(to: userId)
+
+        if let latest = latestResult,
+           latest.userId == userId,
+           hasResolvableMedia(for: latest) {
+            return
+        }
+
+        if persistedHistoryIsEmpty(for: userId) {
+            for sourceUid in UserScopedStorage.likelyUserIds(primary: userId) where sourceUid != userId {
+                if let scan = loadBestPersistedScan(from: sourceUid) {
+                    push(remappedOnboardingScan(scan, userId: userId))
+                    return
+                }
+            }
+        } else if let latest = latestResult,
+                  latest.userId == userId,
+                  !hasResolvableMedia(for: latest) {
+            for sourceUid in UserScopedStorage.likelyUserIds(primary: userId) where sourceUid != userId {
+                guard let scan = loadBestPersistedScan(from: sourceUid),
+                      hasResolvableMedia(for: scan) else { continue }
+                history.removeAll { $0.id == latest.id }
+                push(remappedOnboardingScan(scan, userId: userId))
+                return
+            }
+        }
+
+        didImportOnboarding = false
+        importOnboardingSnapshotIfNeeded()
+    }
+
+    private func remappedOnboardingScan(_ scan: FaceScanResult, userId: String) -> FaceScanResult {
+        FaceScanResult(
+            id: scan.id,
+            userId: userId,
+            createdAt: scan.createdAt,
+            markers: scan.markers,
+            snapshotFilename: scan.snapshotFilename,
+            videoFilename: scan.videoFilename,
+            claudeAnalysis: scan.claudeAnalysis,
+            aiEnhanced: scan.aiEnhanced,
+            coachInsightMessage: scan.coachInsightMessage,
+            coachInsightModel: scan.coachInsightModel,
+            source: scan.source == .daily ? .onboarding : scan.source,
+            sleepHoursAtScan: scan.sleepHoursAtScan,
+            hrvAtScan: scan.hrvAtScan,
+            faceDayScore: scan.faceDayScore,
+            relativeFaceDayScore: scan.relativeFaceDayScore,
+            scanConfidence: scan.scanConfidence,
+            baselineSampleCount: scan.baselineSampleCount,
+            relativeSignals: scan.relativeSignals
+        )
+    }
+
+    private func hasResolvableMedia(for result: FaceScanResult) -> Bool {
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+        if FaceScanImageStore.resolvedVideoURL(for: reconciled) != nil { return true }
+        if FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) != nil { return true }
+        return false
+    }
+
+    private func persistedHistoryIsEmpty(for userId: String) -> Bool {
+        let historyKey = UserScopedStorage.key("facescan.history", userId: userId)
+        let latestKey = UserScopedStorage.key("facescan.latest", userId: userId)
+        return UserDefaults.standard.data(forKey: historyKey) == nil
+            && UserDefaults.standard.data(forKey: latestKey) == nil
+    }
+
+    private func loadBestPersistedScan(from userId: String) -> FaceScanResult? {
+        let historyKey = UserScopedStorage.key("facescan.history", userId: userId)
+        let latestKey = UserScopedStorage.key("facescan.latest", userId: userId)
+
+        if let data = UserDefaults.standard.data(forKey: historyKey),
+           let items = try? JSONDecoder().decode([FaceScanResult].self, from: data) {
+            let reconciled = items
+                .map { FaceScanImageStore.reconcileMediaMetadata(for: $0) }
+                .sorted { lhs, rhs in
+                    let lhsMedia = hasResolvableMedia(for: lhs)
+                    let rhsMedia = hasResolvableMedia(for: rhs)
+                    if lhsMedia != rhsMedia { return lhsMedia && !rhsMedia }
+                    return lhs.createdAt > rhs.createdAt
+                }
+            return reconciled.first
+        }
+
+        if let data = UserDefaults.standard.data(forKey: latestKey),
+           let result = try? JSONDecoder().decode(FaceScanResult.self, from: data) {
+            return FaceScanImageStore.reconcileMediaMetadata(for: result)
+        }
+
+        return nil
     }
 
     private func persist() {

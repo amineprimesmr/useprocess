@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TransformationCaseStudyCard: View {
     let study: TransformationCaseStudy
+    var playsIntroHint: Bool = false
 
     private let bottomTreatmentHeight: CGFloat = 148
 
@@ -16,7 +17,9 @@ struct TransformationCaseStudyCard: View {
         ZStack(alignment: .bottom) {
             BeforeAfterComparisonSlider(
                 beforeImageName: study.beforeImageName,
-                afterImageName: study.afterImageName
+                afterImageName: study.afterImageName,
+                durationWeeks: study.durationWeeks,
+                playsIntroHint: playsIntroHint
             )
 
             bottomTreatment
@@ -57,7 +60,6 @@ struct TransformationCaseStudyCard: View {
                     .shadow(color: .black.opacity(0.35), radius: 8, y: 2)
 
                 HStack(spacing: 8) {
-                    metadataChip(study.transformationDuration)
                     metadataChip(study.memberSince)
                 }
             }

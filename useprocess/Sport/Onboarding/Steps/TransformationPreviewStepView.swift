@@ -12,7 +12,7 @@ struct TransformationCaseStudy: Identifiable, Equatable {
     let name: String
     let beforeImageName: String
     let afterImageName: String
-    let transformationDuration: String
+    let durationWeeks: Int
     let memberSince: String
 }
 
@@ -24,24 +24,24 @@ enum TransformationCaseStudyCatalog {
             name: "Imran",
             beforeImageName: "imran",
             afterImageName: "imranprime",
-            transformationDuration: "⚡ 5 semaines",
-            memberSince: "📅 Depuis mai 2026"
+            durationWeeks: 5,
+            memberSince: "📅 Membre depuis mai 2026"
         ),
         .init(
             id: "leo",
             name: "Léo",
             beforeImageName: "leo",
             afterImageName: "leoprime",
-            transformationDuration: "⚡ 3 semaines",
-            memberSince: "📅 Depuis juin 2026"
+            durationWeeks: 3,
+            memberSince: "📅 Membre depuis juin 2026"
         ),
         .init(
             id: "esteban",
             name: "Esteban",
             beforeImageName: "esteban",
             afterImageName: "estebanprime",
-            transformationDuration: "⚡ 8 semaines",
-            memberSince: "📅 Depuis avr. 2026"
+            durationWeeks: 8,
+            memberSince: "📅 Membre depuis avr. 2026"
         ),
     ]
 
@@ -71,8 +71,11 @@ struct TransformationPreviewStepView: View {
                 VStack(spacing: 28) {
                     header
 
-                    ForEach(availableCaseStudies) { study in
-                        TransformationCaseStudyCard(study: study)
+                    ForEach(Array(availableCaseStudies.enumerated()), id: \.element.id) { index, study in
+                        TransformationCaseStudyCard(
+                            study: study,
+                            playsIntroHint: index == 0
+                        )
                             .padding(.horizontal, 24)
                     }
 

@@ -7,54 +7,26 @@ struct ProcessReferralProgramView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
 
     @State private var store = ProcessReferralStore.shared
-    @State private var showTracking = false
     @State private var showShareSheet = false
     @State private var showTerms = false
     @State private var redeemedAlertReward: ProcessReferralReward?
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    heroCard
-                        .padding(.top, 8)
-
-                    headlineBlock
-                        .padding(.top, 28)
-
-                    linkSection
-                        .padding(.top, 24)
-
-                    shareButton
-                        .padding(.top, 16)
-
-                    termsLine
-                        .padding(.top, 12)
-
-                    rewardsSection
-                        .padding(.top, 32)
-
-                    legalFooter
-                        .padding(.top, 20)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 40)
-            }
+            ProcessReferralProgramScrollContent(
+                store: store,
+                showShareSheet: $showShareSheet,
+                showTerms: $showTerms,
+                redeemedAlertReward: $redeemedAlertReward
+            )
             .processTransparentScrollSurface()
-            .navigationTitle("Récompenses")
+            .navigationTitle("Parrainage")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     ProcessReferralToolbarButton(systemName: "chevron.left", action: { dismiss() })
                         .accessibilityLabel("Fermer")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    ProcessReferralToolbarButton(systemName: "person.2.fill", action: { showTracking = true })
-                        .accessibilityLabel("Suivre les parrainages")
-                }
-            }
-            .sheet(isPresented: $showTracking) {
-                ProcessReferralTrackingView()
             }
             .sheet(isPresented: $showShareSheet) {
                 ProfileShareSheet(items: [store.shareMessage, store.referralLink])
@@ -78,22 +50,100 @@ struct ProcessReferralProgramView: View {
         .processAppPageBackground()
         .processAppPresentationBackground()
         .onAppear {
+            reloadStore()
+        }
+    }
+
+    private func reloadStore() {
+        store.reload(
+            username: profileService.currentProfile?.username,
+            userId: profileService.currentProfile?.userId
+        )
+    }
+}
+
+/// Page parrainage depuis Paramètres (navigation push).
+struct ProcessReferralProgramDetailView: View {
+    @EnvironmentObject private var profileService: UnifiedProfileService
+
+    @State private var store = ProcessReferralStore.shared
+    @State private var showShareSheet = false
+    @State private var showTerms = false
+    @State private var redeemedAlertReward: ProcessReferralReward?
+
+    var body: some View {
+        ProcessReferralProgramScrollContent(
+            store: store,
+            showShareSheet: $showShareSheet,
+            showTerms: $showTerms,
+            redeemedAlertReward: $redeemedAlertReward
+        )
+        .processTransparentScrollSurface()
+        .navigationTitle("Parrainage")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showShareSheet) {
+            ProfileShareSheet(items: [store.shareMessage, store.referralLink])
+        }
+        .sheet(isPresented: $showTerms) {
+            ProcessReferralSafariView(url: ProcessLegalURLs.termsOfUse)
+        }
+        .alert(
+            "Récompense demandée",
+            isPresented: Binding(
+                get: { redeemedAlertReward != nil },
+                set: { if !$0 { redeemedAlertReward = nil } }
+            ),
+            presenting: redeemedAlertReward
+        ) { reward in
+            Button("OK", role: .cancel) {}
+        } message: { reward in
+            Text(redeemedConfirmation(for: reward))
+        }
+        .onAppear {
             store.reload(
                 username: profileService.currentProfile?.username,
                 userId: profileService.currentProfile?.userId
             )
         }
     }
+}
 
-  // MARK: - Hero
+private struct ProcessReferralProgramScrollContent: View {
+    @Bindable var store: ProcessReferralStore
+    @Binding var showShareSheet: Bool
+    @Binding var showTerms: Bool
+    @Binding var redeemedAlertReward: ProcessReferralReward?
 
-    private var heroCard: some View {
-        Image("carteparrainage")
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: 24, y: 10)
-            .accessibilityLabel("Gagnez 15 euros par parrainage")
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                ProfileReferralInteractiveCard()
+                    .padding(.top, 8)
+
+                ProcessReferralStatusSection(entries: store.snapshot.entries)
+                    .padding(.top, 20)
+
+                headlineBlock
+                    .padding(.top, 28)
+
+                linkSection
+                    .padding(.top, 24)
+
+                shareButton
+                    .padding(.top, 16)
+
+                termsLine
+                    .padding(.top, 12)
+
+                rewardsSection
+                    .padding(.top, 32)
+
+                legalFooter
+                    .padding(.top, 20)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 40)
+        }
     }
 
     private var headlineBlock: some View {
@@ -233,15 +283,42 @@ struct ProcessReferralProgramView: View {
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
     }
+}
 
-    private func redeemedConfirmation(for reward: ProcessReferralReward) -> String {
-        switch reward.kind {
-        case .cashEUR:
-            return "Ta demande de \(reward.cashAmount ?? 15) € a été enregistrée. Notre équipe valide sous 48 h."
-        case .proMonths:
-            let months = reward.proMonths ?? 1
-            return "Ta demande de \(months) mois Pro gratuit a été enregistrée. Notre équipe valide sous 48 h."
+// MARK: - Statut des parrainages
+
+struct ProcessReferralStatusSection: View {
+    let entries: [ProcessReferralEntry]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Statut")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(ProcessReferralTheme.textPrimary)
+
+            if entries.isEmpty {
+                Text("Aucun parrainage pour l'instant. Partage ton lien pour suivre tes invités ici.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(ProcessReferralTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(entries) { entry in
+                        ProcessReferralTrackingRow(entry: entry)
+                    }
+                }
+            }
         }
+    }
+}
+
+private func redeemedConfirmation(for reward: ProcessReferralReward) -> String {
+    switch reward.kind {
+    case .cashEUR:
+        return "Ta demande de \(reward.cashAmount ?? 15) € a été enregistrée. Notre équipe valide sous 48 h."
+    case .proMonths:
+        let months = reward.proMonths ?? 1
+        return "Ta demande de \(months) mois Pro gratuit a été enregistrée. Notre équipe valide sous 48 h."
     }
 }
 

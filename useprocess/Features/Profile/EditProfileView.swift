@@ -2,14 +2,15 @@ import SwiftUI
 
 /// Hub paramètres — catégories + sous-pages.
 struct EditProfileView: View {
-    var onShareProfile: () -> Void = {}
     var onLogout: () -> Void = {}
-    var onDeleteConfirmed: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @Bindable private var activityStatusStore = ProcessActivityStatusStore.shared
     @State private var profileStore = SocialProfileStore.shared
     @State private var showPhotoFlow = false
+    @State private var showActivityStatusSheet = false
+    @State private var activityStatusDate = Calendar.current.startOfDay(for: Date())
     @State private var photoMenuAnchor = CGPoint(
         x: UIScreen.main.bounds.midX,
         y: UIScreen.main.bounds.height * 0.22
@@ -25,17 +26,21 @@ struct EditProfileView: View {
         return (first + last).uppercased()
     }
 
-    private var fullName: String {
-        if let profile {
-            return profile.fullName
-        }
-        return profileStore.profile?.displayName ?? "Mon profil"
+    private var firstName: String {
+        let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? profileStore.profile?.displayName
+            ?? "Mon profil"
+        return name.isEmpty ? "Mon profil" : name
+    }
+
+    private var currentActivityStatus: ProcessActivityStatus {
+        activityStatusStore.status(for: activityStatusDate)
     }
 
     var body: some View {
         VStack(spacing: 0) {
                 AccountDetailsGlassHeader(
-                    title: "Paramètres",
+                    title: nil,
                     onBack: { dismiss() },
                     onSave: { dismiss() },
                     saveDisabled: true
@@ -43,39 +48,29 @@ struct EditProfileView: View {
 
                 ScrollView {
                     VStack(spacing: 0) {
+                    VStack(spacing: 14) {
                         AccountDetailsAvatarSection(
-                            fullName: fullName,
+                            displayName: firstName,
                             initials: initials,
                             image: profileStore.profilePhoto,
                             onChangePhoto: { showPhotoFlow = true }
                         )
 
-                        ProfileSummarySectionHeader(title: "Sections")
-
-                        AccountDetailsCard {
-                            ForEach(Array(ProfileSettingsCategory.allCases.enumerated()), id: \.element.id) { index, category in
-                                Group {
-                                    if index > 0 {
-                                        Color.clear.frame(height: AccountDetailsTheme.rowSpacing)
-                                    }
-                                    NavigationLink(value: category) {
-                                        AccountDetailsGlassRow {
-                                            ProfileSettingsCategoryHubRow(category: category)
-                                        }
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
+                        ProfileSettingsActivityStatusPill(
+                            status: currentActivityStatus,
+                            action: openActivityStatusSheet
+                        )
                         .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    ProfileSettingsHubLinksSection()
+                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                        .padding(.top, 20)
 
                         VStack(spacing: AccountDetailsTheme.rowSpacing) {
                             AccountDetailsActionButton(title: "Se déconnecter") {
                                 onLogout()
-                            }
-
-                            AccountDeleteAnimatedButton {
-                                onDeleteConfirmed()
                             }
                         }
                         .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
@@ -93,7 +88,7 @@ struct EditProfileView: View {
             hasExistingPhoto: profileStore.hasProfilePhoto,
             onApply: { image in
                 withAnimation(ProfileEditTheme.spring) {
-                    profileStore.applyPhotos(image)
+                    profileStore.applyProfilePhoto(image)
                 }
             },
             onDelete: {
@@ -110,6 +105,16 @@ struct EditProfileView: View {
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
+            activityStatusStore.reload()
         }
+        .sheet(isPresented: $showActivityStatusSheet) {
+            ProcessActivityStatusSheet(selectedDate: $activityStatusDate)
+        }
+    }
+
+    private func openActivityStatusSheet() {
+        HapticManager.shared.impact(.light)
+        activityStatusDate = Calendar.current.startOfDay(for: Date())
+        showActivityStatusSheet = true
     }
 }

@@ -271,7 +271,7 @@ struct ProfileImageCropView: View {
     @State private var baseZoom: CGFloat = 1
     @State private var offset: CGSize = .zero
     @State private var baseOffset: CGSize = .zero
-    @State private var cropSize: CGSize = CGSize(width: 320, height: 244)
+    @State private var cropSize: CGSize = CGSize(width: 280, height: 280)
 
     var body: some View {
         ZStack {
@@ -284,7 +284,7 @@ struct ProfileImageCropView: View {
                     .padding(.top, 18)
                     .padding(.bottom, 8)
 
-                Text("Ajuste le cadrage — la Dynamic Island montre l’aperçu sur ton profil.")
+                Text("Ajuste le cadrage — l’aperçu correspond à ta photo de profil ronde.")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
                     .multilineTextAlignment(.center)
@@ -292,7 +292,7 @@ struct ProfileImageCropView: View {
                     .padding(.bottom, 12)
 
                 GeometryReader { geo in
-                    let size = coverCropSize(in: geo)
+                    let size = avatarCropSize(in: geo)
                     cropCanvas(cropSize: size)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .onAppear { cropSize = size }
@@ -318,28 +318,15 @@ struct ProfileImageCropView: View {
         .statusBarHidden(false)
     }
 
-    private func coverCropSize(in geo: GeometryProxy) -> CGSize {
-        let availableWidth = max(geo.size.width, 1)
-        let availableHeight = max(geo.size.height, 1)
-        let width = max(120, min(ProfileTheme.heroCoverWidth, availableWidth - 8))
-        let height = width / ProfileTheme.heroCoverAspectRatio
-        let maxHeight = max(180, availableHeight - 8)
-        if height <= maxHeight {
-            return CGSize(width: width, height: height)
-        }
-        let fittedHeight = maxHeight
-        let fittedWidth = max(120, fittedHeight * ProfileTheme.heroCoverAspectRatio)
-        return CGSize(width: fittedWidth, height: fittedHeight)
-    }
-
-    private func cropShapeScale(for cropSize: CGSize) -> CGFloat {
-        cropSize.width / ProfileTheme.heroCoverWidth
+    private func avatarCropSize(in geo: GeometryProxy) -> CGSize {
+        let availableWidth = max(geo.size.width - 48, 1)
+        let availableHeight = max(geo.size.height - 48, 1)
+        let side = min(availableWidth, availableHeight, 320)
+        return CGSize(width: max(220, side), height: max(220, side))
     }
 
     @ViewBuilder
     private func cropCanvas(cropSize: CGSize) -> some View {
-        let shape = ProfileTheme.heroBottomShape(scale: cropShapeScale(for: cropSize))
-
         ZStack {
             Image(uiImage: sourceImage)
                 .resizable()
@@ -347,20 +334,22 @@ struct ProfileImageCropView: View {
                 .scaleEffect(userZoom)
                 .offset(offset)
                 .frame(width: cropSize.width, height: cropSize.height)
-                .clipShape(shape)
-                .overlay { cropMask(cropSize: cropSize, shape: shape) }
+                .clipShape(Circle())
+                .overlay { cropMask(cropSize: cropSize) }
                 .overlay {
-                    ProfileCropSystemChromePreview(cropSize: cropSize)
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.92), lineWidth: 2)
+                        .frame(width: cropSize.width, height: cropSize.height)
                 }
                 .gesture(dragGesture(cropSize: cropSize))
                 .simultaneousGesture(pinchGesture(cropSize: cropSize))
         }
     }
 
-    private func cropMask(cropSize: CGSize, shape: UnevenRoundedRectangle) -> some View {
+    private func cropMask(cropSize: CGSize) -> some View {
         ZStack {
             Color.black.opacity(0.62)
-            shape
+            Circle()
                 .frame(width: cropSize.width, height: cropSize.height)
                 .blendMode(.destinationOut)
         }
@@ -412,7 +401,7 @@ struct ProfileImageCropView: View {
 
     private func renderCroppedImage() -> UIImage? {
         guard let cropped = renderCroppedImage(for: cropSize) else { return nil }
-        return cropped.resizedExactly(to: ProfileTheme.heroCoverExportSize)
+        return cropped.resizedExactly(to: ProfileTheme.avatarCropExportSize)
     }
 
     private func renderCroppedImage(for outputSize: CGSize) -> UIImage? {
@@ -478,60 +467,6 @@ struct ProfileImageCropView: View {
             sourceImage.draw(in: CGRect(origin: origin, size: CGSize(width: drawW, height: drawH)))
         }
     }
-}
-
-// MARK: - Aperçu Dynamic Island / encoche (non exporté)
-
-private struct ProfileCropSystemChromePreview: View {
-    let cropSize: CGSize
-
-    private var scale: CGFloat {
-        cropSize.width / ProfileTheme.heroCoverWidth
-    }
-
-    private var topSafeInset: CGFloat {
-        ProcessMainChromeMetrics.topSafeInset
-    }
-
-    private var showsDynamicIsland: Bool {
-        topSafeInset >= 59
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Group {
-                if showsDynamicIsland {
-                    Capsule(style: .continuous)
-                        .fill(Color.black)
-                        .frame(
-                            width: ProfileCropSystemChromePreview.dynamicIslandWidth * scale,
-                            height: ProfileCropSystemChromePreview.dynamicIslandHeight * scale
-                        )
-                        .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
-                } else if topSafeInset > 20 {
-                    RoundedRectangle(cornerRadius: 12 * scale, style: .continuous)
-                        .fill(Color.black)
-                        .frame(width: 154 * scale, height: 30 * scale)
-                        .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
-                }
-            }
-            .padding(.top, chromeTopPadding * scale)
-
-            Spacer(minLength: 0)
-        }
-        .frame(width: cropSize.width, height: cropSize.height, alignment: .top)
-        .allowsHitTesting(false)
-    }
-
-    private var chromeTopPadding: CGFloat {
-        if showsDynamicIsland {
-            return 11 + max(topSafeInset - 59, 0)
-        }
-        return 8
-    }
-
-    private static let dynamicIslandWidth: CGFloat = 126
-    private static let dynamicIslandHeight: CGFloat = 37
 }
 
 // MARK: - Camera

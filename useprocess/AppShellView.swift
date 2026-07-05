@@ -47,6 +47,9 @@ struct AppShellView: View {
         .task(id: session.hasCompletedOnboarding) {
             guard session.hasCompletedOnboarding else { return }
             WelcomePlanStore.shared.reloadForCurrentUser()
+            PostOnboardingActivationService.prepareFirstAppEntry(
+                profile: UnifiedProfileService.shared.currentProfile
+            )
             if AppConfiguration.firebaseConfigured {
                 _ = UserSessionCoordinator.shared
             }

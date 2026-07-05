@@ -178,14 +178,22 @@ enum OnboardingAnalysisProgressConfig {
         )
     ]
 
-    static let popups: [Popup] = [
+    static let phaseEndPopups: [Popup?] = [
         .init(
             kind: .healthKit,
             question: "Connecte l'app Santé pour personnaliser ton plan avec tes vraies données."
         ),
-        .init(kind: .yesNo, question: "Sais-tu ce qui impact réellement ta récupération ?"),
-        .init(kind: .yesNo, question: "As-tu déjà téléchargé une application de tracking personnalisé ?")
+        .init(
+            kind: .yesNo,
+            question: "As-tu déjà téléchargé une application de tracking personnalisé ?"
+        ),
+        nil
     ]
+
+    static func phaseEndPopup(for phaseIndex: Int) -> Popup? {
+        guard phaseEndPopups.indices.contains(phaseIndex) else { return nil }
+        return phaseEndPopups[phaseIndex]
+    }
 
     static let tickIntervalNs: UInt64 = 22_000_000
     static let segmentStep: Double = 0.012

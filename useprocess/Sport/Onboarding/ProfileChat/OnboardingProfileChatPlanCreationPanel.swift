@@ -6,47 +6,34 @@
 import SwiftUI
 
 struct OnboardingProfileChatPlanCreationPanel: View {
-    let progress: Double
-    let displayedPercentage: Int
     let isVisible: Bool
 
-    private let barHeight: CGFloat = 10
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("Création de ton plan personnalisé…")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(OnboardingTheme.bodyText)
+        VStack(spacing: 28) {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .controlSize(.large)
+                .tint(OnboardingTheme.mutedText)
 
-                Spacer(minLength: 0)
+            VStack(spacing: 10) {
+                Text("Personnalisation de votre expérience...")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(OnboardingTheme.primaryText)
+                    .multilineTextAlignment(.center)
 
-                Text("\(displayedPercentage)%")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(OnboardingTheme.mutedText)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-            }
-
-            GeometryReader { geometry in
-                let clamped = min(max(progress, 0), 1)
-                let fillWidth = max(barHeight, geometry.size.width * clamped)
-
-                ZStack(alignment: .leading) {
-                    Capsule(style: .continuous)
-                        .fill(OnboardingTheme.analysisProgressTrack)
-
-                    Capsule(style: .continuous)
-                        .fill(OnboardingTheme.analysisProgressFillGradient)
-                        .frame(width: fillWidth, height: barHeight)
+                VStack(spacing: 4) {
+                    Text("Cela peut prendre quelques secondes.")
+                    Text("Veuillez ne pas fermer l'application.")
                 }
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(OnboardingTheme.mutedText)
+                .multilineTextAlignment(.center)
             }
-            .frame(height: barHeight)
         }
-        .padding(.top, 6)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
         .opacity(isVisible ? 1 : 0)
         .offset(y: isVisible ? 0 : 10)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: isVisible)
-        .animation(.easeInOut(duration: 0.28), value: progress)
     }
 }

@@ -182,6 +182,25 @@ final class SocialProfileStore {
         persist()
     }
 
+    func applyProfilePhoto(_ image: UIImage) {
+        let previousCover = profile?.coverPhotoFilename
+        let previousAvatar = profile?.profilePhotoFilename
+
+        guard let avatarFilename = saveImage(image, prefix: "avatar") else { return }
+
+        update {
+            $0.profilePhotoFilename = avatarFilename
+            $0.coverPhotoFilename = nil
+        }
+
+        if let previousCover {
+            deleteFile(previousCover)
+        }
+        if let previousAvatar, previousAvatar != avatarFilename {
+            deleteFile(previousAvatar)
+        }
+    }
+
     func applyPhotos(_ coverImage: UIImage) {
         let previousCover = profile?.coverPhotoFilename
         let previousAvatar = profile?.profilePhotoFilename

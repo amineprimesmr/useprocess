@@ -65,7 +65,7 @@ struct ProcessReferralTrackingView: View {
     }
 }
 
-private struct ProcessReferralTrackingRow: View {
+struct ProcessReferralTrackingRow: View {
     let entry: ProcessReferralEntry
 
     private static let dateFormatter: DateFormatter = {
@@ -102,7 +102,7 @@ private struct ProcessReferralTrackingRow: View {
     }
 }
 
-private struct ProcessReferralStatusBadge: View {
+struct ProcessReferralStatusBadge: View {
     let status: ProcessReferralEntryStatus
 
     var body: some View {

@@ -168,6 +168,11 @@ struct DailyJournalChecklistView: View {
 
     @ViewBuilder
     private func homeSectionView(_ section: PlanHomeSectionKind) -> some View {
+        homeSectionContent(section)
+    }
+
+    @ViewBuilder
+    private func homeSectionContent(_ section: PlanHomeSectionKind) -> some View {
         switch section {
         case .faceScan:
             PlanLastFaceScanSection(

@@ -25,7 +25,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .coach: "sparkles"
         case .plan: "house.fill"
-        case .profile: "person.crop.circle.fill"
+        case .profile: "chart.bar.fill"
         }
     }
 }

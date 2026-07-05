@@ -39,6 +39,8 @@ enum OnboardingAppleAuth {
             fallbackFirstName: viewModel.firstName,
             profileService: profileService
         )
+
+        PostOnboardingActivationService.migrateOnboardingFaceScanData()
     }
 
     static func signInWithApple(

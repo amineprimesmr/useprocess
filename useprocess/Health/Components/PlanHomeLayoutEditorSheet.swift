@@ -24,7 +24,9 @@ struct PlanHomeLayoutEditorSheet: View {
                 LazyVStack(alignment: .leading, spacing: 24) {
                     PlanHomeTopChrome(
                         selectedSection: $selectedSection,
-                        selectedDate: $selectedDate
+                        selectedDate: $selectedDate,
+                        showSettings: .constant(false),
+                        onOpenStreak: {}
                     )
 
                     DailyJournalChecklistView(

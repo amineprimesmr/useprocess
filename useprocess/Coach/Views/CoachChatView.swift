@@ -18,7 +18,7 @@ struct CoachChatView: View {
     @State private var messageContextMenu: CoachUserMessageContextState?
     @State private var showFaceScan = false
     @State private var isSidebarExpanded = false
-    @State private var showsIntegrationFlow = false
+    @State private var showsInlineProtocolQuestionnaire = false
     @State private var sidebarPresentedSheet: CoachSidebarDestination?
     @Bindable private var planStore = WelcomePlanStore.shared
     @Bindable private var session = AppSession.shared
@@ -144,7 +144,7 @@ struct CoachChatView: View {
         }
         .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenIntegration) { _, should in
             guard should else { return }
-            showsIntegrationFlow = true
+            showsInlineProtocolQuestionnaire = true
             CoachPlanNavigationBridge.shared.shouldOpenIntegration = false
         }
         .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenTracking) { _, should in
@@ -152,6 +152,11 @@ struct CoachChatView: View {
             isSidebarExpanded = true
             sidebarPresentedSheet = .tracking
             CoachPlanNavigationBridge.shared.shouldOpenTracking = false
+        }
+        .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
+            if completed {
+                showsInlineProtocolQuestionnaire = false
+            }
         }
         .fullScreenCover(isPresented: $showFaceScan) {
             FaceScanPrivacyGateView(
@@ -167,41 +172,6 @@ struct CoachChatView: View {
             )
             .environmentObject(profileService)
         }
-        .fullScreenCover(isPresented: $showsIntegrationFlow) {
-            coachIntegrationFlow
-        }
-    }
-
-    private var coachIntegrationFlow: some View {
-        NavigationStack {
-            WelcomePlanChatView(
-                embeddedInMainApp: true,
-                selectedSection: nil,
-                onComplete: {
-                    planStore.reloadForCurrentUser()
-                    showsIntegrationFlow = false
-                }
-            )
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        planStore.reloadForCurrentUser()
-                        showsIntegrationFlow = false
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(theme.primaryText)
-                            .frame(width: 34, height: 34)
-                            .background(
-                                Circle()
-                                    .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.95 : 0.82))
-                            )
-                    }
-                    .accessibilityLabel("Fermer l'intégration")
-                }
-            }
-        }
-        .environmentObject(profileService)
     }
 
     private func handleCapturedPhoto(_ image: UIImage) {
@@ -216,6 +186,45 @@ struct CoachChatView: View {
     }
 
     private var coachContentLayer: some View {
+        Group {
+            if shouldShowInlineProtocolQuestionnaire {
+                inlineProtocolQuestionnaireLayer
+            } else {
+                normalCoachChatLayer
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            if viewModel.isSidebarEnabled, !isCoachSidebarPresenting {
+                coachMenuButton
+                    .padding(.top, ProcessMainChromeMetrics.topSafeInset + 2)
+                    .padding(.leading, 16)
+                    .zIndex(20)
+            }
+        }
+    }
+
+    private var shouldShowInlineProtocolQuestionnaire: Bool {
+        !isIntegrationComplete && showsInlineProtocolQuestionnaire
+    }
+
+    private var inlineProtocolQuestionnaireLayer: some View {
+        WelcomePlanChatView(
+            embeddedInMainApp: true,
+            selectedSection: nil,
+            onComplete: {
+                planStore.reloadForCurrentUser()
+                showsInlineProtocolQuestionnaire = false
+            },
+            onDismissLater: {
+                WelcomePlanCoachPresentation.markConfigurationAutoPresented()
+                showsInlineProtocolQuestionnaire = false
+            }
+        )
+        .environmentObject(profileService)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var normalCoachChatLayer: some View {
         chatScrollLayer
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if isCompactCameraPresented,
@@ -246,14 +255,6 @@ struct CoachChatView: View {
                 }
             }
             .ios26SafeAnimation(.spring(response: 0.34, dampingFraction: 0.86), value: isCompactCameraPresented)
-            .overlay(alignment: .topLeading) {
-            if viewModel.isSidebarEnabled, !isCoachSidebarPresenting {
-                coachMenuButton
-                    .padding(.top, ProcessMainChromeMetrics.topSafeInset + 2)
-                    .padding(.leading, 16)
-                    .zIndex(20)
-            }
-        }
     }
 
     private var coachMenuButton: some View {
@@ -284,7 +285,7 @@ struct CoachChatView: View {
                 Task { await viewModel.deleteConversation(id) }
             },
             onOpenIntegration: {
-                showsIntegrationFlow = true
+                showsInlineProtocolQuestionnaire = true
             },
             onDeleteAllConversations: {
                 await viewModel.deleteAllConversations()
@@ -301,13 +302,12 @@ struct CoachChatView: View {
     }
 
     private var sidebarActiveDestination: CoachSidebarDestination? {
-        if showsIntegrationFlow { return .integration }
+        if showsInlineProtocolQuestionnaire, !isIntegrationComplete { return .integration }
         return sidebarPresentedSheet
     }
 
     private var isIntegrationComplete: Bool {
         session.hasCompletedWelcomePlanChat
-            || (planStore.plan != nil && WelcomePlanQuestionBank.isFullyAnswered(answers: planStore.questionnaire.answers))
     }
 
     private var integrationProgress: Double {
@@ -846,7 +846,7 @@ struct CoachChatView: View {
             isSidebarExpanded = true
             sidebarPresentedSheet = .tracking
         case .integration:
-            showsIntegrationFlow = true
+            showsInlineProtocolQuestionnaire = true
         }
     }
 
@@ -873,7 +873,7 @@ struct CoachChatView: View {
         WelcomePlanCoachPresentation.markConfigurationAutoPresented()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             guard !isIntegrationComplete else { return }
-            showsIntegrationFlow = true
+            showsInlineProtocolQuestionnaire = true
         }
     }
 }
