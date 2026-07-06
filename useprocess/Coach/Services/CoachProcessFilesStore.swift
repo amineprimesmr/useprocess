@@ -76,7 +76,7 @@ final class CoachProcessFilesStore {
     func syncFromExchange(userText: String, assistantText: String, plan: FaceOriginPlan?) {
         if let plan {
             upsert(
-                title: "Protocole actif",
+                title: "Plan actif",
                 content: "Objectif : \(plan.primaryFaceGoal). Semaine \(plan.calendar.currentWeekNumber())/13. Jour : \(OriginPlanPresenter.todayDayTitle(in: plan) ?? "—")."
             )
         }
@@ -106,7 +106,7 @@ final class CoachProcessFilesStore {
     private func seedFromPlanIfNeeded() {
         guard files.isEmpty, let plan = WelcomePlanStore.shared.plan else { return }
         upsert(
-            title: "Protocole actif",
+            title: "Plan actif",
             content: "Objectif : \(plan.primaryFaceGoal). Nutrition : \(plan.nutritionStructureLabel)."
         )
     }

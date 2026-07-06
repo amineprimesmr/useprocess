@@ -10,7 +10,7 @@ enum CoachSidebarDestination: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .integration: return "Mon protocole"
+        case .integration: return "Configuration"
         case .healthRecords: return "Dossiers de santé"
         case .files: return "Fichiers"
         case .tracking: return "Points de suivi"

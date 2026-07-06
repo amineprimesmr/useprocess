@@ -73,14 +73,23 @@ enum FaceScanQualityValidator {
         case tooClose
     }
 
-    /// Distance caméra (z ARKit, négatif = devant) + part du visage à l'écran.
-    static func distanceFeedback(z: Float, screenFillRatio: CGFloat?) -> FaceDistanceFeedback {
-        if z > -0.14 { return .tooClose }
-        if z < -0.52 { return .tooFar }
+    /// Distance caméra (mètres, scalaire 3D) + part du visage à l'écran.
+    /// `cameraZoom` compense le `.scaleEffect` appliqué sur la preview (sinon toujours « trop proche »).
+    static func distanceFeedback(
+        distanceMeters: Float?,
+        screenFillRatio: CGFloat?,
+        cameraZoom: CGFloat = 1
+    ) -> FaceDistanceFeedback {
+        if let distance = distanceMeters {
+            if distance < 0.14 { return .tooClose }
+            if distance > 0.52 { return .tooFar }
+        }
 
         if let ratio = screenFillRatio {
-            if ratio < 0.11 { return .tooFar }
-            if ratio > 0.40 { return .tooClose }
+            let zoom = max(1, cameraZoom)
+            let adjustedRatio = ratio / (zoom * zoom)
+            if adjustedRatio < 0.11 { return .tooFar }
+            if adjustedRatio > 0.40 { return .tooClose }
         }
 
         return .ok

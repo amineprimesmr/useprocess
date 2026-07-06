@@ -52,7 +52,7 @@
 - Posture mauvaise = danger → sympathique → **cortisol**
 - Posture bonne → langue palais → maxillaire projeté
 
-## Méthode Origine (synthèse script #6)
+## Plan personnalisé (synthèse script #6)
 
 ```
 Hormones stables + énergie cellulaire

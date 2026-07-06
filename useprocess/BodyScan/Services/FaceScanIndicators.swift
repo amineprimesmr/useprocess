@@ -15,7 +15,7 @@ enum FaceScanIndicators {
         var title: String {
             switch self {
             case .retention: return "Rétention"
-            case .recovery: return "Récupération"
+            case .recovery: return "Cernes et fatigue"
             case .skin: return "Peau"
             case .definition: return "Mâchoire"
             case .stressLoad: return "Charge stress"
@@ -25,7 +25,7 @@ enum FaceScanIndicators {
         var subtitle: String {
             switch self {
             case .retention: return "Rétention d'eau / debloat"
-            case .recovery: return "Sommeil & cernes"
+            case .recovery: return "Cernes et fatigue"
             case .skin: return "Régénération cutanée"
             case .definition: return "Mâchoire et pommettes"
             case .stressLoad: return "Cortisol estimé"
@@ -43,7 +43,7 @@ enum FaceScanIndicators {
         var whoopLabel: String {
             switch self {
             case .retention: return "RÉTENTION D'EAU"
-            case .recovery: return "RÉCUPÉRATION"
+            case .recovery: return "CERNES ET FATIGUE"
             case .skin: return "QUALITÉ DE PEAU (BETA)"
             case .definition: return "MÂCHOIRE ET POMMETTES"
             case .stressLoad: return "CORTISOL ESTIMÉ"

@@ -59,6 +59,7 @@ enum FaceScanService {
             capturedAt: result.createdAt
         )
         FaceScanHistoryStore.shared.push(result)
+        ProcessDebloatTrajectoryStore.shared.recordScan(result)
 
         if var plan = WelcomePlanStore.shared.plan {
             PlanRecalibrationService.applyBaselineScan(to: &plan, markers: markers)

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Règles extraites des scripts Enzo (Protocole Origine, Masterclass beauté).
+/// Règles extraites des scripts Enzo (Plan personnalisé, Masterclass beauté).
 enum OriginScriptRulesEngine {
 
     static func nutritionPrinciples(

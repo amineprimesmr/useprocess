@@ -13,6 +13,8 @@ struct ProcessStreakDaySnapshot: Identifiable, Equatable {
     let isComplete: Bool
     let isToday: Bool
     let isFuture: Bool
+    var verdict: DebloatDayVerdict?
+    var compositeScore: Double?
 
     var dayOfMonth: Int {
         Calendar.current.component(.day, from: date)
@@ -46,6 +48,10 @@ struct ProcessStreakSnapshot: Equatable {
     let month: [ProcessStreakDaySnapshot]
     let nextMilestone: ProcessStreakMilestone?
     let daysUntilNextMilestone: Int?
+    let todayVerdict: DebloatDayVerdict?
+    let todayCompositeScore: Double
+    let trajectoryTrend: TrajectoryTrend
+    let velocityLabel: String
 
     var streakTitle: String {
         switch currentStreak {
@@ -57,14 +63,41 @@ struct ProcessStreakSnapshot: Equatable {
 
     func encouragement(firstName: String?) -> String {
         let trimmed = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let nameSuffix = trimmed.isEmpty ? "" : ", \(trimmed)"
+
+        if let verdict = todayVerdict, isTodayComplete {
+            switch verdict {
+            case .excellent:
+                return "Journée excellente\(nameSuffix) — score \(Int(todayCompositeScore))/100."
+            case .onTrack:
+                return "Sur la bonne voie\(nameSuffix) — \(velocityLabel.lowercased())."
+            case .partial:
+                return "Journée partielle\(nameSuffix) — serre le protocole demain."
+            case .regression:
+                return "Régression\(nameSuffix) — on recale ta trajectoire."
+            case .paused, .missed:
+                break
+            }
+        }
+
         if trimmed.isEmpty { return headline }
         if currentStreak >= 7 { return "Tu gères vraiment bien, \(trimmed) !" }
         if currentStreak > 0 { return "Continue comme ça, \(trimmed) !" }
         if isTodayComplete { return "Bien joué \(trimmed), reviens demain." }
-        return "Complète ta checklist pour lancer ta série, \(trimmed)."
+        return "Complète ton bilan du soir pour lancer ta trajectoire, \(trimmed)."
     }
 
     var headline: String {
+        if let verdict = todayVerdict {
+            switch verdict {
+            case .excellent: return "Journée excellente — trajectoire en hausse."
+            case .onTrack: return "Tu restes sur la bonne voie."
+            case .partial: return "Journée partielle — serre le protocole demain."
+            case .regression: return "Régression détectée — on recale ensemble."
+            case .missed: return "Bilan manqué — reviens ce soir."
+            case .paused: return "Jour en pause — streak gelée."
+            }
+        }
         switch currentStreak {
         case 0 where isTodayComplete:
             return "Streak lancé — reviens demain."

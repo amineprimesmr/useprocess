@@ -85,6 +85,12 @@ struct MainAppView: View {
             }
             planBridge.shouldOpenPlan = false
         }
+        .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
+            guard should else { return }
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = .plan
+            }
+        }
     }
 
     // MARK: - iOS 26 native liquid glass
@@ -224,7 +230,6 @@ struct MainAppView: View {
     }
 
     private func openWelcomePlanFromCoach() {
-        CoachPlanNavigationBridge.shared.shouldOpenIntegration = true
         presentCoachSurface()
     }
 
@@ -235,7 +240,6 @@ struct MainAppView: View {
     }
 
     private func openWelcomePlanConfiguration() {
-        CoachPlanNavigationBridge.shared.shouldOpenIntegration = true
         presentCoachSurface()
     }
 

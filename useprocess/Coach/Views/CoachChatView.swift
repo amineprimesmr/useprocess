@@ -18,7 +18,6 @@ struct CoachChatView: View {
     @State private var messageContextMenu: CoachUserMessageContextState?
     @State private var showFaceScan = false
     @State private var isSidebarExpanded = false
-    @State private var showsInlineProtocolQuestionnaire = false
     @State private var sidebarPresentedSheet: CoachSidebarDestination?
     @Bindable private var planStore = WelcomePlanStore.shared
     @Bindable private var session = AppSession.shared
@@ -42,6 +41,10 @@ struct CoachChatView: View {
         isSidebarExpanded || sidebarPresentation.progress > 0.01
     }
 
+    private var canUseCoachSidebar: Bool {
+        isIntegrationComplete && viewModel.isSidebarEnabled
+    }
+
     var body: some View {
         coachMainContent
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -58,7 +61,7 @@ struct CoachChatView: View {
 
     private var coachMainContent: some View {
         CustomSideMenu(
-            isEnabled: viewModel.isSidebarEnabled,
+            isEnabled: canUseCoachSidebar,
             sideBarWidth: coachSidebarWidth,
             isExpanded: $isSidebarExpanded
         ) { _ in
@@ -89,8 +92,12 @@ struct CoachChatView: View {
         .onAppear {
             CoachPresentationTracker.shared.isCoachChatActive = true
             CoachPresentationTracker.shared.activeConversationId = viewModel.activeConversationId
-            focusChatInputIfAppropriate()
-            presentWelcomePlanConfigurationOnFirstCoachOpenIfNeeded()
+            if !isIntegrationComplete {
+                isSidebarExpanded = false
+                sidebarPresentedSheet = nil
+            } else {
+                focusChatInputIfAppropriate()
+            }
         }
         .onDisappear {
             CoachPresentationTracker.shared.isCoachChatActive = false
@@ -109,6 +116,7 @@ struct CoachChatView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             viewModel.bind(profile: profileService.currentProfile)
+            guard isIntegrationComplete else { return }
             await viewModel.loadThreadIfNeeded()
             if !viewModel.messages.contains(where: FaceScanCoachInsightService.isCoachInsightMessage) {
                 _ = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
@@ -142,20 +150,25 @@ struct CoachChatView: View {
             showFaceScan = true
             CoachPlanNavigationBridge.shared.shouldOpenFaceScan = false
         }
-        .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenIntegration) { _, should in
-            guard should else { return }
-            showsInlineProtocolQuestionnaire = true
-            CoachPlanNavigationBridge.shared.shouldOpenIntegration = false
-        }
         .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenTracking) { _, should in
-            guard should else { return }
+            guard should, isIntegrationComplete else {
+                if should { CoachPlanNavigationBridge.shared.shouldOpenTracking = false }
+                return
+            }
             isSidebarExpanded = true
             sidebarPresentedSheet = .tracking
             CoachPlanNavigationBridge.shared.shouldOpenTracking = false
         }
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
-            if completed {
-                showsInlineProtocolQuestionnaire = false
+            if !completed {
+                isSidebarExpanded = false
+                sidebarPresentedSheet = nil
+            } else {
+                Task {
+                    viewModel.bind(profile: profileService.currentProfile)
+                    await viewModel.loadThreadIfNeeded()
+                    focusChatInputIfAppropriate(delay: 0.2)
+                }
             }
         }
         .fullScreenCover(isPresented: $showFaceScan) {
@@ -194,7 +207,7 @@ struct CoachChatView: View {
             }
         }
         .overlay(alignment: .topLeading) {
-            if viewModel.isSidebarEnabled, !isCoachSidebarPresenting {
+            if canUseCoachSidebar, !isCoachSidebarPresenting {
                 coachMenuButton
                     .padding(.top, ProcessMainChromeMetrics.topSafeInset + 2)
                     .padding(.leading, 16)
@@ -204,7 +217,7 @@ struct CoachChatView: View {
     }
 
     private var shouldShowInlineProtocolQuestionnaire: Bool {
-        !isIntegrationComplete && showsInlineProtocolQuestionnaire
+        !isIntegrationComplete
     }
 
     private var inlineProtocolQuestionnaireLayer: some View {
@@ -213,11 +226,6 @@ struct CoachChatView: View {
             selectedSection: nil,
             onComplete: {
                 planStore.reloadForCurrentUser()
-                showsInlineProtocolQuestionnaire = false
-            },
-            onDismissLater: {
-                WelcomePlanCoachPresentation.markConfigurationAutoPresented()
-                showsInlineProtocolQuestionnaire = false
             }
         )
         .environmentObject(profileService)
@@ -285,7 +293,7 @@ struct CoachChatView: View {
                 Task { await viewModel.deleteConversation(id) }
             },
             onOpenIntegration: {
-                showsInlineProtocolQuestionnaire = true
+                // Configuration déjà affichée dans le coach tant qu'elle n'est pas terminée.
             },
             onDeleteAllConversations: {
                 await viewModel.deleteAllConversations()
@@ -302,7 +310,7 @@ struct CoachChatView: View {
     }
 
     private var sidebarActiveDestination: CoachSidebarDestination? {
-        if showsInlineProtocolQuestionnaire, !isIntegrationComplete { return .integration }
+        if !isIntegrationComplete { return .integration }
         return sidebarPresentedSheet
     }
 
@@ -510,7 +518,7 @@ struct CoachChatView: View {
             if let feedback = viewModel.lastActionFeedback {
                 Text(feedback)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.onboardingAccent)
+                    .foregroundStyle(theme.coachAccent)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 4)
             }
@@ -657,7 +665,8 @@ struct CoachChatView: View {
     }
 
     private var canPresentChatInputKeyboard: Bool {
-        CoachPresentationTracker.shared.isCoachChatActive
+        isIntegrationComplete
+            && CoachPresentationTracker.shared.isCoachChatActive
             && !viewModel.showsHomeInsteadOfInput
             && !isCompactCameraPresented
             && !isSidebarExpanded
@@ -783,9 +792,10 @@ struct CoachChatView: View {
                         .combined(with: .scale(scale: 0.98, anchor: .bottomTrailing))
                 )
             }
-        } else if let meal = CoachMealMessageDetector.mealContent(from: message.text) {
+        } else if let meal = resolvedCoachMeal(for: message) {
             CoachMealSuggestionMessageView(
                 content: meal,
+                intro: CoachMealMessageDetector.coachIntro(from: message.text, meal: meal),
                 contextualActions: viewModel.mealOnlyContextualActions(for: message),
                 onAction: { action in
                     Task { await handleContextualAction(action, for: message) }
@@ -835,6 +845,26 @@ struct CoachChatView: View {
         }
     }
 
+    private func resolvedCoachMeal(for message: CoachMessage) -> MealSuggestionContent? {
+        let userText = precedingUserText(before: message)
+        if let userText,
+           let meal = CoachMealMessageDetector.mealContent(from: message.text, userText: userText) {
+            return meal
+        }
+        return CoachMealMessageDetector.mealContent(from: message.text)
+    }
+
+    private func precedingUserText(before message: CoachMessage) -> String? {
+        guard let index = viewModel.messages.firstIndex(where: { $0.id == message.id }) else {
+            return nil
+        }
+        return viewModel.messages
+            .prefix(index)
+            .reversed()
+            .first(where: { $0.role == .user })?
+            .text
+    }
+
     private func handleCoachDeepLink(_ link: CoachDeepLink) {
         switch link.action {
         case .plan, .journal:
@@ -843,10 +873,10 @@ struct CoachChatView: View {
         case .scan:
             showFaceScan = true
         case .streak:
-            isSidebarExpanded = true
-            sidebarPresentedSheet = .tracking
+            CoachPlanNavigationBridge.shared.openProfileStatistics()
+            selectedSection = .profile
         case .integration:
-            showsInlineProtocolQuestionnaire = true
+            break
         }
     }
 
@@ -866,16 +896,6 @@ struct CoachChatView: View {
         }
     }
 
-    private func presentWelcomePlanConfigurationOnFirstCoachOpenIfNeeded() {
-        guard !isIntegrationComplete else { return }
-        guard !WelcomePlanCoachPresentation.hasAutoPresentedConfiguration else { return }
-
-        WelcomePlanCoachPresentation.markConfigurationAutoPresented()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            guard !isIntegrationComplete else { return }
-            showsInlineProtocolQuestionnaire = true
-        }
-    }
 }
 
 private struct CoachChatBottomAccessory<ContextualBar: View, InputBar: View>: View {

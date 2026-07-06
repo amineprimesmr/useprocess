@@ -47,8 +47,7 @@ struct PlanHomeTopChrome: View {
             activityStatusStore.reload()
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
-            streakStore.reload()
-            streakStore.sync(from: planStore.plan)
+            ProcessDebloatTrajectoryStore.shared.reload()
             activityStatusStore.reload()
         }
     }

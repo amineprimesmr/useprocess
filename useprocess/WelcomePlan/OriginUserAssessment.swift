@@ -553,7 +553,7 @@ enum OriginUserAssessment {
                     title: "Consolidation",
                     objectives: [
                         "Ancrer les nouvelles habitudes",
-                        "Comparer scan J1 vs fin de protocole",
+                        "Comparer scan J1 vs fin du plan personnalisé",
                         "Passer en mode maintenance si scores OK"
                     ],
                     habits: ["Maintien 80 % des bases", "Scan comparatif", "Routine soir verrouillée"]
@@ -611,7 +611,7 @@ enum OriginUserAssessment {
                 objectives: [
                     "Ancrer composition et habitudes",
                     "Maintien 80 % des bases",
-                    "Plan après protocole"
+                    "Plan de maintien"
                 ],
                 habits: ["Bilan scan final", "Routine automatique", "Mode maintenance"]
             )
@@ -652,7 +652,7 @@ enum OriginUserAssessment {
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[2] + 1, through: total),
                 title: "Affinage visage & consolidation",
                 objectives: ["Affiner si besoin", "Fascias maxillaire", "Ancrage long terme"],
-                habits: ["Bilan scan", "Maintien 80 % bases", "Plan après protocole"]
+                habits: ["Bilan scan", "Maintien 80 % bases", "Plan de maintien"]
             )
         ]
     }
@@ -821,7 +821,7 @@ enum OriginUserAssessment {
             )
         default:
             criteria.append(
-                .init(label: "Protocole", detail: "Finir les phases avec scan comparatif positif")
+                .init(label: "Plan", detail: "Finir les phases avec scan comparatif positif")
             )
         }
 

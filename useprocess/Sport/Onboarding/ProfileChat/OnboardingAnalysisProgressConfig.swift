@@ -128,7 +128,7 @@ enum OnboardingAnalysisProgressConfig {
             resultCount: nil,
             sources: [
                 .init(id: "nutrition", systemImage: "fork.knife", label: "Nutrition"),
-                .init(id: "recovery", systemImage: "moon.zzz.fill", label: "Récupération"),
+                .init(id: "recovery", systemImage: "moon.zzz.fill", label: "Cernes et fatigue"),
                 .init(id: "coach", imageName: "caochiaicon", label: "Process")
             ]
         )
@@ -173,7 +173,7 @@ enum OnboardingAnalysisProgressConfig {
             sources: [
                 .init(id: "nutrition", systemImage: "fork.knife", label: "Nutrition"),
                 .init(id: "training", systemImage: "dumbbell.fill", label: "Entraînement"),
-                .init(id: "recovery", systemImage: "moon.zzz.fill", label: "Récupération")
+                .init(id: "recovery", systemImage: "moon.zzz.fill", label: "Cernes et fatigue")
             ]
         )
     ]

@@ -45,21 +45,42 @@ struct AppTheme {
     }
 
     var cardBackground: Color {
-        primaryText.opacity(isDark ? 0.08 : 0.06)
+        primaryText.opacity(isDark ? 0.08 : 0.05)
     }
 
     var cardBackgroundStrong: Color {
-        primaryText.opacity(isDark ? 0.12 : 0.08)
+        primaryText.opacity(isDark ? 0.12 : 0.07)
+    }
+
+    /// Accent coach — plus lisible en clair que onboardingAccent.
+    var coachAccent: Color {
+        resolved == .light
+            ? Color(red: 0.40, green: 0.52, blue: 0.90)
+            : onboardingAccent
+    }
+
+    /// Contour des surfaces coach (cartes repas, chips, bulles).
+    var coachSurfaceStroke: Color {
+        resolved == .light
+            ? Color(red: 0.72, green: 0.78, blue: 0.93)
+            : cardStroke
+    }
+
+    /// Fond secondaire coach (lignes ingrédients, blocs raisonnement).
+    var coachSecondaryFill: Color {
+        resolved == .light
+            ? Color(red: 0.94, green: 0.96, blue: 0.99)
+            : cardBackgroundStrong.opacity(0.55)
     }
 
     var coachUserBubble: Color {
         resolved == .light
-            ? Color(red: 0.949, green: 0.949, blue: 0.949)
+            ? Color(red: 0.84, green: 0.90, blue: 0.99)
             : Color(.systemGray6)
     }
 
     var coachAssistantBubble: Color {
-        resolved == .light ? Color(.systemGray6) : Color.white.opacity(0.1)
+        resolved == .light ? .white : Color.white.opacity(0.1)
     }
 
     /// Accent bleu clair (titres onboarding, surlignage).

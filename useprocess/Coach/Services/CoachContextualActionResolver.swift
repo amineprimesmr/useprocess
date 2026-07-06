@@ -33,8 +33,6 @@ enum CoachContextualActionResolver {
 
         if let meal, meal.isValid {
             let slot = meal.timeSlot.rawValue
-            actions.append(CoachContextualAction(kind: .validateMeal, payload: slot))
-            actions.append(CoachContextualAction(kind: .modifyMeal, payload: slot))
             actions.append(CoachContextualAction(kind: .anotherMeal, payload: slot))
             actions.append(CoachContextualAction(kind: .addToShoppingList, payload: slot))
             return dedupe(actions)
@@ -63,9 +61,8 @@ enum CoachContextualActionResolver {
         if isMealDiscussion(lowerUser, lowerAssistant) {
             if let meal, meal.isValid {
                 let slot = meal.timeSlot.rawValue
-                actions.append(CoachContextualAction(kind: .validateMeal, payload: slot))
-                actions.append(CoachContextualAction(kind: .modifyMeal, payload: slot))
                 actions.append(CoachContextualAction(kind: .anotherMeal, payload: slot))
+                actions.append(CoachContextualAction(kind: .addToShoppingList, payload: slot))
             } else {
                 actions.append(CoachContextualAction(
                     kind: .followUp,

@@ -7,32 +7,36 @@ enum WelcomePlanGenerator {
         answers: [String: WelcomePlanAnswer],
         profile: UnifiedUserProfile?
     ) -> FaceOriginPlan {
+        let resolvedAnswers = WelcomePlanQuestionBank.mergedAnswersForGeneration(
+            userAnswers: answers,
+            profile: profile
+        )
         let userId = profile?.userId ?? UserScopedStorage.currentUserId() ?? "local-user"
         let baselineScan = FaceScanHistoryStore.shared.latestResult?.markers
             ?? OnboardingFaceMarkersStore.load()
 
         let assessment = OriginUserAssessment.evaluate(
-            answers: answers,
+            answers: resolvedAnswers,
             profile: profile,
             baselineScan: baselineScan
         )
 
-        let faceGoal = primaryGoalLabel(answers)
-        let bodyFat = answers["body_fat_feel"]?.choiceIds.first
-        let sleepQ = answers["sleep_quality"]?.choiceIds.first
-        let supplements = answers["supplements_use"]?.choiceIds.first
+        let faceGoal = primaryGoalLabel(resolvedAnswers)
+        let bodyFat = resolvedAnswers["body_fat_feel"]?.choiceIds.first
+        let sleepQ = resolvedAnswers["sleep_quality"]?.choiceIds.first
+        let supplements = resolvedAnswers["supplements_use"]?.choiceIds.first
         let sessions = assessment.recommendedSessions
         let gender = profile?.gender ?? .male
         let targets = assessment.dailyTargets
         let duration = assessment.duration
 
-        let pillarScores = computePillarScores(answers: answers, assessment: assessment.snapshot)
-        let dailyHabits = buildDailyHabits(answers: answers, gender: gender, targets: targets, snapshot: assessment.snapshot)
+        let pillarScores = computePillarScores(answers: resolvedAnswers, assessment: assessment.snapshot)
+        let dailyHabits = buildDailyHabits(answers: resolvedAnswers, gender: gender, targets: targets, snapshot: assessment.snapshot)
         let weeklyRhythm = buildWeeklyRhythm(sessions: sessions, targets: targets)
-        let nutrition = buildNutritionProtocol(answers: answers, bodyFat: bodyFat, snapshot: assessment.snapshot, targets: targets)
-        let sleep = buildSleepProtocol(answers: answers, targets: targets, snapshot: assessment.snapshot)
+        let nutrition = buildNutritionProtocol(answers: resolvedAnswers, bodyFat: bodyFat, snapshot: assessment.snapshot, targets: targets)
+        let sleep = buildSleepProtocol(answers: resolvedAnswers, targets: targets, snapshot: assessment.snapshot)
         let training = buildTrainingProtocol(
-            answers: answers,
+            answers: resolvedAnswers,
             profile: profile,
             sessions: sessions,
             gender: gender,
@@ -40,7 +44,7 @@ enum WelcomePlanGenerator {
             location: assessment.trainingLocation
         )
         let posture = buildPostureProtocol(
-            answers: answers,
+            answers: resolvedAnswers,
             targets: targets,
             snapshot: assessment.snapshot,
             gender: gender
@@ -48,7 +52,7 @@ enum WelcomePlanGenerator {
 
         let summary = buildExecutiveSummary(
             faceGoal: faceGoal,
-            answers: answers,
+            answers: resolvedAnswers,
             sleepQ: sleepQ,
             sessions: sessions,
             duration: duration,
@@ -73,14 +77,14 @@ enum WelcomePlanGenerator {
             trainingProtocol: training,
             postureProtocol: posture,
             faceProtocol: buildFaceProtocol(
-                answers: answers,
+                answers: resolvedAnswers,
                 faceGoal: faceGoal,
                 duration: duration,
                 targets: targets,
                 snapshot: assessment.snapshot
             ),
             mindsetNotes: buildMindsetNotes(
-                answers: answers,
+                answers: resolvedAnswers,
                 supplements: supplements,
                 duration: duration,
                 snapshot: assessment.snapshot
@@ -90,13 +94,13 @@ enum WelcomePlanGenerator {
             durationMaxWeeks: duration.maxWeeks,
             calendar: OriginProgramCalendar.empty,
             progress: OriginPlanProgress(),
-            lifestyleExtras: buildLifestyleExtras(answers: answers, snapshot: assessment.snapshot),
+            lifestyleExtras: buildLifestyleExtras(answers: resolvedAnswers, snapshot: assessment.snapshot),
             assessmentSnapshot: assessment.snapshot,
             successCriteria: assessment.successCriteria,
             personalizedTargets: targets
         )
 
-        plan.calendar = OriginPlanCalendarBuilder.build(from: plan, answers: answers, gender: gender)
+        plan.calendar = OriginPlanCalendarBuilder.build(from: plan, answers: resolvedAnswers, gender: gender)
         return plan
     }
 
@@ -136,7 +140,7 @@ enum WelcomePlanGenerator {
     private static func primaryGoalLabel(_ answers: [String: WelcomePlanAnswer]) -> String {
         let concerns = multi("face_concerns", in: answers)
         guard !concerns.isEmpty else {
-            return "Protocole Origine — transformation globale"
+            return "Plan personnalisé — transformation globale"
         }
         return concerns.prefix(3).map {
             WelcomePlanQuestionBank.choiceLabel(for: "face_concerns", choiceId: $0)
@@ -532,7 +536,7 @@ enum WelcomePlanGenerator {
             "Pas de raccourci artificiel. La beauté est la conséquence d'une biologie en ordre."
         ]
         if duration.totalWeeks <= 3 {
-            notes.insert("Protocole court : exécution stricte > perfection.", at: 1)
+            notes.insert("Plan court : exécution stricte > perfection.", at: 1)
         }
         if supplements == "many" || supplements == "basic" {
             notes.append("On remplace les compléments par des aliments entiers — œufs, laitiers, viande rouge.")

@@ -23,11 +23,11 @@ https://useprocess.xyz/confidentialite
 DESCRIPTION (corps principal)
 ================================================================================
 
-Process AI est ton application santé tout-en-un : coach intelligent, suivi Apple Santé, scan visage et protocole personnalisé sport, nutrition et récupération.
+Process AI est ton application santé tout-en-un : coach intelligent, suivi Apple Santé, scan visage et plan personnalisé sport, nutrition et récupération.
 
 CONÇU POUR TOI
 - Onboarding rapide pour calibrer ton profil et tes objectifs
-- Protocole Origine adapté à ton rythme, ton sport et ton sommeil
+- Plan personnalisé adapté à ton rythme, ton sport et ton sommeil
 - Interface claire sur iPhone et iPad
 
 COACH IA
@@ -80,7 +80,7 @@ NOUVEAUTÉS DE CETTE VERSION (première sortie 1.0)
 ================================================================================
 
 Première version de Process AI :
-- Coach IA et protocole personnalisé
+- Coach IA et plan personnalisé
 - Intégration Apple Santé
 - Scan visage et score de readiness
 - Abonnement Premium avec essai gratuit 3 jours

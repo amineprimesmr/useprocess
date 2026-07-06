@@ -150,7 +150,7 @@ struct BodyScanReportView: View {
     private func faceSection(_ face: FaceWellnessMarkers) -> some View {
         section(title: "Visage & bien-être") {
             metricTile("Rétention", face.puffinessScore)
-            metricTile("Récupération", face.underEyeFatigueScore)
+            metricTile("Cernes et fatigue", face.underEyeFatigueScore)
             metricTile("Peau", face.skinClarityScore)
             metricTile("Définition", FaceScanIndicators.definitionScore(from: face))
             metricTile("Charge stress", FaceScanIndicators.stressLoad(from: face))

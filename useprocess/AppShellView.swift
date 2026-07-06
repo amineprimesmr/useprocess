@@ -30,10 +30,8 @@ struct AppShellView: View {
             guard phase == .active else { return }
             ProcessAudioSession.configureForMixingWithOthersIfIdle()
             Task { @MainActor in
-                let delivered = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
-                if delivered {
-                    CoachPlanNavigationBridge.shared.bumpEveningChecklistRefresh()
-                }
+                ProcessEveningCheckInStore.shared.reload()
+                ProcessStreakStore.shared.sync(from: WelcomePlanStore.shared.plan)
             }
         }
         .environment(\.appTheme, theme)

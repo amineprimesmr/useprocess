@@ -133,23 +133,43 @@ struct OnboardingProgramCreationBadge: View {
 struct OnboardingProgramCreationProgressBars: View {
     let labels: [String]
     let progresses: [Double]
+    var visibleCount: Int = 1
 
     private let barHeight: CGFloat = 16
 
+    private var clampedVisibleCount: Int {
+        min(max(visibleCount, 1), labels.count)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
-                barRow(label: label, progress: progresses[safe: index] ?? 0)
+            ForEach(0..<clampedVisibleCount, id: \.self) { index in
+                barRow(
+                    label: labels[index],
+                    progress: progresses[safe: index] ?? 0,
+                    isComplete: (progresses[safe: index] ?? 0) >= 0.999
+                )
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
         .animation(.spring(response: 0.42, dampingFraction: 0.82), value: progresses)
+        .animation(.spring(response: 0.48, dampingFraction: 0.84), value: clampedVisibleCount)
     }
 
-    private func barRow(label: String, progress: Double) -> some View {
+    private func barRow(label: String, progress: Double, isComplete: Bool) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(label)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(OnboardingProgramCreationPalette.subtitle)
+            HStack(spacing: 8) {
+                Text(label)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(OnboardingProgramCreationPalette.subtitle)
+
+                if isComplete {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(OnboardingProgramCreationPalette.accent)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
 
             GeometryReader { geometry in
                 let width = geometry.size.width

@@ -42,7 +42,7 @@ enum OriginPlanNotificationService {
         }()
 
         let content = UNMutableNotificationContent()
-        content.title = "Protocole Origine — Jour \(dayNumber)"
+        content.title = "Plan personnalisé — Jour \(dayNumber)"
         content.body = "\(day?.title ?? "Ton programme") · \(trainingLine) · \(nutritionLine)"
         content.sound = .default
         content.userInfo = ["planDay": dayNumber]

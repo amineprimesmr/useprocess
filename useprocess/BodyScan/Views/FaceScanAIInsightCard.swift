@@ -166,7 +166,7 @@ enum FaceScanAIInsightBuilder {
         switch cause {
         case .retention: return "Rétention d'eau · \(value)%"
         case .cortisol: return "Cortisol estimé · \(value)%"
-        case .recovery: return "Récupération · \(value)%"
+        case .recovery: return "Cernes et fatigue · \(value)%"
         case .skin: return "Qualité de peau · \(value)%"
         case .definition: return "Définition faciale · \(value)%"
         case .balanced: return "Visage en forme · \(value)%"
@@ -299,7 +299,7 @@ enum FaceScanAIInsightBuilder {
         if health.sleepWasGood {
             return "Signaux stables ce matin — sommeil solide, visage reposé. Garde ta routine debloat du jour."
         }
-        return "Bon équilibre facial aujourd'hui. Continue hydratation, repas du protocole et scan demain matin."
+        return "Bon équilibre facial aujourd'hui. Continue hydratation, repas du plan personnalisé et scan demain matin."
     }
 
     private static func emoji(for cause: FaceScanPrimaryCause) -> String {
@@ -473,7 +473,7 @@ enum FaceScanAIInsightBuilder {
 
         Rédige UN message coach visible :
         1) Deux phrases simples : pourquoi son visage est dans cet état (mécanisme debloat, lié à ses données réelles).
-        2) Trois actions concrètes pour AUJOURD'HUI dans le protocole Origine (puces courtes).
+        2) Trois actions concrètes pour AUJOURD'HUI dans le plan personnalisé (puces courtes).
         3) Une question ouverte pour continuer la conversation.
 
         Calibrage obligatoire de l'intensité (ne jamais minimiser) :
@@ -590,6 +590,7 @@ struct FaceScanAIInsightFooter: View {
                 topGlowLine
                 content
             }
+            .background(PlanFaceScanChrome.insightFooterFill(isDark: theme.isDark))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -601,9 +602,9 @@ struct FaceScanAIInsightFooter: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    insight.accent.opacity(0),
-                    insight.accent.opacity(0.55),
-                    insight.accent.opacity(0)
+                    PlanFaceScanChrome.luminousBlue.opacity(0),
+                    PlanFaceScanChrome.luminousBlueGlow.opacity(0.82),
+                    PlanFaceScanChrome.luminousBlue.opacity(0)
                 ],
                 startPoint: .leading,
                 endPoint: .trailing

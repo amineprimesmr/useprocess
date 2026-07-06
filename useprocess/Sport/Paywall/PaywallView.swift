@@ -248,6 +248,9 @@ struct PaywallView: View {
     // MARK: - Prix
 
     private var annualPrimaryPrice: String {
+        if subscriptionService.trialInfo(for: .annual).isActiveOffer {
+            return "0,00 €"
+        }
         let raw = normalizePrice(subscriptionService.displayProduct(for: .annual).displayPrice)
         return "\(raw)/an"
     }
@@ -302,9 +305,8 @@ struct PaywallView: View {
     private var paywallDisclaimerText: String? {
         switch selectedBillingPlan {
         case .annual:
-            return selectedTrialInfo.isActiveOffer
-                ? "Aucun paiement aujourd'hui, sans engagement."
-                : nil
+            let display = normalizePrice(subscriptionService.displayProduct(for: .annual).displayPrice)
+            return selectedTrialInfo.ctaSubtitle(for: .annual, displayPrice: display)
         case .monthly:
             return "Sans engagement, annulable à tout moment."
         }

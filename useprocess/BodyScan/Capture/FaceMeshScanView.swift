@@ -24,6 +24,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     @Binding var isLowLight: Bool
     var isPreviewOnly: Bool = false
     var allowsScreenFlash: Bool = true
+    var cameraZoom: CGFloat = 1
     var onComplete: (FaceScanCapturePayload) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -37,6 +38,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             isDeviceSupported: $isDeviceSupported,
             isLowLight: $isLowLight,
             allowsScreenFlash: allowsScreenFlash,
+            cameraZoom: cameraZoom,
             onComplete: onComplete
         )
     }
@@ -80,6 +82,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         let wasPreview = context.coordinator.isPreviewOnly
         context.coordinator.isPreviewOnly = isPreviewOnly
         context.coordinator.allowsScreenFlash = allowsScreenFlash
+        context.coordinator.cameraZoom = cameraZoom
         context.coordinator.updateViewportSize(uiView.bounds.size)
         if isPreviewOnly, !wasPreview {
             context.coordinator.enterPreviewMode()
@@ -104,6 +107,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         @Binding var isDeviceSupported: Bool
         @Binding var isLowLight: Bool
         var allowsScreenFlash: Bool
+        var cameraZoom: CGFloat
         let onComplete: (FaceScanCapturePayload) -> Void
 
         weak var arView: ARSCNView?
@@ -170,6 +174,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             isDeviceSupported: Binding<Bool>,
             isLowLight: Binding<Bool>,
             allowsScreenFlash: Bool,
+            cameraZoom: CGFloat,
             onComplete: @escaping (FaceScanCapturePayload) -> Void
         ) {
             _progress = progress
@@ -181,6 +186,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             _isDeviceSupported = isDeviceSupported
             _isLowLight = isLowLight
             self.allowsScreenFlash = allowsScreenFlash
+            self.cameraZoom = cameraZoom
             self.onComplete = onComplete
         }
 
@@ -463,14 +469,15 @@ struct FaceMeshScanView: UIViewRepresentable {
             trackedFrameCount += 1
             stableFrameCount += 1
 
-            let z = faceAnchor.transform.columns.3.z
+            let distanceMeters = faceDistanceFromCamera(faceAnchor: faceAnchor)
             let fillRatio = projectedFaceFillRatio(
                 faceAnchor: faceAnchor,
                 renderer: renderer
             )
             let distanceFeedback = FaceScanQualityValidator.distanceFeedback(
-                z: z,
-                screenFillRatio: fillRatio
+                distanceMeters: distanceMeters,
+                screenFillRatio: fillRatio,
+                cameraZoom: cameraZoom
             )
 
             if distanceFeedback != .ok, scanStartTime == nil {
@@ -519,7 +526,7 @@ struct FaceMeshScanView: UIViewRepresentable {
 
             guard referenceTransform != nil else { return }
 
-            registerHeadPose(from: faceAnchor, renderer: renderer)
+            registerHeadPose(from: faceAnchor.transform)
             accumulateBlendShapes(faceAnchor.blendShapes)
 
             guard let scanStart = scanStartTime else { return }
@@ -717,9 +724,20 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
         }
 
-        // MARK: - Pose → anneau Face ID (projection écran, miroir selfie)
+        // MARK: - Pose → anneau Face ID (yaw/pitch relatifs au départ du scan)
 
-        /// Pitch (haut/bas) et yaw (gauche/droite) — utilisé pour la qualité du scan.
+        /// Distance 3D caméra ↔ visage (mètres). Le z brut du transform monde n'est pas fiable.
+        private func faceDistanceFromCamera(faceAnchor: ARFaceAnchor) -> Float? {
+            guard let frame = arView?.session.currentFrame else { return nil }
+            let facePosition = faceAnchor.transform.columns.3
+            let cameraPosition = frame.camera.transform.columns.3
+            return simd_distance(
+                SIMD3<Float>(facePosition.x, facePosition.y, facePosition.z),
+                SIMD3<Float>(cameraPosition.x, cameraPosition.y, cameraPosition.z)
+            )
+        }
+
+        /// Pitch (haut/bas) et yaw (gauche/droite) par rapport à la pose de départ du scan.
         private func relativeYawPitch(from transform: simd_float4x4) -> SIMD2<Float> {
             guard let ref = referenceTransform else { return .zero }
             let rel = simd_mul(simd_inverse(ref), transform)
@@ -729,63 +747,52 @@ struct FaceMeshScanView: UIViewRepresentable {
             return SIMD2(pitch, yaw)
         }
 
-        private func projectWorldPoint(
-            _ point: SIMD3<Float>,
-            renderer: SCNSceneRenderer
-        ) -> CGPoint? {
-            let projected = renderer.projectPoint(SCNVector3(point.x, point.y, point.z))
-            guard projected.z > 0, projected.z < 1 else { return nil }
-            return CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
-        }
+        /// Décalage entre l'angle mathématique et `FaceIDTickProgressRing` (index 0 = gauche, 18 = haut).
+        private var tickRingTopSectorOffset: Int { tickCount / 4 }
 
-        /// Secteur sur l'anneau : 0 = haut, sens horaire (aligné sur `FaceIDTickProgressRing`).
-        /// Utilise la position du nez projetée à l'écran (miroir selfie) pour coller à ce que l'utilisateur voit.
-        private func sectorIndex(
-            faceAnchor: ARFaceAnchor,
-            renderer: SCNSceneRenderer
-        ) -> Int? {
-            let viewport = currentViewportSize()
-            guard viewport.width > 1, viewport.height > 1 else { return nil }
+        /// Secteurs à allumer selon où l'utilisateur regarde (haut/bas/gauche/droite).
+        private func visitedSectors(for transform: simd_float4x4) -> [Int] {
+            guard referenceTransform != nil else { return [] }
 
-            let transform = faceAnchor.transform
-            let center = transform.columns.3
-            let forward = transform.columns.2
-            let noseWorld = SIMD3<Float>(
-                center.x + forward.x * 0.04,
-                center.y + forward.y * 0.04,
-                center.z + forward.z * 0.04
-            )
-            let centerWorld = SIMD3<Float>(center.x, center.y, center.z)
+            let angles = relativeYawPitch(from: transform)
+            let pitch = angles.x
+            let yaw = angles.y
+            let magnitude = hypot(yaw, pitch)
+            guard magnitude >= minActivationAngle else { return [] }
 
-            guard let noseScreen = projectWorldPoint(noseWorld, renderer: renderer),
-                  let centerScreen = projectWorldPoint(centerWorld, renderer: renderer) else { return nil }
-
-            let dx = noseScreen.x - centerScreen.x
-            let dy = noseScreen.y - centerScreen.y
-            let planar = hypot(dx, dy)
-            let minPixels = max(5, min(viewport.width, viewport.height) * 0.016)
-            guard planar >= minPixels else { return nil }
-
-            // Miroir selfie : gauche utilisateur = gauche de l'anneau.
-            let mirroredX = -dx
-            let screenUp = -dy
-
-            var compass = atan2(Float(mirroredX), Float(screenUp))
+            // Boussole : 0 = haut, horaire (droite → bas → gauche).
+            var compass = atan2(yaw, -pitch)
             if compass < 0 { compass += 2 * Float.pi }
-            return Int(compass / (2 * Float.pi) * Float(tickCount)) % tickCount
+
+            let rawSector = Int(compass / (2 * Float.pi) * Float(tickCount)) % tickCount
+            let primary = (rawSector + tickRingTopSectorOffset) % tickCount
+
+            // Plus l'inclinaison est marquée, plus on élargit l'arc vert autour de la direction.
+            let spread = min(2, max(0, Int(magnitude / minActivationAngle) - 1))
+            var sectors = [primary]
+            if spread > 0 {
+                for offset in 1...spread {
+                    sectors.append((primary + offset) % tickCount)
+                    sectors.append((primary - offset + tickCount) % tickCount)
+                }
+            }
+            return sectors
         }
 
-        /// Enregistre le secteur visité selon l'inclinaison réelle (comme Face ID).
-        private func registerHeadPose(from faceAnchor: ARFaceAnchor, renderer: SCNSceneRenderer) {
-            let angles = relativeYawPitch(from: faceAnchor.transform)
+        /// Enregistre les secteurs visités selon l'inclinaison réelle de la tête.
+        private func registerHeadPose(from transform: simd_float4x4) {
+            let angles = relativeYawPitch(from: transform)
             angleSamples.append(angles)
             if angleSamples.count > 200 {
                 angleSamples.removeFirst(angleSamples.count - 200)
             }
 
-            guard let sector = sectorIndex(faceAnchor: faceAnchor, renderer: renderer) else { return }
+            let sectors = visitedSectors(for: transform)
+            guard let sector = sectors.first else { return }
 
-            filledTickSectors.insert(sector)
+            for visited in sectors {
+                filledTickSectors.insert(visited)
+            }
 
             if let last = lastRegisteredSector, last != sector {
                 let forward = (sector - last + tickCount) % tickCount

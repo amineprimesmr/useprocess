@@ -20,13 +20,13 @@ struct ProcessSettingsFullScreenView: View {
             }
             .navigationDestination(for: ProfileSettingsCategory.self) { category in
                 profileSettingsDetail(for: category)
-            }
-            .environment(\.profileAccountDeletionHandler) {
-                Task { @MainActor in
-                    dismiss()
-                    try? await Task.sleep(for: .milliseconds(450))
-                    await performAccountDeletion()
-                }
+                    .environment(\.profileAccountDeletionHandler) {
+                        Task { @MainActor in
+                            dismiss()
+                            try? await Task.sleep(for: .milliseconds(450))
+                            await performAccountDeletion()
+                        }
+                    }
             }
         }
         .processTranslucentOverlayBackground()

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Présentation courte du Protocole Origine — priorités, jour courant, libellés compacts.
+/// Présentation courte du Plan personnalisé — priorités, jour courant, libellés compacts.
 enum OriginPlanPresenter {
 
     // MARK: - Jour courant
@@ -591,7 +591,7 @@ enum OriginPlanPresenter {
 
     private static func firstSentence(_ text: String, maxLength: Int) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "Protocole personnalisé" }
+        guard !trimmed.isEmpty else { return "Plan personnalisé" }
         let sentence = trimmed.split(separator: ".").first.map(String.init) ?? trimmed
         return truncate(sentence, max: maxLength)
     }

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Contexte Protocole Origine injecté dans **tous** les appels IA (coach, repas, mémoire).
+/// Contexte Plan personnalisé injecté dans **tous** les appels IA (coach, repas, mémoire).
 enum CoachPlanContextBuilder {
 
     // MARK: - Bloc compact (résumé plan)
@@ -8,7 +8,7 @@ enum CoachPlanContextBuilder {
     @MainActor
     static func compactBlock(plan: FaceOriginPlan?, memory: CoachGlobalMemory) -> String {
         guard let plan else {
-            return "PROTOCOLE ORIGINE : non généré — invite l'utilisateur à compléter le questionnaire."
+            return "PLAN PERSONNALISÉ : non généré — invite l'utilisateur à compléter le questionnaire."
         }
 
         let dayIdx = plan.calendar.currentProgramDayIndex()
@@ -17,7 +17,7 @@ enum CoachPlanContextBuilder {
         let completed = plan.progress.completedTaskIds.count
 
         var lines: [String] = [
-            "PROTOCOLE ORIGINE (base de TOUTES tes réponses) :",
+            "PLAN PERSONNALISÉ (base de TOUTES tes réponses) :",
             "• Objectif : \(plan.primaryFaceGoal)",
             "• Semaine \(weekNum)/13 — jour \(dayIdx + 1)/\(max(plan.calendar.totalDays, 1))",
             "• \(plan.trainingProtocol.sessionsPerWeek) séances/sem · Sommeil cible \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
@@ -125,7 +125,7 @@ enum CoachPlanContextBuilder {
         return lines.joined(separator: "\n")
     }
 
-    // MARK: - Questionnaire Origine (contraintes perso)
+    // MARK: - Questionnaire du plan personnalisé (contraintes perso)
 
     static func questionnaireBlock(answers: [String: WelcomePlanAnswer]) -> String {
         guard !answers.isEmpty else { return "" }

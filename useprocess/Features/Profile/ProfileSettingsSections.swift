@@ -7,6 +7,7 @@ import UIKit
 struct ProfileSettingsAccountDetailView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.profileAccountDeletionHandler) private var onDeleteConfirmed
+    @Bindable private var session = AppSession.shared
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
@@ -108,11 +109,9 @@ struct ProfileSettingsAccountDetailView: View {
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
 
-                if let onDeleteConfirmed {
-                    AccountDeleteAnimatedButton(onConfirm: onDeleteConfirmed)
-                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                        .padding(.top, 28)
-                }
+                AccountDeleteAnimatedButton(onConfirm: handleAccountDeletion)
+                    .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                    .padding(.top, 28)
             }
             .padding(.bottom, 32)
         }
@@ -132,6 +131,25 @@ struct ProfileSettingsAccountDetailView: View {
 
     private var deviceLine: String {
         "\(UIDevice.current.model) · iOS \(UIDevice.current.systemVersion)"
+    }
+
+    private func handleAccountDeletion() {
+        if let onDeleteConfirmed {
+            onDeleteConfirmed()
+            return
+        }
+
+        Task { @MainActor in
+            session.accountDeletionErrorMessage = nil
+            do {
+                try await session.deleteAccount()
+            } catch let error as AccountDeletionError {
+                if case .cancelled = error { return }
+                session.accountDeletionErrorMessage = error.localizedDescription
+            } catch {
+                session.accountDeletionErrorMessage = error.localizedDescription
+            }
+        }
     }
 }
 

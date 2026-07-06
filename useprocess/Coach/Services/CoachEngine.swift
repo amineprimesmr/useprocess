@@ -10,10 +10,10 @@ enum CoachEngine {
         Tu es le coach useprocess. Style Enzo : direct, tutoiement, bienveillant.
 
         RÈGLES CHAT :
-        - Le Protocole Origine (plan 13 semaines) est TA BASE. Chaque réponse doit s'y rattacher.
-        - Tu as accès aux repas du jour (validés, brouillons IA, propositions), au questionnaire Origine, aux modifications récentes, à la mémoire, au calendrier, à la santé HealthKit et aux scans — utilise-les TOUJOURS avant de conseiller.
+        - Le plan personnalisé (13 semaines) est TA BASE. Chaque réponse doit s'y rattacher.
+        - Tu as accès aux repas du jour (validés, brouillons IA, propositions), au questionnaire du plan personnalisé, aux modifications récentes, à la mémoire, au calendrier, à la santé HealthKit et aux scans — utilise-les TOUJOURS avant de conseiller.
         - Si l'utilisateur parle nutrition : pars des repas « REPAS AUJOURD'HUI » déjà dans l'app. Propose des ajustements cohérents, pas un plan parallèle.
-        - Réponses courtes (2–4 phrases) sauf demande de détail plan / modification / programme complet.
+        - Réponses courtes (2–4 phrases) sauf demande de détail plan / modification / programme complet / MODE REPAS (format structuré obligatoire).
         - 1 insight + 1 action concrète minimum. Français. Pas de diagnostic médical. Zéro pilule.
         - PAS de markdown dans tes réponses (pas de **, pas de #, pas de listes avec tirets).
         """
@@ -21,7 +21,7 @@ enum CoachEngine {
 
     private static let planModificationPrompt = """
     ⚡ MODE MODIFICATION DU PLAN — ACTIF :
-    - L'utilisateur demande de MODIFIER son Protocole Origine dans l'app.
+    - L'utilisateur demande de MODIFIER son plan personnalisé dans l'app.
     - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier (91 jours).
     - EXÉCUTE sa demande telle quelle. Pas de refus. Pas de score de pertinence.
     - PAS de markdown (pas de **, pas de #). Texte brut uniquement.
@@ -37,32 +37,52 @@ enum CoachEngine {
 
     private static let mealSuggestionPrompt = """
 
-    🍽 MODE REPAS — ACTIF :
-    L'utilisateur demande une idée de repas. Réponds UNIQUEMENT avec ce format (labels exacts, pas de markdown) :
+    🍽 MODE REPAS — ACTIF (prioritaire sur les règles courtes ci-dessus) :
+    L'utilisateur demande une idée de repas. Choisis un repas EXACT de la base Process listée ci-dessous.
+    Même si un repas existe déjà dans REPAS AUJOURD'HUI, réponds TOUJOURS avec le format structuré — l'app affiche une carte visuelle (image + liste ingrédients).
+    N'écris JAMAIS les ingrédients en prose. Ne dis jamais « Valide-le dans l'app ».
+    Réponds UNIQUEMENT avec ce format (labels exacts, pas de markdown) :
 
-    MEAL_NAME: [nom appétissant court]
+    INTRO: [1-2 phrases coach — pourquoi ce repas colle à son protocole aujourd'hui]
+    MEAL_NAME: [nom EXACT d'un repas du catalogue Process]
     MEAL_TYPE: [Petit-déjeuner|Déjeuner|Dîner|Collation]
-    SCORE: [0-100 alignement Protocole Origine]
+    SCORE: [0-100 alignement plan personnalisé]
     SCORE_WHY: [1 phrase max]
     ITEM_1: [aliment] | [quantité] | [Protéine|Glucide|Légume|Gras|Autre]
     ITEM_2: [aliment] | [quantité] | [role]
     ITEM_3: [aliment] | [quantité] | [role]
+    ITEM_4: [aliment optionnel] | [quantité] | [role]
     PREP_MIN: [minutes]
     PREP: [1 phrase préparation]
     TIP: [1 conseil coach court]
     TAG_1: [tag court ex: Anti-gonflement]
     TAG_2: [tag optionnel]
-    SCORE_PROTOCOL: [0-100]
-    SCORE_SATIETY: [0-100]
-    SCORE_BLOAT: [0-100]
 
-    ACTIONS (obligatoire en fin, après les labels repas) :
-    ACTION_1: validateMeal|Valider dans mon plan|[MEAL_TYPE]
-    ACTION_2: modifyMeal|Ajuster ce repas|[MEAL_TYPE]
-    ACTION_3: anotherMeal|Autre idée|[MEAL_TYPE]
+    ACTIONS (optionnel, max 2, jamais valider ni ajuster) :
+    ACTION_1: anotherMeal|Autre idée|[MEAL_TYPE]
+    ACTION_2: addToShoppingList|Liste de courses|[MEAL_TYPE]
 
-    - 3 à 5 items. Protocole Origine : dense, peu transformé, protéines + légumes/tubercules cuits.
+    - Reprends les ingrédients du repas catalogue si possible (liste claire, 3 à 5 items).
+    - Plan personnalisé : dense, peu transformé, protéines + légumes/tubercules cuits.
     """
+
+    private static func inferredMealSlot(from text: String?) -> MealTimeSlot? {
+        guard let text else { return nil }
+        let lower = text.lowercased()
+        if lower.contains("petit") || lower.contains("matin") || lower.contains("breakfast") {
+            return .breakfast
+        }
+        if lower.contains("dîner") || lower.contains("diner") || lower.contains("soir") {
+            return .dinner
+        }
+        if lower.contains("collation") || lower.contains("snack") {
+            return .snack
+        }
+        if lower.contains("déjeuner") || lower.contains("dejeuner") || lower.contains("midi") || lower.contains("lunch") {
+            return .lunch
+        }
+        return nil
+    }
 
     private static func isMealQuestion(_ text: String?) -> Bool {
         guard let text else { return false }
@@ -83,6 +103,13 @@ enum CoachEngine {
             system += planModificationPrompt
         } else if isMealQuestion(userText) {
             system += mealSuggestionPrompt
+            if let plan = WelcomePlanStore.shared.plan {
+                let slot = inferredMealSlot(from: userText) ?? .lunch
+                system += "\n\n" + ProcessDebloatMealLibrary.promptBlock(
+                    for: slot,
+                    planType: plan.nutritionPlanType
+                )
+            }
         }
 
         if let focus = planFocus {
@@ -481,7 +508,7 @@ enum CoachEngine {
         \(scanInstruction)
         Génère un résumé de plan personnalisé 13 semaines (8-12 phrases).
         \(UserContextBuilder.promptBlock(from: context))
-        Objectif, 3 piliers Protocole Origine, rythme hebdo, 3 habitudes quotidiennes.
+        Objectif, 3 piliers du plan personnalisé, rythme hebdo, 3 habitudes quotidiennes.
         """
 
         do {
@@ -532,7 +559,7 @@ enum CoachEngine {
     private static func bodyScanFullReport(result: BodyScanResult, base: String) async -> String? {
         let pillarHints = EnzoCoachingVoiceGuide.pillarHints(for: result)
         let prompt = """
-        Reformate ce rapport scan useprocess (Protocole Origine, max 750 mots).
+        Reformate ce rapport scan useprocess (plan personnalisé, max 750 mots).
         \(scanMetricsBlock(result))
         Piliers : \(pillarHints)
         Rapport brut : \(base)

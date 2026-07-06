@@ -34,7 +34,7 @@ struct SubscriptionTrialInfo: Equatable {
         let normalized = displayPrice.trimmingCharacters(in: .whitespacesAndNewlines)
         switch plan {
         case .annual:
-            return "Aucun paiement aujourd'hui, puis \(normalized)/an"
+            return "Aucun paiement aujourd'hui, puis \(normalized) /an"
         case .monthly:
             return "Aucun paiement aujourd'hui, puis \(normalized)/mois"
         }

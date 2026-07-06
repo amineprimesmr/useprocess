@@ -111,11 +111,9 @@ enum CoachIntelligencePromptBuilder {
     private static func contextualActionsBlock(isModify: Bool, isMeal: Bool) -> String {
         if isMeal {
             return """
-            ACTIONS CONTEXTUELLES (obligatoire en fin de réponse, max 4) :
-            ACTION_1: validateMeal|Valider dans mon plan|[Petit-déjeuner|Déjeuner|Dîner|Collation]
-            ACTION_2: modifyMeal|Ajuster ce repas|[créneau]
-            ACTION_3: anotherMeal|Autre idée|[créneau]
-            ACTION_4: addToShoppingList|Liste de courses|[créneau]
+            ACTIONS CONTEXTUELLES (optionnel, max 2 — jamais valider ni ajuster) :
+            ACTION_1: anotherMeal|Autre idée|[Petit-déjeuner|Déjeuner|Dîner|Collation]
+            ACTION_2: addToShoppingList|Liste de courses|[créneau]
             """
         }
         if isModify {

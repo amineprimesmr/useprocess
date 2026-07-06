@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Accueil contextuel du coach — même rendu typewriter que le Protocole Origine.
+/// Accueil contextuel du coach — même rendu typewriter que le Plan personnalisé.
 struct CoachContextualHomeView: View {
     let prompt: CoachHomePrompt
     var mealHandoff: CoachMealHandoff? = nil
@@ -17,7 +17,9 @@ struct CoachContextualHomeView: View {
         GeometryReader { geometry in
             VStack(alignment: .leading, spacing: 0) {
                 if let handoff = mealHandoff {
-                    CoachMealSuggestionMessageView(content: handoff.meal)
+                    CoachMealSuggestionMessageView(
+                        content: CoachMealContentEnricher.enrich(handoff.meal)
+                    )
                         .padding(.horizontal, horizontalPadding)
                         .padding(.top, topContentPadding)
                         .padding(.bottom, 18)

@@ -14,7 +14,6 @@ final class WelcomePlanChatViewModel {
     var generationDisplayedPercentage: Int = 0
     var generatedPlan: FaceOriginPlan?
     var errorMessage: String?
-    var pendingFaceScan = false
     var showsEnterButton = false
     private(set) var pendingAnswerDraft: WelcomePlanAnswer?
     private(set) var answerDraftRevision = 0
@@ -25,8 +24,6 @@ final class WelcomePlanChatViewModel {
     private var answers: [String: WelcomePlanAnswer] = [:]
     private var profile: UnifiedUserProfile?
     private var hasStarted = false
-    private var lastPhase: WelcomePlanPhase?
-    private var skipNextCoachIntro = false
     private var isQuestionReadyForAnswers = false
     private var typewriterTask: Task<Void, Never>?
     private var generationTask: Task<Void, Never>?
@@ -43,20 +40,6 @@ final class WelcomePlanChatViewModel {
     }
 
     var isComplete: Bool { generatedPlan != nil }
-
-    var configurationProgress: Double {
-        WelcomePlanQuestionBank.configurationProgress(answers: answers, isComplete: isComplete)
-    }
-
-    var configurationStepLabel: String {
-        WelcomePlanQuestionBank.configurationStepLabel(answers: answers, isComplete: isComplete)
-    }
-
-    var configurationPhaseLabel: String {
-        if isComplete || isGenerating { return "Protocole prêt" }
-        guard let phase = currentQuestion?.phase else { return "Configuration" }
-        return WelcomePlanQuestionBank.phaseLabel(for: phase)
-    }
 
     var canEditHistory: Bool {
         !isComplete
@@ -114,11 +97,8 @@ final class WelcomePlanChatViewModel {
 
         currentIndex = questionIndex
         currentQuestion = activeQuestions[questionIndex]
-        lastPhase = questionIndex > 0 ? activeQuestions[questionIndex - 1].phase : nil
         pendingAnswerDraft = previousAnswer
         answerDraftRevision += 1
-        pendingFaceScan = answers["optional_face_scan"]?.choiceIds.first == "yes"
-        skipNextCoachIntro = true
         isQuestionReadyForAnswers = true
 
         HapticManager.shared.impact(.light)
@@ -146,17 +126,13 @@ final class WelcomePlanChatViewModel {
             if !answers.isEmpty {
                 restoreConversationHistory()
             }
-            appendAssistantMessageInstant("Ton Protocole Origine est déjà prêt — tu peux entrer dans l'app.")
+            appendAssistantMessageInstant("Ton plan personnalisé est déjà prêt — tu peux entrer dans l'app.")
             withAnimation(OnboardingProfileChatAnswerReveal.spring) {
                 showsEnterButton = true
             }
             currentQuestion = nil
             isQuestionReadyForAnswers = false
             return
-        }
-
-        if currentIndex > 0 {
-            lastPhase = activeQuestions[currentIndex - 1].phase
         }
 
         if !answers.isEmpty {
@@ -242,40 +218,6 @@ final class WelcomePlanChatViewModel {
         onComplete()
     }
 
-    /// Remplit toutes les réponses par défaut et génère le protocole (circuits posture, training, etc.).
-    #if DEBUG
-    func fillAllCircuitsAndGenerate() async {
-        guard !isGenerating, generatedPlan == nil else { return }
-
-        isSubmittingAnswer = true
-        typewriterTask?.cancel()
-        isMessageAnimating = false
-        pendingTypewriterMessageID = nil
-        pendingTypewriterText = nil
-        isQuestionReadyForAnswers = false
-        currentQuestion = nil
-
-        let prefilled = WelcomePlanQuestionBank.prefillAnswers(profile: profile)
-        for (questionId, answer) in prefilled {
-            answers[questionId] = answer
-            WelcomePlanStore.shared.saveAnswer(questionId: questionId, answer: answer)
-        }
-
-        if answers["optional_face_scan"]?.choiceIds.first == "yes" {
-            pendingFaceScan = true
-        } else {
-            pendingFaceScan = false
-        }
-
-        activeQuestions = WelcomePlanQuestionBank.activeQuestions(answers: answers)
-        currentIndex = activeQuestions.count
-
-        appendAssistantMessageInstant("Parfait — j'ajoute tous les circuits à ton protocole.")
-        isSubmittingAnswer = false
-        await generatePlan()
-    }
-    #endif
-
     // MARK: - Private
 
     private func restoreConversationHistory() {
@@ -286,22 +228,23 @@ final class WelcomePlanChatViewModel {
               let answer = answers[questions[nextIndex].id] {
             let question = questions[nextIndex]
 
-            if let intro = WelcomePlanCoachCopy.coachIntro(
-                for: question,
-                answers: simulated,
-                profile: profile,
-                skipBecausePhaseTransition: false
-            ) {
-                messages.append(.init(role: .assistant, text: intro, layoutAnchorText: intro))
-            }
+            let promptText = formattedQuestionPrompt(question, index: nextIndex, total: totalQuestionCount)
             messages.append(
-                .init(role: .assistant, text: question.prompt, layoutAnchorText: question.prompt)
+                .init(role: .assistant, text: promptText, layoutAnchorText: promptText)
             )
             messages.append(.init(role: .user, text: displayLabel(for: question, answer: answer), questionId: question.id))
 
             simulated[question.id] = answer
             questions = WelcomePlanQuestionBank.activeQuestions(answers: simulated)
         }
+    }
+
+    private var totalQuestionCount: Int {
+        max(activeQuestions.count, WelcomePlanQuestionBank.all.count)
+    }
+
+    private func formattedQuestionPrompt(_ question: WelcomePlanQuestion, index: Int, total: Int) -> String {
+        "\(question.prompt) (\(index + 1)/\(total))"
     }
 
     private func displayLabel(for question: WelcomePlanQuestion, answer: WelcomePlanAnswer) -> String {
@@ -347,15 +290,18 @@ final class WelcomePlanChatViewModel {
         guard !isSubmittingAnswer else { return }
         isSubmittingAnswer = true
 
-        answers[question.id] = answer
-        WelcomePlanStore.shared.saveAnswer(questionId: question.id, answer: answer)
+        var resolvedAnswer = answer
+        if question.id == "stimulant_habits",
+           resolvedAnswer.choiceIds.contains("none"),
+           resolvedAnswer.choiceIds.count > 1 {
+            resolvedAnswer = WelcomePlanAnswer(choiceIds: ["none"])
+        }
+
+        answers[question.id] = resolvedAnswer
+        WelcomePlanStore.shared.saveAnswer(questionId: question.id, answer: resolvedAnswer)
 
         activeQuestions = WelcomePlanQuestionBank.activeQuestions(answers: answers)
         currentIndex = (activeQuestions.firstIndex(where: { $0.id == question.id }) ?? currentIndex) + 1
-
-        if question.id == "optional_face_scan", answer.choiceIds.first == "yes" {
-            pendingFaceScan = true
-        }
 
         typewriterTask?.cancel()
         isQuestionReadyForAnswers = false
@@ -376,18 +322,6 @@ final class WelcomePlanChatViewModel {
         }
 
         let next = activeQuestions[currentIndex]
-        if lastPhase != next.phase {
-            lastPhase = next.phase
-            if let transition = WelcomePlanCoachCopy.phaseTransition(
-                for: next.phase,
-                answers: answers,
-                profile: profile
-            ) {
-                await appendAssistantMessage(transition)
-                skipNextCoachIntro = true
-            }
-        }
-
         currentQuestion = next
         await presentCurrentQuestion()
     }
@@ -400,19 +334,14 @@ final class WelcomePlanChatViewModel {
 
         isQuestionReadyForAnswers = false
 
-        if let intro = WelcomePlanCoachCopy.coachIntro(
-            for: question,
-            answers: answers,
-            profile: profile,
-            skipBecausePhaseTransition: skipNextCoachIntro
-        ) {
-            await appendAssistantMessage(intro)
-        }
-        skipNextCoachIntro = false
-
+        let promptText = formattedQuestionPrompt(
+            question,
+            index: currentIndex,
+            total: totalQuestionCount
+        )
         let messageID = UUID()
         pendingTypewriterMessageID = messageID
-        pendingTypewriterText = question.prompt
+        pendingTypewriterText = promptText
 
         withAnimation(OnboardingProfileChatDepthStyle.historySpring) {
             messages.append(
@@ -420,7 +349,7 @@ final class WelcomePlanChatViewModel {
                     id: messageID,
                     role: .assistant,
                     text: "",
-                    layoutAnchorText: question.prompt
+                    layoutAnchorText: promptText
                 )
             )
             isMessageAnimating = true
@@ -442,7 +371,7 @@ final class WelcomePlanChatViewModel {
         isQuestionReadyForAnswers = false
         showsEnterButton = false
 
-        appendAssistantMessageInstant("Je compile ton Protocole Origine…")
+        appendAssistantMessageInstant("Je compile ton plan personnalisé…")
         startGenerationProgressAnimation()
 
         async let builtPlan: FaceOriginPlan = buildGeneratedPlan()
@@ -456,7 +385,7 @@ final class WelcomePlanChatViewModel {
 
         generationProgress = 1
         generationDisplayedPercentage = 100
-        generationPhaseLabel = "Protocole prêt"
+        generationPhaseLabel = "Plan prêt"
         HapticManager.shared.notification(.success)
         try? await Task.sleep(for: .milliseconds(350))
 
@@ -485,10 +414,7 @@ final class WelcomePlanChatViewModel {
     }
 
     private func completionMessage() -> String {
-        if pendingFaceScan {
-            return "C'est prêt. On lance le scan visage juste après."
-        }
-        return "C'est prêt. Retrouve ton plan complet dans Santé."
+        "C'est prêt. Retrouve ton plan complet dans Santé."
     }
 
     private func startGenerationProgressAnimation() {
@@ -497,7 +423,7 @@ final class WelcomePlanChatViewModel {
         let phases = [
             "Lecture de ton profil…",
             "Calibrage sommeil & nutrition…",
-            "Assemblage du protocole…",
+            "Assemblage du plan personnalisé…",
             "Dernières touches…"
         ]
 
@@ -545,7 +471,7 @@ final class WelcomePlanChatViewModel {
         Résumé actuel : \(plan.executiveSummary)
         """
         let prompt = """
-        Reformule ce résumé de plan Protocole Origine en 6-8 phrases (ton Enzo, tutoiement).
+        Reformule ce résumé de ton plan personnalisé en 6-8 phrases (ton Enzo, tutoiement).
         100 % naturel, zéro pilule, zéro complément.
         \(block)
         """
@@ -615,7 +541,7 @@ final class WelcomePlanChatViewModel {
                 displayed.append(character)
                 updateMessage(id: messageID, text: displayed)
 
-                // Pas de haptiques sur le flux Protocole Origine — réservé au coach visible.
+                // Pas de haptiques sur le flux Plan personnalisé — réservé au coach visible.
             }
         }
 

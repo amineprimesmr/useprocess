@@ -10,6 +10,8 @@ final class CoachPlanNavigationBridge {
     var pendingConversationId: UUID?
     var pendingCheckInPrompt: String?
     var pendingEveningChecklist = false
+    var shouldOpenEveningCheckIn = false
+    var shouldFocusProfileStatistics = false
     var eveningChecklistRefreshNonce = 0
     var shouldOpenCoach = false
     var shouldOpenPlan = false
@@ -41,8 +43,28 @@ final class CoachPlanNavigationBridge {
     }
 
     func openCoachWithEveningChecklist() {
-        pendingEveningChecklist = true
-        shouldOpenCoach = true
+        openEveningCheckIn()
+    }
+
+    func openEveningCheckIn() {
+        shouldOpenPlan = true
+        shouldOpenEveningCheckIn = true
+    }
+
+    func openProfileStatistics() {
+        shouldFocusProfileStatistics = true
+    }
+
+    func consumeProfileStatisticsFocus() -> Bool {
+        let pending = shouldFocusProfileStatistics
+        shouldFocusProfileStatistics = false
+        return pending
+    }
+
+    func consumePendingEveningCheckIn() -> Bool {
+        let pending = shouldOpenEveningCheckIn
+        shouldOpenEveningCheckIn = false
+        return pending
     }
 
     func openCoachAfterFaceScan(handoff: FaceScanCoachHandoff) {
@@ -97,14 +119,16 @@ final class CoachPlanNavigationBridge {
         switch action {
         case .plan, .journal:
             shouldOpenPlan = true
+            shouldOpenCoach = true
         case .scan:
             shouldOpenFaceScan = true
+            shouldOpenCoach = true
         case .streak:
-            shouldOpenTracking = true
+            openProfileStatistics()
         case .integration:
             shouldOpenIntegration = true
+            shouldOpenCoach = true
         }
-        shouldOpenCoach = true
     }
 
     func askCoachAboutPlan(focus: CoachPlanFocus) {
@@ -137,7 +161,7 @@ final class CoachPlanNavigationBridge {
             return "J'ai une question sur cette partie de mon plan :\n\n[\(focus.sectionTitle)]\n\(focus.sectionContent)\n\nExplique-moi et dis-moi si c'est pertinent pour moi."
         case .evaluate:
             return """
-            Évalue cette partie de mon Protocole Origine (pertinence 0–100, garder/modifier/remplacer, pourquoi) :
+            Évalue cette partie de mon plan personnalisé (pertinence 0–100, garder/modifier/remplacer, pourquoi) :
 
             [\(focus.sectionTitle)]
             \(focus.sectionContent)

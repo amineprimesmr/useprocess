@@ -115,7 +115,8 @@ struct OnboardingProgramCreationStepView: View {
             if creationViewModel.progressPanelVisible {
                 OnboardingProgramCreationProgressBars(
                     labels: creationViewModel.progressBarLabels,
-                    progresses: creationViewModel.barProgresses
+                    progresses: creationViewModel.barProgresses,
+                    visibleCount: creationViewModel.visibleBarCount
                 )
                 .padding(.horizontal, 28)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))

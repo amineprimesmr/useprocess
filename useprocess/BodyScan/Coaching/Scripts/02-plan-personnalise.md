@@ -1,4 +1,4 @@
-# Script 02 — Comment devenir beau de la tête aux pieds (Protocole Origine)
+# Script 02 — Comment devenir beau de la tête aux pieds (Plan personnalisé)
 
 **Chaîne:** Enzo Geromegnace  
 **Durée:** ~50 min  
@@ -57,4 +57,4 @@
 
 ## Script brut
 
-(Voir conversation / transcript complet fourni par l'utilisateur — vidéo « Protocole Origine » ~50 min)
+(Voir conversation / transcript complet fourni par l'utilisateur — vidéo « Plan personnalisé » ~50 min)

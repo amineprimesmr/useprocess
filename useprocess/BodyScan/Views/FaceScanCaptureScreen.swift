@@ -627,6 +627,7 @@ struct FaceScanCaptureScreen: View {
                             isLowLight: $isLowLight,
                             isPreviewOnly: isInlinePreview,
                             allowsScreenFlash: allowsScreenFlash,
+                            cameraZoom: cameraZoom,
                             onComplete: handleCapture
                         )
                         .id(scanSessionID)

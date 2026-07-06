@@ -78,9 +78,18 @@ private enum BevelTabMetrics {
     static let compactHeight: CGFloat = 50
     static let plusSize: CGFloat = 50
     static let accessoryHeight: CGFloat = 48
+    static let protocolSetupAccessoryHeight: CGFloat = 56
+    static let protocolSetupInlineHeight: CGFloat = 50
     static let tabIconSize: CGFloat = 22
     static let selectedCornerRadius: CGFloat = 14
     static let coachGlyphSize: CGFloat = 28
+
+    static func coachAccessoryHeight(isProtocolSetup: Bool, inline: Bool) -> CGFloat {
+        if isProtocolSetup {
+            return inline ? protocolSetupInlineHeight : protocolSetupAccessoryHeight
+        }
+        return accessoryHeight
+    }
 }
 
 // MARK: - Coach accessory (Bevel « Demander à … »)
@@ -97,11 +106,37 @@ struct ProcessCoachTabAccessory: View {
     var isInlinePlacement: Bool = false
     var onTap: () -> Void
 
+    @Bindable private var session = AppSession.shared
+    @Bindable private var planStore = WelcomePlanStore.shared
+
     private var prompt: String {
         isInlinePlacement ? ProcessCoachAccessoryCopy.inline : ProcessCoachAccessoryCopy.expanded
     }
 
+    private var configurationProgress: Double {
+        WelcomePlanQuestionBank.configurationProgress(
+            answers: planStore.questionnaire.answers,
+            isComplete: session.hasCompletedWelcomePlanChat
+        )
+    }
+
     var body: some View {
+        Group {
+            if session.hasCompletedWelcomePlanChat {
+                coachPromptAccessory
+            } else {
+                ProcessCoachProtocolSetupAccessory(
+                    namespace: namespace,
+                    isInlinePlacement: isInlinePlacement,
+                    progress: configurationProgress,
+                    onTap: onTap
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var coachPromptAccessory: some View {
         if #available(iOS 26.0, *) {
             ProcessCoachTabAccessoryIOS26(namespace: namespace, onTap: onTap)
         } else {
@@ -190,6 +225,101 @@ private struct ProcessCoachAccessoryChrome: ViewModifier {
     }
 }
 
+// MARK: - Configuration plan personnalisé (tab bar)
+
+private enum ProcessCoachProtocolSetupMetrics {
+    static let barHeight: CGFloat = 3
+
+    static let fillGradient = LinearGradient(
+        colors: [
+            Color(red: 0.34, green: 0.92, blue: 0.52),
+            Color(red: 0.22, green: 0.78, blue: 0.94)
+        ],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+}
+
+private struct ProcessCoachProtocolSetupAccessory: View {
+    let namespace: Namespace.ID
+    var isInlinePlacement: Bool
+    let progress: Double
+    let onTap: () -> Void
+
+    @Environment(\.appTheme) private var theme
+
+    private var clampedProgress: Double {
+        min(1, max(0, progress))
+    }
+
+    private var percentage: Int {
+        Int((clampedProgress * 100).rounded())
+    }
+
+    private var title: String {
+        isInlinePlacement ? "Plan personnalisé" : "Création du plan personnalisé"
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 0) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(title)
+                        .font(.system(size: isInlinePlacement ? 14 : 15, weight: .semibold))
+                        .foregroundStyle(theme.primaryText.opacity(0.94))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+
+                    Spacer(minLength: 8)
+
+                    Text("\(percentage)%")
+                        .font(.system(size: isInlinePlacement ? 14 : 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(theme.primaryText.opacity(0.94))
+                        .monospacedDigit()
+                        .contentTransition(.numericText(countsDown: false))
+                }
+                .padding(.horizontal, isInlinePlacement ? 14 : 16)
+                .padding(.top, isInlinePlacement ? 10 : 12)
+
+                protocolProgressBar
+                    .padding(.horizontal, isInlinePlacement ? 12 : 14)
+                    .padding(.top, 8)
+                    .padding(.bottom, isInlinePlacement ? 9 : 10)
+            }
+            .frame(
+                height: BevelTabMetrics.coachAccessoryHeight(
+                    isProtocolSetup: true,
+                    inline: isInlinePlacement
+                )
+            )
+            .frame(maxWidth: .infinity)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .modifier(ProcessCoachAccessoryChrome(isInline: isInlinePlacement))
+        .matchedTransitionSource(id: ProcessCoachZoomTransition.sourceID, in: namespace)
+        .accessibilityLabel("\(title), \(percentage) pour cent")
+        .animation(.easeInOut(duration: 0.28), value: percentage)
+    }
+
+    private var protocolProgressBar: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let fillWidth = max(8, width * clampedProgress)
+
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(theme.primaryText.opacity(theme.isDark ? 0.14 : 0.08))
+
+                Capsule(style: .continuous)
+                    .fill(ProcessCoachProtocolSetupMetrics.fillGradient)
+                    .frame(width: fillWidth)
+            }
+        }
+        .frame(height: ProcessCoachProtocolSetupMetrics.barHeight)
+    }
+}
+
 // MARK: - Legacy floating shell (iOS 18–25)
 
 struct ProcessBevelLegacyTabShell<Content: View>: View {
@@ -199,13 +329,17 @@ struct ProcessBevelLegacyTabShell<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @Environment(\.appTheme) private var theme
+    @Bindable private var session = AppSession.shared
     @State private var scrollState = ProcessTabBarScrollState()
 
     private var chromeBottomInset: CGFloat {
         if scrollState.isMinimized {
             return BevelTabMetrics.compactHeight + BevelTabMetrics.bottomInset + UIApplication.safeAreaBottom + 12
         }
-        return BevelTabMetrics.accessoryHeight
+        return BevelTabMetrics.coachAccessoryHeight(
+            isProtocolSetup: !session.hasCompletedWelcomePlanChat,
+            inline: false
+        )
             + BevelTabMetrics.clusterSpacing
             + BevelTabMetrics.tabCapsuleHeight
             + BevelTabMetrics.bottomInset

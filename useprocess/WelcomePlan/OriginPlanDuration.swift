@@ -1,6 +1,6 @@
 import Foundation
 
-/// Durée personnalisée du Protocole Origine (fourchette + calendrier réel).
+/// Durée personnalisée du Plan personnalisé (fourchette + calendrier réel).
 struct OriginPlanDuration: Equatable {
     let minWeeks: Int
     let maxWeeks: Int
@@ -16,7 +16,7 @@ struct OriginPlanDuration: Equatable {
         if let archetype {
             return "\(archetype.label) — \(totalWeeks) sem."
         }
-        return "Protocole Origine — \(totalWeeks) semaines"
+        return "Plan personnalisé — \(totalWeeks) semaines"
     }
 
     /// Fins de phase inclusives pour le calendrier (une entrée par phase).
@@ -86,7 +86,7 @@ struct OriginPlanDuration: Equatable {
         return roadmap.last ?? .init(
             id: "default",
             weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: totalWeeks),
-            title: "Protocole",
+            title: "Plan personnalisé",
             objectives: [],
             habits: []
         )

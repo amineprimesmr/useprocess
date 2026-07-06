@@ -1,6 +1,6 @@
 import Foundation
 
-/// Repas actuels vs cible — questionnaire Protocole Origine → plan & hub IA.
+/// Repas actuels vs cible — questionnaire Plan personnalisé → plan & hub IA.
 enum ProcessMealPlanConfiguration {
 
     static let defaultTargetMeals = NutritionPlanType.defaultType.targetMealsPerDay

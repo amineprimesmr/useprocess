@@ -34,6 +34,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     @Published private(set) var progress: Double = 0
     @Published private(set) var displayedPercentage = 0
     @Published private(set) var barProgresses: [Double] = [0, 0, 0]
+    @Published private(set) var visibleBarCount: Int = 1
     @Published var activePopup: OnboardingProgramCreationPopupModel?
     @Published private(set) var continueUnlocked = false
     @Published private(set) var successContentRevealed = false
@@ -119,6 +120,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         progress = 0
         displayedPercentage = 0
         barProgresses = Array(repeating: 0, count: phaseCount)
+        visibleBarCount = 1
         progressPanelVisible = true
         isPaused = false
         activePopup = nil
@@ -155,6 +157,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     }
 
     private func animatePhaseIrregularly(index: Int, phasesCount: Int) async {
+        visibleBarCount = index + 1
         let milestones = Self.irregularMilestones(forPhase: index)
 
         for (stepIndex, milestone) in milestones.enumerated() {
@@ -182,6 +185,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         progress = 1
         displayedPercentage = 100
         barProgresses = Array(repeating: 1, count: phaseCount)
+        visibleBarCount = phaseCount
         phase = .complete
 
         try? await Task.sleep(nanoseconds: 280_000_000)

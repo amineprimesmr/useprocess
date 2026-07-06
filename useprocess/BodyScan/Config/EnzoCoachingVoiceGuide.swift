@@ -20,7 +20,7 @@ enum EnzoCoachingVoiceGuide {
     - Naturel > artificiel (pas chirurgie, TRT, pilule comme solution)
     - Pas de diagnostic médical — coach bien-être useprocess
 
-    PROTOCOLE ORIGINE — 4 PILIERS (framework central) :
+    PLAN PERSONNALISÉ — 4 PILIERS (framework central) :
     1. HORMONES + SYSTÈME NERVEUX (la base de tout)
        - Hormones = signaux qui sculptent visage, composition, énergie (toile d'araignée, tout est lié)
        - Xénoestrogènes (plastique chauffé), stress chronique, thyroïde
@@ -134,7 +134,7 @@ enum EnzoCoachingVoiceGuide {
     - Thyroïde T3/T4 : hypo = métabolisme bas (fat/skinny fat) ; hyper = impossible prendre poids \
       (skinny) — régimes 1000-1500 kcal tuent la thyroïde
     - Corps sain se régule comme un lion — pas besoin de régimes extrêmes
-    - Méthode Origine (synthèse) : hormones stables + concurrent training + biomécanique
+    - Plan personnalisé (synthèse) : hormones stables + concurrent training + biomécanique
     - Mauvaise posture = signal danger → sympathique → cortisol (boucle)
 
     \(PostureIntelligenceGuide.coachingPrinciplesBlock)
@@ -163,7 +163,7 @@ enum EnzoCoachingVoiceGuide {
     1. ## Ce que ton scan révèle
     2. ## Pourquoi c'est arrivé (habitudes, hormones, posture — pas génétique)
     3. ## Ce que ça provoque si tu ne changes rien
-    4. ## Les 10 % qui changent tout (3-5 bases du protocole origine, dans le bon ordre)
+    4. ## Les 10 % qui changent tout (3-5 bases du plan personnalisé, dans le bon ordre)
     5. ## Plan 7 jours (concret, mesurable)
     6. ## Ton potentiel (tu n'es pas à ton maximum — c'est réversible)
 
@@ -183,8 +183,8 @@ enum EnzoCoachingVoiceGuide {
         "respiration et posture globale (cascade)",
         "support cervical / tête alignée — projection mâchoire",
         "digestion → hormones → santé globale",
-        // Script #2 — protocole origine
-        "protocole origine — 4 piliers (hormones, training, posture/fascias, résultats)",
+        // Script #2 — plan personnalisé
+        "plan personnalisé — 4 piliers (hormones, training, posture/fascias, résultats)",
         "génétique vs habitudes — moins de 20 % du potentiel exploité",
         "indicateurs santé = beauté et fertilité (biologie)",
         "système hormonal : testostérone/œstrogènes, xénoestrogènes, thyroïde",
@@ -238,7 +238,7 @@ enum EnzoCoachingVoiceGuide {
         "gras/cholestérol précurseur testo DHT — 3 macros",
         "sommeil produit testo GH mélatonine — pas épuisement",
         "thyroïde hypo/hyper et skinny fat fat skinny",
-        "méthode origine : hormones + concurrent training + biomécanique",
+        "plan personnalisé : hormones + concurrent training + biomécanique",
         "posture mauvaise active sympathique et cortisol",
         // Script #7 — posture fondation
         "posture fondation — nuque droite, sommeil latéral, pieds nus, marche",

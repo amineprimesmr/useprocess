@@ -37,7 +37,7 @@ struct PlanLastFaceScanSection: View {
         static let videoTrailingRadius: CGFloat = 18
         static let inlineControlsHeight: CGFloat = 136
         static let scanRingOverflow: CGFloat = FaceScanViewportMetrics.tickRingOverflow
-        static let postScanFooterContentHeight: CGFloat = 44
+        static let postScanFooterContentHeight: CGFloat = 58
     }
 
     private var isPostScanComplete: Bool {
@@ -415,7 +415,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var nextScanFooterBand: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { context in
+        TimelineView(.periodic(from: .now, by: 1)) { context in
             PlanFaceScanNextScanFooter(
                 latest: latest,
                 isScanDue: isScanDue,
@@ -560,6 +560,18 @@ enum PlanFaceScanPreScanAction {
 
 // MARK: - Bande basse prochain scan
 
+enum PlanFaceScanChrome {
+    /// Bleu foncé légèrement lumineux — trait et compte à rebours.
+    static let luminousBlue = Color(red: 0.26, green: 0.48, blue: 0.84)
+    static let luminousBlueGlow = Color(red: 0.34, green: 0.58, blue: 0.94)
+
+    static func insightFooterFill(isDark: Bool) -> Color {
+        isDark
+            ? Color(red: 0.08, green: 0.12, blue: 0.21).opacity(0.78)
+            : Color(red: 0.90, green: 0.94, blue: 0.99).opacity(0.92)
+    }
+}
+
 private struct PlanFaceScanNextScanFooter: View {
     let latest: FaceScanResult?
     let isScanDue: Bool
@@ -598,40 +610,43 @@ private struct PlanFaceScanNextScanFooter: View {
             HStack(alignment: .center, spacing: 8) {
                 Image(systemName: statusIcon)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(trailingColor)
+                    .foregroundStyle(statusColor)
                     .frame(width: isCompact ? 20 : 22, height: isCompact ? 20 : 22)
-                    .background(trailingColor.opacity(0.14), in: Circle())
+                    .background(statusColor.opacity(0.14), in: Circle())
 
                 Text(headline)
                     .font(isCompact ? .footnote.weight(.semibold) : .subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
 
                 Spacer(minLength: 8)
-
-                Text(trailingLabel)
-                    .font(.caption.weight(.bold))
-                    .monospacedDigit()
-                    .foregroundStyle(trailingColor)
-                    .padding(.horizontal, isCompact ? 8 : 10)
-                    .padding(.vertical, isCompact ? 4 : 5)
-                    .background(trailingColor.opacity(0.12), in: Capsule())
             }
+
+            Text(trailingLabel)
+                .font(isCompact ? .caption.weight(.bold) : .footnote.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(countdownColor)
+                .padding(.leading, isCompact ? 28 : 30)
 
             PlanFaceScanProgressBar(
                 progress: progress,
                 isComplete: latest != nil && isScanDue,
                 isPending: latest == nil,
-                accent: theme.onboardingAccent,
+                accent: PlanFaceScanChrome.luminousBlue,
                 track: Color.primary.opacity(theme.isDark ? 0.22 : 0.10),
                 barHeight: progressBarHeight
             )
         }
     }
 
-    private var trailingColor: Color {
-        if latest == nil { return .orange }
+    private var statusColor: Color {
+        if latest == nil { return PlanFaceScanChrome.luminousBlue }
         if isScanDue { return theme.onboardingAccent }
-        return theme.secondaryText
+        return PlanFaceScanChrome.luminousBlue.opacity(0.88)
+    }
+
+    private var countdownColor: Color {
+        if isScanDue { return theme.onboardingAccent }
+        return PlanFaceScanChrome.luminousBlue
     }
 }
 

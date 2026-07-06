@@ -8,7 +8,7 @@ struct MealScoreBreakdownView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            scoreBar(title: "Protocole Origine", value: scores.protocolFit, color: theme.onboardingAccent)
+            scoreBar(title: "Plan personnalisé", value: scores.protocolFit, color: theme.onboardingAccent)
             scoreBar(title: "Satiété", value: scores.satiety, color: .green)
             scoreBar(title: "Anti-gonflement", value: scores.antiBloat, color: .orange)
         }

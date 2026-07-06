@@ -155,8 +155,7 @@ final class CoachChatViewModel {
             }
         }
         if CoachPlanNavigationBridge.shared.consumePendingEveningChecklist() {
-            _ = await CoachEveningChecklistService.deliverEveningMessageIfNeeded(force: true)
-            await reloadForEveningDelivery()
+            CoachPlanNavigationBridge.shared.openEveningCheckIn()
             return
         }
         if let checkInPrompt = CoachPlanNavigationBridge.shared.consumePendingCheckInPrompt() {
@@ -190,15 +189,27 @@ final class CoachChatViewModel {
         activeMealHandoff = nil
 
         let reply = handoff.assistantMessage
-        let conversationId = libraryStore.createConversation()
+        let conversationId = CoachDebloatJourneyStore.ensureConversation()
+        let scanNumber = FaceScanHistoryStore.shared.history.count
+        let userMessage = CoachDebloatJourneyStore.faceScanUserMessage(
+            scanId: handoff.resultId,
+            scanNumber: max(scanNumber, 1)
+        )
+
         libraryStore.selectConversation(conversationId)
-        libraryStore.updateActiveConversation { conversation in
-            conversation.applyAutoTitle(from: "Scan visage du jour")
-            conversation.messages = [reply]
+        libraryStore.updateConversation(conversationId) { conversation in
+            conversation.append(userMessage)
+            conversation.append(reply)
+            if conversation.title == "Nouvelle conversation" || conversation.title.isEmpty {
+                conversation.title = "Trajectoire debloat"
+                conversation.subjectLabel = "Trajectoire debloat"
+            }
         }
 
+        let thread = libraryStore.conversation(for: conversationId)?.messages ?? [userMessage, reply]
+
         // État UI atomique — jamais d’accueil « Salut… » entre-temps.
-        messages = [reply]
+        messages = thread
         homeActionsRevealed = true
         homeInputUnlocked = false
         completedHomePresentationKeys.insert(homePresentationKey())
@@ -325,7 +336,7 @@ final class CoachChatViewModel {
             return []
         }
         let userText = precedingUserText(for: message)
-        let meal = CoachMealMessageDetector.mealContent(from: message.text)
+        let meal = CoachMealMessageDetector.mealContent(from: message.text, userText: userText)
         return CoachContextualActionResolver.resolve(
             userText: userText,
             assistantText: message.text,
@@ -336,10 +347,9 @@ final class CoachChatViewModel {
     }
 
     func mealOnlyContextualActions(for message: CoachMessage) -> [CoachContextualAction] {
-        let mealActions: Set<CoachContextualActionKind> = [
-            .validateMeal, .saveMealDraft, .modifyMeal, .anotherMeal, .addToShoppingList
-        ]
-        return contextualActions(for: message).filter { !mealActions.contains($0.kind) }
+        contextualActions(for: message).filter { action in
+            action.kind != .validateMeal && action.kind != .modifyMeal
+        }
     }
 
     func executeContextualAction(_ action: CoachContextualAction, for message: CoachMessage) async {
@@ -914,7 +924,11 @@ final class CoachChatViewModel {
             }
             let parsed = enrichment
             let model = ClaudeModel.preferred(for: .chat).rawValue
-            let reply = CoachMessage.assistant(from: parsed, modelUsed: model)
+            let reply = Self.assistantMessage(
+                from: parsed,
+                rawText: assembled,
+                modelUsed: model
+            )
 
             if shouldDeferPlanApply, proposesPlanChange {
                 pendingPlanPatches[reply.id] = PendingCoachPlanPatch(
@@ -1065,16 +1079,12 @@ final class CoachChatViewModel {
             guard libraryStore.activeConversationId == conversationId else { return }
             let parsedReply = CoachResponseParser.parseFull(rawReply.text)
             let parsed = parsedReply.enrichment
-            let reply = CoachMessage(
-                id: rawReply.id,
-                role: .assistant,
-                text: parsed.displayText,
-                createdAt: rawReply.createdAt,
+            let reply = Self.assistantMessage(
+                from: parsed,
+                rawText: rawReply.text,
                 modelUsed: rawReply.modelUsed,
-                reasoning: parsed.reasoning,
-                followUps: parsed.followUps.isEmpty ? nil : parsed.followUps,
-                deepLinkAction: parsed.deepLink?.action.rawValue,
-                deepLinkLabel: parsed.deepLink?.label
+                id: rawReply.id,
+                createdAt: rawReply.createdAt
             )
             CoachPostReplyService.applySideEffects(
                 parsed: parsedReply,
@@ -1118,6 +1128,32 @@ final class CoachChatViewModel {
             userId: userId,
             conversationId: conversationId,
             title: libraryStore.activeConversation?.title
+        )
+    }
+
+    private static func assistantMessage(
+        from parsed: CoachMessageEnrichment,
+        rawText: String,
+        modelUsed: String?,
+        id: UUID = UUID(),
+        createdAt: Date = Date()
+    ) -> CoachMessage {
+        let base = CoachMessage.assistant(from: parsed, modelUsed: modelUsed)
+        let persistedText = MealSuggestionParser.parse(rawText)?.isValid == true
+            ? rawText
+            : parsed.displayText
+
+        return CoachMessage(
+            id: id,
+            role: .assistant,
+            text: persistedText,
+            createdAt: createdAt,
+            modelUsed: modelUsed,
+            reasoning: base.reasoning,
+            followUps: base.followUps,
+            deepLinkAction: base.deepLinkAction,
+            deepLinkLabel: base.deepLinkLabel,
+            contextualActions: base.contextualActions
         )
     }
 }

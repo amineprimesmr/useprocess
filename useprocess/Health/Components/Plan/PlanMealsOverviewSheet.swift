@@ -51,7 +51,7 @@ struct PlanMealsOverviewSheet: View {
                 .padding(.bottom, 100)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Repas & protocole")
+            .navigationTitle("Repas & plan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -106,7 +106,7 @@ struct PlanMealsOverviewSheet: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(theme.primaryText)
 
-            Text("Les \(min(visibleDayCount, dayBundles.count)) prochains jours de ton protocole — valide, ajuste avec l’IA, puis gère ta liste de courses.")
+            Text("Les \(min(visibleDayCount, dayBundles.count)) prochains jours de ton plan personnalisé — valide, ajuste avec l’IA, puis gère ta liste de courses.")
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -117,7 +117,7 @@ struct PlanMealsOverviewSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             HealthHubDesign.sectionHeader(
                 "À venir",
-                subtitle: "\(dayBundles.count) jours dans le protocole",
+                subtitle: "\(dayBundles.count) jours dans le plan personnalisé",
                 theme: theme
             )
 
@@ -167,7 +167,7 @@ struct PlanMealsOverviewSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Aucun jour planifié")
                 .font(.subheadline.weight(.semibold))
-            Text("Cette date est hors calendrier Origine. Choisis un jour dans ton protocole sur l’accueil.")
+            Text("Cette date est hors calendrier de ton plan personnalisé. Choisis un jour dans ton plan sur l’accueil.")
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }

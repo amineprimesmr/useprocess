@@ -367,6 +367,7 @@ enum MealSuggestionParser {
         var prepSummary = ""
         var coachTip = ""
         var tags: [String] = []
+        var imageAssetName: String?
 
         for line in raw.components(separatedBy: .newlines) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -376,6 +377,8 @@ enum MealSuggestionParser {
                 name = value
             } else if let value = labeledValue(in: trimmed, labels: ["MEAL_TYPE", "TYPE"]) {
                 mealType = value
+            } else if let value = labeledValue(in: trimmed, labels: ["IMAGE_ASSET", "IMAGE"]) {
+                imageAssetName = value
             } else if let value = labeledValue(in: trimmed, labels: ["SCORE"]) {
                 score = Int(value.filter(\.isNumber)) ?? score
             } else if let value = labeledValue(in: trimmed, labels: ["SCORE_WHY", "SCORE WHY"]) {
@@ -410,8 +413,40 @@ enum MealSuggestionParser {
             coachTip: coachTip,
             tags: tags,
             subScores: parseSubScores(from: raw, fallbackScore: score),
+            imageAssetName: imageAssetName,
             showsScore: true
         )
+    }
+
+    static func coachIntro(from raw: String) -> String? {
+        for line in raw.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if let value = labeledValue(in: trimmed, labels: ["INTRO"]) {
+                let intro = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                return intro.isEmpty ? nil : intro
+            }
+        }
+        return nil
+    }
+
+    static func stripStructuredMealBlock(from raw: String) -> String {
+        let kept = raw
+            .components(separatedBy: .newlines)
+            .filter { line in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { return false }
+                let upper = trimmed.uppercased()
+                if upper.hasPrefix("INTRO:") { return true }
+                if upper.hasPrefix("MEAL_") || upper.hasPrefix("NOM:") || upper.hasPrefix("TYPE:") { return false }
+                if upper.hasPrefix("SCORE") || upper.hasPrefix("ITEM_") || upper.hasPrefix("INGREDIENT_") { return false }
+                if upper.hasPrefix("PREP") || upper.hasPrefix("TIP:") || upper.hasPrefix("CONSEIL:") { return false }
+                if upper.hasPrefix("TAG_") || upper.hasPrefix("IMAGE_") { return false }
+                if upper.hasPrefix("ACTION_") { return false }
+                return true
+            }
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return kept
     }
 
     private static func parseItemLine(_ line: String) -> MealSuggestionItem? {
@@ -460,7 +495,7 @@ enum MealSuggestionParser {
             name: String(cleaned.prefix(48)),
             mealType: "Repas",
             protocolScore: 70,
-            scoreSummary: "Aligné avec ton protocole Origine.",
+            scoreSummary: "Aligné avec ton plan personnalisé.",
             items: [MealSuggestionItem(name: "Voir détail", quantity: "—", role: "Autre")],
             prepMinutes: 15,
             prepSummary: cleaned,

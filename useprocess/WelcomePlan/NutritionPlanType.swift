@@ -1,6 +1,6 @@
 import Foundation
 
-/// Les 3 structures nutrition du Protocole Origine.
+/// Les 3 structures nutrition du Plan personnalisé.
 enum NutritionPlanType: String, Codable, CaseIterable, Identifiable {
     case threeMeals
     case twoMAD

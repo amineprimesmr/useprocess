@@ -5,15 +5,18 @@ import SwiftUI
 struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
 
+    @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
     @EnvironmentObject private var healthManager: HealthManager
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var faceHistoryStore = FaceScanHistoryStore.shared
+    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @State private var profileStore = SocialProfileStore.shared
 
     @State private var selectedAnalysisScan: FaceScanResult?
 
     @State private var chartHistories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
+    @State private var weightChartPeriod: ProfileWeightChartPeriod = .month
 
     private var resolvedProfile: SocialProfile {
         if let profile = profileStore.profile {
@@ -26,22 +29,55 @@ struct ProcessProfileView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ProfileScanEvolutionHero(
-                    historyStore: faceHistoryStore,
-                    onOpenScan: { selectedAnalysisScan = $0 }
-                )
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    ProfileScanEvolutionHero(
+                        historyStore: faceHistoryStore,
+                        onOpenScan: { selectedAnalysisScan = $0 }
+                    )
 
-                profileScrollContent(resolvedProfile)
+                    Color.clear
+                        .frame(height: 0)
+                        .id(ProfileStatisticsAnchor.id)
+
+                    ProfileStatisticsPeriodStrip(
+                        selection: $weightChartPeriod,
+                        theme: theme
+                    )
+                    .padding(.horizontal, ProfileTheme.horizontalPadding)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+
+                    ProfileWeightStatisticsSection(
+                        history: history(for: .weight),
+                        latestValue: latestValue(for: .weight),
+                        deltaVsPrevious: deltaVsPrevious(for: .weight),
+                        selectedPeriod: $weightChartPeriod
+                    )
+                    .padding(.bottom, 20)
+
+                    ProfileStreakStatisticsSection()
+                        .padding(.bottom, 24)
+
+                    profileScrollContent(resolvedProfile)
+                }
+                .processReportsTabBarScrollOffset()
             }
-            .processReportsTabBarScrollOffset()
+            .coordinateSpace(name: "processMainScroll")
+            .scrollClipDisabled()
+            .ignoresSafeArea(edges: .top)
+            .scrollIndicators(.hidden)
+            .processTransparentScrollSurface()
+            .onAppear {
+                focusProfileStatisticsIfNeeded(using: proxy)
+            }
+            .onChange(of: planBridge.shouldFocusProfileStatistics) { _, should in
+                guard should else { return }
+                _ = planBridge.consumeProfileStatisticsFocus()
+                focusProfileStatistics(using: proxy)
+            }
         }
-        .coordinateSpace(name: "processMainScroll")
-        .scrollClipDisabled()
-        .ignoresSafeArea(edges: .top)
-        .scrollIndicators(.hidden)
-        .processTransparentScrollSurface()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .processClearUIKitHostingBackground()
         .fullScreenCover(item: $selectedAnalysisScan) { scan in
@@ -84,14 +120,33 @@ struct ProcessProfileView: View {
     }
 
     private var profileChartsSection: some View {
-        VStack(spacing: 16) {
-            ForEach(ProfileChartMetric.profileDisplayOrder) { metric in
-                ProfileMetricChartSection(
-                    metric: metric,
-                    points: chartPoints(for: metric),
-                    latestValue: latestValue(for: metric),
-                    deltaVsPrevious: deltaVsPrevious(for: metric)
-                )
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Indicateurs")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(theme.secondaryText)
+
+            VStack(spacing: 16) {
+                ForEach(ProfileChartMetric.profileDisplayOrder) { metric in
+                    ProfileMetricChartSection(
+                        metric: metric,
+                        points: chartPoints(for: metric),
+                        latestValue: latestValue(for: metric),
+                        deltaVsPrevious: deltaVsPrevious(for: metric)
+                    )
+                }
+            }
+        }
+    }
+
+    private func focusProfileStatisticsIfNeeded(using proxy: ScrollViewProxy) {
+        guard planBridge.consumeProfileStatisticsFocus() else { return }
+        focusProfileStatistics(using: proxy)
+    }
+
+    private func focusProfileStatistics(using proxy: ScrollViewProxy) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+                proxy.scrollTo(ProfileStatisticsAnchor.id, anchor: .top)
             }
         }
     }
@@ -190,8 +245,7 @@ struct ProcessProfileView: View {
     }
 
     private func refreshProfile(forceHealthRefresh: Bool) async {
-        streakStore.reload()
-        streakStore.sync(from: WelcomePlanStore.shared.plan)
+        ProcessDebloatTrajectoryStore.shared.reload()
         if forceHealthRefresh {
             await ProfileHealthSection.refreshAll(force: true)
         }
@@ -202,7 +256,7 @@ struct ProcessProfileView: View {
         FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
 
         let scans = FaceScanHistoryStore.shared.history
-        let weightSamples = await healthManager.fetchBodyMassHistory(days: 90)
+        let weightSamples = await healthManager.fetchBodyMassHistory(days: 365)
         let effortSamples = await healthManager.fetchEffortHistory(days: 90)
         let profileWeight = profileService.currentProfile?.weight ?? 0
 
@@ -230,4 +284,8 @@ struct ProcessProfileView: View {
               index + 1 < ordered.count else { return nil }
         return ordered[index + 1]
     }
+}
+
+private enum ProfileStatisticsAnchor {
+    static let id = "profileStatistics"
 }

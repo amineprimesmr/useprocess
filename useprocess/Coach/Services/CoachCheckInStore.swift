@@ -51,7 +51,7 @@ enum CoachCheckInTemplate: String, CaseIterable, Identifiable {
     var defaultPrompt: String {
         switch self {
         case .morningOutlook:
-            return "Crée un check-in matin avec mon readiness, mon jour protocole et 1 action prioritaire."
+            return "Crée un check-in matin avec mon readiness, mon jour du plan personnalisé et 1 action prioritaire."
         case .journalReminder:
             return "Rappelle-moi de compléter mon journal du jour si des tâches restent ouvertes."
         case .scanReminder:

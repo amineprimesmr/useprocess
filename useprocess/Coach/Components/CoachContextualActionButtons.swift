@@ -58,15 +58,28 @@ private struct CoachContextualActionGlassStyle: ViewModifier {
                 content
                     .buttonStyle(.plain)
                     .glassEffect(
-                        ProcessGlass.tinted(theme.onboardingAccent, opacity: theme.isDark ? 0.42 : 0.34),
+                        ProcessGlass.tinted(theme.coachAccent, opacity: theme.isDark ? 0.42 : 0.48),
                         in: shape
                     )
                     .buttonStyle(ProcessGlassPressStyle())
             } else {
-                content.processGlassButton(in: shape)
+                content
+                    .background(
+                        shape.fill(theme.coachAccent.opacity(theme.isDark ? 0.28 : 0.16))
+                    )
+                    .overlay(shape.strokeBorder(theme.coachAccent.opacity(theme.isDark ? 0.35 : 0.45), lineWidth: 0.75))
+                    .buttonStyle(ProcessGlassPressStyle())
             }
         } else {
-            content.processGlassButton(in: shape)
+            if theme.isDark {
+                content.processGlassButton(in: shape)
+            } else {
+                content
+                    .background(shape.fill(Color.white))
+                    .overlay(shape.strokeBorder(theme.coachSurfaceStroke.opacity(0.85), lineWidth: 0.75))
+                    .shadow(color: theme.coachSurfaceStroke.opacity(0.16), radius: 8, y: 3)
+                    .buttonStyle(ProcessGlassPressStyle())
+            }
         }
     }
 }

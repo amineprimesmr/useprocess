@@ -41,7 +41,7 @@ enum PlanRecalibrationService {
 
         if checkEarlyCompletion(plan: plan, latestScan: latestScan) {
             messages.append("Critères principaux atteints — tu peux passer en maintenance")
-            plan.mindsetNotes.insert("Protocole express validé — maintiens 80 % des bases.", at: 0)
+            plan.mindsetNotes.insert("Plan express validé — maintiens 80 % des bases.", at: 0)
             plan.lastUpdated = Date()
         }
 

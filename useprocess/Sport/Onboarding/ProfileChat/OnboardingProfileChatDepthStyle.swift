@@ -142,9 +142,14 @@ struct OnboardingChatAmbientHeader: View {
     var compact: Bool = false
     var showsLogo: Bool = true
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isBreathing = false
 
     private static let ambientViolet = OnboardingProfileChatDepthStyle.chatAccentViolet
+
+    private var lightModeBoost: CGFloat {
+        colorScheme == .light ? 1.75 : 1
+    }
 
     private var baseHeaderHeight: CGFloat {
         compact ? 300 : 380
@@ -187,7 +192,7 @@ struct OnboardingChatAmbientHeader: View {
                         if compact {
                             Text(formattedDate)
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color.primary.opacity(0.55))
+                                .foregroundStyle(Color.primary.opacity(colorScheme == .light ? 0.62 : 0.55))
                         }
                     }
                     .offset(y: logoTopOffset(safeTop: safeTop))
@@ -215,11 +220,11 @@ struct OnboardingChatAmbientHeader: View {
                     .fill(
                         LinearGradient(
                             stops: [
-                                .init(color: Self.ambientViolet.opacity(0.13), location: 0),
-                                .init(color: Self.ambientViolet.opacity(0.09), location: 0.22),
-                                .init(color: Self.ambientViolet.opacity(0.055), location: 0.48),
-                                .init(color: Self.ambientViolet.opacity(0.028), location: 0.68),
-                                .init(color: Self.ambientViolet.opacity(0.012), location: 0.84),
+                                .init(color: Self.ambientViolet.opacity(0.13 * lightModeBoost), location: 0),
+                                .init(color: Self.ambientViolet.opacity(0.09 * lightModeBoost), location: 0.22),
+                                .init(color: Self.ambientViolet.opacity(0.055 * lightModeBoost), location: 0.48),
+                                .init(color: Self.ambientViolet.opacity(0.028 * lightModeBoost), location: 0.68),
+                                .init(color: Self.ambientViolet.opacity(0.012 * lightModeBoost), location: 0.84),
                                 .init(color: .clear, location: 1)
                             ],
                             startPoint: .top,
@@ -248,8 +253,8 @@ struct OnboardingChatAmbientHeader: View {
 
                 RadialGradient(
                     colors: [
-                        Self.ambientViolet.opacity(0.055),
-                        Self.ambientViolet.opacity(0.025),
+                        Self.ambientViolet.opacity(0.055 * lightModeBoost),
+                        Self.ambientViolet.opacity(0.025 * lightModeBoost),
                         .clear
                     ],
                     center: UnitPoint(x: 0.5, y: 0.06),
@@ -278,8 +283,8 @@ struct OnboardingChatAmbientHeader: View {
     ) -> some View {
         LinearGradient(
             stops: [
-                .init(color: Self.ambientViolet.opacity(0.09), location: 0),
-                .init(color: Self.ambientViolet.opacity(0.045), location: 0.45),
+                .init(color: Self.ambientViolet.opacity(0.09 * lightModeBoost), location: 0),
+                .init(color: Self.ambientViolet.opacity(0.045 * lightModeBoost), location: 0.45),
                 .init(color: .clear, location: 1)
             ],
             startPoint: startPoint,

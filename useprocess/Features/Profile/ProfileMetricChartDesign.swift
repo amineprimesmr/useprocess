@@ -6,6 +6,17 @@ enum ProfileMetricChartLayout {
     static let cardRadius: CGFloat = 28
     static let cardPadding: CGFloat = 18
     static let chartHeight: CGFloat = 132
+    static let wellRadius: CGFloat = 18
+    static let wellPaddingH: CGFloat = 10
+    static let wellPaddingV: CGFloat = 12
+
+    static func chartWellFill(isDark: Bool) -> Color {
+        isDark ? Color.black.opacity(0.68) : Color.black.opacity(0.14)
+    }
+
+    static func chartWellStroke(isDark: Bool) -> Color {
+        isDark ? Color.white.opacity(0.07) : Color.black.opacity(0.08)
+    }
 }
 
 struct ProfileMetricChartSection: View {
@@ -22,10 +33,28 @@ struct ProfileMetricChartSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            headerRow
+            Text(metric.rawValue)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(theme.secondaryText)
+
+            chartWell
+        }
+        .padding(ProfileMetricChartLayout.cardPadding)
+        .background { cardBackground }
+        .clipShape(cardShape)
+        .processHomeGlassCardShadow(isDark: theme.isDark)
+    }
+
+    @ViewBuilder
+    private var chartWell: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            scoreRow
 
             if points.isEmpty {
-                emptyState
+                Text(latestValue != nil ? metric.emptySinglePointMessage : metric.emptyNoDataMessage)
+                    .font(.system(size: 13))
+                    .foregroundStyle(theme.secondaryText)
+                    .frame(maxWidth: .infinity, minHeight: ProfileMetricChartLayout.chartHeight, alignment: .center)
             } else {
                 ProfileMetricChartRenderer(
                     points: points,
@@ -34,59 +63,45 @@ struct ProfileMetricChartSection: View {
                     style: metric.visualStyle(pointCount: points.count)
                 )
                 .frame(height: ProfileMetricChartLayout.chartHeight)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 12)
-                .background(chartWellBackground)
             }
 
-            footerCaption
+            if showsComparisonCaption {
+                footerCaption
+            }
         }
-        .padding(ProfileMetricChartLayout.cardPadding)
-        .background { cardBackground }
-        .clipShape(cardShape)
-        .processHomeGlassCardShadow(isDark: theme.isDark)
+        .padding(.horizontal, ProfileMetricChartLayout.wellPaddingH)
+        .padding(.vertical, ProfileMetricChartLayout.wellPaddingV)
+        .background(chartWellBackground)
     }
 
-    private var headerRow: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center) {
-                Text(metric.rawValue)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(theme.secondaryText)
-
-                Spacer(minLength: 8)
-
-                if let zone = metric.wellnessZone(for: latestValue) {
-                    ProfileChartStatusBadge(zone: zone)
-                }
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                if let latestValue {
-                    let formatted = metric.formattedChartValue(latestValue)
-                    Text(formatted.main)
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
-                        .foregroundStyle(theme.primaryText)
-                    if !formatted.unit.isEmpty {
-                        Text(formatted.unit)
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(theme.secondaryText)
-                    }
-                } else {
-                    Text("—")
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+    private var scoreRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            if let latestValue {
+                let formatted = metric.formattedChartValue(latestValue)
+                Text(formatted.main)
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .foregroundStyle(theme.primaryText)
+                if !formatted.unit.isEmpty {
+                    Text(formatted.unit)
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(theme.secondaryText)
                 }
+            } else {
+                Text("—")
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .foregroundStyle(theme.secondaryText)
+            }
+
+            Spacer(minLength: 8)
+
+            if let zone = metric.wellnessZone(for: latestValue) {
+                ProfileChartStatusBadge(zone: zone)
             }
         }
     }
 
-    @ViewBuilder
-    private var emptyState: some View {
-        Text(latestValue != nil ? metric.emptySinglePointMessage : metric.emptyNoDataMessage)
-            .font(.system(size: 13))
-            .foregroundStyle(theme.secondaryText)
-            .frame(maxWidth: .infinity, minHeight: ProfileMetricChartLayout.chartHeight, alignment: .center)
+    private var showsComparisonCaption: Bool {
+        deltaVsPrevious != nil
     }
 
     @ViewBuilder
@@ -110,8 +125,12 @@ struct ProfileMetricChartSection: View {
     }
 
     private var chartWellBackground: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(theme.cardBackground.opacity(theme.isDark ? 0.42 : 0.55))
+        RoundedRectangle(cornerRadius: ProfileMetricChartLayout.wellRadius, style: .continuous)
+            .fill(ProfileMetricChartLayout.chartWellFill(isDark: theme.isDark))
+            .overlay {
+                RoundedRectangle(cornerRadius: ProfileMetricChartLayout.wellRadius, style: .continuous)
+                    .strokeBorder(ProfileMetricChartLayout.chartWellStroke(isDark: theme.isDark), lineWidth: 0.5)
+            }
     }
 }
 
@@ -542,8 +561,6 @@ struct ProfileMetricComparisonLabel: View {
             }
         } else if deltaVsPrevious != nil {
             Text("Stable vs la période précédente.")
-        } else {
-            Text(metric.syncHint)
         }
     }
 

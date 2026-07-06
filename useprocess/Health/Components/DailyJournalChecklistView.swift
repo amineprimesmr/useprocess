@@ -94,8 +94,8 @@ struct DailyJournalChecklistView: View {
             if case .outsidePlan = dayAvailability,
                layoutStore.visibleSections.allSatisfy({ $0 != .faceScan }) {
                 journalUnavailableCard(
-                    title: "Hors protocole",
-                    message: "Cette date n'est pas couverte par ton calendrier Origine.",
+                    title: "Hors plan",
+                    message: "Cette date n'est pas couverte par ton calendrier du plan personnalisé.",
                     systemImage: "calendar.badge.exclamationmark"
                 )
                 .padding(.top, 20)
@@ -419,7 +419,7 @@ private struct JournalDayCompletionCard: View {
                 confirmationRow(
                     icon: "arrow.triangle.2.circlepath",
                     tint: theme.onboardingAccent,
-                    text: "Ton protocole Origine a été mis à jour."
+                    text: "Ton plan personnalisé a été mis à jour."
                 )
             }
             .padding(12)
@@ -568,7 +568,7 @@ struct JournalWeekDayStrip: View {
     private func accessibilityLabel(for date: Date, programDay: String, isToday: Bool, isComplete: Bool) -> String {
         var parts: [String] = []
         if programDay != "·" {
-            parts.append("Jour \(programDay) du protocole")
+            parts.append("Jour \(programDay) du plan personnalisé")
         }
         parts.append(date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
         if isToday { parts.append("aujourd'hui") }

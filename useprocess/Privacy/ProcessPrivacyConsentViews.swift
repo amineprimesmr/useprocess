@@ -42,7 +42,7 @@ struct ThirdPartyAIConsentView: View {
                         title: "Finalités",
                         items: [
                             "Réponses du coach personnalisées",
-                            "Génération de protocole et suggestions repas",
+                            "Génération de plan personnalisé et suggestions repas",
                             "Analyses scan visage/corps (si tu l'autorises séparément)"
                         ]
                     )

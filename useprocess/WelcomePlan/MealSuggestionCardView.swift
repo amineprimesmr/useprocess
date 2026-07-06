@@ -10,6 +10,7 @@ struct MealSuggestionCardView: View {
     var isValidated: Bool = false
     var showsActions: Bool = true
     var showsScoreBreakdown: Bool = true
+    var coachListStyle: Bool = false
     var revealedActionIDs: Set<String> = []
     var onValidate: (() -> Void)?
     var onModify: (() -> Void)?
@@ -25,12 +26,16 @@ struct MealSuggestionCardView: View {
         MealNutritionCatalog.debloatAssessment(for: content)
     }
 
+    private var ingredientsExpanded: Bool {
+        coachListStyle || showsIngredients
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             headerRow
             mealImage
-            scoreRow
             if showsScoreBreakdown {
+                scoreRow
                 MealDebloatScoreBreakdownView(
                     assessment: debloatAssessment,
                     compact: true
@@ -48,6 +53,11 @@ struct MealSuggestionCardView: View {
         .padding(14)
         .background(cardBackground)
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: showsIngredients)
+        .onAppear {
+            if coachListStyle {
+                showsIngredients = true
+            }
+        }
     }
 
     // MARK: - Sections
@@ -63,8 +73,14 @@ struct MealSuggestionCardView: View {
             )
             .padding(10)
             .frame(maxWidth: .infinity)
-            .background(theme.cardBackground.opacity(0.45))
+            .background(theme.coachSecondaryFill.opacity(theme.isDark ? 0.45 : 1))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                if !theme.isDark {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(theme.coachSurfaceStroke.opacity(0.45), lineWidth: 0.5)
+                }
+            }
         }
     }
 
@@ -72,19 +88,23 @@ struct MealSuggestionCardView: View {
         MealNutritionCatalog.resolvedImageAsset(for: content)
     }
 
+    private var accentColor: Color {
+        coachListStyle ? theme.coachAccent : theme.onboardingAccent
+    }
+
     private var headerRow: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(content.mealType.uppercased())
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(theme.onboardingAccent)
+                    .foregroundStyle(accentColor)
                     .tracking(0.6)
 
                 if let mealScheduleTarget {
                     HStack(spacing: 6) {
                         Text(mealScheduleTarget)
                             .font(.subheadline.weight(.bold))
-                            .foregroundStyle(theme.onboardingAccent)
+                            .foregroundStyle(accentColor)
                             .monospacedDigit()
 
                         if let mealScheduleWindow {
@@ -138,10 +158,10 @@ struct MealSuggestionCardView: View {
                 ForEach(content.tags, id: \.self) { tag in
                     Text(tag)
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(theme.onboardingAccent)
+                        .foregroundStyle(accentColor)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(theme.onboardingAccent.opacity(0.12))
+                        .background(accentColor.opacity(theme.isDark ? 0.12 : 0.14))
                         .clipShape(Capsule())
                 }
             }
@@ -151,38 +171,79 @@ struct MealSuggestionCardView: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Composition")
+                Text(coachListStyle ? "Ingrédients" : "Composition")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                     .textCase(.uppercase)
                 Spacer()
-                Button {
-                    HapticManager.shared.selection()
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                        showsIngredients.toggle()
+                if !coachListStyle {
+                    Button {
+                        HapticManager.shared.selection()
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                            showsIngredients.toggle()
+                        }
+                    } label: {
+                        Label(
+                            showsIngredients ? "Masquer" : "Voir ingrédients",
+                            systemImage: showsIngredients ? "chevron.up" : "list.bullet"
+                        )
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(theme.onboardingAccent)
                     }
-                } label: {
-                    Label(
-                        showsIngredients ? "Masquer" : "Voir ingrédients",
-                        systemImage: showsIngredients ? "chevron.up" : "list.bullet"
-                    )
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.onboardingAccent)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
             VStack(spacing: 8) {
                 ForEach(content.items) { item in
-                    MealSuggestionItemRow(
-                        item: item,
-                        theme: theme,
-                        isExpanded: showsIngredients,
-                        isEditable: onEditItem != nil
-                    ) {
-                        onEditItem?(item)
+                    if coachListStyle {
+                        coachIngredientRow(item)
+                    } else {
+                        MealSuggestionItemRow(
+                            item: item,
+                            theme: theme,
+                            isExpanded: ingredientsExpanded,
+                            isEditable: onEditItem != nil
+                        ) {
+                            onEditItem?(item)
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    private func coachIngredientRow(_ item: MealSuggestionItem) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("•")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(accentColor)
+                .padding(.top, 1)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.ingredientDisplayLine)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !item.role.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   item.role.lowercased() != "autre" {
+                    Text(item.role)
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryText)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(theme.coachSecondaryFill.opacity(theme.isDark ? 0.45 : 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            if !theme.isDark {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(theme.coachSurfaceStroke.opacity(0.55), lineWidth: 0.5)
             }
         }
     }
@@ -274,8 +335,13 @@ struct MealSuggestionCardView: View {
             .fill(theme.coachAssistantBubble)
             .overlay {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(theme.cardStroke.opacity(0.35), lineWidth: 0.5)
+                    .strokeBorder(theme.coachSurfaceStroke.opacity(theme.isDark ? 0.35 : 0.9), lineWidth: 0.75)
             }
+            .shadow(
+                color: theme.isDark ? .clear : theme.coachSurfaceStroke.opacity(0.22),
+                radius: 12,
+                y: 5
+            )
     }
 
 }
@@ -489,31 +555,36 @@ struct MealItemEditSheet: View {
 
 struct CoachMealSuggestionMessageView: View {
     let content: MealSuggestionContent
+    var intro: String? = nil
     var contextualActions: [CoachContextualAction] = []
     var onAction: ((CoachContextualAction) -> Void)? = nil
 
+    @Environment(\.appTheme) private var theme
+
+    private var visibleActions: [CoachContextualAction] {
+        contextualActions.filter { action in
+            action.kind != .validateMeal && action.kind != .modifyMeal
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if let intro, !intro.isEmpty {
+                Text(intro)
+                    .font(.body)
+                    .foregroundStyle(theme.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             MealSuggestionCardView(
                 content: content,
-                showsActions: onAction != nil,
+                showsActions: false,
                 showsScoreBreakdown: content.showsScore,
-                onValidate: onAction.map { handler in
-                    { handler(CoachContextualAction(kind: .validateMeal, payload: content.timeSlot.rawValue)) }
-                },
-                onModify: onAction.map { handler in
-                    { handler(CoachContextualAction(kind: .modifyMeal, payload: content.timeSlot.rawValue)) }
-                },
-                onAnother: onAction.map { handler in
-                    { handler(CoachContextualAction(kind: .anotherMeal, payload: content.timeSlot.rawValue)) }
-                },
-                onAddToShoppingList: onAction.map { handler in
-                    { handler(CoachContextualAction(kind: .addToShoppingList, payload: content.timeSlot.rawValue)) }
-                }
+                coachListStyle: true
             )
 
-            if let onAction, !contextualActions.isEmpty {
-                CoachContextualActionButtons(actions: contextualActions, onAction: onAction)
+            if let onAction, !visibleActions.isEmpty {
+                CoachContextualActionButtons(actions: visibleActions, onAction: onAction)
             }
         }
     }
@@ -523,7 +594,7 @@ enum CoachMealMessageDetector {
     private static let mealKeywords = [
         "repas", "manger", "nutrition", "déjeuner", "dejeuner", "dîner", "diner",
         "petit-déjeuner", "petit dejeuner", "collation", "recette", "ingrédient",
-        "propose", "idée de repas", "quoi manger", "menu"
+        "propose", "idée de repas", "quoi manger", "menu", "fais mon", "faire mon"
     ]
 
     static func isMealRelated(userText: String) -> Bool {
@@ -531,7 +602,27 @@ enum CoachMealMessageDetector {
         return mealKeywords.contains { lower.contains($0) }
     }
 
-    static func mealContent(from assistantText: String) -> MealSuggestionContent? {
-        MealSuggestionParser.parse(assistantText)
+    static func mealContent(from assistantText: String, userText: String? = nil) -> MealSuggestionContent? {
+        if let stored = MealSuggestionContent.fromStored(assistantText) {
+            return CoachMealContentEnricher.enrich(stored)
+        }
+        if let parsed = MealSuggestionParser.parse(assistantText), parsed.isValid {
+            return CoachMealContentEnricher.enrich(parsed)
+        }
+        if let loose = CoachMealContentEnricher.resolveLooseMeal(
+            assistantText: assistantText,
+            userText: userText
+        ) {
+            return loose
+        }
+        return nil
+    }
+
+    static func coachIntro(from assistantText: String, meal: MealSuggestionContent? = nil) -> String? {
+        if let intro = MealSuggestionParser.coachIntro(from: assistantText) {
+            return intro
+        }
+        guard let meal else { return nil }
+        return CoachMealContentEnricher.plainTextIntro(from: assistantText, mealName: meal.name)
     }
 }

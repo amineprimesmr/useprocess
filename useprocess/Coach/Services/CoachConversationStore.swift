@@ -119,7 +119,7 @@ enum CoachConversationStore {
         let text = message.text
         if text.contains("## Bienvenue dans \(AppBranding.name)") { return true }
         if text.contains("Pose-moi tes questions ici quand tu veux.") { return true }
-        return text.count > 320 && text.localizedCaseInsensitiveContains("protocole origine")
+        return text.count > 320 && text.localizedCaseInsensitiveContains("plan personnalisé")
     }
 
     static func resetThread() {

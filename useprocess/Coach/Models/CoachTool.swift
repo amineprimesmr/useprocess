@@ -53,7 +53,7 @@ enum CoachTool: String, CaseIterable, Identifiable, Sendable {
             """
         case .nutritionAdvice:
             return """
-            Donne un plan nutrition Protocole Origine personnalisé (6-8 phrases) basé sur mon profil \
+            Donne un plan nutrition personnalisé (6-8 phrases) basé sur mon profil \
             et ma qualité alimentation déclarée (\(context.profile?.nutritionQuality ?? "—")).
             """
         case .lastScanSummary:
@@ -64,7 +64,7 @@ enum CoachTool: String, CaseIterable, Identifiable, Sendable {
         case .programRecap:
             return """
             Rappelle mon plan useprocess 13 semaines basé sur mon profil onboarding : objectif, rythme, \
-            3 piliers Protocole Origine prioritaires, habitudes quotidiennes.
+            3 piliers du plan personnalisé prioritaires, habitudes quotidiennes.
             """
         }
     }

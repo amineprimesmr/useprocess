@@ -16,7 +16,7 @@ enum FaceScanChartPeriod: String, CaseIterable, Identifiable {
 
 enum FaceScanChartMetric: String, CaseIterable, Identifiable {
     case retention = "Rétention"
-    case recovery = "Récupération"
+    case recovery = "Cernes et fatigue"
     case skin = "Peau"
     case definition = "Définition"
     case stress = "Stress"

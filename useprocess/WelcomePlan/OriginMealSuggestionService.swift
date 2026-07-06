@@ -30,7 +30,7 @@ enum OriginMealSuggestionService {
     """
 
     private static let systemPrompt = """
-    Tu es le coach nutrition Process (Protocole Origine debloat visage).
+    Tu es le coach nutrition Process (plan personnalisé debloat visage).
     Style Enzo : direct, tutoiement, bienveillant.
     Propose UN repas concret, dense, peu transformé, protéines + tubercules/légumes cuits.
     Pas de diagnostic médical. Pas de markdown.
@@ -130,7 +130,7 @@ enum OriginMealSuggestionService {
         Repas : \(current.name)
         Ingrédient à remplacer : \(item.name) (\(item.quantity), \(item.role))
 
-        Propose EXACTEMENT 3 alternatives compatibles Protocole Origine pour remplacer cet ingrédient.
+        Propose EXACTEMENT 3 alternatives compatibles avec le plan personnalisé pour remplacer cet ingrédient.
         Format : ALT_1: [nom] | ALT_2: [nom] | ALT_3: [nom]
         """
 
@@ -168,7 +168,7 @@ enum OriginMealSuggestionService {
         Principes : \(principles)
 
         Analyse cette photo (frigo, placard ou ingrédients visibles).
-        Compose UN repas réalisable avec ce que tu vois, aligné Protocole Origine.
+        Compose UN repas réalisable avec ce que tu vois, aligné sur le plan personnalisé.
         """
 
         let text = try await CoachAPITransport.complete(

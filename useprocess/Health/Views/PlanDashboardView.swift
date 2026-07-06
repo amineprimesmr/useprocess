@@ -7,12 +7,14 @@ struct PlanDashboardView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
     @Bindable private var session = AppSession.shared
+    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
 
     @State private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
     @State private var showHomeLayoutEditor = false
     @State private var showSettings = false
     @State private var showStreakToast = false
+    @State private var showEveningCheckIn = false
     @State private var streakToast = DynamicIslandToastMessage.streak(
         snapshot: ProcessStreakStore.shared.snapshot,
         firstName: nil
@@ -43,6 +45,13 @@ struct PlanDashboardView: View {
                         onOpenStreak: presentStreakToast,
                         zoomNamespace: homeChromeZoomNamespace
                     )
+
+                    if livePlan != nil, session.hasCompletedWelcomePlanChat {
+                        ProcessEveningCheckInEntryButton {
+                            showEveningCheckIn = true
+                        }
+                    }
+
                     planContent
 
                     if livePlan != nil, session.hasCompletedWelcomePlanChat {
@@ -79,7 +88,21 @@ struct PlanDashboardView: View {
                     .environmentObject(AuthenticationManager.shared)
                     .processZoomTransition(id: .activityStatus, namespace: homeChromeZoomNamespace)
             }
-            .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast)
+            .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast, onTap: openProfileStatistics)
+            .sheet(isPresented: $showEveningCheckIn) {
+                ProcessEveningCheckInSheet(onCompleted: presentStreakToast)
+            }
+            .onAppear {
+                ProcessEveningCheckInStore.shared.reload()
+                if CoachPlanNavigationBridge.shared.consumePendingEveningCheckIn() {
+                    showEveningCheckIn = true
+                }
+            }
+            .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
+                guard should else { return }
+                planBridge.shouldOpenEveningCheckIn = false
+                showEveningCheckIn = true
+            }
         }
     }
 
@@ -117,7 +140,7 @@ struct PlanDashboardView: View {
                         if isRestoringPlan {
                             ProgressView().controlSize(.small)
                         }
-                        Text(isRestoringPlan ? "Restauration…" : "Restaurer mon protocole")
+                        Text(isRestoringPlan ? "Restauration…" : "Restaurer mon plan personnalisé")
                             .font(.subheadline.weight(.semibold))
                     }
                     .frame(maxWidth: .infinity)
@@ -135,7 +158,7 @@ struct PlanDashboardView: View {
         if planStore.canRestorePlan {
             return "Tu as déjà répondu au questionnaire, mais ton programme n'a pas pu être chargé. Restaure-le en un clic ou reprends la configuration avec le coach."
         }
-        return "Ouvre le coach pour personnaliser ton protocole quand tu es prêt."
+        return "Ouvre le coach pour personnaliser ton plan quand tu es prêt."
     }
 
     private func restorePlan() async {
@@ -168,6 +191,15 @@ struct PlanDashboardView: View {
         } else {
             showStreakToast = true
             scheduleStreakToastDismiss()
+        }
+    }
+
+    private func openProfileStatistics() {
+        streakToastDismissTask?.cancel()
+        showStreakToast = false
+        planBridge.openProfileStatistics()
+        withAnimation(ProcessGlass.spring) {
+            selectedSection = .profile
         }
     }
 

@@ -113,7 +113,7 @@ enum CoachPlanModificationService {
             } ?? plan.sleepProtocol.bedtimeWindow
         default:
             sectionPath = "global/program"
-            title = "Protocole Origine"
+            title = "Plan personnalisé"
             content = CoachPlanContextBuilder.todayDetailBlock(plan: plan)
         }
 

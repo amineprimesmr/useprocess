@@ -66,8 +66,14 @@ struct CoachMessageEnrichmentView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.72))
+                .fill(theme.coachSecondaryFill.opacity(theme.isDark ? 0.55 : 1))
         )
+        .overlay {
+            if !theme.isDark {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(theme.coachSurfaceStroke.opacity(0.5), lineWidth: 0.5)
+            }
+        }
     }
 
     private var followUpChips: some View {
@@ -84,11 +90,19 @@ struct CoachMessageEnrichmentView: View {
                             .padding(.vertical, 10)
                             .background(
                                 Capsule()
-                                    .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.88 : 0.95))
+                                    .fill(theme.isDark
+                                        ? theme.cardBackgroundStrong.opacity(0.88)
+                                        : Color.white
+                                    )
                             )
                             .overlay(
                                 Capsule()
-                                    .stroke(theme.secondaryText.opacity(0.16), lineWidth: 0.5)
+                                    .stroke(theme.coachSurfaceStroke.opacity(theme.isDark ? 0.16 : 0.75), lineWidth: 0.75)
+                            )
+                            .shadow(
+                                color: theme.isDark ? .clear : theme.coachSurfaceStroke.opacity(0.14),
+                                radius: 6,
+                                y: 2
                             )
                     }
                     .buttonStyle(.plain)

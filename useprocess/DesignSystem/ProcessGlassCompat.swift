@@ -6,9 +6,15 @@ extension View {
     func processGlassEffect(in shape: some InsettableShape, interactive: Bool = true) -> some View {
         if #available(iOS 26.0, *) {
             glassEffect(interactive ? ProcessGlass.regular : ProcessGlass.regularSurface, in: shape)
+                .overlay {
+                    ProcessGlassLightStroke(shape: shape)
+                }
         } else {
             background(.ultraThinMaterial, in: shape)
                 .overlay(shape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                .overlay {
+                    ProcessGlassLightStroke(shape: shape)
+                }
         }
     }
 
@@ -78,6 +84,17 @@ extension View {
                 .processGlassEffect(in: RoundedRectangle(cornerRadius: 12, style: .continuous), interactive: true)
         } else {
             buttonStyle(ProcessGlassPressStyle())
+        }
+    }
+}
+
+private struct ProcessGlassLightStroke<S: InsettableShape>: View {
+    @Environment(\.appTheme) private var theme
+    let shape: S
+
+    var body: some View {
+        if !theme.isDark {
+            shape.strokeBorder(theme.coachSurfaceStroke.opacity(0.72), lineWidth: 0.75)
         }
     }
 }

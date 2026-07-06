@@ -83,6 +83,8 @@ struct CoachUserThoughtBubbleBody<Content: View>: View {
     var bubbleColor: Color
     @ViewBuilder var content: () -> Content
 
+    @Environment(\.appTheme) private var theme
+
     var body: some View {
         content()
             .padding(.horizontal, CoachUserThoughtBubbleMetrics.horizontalPadding)
@@ -90,6 +92,17 @@ struct CoachUserThoughtBubbleBody<Content: View>: View {
             .background(
                 RoundedRectangle(cornerRadius: CoachUserThoughtBubbleMetrics.cornerRadius, style: .continuous)
                     .fill(bubbleColor)
+                    .overlay {
+                        if !theme.isDark {
+                            RoundedRectangle(cornerRadius: CoachUserThoughtBubbleMetrics.cornerRadius, style: .continuous)
+                                .strokeBorder(theme.coachSurfaceStroke.opacity(0.85), lineWidth: 0.75)
+                        }
+                    }
+                    .shadow(
+                        color: theme.isDark ? .clear : theme.coachSurfaceStroke.opacity(0.28),
+                        radius: 10,
+                        y: 4
+                    )
             )
     }
 }

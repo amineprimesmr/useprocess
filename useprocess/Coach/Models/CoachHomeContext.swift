@@ -161,7 +161,7 @@ enum CoachHomeContext {
                     subtitle: "Personnalisé pour vous",
                     icon: "📋",
                     question: "Pas de séance aujourd'hui, je fais quoi ?",
-                    hint: "Jour protocole : \(day.title)"
+                    hint: "Jour du plan : \(day.title)"
                 )
             )
         }

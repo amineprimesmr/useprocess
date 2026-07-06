@@ -272,7 +272,7 @@ enum HealthDebloatGuide {
         Topic(
             id: "scan",
             title: "Scan quotidien",
-            summary: "Mesurer pour voir la corrélation avec ton protocole.",
+            summary: "Mesurer pour voir la corrélation avec ton plan personnalisé.",
             body: "Le scan Process te permet de suivre l’évolution et de relier gonflement, sommeil et habitudes. C’est un feedback, pas un diagnostic médical.",
             bullets: [
                 "\(ProcessDailyTargets.faceScanSeconds) s chaque matin, même lumière",

@@ -39,6 +39,17 @@ enum ProcessAudioSession {
         configureForMixingWithOthers()
     }
 
+    /// Effet court (validation bilan soir) — mix avec la musique en cours.
+    static func configureForEffectPlayback() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            // Non bloquant.
+        }
+    }
+
     /// Lecteur vidéo sans piste audible (scans, previews).
     static func configurePlayerForSilentPlayback(_ player: AVPlayer) {
         player.isMuted = true

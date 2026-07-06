@@ -42,10 +42,9 @@ final class AppSession {
         UserDefaults.standard.set(true, forKey: onboardingStorageKey)
         AuthenticationManager.shared.completeOnboarding()
 
-        // Le Protocole Origine reste obligatoire après l'onboarding.
+        // Le Plan personnalisé reste obligatoire après l'onboarding.
         hasCompletedWelcomePlanChat = false
         UserDefaults.standard.set(false, forKey: welcomePlanChatStorageKey)
-        WelcomePlanCoachPresentation.resetForCurrentUser()
     }
 
     func completeWelcomePlanChat() {
@@ -73,7 +72,6 @@ final class AppSession {
 
         OnboardingProgressService.shared.resetProgress()
         WelcomePlanStore.shared.resetForCurrentUser()
-        WelcomePlanCoachPresentation.resetForCurrentUser()
         AuthenticationManager.shared.hasCompletedOnboarding = false
     }
 
@@ -94,7 +92,6 @@ final class AppSession {
 
         OnboardingProgressService.shared.resetProgress()
         WelcomePlanStore.shared.resetForCurrentUser()
-        WelcomePlanCoachPresentation.resetForCurrentUser()
 
         AuthenticationManager.shared.applyPostAccountDeletion()
         AuthenticationManager.shared.startOnboarding()
@@ -149,7 +146,7 @@ final class AppSession {
         )
     }
 
-    /// Détermine si le questionnaire Protocole Origine est vraiment terminé (évite la fausse complétion au relaunch).
+    /// Détermine si le questionnaire Plan personnalisé est vraiment terminé (évite la fausse complétion au relaunch).
     private static func resolveWelcomePlanChatCompleted(completedOnboarding: Bool, userId: String?) -> Bool {
         guard completedOnboarding else { return false }
 

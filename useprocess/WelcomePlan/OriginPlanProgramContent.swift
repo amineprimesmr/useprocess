@@ -80,7 +80,7 @@ struct OriginPlanSuccessCriteriaCard: View {
         if criteria.isEmpty { EmptyView() }
         else {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Objectifs du protocole")
+                Text("Objectifs du plan personnalisé")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(theme.primaryText)
                 ForEach(criteria) { criterion in

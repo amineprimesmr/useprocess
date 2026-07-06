@@ -558,7 +558,8 @@ struct OnboardingProfileChatView: View {
 
     private var programCreationSection: some View {
         OnboardingProfileChatPlanCreationPanel(
-            isVisible: chatViewModel.showsProgramCreationSection
+            isVisible: chatViewModel.showsProgramCreationSection,
+            isComplete: chatViewModel.programCreationPhase == .complete
         )
         .padding(.top, 10)
     }

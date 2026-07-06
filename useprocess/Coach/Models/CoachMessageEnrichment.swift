@@ -13,7 +13,7 @@ enum CoachDeepLinkAction: String, Codable, Equatable {
         case .journal: return "Ouvrir le journal"
         case .scan: return "Faire mon scan"
         case .streak: return "Voir ma streak"
-        case .integration: return "Configurer mon protocole"
+        case .integration: return "Continuer la configuration"
         }
     }
 }
@@ -47,6 +47,7 @@ struct CoachParsedReply: Equatable {
 enum CoachResponseParser {
 
     private static let metadataLabels = [
+        "INTRO:",
         "REASONING:",
         "FOLLOW_UP_1:",
         "FOLLOW_UP_2:",
@@ -123,10 +124,14 @@ enum CoachResponseParser {
 
         for index in 1...4 {
             if let match = extract(label: "ACTION_\(index):", from: &working),
-               let action = CoachContextualAction.parse(line: match) {
+               let action = CoachContextualAction.parse(line: match),
+               action.kind != .validateMeal,
+               action.kind != .modifyMeal {
                 contextualActions.append(action)
             }
         }
+
+        working = MealSuggestionParser.stripStructuredMealBlock(from: working)
 
         var display = stripRemainingMetadata(from: working)
         if display.isEmpty {
@@ -166,10 +171,13 @@ enum CoachResponseParser {
 
         let parsed = parseFull(raw)
         let rebuilt = CoachMessage.assistant(from: parsed.enrichment, modelUsed: message.modelUsed)
+        let persistedText = MealSuggestionParser.parse(raw)?.isValid == true
+            ? raw
+            : rebuilt.text
         return CoachMessage(
             id: message.id,
             role: .assistant,
-            text: rebuilt.text,
+            text: persistedText,
             createdAt: message.createdAt,
             modelUsed: message.modelUsed,
             reasoning: rebuilt.reasoning,

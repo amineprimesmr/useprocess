@@ -23,6 +23,8 @@ struct CoachLiquidGlassInputBar: View {
     var onOpenCamera: () -> Void
     var onRemovePendingImageAt: (Int) -> Void
 
+    @Environment(\.appTheme) private var theme
+
     private let barShape = RoundedRectangle(cornerRadius: 26, style: .continuous)
     private let actionButtonSize: CGFloat = 44
     private let horizontalPadding: CGFloat = 16
@@ -94,6 +96,16 @@ struct CoachLiquidGlassInputBar: View {
             focusTextInputIfPossible()
         }
         .glassEffect(ProcessGlass.regular, in: barShape)
+        .overlay {
+            if !theme.isDark {
+                barShape.strokeBorder(theme.coachSurfaceStroke.opacity(0.85), lineWidth: 0.75)
+            }
+        }
+        .shadow(
+            color: theme.isDark ? .clear : theme.coachSurfaceStroke.opacity(0.18),
+            radius: 10,
+            y: 4
+        )
     }
 
     @available(iOS 26.0, *)
@@ -274,6 +286,9 @@ struct CoachLiquidGlassInputBar: View {
         barShape
             .fill(.ultraThinMaterial)
             .overlay(barShape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+            .background {
+                CoachInputBarLightSurface(shape: barShape)
+            }
     }
 
     private var pendingImagesPreview: some View {
@@ -325,6 +340,20 @@ private struct CoachBarGlassCircleStyle: ViewModifier {
 }
 
 // MARK: - Waveform
+
+private struct CoachInputBarLightSurface: View {
+    @Environment(\.appTheme) private var theme
+    let shape: RoundedRectangle
+
+    var body: some View {
+        if !theme.isDark {
+            shape
+                .fill(Color.white.opacity(0.92))
+                .overlay(shape.strokeBorder(theme.coachSurfaceStroke.opacity(0.85), lineWidth: 0.75))
+                .shadow(color: theme.coachSurfaceStroke.opacity(0.18), radius: 10, y: 4)
+        }
+    }
+}
 
 struct CoachVoiceWaveformDots: View {
     let audioLevel: CGFloat

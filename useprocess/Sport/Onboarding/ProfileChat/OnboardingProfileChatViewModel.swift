@@ -90,7 +90,7 @@ final class OnboardingProfileChatViewModel {
     }
 
     var showsProgramCreationSection: Bool {
-        !shouldFinish && programCreationPhase == .running
+        !shouldFinish && (programCreationPhase == .running || programCreationPhase == .complete)
     }
 
     var showsContinueAfterAnalysis: Bool {
@@ -707,7 +707,7 @@ final class OnboardingProfileChatViewModel {
             programCreationDisplayedPercentage = 100
             programCreationPhase = .complete
 
-            try? await Task.sleep(nanoseconds: 420_000_000)
+            try? await Task.sleep(nanoseconds: 750_000_000)
             guard !Task.isCancelled else { return }
 
             animate(OnboardingProfileChatAnswerReveal.spring) {

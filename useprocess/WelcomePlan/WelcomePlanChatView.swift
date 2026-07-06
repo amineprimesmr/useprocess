@@ -5,7 +5,6 @@ struct WelcomePlanChatView: View {
     var embeddedInMainApp: Bool = false
     var selectedSection: Binding<ProcessMainSection>?
     var onComplete: () -> Void
-    var onDismissLater: (() -> Void)? = nil
 
     @EnvironmentObject private var profileService: UnifiedProfileService
 
@@ -13,13 +12,11 @@ struct WelcomePlanChatView: View {
     @State private var multiSelection: Set<String> = []
     @State private var textDraft = ""
     @State private var timeDraft = Calendar.current.date(from: DateComponents(hour: 0, minute: 0)) ?? .now
-    @State private var showFaceScan = false
     @State private var revealedAnswerIDs: Set<String> = []
 
     private let messageLineSpacing: CGFloat = 7
     private let horizontalPadding: CGFloat = 28
     private let answerButtonShape = Capsule()
-    private let configurationProgressHeaderHeight: CGFloat = 18
 
     var body: some View {
         GeometryReader { geometry in
@@ -29,7 +26,7 @@ struct WelcomePlanChatView: View {
                 embedded: embeddedInMainApp
             )
             let bottomContentPadding: CGFloat = {
-                if viewModel.showsEnterButton || showsFillAllCircuitsButton { return 120 }
+                if viewModel.showsEnterButton { return 120 }
                 if viewModel.showsGenerationProgress { return 28 }
                 return embeddedInMainApp ? 24 : 28
             }()
@@ -56,15 +53,6 @@ struct WelcomePlanChatView: View {
                 .mask(topFadeMask)
                 .zIndex(1)
 
-                if showsConfigurationProgress {
-                    configurationProgressHeader
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 8)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        .transition(.opacity)
-                        .zIndex(5)
-                }
-
                 if viewModel.showsEnterButton {
                     enterAppButton
                         .padding(.horizontal, horizontalPadding)
@@ -72,25 +60,8 @@ struct WelcomePlanChatView: View {
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                         .zIndex(5)
                 }
-
-                if showsFillAllCircuitsButton {
-                    fillAllCircuitsButton
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.bottom, embeddedInMainApp ? 28 : 50)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                        .zIndex(5)
-                }
-
-                if showsDismissLaterButton {
-                    dismissLaterButton
-                        .padding(.trailing, horizontalPadding + 46)
-                        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 10)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                        .zIndex(6)
-                }
             }
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsEnterButton)
-            .animation(OnboardingProfileChatAnswerReveal.spring, value: showsFillAllCircuitsButton)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsAnswerOptions)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: viewModel.showsGenerationProgress)
             .ignoresSafeArea(edges: .top)
@@ -107,12 +78,6 @@ struct WelcomePlanChatView: View {
             viewModel.bind(profile: profileService.currentProfile)
             await viewModel.startIfNeeded()
         }
-        .fullScreenCover(isPresented: $showFaceScan) {
-            FaceScanPrivacyGateView(
-                onDismiss: { showFaceScan = false },
-                onComplete: { _ in showFaceScan = false }
-            )
-        }
         .onDisappear {
             WelcomePlanStore.shared.touchQuestionnaireProgress()
         }
@@ -122,75 +87,14 @@ struct WelcomePlanChatView: View {
 
     private var ambientLogoTopInset: CGFloat {
         guard embeddedInMainApp else { return 0 }
-        let progressBand = showsConfigurationProgress
-            ? configurationProgressHeaderHeight + 10
-            : 0
-        return ProcessMainChromeMetrics.topSafeInset + progressBand
+        return ProcessMainChromeMetrics.topSafeInset
     }
 
     private var contentTopClearance: CGFloat {
-        if embeddedInMainApp {
-            return ambientLogoTopInset
-        }
-        return configurationProgressInset
+        embeddedInMainApp ? ambientLogoTopInset : 0
     }
 
     // MARK: - Layout slots
-
-    private var showsConfigurationProgress: Bool {
-        !viewModel.showsEnterButton && !viewModel.isGenerating
-    }
-
-    private var showsFillAllCircuitsButton: Bool {
-        #if DEBUG
-        !viewModel.showsEnterButton && !viewModel.isGenerating && !viewModel.isComplete
-        #else
-        false
-        #endif
-    }
-
-    private var showsDismissLaterButton: Bool {
-        embeddedInMainApp
-            && onDismissLater != nil
-            && !viewModel.showsEnterButton
-            && !viewModel.isGenerating
-            && !viewModel.isComplete
-    }
-
-    private var dismissLaterButton: some View {
-        Button {
-            HapticManager.shared.impact(.light)
-            onDismissLater?()
-        } label: {
-            Text("Continuer plus tard")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(OnboardingTheme.bodyText)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
-                .background(
-                    Capsule()
-                        .fill(OnboardingTheme.cardBackground.opacity(0.92))
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(OnboardingTheme.softBorder, lineWidth: 1)
-                        )
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var configurationProgressInset: CGFloat {
-        showsConfigurationProgress ? configurationProgressHeaderHeight + 8 : 0
-    }
-
-    private var configurationProgressHeader: some View {
-        OnboardingProgressBar(
-            progress: viewModel.configurationProgress,
-            height: 8,
-            cornerRadius: 5
-        )
-        .animation(.easeInOut(duration: 0.25), value: viewModel.configurationProgress)
-    }
 
     private struct ChatLayoutMetrics {
         let screenHeight: CGFloat
@@ -452,7 +356,7 @@ struct WelcomePlanChatView: View {
     private func defaultTime(for question: WelcomePlanQuestion) -> Date {
         switch question.id {
         case "bedtime":
-            return dateFromTimeValue("00:00") ?? .now
+            return dateFromTimeValue("23:00") ?? .now
         case "wake_time":
             return dateFromTimeValue("08:30") ?? .now
         default:
@@ -465,7 +369,7 @@ struct WelcomePlanChatView: View {
         guard parts.count == 2,
               let hour = Int(parts[0]),
               let minute = Int(parts[1]) else { return nil }
-        let snappedMinute = (minute / 5) * 5
+        let snappedMinute = (minute / 30) * 30
         return Calendar.current.date(from: DateComponents(hour: hour, minute: snappedMinute))
     }
 
@@ -543,9 +447,12 @@ struct WelcomePlanChatView: View {
                 .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("validate"))
 
             case .time:
-                WelcomePlanFiveMinuteTimePicker(selection: $timeDraft)
+                WelcomePlanTimeWheelPicker(
+                    selection: $timeDraft,
+                    range: question.id == "bedtime" ? .bedtime : .fullDay
+                )
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 4)
                     .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("time_picker"))
 
                 chatPrimaryButton("Continuer") {
@@ -589,37 +496,11 @@ struct WelcomePlanChatView: View {
 
     // MARK: - CTA
 
-    private var fillAllCircuitsButton: some View {
-        Button {
-            HapticManager.shared.impact(.medium)
-            Task {
-                await viewModel.fillAllCircuitsAndGenerate()
-            }
-        } label: {
-            Text("Ajouter tous les circuits")
-                .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
-                .foregroundStyle(OnboardingTheme.primaryText)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .contentShape(answerButtonShape)
-        }
-        .processGlassButton(in: answerButtonShape)
-        .disabled(viewModel.isSubmittingAnswer || viewModel.isGenerating)
-        .opacity(viewModel.isSubmittingAnswer || viewModel.isGenerating ? 0.55 : 1)
-    }
-
     private var enterAppButton: some View {
         Button {
             HapticManager.shared.impact(.medium)
             Task {
-                if viewModel.pendingFaceScan {
-                    await viewModel.finishAndEnterApp {
-                        showFaceScan = true
-                        onComplete()
-                    }
-                } else {
-                    await viewModel.finishAndEnterApp(onComplete: onComplete)
-                }
+                await viewModel.finishAndEnterApp(onComplete: onComplete)
             }
         } label: {
             Text(enterButtonTitle)
@@ -633,10 +514,7 @@ struct WelcomePlanChatView: View {
     }
 
     private var enterButtonTitle: String {
-        if embeddedInMainApp {
-            return viewModel.pendingFaceScan ? "Terminer & lancer le scan" : "Terminer la configuration"
-        }
-        return viewModel.pendingFaceScan ? "Entrer & lancer le scan" : "Entrer dans Process"
+        embeddedInMainApp ? "Terminer la configuration" : "Entrer dans Process"
     }
 
     // MARK: - Buttons
@@ -727,43 +605,7 @@ struct WelcomePlanChatView: View {
     }
 }
 
-private struct WelcomePlanFiveMinuteTimePicker: UIViewRepresentable {
-    @Binding var selection: Date
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(selection: $selection)
-    }
-
-    func makeUIView(context: Context) -> UIDatePicker {
-        let picker = UIDatePicker()
-        picker.datePickerMode = .time
-        picker.preferredDatePickerStyle = .wheels
-        picker.minuteInterval = 5
-        picker.date = selection
-        picker.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
-        return picker
-    }
-
-    func updateUIView(_ picker: UIDatePicker, context: Context) {
-        if abs(picker.date.timeIntervalSince(selection)) > 1 {
-            picker.date = selection
-        }
-    }
-
-    final class Coordinator: NSObject {
-        @Binding var selection: Date
-
-        init(selection: Binding<Date>) {
-            _selection = selection
-        }
-
-        @objc func changed(_ picker: UIDatePicker) {
-            selection = picker.date
-        }
-    }
-}
-
-#Preview("Protocole Origine") {
+#Preview("Plan personnalisé") {
     WelcomePlanChatView(onComplete: {})
         .environmentObject(UnifiedProfileService.shared)
 }

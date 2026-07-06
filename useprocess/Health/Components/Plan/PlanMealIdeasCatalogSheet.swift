@@ -65,7 +65,7 @@ struct PlanMealIdeasCatalogSheet: View {
 
             Text(
                 "Tous nos repas debloat — petit-déjeuner, déjeuner, dîner, OMAD et collations. " +
-                "Les suggestions du carousel changent chaque jour du protocole."
+                "Les suggestions du carousel changent chaque jour du plan personnalisé."
             )
             .font(.subheadline)
             .foregroundStyle(theme.secondaryText)

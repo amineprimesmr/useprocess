@@ -79,6 +79,24 @@ struct CoachUserContext: Codable, Sendable {
         var aiEnhanced: Bool
     }
 
+    struct DebloatTrajectoryBlock: Codable, Sendable {
+        var currentStreak: Int
+        var todayScore: Double
+        var todayVerdict: String?
+        var trend: String
+        var velocityLabel: String
+        var recentDays: [DebloatDayEntry]
+    }
+
+    struct DebloatDayEntry: Codable, Sendable {
+        var dayKey: String
+        var score: Double
+        var verdict: String
+        var yesCount: Int
+        var puffinessDelta: Int?
+        var hasScan: Bool
+    }
+
     var generatedAt: String
     var profile: ProfileBlock?
     var health: HealthBlock?
@@ -92,6 +110,7 @@ struct CoachUserContext: Codable, Sendable {
     var planProgressTasks: Int?
     var activityStatus: String?
     var activityStatusGuidance: String?
+    var debloatTrajectory: DebloatTrajectoryBlock?
 }
 
 enum UserContextBuilder {
@@ -234,6 +253,27 @@ enum UserContextBuilder {
             ctx.activityStatusGuidance = activityStatus.trainingGuidance
         }
 
+        let trajectory = ProcessDebloatTrajectoryStore.shared
+        let trajectorySnapshot = trajectory.snapshot
+        let recent = trajectory.recentRecords(limit: 14)
+        ctx.debloatTrajectory = .init(
+            currentStreak: trajectorySnapshot.currentStreak,
+            todayScore: trajectorySnapshot.todayCompositeScore,
+            todayVerdict: trajectorySnapshot.todayVerdict?.rawValue,
+            trend: trajectorySnapshot.trajectoryTrend.rawValue,
+            velocityLabel: trajectorySnapshot.velocityLabel,
+            recentDays: recent.map {
+                .init(
+                    dayKey: $0.dayKey,
+                    score: $0.compositeScore,
+                    verdict: $0.verdict.rawValue,
+                    yesCount: $0.yesCount,
+                    puffinessDelta: $0.puffinessDelta,
+                    hasScan: $0.hasScan
+                )
+            }
+        )
+
         return ctx
     }
 
@@ -273,6 +313,13 @@ enum UserContextBuilder {
                 lines.append("• Visage relatif \(relativeScore)/100 : gonflement \(puffinessDelta), cernes \(fatigueDelta)")
             } else {
                 lines.append("• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)")
+            }
+        }
+
+        if let trajectory = context.debloatTrajectory {
+            lines.append("• Trajectoire debloat : streak \(trajectory.currentStreak), aujourd'hui \(Int(trajectory.todayScore))/100 (\(trajectory.todayVerdict ?? "—")), tendance \(trajectory.velocityLabel)")
+            if let last = trajectory.recentDays.first {
+                lines.append("• Dernier bilan : \(last.dayKey) — \(last.verdict), \(last.yesCount)/3 leviers, score \(Int(last.score))")
             }
         }
 

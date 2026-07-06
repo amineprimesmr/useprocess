@@ -4,7 +4,7 @@ import SwiftUI
 enum ProfileChartMetric: String, CaseIterable, Identifiable {
     case weight = "Poids"
     case cortisol = "Cortisol"
-    case recovery = "Récupération"
+    case recovery = "Cernes et fatigue"
     case retention = "Rétention"
     case definition = "Mâchoire & pommettes"
     case skin = "Peau"
@@ -37,7 +37,7 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
         switch self {
         case .weight: return "poids actuel"
         case .cortisol: return "cortisol estimé"
-        case .recovery: return "récupération visage"
+        case .recovery: return "cernes et fatigue"
         case .retention: return "rétention d'eau"
         case .definition: return "définition faciale"
         case .skin: return "qualité de peau"
@@ -66,14 +66,6 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
         case .weight: return "Aucune pesée"
         case .effort: return "Aucune activité"
         default: return "Aucun scan"
-        }
-    }
-
-    var syncHint: String {
-        switch self {
-        case .weight: return "Synchronisé depuis Apple Santé ou ton profil."
-        case .effort: return "Synchronisé depuis Apple Santé."
-        default: return "Basé sur tes scans visage Process."
         }
     }
 }

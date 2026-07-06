@@ -91,7 +91,7 @@ struct WelcomePlanQuestionnaireState: nonisolated Codable, Equatable, @unchecked
     var startedAt: Date = Date()
 }
 
-// MARK: - Plan généré (Protocole Origine — 100 % naturel)
+// MARK: - Plan généré (Plan personnalisé — 100 % naturel)
 
 struct FaceOriginPlan: nonisolated Codable, Identifiable, Equatable, @unchecked Sendable {
     let id: String
