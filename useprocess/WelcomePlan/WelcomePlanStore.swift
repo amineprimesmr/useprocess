@@ -31,6 +31,7 @@ final class WelcomePlanStore {
         }
         CoachMemoryStore.shared.reloadForCurrentUser()
         ProcessDebloatTrajectoryStore.shared.reload()
+        ProcessDebloatTrajectoryStore.shared.sync(from: plan)
 
         if AppConfiguration.firebaseConfigured, uid != "local-user" {
             scheduleRemoteSyncIfNeeded(uid: uid)
@@ -43,6 +44,7 @@ final class WelcomePlanStore {
         repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
         CoachMemoryStore.shared.reloadForCurrentUser()
         ProcessDebloatTrajectoryStore.shared.reload()
+        ProcessDebloatTrajectoryStore.shared.sync(from: plan)
     }
 
     func reloadForCurrentUser(force: Bool = false) {
@@ -211,7 +213,47 @@ final class WelcomePlanStore {
             }
         }
 
+        if shouldRecalibratePlanDuration(plan: current, profile: profile) {
+            recalibratePlanDuration(
+                plan: &current,
+                answers: answers ?? questionnaire.answers,
+                profile: profile
+            )
+            changed = true
+        }
+
         if changed { savePlan(current, structureChanged: true) }
+    }
+
+    private func shouldRecalibratePlanDuration(
+        plan: FaceOriginPlan,
+        profile: UnifiedUserProfile?
+    ) -> Bool {
+        let snapshotVersion = plan.assessmentSnapshot?.assessmentVersion ?? 0
+        if snapshotVersion < OriginPlanAssessmentSnapshot.currentVersion {
+            return true
+        }
+
+        let signals = PlanDurationPersonalizer.signals(profile: profile)
+        guard signals.isLean, signals.isSporty, (signals.weightGapKg ?? 99) <= 6 else {
+            return false
+        }
+        return plan.totalWeeks >= 8
+    }
+
+    private func recalibratePlanDuration(
+        plan: inout FaceOriginPlan,
+        answers: [String: WelcomePlanAnswer],
+        profile: UnifiedUserProfile?
+    ) {
+        let preservedProgress = plan.progress
+        let startedAt = plan.calendar.startedAt ?? plan.createdAt
+        let fresh = WelcomePlanGenerator.generate(answers: answers, profile: profile)
+        plan = plan.mergingUpgrade(
+            from: fresh,
+            progress: preservedProgress,
+            calendarStartedAt: startedAt
+        )
     }
 
     /// Regénère structure, calendrier et assessment — conserve progrès et identité.

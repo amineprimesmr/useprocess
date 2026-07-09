@@ -10,7 +10,7 @@ enum CoachEngine {
         Tu es le coach useprocess. Style Enzo : direct, tutoiement, bienveillant.
 
         RÈGLES CHAT :
-        - Le plan personnalisé (13 semaines) est TA BASE. Chaque réponse doit s'y rattacher.
+        - Le plan personnalisé de l'utilisateur est TA BASE (durée exacte dans le contexte ci-dessous). Chaque réponse doit s'y rattacher.
         - Tu as accès aux repas du jour (validés, brouillons IA, propositions), au questionnaire du plan personnalisé, aux modifications récentes, à la mémoire, au calendrier, à la santé HealthKit et aux scans — utilise-les TOUJOURS avant de conseiller.
         - Si l'utilisateur parle nutrition : pars des repas « REPAS AUJOURD'HUI » déjà dans l'app. Propose des ajustements cohérents, pas un plan parallèle.
         - Réponses courtes (2–4 phrases) sauf demande de détail plan / modification / programme complet / MODE REPAS (format structuré obligatoire).
@@ -22,7 +22,7 @@ enum CoachEngine {
     private static let planModificationPrompt = """
     ⚡ MODE MODIFICATION DU PLAN — ACTIF :
     - L'utilisateur demande de MODIFIER son plan personnalisé dans l'app.
-    - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier (91 jours).
+    - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier du plan.
     - EXÉCUTE sa demande telle quelle. Pas de refus. Pas de score de pertinence.
     - PAS de markdown (pas de **, pas de #). Texte brut uniquement.
     - Confirme en 2–3 phrases ce qui a changé.
@@ -339,6 +339,7 @@ enum CoachEngine {
     Tu t'adresses à UNE personne (tu). Jamais « les gars ». Pas de diagnostic médical.
     """
 
+    @MainActor
     static func analyzeFaceScan(
         result: FaceScanResult,
         profile: UnifiedUserProfile?,
@@ -350,13 +351,19 @@ enum CoachEngine {
         let historyBlock = faceScanHistoryBlock(history: history, current: result)
         let markers = result.markers
         let relativeBlock = relativeFaceScanBlock(result)
+        let insightContext = FaceScanInsightContext.fromTodayHealth()
+        let factsBlock = FaceScanEvolutionEngine.factsPromptBlock(
+            for: result,
+            history: history,
+            context: insightContext
+        )
 
         let prompt = """
         \(UserContextBuilder.compactPromptBlock(from: context))
 
         Règle critique : ne juge jamais la forme naturelle du visage. Un visage large, fin, asymétrique ou avec traits marqués n'est jamais un défaut.
         Interprète uniquement les variations d'état du jour : rétention d'eau, fatigue visible, tension, qualité de scan, tendance vs baseline personnelle.
-        Interdiction absolue de donner des conseils, actions, recommandations ou protocole. Analyse descriptive uniquement.
+        Base ton analyse sur les FAITS ci-dessous — ne les recopie pas mot pour mot, mais respecte leur direction (hausse/baisse/persistance).
 
         Scores locaux (0-100). Plus haut = signal plus marqué pour rétention, récupération, charge stress ; plus haut = mieux pour peau et définition :
         - Rétention d'eau : \(markers.puffinessScore)
@@ -369,11 +376,22 @@ enum CoachEngine {
 
         \(historyBlock)
 
-        Analyse cette photo + scores relatifs. Format EXACT — aucune ligne CONSEIL :
+        \(factsBlock)
+
+        Règles obligatoires :
+        - Si la rétention est encore haute ou en hausse, dis explicitement "tu as encore de la rétention d'eau" ou "rétention en hausse".
+        - Si la rétention baisse, dis explicitement "la rétention descend" et ne dramatise pas.
+        - Si rétention persistante sur plusieurs scans, mentionne la persistance et propose une action DIFFÉRENTE des actions récentes listées.
+        - Pour rétention : actions possibles = eau régulière, sodium/produits salés modérés, potassium alimentaire (banane, pomme de terre, épinards, avocat), marche douce.
+        - Si données nutrition hier disponibles, relie-les à la rétention (sodium/potassium).
+        - Ne parle jamais de diagnostic, pathologie, traitement, diurétique ou supplément potassium.
+
+        Analyse cette photo + faits évolutifs. Format EXACT :
 
         RESUME: [1 phrase — état global du visage aujourd'hui, max 18 mots, factuel]
         SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — observation factuelle]
-        EVOLUTION: [1 phrase vs scan précédent si historique, sinon "Premier scan de référence."]
+        EVOLUTION: [1 phrase vs historique récent — compare aux scans précédents, mentionne persistance ou amélioration]
+        ACTIONS: [action 1 concrète aujourd'hui] | [action 2 concrète aujourd'hui]
         """
 
         do {
@@ -409,7 +427,10 @@ enum CoachEngine {
     }
 
     private static func faceScanHistoryBlock(history: [FaceScanResult], current: FaceScanResult) -> String {
-        let past = history.filter { $0.id != current.id }.prefix(6)
+        let past = history
+            .filter { $0.id != current.id && $0.source == .daily }
+            .sorted { $0.createdAt > $1.createdAt }
+            .prefix(14)
         guard !past.isEmpty else { return "Historique : aucun scan précédent enregistré." }
 
         let formatter = DateFormatter()
@@ -506,7 +527,7 @@ enum CoachEngine {
             : "IMPORTANT : aucun scan visage ni corporel n'a été effectué. Ne dis JAMAIS « ton scan révèle » ni ne fais référence à un scan — base-toi uniquement sur le profil et les données HealthKit."
         let prompt = """
         \(scanInstruction)
-        Génère un résumé de plan personnalisé 13 semaines (8-12 phrases).
+        Génère un résumé du plan personnalisé de l'utilisateur (8-12 phrases, durée exacte dans le contexte).
         \(UserContextBuilder.promptBlock(from: context))
         Objectif, 3 piliers du plan personnalisé, rythme hebdo, 3 habitudes quotidiennes.
         """

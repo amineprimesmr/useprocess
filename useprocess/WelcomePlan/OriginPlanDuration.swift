@@ -102,3 +102,22 @@ struct OriginPlanDuration: Equatable {
         return week == first
     }
 }
+
+enum ProcessDurationFormat {
+    static func weekCount(fromDays days: Int) -> Int {
+        max(1, Int(ceil(Double(max(0, days)) / 7.0)))
+    }
+
+    static func weeksLabel(count: Int) -> String {
+        count == 1 ? "1 semaine" : "\(count) semaines"
+    }
+
+    static func weeksLabel(fromDays days: Int) -> String {
+        weeksLabel(count: weekCount(fromDays: days))
+    }
+
+    static func weeksShort(fromDays days: Int) -> String {
+        let weeks = weekCount(fromDays: days)
+        return weeks == 1 ? "1 sem." : "\(weeks) sem."
+    }
+}

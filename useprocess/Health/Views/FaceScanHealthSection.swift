@@ -25,6 +25,10 @@ struct FaceScanHealthSection: View {
         return CoachEngine.parsedFaceAnalysis(for: latest)
     }
 
+    private var dailyHistory: [FaceScanResult] {
+        FaceScanEvolutionEngine.dailyHistory(from: history)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
@@ -84,6 +88,15 @@ struct FaceScanHealthSection: View {
                         .foregroundStyle(theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+
+                Text(FaceScanMetricDisplay.evolutionSentence(
+                    for: latest,
+                    previous: previous,
+                    history: dailyHistory
+                ))
+                .font(.caption.weight(.medium))
+                .foregroundStyle(theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
 
                 FaceScanMetricsRow(
                     markers: latest.markers,

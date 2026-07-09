@@ -18,6 +18,8 @@ struct TransformationCaseStudyCard: View {
             BeforeAfterComparisonSlider(
                 beforeImageName: study.beforeImageName,
                 afterImageName: study.afterImageName,
+                beforeVideoName: study.beforeVideoName,
+                afterVideoName: study.afterVideoName,
                 durationWeeks: study.durationWeeks,
                 playsIntroHint: playsIntroHint
             )

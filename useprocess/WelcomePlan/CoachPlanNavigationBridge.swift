@@ -47,7 +47,7 @@ final class CoachPlanNavigationBridge {
     }
 
     func openEveningCheckIn() {
-        shouldOpenPlan = true
+        shouldFocusProfileStatistics = true
         shouldOpenEveningCheckIn = true
     }
 

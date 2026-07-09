@@ -422,7 +422,7 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var scanBlockedByLighting: Bool {
-        !allowsScreenFlash && isLowLight && phase != .completed
+        !isInlinePreview && !allowsScreenFlash && isLowLight && phase != .completed
     }
 
     private var embeddedControlsBlock: some View {

@@ -64,8 +64,7 @@ struct IdealWeightStepView: View {
 
         let weightKg = displayWeight
         guard weightKg > 0, weightKg >= 35, weightKg <= 200 else { return false }
-        guard OnboardingViewModel.isPlausibleWeight(currentWeight) else { return true }
-        return abs(weightKg - currentWeight) >= 0.5
+        return isDistinctFromCurrentWeight(weightKg)
     }
 
     init(
@@ -215,23 +214,26 @@ struct IdealWeightStepView: View {
     }
 
     private func loadExistingWeight() {
-        if OnboardingViewModel.isPlausibleWeight(idealWeight) {
+        if OnboardingViewModel.isPlausibleWeight(idealWeight),
+           isDistinctFromCurrentWeight(idealWeight) {
             populateWeightString(from: idealWeight)
         } else if let profile = profileService.currentProfile,
                   let savedIdeal = profile.idealWeight,
-                  OnboardingViewModel.isPlausibleWeight(savedIdeal) {
+                  OnboardingViewModel.isPlausibleWeight(savedIdeal),
+                  isDistinctFromCurrentWeight(savedIdeal) {
             idealWeight = savedIdeal
             populateWeightString(from: savedIdeal)
-        } else if let recommendedIdealWeight,
-                  OnboardingViewModel.isPlausibleWeight(recommendedIdealWeight) {
-            idealWeight = recommendedIdealWeight
-            populateWeightString(from: recommendedIdealWeight)
         } else {
             idealWeight = 0
             weightString = ""
         }
 
         onValidationChanged?(isValidWeight)
+    }
+
+    private func isDistinctFromCurrentWeight(_ weightKg: Double) -> Bool {
+        guard OnboardingViewModel.isPlausibleWeight(currentWeight) else { return true }
+        return abs(weightKg - currentWeight) >= 0.5
     }
 
     private func populateWeightString(from weightKg: Double) {

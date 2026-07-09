@@ -14,7 +14,7 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
     var title: String {
         switch self {
         case .faceScan: "Dernier scan"
-        case .nutrition: "Repas debloat"
+        case .nutrition: "Repas debloat du jour"
         case .training: "Circuit posture & étirements"
         case .posture: "Posture & circuit quotidien"
         case .faceRoutine: "Routine quotidienne"

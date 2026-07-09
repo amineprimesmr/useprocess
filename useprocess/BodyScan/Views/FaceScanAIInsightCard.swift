@@ -41,7 +41,6 @@ struct FaceScanInsightContext: Equatable {
         )
     }
 }
-
 struct FaceScanAIInsight: Equatable {
     let emoji: String
     let title: String
@@ -54,11 +53,15 @@ struct FaceScanAIInsight: Equatable {
 // MARK: - Builder intelligent
 
 enum FaceScanAIInsightBuilder {
+    @MainActor
     static func insight(
         for result: FaceScanResult,
-        context: FaceScanInsightContext = FaceScanInsightContext()
+        history: [FaceScanResult] = [],
+        context: FaceScanInsightContext? = nil
     ) -> FaceScanAIInsight {
-        let diagnosis = diagnose(result: result, context: context)
+        let resolvedContext = context ?? FaceScanInsightContext.fromTodayHealth()
+        let facts = FaceScanEvolutionEngine.build(for: result, history: history, context: resolvedContext)
+        let diagnosis = diagnose(result: result, context: resolvedContext, facts: facts, history: history)
         let accent = accentColor(for: diagnosis.primaryCause, result: result)
         let body = resolvedBody(from: diagnosis, result: result)
 
@@ -100,7 +103,9 @@ enum FaceScanAIInsightBuilder {
 
     private static func diagnose(
         result: FaceScanResult,
-        context: FaceScanInsightContext
+        context: FaceScanInsightContext,
+        facts: FaceScanEvolutionFacts,
+        history: [FaceScanResult]
     ) -> Diagnosis {
         let scores = rankedCauseScores(for: result)
         let health = healthContext(result: result, context: context)
@@ -111,14 +116,16 @@ enum FaceScanAIInsightBuilder {
             return Diagnosis(
                 primaryCause: .balanced,
                 title: title,
-                body: balancedBody(health: health),
+                body: balancedBody(health: health, facts: facts),
                 emoji: "✨",
                 coachPrompt: coachPrompt(
                     for: result,
                     primary: .balanced,
                     secondary: nil,
                     health: health,
-                    baselineNote: baselineNote
+                    baselineNote: baselineNote,
+                    facts: facts,
+                    history: history
                 )
             )
         }
@@ -130,7 +137,9 @@ enum FaceScanAIInsightBuilder {
             primary: primary,
             secondary: secondary,
             result: result,
-            health: health
+            health: health,
+            facts: facts,
+            history: history
         )
         let emoji = emoji(for: primary)
 
@@ -144,7 +153,9 @@ enum FaceScanAIInsightBuilder {
                 primary: primary,
                 secondary: secondary,
                 health: health,
-                baselineNote: baselineNote
+                baselineNote: baselineNote,
+                facts: facts,
+                history: history
             )
         )
     }
@@ -195,32 +206,66 @@ enum FaceScanAIInsightBuilder {
         primary: FaceScanPrimaryCause,
         secondary: FaceScanPrimaryCause?,
         result: FaceScanResult,
-        health: HealthContext
+        health: HealthContext,
+        facts: FaceScanEvolutionFacts,
+        history: [FaceScanResult]
     ) -> String {
         let why: String
         let fix: String
 
         switch primary {
         case .retention:
-            why = retentionWhy(health: health, result: result)
-            fix = "Pour dégonfler vite : 400–500 ml d'eau maintenant, sel/processés limités au déjeuner, 15 min de marche."
+            why = retentionWhy(health: health, result: result, facts: facts)
+            fix = FaceScanEvolutionEngine.actionSentence(
+                for: result,
+                history: history,
+                context: FaceScanInsightContext.fromTodayHealth()
+            )
         case .cortisol:
-            why = cortisolWhy(health: health, result: result)
-            fix = "Pour redescendre : 5 min de respiration nasale, pas de cardio intense ce soir, coucher plus tôt."
+            why = cortisolWhy(health: health, result: result, facts: facts)
+            fix = pickVariedFix(
+                for: .cortisol,
+                facts: facts,
+                defaults: [
+                    "Pour redescendre : 5 min de respiration nasale, pas de cardio intense ce soir, coucher plus tôt.",
+                    "Pour redescendre : marche douce 15 min, pas d'écran 1 h avant le coucher, caféine limitée."
+                ]
+            )
         case .recovery:
-            why = recoveryWhy(health: health, result: result)
-            fix = "Pour récupérer : pause 20 min sans écran, lumière douce ce soir, vise +45 min de sommeil."
+            why = recoveryWhy(health: health, result: result, facts: facts)
+            fix = pickVariedFix(
+                for: .recovery,
+                facts: facts,
+                defaults: [
+                    "Pour récupérer : pause 20 min sans écran, lumière douce ce soir, vise +45 min de sommeil.",
+                    "Pour récupérer : coucher 30 min plus tôt, pas d'alcool ce soir, respiration nasale 5 min."
+                ]
+            )
         case .skin:
             why = skinWhy(health: health, result: result)
-            fix = "Pour retrouver de l'éclat : eau régulière, repas anti-inflammatoires, pas d'alcool ni sucre ajouté."
+            fix = pickVariedFix(
+                for: .skin,
+                facts: facts,
+                defaults: [
+                    "Pour retrouver de l'éclat : eau régulière, repas anti-inflammatoires, pas d'alcool ni sucre ajouté.",
+                    "Pour retrouver de l'éclat : légumes verts au déjeuner, hydratation, pas de grignotage sucré."
+                ]
+            )
         case .definition:
             why = definitionWhy(health: health, result: result)
-            fix = "Pour retrouver les contours : dégonfle d'abord (eau + sel modéré), mâchoire relâchée, langue au palais."
+            fix = pickVariedFix(
+                for: .definition,
+                facts: facts,
+                defaults: [
+                    "Pour retrouver les contours : dégonfle d'abord (eau + sel modéré), mâchoire relâchée, langue au palais.",
+                    "Pour retrouver les contours : marche 15 min, potassium au repas, pas de chewing-gum."
+                ]
+            )
         case .balanced:
-            return balancedBody(health: health)
+            return balancedBody(health: health, facts: facts)
         case .mixed:
-            why = "Plusieurs facteurs se cumulent sur ton visage ce matin — sommeil, stress ou alimentation d'hier."
-            fix = "Commence par l'eau, le sel modéré et une vraie plage de sommeil ce soir."
+            why = mixedWhy(facts: facts)
+            fix = FaceScanEvolutionEngine.actionSentence(for: result, history: history)
         }
 
         if let secondary, primary != .mixed {
@@ -231,22 +276,64 @@ enum FaceScanAIInsightBuilder {
         return join([why, fix])
     }
 
-    private static func retentionWhy(health: HealthContext, result: FaceScanResult) -> String {
+    private static func mixedWhy(facts: FaceScanEvolutionFacts) -> String {
+        if facts.retentionPersistingScans >= 2 {
+            return "Plusieurs signaux se cumulent et la rétention persiste depuis \(facts.retentionPersistingScans) scans — sommeil, sel ou stress d'hier jouent probablement."
+        }
+        if let correlation = facts.correlations.first {
+            return "Plusieurs facteurs se cumulent — \(correlation.message.lowercased())."
+        }
+        return "Plusieurs facteurs se cumulent sur ton visage ce matin — sommeil, stress ou alimentation d'hier."
+    }
+
+    private static func pickVariedFix(
+        for cause: FaceScanPrimaryCause,
+        facts: FaceScanEvolutionFacts,
+        defaults: [String]
+    ) -> String {
+        let hash = abs((facts.scanId + cause.rawValue).hashValue)
+        let pool = defaults.filter { fix in
+            !facts.recentSuggestedActions.contains(where: {
+                $0.lowercased().contains(fix.prefix(20).lowercased())
+            })
+        }
+        let candidates = pool.isEmpty ? defaults : pool
+        return candidates[hash % candidates.count]
+    }
+
+    private static func retentionWhy(health: HealthContext, result: FaceScanResult, facts: FaceScanEvolutionFacts) -> String {
         let load = metricValue(for: .retention, result: result)
         let severity = FaceScanIndicators.adverseFacePhrase(for: .retention, load: load)
+
+        if facts.retentionPersistingScans >= 3 {
+            var line = "Rétention encore visible (\(load) %) depuis \(facts.retentionPersistingScans) scans — \(severity)."
+            if let nutrition = facts.nutritionYesterday.summaryLine {
+                line += " \(nutrition)"
+            }
+            return line
+        }
+
+        if let delta = delta(for: .retention, result: result), delta >= 6 {
+            var line = "Tu es plus gonflé que d'habitude (\(load) %, \(signed(delta)) vs ta moyenne)."
+            if facts.nutritionYesterday.isHighSodium {
+                line += " Hier sodium élevé (~\(String(format: "%.1f", (facts.nutritionYesterday.estimatedSodiumMg ?? 0) / 1_000)) g) — classique."
+            }
+            return line
+        }
+
         if health.sleepWasShort {
             return "Ton visage montre \(severity) — classique après \(health.sleepHoursLabel ?? "une nuit courte"), quand l'aldostérone reste élevée."
         }
         if health.hydrationWasLow {
             return "Gonflement matinal (\(load) % de rétention) : ton corps compense une hydratation basse en stockant l'eau en surface."
         }
-        if let delta = delta(for: .retention, result: result), delta >= 6 {
-            return "Tu es plus gonflé que d'habitude (\(load) %) — souvent sel, digestion lourde ou manque de sommeil."
+        if let nutrition = facts.nutritionYesterday.summaryLine, facts.nutritionYesterday.isPoorElectrolyteBalance {
+            return "Rétention à \(load) % : \(nutrition)"
         }
         return "Rétention à \(load) % : \(severity.capitalizedFirst) — joues et paupières en premier."
     }
 
-    private static func cortisolWhy(health: HealthContext, result: FaceScanResult) -> String {
+    private static func cortisolWhy(health: HealthContext, result: FaceScanResult, facts: FaceScanEvolutionFacts) -> String {
         let load = metricValue(for: .cortisol, result: result)
         let severity = FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: load)
         if health.hrvWasLow {
@@ -255,10 +342,13 @@ enum FaceScanAIInsightBuilder {
         if health.sleepWasShort {
             return "\(severity.capitalizedFirst) — fréquent quand le sommeil est insuffisant ou fragmenté."
         }
+        if let correlation = facts.correlations.first(where: { $0.message.contains("HRV") || $0.message.contains("sommeil") }) {
+            return "\(severity.capitalizedFirst) — \(correlation.message.lowercased())."
+        }
         return "Ton visage montre \(severity) : gonflement, cernes ou mâchoire serrée combinés."
     }
 
-    private static func recoveryWhy(health: HealthContext, result: FaceScanResult) -> String {
+    private static func recoveryWhy(health: HealthContext, result: FaceScanResult, facts: FaceScanEvolutionFacts) -> String {
         let load = metricValue(for: .recovery, result: result)
         let severity = FaceScanIndicators.adverseFacePhrase(for: .recovery, load: load)
         if health.sleepWasShort {
@@ -266,6 +356,9 @@ enum FaceScanAIInsightBuilder {
         }
         if health.hrvWasLow {
             return "Récupération incomplète (\(load) %) — le visage trahit un système nerveux encore en alerte."
+        }
+        if let correlation = facts.correlations.first(where: { $0.message.contains("cernes") || $0.message.contains("6 h") }) {
+            return "\(severity.capitalizedFirst) — \(correlation.message.lowercased())."
         }
         return "\(severity.capitalizedFirst) autour des yeux : drainage lymphatique ralenti, teint moins lumineux."
     }
@@ -295,9 +388,15 @@ enum FaceScanAIInsightBuilder {
         }
     }
 
-    private static func balancedBody(health: HealthContext) -> String {
+    private static func balancedBody(health: HealthContext, facts: FaceScanEvolutionFacts) -> String {
         if health.sleepWasGood {
+            if let month = facts.monthWellnessDelta, month >= 4 {
+                return "Signaux stables ce matin — visage au-dessus de ta moyenne du mois (+\(month) pts). Garde ta routine debloat."
+            }
             return "Signaux stables ce matin — sommeil solide, visage reposé. Garde ta routine debloat du jour."
+        }
+        if let trend = facts.retentionTrend, trend.direction == .falling {
+            return "Bon équilibre facial aujourd'hui — \(trend.label.lowercased()). Continue hydratation et repas du plan."
         }
         return "Bon équilibre facial aujourd'hui. Continue hydratation, repas du plan personnalisé et scan demain matin."
     }
@@ -420,13 +519,17 @@ enum FaceScanAIInsightBuilder {
         primary: FaceScanPrimaryCause,
         secondary: FaceScanPrimaryCause?,
         health: HealthContext,
-        baselineNote: String?
+        baselineNote: String?,
+        facts: FaceScanEvolutionFacts,
+        history: [FaceScanResult]
     ) -> String {
         let cardInsight = narrativeBody(
             primary: primary,
             secondary: secondary,
             result: result,
-            health: health
+            health: health,
+            facts: facts,
+            history: history
         )
         var contextLines: [String] = [
             "Cause principale : \(label(for: primary)).",
@@ -445,6 +548,18 @@ enum FaceScanAIInsightBuilder {
             )
         }
 
+        if facts.retentionPersistingScans >= 2 {
+            contextLines.append("Rétention persistante : \(facts.retentionPersistingScans) scans consécutifs.")
+        }
+
+        if let nutrition = facts.nutritionYesterday.summaryLine {
+            contextLines.append("Nutrition hier : \(nutrition)")
+        }
+
+        for correlation in facts.correlations {
+            contextLines.append("Corrélation : \(correlation.message)")
+        }
+
         if let sleep = health.sleepHoursLabel {
             contextLines.append("Sommeil récent : \(sleep)\(health.sleepWasShort ? " (insuffisant)" : health.sleepWasGood ? " (OK)" : "").")
         }
@@ -454,6 +569,8 @@ enum FaceScanAIInsightBuilder {
         if let baselineNote { contextLines.append(baselineNote) }
 
         contextLines.append(contentsOf: severityLines(for: result))
+        contextLines.append("Action calculée : \(FaceScanEvolutionEngine.actionSentence(for: result, history: history))")
+        contextLines.append(FaceScanEvolutionEngine.factsPromptBlock(for: result, history: history))
 
         if let parsed = optionalParsedAnalysis(for: result) {
             contextLines.append("Analyse IA précédente (à enrichir, pas recopier) : \(parsed)")
@@ -481,6 +598,7 @@ enum FaceScanAIInsightBuilder {
         - Si rétention ≥ 62 % : « nettement gonflé » ou « marqué » — INTERDIT : « légèrement », « un peu », « léger gonflement ».
         - Si rétention ≥ 78 % : « très marqué » ou « forte rétention ».
         - Même logique pour récupération et cortisol selon leur % affiché.
+        - Si rétention marquée : propose hydratation régulière, sodium modéré et potassium alimentaire. Ne conseille jamais de supplément potassium.
 
         Ne répète pas mot pour mot le résumé de la carte. Ne cite pas tous les scores. Pas d'anglais.
         Pas de lignes ACTION_*, DEEP_LINK, FOLLOW_UP_* — uniquement le texte visible pour l'utilisateur.
@@ -781,4 +899,260 @@ struct FaceScanAIInsightCard: View {
 
 enum FaceScanAIInsightStyle {
     case whoopDark
+}
+
+// MARK: - Carte insight unifiée (locale enrichie + IA async)
+
+struct FaceScanUnifiedInsightCard: View {
+    @Environment(\.appTheme) private var theme
+
+    let result: FaceScanResult
+    let history: [FaceScanResult]
+    var style: FaceScanAIInsightStyle = .whoopDark
+    var animateReveal: Bool = false
+    var onTap: (() -> Void)? = nil
+
+    @State private var isVisible = false
+
+    private var context: FaceScanInsightContext {
+        FaceScanInsightContext.fromTodayHealth()
+    }
+
+    private var localInsight: FaceScanAIInsight {
+        FaceScanAIInsightBuilder.insight(for: result, history: history, context: context)
+    }
+
+    private var analysis: FaceScanAnalysisContent {
+        CoachEngine.parsedFaceAnalysis(for: result)
+    }
+
+    private var showsAIAnalysis: Bool {
+        analysis.isValid
+    }
+
+    private var isEnhancing: Bool {
+        !showsAIAnalysis
+            && ProcessPrivacyConsentStore.shared.canSendFacePhotoToAI
+            && ClaudeConfiguration.isConfigured
+    }
+
+    private var accent: Color {
+        localInsight.accent
+    }
+
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
+    }
+
+    var body: some View {
+        Group {
+            if let onTap {
+                Button(action: onTap) { cardContent }
+                    .buttonStyle(.plain)
+            } else {
+                cardContent
+            }
+        }
+        .opacity(isVisible ? 1 : 0)
+        .offset(y: isVisible ? 0 : 8)
+        .onAppear(perform: syncVisibility)
+        .animation(.easeOut(duration: 0.35), value: showsAIAnalysis)
+    }
+
+    private var cardContent: some View {
+        VStack(spacing: 0) {
+            topGlowLine
+            innerContent
+        }
+        .background(cardBackground)
+        .clipShape(cardShape)
+        .processHomeGlassCardShadow(isDark: theme.isDark)
+    }
+
+    private var topGlowLine: some View {
+        Capsule()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        accent.opacity(0),
+                        accent.opacity(0.85),
+                        accent.opacity(0)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(height: 2)
+            .padding(.horizontal, 36)
+            .padding(.top, 1)
+    }
+
+    @ViewBuilder
+    private var innerContent: some View {
+        if showsAIAnalysis {
+            aiAnalysisContent
+        } else {
+            localInsightContent
+        }
+    }
+
+    private var localInsightContent: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(localInsight.emoji)
+                .font(.system(size: 18))
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Text(localInsight.title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(titleColor)
+
+                    if isEnhancing {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(titleColor.opacity(0.7))
+                    }
+                }
+
+                Text(localInsight.body)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(secondaryColor)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if isEnhancing {
+                    Text("Analyse photo en cours…")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(secondaryColor.opacity(0.72))
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if onTap != nil {
+                Image(systemName: "arrow.up.forward")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(secondaryColor.opacity(0.72))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+    }
+
+    private var aiAnalysisContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(localInsight.emoji) Analyse Process")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(titleColor)
+
+                Spacer(minLength: 4)
+
+                if result.aiEnhanced {
+                    Text("IA")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(accent)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(accent.opacity(0.14))
+                        .clipShape(Capsule())
+                }
+
+                if onTap != nil {
+                    Image(systemName: "arrow.up.forward")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(secondaryColor.opacity(0.72))
+                }
+            }
+
+            Text(analysis.summary)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(titleColor)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !analysis.evolution.isEmpty {
+                Text(analysis.evolution)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(secondaryColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !analysis.signals.isEmpty {
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(analysis.signals, id: \.self) { signal in
+                        HStack(alignment: .top, spacing: 6) {
+                            Circle()
+                                .fill(accent.opacity(0.85))
+                                .frame(width: 5, height: 5)
+                                .padding(.top, 6)
+                            Text(signal)
+                                .font(.system(size: 12.5, weight: .regular))
+                                .foregroundStyle(secondaryColor)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+
+            if !analysis.tips.isEmpty {
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(analysis.tips, id: \.self) { tip in
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(accent)
+                            Text(tip)
+                                .font(.system(size: 12.5, weight: .medium))
+                                .foregroundStyle(titleColor.opacity(0.88))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+    }
+
+    @ViewBuilder
+    private var cardBackground: some View {
+        switch style {
+        case .whoopDark:
+            if theme.isDark {
+                cardShape.fill(FaceScanWhoopPalette.card.opacity(0.92))
+            } else {
+                cardShape
+                    .fill(.clear)
+                    .processGlassEffect(in: cardShape, interactive: false)
+            }
+        }
+    }
+
+    private var titleColor: Color {
+        switch style {
+        case .whoopDark: return FaceScanWhoopPalette.label
+        }
+    }
+
+    private var secondaryColor: Color {
+        switch style {
+        case .whoopDark: return FaceScanWhoopPalette.secondary
+        }
+    }
+
+    private func syncVisibility() {
+        guard animateReveal else {
+            isVisible = true
+            return
+        }
+        isVisible = false
+        Task {
+            try? await Task.sleep(for: .milliseconds(320))
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.32)) {
+                    isVisible = true
+                }
+            }
+        }
+    }
 }

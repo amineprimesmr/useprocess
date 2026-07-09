@@ -21,25 +21,35 @@ struct OnboardingEstimationContext {
     let height: Double?
     let gender: Gender?
 
-    var titleMessage: String {
-        "Tu auras atteint ton plein potentiel le..."
-    }
-
     var weightMilestoneLabel: String? {
         guard hasWeightGoal, let ideal = idealWeight else { return nil }
         return "\(Int(ideal.rounded())) kg"
     }
 }
 
+struct OnboardingGraphMilestone: Equatable {
+    let id: String
+    let label: String
+    let date: Date
+    let fraction: Double
+}
+
 /// Données figées du graphique — calculées une seule fois pour éviter les sauts pendant l'animation.
 struct OnboardingEstimationGraphSnapshot {
     let referenceDate: Date
+    /// Date debloat visage (titre + chips).
     let projectedDate: Date
+    /// Fin réelle de la courbe (extrémité droite).
+    let endDate: Date
     let countdownDays: Int
-    let normalizedValues: [Double]
-    let weightMilestoneLabel: String?
-    let weightMilestoneDate: Date?
-    let weightMilestoneFraction: Double
+    /// Valeurs 1 → 0 : gonflement → dégonflement.
+    let descentValues: [Double]
+    /// Jalons intermédiaires uniquement — pas le point final de la courbe.
+    let intermediateMarkers: [OnboardingGraphMilestone]
+
+    var countdownWeeks: Int {
+        ProcessDurationFormat.weekCount(fromDays: countdownDays)
+    }
 
     static func make(
         context: OnboardingEstimationContext,
@@ -47,40 +57,65 @@ struct OnboardingEstimationGraphSnapshot {
         referenceDate: Date = Date()
     ) -> OnboardingEstimationGraphSnapshot {
         let calendar = Calendar.current
-        let projectedDate = timeline.potentialDate
+        let trajectory = timeline.trajectory
+        let debloatDate = timeline.debloatDate
+        let endDate = trajectory.endDate
+
         let countdownDays = max(
             0,
-            calendar.dateComponents([.day], from: referenceDate, to: projectedDate).day ?? 0
+            calendar.dateComponents([.day], from: referenceDate, to: debloatDate).day ?? 0
         )
 
-        let curveData = GoalProjectionService.shared.generateProgressCurveData(
-            startDate: referenceDate,
-            endDate: projectedDate,
-            currentValue: 0,
-            targetValue: 100,
-            isWeightGoal: context.hasWeightGoal,
-            weightGoal: context.weightGoal
-        )
+        let pointCount = 7
+        let seed = Int(debloatDate.timeIntervalSince1970) % 997
+        let descentValues = makeIrregularDescent(pointCount: pointCount, seed: seed)
 
-        let normalizedValues: [Double]
-        if curveData.count <= 6 {
-            normalizedValues = curveData.map { $0.value / 100.0 }
-        } else {
-            let step = max(1, curveData.count / 6)
-            normalizedValues = Array(stride(from: 0, to: curveData.count, by: step).prefix(6)).map { index in
-                curveData[index].value / 100.0
+        let intermediateMarkers = trajectory.milestones
+            .filter { milestone in
+                milestone.fraction < 0.94
+                    && abs(milestone.date.timeIntervalSince(endDate)) > 86_400
             }
-        }
+            .map {
+                OnboardingGraphMilestone(
+                    id: $0.id,
+                    label: $0.label,
+                    date: $0.date,
+                    fraction: $0.fraction
+                )
+            }
 
         return OnboardingEstimationGraphSnapshot(
             referenceDate: referenceDate,
-            projectedDate: projectedDate,
+            projectedDate: debloatDate,
+            endDate: endDate,
             countdownDays: countdownDays,
-            normalizedValues: normalizedValues,
-            weightMilestoneLabel: context.weightMilestoneLabel,
-            weightMilestoneDate: timeline.weightGoalDate,
-            weightMilestoneFraction: timeline.weightMilestoneFraction
+            descentValues: descentValues,
+            intermediateMarkers: intermediateMarkers
         )
+    }
+
+    /// Courbe descendante : 7 points max, irrégularité légère (pas de zigzag).
+    private static func makeIrregularDescent(pointCount: Int, seed: Int) -> [Double] {
+        let count = min(7, max(5, pointCount))
+        guard count >= 2 else { return [0.92, 0.08] }
+
+        var values: [Double] = []
+        let seedD = Double(seed)
+
+        for index in 0..<count {
+            let t = Double(index) / Double(count - 1)
+            var level = 1.0 - pow(t, 1.18)
+
+            // Légères variations lentes — pas de haute fréquence.
+            level += sin(t * 2.8 + seedD * 0.05) * 0.045 * (1.0 - t * 0.5)
+            level += cos(t * 1.6 + seedD * 0.08) * 0.025
+
+            values.append(max(0.06, min(0.98, level)))
+        }
+
+        values[0] = 0.94
+        values[values.count - 1] = 0.07
+        return values
     }
 }
 

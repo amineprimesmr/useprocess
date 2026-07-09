@@ -218,8 +218,10 @@ final class CoachChatViewModel {
     }
 
     func sendFaceScanHandoff(for result: FaceScanResult, insight: FaceScanAIInsight? = nil) async {
+        let history = FaceScanEvolutionEngine.dailyHistory(from: FaceScanHistoryStore.shared.history)
         let resolvedInsight = insight ?? FaceScanAIInsightBuilder.insight(
             for: result,
+            history: history,
             context: FaceScanInsightContext.fromTodayHealth()
         )
         let message = FaceScanCoachInsightService.immediateCoachMessage(

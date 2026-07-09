@@ -10,10 +10,36 @@ import SwiftUI
 struct TransformationCaseStudy: Identifiable, Equatable {
     let id: String
     let name: String
-    let beforeImageName: String
-    let afterImageName: String
+    let beforeImageName: String?
+    let afterImageName: String?
+    let beforeVideoName: String?
+    let afterVideoName: String?
     let durationWeeks: Int
     let memberSince: String
+
+    init(
+        id: String,
+        name: String,
+        beforeImageName: String? = nil,
+        afterImageName: String? = nil,
+        beforeVideoName: String? = nil,
+        afterVideoName: String? = nil,
+        durationWeeks: Int,
+        memberSince: String
+    ) {
+        self.id = id
+        self.name = name
+        self.beforeImageName = beforeImageName
+        self.afterImageName = afterImageName
+        self.beforeVideoName = beforeVideoName
+        self.afterVideoName = afterVideoName
+        self.durationWeeks = durationWeeks
+        self.memberSince = memberSince
+    }
+
+    var usesVideo: Bool {
+        beforeVideoName != nil && afterVideoName != nil
+    }
 }
 
 enum TransformationCaseStudyCatalog {
@@ -22,8 +48,8 @@ enum TransformationCaseStudyCatalog {
         .init(
             id: "imran",
             name: "Imran",
-            beforeImageName: "imran",
-            afterImageName: "imranprime",
+            beforeVideoName: "imran",
+            afterVideoName: "imranprime",
             durationWeeks: 5,
             memberSince: "📅 Membre depuis mai 2026"
         ),
@@ -49,8 +75,15 @@ enum TransformationCaseStudyCatalog {
 
     static func availableStudies() -> [TransformationCaseStudy] {
         all.filter { study in
-            ProcessAssetCatalog.contains(study.beforeImageName)
-                && ProcessAssetCatalog.contains(study.afterImageName)
+            if study.usesVideo {
+                return TransformationBundledVideo.url(for: study.beforeVideoName) != nil
+                    && TransformationBundledVideo.url(for: study.afterVideoName) != nil
+            }
+            guard let before = study.beforeImageName, let after = study.afterImageName else {
+                return false
+            }
+            return ProcessAssetCatalog.contains(before)
+                && ProcessAssetCatalog.contains(after)
         }
     }
 }

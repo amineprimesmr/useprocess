@@ -201,6 +201,13 @@ struct FaceMeshScanView: UIViewRepresentable {
             completed = false
             scanExhausted = false
             resetScanTracking(soft: false)
+            publishUI(force: true) {
+                self.instruction = ""
+                self.frameHint = nil
+                self.progress = 0
+                self.ringProgress = 0
+                self.activeTickSectors = []
+            }
         }
 
         func updateViewportSize(_ size: CGSize) {
@@ -253,7 +260,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 } else {
                     let wasLow = self.isLowLight
                     self.isLowLight = low
-                    if !self.allowsScreenFlash {
+                    if !self.allowsScreenFlash, !self.isPreviewOnly {
                         if low {
                             self.enforceInsufficientLightLock()
                         } else if wasLow {
@@ -362,6 +369,17 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
 
             resetScanTracking(soft: false)
+            if isPreviewOnly {
+                publishUI(force: true) {
+                    self.isFaceDetected = false
+                    self.progress = 0
+                    self.ringProgress = 0
+                    self.activeTickSectors = []
+                    self.instruction = ""
+                    self.frameHint = nil
+                }
+                return
+            }
             publishUI(force: true) {
                 self.isFaceDetected = false
                 self.progress = 0
@@ -458,7 +476,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 return
             }
 
-            if !allowsScreenFlash && isLowLight {
+            if !allowsScreenFlash && isLowLight && !isPreviewOnly {
                 enforceInsufficientLightLock(faceVisible: true)
                 return
             }
@@ -468,6 +486,15 @@ struct FaceMeshScanView: UIViewRepresentable {
             faceDetected = true
             trackedFrameCount += 1
             stableFrameCount += 1
+
+            if isPreviewOnly {
+                publishUI(force: false) {
+                    self.isFaceDetected = self.trackedFrameCount >= 4
+                    self.instruction = ""
+                    self.frameHint = nil
+                }
+                return
+            }
 
             let distanceMeters = faceDistanceFromCamera(faceAnchor: faceAnchor)
             let fillRatio = projectedFaceFillRatio(
@@ -491,15 +518,6 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
 
             distanceOkFrameCount += 1
-
-            if isPreviewOnly {
-                publishUI(force: false) {
-                    self.isFaceDetected = self.trackedFrameCount >= 4
-                    self.instruction = ""
-                    self.frameHint = nil
-                }
-                return
-            }
 
             if scanStartTime == nil {
                 guard trackedFrameCount >= minTrackedFramesBeforeScan else {

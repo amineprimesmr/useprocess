@@ -65,6 +65,7 @@ enum FaceScanService {
             PlanRecalibrationService.applyBaselineScan(to: &plan, markers: markers)
             _ = PlanRecalibrationService.recalibrate(plan: &plan, latestScan: result)
             WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
+            ProcessPlanProgressStore.shared.evaluateAfterScan(plan: plan, latestScan: result)
         }
 
         enqueuePostScanEnhancements(for: result, profile: profile)

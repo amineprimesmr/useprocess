@@ -24,6 +24,13 @@ class HapticManager: ObservableObject {
     /// Reste sous la limite système de 32 messages/s observée sur appareil réel.
     private let cardHoldInterval: TimeInterval = 0.04
 
+    // Engagement hold (maintien doigt onboarding)
+    private var engagementHoldActive = false
+    private var engagementHoldProgress: Double = 0
+    private var engagementHoldLastTick: CFAbsoluteTime = 0
+    private var engagementHoldGenerator: UIImpactFeedbackGenerator?
+    private var engagementHoldStyle: UIImpactFeedbackGenerator.FeedbackStyle = .soft
+
     private init() {}
 
     private func setupHapticEngine() {
@@ -183,5 +190,75 @@ class HapticManager: ObservableObject {
         guard let cardHoldFeedback else { return }
         cardHoldFeedback.impactOccurred(intensity: 0.22)
         cardHoldFeedback.prepare()
+    }
+
+    // MARK: - Engagement hold crescendo
+
+    /// Démarre un crescendo haptique fiable pour le maintien du doigt (onboarding).
+    func beginEngagementHoldCrescendo() {
+        endEngagementHoldCrescendo()
+        engagementHoldActive = true
+        engagementHoldProgress = 0
+        engagementHoldLastTick = 0
+        engagementHoldStyle = .soft
+        engagementHoldGenerator = UIImpactFeedbackGenerator(style: .soft)
+        engagementHoldGenerator?.prepare()
+        tickEngagementHoldCrescendo(force: true)
+    }
+
+    /// Met à jour la progression 0…1 et déclenche un tick si l'intervalle est écoulé.
+    func updateEngagementHoldProgress(_ progress: Double) {
+        guard engagementHoldActive else { return }
+        engagementHoldProgress = min(1, max(0, progress))
+        refreshEngagementHoldGeneratorIfNeeded()
+        tickEngagementHoldCrescendo(force: false)
+    }
+
+    /// Pulse fort une seule fois par jalon (engagement validé visuellement).
+    func engagementMilestonePulse() {
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.prepare()
+        generator.impactOccurred(intensity: 0.95)
+    }
+
+    func endEngagementHoldCrescendo() {
+        engagementHoldActive = false
+        engagementHoldProgress = 0
+        engagementHoldLastTick = 0
+        engagementHoldGenerator = nil
+    }
+
+    private func refreshEngagementHoldGeneratorIfNeeded() {
+        let desiredStyle: UIImpactFeedbackGenerator.FeedbackStyle
+        switch engagementHoldProgress {
+        case ..<0.34:
+            desiredStyle = .soft
+        case ..<0.68:
+            desiredStyle = .medium
+        default:
+            desiredStyle = .heavy
+        }
+
+        guard desiredStyle != engagementHoldStyle else { return }
+        engagementHoldStyle = desiredStyle
+        engagementHoldGenerator = UIImpactFeedbackGenerator(style: desiredStyle)
+        engagementHoldGenerator?.prepare()
+    }
+
+    private func tickEngagementHoldCrescendo(force: Bool) {
+        guard engagementHoldActive, let generator = engagementHoldGenerator else { return }
+
+        let now = CFAbsoluteTimeGetCurrent()
+        let progress = engagementHoldProgress
+
+        // Intervalle qui se resserre : ~120 ms → ~40 ms (sous la limite iOS ~32/s).
+        let minInterval = 0.04 + (1.0 - progress) * 0.08
+
+        if !force, now - engagementHoldLastTick < minInterval { return }
+        engagementHoldLastTick = now
+
+        let intensity = CGFloat(0.25 + progress * 0.75)
+        generator.impactOccurred(intensity: intensity)
+        generator.prepare()
     }
 }

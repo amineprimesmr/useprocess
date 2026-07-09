@@ -1,0 +1,11 @@
+---
+description: Never run Xcode builds from Cursor agents
+alwaysApply: true
+---
+
+# No Xcode Builds in Cursor
+
+- **Never** run `xcodebuild`, `./open-xcode.command` for build verification, or any other Xcode build/compile command from Cursor agents.
+- Do not launch simulator builds to verify compilation unless the user explicitly asks to run a build.
+- For Swift/iOS compile issues, fix from compiler errors shown in Xcode, linter diagnostics, or static code review — do not attempt to build in the terminal.
+- If verification is needed, tell the user to build in Xcode locally.

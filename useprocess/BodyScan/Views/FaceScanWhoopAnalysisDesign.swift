@@ -66,17 +66,37 @@ struct FaceScanWhoopAnalysisScreen: View {
     @State private var showsAnalysisInfo = false
 
     private var analysis: FaceScanAnalysisContent {
-        CoachEngine.parsedFaceAnalysis(for: result)
+        CoachEngine.parsedFaceAnalysis(for: displayResult)
     }
 
     private var displayResult: FaceScanResult {
         historyStore.history.first(where: { $0.id == result.id }) ?? result
     }
 
+    private var resolvedHistory: [FaceScanResult] {
+        history.isEmpty ? historyStore.history : history
+    }
+
+    private var previousForDisplay: FaceScanResult? {
+        resolvedHistory
+            .filter { $0.id != displayResult.id && $0.createdAt < displayResult.createdAt }
+            .sorted { $0.createdAt > $1.createdAt }
+            .first
+    }
+
+    private var dailyHistory: [FaceScanResult] {
+        FaceScanEvolutionEngine.dailyHistory(from: resolvedHistory)
+    }
+
+    private var insightContext: FaceScanInsightContext {
+        FaceScanInsightContext.fromTodayHealth()
+    }
+
     private var todayInsight: FaceScanAIInsight {
         FaceScanAIInsightBuilder.insight(
             for: displayResult,
-            context: FaceScanInsightContext.fromTodayHealth()
+            history: dailyHistory,
+            context: insightContext
         )
     }
 
@@ -91,14 +111,23 @@ struct FaceScanWhoopAnalysisScreen: View {
                         .padding(.top, 8)
                         .padding(.bottom, 18)
 
-                    FaceScanWhoopScoreRing(result: result)
+                    FaceScanWhoopScoreRing(result: displayResult)
                         .padding(.bottom, 22)
 
-                    FaceScanWhoopMetricsCard(result: result)
+                    FaceScanWhoopMetricsCard(result: displayResult, previous: previousForDisplay)
                         .padding(.horizontal, 16)
 
-                    FaceScanAIInsightCard(
-                        insight: todayInsight,
+                    FaceScanWhoopEvolutionSummaryCard(
+                        result: displayResult,
+                        previous: previousForDisplay,
+                        history: dailyHistory
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+
+                    FaceScanUnifiedInsightCard(
+                        result: displayResult,
+                        history: dailyHistory,
                         style: .whoopDark,
                         onTap: {
                             FaceScanCoachHandoffCoordinator.deliver(
@@ -110,7 +139,7 @@ struct FaceScanWhoopAnalysisScreen: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 14)
 
-                    FaceScanWhoopIndicatorTrendsSection(history: history)
+                    FaceScanWhoopIndicatorTrendsSection(history: dailyHistory)
                         .padding(.horizontal, 16)
                         .padding(.top, 28)
 
@@ -120,8 +149,8 @@ struct FaceScanWhoopAnalysisScreen: View {
         }
         .sheet(isPresented: $showsAnalysisInfo) {
             FaceScanWhoopAnalysisInfoSheet(
-                result: result,
-                history: history.isEmpty ? FaceScanHistoryStore.shared.history : history,
+                result: displayResult,
+                history: resolvedHistory,
                 analysis: analysis
             )
         }
@@ -197,10 +226,30 @@ struct FaceScanWhoopInlineResults: View {
         historyStore.history.first(where: { $0.id == result.id }) ?? result
     }
 
+    private var resolvedHistory: [FaceScanResult] {
+        history.isEmpty ? historyStore.history : history
+    }
+
+    private var previousForDisplay: FaceScanResult? {
+        resolvedHistory
+            .filter { $0.id != displayResult.id && $0.createdAt < displayResult.createdAt }
+            .sorted { $0.createdAt > $1.createdAt }
+            .first
+    }
+
+    private var dailyHistory: [FaceScanResult] {
+        FaceScanEvolutionEngine.dailyHistory(from: resolvedHistory)
+    }
+
+    private var insightContext: FaceScanInsightContext {
+        FaceScanInsightContext.fromTodayHealth()
+    }
+
     private var todayInsight: FaceScanAIInsight {
         FaceScanAIInsightBuilder.insight(
             for: displayResult,
-            context: FaceScanInsightContext.fromTodayHealth()
+            history: dailyHistory,
+            context: insightContext
         )
     }
 
@@ -210,16 +259,27 @@ struct FaceScanWhoopInlineResults: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            FaceScanWhoopScoreRing(result: result)
+            FaceScanWhoopScoreRing(result: displayResult)
                 .scaleEffect(ringScale)
                 .padding(.bottom, 22 * ringScale)
 
-            FaceScanWhoopMetricsCard(result: result, style: style)
+            FaceScanWhoopMetricsCard(result: displayResult, previous: previousForDisplay, style: style)
                 .padding(.horizontal, metricsHorizontalPadding)
 
+            if style == .immersive {
+                FaceScanWhoopEvolutionSummaryCard(
+                    result: displayResult,
+                    previous: previousForDisplay,
+                    history: dailyHistory
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+            }
+
             if showsInsight {
-                FaceScanAIInsightCard(
-                    insight: todayInsight,
+                FaceScanUnifiedInsightCard(
+                    result: displayResult,
+                    history: dailyHistory,
                     style: .whoopDark,
                     animateReveal: true,
                     onTap: allowsCoachHandoff
@@ -236,7 +296,7 @@ struct FaceScanWhoopInlineResults: View {
             }
 
             if showsTrends {
-                FaceScanWhoopIndicatorTrendsSection(history: history)
+                FaceScanWhoopIndicatorTrendsSection(history: dailyHistory)
                     .padding(.horizontal, 16)
                     .padding(.top, 28)
             }
@@ -453,6 +513,7 @@ private struct FaceScanWhoopMetricsCard: View {
     @Environment(\.faceScanResultsAnimateReveal) private var animateReveal
 
     let result: FaceScanResult
+    var previous: FaceScanResult?
     var style: FaceScanWhoopResultsStyle = .immersive
 
     @State private var cardVisible = true
@@ -473,6 +534,7 @@ private struct FaceScanWhoopMetricsCard: View {
                 FaceScanWhoopMetricRow(
                     kind: kind,
                     result: result,
+                    previous: previous,
                     style: style,
                     isRevealed: !animateReveal || index < revealedMetricCount,
                     animatesCount: animateReveal
@@ -606,9 +668,120 @@ private struct FaceScanWhoopMetricsCardChrome: ViewModifier {
     }
 }
 
+private struct FaceScanWhoopEvolutionSummaryCard: View {
+    @Environment(\.appTheme) private var theme
+
+    let result: FaceScanResult
+    var previous: FaceScanResult?
+    var history: [FaceScanResult] = []
+
+    private var context: FaceScanInsightContext {
+        FaceScanInsightContext.fromTodayHealth()
+    }
+
+    private var items: [FaceScanMetricDisplay.Item] {
+        FaceScanMetricDisplay.keyItems(for: result, previous: previous, limit: 3)
+    }
+
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Ce qui change")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(FaceScanWhoopPalette.label)
+
+                Spacer()
+
+                Text(result.relativeSignals?.baselineLabel ?? "Référence en cours")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .lineLimit(1)
+            }
+
+            Text(FaceScanMetricDisplay.evolutionSentence(
+                for: result,
+                previous: previous,
+                history: history,
+                context: context
+            ))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(FaceScanWhoopPalette.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                ForEach(items) { item in
+                    FaceScanWhoopEvolutionPill(item: item)
+                }
+            }
+
+            Text(FaceScanMetricDisplay.actionSentence(
+                for: result,
+                previous: previous,
+                history: history,
+                waterLiters: context.waterLiters,
+                hydrationTargetLiters: context.hydrationTargetLiters
+            ))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.82))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .background {
+            cardShape
+                .fill(.clear)
+                .processGlassEffect(in: cardShape, interactive: false)
+        }
+        .clipShape(cardShape)
+        .processHomeGlassCardShadow(isDark: theme.isDark)
+    }
+}
+
+private struct FaceScanWhoopEvolutionPill: View {
+    let item: FaceScanMetricDisplay.Item
+
+    private var tint: Color {
+        switch item.comparisonKind {
+        case .better: return FaceScanWhoopPalette.optimal
+        case .worse: return FaceScanWhoopPalette.insufficient
+        case .stable, .reference: return FaceScanWhoopPalette.secondary
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 4) {
+                Image(systemName: item.arrowSystemName)
+                    .font(.system(size: 10, weight: .bold))
+                Text(item.deltaLabel)
+                    .font(.system(size: 12, weight: .bold))
+                    .monospacedDigit()
+            }
+            .foregroundStyle(tint)
+
+            Text(item.title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.82))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(tint.opacity(0.13))
+        }
+    }
+}
+
 private struct FaceScanWhoopMetricRow: View {
     let kind: FaceScanIndicators.Kind
     let result: FaceScanResult
+    var previous: FaceScanResult?
     var style: FaceScanWhoopResultsStyle = .immersive
     var isRevealed: Bool = true
     var animatesCount: Bool = false
@@ -623,6 +796,10 @@ private struct FaceScanWhoopMetricRow: View {
 
     private var zone: FaceScanIndicators.WellnessZone {
         FaceScanIndicators.displayZone(for: kind, result: result)
+    }
+
+    private var displayItem: FaceScanMetricDisplay.Item {
+        FaceScanMetricDisplay.item(for: kind, result: result, previous: previous)
     }
 
     private var iconColor: Color {
@@ -644,6 +821,14 @@ private struct FaceScanWhoopMetricRow: View {
         return FaceScanWhoopPalette.label
     }
 
+    private var comparisonColor: Color {
+        switch displayItem.comparisonKind {
+        case .better: return FaceScanWhoopPalette.optimal
+        case .worse: return FaceScanWhoopPalette.insufficient
+        case .stable, .reference: return FaceScanWhoopPalette.secondary
+        }
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: kind.systemImage)
@@ -651,13 +836,25 @@ private struct FaceScanWhoopMetricRow: View {
                 .foregroundStyle(iconColor)
                 .frame(width: 22)
 
-            Text(kind.whoopLabel)
-                .font(.system(size: style == .chatThread ? 12 : 11, weight: .semibold))
-                .foregroundStyle(labelColor)
-                .tracking(0.3)
-                .lineLimit(2)
-                .minimumScaleFactor(0.82)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(kind.whoopLabel)
+                    .font(.system(size: style == .chatThread ? 12 : 11, weight: .semibold))
+                    .foregroundStyle(labelColor)
+                    .tracking(0.3)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+
+                HStack(spacing: 4) {
+                    Image(systemName: displayItem.arrowSystemName)
+                        .font(.system(size: 9, weight: .bold))
+                    Text(displayItem.comparison)
+                        .font(.system(size: 10, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+                }
+                .foregroundStyle(comparisonColor)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             FaceScanWhoopZoneBar(activeZone: zone, style: style)
                 .frame(width: 92)
@@ -830,6 +1027,31 @@ private struct FaceScanWhoopIndicatorTrendCard: View {
         }
     }
 
+    private var latestScan: FaceScanResult? {
+        history.sorted { $0.createdAt > $1.createdAt }.first
+    }
+
+    private var previousScan: FaceScanResult? {
+        guard let latestScan else { return nil }
+        return history
+            .filter { $0.id != latestScan.id && $0.createdAt < latestScan.createdAt }
+            .sorted { $0.createdAt > $1.createdAt }
+            .first
+    }
+
+    private var trendItem: FaceScanMetricDisplay.Item? {
+        latestScan.map { FaceScanMetricDisplay.item(for: kind, result: $0, previous: previousScan) }
+    }
+
+    private var trendTint: Color {
+        guard let trendItem else { return FaceScanWhoopPalette.secondary }
+        switch trendItem.comparisonKind {
+        case .better: return FaceScanWhoopPalette.optimal
+        case .worse: return FaceScanWhoopPalette.insufficient
+        case .stable, .reference: return FaceScanWhoopPalette.secondary
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
@@ -847,7 +1069,22 @@ private struct FaceScanWhoopIndicatorTrendCard: View {
 
                 Spacer(minLength: 8)
 
-                if let latest = daySlots.compactMap(\.value).last {
+                if let trendItem {
+                    HStack(spacing: 5) {
+                        Image(systemName: trendItem.arrowSystemName)
+                            .font(.system(size: 10, weight: .bold))
+                        Text(trendItem.deltaLabel)
+                            .font(.system(size: 12, weight: .bold))
+                            .monospacedDigit()
+                    }
+                    .foregroundStyle(trendTint)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background {
+                        Capsule(style: .continuous)
+                            .fill(trendTint.opacity(0.13))
+                    }
+                } else if let latest = daySlots.compactMap(\.value).last {
                     Text("\(latest)%")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(FaceScanWhoopPalette.label)
@@ -901,7 +1138,7 @@ private struct FaceScanWhoopChartDaySlot: Identifiable {
         }
 
         var latestByDay: [Date: FaceScanResult] = [:]
-        for scan in history {
+        for scan in history where scan.source == .daily {
             let day = calendar.startOfDay(for: scan.createdAt)
             guard day >= start, day <= today else { continue }
             if let existing = latestByDay[day], existing.createdAt > scan.createdAt { continue }
@@ -1133,6 +1370,25 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
                                     Text("• \(signal)")
                                         .font(.system(size: 13))
                                         .foregroundStyle(FaceScanWhoopPalette.secondary)
+                                }
+
+                                if !analysis.evolution.isEmpty {
+                                    Text(analysis.evolution)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.86))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                ForEach(analysis.tips, id: \.self) { tip in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: "arrow.right.circle.fill")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundStyle(FaceScanWhoopPalette.optimal)
+                                        Text(tip)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundStyle(FaceScanWhoopPalette.label)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
                                 }
                             }
                             .padding(16)

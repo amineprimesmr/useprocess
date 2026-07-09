@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Page détail repas — swipe latéral entre propositions du même créneau.
+/// Page détail repas — une proposition à la fois, changement via bouton sticky.
 struct PlanMealDetailView: View {
     let entry: PlanDayMealEntry
     let plan: FaceOriginPlan
@@ -43,27 +43,16 @@ struct PlanMealDetailView: View {
         )
     }
 
+    private var showsChangeMealButton: Bool {
+        isEditable && alternatives.count > 1
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                if alternatives.count > 1 {
-                    PlanMealDetailAlternativesHero(
-                        alternatives: alternatives,
-                        slot: entry.slot,
-                        plan: plan,
-                        day: day,
-                        selectedMeal: $displayedMeal
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 6)
-                }
-
+            ZStack(alignment: .bottom) {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 22) {
-                        if alternatives.count == 1 {
-                            singleMealHeroHeader
-                        }
+                        mealHeroHeader
 
                         Text(displayedMeal.name)
                             .font(.system(size: 26, weight: .bold))
@@ -91,9 +80,15 @@ struct PlanMealDetailView: View {
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 32)
+                    .padding(.top, 8)
+                    .padding(.bottom, showsChangeMealButton ? 96 : 32)
+                    .animation(.spring(response: 0.42, dampingFraction: 0.86), value: displayedMeal.name)
                 }
                 .processTransparentScrollSurface()
+
+                if showsChangeMealButton {
+                    changeMealStickyButton
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -118,7 +113,7 @@ struct PlanMealDetailView: View {
         .processAppPageBackground()
     }
 
-    private var singleMealHeroHeader: some View {
+    private var mealHeroHeader: some View {
         let imageAsset = MealNutritionCatalog.resolvedImageAsset(
             for: displayedMeal,
             slot: entry.slot,
@@ -152,7 +147,41 @@ struct PlanMealDetailView: View {
             MealDebloatScoreGlassPill(assessment: assessment)
                 .offset(y: 10)
         }
-        .padding(.top, 8)
+        .padding(.top, 4)
+        .id("meal-hero-\(displayedMeal.name)")
+    }
+
+    private var changeMealStickyButton: some View {
+        Button(action: cycleToNextMeal) {
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Changez de repas")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .foregroundStyle(theme.primaryText.opacity(0.92))
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .processGlassButton(in: Capsule())
+            .shadow(color: Color.black.opacity(theme.isDark ? 0.42 : 0.14), radius: 18, y: 10)
+        }
+        .buttonStyle(ProcessGlassPressStyle())
+        .padding(.horizontal, 20)
+        .padding(.bottom, 12)
+        .accessibilityLabel("Changez de repas")
+        .accessibilityHint("Affiche une autre proposition du catalogue pour ce créneau")
+    }
+
+    private func cycleToNextMeal() {
+        guard alternatives.count > 1 else { return }
+        HapticManager.shared.impact(.light)
+
+        let currentIndex = alternatives.firstIndex(where: { $0.name == displayedMeal.name }) ?? 0
+        let nextIndex = (currentIndex + 1) % alternatives.count
+
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            displayedMeal = alternatives[nextIndex]
+        }
     }
 
     private var ingredientsSection: some View {

@@ -99,7 +99,12 @@ struct PlanLastFaceScanSection: View {
     }
 
     private func todayInsight(for result: FaceScanResult) -> FaceScanAIInsight {
-        FaceScanAIInsightBuilder.insight(for: result, context: insightContext())
+        let history = FaceScanEvolutionEngine.dailyHistory(from: FaceScanHistoryStore.shared.history)
+        return FaceScanAIInsightBuilder.insight(
+            for: result,
+            history: history,
+            context: insightContext()
+        )
     }
 
     @MainActor

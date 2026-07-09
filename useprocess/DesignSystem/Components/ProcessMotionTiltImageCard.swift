@@ -51,6 +51,9 @@ final class ProcessDeviceMotionTiltModel: ObservableObject {
     @Published var parallaxX: CGFloat = 0
     @Published var parallaxY: CGFloat = 0
     @Published var isEngaged = false
+    /// Vecteur gravité brut (réutilisable par la simulation d'eau).
+    @Published var gravityX: Double = 0
+    @Published var gravityZ: Double = -1
 
     private let motionManager = CMMotionManager()
     private let maxTiltDegrees: Double
@@ -87,6 +90,8 @@ final class ProcessDeviceMotionTiltModel: ObservableObject {
         motionManager.stopDeviceMotionUpdates()
         isRunning = false
         isEngaged = false
+        gravityX = 0
+        gravityZ = -1
         withAnimation(.spring(response: 0.52, dampingFraction: 0.74)) {
             tiltX = 0
             tiltY = 0
@@ -98,6 +103,9 @@ final class ProcessDeviceMotionTiltModel: ObservableObject {
     private func apply(_ motion: CMDeviceMotion) {
         let gx = motion.gravity.x
         let gz = motion.gravity.z
+
+        gravityX = gx
+        gravityZ = gz
 
         let targetTiltY = clamp(Double(gx) * maxTiltDegrees * tiltGain, max: maxTiltDegrees)
         let targetTiltX = clamp(Double(gz) * maxTiltDegrees * tiltGain, max: maxTiltDegrees)

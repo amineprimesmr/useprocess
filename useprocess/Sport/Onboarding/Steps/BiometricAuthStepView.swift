@@ -2,7 +2,7 @@
 //  BiometricAuthStepView.swift
 //  Process
 //
-//  Page d'authentification biométrique (empreinte digitale)
+//  Page d'engagement — maintien du doigt pour confirmer.
 //
 
 import SwiftUI
@@ -21,22 +21,22 @@ struct BiometricAuthStepView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var progress: Double = 0.0
-    @State private var authenticationContext: LAContext?
-    @State private var userFirstName = "Utilisateur"
     @State private var isPressed = false
     @State private var pressStartTime: Date?
-    @State private var pressDuration: TimeInterval = 0.0
-    @State private var showFingerprint = true
-    private let requiredPressDuration: TimeInterval = 4.0
 
-    // ✅ États pour animation simple - TOUS LES TEXTES RESTENT VISIBLES
-    @State private var commitmentOpacities: [Double] = [0.0, 0.0, 0.0, 0.0]
+    /// 0 = ghost visible · 1 = engagement confirmé visuellement
+    @State private var commitmentFillProgress: [Double] = [0, 0, 0]
+    @State private var hapticMilestonesFired: Set<Int> = []
+    @State private var pressTask: Task<Void, Never>?
+
+    private let ghostTextOpacity = 0.34
+    private let requiredPressDuration: TimeInterval = 4.0
+    private let commitmentGreen = Color(red: 0.13, green: 0.98, blue: 0.47)
 
     private let commitments = [
-        "Suivre mes données chaque jour",
-        "Adapter mon effort à ma récupération",
-        "Construire ma régularité",
-        OnboardingCopy.text("M'investir pleinement dans \(AppBranding.name)", blank: "Engagement à personnaliser")
+        "Tenir mon plan 7 jours sur 7",
+        "Scanner mon visage et suivre mes progrès",
+        "Faire confiance à Process pour m'accompagner"
     ]
 
     init(onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil, onAuthenticationComplete: ((Bool) -> Void)? = nil) {
@@ -47,105 +47,119 @@ struct BiometricAuthStepView: View {
 
     var body: some View {
         ZStack {
-            // Fond noir simple
             OnboardingTheme.screenBackground
                 .ignoresSafeArea(.all)
 
-                VStack(spacing: 0) {
-                    Spacer()
-                        .frame(height: OnboardingConstants.titleTopPaddingFromScreenTop)
+            VStack(spacing: 0) {
+                Spacer()
+                    .frame(height: OnboardingConstants.titleTopPaddingFromScreenTop)
 
-                    // Titre avec prénom (aligné à gauche)
-                    Text(OnboardingCopy.text("\(userFirstName), établissons un contrat", blank: "Titre à personnaliser"))
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(OnboardingTheme.primaryText)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 40)
-                    .padding(.bottom, 20)
+                Text("Engage-toi envers toi-même")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(OnboardingTheme.primaryText)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal, 32)
+                    .padding(.bottom, 72)
 
-                    // Texte d'introduction
-                    Text(OnboardingCopy.text("À partir de ce jour, je m'engage à :", blank: "Sous-titre à personnaliser"))
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundStyle(OnboardingTheme.primaryText)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                Text(OnboardingCopy.text("À partir de ce jour, je m'engage à :", blank: "Sous-titre à personnaliser"))
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(OnboardingTheme.bodyText)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 40)
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 22)
 
-                // TOUS LES TEXTES D'ENGAGEMENT qui apparaissent progressivement et restent visibles
                 VStack(alignment: .leading, spacing: 12) {
-                    ForEach(0..<commitments.count, id: \.self) { index in
-                        animatedCommitmentText(text: commitments[index], index: index)
+                    ForEach(Array(commitments.enumerated()), id: \.offset) { index, text in
+                        commitmentRow(text: text, index: index)
                     }
                 }
-                        .padding(.horizontal, 40)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 36)
 
                 Spacer()
 
-                // Zone d'empreinte digitale avec animation EN BAS
-                        fingerprintZone
-                            .padding(.horizontal, 40)
+                fingerprintZone
+                    .padding(.horizontal, 40)
                     .padding(.bottom, 50)
             }
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
         }
         .alert("Erreur", isPresented: $showError) {
             Button("OK") {
-                // Permettre de réessayer
                 isAuthenticating = false
                 progress = 0.0
             }
         } message: {
             Text(errorMessage)
         }
-        .onAppear {
-            loadUserFirstName()
-            // Ne plus skip automatiquement - l'utilisateur doit voir la page du contrat
-        }
-        .onChange(of: profileService.currentProfile?.firstName) { _, newValue in
-            if let newFirstName = newValue, !newFirstName.isEmpty {
-                userFirstName = newFirstName
-            }
-        }
     }
 
-    // MARK: - Animated Commitment Text
+    // MARK: - Commitment rows
 
     @ViewBuilder
-    private func animatedCommitmentText(text: String, index: Int) -> some View {
-        HStack(spacing: 16) {
-            // Checkmark qui apparaît avec le texte - Animation simple
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(Color(red: 0.13, green: 0.98, blue: 0.47))
-                .opacity(commitmentOpacities[index])
-                .transition(.opacity)
+    private func commitmentRow(text: String, index: Int) -> some View {
+        let fill = commitmentFillProgress.indices.contains(index) ? commitmentFillProgress[index] : 0
+        let textOpacity = ghostTextOpacity + (1 - ghostTextOpacity) * fill
 
-            // Texte légèrement plus petit avec animation simple
+        HStack(alignment: .top, spacing: 12) {
+            commitmentIcon(fill: fill)
+                .frame(width: 22, height: 22)
+                .padding(.top, 1)
+
             Text(text)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 14, weight: fill >= 0.98 ? .semibold : .medium))
                 .foregroundStyle(OnboardingTheme.primaryText)
-                .opacity(commitmentOpacities[index])
-                .contentTransition(.opacity)
+                .opacity(textOpacity)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .animation(.easeOut(duration: 0.22), value: fill)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.spring(response: 0.42, dampingFraction: 0.78), value: fill)
     }
 
-    // ✅ Fonction pour mettre à jour les animations - Animation simple comme "Cette nuit" -> "Besoin du sommeil"
-    private func updateCommitmentAnimations(progress: Double) {
-        for index in 0..<commitments.count {
-            // Chaque engagement apparaît dans une tranche de 25% de progression et RESTE VISIBLE
-            let startProgress = Double(index) * 0.25
+    @ViewBuilder
+    private func commitmentIcon(fill: Double) -> some View {
+        ZStack {
+            Circle()
+                .strokeBorder(
+                    OnboardingTheme.primaryText.opacity(0.18 + 0.12 * (1 - fill)),
+                    lineWidth: 1.5
+                )
+                .scaleEffect(1 - fill * 0.08)
+                .opacity(1 - min(1, fill * 1.4))
 
-            if progress >= startProgress && commitmentOpacities[index] < 1.0 {
-                // Animation simple avec transition opacity (comme contentTransition)
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    commitmentOpacities[index] = 1.0
-                }
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(commitmentGreen)
+                .scaleEffect(0.35 + 0.65 * fill)
+                .opacity(fill)
+                .shadow(
+                    color: commitmentGreen.opacity(fill * 0.45),
+                    radius: fill * 6,
+                    x: 0,
+                    y: 0
+                )
+        }
+        .animation(.spring(response: 0.44, dampingFraction: 0.68), value: fill)
+    }
+
+    private func updateCommitmentFill(progress: Double) {
+        let segment = 1.0 / Double(commitments.count)
+        for index in commitments.indices {
+            let segmentStart = Double(index) * segment
+            let fill = min(1, max(0, (progress - segmentStart) / segment))
+            if abs(commitmentFillProgress[index] - fill) > 0.008 {
+                commitmentFillProgress[index] = fill
+            }
+            if fill >= 0.92, !hapticMilestonesFired.contains(index) {
+                hapticMilestonesFired.insert(index)
+                HapticManager.shared.engagementMilestonePulse()
             }
         }
+        HapticManager.shared.updateEngagementHoldProgress(progress)
     }
 
     // MARK: - Fingerprint Zone
@@ -171,9 +185,9 @@ struct BiometricAuthStepView: View {
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.6),
+                                    commitmentGreen.opacity(0.6),
                                     Color(red: 0.20, green: 0.85, blue: 0.60).opacity(0.4),
-                                    Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.3)
+                                    commitmentGreen.opacity(0.3)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -182,7 +196,7 @@ struct BiometricAuthStepView: View {
                         )
                         .frame(width: ringSide, height: ringSide)
                         .rotationEffect(.degrees(-90))
-                        .shadow(color: Color(red: 0.13, green: 0.98, blue: 0.47).opacity(0.5), radius: 8, x: 0, y: 0)
+                        .shadow(color: commitmentGreen.opacity(0.5), radius: 8, x: 0, y: 0)
                         .blur(radius: 1)
                         .animation(.easeInOut(duration: 0.1), value: progress)
                 }
@@ -202,24 +216,6 @@ struct BiometricAuthStepView: View {
 
     // MARK: - Actions
 
-    private func loadUserFirstName() {
-        if let user = AuthUser.current {
-            // 1. Priorité 1: Récupérer depuis le profil utilisateur (le plus fiable)
-            if let profile = profileService.currentProfile,
-               !profile.firstName.isEmpty {
-                userFirstName = profile.firstName
-            }
-            // 2. Priorité 2: Récupérer depuis displayName de Firebase Auth
-            else if let displayName = user.displayName, !displayName.isEmpty {
-                userFirstName = displayName
-            }
-            // 3. Fallback: Utiliser un nom générique
-            else {
-                userFirstName = "Utilisateur"
-            }
-        }
-    }
-
     private func startPress() {
         guard !isPressed && !isAuthenticated else { return }
 
@@ -227,82 +223,34 @@ struct BiometricAuthStepView: View {
         pressStartTime = Date()
         progress = 0.0
         isAuthenticating = true
+        hapticMilestonesFired = []
 
-        // Vibration initiale forte
-        HapticManager.shared.impact(.heavy)
+        HapticManager.shared.beginEngagementHoldCrescendo()
 
-        // Animer la progression du cercle avec vibrations ULTRA CRESCENDO
-        Task {
+        pressTask?.cancel()
+        pressTask = Task {
             let startTime = Date()
 
-            while isPressed && !isAuthenticated {
+            while !Task.isCancelled, isPressed, !isAuthenticated {
                 let elapsed = Date().timeIntervalSince(startTime)
                 let newProgress = min(elapsed / requiredPressDuration, 1.0)
 
                 progress = newProgress
+                updateCommitmentFill(progress: newProgress)
 
-                    // ✅ ANIMATION ULTRA FLUIDE DES ENGAGEMENTS - Apparition progressive
-                    updateCommitmentAnimations(progress: newProgress)
+                if newProgress >= 1.0 {
+                    completeAuthentication()
+                    return
+                }
 
-                    // ✅ DÉTECTION AUTOMATIQUE : Quand on atteint 100%, compléter automatiquement
-                    if newProgress >= 1.0 && !isAuthenticated {
-                        completeAuthentication()
-                        return
-                    }
-
-                    // VIBRATIONS CONTINUES EN CRESCENDO - VRAIMENT CONTINUES
-                    // Vibrations à CHAQUE frame avec intensité qui augmente progressivement
-                    // Calcul du nombre de vibrations basé sur la progression (crescendo continu)
-
-                    // Calculer le nombre de vibrations basé sur la progression (de 1 à 8 vibrations)
-                    let vibrationCount = Int(1 + (newProgress * 7)) // 1 vibration à 0%, 8 vibrations à 100%
-
-                    // Calculer l'intervalle entre les vibrations (diminue progressivement)
-                    let vibrationInterval = max(0.002, 0.015 - (newProgress * 0.013)) // De 15ms à 2ms
-
-                    // Déclencher les vibrations en rafale
-                    for i in 0..<vibrationCount {
-                        let delay = Double(i) * vibrationInterval
-                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                            // Intensité qui augmente avec la progression
-                            if newProgress < 0.3 {
-                                HapticManager.shared.impact(.medium)
-                            } else {
-                                HapticManager.shared.impact(.heavy)
-                            }
-                        }
-                    }
-                    // Vibrations spéciales aux milestones (encore plus fortes)
-                    if newProgress > 0.25 && newProgress < 0.26 {
-                        for i in 0..<3 {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.05) {
-                                HapticManager.shared.impact(.heavy)
-                            }
-                        }
-                    } else if newProgress > 0.5 && newProgress < 0.51 {
-                        for i in 0..<5 {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.04) {
-                                HapticManager.shared.impact(.heavy)
-                            }
-                        }
-                    } else if newProgress > 0.75 && newProgress < 0.76 {
-                        for i in 0..<7 {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.03) {
-                                HapticManager.shared.impact(.heavy)
-                            }
-                        }
-                    } else if newProgress > 0.9 && newProgress < 0.91 {
-                        // Finale : explosion de vibrations
-                        for i in 0..<10 {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.02) {
-                                HapticManager.shared.impact(.heavy)
-                            }
-                        }
-                    }
-
-                try? await Task.sleep(nanoseconds: 16_666_666) // ~60 FPS
+                try? await Task.sleep(nanoseconds: 16_666_666)
             }
         }
+    }
+
+    private func stopPressTask() {
+        pressTask?.cancel()
+        pressTask = nil
     }
 
     private func endPress() {
@@ -310,17 +258,15 @@ struct BiometricAuthStepView: View {
 
         isPressed = false
         pressStartTime = nil
+        stopPressTask()
+        HapticManager.shared.endEngagementHoldCrescendo()
+        hapticMilestonesFired = []
 
-        // Si l'authentification n'est pas complète, réinitialiser
         if !isAuthenticated {
             isAuthenticating = false
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
                 progress = 0.0
-            }
-
-            // Réinitialiser les animations des engagements
-            withAnimation(.easeInOut(duration: 0.2)) {
-                commitmentOpacities = [0.0, 0.0, 0.0, 0.0]
+                commitmentFillProgress = Array(repeating: 0, count: commitments.count)
             }
         }
     }
@@ -328,20 +274,23 @@ struct BiometricAuthStepView: View {
     private func completeAuthentication() {
         guard !isAuthenticated else { return }
 
-        // Arrêter l'appui
         isPressed = false
         isAuthenticated = true
         progress = 1.0
+        stopPressTask()
+        HapticManager.shared.endEngagementHoldCrescendo()
 
-        // Vibration de succès finale
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
+            commitmentFillProgress = Array(repeating: 1, count: commitments.count)
+        }
+
         HapticManager.shared.notification(.success)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             HapticManager.shared.notification(.success)
         }
 
-        // Notifier que l'authentification est complète et continuer directement
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            self.onComplete()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            onComplete()
         }
     }
 }

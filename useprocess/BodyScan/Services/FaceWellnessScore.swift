@@ -280,25 +280,40 @@ enum FaceWellnessScore {
         let samples = history
             .filter { $0.source == .daily }
             .sorted { $0.createdAt > $1.createdAt }
-            .prefix(8)
+            .prefix(14)
 
         guard !samples.isEmpty else { return (nil, 0) }
         let count = samples.count
-        let puffiness = average(samples.map(\.markers.puffinessScore))
-        let fatigue = average(samples.map(\.markers.underEyeFatigueScore))
-        let jaw = average(samples.map(\.markers.jawTensionScore))
-        let symmetry = average(samples.map(\.markers.facialSymmetryScore))
-        let clarity = average(samples.map(\.markers.skinClarityScore))
-        let definition = average(samples.map { FaceScanIndicators.definitionScore(from: $0.markers) })
+
+        var weightSum = 0.0
+        var puffiness = 0.0
+        var fatigue = 0.0
+        var jaw = 0.0
+        var symmetry = 0.0
+        var clarity = 0.0
+        var definition = 0.0
+
+        for (index, scan) in samples.enumerated() {
+            let weight = pow(0.82, Double(index))
+            weightSum += weight
+            puffiness += Double(scan.markers.puffinessScore) * weight
+            fatigue += Double(scan.markers.underEyeFatigueScore) * weight
+            jaw += Double(scan.markers.jawTensionScore) * weight
+            symmetry += Double(scan.markers.facialSymmetryScore) * weight
+            clarity += Double(scan.markers.skinClarityScore) * weight
+            definition += Double(FaceScanIndicators.definitionScore(from: scan.markers)) * weight
+        }
+
+        guard weightSum > 0 else { return (nil, 0) }
 
         return (
             FaceWellnessMarkers(
-                puffinessScore: puffiness,
-                underEyeFatigueScore: fatigue,
-                jawTensionScore: jaw,
-                facialSymmetryScore: symmetry,
-                skinClarityScore: clarity,
-                faceDefinitionScore: definition,
+                puffinessScore: Int((puffiness / weightSum).rounded()),
+                underEyeFatigueScore: Int((fatigue / weightSum).rounded()),
+                jawTensionScore: Int((jaw / weightSum).rounded()),
+                facialSymmetryScore: Int((symmetry / weightSum).rounded()),
+                skinClarityScore: Int((clarity / weightSum).rounded()),
+                faceDefinitionScore: Int((definition / weightSum).rounded()),
                 notes: []
             ),
             count

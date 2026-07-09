@@ -179,7 +179,7 @@ struct PlanHomeTopChrome: View {
                     .buttonStyle(ProcessGlassPressStyle())
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0.0)
                     .zIndex(0)
-                    .processZoomSource(id: .activityStatus, namespace: zoomNamespace)
+                    .processZoomSource(id: .settings, namespace: zoomNamespace)
                     .accessibilityLabel("Paramètres, statut \(currentActivityStatus.title)")
                 }
             }
@@ -199,7 +199,7 @@ struct PlanHomeTopChrome: View {
                 }
                 .buttonStyle(ProcessGlassPressStyle())
                 .zIndex(0)
-                .processZoomSource(id: .activityStatus, namespace: zoomNamespace)
+                .processZoomSource(id: .settings, namespace: zoomNamespace)
                 .accessibilityLabel("Paramètres, statut \(currentActivityStatus.title)")
             }
         }

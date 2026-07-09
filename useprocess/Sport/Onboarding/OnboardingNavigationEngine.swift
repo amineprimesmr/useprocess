@@ -97,6 +97,12 @@ class OnboardingNavigationEngine {
         case .height:
             return OnboardingStep.weight.rawValue
         case .weight, .bodyScan:
+            if !isSimulatingNavigation {
+                viewModel.refreshBodyCompositionRouting()
+            }
+            if viewModel.shouldSkipIdealWeightStep {
+                return OnboardingStep.firstNameInput.rawValue
+            }
             return OnboardingStep.idealWeight.rawValue
         case .heightWeight:
             return OnboardingStep.firstNameInput.rawValue
@@ -168,6 +174,9 @@ class OnboardingNavigationEngine {
         case .heightWeight:
             return OnboardingStep.ageSelection.rawValue
         case .firstNameInput:
+            if viewModel.shouldSkipIdealWeightStep {
+                return OnboardingStep.weight.rawValue
+            }
             return OnboardingStep.idealWeight.rawValue
         case .bodyScan:
             return OnboardingStep.weight.rawValue

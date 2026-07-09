@@ -88,7 +88,7 @@ struct MainAppView: View {
         .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
             guard should else { return }
             withAnimation(ProcessGlass.spring) {
-                selectedSection = .plan
+                selectedSection = .profile
             }
         }
     }

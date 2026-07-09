@@ -18,10 +18,12 @@ struct MealDebloatScorePill: View {
     @Environment(\.appTheme) private var theme
 
     var body: some View {
+        let scoreColor = MealDebloatScorePalette.color(for: assessment.score)
+
         HStack(spacing: 6) {
             Image(systemName: "drop.degreesign.fill")
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(MealDebloatScorePalette.color(for: assessment.score))
+                .foregroundStyle(scoreColor)
 
             Text(assessment.scoreText)
                 .font(.caption.weight(.heavy))
@@ -35,23 +37,15 @@ struct MealDebloatScorePill: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background {
-            Capsule(style: .continuous)
-                .fill(usesDarkImageStyle ? Color.black.opacity(0.48) : Color.clear)
-                .background {
-                    if !usesDarkImageStyle {
-                        Capsule(style: .continuous).fill(.ultraThinMaterial)
-                    }
-                }
-                .overlay {
-                    Capsule(style: .continuous)
-                        .strokeBorder(
-                            usesDarkImageStyle
-                                ? Color.white.opacity(0.18)
-                                : Color.primary.opacity(0.08),
-                            lineWidth: 0.5
-                        )
-                }
+            ZStack {
+                Capsule(style: .continuous)
+                    .fill(scoreColor.opacity(usesDarkImageStyle ? 0.18 : 0.10))
+
+                Capsule(style: .continuous)
+                    .processGlassEffect(in: Capsule(style: .continuous), interactive: false)
+            }
         }
+        .shadow(color: .black.opacity(theme.isDark || usesDarkImageStyle ? 0.24 : 0.08), radius: 9, y: 4)
         .accessibilityLabel("Score Debloat \(assessment.score) sur 100")
         .accessibilityHint(assessment.isEstimated ? "Estimation nutritionnelle" : assessment.label)
     }

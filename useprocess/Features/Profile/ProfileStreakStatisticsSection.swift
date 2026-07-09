@@ -1,18 +1,27 @@
 import SwiftUI
 
-/// Trajectoire debloat + streak — section statistiques du profil.
+/// Trajectoire debloat + streak + bilan du soir — section statistiques du profil.
 struct ProfileStreakStatisticsSection: View {
     @Environment(\.appTheme) private var theme
 
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
+    @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
+    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
+    @Bindable private var session = AppSession.shared
+
+    @State private var showEveningCheckIn = false
 
     private var snapshot: ProcessStreakSnapshot { streakStore.snapshot }
     private var trajectory: DebloatTrajectorySnapshot { trajectoryStore.snapshot }
+    private var planProgress: PlanProgressSnapshot { planProgressStore.snapshot }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            ProfilePlanProgressCard(snapshot: planProgress)
+                .padding(.horizontal, ProfileTheme.horizontalPadding)
+
             ProfileDebloatTrajectoryChart(
                 points: trajectory.chartPoints,
                 trend: trajectory.trajectoryTrend,
@@ -20,11 +29,30 @@ struct ProfileStreakStatisticsSection: View {
             )
             .padding(.horizontal, ProfileTheme.horizontalPadding)
 
+            if session.hasCompletedWelcomePlanChat {
+                ProcessEveningCheckInEntryButton {
+                    showEveningCheckIn = true
+                }
+                .padding(.horizontal, ProfileTheme.horizontalPadding)
+            }
+
             streakBlock
                 .padding(.horizontal, ProfileTheme.horizontalPadding)
         }
         .onAppear {
             trajectoryStore.sync(from: planStore.plan)
+            ProcessEveningCheckInStore.shared.reload()
+            if planBridge.consumePendingEveningCheckIn() {
+                showEveningCheckIn = true
+            }
+        }
+        .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
+            guard should else { return }
+            planBridge.shouldOpenEveningCheckIn = false
+            showEveningCheckIn = true
+        }
+        .sheet(isPresented: $showEveningCheckIn) {
+            ProcessEveningCheckInSheet()
         }
     }
 

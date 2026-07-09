@@ -120,6 +120,22 @@ struct FaceScanAnalysisCard: View {
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            if !analysis.tips.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(analysis.tips, id: \.self) { tip in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(theme.onboardingAccent)
+                            Text(tip)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(theme.primaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -21,17 +21,28 @@ class PersonalizedIdealWeightCalculator {
 
         let heightM = height / 100.0
         let bmi = currentWeight / (heightM * heightM)
-        let isMale = gender != .female
+        let resolvedGender = gender ?? .preferNotToSay
+        let anchor = leanAthleticAnchorWeight(
+            height: height,
+            gender: resolvedGender,
+            age: age
+        )
+        let gapToAnchor = currentWeight - anchor
 
-        if isMale {
-            if bmi >= 22.0 { return .lose }
-            if bmi < 19.0 { return .gain }
-        } else {
-            if bmi >= 21.5 { return .lose }
-            if bmi < 18.5 { return .gain }
+        let underweightThreshold = resolvedGender == .female ? 18.5 : 19.0
+        if bmi < underweightThreshold {
+            return .gain
         }
 
-        if age <= 30 {
+        let overweightThreshold = resolvedGender == .female ? 25.0 : 25.5
+        let highNormalThreshold = resolvedGender == .female ? 24.2 : 24.6
+        let meaningfulExcess = resolvedGender == .female ? 6.0 : 7.0
+
+        if bmi >= overweightThreshold {
+            return .lose
+        }
+
+        if bmi >= highNormalThreshold, gapToAnchor >= meaningfulExcess {
             return .lose
         }
 
@@ -68,6 +79,10 @@ class PersonalizedIdealWeightCalculator {
                 age: age,
                 gender: gender
             )
+
+        guard let resolvedGoal else {
+            return (currentWeight * 2).rounded() / 2
+        }
 
         // ✅ ÉTAPE 1 : Estimer ou récupérer la masse maigre actuelle
         let currentLeanMass: Double
@@ -144,7 +159,7 @@ class PersonalizedIdealWeightCalculator {
     // MARK: - Calculs auxiliaires
 
     /// Poids de référence « fit & sec » selon la taille — pas un poids « normal » médical.
-    private static func leanAthleticAnchorWeight(height: Double, gender: Gender, age: Int) -> Double {
+    static func leanAthleticAnchorWeight(height: Double, gender: Gender, age: Int) -> Double {
         let heightM = height / 100.0
         let baseBMI: Double
 

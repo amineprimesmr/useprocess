@@ -9,7 +9,8 @@ final class ProcessDebloatTrajectoryStore {
     private var state = ProcessDebloatTrajectoryState()
 
     private init() {
-        reload()
+        state = loadState() ?? ProcessDebloatTrajectoryState()
+        refreshSnapshot()
     }
 
     // MARK: - Public
@@ -127,6 +128,10 @@ final class ProcessDebloatTrajectoryStore {
         state.recordsByDay
     }
 
+    var consecutiveMissCount: Int {
+        state.consecutiveMisses
+    }
+
     func chartPoints(dayCount: Int = 30) -> [DebloatTrajectoryPoint] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -156,7 +161,8 @@ final class ProcessDebloatTrajectoryStore {
     func sync(from plan: FaceOriginPlan?) {
         migrateFaceScansIfNeeded()
         reconcileMissedDays()
-        refreshSnapshot(plan: plan)
+        refreshSnapshot()
+        syncPlanProgress(plan: plan)
     }
 
     // MARK: - Missed days
@@ -316,13 +322,13 @@ final class ProcessDebloatTrajectoryStore {
             return "Scan enregistré — bilan du soir pour compléter la trajectoire."
         }
         if delta <= -4 { return "Scan : moins gonflé qu'à l'habitude." }
-        if delta >= 6 { return "Scan : rétention en hausse — vérifie sel et hydratation." }
+        if delta >= 6 { return "Scan : rétention en hausse — eau régulière, sodium modéré, potassium alimentaire." }
         return "Scan : signaux stables vs ta baseline."
     }
 
     // MARK: - Snapshot
 
-    private func refreshSnapshot(plan: FaceOriginPlan? = nil, now: Date = Date()) {
+    private func refreshSnapshot(now: Date = Date()) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: now)
         let todayKey = ProcessStreakStore.dayKey(for: today, calendar: calendar)
@@ -383,7 +389,15 @@ final class ProcessDebloatTrajectoryStore {
             eligibleKeys: streakEligibleKeys,
             recordsByDay: state.recordsByDay
         )
-        _ = plan
+    }
+
+    private func syncPlanProgress(plan: FaceOriginPlan?) {
+        ProcessPlanProgressStore.shared.sync(
+            plan: plan,
+            trajectory: snapshot,
+            records: Array(state.recordsByDay.values),
+            consecutiveMisses: state.consecutiveMisses
+        )
     }
 
     // MARK: - Migration

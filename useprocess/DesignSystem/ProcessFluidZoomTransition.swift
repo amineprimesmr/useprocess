@@ -7,11 +7,13 @@ enum ProcessZoomTransitionID: Hashable {
     case faceScanDetail(String)
     case mealDetail(MealTimeSlot)
     case mealCatalog
+    case hydrationHub
     case trainingDay
     case postureCircuit
     case protocolItem(String)
     case homeLayoutEditor
     case activityStatus
+    case settings
     case planResource(PlanResourceSheet)
 
     var sourceID: String {
@@ -26,6 +28,8 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_MEAL_DETAIL_\(slot.rawValue)"
         case .mealCatalog:
             return "PROCESS_MEAL_CATALOG"
+        case .hydrationHub:
+            return "PROCESS_HYDRATION_HUB"
         case .trainingDay:
             return "PROCESS_TRAINING_DAY"
         case .postureCircuit:
@@ -36,6 +40,8 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_HOME_LAYOUT_EDITOR"
         case .activityStatus:
             return "PROCESS_ACTIVITY_STATUS"
+        case .settings:
+            return "PROCESS_SETTINGS"
         case .planResource(let sheet):
             return "PROCESS_PLAN_RESOURCE_\(sheet.id)"
         }

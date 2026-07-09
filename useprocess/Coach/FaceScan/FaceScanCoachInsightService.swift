@@ -26,8 +26,10 @@ enum FaceScanCoachInsightService {
     /// Lance la génération en arrière-plan juste après le scan.
     static func pregenerate(for result: FaceScanResult, profile: UnifiedUserProfile?) {
         guard cachedRawMessage(for: result) == nil else { return }
+        let history = FaceScanEvolutionEngine.dailyHistory(from: FaceScanHistoryStore.shared.history)
         let insight = FaceScanAIInsightBuilder.insight(
             for: result,
+            history: history,
             context: FaceScanInsightContext.fromTodayHealth()
         )
         Task {

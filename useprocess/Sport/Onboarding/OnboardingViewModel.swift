@@ -241,7 +241,15 @@ class OnboardingViewModel: ObservableObject {
         case .weightGoal:
             return true
         case .idealWeight:
-            return isIdealWeightEntered && idealWeightValue > 0
+            return isIdealWeightEntered
+                && Self.isPlausibleWeight(idealWeightValue)
+                && abs(idealWeightValue - selectedWeight) >= 0.5
+                && Self.isReasonableIdealWeight(
+                    idealWeightValue,
+                    currentWeight: selectedWeight,
+                    height: selectedHeight,
+                    gender: selectedGender
+                )
         case .sportSelection:
             return isSportsSelected
         case .yearsOfExperience:
@@ -322,6 +330,36 @@ class OnboardingViewModel: ObservableObject {
 
     var hasWeightObjective: Bool { hasWeightGoal == true }
 
+    var bodyCompositionAssessment: BodyCompositionAssessment? {
+        BodyCompositionAssessment.evaluate(
+            weight: selectedWeight,
+            height: selectedHeight,
+            age: selectedAge,
+            gender: selectedGender
+        )
+    }
+
+    /// Passe l'étape poids idéal si le rapport taille/poids est déjà bon (debloat seul).
+    var shouldSkipIdealWeightStep: Bool {
+        guard Self.isPlausibleWeight(selectedWeight), selectedHeight >= 120 else { return false }
+        return bodyCompositionAssessment?.shouldAskIdealWeight == false
+    }
+
+    func refreshBodyCompositionRouting() {
+        if shouldSkipIdealWeightStep {
+            applyFitProfileDebloatDefaults()
+        }
+    }
+
+    /// Profil déjà fit — pas d'objectif poids, trajectoire debloat visage.
+    func applyFitProfileDebloatDefaults() {
+        applyHasWeightGoal(false)
+        idealWeightValue = selectedWeight
+        isIdealWeightEntered = false
+        selectedWeightGoal = nil
+        isWeightGoalSelected = false
+    }
+
     func applyHasWeightGoal(_ value: Bool) {
         hasWeightGoal = value
         isPrimaryGoalSelected = true
@@ -381,7 +419,14 @@ class OnboardingViewModel: ObservableObject {
         guard Self.isPlausibleWeight(selectedWeight),
               selectedHeight >= 120,
               selectedHeight <= 230,
-              let gender = selectedGender else {
+              let gender = selectedGender,
+              let goal = selectedWeightGoal
+                ?? PersonalizedIdealWeightCalculator.inferredWeightGoal(
+                    currentWeight: selectedWeight,
+                    height: selectedHeight,
+                    age: selectedAge,
+                    gender: gender
+                ) else {
             return nil
         }
 
@@ -390,16 +435,16 @@ class OnboardingViewModel: ObservableObject {
             height: selectedHeight,
             age: selectedAge,
             gender: gender,
-            weightGoal: selectedWeightGoal
-                ?? PersonalizedIdealWeightCalculator.inferredWeightGoal(
-                    currentWeight: selectedWeight,
-                    height: selectedHeight,
-                    age: selectedAge,
-                    gender: gender
-                )
+            weightGoal: goal
         )
 
         guard Self.isPlausibleWeight(recommendation),
+              Self.isReasonableIdealWeight(
+                recommendation,
+                currentWeight: selectedWeight,
+                height: selectedHeight,
+                gender: gender
+              ),
               abs(recommendation - selectedWeight) >= 0.5 else {
             return nil
         }
@@ -665,5 +710,37 @@ class OnboardingViewModel: ObservableObject {
 
     static func isPlausibleWeight(_ value: Double) -> Bool {
         value >= 35 && value <= 250
+    }
+
+    static func isReasonableIdealWeight(
+        _ value: Double,
+        currentWeight: Double,
+        height: Double,
+        gender: Gender?
+    ) -> Bool {
+        guard isPlausibleWeight(value), height >= 120, height <= 230 else { return false }
+
+        let heightM = height / 100.0
+        let bmi = value / (heightM * heightM)
+        let minBMI = gender == .male ? 19.0 : 18.5
+        let maxBMI: Double
+
+        switch gender {
+        case .male:
+            maxBMI = 27.0
+        case .female:
+            maxBMI = 26.0
+        default:
+            maxBMI = 26.5
+        }
+
+        guard bmi >= minBMI, bmi <= maxBMI else { return false }
+
+        if isPlausibleWeight(currentWeight) {
+            let maxDelta = max(25.0, currentWeight * 0.30)
+            return abs(value - currentWeight) <= maxDelta
+        }
+
+        return true
     }
 }

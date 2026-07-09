@@ -91,4 +91,10 @@ enum ProcessGlass {
     static func tinted(_ color: Color, opacity: CGFloat = 0.38) -> Glass {
         .regular.tint(color.opacity(opacity)).interactive()
     }
+
+    /// Eau — liquid glass `.clear` : réfraction native, teinte minimale.
+    @available(iOS 26.0, *)
+    static var waterSurface: Glass {
+        .clear.tint(Color(red: 0.35, green: 0.82, blue: 0.94, opacity: 0.09))
+    }
 }

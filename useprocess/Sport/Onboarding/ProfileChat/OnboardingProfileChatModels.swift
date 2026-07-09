@@ -234,12 +234,12 @@ enum OnboardingProfileChatQuestionBank {
 
         let problemsBlock: String
         if problems.isEmpty {
-            problemsBlock = "Ton scan est plutôt équilibré aujourd'hui — pas de signal très marqué."
+            problemsBlock = "Ton scan est plutôt équilibré aujourd'hui — rien de très marqué qui explique un visage gonflé."
         } else if problems.count == 1 {
-            problemsBlock = "Ton scan montre surtout \(problems[0])."
+            problemsBlock = "Ton scan montre surtout \(problems[0]) — c'est ce qui explique ton visage gonflé en ce moment."
         } else {
             let head = problems.dropLast().joined(separator: ", ")
-            problemsBlock = "Ton scan montre surtout \(head) et \(problems.last!)."
+            problemsBlock = "Ton scan montre surtout \(head) et \(problems.last!) — c'est ce qui explique ton visage gonflé en ce moment."
         }
 
         let nextBlock = "Je croise ça avec tes réponses et je te prépare un plan adapté à toi."
@@ -262,24 +262,35 @@ enum OnboardingProfileChatQuestionBank {
             .filter { $0.zone != .optimal }
             .sorted { metricSeverity(kind: $0.kind, percent: $0.percent) > metricSeverity(kind: $1.kind, percent: $1.percent) }
             .prefix(limit)
-            .map { simpleProblemPhrase(kind: $0.kind, zone: $0.zone) }
+            .map { simpleProblemPhrase(kind: $0.kind, zone: $0.zone, percent: $0.percent) }
     }
 
     private static func simpleProblemPhrase(
         kind: FaceScanIndicators.Kind,
-        zone: FaceScanIndicators.WellnessZone
+        zone: FaceScanIndicators.WellnessZone,
+        percent: Int
     ) -> String {
         switch kind {
         case .retention:
-            return zone == .insufficient ? "une rétention d'eau marquée 💧" : "un léger gonflement 💧"
+            return zone == .insufficient
+                ? "une rétention d'eau à \(percent)% 💧"
+                : "un léger gonflement à \(percent)% 💧"
         case .recovery:
-            return zone == .insufficient ? "une récupération insuffisante 😴" : "des signes de fatigue 😴"
+            return zone == .insufficient
+                ? "une récupération insuffisante à \(percent)% 😴"
+                : "des signes de fatigue à \(percent)% 😴"
         case .stressLoad:
-            return zone == .insufficient ? "une charge de stress élevée 😰" : "une tension modérée 😰"
+            return zone == .insufficient
+                ? "une charge de stress à \(percent)% 😰"
+                : "une tension modérée à \(percent)% 😰"
         case .skin:
-            return zone == .insufficient ? "une peau terne" : "une peau qui manque un peu d'éclat"
+            return zone == .insufficient
+                ? "une peau terne (\(percent)% d'éclat) ✨"
+                : "une peau qui manque un peu d'éclat (\(percent)%) ✨"
         case .definition:
-            return zone == .insufficient ? "une mâchoire peu marquée" : "une définition faciale moyenne"
+            return zone == .insufficient
+                ? "une mâchoire peu marquée (\(percent)%) 🎯"
+                : "une définition faciale moyenne (\(percent)%) 🎯"
         }
     }
 

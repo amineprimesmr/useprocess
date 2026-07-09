@@ -43,6 +43,9 @@ extension SportOnboardingView {
                 selectedWeight: $viewModel.selectedWeight,
                 onValidationChanged: { isValid in
                     viewModel.isHeightWeightSelected = isValid
+                    if isValid {
+                        viewModel.refreshBodyCompositionRouting()
+                    }
                 },
                 onContinue: nextStep // ✅ NOUVEAU: Passer à l'étape suivante depuis le clavier
             )
@@ -80,23 +83,28 @@ extension SportOnboardingView {
                 }
             )
         case .idealWeight:
-            IdealWeightStepView(
-                idealWeight: $viewModel.idealWeightValue,
-                currentWeight: viewModel.selectedWeight,
-                recommendedIdealWeight: viewModel.recommendedIdealWeight(),
-                onValidationChanged: { isValid in
-                    viewModel.isIdealWeightEntered = isValid
-                    if isValid {
-                        viewModel.applyHasWeightGoal(true)
-                        viewModel.syncInferredWeightGoal()
+            if viewModel.shouldSkipIdealWeightStep {
+                EmptyView()
+                    .onAppear { skipTransientStep() }
+            } else {
+                IdealWeightStepView(
+                    idealWeight: $viewModel.idealWeightValue,
+                    currentWeight: viewModel.selectedWeight,
+                    recommendedIdealWeight: viewModel.recommendedIdealWeight(),
+                    onValidationChanged: { isValid in
+                        viewModel.isIdealWeightEntered = isValid
+                        if isValid {
+                            viewModel.applyHasWeightGoal(true)
+                            viewModel.syncInferredWeightGoal()
+                            viewModel.saveProgress()
+                        }
+                    },
+                    onContinue: nextStep,
+                    onPersistAnswers: {
                         viewModel.saveProgress()
                     }
-                },
-                onContinue: nextStep,
-                onPersistAnswers: {
-                    viewModel.saveProgress()
-                }
-            )
+                )
+            }
         case .weightGoalIncompatible:
             WeightGoalIncompatibleStepView(
                 firstName: viewModel.firstName,

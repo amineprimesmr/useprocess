@@ -13,18 +13,33 @@ enum CoachPlanContextBuilder {
 
         let dayIdx = plan.calendar.currentProgramDayIndex()
         let weekNum = plan.calendar.currentWeekNumber()
+        let progress = ProcessPlanProgressStore.shared.snapshot
         let today = plan.calendar.day(globalIndex: dayIdx)
         let completed = plan.progress.completedTaskIds.count
 
         var lines: [String] = [
             "PLAN PERSONNALISÉ (base de TOUTES tes réponses) :",
             "• Objectif : \(plan.primaryFaceGoal)",
-            "• Semaine \(weekNum)/13 — jour \(dayIdx + 1)/\(max(plan.calendar.totalDays, 1))",
+            "• Semaine \(weekNum)/\(plan.totalWeeks)",
+            "• Durée effective : \(progress.weeksLabel)\(progress.durationAdjustmentDays != 0 ? ", ajustement \(ProcessDurationFormat.weeksShort(fromDays: abs(progress.durationAdjustmentDays)))" : "")",
+            "• Jours validés : \(progress.validatedDays) · Streak : \(progress.currentStreak)",
+        ]
+        if let mode = progress.trajectoryMode {
+            lines.append("• Séquence : \(mode.label)")
+        }
+        if let active = progress.activeMilestoneLabel {
+            lines.append("• Jalon actif : \(active)")
+        }
+        for milestone in progress.milestones {
+            let status = milestone.isComplete ? "atteint" : "S\(ProcessDurationFormat.weekCount(fromDays: milestone.elapsedDays))/\(ProcessDurationFormat.weekCount(fromDays: milestone.targetDays))"
+            lines.append("• \(milestone.label) : \(status)")
+        }
+        lines.append(contentsOf: [
             "• \(plan.trainingProtocol.sessionsPerWeek) séances/sem · Sommeil cible \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
             "• Nutrition : \(plan.nutritionPlanType.label) · Créneaux : \(plan.configuredMealSlots.map(\.rawValue).joined(separator: ", "))",
             "• Zéro pilule — 100 % naturel",
             "• Tâches cochées : \(completed)"
-        ]
+        ])
 
         let face = plan.faceProtocol
         if !face.focusAreas.isEmpty {

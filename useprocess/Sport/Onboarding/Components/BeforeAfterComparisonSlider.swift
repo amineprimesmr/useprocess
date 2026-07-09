@@ -8,10 +8,28 @@
 import SwiftUI
 
 struct BeforeAfterComparisonSlider: View {
-    let beforeImageName: String
-    let afterImageName: String
+    let beforeImageName: String?
+    let afterImageName: String?
+    let beforeVideoName: String?
+    let afterVideoName: String?
     var durationWeeks: Int = 8
     var playsIntroHint: Bool = false
+
+    init(
+        beforeImageName: String? = nil,
+        afterImageName: String? = nil,
+        beforeVideoName: String? = nil,
+        afterVideoName: String? = nil,
+        durationWeeks: Int = 8,
+        playsIntroHint: Bool = false
+    ) {
+        self.beforeImageName = beforeImageName
+        self.afterImageName = afterImageName
+        self.beforeVideoName = beforeVideoName
+        self.afterVideoName = afterVideoName
+        self.durationWeeks = durationWeeks
+        self.playsIntroHint = playsIntroHint
+    }
 
     @State private var sliderPosition: CGFloat = 0.74
     @State private var didTriggerDragHaptic = false
@@ -35,12 +53,13 @@ struct BeforeAfterComparisonSlider: View {
             let labelY = height - labelBottomInset
 
             ZStack(alignment: .leading) {
-                Image(afterImageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: width, height: height)
-                    .clipped()
-                    .accessibilityLabel("Semaine \(durationWeeks)")
+                comparisonLayer(
+                    imageName: afterImageName,
+                    videoName: afterVideoName,
+                    width: width,
+                    height: height,
+                    accessibilityLabel: "Semaine \(durationWeeks)"
+                )
 
                 comparisonBadge("Semaine \(durationWeeks)")
                     .position(x: afterLabelX, y: labelY)
@@ -51,16 +70,17 @@ struct BeforeAfterComparisonSlider: View {
                     }
                     .allowsHitTesting(false)
 
-                Image(beforeImageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: width, height: height)
-                    .clipped()
-                    .mask(alignment: .leading) {
-                        Rectangle()
-                            .frame(width: dividerX, height: height)
-                    }
-                    .accessibilityLabel("Semaine 1")
+                comparisonLayer(
+                    imageName: beforeImageName,
+                    videoName: beforeVideoName,
+                    width: width,
+                    height: height,
+                    accessibilityLabel: "Semaine 1"
+                )
+                .mask(alignment: .leading) {
+                    Rectangle()
+                        .frame(width: dividerX, height: height)
+                }
 
                 comparisonBadge("Semaine 1")
                     .position(x: beforeLabelX, y: labelY)
@@ -92,6 +112,32 @@ struct BeforeAfterComparisonSlider: View {
         .onDisappear {
             introHintTask?.cancel()
             introHintTask = nil
+        }
+    }
+
+    @ViewBuilder
+    private func comparisonLayer(
+        imageName: String?,
+        videoName: String?,
+        width: CGFloat,
+        height: CGFloat,
+        accessibilityLabel: String
+    ) -> some View {
+        if let videoName, let url = TransformationBundledVideo.url(for: videoName) {
+            FaceScanSilentVideoLoopView(url: url)
+                .frame(width: width, height: height)
+                .clipped()
+                .accessibilityLabel(accessibilityLabel)
+        } else if let imageName {
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: width, height: height)
+                .clipped()
+                .accessibilityLabel(accessibilityLabel)
+        } else {
+            Color.black.opacity(0.12)
+                .frame(width: width, height: height)
         }
     }
 

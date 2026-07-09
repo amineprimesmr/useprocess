@@ -2,7 +2,7 @@
 //  OnboardingEstimationGraphView.swift
 //  Process
 //
-//  Courbe de progression vers 100 % du potentiel + jalon poids optionnel.
+//  Courbe descendante (gonflement → dégonflement) avec jalons intermédiaires.
 //
 
 import SwiftUI
@@ -12,20 +12,20 @@ struct OnboardingEstimationGraphView: View {
     let curveAnimationProgress: Double
 
     private let graphCornerRadius: CGFloat = 20
+    private let topInset: CGFloat = 44
+    private let bottomInset: CGFloat = 8
 
     var body: some View {
         VStack(spacing: 0) {
             GeometryReader { graphGeometry in
                 let width = max(1, graphGeometry.size.width)
                 let height = max(1, graphGeometry.size.height)
+                let plotHeight = max(1, height - topInset - bottomInset)
                 let points = Self.makePoints(
-                    values: snapshot.normalizedValues,
+                    values: snapshot.descentValues,
                     width: width,
-                    height: height
-                )
-                let milestonePoint = Self.pointOnCurve(
-                    atFraction: snapshot.weightMilestoneFraction,
-                    points: points
+                    plotHeight: plotHeight,
+                    topInset: topInset
                 )
 
                 ZStack {
@@ -36,31 +36,10 @@ struct OnboardingEstimationGraphView: View {
                                 .stroke(OnboardingTheme.cardBorder, lineWidth: 1)
                         )
 
-                    VStack {
-                        HStack {
-                            Text("Ton potentiel")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(OnboardingTheme.primaryText.opacity(0.85))
-                                .padding(.leading, 8)
-                                .padding(.top, 12)
+                    chartHeader
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                            Spacer()
-
-                            HStack(spacing: 4) {
-                                Text("Dans")
-                                Text("\(snapshot.countdownDays)")
-                                    .fontWeight(.bold)
-                                Text(snapshot.countdownDays <= 1 ? "jour" : "jours")
-                            }
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(OnboardingTheme.bodyText)
-                            .padding(.trailing, 8)
-                            .padding(.top, 12)
-                        }
-                        Spacer()
-                    }
-
-                    gridLines(width: width, height: height)
+                    gridLines(width: width, plotHeight: plotHeight, topInset: topInset)
 
                     if !points.isEmpty {
                         curveFill(points: points, width: width, height: height)
@@ -73,39 +52,36 @@ struct OnboardingEstimationGraphView: View {
                         )
                         curveStroke(
                             points: points,
-                            lineWidth: 5,
+                            lineWidth: 4,
                             gradient: [
                                 Color(red: 0.77, green: 0.64, blue: 0.97),
                                 Color(red: 0.6, green: 0.4, blue: 0.8),
                                 Color(red: 0.42, green: 0.05, blue: 0.51)
                             ]
                         )
-                        curveStroke(
-                            points: points,
-                            lineWidth: 1,
-                            color: OnboardingTheme.softBorder,
-                            yOffset: -2
-                        )
 
                         if let lastPoint = points.last {
                             Circle()
                                 .fill(OnboardingTheme.primaryText)
-                                .frame(width: 12, height: 12)
+                                .frame(width: 11, height: 11)
                                 .position(lastPoint)
-                                .opacity(curveAnimationProgress >= 1 ? 1 : 0)
+                                .opacity(curveAnimationProgress >= 0.98 ? 1 : 0)
                         }
 
-                        if let label = snapshot.weightMilestoneLabel,
-                           let markerPoint = milestonePoint {
-                            weightMilestoneMarker(
-                                label: label,
-                                at: markerPoint,
-                                width: width,
-                                height: height
-                            )
-                            .opacity(
-                                curveAnimationProgress >= snapshot.weightMilestoneFraction ? 1 : 0
-                            )
+                        ForEach(snapshot.intermediateMarkers, id: \.id) { milestone in
+                            if let markerPoint = Self.pointOnCurve(
+                                atFraction: milestone.fraction,
+                                points: points
+                            ) {
+                                intermediateMarker(
+                                    milestone: milestone,
+                                    at: markerPoint,
+                                    width: width,
+                                    plotHeight: plotHeight,
+                                    topInset: topInset
+                                )
+                                .opacity(curveAnimationProgress >= milestone.fraction ? 1 : 0)
+                            }
                         }
                     }
                 }
@@ -118,30 +94,53 @@ struct OnboardingEstimationGraphView: View {
         .animation(nil, value: curveAnimationProgress)
     }
 
-    private var graphDateAxis: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let weightX = width * CGFloat(snapshot.weightMilestoneFraction)
+    private var chartHeader: some View {
+        HStack {
+            Text("Ta trajectoire")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(OnboardingTheme.primaryText.opacity(0.85))
+                .padding(.leading, 12)
+                .padding(.top, 12)
 
-            ZStack(alignment: .topLeading) {
-                axisDateLabel(
-                    caption: "Aujourd'hui",
-                    dateText: formatGraphDate(snapshot.referenceDate),
-                    alignment: .leading
-                )
-                .frame(width: 88, alignment: .leading)
-                .position(x: 44, y: 14)
+            Spacer()
 
-                if let weightDate = snapshot.weightMilestoneDate {
-                    axisDateLabel(
-                        caption: snapshot.weightMilestoneLabel ?? "Poids atteint",
-                        dateText: formatGraphDate(weightDate),
-                        alignment: .center
-                    )
-                    .frame(width: 96, alignment: .center)
-                    .position(x: weightX, y: 14)
-                }
+            HStack(spacing: 4) {
+                Text("Dans")
+                Text("\(snapshot.countdownWeeks)")
+                    .fontWeight(.bold)
+                Text(snapshot.countdownWeeks <= 1 ? "semaine" : "semaines")
             }
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(OnboardingTheme.bodyText)
+            .padding(.trailing, 12)
+            .padding(.top, 12)
+        }
+    }
+
+    private var graphDateAxis: some View {
+        HStack(alignment: .top, spacing: 0) {
+            axisDateLabel(
+                caption: "Aujourd'hui",
+                dateText: formatGraphDate(snapshot.referenceDate),
+                alignment: .leading
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let middle = snapshot.intermediateMarkers.first {
+                axisDateLabel(
+                    caption: middle.label,
+                    dateText: formatGraphDate(middle.date),
+                    alignment: .center
+                )
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            axisDateLabel(
+                caption: "Objectif",
+                dateText: formatGraphDate(snapshot.endDate),
+                alignment: .trailing
+            )
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .frame(height: 40)
         .padding(.horizontal, 8)
@@ -158,21 +157,21 @@ struct OnboardingEstimationGraphView: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(OnboardingTheme.mutedText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.75)
 
             Text(dateText)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.footnoteText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.75)
         }
     }
 
     @ViewBuilder
-    private func gridLines(width: CGFloat, height: CGFloat) -> some View {
+    private func gridLines(width: CGFloat, plotHeight: CGFloat, topInset: CGFloat) -> some View {
         Path { path in
             for index in 1...3 {
-                let y = height * CGFloat(index) / 4
+                let y = topInset + plotHeight * CGFloat(index) / 4
                 path.move(to: CGPoint(x: 0, y: y))
                 path.addLine(to: CGPoint(x: width, y: y))
             }
@@ -181,34 +180,36 @@ struct OnboardingEstimationGraphView: View {
     }
 
     @ViewBuilder
-    private func weightMilestoneMarker(
-        label: String,
+    private func intermediateMarker(
+        milestone: OnboardingGraphMilestone,
         at point: CGPoint,
         width: CGFloat,
-        height: CGFloat
+        plotHeight: CGFloat,
+        topInset: CGFloat
     ) -> some View {
-        let markerX = width * CGFloat(snapshot.weightMilestoneFraction)
+        let markerX = width * CGFloat(milestone.fraction)
+        let baselineY = topInset + plotHeight - 4
 
         ZStack {
             Path { path in
                 path.move(to: CGPoint(x: markerX, y: point.y))
-                path.addLine(to: CGPoint(x: markerX, y: height - 12))
+                path.addLine(to: CGPoint(x: markerX, y: baselineY))
             }
             .stroke(
-                OnboardingTheme.primaryText.opacity(0.18),
+                OnboardingTheme.primaryText.opacity(0.16),
                 style: StrokeStyle(lineWidth: 1, dash: [4, 4])
             )
 
             Circle()
                 .fill(Color(red: 0.6, green: 0.4, blue: 0.8))
-                .frame(width: 10, height: 10)
+                .frame(width: 9, height: 9)
                 .position(point)
 
-            Text(label)
-                .font(.system(size: 11, weight: .semibold))
+            Text(milestone.label)
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.primaryText)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
                 .background(
                     Capsule()
                         .fill(OnboardingTheme.cardBackground)
@@ -217,19 +218,19 @@ struct OnboardingEstimationGraphView: View {
                                 .stroke(OnboardingTheme.cardBorder, lineWidth: 1)
                         )
                 )
-                .position(x: min(max(markerX, 44), width - 44), y: max(18, point.y - 22))
+                .position(x: min(max(markerX, 36), width - 36), y: max(topInset + 8, point.y - 18))
         }
     }
 
     @ViewBuilder
     private func curveFill(points: [CGPoint], width: CGFloat, height: CGFloat) -> some View {
         Path { path in
-            let bottomY = height + height * 8.0
+            let bottomY = height + height * 4.0
             path.move(to: CGPoint(x: 0, y: bottomY))
             if let first = points.first {
                 path.addLine(to: first)
             }
-            addCurveSegments(to: &path, points: points)
+            addSmoothCurve(to: &path, points: points)
             if let last = points.last {
                 path.addLine(to: CGPoint(x: last.x, y: bottomY))
             }
@@ -239,13 +240,13 @@ struct OnboardingEstimationGraphView: View {
         .fill(
             LinearGradient(
                 stops: [
-                    .init(color: Color(red: 0.7, green: 0.55, blue: 0.85).opacity(0.7), location: 0.0),
-                    .init(color: Color(red: 0.5, green: 0.3, blue: 0.7).opacity(0.9), location: 0.4),
-                    .init(color: Color(red: 0.4, green: 0.2, blue: 0.6), location: 0.5),
+                    .init(color: Color(red: 0.7, green: 0.55, blue: 0.85).opacity(0.65), location: 0.0),
+                    .init(color: Color(red: 0.5, green: 0.3, blue: 0.7).opacity(0.85), location: 0.45),
+                    .init(color: Color(red: 0.4, green: 0.2, blue: 0.6).opacity(0.35), location: 0.75),
                     .init(color: Color.clear, location: 1.0)
                 ],
-                startPoint: .leading,
-                endPoint: .trailing
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
         )
         .mask(alignment: .leading) {
@@ -264,48 +265,66 @@ struct OnboardingEstimationGraphView: View {
         blur: CGFloat = 0
     ) -> some View {
         Path { path in
-            addCurveSegments(to: &path, points: points, yOffset: yOffset)
+            addSmoothCurve(to: &path, points: points, yOffset: yOffset)
         }
         .trimmedPath(from: 0, to: curveAnimationProgress)
         .stroke(
             gradient != nil
                 ? AnyShapeStyle(LinearGradient(colors: gradient!, startPoint: .leading, endPoint: .trailing))
                 : AnyShapeStyle(color ?? OnboardingTheme.primaryText),
-            style: StrokeStyle(lineWidth: lineWidth, lineCap: .square, lineJoin: .round)
+            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
         )
         .blur(radius: blur)
     }
 
-    private func addCurveSegments(to path: inout Path, points: [CGPoint], yOffset: CGFloat = 0) {
-        for index in 0..<points.count {
-            let point = CGPoint(x: points[index].x, y: points[index].y + yOffset)
-            if index == 0 {
-                path.move(to: point)
-            } else {
-                let previous = points[index - 1]
-                let previousPoint = CGPoint(x: previous.x, y: previous.y + yOffset)
-                let control1 = CGPoint(x: previousPoint.x + (point.x - previousPoint.x) / 3, y: previousPoint.y)
-                let control2 = CGPoint(x: point.x - (point.x - previousPoint.x) / 3, y: point.y)
-                path.addCurve(to: point, control1: control1, control2: control2)
-            }
+    /// Courbe lissée — coins arrondis, tout en gardant l'irrégularité des points.
+    private func addSmoothCurve(to path: inout Path, points: [CGPoint], yOffset: CGFloat = 0) {
+        guard !points.isEmpty else { return }
+
+        let adjusted = points.map { CGPoint(x: $0.x, y: $0.y + yOffset) }
+        path.move(to: adjusted[0])
+
+        guard adjusted.count > 1 else { return }
+
+        if adjusted.count == 2 {
+            path.addLine(to: adjusted[1])
+            return
+        }
+
+        for index in 1..<adjusted.count {
+            let previous = adjusted[index - 1]
+            let current = adjusted[index]
+            let span = max(0.001, current.x - previous.x)
+            let tension: CGFloat = 0.38
+
+            let control1 = CGPoint(
+                x: previous.x + span * tension,
+                y: previous.y
+            )
+            let control2 = CGPoint(
+                x: current.x - span * tension,
+                y: current.y
+            )
+            path.addCurve(to: current, control1: control1, control2: control2)
         }
     }
 
-    private static func makePoints(values: [Double], width: CGFloat, height: CGFloat) -> [CGPoint] {
+    /// Gonflement en haut, dégonflement en bas.
+    private static func makePoints(
+        values: [Double],
+        width: CGFloat,
+        plotHeight: CGFloat,
+        topInset: CGFloat
+    ) -> [CGPoint] {
         guard !values.isEmpty else { return [] }
 
         let stepWidth = width / CGFloat(max(1, values.count - 1))
         var points: [CGPoint] = []
 
         for (index, value) in values.enumerated() {
-            let x = index == 0 ? 0 : CGFloat(index) * stepWidth
-            let normalizedValue = min(1, max(0, value))
-            let adjusted = 1.0 - normalizedValue
-            let baseY = (CGFloat(adjusted) * height * 0.75) + (height * 0.20)
-            let variationFactor = sin(normalizedValue * .pi)
-            let seed = Double(index) * 0.314159
-            let variation = CGFloat(sin(seed) * cos(seed * 2.5)) * 20 * CGFloat(variationFactor)
-            let y = min(height * 0.95, max(height * 0.20, baseY + variation))
+            let x = CGFloat(index) * stepWidth
+            let clamped = min(1, max(0, value))
+            let y = topInset + CGFloat(clamped) * plotHeight
             points.append(CGPoint(x: x, y: y))
         }
 

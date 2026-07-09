@@ -30,6 +30,7 @@ enum UserScopedStorage {
         "process.streak",
         "process.evening_checkin",
         "process.debloat.trajectory",
+        "process.plan.progress",
         "process.activity.status",
         "plan.home.layout",
         "referral.program"

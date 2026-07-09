@@ -17,7 +17,7 @@ extension WelcomePlanQuestionBank {
 
         put("welcome_ready", WelcomePlanAnswer(choiceIds: ["start"]))
         put("face_concerns", WelcomePlanAnswer(choiceIds: faceConcerns(from: profile)))
-        put("body_fat_feel", WelcomePlanAnswer(choiceIds: ["normal"]))
+        put("body_fat_feel", WelcomePlanAnswer(choiceIds: [bodyFatFeelChoice(from: profile)]))
         put("sleep_quality", WelcomePlanAnswer(choiceIds: [profile?.sleepProfile?.sleepQuality?.rawValue ?? OnboardingSleepQuality.good.rawValue]))
         put("bedtime", WelcomePlanAnswer(timeValue: profile?.sleepProfile?.bedtimePreference ?? "23:00"))
         put("wake_time", WelcomePlanAnswer(timeValue: profile?.sleepProfile?.wakeTimePreference ?? "07:30"))
@@ -160,5 +160,10 @@ extension WelcomePlanQuestionBank {
         guard let sessions = profile?.sessionsPerWeek, sessions > 0 else { return "3" }
         if sessions >= 5 { return "5plus" }
         return String(min(max(sessions, 1), 4))
+    }
+
+    private static func bodyFatFeelChoice(from profile: UnifiedUserProfile?) -> String {
+        let bmi = OriginUserAssessment.computeBMI(height: profile?.height, weight: profile?.weight)
+        return PlanDurationPersonalizer.inferredBodyFatFeel(profile: profile, bmi: bmi) ?? "normal"
     }
 }

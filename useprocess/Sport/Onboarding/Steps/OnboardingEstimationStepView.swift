@@ -15,6 +15,7 @@ struct OnboardingEstimationStepView: View {
     var onValidationChanged: ((Bool) -> Void)?
 
     @State private var projectedDate: Date?
+    @State private var titleMessage = ""
     @State private var graphSnapshot: OnboardingEstimationGraphSnapshot?
     @State private var dayOnly = ""
     @State private var monthOnly = ""
@@ -32,7 +33,7 @@ struct OnboardingEstimationStepView: View {
 
     var body: some View {
         EstimationStepLayout(
-            titleMessage: context.titleMessage,
+            titleMessage: titleMessage.isEmpty ? engine.titleMessage(for: context) : titleMessage,
             displayDay: currentDisplayDay,
             displayMonth: currentDisplayMonth,
             graph: {
@@ -133,16 +134,17 @@ struct OnboardingEstimationStepView: View {
     private func hydrateContent() {
         let referenceDate = Date()
         let timeline = engine.computeTimeline(for: context, now: referenceDate)
-        let finalDate = timeline.potentialDate
+        let debloatDate = timeline.debloatDate
 
-        projectedDate = finalDate
+        projectedDate = debloatDate
+        titleMessage = engine.titleMessage(for: context)
         graphSnapshot = OnboardingEstimationGraphSnapshot.make(
             context: context,
             timeline: timeline,
             referenceDate: referenceDate
         )
         summaryLine = engine.summaryLine(for: context)
-        updateDateDisplay(date: finalDate)
+        updateDateDisplay(date: debloatDate)
     }
 
     private func presentCompletedState() {

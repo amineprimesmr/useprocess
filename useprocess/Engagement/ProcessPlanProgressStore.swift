@@ -1,0 +1,111 @@
+import Foundation
+
+@MainActor
+@Observable
+final class ProcessPlanProgressStore {
+    static let shared = ProcessPlanProgressStore()
+
+    private(set) var snapshot: PlanProgressSnapshot = .empty
+    private var state = ProcessPlanProgressState()
+
+    private init() {
+        state = loadState() ?? ProcessPlanProgressState()
+    }
+
+    // MARK: - Public
+
+    func reload(plan: FaceOriginPlan? = nil) {
+        state = loadState() ?? ProcessPlanProgressState()
+        guard let plan else {
+            snapshot = .empty
+            return
+        }
+        refreshSnapshot(
+            plan: plan,
+            trajectory: ProcessDebloatTrajectoryStore.shared.snapshot,
+            consecutiveMisses: ProcessDebloatTrajectoryStore.shared.consecutiveMissCount
+        )
+    }
+
+    func sync(
+        plan: FaceOriginPlan?,
+        trajectory: DebloatTrajectorySnapshot,
+        records: [DebloatDayRecord],
+        consecutiveMisses: Int
+    ) {
+        state = ProcessPlanProgressEngine.evaluateDurationAdjustment(
+            state: state,
+            plan: plan,
+            trajectory: trajectory,
+            records: records,
+            consecutiveMisses: consecutiveMisses,
+            earlyCompletion: false
+        )
+        persist()
+        refreshSnapshot(plan: plan, trajectory: trajectory, consecutiveMisses: consecutiveMisses)
+    }
+
+    func evaluateAfterScan(plan: FaceOriginPlan?, latestScan: FaceScanResult) {
+        let earlyCompletion = plan.map {
+            PlanRecalibrationService.checkEarlyCompletion(plan: $0, latestScan: latestScan)
+        } ?? false
+
+        let trajectory = ProcessDebloatTrajectoryStore.shared.snapshot
+        state = ProcessPlanProgressEngine.evaluateDurationAdjustment(
+            state: state,
+            plan: plan,
+            trajectory: trajectory,
+            records: Array(ProcessDebloatTrajectoryStore.shared.allRecordsByDay.values),
+            consecutiveMisses: ProcessDebloatTrajectoryStore.shared.consecutiveMissCount,
+            earlyCompletion: earlyCompletion
+        )
+        persist()
+        refreshSnapshot(
+            plan: plan,
+            trajectory: trajectory,
+            consecutiveMisses: ProcessDebloatTrajectoryStore.shared.consecutiveMissCount
+        )
+    }
+
+    var recentEvolutionEvents: [PlanDurationEvolutionEvent] {
+        state.events
+    }
+
+    // MARK: - Private
+
+    private func refreshSnapshot(
+        plan: FaceOriginPlan?,
+        trajectory: DebloatTrajectorySnapshot,
+        consecutiveMisses: Int
+    ) {
+        let latestEvent = state.events.first
+        let updated = ProcessPlanProgressEngine.snapshot(
+            plan: plan,
+            trajectory: trajectory,
+            adjustmentDays: state.adjustmentDays,
+            latestEvent: latestEvent,
+            profile: UnifiedProfileService.shared.currentProfile
+        )
+
+        if snapshot != updated {
+            snapshot = updated
+        }
+
+        _ = consecutiveMisses
+    }
+
+    private func persist() {
+        let uid = UserScopedStorage.currentUserId() ?? "local-user"
+        let key = UserScopedStorage.key("process.plan.progress", userId: uid)
+        if let data = try? JSONEncoder().encode(state) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    private func loadState() -> ProcessPlanProgressState? {
+        let uid = UserScopedStorage.currentUserId() ?? "local-user"
+        let key = UserScopedStorage.key("process.plan.progress", userId: uid)
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(ProcessPlanProgressState.self, from: data)
+    }
+}

@@ -66,10 +66,15 @@ struct CoachUserContext: Codable, Sendable {
         var puffiness: Int
         var underEyeFatigue: Int
         var jawTension: Int
+        var skinClarity: Int? = nil
+        var stressLoad: Int? = nil
         var relativeScore: Int?
         var confidence: Int?
         var puffinessDelta: Int?
         var underEyeFatigueDelta: Int?
+        var skinClarityDelta: Int? = nil
+        var stressLoadDelta: Int? = nil
+        var aiSummary: String? = nil
         var createdAt: String
     }
 
@@ -108,6 +113,12 @@ struct CoachUserContext: Codable, Sendable {
     var planDayTitle: String?
     var planWeek: Int?
     var planProgressTasks: Int?
+    var planTotalDays: Int?
+    var planElapsedDays: Int?
+    var planValidatedDays: Int?
+    var planRemainingDays: Int?
+    var planTrajectoryMode: String?
+    var planActiveMilestone: String?
     var activityStatus: String?
     var activityStatusGuidance: String?
     var debloatTrajectory: DebloatTrajectoryBlock?
@@ -213,17 +224,25 @@ enum UserContextBuilder {
             )
         }
 
-        let faceHistory = FaceScanHistoryStore.shared.recentResults(limit: 7)
+        let faceHistory = FaceScanHistoryStore.shared.recentResults(limit: 14)
         if !faceHistory.isEmpty {
             ctx.recentFaceScans = faceHistory.map {
-                CoachUserContext.FaceScanHistoryEntry(
-                    puffiness: $0.markers.puffinessScore,
-                    underEyeFatigue: $0.markers.underEyeFatigueScore,
-                    jawTension: $0.markers.jawTensionScore,
+                let m = $0.markers
+                let rel = $0.relativeSignals
+                let analysis = CoachEngine.parsedFaceAnalysis(for: $0)
+                return CoachUserContext.FaceScanHistoryEntry(
+                    puffiness: m.puffinessScore,
+                    underEyeFatigue: m.underEyeFatigueScore,
+                    jawTension: m.jawTensionScore,
+                    skinClarity: m.skinClarityScore,
+                    stressLoad: FaceScanIndicators.stressLoad(for: $0),
                     relativeScore: $0.relativeFaceDayScore,
                     confidence: $0.scanConfidence,
-                    puffinessDelta: $0.relativeSignals?.puffinessDelta,
-                    underEyeFatigueDelta: $0.relativeSignals?.underEyeFatigueDelta,
+                    puffinessDelta: rel?.puffinessDelta,
+                    underEyeFatigueDelta: rel?.underEyeFatigueDelta,
+                    skinClarityDelta: rel?.skinClarityDelta,
+                    stressLoadDelta: rel?.stressLoadDelta,
+                    aiSummary: analysis.isValid ? analysis.summary : nil,
                     createdAt: formatter.string(from: $0.createdAt)
                 )
             }
@@ -241,10 +260,17 @@ enum UserContextBuilder {
         }
 
         if let plan = WelcomePlanStore.shared.plan {
+            let progress = ProcessPlanProgressStore.shared.snapshot
             ctx.planWeek = plan.calendar.currentWeekNumber()
             ctx.planProgressTasks = plan.progress.completedTaskIds.count
             let idx = plan.calendar.currentProgramDayIndex()
             ctx.planDayTitle = plan.calendar.day(globalIndex: idx)?.title
+            ctx.planTotalDays = progress.totalProgramDays
+            ctx.planElapsedDays = progress.elapsedProgramDays
+            ctx.planValidatedDays = progress.validatedDays
+            ctx.planRemainingDays = progress.remainingProgramDays
+            ctx.planTrajectoryMode = progress.trajectoryMode?.label
+            ctx.planActiveMilestone = progress.activeMilestoneLabel
         }
 
         let activityStatus = ProcessActivityStatusStore.shared.status(for: Date())
@@ -314,6 +340,12 @@ enum UserContextBuilder {
             } else {
                 lines.append("• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)")
             }
+        }
+
+        if let progress = context.planTotalDays.map({ _ in ProcessPlanProgressStore.shared.snapshot }),
+           progress.hasPlan,
+           let mode = progress.trajectoryMode {
+            lines.append("• Plan : \(mode.label), jalon actif \(progress.activeMilestoneLabel ?? "—")")
         }
 
         if let trajectory = context.debloatTrajectory {

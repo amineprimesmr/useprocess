@@ -9,6 +9,10 @@ enum ProcessSoundPlayer {
         playBundledSound(named: "revolut_pay")
     }
 
+    static func playPouringWater() {
+        playBundledSound(named: "pouring_water")
+    }
+
     static func playBundledSound(named name: String, fileExtension: String = "mp3") {
         guard let url = Bundle.main.url(
             forResource: name,

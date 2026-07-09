@@ -51,6 +51,12 @@ enum FaceScanAnalysisParser {
                     .filter { !$0.isEmpty }
             } else if let value = labeledValue(in: trimmed, labels: ["EVOLUTION", "ÉVOLUTION"]) {
                 evolution = value
+            } else if let value = labeledValue(in: trimmed, labels: ["ACTIONS", "ACTION"]) {
+                tips.append(contentsOf: value
+                    .components(separatedBy: "|")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+                )
             } else if let value = labeledValue(in: trimmed, labels: ["CONSEIL_1", "CONSEIL 1"]) {
                 tips.append(value)
             } else if let value = labeledValue(in: trimmed, labels: ["CONSEIL_2", "CONSEIL 2"]) {

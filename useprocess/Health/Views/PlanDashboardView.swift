@@ -14,7 +14,6 @@ struct PlanDashboardView: View {
     @State private var showHomeLayoutEditor = false
     @State private var showSettings = false
     @State private var showStreakToast = false
-    @State private var showEveningCheckIn = false
     @State private var streakToast = DynamicIslandToastMessage.streak(
         snapshot: ProcessStreakStore.shared.snapshot,
         firstName: nil
@@ -46,22 +45,9 @@ struct PlanDashboardView: View {
                         zoomNamespace: homeChromeZoomNamespace
                     )
 
-                    if livePlan != nil, session.hasCompletedWelcomePlanChat {
-                        ProcessEveningCheckInEntryButton {
-                            showEveningCheckIn = true
-                        }
-                    }
-
                     planContent
 
-                    if livePlan != nil, session.hasCompletedWelcomePlanChat {
-                        PlanHomeCustomizeFloatingButton(
-                            zoomNamespace: homeChromeZoomNamespace,
-                            action: { showHomeLayoutEditor = true }
-                        )
-                        .padding(.top, 4)
-                        .padding(.bottom, 24)
-                    }
+                    homeLayoutEditButton
                 }
                 .padding()
             }
@@ -86,22 +72,11 @@ struct PlanDashboardView: View {
                     .environmentObject(profileService)
                     .environmentObject(HealthManager.shared)
                     .environmentObject(AuthenticationManager.shared)
-                    .processZoomTransition(id: .activityStatus, namespace: homeChromeZoomNamespace)
+                    .processZoomTransition(id: .settings, namespace: homeChromeZoomNamespace)
             }
             .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast, onTap: openProfileStatistics)
-            .sheet(isPresented: $showEveningCheckIn) {
-                ProcessEveningCheckInSheet(onCompleted: presentStreakToast)
-            }
             .onAppear {
                 ProcessEveningCheckInStore.shared.reload()
-                if CoachPlanNavigationBridge.shared.consumePendingEveningCheckIn() {
-                    showEveningCheckIn = true
-                }
-            }
-            .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
-                guard should else { return }
-                planBridge.shouldOpenEveningCheckIn = false
-                showEveningCheckIn = true
             }
         }
     }
@@ -119,6 +94,18 @@ struct PlanDashboardView: View {
             .environmentObject(HealthManager.shared)
         } else {
             noPlanCard
+        }
+    }
+
+    @ViewBuilder
+    private var homeLayoutEditButton: some View {
+        if livePlan != nil {
+            PlanHomeCustomizeFloatingButton(
+                zoomNamespace: homeChromeZoomNamespace,
+                action: { showHomeLayoutEditor = true }
+            )
+            .padding(.top, 4)
+            .padding(.bottom, 96)
         }
     }
 

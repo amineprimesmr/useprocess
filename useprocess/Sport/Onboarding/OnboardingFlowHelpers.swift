@@ -15,6 +15,9 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
     case .goalPace, .weightManagementExperience, .weightFailureReasons:
         return viewModel.hasWeightObjective
 
+    case .idealWeight:
+        return !viewModel.shouldSkipIdealWeightStep
+
     case .weightGoalIncompatible:
         return viewModel.selectedWeightGoal != nil
 

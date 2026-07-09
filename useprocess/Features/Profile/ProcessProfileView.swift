@@ -246,6 +246,8 @@ struct ProcessProfileView: View {
 
     private func refreshProfile(forceHealthRefresh: Bool) async {
         ProcessDebloatTrajectoryStore.shared.reload()
+        ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
+        ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
         if forceHealthRefresh {
             await ProfileHealthSection.refreshAll(force: true)
         }

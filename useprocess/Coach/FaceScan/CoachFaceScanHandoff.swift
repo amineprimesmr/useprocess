@@ -47,8 +47,10 @@ enum FaceScanCoachHandoffCoordinator {
     static func deliver(result: FaceScanResult, insight: FaceScanAIInsight? = nil) {
         HapticManager.shared.impact(.light)
 
+        let history = FaceScanEvolutionEngine.dailyHistory(from: FaceScanHistoryStore.shared.history)
         let resolvedInsight = insight ?? FaceScanAIInsightBuilder.insight(
             for: result,
+            history: history,
             context: FaceScanInsightContext.fromTodayHealth()
         )
 

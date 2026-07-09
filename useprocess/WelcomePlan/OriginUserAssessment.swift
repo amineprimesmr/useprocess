@@ -110,8 +110,12 @@ struct OriginPlanAssessmentSnapshot: Codable, Equatable {
     var concernCount: Int
     var habitSeverityScore: Int
     var assessmentVersion: Int
+    var trajectoryMode: TrajectoryMode?
+    var debloatTargetDays: Int?
+    var weightTargetDays: Int?
+    var trajectoryTotalDays: Int?
 
-    static let currentVersion = 1
+    static let currentVersion = 3
 }
 
 // MARK: - Assessment engine
@@ -139,21 +143,31 @@ enum OriginUserAssessment {
         let age = profile?.age ?? 28
 
         let bmi = computeBMI(height: height, weight: weight)
+        let preliminaryFeel = answers["body_fat_feel"]?.choiceIds.first
+            ?? PlanDurationPersonalizer.inferredBodyFatFeel(profile: profile, bmi: bmi)
         let estimatedBF = estimateBodyFat(
             height: height,
             weight: weight,
             age: age,
             gender: gender,
-            subjectiveFeel: answers["body_fat_feel"]?.choiceIds.first
+            subjectiveFeel: preliminaryFeel
         )
         let targetBF = gender == .female ? 20.0 : 14.0
         let bodyFatGap = max(0, estimatedBF - targetBF)
+
+        let signals = PlanDurationPersonalizer.signals(
+            profile: profile,
+            answers: answers,
+            bodyFatGap: bodyFatGap
+        )
 
         let habitSeverity = computeHabitSeverity(answers: answers)
         let concernCount = answers["face_concerns"]?.choiceIds.count ?? 0
         let primaryBlocker = detectPrimaryBlocker(answers: answers, bodyFatGap: bodyFatGap, bmi: bmi)
         let archetype = selectArchetype(
             answers: answers,
+            profile: profile,
+            signals: signals,
             bmi: bmi,
             bodyFatGap: bodyFatGap,
             habitSeverity: habitSeverity,
@@ -166,7 +180,9 @@ enum OriginUserAssessment {
             bodyFatGap: bodyFatGap,
             habitSeverity: habitSeverity,
             answers: answers,
-            concernCount: concernCount
+            concernCount: concernCount,
+            signals: signals,
+            profile: profile
         )
         let dailyTargets = buildDailyTargets(
             answers: answers,
@@ -190,6 +206,12 @@ enum OriginUserAssessment {
             targetBF: targetBF
         )
 
+        let trajectory = buildTrajectory(
+            profile: profile,
+            signals: signals,
+            habitSeverity: habitSeverity
+        )
+
         let snapshot = OriginPlanAssessmentSnapshot(
             archetype: archetype,
             primaryBlocker: primaryBlocker,
@@ -202,7 +224,11 @@ enum OriginUserAssessment {
             weightKg: weight,
             concernCount: concernCount,
             habitSeverityScore: habitSeverity,
-            assessmentVersion: OriginPlanAssessmentSnapshot.currentVersion
+            assessmentVersion: OriginPlanAssessmentSnapshot.currentVersion,
+            trajectoryMode: trajectory.mode,
+            debloatTargetDays: trajectory.debloatDays,
+            weightTargetDays: trajectory.weightDays,
+            trajectoryTotalDays: trajectory.totalDays
         )
 
         return Result(
@@ -324,15 +350,19 @@ enum OriginUserAssessment {
 
     private static func selectArchetype(
         answers: [String: WelcomePlanAnswer],
+        profile: UnifiedUserProfile?,
+        signals: PlanDurationPersonalizer.ProfileSignals,
         bmi: Double?,
         bodyFatGap: Double,
         habitSeverity: Int,
         primaryBlocker: OriginPrimaryBlocker,
         baselineScan: FaceWellnessMarkers?
     ) -> OriginPlanArchetype {
-        let feel = choice("body_fat_feel", in: answers)
+        let feel = choice("body_fat_feel", in: answers) ?? signals.inferredBodyFatFeel
         let consistency = choice("consistency_history", in: answers)
         let scanPuffiness = baselineScan?.puffinessScore ?? 0
+        let weightGap = signals.weightGapKg ?? 99
+        let leanBMI = (bmi ?? 25) < 26
 
         if primaryBlocker == .stress || primaryBlocker == .sleep {
             if bodyFatGap < 6 && (bmi ?? 22) < 27 {
@@ -340,18 +370,23 @@ enum OriginUserAssessment {
             }
         }
 
+        // Profil sportif proche de la cible → debloat express, pas recomposition longue.
+        if signals.isDebloatFocused && weightGap <= 6 && leanBMI && signals.isSporty {
+            if habitSeverity >= 35 || scanPuffiness >= 50 {
+                return .habitReset
+            }
+            return .maintenancePolish
+        }
+
         if bodyFatGap >= 8 || (bmi ?? 0) >= 27 || feel == "high" {
             return .recomposition
         }
 
-        if (feel == "very_lean" || feel == "athletic") && bodyFatGap < 3 && habitSeverity < 35 {
+        if (feel == "very_lean" || feel == "athletic") && bodyFatGap < 4 && habitSeverity < 40 {
             return .maintenancePolish
         }
 
-        if bodyFatGap < 4 && habitSeverity >= 20 && (bmi ?? 22) >= 18.5 && (bmi ?? 22) <= 26 {
-            if scanPuffiness >= 55 || habitSeverity >= 40 {
-                return .habitReset
-            }
+        if bodyFatGap < 5 && habitSeverity >= 15 && leanBMI {
             return .habitReset
         }
 
@@ -359,8 +394,12 @@ enum OriginUserAssessment {
             return .foundationBuild
         }
 
-        if bodyFatGap >= 4 {
+        if bodyFatGap >= 6 {
             return .recomposition
+        }
+
+        if signals.isDebloatFocused && weightGap <= 8 {
+            return .habitReset
         }
 
         return .foundationBuild
@@ -373,18 +412,36 @@ enum OriginUserAssessment {
         bodyFatGap: Double,
         habitSeverity: Int,
         answers: [String: WelcomePlanAnswer],
-        concernCount: Int
+        concernCount: Int,
+        signals: PlanDurationPersonalizer.ProfileSignals,
+        profile: UnifiedUserProfile?
     ) -> OriginPlanDuration {
+        let trajectory = buildTrajectory(
+            profile: profile,
+            signals: signals,
+            habitSeverity: habitSeverity
+        )
+
         var minW: Int
         var maxW: Int
 
         switch archetype {
         case .habitReset:
-            minW = 1
-            maxW = habitSeverity >= 50 ? 3 : 2
+            if signals.isLean && (signals.weightGapKg ?? 99) <= 5 {
+                minW = 1
+                maxW = habitSeverity >= 45 ? 2 : 1
+            } else {
+                minW = 1
+                maxW = habitSeverity >= 50 ? 3 : 2
+            }
         case .maintenancePolish:
-            minW = 2
-            maxW = 4
+            if signals.isLean && (signals.weightGapKg ?? 99) <= 5 {
+                minW = 2
+                maxW = 3
+            } else {
+                minW = 2
+                maxW = 4
+            }
         case .stressRecovery:
             minW = 4
             maxW = 8
@@ -396,8 +453,11 @@ enum OriginUserAssessment {
                 minW = 16
                 maxW = 20
             } else if bodyFatGap >= 8 {
-                minW = 12
-                maxW = 16
+                minW = 10
+                maxW = 14
+            } else if signals.isLean {
+                minW = 5
+                maxW = 8
             } else {
                 minW = 8
                 maxW = 12
@@ -408,7 +468,7 @@ enum OriginUserAssessment {
             minW += 1
             maxW += 2
         }
-        if concernCount >= 3 {
+        if concernCount >= 3 && archetype != .habitReset {
             maxW += 1
         }
         if habitSeverity >= 60 && archetype != .habitReset {
@@ -416,11 +476,103 @@ enum OriginUserAssessment {
             maxW += 1
         }
 
+        let trajectoryWeeks = max(1, Int(ceil(Double(trajectory.planTotalDays) / 7.0)))
+        let phaseWeeks = max(1, Int(ceil(Double(trajectory.planPhaseOneDays) / 7.0)))
+
+        minW = min(minW, phaseWeeks)
+        maxW = min(maxW, trajectoryWeeks)
+
+        if let weekCap = PlanDurationPersonalizer.weightGapWeekCap(
+            weightGap: signals.weightGapKg,
+            signals: signals
+        ) {
+            maxW = min(maxW, weekCap)
+            minW = min(minW, maxW)
+        }
+
+        let sportReduction = PlanDurationPersonalizer.sportWeekReduction(signals: signals)
+        if sportReduction > 0 && archetype != .foundationBuild {
+            minW = max(1, minW - sportReduction)
+            maxW = max(minW, maxW - sportReduction)
+        }
+
         minW = min(max(1, minW), 20)
         maxW = min(max(minW, maxW), 24)
-        let total = min(maxW, max(minW, (minW + maxW + 1) / 2))
+        let picked = PlanDurationPersonalizer.pickTotalWeeks(
+            minW: minW,
+            maxW: maxW,
+            signals: signals,
+            phaseOneDays: trajectory.planPhaseOneDays
+        )
+        let total = min(picked, trajectoryWeeks)
 
-        return OriginPlanDuration(minWeeks: minW, maxWeeks: maxW, totalWeeks: total, archetype: archetype)
+        return OriginPlanDuration(minWeeks: minW, maxWeeks: max(total, minW), totalWeeks: total, archetype: archetype)
+    }
+
+    static func buildTrajectory(
+        profile: UnifiedUserProfile?,
+        signals: PlanDurationPersonalizer.ProfileSignals,
+        habitSeverity: Int,
+        now: Date = Date()
+    ) -> TrajectoryTimeline {
+        let debloatDays = PlanDurationPersonalizer.debloatDays(
+            signals: signals,
+            habitSeverity: habitSeverity
+        )
+        let weightDays = weightTargetDays(profile: profile, signals: signals)
+        let weightLabel: String?
+        if let ideal = profile?.idealWeight, ideal > 0 {
+            weightLabel = "\(Int(ideal.rounded())) kg"
+        } else {
+            weightLabel = nil
+        }
+
+        return PlanDurationPersonalizer.computeTimeline(
+            signals: signals,
+            weightDays: weightDays,
+            debloatDays: debloatDays,
+            hasWeightGoal: weightDays != nil,
+            weightLabel: weightLabel,
+            now: now
+        )
+    }
+
+    private static func weightTargetDays(
+        profile: UnifiedUserProfile?,
+        signals: PlanDurationPersonalizer.ProfileSignals
+    ) -> Int? {
+        guard let current = profile?.weight, current > 0,
+              let ideal = profile?.idealWeight, ideal > 0 else { return nil }
+        let delta = abs(current - ideal)
+        guard delta >= 0.5 else { return nil }
+
+        var weeklyRate = profile?.goalPace?.weightEstimationWeeklyRate ?? 0.7
+        if let age = profile?.age, age <= 25 {
+            weeklyRate = max(weeklyRate, 0.85)
+        }
+        if delta <= 3 { weeklyRate *= 1.18 }
+        else if delta <= 6 { weeklyRate *= 1.12 }
+        else if delta <= 10 { weeklyRate *= 1.08 }
+
+        if let level = profile?.experienceLevel {
+            switch level {
+            case .intermediaire: weeklyRate *= 1.07
+            case .amateur: weeklyRate *= 1.14
+            case .professionnel: weeklyRate *= 1.2
+            default: break
+            }
+        }
+        if (profile?.sessionsPerWeek ?? 0) >= 3 { weeklyRate *= 1.08 }
+        if let age = profile?.age {
+            if age <= 22 { weeklyRate *= 1.12 }
+            else if age <= 28 { weeklyRate *= 1.08 }
+        }
+
+        return PlanDurationPersonalizer.onboardingWeightGoalDays(
+            delta: delta,
+            weeklyRate: weeklyRate,
+            signals: signals
+        )
     }
 
     // MARK: - Daily targets
