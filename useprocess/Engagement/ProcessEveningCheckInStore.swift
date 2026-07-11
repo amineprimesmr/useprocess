@@ -37,7 +37,11 @@ final class ProcessEveningCheckInStore {
     }
 
     var hasSubmittedToday: Bool {
-        submittedDayKeys.contains(ProcessStreakStore.dayKey(for: Date()))
+        hasSubmitted(on: Date())
+    }
+
+    func hasSubmitted(on date: Date) -> Bool {
+        submittedDayKeys.contains(ProcessStreakStore.dayKey(for: date))
     }
 
     func answers(for date: Date = Date()) -> [String: String] {

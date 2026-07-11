@@ -1,155 +1,244 @@
 import SwiftUI
 
-/// Hero profil — dernier scan en rond, swipe chronologique pour voir l'évolution.
+/// Hero profil compact — jour du programme à gauche, dernier scan rond à droite.
 struct ProfileScanEvolutionHero: View {
     @Bindable var historyStore: FaceScanHistoryStore
+    let selectedDate: Date
     var onOpenScan: (FaceScanResult) -> Void
 
     @Environment(\.appTheme) private var theme
+    @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
+    @Bindable private var planStore = WelcomePlanStore.shared
+    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
 
-    @State private var selectedScanId: String?
+    private let circleDiameter: CGFloat = 112
 
-    private let circleDiameter: CGFloat = 220
-
-    /// Du plus ancien au plus récent — swipe vers la droite = scans plus récents.
-    private var chronologicalScans: [FaceScanResult] {
-        historyStore.history.reversed()
+    private var displayedScan: FaceScanResult? {
+        let dayEnd = Calendar.current.date(
+            byAdding: .day,
+            value: 1,
+            to: Calendar.current.startOfDay(for: selectedDate)
+        ) ?? selectedDate
+        return historyStore.history
+            .filter { $0.createdAt < dayEnd }
+            .sorted { $0.createdAt > $1.createdAt }
+            .first
     }
 
-    private var selectedScan: FaceScanResult? {
-        guard let selectedScanId else { return chronologicalScans.last }
-        return chronologicalScans.first(where: { $0.id == selectedScanId })
+    private var progress: PlanProgressSnapshot {
+        planProgressStore.snapshot
     }
 
-    private var selectedIndex: Int {
-        guard let selectedScanId,
-              let index = chronologicalScans.firstIndex(where: { $0.id == selectedScanId }) else {
-            return max(0, chronologicalScans.count - 1)
+    private var selectedProgramDayNumber: Int? {
+        guard let plan = planStore.plan,
+              let day = OriginPlanPresenter.programDay(in: plan, for: selectedDate) else {
+            return nil
         }
-        return index
+        return day.globalDayIndex + 1
+    }
+
+    private var displayedProgramDay: Int {
+        if let selectedProgramDayNumber {
+            return selectedProgramDayNumber
+        }
+        guard progress.hasPlan, progress.totalProgramDays > 0 else { return 0 }
+        if progress.validationProgress >= 1 { return progress.totalProgramDays }
+        return min(progress.totalProgramDays, max(1, progress.validatedDays + 1))
+    }
+
+    private var completionPercent: Int {
+        guard progress.hasPlan else { return 0 }
+        return Int((min(max(progress.validationProgress, 0), 1) * 100).rounded())
+    }
+
+    private var displayedValidatedDays: Int {
+        guard progress.hasPlan else { return 0 }
+        return progress.validatedDays
+    }
+
+    private var displayedStreak: Int {
+        if let record = trajectoryStore.record(for: selectedDate), record.checkInSubmitted {
+            return record.streakAfterDay
+        }
+        return progress.currentStreak
+    }
+
+    private var displayedWeekLabel: String? {
+        guard progress.hasPlan, progress.elapsedProgramDays > 0 else { return nil }
+        return "S\(progress.currentWeek)/\(progress.totalWeeks)"
     }
 
     var body: some View {
-        VStack(spacing: 14) {
-            if chronologicalScans.isEmpty {
-                emptyState
-            } else {
-                scanCarousel
-                scanMetadata
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 18) {
+                programSummary
+
+                Spacer(minLength: 12)
+
+                scanButton
             }
+
+            progressBar
+
+            programMetricsRow
         }
-        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 52)
+        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 48)
         .padding(.horizontal, ProfileTheme.horizontalPadding)
-        .padding(.bottom, 4)
-        .onAppear(perform: syncSelectedScan)
-        .onChange(of: historyStore.history.map(\.id)) { _, _ in
-            syncSelectedScan()
-        }
+        .padding(.bottom, 18)
     }
 
-    private var scanCarousel: some View {
-        TabView(selection: $selectedScanId) {
-            ForEach(chronologicalScans) { scan in
-                Button {
-                    HapticManager.shared.impact(.light)
-                    onOpenScan(scan)
-                } label: {
-                    ProfileScanCircleMedia(result: scan, diameter: circleDiameter)
-                }
-                .buttonStyle(.plain)
-                .tag(scan.id)
-            }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(height: circleDiameter + 12)
-        .onChange(of: selectedScanId) { oldValue, newValue in
-            guard oldValue != newValue, newValue != nil else { return }
-            HapticManager.shared.selection()
-        }
-        .accessibilityLabel("Historique des scans visage")
-        .accessibilityHint(chronologicalScans.count > 1 ? "Glisse pour voir l'évolution" : "")
-    }
+    private var programSummary: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(progress.hasPlan ? "Jour" : "Programme")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(theme.secondaryText)
 
-    private var scanMetadata: some View {
-        VStack(spacing: 6) {
-            if let scan = selectedScan {
-                HStack(spacing: 8) {
-                    Text(scanDateLabel(scan.createdAt))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
+            Text(dateLabel)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(theme.primaryText.opacity(0.74))
 
-                    ReadinessScoreMiniBadge(score: scan.displayWellnessScore)
-                }
-            }
-
-            if chronologicalScans.count > 1 {
-                Text("\(selectedIndex + 1) sur \(chronologicalScans.count)")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(theme.secondaryText)
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
+                Text(progress.hasPlan ? "\(displayedProgramDay)" : "—")
+                    .font(.system(size: 46, weight: .semibold, design: .rounded))
+                    .foregroundStyle(theme.primaryText)
                     .monospacedDigit()
 
-                Text("Glisse pour voir l'évolution")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(theme.secondaryText.opacity(0.85))
+                if progress.hasPlan {
+                    Text("/ \(progress.totalProgramDays)")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(theme.secondaryText)
+                        .monospacedDigit()
+                }
             }
+
+            Text(progress.hasPlan ? "\(completionPercent)% du programme validé" : "Aucun plan actif")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(theme.secondaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
         }
-        .frame(maxWidth: .infinity)
-        .animation(.easeOut(duration: 0.2), value: selectedScanId)
+        .accessibilityElement(children: .combine)
     }
 
-    private var emptyState: some View {
-        VStack(spacing: 12) {
+    @ViewBuilder
+    private var scanButton: some View {
+        if let displayedScan {
+            Button {
+                HapticManager.shared.impact(.light)
+                onOpenScan(displayedScan)
+            } label: {
+                ProfileScanCircleMedia(result: displayedScan, diameter: circleDiameter)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Ouvrir le scan affiché")
+        } else {
             ZStack {
                 Circle()
                     .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.35))
                     .frame(width: circleDiameter, height: circleDiameter)
 
-                VStack(spacing: 8) {
-                    Image(systemName: "face.smiling")
-                        .font(.system(size: 36, weight: .semibold))
-                        .foregroundStyle(theme.onboardingAccent.opacity(0.85))
+                Image(systemName: "face.smiling")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(theme.onboardingAccent.opacity(0.85))
+            }
+            .accessibilityLabel("Aucun scan")
+        }
+    }
 
-                    Text("Aucun scan")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
+    private var progressBar: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(theme.primaryText.opacity(theme.isDark ? 0.10 : 0.07))
+
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.45, green: 0.72, blue: 0.95),
+                                Color(hex: "aeb2fa")
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: max(progress.hasPlan ? 8 : 0, geometry.size.width * CGFloat(min(max(progress.validationProgress, 0), 1))))
+            }
+        }
+        .frame(height: 8)
+        .accessibilityLabel("Progression du programme \(completionPercent) pour cent")
+    }
+
+    @ViewBuilder
+    private var programMetricsRow: some View {
+        if progress.hasPlan {
+            HStack(spacing: 8) {
+                programMetricPill(
+                    icon: "checkmark.circle.fill",
+                    value: "\(displayedValidatedDays)",
+                    label: "validés"
+                )
+
+                programMetricPill(
+                    icon: "flame.fill",
+                    value: "\(displayedStreak)",
+                    label: "série"
+                )
+
+                if let displayedWeekLabel {
+                    programMetricPill(
+                        icon: "calendar",
+                        value: displayedWeekLabel,
+                        label: "semaine"
+                    )
                 }
             }
+            .accessibilityElement(children: .combine)
+        }
+    }
 
-            Text("Fais ton premier scan depuis l'accueil pour suivre ton évolution.")
-                .font(.caption.weight(.medium))
+    private func programMetricPill(icon: String, value: String, label: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(theme.secondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 12)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(theme.primaryText)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text(label)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(theme.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+        .padding(.horizontal, 10)
+        .background(
+            Capsule()
+                .fill(theme.primaryText.opacity(theme.isDark ? 0.075 : 0.045))
+        )
     }
 
-    private func syncSelectedScan() {
-        guard !chronologicalScans.isEmpty else {
-            selectedScanId = nil
-            return
-        }
-
-        if let selectedScanId,
-           chronologicalScans.contains(where: { $0.id == selectedScanId }) {
-            return
-        }
-
-        selectedScanId = chronologicalScans.last?.id
+    private var dateLabel: String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(selectedDate) { return "Aujourd'hui" }
+        if calendar.isDateInYesterday(selectedDate) { return "Hier" }
+        return Self.dateFormatter.string(from: selectedDate)
     }
 
-    private func scanDateLabel(_ date: Date) -> String {
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "fr_FR")
-        if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "'Aujourd'hui,' HH:mm"
-        } else if Calendar.current.isDateInYesterday(date) {
-            formatter.dateFormat = "'Hier,' HH:mm"
-        } else {
-            formatter.dateFormat = "d MMM yyyy"
-        }
-        return formatter.string(from: date)
-    }
+        formatter.dateFormat = "d MMM"
+        return formatter
+    }()
 }
 
 private struct ProfileScanCircleMedia: View {

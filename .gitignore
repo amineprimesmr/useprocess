@@ -15,3 +15,14 @@ Index.noindex/
 SourcePackages/
 *.xcuserstate
 xcuserdata/
+
+# TikTok content assets (keep folder structure, ignore media)
+content/tiktok/raw/**/*.{jpg,jpeg,png,webp,heic,mov,mp4}
+content/tiktok/branded/**/*.{jpg,jpeg,png,webp,heic,mov,mp4}
+content/tiktok/exemples/**/*
+content/tiktok/generated/**/*
+content/tiktok/queue/**/*
+content/tiktok/posted/**/*
+!content/tiktok/**/.gitkeep
+!content/tiktok/**/*.md
+!content/tiktok/**/*.example.json

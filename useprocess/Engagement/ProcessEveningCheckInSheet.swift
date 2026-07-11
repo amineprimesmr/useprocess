@@ -29,6 +29,8 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
 
 /// Bilan du soir — 3 questions binaires, tout visible sans scroll.
 struct ProcessEveningCheckInSheet: View {
+    var targetDate: Date = Date()
+    var isRequired: Bool = false
     var onCompleted: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
@@ -60,6 +62,10 @@ struct ProcessEveningCheckInSheet: View {
         EveningCheckInQuestion.allCases.allSatisfy { answers[$0.id] != nil }
     }
 
+    private var hasSubmittedTargetDate: Bool {
+        eveningStore.hasSubmitted(on: targetDate)
+    }
+
     var body: some View {
         Group {
             switch phase {
@@ -80,9 +86,9 @@ struct ProcessEveningCheckInSheet: View {
         .presentationDetents([.height(Metrics.sheetHeight)])
         .presentationDragIndicator(.hidden)
         .presentationCornerRadius(Metrics.cornerRadius)
-        .interactiveDismissDisabled(phase == .form)
+        .interactiveDismissDisabled(isRequired ? phase != .validated : phase == .form)
         .onAppear {
-            answers = eveningStore.answers()
+            answers = eveningStore.answers(for: targetDate)
         }
         .onDisappear {
             validationTask?.cancel()
@@ -110,7 +116,7 @@ struct ProcessEveningCheckInSheet: View {
 
     private func questionRow(_ question: EveningCheckInQuestion) -> some View {
         HStack(spacing: 12) {
-            Text(question.title)
+            Text(questionTitle(question))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
                 .lineLimit(2)
@@ -140,6 +146,19 @@ struct ProcessEveningCheckInSheet: View {
         .frame(height: Metrics.rowHeight)
         .frame(maxWidth: .infinity)
         .processEveningCheckInGlass(in: Metrics.rowShape)
+    }
+
+    private func questionTitle(_ question: EveningCheckInQuestion) -> String {
+        guard Calendar.current.isDateInYesterday(targetDate) else { return question.title }
+
+        switch question {
+        case .water:
+            return "Hier, eau validée ?"
+        case .debloatMeal:
+            return "Hier, repas debloat ?"
+        case .postureCircuit:
+            return "Hier, circuit posture ?"
+        }
     }
 
     private func answerIconButton(
@@ -174,12 +193,16 @@ struct ProcessEveningCheckInSheet: View {
 
     private var headerRow: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Bilan du soir")
+            Text(titleText)
                 .font(.title3.weight(.bold))
                 .foregroundStyle(theme.primaryText)
 
-            if streakStore.displayStreak > 0, !eveningStore.hasSubmittedToday {
-                Text("Streak \(streakStore.displayStreak) jour\(streakStore.displayStreak > 1 ? "s" : "")")
+            Text(subtitleText)
+                .font(.caption)
+                .foregroundStyle(theme.secondaryText)
+
+            if streakStore.displayStreak > 0, !hasSubmittedTargetDate {
+                Text("Streak \(streakStore.displayStreak) jour\(streakStore.displayStreak > 1 ? "s" : "") à sécuriser")
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
             }
@@ -190,9 +213,29 @@ struct ProcessEveningCheckInSheet: View {
         .padding(.bottom, 16)
     }
 
+    private var titleText: String {
+        if Calendar.current.isDateInYesterday(targetDate) {
+            return "Bilan d'hier"
+        }
+        if Calendar.current.isDateInToday(targetDate) {
+            return "Bilan du soir"
+        }
+        return "Bilan du \(Self.shortDateFormatter.string(from: targetDate))"
+    }
+
+    private var subtitleText: String {
+        if Calendar.current.isDateInYesterday(targetDate) {
+            return "Hier, tu as validé quoi ? On en a besoin pour analyser ta trajectoire."
+        }
+        if isRequired {
+            return "Réponds pour continuer : sans ce bilan, la streak et l'analyse restent bloquées."
+        }
+        return "3 questions pour valider ta streak."
+    }
+
     private var footerBlock: some View {
         Button(action: submitCheckIn) {
-            Text(eveningStore.hasSubmittedToday ? "Mettre à jour" : "Valider mon bilan")
+            Text(hasSubmittedTargetDate ? "Mettre à jour" : "Valider mon bilan")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(theme.primaryText.opacity(isFormComplete ? 0.92 : 0.45))
                 .frame(maxWidth: .infinity)
@@ -285,10 +328,10 @@ struct ProcessEveningCheckInSheet: View {
 
     private var validatedSubtitle: String {
         let snapshot = trajectoryStore.snapshot
-        if let summary = ProcessDebloatTrajectoryStore.shared.record(for: Date())?.aiSummary {
+        if let summary = ProcessDebloatTrajectoryStore.shared.record(for: targetDate)?.aiSummary {
             return summary
         }
-        if let verdict = snapshot.todayVerdict {
+        if Calendar.current.isDateInToday(targetDate), let verdict = snapshot.todayVerdict {
             return "\(verdict.shortLabel) — score \(Int(snapshot.todayCompositeScore))/100 · streak \(snapshot.currentStreak) j"
         }
         return "Ta trajectoire debloat est à jour."
@@ -311,7 +354,7 @@ struct ProcessEveningCheckInSheet: View {
             try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
-            eveningStore.markSubmitted(answers: answers)
+            eveningStore.markSubmitted(answers: answers, for: targetDate)
             onCompleted?()
 
             withAnimation(.spring(response: 0.44, dampingFraction: 0.82)) {
@@ -331,6 +374,13 @@ struct ProcessEveningCheckInSheet: View {
         validationTask?.cancel()
         dismiss()
     }
+
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "d MMM"
+        return formatter
+    }()
 }
 
 // MARK: - Glass

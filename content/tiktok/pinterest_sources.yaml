@@ -1,0 +1,45 @@
+# Sources Pinterest → dossiers raw/
+# Chaque entrée télécharge des images dans le dossier cible.
+
+sources:
+  - name: meals-debloat
+    folder: meals
+    # Recherche Pinterest
+    query: "healthy high protein meal plate aesthetic"
+    limit: 30
+
+  - name: meals-breakfast
+    folder: meals
+    query: "clean breakfast eggs avocado aesthetic"
+    limit: 20
+
+  - name: lifestyle-sleep
+    folder: lifestyle
+    query: "sleep recovery aesthetic dark room"
+    limit: 15
+
+  - name: lifestyle-walk
+    folder: lifestyle
+    query: "morning walk fitness aesthetic"
+    limit: 15
+
+  - name: lifestyle-gym
+    folder: lifestyle
+    query: "gym mirror selfie men aesthetic"
+    limit: 20
+
+  - name: faces-jaw
+    folder: faces
+    query: "sharp jawline men portrait"
+    limit: 20
+
+  - name: hydration
+    folder: lifestyle
+    query: "drinking water aesthetic glass"
+    limit: 15
+
+  # Exemple board (décommente + colle ton URL) :
+  # - name: my-board
+  #   folder: misc
+  #   board: "https://www.pinterest.com/USERNAME/BOARD/"
+  #   limit: 50

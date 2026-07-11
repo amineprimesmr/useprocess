@@ -322,6 +322,7 @@ private struct PlanHydrationCarouselCard: View {
     @Environment(\.appTheme) private var theme
     @StateObject private var waterEngine = ProcessFluidWaterMotionEngine()
     @Bindable private var hydrationStore = ProcessHydrationLogStore.shared
+    @State private var isDraggingWater = false
 
     private var effectiveMilliliters: Int {
         max(
@@ -373,6 +374,14 @@ private struct PlanHydrationCarouselCard: View {
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .hydrationHub, namespace: zoomNamespace)
+        .simultaneousGesture(
+            waterInteractionGesture(
+                in: CGSize(
+                    width: PlanMealCarouselLayout.cardWidth,
+                    height: PlanMealCarouselLayout.cardHeight
+                )
+            )
+        )
         .onAppear { waterEngine.start() }
         .onDisappear { waterEngine.stop() }
         .accessibilityAddTraits(.isButton)
@@ -529,6 +538,22 @@ private struct PlanHydrationCarouselCard: View {
         waterEngine.bumpWave()
     }
 
+    private func waterInteractionGesture(in size: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onChanged { value in
+                if !isDraggingWater {
+                    isDraggingWater = true
+                    waterEngine.beginInteraction(at: value.location, in: size)
+                } else {
+                    waterEngine.updateInteraction(at: value.location, in: size)
+                }
+            }
+            .onEnded { _ in
+                isDraggingWater = false
+                waterEngine.endInteraction()
+            }
+    }
+
     private func formattedMilliliters(_ value: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -545,7 +570,7 @@ private struct PlanHydrationCarouselCard: View {
         let clampedPitch = max(-1, min(1, waterEngine.pitch))
         let centerX = size.width * 0.5
         let wave = CGFloat(sin(Double(waterEngine.wavePhase) + Double(centerX) * 0.035)) * 1.2
-        let surfaceY = min(size.height - 1, max(1, restY - clampedPitch * depth * 0.08 + wave))
+        let surfaceY = min(size.height - 1, max(1, restY - clampedPitch * depth * 0.16 + wave))
         return min(size.height - 34, max(42, surfaceY + 30))
     }
 }
@@ -580,8 +605,8 @@ private struct PlanHydrationCardWaterShape: Shape {
         for index in 0...segmentCount {
             let x = CGFloat(index) / CGFloat(segmentCount) * rect.width
             let normalizedX = (x / rect.width - 0.5) * 2
-            let midY = restY - clampedPitch * depth * 0.08
-            let slope = -clampedRoll * normalizedX * depth * 0.30
+            let midY = restY - clampedPitch * depth * 0.16
+            let slope = -clampedRoll * normalizedX * depth * 0.52
             let wave = CGFloat(sin(Double(wavePhase) + Double(x) * 0.035)) * 1.2
             let y = min(rect.height - 1, max(1, midY + slope + wave))
             points.append(CGPoint(x: x, y: y))

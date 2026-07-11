@@ -8,7 +8,6 @@ struct ProcessProfileView: View {
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
     @EnvironmentObject private var healthManager: HealthManager
-    @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var faceHistoryStore = FaceScanHistoryStore.shared
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @State private var profileStore = SocialProfileStore.shared
@@ -16,7 +15,7 @@ struct ProcessProfileView: View {
     @State private var selectedAnalysisScan: FaceScanResult?
 
     @State private var chartHistories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
-    @State private var weightChartPeriod: ProfileWeightChartPeriod = .month
+    @State private var selectedProfileDate = Calendar.current.startOfDay(for: Date())
 
     private var resolvedProfile: SocialProfile {
         if let profile = profileStore.profile {
@@ -34,6 +33,7 @@ struct ProcessProfileView: View {
                 VStack(spacing: 0) {
                     ProfileScanEvolutionHero(
                         historyStore: faceHistoryStore,
+                        selectedDate: selectedProfileDate,
                         onOpenScan: { selectedAnalysisScan = $0 }
                     )
 
@@ -41,24 +41,13 @@ struct ProcessProfileView: View {
                         .frame(height: 0)
                         .id(ProfileStatisticsAnchor.id)
 
-                    ProfileStatisticsPeriodStrip(
-                        selection: $weightChartPeriod,
-                        theme: theme
-                    )
-                    .padding(.horizontal, ProfileTheme.horizontalPadding)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
-
                     ProfileWeightStatisticsSection(
                         history: history(for: .weight),
                         latestValue: latestValue(for: .weight),
-                        deltaVsPrevious: deltaVsPrevious(for: .weight),
-                        selectedPeriod: $weightChartPeriod
+                        deltaVsPrevious: deltaVsPrevious(for: .weight)
                     )
+                    .padding(.top, 14)
                     .padding(.bottom, 20)
-
-                    ProfileStreakStatisticsSection()
-                        .padding(.bottom, 24)
 
                     profileScrollContent(resolvedProfile)
                 }
@@ -69,7 +58,9 @@ struct ProcessProfileView: View {
             .ignoresSafeArea(edges: .top)
             .scrollIndicators(.hidden)
             .processTransparentScrollSurface()
+            .simultaneousGesture(profileDaySwipeGesture)
             .onAppear {
+                selectedProfileDate = Calendar.current.startOfDay(for: Date())
                 focusProfileStatisticsIfNeeded(using: proxy)
             }
             .onChange(of: planBridge.shouldFocusProfileStatistics) { _, should in
@@ -101,6 +92,7 @@ struct ProcessProfileView: View {
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             profileStore.bind(unified: profileService.currentProfile)
         }
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: selectedProfileDate)
     }
 
     @ViewBuilder
@@ -156,8 +148,13 @@ struct ProcessProfileView: View {
     }
 
     private func chartPoints(for metric: ProfileChartMetric) -> [ProfileAnalyticsPoint] {
+        let selectedDayEnd = Calendar.current.date(
+            byAdding: .day,
+            value: 1,
+            to: Calendar.current.startOfDay(for: selectedProfileDate)
+        ) ?? selectedProfileDate
         let points = ProfileChartHistoryBuilder.visiblePoints(
-            history: history(for: metric),
+            history: history(for: metric).filter { $0.date < selectedDayEnd },
             range: .profileDefault,
             weekOffset: 0
         )
@@ -167,15 +164,16 @@ struct ProcessProfileView: View {
 
     private func fallbackChartPoints(for metric: ProfileChartMetric) -> [ProfileAnalyticsPoint] {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let selectedDay = calendar.startOfDay(for: selectedProfileDate)
+        let isToday = calendar.isDateInToday(selectedDay)
 
         switch metric {
         case .weight:
-            if healthManager.todaySnapshot.vitals.bodyMass > 0 {
+            if isToday, healthManager.todaySnapshot.vitals.bodyMass > 0 {
                 return [
                     ProfileAnalyticsPoint(
                         id: "weight-today",
-                        date: today,
+                        date: selectedDay,
                         value: healthManager.todaySnapshot.vitals.bodyMass
                     )
                 ]
@@ -185,14 +183,17 @@ struct ProcessProfileView: View {
                 return [
                     ProfileAnalyticsPoint(
                         id: "profile-weight",
-                        date: today,
+                        date: selectedDay,
                         value: profileWeight
                     )
                 ]
             }
 
         case .retention, .recovery, .cortisol, .definition, .skin:
-            if let latest = FaceScanHistoryStore.shared.latestResult,
+            if let latest = faceHistoryStore.history
+                .filter({ $0.createdAt < calendar.date(byAdding: .day, value: 1, to: selectedDay) ?? selectedDay })
+                .sorted(by: { $0.createdAt > $1.createdAt })
+                .first,
                let kind = metric.faceScanKind {
                 let value = Double(FaceScanIndicators.displayPercent(for: kind, result: latest))
                 if value > 0 {
@@ -207,12 +208,13 @@ struct ProcessProfileView: View {
             }
 
         case .effort:
+            guard isToday else { break }
             let effortScore = healthManager.todaySnapshot.effort.effortScore
             if effortScore > 0 {
                 return [
                     ProfileAnalyticsPoint(
                         id: "effort-today",
-                        date: today,
+                        date: selectedDay,
                         value: effortScore
                     )
                 ]
@@ -227,15 +229,21 @@ struct ProcessProfileView: View {
     }
 
     private func deltaVsPrevious(for metric: ProfileChartMetric) -> Double? {
+        let selectedEnd = Calendar.current.date(
+            byAdding: .day,
+            value: 1,
+            to: Calendar.current.startOfDay(for: selectedProfileDate)
+        ) ?? selectedProfileDate
+        let scopedHistory = history(for: metric).filter { $0.date < selectedEnd }
         let currentAverage = ProfileChartHistoryBuilder.average(
             in: ProfileChartHistoryBuilder.visiblePoints(
-                history: history(for: metric),
+                history: scopedHistory,
                 range: .week,
                 weekOffset: 0
             )
         )
         let previousAverage = ProfileChartHistoryBuilder.previousPeriodAverage(
-            history: history(for: metric),
+            history: scopedHistory,
             range: .week,
             weekOffset: 0
         )
@@ -285,6 +293,52 @@ struct ProcessProfileView: View {
         guard let index = ordered.firstIndex(where: { $0.id == scan.id }),
               index + 1 < ordered.count else { return nil }
         return ordered[index + 1]
+    }
+
+    private var profileDaySwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 28, coordinateSpace: .local)
+            .onEnded { value in
+                let horizontal = value.translation.width
+                let vertical = value.translation.height
+                guard abs(horizontal) > 70, abs(horizontal) > abs(vertical) * 1.2 else { return }
+
+                if horizontal < 0 {
+                    moveSelectedProfileDate(by: -1)
+                } else {
+                    moveSelectedProfileDate(by: 1)
+                }
+            }
+    }
+
+    private func moveSelectedProfileDate(by dayDelta: Int) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let current = calendar.startOfDay(for: selectedProfileDate)
+        guard let candidate = calendar.date(byAdding: .day, value: dayDelta, to: current) else { return }
+        let minDate = earliestSelectableProfileDate(calendar: calendar, today: today)
+        let clamped = max(min(candidate, today), minDate)
+        guard clamped != selectedProfileDate else { return }
+
+        HapticManager.shared.selection()
+        selectedProfileDate = clamped
+    }
+
+    private func earliestSelectableProfileDate(calendar: Calendar, today: Date) -> Date {
+        if let startedAt = WelcomePlanStore.shared.plan?.calendar.startedAt {
+            return calendar.startOfDay(for: startedAt)
+        }
+
+        let metricDates = chartHistories.values
+            .flatMap { $0.map(\.date) }
+            .map { calendar.startOfDay(for: $0) }
+        let scanDates = faceHistoryStore.history
+            .map { calendar.startOfDay(for: $0.createdAt) }
+
+        if let earliest = (metricDates + scanDates).min() {
+            return earliest
+        }
+
+        return calendar.date(byAdding: .day, value: -30, to: today) ?? today
     }
 }
 

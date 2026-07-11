@@ -1,4 +1,5 @@
 import Combine
+import CoreGraphics
 import CoreMotion
 import Foundation
 
@@ -13,6 +14,9 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
 
     private let motionManager = CMMotionManager()
     private var isRunning = false
+    private var isUserInteracting = false
+    private var sensorRoll: CGFloat = 0
+    private var sensorPitch: CGFloat = 0
 
     private let smoothing: CGFloat = 0.22
     private let deadZone: CGFloat = 0.025
@@ -44,6 +48,22 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
         wavePhase += 0.4
     }
 
+    func beginInteraction(at location: CGPoint, in size: CGSize) {
+        isUserInteracting = true
+        applyInteraction(at: location, in: size, addsWave: true)
+    }
+
+    func updateInteraction(at location: CGPoint, in size: CGSize) {
+        applyInteraction(at: location, in: size, addsWave: false)
+    }
+
+    func endInteraction() {
+        isUserInteracting = false
+        roll = sensorRoll
+        pitch = sensorPitch
+        bumpWave()
+    }
+
     private func consumeMotion(_ motion: CMDeviceMotion) {
         let gx = CGFloat(motion.gravity.x)
         let gy = CGFloat(motion.gravity.y)
@@ -58,7 +78,27 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
         if abs(nextRoll) < deadZone { nextRoll = 0 }
         if abs(nextPitch) < deadZone { nextPitch = 0 }
 
-        roll = roll + (nextRoll - roll) * smoothing
-        pitch = pitch + (nextPitch - pitch) * smoothing
+        sensorRoll = sensorRoll + (nextRoll - sensorRoll) * smoothing
+        sensorPitch = sensorPitch + (nextPitch - sensorPitch) * smoothing
+
+        guard !isUserInteracting else { return }
+        roll = sensorRoll
+        pitch = sensorPitch
+    }
+
+    private func applyInteraction(at location: CGPoint, in size: CGSize, addsWave: Bool) {
+        guard size.width > 1, size.height > 1 else { return }
+
+        let x = min(size.width, max(0, location.x))
+        let y = min(size.height, max(0, location.y))
+        let normalizedX = (x / size.width - 0.5) * 2
+        let normalizedY = (0.5 - y / size.height) * 2
+
+        roll = max(-1, min(1, normalizedX))
+        pitch = max(-1, min(1, normalizedY))
+
+        if addsWave {
+            bumpWave()
+        }
     }
 }

@@ -1,0 +1,16 @@
+{
+  "format": "ba",
+  "lang": "fr",
+  "hook": "EXEMPLE — remplace après génération",
+  "caption": "Exemple de caption.\n\nCommente PLAN",
+  "hashtags": ["#debloat", "#process"],
+  "cta": "Commente PLAN",
+  "slides": [
+    { "file": "slide_01.jpg", "text": "Hook" },
+    { "file": "slide_02.jpg", "text": "Avant" },
+    { "file": "slide_03.jpg", "text": "Après" }
+  ],
+  "sources": [],
+  "post_at": null,
+  "status": "template"
+}

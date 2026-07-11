@@ -7,10 +7,10 @@ enum ProcessFluidWaterSurface {
     static let maxFillRatio: CGFloat = 0.72
     private static let segmentCount = 28
 
-    /// Amplitude de pente (fraction de la profondeur) : 0.42 = déplacement visible des 2 bords.
-    private static let rollAmplitude: CGFloat = 0.42
+    /// Amplitude de pente (fraction de la profondeur) : assez forte pour un suivi tactile net.
+    private static let rollAmplitude: CGFloat = 0.62
     /// Tangage uniforme (fraction de profondeur).
-    private static let pitchAmplitude: CGFloat = 0.10
+    private static let pitchAmplitude: CGFloat = 0.18
 
     private static func waterDepth(height: CGFloat, fillLevel: CGFloat) -> CGFloat {
         min(1, max(0, fillLevel)) * height * maxFillRatio

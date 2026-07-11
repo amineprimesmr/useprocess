@@ -5,20 +5,40 @@ struct ProcessFluidWaterSceneView<Content: View>: View {
     @ObservedObject var engine: ProcessFluidWaterMotionEngine
     var fillLevel: CGFloat
     @ViewBuilder var content: () -> Content
+    @State private var isDraggingWater = false
 
     var body: some View {
-        ZStack {
-            content()
+        GeometryReader { proxy in
+            ZStack {
+                content()
 
-            if #available(iOS 26.0, *) {
-                GlassEffectContainer {
-                    waterGlassLayer
+                if #available(iOS 26.0, *) {
+                    GlassEffectContainer {
+                        waterGlassLayer
+                    }
+                } else {
+                    waterFallbackLayer
                 }
-            } else {
-                waterFallbackLayer
             }
+            .simultaneousGesture(waterInteractionGesture(in: proxy.size))
         }
         .ignoresSafeArea()
+    }
+
+    private func waterInteractionGesture(in size: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onChanged { value in
+                if !isDraggingWater {
+                    isDraggingWater = true
+                    engine.beginInteraction(at: value.location, in: size)
+                } else {
+                    engine.updateInteraction(at: value.location, in: size)
+                }
+            }
+            .onEnded { _ in
+                isDraggingWater = false
+                engine.endInteraction()
+            }
     }
 
     @available(iOS 26.0, *)
