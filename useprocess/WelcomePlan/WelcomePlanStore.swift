@@ -155,7 +155,7 @@ final class WelcomePlanStore {
             if uid != "local-user" {
                 await WelcomePlanFirestoreRepository.shared.savePlan(enriched, userId: uid)
             }
-            await OriginPlanNotificationService.scheduleMorningBrief(plan: enriched)
+            await CoachDailyRhythmService.rescheduleAll()
         }
     }
 
@@ -222,7 +222,23 @@ final class WelcomePlanStore {
             changed = true
         }
 
+        if shouldAlignCalendarToTrajectory(plan: current) {
+            upgradePlanStructure(
+                plan: &current,
+                answers: answers ?? questionnaire.answers,
+                profile: profile
+            )
+            changed = true
+        }
+
         if changed { savePlan(current, structureChanged: true) }
+    }
+
+    private func shouldAlignCalendarToTrajectory(plan: FaceOriginPlan) -> Bool {
+        guard let debloatDays = plan.assessmentSnapshot?.debloatTargetDays, debloatDays > 0 else {
+            return false
+        }
+        return plan.calendar.totalDays < debloatDays
     }
 
     private func shouldRecalibratePlanDuration(
@@ -564,16 +580,50 @@ final class WelcomePlanStore {
         savePlan(regenerated, structureChanged: true)
     }
 
-    /// Génère un aperçu du plan (repas / training / routines) sans valider le protocole.
-    func seedPreviewPlanIfNeeded(profile: UnifiedUserProfile?) {
+    /// Génère un plan depuis l'onboarding et valide le protocole sans questionnaire.
+    func autoCompleteWelcomePlanIfNeeded(profile: UnifiedUserProfile?) {
         guard AppSession.shared.hasCompletedOnboarding else { return }
-        guard !AppSession.shared.hasCompletedWelcomePlanChat else { return }
-        guard plan == nil else { return }
-        guard questionnaire.answers.isEmpty else { return }
+        if AppSession.shared.hasCompletedWelcomePlanChat,
+           plan != nil,
+           isQuestionnaireComplete,
+           WelcomePlanQuestionBank.isFullyAnswered(answers: questionnaire.answers) {
+            return
+        }
 
-        let previewAnswers = WelcomePlanQuestionBank.prefillAnswersFromOnboarding(profile: profile)
-        let previewPlan = WelcomePlanGenerator.generate(answers: previewAnswers, profile: profile)
-        savePlan(previewPlan, structureChanged: true)
+        let answers: [String: WelcomePlanAnswer]
+        if WelcomePlanQuestionBank.isFullyAnswered(answers: questionnaire.answers) {
+            answers = questionnaire.answers
+        } else {
+            var merged = WelcomePlanQuestionBank.prefillAnswersFromOnboarding(profile: profile)
+            // Conserve les réponses déjà saisies, complète le reste.
+            for (questionId, answer) in questionnaire.answers {
+                merged[questionId] = answer
+            }
+            answers = merged
+            for (questionId, answer) in answers {
+                questionnaire.answers[questionId] = answer
+            }
+            if questionnaire.startedAt == nil {
+                questionnaire.startedAt = Date()
+            }
+            persistQuestionnaire()
+        }
+
+        if questionnaire.completedAt == nil {
+            markQuestionnaireComplete()
+        }
+
+        if plan == nil {
+            let generated = WelcomePlanGenerator.generate(answers: answers, profile: profile)
+            savePlan(generated, structureChanged: true)
+        }
+
+        AppSession.shared.completeWelcomePlanChat()
+    }
+
+    /// Ancien aperçu — redirige vers la complétion automatique (plus de questionnaire).
+    func seedPreviewPlanIfNeeded(profile: UnifiedUserProfile?) {
+        autoCompleteWelcomePlanIfNeeded(profile: profile)
     }
 
     private func syncWelcomePlanCompletionFlag() {

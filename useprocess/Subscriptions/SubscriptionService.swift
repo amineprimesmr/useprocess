@@ -230,7 +230,89 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func purchaseWithPromoOffer() async throws {
+        try await purchaseWinbackAnnual()
+    }
+
+    /// Achat annuel winback à 19,99 € : offre promo ASC, sinon produit winback, sinon annuel standard.
+    func purchaseWinbackAnnual() async throws {
+        if isConfigured {
+            try await purchaseWinbackWithRevenueCat()
+            return
+        }
+        try await purchaseWinbackWithStoreKit()
+    }
+
+    private func purchaseWinbackWithRevenueCat() async throws {
+        let product = annualStoreProductRC ?? annualPackage?.storeProduct
+        if let product,
+           let discount = product.discounts.first(where: {
+               $0.offerIdentifier == SubscriptionConfiguration.winbackOfferID
+           }) {
+            do {
+                let promoOffer = try await Purchases.shared.promotionalOffer(
+                    forProductDiscount: discount,
+                    product: product
+                )
+                if let package = annualPackage {
+                    let result = try await Purchases.shared.purchase(
+                        package: package,
+                        promotionalOffer: promoOffer
+                    )
+                    if result.userCancelled { throw SubscriptionError.userCancelled }
+                    applyCustomerInfo(result.customerInfo)
+                    await scheduleTrialReminderIfNeeded(from: result.customerInfo)
+                    return
+                }
+                let result = try await Purchases.shared.purchase(
+                    product: product,
+                    promotionalOffer: promoOffer
+                )
+                if result.userCancelled { throw SubscriptionError.userCancelled }
+                applyCustomerInfo(result.customerInfo)
+                await scheduleTrialReminderIfNeeded(from: result.customerInfo)
+                return
+            } catch let error as ErrorCode where error == .purchaseCancelledError {
+                throw SubscriptionError.userCancelled
+            } catch {
+                // Offre non signée / inéligible → fallback produit ou annuel.
+            }
+        }
+
+        if let winback = try? await Purchases.shared.products([SubscriptionConfiguration.winbackAnnualProductID]).first {
+            do {
+                let result = try await Purchases.shared.purchase(product: winback)
+                if result.userCancelled { throw SubscriptionError.userCancelled }
+                applyCustomerInfo(result.customerInfo)
+                await scheduleTrialReminderIfNeeded(from: result.customerInfo)
+                return
+            } catch let error as ErrorCode where error == .purchaseCancelledError {
+                throw SubscriptionError.userCancelled
+            }
+        }
+
         try await purchase(plan: .annual)
+    }
+
+    private func purchaseWinbackWithStoreKit() async throws {
+        // Produit winback dédié (StoreKit Configuration / sandbox).
+        if let winback = try? await Product.products(for: [SubscriptionConfiguration.winbackAnnualProductID]).first {
+            let result = try await winback.purchase()
+            switch result {
+            case .success(let verification):
+                let transaction = try verified(verification)
+                await transaction.finish()
+                await checkStoreKitSubscriptionStatus()
+                return
+            case .userCancelled:
+                throw SubscriptionError.userCancelled
+            case .pending:
+                throw SubscriptionError.pending
+            @unknown default:
+                throw SubscriptionError.unknown
+            }
+        }
+
+        try await purchaseWithStoreKit(plan: .annual)
     }
 
     func restorePurchases() async throws {
@@ -417,19 +499,18 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func makeDisplay(from product: StoreProduct, plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
-        let price = product.localizedPriceString
+        let price = SubscriptionConfiguration.formatPaywallEUR(decimal: product.price as Decimal)
         let name = product.localizedTitle.isEmpty ? plan.title : product.localizedTitle
         let trialDays: Int?
         let introEligible: Bool
 
         switch plan {
         case .monthly:
-            trialDays = SubscriptionIntroOfferParser.trialDays(from: product)
+            trialDays = configuredTrialDays(from: product, plan: .monthly)
             introEligible = trialDays != nil && isIntroOfferEligible
         case .annual:
-            trialDays = SubscriptionIntroOfferParser.trialDays(from: product)
-                ?? SubscriptionConfiguration.freeTrialDays
-            introEligible = isIntroOfferEligible
+            trialDays = configuredTrialDays(from: product, plan: .annual)
+            introEligible = trialDays != nil && isIntroOfferEligible
         }
 
         switch plan {
@@ -440,6 +521,9 @@ final class SubscriptionService: NSObject, ObservableObject {
                 displayPrice: price,
                 periodLabel: "par mois",
                 monthlyEquivalentPrice: nil,
+                paywallStrikethroughAnnualTotal: SubscriptionConfiguration.paywallStrikethroughAnnualTotal(
+                    fromMonthlyPrice: product.price as Decimal
+                ),
                 freeTrialDays: trialDays,
                 isIntroOfferEligible: introEligible
             )
@@ -451,6 +535,7 @@ final class SubscriptionService: NSObject, ObservableObject {
                 displayPrice: price,
                 periodLabel: "par an",
                 monthlyEquivalentPrice: monthly,
+                paywallStrikethroughAnnualTotal: nil,
                 freeTrialDays: trialDays,
                 isIntroOfferEligible: introEligible
             )
@@ -459,41 +544,37 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     private func makeDisplay(from product: Product, plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
         let trialDays = trialDays(from: product, plan: plan)
-        let introEligible: Bool = {
-            switch plan {
-            case .monthly: return trialDays != nil && isIntroOfferEligible
-            case .annual: return isIntroOfferEligible
-            }
-        }()
+        let introEligible = trialDays != nil && isIntroOfferEligible
 
         return SubscriptionProductDisplay(
             productID: product.id,
             displayName: product.displayName.isEmpty ? plan.title : product.displayName,
-            displayPrice: product.displayPrice,
+            displayPrice: SubscriptionConfiguration.formatPaywallEUR(decimal: product.price),
             periodLabel: plan == .monthly ? "par mois" : "par an",
             monthlyEquivalentPrice: plan == .annual ? monthlyEquivalent(from: product) : nil,
+            paywallStrikethroughAnnualTotal: plan == .monthly
+                ? SubscriptionConfiguration.paywallStrikethroughAnnualTotal(fromMonthlyPrice: product.price)
+                : nil,
             freeTrialDays: trialDays,
             isIntroOfferEligible: introEligible
         )
     }
 
     private func monthlyEquivalent(from product: StoreProduct) -> String? {
-        let monthly = product.price / 12
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = product.priceFormatter?.locale ?? Locale(identifier: "fr_FR")
-        return formatter.string(from: monthly as NSDecimalNumber)
+        SubscriptionConfiguration.formatPaywallEUR(decimal: (product.price as Decimal) / 12)
     }
 
     private func monthlyEquivalent(from product: Product) -> String? {
-        let monthly = (product.price as NSDecimalNumber).doubleValue / 12.0
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "fr_FR")
-        return formatter.string(from: NSNumber(value: monthly))
+        SubscriptionConfiguration.formatPaywallEUR(decimal: product.price / 12)
+    }
+
+    private func configuredTrialDays(from product: StoreProduct, plan: SubscriptionBillingPlan) -> Int? {
+        guard SubscriptionConfiguration.supportsFreeTrial(plan) else { return nil }
+        return SubscriptionIntroOfferParser.trialDays(from: product)
     }
 
     private func trialDays(from product: Product, plan: SubscriptionBillingPlan) -> Int? {
+        guard SubscriptionConfiguration.supportsFreeTrial(plan) else { return nil }
         guard let offer = product.subscription?.introductoryOffer,
               offer.paymentMode == .freeTrial else {
             return SubscriptionConfiguration.freeTrialDays(for: plan)

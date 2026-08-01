@@ -1,16 +1,26 @@
 import Foundation
 import UserNotifications
 
+/// Unique owner du rythme quotidien (1 matin + 1 soir). Purge les anciens schedulers.
 @MainActor
 enum CoachDailyRhythmService {
     private static let outlookID = "process.coach.daily.outlook"
     private static let reviewID = "process.coach.daily.review"
 
+    private static let orphanFixedIDs = [
+        "process.originplan.morning",
+        "process.facescan.cadence",
+        "process.paywall.exit.reminder"
+    ]
+    private static let orphanPrefixes = [
+        "process.coach.checkin."
+    ]
+
     static var morningOutlookEnabled: Bool {
         get { UserDefaults.standard.object(forKey: settingsKey("morning")) as? Bool ?? true }
         set {
             UserDefaults.standard.set(newValue, forKey: settingsKey("morning"))
-            Task { await reschedule() }
+            Task { await rescheduleAll() }
         }
     }
 
@@ -18,8 +28,14 @@ enum CoachDailyRhythmService {
         get { UserDefaults.standard.object(forKey: settingsKey("evening")) as? Bool ?? true }
         set {
             UserDefaults.standard.set(newValue, forKey: settingsKey("evening"))
-            Task { await reschedule() }
+            Task { await rescheduleAll() }
         }
+    }
+
+    /// Purge les notifs orphelines puis replanifie matin + soir uniquement.
+    static func rescheduleAll() async {
+        await purgeOrphanNotifications()
+        await reschedule()
     }
 
     static func reschedule() async {
@@ -36,7 +52,8 @@ enum CoachDailyRhythmService {
                 title: dailyOutlookTitle(),
                 body: dailyOutlookBody(),
                 hour: 7,
-                minute: 15
+                minute: 30,
+                kind: "daily_outlook"
             )
         }
 
@@ -46,23 +63,42 @@ enum CoachDailyRhythmService {
                 title: "Bilan du soir",
                 body: eveningReviewBody(),
                 hour: 21,
-                minute: 0
+                minute: 0,
+                kind: "daily_review"
             )
         }
     }
 
-    static func sendMorningOutlookNowIfNeeded() async {
-        guard morningOutlookEnabled, CoachIntelligenceSettingsStore.shared.isEnabled else { return }
-        guard !CoachPresentationTracker.shared.applicationIsActive else { return }
+    // MARK: - Purge
 
-        await CoachIntelligenceNotificationService.notifyCustom(
-            title: dailyOutlookTitle(),
-            body: dailyOutlookBody(),
-            kind: "daily_outlook"
-        )
+    private static func purgeOrphanNotifications() async {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: orphanFixedIDs)
+
+        let pending = await center.pendingNotificationRequests()
+        let orphanIDs = pending.map(\.identifier).filter { id in
+            orphanPrefixes.contains { id.hasPrefix($0) }
+        }
+        if !orphanIDs.isEmpty {
+            center.removePendingNotificationRequests(withIdentifiers: orphanIDs)
+        }
+
+        FaceScanReminderService.cancelReminder()
+        OriginPlanNotificationService.cancel()
+        await CoachCheckInScheduler.cancelAll()
+        PaywallTrialNotificationService.shared.clearExitNotification()
     }
 
-    private static func schedule(id: String, title: String, body: String, hour: Int, minute: Int) async {
+    // MARK: - Schedule
+
+    private static func schedule(
+        id: String,
+        title: String,
+        body: String,
+        hour: Int,
+        minute: Int,
+        kind: String
+    ) async {
         var components = DateComponents()
         components.hour = hour
         components.minute = minute
@@ -70,17 +106,23 @@ enum CoachDailyRhythmService {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.subtitle = "Process Intelligence"
+        content.subtitle = "Process"
         content.threadIdentifier = CoachIntelligenceNotificationService.threadID
         content.sound = .default
-        content.userInfo = ["kind": id.contains("outlook") ? "daily_outlook" : "daily_review"]
+        content.userInfo = ["kind": kind]
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
         try? await UNUserNotificationCenter.current().add(request)
     }
 
+    // MARK: - Copy
+
     private static func dailyOutlookTitle() -> String {
+        if let plan = WelcomePlanStore.shared.plan,
+           let dayTitle = OriginPlanPresenter.todayDayTitle(in: plan) {
+            return dayTitle
+        }
         let readiness = HealthManager.shared.readinessScore
         if readiness >= 67 { return "Bonne récup — prêt à avancer" }
         if readiness >= 34 { return "Journée modérée" }
@@ -89,23 +131,40 @@ enum CoachDailyRhythmService {
 
     private static func dailyOutlookBody() -> String {
         var parts: [String] = []
+
         if let plan = WelcomePlanStore.shared.plan {
-            parts.append(OriginPlanPresenter.todayDayTitle(in: plan) ?? "Ton plan personnalisé t'attend")
+            let dayIndex = plan.calendar.currentProgramDayIndex()
+            parts.append("Jour \(dayIndex + 1)")
+            if let day = plan.calendar.day(globalIndex: dayIndex) {
+                if let training = day.training {
+                    parts.append(training.sessionName)
+                } else {
+                    parts.append("Récup active")
+                }
+            }
         }
+
         let readiness = HealthManager.shared.readinessScore
         if readiness > 0 {
             parts.append("Readiness \(readiness)%")
         }
-        parts.append("Ouvre le coach pour ton plan du jour.")
+
+        if FaceScanCadence.isScanDue(since: FaceScanHistoryStore.shared.latestResult?.createdAt) {
+            parts.append("Scan visage à faire")
+        }
+
+        if parts.isEmpty {
+            return "Ouvre Process pour ton plan du jour."
+        }
         return parts.joined(separator: " · ")
     }
 
     private static func eveningReviewBody() -> String {
-        let streak = ProcessStreakStore.shared.snapshot.currentStreak
-        if streak > 0 {
-            return "Streak \(streak) jour\(streak > 1 ? "s" : ""). Valide ton bilan sur l'accueil avant de dormir."
+        let validatedDays = ProcessStreakStore.shared.snapshot.totalCompletedDays
+        if validatedDays > 0 {
+            return "\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Valide ton bilan sur l'accueil avant de dormir."
         }
-        return "Deux minutes sur l'accueil pour valider ta journée et lancer ta streak."
+        return "Deux minutes sur l'accueil pour valider ta journée."
     }
 
     private static func settingsKey(_ suffix: String) -> String {

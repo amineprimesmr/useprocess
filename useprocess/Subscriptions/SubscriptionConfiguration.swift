@@ -19,10 +19,11 @@ enum SubscriptionConfiguration {
     /// Groupe d'abonnements App Store (StoreKit + éligibilité intro).
     static let subscriptionGroupID = "21482999"
 
-    /// Essai gratuit — doit correspondre à l'offre intro App Store Connect (P3D), annuel uniquement.
-    static let freeTrialDays = 3
+    /// Essai gratuit désactivé (plus d'offre intro côté produit).
+    static let freeTrialDays = 0
 
     static func freeTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
+        guard freeTrialDays > 0 else { return nil }
         switch plan {
         case .annual: return freeTrialDays
         case .monthly: return nil
@@ -34,10 +35,42 @@ enum SubscriptionConfiguration {
     }
 
     /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR).
-    static let fallbackMonthlyPrice = "5,99 €"
-    static let fallbackAnnualPrice = "29,99 €"
-    static let fallbackAnnualMonthlyEquivalent = "2,50 €"
-    static let annualCompareAtPrice = "70,99 €"
+    static let fallbackMonthlyPrice = "23€"
+    static let fallbackAnnualPrice = "49€"
+    static let fallbackAnnualMonthlyEquivalent = "4€"
+    static let fallbackMonthlyStrikethroughAnnualPrice = "276€"
+    static let annualCompareAtPrice: String? = nil
+
+    static func paywallStrikethroughAnnualTotal(fromMonthlyPrice monthly: Decimal) -> String {
+        formatPaywallEUR(decimal: monthly * 12)
+    }
+
+    static let paywallPriceLocale = Locale(identifier: "fr_FR")
+
+    static func formatPaywallEUR(decimal: Decimal) -> String {
+        var input = decimal
+        var rounded = Decimal()
+        NSDecimalRound(&rounded, &input, 0, .plain)
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = paywallPriceLocale
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 0
+        let numberPart = formatter.string(from: rounded as NSDecimalNumber) ?? "\(rounded)"
+        return "\(numberPart)€"
+    }
+
+    /// Winback roue : 1re année à 19,99 € (offre promo ASC `winback_1999` sur l’annuel).
+    static let winbackAnnualPrice = "19,99 €"
+    /// Équivalent mensuel affiché (19,99 € / 12).
+    static let winbackMonthlyEquivalent = "1,67 €"
+    static let winbackOfferID = "winback_1999"
+    /// Produit alternatif (si tu préfères un SKU dédié plutôt qu’une promo).
+    static let winbackAnnualProductID = "com.useprocess.annual.winback"
+
+    /// Affiché sur la roue / copy winback (marketing — pas le calcul réel 49→19,99).
+    static let winbackDiscountPercent = 78
 }
 
 enum SubscriptionBillingPlan: String, CaseIterable, Identifiable {
@@ -55,8 +88,10 @@ enum SubscriptionBillingPlan: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .monthly: return "5,99 € / mois"
-        case .annual: return "29,99 € / an"
+        case .monthly:
+            return "\(SubscriptionConfiguration.fallbackMonthlyPrice)/mois"
+        case .annual:
+            return "\(SubscriptionConfiguration.fallbackAnnualMonthlyEquivalent)/mois"
         }
     }
 
@@ -74,6 +109,8 @@ struct SubscriptionProductDisplay: Equatable {
     let displayPrice: String
     let periodLabel: String
     let monthlyEquivalentPrice: String?
+    /// 12× le mensuel — prix barré sur l’onglet Annuel (ex. 276 €).
+    let paywallStrikethroughAnnualTotal: String?
     let freeTrialDays: Int?
     let isIntroOfferEligible: Bool
 
@@ -89,22 +126,24 @@ struct SubscriptionProductDisplay: Equatable {
         case .monthly:
             return SubscriptionProductDisplay(
                 productID: plan.productID,
-                displayName: "Process AI Premium — Mensuel",
+                displayName: "Process Premium — Mensuel",
                 displayPrice: SubscriptionConfiguration.fallbackMonthlyPrice,
                 periodLabel: "par mois",
                 monthlyEquivalentPrice: nil,
+                paywallStrikethroughAnnualTotal: SubscriptionConfiguration.fallbackMonthlyStrikethroughAnnualPrice,
                 freeTrialDays: nil,
                 isIntroOfferEligible: false
             )
         case .annual:
             return SubscriptionProductDisplay(
                 productID: plan.productID,
-                displayName: "Process AI Premium — Annuel",
+                displayName: "Process Premium — Annuel",
                 displayPrice: SubscriptionConfiguration.fallbackAnnualPrice,
                 periodLabel: "par an",
                 monthlyEquivalentPrice: SubscriptionConfiguration.fallbackAnnualMonthlyEquivalent,
-                freeTrialDays: SubscriptionConfiguration.freeTrialDays,
-                isIntroOfferEligible: true
+                paywallStrikethroughAnnualTotal: nil,
+                freeTrialDays: nil,
+                isIntroOfferEligible: false
             )
         }
     }
@@ -116,9 +155,25 @@ struct SubscriptionProductDisplay: Equatable {
             displayPrice: displayPrice,
             periodLabel: periodLabel,
             monthlyEquivalentPrice: monthlyEquivalentPrice,
+            paywallStrikethroughAnnualTotal: paywallStrikethroughAnnualTotal,
             freeTrialDays: freeTrialDays,
             isIntroOfferEligible: eligible
         )
+    }
+
+    /// Prix barré annuel (12× mensuel), ex. « 276€ ».
+    var paywallAnnualStrikethroughComparePrice: String {
+        paywallStrikethroughAnnualTotal ?? SubscriptionConfiguration.fallbackMonthlyStrikethroughAnnualPrice
+    }
+
+    /// Prix principal sur les cartes paywall (toujours en €/mois, sans coupure de ligne).
+    var paywallPrimaryMonthlyPriceLabel: String {
+        let amount = monthlyEquivalentPrice ?? displayPrice
+        return Self.paywallPerMonthLabel(amount: amount)
+    }
+
+    private static func paywallPerMonthLabel(amount: String) -> String {
+        "\(amount)/mois"
     }
 }
 

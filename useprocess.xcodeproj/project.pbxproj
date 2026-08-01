@@ -288,7 +288,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Process AI";
+				INFOPLIST_KEY_CFBundleDisplayName = Process;
 				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra avant et la caméra arrière permettent le scan visage, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "La caméra avant est utilisée pour le scan visage (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
@@ -342,7 +342,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Process AI";
+				INFOPLIST_KEY_CFBundleDisplayName = Process;
 				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra avant et la caméra arrière permettent le scan visage, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "La caméra avant est utilisée pour le scan visage (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";

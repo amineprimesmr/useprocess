@@ -29,16 +29,18 @@ enum OriginPlanDailyTaskCatalog {
   // MARK: - Posture
 
   static func postureTasks(plan: FaceOriginPlan, dayId: String) -> [OriginPlanTask] {
-    let blocks = plan.postureProtocol.mobilityBlocks
+    let blocks = PlanPostureCircuitContent.mobilityBlocks(for: plan)
     guard !blocks.isEmpty else { return [] }
+
+    let duration = PlanPostureCircuitContent.estimatedCircuitDurationMinutes(for: plan)
 
     let tasks: [OriginPlanTask] = [
       journalTask(
         id: "\(dayId).posture.circuit",
         title: "Circuit posture",
-        detail: "\(blocks.count) blocs — \(blocks.prefix(2).joined(separator: " · "))",
+        detail: "\(duration) min — \(blocks.prefix(2).joined(separator: " · "))",
         pillar: "Posture",
-        minutes: 10
+        minutes: duration
       )
     ]
 

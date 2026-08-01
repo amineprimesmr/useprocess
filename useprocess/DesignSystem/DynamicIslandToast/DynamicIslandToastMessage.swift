@@ -15,12 +15,15 @@ struct DynamicIslandToastMessage: Equatable {
 
 extension DynamicIslandToastMessage {
     static func streak(snapshot: ProcessStreakSnapshot, firstName: String?) -> DynamicIslandToastMessage {
-        DynamicIslandToastMessage(
-            symbol: "flame.fill",
+        let validatedToday = snapshot.isTodayComplete
+        return DynamicIslandToastMessage(
+            symbol: validatedToday ? "checkmark.circle.fill" : "flame.fill",
             symbolFont: .system(size: 32, weight: .semibold),
             symbolForegroundStyle: (.white, ProcessStreakPalette.flame),
-            title: snapshot.streakTitle,
-            message: snapshot.encouragement(firstName: firstName)
+            title: validatedToday ? snapshot.streakTitle : "Bilan du soir",
+            message: validatedToday
+                ? snapshot.encouragement(firstName: firstName)
+                : "Valide ton bilan ce soir pour compter ce jour."
         )
     }
 }

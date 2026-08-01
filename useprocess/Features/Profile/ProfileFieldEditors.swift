@@ -59,7 +59,7 @@ struct ProfileNameEditorView: View {
 
                 ProfileEditorHero(
                     headline: "Comment tu t'appelles ? 👋",
-                    subtitle: "C'est le prénom qu'on utilise partout dans Process AI."
+                    subtitle: "C'est le prénom qu'on utilise partout dans Process."
                 )
 
                 TextField("", text: $name, prompt:

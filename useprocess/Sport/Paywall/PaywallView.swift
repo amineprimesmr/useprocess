@@ -13,11 +13,9 @@ import UIKit
 struct PaywallView: View {
     @ObservedObject private var subscriptionService = SubscriptionService.shared
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
 
     let onComplete: (() -> Void)?
-    let onBack: (() -> Void)?
 
     /// Plan choisi dans le paywall (source de vérité unique).
     @State private var selectedBillingPlan: SubscriptionBillingPlan = .annual
@@ -28,14 +26,16 @@ struct PaywallView: View {
     @State private var legalSafariURL: URL?
     @State private var showsPaywallLegalMenu = false
     @State private var measuredTopSafeInset: CGFloat = 0
-    @State private var hasScheduledExitNotification = false
-
+    @State private var continueShakeTicks: CGFloat = 0
+    @State private var showsSpinWinback = false
+    @State private var didPresentSpinWinback = false
+    @State private var showsStayPopup = false
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
 
     init(onComplete: (() -> Void)? = nil, onBack: (() -> Void)? = nil) {
         self.onComplete = onComplete
-        self.onBack = onBack
+        _ = onBack
     }
 
     private var selectedPlanAvailableOnStore: Bool {
@@ -58,16 +58,16 @@ struct PaywallView: View {
 
                 titleBlock
                     .padding(.horizontal, 24)
-                    .padding(.top, 6)
-                    .padding(.bottom, 18)
+                    .padding(.top, -6)
+                    .padding(.bottom, 14)
 
                 PaywallBevelAutoScrollingFeatures(
                     primary: PaywallBevelFeatureCatalog.primary,
                     alsoIncluded: PaywallBevelFeatureCatalog.alsoIncluded,
                     onNutritionSecretUnlock: activateDeveloperPremiumAccess
                 )
-                .padding(.top, 4)
-                .padding(.bottom, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
                 .frame(maxHeight: .infinity)
                 .layoutPriority(1)
 
@@ -75,7 +75,23 @@ struct PaywallView: View {
             }
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.paywallMaxWidth)
             .padding(.top, paywallRootTopPadding)
+            .allowsHitTesting(!showsStayPopup)
+
+            if showsStayPopup {
+                PaywallStayRetentionOverlay(
+                    onTryLuck: {
+                        dismissStayPopup()
+                        presentSpinWinbackIfNeeded(force: true)
+                    },
+                    onStay: {
+                        dismissStayPopup()
+                    }
+                )
+                .transition(.opacity)
+                .zIndex(20)
+            }
         }
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: showsStayPopup)
         .alert("Achat", isPresented: Binding(
             get: { purchaseError != nil },
             set: { if !$0 { purchaseError = nil } }
@@ -117,14 +133,27 @@ struct PaywallView: View {
                 completePaywallFlow()
             }
         }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
-            if oldPhase == .active && (newPhase == .background || newPhase == .inactive) {
-                scheduleExitNotificationIfNeeded()
+        .fullScreenCover(isPresented: $showsSpinWinback) {
+            PaywallSpinWinbackView {
+                showsSpinWinback = false
+                completePaywallFlow()
             }
+            .interactiveDismissDisabled()
         }
-        .onDisappear {
-            scheduleExitNotificationIfNeeded()
+        .interactiveDismissDisabled()
+        .processRequireDoubleHomeSwipe {
+            handleDeferredHomeSwipe()
         }
+    }
+
+    private func handleDeferredHomeSwipe() {
+        // 1er swipe Home uniquement → pop rétention.
+        guard !showsSpinWinback, !showsStayPopup else { return }
+        HapticManager.shared.notification(.warning)
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            showsStayPopup = true
+        }
+        shakeContinueButton()
     }
 
     func completePaywallFlow() {
@@ -139,82 +168,101 @@ struct PaywallView: View {
 
     private var topChrome: some View {
         HStack {
-            if let onBack {
-                Button {
-                    HapticManager.shared.impact(.light)
-                    onBack()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 36, height: 36)
-                }
-                .processGlassIconButtonStyle()
-                .accessibilityLabel("Retour")
-            } else {
-                Spacer(minLength: 0)
-            }
-
-            Spacer(minLength: 0)
-
             Button {
                 HapticManager.shared.impact(.light)
                 showsPaywallLegalMenu = true
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-                    .frame(width: 36, height: 36)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.28))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
             }
-            .processGlassIconButtonStyle()
+            .buttonStyle(.plain)
             .accessibilityLabel("Options et informations légales")
             .popover(isPresented: $showsPaywallLegalMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
                 paywallLegalMenuPopover
                     .presentationCompactAdaptation(.popover)
             }
+
+            Spacer(minLength: 0)
+
+            Button {
+                shakeContinueButton()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.primary)
+                    .frame(width: 36, height: 36)
+            }
+            .processGlassIconButtonStyle()
+            .accessibilityLabel("Fermer")
         }
         .padding(.horizontal, 18)
     }
 
-    private var titleBlock: some View {
-        Text(paywallTitleText)
-            .font(PaywallBevelTheme.paywallTitleFont())
-            .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
-            .multilineTextAlignment(.center)
-            .lineSpacing(3)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity)
+    private func dismissStayPopup() {
+        withAnimation(.spring(response: 0.36, dampingFraction: 0.88)) {
+            showsStayPopup = false
+        }
     }
 
-    private var paywallTitleText: String {
-        "Commencez votre transformation aujourd'hui avec Process"
+    private func shakeContinueButton() {
+        HapticManager.shared.notification(.warning)
+        withAnimation(.default) {
+            continueShakeTicks += 1
+        }
+    }
+
+    private var titleBlock: some View {
+        VStack(spacing: 12) {
+            if let result = FaceScanHistoryStore.shared.latestResult {
+                PaywallFaceScanHero(
+                    result: result,
+                    onDeveloperUnlock: activateDeveloperPremiumAccess
+                )
+                .padding(.bottom, 2)
+            }
+
+            VStack(spacing: 10) {
+                (
+                    Text("Débloque ton plan personnalisé avec ")
+                        .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
+                    + Text("Pro")
+                        .foregroundStyle(PaywallBevelTheme.paywallProTitleGradient(for: colorScheme))
+                )
+                    .font(PaywallBevelTheme.paywallHeroTitleFont(size: 31))
+                    .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+
+                Text(paywallCommunitySubtitle)
+                    .font(PaywallBevelTheme.paywallHeroSubtitleFont())
+                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 4)
+            }
+        }
+    }
+
+    private var paywallCommunitySubtitle: String {
+        "Rejoins +\(TransformationCaseStudyCatalog.transformedPeopleCount) personnes qui ont déjà dégonflés leur visage avec Process."
     }
 
     // MARK: - Bas (forfaits + CTA)
 
     private var bottomSection: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                PaywallBevelPlanCard(
-                    title: "Annuel",
-                    primaryPrice: annualPrimaryPrice,
-                    compareAtPrice: SubscriptionConfiguration.annualCompareAtPrice,
-                    secondaryPrice: annualSecondaryPrice,
-                    isSelected: selectedBillingPlan == .annual,
-                    savingsBadge: annualSavingsBadge
-                ) {
-                    selectAnnualPlan()
-                }
-                PaywallBevelPlanCard(
-                    title: "Mensuel",
-                    primaryPrice: monthlyPrimaryPrice,
-                    secondaryPrice: monthlySecondaryPrice,
-                    isSelected: selectedBillingPlan == .monthly,
-                    savingsBadge: nil
-                ) {
-                    selectMonthlyPlan()
-                }
-            }
+            PaywallBevelPlanSegmentPicker(
+                selection: $selectedBillingPlan,
+                annualComparePrice: subscriptionService.displayProduct(for: .monthly).paywallAnnualStrikethroughComparePrice,
+                annualPrice: annualPrimaryPrice,
+                monthlyPrice: monthlyPrimaryPrice
+            )
 
             PaywallBevelContinueButton(
                 title: paywallContinueButtonTitle,
@@ -223,15 +271,13 @@ struct PaywallView: View {
             ) {
                 Task { await purchaseSubscription() }
             }
-            .padding(.top, -4)
+            .modifier(PaywallContinueShakeEffect(shakes: continueShakeTicks))
 
-            if let paywallDisclaimerText {
-                Text(paywallDisclaimerText)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 2)
-            }
+            Text("Sans engagement, annulable à tout moment.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                .multilineTextAlignment(.center)
+                .padding(.top, 2)
 
             if !subscriptionService.isLoading, !selectedPlanAvailableOnStore {
                 Text("Cette offre n'est pas encore disponible sur l'App Store. Réessayez dans quelques minutes.")
@@ -248,97 +294,19 @@ struct PaywallView: View {
     // MARK: - Prix
 
     private var annualPrimaryPrice: String {
-        if subscriptionService.trialInfo(for: .annual).isActiveOffer {
-            return "0,00 €"
-        }
-        let raw = normalizePrice(subscriptionService.displayProduct(for: .annual).displayPrice)
-        return "\(raw)/an"
-    }
-
-    private var selectedTrialInfo: SubscriptionTrialInfo {
-        subscriptionService.trialInfo(for: selectedBillingPlan)
+        subscriptionService.displayProduct(for: .annual).paywallPrimaryMonthlyPriceLabel
     }
 
     private var monthlyPrimaryPrice: String {
-        let raw = normalizePrice(subscriptionService.displayProduct(for: .monthly).displayPrice)
-        return "\(raw)/mois"
-    }
-
-    private var annualSecondaryPrice: String {
-        subscriptionService.trialInfo(for: .annual).cardSecondaryPrice(
-            for: .annual,
-            annualMonthlyEquivalent: annualMonthlyEquivalentPrice
-        )
-    }
-
-    private var monthlySecondaryPrice: String {
-        subscriptionService.trialInfo(for: .monthly).cardSecondaryPrice(
-            for: .monthly,
-            annualMonthlyEquivalent: annualMonthlyEquivalentPrice
-        )
-    }
-
-    private var annualMonthlyEquivalentPrice: String {
-        let display = subscriptionService.displayProduct(for: .annual)
-        if let monthly = display.monthlyEquivalentPrice {
-            return normalizePrice(monthly)
-        }
-        if let product = subscriptionService.annualProduct {
-            let monthly = (product.price as NSDecimalNumber).doubleValue / 12.0
-            return formatEuroAmount(monthly)
-        }
-        return SubscriptionConfiguration.fallbackAnnualMonthlyEquivalent
-    }
-
-    private var annualSavingsBadge: String? {
-        "\(SubscriptionConfiguration.freeTrialDays) jours gratuits"
+        subscriptionService.displayProduct(for: .monthly).paywallPrimaryMonthlyPriceLabel
     }
 
     private var paywallContinueButtonTitle: String {
-        selectedTrialInfo.ctaTitle()
+        "Continuer, aucun engagement."
     }
 
     private var paywallContinueButtonEnabled: Bool {
         selectedPlanAvailableOnStore && !subscriptionService.isLoading && !isPurchasing
-    }
-
-    private var paywallDisclaimerText: String? {
-        switch selectedBillingPlan {
-        case .annual:
-            let display = normalizePrice(subscriptionService.displayProduct(for: .annual).displayPrice)
-            return selectedTrialInfo.ctaSubtitle(for: .annual, displayPrice: display)
-        case .monthly:
-            return "Sans engagement, annulable à tout moment."
-        }
-    }
-
-    private func normalizePrice(_ raw: String) -> String {
-        let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if s.hasPrefix("$") {
-            let amount = String(s.dropFirst()).trimmingCharacters(in: .whitespaces)
-            return "\(amount.replacingOccurrences(of: ".", with: ",")) €"
-        }
-        return s
-    }
-
-    private func formatEuroAmount(_ amount: Double) -> String {
-        String(format: "%.2f", amount).replacingOccurrences(of: ".", with: ",") + " €"
-    }
-
-    private func selectMonthlyPlan() {
-        guard selectedBillingPlan != .monthly else { return }
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-            selectedBillingPlan = .monthly
-        }
-    }
-
-    private func selectAnnualPlan() {
-        guard selectedBillingPlan != .annual else { return }
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-            selectedBillingPlan = .annual
-        }
     }
 
     private func refreshMeasuredTopSafeInset() {
@@ -418,9 +386,24 @@ struct PaywallView: View {
                 completePaywallFlow()
             }
         } catch SubscriptionError.userCancelled {
-            return
+            presentSpinWinbackIfNeeded()
         } catch {
             purchaseError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private func presentSpinWinbackIfNeeded(force: Bool = false) {
+        if didPresentSpinWinback, !force {
+            shakeContinueButton()
+            return
+        }
+        if didPresentSpinWinback, force {
+            showsSpinWinback = true
+            return
+        }
+        didPresentSpinWinback = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+            showsSpinWinback = true
         }
     }
 
@@ -460,18 +443,239 @@ struct PaywallView: View {
     private func activateDeveloperPremiumAccess() {
         #if DEBUG
         HapticManager.shared.notification(.success)
-        hasScheduledExitNotification = true
         subscriptionService.activateDeveloperPremiumAccess()
         completePaywallFlow()
         #endif
     }
+}
 
-    private func scheduleExitNotificationIfNeeded() {
-        guard !hasScheduledExitNotification else { return }
-        guard !subscriptionService.subscriptionStatus.isActive else { return }
-        hasScheduledExitNotification = true
-        Task {
-            await PaywallExitNotificationService.shared.scheduleExitNotification(hasPurchased: false)
+// MARK: - Pop rétention (double sortie)
+
+private struct PaywallStayRetentionOverlay: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let onTryLuck: () -> Void
+    let onStay: () -> Void
+
+    @State private var appeared = false
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(appeared ? 0.48 : 0)
+                .ignoresSafeArea()
+                .onTapGesture { onStay() }
+
+            VStack(spacing: 18) {
+                Image(systemName: "hand.raised.fill")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.98, green: 0.48, blue: 0.36))
+                    .padding(.top, 4)
+
+                Text("Attends !")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(OnboardingTheme.primaryText)
+
+                Text("Ne pars pas maintenant.\nTente ta chance — une offre exclusive t’attend.")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(OnboardingTheme.bodyText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(action: onTryLuck) {
+                    Text("Tente ta chance")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(colorScheme == .dark ? .black : .white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background {
+                            Capsule(style: .continuous)
+                                .fill(Color.primary.opacity(colorScheme == .dark ? 0.92 : 0.94))
+                        }
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+
+                Button(action: onStay) {
+                    Text("Rester sur l’offre")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 2)
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 24)
+            .frame(maxWidth: 340)
+            .background {
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.28), radius: 28, y: 14)
+            }
+            .padding(.horizontal, 28)
+            .scaleEffect(appeared ? 1 : 0.88)
+            .opacity(appeared ? 1 : 0)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.48, dampingFraction: 0.78)) {
+                appeared = true
+            }
+        }
+    }
+}
+
+// MARK: - Shake CTA (croix paywall)
+
+private struct PaywallContinueShakeEffect: GeometryEffect {
+    var shakes: CGFloat
+    var amount: CGFloat = 10
+    var shakesPerUnit: CGFloat = 3
+
+    var animatableData: CGFloat {
+        get { shakes }
+        set { shakes = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(
+            CGAffineTransform(
+                translationX: amount * sin(shakes * .pi * shakesPerUnit),
+                y: 0
+            )
+        )
+    }
+}
+
+// MARK: - Aperçu scan visage
+
+struct PaywallFaceScanHero: View {
+    let result: FaceScanResult
+    var onDeveloperUnlock: (() -> Void)? = nil
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var resolvedVideoURL: URL?
+    @State private var resolvedSnapshot: UIImage?
+    @State private var mediaRefreshToken = 0
+    @State private var animatedProgress: Double = 0
+
+    private let ringSize: CGFloat = 168
+    private let strokeWidth: CGFloat = 5
+
+    private var innerDiameter: CGFloat {
+        ringSize - strokeWidth * 2 - 6
+    }
+
+    private var displayScore: Int {
+        result.displayWellnessScore
+    }
+
+    private var scoreZone: FaceScanIndicators.WellnessZone {
+        FaceScanIndicators.compositeWellnessZone(for: result)
+    }
+
+    private var ringProgressColor: Color {
+        FaceScanWhoopPalette.ringColor(for: scoreZone)
+    }
+
+    var body: some View {
+        ZStack {
+            mediaContent
+                .frame(width: innerDiameter, height: innerDiameter)
+                .clipShape(Circle())
+
+            Circle()
+                .stroke(FaceScanWhoopPalette.ringTrack, lineWidth: strokeWidth)
+                .frame(width: ringSize, height: ringSize)
+
+            Circle()
+                .trim(from: 0, to: animatedProgress)
+                .stroke(
+                    ringProgressColor,
+                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
+                )
+                .frame(width: ringSize, height: ringSize)
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: ringSize, height: ringSize)
+        .shadow(
+            color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.12),
+            radius: 16,
+            y: 7
+        )
+        .contentShape(Circle())
+        #if DEBUG
+        .onTapGesture(count: 2) {
+            onDeveloperUnlock?()
+        }
+        #endif
+        .id("\(result.id)-paywall-\(mediaRefreshToken)")
+        .onAppear {
+            refreshMedia()
+            animatedProgress = 0
+            withAnimation(.spring(response: 0.9, dampingFraction: 0.82)) {
+                animatedProgress = Double(displayScore) / 100.0
+            }
+        }
+        .onChange(of: result.id) { _, _ in
+            refreshMedia()
+            animatedProgress = 0
+            withAnimation(.spring(response: 0.9, dampingFraction: 0.82)) {
+                animatedProgress = Double(displayScore) / 100.0
+            }
+        }
+        .onChange(of: result.videoFilename) { _, _ in refreshMedia() }
+        .onChange(of: result.snapshotFilename) { _, _ in refreshMedia() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            refreshMedia()
+        }
+        .task(id: result.id) {
+            await resolveVideoWithRetry()
+        }
+        .accessibilityLabel("Score visage \(displayScore) pour cent")
+    }
+
+    @ViewBuilder
+    private var mediaContent: some View {
+        if let url = resolvedVideoURL {
+            FaceScanSilentVideoLoopView(url: url)
+        } else if let image = resolvedSnapshot {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Circle()
+                .fill(Color.primary.opacity(0.06))
+                .overlay {
+                    Image(systemName: "face.smiling")
+                        .font(.system(size: 42, weight: .light))
+                        .foregroundStyle(.secondary)
+                }
+        }
+    }
+
+    private func refreshMedia() {
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+        resolvedVideoURL = FaceScanImageStore.resolvedVideoURL(for: reconciled)
+        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
+            resolvedSnapshot = FaceScanImageStore.load(filename: filename)
+        } else {
+            resolvedSnapshot = nil
+        }
+        if resolvedVideoURL == nil, resolvedSnapshot == nil {
+            mediaRefreshToken &+= 1
+        }
+    }
+
+    private func resolveVideoWithRetry() async {
+        for _ in 0..<24 {
+            let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+            if let url = FaceScanImageStore.resolvedVideoURL(for: reconciled) {
+                resolvedVideoURL = url
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(180))
         }
     }
 }

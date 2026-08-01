@@ -54,6 +54,14 @@ enum TransformationCaseStudyCatalog {
             memberSince: "📅 Membre depuis mai 2026"
         ),
         .init(
+            id: "daniel",
+            name: "Daniel",
+            beforeVideoName: "daniel",
+            afterVideoName: "danielprime",
+            durationWeeks: 4,
+            memberSince: "📅 Membre depuis juin 2026"
+        ),
+        .init(
             id: "leo",
             name: "Léo",
             beforeImageName: "leo",
@@ -71,7 +79,7 @@ enum TransformationCaseStudyCatalog {
         ),
     ]
 
-    static let additionalTransformationsCount = 450
+    static let transformedPeopleCount = 8500
 
     static func availableStudies() -> [TransformationCaseStudy] {
         all.filter { study in
@@ -111,8 +119,6 @@ struct TransformationPreviewStepView: View {
                         )
                             .padding(.horizontal, 24)
                     }
-
-                    communityProofBanner
                 }
                 .padding(.top, OnboardingConstants.backOnlyContentTopInset)
                 .padding(.bottom, 24)
@@ -124,75 +130,50 @@ struct TransformationPreviewStepView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             (Text("Visualise ta ") + Text("transformation").foregroundColor(OnboardingTheme.accentHighlight))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(OnboardingTheme.primaryText)
                 .multilineTextAlignment(.center)
 
-            Text("Swipe le curseur pour comparer · scroll pour voir les autres")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(OnboardingTheme.bodyText)
-                .multilineTextAlignment(.center)
+            socialProofRow
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 28)
     }
 
-    private var communityProofBanner: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: -12) {
-                communityAvatar("fille1")
-                communityAvatar("gars1")
-                plusCountBadge
+    private var socialProofRow: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: -10) {
+                ForEach(communityAvatarNames, id: \.self) { name in
+                    communityAvatar(name)
+                }
             }
 
-            (Text("Et ") + Text("+\(TransformationCaseStudyCatalog.additionalTransformationsCount) personnes")
+            (Text("+\(TransformationCaseStudyCatalog.transformedPeopleCount) personnes")
                 .fontWeight(.bold)
                 .foregroundColor(OnboardingTheme.accentHighlight)
-                + Text(" ont transformé leur physique avec Process"))
-                .font(.system(size: 15, weight: .medium))
+                + Text(" ont dégonflé leur visage avec Process"))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(OnboardingTheme.bodyText)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
-        .frame(maxWidth: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(OnboardingTheme.cardBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(OnboardingTheme.cardBorder, lineWidth: 1)
-                }
-        }
-        .padding(.horizontal, 24)
+    }
+
+    private var communityAvatarNames: [String] {
+        ["fille1", "gars1", "leo", "estebanprime", "imranprime"]
+            .filter { ProcessAssetCatalog.contains($0) }
     }
 
     private func communityAvatar(_ imageName: String) -> some View {
         Image(imageName)
             .resizable()
             .scaledToFill()
-            .frame(width: 40, height: 40)
+            .frame(width: 32, height: 32)
             .clipShape(Circle())
             .overlay {
                 Circle()
                     .strokeBorder(OnboardingTheme.screenBackground, lineWidth: 2)
-            }
-    }
-
-    private var plusCountBadge: some View {
-        Text("+\(TransformationCaseStudyCatalog.additionalTransformationsCount)")
-            .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(OnboardingTheme.primaryText)
-            .frame(width: 40, height: 40)
-            .background {
-                Circle()
-                    .fill(OnboardingTheme.mutedFill)
-                    .overlay {
-                        Circle()
-                            .strokeBorder(OnboardingTheme.cardBorder, lineWidth: 1)
-                    }
             }
     }
 

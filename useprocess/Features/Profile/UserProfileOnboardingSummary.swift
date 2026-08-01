@@ -87,7 +87,7 @@ enum UserProfileOnboardingSummary {
         var rows: [ProfileSummaryItem] = []
 
         if let weightGoal = profile.weightGoal {
-            rows.append(.init(id: "weightGoal", label: "Objectif poids", value: weightGoal.rawValue))
+            rows.append(.init(id: "weightGoal", label: "Focus debloat", value: weightGoal.title))
         }
         if let goalPace = profile.goalPace {
             rows.append(.init(id: "goalPace", label: "Rythme souhaité", value: goalPace.rawValue))

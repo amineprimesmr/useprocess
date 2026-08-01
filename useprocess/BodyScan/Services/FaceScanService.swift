@@ -93,7 +93,7 @@ enum FaceScanService {
             }
 
             await HealthManager.shared.performFullSync()
-            await FaceScanReminderService.scheduleNextReminder(after: enhanced.createdAt)
+            FaceScanReminderService.cancelReminder()
             FaceScanCoachInsightService.pregenerate(for: enhanced, profile: profile)
         }
     }

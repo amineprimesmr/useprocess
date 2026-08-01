@@ -7,10 +7,11 @@ struct PlanHydrationExperienceView: View {
     var selectedDate: Date
 
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var healthManager: HealthManager
 
     @StateObject private var waterEngine = ProcessFluidWaterMotionEngine()
     @Bindable private var hydrationStore = ProcessHydrationLogStore.shared
+
+    @State private var healthKitWaterLiters: Double = 0
 
     @State private var animatedFill: CGFloat = 0.08
     @State private var displayedMilliliters: Int = 0
@@ -22,7 +23,7 @@ struct PlanHydrationExperienceView: View {
     private var targetMilliliters: Int { targets.hydrationLitersPerDay * 1000 }
 
     private var healthKitMilliliters: Int {
-        Int((healthManager.todaySnapshot.nutrition.waterLiters * 1000).rounded())
+        Int((healthKitWaterLiters * 1000).rounded())
     }
 
     private var effectiveMilliliters: Int {
@@ -33,7 +34,7 @@ struct PlanHydrationExperienceView: View {
         CGFloat(hydrationStore.progress(
             for: selectedDate,
             targetLiters: Double(targets.hydrationLitersPerDay),
-            healthKitLiters: healthManager.todaySnapshot.nutrition.waterLiters
+            healthKitLiters: healthKitWaterLiters
         ))
     }
 
@@ -79,11 +80,18 @@ struct PlanHydrationExperienceView: View {
         .preferredColorScheme(.light)
         .onAppear {
             waterEngine.start()
+            healthKitWaterLiters = HealthManager.shared.todaySnapshot.nutrition.waterLiters
             syncDisplayedValues(animated: false)
-            Task { await healthManager.syncHealthDataForDate(Date()) }
+            Task {
+                await HealthManager.shared.syncHealthDataForDate(Date())
+                healthKitWaterLiters = HealthManager.shared.todaySnapshot.nutrition.waterLiters
+            }
         }
         .onDisappear {
             waterEngine.stop()
+        }
+        .onChange(of: healthKitWaterLiters) { _, _ in
+            syncDisplayedValues(animated: true)
         }
         .onChange(of: effectiveMilliliters) { _, _ in
             syncDisplayedValues(animated: true)

@@ -29,6 +29,8 @@ private enum JournalDesign {
 struct DailyJournalChecklistView: View {
     let plan: FaceOriginPlan
     @Binding var selectedDate: Date
+    var isPlanActive: Bool = true
+    var healthMetrics: PlanHomeHealthMetrics = PlanHomeHealthMetrics()
     var showHeader: Bool = true
     var showWeekStrip: Bool = true
     var showChecklist: Bool = true
@@ -42,13 +44,21 @@ struct DailyJournalChecklistView: View {
     @State private var isChecklistExpanded = true
     @State private var showFaceScan = false
     @Bindable private var layoutStore = PlanHomeLayoutStore.shared
-    @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
 
     private var livePlan: FaceOriginPlan { WelcomePlanStore.shared.plan ?? plan }
 
     private var dayAvailability: OriginPlanPresenter.JournalDayAvailability {
         OriginPlanPresenter.journalDayAvailability(for: selectedDate, in: livePlan)
+    }
+
+    private func clampSelectedDateToPlanIfNeeded() {
+        let preferred = OriginPlanPresenter.preferredHomeDate(in: livePlan)
+        let current = Calendar.current.startOfDay(for: selectedDate)
+        // Sur l'accueil (sans bandeau), recentre si le jour courant n'a pas de contenu.
+        if !showWeekStrip, case .outsidePlan = dayAvailability, preferred != current {
+            selectedDate = preferred
+        }
     }
 
     var body: some View {
@@ -81,8 +91,7 @@ struct DailyJournalChecklistView: View {
                 .animation(.spring(response: 0.44, dampingFraction: 0.86), value: layoutStore.visibleSectionIDs)
             }
 
-            if case .future = dayAvailability, !showChecklist,
-               layoutStore.visibleSections.allSatisfy({ $0 != .faceScan }) {
+            if case .future = dayAvailability, !showChecklist {
                 journalUnavailableCard(
                     title: "Jour à venir",
                     message: "Le contenu de cette journée sera disponible le jour J.",
@@ -91,8 +100,7 @@ struct DailyJournalChecklistView: View {
                 .padding(.top, 20)
             }
 
-            if case .outsidePlan = dayAvailability,
-               layoutStore.visibleSections.allSatisfy({ $0 != .faceScan }) {
+            if case .outsidePlan = dayAvailability {
                 journalUnavailableCard(
                     title: "Hors plan",
                     message: "Cette date n'est pas couverte par ton calendrier du plan personnalisé.",
@@ -109,6 +117,13 @@ struct DailyJournalChecklistView: View {
         .onAppear {
             faceHistoryStore = FaceScanHistoryStore.shared
             layoutStore.reload()
+            clampSelectedDateToPlanIfNeeded()
+        }
+        .onChange(of: livePlan.calendar.startedAt) { _, _ in
+            clampSelectedDateToPlanIfNeeded()
+        }
+        .onChange(of: livePlan.calendar.totalDays) { _, _ in
+            clampSelectedDateToPlanIfNeeded()
         }
     }
 
@@ -179,6 +194,8 @@ struct DailyJournalChecklistView: View {
                 latest: faceHistoryStore.latestResult,
                 isScanDue: faceHistoryStore.isScanDue,
                 isScanFlowActive: $showFaceScan,
+                isPlanActive: isPlanActive,
+                healthMetrics: healthMetrics,
                 zoomNamespace: faceScanHistoryZoomNamespace,
                 onScan: {},
                 onScanComplete: { _ in
@@ -200,6 +217,8 @@ struct DailyJournalChecklistView: View {
                     day: day,
                     selectedDate: selectedDate,
                     isEditable: true,
+                    isPlanActive: isPlanActive,
+                    healthKitWaterLiters: healthMetrics.waterLitersToday,
                     mealZoomNamespace: mealZoomNamespace
                 )
                 .environmentObject(UnifiedProfileService.shared)

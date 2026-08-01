@@ -116,7 +116,7 @@ struct SportOnboardingView: View {
                     viewModel: viewModel,
                     shouldShowBackButton: shouldShowBackButton,
                     flowProgress: flowProgress,
-                    onPreviousStep: previousStep
+                    onPreviousStep: handleOnboardingBack
                 )
                 .ignoresSafeArea(edges: .top)
             }
@@ -240,7 +240,7 @@ struct SportOnboardingView: View {
 
             if shouldShowNoWeightGoalLink {
                 Button(action: skipWeightGoalFromIdealWeight) {
-                    Text("Pas d'objectif de poids")
+                    Text("Passer — je me concentre sur mon visage")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(OnboardingTheme.mutedText.opacity(0.75))
                         .padding(.top, 8)

@@ -21,6 +21,19 @@ struct ProcessStreakDaySnapshot: Identifiable, Equatable {
     }
 }
 
+/// Jour du programme debloat — affiché dans le streak profil.
+struct ProfileProgramStreakDay: Identifiable, Equatable {
+    let id: Int
+    let programDayNumber: Int
+    let date: Date
+    let isComplete: Bool
+    let isToday: Bool
+    let isFuture: Bool
+    let isMissed: Bool
+
+    var label: String { "J\(programDayNumber)" }
+}
+
 struct ProcessStreakMilestone: Identifiable, Equatable {
     let days: Int
     let title: String
@@ -54,10 +67,10 @@ struct ProcessStreakSnapshot: Equatable {
     let velocityLabel: String
 
     var streakTitle: String {
-        switch currentStreak {
-        case 0: return "Série"
-        case 1: return "1 jour de série"
-        default: return "\(currentStreak) jours de série"
+        switch totalCompletedDays {
+        case 0: return "Jours validés"
+        case 1: return "1 jour validé"
+        default: return "\(totalCompletedDays) jours validés"
         }
     }
 
@@ -81,8 +94,8 @@ struct ProcessStreakSnapshot: Equatable {
         }
 
         if trimmed.isEmpty { return headline }
-        if currentStreak >= 7 { return "Tu gères vraiment bien, \(trimmed) !" }
-        if currentStreak > 0 { return "Continue comme ça, \(trimmed) !" }
+        if totalCompletedDays >= 7 { return "Tu gères vraiment bien, \(trimmed) !" }
+        if totalCompletedDays > 0 { return "Continue comme ça, \(trimmed) !" }
         if isTodayComplete { return "Bien joué \(trimmed), reviens demain." }
         return "Complète ton bilan du soir pour lancer ta trajectoire, \(trimmed)."
     }
@@ -95,20 +108,20 @@ struct ProcessStreakSnapshot: Equatable {
             case .partial: return "Journée partielle — serre le protocole demain."
             case .regression: return "Régression détectée — on recale ensemble."
             case .missed: return "Bilan manqué — reviens ce soir."
-            case .paused: return "Jour en pause — streak gelée."
+            case .paused: return "Jour en pause — compteur gelé."
             }
         }
         switch currentStreak {
         case 0 where isTodayComplete:
-            return "Streak lancé — reviens demain."
+            return "Premier jour validé — continue demain."
         case 0:
-            return "Complète ta checklist pour lancer ta streak."
+            return "Complète ton bilan du soir pour valider ta journée."
         case 1:
             return "Bien joué. Enchaîne demain."
         case 2..<7:
             return "Tu construis l’habitude."
         case 7..<30:
-            return "Streak solide — ne lâche pas."
+            return "Régularité solide — ne lâche pas."
         default:
             return "Tu es en mode Process."
         }

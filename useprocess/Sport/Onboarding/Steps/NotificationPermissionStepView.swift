@@ -89,9 +89,9 @@ struct NotificationPermissionStepView: View {
         let granted = await permissionsManager.requestNotificationPermission()
 
         if granted {
-            await PaywallTrialNotificationService.shared.scheduleTrialEndingReminder(
-                days: SubscriptionConfiguration.freeTrialDays
-            )
+            if let days = SubscriptionConfiguration.freeTrialDays(for: .annual), days > 0 {
+                await PaywallTrialNotificationService.shared.scheduleTrialEndingReminder(days: days)
+            }
             HapticManager.shared.notification(.success)
         }
 

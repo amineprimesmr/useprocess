@@ -16,37 +16,9 @@ enum OnboardingProgramCreationPalette {
 // MARK: - Background
 
 struct OnboardingProgramCreationBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let progress: Double
-
     var body: some View {
-        ZStack {
-            OnboardingProgramCreationPalette.background
-
-            RadialGradient(
-                colors: [
-                    OnboardingProgramCreationPalette.accent.opacity(colorScheme == .dark ? 0.12 : 0.18),
-                    OnboardingProgramCreationPalette.accent.opacity(colorScheme == .dark ? 0.04 : 0.08),
-                    .clear
-                ],
-                center: UnitPoint(x: 0.5, y: 0.36),
-                startRadius: 20,
-                endRadius: 300
-            )
-
-            RadialGradient(
-                colors: [
-                    Color(red: 0.18, green: 0.14, blue: 0.32).opacity(colorScheme == .dark ? 0.28 : 0.12),
-                    .clear
-                ],
-                center: UnitPoint(x: 0.5, y: 0.58),
-                startRadius: 0,
-                endRadius: 240
-            )
-            .opacity((colorScheme == .dark ? 0.25 : 0.14) + progress * 0.2)
-        }
-        .ignoresSafeArea()
+        OnboardingProgramCreationPalette.background
+            .ignoresSafeArea()
     }
 }
 

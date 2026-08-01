@@ -8,8 +8,8 @@ enum ProfileAnalyticsRange: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Fenêtre par défaut sur le profil — tout l'historique chargé (90 j).
-    static let profileDefault: ProfileAnalyticsRange = .all
+    /// Fenêtre par défaut sur le profil — 30 derniers jours pour limiter le coût de rendu.
+    static let profileDefault: ProfileAnalyticsRange = .month
 }
 
 struct ProfileAnalyticsPoint: Identifiable, Equatable {

@@ -64,10 +64,7 @@ final class OnboardingEstimationEngine {
     func summaryLine(for context: OnboardingEstimationContext) -> String {
         let timeline = computeTimeline(for: context)
         let debloatFmt = PlanDurationPersonalizer.formatShortDate(timeline.debloatDate)
-        if context.hasWeightGoal, let weight = context.weightMilestoneLabel {
-            return "Calibré sur ton profil — visage moins gonflé d'ici \(debloatFmt), trajectoire \(weight) incluse."
-        }
-        return "Calibré sur ton profil — visage visiblement moins gonflé d'ici \(debloatFmt)."
+        return "Calibré sur ton profil — visage visiblement moins gonflé d’ici \(debloatFmt)."
     }
 
     // MARK: - Weight goal timeline

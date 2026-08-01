@@ -17,7 +17,7 @@
       "localizations" : [
 
       ],
-      "name" : "Process AI Premium",
+      "name" : "Process Premium",
       "subscriptions" : [
         {
           "adHocOffers" : [
@@ -26,14 +26,14 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "5.99",
+          "displayPrice" : "23.00",
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "6738291001",
           "localizations" : [
             {
-              "description" : "Accès premium mensuel à Process AI",
-              "displayName" : "Process AI Premium — Mensuel",
+              "description" : "Accès premium mensuel à Process",
+              "displayName" : "Process Premium — Mensuel",
               "locale" : "fr_FR"
             }
           ],
@@ -50,26 +50,54 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "29.99",
+          "displayPrice" : "49.00",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6738291002",
-          "introductoryOffer" : {
-            "internalID" : "6738291102",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D"
-          },
           "localizations" : [
             {
-              "description" : "Accès premium annuel à Process AI — 3 jours gratuits",
-              "displayName" : "Process AI Premium — Annuel",
+              "description" : "Accès premium annuel à Process",
+              "displayName" : "Process Premium — Annuel",
               "locale" : "fr_FR"
             }
           ],
           "productID" : "com.useprocess.annual",
+          "promotionalOffers" : [
+            {
+              "displayPrice" : "19.99",
+              "internalID" : "6738291201",
+              "numberOfPeriods" : 1,
+              "offerID" : "winback_1999",
+              "paymentMode" : "payUpFront",
+              "subscriptionPeriod" : "P1Y"
+            }
+          ],
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Premium Yearly",
+          "subscriptionGroupID" : "21482999",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6738291003",
+          "localizations" : [
+            {
+              "description" : "Accès premium annuel winback Process",
+              "displayName" : "Process Premium — Annuel Winback",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.useprocess.annual.winback",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly Winback",
           "subscriptionGroupID" : "21482999",
           "type" : "RecurringSubscription"
         }

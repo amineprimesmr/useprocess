@@ -44,7 +44,7 @@ enum CoachCheckInTemplate: String, CaseIterable, Identifiable {
         case .morningOutlook: return "Brief matin"
         case .journalReminder: return "Rappel journal"
         case .scanReminder: return "Rappel scan visage"
-        case .streakGuard: return "Streak en jeu"
+        case .streakGuard: return "Jours validés en jeu"
         }
     }
 
@@ -57,7 +57,7 @@ enum CoachCheckInTemplate: String, CaseIterable, Identifiable {
         case .scanReminder:
             return "Rappelle-moi de faire mon scan visage si je ne l'ai pas fait aujourd'hui."
         case .streakGuard:
-            return "Préviens-moi en fin de journée si ma streak est en danger."
+            return "Préviens-moi en fin de journée si mes jours validés sont en danger."
         }
     }
 }
@@ -68,65 +68,45 @@ final class CoachCheckInStore {
     static let shared = CoachCheckInStore()
 
     private(set) var checkIns: [CoachCheckIn] = []
+    /// Feature retirée du produit — toujours off, pending purgées.
     var proactiveCheckInsEnabled: Bool {
         didSet { persistSettings() }
     }
 
     private init() {
-        let uid = UserScopedStorage.currentUserId() ?? "local-user"
-        let prefix = UserScopedStorage.key("coach.checkins", userId: uid)
-        proactiveCheckInsEnabled = UserDefaults.standard.object(forKey: "\(prefix).enabled") as? Bool ?? true
+        proactiveCheckInsEnabled = false
         reload()
     }
 
     func reload() {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let prefix = UserScopedStorage.key("coach.checkins", userId: uid)
-        proactiveCheckInsEnabled = UserDefaults.standard.object(forKey: "\(prefix).enabled") as? Bool ?? true
-        guard let data = UserDefaults.standard.data(forKey: prefix),
-              let decoded = try? JSONDecoder().decode([CoachCheckIn].self, from: data) else {
-            checkIns = defaultCheckIns()
-            persist()
-            return
-        }
-        checkIns = decoded
+
+        // Migration : désactive et vide les check-ins programmés (spam).
+        proactiveCheckInsEnabled = false
+        UserDefaults.standard.set(false, forKey: "\(prefix).enabled")
+        checkIns = []
+        UserDefaults.standard.removeObject(forKey: prefix)
+
+        Task { await CoachCheckInScheduler.cancelAll() }
     }
 
     func add(from template: CoachCheckInTemplate, hour: Int, minute: Int) {
-        checkIns.append(
-            CoachCheckIn(
-                title: template.title,
-                prompt: template.defaultPrompt,
-                hour: hour,
-                minute: minute
-            )
-        )
-        persist()
-        Task { await CoachCheckInScheduler.rescheduleAll() }
+        // No-op — check-ins programmés retirés.
+        _ = (template, hour, minute)
     }
 
     func delete(id: String) {
         checkIns.removeAll { $0.id == id }
         persist()
-        Task { await CoachCheckInScheduler.rescheduleAll() }
+        Task { await CoachCheckInScheduler.cancelAll() }
     }
 
     func toggle(id: String, enabled: Bool) {
         guard let index = checkIns.firstIndex(where: { $0.id == id }) else { return }
         checkIns[index].isEnabled = enabled
         persist()
-        Task { await CoachCheckInScheduler.rescheduleAll() }
-    }
-
-    private func defaultCheckIns() -> [CoachCheckIn] {
-        [
-            CoachCheckIn(
-                title: CoachCheckInTemplate.morningOutlook.title,
-                prompt: CoachCheckInTemplate.morningOutlook.defaultPrompt,
-                hour: 7,
-                minute: 30
-            )
-        ]
+        Task { await CoachCheckInScheduler.cancelAll() }
     }
 
     private func persist() {
@@ -140,6 +120,6 @@ final class CoachCheckInStore {
     private func persistSettings() {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("coach.checkins", userId: uid)
-        UserDefaults.standard.set(proactiveCheckInsEnabled, forKey: "\(key).enabled")
+        UserDefaults.standard.set(false, forKey: "\(key).enabled")
     }
 }

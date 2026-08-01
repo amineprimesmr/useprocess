@@ -125,12 +125,10 @@ extension WelcomePlanQuestionBank {
         var concerns = Set<String>()
 
         switch profile?.onboardingPrimaryFocus {
-        case .face:
-            concerns.formUnion(["puffiness", "dull_skin"])
-        case .weight:
-            concerns.insert("double_chin")
-        case .energy:
-            concerns.insert("dark_circles")
+        case .face, .weight, .health, .energy:
+            if let focus = profile?.onboardingPrimaryFocus {
+                concerns.formUnion(focus.faceConcernChoiceIds)
+            }
         default:
             break
         }

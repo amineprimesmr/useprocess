@@ -92,12 +92,7 @@ struct CoachChatView: View {
         .onAppear {
             CoachPresentationTracker.shared.isCoachChatActive = true
             CoachPresentationTracker.shared.activeConversationId = viewModel.activeConversationId
-            if !isIntegrationComplete {
-                isSidebarExpanded = false
-                sidebarPresentedSheet = nil
-            } else {
-                focusChatInputIfAppropriate()
-            }
+            focusChatInputIfAppropriate()
         }
         .onDisappear {
             CoachPresentationTracker.shared.isCoachChatActive = false
@@ -116,7 +111,6 @@ struct CoachChatView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             viewModel.bind(profile: profileService.currentProfile)
-            guard isIntegrationComplete else { return }
             await viewModel.loadThreadIfNeeded()
             if !viewModel.messages.contains(where: FaceScanCoachInsightService.isCoachInsightMessage) {
                 _ = await CoachEveningChecklistService.deliverEveningMessageIfNeeded()
@@ -151,24 +145,17 @@ struct CoachChatView: View {
             CoachPlanNavigationBridge.shared.shouldOpenFaceScan = false
         }
         .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenTracking) { _, should in
-            guard should, isIntegrationComplete else {
-                if should { CoachPlanNavigationBridge.shared.shouldOpenTracking = false }
-                return
-            }
+            guard should else { return }
             isSidebarExpanded = true
             sidebarPresentedSheet = .tracking
             CoachPlanNavigationBridge.shared.shouldOpenTracking = false
         }
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
-            if !completed {
-                isSidebarExpanded = false
-                sidebarPresentedSheet = nil
-            } else {
-                Task {
-                    viewModel.bind(profile: profileService.currentProfile)
-                    await viewModel.loadThreadIfNeeded()
-                    focusChatInputIfAppropriate(delay: 0.2)
-                }
+            guard completed else { return }
+            Task {
+                viewModel.bind(profile: profileService.currentProfile)
+                await viewModel.loadThreadIfNeeded()
+                focusChatInputIfAppropriate(delay: 0.2)
             }
         }
         .fullScreenCover(isPresented: $showFaceScan) {
@@ -199,37 +186,15 @@ struct CoachChatView: View {
     }
 
     private var coachContentLayer: some View {
-        Group {
-            if shouldShowInlineProtocolQuestionnaire {
-                inlineProtocolQuestionnaireLayer
-            } else {
-                normalCoachChatLayer
+        normalCoachChatLayer
+            .overlay(alignment: .topLeading) {
+                if canUseCoachSidebar, !isCoachSidebarPresenting {
+                    coachMenuButton
+                        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 2)
+                        .padding(.leading, 16)
+                        .zIndex(20)
+                }
             }
-        }
-        .overlay(alignment: .topLeading) {
-            if canUseCoachSidebar, !isCoachSidebarPresenting {
-                coachMenuButton
-                    .padding(.top, ProcessMainChromeMetrics.topSafeInset + 2)
-                    .padding(.leading, 16)
-                    .zIndex(20)
-            }
-        }
-    }
-
-    private var shouldShowInlineProtocolQuestionnaire: Bool {
-        !isIntegrationComplete
-    }
-
-    private var inlineProtocolQuestionnaireLayer: some View {
-        WelcomePlanChatView(
-            embeddedInMainApp: true,
-            selectedSection: nil,
-            onComplete: {
-                planStore.reloadForCurrentUser()
-            }
-        )
-        .environmentObject(profileService)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var normalCoachChatLayer: some View {
@@ -310,19 +275,15 @@ struct CoachChatView: View {
     }
 
     private var sidebarActiveDestination: CoachSidebarDestination? {
-        if !isIntegrationComplete { return .integration }
-        return sidebarPresentedSheet
+        sidebarPresentedSheet
     }
 
     private var isIntegrationComplete: Bool {
-        session.hasCompletedWelcomePlanChat
+        true
     }
 
     private var integrationProgress: Double {
-        WelcomePlanQuestionBank.configurationProgress(
-            answers: planStore.questionnaire.answers,
-            isComplete: isIntegrationComplete
-        )
+        1
     }
 
     @ViewBuilder

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// En-tête accueil Plan — salutation + cluster glass streak / statut d'activité.
+/// En-tête accueil Plan — salutation + cluster glass jours validés / statut d'activité.
 struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
     @Binding var selectedDate: Date
@@ -13,10 +13,10 @@ struct PlanHomeTopChrome: View {
 
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
+    @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
     @Bindable private var activityStatusStore = ProcessActivityStatusStore.shared
-    @State private var showDatePicker = false
 
-    private static let frenchLocale = Locale(identifier: "fr_FR")
+    private var programProgress: PlanProgressSnapshot { planProgressStore.snapshot }
 
     private var greetingFirstName: String {
         profileService.currentProfile?.firstName
@@ -29,10 +29,12 @@ struct PlanHomeTopChrome: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 10) {
                 PlanHomeGreetingLabel(greeting: homeGreeting)
 
-                homeDatePickerButton
+                if programProgress.hasPlan {
+                    PlanHomeProgramProgressBar(progress: programProgress)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -40,109 +42,27 @@ struct PlanHomeTopChrome: View {
         }
         .padding(.top, 14)
         .padding(.bottom, 4)
-        .sheet(isPresented: $showDatePicker) {
-            homeDatePickerSheet
-        }
         .onAppear {
             activityStatusStore.reload()
+            syncProgramProgress()
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             ProcessDebloatTrajectoryStore.shared.reload()
             activityStatusStore.reload()
+            syncProgramProgress()
         }
+        .onChange(of: planStore.plan?.id) { _, _ in
+            syncProgramProgress()
+        }
+    }
+
+    private func syncProgramProgress() {
+        ProcessDebloatTrajectoryStore.shared.sync(from: planStore.plan)
+        planProgressStore.reload(plan: planStore.plan)
     }
 
     private var homeGreeting: PlanHomeGreeting {
         PlanHomeGreetingBuilder.make(firstName: greetingFirstName)
-    }
-
-    private var homeDateLabel: String {
-        let calendar = Calendar.current
-        let date = calendar.startOfDay(for: selectedDate)
-        return formattedWeekdayDayMonth(date)
-    }
-
-    private var homeDatePickerButton: some View {
-        Button {
-            HapticManager.shared.impact(.light)
-            showDatePicker = true
-        } label: {
-            HStack(spacing: 5) {
-                Text(homeDateLabel)
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-            }
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(theme.secondaryText)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Changer le jour affiché")
-        .accessibilityHint("Ouvre le sélecteur de date")
-    }
-
-  @ViewBuilder
-    private var homeDatePickerSheet: some View {
-        NavigationStack {
-            DatePicker(
-                "Jour",
-                selection: $selectedDate,
-                in: homeDatePickerRange,
-                displayedComponents: .date
-            )
-            .datePickerStyle(.graphical)
-            .environment(\.locale, Self.frenchLocale)
-            .padding(.horizontal, 12)
-            .navigationTitle("Choisir un jour")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("OK") {
-                        normalizeSelectedDate()
-                        showDatePicker = false
-                    }
-                }
-            }
-            .onAppear {
-                normalizeSelectedDate()
-            }
-        }
-        .processAppPageBackground()
-        .processAppPresentationBackground()
-        .presentationDetents([.medium, .large])
-    }
-
-    private var homeDatePickerRange: ClosedRange<Date> {
-        let dates: [Date] = {
-            guard let plan = planStore.plan else {
-                return OriginPlanPresenter.journalStripDates()
-            }
-            return OriginPlanPresenter.journalStripDates(in: plan)
-        }()
-        if let first = dates.first, let last = dates.last {
-            return first...last
-        }
-        let today = Calendar.current.startOfDay(for: Date())
-        return today...today
-    }
-
-    private func normalizeSelectedDate() {
-        let calendar = Calendar.current
-        let day = calendar.startOfDay(for: selectedDate)
-        let range = homeDatePickerRange
-        if day < range.lowerBound {
-            selectedDate = range.lowerBound
-        } else if day > range.upperBound {
-            selectedDate = range.upperBound
-        } else {
-            selectedDate = day
-        }
-    }
-
-    private func formattedWeekdayDayMonth(_ date: Date) -> String {
-        date.formatted(
-            .dateTime.weekday(.wide).day().month(.wide)
-                .locale(Self.frenchLocale)
-        )
     }
 
     private enum GlassClusterMetrics {
@@ -170,7 +90,7 @@ struct PlanHomeTopChrome: View {
                     }
                     .buttonStyle(ProcessGlassPressStyle())
                     .zIndex(1)
-                    .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
+                    .accessibilityLabel("Jours validés, \(streakStore.displayValidatedDays)")
 
                     Button(action: openSettings) {
                         activityStatusGlassTile
@@ -191,7 +111,7 @@ struct PlanHomeTopChrome: View {
                 }
                 .buttonStyle(ProcessGlassPressStyle())
                 .zIndex(1)
-                .accessibilityLabel("Streak, \(streakStore.displayStreak) jours")
+                .accessibilityLabel("Jours validés, \(streakStore.displayValidatedDays)")
 
                 Button(action: openSettings) {
                     legacyActivityStatusButton
@@ -208,11 +128,11 @@ struct PlanHomeTopChrome: View {
     @available(iOS 26.0, *)
     private var streakGlassTile: some View {
         HStack(spacing: 4) {
-            Image(systemName: "flame.fill")
+            Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: GlassClusterMetrics.iconSize, weight: .semibold))
                 .foregroundStyle(streakFlameColor)
 
-            Text("\(streakStore.displayStreak)")
+            Text("\(streakStore.displayValidatedDays)")
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(theme.primaryText)
                 .monospacedDigit()
@@ -236,10 +156,10 @@ struct PlanHomeTopChrome: View {
 
     private var legacyStreakButton: some View {
         HStack(spacing: 4) {
-            Image(systemName: "flame.fill")
+            Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(streakFlameColor)
-            Text("\(streakStore.displayStreak)")
+            Text("\(streakStore.displayValidatedDays)")
                 .font(.system(size: 15, weight: .bold))
                 .monospacedDigit()
         }
@@ -259,7 +179,7 @@ struct PlanHomeTopChrome: View {
     }
 
     private var streakFlameColor: Color {
-        streakStore.displayStreak > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
+        streakStore.displayValidatedDays > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
     }
 
     private func openSettings() {
@@ -269,6 +189,64 @@ struct PlanHomeTopChrome: View {
 
     private func openStreak() {
         onOpenStreak()
+    }
+}
+
+// MARK: - Progression programme
+
+private struct PlanHomeProgramProgressBar: View {
+    let progress: PlanProgressSnapshot
+
+    @Environment(\.appTheme) private var theme
+
+    private var fillProgress: Double {
+        min(max(progress.timeProgress, 0), 1)
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            progressTrack
+                .frame(width: 120, height: 5)
+
+            Text(remainingLabel)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(theme.secondaryText.opacity(0.85))
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(remainingLabel), \(Int(fillProgress * 100)) pour cent du programme"
+        )
+    }
+
+    private var remainingLabel: String {
+        let days = progress.remainingProgramDays
+        guard days > 0 else { return "Terminé" }
+        return "\(days) j restant\(days > 1 ? "s" : "")"
+    }
+
+    private var progressTrack: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(theme.primaryText.opacity(theme.isDark ? 0.10 : 0.08))
+
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.48, green: 0.93, blue: 0.68),
+                                Color(red: 0.22, green: 0.72, blue: 0.48)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: max(4, geometry.size.width * fillProgress))
+                    .animation(.spring(response: 0.5, dampingFraction: 0.82), value: fillProgress)
+            }
+        }
     }
 }
 

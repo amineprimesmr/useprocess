@@ -25,9 +25,6 @@ struct useprocessApp: App {
             AppShellView()
                 .task {
                     await PermissionsManager.shared.clearAppBadge()
-                    await FaceScanReminderService.scheduleNextReminder(
-                        after: FaceScanHistoryStore.shared.latestResult?.createdAt
-                    )
                     try? await Task.sleep(for: .milliseconds(350))
                     CoachIntelligenceNotificationService.configure()
                     SubscriptionService.shared.configure()

@@ -57,11 +57,15 @@ final class OnboardingProfileChatViewModel {
     var inlineFaceScanElapsedSeconds = 0
 
     var showsInlineFaceScanFlow: Bool {
-        faceScanInlinePhase != .idle
+        false
     }
 
     var showsInlineFaceScanSection: Bool {
-        currentQuestion?.id == "face_scan_offer" && showsInlineFaceScanFlow
+        currentQuestion?.id == "face_scan_offer"
+            && !shouldFinish
+            && !isMessageAnimating
+            && !isSubmittingAnswer
+            && isQuestionReadyForAnswers
     }
 
     var inlineFaceScanCapturedPayload: FaceScanCapturePayload? {
@@ -144,7 +148,6 @@ final class OnboardingProfileChatViewModel {
             restoreConversationFromSavedProgress()
             await resumeFromSavedProgress()
         } else {
-            await presentOpeningLine()
             await presentFirstQuestionAfterOpening()
         }
     }
@@ -154,11 +157,12 @@ final class OnboardingProfileChatViewModel {
         let completed = viewModel.completedProfileChatQuestionIDs
 
         messages.removeAll(keepingCapacity: true)
-        appendAssistantMessageInstant(OnboardingProfileChatQuestionBank.openingLine(for: viewModel))
 
         for question in questions where completed.contains(question.id) {
             let resolved = OnboardingProfileChatQuestionBank.resolvedQuestion(question, for: viewModel)
-            appendAssistantMessageInstant(resolved.prompt)
+            for block in resolved.assistantPresentationBlocks {
+                appendAssistantMessageInstant(block)
+            }
             if let answer = OnboardingProfileChatQuestionBank.savedAnswerDisplay(
                 for: resolved.id,
                 viewModel: viewModel
@@ -192,7 +196,7 @@ final class OnboardingProfileChatViewModel {
         isQuestionReadyForAnswers = false
         isMessageAnimating = false
 
-        appendAssistantMessageInstant(question.prompt)
+        appendAssistantMessagesInstant(for: question)
 
         switch question.kind {
         case .autoPlanCreation:
@@ -224,34 +228,8 @@ final class OnboardingProfileChatViewModel {
 
     private func presentFirstQuestionAfterOpening() async {
         guard currentIndex < questions.count else { return }
-        isQuestionReadyForAnswers = false
         currentQuestion = questions[currentIndex]
-        guard let question = currentQuestion else { return }
-
-        let messageID = UUID()
-        pendingTypewriterMessageID = messageID
-        pendingTypewriterText = question.prompt
-
-        animate(OnboardingProfileChatDepthStyle.historySpring) {
-            messages.append(
-                .init(
-                    id: messageID,
-                    role: .assistant,
-                    text: "",
-                    layoutAnchorText: question.prompt
-                )
-            )
-            isMessageAnimating = true
-        }
-
-        try? await Task.sleep(nanoseconds: 320_000_000)
-        await runTypewriter(initialDelay: true)
-        await finalizeQuestionPresentation()
-    }
-
-    private func presentOpeningLine() async {
-        guard let viewModel = onboardingViewModel else { return }
-        await appendAssistantMessage(OnboardingProfileChatQuestionBank.openingLine(for: viewModel))
+        await presentCurrentQuestion(initialDelay: true)
     }
 
     func submitContinueAfterAnalysis() {
@@ -264,8 +242,181 @@ final class OnboardingProfileChatViewModel {
               let question = currentQuestion,
               question.kind == .infoContinue else { return }
         isSubmittingAnswer = true
-        markQuestionCompleted(question.id)
-        await advanceAfterAnswer()
+        await recordAnswer(
+            display: question.continueLabel ?? "Continuer",
+            questionID: question.id
+        )
+    }
+
+    /// Remonte d’une question / d’un texte dans le fil. `false` = quitter la discussion.
+    @discardableResult
+    func goBackInDiscussion() -> Bool {
+        guard let viewModel = onboardingViewModel else { return false }
+
+        // Annule animations / jobs en cours pour pouvoir remonter proprement.
+        typewriterTask?.cancel()
+        analysisTask?.cancel()
+        programCreationTask?.cancel()
+        inlineFaceScanTask?.cancel()
+        stopAnalysisElapsedTimer()
+        stopInlineFaceScanElapsedTimer()
+        isMessageAnimating = false
+        isSubmittingAnswer = false
+        pendingTypewriterMessageID = nil
+        pendingTypewriterText = nil
+
+        // Scan inline : d’abord sortir du flux capture/analyse/résultats.
+        if faceScanInlinePhase != .idle {
+            resetInlineFaceScanState()
+            if let index = questions.firstIndex(where: { $0.id == "face_scan_offer" }) {
+                currentIndex = index
+                let question = OnboardingProfileChatQuestionBank.resolvedQuestion(
+                    questions[index],
+                    for: viewModel
+                )
+                questions[index] = question
+                currentQuestion = question
+                isQuestionReadyForAnswers = true
+                rebuildMessages(upToCompletedExclusiveOf: "face_scan_offer")
+                appendAssistantMessagesInstant(for: question)
+            }
+            analysisLetsGoUnlocked = false
+            analysisPhase = .idle
+            analysisProgressPanelVisible = false
+            programCreationPhase = .idle
+            shouldFinish = false
+            return true
+        }
+
+        let orderedIDs = questions.map(\.id)
+        let orderedCompleted = orderedIDs.filter { viewModel.completedProfileChatQuestionIDs.contains($0) }
+
+        // Rien de validé : on est sur la 1re bulle → sortie vers l’étape précédente.
+        guard let targetID = orderedCompleted.last,
+              let targetIndex = orderedIDs.firstIndex(of: targetID) else {
+            return false
+        }
+
+        viewModel.rewindProfileChat(from: targetID, orderedQuestionIDs: orderedIDs)
+        clearSideEffectsIfNeeded(rewindingFrom: targetID)
+
+        currentIndex = targetIndex
+        analysisLetsGoUnlocked = false
+        analysisPhase = .idle
+        analysisProgressPanelVisible = false
+        analysisProgress = 0
+        programCreationPhase = .idle
+        programCreationProgress = 0
+        shouldFinish = false
+        resetInlineFaceScanState()
+
+        let question = OnboardingProfileChatQuestionBank.resolvedQuestion(
+            questions[targetIndex],
+            for: viewModel
+        )
+        questions[targetIndex] = question
+        currentQuestion = question
+        isQuestionReadyForAnswers = true
+
+        rebuildMessages(upToCompletedExclusiveOf: targetID)
+        appendAssistantMessagesInstant(for: question)
+
+        return true
+    }
+
+    private func appendAssistantMessagesInstant(for question: OnboardingProfileChatQuestion) {
+        for block in question.assistantPresentationBlocks {
+            appendAssistantMessageInstant(block)
+        }
+    }
+
+    private func presentCurrentQuestion(initialDelay: Bool) async {
+        guard let question = currentQuestion else { return }
+
+        isQuestionReadyForAnswers = false
+        let blocks = question.assistantPresentationBlocks
+        guard !blocks.isEmpty else {
+            await finalizeQuestionPresentation()
+            return
+        }
+
+        if initialDelay {
+            try? await Task.sleep(nanoseconds: 320_000_000)
+        }
+
+        for (index, block) in blocks.enumerated() {
+            let messageID = UUID()
+            pendingTypewriterMessageID = messageID
+            pendingTypewriterText = block
+
+            animate(OnboardingProfileChatDepthStyle.historySpring) {
+                messages.append(
+                    .init(
+                        id: messageID,
+                        role: .assistant,
+                        text: "",
+                        layoutAnchorText: block
+                    )
+                )
+                isMessageAnimating = true
+            }
+
+            await runTypewriter(initialDelay: initialDelay && index == 0)
+
+            if index < blocks.count - 1 {
+                try? await Task.sleep(nanoseconds: 520_000_000)
+            }
+        }
+
+        await finalizeQuestionPresentation()
+    }
+
+    private func rebuildMessages(upToCompletedExclusiveOf excludedID: String) {
+        guard let viewModel = onboardingViewModel else { return }
+        let completed = viewModel.completedProfileChatQuestionIDs
+
+        messages.removeAll(keepingCapacity: true)
+
+        for question in questions where completed.contains(question.id) && question.id != excludedID {
+            let resolved = OnboardingProfileChatQuestionBank.resolvedQuestion(question, for: viewModel)
+            for block in resolved.assistantPresentationBlocks {
+                appendAssistantMessageInstant(block)
+            }
+            if let answer = OnboardingProfileChatQuestionBank.savedAnswerDisplay(
+                for: resolved.id,
+                viewModel: viewModel
+            ) {
+                appendUserMessage(answer)
+            }
+        }
+    }
+
+    private func clearSideEffectsIfNeeded(rewindingFrom questionID: String) {
+        switch questionID {
+        case "debloat_driver":
+            onboardingViewModel?.onboardingDebloatDrivers = []
+        case "hydration_level":
+            guard var profile = onboardingViewModel?.nutritionProfile else { break }
+            profile.hydrationLevel = nil
+            profile.hasSufficientHydration = nil
+            onboardingViewModel?.nutritionProfile = profile
+        case "junk_food":
+            onboardingViewModel?.updateNutritionQuality(nil)
+        case "sleep_hours":
+            guard var sleep = onboardingViewModel?.sleepProfile else { break }
+            sleep.averageSleepHours = nil
+            sleep.sleepQuality = nil
+            onboardingViewModel?.sleepProfile = sleep
+        case "cardio_frequency":
+            onboardingViewModel?.selectedTrainingFrequency = nil
+            onboardingViewModel?.isTrainingFrequencySelected = false
+        case "face_scan_offer", "scan_explanation":
+            onboardingViewModel?.onboardingFaceMarkers = nil
+            onboardingViewModel?.isFaceAnalysisCompleted = false
+            inlineFaceScanResult = nil
+        default:
+            break
+        }
     }
 
     func submitYesNo(_ yes: Bool) async {
@@ -280,33 +431,43 @@ final class OnboardingProfileChatViewModel {
         let label = question.choices.first(where: { $0.id == choiceId })?.label ?? choiceId
 
         switch question.id {
-        case "primary_focus":
-            if let focus = OnboardingPrimaryFocus(rawValue: choiceId) {
-                onboardingViewModel?.onboardingPrimaryFocus = focus
-                switch focus {
-                case .face:
-                    onboardingViewModel?.selectedPrimaryGoals.insert(.reduceStress)
-                case .weight:
-                    onboardingViewModel?.selectedPrimaryGoals.insert(.manageWeight)
-                case .health:
-                    onboardingViewModel?.selectedPrimaryGoals.insert(.improveFitness)
-                case .energy:
-                    onboardingViewModel?.selectedPrimaryGoals.insert(.optimizeEnergy)
-                }
+        case "debloat_driver":
+            if let driver = OnboardingDebloatDriver(rawValue: choiceId) {
+                onboardingViewModel?.onboardingDebloatDrivers = [driver]
             }
-        case "nutrition_quality":
-            if choiceId == "snacking" {
-                onboardingViewModel?.updateNutritionQuality(.poor)
-                var profile = onboardingViewModel?.nutritionProfile ?? NutritionProfile()
-                profile.nutritionObstacles.insert(.snacking)
+        case "hydration_level":
+            if let level = HydrationLevel(rawValue: choiceId) {
+                guard var profile = onboardingViewModel?.nutritionProfile else { break }
+                profile.hydrationLevel = level
+                profile.hasSufficientHydration = level != .poor && level != .veryPoor
                 onboardingViewModel?.nutritionProfile = profile
-            } else if choiceId == "unknown" {
-                onboardingViewModel?.updateNutritionQuality(.average)
-            } else {
-                onboardingViewModel?.updateNutritionQuality(
-                    NutritionQuality(rawValue: choiceId) ?? .average
-                )
             }
+        case "junk_food":
+            onboardingViewModel?.updateNutritionQuality(
+                NutritionQuality(rawValue: choiceId) ?? .average
+            )
+        case "sleep_hours":
+            if let hours = Double(choiceId) {
+                guard var sleep = onboardingViewModel?.sleepProfile else { break }
+                sleep.averageSleepHours = hours
+                switch hours {
+                case ..<5:
+                    sleep.sleepQuality = .veryPoor
+                case ..<6:
+                    sleep.sleepQuality = .poor
+                case ..<7:
+                    sleep.sleepQuality = .average
+                case ..<8:
+                    sleep.sleepQuality = .good
+                default:
+                    sleep.sleepQuality = .excellent
+                }
+                onboardingViewModel?.sleepProfile = sleep
+            }
+        case "cardio_frequency":
+            onboardingViewModel?.selectedTrainingFrequency = choiceId
+            onboardingViewModel?.isTrainingFrequencySelected = true
+            onboardingViewModel?.hasSportActivity = choiceId != "0-2"
         default:
             break
         }
@@ -347,52 +508,68 @@ final class OnboardingProfileChatViewModel {
             ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
 
-        typewriterTask?.cancel()
-        isQuestionReadyForAnswers = false
-
-        animate(OnboardingProfileChatDepthStyle.historySpring) {
+        if messages.last?.role != .user || messages.last?.text != "Lancer le scan" {
             appendUserMessage("Lancer le scan")
         }
-
-        try? await Task.sleep(nanoseconds: 280_000_000)
-
-        animate(OnboardingProfileChatAnswerReveal.spring) {
-            faceScanInlinePhase = .capturing
-        }
+        isQuestionReadyForAnswers = false
         isSubmittingAnswer = false
+        // La View ouvre la page de scan dédiée.
     }
 
     func submitFaceScanLater() async {
         guard !isSubmittingAnswer, currentQuestion?.id == "face_scan_offer" else { return }
         isSubmittingAnswer = true
         onboardingViewModel?.isFaceAnalysisCompleted = true
-        await recordAnswer(display: "Faire mon scan plus tard", questionID: "face_scan_offer")
+        onboardingViewModel?.onboardingFaceMesh = nil
+        onboardingViewModel?.onboardingFaceMarkers = nil
+        markQuestionCompleted("face_scan_offer")
+        if messages.last?.role != .user || messages.last?.text != "Faire mon scan plus tard" {
+            appendUserMessage("Faire mon scan plus tard")
+        }
+        currentQuestion = nil
+        isQuestionReadyForAnswers = false
+        animate(OnboardingProfileChatAnswerReveal.spring) {
+            analysisLetsGoUnlocked = true
+        }
+        isSubmittingAnswer = false
     }
 
-    func faceScanCaptureCompleted(payload: FaceScanCapturePayload, markers: FaceWellnessMarkers) {
-        inlineFaceScanPayload = payload
-        inlineFaceScanMarkers = OnboardingFaceScanMarkerCalibration.calibrate(markers)
-        Task { await runInlineFaceScanAnalysis() }
-    }
-
-    func submitFaceScanResultsContinue() {
-        guard faceScanInlinePhase == .results,
-              let result = inlineFaceScanResult else { return }
-        HapticManager.shared.impact(.medium)
+    func adoptDedicatedFaceScanResult(_ result: FaceScanResult) {
+        inlineFaceScanResult = result
         onboardingViewModel?.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
         onboardingViewModel?.onboardingFaceMarkers = result.markers
         onboardingViewModel?.isFaceAnalysisCompleted = true
         markQuestionCompleted("face_scan_offer")
-        Task { await advanceAfterFaceScanResponse() }
+    }
+
+    func restoreFaceScanOfferAnswers() {
+        guard currentQuestion?.id == "face_scan_offer", !shouldFinish else { return }
+        isSubmittingAnswer = false
+        isQuestionReadyForAnswers = true
+    }
+
+    func submitFaceScanResultsContinue() {
+        // Compat — plus utilisé (page dédiée hors chat).
+    }
+
+    /// Persiste le scan et clôture la discussion après Sign in with Apple.
+    func finishAfterDedicatedFaceAnalysis() {
+        if let result = inlineFaceScanResult {
+            onboardingViewModel?.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
+            onboardingViewModel?.onboardingFaceMarkers = result.markers
+            onboardingViewModel?.isFaceAnalysisCompleted = true
+            markQuestionCompleted("face_scan_offer")
+        }
+        currentQuestion = nil
+        isQuestionReadyForAnswers = false
+        programCreationPhase = .idle
+        analysisLetsGoUnlocked = false
+        resetInlineFaceScanState()
+        shouldFinish = true
     }
 
     func faceScanDidSkip() {
-        resetInlineFaceScanState()
-        onboardingViewModel?.onboardingFaceMesh = nil
-        onboardingViewModel?.onboardingFaceMarkers = nil
-        onboardingViewModel?.isFaceAnalysisCompleted = true
-        markQuestionCompleted("face_scan_offer")
-        Task { await advanceAfterFaceScanResponse() }
+        Task { await submitFaceScanLater() }
     }
 
     func finish(onComplete: () -> Void) {
@@ -490,8 +667,8 @@ final class OnboardingProfileChatViewModel {
             inlineFaceScanResultsUnlocked = false
         }
 
-        // Laisse l'anneau WHOOP et les 5 indicateurs se révéler avant le bouton Continuer.
-        try? await Task.sleep(nanoseconds: 4_800_000_000)
+        // Court délai puis bouton « Voir l’analyse ».
+        try? await Task.sleep(nanoseconds: 450_000_000)
 
         animate(OnboardingProfileChatAnswerReveal.spring) {
             inlineFaceScanResultsUnlocked = true
@@ -580,10 +757,9 @@ final class OnboardingProfileChatViewModel {
     private func advanceAfterFaceScanResponse() async {
         isSubmittingAnswer = true
         resetInlineFaceScanState()
-        let shouldType = prepareNextQuestionMessage()
+        let shouldType = advanceToNextQuestion()
         if shouldType {
-            await runTypewriter(initialDelay: false)
-            await finalizeQuestionPresentation()
+            await presentCurrentQuestion(initialDelay: false)
         }
         isSubmittingAnswer = false
     }
@@ -601,12 +777,11 @@ final class OnboardingProfileChatViewModel {
 
         animate(OnboardingProfileChatDepthStyle.historySpring) {
             appendUserMessage(display)
-            shouldTypeNextQuestion = prepareNextQuestionMessage()
+            shouldTypeNextQuestion = advanceToNextQuestion()
         }
 
         if shouldTypeNextQuestion {
-            await runTypewriter(initialDelay: false)
-            await finalizeQuestionPresentation()
+            await presentCurrentQuestion(initialDelay: false)
         }
 
         isSubmittingAnswer = false
@@ -798,7 +973,7 @@ final class OnboardingProfileChatViewModel {
     }
 
     @discardableResult
-    private func prepareNextQuestionMessage() -> Bool {
+    private func advanceToNextQuestion() -> Bool {
         currentIndex += 1
 
         if currentIndex >= questions.count {
@@ -811,13 +986,7 @@ final class OnboardingProfileChatViewModel {
         }
 
         currentQuestion = questions[currentIndex]
-        guard var question = currentQuestion else { return false }
-
-        if question.id == "scan_explanation", let viewModel = onboardingViewModel {
-            question = OnboardingProfileChatQuestionBank.scanExplanationQuestion(for: viewModel)
-            questions[currentIndex] = question
-            currentQuestion = question
-        }
+        guard let question = currentQuestion else { return false }
 
         if question.kind == .answersAnalysis {
             analysisPhase = .idle
@@ -831,28 +1000,15 @@ final class OnboardingProfileChatViewModel {
             analysisPhaseLabel = OnboardingAnalysisProgressConfig.answersAnalysisSteps[0].phaseLabel
         }
 
-        let messageID = UUID()
-        pendingTypewriterMessageID = messageID
-        pendingTypewriterText = question.prompt
-        messages.append(
-            .init(
-                id: messageID,
-                role: .assistant,
-                text: "",
-                layoutAnchorText: question.prompt
-            )
-        )
-        isMessageAnimating = true
         return true
     }
 
     private func advanceAfterAnswer() async {
         defer { isSubmittingAnswer = false }
 
-        let shouldType = prepareNextQuestionMessage()
+        let shouldType = advanceToNextQuestion()
         if shouldType {
-            await runTypewriter(initialDelay: true)
-            await finalizeQuestionPresentation()
+            await presentCurrentQuestion(initialDelay: true)
         }
     }
 
@@ -919,15 +1075,15 @@ final class OnboardingProfileChatViewModel {
     private func typewriterDelay(for character: Character) -> UInt64 {
         switch character {
         case " ", "\n", "\t":
-            return 15_000_000
+            return 20_000_000
         case ".", "!", "?", "…":
-            return 90_000_000
+            return 115_000_000
         case ",", ";", ":":
-            return 55_000_000
+            return 72_000_000
         case "%":
-            return 45_000_000
+            return 58_000_000
         default:
-            return 28_000_000
+            return 36_000_000
         }
     }
 

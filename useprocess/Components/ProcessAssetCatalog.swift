@@ -33,6 +33,7 @@ enum ProcessAssetCatalog {
         "breakfast_layer_eggs_2",
         "breakfast_layer_eggs_3",
         "caochiaicon",
+        "ProcessAppIcon",
         "cardio_corde",
         "cardio_course_pied",
         "cardio_elliptique",

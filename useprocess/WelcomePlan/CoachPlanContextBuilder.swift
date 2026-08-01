@@ -8,11 +8,10 @@ enum CoachPlanContextBuilder {
     @MainActor
     static func compactBlock(plan: FaceOriginPlan?, memory: CoachGlobalMemory) -> String {
         guard let plan else {
-            return "PLAN PERSONNALISÉ : non généré — invite l'utilisateur à compléter le questionnaire."
+            return "PLAN PERSONNALISÉ : en cours de préparation."
         }
 
         let dayIdx = plan.calendar.currentProgramDayIndex()
-        let weekNum = plan.calendar.currentWeekNumber()
         let progress = ProcessPlanProgressStore.shared.snapshot
         let today = plan.calendar.day(globalIndex: dayIdx)
         let completed = plan.progress.completedTaskIds.count
@@ -20,19 +19,12 @@ enum CoachPlanContextBuilder {
         var lines: [String] = [
             "PLAN PERSONNALISÉ (base de TOUTES tes réponses) :",
             "• Objectif : \(plan.primaryFaceGoal)",
-            "• Semaine \(weekNum)/\(plan.totalWeeks)",
-            "• Durée effective : \(progress.weeksLabel)\(progress.durationAdjustmentDays != 0 ? ", ajustement \(ProcessDurationFormat.weeksShort(fromDays: abs(progress.durationAdjustmentDays)))" : "")",
-            "• Jours validés : \(progress.validatedDays) · Streak : \(progress.currentStreak)",
+            "• Programme debloat : jour \(progress.elapsedProgramDays)/\(progress.totalProgramDays)",
+            "• Durée debloat : \(progress.weeksLabel)\(progress.durationAdjustmentDays != 0 ? ", ajustement \(abs(progress.durationAdjustmentDays)) j" : "")",
+            "• Jours validés : \(progress.validatedDays)",
         ]
-        if let mode = progress.trajectoryMode {
-            lines.append("• Séquence : \(mode.label)")
-        }
-        if let active = progress.activeMilestoneLabel {
-            lines.append("• Jalon actif : \(active)")
-        }
-        for milestone in progress.milestones {
-            let status = milestone.isComplete ? "atteint" : "S\(ProcessDurationFormat.weekCount(fromDays: milestone.elapsedDays))/\(ProcessDurationFormat.weekCount(fromDays: milestone.targetDays))"
-            lines.append("• \(milestone.label) : \(status)")
+        if progress.remainingProgramDays > 0, let end = progress.estimatedEndDate {
+            lines.append("• Debloat visé dans \(progress.remainingProgramDays) j · \(Self.formatShortDate(end))")
         }
         lines.append(contentsOf: [
             "• \(plan.trainingProtocol.sessionsPerWeek) séances/sem · Sommeil cible \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
@@ -281,5 +273,12 @@ enum CoachPlanContextBuilder {
         }
         let text = answer.displayText.trimmingCharacters(in: .whitespacesAndNewlines)
         return text.isEmpty ? "" : text
+    }
+
+    private static func formatShortDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "d MMM"
+        return formatter.string(from: date)
     }
 }

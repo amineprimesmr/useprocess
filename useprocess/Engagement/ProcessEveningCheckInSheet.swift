@@ -5,26 +5,29 @@ import SwiftUI
 private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
     case water
     case debloatMeal
-    case postureCircuit
+    case cardio
 
     var id: String {
         switch self {
         case .water: return EveningCheckInQuestionID.water
         case .debloatMeal: return EveningCheckInQuestionID.debloatMeal
-        case .postureCircuit: return EveningCheckInQuestionID.postureCircuit
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .water: return "\(ProcessDailyTargets.hydrationLabel) d'eau ?"
-        case .debloatMeal: return "Repas debloat ?"
-        case .postureCircuit: return "Circuit posture ?"
+        case .cardio: return EveningCheckInQuestionID.cardio
         }
     }
 
     var yesValue: String { "yes" }
     var noValue: String { "no" }
+
+    func prompt() -> String {
+        switch self {
+        case .water:
+            return "Bu \(ProcessDailyTargets.hydrationLabel) d'eau ?"
+        case .debloatMeal:
+            return "Respecté tes repas debloat ?"
+        case .cardio:
+            return "Fais ton cardio ?"
+        }
+    }
 }
 
 /// Bilan du soir — 3 questions binaires, tout visible sans scroll.
@@ -44,6 +47,7 @@ struct ProcessEveningCheckInSheet: View {
     @State private var answers: [String: String] = [:]
     @State private var analyzingLabel = "Enregistrement…"
     @State private var validationTask: Task<Void, Never>?
+    @State private var submittedDayValidated = false
 
     private enum Phase {
         case form
@@ -86,7 +90,7 @@ struct ProcessEveningCheckInSheet: View {
         .presentationDetents([.height(Metrics.sheetHeight)])
         .presentationDragIndicator(.hidden)
         .presentationCornerRadius(Metrics.cornerRadius)
-        .interactiveDismissDisabled(isRequired ? phase != .validated : phase == .form)
+        .interactiveDismissDisabled(phase == .analyzing || (isRequired && phase != .validated))
         .onAppear {
             answers = eveningStore.answers(for: targetDate)
         }
@@ -149,16 +153,7 @@ struct ProcessEveningCheckInSheet: View {
     }
 
     private func questionTitle(_ question: EveningCheckInQuestion) -> String {
-        guard Calendar.current.isDateInYesterday(targetDate) else { return question.title }
-
-        switch question {
-        case .water:
-            return "Hier, eau validée ?"
-        case .debloatMeal:
-            return "Hier, repas debloat ?"
-        case .postureCircuit:
-            return "Hier, circuit posture ?"
-        }
+        question.prompt()
     }
 
     private func answerIconButton(
@@ -191,18 +186,24 @@ struct ProcessEveningCheckInSheet: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
+    private var isYesterdayCheckIn: Bool {
+        Calendar.current.isDateInYesterday(targetDate)
+    }
+
     private var headerRow: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(titleText)
                 .font(.title3.weight(.bold))
                 .foregroundStyle(theme.primaryText)
 
-            Text(subtitleText)
-                .font(.caption)
-                .foregroundStyle(theme.secondaryText)
+            if !isYesterdayCheckIn {
+                Text(subtitleText)
+                    .font(.caption)
+                    .foregroundStyle(theme.secondaryText)
+            }
 
-            if streakStore.displayStreak > 0, !hasSubmittedTargetDate {
-                Text("Streak \(streakStore.displayStreak) jour\(streakStore.displayStreak > 1 ? "s" : "") à sécuriser")
+            if !isYesterdayCheckIn, streakStore.displayValidatedDays > 0, !hasSubmittedTargetDate {
+                Text("\(streakStore.displayValidatedDays) jour\(streakStore.displayValidatedDays > 1 ? "s" : "") validé\(streakStore.displayValidatedDays > 1 ? "s" : "") · valide ce soir")
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
             }
@@ -214,8 +215,8 @@ struct ProcessEveningCheckInSheet: View {
     }
 
     private var titleText: String {
-        if Calendar.current.isDateInYesterday(targetDate) {
-            return "Bilan d'hier"
+        if isYesterdayCheckIn {
+            return "Hier tu as…"
         }
         if Calendar.current.isDateInToday(targetDate) {
             return "Bilan du soir"
@@ -224,13 +225,7 @@ struct ProcessEveningCheckInSheet: View {
     }
 
     private var subtitleText: String {
-        if Calendar.current.isDateInYesterday(targetDate) {
-            return "Hier, tu as validé quoi ? On en a besoin pour analyser ta trajectoire."
-        }
-        if isRequired {
-            return "Réponds pour continuer : sans ce bilan, la streak et l'analyse restent bloquées."
-        }
-        return "3 questions pour valider ta streak."
+        "Eau + repas debloat obligatoires · cardio min. 3/semaine."
     }
 
     private var footerBlock: some View {
@@ -286,16 +281,16 @@ struct ProcessEveningCheckInSheet: View {
 
             ZStack {
                 Circle()
-                    .fill(Color(red: 0.35, green: 0.78, blue: 0.45).opacity(0.18))
+                    .fill(validatedAccent.opacity(0.18))
                     .frame(width: 88, height: 88)
-                Image(systemName: "checkmark.circle.fill")
+                Image(systemName: validatedSymbol)
                     .font(.system(size: 52, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.35, green: 0.78, blue: 0.45))
+                    .foregroundStyle(validatedAccent)
                     .symbolEffect(.bounce, value: phase)
             }
 
             VStack(spacing: 8) {
-                Text("Bilan enregistré")
+                Text(validatedTitle)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(theme.primaryText)
 
@@ -326,13 +321,49 @@ struct ProcessEveningCheckInSheet: View {
         .padding(.horizontal, 20)
     }
 
+    private var validatedAccent: Color {
+        submittedDayValidated
+            ? Color(red: 0.35, green: 0.78, blue: 0.45)
+            : Color(red: 0.92, green: 0.58, blue: 0.28)
+    }
+
+    private var validatedSymbol: String {
+        submittedDayValidated ? "checkmark.circle.fill" : "exclamationmark.circle.fill"
+    }
+
+    private var validatedTitle: String {
+        submittedDayValidated ? "Jour validé" : "Bilan enregistré"
+    }
+
     private var validatedSubtitle: String {
-        let snapshot = trajectoryStore.snapshot
+        if !submittedDayValidated {
+            let record = ProcessDebloatTrajectoryStore.shared.record(for: targetDate)
+            let yesCount = record?.yesCount
+                ?? ProcessDebloatTrajectoryEngine.yesCount(from: answers)
+            if record?.water != true {
+                return "Hydratation manquante — objectif eau requis pour valider."
+            }
+            if record?.debloatMeal != true {
+                return "Repas debloat manquant — équilibre Na/K/Mg requis pour valider."
+            }
+            if let record,
+               let failure = ProcessDebloatValidation.failure(
+                for: record,
+                consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
+                    before: record.dayKey,
+                    in: ProcessDebloatTrajectoryStore.shared.allRecordsByDay
+                )
+               ) {
+                return ProcessDebloatValidation.failureMessage(failure)
+            }
+            return "\(yesCount)/3 leviers — protocole debloat incomplet."
+        }
         if let summary = ProcessDebloatTrajectoryStore.shared.record(for: targetDate)?.aiSummary {
             return summary
         }
+        let snapshot = trajectoryStore.snapshot
         if Calendar.current.isDateInToday(targetDate), let verdict = snapshot.todayVerdict {
-            return "\(verdict.shortLabel) — score \(Int(snapshot.todayCompositeScore))/100 · streak \(snapshot.currentStreak) j"
+            return "\(verdict.shortLabel) — score \(Int(snapshot.todayCompositeScore))/100 · \(snapshot.totalValidatedDays) j validés"
         }
         return "Ta trajectoire debloat est à jour."
     }
@@ -350,19 +381,31 @@ struct ProcessEveningCheckInSheet: View {
             try? await Task.sleep(for: .milliseconds(700))
             guard !Task.isCancelled else { return }
 
-            analyzingLabel = "Mise à jour de ta streak…"
+            analyzingLabel = "Analyse de ton bilan…"
             try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
             eveningStore.markSubmitted(answers: answers, for: targetDate)
+            submittedDayValidated = ProcessDebloatTrajectoryStore.shared
+                .record(for: targetDate)?
+                .countsAsValidatedDay(
+                    consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
+                        before: ProcessStreakStore.dayKey(for: targetDate),
+                        in: ProcessDebloatTrajectoryStore.shared.allRecordsByDay
+                    )
+                ) == true
             onCompleted?()
 
             withAnimation(.spring(response: 0.44, dampingFraction: 0.82)) {
                 phase = .validated
             }
 
-            HapticManager.shared.notification(.success)
-            ProcessSoundPlayer.playRevolutPaySuccess()
+            if submittedDayValidated {
+                HapticManager.shared.notification(.success)
+                ProcessSoundPlayer.playRevolutPaySuccess()
+            } else {
+                HapticManager.shared.notification(.warning)
+            }
 
             try? await Task.sleep(for: .seconds(2.2))
             guard !Task.isCancelled else { return }
@@ -442,6 +485,25 @@ struct ProcessEveningCheckInEntryButton: View {
     @Environment(\.appTheme) private var theme
     @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
     @Bindable private var streakStore = ProcessStreakStore.shared
+    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
+
+    private var todayRecord: DebloatDayRecord? {
+        trajectoryStore.record(for: Date())
+    }
+
+    private var isDayValidated: Bool {
+        guard let record = todayRecord else { return false }
+        return record.countsAsValidatedDay(
+            consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
+                before: record.dayKey,
+                in: trajectoryStore.allRecordsByDay
+            )
+        )
+    }
+
+    private var hasSubmittedToday: Bool {
+        eveningStore.hasSubmittedToday
+    }
 
     var body: some View {
         Button(action: {
@@ -453,17 +515,13 @@ struct ProcessEveningCheckInEntryButton: View {
                     Circle()
                         .fill(theme.onboardingAccent.opacity(theme.isDark ? 0.22 : 0.14))
                         .frame(width: 40, height: 40)
-                    Image(systemName: eveningStore.hasSubmittedToday ? "checkmark.seal.fill" : "moon.stars.fill")
+                    Image(systemName: entrySymbol)
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(
-                            eveningStore.hasSubmittedToday
-                                ? Color(red: 0.35, green: 0.78, blue: 0.45)
-                                : theme.onboardingAccent
-                        )
+                        .foregroundStyle(entrySymbolColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(eveningStore.hasSubmittedToday ? "Bilan du soir validé" : "Bilan du soir")
+                    Text(entryTitle)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
                     Text(subtitle)
@@ -474,11 +532,11 @@ struct ProcessEveningCheckInEntryButton: View {
 
                 Spacer(minLength: 8)
 
-                if !eveningStore.hasSubmittedToday, streakStore.displayStreak > 0 {
+                if !isDayValidated, streakStore.displayValidatedDays > 0 {
                     HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.caption.weight(.bold))
-                        Text("\(streakStore.displayStreak)")
+                        Text("\(streakStore.displayValidatedDays)")
                             .font(.caption.weight(.bold))
                             .monospacedDigit()
                     }
@@ -497,17 +555,42 @@ struct ProcessEveningCheckInEntryButton: View {
             .background(entryBackground)
         }
         .buttonStyle(ProcessGlassPressStyle())
-        .accessibilityLabel(eveningStore.hasSubmittedToday ? "Bilan du soir validé" : "Ouvrir le bilan du soir")
+        .accessibilityLabel(isDayValidated ? "Jour validé" : "Ouvrir le bilan du soir")
+    }
+
+    private var entrySymbol: String {
+        if isDayValidated { return "checkmark.seal.fill" }
+        if hasSubmittedToday { return "exclamationmark.circle.fill" }
+        return "moon.stars.fill"
+    }
+
+    private var entrySymbolColor: Color {
+        if isDayValidated {
+            return Color(red: 0.35, green: 0.78, blue: 0.45)
+        }
+        if hasSubmittedToday {
+            return Color(red: 0.92, green: 0.58, blue: 0.28)
+        }
+        return theme.onboardingAccent
+    }
+
+    private var entryTitle: String {
+        if isDayValidated { return "Jour validé" }
+        if hasSubmittedToday { return "Bilan enregistré" }
+        return "Bilan du soir"
     }
 
     private var subtitle: String {
-        if eveningStore.hasSubmittedToday {
+        if isDayValidated {
             return "Tu peux modifier tes réponses si besoin."
         }
-        if isEveningWindow {
-            return "Eau, repas debloat, circuit posture."
+        if hasSubmittedToday {
+            return "Eau + repas debloat obligatoires. Cardio min. 3/semaine — 3 j sans cardio = blocage."
         }
-        return "3 questions pour valider ta streak."
+        if isEveningWindow {
+            return "Eau · repas Na/K/Mg · cardio (marche, vélo, HIIT…)."
+        }
+        return "Protocole debloat : hydratation + alimentation obligatoires."
     }
 
     private var isEveningWindow: Bool {

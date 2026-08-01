@@ -18,6 +18,7 @@ struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var isCoachPresented = false
     @State private var requiredEveningCheckIn: RequiredEveningCheckInTarget?
+    @State private var lastPresentedEveningCheckInDayKey: String?
     @State private var tabBeforeCoach: ProcessMainSection = .plan
     @State private var coachViewModel = CoachChatViewModel()
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
@@ -39,15 +40,9 @@ struct MainAppView: View {
                 }
             }
 
-            Group {
-                if #available(iOS 26.0, *) {
-                    modernTabShell
-                } else {
-                    legacyTabShell
-                }
-            }
-            .background(Color.clear)
-            .processClearUIKitHostingBackground()
+            igTabShell
+                .background(Color.clear)
+                .processClearUIKitHostingBackground()
         }
         .animation(.easeInOut(duration: 0.22), value: screenFlash.isActive)
         .fullScreenCover(isPresented: $isCoachPresented) {
@@ -62,12 +57,17 @@ struct MainAppView: View {
                 .processCoachZoomTransition(namespace: coachZoomNamespace)
             }
         }
-        .sheet(item: $requiredEveningCheckIn, onDismiss: evaluateRequiredEveningCheckIn) { target in
+        .sheet(item: $requiredEveningCheckIn, onDismiss: handleEveningCheckInDismiss) { target in
             ProcessEveningCheckInSheet(
                 targetDate: target.date,
                 isRequired: true,
-                onCompleted: nil
+                onCompleted: {
+                    lastPresentedEveningCheckInDayKey = nil
+                }
             )
+            .onAppear {
+                lastPresentedEveningCheckInDayKey = target.id
+            }
         }
         .onAppear {
             _ = UserSessionCoordinator.shared
@@ -113,70 +113,67 @@ struct MainAppView: View {
         }
         .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
             guard should else { return }
+            planBridge.shouldOpenEveningCheckIn = false
             withAnimation(ProcessGlass.spring) {
-                selectedSection = .profile
+                selectedSection = .plan
             }
-            requiredEveningCheckIn = nil
+            evaluateRequiredEveningCheckIn()
         }
     }
 
-    // MARK: - iOS 26 native liquid glass
+    // MARK: - Instagram-style floating tab bar
 
-    @available(iOS 26.0, *)
-    private var modernTabShell: some View {
-        TabView(selection: $selectedSection) {
-            Tab("", systemImage: ProcessMainSection.plan.icon, value: ProcessMainSection.plan) {
-                planTabRoot
-            }
-            .accessibilityLabel(ProcessMainSection.plan.label)
-
-            Tab("", systemImage: ProcessMainSection.profile.icon, value: ProcessMainSection.profile) {
-                profileTabRoot
-            }
-            .accessibilityLabel(ProcessMainSection.profile.label)
-        }
-        .background(Color.clear)
-        .tabBarMinimizeBehavior(.onScrollDown)
-        .tabViewBottomAccessory {
-            ProcessCoachTabAccessory(namespace: coachZoomNamespace, onTap: openCoachFromAccessory)
-        }
-        .tint(theme.primaryText)
-    }
-
-    // MARK: - iOS 18–25 fallback
-
-    private var legacyTabShell: some View {
-        ProcessBevelLegacyTabShell(
+    private var igTabShell: some View {
+        ProcessIGTabShell(
             selectedSection: $selectedSection,
             coachZoomNamespace: coachZoomNamespace,
             onPresentCoach: openCoachFromAccessory
         ) {
-            legacyTabContent
-                .coordinateSpace(name: "processMainScroll")
-        }
-    }
+            if #available(iOS 26.0, *) {
+                TabView(selection: $selectedSection) {
+                    Tab("", systemImage: ProcessMainSection.plan.icon, value: ProcessMainSection.plan) {
+                        planTabRoot
+                            .processHideNativeTabBar()
+                    }
+                    .accessibilityLabel(ProcessMainSection.plan.label)
 
-    @ViewBuilder
-    private var legacyTabContent: some View {
-        switch selectedSection {
-        case .plan:
-            planTabRoot
-        case .profile:
-            profileTabRoot
-        case .coach:
-            planTabRoot
+                    Tab("", systemImage: ProcessMainSection.profile.icon, value: ProcessMainSection.profile) {
+                        profileTabRoot
+                            .processHideNativeTabBar()
+                    }
+                    .accessibilityLabel(ProcessMainSection.profile.label)
+                }
+                .processHideNativeTabBar()
+                .background(Color.clear)
+                .tint(theme.primaryText)
+            } else {
+                Group {
+                    switch selectedSection {
+                    case .plan, .coach:
+                        planTabRoot
+                    case .profile:
+                        profileTabRoot
+                    }
+                }
+            }
         }
     }
 
     // MARK: - Tab roots
 
     private var planTabRoot: some View {
-        PlanDashboardView(selectedSection: $selectedSection)
+        PlanDashboardView(
+            selectedSection: $selectedSection,
+            isTabActive: selectedSection == .plan
+        )
             .background(Color.clear)
     }
 
     private var profileTabRoot: some View {
-        ProcessProfileView(selectedSection: $selectedSection)
+        ProcessProfileView(
+            selectedSection: $selectedSection,
+            isTabActive: selectedSection == .profile
+        )
             .background(Color.clear)
     }
 
@@ -245,6 +242,19 @@ struct MainAppView: View {
         presentCoachSurface()
     }
 
+    private func handleEveningCheckInDismiss() {
+        let dayKey = lastPresentedEveningCheckInDayKey ?? requiredEveningCheckIn?.id
+        lastPresentedEveningCheckInDayKey = nil
+        requiredEveningCheckIn = nil
+
+        guard let dayKey,
+              !ProcessEveningCheckInStore.shared.submittedDayKeys.contains(dayKey) else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            evaluateRequiredEveningCheckIn()
+        }
+    }
+
     private func evaluateRequiredEveningCheckIn() {
         guard session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat else {
             requiredEveningCheckIn = nil
@@ -260,6 +270,7 @@ struct MainAppView: View {
         }
     }
 
+    /// Un seul rappel soft : hier. Pas de rattrapage forcé des jours plus anciens.
     private func firstRequiredEveningCheckInTarget(
         now: Date = Date(),
         calendar: Calendar = .current
@@ -269,23 +280,14 @@ struct MainAppView: View {
         ProcessActivityStatusStore.shared.reload()
 
         guard let plan = WelcomePlanStore.shared.plan else { return nil }
-
         let today = calendar.startOfDay(for: now)
-        let start = calendar.date(byAdding: .day, value: -7, to: today) ?? today
-        let candidateDates = (0...7).compactMap {
-            calendar.date(byAdding: .day, value: $0, to: start)
-        }.filter { date in
-            date < today
-        }
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return nil }
 
-        for date in candidateDates {
-            guard OriginPlanPresenter.programDay(in: plan, for: date) != nil else { continue }
-            guard ProcessActivityStatusStore.shared.status(for: date, calendar: calendar) == .active else { continue }
-            guard !eveningStore.hasSubmitted(on: date) else { continue }
-            return RequiredEveningCheckInTarget(date: date, calendar: calendar)
-        }
-
-        return nil
+        let target = RequiredEveningCheckInTarget(date: yesterday, calendar: calendar)
+        guard OriginPlanPresenter.programDay(in: plan, for: yesterday) != nil else { return nil }
+        guard ProcessActivityStatusStore.shared.status(for: yesterday, calendar: calendar) == .active else { return nil }
+        guard !eveningStore.hasSubmitted(on: yesterday) else { return nil }
+        return target
     }
 
     private func dismissCoachPresentation() {

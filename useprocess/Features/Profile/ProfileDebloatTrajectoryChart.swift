@@ -78,6 +78,7 @@ struct ProfileDebloatTrajectoryChart: View {
             } else {
                 ProfileDebloatTrajectoryChartRenderer(points: points, theme: theme)
                     .frame(height: ProfileMetricChartLayout.chartHeight)
+                    .drawingGroup()
             }
 
             legendRow
@@ -136,7 +137,7 @@ private struct ProfileDebloatTrajectoryChartRenderer: View {
     let points: [DebloatTrajectoryPoint]
     let theme: AppTheme
 
-    @State private var drawProgress: CGFloat = 0
+    @State private var drawProgress: CGFloat = ProfileChartAnimationGate.hasPlayedProfileIntro ? 1 : 0
 
     private var values: [Double] { points.map(\.compositeScore) }
     private var valueRange: (min: Double, max: Double) {
@@ -153,6 +154,7 @@ private struct ProfileDebloatTrajectoryChartRenderer: View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height - 20
+            let cgPoints = normalizedChartPoints(width: width, height: height)
 
             ZStack(alignment: .topLeading) {
                 ProfileMetricChartGrid(lineCount: 4, width: width, height: height, theme: theme)
@@ -175,7 +177,6 @@ private struct ProfileDebloatTrajectoryChartRenderer: View {
                     .frame(width: width, height: height)
 
                 ForEach(Array(points.enumerated()), id: \.element.id) { index, point in
-                    let cgPoints = normalizedChartPoints(width: width, height: height)
                     if cgPoints.indices.contains(index) {
                         ZStack {
                             Circle()
@@ -193,12 +194,18 @@ private struct ProfileDebloatTrajectoryChartRenderer: View {
                     }
                 }
             }
-            .onAppear {
-                withAnimation(.easeOut(duration: 0.9)) {
-                    drawProgress = 1
-                }
-            }
+            .onAppear(perform: playIntroIfNeeded)
         }
+    }
+
+    private func playIntroIfNeeded() {
+        guard !ProfileChartAnimationGate.hasPlayedProfileIntro else {
+            drawProgress = 1
+            return
+        }
+        drawProgress = 0
+        withAnimation(.easeOut(duration: 0.9)) { drawProgress = 1 }
+        ProfileChartAnimationGate.hasPlayedProfileIntro = true
     }
 
     private func normalizedChartPoints(width: CGFloat, height: CGFloat) -> [CGPoint] {

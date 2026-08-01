@@ -689,6 +689,17 @@ class OnboardingViewModel: ObservableObject {
         saveProgress()
     }
 
+    /// Remonte le fil de discussion à partir de `questionID` (inclu).
+    func rewindProfileChat(from questionID: String, orderedQuestionIDs: [String]) {
+        guard let index = orderedQuestionIDs.firstIndex(of: questionID) else { return }
+        let toRemove = Set(orderedQuestionIDs[index...])
+        completedProfileChatQuestionIDs.subtract(toRemove)
+        saveProgress()
+    }
+
+    /// Handler retour discussion — `true` si le back a été consommé dans le chat.
+    var profileChatBackHandler: (() -> Bool)?
+
     private func hasReachedFaceScanStep(savedStep: Int, visited: [Int]) -> Bool {
         if visited.contains(OnboardingStep.faceAnalysis.rawValue) {
             return true

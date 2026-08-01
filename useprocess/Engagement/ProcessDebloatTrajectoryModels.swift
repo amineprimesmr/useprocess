@@ -13,9 +13,9 @@ enum DebloatDayVerdict: String, Codable, Equatable, CaseIterable {
 
     var countsForStreak: Bool {
         switch self {
-        case .excellent, .onTrack, .partial:
+        case .excellent, .onTrack:
             return true
-        case .regression, .missed, .paused:
+        case .partial, .regression, .missed, .paused:
             return false
         }
     }
@@ -81,7 +81,7 @@ struct DebloatDayRecord: Codable, Equatable, Identifiable {
     var checkInSubmitted: Bool
     var water: Bool?
     var debloatMeal: Bool?
-    var postureCircuit: Bool?
+    var cardio: Bool?
     var behaviorScore: Double
     var scanId: String?
     var relativeFaceScore: Int?
@@ -97,19 +97,110 @@ struct DebloatDayRecord: Codable, Equatable, Identifiable {
     var id: String { dayKey }
 
     var yesCount: Int {
-        [water, debloatMeal, postureCircuit].filter { $0 == true }.count
+        [water, debloatMeal, cardio].filter { $0 == true }.count
+    }
+
+    func countsAsValidatedDay(consecutiveCardioMissesBefore: Int) -> Bool {
+        ProcessDebloatTrajectoryEngine.countsAsValidatedDay(
+            record: self,
+            consecutiveCardioMissesBefore: consecutiveCardioMissesBefore
+        )
     }
 
     var hasScan: Bool { scanId != nil }
+
+    enum CodingKeys: String, CodingKey {
+        case dayKey, checkInSubmitted, water, debloatMeal, cardio, postureCircuit
+        case behaviorScore, scanId, relativeFaceScore, puffinessDelta, scanScore
+        case compositeScore, verdict, streakAfterDay, graceUsed, aiSummary, trajectoryTrend
+    }
+
+    init(
+        dayKey: String,
+        checkInSubmitted: Bool,
+        water: Bool?,
+        debloatMeal: Bool?,
+        cardio: Bool?,
+        behaviorScore: Double,
+        scanId: String?,
+        relativeFaceScore: Int?,
+        puffinessDelta: Int?,
+        scanScore: Double?,
+        compositeScore: Double,
+        verdict: DebloatDayVerdict,
+        streakAfterDay: Int,
+        graceUsed: Bool,
+        aiSummary: String?,
+        trajectoryTrend: TrajectoryTrend
+    ) {
+        self.dayKey = dayKey
+        self.checkInSubmitted = checkInSubmitted
+        self.water = water
+        self.debloatMeal = debloatMeal
+        self.cardio = cardio
+        self.behaviorScore = behaviorScore
+        self.scanId = scanId
+        self.relativeFaceScore = relativeFaceScore
+        self.puffinessDelta = puffinessDelta
+        self.scanScore = scanScore
+        self.compositeScore = compositeScore
+        self.verdict = verdict
+        self.streakAfterDay = streakAfterDay
+        self.graceUsed = graceUsed
+        self.aiSummary = aiSummary
+        self.trajectoryTrend = trajectoryTrend
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        dayKey = try container.decode(String.self, forKey: .dayKey)
+        checkInSubmitted = try container.decode(Bool.self, forKey: .checkInSubmitted)
+        water = try container.decodeIfPresent(Bool.self, forKey: .water)
+        debloatMeal = try container.decodeIfPresent(Bool.self, forKey: .debloatMeal)
+        cardio = try container.decodeIfPresent(Bool.self, forKey: .cardio)
+            ?? container.decodeIfPresent(Bool.self, forKey: .postureCircuit)
+        behaviorScore = try container.decode(Double.self, forKey: .behaviorScore)
+        scanId = try container.decodeIfPresent(String.self, forKey: .scanId)
+        relativeFaceScore = try container.decodeIfPresent(Int.self, forKey: .relativeFaceScore)
+        puffinessDelta = try container.decodeIfPresent(Int.self, forKey: .puffinessDelta)
+        scanScore = try container.decodeIfPresent(Double.self, forKey: .scanScore)
+        compositeScore = try container.decode(Double.self, forKey: .compositeScore)
+        verdict = try container.decode(DebloatDayVerdict.self, forKey: .verdict)
+        streakAfterDay = try container.decode(Int.self, forKey: .streakAfterDay)
+        graceUsed = try container.decode(Bool.self, forKey: .graceUsed)
+        aiSummary = try container.decodeIfPresent(String.self, forKey: .aiSummary)
+        trajectoryTrend = try container.decode(TrajectoryTrend.self, forKey: .trajectoryTrend)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(dayKey, forKey: .dayKey)
+        try container.encode(checkInSubmitted, forKey: .checkInSubmitted)
+        try container.encodeIfPresent(water, forKey: .water)
+        try container.encodeIfPresent(debloatMeal, forKey: .debloatMeal)
+        try container.encodeIfPresent(cardio, forKey: .cardio)
+        try container.encode(behaviorScore, forKey: .behaviorScore)
+        try container.encodeIfPresent(scanId, forKey: .scanId)
+        try container.encodeIfPresent(relativeFaceScore, forKey: .relativeFaceScore)
+        try container.encodeIfPresent(puffinessDelta, forKey: .puffinessDelta)
+        try container.encodeIfPresent(scanScore, forKey: .scanScore)
+        try container.encode(compositeScore, forKey: .compositeScore)
+        try container.encode(verdict, forKey: .verdict)
+        try container.encode(streakAfterDay, forKey: .streakAfterDay)
+        try container.encode(graceUsed, forKey: .graceUsed)
+        try container.encodeIfPresent(aiSummary, forKey: .aiSummary)
+        try container.encode(trajectoryTrend, forKey: .trajectoryTrend)
+    }
 }
 
 struct ProcessDebloatTrajectoryState: Codable, Equatable {
     var recordsByDay: [String: DebloatDayRecord] = [:]
     var graceUsedDayKeys: Set<String> = []
     var consecutiveMisses: Int = 0
+    var consecutiveCardioMisses: Int = 0
     var longestStreak: Int = 0
     var debloatJourneyConversationId: String?
-    var schemaVersion: Int = 1
+    var schemaVersion: Int = 3
 }
 
 // MARK: - Snapshot UI
@@ -152,10 +243,10 @@ struct DebloatTrajectorySnapshot: Equatable {
     }
 
     var streakTitle: String {
-        switch currentStreak {
-        case 0: return "Série"
-        case 1: return "1 jour de série"
-        default: return "\(currentStreak) jours de série"
+        switch totalValidatedDays {
+        case 0: return "Jours validés"
+        case 1: return "1 jour validé"
+        default: return "\(totalValidatedDays) jours validés"
         }
     }
 
@@ -173,10 +264,10 @@ struct DebloatTrajectorySnapshot: Equatable {
         case .regression:
             return "Régression détectée\(nameSuffix) — le coach t’aide à recaler."
         case .missed:
-            return "Bilan manqué — reviens ce soir pour relancer ta série."
+            return "Bilan manqué — valide ce soir pour continuer."
         case .paused, .none:
-            if currentStreak >= 7 { return "Streak solide\(nameSuffix) — ne lâche pas." }
-            if currentStreak > 0 { return "Continue comme ça\(nameSuffix) !" }
+            if totalValidatedDays >= 7 { return "Régularité solide\(nameSuffix) — ne lâche pas." }
+            if totalValidatedDays > 0 { return "Continue comme ça\(nameSuffix) !" }
             return "Complète ton bilan du soir pour lancer ta trajectoire\(nameSuffix)."
         }
     }

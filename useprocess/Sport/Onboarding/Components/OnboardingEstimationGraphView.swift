@@ -106,9 +106,9 @@ struct OnboardingEstimationGraphView: View {
 
             HStack(spacing: 4) {
                 Text("Dans")
-                Text("\(snapshot.countdownWeeks)")
+                Text("\(snapshot.countdownDays)")
                     .fontWeight(.bold)
-                Text(snapshot.countdownWeeks <= 1 ? "semaine" : "semaines")
+                Text(snapshot.countdownDays <= 1 ? "jour" : "jours")
             }
             .font(.system(size: 14, weight: .medium))
             .foregroundStyle(OnboardingTheme.bodyText)

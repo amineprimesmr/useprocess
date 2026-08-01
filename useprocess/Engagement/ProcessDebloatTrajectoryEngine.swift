@@ -6,7 +6,7 @@ enum ProcessDebloatTrajectoryEngine {
     static let behaviorWeights: [String: Double] = [
         EveningCheckInQuestionID.water: 0.35,
         EveningCheckInQuestionID.debloatMeal: 0.40,
-        EveningCheckInQuestionID.postureCircuit: 0.25
+        EveningCheckInQuestionID.cardio: 0.25
     ]
 
     // MARK: - Scores
@@ -19,6 +19,16 @@ enum ProcessDebloatTrajectoryEngine {
 
     static func yesCount(from answers: [String: String]) -> Int {
         EveningCheckInQuestionID.all.filter { answers[$0] == "yes" }.count
+    }
+
+    static func countsAsValidatedDay(
+        record: DebloatDayRecord,
+        consecutiveCardioMissesBefore: Int
+    ) -> Bool {
+        ProcessDebloatValidation.countsAsValidatedDay(
+            record: record,
+            consecutiveCardioMissesBefore: consecutiveCardioMissesBefore
+        )
     }
 
     static func scanScore(
@@ -54,30 +64,45 @@ enum ProcessDebloatTrajectoryEngine {
     // MARK: - Verdict
 
     static func verdict(
-        behaviorScore: Double,
-        yesCount: Int,
+        record: DebloatDayRecord,
+        consecutiveCardioMissesBefore: Int,
         scanScore: Double?,
-        isPaused: Bool,
-        checkInSubmitted: Bool
+        isPaused: Bool
     ) -> DebloatDayVerdict {
         if isPaused { return .paused }
-        if !checkInSubmitted { return .missed }
+        if !record.checkInSubmitted { return .missed }
 
         let effectiveScan = scanScore ?? 0.5
+        let validated = countsAsValidatedDay(
+            record: record,
+            consecutiveCardioMissesBefore: consecutiveCardioMissesBefore
+        )
 
-        if yesCount == 0 {
-            return .regression
-        }
-        if behaviorScore >= 0.9 && effectiveScan >= 0.55 {
-            return .excellent
-        }
-        if behaviorScore >= 0.55 {
-            return .onTrack
-        }
-        if yesCount >= 1 {
+        if !validated {
+            if record.water != true || record.debloatMeal != true {
+                return .regression
+            }
+            if record.cardio != true,
+               consecutiveCardioMissesBefore + 1 >= ProcessDebloatValidation.consecutiveCardioMissLimit {
+                return .regression
+            }
             return .partial
         }
-        return .regression
+
+        if record.water == true, record.debloatMeal == true, record.cardio == true,
+           behaviorScore(from: record) >= 0.9, effectiveScan >= 0.55 {
+            return .excellent
+        }
+
+        return .onTrack
+    }
+
+    private static func behaviorScore(from record: DebloatDayRecord) -> Double {
+        var answers: [String: String] = [:]
+        if let water = record.water { answers[EveningCheckInQuestionID.water] = water ? "yes" : "no" }
+        if let meal = record.debloatMeal { answers[EveningCheckInQuestionID.debloatMeal] = meal ? "yes" : "no" }
+        if let cardio = record.cardio { answers[EveningCheckInQuestionID.cardio] = cardio ? "yes" : "no" }
+        return behaviorScore(from: answers)
     }
 
     // MARK: - Streak
@@ -107,8 +132,11 @@ enum ProcessDebloatTrajectoryEngine {
         case .paused:
             return (previousStreak, 0, false)
 
-        case .excellent, .onTrack, .partial:
+        case .excellent, .onTrack:
             return (previousStreak + 1, 0, false)
+
+        case .partial:
+            return (previousStreak, 0, false)
 
         case .regression:
             return (max(0, previousStreak - 3), 0, false)
@@ -123,6 +151,15 @@ enum ProcessDebloatTrajectoryEngine {
             }
             return (max(0, previousStreak - 5), misses, false)
         }
+    }
+
+    static func applyCardioMissTransition(
+        previousMisses: Int,
+        record: DebloatDayRecord
+    ) -> Int {
+        guard record.checkInSubmitted else { return previousMisses }
+        if record.cardio == true { return 0 }
+        return previousMisses + 1
     }
 
     static func currentStreak(from records: [DebloatDayRecord], today: Date, calendar: Calendar = .current) -> Int {
@@ -161,27 +198,42 @@ enum ProcessDebloatTrajectoryEngine {
     }
 
     static func aiSummary(
-        verdict: DebloatDayVerdict,
-        yesCount: Int,
+        record: DebloatDayRecord,
+        consecutiveCardioMissesBefore: Int,
         compositeScore: Double,
         puffinessDelta: Int?
     ) -> String {
-        switch verdict {
+        if let failure = ProcessDebloatValidation.failure(
+            for: record,
+            consecutiveCardioMissesBefore: consecutiveCardioMissesBefore
+        ) {
+            switch failure {
+            case .notSubmitted:
+                break
+            default:
+                return ProcessDebloatValidation.failureMessage(failure)
+            }
+        }
+
+        switch record.verdict {
         case .excellent:
             if let delta = puffinessDelta, delta <= -4 {
-                return "Journée excellente — visage moins gonflé, protocole bien exécuté."
+                return "Protocole debloat complet — visage moins gonflé, électrolytes et cardio OK."
             }
-            return "Journée excellente — protocole debloat respecté à \(Int(compositeScore))%."
+            return "Protocole debloat complet — hydratation, repas Na/K/Mg et cardio validés (\(Int(compositeScore))%)."
         case .onTrack:
-            return "Sur la bonne voie — \(yesCount)/3 leviers validés."
+            if record.cardio == true {
+                return "Journée validée — eau, alimentation debloat et cardio OK."
+            }
+            return "Journée validée — eau et repas debloat OK. Pense au cardio (min. 3/sem)."
         case .partial:
-            return "Journée partielle — \(yesCount)/3. Serre l'hydratation ou le repas debloat demain."
+            return "Journée partielle — hydratation et repas debloat requis pour valider."
         case .regression:
-            return "Régression — 0 ou 1 levier sur 3. Le visage peut stagner 2–4 jours avant la balance."
+            return "Régression — protocole debloat incomplet (eau + repas + cardio)."
         case .missed:
             return "Bilan non validé — ta trajectoire est en pause ce jour-là."
         case .paused:
-            return "Jour en pause — streak gelée."
+            return "Jour en pause — compteur gelé."
         }
     }
 
@@ -195,7 +247,11 @@ enum ProcessDebloatTrajectoryEngine {
     }
 
     static func boolAnswer(_ answers: [String: String], key: String) -> Bool? {
-        guard let raw = answers[key] else { return nil }
-        return raw == "yes"
+        if let raw = answers[key] { return raw == "yes" }
+        if key == EveningCheckInQuestionID.cardio,
+           let legacy = answers["postureCircuit"] {
+            return legacy == "yes"
+        }
+        return nil
     }
 }

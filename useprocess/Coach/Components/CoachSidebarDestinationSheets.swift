@@ -223,13 +223,13 @@ struct CoachTrackingSheet: View {
 
     private var streakSummaryCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Streak actuel")
+            Text("Jours validés")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
                 .textCase(.uppercase)
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("\(snapshot.currentStreak)")
+                Text("\(snapshot.totalCompletedDays)")
                     .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundStyle(theme.primaryText)
                 Text("jours")
@@ -237,7 +237,7 @@ struct CoachTrackingSheet: View {
                     .foregroundStyle(theme.secondaryText)
             }
 
-            Text("Record : \(snapshot.longestStreak) jours")
+            Text(snapshot.totalCompletedDays <= 1 ? "Journée cumulée" : "Total cumulé")
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
         }

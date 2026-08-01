@@ -55,9 +55,6 @@ struct AppShellView: View {
         .task(id: session.hasCompletedWelcomePlanChat) {
             guard session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat else { return }
             WelcomePlanStore.shared.reloadForCurrentUser()
-            if let plan = WelcomePlanStore.shared.plan {
-                await OriginPlanNotificationService.scheduleMorningBrief(plan: plan)
-            }
             await CoachMemorySummarizer.refreshIfNeeded(
                 profile: UnifiedProfileService.shared.currentProfile,
                 force: false
@@ -67,8 +64,7 @@ struct AppShellView: View {
             CoachMyMemoryStore.shared.reload()
             CoachProcessFilesStore.shared.reload()
             CoachIntelligenceSettingsStore.shared.syncSubscriberCreditsIfNeeded()
-            await CoachCheckInScheduler.rescheduleAll()
-            await CoachDailyRhythmService.reschedule()
+            await CoachDailyRhythmService.rescheduleAll()
         }
         .overlay {
             if session.isAccountWipeInProgress {

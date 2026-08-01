@@ -386,6 +386,30 @@ enum OriginPlanPresenter {
         return .outsidePlan(date: dayStart)
     }
 
+    /// Date d'accueil à afficher : aujourd'hui si couvert, sinon dernier (ou premier) jour du plan.
+    static func preferredHomeDate(in plan: FaceOriginPlan, now: Date = Date()) -> Date {
+        let today = journalDayStart(now)
+        if programDay(in: plan, for: today) != nil {
+            return today
+        }
+
+        guard let start = plan.calendar.startedAt, plan.calendar.totalDays > 0 else {
+            return today
+        }
+
+        let startDay = journalDayStart(start)
+        let lastOffset = plan.calendar.totalDays - 1
+        let lastDay = Calendar.current.date(byAdding: .day, value: lastOffset, to: startDay) ?? startDay
+
+        if today > lastDay {
+            return lastDay
+        }
+        if today < startDay {
+            return startDay
+        }
+        return today
+    }
+
     /// Bandeau journal : 7 jours avant → 7 jours après aujourd'hui, limité aux jours du protocole.
     static func journalStripDates(in plan: FaceOriginPlan, relativeTo today: Date = Date()) -> [Date] {
         journalStripDates(relativeTo: today).filter { programDay(in: plan, for: $0) != nil }

@@ -59,15 +59,10 @@ enum PlanProtocolCarouselBuilder {
 
     static let compactPostureItemLimit = 4
 
-    static func compactPostureItems(
-        from plan: FaceOriginPlan,
-        stepsToday: Int
-    ) -> [PlanProtocolCarouselItem] {
-        let hasWalking = PlanPostureCircuitContent.hasWalkingTarget(for: plan)
-        let lineLimit = hasWalking ? compactPostureItemLimit - 1 : compactPostureItemLimit
-        var items = PlanPostureCircuitContent.compactLines(
+    static func compactPostureItems(from plan: FaceOriginPlan) -> [PlanProtocolCarouselItem] {
+        PlanPostureCircuitContent.compactLines(
             for: plan,
-            limit: lineLimit,
+            limit: compactPostureItemLimit,
             includeWalking: false
         )
         .enumerated()
@@ -79,16 +74,6 @@ enum PlanProtocolCarouselBuilder {
                 category: "Circuit posture"
             )
         }
-
-        if hasWalking {
-            items.append(walkingStepsItem(
-                current: stepsToday,
-                target: PlanPostureCircuitContent.dailyStepTarget(for: plan),
-                plan: plan
-            ))
-        }
-
-        return items
     }
 
     static func trainingDayCarouselItems(
@@ -96,7 +81,7 @@ enum PlanProtocolCarouselBuilder {
         plan: FaceOriginPlan,
         stepsToday: Int
     ) -> [PlanProtocolCarouselItem] {
-        let items = trainingItems(from: training) + compactPostureItems(from: plan, stepsToday: stepsToday)
+        let items = trainingItems(from: training) + compactPostureItems(from: plan)
         return items + [seeAllTrainingCard(training: training, plan: plan, previewItemCount: items.count)]
     }
 

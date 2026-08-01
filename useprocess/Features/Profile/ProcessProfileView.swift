@@ -1,21 +1,41 @@
 import AuthenticationServices
 import SwiftUI
 
+private struct ProfileMetricPresentation: Equatable, Identifiable {
+    let metric: ProfileChartMetric
+    let points: [ProfileAnalyticsPoint]
+    let latestValue: Double?
+    let deltaVsPrevious: Double?
+
+    var id: ProfileChartMetric { metric }
+}
+
+
 /// Profil — scans visage, métriques et identité.
 struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
+    var isTabActive: Bool = true
 
     @Environment(\.appTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var profileService: UnifiedProfileService
-    @EnvironmentObject private var healthManager: HealthManager
     @Bindable private var faceHistoryStore = FaceScanHistoryStore.shared
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @State private var profileStore = SocialProfileStore.shared
+
+    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
 
     @State private var selectedAnalysisScan: FaceScanResult?
 
     @State private var chartHistories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
     @State private var selectedProfileDate = Calendar.current.startOfDay(for: Date())
+    @State private var metricPresentations: [ProfileMetricPresentation] = []
+    @State private var isReloadingCharts = false
+    @State private var chartDataRevision = 0
+
+    private var isHeroPlaybackActive: Bool {
+        isTabActive && scenePhase == .active
+    }
 
     private var resolvedProfile: SocialProfile {
         if let profile = profileStore.profile {
@@ -30,10 +50,13 @@ struct ProcessProfileView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
+                    ProfileStreakAchievementsSection(selectedDate: $selectedProfileDate)
+
                     ProfileScanEvolutionHero(
                         historyStore: faceHistoryStore,
-                        selectedDate: selectedProfileDate,
+                        selectedDate: $selectedProfileDate,
+                        isPlaybackActive: isHeroPlaybackActive,
                         onOpenScan: { selectedAnalysisScan = $0 }
                     )
 
@@ -41,11 +64,12 @@ struct ProcessProfileView: View {
                         .frame(height: 0)
                         .id(ProfileStatisticsAnchor.id)
 
-                    ProfileWeightStatisticsSection(
-                        history: history(for: .weight),
-                        latestValue: latestValue(for: .weight),
-                        deltaVsPrevious: deltaVsPrevious(for: .weight)
+                    ProfileDebloatTrajectoryChart(
+                        points: debloatChartPoints,
+                        trend: debloatChartTrend,
+                        velocityLabel: debloatVelocityLabel
                     )
+                    .padding(.horizontal, ProfileTheme.horizontalPadding)
                     .padding(.top, 14)
                     .padding(.bottom, 20)
 
@@ -57,6 +81,7 @@ struct ProcessProfileView: View {
             .scrollClipDisabled()
             .ignoresSafeArea(edges: .top)
             .scrollIndicators(.hidden)
+            .processAdoptForIGTabBar()
             .processTransparentScrollSurface()
             .simultaneousGesture(profileDaySwipeGesture)
             .onAppear {
@@ -87,12 +112,46 @@ struct ProcessProfileView: View {
         }
         .onAppear {
             ProcessPerformanceTrace.endProfileOpen()
-            Task { await reloadChartHistories() }
+            ProcessDebloatTrajectoryStore.shared.reload()
+            ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
+            ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
+            ProcessStreakStore.shared.sync(from: WelcomePlanStore.shared.plan)
+            rebuildPresentations()
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             profileStore.bind(unified: profileService.currentProfile)
         }
-        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: selectedProfileDate)
+        .onChange(of: chartDataRevision) { _, _ in
+            rebuildPresentations()
+        }
+        .onChange(of: selectedProfileDate) { _, _ in
+            rebuildPresentations()
+        }
+        .onChange(of: faceHistoryStore.history.count) { _, _ in
+            rebuildPresentations()
+        }
+    }
+
+    private var debloatChartPoints: [DebloatTrajectoryPoint] {
+        let calendar = Calendar.current
+        let dayEnd = calendar.date(
+            byAdding: .day,
+            value: 1,
+            to: calendar.startOfDay(for: selectedProfileDate)
+        ) ?? selectedProfileDate
+        return trajectoryStore.snapshot.chartPoints.filter { $0.date < dayEnd }
+    }
+
+    private var debloatChartTrend: TrajectoryTrend {
+        ProcessDebloatTrajectoryEngine.trajectoryTrend(for: debloatChartPoints)
+    }
+
+    private var debloatVelocityLabel: String {
+        guard debloatChartPoints.count >= 3 else { return TrajectoryTrend.unknown.label }
+        let slope = ProcessDebloatTrajectoryEngine.velocitySlope(for: debloatChartPoints)
+        if slope > 2.5 { return TrajectoryTrend.accelerating.label }
+        if slope < -2.5 { return TrajectoryTrend.regressing.label }
+        return TrajectoryTrend.stable.label
     }
 
     @ViewBuilder
@@ -117,14 +176,15 @@ struct ProcessProfileView: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(theme.secondaryText)
 
-            VStack(spacing: 16) {
-                ForEach(ProfileChartMetric.profileDisplayOrder) { metric in
+            LazyVStack(spacing: 16) {
+                ForEach(metricPresentations) { presentation in
                     ProfileMetricChartSection(
-                        metric: metric,
-                        points: chartPoints(for: metric),
-                        latestValue: latestValue(for: metric),
-                        deltaVsPrevious: deltaVsPrevious(for: metric)
+                        metric: presentation.metric,
+                        points: presentation.points,
+                        latestValue: presentation.latestValue,
+                        deltaVsPrevious: presentation.deltaVsPrevious
                     )
+                    .equatable()
                 }
             }
         }
@@ -140,6 +200,18 @@ struct ProcessProfileView: View {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
                 proxy.scrollTo(ProfileStatisticsAnchor.id, anchor: .top)
             }
+        }
+    }
+
+    private func rebuildPresentations() {
+        metricPresentations = ProfileChartMetric.profileDisplayOrder.map { metric in
+            let points = chartPoints(for: metric)
+            return ProfileMetricPresentation(
+                metric: metric,
+                points: points,
+                latestValue: points.last?.value,
+                deltaVsPrevious: deltaVsPrevious(for: metric)
+            )
         }
     }
 
@@ -166,6 +238,7 @@ struct ProcessProfileView: View {
         let calendar = Calendar.current
         let selectedDay = calendar.startOfDay(for: selectedProfileDate)
         let isToday = calendar.isDateInToday(selectedDay)
+        let healthManager = HealthManager.shared
 
         switch metric {
         case .weight:
@@ -190,10 +263,8 @@ struct ProcessProfileView: View {
             }
 
         case .retention, .recovery, .cortisol, .definition, .skin:
-            if let latest = faceHistoryStore.history
-                .filter({ $0.createdAt < calendar.date(byAdding: .day, value: 1, to: selectedDay) ?? selectedDay })
-                .sorted(by: { $0.createdAt > $1.createdAt })
-                .first,
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: selectedDay) ?? selectedDay
+            if let latest = faceHistoryStore.history.first(where: { $0.createdAt < dayEnd }),
                let kind = metric.faceScanKind {
                 let value = Double(FaceScanIndicators.displayPercent(for: kind, result: latest))
                 if value > 0 {
@@ -222,10 +293,6 @@ struct ProcessProfileView: View {
         }
 
         return []
-    }
-
-    private func latestValue(for metric: ProfileChartMetric) -> Double? {
-        chartPoints(for: metric).last?.value
     }
 
     private func deltaVsPrevious(for metric: ProfileChartMetric) -> Double? {
@@ -263,19 +330,15 @@ struct ProcessProfileView: View {
     }
 
     private func reloadChartHistories() async {
+        guard !isReloadingCharts else { return }
+        isReloadingCharts = true
+        defer { isReloadingCharts = false }
+
         FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
 
         let scans = FaceScanHistoryStore.shared.history
-        let weightSamples = await healthManager.fetchBodyMassHistory(days: 365)
-        let effortSamples = await healthManager.fetchEffortHistory(days: 90)
-        let profileWeight = profileService.currentProfile?.weight ?? 0
 
         var histories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
-        histories[.weight] = ProfileChartHistoryBuilder.mergeWithProfileFallback(
-            history: weightSamples,
-            profileWeight: profileWeight
-        )
-        histories[.effort] = effortSamples
 
         for metric in ProfileChartMetric.profileDisplayOrder {
             guard let kind = metric.faceScanKind else { continue }
@@ -286,6 +349,7 @@ struct ProcessProfileView: View {
         }
 
         chartHistories = histories
+        chartDataRevision &+= 1
     }
 
     private func previousScan(before scan: FaceScanResult) -> FaceScanResult? {

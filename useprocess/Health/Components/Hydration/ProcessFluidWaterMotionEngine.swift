@@ -18,13 +18,19 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
     private var sensorRoll: CGFloat = 0
     private var sensorPitch: CGFloat = 0
 
+    private let motionUpdateInterval: TimeInterval = 1.0 / 20.0
+    private let publishEpsilon: CGFloat = 0.018
+
+    private var lastPublishedRoll: CGFloat = 0
+    private var lastPublishedPitch: CGFloat = 0
+
     private let smoothing: CGFloat = 0.22
     private let deadZone: CGFloat = 0.025
 
     func start() {
         guard !isRunning, motionManager.isDeviceMotionAvailable else { return }
         isRunning = true
-        motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
+        motionManager.deviceMotionUpdateInterval = motionUpdateInterval
         // Même référence que ProcessMotionTiltImageCard (déjà fiable dans l'app).
         motionManager.startDeviceMotionUpdates(
             using: .xArbitraryZVertical,
@@ -42,6 +48,8 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
         roll = 0
         pitch = 0
         wavePhase = 0
+        lastPublishedRoll = 0
+        lastPublishedPitch = 0
     }
 
     func bumpWave() {
@@ -59,8 +67,7 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
 
     func endInteraction() {
         isUserInteracting = false
-        roll = sensorRoll
-        pitch = sensorPitch
+        publishMotion(roll: sensorRoll, pitch: sensorPitch)
         bumpWave()
     }
 
@@ -82,8 +89,16 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
         sensorPitch = sensorPitch + (nextPitch - sensorPitch) * smoothing
 
         guard !isUserInteracting else { return }
-        roll = sensorRoll
-        pitch = sensorPitch
+        publishMotion(roll: sensorRoll, pitch: sensorPitch)
+    }
+
+    private func publishMotion(roll newRoll: CGFloat, pitch newPitch: CGFloat) {
+        guard abs(newRoll - lastPublishedRoll) > publishEpsilon
+            || abs(newPitch - lastPublishedPitch) > publishEpsilon else { return }
+        roll = newRoll
+        pitch = newPitch
+        lastPublishedRoll = newRoll
+        lastPublishedPitch = newPitch
     }
 
     private func applyInteraction(at location: CGPoint, in size: CGSize, addsWave: Bool) {
@@ -96,6 +111,8 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
 
         roll = max(-1, min(1, normalizedX))
         pitch = max(-1, min(1, normalizedY))
+        lastPublishedRoll = roll
+        lastPublishedPitch = pitch
 
         if addsWave {
             bumpWave()

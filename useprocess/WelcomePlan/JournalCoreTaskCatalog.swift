@@ -5,10 +5,21 @@ enum JournalCoreTaskCatalog {
 
     static let nutritionTaskIdSuffix = "core.nutrition"
 
+    private static func cardioTask(dayId: String) -> OriginPlanTask {
+        journalTask(
+            id: "\(dayId).core.cardio",
+            title: "Cardio debloat",
+            detail: "Marche active, vélo ou HIIT léger — min. 3 séances/semaine.",
+            pillar: "Entraînement",
+            minutes: 25
+        )
+    }
+
     static func coreTasks(for dayId: String) -> [OriginPlanTask] {
         [
             hydrationTask(dayId: dayId),
             nutritionTask(dayId: dayId),
+            cardioTask(dayId: dayId),
             morningRoutineTask(dayId: dayId),
             sleepDebloatTask(dayId: dayId)
         ]

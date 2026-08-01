@@ -31,6 +31,26 @@ struct FaceScanCapturePayload: Sendable {
     let videoFilename: String?
     let averageBlendShapes: [String: Float]
     let yawCoverage: Double
+    /// 0…1 — mobilité du liquide facial (test penché latéral / gravité).
+    let fluidShiftScore: Double
+
+    init(
+        scanId: String,
+        mesh: FaceMesh3DData,
+        snapshot: UIImage?,
+        videoFilename: String?,
+        averageBlendShapes: [String: Float],
+        yawCoverage: Double,
+        fluidShiftScore: Double = 0
+    ) {
+        self.scanId = scanId
+        self.mesh = mesh
+        self.snapshot = snapshot
+        self.videoFilename = videoFilename
+        self.averageBlendShapes = averageBlendShapes
+        self.yawCoverage = yawCoverage
+        self.fluidShiftScore = fluidShiftScore
+    }
 }
 
 // MARK: - Historique scan visage (Santé)

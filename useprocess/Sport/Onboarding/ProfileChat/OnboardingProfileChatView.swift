@@ -21,6 +21,7 @@ struct OnboardingProfileChatView: View {
     @State private var isSigningIn = false
     @State private var signInError: String?
     @State private var faceScanScrollProxy: ScrollViewProxy?
+    @State private var showsOnboardingFaceScanSession = false
 
     private let messageLineSpacing: CGFloat = 7
     private let horizontalPadding: CGFloat = 28
@@ -31,9 +32,6 @@ struct OnboardingProfileChatView: View {
             let layout = ChatLayoutMetrics(screenHeight: geometry.size.height)
 
             ZStack(alignment: .bottom) {
-                OnboardingChatAmbientHeader(topInset: OnboardingConstants.headerBackButtonTopPadding)
-                    .zIndex(0)
-
                 if isSportSearchActive {
                     VStack(spacing: 0) {
                         Color.black.opacity(0.001)
@@ -101,14 +99,42 @@ struct OnboardingProfileChatView: View {
         } message: {
             Text(signInError ?? "")
         }
+        .fullScreenCover(isPresented: $showsOnboardingFaceScanSession) {
+            OnboardingFaceScanSessionView(
+                isSigningIn: isSigningIn,
+                onCancel: {
+                    showsOnboardingFaceScanSession = false
+                    chatViewModel.isSubmittingAnswer = false
+                    if chatViewModel.currentQuestion?.id == "face_scan_offer" {
+                        chatViewModel.restoreFaceScanOfferAnswers()
+                    }
+                },
+                onResultReady: { result in
+                    chatViewModel.adoptDedicatedFaceScanResult(result)
+                },
+                onContinueAfterResults: {
+                    Task { await authenticateAndFinishFromFaceAnalysis() }
+                }
+            )
+            .environmentObject(profileService)
+            .interactiveDismissDisabled(isSigningIn)
+        }
         .task(id: onboardingViewModel.currentStep) {
             chatViewModel.bind(
                 onboardingViewModel,
                 healthManager: healthManager,
                 permissionsManager: permissionsManager
             )
+            onboardingViewModel.profileChatBackHandler = { [chatViewModel] in
+                chatViewModel.goBackInDiscussion()
+            }
             onboardingViewModel.syncInferredWeightGoal()
             await chatViewModel.startIfNeeded()
+        }
+        .onDisappear {
+            if onboardingViewModel.profileChatBackHandler != nil {
+                onboardingViewModel.profileChatBackHandler = nil
+            }
         }
     }
 
@@ -445,7 +471,7 @@ struct OnboardingProfileChatView: View {
         VStack(alignment: .leading, spacing: 12) {
             switch question.kind {
             case .infoContinue:
-                chatPrimaryButton("Continuer") {
+                chatPrimaryButton(question.continueLabel ?? "Continuer") {
                     await chatViewModel.submitInfoContinue()
                 }
                 .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("continue"))
@@ -522,29 +548,13 @@ struct OnboardingProfileChatView: View {
 
             case .faceScanOffer:
                 OnboardingProfileChatInlineFaceScanSection(
-                    phase: chatViewModel.faceScanInlinePhase,
-                    analysisProgress: chatViewModel.inlineFaceScanProgress,
-                    analysisPhaseIndex: chatViewModel.inlineFaceScanPhaseIndex,
-                    analysisPhaseLabel: chatViewModel.inlineFaceScanPhaseLabel,
-                    analysisDisplayedPercentage: chatViewModel.inlineFaceScanDisplayedPercentage,
-                    analysisElapsedSeconds: chatViewModel.inlineFaceScanElapsedSeconds,
-                    scanResult: chatViewModel.inlineFaceScanResult,
-                    resultsUnlocked: chatViewModel.inlineFaceScanResultsUnlocked,
                     isSubmitting: chatViewModel.isSubmittingAnswer,
-                    skipLabel: question.detailText,
                     isScanRevealed: isAnswerRevealed("scan"),
-                    capturedPayload: chatViewModel.inlineFaceScanCapturedPayload,
                     onLaunchScan: {
-                        await chatViewModel.submitFaceScanNow()
-                    },
-                    onSkip: {
-                        await chatViewModel.submitFaceScanLater()
-                    },
-                    onCapture: { payload, markers in
-                        chatViewModel.faceScanCaptureCompleted(payload: payload, markers: markers)
-                    },
-                    onContinueResults: {
-                        chatViewModel.submitFaceScanResultsContinue()
+                        Task {
+                            await chatViewModel.submitFaceScanNow()
+                            showsOnboardingFaceScanSession = true
+                        }
                     }
                 )
 
@@ -626,6 +636,31 @@ struct OnboardingProfileChatView: View {
             HapticManager.shared.notification(.success)
             isSigningIn = false
             chatViewModel.submitContinueAfterAnalysis()
+        } catch {
+            HapticManager.shared.notification(.error)
+            signInError = error.localizedDescription
+            isSigningIn = false
+        }
+    }
+
+    @MainActor
+    private func authenticateAndFinishFromFaceAnalysis() async {
+        guard !isSigningIn else { return }
+        isSigningIn = true
+        signInError = nil
+        chatViewModel.prepareAnswersForAuthentication()
+        onboardingViewModel.saveProgress()
+
+        do {
+            try await OnboardingAppleAuth.authenticateAndMigrate(
+                authManager: authManager,
+                profileService: profileService,
+                viewModel: onboardingViewModel
+            )
+            HapticManager.shared.notification(.success)
+            isSigningIn = false
+            showsOnboardingFaceScanSession = false
+            chatViewModel.finishAfterDedicatedFaceAnalysis()
         } catch {
             HapticManager.shared.notification(.error)
             signInError = error.localizedDescription

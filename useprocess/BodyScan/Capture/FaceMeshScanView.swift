@@ -17,6 +17,10 @@ struct FaceMeshScanView: UIViewRepresentable {
     @Binding var progress: Double
     @Binding var ringProgress: Double
     @Binding var activeTickSectors: Set<Int>
+    @Binding var overlayMode: FaceScanCaptureOverlayMode
+    @Binding var tiltHoldProgress: Double
+    @Binding var tiltDirection: FaceScanTiltDirection
+    @Binding var tiltIsEngaged: Bool
     @Binding var instruction: String
     @Binding var frameHint: String?
     @Binding var isFaceDetected: Bool
@@ -32,6 +36,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             progress: $progress,
             ringProgress: $ringProgress,
             activeTickSectors: $activeTickSectors,
+            overlayMode: $overlayMode,
+            tiltHoldProgress: $tiltHoldProgress,
+            tiltDirection: $tiltDirection,
+            tiltIsEngaged: $tiltIsEngaged,
             instruction: $instruction,
             frameHint: $frameHint,
             isFaceDetected: $isFaceDetected,
@@ -66,6 +74,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                 progress = 0
                 ringProgress = 0
                 activeTickSectors = []
+                overlayMode = .orbitTicks
+                tiltHoldProgress = 0
+                tiltDirection = .none
+                tiltIsEngaged = false
             }
             return view
         }
@@ -101,6 +113,10 @@ struct FaceMeshScanView: UIViewRepresentable {
         @Binding var progress: Double
         @Binding var ringProgress: Double
         @Binding var activeTickSectors: Set<Int>
+        @Binding var overlayMode: FaceScanCaptureOverlayMode
+        @Binding var tiltHoldProgress: Double
+        @Binding var tiltDirection: FaceScanTiltDirection
+        @Binding var tiltIsEngaged: Bool
         @Binding var instruction: String
         @Binding var frameHint: String?
         @Binding var isFaceDetected: Bool
@@ -115,15 +131,26 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         let scanDuration: TimeInterval = 5.5
         let tickCount = 72
-        let minSectorsToComplete = 54
-        let minTickProgress = 0.72
+        let minSectorsToComplete = 48
+        let minTickProgress = 0.65
         let maxHeadRotation: Float = 0.55
-        let minTrackedFramesBeforeScan = 8
-        let minDistanceOkFramesBeforeScan = 14
+        let minTrackedFramesBeforeScan = 6
+        let minDistanceOkFramesBeforeScan = 8
         let minActivationAngle: Float = 0.06
         let maxSectorBridgeSteps = 1
         let lostFrameThresholdPositioning = 30
         let lostFrameThresholdScanning = 55
+        /// Penché latéral (oreille → épaule) pour faire migrer le liquide sous gravité.
+        let minTiltRoll: Float = 0.28
+        let tiltHoldFramesRequired = 16
+        let maxGazeAngleDuringTilt: Float = 0.42
+        let tiltPhaseTimeout: TimeInterval = 14
+
+        private enum LiveScanPhase {
+            case orbit
+            case fluidTiltLeft
+            case fluidTiltRight
+        }
 
         var completed = false
         var isTornDown = false
@@ -138,6 +165,15 @@ struct FaceMeshScanView: UIViewRepresentable {
         var qualityRetryCount = 0
         var scanExhausted = false
         var sessionRecoveryAttempts = 0
+        private var livePhase: LiveScanPhase = .orbit
+        private var tiltPhaseStartedAt: Date?
+        private var tiltHoldFrames = 0
+        private var leftTiltMesh: FaceMesh3DData?
+        private var rightTiltMesh: FaceMesh3DData?
+        private var peakLeftRoll: Float = 0
+        private var peakRightRoll: Float = 0
+        /// Signe du roll pour le 1er penché (+1 / -1). Le 2e exige l’opposé.
+        private var firstTiltSign: Float = 0
 
         var activeScanId = UUID().uuidString
         let videoRecorder = FaceScanVideoRecorder()
@@ -168,6 +204,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             progress: Binding<Double>,
             ringProgress: Binding<Double>,
             activeTickSectors: Binding<Set<Int>>,
+            overlayMode: Binding<FaceScanCaptureOverlayMode>,
+            tiltHoldProgress: Binding<Double>,
+            tiltDirection: Binding<FaceScanTiltDirection>,
+            tiltIsEngaged: Binding<Bool>,
             instruction: Binding<String>,
             frameHint: Binding<String?>,
             isFaceDetected: Binding<Bool>,
@@ -180,6 +220,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             _progress = progress
             _ringProgress = ringProgress
             _activeTickSectors = activeTickSectors
+            _overlayMode = overlayMode
+            _tiltHoldProgress = tiltHoldProgress
+            _tiltDirection = tiltDirection
+            _tiltIsEngaged = tiltIsEngaged
             _instruction = instruction
             _frameHint = frameHint
             _isFaceDetected = isFaceDetected
@@ -207,6 +251,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.progress = 0
                 self.ringProgress = 0
                 self.activeTickSectors = []
+                self.overlayMode = .orbitTicks
+                self.tiltHoldProgress = 0
+                self.tiltDirection = .none
+                self.tiltIsEngaged = false
             }
         }
 
@@ -375,6 +423,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                     self.progress = 0
                     self.ringProgress = 0
                     self.activeTickSectors = []
+                    self.resetOverlayToOrbit()
                     self.instruction = ""
                     self.frameHint = nil
                 }
@@ -385,6 +434,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.progress = 0
                 self.ringProgress = 0
                 self.activeTickSectors = []
+                self.resetOverlayToOrbit()
                 if !self.allowsScreenFlash && self.isLowLight {
                     self.instruction = "Pas assez de lumière pour lancer le scan."
                     self.frameHint = "Place-toi face à une fenêtre ou une lampe."
@@ -407,6 +457,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.instruction = "Pas assez de lumière pour lancer le scan."
                 self.frameHint = "Place-toi face à une fenêtre ou une lampe."
                 self.activeTickSectors = []
+                self.resetOverlayToOrbit()
             }
         }
 
@@ -442,6 +493,14 @@ struct FaceMeshScanView: UIViewRepresentable {
                 lastMediaSampleTime = 0
                 videoRecorder.cancel()
                 activeScanId = UUID().uuidString
+                livePhase = .orbit
+                tiltPhaseStartedAt = nil
+                tiltHoldFrames = 0
+                leftTiltMesh = nil
+                rightTiltMesh = nil
+                peakLeftRoll = 0
+                peakRightRoll = 0
+                firstTiltSign = 0
             }
         }
 
@@ -458,6 +517,14 @@ struct FaceMeshScanView: UIViewRepresentable {
             referenceTransform = faceAnchor.transform
             filledTickSectors.removeAll()
             lastRegisteredSector = nil
+            livePhase = .orbit
+            tiltPhaseStartedAt = nil
+            tiltHoldFrames = 0
+            leftTiltMesh = nil
+            rightTiltMesh = nil
+            peakLeftRoll = 0
+            peakRightRoll = 0
+            firstTiltSign = 0
             angleSamples.append(relativeYawPitch(from: faceAnchor.transform))
 
             publishUI(ring: 0, progress: 0.02, force: true) {
@@ -467,6 +534,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.frameHint = nil
                 self.activeTickSectors = []
                 self.ringProgress = 0
+                self.overlayMode = .orbitTicks
+                self.tiltHoldProgress = 0
+                self.tiltDirection = .none
+                self.tiltIsEngaged = false
             }
         }
 
@@ -533,7 +604,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                     publishUI(force: false) {
                         self.isFaceDetected = true
                         self.instruction = FaceScanQualityValidator.distanceInstruction(for: .ok)
-                        self.frameHint = "Ne bouge plus — le scan va démarrer."
+                        self.frameHint = "Ne bouge plus. Le scan va démarrer."
                     }
                     return
                 }
@@ -544,14 +615,214 @@ struct FaceMeshScanView: UIViewRepresentable {
 
             guard referenceTransform != nil else { return }
 
+            switch livePhase {
+            case .orbit:
+                processOrbitPhase(faceAnchor: faceAnchor)
+            case .fluidTiltLeft, .fluidTiltRight:
+                processFluidTiltPhase(faceAnchor: faceAnchor)
+            }
+        }
+
+        private func processOrbitPhase(faceAnchor: ARFaceAnchor) {
             registerHeadPose(from: faceAnchor.transform)
             accumulateBlendShapes(faceAnchor.blendShapes)
 
             guard let scanStart = scanStartTime else { return }
             let elapsed = Date().timeIntervalSince(scanStart)
             let tickProgress = Double(filledTickSectors.count) / Double(tickCount)
-            let combinedProgress = progressValue(elapsed: elapsed, tickProgress: tickProgress)
+            let combinedProgress = progressValue(elapsed: elapsed, tickProgress: tickProgress) * 0.78
 
+            sampleMediaIfNeeded(elapsed: elapsed, faceAnchor: faceAnchor)
+
+            let instructionText: String
+            if tickProgress < 0.35 {
+                instructionText = "Tourne lentement la tête. Gauche, droite, haut, bas."
+            } else if tickProgress < minTickProgress {
+                instructionText = "Continue à tourner la tête pour compléter le cercle."
+            } else if !orbitQualityReady(elapsed: elapsed, tickProgress: tickProgress) {
+                instructionText = qualityHint(elapsed: elapsed, tickProgress: tickProgress)
+            } else {
+                instructionText = "Parfait. Passe au test de rétention."
+            }
+
+            let sectorSignature = filledTickSectors.reduce(0) { $0 ^ ($1 &* 31) }
+            let sectorsChanged = sectorSignature != lastPublishedSectorSignature
+            publishUI(
+                ring: min(1, Double(filledTickSectors.count) / Double(tickCount)),
+                progress: combinedProgress,
+                force: sectorsChanged || Int(elapsed * 10) % 3 == 0
+            ) {
+                self.isFaceDetected = true
+                self.frameHint = nil
+                self.overlayMode = .orbitTicks
+                self.tiltHoldProgress = 0
+                self.tiltDirection = .none
+                self.tiltIsEngaged = false
+                self.activeTickSectors = self.filledTickSectors
+                self.instruction = instructionText
+                if sectorsChanged {
+                    HapticManager.shared.selection()
+                    self.lastPublishedSectorSignature = sectorSignature
+                }
+            }
+
+            guard !scanExhausted else { return }
+
+            let bestMesh = resolveBestMesh()
+            if orbitQualityReady(elapsed: elapsed, tickProgress: tickProgress),
+               FaceScanQualityValidator.meshIsSolid(bestMesh) {
+                enterFluidTiltPhase()
+            } else if elapsed >= scanDuration * 1.25 {
+                handleQualityFailure()
+            }
+        }
+
+        private func enterFluidTiltPhase() {
+            livePhase = .fluidTiltLeft
+            tiltPhaseStartedAt = Date()
+            tiltHoldFrames = 0
+            peakLeftRoll = 0
+            peakRightRoll = 0
+            firstTiltSign = 0
+            leftTiltMesh = nil
+            rightTiltMesh = nil
+            publishUI(ring: 0, progress: 0.78, force: true) {
+                HapticManager.shared.impact(.medium)
+                self.isFaceDetected = true
+                self.overlayMode = .tiltHold
+                self.activeTickSectors = []
+                self.tiltHoldProgress = 0
+                self.tiltDirection = .either
+                self.tiltIsEngaged = false
+                self.instruction = "Regarde la caméra. Penche la tête sur un côté."
+                self.frameHint = "Oreille vers l’épaule, sans tourner le visage."
+            }
+        }
+
+        private func processFluidTiltPhase(faceAnchor: ARFaceAnchor) {
+            accumulateBlendShapes(faceAnchor.blendShapes)
+
+            let pose = relativeYawPitchRoll(from: faceAnchor.transform)
+            let pitch = pose.x
+            let yaw = pose.y
+            let roll = pose.z
+            let lookingAtCamera = abs(yaw) <= maxGazeAngleDuringTilt && abs(pitch) <= maxGazeAngleDuringTilt
+            let rollMagnitude = abs(roll)
+            let isFirstSide = livePhase == .fluidTiltLeft
+
+            let correctSide: Bool
+            let wrongSide: Bool
+            if isFirstSide {
+                correctSide = rollMagnitude >= minTiltRoll
+                wrongSide = false
+            } else {
+                let needed = -firstTiltSign
+                correctSide = needed != 0 && roll * needed >= minTiltRoll
+                wrongSide = firstTiltSign != 0 && roll * firstTiltSign >= minTiltRoll
+            }
+
+            if lookingAtCamera && correctSide {
+                tiltHoldFrames += 1
+                let mesh = extractMesh(from: faceAnchor.geometry)
+                if isFirstSide {
+                    if firstTiltSign == 0 { firstTiltSign = roll >= 0 ? 1 : -1 }
+                    if rollMagnitude > abs(peakLeftRoll) {
+                        peakLeftRoll = roll
+                        leftTiltMesh = mesh
+                        if sampledMeshes.count < 28 { sampledMeshes.append(mesh) }
+                        if let snap = arView?.snapshot() { bestSnapshot = snap }
+                    }
+                } else if rollMagnitude > abs(peakRightRoll) {
+                    peakRightRoll = roll
+                    rightTiltMesh = mesh
+                    if sampledMeshes.count < 28 { sampledMeshes.append(mesh) }
+                    if let snap = arView?.snapshot() { bestSnapshot = snap }
+                }
+            } else if lookingAtCamera && wrongSide {
+                tiltHoldFrames = max(0, tiltHoldFrames - 2)
+            } else {
+                tiltHoldFrames = max(0, tiltHoldFrames - 1)
+            }
+
+            let holdRatio = min(1, Double(tiltHoldFrames) / Double(tiltHoldFramesRequired))
+            let baseProgress = isFirstSide ? 0.78 : 0.89
+            let progress = baseProgress + holdRatio * 0.11
+
+            let instructionText: String
+            let hintText: String?
+            if !lookingAtCamera {
+                instructionText = "Garde les yeux vers la caméra."
+                hintText = "Penche seulement la tête, sans tourner le visage."
+            } else if wrongSide {
+                instructionText = "Penche de l’autre côté."
+                hintText = "Oreille vers l’épaule, regard fixe."
+            } else if !correctSide {
+                instructionText = isFirstSide
+                    ? "Regarde la caméra. Penche la tête sur un côté."
+                    : "Regarde la caméra. Penche la tête de l’autre côté."
+                hintText = "Un peu plus fort, puis tiens la pose."
+            } else if holdRatio < 1 {
+                instructionText = "Tiens cette position…"
+                hintText = nil
+            } else {
+                instructionText = isFirstSide
+                    ? "Parfait. Maintenant l’autre côté."
+                    : "Finalisation du scan…"
+                hintText = nil
+            }
+
+            let engaged = lookingAtCamera && correctSide
+            let direction = tiltDirectionForPhase(isFirstSide: isFirstSide)
+
+            publishUI(ring: holdRatio, progress: progress, force: true) {
+                self.isFaceDetected = true
+                self.overlayMode = .tiltHold
+                self.activeTickSectors = []
+                self.tiltHoldProgress = holdRatio
+                self.tiltDirection = direction
+                self.tiltIsEngaged = engaged
+                self.instruction = instructionText
+                self.frameHint = hintText
+            }
+
+            if tiltHoldFrames >= tiltHoldFramesRequired {
+                if isFirstSide {
+                    livePhase = .fluidTiltRight
+                    tiltHoldFrames = 0
+                    publishUI(ring: 0, progress: 0.89, force: true) {
+                        HapticManager.shared.impact(.medium)
+                        self.overlayMode = .tiltHold
+                        self.activeTickSectors = []
+                        self.tiltHoldProgress = 0
+                        self.tiltDirection = self.tiltDirectionForPhase(isFirstSide: false)
+                        self.tiltIsEngaged = false
+                        self.instruction = "Regarde la caméra. Penche la tête de l’autre côté."
+                        self.frameHint = "Oreille vers l’épaule, sans tourner le visage."
+                    }
+                    return
+                }
+
+                let bestMesh = resolveBestMesh()
+                if FaceScanQualityValidator.meshIsSolid(bestMesh) {
+                    finishScan()
+                } else {
+                    handleQualityFailure()
+                }
+                return
+            }
+
+            if let started = tiltPhaseStartedAt,
+               Date().timeIntervalSince(started) >= tiltPhaseTimeout {
+                let bestMesh = resolveBestMesh()
+                if FaceScanQualityValidator.meshIsSolid(bestMesh) {
+                    finishScan()
+                } else {
+                    handleQualityFailure()
+                }
+            }
+        }
+
+        private func sampleMediaIfNeeded(elapsed: TimeInterval, faceAnchor: ARFaceAnchor) {
             let mediaSampleTime = CACurrentMediaTime()
             if elapsed > 0.35,
                mediaSampleTime - lastMediaSampleTime >= 0.25,
@@ -567,61 +838,22 @@ struct FaceMeshScanView: UIViewRepresentable {
                     }
                 }
             }
-
-            let instructionText: String
-            if tickProgress < 0.35 {
-                instructionText = "Tourne lentement la tête — gauche, droite, haut, bas."
-            } else if tickProgress < minTickProgress {
-                instructionText = "Continue à tourner la tête pour compléter le cercle."
-            } else if !qualityReady(elapsed: elapsed, tickProgress: tickProgress) {
-                instructionText = qualityHint(elapsed: elapsed, tickProgress: tickProgress)
-            } else {
-                instructionText = "Finalisation du scan…"
-            }
-
-            let sectorSignature = filledTickSectors.reduce(0) { $0 ^ ($1 &* 31) }
-            let sectorsChanged = sectorSignature != lastPublishedSectorSignature
-            publishUI(
-                ring: combinedProgress,
-                progress: combinedProgress,
-                force: sectorsChanged || Int(elapsed * 10) % 3 == 0
-            ) {
-                self.isFaceDetected = true
-                self.frameHint = nil
-                self.activeTickSectors = self.filledTickSectors
-                self.instruction = instructionText
-                if sectorsChanged {
-                    HapticManager.shared.selection()
-                    self.lastPublishedSectorSignature = sectorSignature
-                }
-            }
-
-            guard !scanExhausted else { return }
-
-            let bestMesh = resolveBestMesh()
-            if qualityReady(elapsed: elapsed, tickProgress: tickProgress),
-               FaceScanQualityValidator.meshIsSolid(bestMesh) {
-                finishScan()
-            } else if elapsed >= scanDuration * 1.25 {
-                handleQualityFailure()
-            }
         }
 
         private func progressValue(elapsed: TimeInterval, tickProgress: Double? = nil) -> Double {
             let tick = tickProgress ?? Double(filledTickSectors.count) / Double(tickCount)
             let time = min(1, elapsed / scanDuration)
-            // La progression visuelle suit surtout les angles visités, pas le temps seul.
             return min(1, tick * 0.92 + time * 0.08)
         }
 
-        private func qualityReady(elapsed: TimeInterval, tickProgress: Double) -> Bool {
+        private func orbitQualityReady(elapsed: TimeInterval, tickProgress: Double) -> Bool {
             guard elapsed >= scanDuration * 0.90 else { return false }
             guard tickProgress >= minTickProgress else { return false }
             guard filledTickSectors.count >= minSectorsToComplete else { return false }
-            guard FaceScanQualityValidator.headSpreadIsSufficient(angleSamples, minimum: 0.32) else { return false }
+            guard FaceScanQualityValidator.headSpreadIsSufficient(angleSamples, minimum: 0.24) else { return false }
 
             let flashActive = FaceScanScreenFlash.shared.isActive
-            let minLuma: CGFloat = flashActive ? 0.08 : (isLowLight ? 0.14 : 0.10)
+            let minLuma: CGFloat = flashActive ? 0.06 : (isLowLight ? 0.09 : 0.07)
             return FaceScanQualityValidator.snapshotIsUsable(
                 bestSnapshot,
                 minimumLuminance: minLuma,
@@ -639,7 +871,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             let flashActive = FaceScanScreenFlash.shared.isActive
             if !FaceScanQualityValidator.snapshotIsUsable(
                 bestSnapshot,
-                minimumLuminance: flashActive ? 0.08 : (isLowLight ? 0.14 : 0.10),
+                minimumLuminance: flashActive ? 0.06 : (isLowLight ? 0.09 : 0.07),
                 screenFlashActive: flashActive
             ) {
                 return flashActive
@@ -647,13 +879,31 @@ struct FaceMeshScanView: UIViewRepresentable {
                     : (isLowLight
                         ? (allowsScreenFlash
                             ? "Active le flash ou rapproche-toi."
-                            : "Pas assez de lumière — rapproche-toi d'une source lumineuse.")
+                            : "Pas assez de lumière. Rapproche-toi d'une source lumineuse.")
                         : "Cherche plus de lumière.")
             }
             if elapsed < scanDuration * 0.90 {
                 return "Encore quelques secondes…"
             }
             return "Finalisation…"
+        }
+
+        private func tiltDirectionForPhase(isFirstSide: Bool) -> FaceScanTiltDirection {
+            if isFirstSide {
+                if firstTiltSign > 0 { return .right }
+                if firstTiltSign < 0 { return .left }
+                return .either
+            }
+            if firstTiltSign > 0 { return .left }
+            if firstTiltSign < 0 { return .right }
+            return .either
+        }
+
+        private func resetOverlayToOrbit() {
+            overlayMode = .orbitTicks
+            tiltHoldProgress = 0
+            tiltDirection = .none
+            tiltIsEngaged = false
         }
 
         private func handleQualityFailure() {
@@ -667,8 +917,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                     scanExhausted = true
                     publishUI(force: true) {
                         self.instruction = self.allowsScreenFlash
-                            ? "Scan difficile — active le flash et réessaie."
-                            : "Scan difficile — cherche plus de lumière et réessaie."
+                            ? "Scan difficile. Active le flash et réessaie."
+                            : "Scan difficile. Cherche plus de lumière et réessaie."
                         self.frameHint = "Rapproche-toi puis replace ton visage dans le cadre."
                     }
                     HapticManager.shared.notification(.warning)
@@ -681,7 +931,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.progress = 0
                 self.ringProgress = 0
                 self.activeTickSectors = []
-                self.instruction = "On recommence — tourne la tête plus lentement."
+                self.resetOverlayToOrbit()
+                self.instruction = "On recommence. Tourne la tête plus lentement."
                 self.frameHint = self.isLowLight
                     ? (self.allowsScreenFlash ? "Environnement sombre" : "Pas assez de lumière")
                     : nil
@@ -708,6 +959,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             let shapes = blendShapeAccumulators.mapValues { $0.sum / Float($0.count) }
             let scanId = activeScanId
             let snapshot = bestSnapshot
+            let fluidShift = computeFluidShiftScore()
 
             Task {
                 let videoURL = await videoRecorder.finish()
@@ -724,7 +976,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                     snapshot: snapshot,
                     videoFilename: videoFilename,
                     averageBlendShapes: shapes,
-                    yawCoverage: Double(filledTickSectors.count) / Double(tickCount)
+                    yawCoverage: Double(self.filledTickSectors.count) / Double(self.tickCount),
+                    fluidShiftScore: fluidShift
                 )
 
                 await MainActor.run {
@@ -733,6 +986,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                         self.progress = 1
                         self.ringProgress = 1
                         self.activeTickSectors = self.filledTickSectors
+                        self.overlayMode = .orbitTicks
+                        self.tiltHoldProgress = 0
+                        self.tiltDirection = .none
+                        self.tiltIsEngaged = false
                         self.instruction = "Analyse terminée."
                         self.frameHint = nil
                         HapticManager.shared.notification(.success)
@@ -742,7 +999,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
         }
 
-        // MARK: - Pose → anneau Face ID (yaw/pitch relatifs au départ du scan)
+        // MARK: - Pose → anneau Face ID (yaw/pitch) + roll (rétention)
 
         /// Distance 3D caméra ↔ visage (mètres). Le z brut du transform monde n'est pas fiable.
         private func faceDistanceFromCamera(faceAnchor: ARFaceAnchor) -> Float? {
@@ -755,17 +1012,65 @@ struct FaceMeshScanView: UIViewRepresentable {
             )
         }
 
-        /// Pitch (haut/bas) et yaw (gauche/droite) par rapport à la pose de départ du scan.
-        private func relativeYawPitch(from transform: simd_float4x4) -> SIMD2<Float> {
+        /// Pitch (haut/bas), yaw (gauche/droite), roll (penché latéral) relatifs au départ du scan.
+        private func relativeYawPitchRoll(from transform: simd_float4x4) -> SIMD3<Float> {
             guard let ref = referenceTransform else { return .zero }
             let rel = simd_mul(simd_inverse(ref), transform)
             let forward = rel.columns.2
+            let up = rel.columns.1
             let pitch = asin(max(-1, min(1, -forward.y)))
             let yaw = atan2(forward.x, forward.z)
-            return SIMD2(pitch, yaw)
+            let roll = atan2(up.x, up.y)
+            return SIMD3(pitch, yaw, roll)
         }
 
-        /// Décalage entre l'angle mathématique et `FaceIDTickProgressRing` (index 0 = gauche, 18 = haut).
+        /// Pitch (haut/bas) et yaw (gauche/droite) par rapport à la pose de départ du scan.
+        private func relativeYawPitch(from transform: simd_float4x4) -> SIMD2<Float> {
+            let pose = relativeYawPitchRoll(from: transform)
+            return SIMD2(pose.x, pose.y)
+        }
+
+        /// Asymétrie joue gauche/droite (z). Différence entre penché G et D = mobilité du liquide.
+        private func computeFluidShiftScore() -> Double {
+            guard let leftMesh = leftTiltMesh, let rightMesh = rightTiltMesh else {
+                if leftTiltMesh != nil || rightTiltMesh != nil { return 0.06 }
+                return 0
+            }
+            let leftAsym = cheekDepthAsymmetry(leftMesh)
+            let rightAsym = cheekDepthAsymmetry(rightMesh)
+            let mobility = abs(leftAsym - rightAsym)
+            return min(1, Double(mobility) * 14)
+        }
+
+        private func cheekDepthAsymmetry(_ mesh: FaceMesh3DData) -> Float {
+            let left = averageCheekZ(mesh, positiveX: false)
+            let right = averageCheekZ(mesh, positiveX: true)
+            guard let left, let right else { return 0 }
+            return right - left
+        }
+
+        private func averageCheekZ(_ mesh: FaceMesh3DData, positiveX: Bool) -> Float? {
+            let count = mesh.vertices.count / 3
+            guard count > 20 else { return nil }
+            var sum: Float = 0
+            var n = 0
+            for i in 0..<count {
+                let x = mesh.vertices[i * 3]
+                let y = mesh.vertices[i * 3 + 1]
+                let z = mesh.vertices[i * 3 + 2]
+                guard y > -0.05, y < 0.03 else { continue }
+                if positiveX {
+                    guard x > 0.045, x < 0.13 else { continue }
+                } else {
+                    guard x < -0.045, x > -0.13 else { continue }
+                }
+                sum += z
+                n += 1
+            }
+            return n > 8 ? sum / Float(n) : nil
+        }
+
+                /// Décalage entre l'angle mathématique et `FaceIDTickProgressRing` (index 0 = gauche, 18 = haut).
         private var tickRingTopSectorOffset: Int { tickCount / 4 }
 
         /// Secteurs à allumer selon où l'utilisateur regarde (haut/bas/gauche/droite).

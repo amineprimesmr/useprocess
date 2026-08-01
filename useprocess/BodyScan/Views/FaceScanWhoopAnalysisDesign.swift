@@ -59,7 +59,10 @@ struct FaceScanWhoopAnalysisScreen: View {
     var previous: FaceScanResult?
     var history: [FaceScanResult] = []
     var showsDoneButton: Bool = false
+    var doneButtonTitle: String = "Terminer"
     var onDone: (() -> Void)?
+    var bottomContentInset: CGFloat = 40
+    var allowsCoachHandoff: Bool = true
 
     @Environment(\.dismiss) private var dismiss
     @Bindable private var historyStore = FaceScanHistoryStore.shared
@@ -130,6 +133,7 @@ struct FaceScanWhoopAnalysisScreen: View {
                         history: dailyHistory,
                         style: .whoopDark,
                         onTap: {
+                            guard allowsCoachHandoff else { return }
                             FaceScanCoachHandoffCoordinator.deliver(
                                 result: displayResult,
                                 insight: todayInsight
@@ -143,7 +147,7 @@ struct FaceScanWhoopAnalysisScreen: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 28)
 
-                    Spacer(minLength: 40)
+                    Spacer(minLength: bottomContentInset)
                 }
             }
         }
@@ -179,11 +183,15 @@ struct FaceScanWhoopAnalysisScreen: View {
 
             Spacer()
 
-            if showsDoneButton, let onDone {
-                Button("Terminer", action: onDone)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.label)
-                    .frame(minWidth: 44, alignment: .trailing)
+            if showsDoneButton {
+                if let onDone, !doneButtonTitle.isEmpty {
+                    Button(doneButtonTitle, action: onDone)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(FaceScanWhoopPalette.label)
+                        .frame(minWidth: 44, alignment: .trailing)
+                } else {
+                    Color.clear.frame(width: 44, height: 44)
+                }
             } else {
                 Button {
                     showsAnalysisInfo = true
@@ -309,7 +317,7 @@ struct FaceScanWhoopInlineResults: View {
 
 // MARK: - Anneau + photo
 
-private struct FaceScanWhoopScoreRing: View {
+struct FaceScanWhoopScoreRing: View {
     @Environment(\.faceScanResultsAnimateReveal) private var animateReveal
 
     let result: FaceScanResult
@@ -916,7 +924,7 @@ private struct FaceScanWhoopMetricRow: View {
     }
 }
 
-private struct FaceScanWhoopZoneBar: View {
+struct FaceScanWhoopZoneBar: View {
     let activeZone: FaceScanIndicators.WellnessZone
     var style: FaceScanWhoopResultsStyle = .immersive
 

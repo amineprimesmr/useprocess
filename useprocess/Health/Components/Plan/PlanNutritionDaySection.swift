@@ -116,11 +116,12 @@ struct PlanNutritionDaySection: View {
     let day: OriginProgramDay
     var selectedDate: Date
     var isEditable: Bool = true
+    var isPlanActive: Bool = true
+    var healthKitWaterLiters: Double = 0
     var mealZoomNamespace: Namespace.ID
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
-    @EnvironmentObject private var healthManager: HealthManager
 
     @State private var selectedEntry: PlanDayMealEntry?
     @State private var showMealIdeasCatalog = false
@@ -154,7 +155,7 @@ struct PlanNutritionDaySection: View {
                 scrollPosition = target
             }
         }
-        .onChange(of: entries.map(\.isValidated)) { _, _ in
+        .onChange(of: entriesValidationToken) { _, _ in
             let target = focusedMealSlot
             guard scrollPosition != target else { return }
             withAnimation(.smooth(duration: 0.42)) {
@@ -195,9 +196,12 @@ struct PlanNutritionDaySection: View {
                 selectedDate: selectedDate
             )
             .environmentObject(profileService)
-            .environmentObject(healthManager)
             .processZoomTransition(id: .hydrationHub, namespace: mealZoomNamespace)
         }
+    }
+
+    private var entriesValidationToken: String {
+        entries.map { "\($0.slot.rawValue):\($0.isValidated)" }.joined(separator: "|")
     }
 
     private var headerRow: some View {
@@ -213,7 +217,8 @@ struct PlanNutritionDaySection: View {
             hydrationTargetMilliliters: livePlan.resolvedDailyTargets.hydrationLitersPerDay * 1000,
             selectedDate: selectedDate,
             dayId: day.id,
-            healthKitWaterLiters: healthManager.todaySnapshot.nutrition.waterLiters,
+            healthKitWaterLiters: healthKitWaterLiters,
+            isPlanActive: isPlanActive,
             scrollPosition: $scrollPosition,
             mealZoomNamespace: mealZoomNamespace,
             onOpenHydration: { showHydrationHub = true },
@@ -245,6 +250,7 @@ private struct PlanMealCoverFlowCarousel: View {
     let selectedDate: Date
     let dayId: String
     let healthKitWaterLiters: Double
+    let isPlanActive: Bool
     @Binding var scrollPosition: MealTimeSlot?
     let mealZoomNamespace: Namespace.ID
     var onOpenHydration: () -> Void
@@ -269,6 +275,7 @@ private struct PlanMealCoverFlowCarousel: View {
                 selectedDate: selectedDate,
                 dayId: dayId,
                 healthKitWaterLiters: healthKitWaterLiters,
+                isMotionActive: isPlanActive,
                 zoomNamespace: mealZoomNamespace,
                 onOpenHydration: onOpenHydration
             )
@@ -316,6 +323,7 @@ private struct PlanHydrationCarouselCard: View {
     let selectedDate: Date
     let dayId: String
     let healthKitWaterLiters: Double
+    var isMotionActive: Bool = true
     let zoomNamespace: Namespace.ID
     var onOpenHydration: () -> Void
 
@@ -382,8 +390,11 @@ private struct PlanHydrationCarouselCard: View {
                 )
             )
         )
-        .onAppear { waterEngine.start() }
+        .onAppear { updateMotionEngineState() }
         .onDisappear { waterEngine.stop() }
+        .onChange(of: isMotionActive) { _, _ in
+            updateMotionEngineState()
+        }
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Hydratation \(millilitersLabel). Ajouter 500 millilitres ou ouvrir la page hydratation.")
     }
@@ -431,7 +442,6 @@ private struct PlanHydrationCarouselCard: View {
         }
         .allowsHitTesting(false)
         .animation(.spring(response: 0.56, dampingFraction: 0.82), value: effectiveMilliliters)
-        .animation(.spring(response: 0.56, dampingFraction: 0.82), value: progress)
     }
 
     private var bottomMillilitersLabel: some View {
@@ -554,6 +564,14 @@ private struct PlanHydrationCarouselCard: View {
             }
     }
 
+    private func updateMotionEngineState() {
+        if isMotionActive {
+            waterEngine.start()
+        } else {
+            waterEngine.stop()
+        }
+    }
+
     private func formattedMilliliters(_ value: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -567,10 +585,7 @@ private struct PlanHydrationCarouselCard: View {
         let fill = max(0.08, progress)
         let depth = fill * size.height
         let restY = size.height - depth
-        let clampedPitch = max(-1, min(1, waterEngine.pitch))
-        let centerX = size.width * 0.5
-        let wave = CGFloat(sin(Double(waterEngine.wavePhase) + Double(centerX) * 0.035)) * 1.2
-        let surfaceY = min(size.height - 1, max(1, restY - clampedPitch * depth * 0.16 + wave))
+        let surfaceY = min(size.height - 1, max(1, restY))
         return min(size.height - 34, max(42, surfaceY + 30))
     }
 }

@@ -8,7 +8,7 @@ enum HealthMedicalSources {
     }
 
     static let disclaimer =
-        "Les scores, rapports et recommandations Process AI sont des estimations bien-être. Ils ne remplacent pas un avis médical, kinésithérapique ou dermatologique."
+        "Les scores, rapports et recommandations Process sont des estimations bien-être. Ils ne remplacent pas un avis médical, kinésithérapique ou dermatologique."
 
     static let references: [Reference] = [
         .init(

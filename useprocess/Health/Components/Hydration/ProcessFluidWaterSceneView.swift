@@ -22,6 +22,7 @@ struct ProcessFluidWaterSceneView<Content: View>: View {
             }
             .simultaneousGesture(waterInteractionGesture(in: proxy.size))
         }
+        .drawingGroup()
         .ignoresSafeArea()
     }
 

@@ -10,7 +10,7 @@ enum TrajectoryMode: String, Codable, Equatable {
     var label: String {
         switch self {
         case .debloatFirst: return "Debloat puis poids"
-        case .weightFirst: return "Poids puis debloat"
+        case .weightFirst: return "Debloat visage prioritaire"
         }
     }
 }

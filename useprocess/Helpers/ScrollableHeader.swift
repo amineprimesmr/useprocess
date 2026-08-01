@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension View {
-    /// Scroll principal sans chrome custom: la navigation globale est assurée par la tab bar native.
+    /// Scroll principal — track le collapse Instagram-style de la tab bar flottante.
     func processMainScrollableChrome<ScrollContent: View>(
         selectedSection: Binding<ProcessMainSection>,
         pageSection: ProcessMainSection,
@@ -12,24 +12,22 @@ extension View {
         Group {
             if let dismissesKeyboard {
                 ScrollView {
-                    scrollTrackedContent(content())
+                    content()
                 }
                 .scrollDisabled(scrollDisabled)
                 .scrollDismissesKeyboard(dismissesKeyboard)
                 .processTransparentScrollSurface()
+                .processAdoptForIGTabBar()
             } else {
                 ScrollView {
-                    scrollTrackedContent(content())
+                    content()
                 }
                 .scrollDisabled(scrollDisabled)
                 .processTransparentScrollSurface()
+                .processAdoptForIGTabBar()
             }
         }
         .coordinateSpace(name: "processMainScroll")
         .scrollIndicators(.hidden)
-    }
-
-    private func scrollTrackedContent<ScrollContent: View>(_ content: ScrollContent) -> some View {
-        content.processReportsTabBarScrollOffset()
     }
 }

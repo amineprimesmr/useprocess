@@ -39,7 +39,6 @@ struct BeforeAfterComparisonSlider: View {
 
     private let handleSize: CGFloat = 44
     private let dividerWidth: CGFloat = 3
-    private let labelBottomInset: CGFloat = 52
     private let defaultSliderPosition: CGFloat = 0.74
 
     var body: some View {
@@ -47,10 +46,6 @@ struct BeforeAfterComparisonSlider: View {
             let width = max(geometry.size.width, 1)
             let height = geometry.size.height
             let dividerX = width * sliderPosition
-            let beforeLabelX = max(dividerX * 0.5, 48)
-            let afterRegionWidth = width - dividerX
-            let afterLabelX = dividerX + max(afterRegionWidth * 0.5, afterRegionWidth - 40)
-            let labelY = height - labelBottomInset
 
             ZStack(alignment: .leading) {
                 comparisonLayer(
@@ -58,37 +53,20 @@ struct BeforeAfterComparisonSlider: View {
                     videoName: afterVideoName,
                     width: width,
                     height: height,
-                    accessibilityLabel: "Semaine \(durationWeeks)"
+                    accessibilityLabel: "Après"
                 )
-
-                comparisonBadge("Semaine \(durationWeeks)")
-                    .position(x: afterLabelX, y: labelY)
-                    .mask(alignment: .leading) {
-                        Rectangle()
-                            .frame(width: max(width - dividerX, 0), height: height)
-                            .offset(x: dividerX)
-                    }
-                    .allowsHitTesting(false)
 
                 comparisonLayer(
                     imageName: beforeImageName,
                     videoName: beforeVideoName,
                     width: width,
                     height: height,
-                    accessibilityLabel: "Semaine 1"
+                    accessibilityLabel: "Avant"
                 )
                 .mask(alignment: .leading) {
                     Rectangle()
                         .frame(width: dividerX, height: height)
                 }
-
-                comparisonBadge("Semaine 1")
-                    .position(x: beforeLabelX, y: labelY)
-                    .mask(alignment: .leading) {
-                        Rectangle()
-                            .frame(width: dividerX, height: height)
-                    }
-                    .allowsHitTesting(false)
 
                 Rectangle()
                     .fill(.white)
@@ -207,24 +185,5 @@ struct BeforeAfterComparisonSlider: View {
         introHintTask?.cancel()
         introHintTask = nil
         hasPlayedIntroHint = true
-    }
-
-    private func comparisonBadge(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(.white)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .shadow(color: .black.opacity(0.55), radius: 6, y: 2)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 6)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(.black.opacity(0.28))
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
-                    }
-            }
     }
 }

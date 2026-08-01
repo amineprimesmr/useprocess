@@ -192,6 +192,16 @@ func previousStep() {
     }
 }
 
+/// Retour header : dans la discussion, remonte le fil ; sinon étape précédente.
+func handleOnboardingBack() {
+    if OnboardingStep(rawValue: viewModel.currentStep) == .weightMotivation,
+       viewModel.profileChatBackHandler?() == true {
+        HapticManager.shared.impact(.light)
+        return
+    }
+    previousStep()
+}
+
 /// Ajoute une étape visible à la pile (tronque une éventuelle branche future).
 func commitVisibleStepToHistory(_ step: Int) {
     guard let onboardingStep = OnboardingStep(rawValue: step),

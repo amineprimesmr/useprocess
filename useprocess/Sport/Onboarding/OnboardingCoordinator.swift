@@ -133,11 +133,11 @@ class OnboardingCoordinator {
             // selectedTrainingFrequency n'existe pas dans UnifiedUserProfile, utiliser activityLevel à la place
             if let frequency = viewModel.selectedTrainingFrequency {
                 switch frequency {
-                case "0-2":
+                case "0-2", "1-2":
                     currentProfile.activityLevel = .low
-                case "3-5":
+                case "3-5", "3-4":
                     currentProfile.activityLevel = .moderate
-                case "6+":
+                case "6+", "5+":
                     currentProfile.activityLevel = .high
                 default:
                     break

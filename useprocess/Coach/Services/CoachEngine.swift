@@ -256,7 +256,7 @@ enum CoachEngine {
     // MARK: - Brief quotidien
 
     private static let dailyBriefSystemPrompt = """
-    Tu es le coach Process AI. Tu t'adresses à UNE seule personne (tu / ton / ta).
+    Tu es le coach Process. Tu t'adresses à UNE seule personne (tu / ton / ta).
     Jamais « les gars », jamais pluriel de groupe, jamais tutoiement collectif.
 
     Brief Santé : court, clair, actionnable. Pas de diagnostic médical.
@@ -335,7 +335,7 @@ enum CoachEngine {
     // MARK: - Scan visage
 
     private static let faceScanSystemPrompt = """
-    Tu es le coach Process AI — analyse visage (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
+    Tu es le coach Process — analyse visage (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
     Tu t'adresses à UNE personne (tu). Jamais « les gars ». Pas de diagnostic médical.
     """
 

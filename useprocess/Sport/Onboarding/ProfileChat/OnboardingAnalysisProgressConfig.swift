@@ -66,12 +66,23 @@ enum OnboardingAnalysisProgressConfig {
         .init(
             id: "markers",
             phaseLabel: "Biomarqueurs",
-            query: "Calcul des indicateurs faciaux…",
-            resultCount: 5,
+            query: "Rétention, cortisol et signaux faciaux…",
+            resultCount: 2,
             sources: [
-                .init(id: "process", imageName: "caochiaicon", label: "Process AI"),
-                .init(id: "symmetry", systemImage: "person.crop.circle", label: "Symétrie"),
-                .init(id: "skin", systemImage: "sparkles", label: "Peau")
+                .init(id: "process", imageName: "caochiaicon", label: "Process"),
+                .init(id: "retention", systemImage: "drop.fill", label: "Rétention"),
+                .init(id: "cortisol", systemImage: "waveform.path.ecg", label: "Cortisol")
+            ]
+        ),
+        .init(
+            id: "structure",
+            phaseLabel: "Structure faciale",
+            query: "Yeux, jawline, pommettes, maxillaire, harmonie…",
+            resultCount: 15,
+            sources: [
+                .init(id: "process", imageName: "caochiaicon", label: "Process"),
+                .init(id: "symmetry", systemImage: "arrow.left.and.right", label: "Symétrie"),
+                .init(id: "bone", systemImage: "cube.fill", label: "Osseux")
             ]
         ),
         .init(
@@ -88,8 +99,8 @@ enum OnboardingAnalysisProgressConfig {
         ),
         .init(
             id: "claude",
-            phaseLabel: "Réflexion IA",
-            query: "Analyse avec Claude de ton scan…",
+            phaseLabel: "Synthèse",
+            query: "Défauts, atouts et résumé personnalisé…",
             resultCount: nil,
             sources: [
                 .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
@@ -162,7 +173,7 @@ enum OnboardingAnalysisProgressConfig {
             resultCount: nil,
             sources: [
                 .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
-                .init(id: "process", imageName: "caochiaicon", label: "Process AI")
+                .init(id: "process", imageName: "caochiaicon", label: "Process")
             ]
         ),
         .init(

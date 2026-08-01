@@ -41,10 +41,7 @@ final class AppSession {
         hasCompletedOnboarding = true
         UserDefaults.standard.set(true, forKey: onboardingStorageKey)
         AuthenticationManager.shared.completeOnboarding()
-
-        // Le Plan personnalisé reste obligatoire après l'onboarding.
-        hasCompletedWelcomePlanChat = false
-        UserDefaults.standard.set(false, forKey: welcomePlanChatStorageKey)
+        // Plus de questionnaire post-onboarding : accès direct à l'app.
     }
 
     func completeWelcomePlanChat() {
@@ -140,53 +137,38 @@ final class AppSession {
 
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
         WelcomePlanStore.shared.reloadForCurrentUser(force: true)
+        if hasCompletedOnboarding {
+            WelcomePlanStore.shared.autoCompleteWelcomePlanIfNeeded(
+                profile: UnifiedProfileService.shared.currentProfile
+            )
+        }
         hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
             completedOnboarding: hasCompletedOnboarding,
             userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId
         )
     }
 
-    /// Détermine si le questionnaire Plan personnalisé est vraiment terminé (évite la fausse complétion au relaunch).
+    /// Flag welcome plan : si onboarding fait, le plan auto suffit (plus de questionnaire).
     private static func resolveWelcomePlanChatCompleted(completedOnboarding: Bool, userId: String?) -> Bool {
         guard completedOnboarding else { return false }
 
         let uid = userId ?? "local-user"
         let welcomeKey = UserScopedStorage.key("welcome.plan.chat.completed", userId: uid)
-        let questionnaire = loadPersistedQuestionnaire(userId: uid)
-        let isFullyAnswered = questionnaire.map {
-            WelcomePlanQuestionBank.isFullyAnswered(answers: $0.answers)
-        } ?? false
-        let hasCompletedQuestionnaire = questionnaire?.completedAt != nil && isFullyAnswered
         let hasSavedPlan = UserDefaults.standard.data(
             forKey: UserScopedStorage.key("welcome.plan", userId: uid)
         ) != nil
-        let hasValidCompletion = hasCompletedQuestionnaire && hasSavedPlan && isFullyAnswered
 
-        if UserDefaults.standard.object(forKey: welcomeKey) != nil {
-            let explicit = UserDefaults.standard.bool(forKey: welcomeKey)
-            if explicit, hasValidCompletion {
-                return true
-            }
-            if explicit {
-                // Flag true sans configuration réellement terminée → réparer.
-                UserDefaults.standard.set(false, forKey: welcomeKey)
-            }
-            return false
+        if UserDefaults.standard.bool(forKey: welcomeKey), hasSavedPlan {
+            return true
         }
 
-        // Anciens comptes (avant le flag) : exemptés seulement s'ils ont un plan ET toutes les réponses.
-        if hasValidCompletion {
+        // Compte onboarding terminé + plan présent → considéré complété.
+        if hasSavedPlan {
             UserDefaults.standard.set(true, forKey: welcomeKey)
             return true
         }
 
-        return false
-    }
-
-    private static func loadPersistedQuestionnaire(userId: String) -> WelcomePlanQuestionnaireState? {
-        let key = UserScopedStorage.key("welcome.questionnaire", userId: userId)
-        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
-        return try? JSONDecoder().decode(WelcomePlanQuestionnaireState.self, from: data)
+        return UserDefaults.standard.bool(forKey: welcomeKey)
     }
 
     func setAppearance(_ mode: AppAppearance) {

@@ -62,6 +62,10 @@ final class ProcessStreakStore {
         snapshot.currentStreak
     }
 
+    var displayValidatedDays: Int {
+        snapshot.totalCompletedDays
+    }
+
     // MARK: - Persistence
 
     private func persist() {
@@ -116,11 +120,109 @@ final class ProcessStreakStore {
                 id: key,
                 date: dayStart,
                 weekdaySymbol: formatter.string(from: dayStart).uppercased(),
-                isComplete: completedKeys.contains(key) || record?.checkInSubmitted == true,
+                isComplete: completedKeys.contains(key),
                 isToday: weekCalendar.isDateInToday(dayStart),
                 isFuture: dayStart > today,
                 verdict: record?.verdict,
                 compositeScore: record?.compositeScore
+            )
+        }
+    }
+
+    /// Semaine affichée sur le profil — dimanche → samedi (design streak).
+    static func buildProfileWeekSnapshots(
+        completedKeys: Set<String>,
+        recordsByDay: [String: DebloatDayRecord],
+        now: Date,
+        calendar: Calendar = .current
+    ) -> [ProcessStreakDaySnapshot] {
+        var weekCalendar = calendar
+        weekCalendar.locale = Locale(identifier: "fr_FR")
+        weekCalendar.firstWeekday = 1
+
+        let today = weekCalendar.startOfDay(for: now)
+        guard let interval = weekCalendar.dateInterval(of: .weekOfYear, for: today) else { return [] }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.setLocalizedDateFormatFromTemplate("EEE")
+
+        return (0..<7).compactMap { offset in
+            guard let date = weekCalendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
+            let dayStart = weekCalendar.startOfDay(for: date)
+            let key = dayKey(for: dayStart, calendar: weekCalendar)
+            let record = recordsByDay[key]
+            let label = formatter.string(from: dayStart)
+                .replacingOccurrences(of: ".", with: "")
+                .uppercased()
+            return ProcessStreakDaySnapshot(
+                id: key,
+                date: dayStart,
+                weekdaySymbol: String(label.prefix(3)),
+                isComplete: completedKeys.contains(key),
+                isToday: weekCalendar.isDateInToday(dayStart),
+                isFuture: dayStart > today,
+                verdict: record?.verdict,
+                compositeScore: record?.compositeScore
+            )
+        }
+    }
+
+    /// Fenêtre de 7 jours du programme debloat — alignée sur `elapsedProgramDays`.
+    static func buildProgramStreakWindow(
+        plan: FaceOriginPlan?,
+        progress: PlanProgressSnapshot,
+        recordsByDay: [String: DebloatDayRecord],
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> [ProfileProgramStreakDay] {
+        guard let plan, progress.hasPlan, progress.totalProgramDays > 0 else { return [] }
+
+        let today = calendar.startOfDay(for: now)
+        let total = progress.totalProgramDays
+        let currentDay = plan.calendar.startedAt != nil
+            ? max(1, progress.elapsedProgramDays)
+            : 1
+
+        let endDay = min(total, max(7, currentDay + 3))
+        let startDay = max(1, endDay - 6)
+        let finalEnd = min(total, startDay + 6)
+
+        return (startDay...finalEnd).compactMap { programDayNumber in
+            let globalIndex = programDayNumber - 1
+            guard let programDay = plan.calendar.day(globalIndex: globalIndex) else { return nil }
+
+            let date: Date
+            if let mapped = OriginPlanPresenter.calendarDate(for: programDay, in: plan) {
+                date = calendar.startOfDay(for: mapped)
+            } else if let startedAt = plan.calendar.startedAt {
+                date = calendar.date(byAdding: .day, value: globalIndex, to: calendar.startOfDay(for: startedAt)) ?? today
+            } else {
+                date = today
+            }
+
+            let key = dayKey(for: date, calendar: calendar)
+            let record = recordsByDay[key]
+            let isComplete = record.map {
+                $0.countsAsValidatedDay(
+                    consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
+                        before: $0.dayKey,
+                        in: recordsByDay
+                    )
+                )
+            } == true
+            let isToday = calendar.isDate(date, inSameDayAs: today)
+            let isFuture = programDayNumber > currentDay
+            let isMissed = !isFuture && !isToday && !isComplete && programDayNumber <= currentDay
+
+            return ProfileProgramStreakDay(
+                id: programDayNumber,
+                programDayNumber: programDayNumber,
+                date: date,
+                isComplete: isComplete,
+                isToday: isToday,
+                isFuture: isFuture,
+                isMissed: isMissed
             )
         }
     }
@@ -145,7 +247,7 @@ final class ProcessStreakStore {
                 id: key,
                 date: dayStart,
                 weekdaySymbol: formatter.string(from: dayStart).uppercased(),
-                isComplete: completedKeys.contains(key) || record?.checkInSubmitted == true,
+                isComplete: completedKeys.contains(key),
                 isToday: calendar.isDateInToday(dayStart),
                 isFuture: dayStart > today,
                 verdict: record?.verdict,

@@ -6,6 +6,8 @@ enum PlanDurationEvolutionReason: String, Codable, Equatable {
     case earlyScanCompletion
     case streakMilestone
     case consecutiveMisses
+    case cardioConsecutiveMisses
+    case cardioWeeklyDeficit
     case regressionPattern
 
     var systemImage: String {
@@ -13,6 +15,8 @@ enum PlanDurationEvolutionReason: String, Codable, Equatable {
         case .earlyScanCompletion: return "checkmark.seal.fill"
         case .streakMilestone: return "flame.fill"
         case .consecutiveMisses: return "calendar.badge.plus"
+        case .cardioConsecutiveMisses: return "figure.run"
+        case .cardioWeeklyDeficit: return "figure.run.circle"
         case .regressionPattern: return "arrow.uturn.backward.circle.fill"
         }
     }
@@ -26,10 +30,10 @@ struct PlanDurationEvolutionEvent: Codable, Equatable, Identifiable {
     let message: String
 
     var signedLabel: String {
-        let weeks = ProcessDurationFormat.weekCount(fromDays: abs(deltaDays))
-        if deltaDays > 0 { return "+\(weeks) sem." }
-        if deltaDays < 0 { return "-\(weeks) sem." }
-        return "0 sem."
+        let days = abs(deltaDays)
+        if deltaDays > 0 { return "+\(days) j" }
+        if deltaDays < 0 { return "-\(days) j" }
+        return "0 j"
     }
 }
 
@@ -77,6 +81,10 @@ struct PlanProgressSnapshot: Equatable {
     let trajectoryMode: TrajectoryMode?
     let milestones: [PlanMilestoneProgress]
     let activeMilestoneLabel: String?
+    /// Jalon debloat promis à l'onboarding (`assessmentSnapshot.debloatTargetDays`).
+    let debloatTargetDays: Int?
+    let debloatEstimatedDate: Date?
+    let debloatRemainingDays: Int?
 
     static let empty = PlanProgressSnapshot(
         hasPlan: false,
@@ -98,6 +106,9 @@ struct PlanProgressSnapshot: Equatable {
         latestEvolutionNote: nil,
         trajectoryMode: nil,
         milestones: [],
-        activeMilestoneLabel: nil
+        activeMilestoneLabel: nil,
+        debloatTargetDays: nil,
+        debloatEstimatedDate: nil,
+        debloatRemainingDays: nil
     )
 }

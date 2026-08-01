@@ -5,7 +5,8 @@ import UIKit
 enum FaceScanQualityValidator {
 
     /// Seuil ARKit : en dessous → environnement sombre (lux approximatif).
-    static let lowLightAmbientThreshold: CGFloat = 650
+    /// Assoupli : 650 bloquait trop souvent des pièces correctement éclairées.
+    static let lowLightAmbientThreshold: CGFloat = 280
 
     static func isLowLight(ambientIntensity: CGFloat) -> Bool {
         ambientIntensity > 0 && ambientIntensity < lowLightAmbientThreshold
@@ -46,7 +47,7 @@ enum FaceScanQualityValidator {
 
     static func snapshotIsUsable(
         _ image: UIImage?,
-        minimumLuminance: CGFloat = 0.12,
+        minimumLuminance: CGFloat = 0.08,
         screenFlashActive: Bool = false
     ) -> Bool {
         if screenFlashActive { return true }
@@ -58,8 +59,8 @@ enum FaceScanQualityValidator {
         mesh.isValid && mesh.vertices.count >= 360
     }
 
-    static func headSpreadIsSufficient(_ samples: [SIMD2<Float>], minimum: Float = 0.26) -> Bool {
-        guard samples.count >= 12 else { return false }
+    static func headSpreadIsSufficient(_ samples: [SIMD2<Float>], minimum: Float = 0.22) -> Bool {
+        guard samples.count >= 10 else { return false }
         let pitches = samples.map(\.x)
         let yaws = samples.map(\.y)
         guard let pMin = pitches.min(), let pMax = pitches.max(),
@@ -73,23 +74,22 @@ enum FaceScanQualityValidator {
         case tooClose
     }
 
-    /// Distance caméra (mètres, scalaire 3D) + part du visage à l'écran.
-    /// `cameraZoom` compense le `.scaleEffect` appliqué sur la preview (sinon toujours « trop proche »).
+    /// Distance caméra (mètres) + fill écran. Plages élargies vs l’ancien 0.14–0.52 m.
     static func distanceFeedback(
         distanceMeters: Float?,
         screenFillRatio: CGFloat?,
         cameraZoom: CGFloat = 1
     ) -> FaceDistanceFeedback {
         if let distance = distanceMeters {
-            if distance < 0.14 { return .tooClose }
-            if distance > 0.52 { return .tooFar }
+            if distance < 0.09 { return .tooClose }
+            if distance > 0.72 { return .tooFar }
         }
 
         if let ratio = screenFillRatio {
             let zoom = max(1, cameraZoom)
             let adjustedRatio = ratio / (zoom * zoom)
-            if adjustedRatio < 0.11 { return .tooFar }
-            if adjustedRatio > 0.40 { return .tooClose }
+            if adjustedRatio < 0.06 { return .tooFar }
+            if adjustedRatio > 0.58 { return .tooClose }
         }
 
         return .ok
@@ -109,7 +109,7 @@ enum FaceScanQualityValidator {
     static func distanceInstruction(for feedback: FaceDistanceFeedback) -> String {
         switch feedback {
         case .ok:
-            return "Parfait — garde cette distance."
+            return "Parfait. Garde cette distance."
         case .tooFar:
             return "Rapproche-toi de l'iPhone."
         case .tooClose:

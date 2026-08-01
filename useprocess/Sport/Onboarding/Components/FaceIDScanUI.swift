@@ -16,6 +16,19 @@ enum FaceIDScanColors {
     static let continueFill = Color(red: 0.13, green: 0.98, blue: 0.47)
 }
 
+enum FaceScanCaptureOverlayMode: Equatable {
+    case orbitTicks
+    case tiltHold
+}
+
+enum FaceScanTiltDirection: Equatable {
+    case none
+    case left
+    case right
+    /// Premier penché — les deux côtés sont acceptés.
+    case either
+}
+
 // MARK: - Forme morph carré arrondi → cercle
 
 enum FaceScanViewportMetrics {
@@ -232,8 +245,8 @@ struct FaceIDTickProgressRing: View {
             }
         }
         .frame(width: ringDiameter, height: ringDiameter)
-        .animation(.easeOut(duration: 0.12), value: sectorSignature)
-        .animation(.easeOut(duration: 0.12), value: isComplete)
+        .animation(.smooth(duration: 0.28), value: sectorSignature)
+        .animation(.smooth(duration: 0.28), value: isComplete)
     }
 
     @ViewBuilder
@@ -251,6 +264,124 @@ struct FaceIDTickProgressRing: View {
             )
             .offset(y: -radialOffset)
             .rotationEffect(.degrees(Double(index) / Double(tickCount) * 360 - 90))
+            .animation(.smooth(duration: 0.22), value: isActive)
+    }
+}
+
+// MARK: - Anneau vert de maintien (penché latéral)
+
+struct FaceIDTiltHoldRing: View {
+    var progress: Double
+    let cameraDiameter: CGFloat
+    var isEngaged: Bool
+    var isLightBackdrop: Bool = false
+
+    private let strokeWidth: CGFloat = 5.5
+    private let gapFromCircle: CGFloat = 10
+
+    private var ringDiameter: CGFloat {
+        cameraDiameter + (gapFromCircle + strokeWidth) * 2
+    }
+
+    private var trackColor: Color {
+        isLightBackdrop ? Color.black.opacity(0.12) : Color.white.opacity(0.16)
+    }
+
+    var body: some View {
+        ZStack {
+            if isEngaged {
+                Circle()
+                    .stroke(FaceIDScanColors.activeTick.opacity(0.22), lineWidth: strokeWidth + 8)
+                    .frame(width: ringDiameter, height: ringDiameter)
+                    .blur(radius: 3)
+                    .scaleEffect(1.015)
+            }
+
+            Circle()
+                .stroke(trackColor, lineWidth: strokeWidth)
+                .frame(width: ringDiameter, height: ringDiameter)
+
+            Circle()
+                .trim(from: 0, to: min(1, max(0, progress)))
+                .stroke(
+                    FaceIDScanColors.activeTick,
+                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
+                )
+                .frame(width: ringDiameter, height: ringDiameter)
+                .rotationEffect(.degrees(-90))
+                .shadow(
+                    color: FaceIDScanColors.activeTick.opacity(isEngaged ? 0.55 : 0.25),
+                    radius: isEngaged ? 5 : 2
+                )
+        }
+        .animation(.smooth(duration: 0.34), value: progress)
+        .animation(.smooth(duration: 0.28), value: isEngaged)
+    }
+}
+
+// MARK: - Flèche d’inclinaison (penché latéral)
+
+struct FaceScanTiltArrowHint: View {
+    let direction: FaceScanTiltDirection
+    let cameraDiameter: CGFloat
+    var isEngaged: Bool
+    var isLightBackdrop: Bool = false
+
+    @State private var pulse = false
+    @State private var bob = false
+
+    private var arrowColor: Color {
+        if isEngaged { return FaceIDScanColors.activeTick }
+        return isLightBackdrop ? Color.black.opacity(0.72) : Color.white.opacity(0.94)
+    }
+
+    var body: some View {
+        let radial = cameraDiameter / 2 + 34
+
+        Group {
+            switch direction {
+            case .none:
+                EmptyView()
+            case .left:
+                tiltArrow(systemName: "arrow.turn.down.left")
+                    .offset(x: -radial * 0.52, y: -radial * 0.08)
+            case .right:
+                tiltArrow(systemName: "arrow.turn.down.right")
+                    .offset(x: radial * 0.52, y: -radial * 0.08)
+            case .either:
+                ZStack {
+                    tiltArrow(systemName: "arrow.turn.down.left")
+                        .opacity(bob ? 1 : 0.22)
+                        .offset(x: -radial * 0.48, y: -radial * 0.06)
+                    tiltArrow(systemName: "arrow.turn.down.right")
+                        .opacity(bob ? 0.22 : 1)
+                        .offset(x: radial * 0.48, y: -radial * 0.06)
+                }
+            }
+        }
+        .animation(.smooth(duration: 0.32), value: direction)
+        .animation(.smooth(duration: 0.28), value: isEngaged)
+        .onAppear { startAnimations() }
+        .onChange(of: direction) { _, _ in startAnimations() }
+    }
+
+    @ViewBuilder
+    private func tiltArrow(systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 30, weight: .semibold))
+            .foregroundStyle(arrowColor)
+            .shadow(color: .black.opacity(isLightBackdrop ? 0.12 : 0.38), radius: 5, y: 2)
+            .scaleEffect(pulse ? 1.08 : 0.92)
+            .rotationEffect(.degrees(pulse ? 2 : -2))
+    }
+
+    private func startAnimations() {
+        pulse = false
+        bob = false
+        withAnimation(.easeInOut(duration: 0.85).repeatForever(autoreverses: true)) {
+            pulse = true
+            bob = true
+        }
     }
 }
 

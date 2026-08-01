@@ -1,7 +1,7 @@
 import Foundation
 import UserNotifications
 
-/// Notifications locales liées à l'essai gratuit (fin d'essai + rappel paywall abandonné).
+/// Notifications locales liées à l'essai gratuit (rappel fin d'essai uniquement).
 @MainActor
 final class PaywallTrialNotificationService {
     static let shared = PaywallTrialNotificationService()
@@ -49,28 +49,10 @@ final class PaywallTrialNotificationService {
         await scheduleTrialEndingReminder(trialEndDate: end)
     }
 
-    func scheduleExitNotification(hasPurchased: Bool) async {
-        guard !hasPurchased else { return }
-
-        let center = UNUserNotificationCenter.current()
-        let settings = await center.notificationSettings()
-        guard settings.authorizationStatus == .authorized else { return }
-
-        center.removePendingNotificationRequests(withIdentifiers: [paywallExitIdentifier])
-
-        let content = UNMutableNotificationContent()
-        content.title = "3 jours gratuits t'attendent"
-        content.body = "Reviens activer ton essai gratuit sur Process — annulable à tout moment."
-        content.sound = .default
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 60 * 60 * 3, repeats: false)
-        let request = UNNotificationRequest(
-            identifier: paywallExitIdentifier,
-            content: content,
-            trigger: trigger
+    func clearExitNotification() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [paywallExitIdentifier]
         )
-
-        try? await center.add(request)
     }
 
     func clearTrialNotifications() {
@@ -79,6 +61,3 @@ final class PaywallTrialNotificationService {
         )
     }
 }
-
-/// Alias historique utilisé par le paywall.
-typealias PaywallExitNotificationService = PaywallTrialNotificationService

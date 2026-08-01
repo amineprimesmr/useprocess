@@ -80,8 +80,8 @@ struct BodyCompositionAssessment: Equatable {
         )
 
         let focus = profile.isFitForDebloatOnly
-            ? "Debloat visage — ton rapport taille/poids est déjà solide."
-            : "Recomposition — calibrons ta cible de poids."
+            ? "Debloat visage — on se concentre sur le gonflement."
+            : "Debloat visage — on affine rétention et ovale."
 
         return BodyCompositionAssessment(
             bmi: bmi,

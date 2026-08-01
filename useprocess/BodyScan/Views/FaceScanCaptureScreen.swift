@@ -35,6 +35,10 @@ struct FaceScanCaptureScreen: View {
     @State private var scanProgress: Double = 0
     @State private var ringProgress: Double = 0
     @State private var activeTickSectors: Set<Int> = []
+    @State private var overlayMode: FaceScanCaptureOverlayMode = .orbitTicks
+    @State private var tiltHoldProgress: Double = 0
+    @State private var tiltDirection: FaceScanTiltDirection = .none
+    @State private var tiltIsEngaged: Bool = false
     @State private var instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
     @State private var frameHint: String?
     @State private var isFaceDetected = false
@@ -620,6 +624,10 @@ struct FaceScanCaptureScreen: View {
                             progress: $scanProgress,
                             ringProgress: $ringProgress,
                             activeTickSectors: $activeTickSectors,
+                            overlayMode: $overlayMode,
+                            tiltHoldProgress: $tiltHoldProgress,
+                            tiltDirection: $tiltDirection,
+                            tiltIsEngaged: $tiltIsEngaged,
                             instruction: $instruction,
                             frameHint: $frameHint,
                             isFaceDetected: $isFaceDetected,
@@ -691,17 +699,37 @@ struct FaceScanCaptureScreen: View {
     @ViewBuilder
     private func scannerOverlay(cameraDiameter: CGFloat) -> some View {
         ZStack {
-            FaceIDTickProgressRing(
-                activeSectors: activeTickSectors,
-                cameraDiameter: cameraDiameter,
-                isLightBackdrop: isFlashEnabled
-            )
-
             if phase == .completed {
                 FaceIDSuccessRing(diameter: cameraDiameter)
                     .transition(.scale.combined(with: .opacity))
+            } else if overlayMode == .tiltHold {
+                FaceIDTiltHoldRing(
+                    progress: tiltHoldProgress,
+                    cameraDiameter: cameraDiameter,
+                    isEngaged: tiltIsEngaged,
+                    isLightBackdrop: isFlashEnabled
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+
+                FaceScanTiltArrowHint(
+                    direction: tiltDirection,
+                    cameraDiameter: cameraDiameter,
+                    isEngaged: tiltIsEngaged,
+                    isLightBackdrop: isFlashEnabled
+                )
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            } else {
+                FaceIDTickProgressRing(
+                    activeSectors: activeTickSectors,
+                    cameraDiameter: cameraDiameter,
+                    isLightBackdrop: isFlashEnabled
+                )
+                .transition(.opacity)
             }
         }
+        .animation(.smooth(duration: 0.38), value: overlayMode)
+        .animation(.smooth(duration: 0.34), value: tiltHoldProgress)
+        .animation(.smooth(duration: 0.28), value: tiltIsEngaged)
     }
 
     // MARK: - Copy
@@ -923,6 +951,10 @@ struct FaceScanCaptureScreen: View {
         scanProgress = 0
         ringProgress = 0
         activeTickSectors = []
+        overlayMode = .orbitTicks
+        tiltHoldProgress = 0
+        tiltDirection = .none
+        tiltIsEngaged = false
         isFaceDetected = false
         frameHint = nil
         self.instruction = instruction

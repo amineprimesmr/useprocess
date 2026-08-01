@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// Évite de relancer les animations draw à chaque retour sur le profil.
+enum ProfileChartAnimationGate {
+    static var hasPlayedProfileIntro = false
+}
+
 // MARK: - Carte métrique (style WHOOP / Bevel)
 
 enum ProfileMetricChartLayout {
@@ -19,7 +24,30 @@ enum ProfileMetricChartLayout {
     }
 }
 
-struct ProfileMetricChartSection: View {
+struct ProfileMetricChartSection: View, Equatable {
+    let metric: ProfileChartMetric
+    let points: [ProfileAnalyticsPoint]
+    let latestValue: Double?
+    let deltaVsPrevious: Double?
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.metric == rhs.metric
+            && lhs.points == rhs.points
+            && lhs.latestValue == rhs.latestValue
+            && lhs.deltaVsPrevious == rhs.deltaVsPrevious
+    }
+
+    var body: some View {
+        ProfileMetricChartSectionContent(
+            metric: metric,
+            points: points,
+            latestValue: latestValue,
+            deltaVsPrevious: deltaVsPrevious
+        )
+    }
+}
+
+private struct ProfileMetricChartSectionContent: View {
     @Environment(\.appTheme) private var theme
 
     let metric: ProfileChartMetric
@@ -63,6 +91,7 @@ struct ProfileMetricChartSection: View {
                     style: metric.visualStyle(pointCount: points.count)
                 )
                 .frame(height: ProfileMetricChartLayout.chartHeight)
+                .drawingGroup()
             }
 
             if showsComparisonCaption {
@@ -268,7 +297,7 @@ private struct ProfileMetricSplineChart: View {
     let metric: ProfileChartMetric
     let theme: AppTheme
 
-    @State private var drawProgress: CGFloat = 0
+    @State private var drawProgress: CGFloat = ProfileChartAnimationGate.hasPlayedProfileIntro ? 1 : 0
 
     private var values: [Double] { points.map(\.value) }
     private var valueRange: (min: Double, max: Double) {
@@ -280,6 +309,11 @@ private struct ProfileMetricSplineChart: View {
             let width = geometry.size.width
             let height = geometry.size.height - 20
             let color = metric.chartLineColor(theme: theme)
+            let cgPoints = ProfileMetricChartAxis.normalizedPoints(
+                values: values,
+                range: valueRange,
+                in: CGSize(width: width, height: height)
+            )
 
             ZStack(alignment: .topLeading) {
                 ProfileMetricChartGrid(lineCount: 4, width: width, height: height, theme: theme)
@@ -301,20 +335,13 @@ private struct ProfileMetricSplineChart: View {
                     .shadow(color: color.opacity(0.65), radius: 6, y: 0)
                     .frame(width: width, height: height)
 
-                ForEach(Array(values.enumerated()), id: \.offset) { index, value in
-                    let cgPoints = ProfileMetricChartAxis.normalizedPoints(
-                        values: values,
-                        range: valueRange,
-                        in: CGSize(width: width, height: height)
-                    )
-                    if cgPoints.indices.contains(index) {
-                        Circle()
-                            .fill(color)
-                            .frame(width: 6, height: 6)
-                            .shadow(color: color.opacity(0.8), radius: 4)
-                            .position(cgPoints[index])
-                            .opacity(drawProgress)
-                    }
+                ForEach(Array(cgPoints.enumerated()), id: \.offset) { index, point in
+                    Circle()
+                        .fill(color)
+                        .frame(width: 6, height: 6)
+                        .shadow(color: color.opacity(0.8), radius: 4)
+                        .position(point)
+                        .opacity(drawProgress)
                 }
 
                 ProfileMetricChartXAxis(
@@ -325,10 +352,17 @@ private struct ProfileMetricSplineChart: View {
                 )
             }
         }
-        .onAppear {
-            drawProgress = 0
-            withAnimation(.easeOut(duration: 0.9)) { drawProgress = 1 }
+        .onAppear(perform: playIntroIfNeeded)
+    }
+
+    private func playIntroIfNeeded() {
+        guard !ProfileChartAnimationGate.hasPlayedProfileIntro else {
+            drawProgress = 1
+            return
         }
+        drawProgress = 0
+        withAnimation(.easeOut(duration: 0.9)) { drawProgress = 1 }
+        ProfileChartAnimationGate.hasPlayedProfileIntro = true
     }
 }
 
@@ -339,7 +373,7 @@ private struct ProfileMetricLineAreaChart: View {
     let metric: ProfileChartMetric
     let theme: AppTheme
 
-    @State private var drawProgress: CGFloat = 0
+    @State private var drawProgress: CGFloat = ProfileChartAnimationGate.hasPlayedProfileIntro ? 1 : 0
 
     private var values: [Double] { points.map(\.value) }
     private var valueRange: (min: Double, max: Double) {
@@ -379,10 +413,17 @@ private struct ProfileMetricLineAreaChart: View {
                 )
             }
         }
-        .onAppear {
-            drawProgress = 0
-            withAnimation(.easeOut(duration: 0.85)) { drawProgress = 1 }
+        .onAppear(perform: playIntroIfNeeded)
+    }
+
+    private func playIntroIfNeeded() {
+        guard !ProfileChartAnimationGate.hasPlayedProfileIntro else {
+            drawProgress = 1
+            return
         }
+        drawProgress = 0
+        withAnimation(.easeOut(duration: 0.85)) { drawProgress = 1 }
+        ProfileChartAnimationGate.hasPlayedProfileIntro = true
     }
 }
 
@@ -393,7 +434,7 @@ private struct ProfileMetricBarTrendChart: View {
     let metric: ProfileChartMetric
     let theme: AppTheme
 
-    @State private var drawProgress: CGFloat = 0
+    @State private var drawProgress: CGFloat = ProfileChartAnimationGate.hasPlayedProfileIntro ? 1 : 0
 
     private var values: [Double] { points.map(\.value) }
     private var valueRange: (min: Double, max: Double) {
@@ -465,10 +506,17 @@ private struct ProfileMetricBarTrendChart: View {
                 )
             }
         }
-        .onAppear {
-            drawProgress = 0
-            withAnimation(.easeOut(duration: 0.9)) { drawProgress = 1 }
+        .onAppear(perform: playIntroIfNeeded)
+    }
+
+    private func playIntroIfNeeded() {
+        guard !ProfileChartAnimationGate.hasPlayedProfileIntro else {
+            drawProgress = 1
+            return
         }
+        drawProgress = 0
+        withAnimation(.easeOut(duration: 0.9)) { drawProgress = 1 }
+        ProfileChartAnimationGate.hasPlayedProfileIntro = true
     }
 }
 
@@ -479,7 +527,7 @@ private struct ProfileMetricDashedLineChart: View {
     let metric: ProfileChartMetric
     let theme: AppTheme
 
-    @State private var drawProgress: CGFloat = 0
+    @State private var drawProgress: CGFloat = ProfileChartAnimationGate.hasPlayedProfileIntro ? 1 : 0
 
     private var values: [Double] { points.map(\.value) }
     private var valueRange: (min: Double, max: Double) {
@@ -534,10 +582,17 @@ private struct ProfileMetricDashedLineChart: View {
                 .offset(x: 32)
             }
         }
-        .onAppear {
-            drawProgress = 0
-            withAnimation(.easeOut(duration: 0.85)) { drawProgress = 1 }
+        .onAppear(perform: playIntroIfNeeded)
+    }
+
+    private func playIntroIfNeeded() {
+        guard !ProfileChartAnimationGate.hasPlayedProfileIntro else {
+            drawProgress = 1
+            return
         }
+        drawProgress = 0
+        withAnimation(.easeOut(duration: 0.85)) { drawProgress = 1 }
+        ProfileChartAnimationGate.hasPlayedProfileIntro = true
     }
 }
 

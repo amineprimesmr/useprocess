@@ -6,12 +6,13 @@ struct PlanLastFaceScanSection: View {
     let latest: FaceScanResult?
     let isScanDue: Bool
     @Binding var isScanFlowActive: Bool
+    var isPlanActive: Bool = true
+    var healthMetrics: PlanHomeHealthMetrics = PlanHomeHealthMetrics()
     var zoomNamespace: Namespace.ID? = nil
     var onScan: (() -> Void)? = nil
     var onScanComplete: ((FaceScanResult) -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
-    @EnvironmentObject private var healthManager: HealthManager
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
 
@@ -82,7 +83,11 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var livePreviewActive: Bool {
-        needsLiveCameraPreview && !isScanFlowActive && !showsUnifiedScanCard
+        isPlanActive && needsLiveCameraPreview && !isScanFlowActive && !showsUnifiedScanCard
+    }
+
+    private var isMediaPlaybackActive: Bool {
+        isPlanActive && latest != nil && displayPreferences.showsVideo && !needsLiveCameraPreview
     }
 
     private var showsUnifiedScanCard: Bool {
@@ -95,7 +100,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private func insightContext() -> FaceScanInsightContext {
-        FaceScanInsightContext.fromTodayHealth(healthManager)
+        healthMetrics.insightContext()
     }
 
     private func todayInsight(for result: FaceScanResult) -> FaceScanAIInsight {
@@ -412,19 +417,19 @@ struct PlanLastFaceScanSection: View {
         let targets = WelcomePlanStore.shared.plan?.personalizedTargets ?? .default
         return PlanFaceScanPreScanAction.message(
             for: latest,
-            stepsToday: healthManager.todaySnapshot.effort.steps,
+            stepsToday: healthMetrics.stepsToday,
             stepTarget: targets.dailySteps,
-            waterLitersToday: healthManager.todaySnapshot.nutrition.waterLiters,
+            waterLitersToday: healthMetrics.waterLitersToday,
             waterTargetLiters: targets.hydrationLitersPerDay
         )
     }
 
     private var nextScanFooterBand: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+        PlanHomePeriodicTicker(isActive: isPlanActive) { now in
             PlanFaceScanNextScanFooter(
                 latest: latest,
                 isScanDue: isScanDue,
-                now: context.date,
+                now: now,
                 theme: theme,
                 isCompact: isPostScanComplete
             )
@@ -450,7 +455,10 @@ struct PlanLastFaceScanSection: View {
                 PlanFaceScanLiveCameraPanel(isActive: livePreviewActive)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let latest {
-                PlanFaceScanMediaPanel(result: latest)
+                PlanFaceScanMediaPanel(
+                    result: latest,
+                    isPlaybackActive: isMediaPlaybackActive
+                )
                     .equatable()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -714,17 +722,20 @@ private struct PlanFaceScanProgressBar: View {
 
 private struct PlanFaceScanMediaPanel: View, Equatable {
     let result: FaceScanResult
+    var isPlaybackActive: Bool = true
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.result.id == rhs.result.id
             && lhs.result.videoFilename == rhs.result.videoFilename
             && lhs.result.snapshotFilename == rhs.result.snapshotFilename
+            && lhs.isPlaybackActive == rhs.isPlaybackActive
     }
 
     var body: some View {
         FaceScanRecordingMediaView(
             result: result,
-            displayMode: .sidePanel
+            displayMode: .sidePanel,
+            isPlaybackActive: isPlaybackActive
         )
         .accessibilityLabel("Vidéo du dernier scan")
     }

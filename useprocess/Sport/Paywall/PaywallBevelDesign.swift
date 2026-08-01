@@ -16,8 +16,25 @@ enum PaywallBevelTheme {
     }
 
     static func paywallTitleFont() -> Font {
-        .system(size: 29, weight: .heavy, design: .default)
+        paywallHeroTitleFont()
     }
+
+    /// Titre hero paywall — SF Pro Display Bold, comme les paywalls Pro type référence.
+    static func paywallHeroTitleFont(size: CGFloat = 26) -> Font {
+        if let uiFont = UIFont(name: "SFProDisplay-Bold", size: size) {
+            return Font(uiFont)
+        }
+        return .system(size: size, weight: .bold, design: .default)
+    }
+
+    static func paywallHeroSubtitleFont(size: CGFloat = 15) -> Font {
+        if let uiFont = UIFont(name: "SFProDisplay-Regular", size: size) {
+            return Font(uiFont)
+        }
+        return .system(size: size, weight: .regular, design: .default)
+    }
+
+    static let paywallHeroTitleTracking: CGFloat = -0.45
 
     static func paywallTitleColor(for scheme: ColorScheme) -> Color {
         scheme == .dark
@@ -111,9 +128,50 @@ enum PaywallBevelTheme {
         accentBlueGlow(for: scheme).opacity(enabled ? 1 : 0)
     }
 
+    static func featureTitle(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color.white.opacity(0.92)
+            : Color(red: 0.06, green: 0.07, blue: 0.09).opacity(0.90)
+    }
+
+    static func featureIcon(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color.white.opacity(0.88)
+            : Color.primary.opacity(0.70)
+    }
+
+    static func featureRowFont() -> Font {
+        .system(size: 17, weight: .medium)
+    }
+
     static func accentBlueGlow(for scheme: ColorScheme) -> Color {
         Color(red: 0.48, green: 0.72, blue: 0.98)
             .opacity(scheme == .dark ? 0.22 : 0.38)
+    }
+
+    /// Dégradé « Pro » dans le titre hero paywall.
+    static func paywallProTitleGradient(for scheme: ColorScheme) -> LinearGradient {
+        if scheme == .dark {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.52, green: 0.88, blue: 1.0),
+                    Color(red: 0.34, green: 0.72, blue: 1.0),
+                    Color(red: 0.20, green: 0.56, blue: 0.98),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.28, green: 0.66, blue: 1.0),
+                    Color(red: 0.14, green: 0.50, blue: 0.96),
+                    Color(red: 0.08, green: 0.38, blue: 0.90),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
     }
 
     /// Opacité de la 2e couche de lueur (badge + CTA).
@@ -133,29 +191,7 @@ enum PaywallBevelTheme {
 struct PaywallFeatureItem: Identifiable, Equatable {
     let id: String
     let title: String
-    let subtitle: String
     let symbol: String
-    let symbolColors: [Color]
-    let assetName: String?
-    let assetCornerRadius: CGFloat?
-
-    init(
-        id: String,
-        title: String,
-        subtitle: String,
-        symbol: String,
-        symbolColors: [Color],
-        assetName: String? = nil,
-        assetCornerRadius: CGFloat? = nil
-    ) {
-        self.id = id
-        self.title = title
-        self.subtitle = subtitle
-        self.symbol = symbol
-        self.symbolColors = symbolColors
-        self.assetName = assetName
-        self.assetCornerRadius = assetCornerRadius
-    }
 }
 
 // MARK: - Fond + dégradé pastel (Bevel)
@@ -164,52 +200,31 @@ struct PaywallBevelBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        ZStack {
-            if colorScheme == .dark {
-                Color(red: 0.07, green: 0.07, blue: 0.08)
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.16, green: 0.22, blue: 0.38).opacity(0.42),
-                        Color(red: 0.08, green: 0.10, blue: 0.16).opacity(0.22),
-                        Color.clear,
-                    ],
-                    center: UnitPoint(x: 0.42, y: 0.34),
-                    startRadius: 20,
-                    endRadius: 380
-                )
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.20, green: 0.16, blue: 0.32).opacity(0.24),
-                        Color.clear,
-                    ],
-                    center: UnitPoint(x: 0.82, y: 0.40),
-                    startRadius: 8,
-                    endRadius: 260
-                )
-            } else {
-                Color(red: 0.99, green: 0.99, blue: 1.0)
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.90, green: 0.95, blue: 1.0).opacity(0.42),
-                        Color(red: 0.96, green: 0.98, blue: 1.0).opacity(0.22),
-                        Color.clear,
-                    ],
-                    center: UnitPoint(x: 0.45, y: 0.38),
-                    startRadius: 20,
-                    endRadius: 420
-                )
-                RadialGradient(
-                    colors: [
-                        Color(red: 0.94, green: 0.96, blue: 0.99).opacity(0.28),
-                        Color.clear,
-                    ],
-                    center: UnitPoint(x: 0.88, y: 0.42),
-                    startRadius: 8,
-                    endRadius: 280
-                )
-            }
-        }
+        LinearGradient(
+            colors: backdropGradientColors,
+            startPoint: .top,
+            endPoint: .bottom
+        )
         .ignoresSafeArea()
+    }
+
+    private var backdropGradientColors: [Color] {
+        if colorScheme == .dark {
+            [
+                Color.black,
+                Color(red: 0.04, green: 0.04, blue: 0.06),
+                Color(red: 0.07, green: 0.09, blue: 0.14),
+                Color(red: 0.10, green: 0.14, blue: 0.24),
+                Color(red: 0.12, green: 0.17, blue: 0.30),
+            ]
+        } else {
+            [
+                Color.white,
+                Color(red: 0.99, green: 0.99, blue: 1.0),
+                Color(red: 0.95, green: 0.97, blue: 1.0),
+                Color(red: 0.90, green: 0.94, blue: 0.99),
+            ]
+        }
     }
 }
 
@@ -225,90 +240,32 @@ struct PaywallBevelFeatureRow: View {
         self.onNutritionSecretUnlock = onNutritionSecretUnlock
     }
 
-    private var iconSize: CGFloat { 48 }
-    private var iconContainerSize: CGFloat { 62 }
-    private var iconCornerRadius: CGFloat {
-        max(item.assetCornerRadius ?? 0, 14)
-    }
+    private let iconSlotWidth: CGFloat = 30
 
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
-            featureIcon
-                .frame(width: iconContainerSize, height: iconContainerSize)
+            Image(systemName: item.symbol)
+                .font(.system(size: 22, weight: .regular))
+                .foregroundStyle(PaywallBevelTheme.featureIcon(for: colorScheme))
+                .symbolRenderingMode(.monochrome)
+                .frame(width: iconSlotWidth, height: iconSlotWidth, alignment: .center)
 
-            VStack(alignment: .leading, spacing: 3) {
-                featureTitle
-                Text(item.subtitle)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
-            }
+            Text(item.title)
+                .font(PaywallBevelTheme.featureRowFont())
+                .foregroundStyle(PaywallBevelTheme.featureTitle(for: colorScheme))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 11)
-    }
-
-    @ViewBuilder
-    private var featureTitle: some View {
-        if item.id == "nutrition" {
-            HStack(spacing: 4) {
-                Text("Plan nutritionnel")
-                Text("facile")
-                    #if DEBUG
-                    .onTapGesture(count: 2) {
-                        onNutritionSecretUnlock?()
-                    }
-                    #endif
-            }
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
-            .multilineTextAlignment(.leading)
-        } else {
-            Text(item.title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
-                .multilineTextAlignment(.leading)
+        .padding(.vertical, 6)
+        #if DEBUG
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            guard item.id == "hydration" else { return }
+            onNutritionSecretUnlock?()
         }
-    }
-
-    @ViewBuilder
-    private var featureIcon: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.white.opacity(colorScheme == .dark ? 0.12 : 0.28),
-                            Color.white.opacity(colorScheme == .dark ? 0.04 : 0.10),
-                            .clear,
-                        ],
-                        center: .center,
-                        startRadius: iconSize * 0.16,
-                        endRadius: iconContainerSize * 0.50
-                    )
-                )
-                .frame(width: iconContainerSize, height: iconContainerSize)
-
-            if let assetName = item.assetName, !assetName.isEmpty {
-                Image(assetName)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
-                    .clipShape(
-                        RoundedRectangle(
-                            cornerRadius: iconCornerRadius,
-                            style: .continuous
-                        )
-                    )
-            } else {
-                Image(systemName: item.symbol)
-                    .font(.system(size: 32, weight: .semibold))
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(item.symbolColors.first ?? .blue, item.symbolColors.last ?? .cyan)
-            }
-        }
+        #endif
     }
 }
 
@@ -333,7 +290,7 @@ struct PaywallBevelAlsoIncludesDivider: View {
     }
 }
 
-// MARK: - Défilement vertical (auto + manuel, boucle fluide sans saut)
+// MARK: - Liste features (statique)
 
 struct PaywallBevelAutoScrollingFeatures: View {
     let primary: [PaywallFeatureItem]
@@ -350,121 +307,171 @@ struct PaywallBevelAutoScrollingFeatures: View {
         self.onNutritionSecretUnlock = onNutritionSecretUnlock
     }
 
-    private let pixelsPerSecond: CGFloat = 16
-
-    @State private var measuredBlockHeight: CGFloat = 0
-    @State private var baseOffset: CGFloat = 0
-    @State private var autoAnchor = Date()
-    @State private var isUserDragging = false
-    @State private var dragTranslation: CGFloat = 0
-
-    private var loopBlockHeight: CGFloat {
-        max(measuredBlockHeight, 1)
-    }
-
     var body: some View {
-        GeometryReader { geo in
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: isUserDragging)) { timeline in
-                let block = loopBlockHeight
-                let autoDelta: CGFloat = {
-                    guard !isUserDragging else { return 0 }
-                    let elapsed = timeline.date.timeIntervalSince(autoAnchor)
-                    return -CGFloat(elapsed) * pixelsPerSecond
-                }()
-                let raw = baseOffset + autoDelta + (isUserDragging ? dragTranslation : 0)
-                let displayOffset = loopOffset(raw, block: block)
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
 
-                VStack(spacing: 0) {
-                    featureStack
-                    featureStack
-                    featureStack
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(primary) {
+                    PaywallBevelFeatureRow(item: $0, onNutritionSecretUnlock: onNutritionSecretUnlock)
                 }
-                .offset(y: displayOffset)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                if !alsoIncluded.isEmpty {
+                    PaywallBevelAlsoIncludesDivider()
+                    ForEach(alsoIncluded) {
+                        PaywallBevelFeatureRow(item: $0, onNutritionSecretUnlock: onNutritionSecretUnlock)
+                    }
+                }
             }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .clipped()
-            .contentShape(Rectangle())
-            .simultaneousGesture(manualScrollGesture)
-            .mask {
-                LinearGradient(
-                    stops: [
-                        .init(color: .clear, location: 0),
-                        .init(color: .black, location: 0.06),
-                        .init(color: .black, location: 0.96),
-                        .init(color: .clear, location: 1),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 26)
+
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
 
-    private var manualScrollGesture: some Gesture {
-        DragGesture(minimumDistance: 6)
-            .onChanged { value in
-                let block = loopBlockHeight
-                if !isUserDragging {
-                    let elapsed = Date().timeIntervalSince(autoAnchor)
-                    baseOffset = loopOffset(baseOffset - CGFloat(elapsed) * pixelsPerSecond, block: block)
-                    autoAnchor = Date()
-                    isUserDragging = true
-                }
-                dragTranslation = value.translation.height
-            }
-            .onEnded { value in
-                let block = loopBlockHeight
-                baseOffset = loopOffset(baseOffset + value.translation.height, block: block)
-                dragTranslation = 0
-                autoAnchor = Date()
-                isUserDragging = false
-            }
+// MARK: - Segmented picker Annuel / Mensuel
+
+struct PaywallBevelPlanSegmentPicker: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Binding var selection: SubscriptionBillingPlan
+    let annualComparePrice: String
+    let annualPrice: String
+    let monthlyPrice: String
+    var onSelectionChange: ((SubscriptionBillingPlan) -> Void)?
+
+    @Namespace private var pillNamespace
+
+    private let segmentHeight: CGFloat = 88
+    private let inset: CGFloat = 5
+    private let trackCornerRadius: CGFloat = 30
+    private let pillCornerRadius: CGFloat = 24
+
+    var body: some View {
+        HStack(spacing: 0) {
+            segmentButton(.annual)
+            segmentButton(.monthly)
+        }
+        .padding(inset)
+        .background {
+            trackShape.fill(Color.clear)
+        }
+        .overlay {
+            trackShape.strokeBorder(trackBorderColor, lineWidth: 1)
+        }
     }
 
-    private func loopOffset(_ raw: CGFloat, block: CGFloat) -> CGFloat {
-        guard block > 0 else { return raw }
-        var value = raw.truncatingRemainder(dividingBy: block)
-        if value > 0 { value -= block }
-        return value
+    private var trackShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: trackCornerRadius, style: .continuous)
+    }
+
+    private func pillShape() -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: pillCornerRadius, style: .continuous)
+    }
+
+    private var trackBorderColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.26) : Color.black.opacity(0.14)
+    }
+
+    private func segmentButton(_ plan: SubscriptionBillingPlan) -> some View {
+        let isSelected = selection == plan
+
+        return Button {
+            guard selection != plan else { return }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.84, blendDuration: 0.12)) {
+                selection = plan
+            }
+            onSelectionChange?(plan)
+        } label: {
+            ZStack(alignment: .leading) {
+                if isSelected {
+                    selectedPillGlass
+                        .matchedGeometryEffect(id: "paywallPlanPill", in: pillNamespace)
+                }
+
+                segmentContent(plan: plan, isSelected: isSelected)
+                    .padding(.horizontal, 18)
+            }
+            .frame(maxWidth: .infinity, minHeight: segmentHeight, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: pillCornerRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
-    private var featureStack: some View {
-        VStack(spacing: 0) {
-            ForEach(primary) {
-                PaywallBevelFeatureRow(item: $0, onNutritionSecretUnlock: onNutritionSecretUnlock)
-            }
-            if !alsoIncluded.isEmpty {
-                PaywallBevelAlsoIncludesDivider()
-                ForEach(alsoIncluded) {
-                    PaywallBevelFeatureRow(item: $0, onNutritionSecretUnlock: onNutritionSecretUnlock)
-                }
+    private func segmentContent(plan: SubscriptionBillingPlan, isSelected: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(plan == .annual ? "Annuel" : "Mensuel")
+                .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: isSelected ? 18 : 17))
+                .fontWeight(isSelected ? .bold : .semibold)
+                .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)
+
+            if plan == .annual {
+                annualPriceRow(isSelected: isSelected)
+            } else {
+                Text(monthlyPrice)
+                    .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 18))
+                    .fontWeight(isSelected ? .bold : .semibold)
+                    .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .allowsTightening(true)
             }
         }
-        .padding(.horizontal, 22)
-        .background {
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(key: PaywallFeatureBlockHeightKey.self, value: proxy.size.height)
-            }
-        }
-        .onPreferenceChange(PaywallFeatureBlockHeightKey.self) { height in
-            guard height > 0, abs(height - measuredBlockHeight) > 0.5 else { return }
-            measuredBlockHeight = height
-        }
+        .animation(.easeInOut(duration: 0.18), value: isSelected)
+    }
+
+    @ViewBuilder
+    private func annualPriceRow(isSelected: Bool) -> some View {
+        let compareStyle = isSelected ? selectedCompareText : unselectedText.opacity(0.88)
+        let priceWeight: Font.Weight = isSelected ? .bold : .semibold
+        let priceColor = isSelected ? selectedPrimaryText : unselectedText
+
+        (
+            Text(annualComparePrice)
+                .foregroundStyle(compareStyle)
+                .strikethrough(
+                    true,
+                    color: compareStyle.opacity(0.72)
+                )
+            + Text(" ")
+            + Text(annualPrice)
+                .fontWeight(priceWeight)
+                .foregroundStyle(priceColor)
+        )
+        .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 18))
+        .lineLimit(1)
+        .minimumScaleFactor(0.72)
+        .allowsTightening(true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var selectedPillGlass: some View {
+        let shape = pillShape()
+
+        shape
+            .fill(.clear)
+            .processGlassEffect(in: shape, interactive: true)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.22 : 0.08), radius: 6, y: 2)
+    }
+
+    private var selectedPrimaryText: Color {
+        PaywallBevelTheme.planPrimaryPrice(for: colorScheme)
+    }
+
+    private var selectedCompareText: Color {
+        PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.88)
+    }
+
+    private var unselectedText: Color {
+        colorScheme == .dark ? Color.white.opacity(0.56) : Color.black.opacity(0.42)
     }
 }
 
-private struct PaywallFeatureBlockHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-// MARK: - Carte forfait
+// MARK: - Carte forfait (legacy)
 
 struct PaywallBevelPlanCard: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -511,7 +518,7 @@ struct PaywallBevelPlanCard: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 18)
+                .padding(.top, savingsBadge == nil ? 18 : 22)
                 .padding(.bottom, 16)
                 .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
                 .background {
@@ -534,23 +541,23 @@ struct PaywallBevelPlanCard: View {
 
                 if let savingsBadge {
                     Text(savingsBadge)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(PaywallBevelTheme.badgeText(for: colorScheme))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
                         .background(
                             Capsule()
                                 .fill(PaywallBevelTheme.badgeFill(for: colorScheme))
                                 .shadow(
                                     color: PaywallBevelTheme.accentBlueGlow(for: colorScheme),
-                                    radius: colorScheme == .dark ? 8 : 10,
+                                    radius: colorScheme == .dark ? 6 : 8,
                                     y: 0
                                 )
                                 .shadow(
                                     color: PaywallBevelTheme.accentBlueGlow(for: colorScheme)
                                         .opacity(PaywallBevelTheme.accentBlueGlowLayerOpacity(for: colorScheme)),
-                                    radius: colorScheme == .dark ? 12 : 18,
-                                    y: 3
+                                    radius: colorScheme == .dark ? 10 : 14,
+                                    y: 2
                                 )
                         )
                         .offset(y: -9)
@@ -677,89 +684,31 @@ private struct PaywallBevelPressStyle: ButtonStyle {
 // MARK: - Features Process
 
 enum PaywallBevelFeatureCatalog {
-    private static let iconCornerRadius: CGFloat = 11
-
     static let primary: [PaywallFeatureItem] = [
         PaywallFeatureItem(
-            id: "habits",
-            title: "Suivez les habitudes et les symptômes",
-            subtitle: "Repère tes routines et ce qui change au quotidien.",
-            symbol: "list.bullet.clipboard.fill",
-            symbolColors: [Color(red: 0.28, green: 0.62, blue: 0.98), Color(red: 0.52, green: 0.82, blue: 1.0)],
-            assetName: "PaywallIconHabits",
-            assetCornerRadius: iconCornerRadius
+            id: "plan",
+            title: "Plan personnalisé anti-rétention",
+            symbol: "list.clipboard"
         ),
         PaywallFeatureItem(
-            id: "stress",
-            title: "Identifiez les déclencheurs de stress",
-            subtitle: "Comprends ce qui te tire vers le bas et agis dessus.",
-            symbol: "bolt.heart.fill",
-            symbolColors: [Color(red: 0.95, green: 0.55, blue: 0.18), Color(red: 1.0, green: 0.78, blue: 0.42)],
-            assetName: "PaywallIconStress",
-            assetCornerRadius: iconCornerRadius
+            id: "scan",
+            title: "Scans visage illimités",
+            symbol: "viewfinder"
         ),
         PaywallFeatureItem(
-            id: "body",
-            title: "Optimisez votre corps",
-            subtitle: "Ajuste ton entraînement et ta récupération en continu.",
-            symbol: "figure.strengthtraining.traditional",
-            symbolColors: [Color(red: 0.98, green: 0.34, blue: 0.42), Color(red: 1.0, green: 0.62, blue: 0.58)],
-            assetName: "PaywallIconBody",
-            assetCornerRadius: iconCornerRadius
+            id: "hydration",
+            title: "Hydratation guidée au quotidien",
+            symbol: "drop"
         ),
         PaywallFeatureItem(
-            id: "training",
-            title: "Plans d'entraînement personnalisés",
-            subtitle: "Des séances adaptées à ton niveau et à tes objectifs.",
-            symbol: "calendar.badge.clock",
-            symbolColors: [Color(red: 0.42, green: 0.48, blue: 0.98), Color(red: 0.68, green: 0.72, blue: 1.0)],
-            assetName: "PaywallIconTraining",
-            assetCornerRadius: iconCornerRadius
+            id: "coach",
+            title: "Coach IA dédié à ton visage",
+            symbol: "bubble.left.and.bubble.right"
         ),
         PaywallFeatureItem(
             id: "nutrition",
-            title: "Plan nutritionnel facile",
-            subtitle: "Des repères simples pour mieux manger sans prise de tête.",
-            symbol: "leaf.fill",
-            symbolColors: [Color(red: 0.22, green: 0.72, blue: 0.48), Color(red: 0.52, green: 0.88, blue: 0.62)],
-            assetName: "PaywallIconNutrition",
-            assetCornerRadius: iconCornerRadius
-        ),
-        PaywallFeatureItem(
-            id: "sleep",
-            title: "Améliorer la qualité du sommeil",
-            subtitle: "Repères concrets pour mieux dormir et récupérer.",
-            symbol: "moon.zzz.fill",
-            symbolColors: [Color(red: 0.55, green: 0.35, blue: 0.92), Color(red: 0.78, green: 0.62, blue: 1.0)],
-            assetName: "PaywallIconSleep",
-            assetCornerRadius: iconCornerRadius
-        ),
-        PaywallFeatureItem(
-            id: "intelligence",
-            title: "Process Intelligence",
-            subtitle: "Un coach IA illimité, adapté à ton profil et tes objectifs.",
-            symbol: "sparkles",
-            symbolColors: [Color(red: 0.98, green: 0.45, blue: 0.38), Color(red: 1.0, green: 0.72, blue: 0.55)],
-            assetName: "PaywallIconIntelligence",
-            assetCornerRadius: iconCornerRadius
-        ),
-        PaywallFeatureItem(
-            id: "scan360",
-            title: "Analyse visage 360°",
-            subtitle: "Suis ta progression avec une analyse visuelle complète.",
-            symbol: "viewfinder.circle.fill",
-            symbolColors: [Color(red: 0.98, green: 0.45, blue: 0.38), Color(red: 1.0, green: 0.72, blue: 0.55)],
-            assetName: "PaywallIconScanVisage",
-            assetCornerRadius: iconCornerRadius
-        ),
-        PaywallFeatureItem(
-            id: "memory",
-            title: "Mémoire Claude illimitée",
-            subtitle: "Ton contexte est retenu d'une session à l'autre.",
-            symbol: "brain.head.profile.fill",
-            symbolColors: [Color(red: 0.55, green: 0.35, blue: 0.92), Color(red: 0.78, green: 0.62, blue: 1.0)],
-            assetName: "PaywallIconMemory",
-            assetCornerRadius: iconCornerRadius
+            title: "Nutrition et repas anti-rétention",
+            symbol: "fork.knife"
         ),
     ]
 

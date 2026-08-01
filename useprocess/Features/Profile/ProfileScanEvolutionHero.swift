@@ -1,15 +1,15 @@
 import SwiftUI
 
-/// Hero profil compact — jour du programme à gauche, dernier scan rond à droite.
+/// Hero stats — une seule progression : le programme debloat (jour X / total).
 struct ProfileScanEvolutionHero: View {
     @Bindable var historyStore: FaceScanHistoryStore
-    let selectedDate: Date
+    @Binding var selectedDate: Date
+    var isPlaybackActive: Bool = true
     var onOpenScan: (FaceScanResult) -> Void
 
     @Environment(\.appTheme) private var theme
     @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
-    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
 
     private let circleDiameter: CGFloat = 112
 
@@ -19,10 +19,7 @@ struct ProfileScanEvolutionHero: View {
             value: 1,
             to: Calendar.current.startOfDay(for: selectedDate)
         ) ?? selectedDate
-        return historyStore.history
-            .filter { $0.createdAt < dayEnd }
-            .sorted { $0.createdAt > $1.createdAt }
-            .first
+        return historyStore.history.first { $0.createdAt < dayEnd }
     }
 
     private var progress: PlanProgressSnapshot {
@@ -38,34 +35,20 @@ struct ProfileScanEvolutionHero: View {
     }
 
     private var displayedProgramDay: Int {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(selectedDate), progress.elapsedProgramDays > 0 {
+            return progress.elapsedProgramDays
+        }
         if let selectedProgramDayNumber {
             return selectedProgramDayNumber
         }
         guard progress.hasPlan, progress.totalProgramDays > 0 else { return 0 }
-        if progress.validationProgress >= 1 { return progress.totalProgramDays }
-        return min(progress.totalProgramDays, max(1, progress.validatedDays + 1))
+        return min(progress.totalProgramDays, max(1, progress.elapsedProgramDays))
     }
 
     private var completionPercent: Int {
         guard progress.hasPlan else { return 0 }
-        return Int((min(max(progress.validationProgress, 0), 1) * 100).rounded())
-    }
-
-    private var displayedValidatedDays: Int {
-        guard progress.hasPlan else { return 0 }
-        return progress.validatedDays
-    }
-
-    private var displayedStreak: Int {
-        if let record = trajectoryStore.record(for: selectedDate), record.checkInSubmitted {
-            return record.streakAfterDay
-        }
-        return progress.currentStreak
-    }
-
-    private var displayedWeekLabel: String? {
-        guard progress.hasPlan, progress.elapsedProgramDays > 0 else { return nil }
-        return "S\(progress.currentWeek)/\(progress.totalWeeks)"
+        return Int((min(max(progress.timeProgress, 0), 1) * 100).rounded())
     }
 
     var body: some View {
@@ -80,16 +63,18 @@ struct ProfileScanEvolutionHero: View {
 
             progressBar
 
-            programMetricsRow
+            if progress.hasPlan {
+                programFooter
+            }
         }
-        .padding(.top, ProcessMainChromeMetrics.topSafeInset + 48)
+        .padding(.top, 12)
         .padding(.horizontal, ProfileTheme.horizontalPadding)
         .padding(.bottom, 18)
     }
 
     private var programSummary: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(progress.hasPlan ? "Jour" : "Programme")
+            Text(progress.hasPlan ? "Programme debloat" : "Programme")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(theme.secondaryText)
 
@@ -111,13 +96,48 @@ struct ProfileScanEvolutionHero: View {
                 }
             }
 
-            Text(progress.hasPlan ? "\(completionPercent)% du programme validé" : "Aucun plan actif")
+            Text(progress.hasPlan ? progress.subtitle : "Aucun plan actif")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(theme.secondaryText)
-                .lineLimit(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.82)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var programFooter: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if progress.durationAdjustmentDays != 0 {
+                Text(adjustmentLabel)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(
+                        progress.durationAdjustmentDays < 0
+                            ? Color(red: 0.35, green: 0.78, blue: 0.45)
+                            : Color(red: 1.0, green: 0.72, blue: 0.28)
+                    )
+            }
+
+            if let note = progress.latestEvolutionNote {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color(hex: "aeb2fa"))
+                        .padding(.top, 2)
+
+                    Text(note)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private var adjustmentLabel: String {
+        let days = abs(progress.durationAdjustmentDays)
+        let signed = progress.durationAdjustmentDays > 0 ? "+\(days)" : "-\(days)"
+        return "\(signed) j sur le programme debloat"
     }
 
     @ViewBuilder
@@ -127,7 +147,11 @@ struct ProfileScanEvolutionHero: View {
                 HapticManager.shared.impact(.light)
                 onOpenScan(displayedScan)
             } label: {
-                ProfileScanCircleMedia(result: displayedScan, diameter: circleDiameter)
+                ProfileScanCircleMedia(
+                    result: displayedScan,
+                    diameter: circleDiameter,
+                    isPlaybackActive: isPlaybackActive
+                )
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Ouvrir le scan affiché")
@@ -162,68 +186,11 @@ struct ProfileScanEvolutionHero: View {
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: max(progress.hasPlan ? 8 : 0, geometry.size.width * CGFloat(min(max(progress.validationProgress, 0), 1))))
+                    .frame(width: max(progress.hasPlan ? 8 : 0, geometry.size.width * CGFloat(min(max(progress.timeProgress, 0), 1))))
             }
         }
         .frame(height: 8)
-        .accessibilityLabel("Progression du programme \(completionPercent) pour cent")
-    }
-
-    @ViewBuilder
-    private var programMetricsRow: some View {
-        if progress.hasPlan {
-            HStack(spacing: 8) {
-                programMetricPill(
-                    icon: "checkmark.circle.fill",
-                    value: "\(displayedValidatedDays)",
-                    label: "validés"
-                )
-
-                programMetricPill(
-                    icon: "flame.fill",
-                    value: "\(displayedStreak)",
-                    label: "série"
-                )
-
-                if let displayedWeekLabel {
-                    programMetricPill(
-                        icon: "calendar",
-                        value: displayedWeekLabel,
-                        label: "semaine"
-                    )
-                }
-            }
-            .accessibilityElement(children: .combine)
-        }
-    }
-
-    private func programMetricPill(icon: String, value: String, label: String) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(theme.secondaryText)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(theme.primaryText)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-
-                Text(label)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(theme.secondaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
-        .padding(.horizontal, 10)
-        .background(
-            Capsule()
-                .fill(theme.primaryText.opacity(theme.isDark ? 0.075 : 0.045))
-        )
+        .accessibilityLabel("Progression debloat \(completionPercent) pour cent")
     }
 
     private var dateLabel: String {
@@ -244,6 +211,7 @@ struct ProfileScanEvolutionHero: View {
 private struct ProfileScanCircleMedia: View {
     let result: FaceScanResult
     let diameter: CGFloat
+    var isPlaybackActive: Bool = true
 
     @Environment(\.appTheme) private var theme
 
@@ -251,8 +219,10 @@ private struct ProfileScanCircleMedia: View {
         FaceScanRecordingMediaView(
             result: result,
             height: diameter,
-            displayMode: .featured
+            displayMode: .featured,
+            isPlaybackActive: isPlaybackActive
         )
+        .id("\(result.id)-\(isPlaybackActive)")
         .frame(width: diameter, height: diameter)
         .clipShape(Circle())
         .overlay {

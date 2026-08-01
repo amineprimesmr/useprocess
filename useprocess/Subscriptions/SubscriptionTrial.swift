@@ -2,7 +2,7 @@ import Foundation
 import RevenueCat
 import StoreKit
 
-/// Essai gratuit configuré côté App Store Connect / StoreKit (3 jours).
+/// Essai gratuit configuré côté App Store Connect / StoreKit (désactivé).
 struct SubscriptionTrialInfo: Equatable {
     let days: Int
     let isEligible: Bool
@@ -10,7 +10,7 @@ struct SubscriptionTrialInfo: Equatable {
     static var configured: SubscriptionTrialInfo {
         SubscriptionTrialInfo(
             days: SubscriptionConfiguration.freeTrialDays,
-            isEligible: true
+            isEligible: SubscriptionConfiguration.freeTrialDays > 0
         )
     }
 
@@ -73,7 +73,7 @@ enum SubscriptionIntroOfferParser {
         case .year:
             return max(1, period.value * 365)
         @unknown default:
-            return SubscriptionConfiguration.freeTrialDays
+            return max(1, SubscriptionConfiguration.freeTrialDays)
         }
     }
 }

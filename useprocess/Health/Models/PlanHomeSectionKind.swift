@@ -15,7 +15,7 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
         switch self {
         case .faceScan: "Dernier scan"
         case .nutrition: "Repas debloat du jour"
-        case .training: "Circuit posture & étirements"
+        case .training: "Circuit posture"
         case .posture: "Posture & circuit quotidien"
         case .faceRoutine: "Routine quotidienne"
         case .resources: "Aller plus loin"

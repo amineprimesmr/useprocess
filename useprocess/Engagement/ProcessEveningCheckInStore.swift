@@ -3,9 +3,10 @@ import Foundation
 enum EveningCheckInQuestionID {
     static let water = "water"
     static let debloatMeal = "debloatMeal"
-    static let postureCircuit = "postureCircuit"
+    static let cardio = "cardio"
+    static let legacyPostureCircuit = "postureCircuit"
 
-    static let all: [String] = [water, debloatMeal, postureCircuit]
+    static let all: [String] = [water, debloatMeal, cardio]
 }
 
 struct ProcessEveningCheckInDayRecord: Codable, Equatable {
@@ -63,9 +64,14 @@ final class ProcessEveningCheckInStore {
     }
 
     private func sanitizedAnswers(_ answers: [String: String]) -> [String: String] {
-        Dictionary(
+        var normalized = Dictionary(
             uniqueKeysWithValues: answers.filter { EveningCheckInQuestionID.all.contains($0.key) }
         )
+        if normalized[EveningCheckInQuestionID.cardio] == nil,
+           let legacy = answers[EveningCheckInQuestionID.legacyPostureCircuit] {
+            normalized[EveningCheckInQuestionID.cardio] = legacy
+        }
+        return normalized
     }
 
     private func applyAnswersToPlan(_ answers: [String: String], for date: Date) {
@@ -93,10 +99,10 @@ final class ProcessEveningCheckInStore {
             )
         }
 
-        if let posture = answers[EveningCheckInQuestionID.postureCircuit] {
+        if let cardio = answers[EveningCheckInQuestionID.cardio] {
             planStore.setJournalTaskStatus(
-                posture == "yes" ? .completed : .failed,
-                taskId: "\(dayId).posture.circuit",
+                cardio == "yes" ? .completed : .failed,
+                taskId: "\(dayId).core.cardio",
                 dayId: dayId
             )
         }

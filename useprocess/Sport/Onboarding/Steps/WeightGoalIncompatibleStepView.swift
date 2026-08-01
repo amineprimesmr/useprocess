@@ -47,14 +47,11 @@ struct WeightGoalIncompatibleStepView: View {
     // ✅ Déterminer le message selon l'incompatibilité
     private var message: String {
         if currentBMI >= 25.0 && selectedGoal == .gain {
-            // Surpoids/Obésité + objectif "prendre du poids"
-            return "\(userFirstName), tu es actuellement en surpoids par rapport à ta taille. Tu ne peux pas avoir comme objectif de prendre du poids. Nous te recommandons de choisir l'objectif de perdre du poids pour améliorer ta santé."
+            return "\(userFirstName), pour ton profil actuel on privilégie un plan debloat visage (rétention, ovale, cernes) plutôt qu’une prise de volume. On recentre sur le gonflement facial."
         } else if currentBMI < 18.5 && selectedGoal == .lose {
-            // Maigreur + objectif "perdre du poids"
-            return "\(userFirstName), tu es actuellement en dessous de ton poids de forme. Tu ne peux pas avoir comme objectif de perdre du poids. Nous te recommandons de choisir l'objectif de prendre du poids pour améliorer ta santé."
+            return "\(userFirstName), on évite toute logique de restriction. Process se concentre sur le debloat visage : sommeil, sel, inflammation et drainage — pas sur la perte de poids."
         }
-        // Fallback (ne devrait pas arriver)
-        return "\(userFirstName), cet objectif n'est pas adapté à ta situation actuelle."
+        return "\(userFirstName), on recentre ton plan uniquement sur le debloat visage."
     }
 
     private var fullText: String {

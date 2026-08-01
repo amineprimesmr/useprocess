@@ -24,7 +24,7 @@ struct ProfileWeightSpectrumChart: View {
     let history: [ProfileAnalyticsPoint]
     var theme: AppTheme
 
-    @State private var revealProgress: CGFloat = 0
+    @State private var revealProgress: CGFloat = ProfileChartAnimationGate.hasPlayedProfileIntro ? 1 : 0
 
     private let chartHeight: CGFloat = 148
     private let visibleSampleCount: Int = 30
@@ -53,18 +53,29 @@ struct ProfileWeightSpectrumChart: View {
         chartCanvas
             .frame(height: chartHeight + 44)
             .padding(.top, 4)
-            .onAppear {
-                revealProgress = 0
-                withAnimation(.spring(response: 0.72, dampingFraction: 0.82)) {
-                    revealProgress = 1
-                }
+            .drawingGroup()
+            .onAppear(perform: playIntroIfNeeded)
+            .onChange(of: historySignature) { _, _ in
+                guard !history.isEmpty else { return }
+                revealProgress = 1
             }
-            .onChange(of: history) { _, _ in
-                revealProgress = 0
-                withAnimation(.spring(response: 0.62, dampingFraction: 0.84)) {
-                    revealProgress = 1
-                }
-            }
+    }
+
+    private var historySignature: String {
+        guard let last = history.last else { return "empty" }
+        return "\(history.count)-\(last.id)-\(last.value)"
+    }
+
+    private func playIntroIfNeeded() {
+        guard !ProfileChartAnimationGate.hasPlayedProfileIntro else {
+            revealProgress = 1
+            return
+        }
+        revealProgress = 0
+        withAnimation(.spring(response: 0.72, dampingFraction: 0.82)) {
+            revealProgress = 1
+        }
+        ProfileChartAnimationGate.hasPlayedProfileIntro = true
     }
 
     private var chartCanvas: some View {
@@ -178,8 +189,6 @@ struct ProfileWeightSpectrumChart: View {
         }
         .position(x: x, y: y)
         .opacity(revealProgress)
-        .animation(.spring(response: 0.58, dampingFraction: 0.86), value: revealProgress)
-        .animation(.spring(response: 0.58, dampingFraction: 0.86), value: history)
     }
 
     private func formattedTooltipValue(_ value: Double) -> String {

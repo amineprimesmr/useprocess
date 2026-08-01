@@ -6,6 +6,7 @@ struct FaceScanRecordingMediaView: View {
     let result: FaceScanResult
     var height: CGFloat = 260
     var displayMode: DisplayMode = .featured
+    var isPlaybackActive: Bool = true
 
     enum DisplayMode {
         case featured
@@ -20,7 +21,7 @@ struct FaceScanRecordingMediaView: View {
     var body: some View {
         Group {
             if let url = resolvedVideoURL {
-                FaceScanSilentVideoLoopView(url: url)
+                FaceScanSilentVideoLoopView(url: url, isPlaybackActive: isPlaybackActive)
             } else if let image = resolvedSnapshot {
                 Image(uiImage: image)
                     .resizable()
@@ -44,6 +45,10 @@ struct FaceScanRecordingMediaView: View {
         }
         .onChange(of: result.snapshotFilename) { _, _ in
             refreshResolvedMedia()
+        }
+        .onChange(of: isPlaybackActive) { _, isActive in
+            guard isActive else { return }
+            mediaRefreshToken &+= 1
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             refreshResolvedMedia()
@@ -103,6 +108,7 @@ private struct FaceScanMediaCornerClip: ViewModifier {
 /// Boucle vidéo muette — AVPlayerLayer (pas VideoPlayer) pour ne pas couper la musique.
 struct FaceScanSilentVideoLoopView: UIViewRepresentable {
     let url: URL
+    var isPlaybackActive: Bool = true
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -111,11 +117,18 @@ struct FaceScanSilentVideoLoopView: UIViewRepresentable {
     func makeUIView(context: Context) -> FaceScanVideoLoopContainerView {
         let view = FaceScanVideoLoopContainerView()
         context.coordinator.attach(to: view, url: url)
+        view.setPlaybackActive(isPlaybackActive)
         return view
     }
 
     func updateUIView(_ uiView: FaceScanVideoLoopContainerView, context: Context) {
         context.coordinator.attach(to: uiView, url: url)
+        uiView.setPlaybackActive(isPlaybackActive)
+        guard isPlaybackActive else { return }
+        uiView.resumePlaybackIfNeeded()
+        DispatchQueue.main.async {
+            uiView.resumePlaybackIfNeeded()
+        }
     }
 
     static func dismantleUIView(_ uiView: FaceScanVideoLoopContainerView, coordinator: Coordinator) {
@@ -164,6 +177,7 @@ struct FaceScanSilentVideoLoopView: UIViewRepresentable {
 
 final class FaceScanVideoLoopContainerView: UIView {
     private var playerLayer: AVPlayerLayer?
+    private var playbackActive = true
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -197,8 +211,18 @@ final class FaceScanVideoLoopContainerView: UIView {
         playerLayer = nil
     }
 
+    func setPlaybackActive(_ active: Bool) {
+        playbackActive = active
+        if active {
+            resumePlaybackIfNeeded()
+        } else {
+            playerLayer?.player?.pause()
+        }
+    }
+
     func resumePlaybackIfNeeded() {
-        guard window != nil,
+        guard playbackActive,
+              window != nil,
               bounds.width > 1,
               bounds.height > 1,
               let player = playerLayer?.player else { return }
@@ -209,7 +233,11 @@ final class FaceScanVideoLoopContainerView: UIView {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        resumePlaybackIfNeeded()
+        if window == nil {
+            playerLayer?.player?.pause()
+        } else {
+            resumePlaybackIfNeeded()
+        }
     }
 
     override func layoutSubviews() {

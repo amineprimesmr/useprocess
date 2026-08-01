@@ -29,7 +29,7 @@ struct OnboardingProgramCreationStepView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                OnboardingProgramCreationBackground(progress: creationViewModel.progress)
+                OnboardingProgramCreationBackground()
 
                 if creationViewModel.displayMode == .success {
                     OnboardingProgramCreationConfettiView(isActive: creationViewModel.successContentRevealed)

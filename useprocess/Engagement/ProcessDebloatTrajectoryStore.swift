@@ -20,6 +20,7 @@ final class ProcessDebloatTrajectoryStore {
         migrateLegacyCheckInsIfNeeded()
         migrateFaceScansIfNeeded()
         reconcileMissedDays()
+        rebuildAllStreaks()
         refreshSnapshot()
     }
 
@@ -31,13 +32,16 @@ final class ProcessDebloatTrajectoryStore {
 
         let isPaused = ProcessActivityStatusStore.shared.status(for: dayStart) != .active
         let behavior = ProcessDebloatTrajectoryEngine.behaviorScore(from: sanitized)
-        let yesCount = ProcessDebloatTrajectoryEngine.yesCount(from: sanitized)
+        let cardioMissesBefore = ProcessDebloatValidation.consecutiveCardioMisses(
+            before: dayKey,
+            in: state.recordsByDay
+        )
 
         var record = state.recordsByDay[dayKey] ?? emptyRecord(dayKey: dayKey)
         record.checkInSubmitted = true
         record.water = ProcessDebloatTrajectoryEngine.boolAnswer(sanitized, key: EveningCheckInQuestionID.water)
         record.debloatMeal = ProcessDebloatTrajectoryEngine.boolAnswer(sanitized, key: EveningCheckInQuestionID.debloatMeal)
-        record.postureCircuit = ProcessDebloatTrajectoryEngine.boolAnswer(sanitized, key: EveningCheckInQuestionID.postureCircuit)
+        record.cardio = ProcessDebloatTrajectoryEngine.boolAnswer(sanitized, key: EveningCheckInQuestionID.cardio)
         record.behaviorScore = behavior
 
         if record.scanScore == nil {
@@ -48,11 +52,10 @@ final class ProcessDebloatTrajectoryStore {
         }
 
         record.verdict = ProcessDebloatTrajectoryEngine.verdict(
-            behaviorScore: behavior,
-            yesCount: yesCount,
+            record: record,
+            consecutiveCardioMissesBefore: cardioMissesBefore,
             scanScore: record.scanScore,
-            isPaused: isPaused,
-            checkInSubmitted: true
+            isPaused: isPaused
         )
 
         finalizeRecord(&record, dayKey: dayKey)
@@ -84,13 +87,15 @@ final class ProcessDebloatTrajectoryStore {
         record.scanScore = scan
 
         if record.checkInSubmitted {
-            let yesCount = record.yesCount
+            let cardioMissesBefore = ProcessDebloatValidation.consecutiveCardioMisses(
+                before: dayKey,
+                in: state.recordsByDay
+            )
             record.verdict = ProcessDebloatTrajectoryEngine.verdict(
-                behaviorScore: record.behaviorScore,
-                yesCount: yesCount,
+                record: record,
+                consecutiveCardioMissesBefore: cardioMissesBefore,
                 scanScore: scan,
-                isPaused: record.verdict == .paused,
-                checkInSubmitted: true
+                isPaused: record.verdict == .paused
             )
             finalizeRecord(&record, dayKey: dayKey, recomputeStreak: false)
         } else {
@@ -130,6 +135,10 @@ final class ProcessDebloatTrajectoryStore {
 
     var consecutiveMissCount: Int {
         state.consecutiveMisses
+    }
+
+    var consecutiveCardioMissCount: Int {
+        state.consecutiveCardioMisses
     }
 
     func chartPoints(dayCount: Int = 30) -> [DebloatTrajectoryPoint] {
@@ -193,7 +202,7 @@ final class ProcessDebloatTrajectoryStore {
             checkInSubmitted: false,
             water: nil,
             debloatMeal: nil,
-            postureCircuit: nil,
+            cardio: nil,
             behaviorScore: 0,
             scanId: nil,
             relativeFaceScore: nil,
@@ -244,8 +253,11 @@ final class ProcessDebloatTrajectoryStore {
         record.trajectoryTrend = ProcessDebloatTrajectoryEngine.trajectoryTrend(for: points)
 
         record.aiSummary = ProcessDebloatTrajectoryEngine.aiSummary(
-            verdict: record.verdict,
-            yesCount: record.yesCount,
+            record: record,
+            consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
+                before: dayKey,
+                in: state.recordsByDay
+            ),
             compositeScore: record.compositeScore,
             puffinessDelta: record.puffinessDelta
         )
@@ -258,6 +270,7 @@ final class ProcessDebloatTrajectoryStore {
     private func rebuildAllStreaks() {
         let sorted = state.recordsByDay.keys.sorted()
         var consecutiveMisses = 0
+        var consecutiveCardioMisses = 0
         var graceKeys = Set<String>()
         var longest = 0
 
@@ -268,6 +281,15 @@ final class ProcessDebloatTrajectoryStore {
                 graceUsedDayKeys: graceKeys,
                 for: key
             )
+
+            if record.checkInSubmitted {
+                record.verdict = ProcessDebloatTrajectoryEngine.verdict(
+                    record: record,
+                    consecutiveCardioMissesBefore: consecutiveCardioMisses,
+                    scanScore: record.scanScore,
+                    isPaused: record.verdict == .paused
+                )
+            }
 
             let transition = ProcessDebloatTrajectoryEngine.applyStreakTransition(
                 previousStreak: previous,
@@ -290,10 +312,15 @@ final class ProcessDebloatTrajectoryStore {
                 momentumStreak: transition.streak
             )
             record.aiSummary = ProcessDebloatTrajectoryEngine.aiSummary(
-                verdict: record.verdict,
-                yesCount: record.yesCount,
+                record: record,
+                consecutiveCardioMissesBefore: consecutiveCardioMisses,
                 compositeScore: record.compositeScore,
                 puffinessDelta: record.puffinessDelta
+            )
+
+            consecutiveCardioMisses = ProcessDebloatTrajectoryEngine.applyCardioMissTransition(
+                previousMisses: consecutiveCardioMisses,
+                record: record
             )
 
             state.recordsByDay[key] = record
@@ -301,7 +328,16 @@ final class ProcessDebloatTrajectoryStore {
 
         state.graceUsedDayKeys = graceKeys
         state.consecutiveMisses = consecutiveMisses
+        state.consecutiveCardioMisses = consecutiveCardioMisses
         state.longestStreak = max(state.longestStreak, longest)
+    }
+
+    private func isValidatedDay(_ record: DebloatDayRecord) -> Bool {
+        let cardioBefore = ProcessDebloatValidation.consecutiveCardioMisses(
+            before: record.dayKey,
+            in: state.recordsByDay
+        )
+        return record.countsAsValidatedDay(consecutiveCardioMissesBefore: cardioBefore)
     }
 
     private func previousStreak(before dayKey: String) -> Int {
@@ -343,7 +379,7 @@ final class ProcessDebloatTrajectoryStore {
 
         let streakEligibleKeys = Set(
             state.recordsByDay.values
-                .filter { $0.verdict.countsForStreak || ($0.verdict == .missed && $0.graceUsed) }
+                .filter { isValidatedDay($0) || ($0.verdict == .missed && $0.graceUsed) }
                 .map(\.dayKey)
         )
 
@@ -364,20 +400,28 @@ final class ProcessDebloatTrajectoryStore {
         let nextMilestone = ProcessStreakMilestone.catalog.first(where: { $0.days > current })
         let daysUntil = nextMilestone.map { $0.days - current }
 
+        let todayCardioBefore = ProcessDebloatValidation.consecutiveCardioMisses(
+            before: todayKey,
+            in: state.recordsByDay
+        )
+        let isTodayValidated = todayRecord?.countsAsValidatedDay(
+            consecutiveCardioMissesBefore: todayCardioBefore
+        ) == true
+
         let updated = DebloatTrajectorySnapshot(
             currentStreak: current,
             longestStreak: max(state.longestStreak, current),
             todayCompositeScore: todayRecord?.compositeScore ?? 0,
             todayVerdict: todayRecord?.verdict,
             todayProgress: todayProgress,
-            isTodayComplete: todayRecord?.checkInSubmitted == true,
+            isTodayComplete: isTodayValidated,
             trajectoryTrend: ProcessDebloatTrajectoryEngine.trajectoryTrend(for: chartPoints),
             velocitySlope: ProcessDebloatTrajectoryEngine.velocitySlope(for: chartPoints),
             chartPoints: chartPoints,
             calendarWeek: calendarWeek,
             nextMilestone: nextMilestone,
             daysUntilNextMilestone: daysUntil,
-            totalValidatedDays: state.recordsByDay.values.filter(\.checkInSubmitted).count
+            totalValidatedDays: state.recordsByDay.values.filter { isValidatedDay($0) }.count
         )
 
         if snapshot != updated {
@@ -396,7 +440,8 @@ final class ProcessDebloatTrajectoryStore {
             plan: plan,
             trajectory: snapshot,
             records: Array(state.recordsByDay.values),
-            consecutiveMisses: state.consecutiveMisses
+            consecutiveMisses: state.consecutiveMisses,
+            consecutiveCardioMisses: state.consecutiveCardioMisses
         )
     }
 
@@ -413,25 +458,27 @@ final class ProcessDebloatTrajectoryStore {
 
             let answers = evening.answers(for: date)
             let behavior = ProcessDebloatTrajectoryEngine.behaviorScore(from: answers)
-            let yesCount = ProcessDebloatTrajectoryEngine.yesCount(from: answers)
             let isPaused = ProcessActivityStatusStore.shared.status(for: date) != .active
 
             var record = emptyRecord(dayKey: dayKey)
             record.checkInSubmitted = true
             record.water = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.water)
             record.debloatMeal = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.debloatMeal)
-            record.postureCircuit = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.postureCircuit)
+            record.cardio = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.cardio)
             record.behaviorScore = behavior
             record.scanScore = ProcessDebloatTrajectoryEngine.rollingScanScore(
                 from: Array(state.recordsByDay.values),
                 before: dayKey
             )
+            let cardioMissesBefore = ProcessDebloatValidation.consecutiveCardioMisses(
+                before: dayKey,
+                in: state.recordsByDay
+            )
             record.verdict = ProcessDebloatTrajectoryEngine.verdict(
-                behaviorScore: behavior,
-                yesCount: yesCount,
+                record: record,
+                consecutiveCardioMissesBefore: cardioMissesBefore,
                 scanScore: record.scanScore,
-                isPaused: isPaused,
-                checkInSubmitted: true
+                isPaused: isPaused
             )
             finalizeRecord(&record, dayKey: dayKey, recomputeStreak: false)
             state.recordsByDay[dayKey] = record
@@ -464,9 +511,14 @@ final class ProcessDebloatTrajectoryStore {
     }
 
     private func sanitizedAnswers(_ answers: [String: String]) -> [String: String] {
-        Dictionary(
+        var normalized = Dictionary(
             uniqueKeysWithValues: answers.filter { EveningCheckInQuestionID.all.contains($0.key) }
         )
+        if normalized[EveningCheckInQuestionID.cardio] == nil,
+           let legacy = answers[EveningCheckInQuestionID.legacyPostureCircuit] {
+            normalized[EveningCheckInQuestionID.cardio] = legacy
+        }
+        return normalized
     }
 
     // MARK: - Persistence

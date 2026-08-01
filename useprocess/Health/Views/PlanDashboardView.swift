@@ -3,15 +3,16 @@ import SwiftUI
 /// Page Plan — timeline chronologique du jour + ressources en fiches séparées.
 struct PlanDashboardView: View {
     @Binding var selectedSection: ProcessMainSection
+    var isTabActive: Bool = true
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
     @Bindable private var session = AppSession.shared
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
 
     @State private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
-    @State private var showHomeLayoutEditor = false
     @State private var showSettings = false
     @State private var showStreakToast = false
     @State private var streakToast = DynamicIslandToastMessage.streak(
@@ -20,7 +21,12 @@ struct PlanDashboardView: View {
     )
     @State private var streakToastDismissTask: Task<Void, Never>?
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
+    @State private var planHealthMetrics = PlanHomeHealthMetrics()
     @Namespace private var homeChromeZoomNamespace
+
+    private var isPlanRuntimeActive: Bool {
+        isTabActive && scenePhase == .active
+    }
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
@@ -46,26 +52,17 @@ struct PlanDashboardView: View {
                     )
 
                     planContent
-
-                    homeLayoutEditButton
                 }
                 .padding()
+                .padding(.bottom, 24)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
             .toolbarBackground(.hidden, for: .navigationBar)
             .processClearUIKitHostingBackground()
-            .refreshable { planStore.reloadForCurrentUser(force: true) }
-            .fullScreenCover(isPresented: $showHomeLayoutEditor) {
-                if let plan = livePlan {
-                    PlanHomeLayoutEditorSheet(
-                        plan: plan,
-                        selectedDate: $selectedPlanDate,
-                        selectedSection: $selectedSection
-                    )
-                    .environmentObject(profileService)
-                    .processZoomTransition(id: .homeLayoutEditor, namespace: homeChromeZoomNamespace)
-                }
+            .processMorphingRefreshable {
+                planStore.reloadForCurrentUser(force: true)
+                refreshPlanHealthMetrics()
             }
             .fullScreenCover(isPresented: $showSettings) {
                 ProcessSettingsFullScreenView()
@@ -77,8 +74,30 @@ struct PlanDashboardView: View {
             .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast, onTap: openProfileStatistics)
             .onAppear {
                 ProcessEveningCheckInStore.shared.reload()
+                if let plan = livePlan {
+                    selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
+                }
+                refreshPlanHealthMetrics()
+            }
+            .onChange(of: livePlan?.calendar.totalDays) { _, _ in
+                if let plan = livePlan {
+                    selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
+                }
+            }
+            .task(id: isPlanRuntimeActive) {
+                guard isPlanRuntimeActive else { return }
+                refreshPlanHealthMetrics()
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(30))
+                    refreshPlanHealthMetrics()
+                }
             }
         }
+    }
+
+    @MainActor
+    private func refreshPlanHealthMetrics() {
+        planHealthMetrics = PlanHomeHealthMetrics.fromTodaySnapshot()
     }
 
     @ViewBuilder
@@ -87,25 +106,14 @@ struct PlanDashboardView: View {
             DailyJournalChecklistView(
                 plan: plan,
                 selectedDate: $selectedPlanDate,
+                isPlanActive: isPlanRuntimeActive,
+                healthMetrics: planHealthMetrics,
                 showHeader: false,
                 showWeekStrip: false,
                 showChecklist: false
             )
-            .environmentObject(HealthManager.shared)
         } else {
             noPlanCard
-        }
-    }
-
-    @ViewBuilder
-    private var homeLayoutEditButton: some View {
-        if livePlan != nil {
-            PlanHomeCustomizeFloatingButton(
-                zoomNamespace: homeChromeZoomNamespace,
-                action: { showHomeLayoutEditor = true }
-            )
-            .padding(.top, 4)
-            .padding(.bottom, 96)
         }
     }
 
@@ -143,9 +151,9 @@ struct PlanDashboardView: View {
 
     private var noPlanMessage: String {
         if planStore.canRestorePlan {
-            return "Tu as déjà répondu au questionnaire, mais ton programme n'a pas pu être chargé. Restaure-le en un clic ou reprends la configuration avec le coach."
+            return "Ton programme n'a pas pu être chargé. Restaure-le en un clic."
         }
-        return "Ouvre le coach pour personnaliser ton plan quand tu es prêt."
+        return "Ton plan se prépare. Reviens dans un instant."
     }
 
     private func restorePlan() async {

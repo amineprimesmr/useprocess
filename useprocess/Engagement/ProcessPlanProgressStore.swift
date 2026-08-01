@@ -9,13 +9,13 @@ final class ProcessPlanProgressStore {
     private var state = ProcessPlanProgressState()
 
     private init() {
-        state = loadState() ?? ProcessPlanProgressState()
+        state = ProcessPlanProgressEngine.sanitizeState(loadState() ?? ProcessPlanProgressState())
     }
 
     // MARK: - Public
 
     func reload(plan: FaceOriginPlan? = nil) {
-        state = loadState() ?? ProcessPlanProgressState()
+        state = ProcessPlanProgressEngine.sanitizeState(loadState() ?? ProcessPlanProgressState())
         guard let plan else {
             snapshot = .empty
             return
@@ -31,7 +31,8 @@ final class ProcessPlanProgressStore {
         plan: FaceOriginPlan?,
         trajectory: DebloatTrajectorySnapshot,
         records: [DebloatDayRecord],
-        consecutiveMisses: Int
+        consecutiveMisses: Int,
+        consecutiveCardioMisses: Int = 0
     ) {
         state = ProcessPlanProgressEngine.evaluateDurationAdjustment(
             state: state,
@@ -39,8 +40,10 @@ final class ProcessPlanProgressStore {
             trajectory: trajectory,
             records: records,
             consecutiveMisses: consecutiveMisses,
+            consecutiveCardioMisses: consecutiveCardioMisses,
             earlyCompletion: false
         )
+        state = ProcessPlanProgressEngine.sanitizeState(state)
         persist()
         refreshSnapshot(plan: plan, trajectory: trajectory, consecutiveMisses: consecutiveMisses)
     }
@@ -57,8 +60,10 @@ final class ProcessPlanProgressStore {
             trajectory: trajectory,
             records: Array(ProcessDebloatTrajectoryStore.shared.allRecordsByDay.values),
             consecutiveMisses: ProcessDebloatTrajectoryStore.shared.consecutiveMissCount,
+            consecutiveCardioMisses: ProcessDebloatTrajectoryStore.shared.consecutiveCardioMissCount,
             earlyCompletion: earlyCompletion
         )
+        state = ProcessPlanProgressEngine.sanitizeState(state)
         persist()
         refreshSnapshot(
             plan: plan,
@@ -89,6 +94,11 @@ final class ProcessPlanProgressStore {
 
         if snapshot != updated {
             snapshot = updated
+        }
+
+        if state.schemaVersion < 2 {
+            state = ProcessPlanProgressEngine.sanitizeState(state)
+            persist()
         }
 
         _ = consecutiveMisses

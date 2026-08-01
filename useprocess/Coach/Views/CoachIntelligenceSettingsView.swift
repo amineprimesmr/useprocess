@@ -12,7 +12,6 @@ struct CoachIntelligenceSettingsView: View {
     @State private var showsPersonalityPicker = false
     @State private var showsMyMemory = false
     @State private var showsCredits = false
-    @State private var showsCheckIns = false
     @State private var showsDeleteConversationsConfirm = false
     @State private var showsDeleteFilesConfirm = false
     @State private var isResyncing = false
@@ -90,13 +89,9 @@ struct CoachIntelligenceSettingsView: View {
             .sheet(isPresented: $showsCredits) {
                 CoachIntelligenceCreditsView()
             }
-            .sheet(isPresented: $showsCheckIns) {
-                CoachCheckInsManageView()
-            }
             .onChange(of: store.isEnabled) { _, _ in
                 Task {
-                    await CoachCheckInScheduler.rescheduleAll()
-                    await CoachDailyRhythmService.reschedule()
+                    await CoachDailyRhythmService.rescheduleAll()
                 }
             }
         }
@@ -242,23 +237,12 @@ struct CoachIntelligenceSettingsView: View {
 
     private var proactiveSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Rythme proactif")
+            sectionTitle("Notifications")
 
             VStack(spacing: 0) {
                 settingsToggleRow(
-                    title: "Check-ins programmés",
-                    subtitle: "Rappels personnalisés pour ouvrir le coach aux moments clés.",
-                    isOn: Binding(
-                        get: { CoachCheckInStore.shared.proactiveCheckInsEnabled },
-                        set: { CoachCheckInStore.shared.proactiveCheckInsEnabled = $0 }
-                    )
-                )
-
-                settingsDivider
-
-                settingsToggleRow(
                     title: "Brief matin",
-                    subtitle: "Notification quotidienne avec readiness et action prioritaire.",
+                    subtitle: "Une notification quotidienne : plan du jour, readiness, scan si besoin.",
                     isOn: Binding(
                         get: { CoachDailyRhythmService.morningOutlookEnabled },
                         set: { CoachDailyRhythmService.morningOutlookEnabled = $0 }
@@ -269,31 +253,12 @@ struct CoachIntelligenceSettingsView: View {
 
                 settingsToggleRow(
                     title: "Bilan du soir",
-                    subtitle: "Rappel streak et journal avant le coucher.",
+                    subtitle: "Rappel pour valider ta journée avant de dormir.",
                     isOn: Binding(
                         get: { CoachDailyRhythmService.eveningReviewEnabled },
                         set: { CoachDailyRhythmService.eveningReviewEnabled = $0 }
                     )
                 )
-
-                settingsDivider
-
-                Button {
-                    showsCheckIns = true
-                } label: {
-                    HStack {
-                        Text("Gérer les check-ins")
-                            .font(.body)
-                            .foregroundStyle(theme.primaryText)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(theme.secondaryText.opacity(0.7))
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                }
-                .buttonStyle(.plain)
             }
             .background(cardBackground)
         }

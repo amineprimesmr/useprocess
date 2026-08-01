@@ -9,27 +9,18 @@ struct PlanTrainingDaySection: View {
     var isEditable: Bool = true
 
     @Environment(\.appTheme) private var theme
-    @EnvironmentObject private var healthManager: HealthManager
 
     @Namespace private var trainingZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
 
-    private var stepsToday: Int {
-        healthManager.todaySnapshot.effort.steps
-    }
-
-    /// Temporaire : uniquement le circuit posture & étirements (pas de séance du jour).
     private var carouselItems: [PlanProtocolCarouselItem] {
-        PlanProtocolCarouselBuilder.compactPostureItems(
-            from: plan,
-            stepsToday: stepsToday
-        )
+        PlanProtocolCarouselBuilder.compactPostureItems(from: plan)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Circuit posture & étirements",
+                title: "Circuit posture",
                 trailing: sectionHeaderTrailing
             )
 
@@ -47,9 +38,8 @@ struct PlanTrainingDaySection: View {
     }
 
     private var sectionHeaderTrailing: String? {
-        let count = carouselItems.count
-        guard count > 0 else { return nil }
-        return "\(count) blocs"
+        guard !carouselItems.isEmpty else { return nil }
+        return PlanPostureCircuitContent.estimatedCircuitDurationLabel(for: plan)
     }
 
     private func zoomID(for item: PlanProtocolCarouselItem) -> ProcessZoomTransitionID {
@@ -139,7 +129,7 @@ struct PlanTrainingDayOverviewSheet: View {
 
                     overviewSection(
                         title: "Circuit posture",
-                        subtitle: "\(postureLines.count) blocs · nuque, épaules, hanches"
+                        subtitle: "\(PlanPostureCircuitContent.estimatedCircuitDurationLabel(for: plan)) · nuque, épaules, hanches"
                     ) {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(postureLines, id: \.self) { line in

@@ -476,7 +476,7 @@ enum OriginUserAssessment {
             maxW += 1
         }
 
-        let trajectoryWeeks = max(1, Int(ceil(Double(trajectory.planTotalDays) / 7.0)))
+        let trajectoryWeeks = max(1, Int(ceil(Double(trajectory.debloatDays) / 7.0)))
         let phaseWeeks = max(1, Int(ceil(Double(trajectory.planPhaseOneDays) / 7.0)))
 
         minW = min(minW, phaseWeeks)
@@ -498,15 +498,9 @@ enum OriginUserAssessment {
 
         minW = min(max(1, minW), 20)
         maxW = min(max(minW, maxW), 24)
-        let picked = PlanDurationPersonalizer.pickTotalWeeks(
-            minW: minW,
-            maxW: maxW,
-            signals: signals,
-            phaseOneDays: trajectory.planPhaseOneDays
-        )
-        let total = min(picked, trajectoryWeeks)
+        let totalWeeks = trajectoryWeeks
 
-        return OriginPlanDuration(minWeeks: minW, maxWeeks: max(total, minW), totalWeeks: total, archetype: archetype)
+        return OriginPlanDuration(minWeeks: minW, maxWeeks: max(totalWeeks, minW), totalWeeks: totalWeeks, archetype: archetype)
     }
 
     static func buildTrajectory(

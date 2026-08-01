@@ -5,6 +5,20 @@ enum ProcessPlanProgressEngine {
     static let maxReductionDays = 21
     static let maxExtensionDays = 21
 
+    /// Durée canonique = promesse debloat onboarding (`debloatTargetDays`).
+    /// Le programme se termine quand le debloat est atteint à 100 %.
+    static func canonicalBaseProgramDays(plan: FaceOriginPlan) -> Int {
+        if let debloat = plan.assessmentSnapshot?.debloatTargetDays, debloat > 0 {
+            return debloat
+        }
+        if let trajectory = plan.assessmentSnapshot?.trajectoryTotalDays, trajectory > 0 {
+            return trajectory
+        }
+        let calendarDays = plan.calendar.totalDays
+        if calendarDays > 0 { return calendarDays }
+        return max(7, plan.totalWeeks * 7)
+    }
+
     // MARK: - Snapshot
 
     static func snapshot(
@@ -18,20 +32,15 @@ enum ProcessPlanProgressEngine {
         guard let plan else { return .empty }
 
         let calendar = Calendar.current
-        let baseDays = max(7, plan.calendar.totalDays > 0 ? plan.calendar.totalDays : plan.totalWeeks * 7)
+        let baseDays = max(7, canonicalBaseProgramDays(plan: plan))
         let clampedAdjustment = clampAdjustment(adjustmentDays, baseDays: baseDays)
         let totalDays = max(7, baseDays + clampedAdjustment)
 
-        let startedAt = plan.calendar.startedAt ?? plan.createdAt
         let elapsedIndex = plan.calendar.startedAt != nil
             ? plan.calendar.currentProgramDayIndex(from: now)
             : 0
         let elapsedDays = plan.calendar.startedAt != nil ? elapsedIndex + 1 : 0
         let remaining = max(0, totalDays - elapsedDays)
-
-        let currentWeek = plan.calendar.startedAt != nil
-            ? plan.calendar.currentWeekNumber(from: now)
-            : 1
 
         let anchor = calendar.startOfDay(for: plan.calendar.startedAt ?? now)
         let endDate = calendar.date(byAdding: .day, value: totalDays - 1, to: anchor)
@@ -41,55 +50,34 @@ enum ProcessPlanProgressEngine {
             ? min(1, Double(trajectory.totalValidatedDays) / Double(totalDays))
             : 0
 
-        let weeksLabel = plan.totalWeeks == 1
-            ? "1 semaine"
-            : "\(plan.totalWeeks) semaines"
-
-        let milestoneData = buildMilestones(
-            plan: plan,
-            profile: profile,
-            elapsedDays: elapsedDays,
-            anchor: anchor,
-            calendar: calendar
-        )
+        let daysLabel = totalDays == 1 ? "1 jour" : "\(totalDays) jours"
+        let isComplete = elapsedDays >= totalDays
 
         let headline: String
         let subtitle: String
 
-        if let active = milestoneData.activeLabel, let activeMilestone = milestoneData.milestones.first(where: { $0.isActive }) {
-            if plan.calendar.startedAt == nil {
-                if let date = activeMilestone.estimatedDate {
-                    headline = "\(active) d'ici \(Self.formatDate(date))"
-                } else {
-                    headline = "Objectif \(active.lowercased())"
-                }
-                subtitle = milestoneData.mode.map { "\($0.label) — \(weeksLabel) au total." }
-                    ?? "Plan calibré sur ton profil."
-            } else {
-                headline = "Semaine \(currentWeek) / \(plan.totalWeeks)"
-                let remainingWeeks = ProcessDurationFormat.weekCount(fromDays: activeMilestone.remainingDays)
-                var parts = ["\(active) : \(ProcessDurationFormat.weeksLabel(count: remainingWeeks)) restante\(remainingWeeks > 1 ? "s" : "")"]
-                if let endDate {
-                    parts.append("fin totale \(Self.formatDate(endDate))")
-                }
-                parts.append("\(trajectory.totalValidatedDays) j validé\(trajectory.totalValidatedDays > 1 ? "s" : "")")
-                subtitle = parts.joined(separator: " · ")
-            }
-        } else if plan.calendar.startedAt == nil {
+        if plan.calendar.startedAt == nil {
+            headline = "Programme debloat · \(daysLabel)"
             if let endDate {
-                headline = "Objectif d'ici \(Self.formatDate(endDate))"
+                subtitle = "Debloat visé le \(Self.formatDate(endDate))"
             } else {
-                headline = weeksLabel
+                subtitle = "Calibré sur ton profil onboarding."
             }
-            subtitle = "Plan calibré sur ton profil — \(weeksLabel)."
+        } else if isComplete {
+            headline = "Programme debloat terminé"
+            subtitle = "\(trajectory.totalValidatedDays) jour\(trajectory.totalValidatedDays > 1 ? "s" : "") validé\(trajectory.totalValidatedDays > 1 ? "s" : "")"
         } else {
-            headline = "Semaine \(currentWeek) / \(plan.totalWeeks)"
-            let remainingWeeks = ProcessDurationFormat.weekCount(fromDays: remaining)
-            var parts = ["\(ProcessDurationFormat.weeksLabel(count: remainingWeeks)) restante\(remainingWeeks > 1 ? "s" : "")"]
-            if let endDate {
-                parts.append("fin estimée \(Self.formatDate(endDate))")
+            headline = "Jour \(elapsedDays) / \(totalDays)"
+            var parts: [String] = []
+            if remaining > 0 {
+                parts.append("\(remaining) j restant\(remaining > 1 ? "s" : "")")
             }
-            parts.append("\(trajectory.totalValidatedDays) j validé\(trajectory.totalValidatedDays > 1 ? "s" : "")")
+            if let endDate {
+                parts.append("debloat le \(Self.formatDate(endDate))")
+            }
+            if trajectory.totalValidatedDays > 0 {
+                parts.append("\(trajectory.totalValidatedDays) j validé\(trajectory.totalValidatedDays > 1 ? "s" : "")")
+            }
             subtitle = parts.joined(separator: " · ")
         }
 
@@ -100,8 +88,8 @@ enum ProcessPlanProgressEngine {
             durationAdjustmentDays: clampedAdjustment,
             elapsedProgramDays: elapsedDays,
             remainingProgramDays: remaining,
-            currentWeek: currentWeek,
-            totalWeeks: plan.totalWeeks,
+            currentWeek: 0,
+            totalWeeks: 0,
             validatedDays: trajectory.totalValidatedDays,
             currentStreak: trajectory.currentStreak,
             estimatedEndDate: endDate,
@@ -109,98 +97,15 @@ enum ProcessPlanProgressEngine {
             validationProgress: validationProgress,
             headline: headline,
             subtitle: subtitle,
-            weeksLabel: weeksLabel,
-            latestEvolutionNote: latestEvent?.message,
-            trajectoryMode: milestoneData.mode,
-            milestones: milestoneData.milestones,
-            activeMilestoneLabel: milestoneData.activeLabel
+            weeksLabel: daysLabel,
+            latestEvolutionNote: latestEvent.map { sanitizeEvolutionMessage($0) },
+            trajectoryMode: nil,
+            milestones: [],
+            activeMilestoneLabel: isComplete ? nil : "Debloat",
+            debloatTargetDays: baseDays,
+            debloatEstimatedDate: endDate,
+            debloatRemainingDays: remaining
         )
-    }
-
-    // MARK: - Milestones
-
-    private struct MilestoneData {
-        let mode: TrajectoryMode?
-        let milestones: [PlanMilestoneProgress]
-        let activeLabel: String?
-    }
-
-    private static func buildMilestones(
-        plan: FaceOriginPlan,
-        profile: UnifiedUserProfile?,
-        elapsedDays: Int,
-        anchor: Date,
-        calendar: Calendar
-    ) -> MilestoneData {
-        guard let assessment = plan.assessmentSnapshot,
-              let mode = assessment.trajectoryMode,
-              let debloatTarget = assessment.debloatTargetDays else {
-            return MilestoneData(mode: nil, milestones: [], activeLabel: nil)
-        }
-
-        let weightLabel: String?
-        if let ideal = profile?.idealWeight, ideal > 0 {
-            weightLabel = "\(Int(ideal.rounded())) kg"
-        } else {
-            weightLabel = assessment.weightTargetDays != nil ? "Poids cible" : nil
-        }
-
-        func makeMilestone(id: String, label: String, targetDays: Int) -> PlanMilestoneProgress {
-            let progress = targetDays > 0 ? min(1, Double(elapsedDays) / Double(targetDays)) : 0
-            let isComplete = elapsedDays >= targetDays
-            let remaining = max(0, targetDays - elapsedDays)
-            let date = calendar.date(byAdding: .day, value: max(0, targetDays - 1), to: anchor)
-            return PlanMilestoneProgress(
-                id: id,
-                label: label,
-                targetDays: targetDays,
-                elapsedDays: min(elapsedDays, targetDays),
-                remainingDays: remaining,
-                estimatedDate: date,
-                progress: progress,
-                isComplete: isComplete,
-                isActive: false
-            )
-        }
-
-        var items: [PlanMilestoneProgress] = []
-
-        switch mode {
-        case .debloatFirst:
-            items.append(makeMilestone(id: "debloat", label: "Debloat", targetDays: debloatTarget))
-            if let weightTarget = assessment.weightTargetDays, let label = weightLabel {
-                items.append(makeMilestone(id: "weight", label: label, targetDays: weightTarget))
-            }
-        case .weightFirst:
-            if let weightTarget = assessment.weightTargetDays, let label = weightLabel {
-                items.append(makeMilestone(id: "weight", label: label, targetDays: weightTarget))
-            }
-            let debloatEnd = assessment.trajectoryTotalDays
-                ?? ((assessment.weightTargetDays ?? 0) + debloatTarget)
-            items.append(makeMilestone(id: "debloat", label: "Debloat", targetDays: debloatEnd))
-        }
-
-        var resolved = items
-        if let firstIncomplete = resolved.firstIndex(where: { !$0.isComplete }) {
-            let item = resolved[firstIncomplete]
-            resolved[firstIncomplete] = PlanMilestoneProgress(
-                id: item.id,
-                label: item.label,
-                targetDays: item.targetDays,
-                elapsedDays: item.elapsedDays,
-                remainingDays: item.remainingDays,
-                estimatedDate: item.estimatedDate,
-                progress: item.progress,
-                isComplete: item.isComplete,
-                isActive: true
-            )
-        }
-
-        let activeLabel = resolved.first(where: { $0.isActive })?.label
-            ?? resolved.first(where: { !$0.isComplete })?.label
-            ?? resolved.last?.label
-
-        return MilestoneData(mode: mode, milestones: resolved, activeLabel: activeLabel)
     }
 
     // MARK: - Évolution durée
@@ -211,7 +116,8 @@ enum ProcessPlanProgressEngine {
         trajectory: DebloatTrajectorySnapshot,
         records: [DebloatDayRecord],
         consecutiveMisses: Int,
-        earlyCompletion: Bool,
+        consecutiveCardioMisses: Int = 0,
+        earlyCompletion: Bool = false,
         now: Date = Date()
     ) -> ProcessPlanProgressState {
         guard plan != nil else { return state }
@@ -223,7 +129,7 @@ enum ProcessPlanProgressEngine {
 
         func apply(delta: Int, token: String, reason: PlanDurationEvolutionReason, message: String) {
             guard !tokens.contains(token) else { return }
-            let baseDays = max(7, plan?.calendar.totalDays ?? (plan?.totalWeeks ?? 1) * 7)
+            let baseDays = max(7, plan.map { canonicalBaseProgramDays(plan: $0) } ?? 7)
             let next = clampAdjustment(adjustment + delta, baseDays: baseDays)
             guard next != adjustment else { return }
 
@@ -246,7 +152,7 @@ enum ProcessPlanProgressEngine {
                 delta: -7,
                 token: "scan_early_completion",
                 reason: .earlyScanCompletion,
-                message: "Objectifs atteints en avance — plan raccourci d'une semaine."
+                message: evolutionMessage(for: .earlyScanCompletion, deltaDays: -7)
             )
         }
 
@@ -260,36 +166,117 @@ enum ProcessPlanProgressEngine {
                 delta: -milestone.reduction,
                 token: "streak_\(milestone.days)",
                 reason: .streakMilestone,
-                message: "Série de \(milestone.days) jours — plan accéléré de \(ProcessDurationFormat.weeksShort(fromDays: milestone.reduction))."
+                message: evolutionMessage(for: .streakMilestone, deltaDays: -milestone.reduction, streakDays: milestone.days)
             )
         }
 
+        // Prolongation uniquement après 2 bilans manqués d'affilée (sans grâce).
+        // Un seul jour oublié ne doit pas rallonger le programme.
         if consecutiveMisses >= 2 {
             apply(
-                delta: 7,
+                delta: 3,
                 token: "consecutive_misses",
                 reason: .consecutiveMisses,
-                message: "Jours manqués — plan prolongé d'une semaine pour te laisser le temps de reprendre."
-            )
-        } else if consecutiveMisses == 0 {
-            tokens.remove("consecutive_misses")
-        }
-
-        if regressionEpisode(in: records, dayCount: 3) {
-            apply(
-                delta: 3,
-                token: "regression_episode",
-                reason: .regressionPattern,
-                message: "Régression détectée — plan ajusté (\(ProcessDurationFormat.weeksShort(fromDays: 3))) pour stabiliser ta trajectoire."
+                message: evolutionMessage(for: .consecutiveMisses, deltaDays: 3)
             )
         } else {
-            tokens.remove("regression_episode")
+            tokens.remove("consecutive_misses")
+            let baseDays = max(7, plan.map { canonicalBaseProgramDays(plan: $0) } ?? 7)
+            reconcileLegacyRegressionExtension(adjustment: &adjustment, tokens: &tokens, baseDays: baseDays)
+        }
+
+        if consecutiveCardioMisses >= ProcessDebloatValidation.consecutiveCardioMissLimit {
+            apply(
+                delta: 2,
+                token: "cardio_consecutive_misses",
+                reason: .cardioConsecutiveMisses,
+                message: evolutionMessage(for: .cardioConsecutiveMisses, deltaDays: 2)
+            )
+        } else {
+            tokens.remove("cardio_consecutive_misses")
+        }
+
+        if let latestKey = records.map(\.dayKey).max(),
+           ProcessDebloatValidation.isWeeklyCardioDeficit(
+            endingAt: latestKey,
+            in: Dictionary(uniqueKeysWithValues: records.map { ($0.dayKey, $0) })
+           ) {
+            let sessions = ProcessDebloatValidation.cardioSessionsInRollingWindow(
+                endingAt: latestKey,
+                in: Dictionary(uniqueKeysWithValues: records.map { ($0.dayKey, $0) })
+            )
+            apply(
+                delta: 2,
+                token: "cardio_weekly_deficit",
+                reason: .cardioWeeklyDeficit,
+                message: evolutionMessage(
+                    for: .cardioWeeklyDeficit,
+                    deltaDays: 2,
+                    cardioSessions: sessions
+                )
+            )
+        } else {
+            tokens.remove("cardio_weekly_deficit")
         }
 
         updated.adjustmentDays = adjustment
         updated.appliedTokens = tokens
-        updated.events = Array(events.prefix(12))
+        updated.events = Array(events.prefix(12)).map { sanitizeEvent($0) }
         return updated
+    }
+
+    // MARK: - Migration messages legacy
+
+    static func sanitizeState(_ state: ProcessPlanProgressState) -> ProcessPlanProgressState {
+        var updated = state
+        updated.events = state.events.map { sanitizeEvent($0) }
+        if updated.schemaVersion < 2 {
+            updated.schemaVersion = 2
+        }
+        return updated
+    }
+
+    static func sanitizeEvent(_ event: PlanDurationEvolutionEvent) -> PlanDurationEvolutionEvent {
+        PlanDurationEvolutionEvent(
+            id: event.id,
+            createdAt: event.createdAt,
+            deltaDays: event.deltaDays,
+            reason: event.reason,
+            message: sanitizeEvolutionMessage(event)
+        )
+    }
+
+    static func sanitizeEvolutionMessage(_ event: PlanDurationEvolutionEvent) -> String {
+        let lower = event.message.lowercased()
+        if lower.contains("sem.") || lower.contains("semaine") {
+            return evolutionMessage(for: event.reason, deltaDays: event.deltaDays)
+        }
+        return event.message
+    }
+
+    static func evolutionMessage(
+        for reason: PlanDurationEvolutionReason,
+        deltaDays: Int,
+        streakDays: Int? = nil,
+        cardioSessions: Int? = nil
+    ) -> String {
+        let days = abs(deltaDays)
+        switch reason {
+        case .earlyScanCompletion:
+            return "Objectifs atteints en avance — programme raccourci de \(days) jours."
+        case .streakMilestone:
+            let streak = streakDays ?? days
+            return "\(streak) jours validés — programme accéléré de \(days) jours."
+        case .consecutiveMisses:
+            return "Bilans manqués — programme prolongé de \(days) jours."
+        case .cardioConsecutiveMisses:
+            return "Cardio absent 3 jours d'affilée — programme prolongé de \(days) jours."
+        case .cardioWeeklyDeficit:
+            let count = cardioSessions ?? 0
+            return "Cardio insuffisant (\(count)/\(ProcessDebloatValidation.weeklyCardioMinimum) cette semaine) — +\(days) jours."
+        case .regressionPattern:
+            return "Régression détectée — programme prolongé de \(days) jours."
+        }
     }
 
     // MARK: - Helpers
@@ -300,19 +287,21 @@ enum ProcessPlanProgressEngine {
         return min(maxAdjustment, max(minAdjustment, adjustment))
     }
 
-    private static func regressionEpisode(in records: [DebloatDayRecord], dayCount: Int) -> Bool {
-        let recent = records
-            .sorted { $0.dayKey > $1.dayKey }
-            .prefix(dayCount)
-        guard recent.count >= 2 else { return false }
-        let regressions = recent.filter { $0.verdict == .regression || $0.verdict == .missed }.count
-        return regressions >= 2
+    /// Retire l'extension +3 jours legacy déclenchée par une régression + un jour manqué.
+    private static func reconcileLegacyRegressionExtension(
+        adjustment: inout Int,
+        tokens: inout Set<String>,
+        baseDays: Int
+    ) {
+        guard tokens.contains("regression_episode") else { return }
+        tokens.remove("regression_episode")
+        adjustment = clampAdjustment(adjustment - 3, baseDays: baseDays)
     }
 
     private static func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "d MMM"
+        formatter.dateFormat = "d MMMM"
         return formatter.string(from: date)
     }
 }

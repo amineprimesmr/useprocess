@@ -40,6 +40,14 @@ enum FaceWellnessAnalyzer {
             notes.append("Scan 3D capturé — couverture angulaire partielle.")
         }
 
+        if capture.fluidShiftScore >= 0.22 {
+            let boost = Int(round(capture.fluidShiftScore * 16))
+            puffiness = min(92, puffiness + boost)
+            notes.append("Test de rétention : le liquide se déplace quand tu penches la tête.")
+        } else if capture.fluidShiftScore >= 0.08 {
+            notes.append("Test de rétention : léger déplacement de liquide au penché.")
+        }
+
         appendWellnessNotes(fatigue: fatigue, puffiness: puffiness, jaw: jaw, into: &notes)
         appendAdvancedNotes(
             fatigue: fatigue, puffiness: puffiness, jaw: jaw,
