@@ -19,39 +19,67 @@ struct FaceScanRecordingMediaView: View {
     @State private var mediaRefreshToken = 0
 
     var body: some View {
-        Group {
-            if let url = resolvedVideoURL {
-                FaceScanSilentVideoLoopView(url: url, isPlaybackActive: isPlaybackActive)
-            } else if let image = resolvedSnapshot {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                placeholder
+        mediaContent
+            .frame(height: displayMode == .sidePanel ? nil : height)
+            .frame(maxWidth: usesFullWidth ? .infinity : nil)
+            .frame(maxHeight: displayMode == .sidePanel ? .infinity : nil)
+            .clipped()
+            .modifier(FaceScanMediaCornerClip(radius: cornerRadius))
+            .id("\(result.id)-\(displayMode)-\(mediaRefreshToken)")
+            .onAppear(perform: refreshResolvedMedia)
+            .onChange(of: result.id) { _, _ in
+                refreshResolvedMedia()
+            }
+            .onChange(of: result.videoFilename) { _, _ in
+                refreshResolvedMedia()
+            }
+            .onChange(of: result.snapshotFilename) { _, _ in
+                refreshResolvedMedia()
+            }
+            .onChange(of: result.studioFraming) { _, _ in
+                mediaRefreshToken &+= 1
+            }
+            .onChange(of: isPlaybackActive) { _, isActive in
+                guard isActive else { return }
+                mediaRefreshToken &+= 1
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                refreshResolvedMedia()
+            }
+    }
+
+    @ViewBuilder
+    private var mediaContent: some View {
+        let framing = result.resolvedStudioFraming
+        if framing.isIdentity {
+            rawMediaLayer
+        } else {
+            GeometryReader { geo in
+                let side = max(geo.size.width, geo.size.height, 1)
+                rawMediaLayer
+                    .frame(width: side, height: side)
+                    .scaleEffect(framing.scale)
+                    .offset(
+                        x: CGFloat(framing.offsetX) * side,
+                        y: CGFloat(framing.offsetY) * side
+                    )
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
             }
         }
-        .frame(height: displayMode == .sidePanel ? nil : height)
-        .frame(maxWidth: usesFullWidth ? .infinity : nil)
-        .frame(maxHeight: displayMode == .sidePanel ? .infinity : nil)
-        .clipped()
-        .modifier(FaceScanMediaCornerClip(radius: cornerRadius))
-        .id("\(result.id)-\(displayMode)-\(mediaRefreshToken)")
-        .onAppear(perform: refreshResolvedMedia)
-        .onChange(of: result.id) { _, _ in
-            refreshResolvedMedia()
-        }
-        .onChange(of: result.videoFilename) { _, _ in
-            refreshResolvedMedia()
-        }
-        .onChange(of: result.snapshotFilename) { _, _ in
-            refreshResolvedMedia()
-        }
-        .onChange(of: isPlaybackActive) { _, isActive in
-            guard isActive else { return }
-            mediaRefreshToken &+= 1
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            refreshResolvedMedia()
+    }
+
+    @ViewBuilder
+    private var rawMediaLayer: some View {
+        if let url = resolvedVideoURL {
+            FaceScanSilentVideoLoopView(url: url, isPlaybackActive: isPlaybackActive)
+        } else if let image = resolvedSnapshot {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            placeholder
         }
     }
 

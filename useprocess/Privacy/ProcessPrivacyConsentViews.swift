@@ -162,7 +162,8 @@ struct FaceScanPrivacyGateView: View {
                 FaceScanSessionView(
                     onDismiss: onDismiss,
                     onComplete: onComplete,
-                    skipResultSheet: skipResultSheet
+                    skipResultSheet: skipResultSheet,
+                    showsMediaImport: ProcessCreatorModeStore.shared.allowsPhotoImport
                 )
             } else {
                 ProgressView()

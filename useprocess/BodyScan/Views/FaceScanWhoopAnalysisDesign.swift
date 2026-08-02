@@ -80,8 +80,10 @@ struct FaceScanWhoopAnalysisScreen: View {
     var bottomContentInset: CGFloat = 40
 
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
     @Bindable private var historyStore = FaceScanHistoryStore.shared
     @State private var showsAnalysisInfo = false
+    @State private var framingDraft: FaceScanStudioFraming = .identity
 
     private var displayResult: FaceScanResult {
         historyStore.history.first(where: { $0.id == result.id }) ?? result
@@ -116,10 +118,25 @@ struct FaceScanWhoopAnalysisScreen: View {
                         .padding(.top, 8)
                         .padding(.bottom, 18)
 
-                    FaceScanWhoopScoreRing(result: displayResult)
+                    FaceScanWhoopScoreRing(
+                        result: displayResult,
+                        studioFraming: framingDraft,
+                        allowsStudioFraming: creatorMode.isUnlocked,
+                        onStudioFramingChange: { framing in
+                            framingDraft = framing.clamped()
+                            var updated = displayResult
+                            updated.studioFraming = framing.isIdentity ? nil : framing.clamped()
+                            FaceScanHistoryStore.shared.update(updated)
+                        }
+                    )
                         .padding(.bottom, 22)
 
-                    FaceScanWhoopMetricsCard(result: displayResult, previous: previousForDisplay)
+                    FaceScanWhoopMetricsCard(
+                        result: displayResult,
+                        previous: previousForDisplay,
+                        hidesComparisons: creatorMode.isUnlocked,
+                        emphasizesLabels: creatorMode.isUnlocked
+                    )
                         .padding(.horizontal, 16)
 
                     FaceScanWhoopEvolutionSummaryCard(
@@ -137,6 +154,12 @@ struct FaceScanWhoopAnalysisScreen: View {
                     Spacer(minLength: bottomContentInset)
                 }
             }
+        }
+        .onAppear {
+            framingDraft = displayResult.resolvedStudioFraming
+        }
+        .onChange(of: displayResult.id) { _, _ in
+            framingDraft = displayResult.resolvedStudioFraming
         }
         .sheet(isPresented: $showsAnalysisInfo) {
             FaceScanWhoopAnalysisInfoSheet(
@@ -204,17 +227,82 @@ enum FaceScanWhoopResultsStyle {
 }
 
 /// Corps résultats WHOOP — réutilisable dans le flux d'analyse inline.
-struct FaceScanWhoopInlineResults: View {
+struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
     let result: FaceScanResult
     var history: [FaceScanResult] = []
     var showsTrends: Bool = true
     var ringScale: CGFloat = 1
     var style: FaceScanWhoopResultsStyle = .immersive
+    /// Si true, garde les markers/score passés (slider studio) au lieu d’écraser avec l’historique.
+    var prefersPassedResult: Bool = false
+    /// Ancre stable pour évolution / tendances (évite de recalculer les charts à chaque tick du slider).
+    var evolutionAnchor: FaceScanResult? = nil
+    /// Première apparition uniquement — pas de re-reveal à chaque update live.
+    var animateRevealOnce: Bool = true
+    /// Mode studio : tap sur le visage pour recadrer.
+    var allowsStudioFraming: Bool = false
+    var studioFraming: FaceScanStudioFraming = .identity
+    var onStudioFramingChange: ((FaceScanStudioFraming) -> Void)? = nil
+    /// Contenu collé tout en bas du scroll (ex. slider créateur), hors premier viewport.
+    @ViewBuilder var bottomAccessory: () -> BelowMetrics
 
     @Bindable private var historyStore = FaceScanHistoryStore.shared
 
+    init(
+        result: FaceScanResult,
+        history: [FaceScanResult] = [],
+        showsTrends: Bool = true,
+        ringScale: CGFloat = 1,
+        style: FaceScanWhoopResultsStyle = .immersive,
+        prefersPassedResult: Bool = false,
+        evolutionAnchor: FaceScanResult? = nil,
+        animateRevealOnce: Bool = true,
+        allowsStudioFraming: Bool = false,
+        studioFraming: FaceScanStudioFraming = .identity,
+        onStudioFramingChange: ((FaceScanStudioFraming) -> Void)? = nil,
+        @ViewBuilder bottomAccessory: @escaping () -> BelowMetrics = { EmptyView() }
+    ) {
+        self.result = result
+        self.history = history
+        self.showsTrends = showsTrends
+        self.ringScale = ringScale
+        self.style = style
+        self.prefersPassedResult = prefersPassedResult
+        self.evolutionAnchor = evolutionAnchor
+        self.animateRevealOnce = animateRevealOnce
+        self.allowsStudioFraming = allowsStudioFraming
+        self.studioFraming = studioFraming
+        self.onStudioFramingChange = onStudioFramingChange
+        self.bottomAccessory = bottomAccessory
+    }
+
     private var displayResult: FaceScanResult {
-        historyStore.history.first(where: { $0.id == result.id }) ?? result
+        guard let stored = historyStore.history.first(where: { $0.id == result.id }) else {
+            return result
+        }
+        guard prefersPassedResult else { return stored }
+        // Slider live : markers du résultat passé + éventuel texte IA déjà enrichi.
+        return FaceScanResult(
+            id: result.id,
+            userId: result.userId,
+            createdAt: result.createdAt,
+            markers: result.markers,
+            snapshotFilename: result.snapshotFilename ?? stored.snapshotFilename,
+            videoFilename: result.videoFilename ?? stored.videoFilename,
+            claudeAnalysis: stored.claudeAnalysis ?? result.claudeAnalysis,
+            aiEnhanced: stored.aiEnhanced || result.aiEnhanced,
+            coachInsightMessage: stored.coachInsightMessage ?? result.coachInsightMessage,
+            coachInsightModel: stored.coachInsightModel ?? result.coachInsightModel,
+            source: result.source,
+            sleepHoursAtScan: result.sleepHoursAtScan,
+            hrvAtScan: result.hrvAtScan,
+            faceDayScore: result.faceDayScore,
+            relativeFaceDayScore: result.relativeFaceDayScore,
+            scanConfidence: result.scanConfidence,
+            baselineSampleCount: result.baselineSampleCount,
+            relativeSignals: result.relativeSignals,
+            studioFraming: result.studioFraming ?? stored.studioFraming
+        )
     }
 
     private var resolvedHistory: [FaceScanResult] {
@@ -228,10 +316,14 @@ struct FaceScanWhoopInlineResults: View {
             .first
     }
 
+    private var evolutionSource: FaceScanResult {
+        evolutionAnchor ?? displayResult
+    }
+
     private var evolutionHistory: [FaceScanResult] {
         FaceScanWhoopEvolutionHistory.resolve(
             from: resolvedHistory,
-            ensuring: displayResult
+            ensuring: evolutionSource
         )
     }
 
@@ -241,16 +333,27 @@ struct FaceScanWhoopInlineResults: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            FaceScanWhoopScoreRing(result: displayResult)
+            FaceScanWhoopScoreRing(
+                result: displayResult,
+                studioFraming: studioFraming,
+                allowsStudioFraming: allowsStudioFraming,
+                onStudioFramingChange: onStudioFramingChange
+            )
                 .scaleEffect(ringScale)
                 .padding(.bottom, 22 * ringScale)
 
-            FaceScanWhoopMetricsCard(result: displayResult, previous: previousForDisplay, style: style)
+            FaceScanWhoopMetricsCard(
+                result: displayResult,
+                previous: previousForDisplay,
+                style: style,
+                hidesComparisons: allowsStudioFraming,
+                emphasizesLabels: allowsStudioFraming
+            )
                 .padding(.horizontal, metricsHorizontalPadding)
 
             if style == .immersive {
                 FaceScanWhoopEvolutionSummaryCard(
-                    result: displayResult,
+                    result: evolutionSource,
                     previous: previousForDisplay,
                     history: evolutionHistory
                 )
@@ -264,9 +367,11 @@ struct FaceScanWhoopInlineResults: View {
                     .padding(.top, 28)
             }
 
+            bottomAccessory()
+
             Spacer(minLength: showsTrends ? 40 : (style == .chatThread ? 0 : 12))
         }
-        .environment(\.faceScanResultsAnimateReveal, true)
+        .environment(\.faceScanResultsAnimateReveal, animateRevealOnce)
     }
 }
 
@@ -276,11 +381,16 @@ struct FaceScanWhoopScoreRing: View {
     @Environment(\.faceScanResultsAnimateReveal) private var animateReveal
 
     let result: FaceScanResult
+    var studioFraming: FaceScanStudioFraming = .identity
+    var allowsStudioFraming: Bool = false
+    var onStudioFramingChange: ((FaceScanStudioFraming) -> Void)? = nil
 
     @State private var animatedProgress: Double = 0
     @State private var displayedScore: Int = 0
     @State private var contentVisible = true
+    @State private var hasCompletedReveal = false
     @State private var scoreCountTask: Task<Void, Never>?
+    @State private var showsFramingEditor = false
 
     private let ringSize: CGFloat = 300
     private let strokeWidth: CGFloat = 11
@@ -309,7 +419,7 @@ struct FaceScanWhoopScoreRing: View {
         VStack(spacing: 16) {
             ZStack {
                 ZStack(alignment: .bottom) {
-                    FaceScanWhoopCircularPhoto(result: result)
+                    FaceScanWhoopCircularPhoto(result: result, framing: studioFraming)
                         .frame(width: innerDiameter, height: innerDiameter)
                         .clipShape(Circle())
 
@@ -336,6 +446,12 @@ struct FaceScanWhoopScoreRing: View {
                 }
                 .frame(width: innerDiameter, height: innerDiameter)
                 .clipShape(Circle())
+                .contentShape(Circle())
+                .onTapGesture {
+                    guard allowsStudioFraming else { return }
+                    HapticManager.shared.impact(.light)
+                    showsFramingEditor = true
+                }
 
                 Circle()
                     .stroke(FaceScanWhoopPalette.ringTrack, lineWidth: strokeWidth)
@@ -349,6 +465,7 @@ struct FaceScanWhoopScoreRing: View {
                     )
                     .frame(width: ringSize, height: ringSize)
                     .rotationEffect(.degrees(-90))
+                    .allowsHitTesting(false)
             }
             .frame(width: ringSize, height: ringSize)
             .scaleEffect(contentVisible ? 1 : 0.96)
@@ -359,18 +476,41 @@ struct FaceScanWhoopScoreRing: View {
         .onChange(of: result.id) { _, _ in
             syncRevealState()
         }
+        .onChange(of: displayScore) { _, newScore in
+            // Update live (slider créateur) sans rejouer le reveal / flash.
+            guard hasCompletedReveal else { return }
+            scoreCountTask?.cancel()
+            contentVisible = true
+            withAnimation(.easeOut(duration: 0.12)) {
+                animatedProgress = Double(newScore) / 100.0
+                displayedScore = newScore
+            }
+        }
         .onDisappear {
             scoreCountTask?.cancel()
+        }
+        .fullScreenCover(isPresented: $showsFramingEditor) {
+            FaceScanStudioFramingEditor(
+                result: result,
+                initialFraming: studioFraming,
+                onCancel: { showsFramingEditor = false },
+                onSave: { framing in
+                    onStudioFramingChange?(framing)
+                    showsFramingEditor = false
+                }
+            )
         }
     }
 
     private func syncRevealState() {
         scoreCountTask?.cancel()
+        hasCompletedReveal = false
 
         guard animateReveal else {
             animatedProgress = progress
             displayedScore = displayScore
             contentVisible = true
+            hasCompletedReveal = true
             return
         }
 
@@ -399,6 +539,7 @@ struct FaceScanWhoopScoreRing: View {
             }
             await MainActor.run {
                 displayedScore = target
+                hasCompletedReveal = true
             }
         }
     }
@@ -406,28 +547,43 @@ struct FaceScanWhoopScoreRing: View {
 
 private struct FaceScanWhoopCircularPhoto: View {
     let result: FaceScanResult
+    var framing: FaceScanStudioFraming = .identity
 
     @State private var resolvedVideoURL: URL?
     @State private var snapshot: UIImage?
     @State private var mediaRefreshToken = 0
 
     var body: some View {
-        Group {
-            if let url = resolvedVideoURL {
-                FaceScanSilentVideoLoopView(url: url)
-            } else if let snapshot {
-                Image(uiImage: snapshot)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Circle()
-                    .fill(Color.white.opacity(0.08))
-                    .overlay {
-                        Image(systemName: "face.smiling")
-                            .font(.system(size: 44, weight: .light))
-                            .foregroundStyle(FaceScanWhoopPalette.secondary)
-                    }
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height)
+            let clamped = framing.clamped()
+
+            Group {
+                if let url = resolvedVideoURL {
+                    FaceScanSilentVideoLoopView(url: url)
+                } else if let snapshot {
+                    Image(uiImage: snapshot)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Circle()
+                        .fill(Color.white.opacity(0.08))
+                        .overlay {
+                            Image(systemName: "face.smiling")
+                                .font(.system(size: 44, weight: .light))
+                                .foregroundStyle(FaceScanWhoopPalette.secondary)
+                        }
+                }
             }
+            .frame(width: side, height: side)
+            .scaleEffect(clamped.scale)
+            .offset(
+                x: CGFloat(clamped.offsetX) * side,
+                y: CGFloat(clamped.offsetY) * side
+            )
+            .frame(width: side, height: side)
+            .clipped()
+            .position(x: geo.size.width / 2, y: geo.size.height / 2)
         }
         .id("\(result.id)-media-\(mediaRefreshToken)")
         .onAppear(perform: refreshMedia)
@@ -478,6 +634,9 @@ private struct FaceScanWhoopMetricsCard: View {
     let result: FaceScanResult
     var previous: FaceScanResult?
     var style: FaceScanWhoopResultsStyle = .immersive
+    /// Mode studio : pas de « Stable / +5 vs moyenne », labels plus visibles.
+    var hidesComparisons: Bool = false
+    var emphasizesLabels: Bool = false
 
     @State private var cardVisible = true
     @State private var revealedMetricCount = FaceScanIndicators.Kind.allCases.count
@@ -500,7 +659,9 @@ private struct FaceScanWhoopMetricsCard: View {
                     previous: previous,
                     style: style,
                     isRevealed: !animateReveal || index < revealedMetricCount,
-                    animatesCount: animateReveal
+                    animatesCount: animateReveal,
+                    hidesComparison: hidesComparisons,
+                    emphasizesLabel: emphasizesLabels
                 )
                 .padding(.horizontal, style == .chatThread ? 0 : 16)
                 .padding(.vertical, style == .chatThread ? 11 : 14)
@@ -777,6 +938,8 @@ private struct FaceScanWhoopMetricRow: View {
     var style: FaceScanWhoopResultsStyle = .immersive
     var isRevealed: Bool = true
     var animatesCount: Bool = false
+    var hidesComparison: Bool = false
+    var emphasizesLabel: Bool = false
 
     @State private var displayedPercent: Int = 0
     @State private var zoneBarProgress: Double = 1
@@ -803,7 +966,7 @@ private struct FaceScanWhoopMetricRow: View {
     private var labelColor: Color {
         style == .chatThread
             ? OnboardingTheme.primaryText
-            : FaceScanWhoopPalette.label.opacity(0.88)
+            : FaceScanWhoopPalette.label.opacity(emphasizesLabel ? 0.95 : 0.88)
     }
 
     private var valueColor: Color {
@@ -821,6 +984,11 @@ private struct FaceScanWhoopMetricRow: View {
         }
     }
 
+    private var labelFontSize: CGFloat {
+        if emphasizesLabel { return 12.5 }
+        return style == .chatThread ? 12 : 11
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: kind.systemImage)
@@ -828,23 +996,25 @@ private struct FaceScanWhoopMetricRow: View {
                 .foregroundStyle(iconColor)
                 .frame(width: 22)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: hidesComparison ? 0 : 3) {
                 Text(kind.whoopLabel)
-                    .font(.system(size: style == .chatThread ? 12 : 11, weight: .semibold))
+                    .font(.system(size: labelFontSize, weight: .semibold))
                     .foregroundStyle(labelColor)
-                    .tracking(0.3)
+                    .tracking(emphasizesLabel ? 0.25 : 0.3)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
 
-                HStack(spacing: 4) {
-                    Image(systemName: displayItem.arrowSystemName)
-                        .font(.system(size: 9, weight: .bold))
-                    Text(displayItem.comparison)
-                        .font(.system(size: 10, weight: .semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.76)
+                if !hidesComparison {
+                    HStack(spacing: 4) {
+                        Image(systemName: displayItem.arrowSystemName)
+                            .font(.system(size: 9, weight: .bold))
+                        Text(displayItem.comparison)
+                            .font(.system(size: 10, weight: .semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.76)
+                    }
+                    .foregroundStyle(comparisonColor)
                 }
-                .foregroundStyle(comparisonColor)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -867,6 +1037,11 @@ private struct FaceScanWhoopMetricRow: View {
         .onChange(of: result.id) { _, _ in
             didAnimateRow = false
             syncDisplayedValues()
+        }
+        .onChange(of: percent) { _, newValue in
+            // Update live (slider) — pas de re-count animé.
+            displayedPercent = newValue
+            zoneBarProgress = 1
         }
     }
 

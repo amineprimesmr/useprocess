@@ -39,8 +39,8 @@ extension WelcomePlanQuestionBank {
         put("mouth_breathing", WelcomePlanAnswer(choiceIds: ["mixed"]))
         put("training_experience", WelcomePlanAnswer(choiceIds: [profile?.experienceLevel?.rawValue ?? ExperienceLevel.intermediaire.rawValue]))
         put("sessions_per_week", WelcomePlanAnswer(choiceIds: [sessionsPerWeekChoice(from: profile)]))
-        put("primary_sport", WelcomePlanAnswer(choiceIds: ["weights"]))
-        put("training_location", WelcomePlanAnswer(choiceIds: [profile?.trainingLocation?.rawValue ?? TrainingLocation.home.rawValue]))
+        put("primary_sport", WelcomePlanAnswer(choiceIds: ["cardio"]))
+        put("training_location", WelcomePlanAnswer(choiceIds: [profile?.trainingLocation?.rawValue ?? TrainingLocation.outdoor.rawValue]))
         put("injuries", WelcomePlanAnswer(choiceIds: ["none"]))
         put("consistency_history", WelcomePlanAnswer(choiceIds: ["months"]))
         put("biggest_barrier", WelcomePlanAnswer(choiceIds: ["time"]))
@@ -93,14 +93,14 @@ extension WelcomePlanQuestionBank {
         if let sport = userAnswers["primary_sport"]?.choiceIds.first {
             let location: String
             switch sport {
-            case "weights", "cardio":
-                location = TrainingLocation.gym.rawValue
+            case "cardio":
+                location = TrainingLocation.mixed.rawValue
             case "running", "team":
                 location = TrainingLocation.outdoor.rawValue
             case "swimming":
                 location = TrainingLocation.mixed.rawValue
             default:
-                location = profile?.trainingLocation?.rawValue ?? TrainingLocation.home.rawValue
+                location = profile?.trainingLocation?.rawValue ?? TrainingLocation.outdoor.rawValue
             }
             merged["training_location"] = WelcomePlanAnswer(choiceIds: [location])
         }

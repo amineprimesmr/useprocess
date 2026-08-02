@@ -101,10 +101,14 @@ enum CoachPlanModificationService {
             }
         case "training":
             sectionPath = intent.scope == .allDays ? "global/training" : "\(dayId)/training"
-            title = "Entraînement"
-            content = day?.training.map {
-                "\($0.sessionName) — \($0.exercises.map(\.name).joined(separator: ", "))"
-            } ?? plan.trainingProtocol.weeklyTemplate.joined(separator: "\n")
+            title = "Cardio et Circuit"
+            let cardio = DebloatCardioDayCatalog.session()
+            content = """
+            Cardio du jour : \(cardio.title) — \(cardio.minutes) min
+            \(cardio.detail)
+            \(DebloatCardioDayCatalog.frequencyCaption)
+            Circuit / postures : disponible dans Cardio et Circuit
+            """
         case "sleep":
             sectionPath = "\(dayId)/sleep"
             title = "Sommeil"

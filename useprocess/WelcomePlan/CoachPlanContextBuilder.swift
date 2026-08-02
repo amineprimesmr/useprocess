@@ -27,7 +27,7 @@ enum CoachPlanContextBuilder {
             lines.append("• Debloat visé dans \(progress.remainingProgramDays) j · \(Self.formatShortDate(end))")
         }
         lines.append(contentsOf: [
-            "• \(plan.trainingProtocol.sessionsPerWeek) séances/sem · Sommeil cible \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
+            "• Cardio cible : \(max(plan.trainingProtocol.sessionsPerWeek, ProcessDebloatValidation.weeklyCardioMinimum))×/sem (idéal chaque jour) · Sommeil \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
             "• Nutrition : \(plan.nutritionPlanType.label) · Créneaux : \(plan.configuredMealSlots.map(\.rawValue).joined(separator: ", "))",
             "• Zéro pilule — 100 % naturel",
             "• Tâches cochées : \(completed)"
@@ -52,9 +52,9 @@ enum CoachPlanContextBuilder {
 
         if let today {
             lines.append("• Aujourd'hui (\(today.weekdayLabel)) : \(today.title)")
-            if let training = today.training {
-                lines.append("  → Séance : \(training.sessionName) (\(training.durationMinutes) min)")
-            }
+            let cardio = DebloatCardioDayCatalog.session()
+            lines.append("  → Cardio du jour : \(cardio.title) (\(cardio.minutes) min) — \(DebloatCardioDayCatalog.frequencyCaption)")
+            lines.append("  → Circuit / postures disponible dans Cardio et Circuit")
         }
 
         if !memory.planAdjustments.isEmpty {
@@ -151,9 +151,9 @@ enum CoachPlanContextBuilder {
             ("sleep_quality", "Sommeil"),
             ("bedtime", "Coucher"),
             ("wake_time", "Réveil"),
-            ("sessions_per_week", "Séances/sem"),
-            ("training_location", "Lieu d'entraînement"),
-            ("training_experience", "Niveau sport")
+            ("sessions_per_week", "Cardio/sem"),
+            ("training_location", "Lieu cardio"),
+            ("training_experience", "Niveau activité")
         ]
 
         var lines: [String] = []
@@ -217,13 +217,9 @@ enum CoachPlanContextBuilder {
         parts.append("Principes du jour : \(day.nutrition.principles.joined(separator: " · "))")
         parts.append("Aliments à privilégier : \(day.nutrition.foodsToday.joined(separator: ", "))")
 
-        if let t = day.training {
-            parts.append("TRAINING : \(t.sessionName) — \(t.exercises.map { "\($0.name) \($0.sets)×\($0.reps)" }.joined(separator: " · "))")
-        } else {
-            parts.append("TRAINING : repos actif / marche")
-        }
-
-        parts.append("POSTURE : " + day.posture.map(\.title).joined(separator: ", "))
+        let cardio = DebloatCardioDayCatalog.session()
+        parts.append("CARDIO DU JOUR : \(cardio.title) (\(cardio.minutes) min) — \(DebloatCardioDayCatalog.frequencyCaption)")
+        parts.append("POSTURE / CIRCUIT : " + day.posture.map(\.title).joined(separator: ", "))
         let continuous = ProcessContinuousHabits.all.map(\.title).joined(separator: ", ")
         parts.append("24/7 : \(continuous)")
         parts.append("SOIR : " + day.evening.map(\.title).joined(separator: ", "))

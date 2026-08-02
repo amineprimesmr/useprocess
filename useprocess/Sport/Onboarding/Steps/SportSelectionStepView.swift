@@ -27,7 +27,7 @@ struct SportSelectionStepView: View {
     // ✨ Les 4 sports les plus pratiqués
     private let topSports = [
         "🏃‍♂️ Course à pied",
-        "🏋️‍♂️ Musculation",
+        "🚴‍♂️ Cyclisme",
         "⚽ Football",
         "🥊 Boxe"
     ]
@@ -105,15 +105,11 @@ struct SportSelectionStepView: View {
             "🏊‍♂️ Aquathlon"
         ])
 
-        // Musculation et force
+        // Condition / fitness (pas de musculation salle)
         sports.append(contentsOf: [
-            "🏋️‍♂️ Musculation",
-            "🏋️‍♀️ Musculation",
             "🏋️‍♀️ CrossFit",
-            "🏋️‍♂️ Powerlifting",
-            "🏋️‍♂️ Bodybuilding",
             "💪 Fitness",
-            "💪 Force athlétique"
+            "🤸‍♂️ HIIT"
         ])
 
         // Sports de combat

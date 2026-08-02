@@ -47,6 +47,8 @@ struct EditProfileView: View {
 
                     identityBlock
 
+                    ProcessCreatorStudioHubLink()
+
                     ProfileSettingsHubLinksSection()
 
                     AccountDetailsActionButton(title: "Se déconnecter") {
@@ -71,12 +73,14 @@ struct EditProfileView: View {
                 await profileService.loadProfile()
             }
             profileStore.bind(unified: profileService.currentProfile)
+            ProcessCreatorModeStore.shared.syncFromCurrentProfile()
             FaceScanHistoryStore.shared.reloadForUser(
                 userId: UserScopedStorage.currentUserId()
             )
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
+            ProcessCreatorModeStore.shared.syncFromCurrentProfile()
         }
     }
 

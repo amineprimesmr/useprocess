@@ -14,6 +14,7 @@ struct PlanLastFaceScanSection: View {
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
 
     @State private var analysisSession: InlineFaceScanAnalysisSession?
@@ -36,13 +37,19 @@ struct PlanLastFaceScanSection: View {
         static let postScanFooterVerticalPadding: CGFloat = 10
         static let blockSpacing: CGFloat = 8
         static let videoTrailingRadius: CGFloat = 18
-        static let inlineControlsHeight: CGFloat = 136
+        static let inlineControlsHeight: CGFloat = 196
         static let scanRingOverflow: CGFloat = FaceScanViewportMetrics.tickRingOverflow
         static let postScanFooterContentHeight: CGFloat = 58
     }
 
+    /// Cadence réelle uniquement — après Continuer, on affiche « Dernier scan » + photo + Prochain scan.
+    /// Le studio peut toujours relancer via le menu « Refaire le scan » (`isScanFlowActive`).
+    private var effectiveScanDue: Bool {
+        isScanDue
+    }
+
     private var isPostScanComplete: Bool {
-        latest != nil && !isScanDue
+        latest != nil && !effectiveScanDue
     }
 
     private func inlineViewportDiameter(for cardWidth: CGFloat) -> CGFloat {
@@ -61,7 +68,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var needsLiveCameraPreview: Bool {
-        isFirstScanPending || isScanDue
+        isFirstScanPending || effectiveScanDue
     }
 
     private var isScanAvailable: Bool {
@@ -224,6 +231,7 @@ struct PlanLastFaceScanSection: View {
             ),
             showsInlineHeader: false,
             onBack: closeInlineScan,
+            showsMediaImport: creatorMode.allowsPhotoImport,
             allowsScreenFlash: expanded,
             isCameraSessionActive: isPlanActive,
             onContinue: { payload, markers in
@@ -699,6 +707,8 @@ private struct PlanFaceScanMediaPanel: View, Equatable {
         lhs.result.id == rhs.result.id
             && lhs.result.videoFilename == rhs.result.videoFilename
             && lhs.result.snapshotFilename == rhs.result.snapshotFilename
+            && lhs.result.studioFraming == rhs.result.studioFraming
+            && lhs.result.displayWellnessScore == rhs.result.displayWellnessScore
             && lhs.isPlaybackActive == rhs.isPlaybackActive
     }
 

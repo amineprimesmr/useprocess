@@ -195,7 +195,7 @@ enum PlanPostureCircuitContent {
     }
 }
 
-/// Section posture dédiée — le circuit est présenté dans « Entraînement du jour ».
+/// Section posture dédiée — le circuit est présenté dans « Cardio et Circuit ».
 struct PlanPostureDaySection: View {
     let plan: FaceOriginPlan
 
@@ -225,7 +225,7 @@ struct PlanPostureDetailSheet: View {
                             .foregroundStyle(theme.secondaryText)
                     }
 
-                    blockTitle("Circuit posture")
+                    blockTitle("Cardio et Circuit")
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(circuitLines, id: \.self) { line in
                             PlanTrainingBlockRow(line: line, fallbackSystemImage: postureIcon(for: line))
@@ -235,7 +235,7 @@ struct PlanPostureDetailSheet: View {
                 .padding()
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Circuit posture")
+            .navigationTitle("Cardio et Circuit")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

@@ -99,12 +99,13 @@ enum OriginPlanPresenter {
             ))
         }
 
-        if includeTraining, let training = day.training {
+        if includeTraining {
+            let cardio = DebloatCardioDayCatalog.session()
             phases.append(.init(
                 id: "training",
-                title: "Entraînement",
-                timeHint: "\(training.durationMinutes) min · \(training.sessionName)",
-                kind: .training(training)
+                title: "Cardio et Circuit",
+                timeHint: "\(cardio.minutes) min · \(cardio.title)",
+                kind: .autoTracking
             ))
         }
 
@@ -606,9 +607,12 @@ enum OriginPlanPresenter {
     }
 
     static func trainingOneLiner(_ training: OriginDayTraining?) -> String? {
-        guard let training else { return nil }
-        let first = training.exercises.first?.name ?? training.sessionName
-        return "\(training.sessionName) · \(training.durationMinutes) min · \(first)"
+        if let training {
+            let first = training.exercises.first?.name ?? training.sessionName
+            return "\(training.sessionName) · \(training.durationMinutes) min · \(first)"
+        }
+        let cardio = DebloatCardioDayCatalog.session()
+        return "\(cardio.title) · \(cardio.minutes) min · \(DebloatCardioDayCatalog.frequencyCaption)"
     }
 
     // MARK: - Helpers

@@ -8,7 +8,7 @@ import Foundation
 enum OnboardingSportCatalog {
     static let featuredChoices: [OnboardingProfileChatChoice] = [
         .init(id: "Course à pied", label: "Course à pied", emoji: "🏃‍♂️"),
-        .init(id: "Musculation", label: "Musculation", emoji: "🏋️‍♂️"),
+        .init(id: "Cyclisme", label: "Cyclisme", emoji: "🚴‍♂️"),
         .init(id: "Football", label: "Football", emoji: "⚽"),
         .init(id: "Boxe", label: "Boxe", emoji: "🥊"),
         .init(id: "Natation", label: "Natation", emoji: "🏊‍♂️")
@@ -28,7 +28,7 @@ enum OnboardingSportCatalog {
             "🏊‍♂️ Triathlon", "🏊‍♂️ Aquagym"
         ])
         sports.append(contentsOf: [
-            "🏋️‍♂️ Musculation", "🏋️‍♀️ CrossFit", "🏋️‍♂️ Powerlifting", "💪 Fitness"
+            "🏋️‍♀️ CrossFit", "💪 Fitness", "🤸‍♂️ HIIT"
         ])
         sports.append(contentsOf: [
             "🥊 Boxe", "🥋 Karaté", "🥋 Judo", "🥋 Taekwondo", "🥋 MMA", "🤺 Escrime"

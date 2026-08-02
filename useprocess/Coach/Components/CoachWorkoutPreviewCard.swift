@@ -37,7 +37,7 @@ struct CoachWorkoutPreviewCard: View {
 
     private var headerThumbAsset: String? {
         workout.exercises.lazy
-            .compactMap { TrainingAssetCatalog.exerciseAsset(for: $0.name) }
+            .compactMap { TrainingAssetCatalog.blockAsset(for: $0.name) }
             .first
     }
 
@@ -45,7 +45,7 @@ struct CoachWorkoutPreviewCard: View {
         HStack(spacing: 10) {
             PlanTrainingMediaThumb(
                 assetName: headerThumbAsset,
-                fallbackSystemImage: "figure.strengthtraining.traditional",
+                fallbackSystemImage: "figure.run",
                 size: 36
             )
 
@@ -75,7 +75,8 @@ struct CoachWorkoutPreviewCard: View {
     private func exerciseRow(_ exercise: CoachExercisePreview) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             PlanTrainingMediaThumb(
-                assetName: TrainingAssetCatalog.exerciseAsset(for: exercise.name),
+                assetName: TrainingAssetCatalog.blockAsset(for: exercise.name),
+                fallbackSystemImage: "figure.run",
                 size: 40
             )
 

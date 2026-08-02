@@ -9,7 +9,7 @@ struct FaceScanSessionView: View {
     var skipResultSheet: Bool = false
     var onCancelCapture: (() -> Void)? = nil
     var onSkipCapture: (() -> Void)? = nil
-    var showsMediaImport: Bool = true
+    var showsMediaImport: Bool = false
     var compactSkipAction: Bool = false
 
     @State private var captureInput: CaptureInput?

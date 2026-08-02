@@ -82,23 +82,15 @@ enum CoachFoodLogService {
 enum CoachTrainingTemplateStore {
 
     static func promptBlock(plan: FaceOriginPlan?) -> String {
-        guard let plan,
-              let day = OriginPlanPresenter.todayDay(in: plan),
-              let training = day.training else { return "" }
-
-        var lines: [String] = [
-            "SÉANCE DU JOUR : \(training.sessionName) (\(training.durationMinutes) min)"
+        guard plan != nil else { return "" }
+        let cardio = DebloatCardioDayCatalog.session()
+        let lines: [String] = [
+            "CARDIO DU JOUR : \(cardio.title) (\(cardio.minutes) min)",
+            cardio.detail,
+            DebloatCardioDayCatalog.frequencyCaption,
+            "Pas de musculation (push/pull/legs) — uniquement cardio debloat + circuit posture."
         ]
-        if !training.warmup.isEmpty {
-            lines.append("Échauffement : \(training.warmup.prefix(3).joined(separator: ", "))")
-        }
-        for exercise in training.exercises.prefix(4) {
-            lines.append("• \(exercise.name) — \(exercise.sets)×\(exercise.reps)")
-        }
-        if let notes = training.notes, !notes.isEmpty {
-            lines.append("Note : \(notes)")
-        }
-        return "\nTEMPLATE ENTRAÎNEMENT :\n" + lines.joined(separator: "\n")
+        return "\nTEMPLATE CARDIO & CIRCUIT :\n" + lines.joined(separator: "\n")
     }
 }
 

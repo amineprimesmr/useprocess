@@ -34,7 +34,10 @@ enum UserScopedStorage {
         "process.activity.status",
         "process.debloat.food_prefs",
         "plan.home.layout",
-        "referral.program"
+        "referral.program",
+        "creator.mode.unlocked",
+        "creator.mode.quality",
+        "creator.mode.look"
     ]
 
     static func currentUserId() -> String? {

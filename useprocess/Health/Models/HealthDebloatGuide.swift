@@ -16,7 +16,7 @@ enum HealthDebloatGuide {
         var title: String {
             switch self {
             case .nutrition: return "Nutrition"
-            case .training: return "Entraînement"
+            case .training: return "Cardio et Circuit"
             case .sleep: return "Sommeil"
             case .face: return "Visage"
             case .continuousHabits: return "24/7"

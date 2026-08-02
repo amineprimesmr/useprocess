@@ -166,6 +166,7 @@ struct ProfileSettingsHealthDetailView: View {
                 AccountDetailsCard {
                     NavigationLink {
                         BodyScanHistoryTabContent()
+                            .reportsProfileSubrouteActive(true)
                     } label: {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
@@ -201,6 +202,7 @@ struct ProfileSettingsHealthDetailView: View {
                     NavigationLink {
                         HealthConnectedSourcesSettingsView()
                             .environmentObject(healthManager)
+                            .reportsProfileSubrouteActive(true)
                     } label: {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
@@ -300,6 +302,7 @@ struct ProfileSettingsLegalDetailView: View {
                         .processTransparentScrollSurface()
                         .navigationTitle("Scores et recommandations")
                         .navigationBarTitleDisplayMode(.inline)
+                        .reportsProfileSubrouteActive(true)
                     } label: {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
@@ -427,5 +430,6 @@ struct BodyScanHistoryTabContent: View {
             }
         }
         .navigationTitle("Rapports")
+        .reportsProfileSubrouteActive(true)
     }
 }

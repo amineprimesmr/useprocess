@@ -163,29 +163,17 @@ enum CoachHomeContext {
             )
         )
 
-        if let training = day.training {
-            items.append(
-                suggestion(
-                    id: "training",
-                    title: "Ma séance",
-                    subtitle: "\(training.sessionName) · \(training.durationMinutes) min",
-                    icon: "💪",
-                    question: "Explique-moi ma séance d'aujourd'hui et comment bien la faire.",
-                    hint: "\(training.sessionName), \(training.durationMinutes) min"
-                )
+        let cardio = DebloatCardioDayCatalog.session()
+        items.append(
+            suggestion(
+                id: "cardio-circuit",
+                title: "Cardio et Circuit",
+                subtitle: "\(cardio.title) · \(cardio.minutes) min",
+                icon: "🏃",
+                question: "Explique-moi mon cardio du jour et le circuit posture — comment bien les faire pour le debloat ?",
+                hint: "\(cardio.title), \(cardio.minutes) min · \(DebloatCardioDayCatalog.frequencyCaption)"
             )
-        } else {
-            items.append(
-                suggestion(
-                    id: "training-rest",
-                    title: "Jour de repos",
-                    subtitle: "Que faire aujourd'hui ?",
-                    icon: "🧘",
-                    question: "C'est un jour de repos — comment je récupère bien sans perdre le rythme ?",
-                    hint: "Jour du plan : \(day.title)"
-                )
-            )
-        }
+        )
 
         let nutritionLine = OriginPlanPresenter.nutritionOneLiner(day: day, plan: plan)
         items.append(
@@ -234,12 +222,12 @@ enum CoachHomeContext {
                 hint: "Objectif \(goal)"
             ),
             suggestion(
-                id: "training",
-                title: "Entraînement",
-                subtitle: sportsLine == "—" ? "Conseil du jour" : sportsLine,
-                icon: "💪",
-                question: "Que me conseilles-tu pour l'entraînement aujourd'hui ?",
-                hint: "Sports : \(sportsLine), objectif \(goal)"
+                id: "cardio-circuit",
+                title: "Cardio et Circuit",
+                subtitle: sportsLine == "—" ? DebloatCardioDayCatalog.frequencyCaption : sportsLine,
+                icon: "🏃",
+                question: "Que me conseilles-tu comme cardio léger et circuit posture aujourd'hui pour le debloat ?",
+                hint: "Cardio du jour · \(DebloatCardioDayCatalog.frequencyCaption) · sports : \(sportsLine)"
             ),
             suggestion(
                 id: "meals",
