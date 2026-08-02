@@ -80,7 +80,13 @@ struct OnboardingDedicatedFaceScanResultsView: View {
 
     private var bottomCTA: some View {
         VStack(spacing: 10) {
-            if !needsAppleSignIn {
+            if needsAppleSignIn {
+                Text("Connecte-toi pour sauvegarder ton analyse et retrouver ton plan sur tous tes appareils.")
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+            } else {
                 Text("Ton analyse est prête. Continue pour créer ton plan.")
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
@@ -129,18 +135,10 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                 }
             }
             .opacity(isSigningIn ? 0.72 : 1)
-
-            if needsAppleSignIn {
-                Text("Connecte-toi pour sauvegarder ton analyse et retrouver ton plan sur tous tes appareils.")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(FaceScanWhoopPalette.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-            }
         }
         .padding(.horizontal, 24)
         .padding(.top, 14)
-        .padding(.bottom, 28)
+        .padding(.bottom, 10)
         .background(
             LinearGradient(
                 colors: [

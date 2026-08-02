@@ -1034,38 +1034,42 @@ struct FaceMeshScanView: UIViewRepresentable {
             let scanId = activeScanId
             let snapshot = bestSnapshot
             let fluidShift = computeFluidShiftScore()
+            let yawCoverage = Double(filledTickSectors.count) / Double(tickCount)
+            let tickSectors = filledTickSectors
 
-            let deliverCapture: @MainActor () -> Void = { [weak self] in
-                guard let self, !self.isTornDown else { return }
-                self.progress = 1
-                self.ringProgress = 1
-                self.activeTickSectors = self.filledTickSectors
-                self.overlayMode = .orbitTicks
-                self.tiltHoldProgress = 0
-                self.tiltDirection = .none
-                self.tiltIsEngaged = false
-                self.instruction = "Scan terminé."
-                self.frameHint = nil
-                HapticManager.shared.notification(.success)
+            Task { [weak self] in
+                let videoURL = await self?.videoRecorder.finish()
+                let videoFilename: String?
+                if let videoURL, FileManager.default.fileExists(atPath: videoURL.path) {
+                    videoFilename = FaceScanImageStore.videoFilename(for: scanId)
+                } else {
+                    videoFilename = nil
+                }
 
                 let payload = FaceScanCapturePayload(
                     scanId: scanId,
                     mesh: mesh,
                     snapshot: snapshot,
-                    videoFilename: nil,
+                    videoFilename: videoFilename,
                     averageBlendShapes: shapes,
-                    yawCoverage: Double(self.filledTickSectors.count) / Double(self.tickCount),
+                    yawCoverage: yawCoverage,
                     fluidShiftScore: fluidShift
                 )
-                self.onComplete(payload)
-            }
 
-            Task { @MainActor in
-                deliverCapture()
-            }
-
-            Task { [weak self] in
-                _ = await self?.videoRecorder.finish()
+                await MainActor.run {
+                    guard let self, !self.isTornDown else { return }
+                    self.progress = 1
+                    self.ringProgress = 1
+                    self.activeTickSectors = tickSectors
+                    self.overlayMode = .orbitTicks
+                    self.tiltHoldProgress = 0
+                    self.tiltDirection = .none
+                    self.tiltIsEngaged = false
+                    self.instruction = "Scan terminé."
+                    self.frameHint = nil
+                    HapticManager.shared.notification(.success)
+                    self.onComplete(payload)
+                }
             }
         }
 

@@ -3,7 +3,14 @@ import UIKit
 
 /// Couleurs sémantiques onboarding — s'adaptent au mode clair / sombre.
 enum OnboardingTheme {
-    static var screenBackground: Color { ProcessColors.background }
+    /// Dark = noir pur (onboarding). Clair = inchangé (même teinte Process).
+    static var screenBackground: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? .black
+                : UIColor(red: 0.968, green: 0.972, blue: 0.988, alpha: 1)
+        })
+    }
     static var primaryText: Color { Color.primary }
     static var secondaryText: Color { Color.secondary }
 
@@ -87,7 +94,7 @@ enum OnboardingTheme {
     }
 
     static func wheelFadeGradient(from colorScheme: ColorScheme, reversed: Bool) -> [Color] {
-        let bg = Color(.systemBackground)
+        let bg = screenBackground
         if reversed {
             return [bg.opacity(0), bg]
         }

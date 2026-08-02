@@ -22,7 +22,6 @@ struct OnboardingProfileChatView: View {
     @State private var signInError: String?
     @State private var faceScanScrollProxy: ScrollViewProxy?
     @State private var showsOnboardingFaceScanSession = false
-    @State private var pendingFaceScanSessionFinish = false
 
     private let messageLineSpacing: CGFloat = 7
     private let horizontalPadding: CGFloat = 28
@@ -104,7 +103,7 @@ struct OnboardingProfileChatView: View {
             OnboardingFaceScanSessionView(
                 isSigningIn: isSigningIn,
                 onCancel: {
-                    pendingFaceScanSessionFinish = false
+                    guard !isSigningIn else { return }
                     showsOnboardingFaceScanSession = false
                     chatViewModel.isSubmittingAnswer = false
                     if chatViewModel.currentQuestion?.id == "face_scan_offer" {
@@ -115,17 +114,19 @@ struct OnboardingProfileChatView: View {
                     chatViewModel.adoptDedicatedFaceScanResult(result)
                 },
                 onContinueAfterResults: {
-                    pendingFaceScanSessionFinish = true
-                    showsOnboardingFaceScanSession = false
-                    Task { await completePendingFaceScanSessionFinish() }
+                    Task { await completeFaceScanOnboarding() }
                 }
             )
             .environmentObject(profileService)
             .interactiveDismissDisabled(isSigningIn)
-        }
-        .onChange(of: showsOnboardingFaceScanSession) { _, isPresented in
-            guard !isPresented, pendingFaceScanSessionFinish else { return }
-            Task { await completePendingFaceScanSessionFinish() }
+            .alert("Connexion impossible", isPresented: Binding(
+                get: { signInError != nil },
+                set: { if !$0 { signInError = nil } }
+            )) {
+                Button("OK", role: .cancel) { signInError = nil }
+            } message: {
+                Text(signInError ?? "")
+            }
         }
         .task(id: onboardingViewModel.currentStep) {
             chatViewModel.bind(
@@ -655,18 +656,10 @@ struct OnboardingProfileChatView: View {
     }
 
     @MainActor
-    private func completePendingFaceScanSessionFinish() async {
-        guard pendingFaceScanSessionFinish else { return }
-        pendingFaceScanSessionFinish = false
-        await completeFaceScanOnboarding()
-    }
-
-    @MainActor
     private func completeFaceScanOnboarding() async {
         guard !isSigningIn else { return }
         isSigningIn = true
         signInError = nil
-        defer { isSigningIn = false }
 
         chatViewModel.prepareAnswersForAuthentication()
         onboardingViewModel.saveProgress()
@@ -681,10 +674,14 @@ struct OnboardingProfileChatView: View {
             }
             HapticManager.shared.notification(.success)
             chatViewModel.finishAfterDedicatedFaceAnalysis()
+            // Ferme la page résultats seulement après une connexion réussie.
+            showsOnboardingFaceScanSession = false
+            isSigningIn = false
             chatViewModel.finish(onComplete: onComplete)
         } catch {
             HapticManager.shared.notification(.error)
             signInError = error.localizedDescription
+            isSigningIn = false
         }
     }
 

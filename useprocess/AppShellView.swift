@@ -27,6 +27,8 @@ struct AppShellView: View {
             }
         }
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
+        // Double-swipe Home dès le téléchargement jusqu’à l’accès app (après paiement).
+        .processPreAccessDoubleHomeSwipe(isActive: !session.hasCompletedOnboarding)
         .onChange(of: scenePhase) { _, phase in
             CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
             guard phase == .active else { return }

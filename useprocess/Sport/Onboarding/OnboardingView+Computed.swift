@@ -139,7 +139,9 @@ func handleContinueButtonTap() {
 
 var isImmersiveOnboardingStep: Bool {
     guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
-    return step == .videoIntroduction || step == .faceAnalysis
+    // Paywall en immersif : évite le remount `.id(onboarding_content_…)` qui cassait
+    // le double-swipe Home (« Attends ! ») juste après la fin de l’onboarding.
+    return step == .videoIntroduction || step == .faceAnalysis || step == .payment
 }
 
 var shouldShowBackButton: Bool {

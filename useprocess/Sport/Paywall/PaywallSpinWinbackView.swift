@@ -143,11 +143,20 @@ struct PaywallSpinWinbackView: View {
         } message: {
             if let purchaseError { Text(purchaseError) }
         }
+        .onAppear {
+            ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .spinWinback
+        }
         .onDisappear {
             spinTask?.cancel()
             revealTask?.cancel()
+            if ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface == .spinWinback {
+                ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .paywall
+            }
         }
-        .processRequireDoubleHomeSwipe()
+        // Cover plein écran : garde un deferral local (le root AppShell est en dessous).
+        .processRequireDoubleHomeSwipe {
+            ProcessPreAccessHomeSwipeCoordinator.shared.handleFirstSwipe()
+        }
     }
 
     /// Page finale — offre unique, structure alignée sur `PaywallView`.
@@ -414,7 +423,12 @@ struct PaywallSpinWinbackView: View {
     // MARK: - Sheets
 
     private var spinAgainSheet: some View {
-        VStack(spacing: 0) {
+        // Fond charcoal fixe → textes toujours clairs (évite gris-sur-gris en mode clair).
+        let sheetBackground = Color(red: 0.14, green: 0.14, blue: 0.16)
+        let titleColor = Color.white
+        let bodyColor = Color.white.opacity(0.78)
+
+        return VStack(spacing: 0) {
             Spacer(minLength: 0)
 
             VStack(alignment: .leading, spacing: 18) {
@@ -426,11 +440,11 @@ struct PaywallSpinWinbackView: View {
                         Text("Retente ta chance")
                             .font(PaywallBevelTheme.paywallHeroTitleFont(size: 26))
                             .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
-                            .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
+                            .foregroundStyle(titleColor)
 
                         Text("Tu es tombé sur 5%.\nLa meilleure remise est encore sur la roue — retente avant que l’offre disparaisse.")
                             .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 16))
-                            .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                            .foregroundStyle(bodyColor)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -440,7 +454,7 @@ struct PaywallSpinWinbackView: View {
                 } label: {
                     Text("Tourner encore")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(colorScheme == .dark ? .black : Color(red: 0.12, green: 0.12, blue: 0.14))
+                        .foregroundStyle(Color(red: 0.10, green: 0.10, blue: 0.12))
                         .frame(maxWidth: .infinity)
                         .frame(height: 60)
                         .background {
@@ -463,11 +477,7 @@ struct PaywallSpinWinbackView: View {
                     topTrailingRadius: 32,
                     style: .continuous
                 )
-                .fill(Color(UIColor { traits in
-                    traits.userInterfaceStyle == .dark
-                        ? UIColor(red: 0.14, green: 0.14, blue: 0.16, alpha: 1)
-                        : UIColor(red: 0.16, green: 0.16, blue: 0.18, alpha: 1)
-                }))
+                .fill(sheetBackground)
                 .shadow(color: .black.opacity(0.4), radius: 28, y: -10)
             }
         }

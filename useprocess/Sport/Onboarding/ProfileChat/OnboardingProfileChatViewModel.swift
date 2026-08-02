@@ -1060,6 +1060,10 @@ final class OnboardingProfileChatViewModel {
                 displayed.append(character)
                 updateMessage(id: messageID, text: displayed)
 
+                // Tick à chaque glyphe pour sentir le texte s’écrire.
+                if !character.isWhitespace {
+                    HapticManager.shared.impact(.soft)
+                }
                 if character == "!" || character == "." || character == "?" {
                     HapticManager.shared.impact(.light)
                 }

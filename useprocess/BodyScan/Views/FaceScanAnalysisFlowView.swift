@@ -297,8 +297,9 @@ struct FaceScanAnalysisHeroView: View {
     }
 
     private func resolveVideoWithRetry() async {
-        guard payload.videoFilename != nil else { return }
-        for _ in 0..<24 {
+        // Probe by scan id even when `videoFilename` is still nil — the mp4 can
+        // finish writing a beat after capture delivery.
+        for _ in 0..<30 {
             if let url = FaceScanImageStore.resolvedVideoURL(forScanId: payload.scanId) {
                 resolvedVideoURL = url
                 return

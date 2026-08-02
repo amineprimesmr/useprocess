@@ -14,6 +14,7 @@ struct PaywallView: View {
     @ObservedObject private var subscriptionService = SubscriptionService.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var homeSwipeGate = ProcessPreAccessHomeSwipeCoordinator.shared
 
     let onComplete: (() -> Void)?
 
@@ -30,6 +31,7 @@ struct PaywallView: View {
     @State private var showsSpinWinback = false
     @State private var didPresentSpinWinback = false
     @State private var showsStayPopup = false
+    @State private var lastHandledSwipeToken = 0
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
 
@@ -141,13 +143,28 @@ struct PaywallView: View {
             .interactiveDismissDisabled()
         }
         .interactiveDismissDisabled()
-        .processRequireDoubleHomeSwipe {
+        .onAppear {
+            homeSwipeGate.retentionSurface = .paywall
+            lastHandledSwipeToken = homeSwipeGate.swipeToken
+        }
+        .onDisappear {
+            if homeSwipeGate.retentionSurface == .paywall {
+                homeSwipeGate.retentionSurface = .none
+            }
+        }
+        .onChange(of: showsSpinWinback) { _, isPresented in
+            homeSwipeGate.retentionSurface = isPresented ? .spinWinback : .paywall
+        }
+        .onChange(of: homeSwipeGate.swipeToken) { _, token in
+            guard token != lastHandledSwipeToken else { return }
+            lastHandledSwipeToken = token
             handleDeferredHomeSwipe()
         }
     }
 
     private func handleDeferredHomeSwipe() {
-        // 1er swipe Home uniquement → pop rétention.
+        // 1er swipe Home uniquement → pop rétention (gate global pré-accès).
+        guard homeSwipeGate.shouldShowPaywallStayPopup else { return }
         guard !showsSpinWinback, !showsStayPopup else { return }
         HapticManager.shared.notification(.warning)
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {

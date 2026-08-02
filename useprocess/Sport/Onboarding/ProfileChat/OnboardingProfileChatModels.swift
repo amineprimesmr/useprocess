@@ -116,7 +116,7 @@ enum OnboardingProfileChatQuestionBank {
                 - cortisol
                 - lymphe qui circule mal…
 
-                Tu n’as pas besoin de tout comprendre maintenant. Process est là pour ça.
+                Tu n’as pas besoin de tout comprendre. Process est là pour ça.
                 """,
                 kind: .infoContinue,
                 continueLabel: "Et ensuite ?"

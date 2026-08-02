@@ -13,12 +13,6 @@ enum FaceScanService {
         let scanId = payload.scanId
         let health = HealthManager.shared
 
-        let absoluteDayScore = FaceWellnessScore.dayScore(from: markers)
-        let relativeAssessment = FaceWellnessScore.relativeAssessment(
-            current: markers,
-            history: FaceScanHistoryStore.shared.history,
-            yawCoverage: payload.yawCoverage
-        )
         let sleepHours = health.todaySnapshot.sleep.sleepDuration > 0
             ? health.todaySnapshot.sleep.sleepDuration
             : nil
@@ -27,11 +21,28 @@ enum FaceScanService {
             : nil
 
         let scanSource: FaceScanSource = AppSession.shared.hasCompletedOnboarding ? .daily : .onboarding
+        let resolvedMarkers: FaceWellnessMarkers
+        if scanSource == .onboarding {
+            resolvedMarkers = OnboardingFaceScanMarkerCalibration.calibrate(
+                markers,
+                sleepHours: sleepHours,
+                hrv: hrv
+            )
+        } else {
+            resolvedMarkers = markers
+        }
+
+        let absoluteDayScore = FaceWellnessScore.dayScore(from: resolvedMarkers)
+        let relativeAssessment = FaceWellnessScore.relativeAssessment(
+            current: resolvedMarkers,
+            history: FaceScanHistoryStore.shared.history,
+            yawCoverage: payload.yawCoverage
+        )
 
         let result = FaceScanResult(
             id: scanId,
             userId: userId,
-            markers: markers,
+            markers: resolvedMarkers,
             snapshotFilename: nil,
             videoFilename: payload.videoFilename,
             source: scanSource,
@@ -47,7 +58,7 @@ enum FaceScanService {
         enqueueScanPersistence(
             result: result,
             payload: payload,
-            markers: markers
+            markers: resolvedMarkers
         )
 
         return result
