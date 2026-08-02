@@ -151,7 +151,7 @@ enum CoachPlanContextBuilder {
             ("sleep_quality", "Sommeil"),
             ("bedtime", "Coucher"),
             ("wake_time", "Réveil"),
-            ("sessions_per_week", "Séances/sem"),
+            ("sessions_per_week", "Cardio/sem"),
             ("training_location", "Lieu cardio"),
             ("training_experience", "Niveau activité")
         ]
