@@ -10,8 +10,6 @@ enum OriginPlanCalendarBuilder {
         gender: Gender
     ) -> OriginProgramCalendar {
         let targets = plan.personalizedTargets ?? .default
-        let sessions = plan.trainingProtocol.sessionsPerWeek
-        let location = answers["training_location"]?.choiceIds.first
         let bedtime = answers["bedtime"]?.timeValue ?? "22:30"
         let wake = answers["wake_time"]?.timeValue ?? "07:00"
         let hours = WelcomePlanGenerator.computedSleepHours(bedtime: bedtime, wake: wake)
@@ -22,8 +20,6 @@ enum OriginPlanCalendarBuilder {
             totalWeeks: totalWeeks,
             archetype: plan.assessmentSnapshot?.archetype
         )
-        let phaseEnds = duration.phaseWeekEnds
-        let injuries = answers["injuries"]?.choiceIds ?? []
 
         var weeks: [OriginProgramWeek] = []
         var globalDay = 0
@@ -33,17 +29,7 @@ enum OriginPlanCalendarBuilder {
             var days: [OriginProgramDay] = []
 
             for weekday in 0..<7 {
-                let training = trainingForDay(
-                    week: weekNum,
-                    weekday: weekday,
-                    sessions: sessions,
-                    gender: gender,
-                    phase: phase,
-                    plan: plan,
-                    phaseEnds: phaseEnds,
-                    location: location,
-                    injuries: injuries
-                )
+                // Plus de séances muscu (push/pull/legs) — le cardio du jour vit dans l’UI Accueil.
                 let nutrition = nutritionForDay(week: weekNum, plan: plan, phase: phase)
 
                 let dayId = "w\(weekNum)-d\(weekday)"
@@ -55,10 +41,10 @@ enum OriginPlanCalendarBuilder {
                         weekNumber: weekNum,
                         weekdayIndex: weekday,
                         weekdayLabel: weekdayLabels[weekday],
-                        title: dayTitle(week: weekNum, weekday: weekday, hasTraining: training != nil),
+                        title: dayTitle(week: weekNum, weekday: weekday),
                         morning: morningTasks(plan: plan, targets: targets, dayId: dayId),
                         nutrition: nutrition,
-                        training: training,
+                        training: nil,
                         posture: OriginPlanDailyTaskCatalog.postureTasks(plan: plan, dayId: dayId),
                         face: [],
                         evening: [],
@@ -87,7 +73,7 @@ enum OriginPlanCalendarBuilder {
             )
         }
 
-        return OriginProgramCalendar(startedAt: Date(), weeks: weeks, buildVersion: 8)
+        return OriginProgramCalendar(startedAt: Date(), weeks: weeks, buildVersion: 10)
     }
 
     private static func sleepEveningActions(
@@ -102,143 +88,6 @@ enum OriginPlanCalendarBuilder {
             return checklist
         }
         return Array(plan.sleepProtocol.eveningRoutine.prefix(5))
-    }
-
-    // MARK: - Training
-
-    private static func trainingForDay(
-        week: Int,
-        weekday: Int,
-        sessions: Int,
-        gender: Gender,
-        phase: OriginPlanPhaseBlock,
-        plan: FaceOriginPlan,
-        phaseEnds: [Int],
-        location: String?,
-        injuries: [String]
-    ) -> OriginDayTraining? {
-        let archetype = plan.assessmentSnapshot?.archetype
-        if archetype == .stressRecovery && week <= (phaseEnds.first ?? 2) && sessions > 0 {
-            return nil
-        }
-
-        let slots = trainingSlots(sessionsPerWeek: sessions)
-        guard slots.contains(weekday) else { return nil }
-
-        let isDeload = phaseEnds.contains(week)
-        let intensityNote = isDeload ? "Semaine deload — charge légère, arrête-toi avant l'échec." : nil
-        let sessionIndex = slots.firstIndex(of: weekday) ?? 0
-        let progression = progressionFactor(week: week)
-
-        if gender == .female {
-            return femaleSession(
-                sessionIndex: sessionIndex,
-                weekday: weekday,
-                week: week,
-                plan: plan,
-                note: intensityNote,
-                location: location,
-                progression: progression,
-                injuries: injuries
-            )
-        }
-        return maleSession(
-            sessionIndex: sessionIndex,
-            weekday: weekday,
-            week: week,
-            plan: plan,
-            note: intensityNote,
-            location: location,
-            progression: progression,
-            injuries: injuries
-        )
-    }
-
-    private static func progressionFactor(week: Int) -> Double {
-        1.0 + Double(min(week - 1, 8)) * 0.04
-    }
-
-    private static func trainingSlots(sessionsPerWeek: Int) -> [Int] {
-        switch sessionsPerWeek {
-        case 1: return [2]
-        case 2: return [1, 4]
-        case 4: return [0, 2, 4, 5]
-        case 5...: return [0, 1, 3, 4, 5]
-        default: return [0, 2, 4]
-        }
-    }
-
-    private static func maleSession(
-        sessionIndex: Int,
-        weekday: Int,
-        week: Int,
-        plan: FaceOriginPlan,
-        note: String?,
-        location: String?,
-        progression: Double,
-        injuries: [String]
-    ) -> OriginDayTraining {
-        let useHome = usesHomeTrainingTemplates(location: location)
-        let templates = useHome ? TrainingProgramCatalog.homeSessions() : TrainingProgramCatalog.gymSessions()
-        let idx = sessionIndex % templates.count
-        let template = templates[idx]
-        let scaled = scaleExercises(template.exercises, factor: progression, injuries: injuries)
-
-        return OriginDayTraining(
-            sessionName: template.sessionName,
-            durationMinutes: plan.trainingProtocol.sessionDurationMinutes,
-            warmup: TrainingProgramCatalog.warmupForSessionIndex(
-                sessionIndex,
-                weekday: weekday,
-                useFemale: false,
-                useHome: useHome
-            ),
-            exercises: scaled,
-            cooldown: TrainingProgramCatalog.cooldownForSession(useFemale: false),
-            notes: note
-        )
-    }
-
-    private static func femaleSession(
-        sessionIndex: Int,
-        weekday: Int,
-        week: Int,
-        plan: FaceOriginPlan,
-        note: String?,
-        location: String?,
-        progression: Double,
-        injuries: [String]
-    ) -> OriginDayTraining {
-        let templates = TrainingProgramCatalog.femaleSessions()
-        let idx = sessionIndex % templates.count
-        let template = templates[idx]
-        return OriginDayTraining(
-            sessionName: template.sessionName,
-            durationMinutes: min(plan.trainingProtocol.sessionDurationMinutes, 50),
-            warmup: TrainingProgramCatalog.warmupForSessionIndex(sessionIndex, weekday: weekday, useFemale: true),
-            exercises: scaleExercises(template.exercises, factor: progression, injuries: injuries),
-            cooldown: TrainingProgramCatalog.cooldownForSession(useFemale: true),
-            notes: note
-        )
-    }
-
-    private static func scaleExercises(
-        _ exercises: [OriginExercise],
-        factor: Double,
-        injuries: [String]
-    ) -> [OriginExercise] {
-        exercises.map { exercise in
-            var copy = exercise
-            copy.sets = min(5, max(2, Int((Double(exercise.sets) * factor).rounded())))
-            if injuries.contains("lower_back"), copy.name.lowercased().contains("deadlift") {
-                copy.name = "Hip hinge léger"
-                copy.coachingCue = "Dos neutre — amplitude contrôlée"
-            }
-            if injuries.contains("knees"), copy.name.lowercased().contains("squat") || copy.name.lowercased().contains("fente") {
-                copy.coachingCue = "Amplitude sans douleur — genou aligné"
-            }
-            return copy
-        }
     }
 
     // MARK: - Nutrition
@@ -317,18 +166,9 @@ enum OriginPlanCalendarBuilder {
             .replacingOccurrences(of: "'", with: "")
     }
 
-    private static func dayTitle(week: Int, weekday: Int, hasTraining: Bool) -> String {
+    private static func dayTitle(week: Int, weekday: Int) -> String {
         if weekday == 6 { return "Semaine \(week) — Récupération" }
-        if hasTraining { return "Semaine \(week) — \(weekdayLabels[weekday]) · Séance" }
-        return "Semaine \(week) — \(weekdayLabels[weekday]) · Récup active"
-    }
-
-    private static func usesHomeTrainingTemplates(location: String?) -> Bool {
-        guard let location else { return false }
-        if location == "home" || location == "outdoor" { return true }
-        return location == TrainingLocation.home.rawValue
-            || location == TrainingLocation.outdoor.rawValue
-            || location == TrainingLocation.mixed.rawValue
+        return "Semaine \(week) — \(weekdayLabels[weekday]) · Cardio & circuit"
     }
 }
 

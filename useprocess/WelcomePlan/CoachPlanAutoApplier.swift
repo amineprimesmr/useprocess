@@ -35,9 +35,9 @@ enum CoachPlanAutoApplier {
         }
 
         if let sessions = parseSessionsPerWeek(lower) {
-            plan.trainingProtocol.sessionsPerWeek = sessions
+            plan.trainingProtocol.sessionsPerWeek = max(sessions, ProcessDebloatValidation.weeklyCardioMinimum)
             plan.lastUpdated = Date()
-            results.append("Entraînement → \(sessions) séance(s)/semaine")
+            results.append("Cardio → \(plan.trainingProtocol.sessionsPerWeek)×/semaine (idéal chaque jour)")
         }
 
         return results
@@ -89,9 +89,7 @@ enum CoachPlanAutoApplier {
         case "nutrition":
             applied = applyNutrition(response, to: &day.nutrition)
         case "training":
-            if day.training != nil {
-                applied = applyTraining(response, to: &day.training!)
-            }
+            applied = applyCardioCircuit(response, to: &plan)
         case "sleep":
             applied = applySleep(response, to: &day.sleep)
         case "morning", "posture", "face", "evening":
@@ -103,7 +101,9 @@ enum CoachPlanAutoApplier {
         }
 
         if applied {
-            plan.calendar.weeks[weekIndex].days[dayIndex] = day
+            if section != "training" {
+                plan.calendar.weeks[weekIndex].days[dayIndex] = day
+            }
             plan.lastUpdated = Date()
         }
         return applied
@@ -131,12 +131,11 @@ enum CoachPlanAutoApplier {
             return changed
         }
 
-        if path.contains("training") || title.contains("entraînement") || title.contains("entrainement") {
-            if let sessions = extractLabel("Séances", from: response).flatMap({ Int($0.filter(\.isNumber)) }) {
-                plan.trainingProtocol.sessionsPerWeek = sessions
-                plan.lastUpdated = Date()
-                return true
-            }
+        if path.contains("training")
+            || title.contains("entraînement")
+            || title.contains("entrainement")
+            || title.contains("cardio") {
+            return applyCardioCircuit(response, to: &plan)
         }
 
         return false
@@ -178,53 +177,38 @@ enum CoachPlanAutoApplier {
         return changed
     }
 
-    private static func applyTraining(_ response: String, to training: inout OriginDayTraining) -> Bool {
-        let lines = response.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        var newExercises: [OriginExercise] = []
+    /// Applique un ajustement cardio / circuit — plus de séances muscu push/pull/legs.
+    private static func applyCardioCircuit(_ response: String, to plan: inout FaceOriginPlan) -> Bool {
+        var changed = false
 
-        for line in lines {
-            if let ex = parseExerciseLine(line) {
-                newExercises.append(ex)
+        if let sessions = extractLabel("Séances", from: response).flatMap({ Int($0.filter(\.isNumber)) })
+            ?? extractLabel("Cardio", from: response).flatMap({ Int($0.filter(\.isNumber)) }) {
+            plan.trainingProtocol.sessionsPerWeek = max(sessions, ProcessDebloatValidation.weeklyCardioMinimum)
+            changed = true
+        }
+
+        let bullets = extractBulletLines(from: response, fallback: [])
+        if !bullets.isEmpty {
+            plan.trainingProtocol.weeklyTemplate = Array(bullets.prefix(5))
+            changed = true
+        } else {
+            let lines = response
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty && $0.count > 12 }
+            if let note = lines.first {
+                plan.trainingProtocol.weeklyTemplate = [
+                    "Cardio du jour — \(DebloatCardioDayCatalog.frequencyCaption)",
+                    CoachFormattedText.sanitizeField(note)
+                ]
+                changed = true
             }
         }
 
-        if !newExercises.isEmpty {
-            training.exercises = newExercises
-            if let name = extractLabel("Séance", from: response) {
-                training.sessionName = name
-            }
-            return true
+        if changed {
+            plan.lastUpdated = Date()
         }
-
-        if let note = lines.last, note.count > 20 {
-            training.notes = note
-            return true
-        }
-        return false
-    }
-
-    private static func parseExerciseLine(_ line: String) -> OriginExercise? {
-        let cleaned = line.replacingOccurrences(of: "•", with: "").trimmingCharacters(in: .whitespaces)
-        guard cleaned.count > 3 else { return nil }
-
-        if let match = cleaned.range(of: #"(\d+)\s*[x×]\s*([\d\./\-–\s]+)"#, options: .regularExpression) {
-            let name = String(cleaned[..<match.lowerBound]).trimmingCharacters(in: .whitespaces)
-            let pattern = String(cleaned[match])
-            let nums = pattern.components(separatedBy: CharacterSet(charactersIn: "x×"))
-            let sets = Int(nums.first?.trimmingCharacters(in: .whitespaces) ?? "") ?? 3
-            let reps = nums.dropFirst().first?.trimmingCharacters(in: .whitespaces) ?? "10"
-            guard !name.isEmpty else { return nil }
-            return OriginExercise(
-                id: UUID().uuidString,
-                name: name,
-                sets: sets,
-                reps: reps,
-                restSeconds: 90,
-                coachingCue: "Ajusté par le coach",
-                muscleGroup: "—"
-            )
-        }
-        return nil
+        return changed
     }
 
     private static func applySleep(_ response: String, to sleep: inout OriginDaySleep) -> Bool {

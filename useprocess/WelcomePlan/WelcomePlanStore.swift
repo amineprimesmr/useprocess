@@ -204,6 +204,17 @@ final class WelcomePlanStore {
             changed = true
         }
 
+        // v10 — retire les séances muscu du calendrier (push/pull/legs).
+        if current.calendar.buildVersion < 10 {
+            upgradePlanStructure(
+                plan: &current,
+                answers: answers ?? questionnaire.answers,
+                profile: profile
+            )
+            current.calendar.buildVersion = 10
+            changed = true
+        }
+
         if current.nutritionProtocol.targetMealsPerDay == nil {
             ProcessMealPlanConfiguration.enrichNutritionProtocol(
                 &current.nutritionProtocol,

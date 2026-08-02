@@ -37,9 +37,9 @@ enum OriginPlanDailyTaskCatalog {
     let tasks: [OriginPlanTask] = [
       journalTask(
         id: "\(dayId).posture.circuit",
-        title: "Circuit posture",
+        title: "Cardio et Circuit",
         detail: "\(duration) min — \(blocks.prefix(2).joined(separator: " · "))",
-        pillar: "Posture",
+        pillar: "Circuit",
         minutes: duration
       )
     ]

@@ -1,22 +1,10 @@
 import Foundation
 
-/// Catalogue visuel entraînement Process — exercices, cardio, posture, routines (cartes carousel 9:16).
+/// Catalogue visuel entraînement Process — cardio, posture, routines (cartes carousel 9:16).
 enum TrainingAssetCatalog {
 
     /// Noms d’assets (pas d’UIKit) — isolés pour usage depuis contextes non-MainActor.
     private enum Names {
-        static let exerciseDeveloppeHalteres = "exercise_developpe_halteres"
-        static let exerciseElevationsLaterales = "exercise_elevations_laterales"
-        static let exerciseFacePulls = "exercise_face_pulls"
-        static let exerciseShrugs = "exercise_shrugs"
-        static let exerciseTractionsTirage = "exercise_tractions_tirage"
-        static let exerciseRowing = "exercise_rowing"
-        static let exerciseCurlMarteau = "exercise_curl_marteau"
-        static let exerciseSquat = "exercise_squat"
-        static let exerciseRomanianDeadlift = "exercise_romanian_deadlift"
-        static let exerciseHipThrust = "exercise_hip_thrust"
-        static let exerciseMollets = "exercise_mollets"
-
         static let trainingSeeAll = "training_see_all"
 
         static let cardioMarche = "cardio_marche"
@@ -65,58 +53,10 @@ enum TrainingAssetCatalog {
         Names.postureJawBreath
     ]
 
-    static let exerciseAssetNames: [String] = [
-        Names.exerciseDeveloppeHalteres, Names.exerciseElevationsLaterales, Names.exerciseFacePulls,
-        Names.exerciseShrugs, Names.exerciseTractionsTirage, Names.exerciseRowing, Names.exerciseCurlMarteau,
-        Names.exerciseSquat, Names.exerciseRomanianDeadlift, Names.exerciseHipThrust, Names.exerciseMollets
-    ]
-
-    static let allAssetNames: [String] = exerciseAssetNames + [Names.mobiliteEpaulesHanches]
+    static let allAssetNames: [String] = [Names.mobiliteEpaulesHanches]
         + cardioAssetNames + postureHomeAssetNames
 
-    // MARK: - Résolution exercice
-
-    static func exerciseAsset(for name: String) -> String? {
-        let key = normalize(name)
-        guard let asset = exerciseAssetMap.first(where: { key.contains($0.key) })?.value else {
-            return nil
-        }
-        return assetExists(asset) ? asset : nil
-    }
-
-    private static let exerciseAssetMap: [(key: String, value: String)] = [
-        ("developpe", Names.exerciseDeveloppeHalteres),
-        ("développé", Names.exerciseDeveloppeHalteres),
-        ("elevation", Names.exerciseElevationsLaterales),
-        ("élévation", Names.exerciseElevationsLaterales),
-        ("face pull", Names.exerciseFacePulls),
-        ("shrug", Names.exerciseShrugs),
-        ("traction", Names.exerciseTractionsTirage),
-        ("tirage", Names.exerciseTractionsTirage),
-        ("rowing", Names.exerciseRowing),
-        ("row elastique", Names.exerciseRowing),
-        ("curl", Names.exerciseCurlMarteau),
-        ("squat", Names.exerciseSquat),
-        ("goblet", Names.exerciseSquat),
-        ("romanian", Names.exerciseRomanianDeadlift),
-        ("deadlift", Names.exerciseRomanianDeadlift),
-        ("hip thrust", Names.exerciseHipThrust),
-        ("hip hinge", Names.exerciseHipThrust),
-        ("mollet", Names.exerciseMollets),
-        ("fente", Names.exerciseSquat),
-        ("pompes", Names.exerciseDeveloppeHalteres),
-        ("push-up", Names.exerciseDeveloppeHalteres),
-        ("pike push", Names.exerciseElevationsLaterales),
-        ("planche", Names.exerciseHipThrust),
-        ("dead bug", Names.exerciseHipThrust),
-        ("superman", Names.exerciseRowing),
-        ("reverse fly", Names.exerciseFacePulls),
-        ("abduction", Names.exerciseHipThrust),
-        ("chin tuck", Names.postureChinTuck),
-        ("retraction cervicale", Names.postureChinTuck)
-    ]
-
-    // MARK: - Échauffement / cooldown / bloc posture
+    // MARK: - Échauffement / cooldown / bloc posture / cardio
 
     static func blockAsset(for line: String) -> String? {
         let key = normalize(line)

@@ -37,7 +37,7 @@ enum CoachConversationSubjectService {
         Exemples:
         - « Comment améliorer mon sommeil ? » → Sommeil · Récupération
         - « J'ai mal au genou » → Genou · Douleur
-        - « Change mon plan muscu mardi » → Plan · Musculation
+        - « Change mon cardio mardi » → Plan · Cardio
 
         Message:
         \(trimmed)

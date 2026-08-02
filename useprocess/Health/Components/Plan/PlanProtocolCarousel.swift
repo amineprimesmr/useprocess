@@ -53,11 +53,27 @@ enum PlanProtocolLineParser {
 }
 
 enum PlanProtocolCarouselBuilder {
-    enum SummaryID {
-        static let seeAllTraining = "training-see-all"
+    static let compactPostureItemLimit = 4
+
+    /// Accueil Plan — cardio du jour + circuit / postures (plus de muscu).
+    static func cardioAndCircuitItems(
+        plan: FaceOriginPlan,
+        date: Date = Date()
+    ) -> [PlanProtocolCarouselItem] {
+        [cardioDayItem(for: date)] + compactPostureItems(from: plan)
     }
 
-    static let compactPostureItemLimit = 4
+    static func cardioDayItem(for date: Date = Date()) -> PlanProtocolCarouselItem {
+        let session = DebloatCardioDayCatalog.session(for: date)
+        return PlanProtocolCarouselItem(
+            id: session.id,
+            title: session.title,
+            repBadge: "\(session.minutes) min",
+            detailText: session.detail,
+            assetName: session.assetName,
+            fallbackSystemImage: session.systemImage
+        )
+    }
 
     static func compactPostureItems(from plan: FaceOriginPlan) -> [PlanProtocolCarouselItem] {
         PlanPostureCircuitContent.compactLines(
@@ -71,125 +87,9 @@ enum PlanProtocolCarouselBuilder {
                 line,
                 id: "posture-\(index)",
                 fallback: postureFallback(for: line),
-                category: "Circuit posture"
+                category: "Cardio et Circuit"
             )
         }
-    }
-
-    static func trainingDayCarouselItems(
-        training: OriginDayTraining,
-        plan: FaceOriginPlan,
-        stepsToday: Int
-    ) -> [PlanProtocolCarouselItem] {
-        let items = trainingItems(from: training) + compactPostureItems(from: plan)
-        return items + [seeAllTrainingCard(training: training, plan: plan, previewItemCount: items.count)]
-    }
-
-    static func restDayCarouselItems(
-        plan: FaceOriginPlan,
-        stepsToday: Int
-    ) -> [PlanProtocolCarouselItem] {
-        let hasWalking = PlanPostureCircuitContent.hasWalkingTarget(for: plan)
-        var items: [PlanProtocolCarouselItem] = []
-
-        if hasWalking {
-            items.append(walkingStepsItem(
-                current: stepsToday,
-                target: PlanPostureCircuitContent.dailyStepTarget(for: plan),
-                plan: plan
-            ))
-        }
-
-        let lineLimit = hasWalking ? compactPostureItemLimit - 1 : compactPostureItemLimit
-        items += PlanPostureCircuitContent.compactLines(
-            for: plan,
-            limit: lineLimit,
-            isRestDay: true,
-            includeWalking: false
-        )
-        .enumerated()
-        .map { index, line in
-            lineItem(
-                line,
-                id: "rest-\(index)",
-                fallback: postureFallback(for: line),
-                category: "Circuit posture"
-            )
-        }
-
-        return items + [seeAllTrainingCard(training: nil, plan: plan, previewItemCount: items.count)]
-    }
-
-    static func walkingStepsItem(
-        current: Int,
-        target: Int,
-        plan: FaceOriginPlan
-    ) -> PlanProtocolCarouselItem {
-        let detail = PlanPostureCircuitContent.walkingTarget(for: plan)
-            ?? "Objectif \(PlanStepsProgressFormatter.formatted(target)) pas aujourd'hui — HealthKit"
-
-        return PlanProtocolCarouselItem(
-            id: "walking-steps",
-            title: "Marche",
-            repBadge: nil,
-            detailText: detail,
-            assetName: TrainingAssetCatalog.blockAsset(for: "Marche"),
-            fallbackSystemImage: "figure.walk",
-            stepsProgress: PlanStepsProgress(current: current, target: target)
-        )
-    }
-
-    static func seeAllTrainingCard(
-        training: OriginDayTraining?,
-        plan: FaceOriginPlan,
-        previewItemCount: Int
-    ) -> PlanProtocolCarouselItem {
-        let postureCount = PlanPostureCircuitContent.mobilityBlocks(for: plan).count
-        let sessionCount = TrainingProgramCatalog.allSessionTemplates().count
-
-        let detailText: String
-        if let training {
-            detailText = "Programme complet · \(sessionCount) séances · \(postureCount) blocs posture · \(training.sessionName) aujourd'hui."
-        } else {
-            detailText = "Programme complet · \(sessionCount) séances · \(postureCount) blocs posture · repos actif aujourd'hui."
-        }
-
-        return PlanProtocolCarouselItem(
-            id: SummaryID.seeAllTraining,
-            title: "Voir tout",
-            repBadge: training.map { "\($0.durationMinutes) min" },
-            detailText: detailText,
-            assetName: TrainingAssetCatalog.seeAllTrainingAssetName,
-            fallbackSystemImage: "square.grid.2x2.fill"
-        )
-    }
-
-    static func trainingItems(from training: OriginDayTraining) -> [PlanProtocolCarouselItem] {
-        var items: [PlanProtocolCarouselItem] = []
-
-        for (index, line) in training.warmup.enumerated() {
-            items.append(lineItem(
-                line,
-                id: "warmup-\(index)",
-                fallback: "flame.fill",
-                category: "Échauffement"
-            ))
-        }
-
-        for exercise in training.exercises {
-            items.append(exerciseItem(exercise))
-        }
-
-        for (index, line) in training.cooldown.enumerated() {
-            items.append(lineItem(
-                line,
-                id: "cooldown-\(index)",
-                fallback: "figure.cooldown",
-                category: "Retour au calme"
-            ))
-        }
-
-        return items
     }
 
     static func lineItems(
@@ -238,29 +138,6 @@ enum PlanProtocolCarouselBuilder {
         if lower.contains("buteyko") || lower.contains("respiration") { return "wind" }
         if lower.contains("marche") || lower.contains("pas") { return "figure.walk" }
         return "figure.mind.and.body"
-    }
-
-    private static func exerciseItem(_ exercise: OriginExercise) -> PlanProtocolCarouselItem {
-        let badge = "\(exercise.sets)×\(exercise.reps)"
-        var detailParts: [String] = ["\(exercise.sets) séries × \(exercise.reps) reps"]
-        if exercise.restSeconds > 0 {
-            detailParts.append("Repos \(exercise.restSeconds) s entre les séries")
-        }
-        if !exercise.muscleGroup.isEmpty {
-            detailParts.append(exercise.muscleGroup.capitalized)
-        }
-        if !exercise.coachingCue.isEmpty {
-            detailParts.append(exercise.coachingCue)
-        }
-
-        return PlanProtocolCarouselItem(
-            id: exercise.id,
-            title: exercise.name,
-            repBadge: badge,
-            detailText: detailParts.joined(separator: "\n\n"),
-            assetName: TrainingAssetCatalog.exerciseAsset(for: exercise.name),
-            fallbackSystemImage: "figure.strengthtraining.traditional"
-        )
     }
 }
 
@@ -444,10 +321,6 @@ struct PlanProtocolCarouselCard: View {
         .processZoomSource(id: zoomTransitionID, namespace: zoomNamespace)
     }
 
-    private var isSeeAllCard: Bool {
-        item.id == PlanProtocolCarouselBuilder.SummaryID.seeAllTraining
-    }
-
     private var cardBody: some View {
         ZStack {
             previewImage
@@ -461,11 +334,7 @@ struct PlanProtocolCarouselCard: View {
             )
             .allowsHitTesting(false)
 
-            if isSeeAllCard {
-                seeAllCardChrome
-            } else {
-                standardCardChrome
-            }
+            standardCardChrome
         }
         .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: PlanProtocolCarouselLayout.cornerRadius, style: .continuous))
@@ -481,53 +350,6 @@ struct PlanProtocolCarouselCard: View {
                     .allowsHitTesting(false)
             }
         }
-    }
-
-    private var seeAllCardChrome: some View {
-        ZStack {
-            seeAllCenterGlassLabel
-
-            VStack(spacing: 0) {
-                HStack {
-                    Spacer(minLength: 0)
-                    if let repBadge = item.repBadge {
-                        Text(repBadge)
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.96))
-                            .monospacedDigit()
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background {
-                                Capsule()
-                                    .fill(.black.opacity(0.45))
-                                    .overlay {
-                                        Capsule()
-                                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
-                                    }
-                            }
-                    }
-                }
-                .padding(10)
-
-                Spacer(minLength: 0)
-            }
-        }
-    }
-
-    private var seeAllCenterGlassLabel: some View {
-        Text("Voir tout")
-            .font(.system(size: isLargeCard ? 15 : 14, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.96))
-            .padding(.horizontal, isLargeCard ? 22 : 18)
-            .padding(.vertical, isLargeCard ? 12 : 10)
-            .processGlassEffect(in: Capsule(), interactive: false)
-            .overlay {
-                Capsule()
-                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5)
-                    .allowsHitTesting(false)
-            }
-            .shadow(color: .black.opacity(0.32), radius: 10, y: 5)
-            .allowsHitTesting(false)
     }
 
     private var standardCardChrome: some View {

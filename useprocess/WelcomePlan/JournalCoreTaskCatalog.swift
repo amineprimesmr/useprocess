@@ -9,8 +9,8 @@ enum JournalCoreTaskCatalog {
         journalTask(
             id: "\(dayId).core.cardio",
             title: "Cardio debloat",
-            detail: "Marche active, vélo ou HIIT léger — min. 3 séances/semaine.",
-            pillar: "Entraînement",
+            detail: "Marche, vélo ou HIIT léger — idéal chaque jour · min. \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.",
+            pillar: "Cardio",
             minutes: 25
         )
     }

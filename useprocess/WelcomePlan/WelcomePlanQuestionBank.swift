@@ -74,25 +74,24 @@ enum WelcomePlanQuestionBank {
             id: "sessions_per_week",
             phase: .training,
             kind: .singleChoice,
-            prompt: "Combien de séances de sport par semaine tu peux tenir ?",
+            prompt: "Combien de séances cardio par semaine tu peux tenir ? (idéal chaque jour · min. 3)",
             choices: [
                 .init(id: "1", label: "1"),
                 .init(id: "2", label: "2"),
                 .init(id: "3", label: "3"),
                 .init(id: "4", label: "4"),
-                .init(id: "5plus", label: "5 ou plus")
+                .init(id: "5plus", label: "5 ou plus / presque chaque jour")
             ]
         ),
         WelcomePlanQuestion(
             id: "primary_sport",
             phase: .training,
             kind: .singleChoice,
-            prompt: "Quel sport tu pratiques ou veux pratiquer ?",
+            prompt: "Quel cardio tu pratiques ou veux pratiquer ?",
             choices: [
-                .init(id: "weights", label: "Musculation"),
-                .init(id: "running", label: "Course à pied"),
-                .init(id: "swimming", label: "Natation"),
+                .init(id: "running", label: "Course / marche rapide"),
                 .init(id: "cardio", label: "Cardio (vélo, rameur…)"),
+                .init(id: "swimming", label: "Natation"),
                 .init(id: "team", label: "Sports collectifs"),
                 .init(id: "other", label: "Autre")
             ]
@@ -137,7 +136,7 @@ enum WelcomePlanQuestionBank {
         case .hormonesSleep: return "Sommeil"
         case .nutrition: return "Alimentation"
         case .postureFace: return "Posture"
-        case .training: return "Sport"
+        case .training: return "Cardio"
         case .psychology: return "Régularité"
         case .closing: return "Finalisation"
         }

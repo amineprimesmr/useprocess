@@ -135,12 +135,9 @@ enum CoachDailyRhythmService {
         if let plan = WelcomePlanStore.shared.plan {
             let dayIndex = plan.calendar.currentProgramDayIndex()
             parts.append("Jour \(dayIndex + 1)")
-            if let day = plan.calendar.day(globalIndex: dayIndex) {
-                if let training = day.training {
-                    parts.append(training.sessionName)
-                } else {
-                    parts.append("Récup active")
-                }
+            if plan.calendar.day(globalIndex: dayIndex) != nil {
+                let cardio = DebloatCardioDayCatalog.session()
+                parts.append("\(cardio.title) · \(cardio.minutes) min")
             }
         }
 

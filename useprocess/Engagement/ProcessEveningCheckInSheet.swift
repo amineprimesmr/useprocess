@@ -25,7 +25,7 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
         case .debloatMeal:
             return "Respecté tes repas debloat ?"
         case .cardio:
-            return "Fais ton cardio ?"
+            return "Cardio du jour ? (idéal chaque jour · min. 3×/sem)"
         }
     }
 }
@@ -288,9 +288,9 @@ struct ProcessEveningCheckInSheet: View {
 
     private var subtitleText: String {
         if hydrationPrefill != nil {
-            return "Eau déjà suivie · repas debloat obligatoire · cardio min. 3/semaine."
+            return "Eau déjà suivie · repas debloat obligatoire · cardio idéal chaque jour (min. 3/sem)."
         }
-        return "Eau + repas debloat obligatoires · cardio min. 3/semaine."
+        return "Eau + repas debloat obligatoires · cardio idéal chaque jour (min. 3/sem)."
     }
 
     private var footerBlock: some View {
@@ -655,10 +655,10 @@ struct ProcessEveningCheckInEntryButton: View {
             return "Tu peux modifier tes réponses si besoin."
         }
         if hasSubmittedToday {
-            return "Eau + repas debloat obligatoires. Cardio min. 3/semaine — 3 j sans cardio = blocage."
+            return "Eau + repas debloat obligatoires. Cardio idéal chaque jour · min. 3/semaine."
         }
         if isEveningWindow {
-            return "Eau · repas Na/K/Mg · cardio (marche, vélo, HIIT…)."
+            return "Eau · repas Na/K/Mg · cardio du jour (marche, vélo, HIIT…)."
         }
         return "Protocole debloat : hydratation + alimentation obligatoires."
     }
