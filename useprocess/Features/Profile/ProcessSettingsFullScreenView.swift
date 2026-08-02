@@ -18,9 +18,11 @@ struct ProcessSettingsFullScreenView: View {
             )
             .navigationDestination(for: ProfileEditDestination.self) { destination in
                 profileFieldEditor(for: destination)
+                    .reportsProfileSubrouteActive(true)
             }
             .navigationDestination(for: ProfileSettingsCategory.self) { category in
                 profileSettingsDetail(for: category)
+                    .reportsProfileSubrouteActive(true)
                     .environment(\.profileAccountDeletionHandler) {
                         Task { @MainActor in
                             dismiss()

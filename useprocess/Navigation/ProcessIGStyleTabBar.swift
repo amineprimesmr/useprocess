@@ -235,16 +235,29 @@ struct ProcessIGTabShell<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @State private var progress: CGFloat = 0
+    /// Sous-pages Réglages (prénom, compte, etc.) — masque le tab bar pour ne pas bloquer Enregistrer / clavier.
+    @State private var profileSubrouteActive = false
 
     private var scale: CGFloat {
         1 - (progress * (1 - ProcessIGTabMetrics.minScale))
     }
 
+    private var showsTabChrome: Bool {
+        selectedSection != .coach && !profileSubrouteActive
+    }
+
     var body: some View {
         content()
             .environment(\.processIGTabBarProgress, $progress)
+            .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
+                guard selectedSection == .profile else {
+                    profileSubrouteActive = false
+                    return
+                }
+                profileSubrouteActive = active
+            }
             .overlay(alignment: .bottom) {
-                if selectedSection != .coach {
+                if showsTabChrome {
                     chrome
                         .transition(
                             .asymmetric(
@@ -255,7 +268,11 @@ struct ProcessIGTabShell<Content: View>: View {
                 }
             }
             .animation(ProcessGlass.spring, value: selectedSection == .coach)
-            .onChange(of: selectedSection) { _, _ in
+            .animation(ProcessGlass.spring, value: profileSubrouteActive)
+            .onChange(of: selectedSection) { _, section in
+                if section != .profile {
+                    profileSubrouteActive = false
+                }
                 expandIfNeeded()
             }
     }

@@ -41,26 +41,32 @@ final class FaceScanHistoryStore {
     }
 
     func push(_ result: FaceScanResult) {
-        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
-        latestResult = reconciled
-        history.removeAll { $0.id == reconciled.id }
-        history.insert(reconciled, at: 0)
-        if history.count > 90 { history = Array(history.prefix(90)) }
-        persist()
-        uploadToCloud(reconciled)
-        FaceScanDataLifecycle.enforceRetention(for: self)
+        upsert(result)
     }
 
     func update(_ result: FaceScanResult) {
+        upsert(result)
+    }
+
+    /// Insert ou remplace — fiable après Continuer (import photo + cadrage + slider studio).
+    func upsert(_ result: FaceScanResult) {
         let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
-        if latestResult?.id == reconciled.id {
-            latestResult = reconciled
-        }
         if let index = history.firstIndex(where: { $0.id == reconciled.id }) {
             history[index] = reconciled
+        } else {
+            history.insert(reconciled, at: 0)
         }
+        if history.count > 90 { history = Array(history.prefix(90)) }
+
+        if latestResult == nil
+            || latestResult?.id == reconciled.id
+            || (latestResult.map { reconciled.createdAt >= $0.createdAt } ?? true) {
+            latestResult = reconciled
+        }
+
         persist()
         uploadToCloud(reconciled)
+        FaceScanDataLifecycle.enforceRetention(for: self)
     }
 
     func syncFromRemote() async {
@@ -97,6 +103,9 @@ final class FaceScanHistoryStore {
                 }
                 if merged.coachInsightModel == nil {
                     merged.coachInsightModel = existing.coachInsightModel
+                }
+                if merged.studioFraming == nil {
+                    merged.studioFraming = existing.studioFraming
                 }
                 byId[item.id] = FaceScanImageStore.reconcileMediaMetadata(for: merged)
             } else {
@@ -136,8 +145,14 @@ final class FaceScanHistoryStore {
         return FaceScanCadence.daysUntilNextScan(since: latest.createdAt)
     }
 
+    /// Cadence réelle — le studio ne force plus « dû » (sinon jamais de carte Dernier scan).
     var isScanDue: Bool {
         FaceScanCadence.isScanDue(since: latestResult?.createdAt)
+    }
+
+    /// Studio : peut relancer un scan hors cadence (menu « Refaire le scan »).
+    var canStartScanAnytime: Bool {
+        ProcessCreatorModeStore.shared.allowsUnlimitedScans
     }
 
     /// Nombre de jours consécutifs avec scan (rythme quotidien).

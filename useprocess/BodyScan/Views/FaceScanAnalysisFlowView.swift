@@ -1,8 +1,10 @@
 import SwiftUI
+import UIKit
 
 /// Session post-capture : animation d'analyse (Claude, HealthKit…) puis écran résultats WHOOP.
 struct FaceScanAnalysisFlowView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
 
     let payload: FaceScanCapturePayload
     let markers: FaceWellnessMarkers
@@ -11,7 +13,9 @@ struct FaceScanAnalysisFlowView: View {
     var onDismiss: () -> Void
     var onComplete: (FaceScanResult) -> Void
 
-    @State private var completedResult: FaceScanResult?
+    @State private var baseResult: FaceScanResult?
+    @State private var qualityDraft: Double = 0.5
+    @State private var framingDraft: FaceScanStudioFraming = .identity
     @State private var analysisProgress: Double = 0
     @State private var analysisDisplayedPercentage = 0
     @State private var analysisPhaseIndex = 0
@@ -25,59 +29,102 @@ struct FaceScanAnalysisFlowView: View {
         OnboardingAnalysisProgressConfig.faceScanAnalysisSteps
     }
 
+    private var showsCreatorControls: Bool {
+        creatorMode.isUnlocked && showsResultScreen && baseResult != nil
+    }
+
+    private var qualityDraftLabel: String {
+        switch qualityDraft {
+        case ..<0.2: return "Mauvais"
+        case ..<0.4: return "Faible"
+        case ..<0.6: return "Réaliste"
+        case ..<0.8: return "Bon"
+        default: return "Excellent"
+        }
+    }
+
+    /// Résultat affiché — éventuellement ajusté par le slider studio.
+    private var displayResult: FaceScanResult? {
+        guard let base = baseResult else { return nil }
+        guard showsCreatorControls else { return base }
+        return creatorMode.rebuildResult(base, quality: qualityDraft)
+    }
+
     var body: some View {
-        ZStack {
-            analysisBackground.ignoresSafeArea()
+        GeometryReader { geometry in
+            // Toujours prendre le vrai inset fenêtre (évite le chevauchement Dynamic Island).
+            let topInset = max(geometry.safeAreaInsets.top, Self.windowSafeAreaTop, 47)
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: completedResult == nil ? 28 : 0) {
-                    headerBar
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                        .padding(.bottom, completedResult == nil ? 0 : 18)
+            ZStack {
+                analysisBackground.ignoresSafeArea()
 
-                    if let result = completedResult, showsResultScreen {
-                        FaceScanWhoopInlineResults(
-                            result: result,
-                            history: FaceScanHistoryStore.shared.history
-                        )
-                        .transition(.opacity)
-                        .padding(.bottom, 12)
-                    } else {
-                        FaceScanAnalysisHeroView(payload: payload)
-                        .padding(.horizontal, 24)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: baseResult == nil ? 28 : 0) {
+                        headerBar
+                            .padding(.horizontal, 20)
+                            .padding(.top, topInset + 4)
+                            .padding(.bottom, baseResult == nil ? 0 : 18)
 
-                        OnboardingProfileChatAnalysisPanel(
-                            phaseLabel: analysisPhaseLabel,
-                            phaseIndex: analysisPhaseIndex,
-                            displayedPercentage: analysisDisplayedPercentage,
-                            progress: analysisProgress,
-                            elapsedSeconds: analysisElapsedSeconds,
-                            isVisible: true,
-                            steps: steps
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 36)
+                        if let result = displayResult, let base = baseResult, showsResultScreen {
+                            FaceScanWhoopInlineResults(
+                                result: result,
+                                history: FaceScanHistoryStore.shared.history,
+                                prefersPassedResult: showsCreatorControls,
+                                evolutionAnchor: base,
+                                animateRevealOnce: true,
+                                allowsStudioFraming: showsCreatorControls,
+                                studioFraming: framingDraft,
+                                onStudioFramingChange: { framing in
+                                    framingDraft = framing.clamped()
+                                }
+                            ) {
+                                if showsCreatorControls {
+                                    creatorQualitySlider
+                                        .padding(.horizontal, 16)
+                                        .padding(.top, 28)
+                                        .padding(.bottom, 8)
+                                }
+                            }
+                            // Identité stable : ne JAMAIS remonter la page quand le slider bouge.
+                            .id(base.id)
+                            .transition(.opacity)
+                            .padding(.bottom, 120)
+                        } else {
+                            FaceScanAnalysisHeroView(payload: payload)
+                                .padding(.horizontal, 24)
+
+                            OnboardingProfileChatAnalysisPanel(
+                                phaseLabel: analysisPhaseLabel,
+                                phaseIndex: analysisPhaseIndex,
+                                displayedPercentage: analysisDisplayedPercentage,
+                                progress: analysisProgress,
+                                elapsedSeconds: analysisElapsedSeconds,
+                                isVisible: true,
+                                steps: steps
+                            )
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 36)
+                        }
                     }
                 }
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if let result = completedResult, showsResultScreen {
-                    FaceIDContinueButton {
-                        HapticManager.shared.impact(.medium)
-                        complete(with: result)
+                // Le fond ignore le safe area ; on gère le top manuellement via topInset.
+                .ignoresSafeArea(edges: .top)
+
+                if let result = displayResult, showsResultScreen {
+                    VStack {
+                        Spacer(minLength: 0)
+                        FaceIDContinueButton {
+                            HapticManager.shared.impact(.medium)
+                            complete(with: result)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, max(geometry.safeAreaInsets.bottom, 12) + 12)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 8)
-                    .padding(.bottom, 28)
-                    .background(
-                        FaceScanWhoopPalette.canvas
-                            .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
-                    )
+                    .transition(.opacity)
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.38), value: completedResult?.id)
+        .animation(.easeInOut(duration: 0.28), value: baseResult?.id)
         .task(id: payload.scanId) {
             await runAnalysis()
         }
@@ -88,16 +135,84 @@ struct FaceScanAnalysisFlowView: View {
         }
     }
 
+    private var creatorQualitySlider: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Rendu résultats")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                Spacer()
+                Text(qualityDraftLabel)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(FaceScanWhoopPalette.label)
+                    .contentTransition(.opacity)
+            }
+
+            Slider(
+                value: Binding(
+                    get: { qualityDraft },
+                    set: { newValue in
+                        // Pas d’animations implicites sur toute la page pendant le drag.
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            qualityDraft = newValue
+                        }
+                    }
+                ),
+                in: 0...1,
+                onEditingChanged: { editing in
+                    // Persist uniquement en fin de geste — pas de UserDefaults / @Published à chaque tick.
+                    if !editing {
+                        creatorMode.resultQuality = qualityDraft
+                    }
+                }
+            )
+            .tint(FaceScanWhoopPalette.label)
+
+            HStack {
+                Text("Mauvais")
+                Spacer()
+                Text("Réaliste")
+                Spacer()
+                Text("Excellent")
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(FaceScanWhoopPalette.secondary)
+        }
+    }
+
     @MainActor
     private func complete(with result: FaceScanResult) {
         guard !didCompleteAnalysis else { return }
         didCompleteAnalysis = true
-        onComplete(result)
+
+        var final = result
+        // Persiste le rendu final (slider + cadrage + photo) — même carte accueil qu’un vrai scan.
+        if showsCreatorControls {
+            creatorMode.resultQuality = qualityDraft
+            final.studioFraming = framingDraft.isIdentity ? nil : framingDraft.clamped()
+        }
+        // Upsert systématique : import photo / studio doivent bien remplacer le latest.
+        FaceScanHistoryStore.shared.upsert(final)
+        ProcessDebloatTrajectoryStore.shared.recordScan(final)
+
+        onComplete(final)
         onDismiss()
     }
 
     private var analysisBackground: Color {
         FaceScanWhoopPalette.canvas
+    }
+
+    /// Safe area top depuis la fenêtre UIKit (fiable en fullScreenCover).
+    private static var windowSafeAreaTop: CGFloat {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)
+            ?? scenes.flatMap(\.windows).first
+        return window?.safeAreaInsets.top ?? 0
     }
 
     private var headerForeground: Color {
@@ -111,18 +226,18 @@ struct FaceScanAnalysisFlowView: View {
 
             Spacer(minLength: 0)
 
-            Text(completedResult == nil ? "ANALYSE DU SCAN" : formattedHeaderDate)
-                .font(.system(size: completedResult == nil ? 13 : 15, weight: .semibold))
+            Text(displayResult == nil ? "ANALYSE DU SCAN" : formattedHeaderDate)
+                .font(.system(size: displayResult == nil ? 13 : 15, weight: .semibold))
                 .foregroundStyle(headerForeground)
-                .tracking(completedResult == nil ? 0.6 : 0)
+                .tracking(displayResult == nil ? 0.6 : 0)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
 
             Spacer(minLength: 0)
 
-            if completedResult != nil, showsResultScreen {
+            if displayResult != nil, showsResultScreen {
                 Button("Terminer") {
-                    if let result = completedResult {
+                    if let result = displayResult {
                         complete(with: result)
                     }
                 }
@@ -137,12 +252,13 @@ struct FaceScanAnalysisFlowView: View {
     }
 
     private var formattedHeaderDate: String {
-        guard let result = completedResult else { return "" }
+        guard let result = displayResult else { return "" }
         return FaceScanWhoopDateLabel.header(for: result.createdAt)
     }
 
     @MainActor
     private func runAnalysis() async {
+        qualityDraft = creatorMode.resultQuality
         startElapsedTimer()
         startProgressAnimation()
 
@@ -172,9 +288,17 @@ struct FaceScanAnalysisFlowView: View {
         try? await Task.sleep(for: .milliseconds(420))
 
         if showsResultScreen {
-            completedResult = result
+            framingDraft = result.resolvedStudioFraming
+            baseResult = result
         } else {
-            complete(with: result)
+            // Onboarding / flux sans résultats inline : applique le rendu studio si besoin.
+            let final = creatorMode.isUnlocked
+                ? creatorMode.rebuildResult(result, quality: creatorMode.resultQuality)
+                : result
+            if creatorMode.isUnlocked {
+                FaceScanHistoryStore.shared.update(final)
+            }
+            complete(with: final)
         }
     }
 
@@ -227,48 +351,51 @@ struct FaceScanAnalysisFlowView: View {
 
         let start = analysisProgress
         let stepsCount = 12
-        for step in 1...stepsCount {
-            let t = Double(step) / Double(stepsCount)
-            let eased = start + (1 - start) * (1 - pow(1 - t, 2))
-            analysisProgress = eased
-            analysisDisplayedPercentage = Int((eased * 100).rounded())
-            analysisPhaseIndex = min(steps.count - 1, Int(eased * Double(steps.count)))
-            analysisPhaseLabel = steps[analysisPhaseIndex].phaseLabel
-            try? await Task.sleep(for: .milliseconds(45))
+        for i in 1...stepsCount {
+            let t = Double(i) / Double(stepsCount)
+            let eased = 1.0 - pow(1.0 - t, 1.6)
+            analysisProgress = start + (1.0 - start) * eased
+            analysisDisplayedPercentage = Int((analysisProgress * 100).rounded())
+            analysisPhaseIndex = steps.count - 1
+            analysisPhaseLabel = steps[steps.count - 1].phaseLabel
+            try? await Task.sleep(for: .milliseconds(28))
         }
-
         analysisProgress = 1
         analysisDisplayedPercentage = 100
-        analysisPhaseIndex = steps.count - 1
-        analysisPhaseLabel = steps.last?.phaseLabel ?? analysisPhaseLabel
     }
 }
 
-// MARK: - Hero vidéo
+// MARK: - Hero média (vidéo / snapshot)
 
 struct FaceScanAnalysisHeroView: View {
     let payload: FaceScanCapturePayload
     var showsAnalysisSweep: Bool = true
 
-    private let heroDiameter: CGFloat = 248
-
     @State private var resolvedVideoURL: URL?
+
+    private let heroDiameter: CGFloat = 240
 
     var body: some View {
         ZStack {
-            mediaLayer
-                .frame(width: heroDiameter, height: heroDiameter)
-                .clipShape(Circle())
-
-            if showsAnalysisSweep {
-                FaceScanAnalysisSweepOverlay(diameter: heroDiameter)
-                    .frame(width: heroDiameter, height: heroDiameter)
-                    .clipShape(Circle())
-            }
-
             Circle()
-                .strokeBorder(Color.white.opacity(0.16), lineWidth: 1.5)
+                .fill(Color.black.opacity(0.35))
                 .frame(width: heroDiameter, height: heroDiameter)
+                .overlay {
+                    mediaLayer
+                        .frame(width: heroDiameter, height: heroDiameter)
+                        .clipShape(Circle())
+                }
+                .overlay {
+                    if showsAnalysisSweep {
+                        FaceScanAnalysisSweepOverlay(diameter: heroDiameter)
+                            .frame(width: heroDiameter, height: heroDiameter)
+                            .clipShape(Circle())
+                    }
+                }
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.16), lineWidth: 1.5)
+                }
         }
         .frame(maxWidth: .infinity)
         .task(id: payload.scanId) {
@@ -297,8 +424,6 @@ struct FaceScanAnalysisHeroView: View {
     }
 
     private func resolveVideoWithRetry() async {
-        // Probe by scan id even when `videoFilename` is still nil — the mp4 can
-        // finish writing a beat after capture delivery.
         for _ in 0..<30 {
             if let url = FaceScanImageStore.resolvedVideoURL(forScanId: payload.scanId) {
                 resolvedVideoURL = url
@@ -339,64 +464,29 @@ struct FaceScanAnalysisSweepOverlay: View {
                         .position(x: width * 0.5, y: y)
 
                     Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    lineColor.opacity(0),
-                                    lineColor.opacity(colorScheme == .dark ? 0.92 : 0.98),
-                                    lineColor.opacity(0)
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: width * 0.92, height: 1.6)
-                        .shadow(color: lineGlow.opacity(0.55), radius: 5, y: 0)
-                        .position(x: width * 0.5, y: y)
-
-                    Rectangle()
-                        .fill(lineColor.opacity(colorScheme == .dark ? 0.42 : 0.34))
-                        .frame(width: width * 0.72, height: 0.8)
-                        .blur(radius: 0.4)
+                        .fill(Color.white.opacity(colorScheme == .dark ? 0.22 : 0.28))
+                        .frame(width: width, height: 1.5)
                         .position(x: width * 0.5, y: y)
                 }
             }
         }
         .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-
-    private var lineColor: Color {
-        colorScheme == .dark
-            ? Color(red: 0.78, green: 0.96, blue: 1.0)
-            : .white
-    }
-
-    private var lineGlow: Color {
-        colorScheme == .dark
-            ? Color(red: 0.35, green: 0.92, blue: 1.0)
-            : Color.white
     }
 
     private var maskGradient: LinearGradient {
-        let peak = colorScheme == .dark ? 0.24 : 0.30
-        return LinearGradient(
+        LinearGradient(
             colors: [
-                lineGlow.opacity(0),
-                lineGlow.opacity(peak * 0.45),
-                lineGlow.opacity(peak),
-                lineGlow.opacity(peak * 0.45),
-                lineGlow.opacity(0)
+                Color.white.opacity(0),
+                Color.white.opacity(colorScheme == .dark ? 0.18 : 0.22),
+                Color.white.opacity(0)
             ],
             startPoint: .top,
             endPoint: .bottom
         )
     }
 
-    private func smoothPingPong(_ phase: Double) -> CGFloat {
-        let wave = sin((phase * 2 * .pi) - (.pi / 2))
-        let normalized = (wave + 1) * 0.5
-        let inset = 0.1
-        return CGFloat(inset + normalized * (1 - inset * 2))
+    private func smoothPingPong(_ phase: Double) -> Double {
+        let x = phase < 0.5 ? phase * 2 : (1 - phase) * 2
+        return x * x * (3 - 2 * x)
     }
 }

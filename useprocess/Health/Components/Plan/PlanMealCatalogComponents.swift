@@ -90,7 +90,7 @@ struct PlanMealCatalogCard: View {
                     .padding(.top, 18)
 
                 ZStack(alignment: .bottom) {
-                    mealImageCircle
+                    mealImage
 
                     MealDebloatScorePill(assessment: assessment)
                         .padding(.bottom, 2)
@@ -116,32 +116,24 @@ struct PlanMealCatalogCard: View {
     }
 
     @ViewBuilder
-    private var mealImageCircle: some View {
+    private var mealImage: some View {
         if ProcessAssetCatalog.contains(imageAsset) {
+            // PNG tels quels — pas de clip circulaire (évite le « rond noir » autour).
             Image(imageAsset)
                 .resizable()
-                .scaledToFill()
+                .scaledToFit()
                 .frame(
                     width: PlanMealCatalogLayout.imageDiameter,
                     height: PlanMealCatalogLayout.imageDiameter
                 )
-                .clipShape(Circle())
-                .overlay {
-                    Circle()
-                        .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
-                }
         } else {
-            Circle()
-                .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.35))
+            Image(systemName: slot.icon)
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(theme.onboardingAccent.opacity(0.8))
                 .frame(
                     width: PlanMealCatalogLayout.imageDiameter,
                     height: PlanMealCatalogLayout.imageDiameter
                 )
-                .overlay {
-                    Image(systemName: slot.icon)
-                        .font(.system(size: 34, weight: .semibold))
-                        .foregroundStyle(theme.onboardingAccent.opacity(0.8))
-                }
         }
     }
 }

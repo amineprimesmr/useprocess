@@ -707,18 +707,14 @@ private struct PlanMealCatalogBrowseCard: View {
             if ProcessAssetCatalog.contains(asset) {
                 Image(asset)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
             } else {
-                Circle()
-                    .fill(theme.cardBackgroundStrong.opacity(0.5))
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(theme.onboardingAccent.opacity(0.8))
             }
         }
         .frame(width: PlanMealCarouselLayout.imageDiameter, height: PlanMealCarouselLayout.imageDiameter)
-        .clipShape(Circle())
-        .overlay {
-            Circle()
-                .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
-        }
     }
 
     private var catalogCountPill: some View {
@@ -773,7 +769,7 @@ private struct PlanMealCarouselCard: View {
                     .padding(.top, 18)
 
                 ZStack(alignment: .bottom) {
-                    mealImageCircle
+                    mealImage
 
                     debloatScorePill
                         .padding(.bottom, 2)
@@ -799,32 +795,24 @@ private struct PlanMealCarouselCard: View {
     }
 
     @ViewBuilder
-    private var mealImageCircle: some View {
+    private var mealImage: some View {
         if ProcessAssetCatalog.contains(entry.imageAssetName) {
+            // PNG tels quels — pas de clip circulaire (évite le « rond noir » autour).
             Image(entry.imageAssetName)
                 .resizable()
-                .scaledToFill()
+                .scaledToFit()
                 .frame(
                     width: PlanMealCarouselLayout.imageDiameter,
                     height: PlanMealCarouselLayout.imageDiameter
                 )
-                .clipShape(Circle())
-                .overlay {
-                    Circle()
-                        .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
-                }
         } else {
-            Circle()
-                .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.35))
+            Image(systemName: entry.slot.icon)
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(theme.onboardingAccent.opacity(0.8))
                 .frame(
                     width: PlanMealCarouselLayout.imageDiameter,
                     height: PlanMealCarouselLayout.imageDiameter
                 )
-                .overlay {
-                    Image(systemName: entry.slot.icon)
-                        .font(.system(size: 34, weight: .semibold))
-                        .foregroundStyle(theme.onboardingAccent.opacity(0.8))
-                }
         }
     }
 

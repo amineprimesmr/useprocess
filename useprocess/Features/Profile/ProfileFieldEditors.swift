@@ -85,6 +85,7 @@ struct ProfileNameEditorView: View {
             ) {
                 Task {
                     await persistProfileChanges(using: profileService) { $0.firstName = trimmedName }
+                    ProcessCreatorModeStore.shared.evaluate(firstName: trimmedName)
                     dismiss()
                 }
             }

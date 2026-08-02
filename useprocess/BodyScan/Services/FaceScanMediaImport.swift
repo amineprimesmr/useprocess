@@ -23,9 +23,12 @@ enum FaceScanMediaImport {
         }
     }
 
-    @MainActor
-    static func process(image: UIImage) throws -> (FaceScanCapturePayload, FaceWellnessMarkers) {
-        let normalized = normalize(image)
+    /// Photo — resize/orientation hors MainActor, puis Vision.
+    static func process(image: UIImage) async throws -> (FaceScanCapturePayload, FaceWellnessMarkers) {
+        let normalized = await Task.detached(priority: .userInitiated) {
+            normalize(image)
+        }.value
+
         guard containsFace(in: normalized) else {
             throw ImportError.noFaceDetected
         }
@@ -45,7 +48,6 @@ enum FaceScanMediaImport {
         return (payload, markers)
     }
 
-    @MainActor
     static func process(videoSourceURL: URL) async throws -> (FaceScanCapturePayload, FaceWellnessMarkers) {
         let scanId = UUID().uuidString
         let tempVideo = FileManager.default.temporaryDirectory
@@ -68,7 +70,10 @@ enum FaceScanMediaImport {
             throw ImportError.videoProcessingFailed
         }
 
-        let normalized = normalize(snapshot)
+        let normalized = await Task.detached(priority: .userInitiated) {
+            normalize(snapshot)
+        }.value
+
         guard containsFace(in: normalized) else {
             throw ImportError.noFaceDetected
         }
@@ -129,16 +134,29 @@ enum FaceScanMediaImport {
         }
     }
 
-    private static func normalize(_ image: UIImage, maxPixel: CGFloat = 1400) -> UIImage {
-        let maxSide = max(image.size.width, image.size.height)
-        guard maxSide > maxPixel, maxSide > 0 else { return image }
+    /// Resize + orientation `.up` — appelé hors MainActor.
+    nonisolated private static func normalize(_ image: UIImage, maxPixel: CGFloat = 1400) -> UIImage {
+        let upright = image.normalizedUpOrientation()
+        let maxSide = max(upright.size.width, upright.size.height)
+        guard maxSide > maxPixel, maxSide > 0 else { return upright }
 
         let scale = maxPixel / maxSide
-        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let newSize = CGSize(width: upright.size.width * scale, height: upright.size.height * scale)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
+            upright.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+    }
+}
+
+private extension UIImage {
+    nonisolated func normalizedUpOrientation() -> UIImage {
+        guard imageOrientation != .up else { return self }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
         }
     }
 }

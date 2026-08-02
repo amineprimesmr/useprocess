@@ -26,7 +26,7 @@ struct FaceScanCaptureScreen: View {
     var matchedCameraNamespace: Namespace.ID? = nil
     var onBack: () -> Void = {}
     var onSkip: (() -> Void)? = nil
-    var showsMediaImport: Bool = true
+    var showsMediaImport: Bool = false
     var compactSkipAction: Bool = false
     var skipButtonTitle: String = "Continuer sans scan"
     var allowsScreenFlash: Bool = true
@@ -387,6 +387,12 @@ struct FaceScanCaptureScreen: View {
                 embeddedControlsBlock
                     .padding(.horizontal, Layout.cardPadding)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                if showsMediaImport, self.phase != .completed {
+                    importMediaButton
+                        .padding(.horizontal, Layout.cardPadding)
+                        .padding(.top, 2)
+                }
 
                 bottomAction
                     .padding(.horizontal, Layout.cardPadding)
@@ -808,9 +814,16 @@ struct FaceScanCaptureScreen: View {
         }
     }
 
+    /// Capture live (mesh 3D) ou import galerie (photo/vidéo + markers, sans mesh).
+    private var hasReadyCapture: Bool {
+        guard let payload = capturedPayload else { return false }
+        if payload.mesh.isValid { return true }
+        return payload.snapshot != nil && capturedMarkers != nil
+    }
+
     @ViewBuilder
     private var bottomAction: some View {
-        if phase == .completed, let payload = capturedPayload, payload.mesh.isValid {
+        if phase == .completed, hasReadyCapture {
             FaceIDContinueButton {
                 submitCapturedScan()
             }
@@ -824,7 +837,7 @@ struct FaceScanCaptureScreen: View {
     @MainActor
     private func submitCapturedScan() {
         guard !hasSubmittedCapture else { return }
-        guard let payload = capturedPayload, payload.mesh.isValid else { return }
+        guard let payload = capturedPayload, hasReadyCapture else { return }
 
         hasSubmittedCapture = true
         captureSessionPaused = true
@@ -909,7 +922,7 @@ struct FaceScanCaptureScreen: View {
         Task { @MainActor in
             defer { isImportingMedia = false }
             do {
-                let result = try FaceScanMediaImport.process(image: image)
+                let result = try await FaceScanMediaImport.process(image: image)
                 submitImportedMedia(result.0, markers: result.1)
             } catch {
                 importErrorMessage = error.localizedDescription
@@ -933,6 +946,7 @@ struct FaceScanCaptureScreen: View {
         }
     }
 
+    @MainActor
     private func submitImportedMedia(_ payload: FaceScanCapturePayload, markers: FaceWellnessMarkers) {
         guard !hasSubmittedCapture else { return }
         capturedPayload = payload
@@ -942,6 +956,8 @@ struct FaceScanCaptureScreen: View {
         isFlashEnabled = false
         HapticManager.shared.notification(.success)
         phase = .completed
+        // Import sans mesh 3D : enchaîne tout de suite l’analyse (évite l’écran bloqué).
+        submitCapturedScan()
     }
 
     private func restartScan() {

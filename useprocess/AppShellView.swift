@@ -53,6 +53,7 @@ struct AppShellView: View {
             try? await Task.sleep(for: .milliseconds(650))
             guard !Task.isCancelled, session.hasCompletedOnboarding else { return }
             WelcomePlanStore.shared.reloadForCurrentUser()
+            ProcessCreatorModeStore.shared.syncFromCurrentProfile()
             PostOnboardingActivationService.prepareFirstAppEntry(
                 profile: UnifiedProfileService.shared.currentProfile
             )

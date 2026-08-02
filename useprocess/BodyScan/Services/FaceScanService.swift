@@ -21,8 +21,9 @@ enum FaceScanService {
             : nil
 
         let scanSource: FaceScanSource = AppSession.shared.hasCompletedOnboarding ? .daily : .onboarding
+        // Studio créateur : on garde l’analyse réelle ici — le slider ajuste sur l’écran résultats.
         let resolvedMarkers: FaceWellnessMarkers
-        if scanSource == .onboarding {
+        if scanSource == .onboarding, !ProcessCreatorModeStore.shared.isUnlocked {
             resolvedMarkers = OnboardingFaceScanMarkerCalibration.calibrate(
                 markers,
                 sleepHours: sleepHours,
@@ -39,11 +40,18 @@ enum FaceScanService {
             yawCoverage: payload.yawCoverage
         )
 
+        // Snapshot disque avant retour — la carte accueil doit avoir la photo dès Continuer.
+        let snapshotFilename = await Task.detached(priority: .utility) {
+            payload.snapshot.flatMap {
+                FaceScanImageStore.save(image: $0, scanId: payload.scanId)
+            }
+        }.value
+
         let result = FaceScanResult(
             id: scanId,
             userId: userId,
             markers: resolvedMarkers,
-            snapshotFilename: nil,
+            snapshotFilename: snapshotFilename,
             videoFilename: payload.videoFilename,
             source: scanSource,
             sleepHoursAtScan: sleepHours,
@@ -55,49 +63,24 @@ enum FaceScanService {
             relativeSignals: relativeAssessment.signals
         )
 
-        enqueueScanPersistence(
-            result: result,
-            payload: payload,
-            markers: resolvedMarkers
+        OnboardingFaceMarkersStore.save(
+            markers: resolvedMarkers,
+            mesh: payload.mesh,
+            scanId: payload.scanId,
+            snapshotFilename: result.snapshotFilename,
+            videoFilename: result.videoFilename,
+            capturedAt: result.createdAt
+        )
+        FaceScanHistoryStore.shared.push(result)
+        ProcessDebloatTrajectoryStore.shared.recordScan(result)
+
+        enqueuePlanRecalibration(for: result, markers: resolvedMarkers)
+        enqueuePostScanEnhancements(
+            for: result,
+            profile: UnifiedProfileService.shared.currentProfile
         )
 
         return result
-    }
-
-    private static func enqueueScanPersistence(
-        result: FaceScanResult,
-        payload: FaceScanCapturePayload,
-        markers: FaceWellnessMarkers
-    ) {
-        Task.detached(priority: .utility) {
-            let snapshotFilename = payload.snapshot.flatMap {
-                FaceScanImageStore.save(image: $0, scanId: payload.scanId)
-            }
-
-            await MainActor.run {
-                var persisted = result
-                if let snapshotFilename {
-                    persisted.snapshotFilename = snapshotFilename
-                }
-
-                OnboardingFaceMarkersStore.save(
-                    markers: markers,
-                    mesh: payload.mesh,
-                    scanId: payload.scanId,
-                    snapshotFilename: persisted.snapshotFilename,
-                    videoFilename: persisted.videoFilename,
-                    capturedAt: persisted.createdAt
-                )
-                FaceScanHistoryStore.shared.push(persisted)
-                ProcessDebloatTrajectoryStore.shared.recordScan(persisted)
-
-                enqueuePlanRecalibration(for: persisted, markers: markers)
-                enqueuePostScanEnhancements(
-                    for: persisted,
-                    profile: UnifiedProfileService.shared.currentProfile
-                )
-            }
-        }
     }
 
     private static func enqueuePlanRecalibration(for result: FaceScanResult, markers: FaceWellnessMarkers) {
@@ -131,6 +114,30 @@ enum FaceScanService {
                    history: FaceScanHistoryStore.shared.recentResults(limit: 14)
                ) {
                 enhanced = aiResult
+                // Ne pas écraser un rendu studio déjà validé (slider / cadrage).
+                if let current = FaceScanHistoryStore.shared.history.first(where: { $0.id == enhanced.id }) {
+                    enhanced = FaceScanResult(
+                        id: enhanced.id,
+                        userId: enhanced.userId,
+                        createdAt: enhanced.createdAt,
+                        markers: current.markers,
+                        snapshotFilename: current.snapshotFilename ?? enhanced.snapshotFilename,
+                        videoFilename: current.videoFilename ?? enhanced.videoFilename,
+                        claudeAnalysis: enhanced.claudeAnalysis,
+                        aiEnhanced: enhanced.aiEnhanced,
+                        coachInsightMessage: enhanced.coachInsightMessage ?? current.coachInsightMessage,
+                        coachInsightModel: enhanced.coachInsightModel ?? current.coachInsightModel,
+                        source: enhanced.source,
+                        sleepHoursAtScan: current.sleepHoursAtScan,
+                        hrvAtScan: current.hrvAtScan,
+                        faceDayScore: current.faceDayScore,
+                        relativeFaceDayScore: current.relativeFaceDayScore,
+                        scanConfidence: enhanced.scanConfidence ?? current.scanConfidence,
+                        baselineSampleCount: enhanced.baselineSampleCount ?? current.baselineSampleCount,
+                        relativeSignals: enhanced.relativeSignals ?? current.relativeSignals,
+                        studioFraming: current.studioFraming
+                    )
+                }
                 FaceScanHistoryStore.shared.update(enhanced)
             }
 

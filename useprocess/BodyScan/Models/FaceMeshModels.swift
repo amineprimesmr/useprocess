@@ -60,6 +60,30 @@ enum FaceScanSource: String, Codable {
     case daily
 }
 
+/// Recadrage studio du visage dans le rond (offsets normalisés + zoom).
+struct FaceScanStudioFraming: nonisolated Codable, Hashable, Sendable {
+    /// Décalage horizontal en fraction du diamètre du rond (−0.45…0.45).
+    var offsetX: Double
+    /// Décalage vertical en fraction du diamètre du rond (−0.45…0.45).
+    var offsetY: Double
+    /// Zoom (≥ 1).
+    var scale: Double
+
+    static let identity = FaceScanStudioFraming(offsetX: 0, offsetY: 0, scale: 1)
+
+    var isIdentity: Bool {
+        abs(offsetX) < 0.001 && abs(offsetY) < 0.001 && abs(scale - 1) < 0.001
+    }
+
+    func clamped() -> FaceScanStudioFraming {
+        FaceScanStudioFraming(
+            offsetX: min(0.45, max(-0.45, offsetX)),
+            offsetY: min(0.45, max(-0.45, offsetY)),
+            scale: min(3.0, max(1.0, scale))
+        )
+    }
+}
+
 struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked Sendable {
     let id: String
     let userId: String
@@ -81,6 +105,8 @@ struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked S
     var scanConfidence: Int?
     var baselineSampleCount: Int?
     var relativeSignals: FaceScanRelativeSignals?
+    /// Recadrage mode studio — appliqué dans le rond résultats / screens.
+    var studioFraming: FaceScanStudioFraming?
 
     var resolvedFaceDayScore: Int {
         relativeFaceDayScore ?? faceDayScore ?? FaceWellnessScore.dayScore(from: markers)
@@ -90,6 +116,10 @@ struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked S
     /// Moyenne pondérée des 5 indicateurs wellness — aligné sur l’écran d’analyse.
     var displayWellnessScore: Int {
         FaceScanIndicators.compositeWellnessScore(for: self)
+    }
+
+    var resolvedStudioFraming: FaceScanStudioFraming {
+        studioFraming?.clamped() ?? .identity
     }
 
     init(
@@ -110,7 +140,8 @@ struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked S
         relativeFaceDayScore: Int? = nil,
         scanConfidence: Int? = nil,
         baselineSampleCount: Int? = nil,
-        relativeSignals: FaceScanRelativeSignals? = nil
+        relativeSignals: FaceScanRelativeSignals? = nil,
+        studioFraming: FaceScanStudioFraming? = nil
     ) {
         self.id = id
         self.userId = userId
@@ -130,6 +161,7 @@ struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked S
         self.scanConfidence = scanConfidence
         self.baselineSampleCount = baselineSampleCount
         self.relativeSignals = relativeSignals
+        self.studioFraming = studioFraming
     }
 
     func delta(from previous: FaceScanResult) -> FaceScanTrend {

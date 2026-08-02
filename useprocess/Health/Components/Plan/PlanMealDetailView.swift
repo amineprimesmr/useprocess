@@ -113,25 +113,17 @@ struct PlanMealDetailView: View {
         return ZStack(alignment: .bottom) {
             Group {
                 if ProcessAssetCatalog.contains(imageAsset) {
+                    // PNG tels quels — pas de clip circulaire (évite le « rond noir » autour).
                     Image(imageAsset)
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                 } else {
-                    ZStack {
-                        Circle()
-                            .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.35))
-                        Image(systemName: entry.slot.icon)
-                            .font(.system(size: 40, weight: .semibold))
-                            .foregroundStyle(theme.onboardingAccent.opacity(0.8))
-                    }
+                    Image(systemName: entry.slot.icon)
+                        .font(.system(size: 40, weight: .semibold))
+                        .foregroundStyle(theme.onboardingAccent.opacity(0.8))
                 }
             }
             .frame(width: 152, height: 152)
-            .clipShape(Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
-            }
 
             MealDebloatScoreGlassPill(assessment: assessment)
                 .offset(y: 10)
