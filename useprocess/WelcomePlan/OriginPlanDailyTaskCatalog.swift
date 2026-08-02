@@ -130,6 +130,9 @@ enum OriginPlanDailyTaskCatalog {
   private static func repMinutes(from line: String, targets: OriginPersonalizedDailyTargets) -> Int? {
     let lower = line.lowercased()
     if lower.contains("soleil") { return targets.morningLightMinutes }
+    if lower.contains("corde") || lower.contains("sauts sur place") || lower.contains("saut sur place") {
+      return FaceMorningRoutineCatalog.jumpActivationMinutes
+    }
     if lower.contains("massage") { return targets.lymphFaceMassageMinutes }
     if lower.contains("glacon") || lower.contains("glaçon") || lower.contains("eau froide") { return 1 }
     return nil

@@ -18,8 +18,6 @@ enum TrainingAssetCatalog {
         static let cardioNatation = "cardio_natation"
         static let cardioCorde = "cardio_corde"
         static let cardioHiit = "cardio_hiit"
-        static let cardioVeloRoute = "cardio_velo_route"
-        static let cardioRandonnee = "cardio_randonnee"
         static let mobiliteEpaulesHanches = "mobilite_epaules_hanches"
         static let postureChinTuck = "posture_chin_tuck"
         static let postureNeckCurls = "posture_neck_curls"
@@ -41,8 +39,7 @@ enum TrainingAssetCatalog {
     static let cardioAssetNames: [String] = [
         Names.cardioMarche, Names.cardioVelo, Names.cardioTapisIncline, Names.cardioTapisCourse,
         Names.cardioCoursePied, Names.cardioRameur, Names.cardioElliptique, Names.cardioEscalier,
-        Names.cardioNatation, Names.cardioCorde, Names.cardioHiit, Names.cardioVeloRoute,
-        Names.cardioRandonnee
+        Names.cardioNatation, Names.cardioCorde, Names.cardioHiit
     ]
 
     static let postureHomeAssetNames: [String] = [
@@ -79,16 +76,13 @@ enum TrainingAssetCatalog {
             return assetIfAvailable(Names.cardioEscalier) ?? assetIfAvailable(Names.cardioTapisIncline)
         }
         if key.contains("randonnee") || key.contains("randonnée") || key.contains("rando") || key.contains("trail") && key.contains("marche") {
-            return assetIfAvailable(Names.cardioRandonnee) ?? assetIfAvailable(Names.cardioMarche)
+            return assetIfAvailable(Names.cardioMarche)
         }
         if key.contains("course") || key.contains("running") || key.contains("jog") || key.contains("footing") {
             if key.contains("tapis") {
                 return assetIfAvailable(Names.cardioTapisCourse) ?? assetIfAvailable(Names.cardioTapisIncline)
             }
             return assetIfAvailable(Names.cardioCoursePied) ?? assetIfAvailable(Names.cardioMarche)
-        }
-        if key.contains("cycl") && (key.contains("route") || key.contains("ext") || key.contains("outdoor")) {
-            return assetIfAvailable(Names.cardioVeloRoute) ?? assetIfAvailable(Names.cardioVelo)
         }
         if key.contains("velo") || key.contains("vélo") || key.contains("bike") || key.contains("cycl") {
             return assetIfAvailable(Names.cardioVelo)

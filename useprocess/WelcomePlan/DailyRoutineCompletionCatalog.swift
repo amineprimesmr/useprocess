@@ -6,6 +6,7 @@ enum DailyRoutineCompletionCatalog {
 
     static let morningCarouselItemIds: Set<String> = [
         "daily-routine-soleil",
+        "daily-routine-corde",
         "daily-routine-eau"
     ]
 

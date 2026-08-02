@@ -104,7 +104,7 @@ enum OriginPlanPresenter {
             phases.append(.init(
                 id: "training",
                 title: "Cardio et Circuit",
-                timeHint: "\(cardio.minutes) min · \(cardio.title)",
+                timeHint: cardio.prescriptionLine,
                 kind: .autoTracking
             ))
         }
@@ -612,7 +612,7 @@ enum OriginPlanPresenter {
             return "\(training.sessionName) · \(training.durationMinutes) min · \(first)"
         }
         let cardio = DebloatCardioDayCatalog.session()
-        return "\(cardio.title) · \(cardio.minutes) min · \(DebloatCardioDayCatalog.frequencyCaption)"
+        return "\(cardio.title) · \(cardio.prescriptionLine)"
     }
 
     // MARK: - Helpers

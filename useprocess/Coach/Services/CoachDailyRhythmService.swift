@@ -137,7 +137,7 @@ enum CoachDailyRhythmService {
             parts.append("Jour \(dayIndex + 1)")
             if plan.calendar.day(globalIndex: dayIndex) != nil {
                 let cardio = DebloatCardioDayCatalog.session()
-                parts.append("\(cardio.title) · \(cardio.minutes) min")
+                parts.append(cardio.prescriptionLine)
             }
         }
 

@@ -85,10 +85,10 @@ enum CoachTrainingTemplateStore {
         guard plan != nil else { return "" }
         let cardio = DebloatCardioDayCatalog.session()
         let lines: [String] = [
-            "CARDIO DU JOUR : \(cardio.title) (\(cardio.minutes) min)",
+            "CARDIO OBLIGATOIRE : \(cardio.title) — \(cardio.prescriptionLine)",
             cardio.detail,
             DebloatCardioDayCatalog.frequencyCaption,
-            "Pas de musculation (push/pull/legs) — uniquement cardio debloat + circuit posture."
+            "Aucun autre cardio (pas de vélo, HIIT, course, rameur, randonnée). Uniquement marche inclinée + circuit posture."
         ]
         return "\nTEMPLATE CARDIO & CIRCUIT :\n" + lines.joined(separator: "\n")
     }

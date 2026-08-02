@@ -53,7 +53,8 @@ enum CoachPlanContextBuilder {
         if let today {
             lines.append("• Aujourd'hui (\(today.weekdayLabel)) : \(today.title)")
             let cardio = DebloatCardioDayCatalog.session()
-            lines.append("  → Cardio du jour : \(cardio.title) (\(cardio.minutes) min) — \(DebloatCardioDayCatalog.frequencyCaption)")
+            lines.append("  → Cardio obligatoire : \(cardio.title) — \(cardio.prescriptionLine)")
+            lines.append("  → \(DebloatCardioDayCatalog.frequencyCaption) · aucun autre cardio")
             lines.append("  → Circuit / postures disponible dans Cardio et Circuit")
         }
 
@@ -218,7 +219,7 @@ enum CoachPlanContextBuilder {
         parts.append("Aliments à privilégier : \(day.nutrition.foodsToday.joined(separator: ", "))")
 
         let cardio = DebloatCardioDayCatalog.session()
-        parts.append("CARDIO DU JOUR : \(cardio.title) (\(cardio.minutes) min) — \(DebloatCardioDayCatalog.frequencyCaption)")
+        parts.append("CARDIO OBLIGATOIRE : \(cardio.title) — \(cardio.prescriptionLine) — \(DebloatCardioDayCatalog.frequencyCaption)")
         parts.append("POSTURE / CIRCUIT : " + day.posture.map(\.title).joined(separator: ", "))
         let continuous = ProcessContinuousHabits.all.map(\.title).joined(separator: ", ")
         parts.append("24/7 : \(continuous)")

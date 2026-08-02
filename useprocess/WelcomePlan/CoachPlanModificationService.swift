@@ -104,7 +104,7 @@ enum CoachPlanModificationService {
             title = "Cardio et Circuit"
             let cardio = DebloatCardioDayCatalog.session()
             content = """
-            Cardio du jour : \(cardio.title) — \(cardio.minutes) min
+            Cardio obligatoire : \(cardio.title) — \(cardio.prescriptionLine)
             \(cardio.detail)
             \(DebloatCardioDayCatalog.frequencyCaption)
             Circuit / postures : disponible dans Cardio et Circuit

@@ -168,10 +168,10 @@ enum CoachHomeContext {
             suggestion(
                 id: "cardio-circuit",
                 title: "Cardio et Circuit",
-                subtitle: "\(cardio.title) · \(cardio.minutes) min",
+                subtitle: cardio.prescriptionLine,
                 icon: "🏃",
-                question: "Explique-moi mon cardio du jour et le circuit posture — comment bien les faire pour le debloat ?",
-                hint: "\(cardio.title), \(cardio.minutes) min · \(DebloatCardioDayCatalog.frequencyCaption)"
+                question: "Explique-moi ma marche inclinée (durée, pente, allure) et le circuit posture pour le debloat.",
+                hint: "\(cardio.title) · \(cardio.prescriptionLine) · \(DebloatCardioDayCatalog.frequencyCaption)"
             )
         )
 

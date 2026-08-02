@@ -68,7 +68,7 @@ enum PlanProtocolCarouselBuilder {
         return PlanProtocolCarouselItem(
             id: session.id,
             title: session.title,
-            repBadge: "\(session.minutes) min",
+            repBadge: session.badgeLabel,
             detailText: session.detail,
             assetName: session.assetName,
             fallbackSystemImage: session.systemImage

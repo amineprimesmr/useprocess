@@ -7,8 +7,10 @@ enum RoutineAssetCatalog {
     static let mewing = "routinemewing"
     static let posture = "routineposture"
     static let dormir = "routinedormir"
+    /// Réutilise l’asset cardio corde pour l’activation lymphatique matinale.
+    static let corde = "cardio_corde"
 
-    static let allAssetNames: [String] = [soleil, eau, mewing, posture, dormir]
+    static let allAssetNames: [String] = [soleil, eau, mewing, posture, dormir, corde]
 
     static func asset(forHabitTitle title: String) -> String? {
         switch title {
@@ -26,6 +28,9 @@ enum RoutineAssetCatalog {
     static func asset(forRoutineLine line: String) -> String? {
         let key = normalize(line)
         if key.hasPrefix("soleil") { return soleil }
+        if key.contains("corde") || key.contains("saut sur place") || key.contains("sauts sur place") {
+            return corde
+        }
         if key.contains("glacon") || key.contains("glaçon") || key.contains("eau froide") { return eau }
         if key.contains("mewing") || key.contains("suction mew") { return mewing }
         if key.contains("nuque") || key.contains("posture") { return posture }

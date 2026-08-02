@@ -9,7 +9,7 @@ enum JournalCoreTaskCatalog {
         journalTask(
             id: "\(dayId).core.cardio",
             title: "Cardio debloat",
-            detail: "Marche, vélo ou HIIT léger — idéal chaque jour · min. \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.",
+            detail: "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min · \(DebloatCardioDayCatalog.inclinePercent)% · \(String(format: "%.1f", DebloatCardioDayCatalog.paceKmh)) km/h — idéal chaque jour · min. \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.",
             pillar: "Cardio",
             minutes: 25
         )
@@ -68,9 +68,9 @@ enum JournalCoreTaskCatalog {
         journalTask(
             id: "\(dayId).core.morning",
             title: "Routine matin visage",
-            detail: "\(ProcessDailyTargets.morningLightMinutes) min lumière · glaçons sur le visage",
+            detail: "\(ProcessDailyTargets.morningLightMinutes) min lumière · \(FaceMorningRoutineCatalog.jumpActivationMinutes) min corde/sauts · glaçons",
             pillar: "Visage",
-            minutes: ProcessDailyTargets.morningLightMinutes + 1
+            minutes: ProcessDailyTargets.morningLightMinutes + FaceMorningRoutineCatalog.jumpActivationMinutes + 1
         )
     }
 

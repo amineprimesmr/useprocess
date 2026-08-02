@@ -3,14 +3,20 @@ import Foundation
 /// Routine quotidienne — actions matin + habitudes 24/7 (carousel Plan).
 enum FaceMorningRoutineCatalog {
 
+    /// Activation lymphatique matinale (corde à sauter ou sauts sur place).
+    static let jumpActivationMinutes = 5
+
     enum Step: Int, CaseIterable {
         case soleilAuReveil
+        case cordeOuSauts
         case eauFroide
 
         func canonicalLine(targets: OriginPersonalizedDailyTargets) -> String {
             switch self {
             case .soleilAuReveil:
                 return "Soleil au réveil — \(ProcessDailyTargets.morningLightMinutes) min de lumière naturelle"
+            case .cordeOuSauts:
+                return "Corde à sauter ou sauts sur place — \(FaceMorningRoutineCatalog.jumpActivationMinutes) min pour activer le drainage lymphatique"
             case .eauFroide:
                 return "Glaçons sur le visage"
             }
@@ -45,7 +51,7 @@ enum FaceMorningRoutineCatalog {
     }
 
     static func estimatedMinutes(targets: OriginPersonalizedDailyTargets) -> Int {
-        targets.morningLightMinutes + 1
+        targets.morningLightMinutes + jumpActivationMinutes + 1
     }
 
     static func dailyRoutineActionCount(targets: OriginPersonalizedDailyTargets) -> Int {
@@ -63,6 +69,13 @@ enum FaceMorningRoutineCatalog {
             fallback: "sun.max.fill",
             category: category,
             assetName: RoutineAssetCatalog.soleil
+        ))
+        items.append(PlanProtocolCarouselBuilder.lineItem(
+            Step.cordeOuSauts.canonicalLine(targets: targets),
+            id: "daily-routine-corde",
+            fallback: "figure.jumprope",
+            category: category,
+            assetName: RoutineAssetCatalog.corde
         ))
         items.append(PlanProtocolCarouselBuilder.lineItem(
             Step.eauFroide.canonicalLine(targets: targets),

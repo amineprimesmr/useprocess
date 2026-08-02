@@ -25,7 +25,7 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
         case .debloatMeal:
             return "Respecté tes repas debloat ?"
         case .cardio:
-            return "Cardio du jour ? (idéal chaque jour · min. 3×/sem)"
+            return "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min (\(DebloatCardioDayCatalog.inclinePercent)%) ?"
         }
     }
 }
@@ -658,7 +658,7 @@ struct ProcessEveningCheckInEntryButton: View {
             return "Eau + repas debloat obligatoires. Cardio idéal chaque jour · min. 3/semaine."
         }
         if isEveningWindow {
-            return "Eau · repas Na/K/Mg · cardio du jour (marche, vélo, HIIT…)."
+            return "Eau · repas Na/K/Mg · marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min (\(DebloatCardioDayCatalog.inclinePercent)%)."
         }
         return "Protocole debloat : hydratation + alimentation obligatoires."
     }
