@@ -2,15 +2,18 @@ import AVFoundation
 
 /// Politique audio Process — ne jamais couper Spotify / Apple Music sauf dictée coach.
 enum ProcessAudioSession {
+    private static let queue = DispatchQueue(label: "process.audio-session", qos: .utility)
 
     /// Par défaut : mix avec la musique en cours (accueil, vidéos muettes, caméra, AR).
     static func configureForMixingWithOthers() {
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
-            try session.setActive(true)
-        } catch {
-            // Non bloquant — la session peut déjà être active.
+        queue.async {
+            let session = AVAudioSession.sharedInstance()
+            do {
+                try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+                try session.setActive(true)
+            } catch {
+                // Non bloquant — la session peut déjà être active.
+            }
         }
     }
 
@@ -34,19 +37,28 @@ enum ProcessAudioSession {
 
     /// Fin dictée — relance la musique au volume normal.
     static func endVoiceCaptureAndRestoreMixing() {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setActive(false, options: .notifyOthersOnDeactivation)
-        configureForMixingWithOthers()
+        queue.async {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            do {
+                try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+                try session.setActive(true)
+            } catch {
+                // Non bloquant.
+            }
+        }
     }
 
     /// Effet court (validation bilan soir) — mix avec la musique en cours.
     static func configureForEffectPlayback() {
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
-            try session.setActive(true)
-        } catch {
-            // Non bloquant.
+        queue.async {
+            let session = AVAudioSession.sharedInstance()
+            do {
+                try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+                try session.setActive(true)
+            } catch {
+                // Non bloquant.
+            }
         }
     }
 

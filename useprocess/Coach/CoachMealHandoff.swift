@@ -9,7 +9,11 @@ struct CoachMealHandoff: Equatable {
 }
 
 enum CoachMealHandoffBuilder {
-    private static let answerStyle = " Réponds en 2-3 phrases, tutoiement, concret, sans markdown."
+    private static let answerStyle = """
+     Réponds en français, tutoiement, concret.
+    Si tu listes des options ou ingrédients, mets chaque point sur une nouvelle ligne avec un tiret (– ).
+    Pas de markdown (** #), pas de fiche repas structurée.
+    """
 
     static func homePrompt(for handoff: CoachMealHandoff, profile: UnifiedUserProfile?) -> CoachHomePrompt {
         let trimmedName = profile?.firstName
@@ -51,19 +55,11 @@ enum CoachMealHandoffBuilder {
                 hint: hint
             ),
             suggestion(
-                id: "another",
-                title: "Autre repas",
-                subtitle: "Pour \(handoff.slot.rawValue)",
-                icon: "🍽️",
-                question: "Propose un autre repas différent pour \(handoff.slot.rawValue).",
-                hint: hint
-            ),
-            suggestion(
                 id: "substitution",
-                title: "Substitution",
-                subtitle: "Changer un ingrédient",
+                title: "Remplacer",
+                subtitle: "Un ingrédient",
                 icon: "↔️",
-                question: "Je veux remplacer un ingrédient de ce repas — propose des alternatives compatibles.",
+                question: "Je n'ai pas un des ingrédients — par quoi je peux le remplacer ?",
                 hint: hint
             )
         ]
@@ -103,7 +99,8 @@ enum CoachMealHandoffBuilder {
             label: title,
             subtitle: subtitle,
             icon: icon,
-            prompt: prompt
+            prompt: prompt,
+            userMessage: question
         )
     }
 }

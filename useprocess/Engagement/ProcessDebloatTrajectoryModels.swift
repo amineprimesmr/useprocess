@@ -3,11 +3,12 @@ import SwiftUI
 
 // MARK: - Verdict & tendance
 
-enum DebloatDayVerdict: String, Codable, Equatable, CaseIterable {
+enum DebloatDayVerdict: String, nonisolated Codable, Equatable, CaseIterable, Sendable {
     case excellent
     case onTrack
     case partial
     case regression
+    case pending
     case missed
     case paused
 
@@ -15,7 +16,7 @@ enum DebloatDayVerdict: String, Codable, Equatable, CaseIterable {
         switch self {
         case .excellent, .onTrack:
             return true
-        case .partial, .regression, .missed, .paused:
+        case .partial, .regression, .pending, .missed, .paused:
             return false
         }
     }
@@ -26,6 +27,7 @@ enum DebloatDayVerdict: String, Codable, Equatable, CaseIterable {
         case .onTrack: return "Sur la bonne voie"
         case .partial: return "Partiel"
         case .regression: return "Régression"
+        case .pending: return "En attente"
         case .missed: return "Manqué"
         case .paused: return "Pause"
         }
@@ -41,6 +43,8 @@ enum DebloatDayVerdict: String, Codable, Equatable, CaseIterable {
             return Color(red: 1.0, green: 0.72, blue: 0.28)
         case .regression:
             return Color(red: 0.92, green: 0.38, blue: 0.38)
+        case .pending:
+            return Color(red: 0.55, green: 0.58, blue: 0.65)
         case .missed:
             return Color(red: 0.55, green: 0.55, blue: 0.58)
         case .paused:
@@ -49,7 +53,7 @@ enum DebloatDayVerdict: String, Codable, Equatable, CaseIterable {
     }
 }
 
-enum TrajectoryTrend: String, Codable, Equatable {
+enum TrajectoryTrend: String, nonisolated Codable, Equatable, Sendable {
     case accelerating
     case stable
     case regressing
@@ -76,7 +80,7 @@ enum TrajectoryTrend: String, Codable, Equatable {
 
 // MARK: - Enregistrement journalier
 
-struct DebloatDayRecord: Codable, Equatable, Identifiable {
+struct DebloatDayRecord: nonisolated Codable, Equatable, Identifiable, Sendable {
     var dayKey: String
     var checkInSubmitted: Bool
     var water: Bool?
@@ -193,7 +197,7 @@ struct DebloatDayRecord: Codable, Equatable, Identifiable {
     }
 }
 
-struct ProcessDebloatTrajectoryState: Codable, Equatable {
+struct ProcessDebloatTrajectoryState: nonisolated Codable, Equatable, Sendable {
     var recordsByDay: [String: DebloatDayRecord] = [:]
     var graceUsedDayKeys: Set<String> = []
     var consecutiveMisses: Int = 0
@@ -265,6 +269,8 @@ struct DebloatTrajectorySnapshot: Equatable {
             return "Régression détectée\(nameSuffix) — le coach t’aide à recaler."
         case .missed:
             return "Bilan manqué — valide ce soir pour continuer."
+        case .pending:
+            return "Bilan du soir en attente — valide quand la fenêtre s'ouvre."
         case .paused, .none:
             if totalValidatedDays >= 7 { return "Régularité solide\(nameSuffix) — ne lâche pas." }
             if totalValidatedDays > 0 { return "Continue comme ça\(nameSuffix) !" }

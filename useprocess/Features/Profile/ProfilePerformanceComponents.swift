@@ -39,14 +39,14 @@ struct ProfilePageTopBar: View {
 
             Button(action: onSettings) {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+                    .frame(width: 40, height: 40)
             }
-            .buttonStyle(.plain)
+            .processGlassIconButtonStyle()
             .accessibilityLabel("Paramètres")
         }
+        .padding(.horizontal, 20)
     }
 }
 

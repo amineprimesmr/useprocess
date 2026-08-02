@@ -38,30 +38,31 @@ Ajoute si besoin : *« transparent background, PNG cutout, isolated on alpha, to
 
 ## Petit-déjeuner (3)
 
-### 1. `meal_debloat_eggs_banana_kiwi` — Œufs Banane Kiwi
+### 1. `meal_debloat_eggs_banana_kiwi` — Œufs Brouillés Banane Kiwi
 
 ```
 SCENE:
-Overhead white plate — fluffy golden scrambled eggs center-left,
+Overhead white plate — fluffy golden scrambled eggs (generous portion, 3 eggs) center-left,
 banana slices and kiwi rounds arranged beside eggs, colorful fruit pattern from above.
 3D egg texture, fruit fresh. Transparent PNG, floating asset.
 ```
 
-### 2. `meal_debloat_eggs_avocado` — Œufs Avocat Citron
+### 2. `meal_debloat_yogurt_blueberry` — Yaourt Myrtilles Miel
 
 ```
 SCENE:
-Overhead plate — scrambled eggs golden mound, half avocado sliced in fan shape,
-thin lemon slice for color. Pepper flecks on eggs. No bread. 3D volume, transparent background.
+Overhead ceramic bowl — creamy natural yogurt or kefir, piled fresh blueberries on top,
+thin honey drizzle and a few chopped almonds. Sweet breakfast look, no granola cereal.
+3D volume, soft dairy texture, transparent PNG background.
 ```
 
-### 3. `meal_debloat_eggs_tomato_salad` — Œufs Tomates Salade Roquette
+### 3. `meal_debloat_salmon_avocado_bowl` — Bowl Saumon Avocat Concombre
 
 ```
 SCENE:
-Overhead plate — two pan-seared eggs with golden edges, cherry tomatoes halved around eggs,
-arugula and cucumber ribbons on one side, lemon oil gloss visible from top.
-Savory breakfast layout, 3D ingredients, PNG transparent.
+Overhead breakfast bowl — pan-seared fresh salmon fillet (not smoked), fanned avocado,
+cucumber ribbons, lemon wedge and dill. No bread, no quinoa. Clean brunch bowl.
+3D ingredients, transparent PNG.
 ```
 
 ---

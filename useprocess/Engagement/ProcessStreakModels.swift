@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct ProcessStreakState: Codable, Equatable {
+struct ProcessStreakState: nonisolated Codable, Equatable, Sendable {
     var completedDayKeys: Set<String> = []
     var longestStreak: Int = 0
 }
@@ -31,7 +31,21 @@ struct ProfileProgramStreakDay: Identifiable, Equatable {
     let isFuture: Bool
     let isMissed: Bool
 
-    var label: String { "J\(programDayNumber)" }
+    var label: String {
+        let raw = Self.weekdayLabelFormatter.string(from: date)
+        let cleaned = raw
+            .replacingOccurrences(of: ".", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = cleaned.first else { return raw }
+        return String(first).uppercased() + cleaned.dropFirst().lowercased()
+    }
+
+    private static let weekdayLabelFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "EEE"
+        return formatter
+    }()
 }
 
 struct ProcessStreakMilestone: Identifiable, Equatable {
@@ -88,7 +102,7 @@ struct ProcessStreakSnapshot: Equatable {
                 return "Journée partielle\(nameSuffix) — serre le protocole demain."
             case .regression:
                 return "Régression\(nameSuffix) — on recale ta trajectoire."
-            case .paused, .missed:
+            case .pending, .paused, .missed:
                 break
             }
         }
@@ -107,6 +121,7 @@ struct ProcessStreakSnapshot: Equatable {
             case .onTrack: return "Tu restes sur la bonne voie."
             case .partial: return "Journée partielle — serre le protocole demain."
             case .regression: return "Régression détectée — on recale ensemble."
+            case .pending: return "Bilan du soir en attente — valide ce soir."
             case .missed: return "Bilan manqué — reviens ce soir."
             case .paused: return "Jour en pause — compteur gelé."
             }
@@ -129,16 +144,24 @@ struct ProcessStreakSnapshot: Equatable {
 }
 
 enum ProcessStreakPalette {
-    static let flame = Color(red: 1.0, green: 0.45, blue: 0.12)
+    /// Bleu Pro paywall — cohérence graphique app-wide.
+    static let flameGlow = Color(red: 0.52, green: 0.88, blue: 1.0)
+    static let flame = Color(red: 0.34, green: 0.72, blue: 1.0)
+    static let flameDeep = Color(red: 0.20, green: 0.56, blue: 0.98)
 
     static var flameGradient: LinearGradient {
         LinearGradient(
-            colors: [
-                Color(red: 1.0, green: 0.62, blue: 0.18),
-                Color(red: 1.0, green: 0.34, blue: 0.08)
-            ],
+            colors: [flameGlow, flame, flameDeep],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
+        )
+    }
+
+    static var progressGradient: LinearGradient {
+        LinearGradient(
+            colors: [flameGlow.opacity(0.95), flame, flameDeep],
+            startPoint: .leading,
+            endPoint: .trailing
         )
     }
 }

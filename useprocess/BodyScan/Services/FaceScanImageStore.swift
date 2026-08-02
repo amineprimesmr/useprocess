@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-enum FaceScanImageStore {
+nonisolated enum FaceScanImageStore {
 
     private static let snapshotSuffix = "_face.jpg"
     private static let videoSuffix = "_face.mp4"

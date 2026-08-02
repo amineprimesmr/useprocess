@@ -19,6 +19,7 @@ struct FaceScanAnalysisFlowView: View {
     @State private var analysisElapsedSeconds = 0
     @State private var analysisTask: Task<Void, Never>?
     @State private var elapsedTask: Task<Void, Never>?
+    @State private var didCompleteAnalysis = false
 
     private var steps: [OnboardingAnalysisProgressConfig.ProgressStep] {
         OnboardingAnalysisProgressConfig.faceScanAnalysisSteps
@@ -41,6 +42,7 @@ struct FaceScanAnalysisFlowView: View {
                             history: FaceScanHistoryStore.shared.history
                         )
                         .transition(.opacity)
+                        .padding(.bottom, 12)
                     } else {
                         FaceScanAnalysisHeroView(payload: payload)
                         .padding(.horizontal, 24)
@@ -59,15 +61,39 @@ struct FaceScanAnalysisFlowView: View {
                     }
                 }
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let result = completedResult, showsResultScreen {
+                    FaceIDContinueButton {
+                        HapticManager.shared.impact(.medium)
+                        complete(with: result)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .padding(.bottom, 28)
+                    .background(
+                        FaceScanWhoopPalette.canvas
+                            .shadow(color: .black.opacity(0.12), radius: 12, y: -4)
+                    )
+                }
+            }
         }
         .animation(.easeInOut(duration: 0.38), value: completedResult?.id)
-        .task {
+        .task(id: payload.scanId) {
             await runAnalysis()
         }
         .onDisappear {
+            guard !didCompleteAnalysis else { return }
             analysisTask?.cancel()
             elapsedTask?.cancel()
         }
+    }
+
+    @MainActor
+    private func complete(with result: FaceScanResult) {
+        guard !didCompleteAnalysis else { return }
+        didCompleteAnalysis = true
+        onComplete(result)
+        onDismiss()
     }
 
     private var analysisBackground: Color {
@@ -86,18 +112,19 @@ struct FaceScanAnalysisFlowView: View {
             Spacer(minLength: 0)
 
             Text(completedResult == nil ? "ANALYSE DU SCAN" : formattedHeaderDate)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: completedResult == nil ? 13 : 15, weight: .semibold))
                 .foregroundStyle(headerForeground)
-                .tracking(0.6)
+                .tracking(completedResult == nil ? 0.6 : 0)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
 
             Spacer(minLength: 0)
 
             if completedResult != nil, showsResultScreen {
                 Button("Terminer") {
                     if let result = completedResult {
-                        onComplete(result)
+                        complete(with: result)
                     }
-                    onDismiss()
                 }
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(headerForeground)
@@ -111,16 +138,15 @@ struct FaceScanAnalysisFlowView: View {
 
     private var formattedHeaderDate: String {
         guard let result = completedResult else { return "" }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "EEE., d MMM"
-        return formatter.string(from: result.createdAt).uppercased()
+        return FaceScanWhoopDateLabel.header(for: result.createdAt)
     }
 
     @MainActor
     private func runAnalysis() async {
         startElapsedTimer()
         startProgressAnimation()
+
+        try? await Task.sleep(for: .milliseconds(250))
 
         let analysisStartedAt = Date()
 
@@ -148,8 +174,7 @@ struct FaceScanAnalysisFlowView: View {
         if showsResultScreen {
             completedResult = result
         } else {
-            onComplete(result)
-            onDismiss()
+            complete(with: result)
         }
     }
 
@@ -294,14 +319,14 @@ struct FaceScanAnalysisSweepOverlay: View {
     private let maskBandHeightRatio: CGFloat = 0.26
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
             let elapsed = context.date.timeIntervalSinceReferenceDate
             let phase = elapsed.truncatingRemainder(dividingBy: cycleDuration) / cycleDuration
             let sweepProgress = smoothPingPong(phase)
 
             GeometryReader { geometry in
-                let width = geometry.size.width
-                let height = geometry.size.height
+                let width = max(1, geometry.size.width.isFinite ? geometry.size.width : 1)
+                let height = max(1, geometry.size.height.isFinite ? geometry.size.height : 1)
                 let y = height * sweepProgress
                 let maskHeight = max(44, height * maskBandHeightRatio)
 

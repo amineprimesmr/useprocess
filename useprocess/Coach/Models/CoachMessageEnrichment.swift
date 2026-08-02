@@ -9,7 +9,7 @@ enum CoachDeepLinkAction: String, Codable, Equatable {
 
     var defaultLabel: String {
         switch self {
-        case .plan: return "Voir mon plan"
+        case .plan: return "Ouvrir l'accueil"
         case .journal: return "Ouvrir le journal"
         case .scan: return "Faire mon scan"
         case .streak: return "Voir ma streak"
@@ -70,7 +70,6 @@ enum CoachResponseParser {
 
     static func parseFull(_ raw: String) -> CoachParsedReply {
         var working = raw
-        var reasoning: String?
         var followUps: [String] = []
         var deepLink: CoachDeepLink?
         var memoryUpdates: [CoachMemoryUpdate] = []
@@ -79,9 +78,8 @@ enum CoachResponseParser {
         var artifactBody: String?
         var contextualActions: [CoachContextualAction] = []
 
-        if let match = extract(label: "REASONING:", from: &working) {
-            reasoning = match
-        }
+        // Strip legacy REASONING blocks without surfacing them in the UI.
+        _ = extract(label: "REASONING:", from: &working)
 
         for index in 1...3 {
             if let match = extract(label: "FOLLOW_UP_\(index):", from: &working) {
@@ -93,7 +91,8 @@ enum CoachResponseParser {
         if let match = extract(label: "DEEP_LINK:", from: &working) {
             let parts = match.split(separator: "|", maxSplits: 1).map(String.init)
             if let actionRaw = parts.first?.trimmingCharacters(in: .whitespacesAndNewlines),
-               let action = CoachDeepLinkAction(rawValue: actionRaw) {
+               let action = CoachDeepLinkAction(rawValue: actionRaw),
+               action != .plan {
                 let label = parts.count > 1
                     ? parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
                     : action.defaultLabel
@@ -125,8 +124,7 @@ enum CoachResponseParser {
         for index in 1...4 {
             if let match = extract(label: "ACTION_\(index):", from: &working),
                let action = CoachContextualAction.parse(line: match),
-               action.kind != .validateMeal,
-               action.kind != .modifyMeal {
+               action.kind == .applyPlanChanges {
                 contextualActions.append(action)
             }
         }
@@ -140,7 +138,7 @@ enum CoachResponseParser {
 
         let enrichment = CoachMessageEnrichment(
             displayText: display,
-            reasoning: reasoning?.isEmpty == true ? nil : reasoning,
+            reasoning: nil,
             followUps: followUps,
             deepLink: deepLink,
             contextualActions: contextualActions
@@ -171,19 +169,24 @@ enum CoachResponseParser {
 
         let parsed = parseFull(raw)
         let rebuilt = CoachMessage.assistant(from: parsed.enrichment, modelUsed: message.modelUsed)
-        let persistedText = MealSuggestionParser.parse(raw)?.isValid == true
-            ? raw
-            : rebuilt.text
+        let text: String = {
+            if let intro = MealSuggestionParser.coachIntro(from: raw),
+               MealSuggestionParser.parse(raw)?.isValid == true {
+                return intro
+            }
+            let display = rebuilt.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return display.isEmpty ? message.text : display
+        }()
         return CoachMessage(
             id: message.id,
             role: .assistant,
-            text: persistedText,
+            text: text,
             createdAt: message.createdAt,
             modelUsed: message.modelUsed,
-            reasoning: rebuilt.reasoning,
+            reasoning: nil,
             followUps: rebuilt.followUps,
-            deepLinkAction: rebuilt.deepLinkAction,
-            deepLinkLabel: rebuilt.deepLinkLabel,
+            deepLinkAction: nil,
+            deepLinkLabel: nil,
             contextualActions: rebuilt.contextualActions
         )
     }
@@ -280,32 +283,32 @@ extension CoachMessage {
             )
         }
 
-        let hasReasoning = !(reasoning?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
         let resolvedFollowUps = CoachFollowUpSanitizer.sanitized(followUps ?? [])
-        let resolvedActions = resolvedContextualActions
-        guard hasReasoning || !resolvedFollowUps.isEmpty || link != nil || !resolvedActions.isEmpty else { return nil }
+        let resolvedActions = resolvedContextualActions.filter { $0.kind == .applyPlanChanges }
+        guard !resolvedFollowUps.isEmpty || !resolvedActions.isEmpty else { return nil }
 
         return CoachMessageEnrichment(
             displayText: text,
-            reasoning: hasReasoning ? reasoning : nil,
+            reasoning: nil,
             followUps: resolvedFollowUps,
-            deepLink: link,
+            deepLink: nil,
             contextualActions: resolvedActions
         )
     }
 
     static func assistant(from parsed: CoachMessageEnrichment, modelUsed: String?) -> CoachMessage {
-        CoachMessage(
+        let applyActions = parsed.contextualActions.filter { $0.kind == .applyPlanChanges }
+        return CoachMessage(
             role: .assistant,
             text: parsed.displayText,
             modelUsed: modelUsed,
-            reasoning: parsed.reasoning,
+            reasoning: nil,
             followUps: parsed.followUps.isEmpty ? nil : parsed.followUps,
-            deepLinkAction: parsed.deepLink?.action.rawValue,
-            deepLinkLabel: parsed.deepLink?.label,
-            contextualActions: parsed.contextualActions.isEmpty
+            deepLinkAction: nil,
+            deepLinkLabel: nil,
+            contextualActions: applyActions.isEmpty
                 ? nil
-                : CoachContextualAction.encodeList(parsed.contextualActions)
+                : CoachContextualAction.encodeList(applyActions)
         )
     }
 }

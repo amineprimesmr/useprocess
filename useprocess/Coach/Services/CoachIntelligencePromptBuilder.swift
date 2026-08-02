@@ -1,32 +1,22 @@
 import Foundation
 
-/// Construit le system prompt Process Intelligence (personnalité, mémoire, WHOOP/Bevel patterns).
+/// Construit le system prompt Process Intelligence (personnalité, mémoire).
 @MainActor
 enum CoachIntelligencePromptBuilder {
 
-    static func intelligenceBlock(isModify: Bool, isMeal: Bool) -> String {
+    static func intelligenceBlock(isModify: Bool) -> String {
         guard CoachIntelligenceSettingsStore.shared.isEnabled else { return "" }
 
         var parts: [String] = ["\nPROCESS INTELLIGENCE — ACTIF"]
         parts.append(personalityBlock())
-        parts.append(whoopBehaviorBlock(isModify: isModify, isMeal: isMeal))
+        parts.append(behaviorBlock(isModify: isModify))
 
-        if CoachIntelligenceSettingsStore.shared.showsExtendedReasoning, !isModify, !isMeal {
-            parts.append(extendedReasoningBlock())
-        }
-        if CoachIntelligenceSettingsStore.shared.showsSuggestedFollowUps, !isModify, !isMeal {
+        if CoachIntelligenceSettingsStore.shared.showsSuggestedFollowUps, !isModify {
             parts.append(followUpBlock())
         }
 
-        if !isModify, !isMeal {
-            parts.append(deepLinkBlock())
-        }
-        parts.append(contextualActionsBlock(isModify: isModify, isMeal: isMeal))
+        parts.append(contextualActionsBlock(isModify: isModify))
         parts.append(memoryUpdateBlock())
-        parts.append(artifactBlock())
-        if !isModify {
-            parts.append(foodLogBlock())
-        }
         parts.append(CoachTrainingTemplateStore.promptBlock(plan: WelcomePlanStore.shared.plan))
         parts.append(CoachMyMemoryStore.shared.promptBlock())
         parts.append(CoachProcessFilesStore.shared.promptBlock())
@@ -39,103 +29,73 @@ enum CoachIntelligencePromptBuilder {
         case .dataNerd:
             return """
             PERSONNALITÉ — Nerd des données :
-            - Analytique, cite les chiffres du contexte (readiness, HRV, pas, score protocole).
+            - Analytique, cite les chiffres du contexte (sommeil, HRV, pas, scan visage, jour protocole).
             - Explique le « pourquoi » en 1 phrase max.
+            - N’invente jamais de score « readiness » — ce concept n’existe pas dans Process.
             """
         case .directCoach:
             return """
             PERSONNALITÉ — Coach direct (Commander) :
             - Très concis, impératif bienveillant, zéro fluff.
             - Dis clairement quoi faire maintenant et pourquoi c'est la priorité.
+            - N’utilise jamais le mot readiness.
             """
         case .warmGuide:
             return """
             PERSONNALITÉ — Guide bienveillant (Friend) :
             - Ton chaleureux, encourage la régularité sans culpabiliser.
             - Valide l'effort avant de conseiller la suite.
+            - N’utilise jamais le mot readiness.
             """
         case .guardian:
             return """
             PERSONNALITÉ — Guardian :
             - Calme, long terme, protège la santé avant la performance.
-            - Si readiness basse ou fatigue scan → priorise récupération.
+            - Si sommeil faible, HRV basse ou fatigue scan → priorise récupération.
+            - N’utilise jamais le mot readiness.
             """
         }
     }
 
-    private static func whoopBehaviorBlock(isModify: Bool, isMeal: Bool) -> String {
-        if isModify || isMeal { return "" }
+    private static func behaviorBlock(isModify: Bool) -> String {
+        if isModify { return "" }
         return """
-        COMPORTEMENT WHOOP/BEVEL :
-        - Explain → Personalize : si question éducative, 1 phrase générale puis 1 phrase avec SES données.
+        COMPORTEMENT PROCESS :
+        - Discussion fluide avec le plan debloat comme contexte — pas de réponses préfabriquées.
         - Ne jamais inventer une métrique absente du contexte.
-        - Pose tes questions à l'utilisateur DANS le texte de réponse visible, pas dans FOLLOW_UP.
-        - FOLLOW_UP = seulement ce que l'utilisateur pourrait te demander ensuite (ex: "Autre idée de dîner").
-        - ACTION_* seulement pour une action concrète dans l'app (valider repas, photo frigo, changer séance) — pas pour un simple conseil ou avis.
-        - Si tu conseilles de ne rien changer (garde, trop tôt, pas maintenant) → aucun ACTION_* ni DEEP_LINK plan.
-        - Si tu proposes une séance, liste chaque exercice sur une ligne (Nom 3x10) — pas tout en un bloc.
-        - Réponse visible : 2–4 phrases max. Pas de markdown.
-        - Cite au moins 1 data réelle quand disponible (readiness, sommeil, jour protocole, scan visage).
-        - Si l'utilisateur mentionne un repas consommé, propose de l'enregistrer dans le journal nutrition (DEEP_LINK: journal).
-        - Pour une séance protocole, rappelle le template du jour (nom, durée) si présent dans le contexte.
-        """
-    }
-
-    private static func extendedReasoningBlock() -> String {
-        """
-        ÉTAPES DE RÉFLEXION (obligatoire en fin de réponse, bloc séparé) :
-        REASONING: [2–3 phrases courtes — comment tu as utilisé le contexte pour conclure]
+        - INTERDIT : readiness, fiches repas structurées (MEAL_NAME / ITEM_*), boutons d'action inutiles.
+        - INTERDIT : DEEP_LINK, ARTIFACT, FOOD_LOG, format carte repas.
+        - Mise en page : si plusieurs repas / options / étapes → une ligne par point avec tiret (– ).
+        - Pose tes questions DANS le texte visible. Pas de markdown (** #).
+        - Cite au moins 1 data réelle quand disponible (sommeil, pas, jour protocole, scan visage).
         """
     }
 
     private static func followUpBlock() -> String {
         """
-        SUIVIS SUGGÉRÉS (optionnel, max 2, bloc séparé) :
-        Messages que L'UTILISATEUR enverrait AU coach — pas des questions que tu poses à l'utilisateur.
-        FOLLOW_UP_1: [phrase utilisateur→coach, ex: "Propose une variante sans pâtes"]
-        FOLLOW_UP_2: [optionnel, ex: "Enregistrer ce dîner dans mon plan"]
-        INTERDIT dans FOLLOW_UP : questions coach→user ("T'as fait ta séance ?", "Tu as du riz ?", "T'as un micro-ondes ?").
-        Si des ACTION_* suffisent, ne mets pas de FOLLOW_UP.
+        SUIVIS SUGGÉRÉS (recommandé, max 2, bloc séparé) :
+        Messages naturels que L'UTILISATEUR enverrait AU coach, liés à ta réponse.
+        FOLLOW_UP_1: [ex: Je n'ai pas d'avocat, par quoi je peux le remplacer au déjeuner ?]
+        FOLLOW_UP_2: [ex: Et si je n'ai que 20 minutes ce midi ?]
+        Règles : phrase complète, utile, concrète. Pas de questions coach→user.
+        INTERDIT : « Autre idée », « Enregistrer », formulations vagues.
+        N'ajoute AUCUN ACTION_*.
         """
     }
 
-    private static func deepLinkBlock() -> String {
-        """
-        LIEN APP (optionnel — seulement si navigation utile, 1 max, jamais en doublon avec ACTION openPlan) :
-        DEEP_LINK: [plan|journal|scan|streak|integration]|[libellé bouton court]
-        Exemples : DEEP_LINK: scan|Faire mon scan · DEEP_LINK: journal|Ouvrir mon journal
-        Ne mets pas DEEP_LINK: plan si tu ne renvoies pas explicitement vers le programme.
-        """
-    }
-
-    private static func contextualActionsBlock(isModify: Bool, isMeal: Bool) -> String {
-        if isMeal {
-            return """
-            ACTIONS CONTEXTUELLES (optionnel, max 2 — jamais valider ni ajuster) :
-            ACTION_1: anotherMeal|Autre idée|[Petit-déjeuner|Déjeuner|Dîner|Collation]
-            ACTION_2: addToShoppingList|Liste de courses|[créneau]
-            """
-        }
+    private static func contextualActionsBlock(isModify: Bool) -> String {
         if isModify {
             return """
             ACTIONS CONTEXTUELLES (obligatoire en fin de réponse) :
             ACTION_1: applyPlanChanges|Appliquer au programme
-            ACTION_2: openPlan|Voir mon plan
             """
         }
         return """
-        ACTIONS CONTEXTUELLES (seulement si l'utilisateur peut agir dans l'app maintenant, max 2) :
-        Format : ACTION_N: [kind]|[libellé court]|[payload optionnel]
-        Kinds : validateMeal, saveMealDraft, modifyMeal, anotherMeal, addToShoppingList,
-        applyPlanChanges, swapWorkout, openPlan, openJournal, takePhoto, followUp
-        Règles :
-        - JAMAIS applyPlanChanges pour une question d'avis ou si tu conseilles de ne pas changer.
-        - applyPlanChanges uniquement si tu proposes une modification précise du protocole à appliquer.
-        - openPlan uniquement si tu renvoies explicitement vers le plan/journal.
-        - Si aucune action pertinente → n'écris aucun ACTION_*.
-        Exemples :
-        ACTION_1: takePhoto|Photographier mes ingrédients
-        ACTION_2: swapWorkout|Changer la séance
+        ACTIONS CONTEXTUELLES :
+        - Par défaut : n'écris AUCUN ACTION_*.
+        - INTERDIT : anotherMeal, addToShoppingList, validateMeal, saveMealDraft, modifyMeal,
+          swapWorkout, openPlan, openJournal, takePhoto, followUp, DEEP_LINK.
+        - Seul cas autorisé hors modification : aucun — la conversation suffit.
         """
     }
 
@@ -143,20 +103,6 @@ enum CoachIntelligencePromptBuilder {
         """
         MÉMOIRE AUTO (si info perso nouvelle et utile, max 1 ligne) :
         MEMORY_UPDATE: [goals|identity|lifestyle|preferences|events|healthHistory|mood]|[texte court]
-        """
-    }
-
-    private static func artifactBlock() -> String {
-        """
-        ARTEFACT DATA (optionnel, si tu résumes une tendance chiffrée) :
-        ARTIFACT: [titre court]|[2-3 phrases avec chiffres du contexte]
-        """
-    }
-
-    private static func foodLogBlock() -> String {
-        """
-        REPAS NOTÉ (si l'utilisateur dit ce qu'il a mangé) :
-        FOOD_LOG: ou format MEAL_NAME: … complet pour enregistrement journal.
         """
     }
 }

@@ -7,6 +7,7 @@ final class ProcessDebloatTrajectoryStore {
 
     private(set) var snapshot: DebloatTrajectorySnapshot = .empty
     private var state = ProcessDebloatTrajectoryState()
+    private var persistenceGeneration: UInt64 = 0
 
     private init() {
         state = loadState() ?? ProcessDebloatTrajectoryState()
@@ -19,7 +20,7 @@ final class ProcessDebloatTrajectoryStore {
         state = loadState() ?? ProcessDebloatTrajectoryState()
         migrateLegacyCheckInsIfNeeded()
         migrateFaceScansIfNeeded()
-        reconcileMissedDays()
+        reconcileWithEveningCheckInStore()
         rebuildAllStreaks()
         refreshSnapshot()
     }
@@ -62,11 +63,13 @@ final class ProcessDebloatTrajectoryStore {
         state.recordsByDay[dayKey] = record
         persist()
         refreshSnapshot()
+        syncPlanProgress(plan: WelcomePlanStore.shared.plan)
         Task { await DebloatTrajectoryFirestoreRepository.shared.saveDay(record) }
 
         CoachDebloatJourneyStore.appendCheckInEvent(
             answers: sanitized,
-            record: record
+            record: record,
+            in: CoachConversationLibraryStore.shared
         )
     }
 
@@ -169,20 +172,28 @@ final class ProcessDebloatTrajectoryStore {
 
     func sync(from plan: FaceOriginPlan?) {
         migrateFaceScansIfNeeded()
-        reconcileMissedDays()
+        reconcileWithEveningCheckInStore()
+        purgeInvalidMissedRecords(plan: plan)
+        reconcileMissedDays(plan: plan)
+        rebuildAllStreaks()
         refreshSnapshot()
         syncPlanProgress(plan: plan)
     }
 
     // MARK: - Missed days
 
-    func reconcileMissedDays(now: Date = Date()) {
+    func reconcileMissedDays(now: Date = Date(), plan: FaceOriginPlan? = nil) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: now)
         guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return }
         let yesterdayKey = ProcessStreakStore.dayKey(for: yesterday, calendar: calendar)
 
-        guard !state.recordsByDay.isEmpty else { return }
+        if let startedAt = plan?.calendar.startedAt {
+            let programStart = calendar.startOfDay(for: startedAt)
+            if yesterday < programStart { return }
+        }
+
+        guard state.recordsByDay.values.contains(where: { $0.checkInSubmitted }) else { return }
         guard state.recordsByDay[yesterdayKey] == nil else { return }
 
         let isPaused = ProcessActivityStatusStore.shared.status(for: yesterday) != .active
@@ -192,6 +203,26 @@ final class ProcessDebloatTrajectoryStore {
         state.recordsByDay[yesterdayKey] = record
         rebuildAllStreaks()
         persist()
+    }
+
+    private func purgeInvalidMissedRecords(plan: FaceOriginPlan?) {
+        guard let startedAt = plan?.calendar.startedAt else { return }
+        let calendar = Calendar.current
+        let programStart = calendar.startOfDay(for: startedAt)
+        var changed = false
+
+        for (key, record) in state.recordsByDay {
+            guard record.verdict == .missed, !record.checkInSubmitted else { continue }
+            guard let date = ProcessDebloatTrajectoryEngine.date(from: key) else { continue }
+            guard date < programStart else { continue }
+            state.recordsByDay.removeValue(forKey: key)
+            changed = true
+        }
+
+        if changed {
+            rebuildAllStreaks()
+            persist()
+        }
     }
 
     // MARK: - Private record building
@@ -209,7 +240,7 @@ final class ProcessDebloatTrajectoryStore {
             puffinessDelta: nil,
             scanScore: nil,
             compositeScore: 0,
-            verdict: .missed,
+            verdict: .pending,
             streakAfterDay: 0,
             graceUsed: false,
             aiSummary: nil,
@@ -267,7 +298,7 @@ final class ProcessDebloatTrajectoryStore {
         }
     }
 
-    private func rebuildAllStreaks() {
+    private func rebuildAllStreaks(now: Date = Date()) {
         let sorted = state.recordsByDay.keys.sorted()
         var consecutiveMisses = 0
         var consecutiveCardioMisses = 0
@@ -287,8 +318,16 @@ final class ProcessDebloatTrajectoryStore {
                     record: record,
                     consecutiveCardioMissesBefore: consecutiveCardioMisses,
                     scanScore: record.scanScore,
-                    isPaused: record.verdict == .paused
+                    isPaused: record.verdict == .paused,
+                    now: now
                 )
+            } else {
+                let isPaused = ProcessActivityStatusStore.shared.status(
+                    for: ProcessDebloatTrajectoryEngine.date(from: key) ?? now
+                ) != .active
+                record.verdict = isPaused
+                    ? .paused
+                    : ProcessDebloatTrajectoryEngine.unsubmittedVerdict(for: key, now: now)
             }
 
             let transition = ProcessDebloatTrajectoryEngine.applyStreakTransition(
@@ -379,7 +418,7 @@ final class ProcessDebloatTrajectoryStore {
 
         let streakEligibleKeys = Set(
             state.recordsByDay.values
-                .filter { isValidatedDay($0) || ($0.verdict == .missed && $0.graceUsed) }
+                .filter { isValidatedDay($0) }
                 .map(\.dayKey)
         )
 
@@ -447,6 +486,48 @@ final class ProcessDebloatTrajectoryStore {
 
     // MARK: - Migration
 
+    private func reconcileWithEveningCheckInStore(now: Date = Date()) {
+        let evening = ProcessEveningCheckInStore.shared
+        var changed = false
+
+        for key in Array(state.recordsByDay.keys) {
+            guard var record = state.recordsByDay[key] else { continue }
+            let submitted = evening.submittedDayKeys.contains(key)
+
+            if submitted {
+                guard let date = ProcessDebloatTrajectoryEngine.date(from: key) else { continue }
+                let answers = evening.answers(for: date)
+                record.checkInSubmitted = true
+                record.water = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.water)
+                record.debloatMeal = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.debloatMeal)
+                record.cardio = ProcessDebloatTrajectoryEngine.boolAnswer(answers, key: EveningCheckInQuestionID.cardio)
+                record.behaviorScore = ProcessDebloatTrajectoryEngine.behaviorScore(from: answers)
+                state.recordsByDay[key] = record
+                changed = true
+            } else if record.checkInSubmitted {
+                record.checkInSubmitted = false
+                record.water = nil
+                record.debloatMeal = nil
+                record.cardio = nil
+                record.behaviorScore = 0
+                let isPaused = ProcessActivityStatusStore.shared.status(
+                    for: ProcessDebloatTrajectoryEngine.date(from: key) ?? now
+                ) != .active
+                record.verdict = isPaused
+                    ? .paused
+                    : ProcessDebloatTrajectoryEngine.unsubmittedVerdict(for: key, now: now)
+                record.graceUsed = false
+                record.streakAfterDay = 0
+                state.recordsByDay[key] = record
+                changed = true
+            }
+        }
+
+        if changed {
+            state.graceUsedDayKeys = []
+        }
+    }
+
     private func migrateLegacyCheckInsIfNeeded() {
         let evening = ProcessEveningCheckInStore.shared
         guard !evening.submittedDayKeys.isEmpty else { return }
@@ -495,6 +576,15 @@ final class ProcessDebloatTrajectoryStore {
         let scans = FaceScanHistoryStore.shared.history
         guard !scans.isEmpty else { return }
 
+        let needsMigration = scans.contains { scan in
+            let dayKey = ProcessStreakStore.dayKey(for: scan.createdAt)
+            if let existing = state.recordsByDay[dayKey], existing.scanId != nil {
+                return false
+            }
+            return true
+        }
+        guard needsMigration else { return }
+
         var changed = false
         for scan in scans {
             let dayKey = ProcessStreakStore.dayKey(for: scan.createdAt)
@@ -526,8 +616,15 @@ final class ProcessDebloatTrajectoryStore {
     private func persist() {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("process.debloat.trajectory", userId: uid)
-        if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: key)
+        let stateSnapshot = state
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.store(
+                stateSnapshot,
+                forKey: key,
+                generation: generation
+            )
         }
     }
 

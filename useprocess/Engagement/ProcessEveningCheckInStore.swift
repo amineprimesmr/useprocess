@@ -9,11 +9,11 @@ enum EveningCheckInQuestionID {
     static let all: [String] = [water, debloatMeal, cardio]
 }
 
-struct ProcessEveningCheckInDayRecord: Codable, Equatable {
+struct ProcessEveningCheckInDayRecord: nonisolated Codable, Equatable, Sendable {
     var answers: [String: String] = [:]
 }
 
-struct ProcessEveningCheckInState: Codable, Equatable {
+struct ProcessEveningCheckInState: nonisolated Codable, Equatable, Sendable {
     var submittedDayKeys: Set<String> = []
     var recordsByDay: [String: ProcessEveningCheckInDayRecord] = [:]
 }
@@ -26,6 +26,7 @@ final class ProcessEveningCheckInStore {
 
     private(set) var submittedDayKeys: Set<String> = []
     private(set) var recordsByDay: [String: ProcessEveningCheckInDayRecord] = [:]
+    private var persistenceGeneration: UInt64 = 0
 
     private init() {
         reload()
@@ -115,8 +116,14 @@ final class ProcessEveningCheckInStore {
             submittedDayKeys: submittedDayKeys,
             recordsByDay: recordsByDay
         )
-        if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: key)
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.store(
+                state,
+                forKey: key,
+                generation: generation
+            )
         }
     }
 
@@ -125,5 +132,64 @@ final class ProcessEveningCheckInStore {
         let key = UserScopedStorage.key("process.evening_checkin", userId: uid)
         guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(ProcessEveningCheckInState.self, from: data)
+    }
+}
+
+enum ProcessEveningCheckInSchedule {
+    static let openHour = 21
+
+    static func isAvailable(at date: Date = Date(), calendar: Calendar = .current) -> Bool {
+        calendar.component(.hour, from: date) >= openHour
+    }
+
+    /// Un jour sans bilan n'est « manqué » qu'une fois passé (hier ou avant).
+    /// Aujourd'hui reste en attente tant que le bilan du soir n'a pas été soumis.
+    static func isOverdue(for date: Date, now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        calendar.startOfDay(for: date) < calendar.startOfDay(for: now)
+    }
+
+    static func nextOpenDate(from now: Date = Date(), calendar: Calendar = .current) -> Date {
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        components.hour = openHour
+        components.minute = 0
+        components.second = 0
+        let todayOpen = calendar.date(from: components) ?? now
+        if now < todayOpen {
+            return todayOpen
+        }
+        return calendar.date(byAdding: .day, value: 1, to: todayOpen) ?? todayOpen
+    }
+
+    static func opensInLabel(from now: Date = Date(), calendar: Calendar = .current) -> String {
+        guard !isAvailable(at: now, calendar: calendar) else { return "" }
+        let interval = max(0, nextOpenDate(from: now, calendar: calendar).timeIntervalSince(now))
+        let totalMinutes = Int((interval / 60).rounded(.up))
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours > 0, minutes > 0 {
+            return "dans \(hours) h \(minutes) min"
+        }
+        if hours > 0 {
+            return "dans \(hours) h"
+        }
+        return "dans \(max(1, minutes)) min"
+    }
+
+    @MainActor
+    static func streakLaunchMessage(from now: Date = Date(), calendar: Calendar = .current) -> String {
+        let isFirstBilan = ProcessEveningCheckInStore.shared.submittedDayKeys.isEmpty
+            || ProcessStreakStore.shared.snapshot.totalCompletedDays == 0
+
+        if isAvailable(at: now, calendar: calendar) {
+            return isFirstBilan
+                ? "Valide ton premier bilan pour lancer la série"
+                : "Valide ton bilan du soir pour lancer la série"
+        }
+
+        let countdown = opensInLabel(from: now, calendar: calendar)
+        if isFirstBilan {
+            return countdown.isEmpty ? "Premier bilan ce soir" : "Premier bilan \(countdown)"
+        }
+        return countdown.isEmpty ? "Prochain bilan ce soir" : "Prochain bilan \(countdown)"
     }
 }

@@ -255,7 +255,7 @@ enum FaceWellnessScore {
         appreciation(markers: syntheticMarkers(forScore: score), relativeSignals: nil)
     }
 
-    /// Pour readiness / coach quand seul le score est disponible.
+    /// Pour le coach / résumé santé quand seul le score est disponible.
     private static func syntheticMarkers(forScore score: Int) -> FaceWellnessMarkers {
         let stress = max(0, min(100, 100 - score))
         return FaceWellnessMarkers(

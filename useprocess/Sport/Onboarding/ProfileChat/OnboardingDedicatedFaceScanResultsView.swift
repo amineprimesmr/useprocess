@@ -14,7 +14,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     var onContinue: () -> Void
 
     private var needsAppleSignIn: Bool {
-        AuthUser.current == nil
+        AppConfiguration.firebaseConfigured && AuthUser.current == nil
     }
 
     private var appleButtonBackground: Color {
@@ -34,7 +34,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             FaceScanWhoopPalette.canvas.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
@@ -54,12 +54,12 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                         showsUnlockTeaser: false
                     )
                     .padding(.horizontal, 16)
-
-                    Spacer(minLength: 150)
+                    .padding(.bottom, 24)
                 }
             }
-
-            bottomCTA
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomCTA
+            }
         }
     }
 
@@ -88,32 +88,46 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                     .padding(.horizontal, 12)
             }
 
-            Button {
-                guard !isSigningIn else { return }
-                HapticManager.shared.impact(.medium)
-                onContinue()
-            } label: {
-                HStack(spacing: 10) {
-                    if isSigningIn {
+            Group {
+                if isSigningIn {
+                    HStack {
+                        Spacer(minLength: 0)
                         ProgressView()
-                            .tint(appleButtonForeground)
-                    } else if needsAppleSignIn {
-                        Image(systemName: "apple.logo")
-                            .font(.system(size: 20, weight: .semibold))
-                        Text("Continuer avec Apple")
-                            .font(.system(size: 17, weight: .bold))
-                    } else {
-                        Text("Continuer")
-                            .font(.system(size: 17, weight: .bold))
+                            .tint(needsAppleSignIn ? appleButtonForeground : .black)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(
+                        Capsule().fill(
+                            needsAppleSignIn ? appleButtonBackground : FaceIDScanColors.continueFill
+                        )
+                    )
+                } else if needsAppleSignIn {
+                    Button {
+                        HapticManager.shared.impact(.medium)
+                        onContinue()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "apple.logo")
+                                .font(.system(size: 20, weight: .semibold))
+                            Text("Continuer avec Apple")
+                                .font(.system(size: 17, weight: .bold))
+                        }
+                        .foregroundStyle(appleButtonForeground)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .background(Capsule().fill(appleButtonBackground))
+                        .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    FaceIDContinueButton {
+                        HapticManager.shared.impact(.medium)
+                        onContinue()
                     }
                 }
-                .foregroundStyle(appleButtonForeground)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .background(Capsule().fill(appleButtonBackground))
-                .contentShape(Capsule())
             }
-            .disabled(isSigningIn)
             .opacity(isSigningIn ? 0.72 : 1)
 
             if needsAppleSignIn {
@@ -137,7 +151,6 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .ignoresSafeArea(edges: .bottom)
         )
     }
 }

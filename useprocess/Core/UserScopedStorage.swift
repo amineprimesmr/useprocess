@@ -32,6 +32,7 @@ enum UserScopedStorage {
         "process.debloat.trajectory",
         "process.plan.progress",
         "process.activity.status",
+        "process.debloat.food_prefs",
         "plan.home.layout",
         "referral.program"
     ]

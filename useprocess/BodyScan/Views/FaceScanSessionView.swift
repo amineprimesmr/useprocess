@@ -12,39 +12,19 @@ struct FaceScanSessionView: View {
     var showsMediaImport: Bool = true
     var compactSkipAction: Bool = false
 
-    @State private var phase: Phase = .capturing
+    @State private var captureInput: CaptureInput?
 
-    private enum Phase {
-        case capturing
-        case analysis(FaceScanCapturePayload, FaceWellnessMarkers)
+    private struct CaptureInput {
+        let payload: FaceScanCapturePayload
+        let markers: FaceWellnessMarkers
     }
 
     var body: some View {
         Group {
-            switch phase {
-            case .capturing:
-                FaceScanCaptureScreen(
-                    onBack: {
-                        if let onCancelCapture {
-                            onCancelCapture()
-                        } else {
-                            onDismiss()
-                        }
-                    },
-                    onSkip: onSkipCapture,
-                    showsMediaImport: showsMediaImport,
-                    compactSkipAction: compactSkipAction
-                ) { payload, markers in
-                    withAnimation(.easeInOut(duration: 0.28)) {
-                        phase = .analysis(payload, markers)
-                    }
-                }
-                .transition(.opacity)
-
-            case .analysis(let payload, let markers):
+            if let input = captureInput {
                 FaceScanAnalysisFlowView(
-                    payload: payload,
-                    markers: markers,
+                    payload: input.payload,
+                    markers: input.markers,
                     profile: profileService.currentProfile,
                     showsResultScreen: !skipResultSheet,
                     onDismiss: onDismiss,
@@ -56,17 +36,26 @@ struct FaceScanSessionView: View {
                     }
                 )
                 .transition(.opacity)
+            } else {
+                FaceScanCaptureScreen(
+                    onBack: {
+                        if let onCancelCapture {
+                            onCancelCapture()
+                        } else {
+                            onDismiss()
+                        }
+                    },
+                    onSkip: onSkipCapture,
+                    showsMediaImport: showsMediaImport,
+                    compactSkipAction: compactSkipAction,
+                    onContinue: { payload, markers in
+                        captureInput = CaptureInput(payload: payload, markers: markers)
+                    }
+                )
+                .transition(.opacity)
             }
         }
-        .id(phaseToken)
-        .animation(.easeInOut(duration: 0.28), value: phaseToken)
-    }
-
-    private var phaseToken: String {
-        switch phase {
-        case .capturing: return "capturing"
-        case .analysis(let payload, _): return "analysis-\(payload.scanId)"
-        }
+        .id(captureInput?.payload.scanId ?? "capturing")
     }
 }
 

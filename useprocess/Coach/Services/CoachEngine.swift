@@ -10,12 +10,17 @@ enum CoachEngine {
         Tu es le coach useprocess. Style Enzo : direct, tutoiement, bienveillant.
 
         RÈGLES CHAT :
-        - Le plan personnalisé de l'utilisateur est TA BASE (durée exacte dans le contexte ci-dessous). Chaque réponse doit s'y rattacher.
-        - Tu as accès aux repas du jour (validés, brouillons IA, propositions), au questionnaire du plan personnalisé, aux modifications récentes, à la mémoire, au calendrier, à la santé HealthKit et aux scans — utilise-les TOUJOURS avant de conseiller.
-        - Si l'utilisateur parle nutrition : pars des repas « REPAS AUJOURD'HUI » déjà dans l'app. Propose des ajustements cohérents, pas un plan parallèle.
-        - Réponses courtes (2–4 phrases) sauf demande de détail plan / modification / programme complet / MODE REPAS (format structuré obligatoire).
-        - 1 insight + 1 action concrète minimum. Français. Pas de diagnostic médical. Zéro pilule.
-        - PAS de markdown dans tes réponses (pas de **, pas de #, pas de listes avec tirets).
+        - Discussion naturelle uniquement. Tu as accès au plan debloat / protocole de l'utilisateur — utilise-le pour conseiller.
+        - Réponses claires et aérées. Pas de fiches, pas de cartes, pas de templates.
+        - Si tu listes des repas, étapes ou options : une ligne par point, préfixée d'un tiret (– ). Exemple :
+          Tes repas du jour :
+          – Petit-déj : yaourt myrtilles miel
+          – Déjeuner : salade poulet avocat
+          – Dîner : steak roquette pommes de terre
+        - INTERDIT : format structuré repas (INTRO:, MEAL_NAME:, ITEM_*, SCORE:, PREP:, TIP:, TAG_*).
+        - Si on parle nutrition : conseille en t'appuyant sur REPAS AUJOURD'HUI / le plan — sans générer une fiche repas.
+        - Si c'est un jour de repos : dis-le clairement. Ne propose pas de « changer la séance » ni d'actions UI.
+        - Français. Pas de diagnostic médical. Zéro pilule. Pas de markdown (** #).
         """
     }
 
@@ -25,6 +30,7 @@ enum CoachEngine {
     - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier du plan.
     - EXÉCUTE sa demande telle quelle. Pas de refus. Pas de score de pertinence.
     - PAS de markdown (pas de **, pas de #). Texte brut uniquement.
+    - Si plusieurs changements : une ligne par point avec tiret (– ).
     - Confirme en 2–3 phrases ce qui a changé.
     - Pour nutrition OMAD / 1 repas : écris « Repas unique: [contenu] » (pas PDJ/déj/dîner vides).
     - Tu peux ajouter 1 suggestion optionnelle à la fin (« Si tu veux, on peut aussi… ») — l'utilisateur n'est pas obligé de répondre.
@@ -34,60 +40,6 @@ enum CoachEngine {
       Élévations latérales 3x12
       Face pulls 3x15
     """
-
-    private static let mealSuggestionPrompt = """
-
-    🍽 MODE REPAS — ACTIF (prioritaire sur les règles courtes ci-dessus) :
-    L'utilisateur demande une idée de repas. Choisis un repas EXACT de la base Process listée ci-dessous.
-    Même si un repas existe déjà dans REPAS AUJOURD'HUI, réponds TOUJOURS avec le format structuré — l'app affiche une carte visuelle (image + liste ingrédients).
-    N'écris JAMAIS les ingrédients en prose. Ne dis jamais « Valide-le dans l'app ».
-    Réponds UNIQUEMENT avec ce format (labels exacts, pas de markdown) :
-
-    INTRO: [1-2 phrases coach — pourquoi ce repas colle à son protocole aujourd'hui]
-    MEAL_NAME: [nom EXACT d'un repas du catalogue Process]
-    MEAL_TYPE: [Petit-déjeuner|Déjeuner|Dîner|Collation]
-    SCORE: [0-100 alignement plan personnalisé]
-    SCORE_WHY: [1 phrase max]
-    ITEM_1: [aliment] | [quantité] | [Protéine|Glucide|Légume|Gras|Autre]
-    ITEM_2: [aliment] | [quantité] | [role]
-    ITEM_3: [aliment] | [quantité] | [role]
-    ITEM_4: [aliment optionnel] | [quantité] | [role]
-    PREP_MIN: [minutes]
-    PREP: [1 phrase préparation]
-    TIP: [1 conseil coach court]
-    TAG_1: [tag court ex: Anti-gonflement]
-    TAG_2: [tag optionnel]
-
-    ACTIONS (optionnel, max 2, jamais valider ni ajuster) :
-    ACTION_1: anotherMeal|Autre idée|[MEAL_TYPE]
-    ACTION_2: addToShoppingList|Liste de courses|[MEAL_TYPE]
-
-    - Reprends les ingrédients du repas catalogue si possible (liste claire, 3 à 5 items).
-    - Plan personnalisé : dense, peu transformé, protéines + légumes/tubercules cuits.
-    """
-
-    private static func inferredMealSlot(from text: String?) -> MealTimeSlot? {
-        guard let text else { return nil }
-        let lower = text.lowercased()
-        if lower.contains("petit") || lower.contains("matin") || lower.contains("breakfast") {
-            return .breakfast
-        }
-        if lower.contains("dîner") || lower.contains("diner") || lower.contains("soir") {
-            return .dinner
-        }
-        if lower.contains("collation") || lower.contains("snack") {
-            return .snack
-        }
-        if lower.contains("déjeuner") || lower.contains("dejeuner") || lower.contains("midi") || lower.contains("lunch") {
-            return .lunch
-        }
-        return nil
-    }
-
-    private static func isMealQuestion(_ text: String?) -> Bool {
-        guard let text else { return false }
-        return CoachMealMessageDetector.isMealRelated(userText: text)
-    }
 
     private static func contextualSystem(profile: UnifiedUserProfile?, planFocus: CoachPlanFocus? = nil, userText: String? = nil) -> String {
         CoachMemoryStore.shared.refreshConversationDigests(
@@ -101,15 +53,6 @@ enum CoachEngine {
 
         if isModify {
             system += planModificationPrompt
-        } else if isMealQuestion(userText) {
-            system += mealSuggestionPrompt
-            if let plan = WelcomePlanStore.shared.plan {
-                let slot = inferredMealSlot(from: userText) ?? .lunch
-                system += "\n\n" + ProcessDebloatMealLibrary.promptBlock(
-                    for: slot,
-                    planType: plan.nutritionPlanType
-                )
-            }
         }
 
         if let focus = planFocus {
@@ -123,10 +66,7 @@ enum CoachEngine {
             """
         }
 
-        system += CoachIntelligencePromptBuilder.intelligenceBlock(
-            isModify: isModify,
-            isMeal: isMealQuestion(userText)
-        )
+        system += CoachIntelligencePromptBuilder.intelligenceBlock(isModify: isModify)
         return system
     }
 
@@ -240,7 +180,7 @@ enum CoachEngine {
     ) async throws -> CoachMessage {
         let context = UserContextBuilder.build(profile: profile)
         let prompt = tool.buildPrompt(context: context) + "\n\nRéponds en MAX 3 phrases.\n\n" + UserContextBuilder.compactPromptBlock(from: context)
-        let model = ClaudeModel.preferred(for: .readinessAnalysis)
+        let model = ClaudeModel.preferred(for: .quickHint)
 
         let text = try await CoachAPITransport.complete(
             task: .tool,
@@ -288,12 +228,12 @@ enum CoachEngine {
 
         Génère le brief du jour. Réponds UNIQUEMENT avec ces 4 lignes (labels exacts) :
 
-        VERDICT: [1 phrase, max 12 mots — état readiness]
+        VERDICT: [1 phrase, max 12 mots — état du jour basé sur sommeil / plan]
         POURQUOI: [1 phrase, max 18 mots — cause principale]
         ACTION_1: [action concrète pour aujourd'hui]
         ACTION_2: [action concrète pour demain]
 
-        Règles : tutoiement singulier, 2 actions max, pas de pavé, pas de chiffres inventés.
+        Règles : tutoiement singulier, 2 actions max, pas de pavé, pas de chiffres inventés, jamais le mot readiness.
         """
 
         do {
@@ -308,25 +248,6 @@ enum CoachEngine {
             let sanitized = CoachDailyBriefParser.sanitize(text)
             CoachConversationStore.cacheDailyBrief(sanitized)
             return CoachDailyBriefParser.parse(sanitized)
-        } catch {
-            return nil
-        }
-    }
-
-    // MARK: - Readiness
-
-    static func explainReadiness(profile: UnifiedUserProfile?) async -> String? {
-        guard ClaudeConfiguration.isConfigured else { return nil }
-        do {
-            return try await CoachAPITransport.complete(
-                task: .readinessAnalysis,
-                system: EnzoCoachingVoiceGuide.systemPrompt,
-                userText: CoachTool.explainReadiness.buildPrompt(
-                    context: UserContextBuilder.build(profile: profile)
-                ) + "\n\n" + UserContextBuilder.promptBlock(from: UserContextBuilder.build(profile: profile)),
-                model: ClaudeModel.preferred(for: .readinessAnalysis),
-                maxTokens: 450
-            )
         } catch {
             return nil
         }

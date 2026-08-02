@@ -13,7 +13,7 @@ struct PlanDashboardView: View {
 
     @State private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
-    @State private var showSettings = false
+    @State private var showCalendar = false
     @State private var showStreakToast = false
     @State private var streakToast = DynamicIslandToastMessage.streak(
         snapshot: ProcessStreakStore.shared.snapshot,
@@ -22,7 +22,6 @@ struct PlanDashboardView: View {
     @State private var streakToastDismissTask: Task<Void, Never>?
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
     @State private var planHealthMetrics = PlanHomeHealthMetrics()
-    @Namespace private var homeChromeZoomNamespace
 
     private var isPlanRuntimeActive: Bool {
         isTabActive && scenePhase == .active
@@ -46,9 +45,8 @@ struct PlanDashboardView: View {
                     PlanHomeTopChrome(
                         selectedSection: $selectedSection,
                         selectedDate: $selectedPlanDate,
-                        showSettings: $showSettings,
-                        onOpenStreak: presentStreakToast,
-                        zoomNamespace: homeChromeZoomNamespace
+                        showCalendar: $showCalendar,
+                        onOpenStreak: presentStreakToast
                     )
 
                     planContent
@@ -64,16 +62,16 @@ struct PlanDashboardView: View {
                 planStore.reloadForCurrentUser(force: true)
                 refreshPlanHealthMetrics()
             }
-            .fullScreenCover(isPresented: $showSettings) {
-                ProcessSettingsFullScreenView()
-                    .environmentObject(profileService)
-                    .environmentObject(HealthManager.shared)
-                    .environmentObject(AuthenticationManager.shared)
-                    .processZoomTransition(id: .settings, namespace: homeChromeZoomNamespace)
+            .sheet(isPresented: $showCalendar) {
+                PlanHomeCalendarSheet(
+                    selectedDate: $selectedPlanDate,
+                    plan: livePlan
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
             .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast, onTap: openProfileStatistics)
             .onAppear {
-                ProcessEveningCheckInStore.shared.reload()
                 if let plan = livePlan {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
                 }
@@ -194,7 +192,7 @@ struct PlanDashboardView: View {
         showStreakToast = false
         planBridge.openProfileStatistics()
         withAnimation(ProcessGlass.spring) {
-            selectedSection = .profile
+            selectedSection = .statistics
         }
     }
 

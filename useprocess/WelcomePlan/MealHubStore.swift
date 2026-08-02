@@ -125,6 +125,32 @@ extension WelcomePlanStore {
         savePlan(current)
     }
 
+    func mergeShoppingItems(_ items: [MealShoppingItem]) {
+        guard var current = plan else { return }
+        for item in items {
+            let exists = current.progress.shoppingList.contains {
+                !$0.isChecked && $0.name.lowercased() == item.name.lowercased()
+            }
+            guard !exists else { continue }
+            if let warning = DebloatGroceryGenerator.warning(for: item.name),
+               let swap = warning.swap {
+                let swapExists = current.progress.shoppingList.contains {
+                    !$0.isChecked && $0.name.lowercased() == swap.lowercased()
+                }
+                if !swapExists {
+                    current.progress.shoppingList.insert(
+                        MealShoppingItem(name: swap, quantity: item.quantity, dayId: item.dayId),
+                        at: 0
+                    )
+                }
+                continue
+            }
+            current.progress.shoppingList.insert(item, at: 0)
+        }
+        current.progress.shoppingList = Array(current.progress.shoppingList.prefix(80))
+        savePlan(current)
+    }
+
     func toggleShoppingItem(_ id: String) {
         guard var current = plan else { return }
         guard let index = current.progress.shoppingList.firstIndex(where: { $0.id == id }) else { return }
@@ -228,7 +254,7 @@ extension WelcomePlanStore {
         dayId: String?,
         on plan: inout FaceOriginPlan
     ) {
-        for item in meal.items {
+        for item in meal.foodItems {
             let exists = plan.progress.shoppingList.contains {
                 !$0.isChecked && $0.name.lowercased() == item.name.lowercased()
             }

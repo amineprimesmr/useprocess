@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Évolution durée
 
-enum PlanDurationEvolutionReason: String, Codable, Equatable {
+enum PlanDurationEvolutionReason: String, nonisolated Codable, Equatable, Sendable {
     case earlyScanCompletion
     case streakMilestone
     case consecutiveMisses
@@ -22,7 +22,7 @@ enum PlanDurationEvolutionReason: String, Codable, Equatable {
     }
 }
 
-struct PlanDurationEvolutionEvent: Codable, Equatable, Identifiable {
+struct PlanDurationEvolutionEvent: nonisolated Codable, Equatable, Identifiable, Sendable {
     let id: String
     let createdAt: Date
     let deltaDays: Int
@@ -37,7 +37,7 @@ struct PlanDurationEvolutionEvent: Codable, Equatable, Identifiable {
     }
 }
 
-struct ProcessPlanProgressState: Codable, Equatable {
+struct ProcessPlanProgressState: nonisolated Codable, Equatable, Sendable {
     var adjustmentDays: Int = 0
     var events: [PlanDurationEvolutionEvent] = []
     var appliedTokens: Set<String> = []

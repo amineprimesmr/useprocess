@@ -21,7 +21,8 @@ final class WelcomePlanStore {
 
     func reload(force: Bool = false) {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
-        guard force || loadedUserId != uid else { return }
+        let userChanged = loadedUserId != uid
+        guard force || userChanged else { return }
         loadedUserId = uid
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
         plan = loadPlan(userId: uid)
@@ -30,7 +31,9 @@ final class WelcomePlanStore {
             migratePlanIfNeeded(answers: questionnaire.answers, profile: UnifiedProfileService.shared.currentProfile)
         }
         CoachMemoryStore.shared.reloadForCurrentUser()
-        ProcessDebloatTrajectoryStore.shared.reload()
+        if userChanged {
+            ProcessDebloatTrajectoryStore.shared.reload()
+        }
         ProcessDebloatTrajectoryStore.shared.sync(from: plan)
 
         if AppConfiguration.firebaseConfigured, uid != "local-user" {
@@ -43,7 +46,6 @@ final class WelcomePlanStore {
         plan = loadPlan(userId: uid)
         repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
         CoachMemoryStore.shared.reloadForCurrentUser()
-        ProcessDebloatTrajectoryStore.shared.reload()
         ProcessDebloatTrajectoryStore.shared.sync(from: plan)
     }
 
@@ -602,9 +604,6 @@ final class WelcomePlanStore {
             answers = merged
             for (questionId, answer) in answers {
                 questionnaire.answers[questionId] = answer
-            }
-            if questionnaire.startedAt == nil {
-                questionnaire.startedAt = Date()
             }
             persistQuestionnaire()
         }

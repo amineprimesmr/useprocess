@@ -28,7 +28,7 @@ struct CoachLiquidGlassInputBar: View {
     private let barShape = RoundedRectangle(cornerRadius: 26, style: .continuous)
     private let actionButtonSize: CGFloat = 44
     private let horizontalPadding: CGFloat = 16
-    private let bottomPadding: CGFloat = 10
+    private let bottomPadding: CGFloat = 6
     private let topPaddingDefault: CGFloat = 10
     private let topPaddingWithImage: CGFloat = 8
 

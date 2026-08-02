@@ -22,8 +22,6 @@ struct CoachUserContext: Codable, Sendable {
     }
 
     struct HealthBlock: Codable, Sendable {
-        var readinessScore: Int?
-        var readinessLabel: String?
         var steps: Int?
         var activeCalories: Double?
         var sleepHours: Double?
@@ -169,8 +167,6 @@ enum UserContextBuilder {
         let snap = healthManager.todaySnapshot
         let baselines = healthManager.baselines
         ctx.health = .init(
-            readinessScore: healthManager.readinessScore > 0 ? healthManager.readinessScore : nil,
-            readinessLabel: healthManager.readinessLabel != "—" ? healthManager.readinessLabel : nil,
             steps: snap.effort.steps > 0 ? snap.effort.steps : nil,
             activeCalories: snap.effort.activeEnergyBurned > 0 ? snap.effort.activeEnergyBurned : nil,
             sleepHours: snap.sleep.sleepDuration > 0 ? snap.sleep.sleepDuration : nil,
@@ -315,12 +311,17 @@ enum UserContextBuilder {
         }
 
         if let h = context.health {
-            var health = "• Readiness \(h.readinessScore.map(String.init) ?? "—")"
-            if let steps = h.steps { health += ", \(steps) pas" }
+            var parts: [String] = []
             if let sleep = h.sleepHours, sleep > 0 {
-                health += ", sommeil \(String(format: "%.1f", sleep))h"
+                parts.append("sommeil \(String(format: "%.1f", sleep))h")
             }
-            lines.append(health)
+            if let steps = h.steps { parts.append("\(steps) pas") }
+            if let hrv = h.hrv, hrv > 0 {
+                parts.append("HRV \(Int(hrv.rounded()))")
+            }
+            if !parts.isEmpty {
+                lines.append("• " + parts.joined(separator: ", "))
+            }
         }
 
         if let status = context.activityStatus, status != ProcessActivityStatus.active.title {

@@ -217,7 +217,6 @@ struct DailyJournalChecklistView: View {
                     day: day,
                     selectedDate: selectedDate,
                     isEditable: true,
-                    isPlanActive: isPlanActive,
                     healthKitWaterLiters: healthMetrics.waterLitersToday,
                     mealZoomNamespace: mealZoomNamespace
                 )

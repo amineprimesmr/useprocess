@@ -4,9 +4,8 @@ import SwiftUI
 struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
     @Binding var selectedDate: Date
-    @Binding var showSettings: Bool
+    @Binding var showCalendar: Bool
     var onOpenStreak: () -> Void
-    var zoomNamespace: Namespace.ID? = nil
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
@@ -14,17 +13,12 @@ struct PlanHomeTopChrome: View {
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
     @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
-    @Bindable private var activityStatusStore = ProcessActivityStatusStore.shared
 
     private var programProgress: PlanProgressSnapshot { planProgressStore.snapshot }
 
     private var greetingFirstName: String {
         profileService.currentProfile?.firstName
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    }
-
-    private var currentActivityStatus: ProcessActivityStatus {
-        activityStatusStore.status(for: selectedDate)
     }
 
     var body: some View {
@@ -43,12 +37,9 @@ struct PlanHomeTopChrome: View {
         .padding(.top, 14)
         .padding(.bottom, 4)
         .onAppear {
-            activityStatusStore.reload()
             syncProgramProgress()
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
-            ProcessDebloatTrajectoryStore.shared.reload()
-            activityStatusStore.reload()
             syncProgramProgress()
         }
         .onChange(of: planStore.plan?.id) { _, _ in
@@ -92,15 +83,14 @@ struct PlanHomeTopChrome: View {
                     .zIndex(1)
                     .accessibilityLabel("Jours validés, \(streakStore.displayValidatedDays)")
 
-                    Button(action: openSettings) {
-                        activityStatusGlassTile
+                    Button(action: openCalendar) {
+                        calendarGlassTile
                             .contentShape(Circle())
                     }
                     .buttonStyle(ProcessGlassPressStyle())
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0.0)
                     .zIndex(0)
-                    .processZoomSource(id: .settings, namespace: zoomNamespace)
-                    .accessibilityLabel("Paramètres, statut \(currentActivityStatus.title)")
+                    .accessibilityLabel("Calendrier, choisir une date")
                 }
             }
         } else {
@@ -113,14 +103,13 @@ struct PlanHomeTopChrome: View {
                 .zIndex(1)
                 .accessibilityLabel("Jours validés, \(streakStore.displayValidatedDays)")
 
-                Button(action: openSettings) {
-                    legacyActivityStatusButton
+                Button(action: openCalendar) {
+                    legacyCalendarButton
                         .contentShape(Circle())
                 }
                 .buttonStyle(ProcessGlassPressStyle())
                 .zIndex(0)
-                .processZoomSource(id: .settings, namespace: zoomNamespace)
-                .accessibilityLabel("Paramètres, statut \(currentActivityStatus.title)")
+                .accessibilityLabel("Calendrier, choisir une date")
             }
         }
     }
@@ -144,14 +133,12 @@ struct PlanHomeTopChrome: View {
     }
 
     @available(iOS 26.0, *)
-    private var activityStatusGlassTile: some View {
-        ProcessActivityStatusBadge(
-            status: currentActivityStatus,
-            size: GlassClusterMetrics.statusIconSize,
-            iconSize: 15
-        )
-        .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
-        .glassEffect(ProcessGlass.regular, in: Circle())
+    private var calendarGlassTile: some View {
+        Image(systemName: "calendar")
+            .font(.system(size: GlassClusterMetrics.iconSize, weight: .semibold))
+            .foregroundStyle(theme.primaryText)
+            .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
+            .glassEffect(ProcessGlass.regular, in: Circle())
     }
 
     private var legacyStreakButton: some View {
@@ -168,27 +155,73 @@ struct PlanHomeTopChrome: View {
         .processGlassCircle(interactive: true)
     }
 
-    private var legacyActivityStatusButton: some View {
-        ProcessActivityStatusBadge(
-            status: currentActivityStatus,
-            size: 36,
-            iconSize: 16
-        )
-        .frame(width: 44, height: 44)
-        .processGlassCircle(interactive: true)
+    private var legacyCalendarButton: some View {
+        Image(systemName: "calendar")
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(theme.primaryText)
+            .frame(width: 44, height: 44)
+            .processGlassCircle(interactive: true)
     }
 
     private var streakFlameColor: Color {
         streakStore.displayValidatedDays > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
     }
 
-    private func openSettings() {
+    private func openCalendar() {
         HapticManager.shared.impact(.light)
-        showSettings = true
+        showCalendar = true
     }
 
     private func openStreak() {
         onOpenStreak()
+    }
+}
+
+// MARK: - Calendrier accueil
+
+struct PlanHomeCalendarSheet: View {
+    @Binding var selectedDate: Date
+    let plan: FaceOriginPlan?
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.appTheme) private var theme
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    if let plan {
+                        JournalWeekDayStrip(
+                            selectedDate: $selectedDate,
+                            plan: plan
+                        )
+                    }
+
+                    DatePicker(
+                        "Date",
+                        selection: $selectedDate,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                    .environment(\.locale, Locale(identifier: "fr_FR"))
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
+            }
+            .scrollIndicators(.hidden)
+            .navigationTitle("Calendrier")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("OK") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+        .processAppPageBackground()
     }
 }
 
@@ -233,16 +266,7 @@ private struct PlanHomeProgramProgressBar: View {
                     .fill(theme.primaryText.opacity(theme.isDark ? 0.10 : 0.08))
 
                 Capsule(style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.48, green: 0.93, blue: 0.68),
-                                Color(red: 0.22, green: 0.72, blue: 0.48)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .fill(ProcessStreakPalette.progressGradient)
                     .frame(width: max(4, geometry.size.width * fillProgress))
                     .animation(.spring(response: 0.5, dampingFraction: 0.82), value: fillProgress)
             }

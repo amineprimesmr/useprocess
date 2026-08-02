@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-struct FaceMesh3DData: Codable, Hashable {
+struct FaceMesh3DData: nonisolated Codable, Hashable, Sendable {
     var vertices: [Float]
     var triangleIndices: [Int]
     var textureCoordinates: [Float]
@@ -13,7 +13,7 @@ struct FaceMesh3DData: Codable, Hashable {
     }
 }
 
-struct OnboardingFaceScanPayload: Codable, Hashable {
+struct OnboardingFaceScanPayload: nonisolated Codable, Hashable, Sendable {
     var markers: FaceWellnessMarkers
     var mesh: FaceMesh3DData
     /// Identifiant du scan capturé — sert à retrouver la vidéo locale (`{scanId}_face.mp4`).

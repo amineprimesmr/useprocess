@@ -64,20 +64,9 @@ struct PlanMealDetailView: View {
                         MealDebloatScoreDetailCard(assessment: assessment)
                             .id("meal-score-\(displayedMeal.name)")
 
-                        if let scheduleTarget = entry.scheduleTargetLabel,
-                           let scheduleWindow = entry.scheduleWindowLabel {
-                            scheduleCard(target: scheduleTarget, window: scheduleWindow)
-                        }
-
                         ingredientsSection
 
-                        if preparationPresentation.hasContent {
-                            preparationSection
-                        }
-
-                        if isEditable {
-                            shoppingListBar
-                        }
+                        preparationSection
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
@@ -191,7 +180,7 @@ struct PlanMealDetailView: View {
                 .foregroundStyle(theme.secondaryText)
 
             VStack(spacing: 8) {
-                ForEach(displayedMeal.items) { item in
+                ForEach(displayedMeal.foodItems) { item in
                     ingredientRow(item)
                 }
             }
@@ -223,34 +212,27 @@ struct PlanMealDetailView: View {
 
     private var preparationSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Label("Préparation", systemImage: "list.number")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
 
+                Spacer(minLength: 0)
+
                 if let minutes = preparationPresentation.estimatedMinutes {
                     Text("~\(minutes) min")
-                        .font(.caption)
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(theme.cardBackground.opacity(0.55), in: Capsule())
                 }
             }
 
             if !preparationPresentation.steps.isEmpty {
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     ForEach(preparationPresentation.steps) { step in
-                        HStack(alignment: .top, spacing: 12) {
-                            Text("\(step.index)")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(theme.inverseText)
-                                .frame(width: 26, height: 26)
-                                .background(Circle().fill(theme.onboardingAccent))
-
-                            Text(step.text)
-                                .font(.subheadline)
-                                .foregroundStyle(theme.primaryText)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        preparationStepRow(step)
                     }
                 }
             } else if let prose = preparationPresentation.proseFallback {
@@ -258,6 +240,29 @@ struct PlanMealDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(theme.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Aucune étape de préparation pour ce repas.")
+                    .font(.subheadline)
+                    .foregroundStyle(theme.secondaryText)
+            }
+
+            let tip = displayedMeal.coachTip.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !tip.isEmpty {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(theme.onboardingAccent)
+                        .padding(.top, 2)
+
+                    Text(tip)
+                        .font(.subheadline)
+                        .foregroundStyle(theme.primaryText.opacity(0.92))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(theme.onboardingAccent.opacity(theme.isDark ? 0.14 : 0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
         .padding(16)
@@ -266,92 +271,24 @@ struct PlanMealDetailView: View {
         .id("meal-prep-\(displayedMeal.name)")
     }
 
-    private var shoppingListBar: some View {
-        Button {
-            HapticManager.shared.impact(.medium)
-            WelcomePlanStore.shared.addMealToShoppingList(displayedMeal, dayId: day.id)
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "cart.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .background(
-                        Circle()
-                            .fill(theme.isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.06))
-                    )
+    private func preparationStepRow(_ step: MealPreparationStep) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(step.index)")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(theme.inverseText)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(theme.primaryText))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Liste de courses")
-                        .font(.system(size: 16, weight: .semibold))
-                    Text("Ajouter les ingrédients de ce repas")
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
-                }
-
-                Spacer(minLength: 4)
-
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(theme.secondaryText)
-            }
-            .foregroundStyle(theme.primaryText.opacity(0.92))
-            .padding(.leading, 14)
-            .padding(.trailing, 16)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .processGlassEffect(in: Capsule(), interactive: true)
-            .shadow(color: Color.black.opacity(theme.isDark ? 0.42 : 0.14), radius: 18, y: 10)
+            Text(step.text)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(theme.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .buttonStyle(ProcessGlassPressStyle())
-        .accessibilityLabel("Ajouter à la liste de courses")
-    }
-
-    private func scheduleCard(target: String, window: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Horaire debloat", systemImage: "clock.fill")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
-
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(target)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(theme.onboardingAccent)
-                    .monospacedDigit()
-
-                Text(window)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(theme.secondaryText)
-            }
-
-            if let note = entry.scheduleNote {
-                Text(note)
-                    .font(.subheadline)
-                    .foregroundStyle(theme.primaryText.opacity(0.9))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "fork.knife")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.onboardingAccent)
-                    .frame(width: 24, height: 24)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(ProcessContinuousHabits.masticationTitle)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
-                    Text(ProcessContinuousHabits.masticationDetail)
-                        .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-            }
-        }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(mealSurfaceCard)
+        .background(theme.cardBackground.opacity(0.45))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var mealSurfaceCard: some View {

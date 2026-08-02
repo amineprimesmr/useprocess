@@ -6,7 +6,7 @@ enum CoachDebloatJourneyStore {
     private static let title = "Trajectoire debloat"
     private static let subject = "Trajectoire debloat"
 
-    static func ensureConversation(in store: CoachConversationLibraryStore = .shared) -> UUID {
+    static func ensureConversation(in store: CoachConversationLibraryStore) -> UUID {
         if let existing = ProcessDebloatTrajectoryStore.shared.debloatJourneyConversationId,
            store.conversation(for: existing) != nil {
             return existing
@@ -34,19 +34,18 @@ enum CoachDebloatJourneyStore {
         return id
     }
 
-    static func chatHistory(for conversationId: UUID) -> [CoachMessage] {
-        CoachConversationLibraryStore.shared.conversation(for: conversationId)?.messages ?? []
+    static func chatHistory(for conversationId: UUID, in store: CoachConversationLibraryStore) -> [CoachMessage] {
+        store.conversation(for: conversationId)?.messages ?? []
     }
 
     static func appendCheckInEvent(
         answers: [String: String],
         record: DebloatDayRecord,
-        in store: CoachConversationLibraryStore = .shared
+        in store: CoachConversationLibraryStore
     ) {
         let conversationId = ensureConversation(in: store)
         store.selectConversation(conversationId)
 
-        let yesCount = record.yesCount
         let summary = record.aiSummary ?? record.verdict.shortLabel
         let text = """
         [Bilan du soir — \(record.dayKey)]

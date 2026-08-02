@@ -7,6 +7,7 @@ final class ProcessActivityStatusStore {
 
     private(set) var hasSeenIntro = false
     private var statusByDayKey: [String: String] = [:]
+    private var persistenceGeneration: UInt64 = 0
 
     private init() {
         reload()
@@ -47,8 +48,15 @@ final class ProcessActivityStatusStore {
         guard let uid = UserScopedStorage.currentUserId() else { return }
         let key = UserScopedStorage.key("process.activity.status", userId: uid)
         let state = ProcessActivityStatusState(hasSeenIntro: hasSeenIntro, statusByDayKey: statusByDayKey)
-        guard let data = try? JSONEncoder().encode(state) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.store(
+                state,
+                forKey: key,
+                generation: generation
+            )
+        }
     }
 
     private func loadState() -> ProcessActivityStatusState? {

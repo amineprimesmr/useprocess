@@ -10,7 +10,7 @@ enum FaceMorningRoutineCatalog {
         func canonicalLine(targets: OriginPersonalizedDailyTargets) -> String {
             switch self {
             case .soleilAuReveil:
-                return "Soleil au réveil — \(targets.morningLightMinutes) min de lumière naturelle"
+                return "Soleil au réveil — \(ProcessDailyTargets.morningLightMinutes) min de lumière naturelle"
             case .eauFroide:
                 return "Glaçons sur le visage"
             }

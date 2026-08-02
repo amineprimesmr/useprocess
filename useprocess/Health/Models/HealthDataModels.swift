@@ -7,6 +7,7 @@ struct DailyRecoveryData: Codable {
     var hrv: Double = 0
     var restingHeartRate: Double = 0
     var sleepHours: Double = 0
+    /// Legacy field kept for Codable compatibility — unused.
     var readinessLabel: String = "—"
 }
 

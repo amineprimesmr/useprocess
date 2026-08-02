@@ -7,6 +7,7 @@ extension View {
         pageSection: ProcessMainSection,
         dismissesKeyboard: ScrollDismissesKeyboardMode? = nil,
         scrollDisabled: Bool = false,
+        adoptsFloatingTabBar: Bool = true,
         @ViewBuilder content: @escaping () -> ScrollContent
     ) -> some View {
         Group {
@@ -17,17 +18,29 @@ extension View {
                 .scrollDisabled(scrollDisabled)
                 .scrollDismissesKeyboard(dismissesKeyboard)
                 .processTransparentScrollSurface()
-                .processAdoptForIGTabBar()
+                .modifier(ProcessFloatingTabBarScrollAdoption(enabled: adoptsFloatingTabBar))
             } else {
                 ScrollView {
                     content()
                 }
                 .scrollDisabled(scrollDisabled)
                 .processTransparentScrollSurface()
-                .processAdoptForIGTabBar()
+                .modifier(ProcessFloatingTabBarScrollAdoption(enabled: adoptsFloatingTabBar))
             }
         }
         .coordinateSpace(name: "processMainScroll")
         .scrollIndicators(.hidden)
+    }
+}
+
+private struct ProcessFloatingTabBarScrollAdoption: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.processAdoptForIGTabBar()
+        } else {
+            content
+        }
     }
 }

@@ -52,6 +52,22 @@ enum FaceScanWhoopPalette {
     }
 }
 
+enum FaceScanWhoopDateLabel {
+    static func header(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "EEEE d MMMM"
+        return formatter.string(from: date)
+    }
+
+    static func historyRow(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.dateFormat = "EEEE d MMMM · HH:mm"
+        return formatter.string(from: date)
+    }
+}
+
 // MARK: - Écran principal
 
 struct FaceScanWhoopAnalysisScreen: View {
@@ -62,15 +78,10 @@ struct FaceScanWhoopAnalysisScreen: View {
     var doneButtonTitle: String = "Terminer"
     var onDone: (() -> Void)?
     var bottomContentInset: CGFloat = 40
-    var allowsCoachHandoff: Bool = true
 
     @Environment(\.dismiss) private var dismiss
     @Bindable private var historyStore = FaceScanHistoryStore.shared
     @State private var showsAnalysisInfo = false
-
-    private var analysis: FaceScanAnalysisContent {
-        CoachEngine.parsedFaceAnalysis(for: displayResult)
-    }
 
     private var displayResult: FaceScanResult {
         historyStore.history.first(where: { $0.id == result.id }) ?? result
@@ -87,19 +98,10 @@ struct FaceScanWhoopAnalysisScreen: View {
             .first
     }
 
-    private var dailyHistory: [FaceScanResult] {
-        FaceScanEvolutionEngine.dailyHistory(from: resolvedHistory)
-    }
-
-    private var insightContext: FaceScanInsightContext {
-        FaceScanInsightContext.fromTodayHealth()
-    }
-
-    private var todayInsight: FaceScanAIInsight {
-        FaceScanAIInsightBuilder.insight(
-            for: displayResult,
-            history: dailyHistory,
-            context: insightContext
+    private var evolutionHistory: [FaceScanResult] {
+        FaceScanWhoopEvolutionHistory.resolve(
+            from: resolvedHistory,
+            ensuring: displayResult
         )
     }
 
@@ -123,27 +125,12 @@ struct FaceScanWhoopAnalysisScreen: View {
                     FaceScanWhoopEvolutionSummaryCard(
                         result: displayResult,
                         previous: previousForDisplay,
-                        history: dailyHistory
+                        history: evolutionHistory
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, 14)
 
-                    FaceScanUnifiedInsightCard(
-                        result: displayResult,
-                        history: dailyHistory,
-                        style: .whoopDark,
-                        onTap: {
-                            guard allowsCoachHandoff else { return }
-                            FaceScanCoachHandoffCoordinator.deliver(
-                                result: displayResult,
-                                insight: todayInsight
-                            )
-                        }
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 14)
-
-                    FaceScanWhoopIndicatorTrendsSection(history: dailyHistory)
+                    FaceScanWhoopIndicatorTrendsSection(history: evolutionHistory)
                         .padding(.horizontal, 16)
                         .padding(.top, 28)
 
@@ -154,8 +141,7 @@ struct FaceScanWhoopAnalysisScreen: View {
         .sheet(isPresented: $showsAnalysisInfo) {
             FaceScanWhoopAnalysisInfoSheet(
                 result: displayResult,
-                history: resolvedHistory,
-                analysis: analysis
+                history: resolvedHistory
             )
         }
     }
@@ -176,10 +162,11 @@ struct FaceScanWhoopAnalysisScreen: View {
             Spacer()
 
             Text(formattedHeaderDate)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(FaceScanWhoopPalette.label)
-                .textCase(.uppercase)
-                .tracking(0.6)
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
 
             Spacer()
 
@@ -196,20 +183,18 @@ struct FaceScanWhoopAnalysisScreen: View {
                 Button {
                     showsAnalysisInfo = true
                 } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 18, weight: .regular))
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(FaceScanWhoopPalette.label)
                         .frame(width: 44, height: 44, alignment: .trailing)
                 }
+                .accessibilityLabel("Historique des scans")
             }
         }
     }
 
     private var formattedHeaderDate: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "EEE., d MMM"
-        return formatter.string(from: result.createdAt).uppercased()
+        FaceScanWhoopDateLabel.header(for: result.createdAt)
     }
 }
 
@@ -222,8 +207,6 @@ enum FaceScanWhoopResultsStyle {
 struct FaceScanWhoopInlineResults: View {
     let result: FaceScanResult
     var history: [FaceScanResult] = []
-    var allowsCoachHandoff: Bool = true
-    var showsInsight: Bool = true
     var showsTrends: Bool = true
     var ringScale: CGFloat = 1
     var style: FaceScanWhoopResultsStyle = .immersive
@@ -245,19 +228,10 @@ struct FaceScanWhoopInlineResults: View {
             .first
     }
 
-    private var dailyHistory: [FaceScanResult] {
-        FaceScanEvolutionEngine.dailyHistory(from: resolvedHistory)
-    }
-
-    private var insightContext: FaceScanInsightContext {
-        FaceScanInsightContext.fromTodayHealth()
-    }
-
-    private var todayInsight: FaceScanAIInsight {
-        FaceScanAIInsightBuilder.insight(
-            for: displayResult,
-            history: dailyHistory,
-            context: insightContext
+    private var evolutionHistory: [FaceScanResult] {
+        FaceScanWhoopEvolutionHistory.resolve(
+            from: resolvedHistory,
+            ensuring: displayResult
         )
     }
 
@@ -278,33 +252,14 @@ struct FaceScanWhoopInlineResults: View {
                 FaceScanWhoopEvolutionSummaryCard(
                     result: displayResult,
                     previous: previousForDisplay,
-                    history: dailyHistory
-                )
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-            }
-
-            if showsInsight {
-                FaceScanUnifiedInsightCard(
-                    result: displayResult,
-                    history: dailyHistory,
-                    style: .whoopDark,
-                    animateReveal: true,
-                    onTap: allowsCoachHandoff
-                        ? {
-                            FaceScanCoachHandoffCoordinator.deliver(
-                                result: displayResult,
-                                insight: todayInsight
-                            )
-                        }
-                        : nil
+                    history: evolutionHistory
                 )
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
             }
 
             if showsTrends {
-                FaceScanWhoopIndicatorTrendsSection(history: dailyHistory)
+                FaceScanWhoopIndicatorTrendsSection(history: evolutionHistory)
                     .padding(.horizontal, 16)
                     .padding(.top, 28)
             }
@@ -676,6 +631,20 @@ private struct FaceScanWhoopMetricsCardChrome: ViewModifier {
     }
 }
 
+/// Historique pour les blocs d’évolution UI — inclut le scan courant même s’il est onboarding.
+private enum FaceScanWhoopEvolutionHistory {
+    static func resolve(from history: [FaceScanResult], ensuring current: FaceScanResult) -> [FaceScanResult] {
+        var scans = FaceScanEvolutionEngine.dailyHistory(from: history)
+        if scans.isEmpty {
+            scans = history
+        }
+        if !scans.contains(where: { $0.id == current.id }) {
+            scans.append(current)
+        }
+        return scans.sorted { $0.createdAt < $1.createdAt }
+    }
+}
+
 private struct FaceScanWhoopEvolutionSummaryCard: View {
     @Environment(\.appTheme) private var theme
 
@@ -687,8 +656,16 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
         FaceScanInsightContext.fromTodayHealth()
     }
 
+    /// Toutes les métriques — visibles dès le 1er scan pour préparer le suivi.
     private var items: [FaceScanMetricDisplay.Item] {
-        FaceScanMetricDisplay.keyItems(for: result, previous: previous, limit: 3)
+        FaceScanMetricDisplay.items(for: result, previous: previous)
+    }
+
+    private var baselineBadge: String {
+        if previous == nil || result.relativeSignals?.baselineLabel == "Premier scan de référence" {
+            return "Point de départ"
+        }
+        return result.relativeSignals?.baselineLabel ?? "Référence en cours"
     }
 
     private var cardShape: RoundedRectangle {
@@ -704,7 +681,7 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
 
                 Spacer()
 
-                Text(result.relativeSignals?.baselineLabel ?? "Référence en cours")
+                Text(baselineBadge)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
                     .lineLimit(1)
@@ -720,7 +697,14 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
                 .foregroundStyle(FaceScanWhoopPalette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 8) {
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 8),
+                    GridItem(.flexible(), spacing: 8),
+                    GridItem(.flexible(), spacing: 8)
+                ],
+                spacing: 8
+            ) {
                 ForEach(items) { item in
                     FaceScanWhoopEvolutionPill(item: item)
                 }
@@ -973,6 +957,17 @@ private struct FaceScanWhoopIndicatorTrendsSection: View {
 
     @State private var sectionVisible = true
 
+    private var plottedScanCount: Int {
+        Set(history.map { Calendar.current.startOfDay(for: $0.createdAt) }).count
+    }
+
+    private var sectionSubtitle: String {
+        if plottedScanCount < 2 {
+            return "Point de départ — l’évolution se remplit à chaque nouveau scan (7 jours)."
+        }
+        return "Évolution par rapport aux 7 jours précédents"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
@@ -980,9 +975,10 @@ private struct FaceScanWhoopIndicatorTrendsSection: View {
                     .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
 
-                Text("Évolution par rapport aux 7 jours précédents")
+                Text(sectionSubtitle)
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             ForEach(Array(FaceScanIndicators.Kind.allCases.enumerated()), id: \.element.id) { index, kind in
@@ -1100,8 +1096,8 @@ private struct FaceScanWhoopIndicatorTrendCard: View {
                 }
             }
 
-            if daySlots.compactMap(\.value).count < 2 {
-                Text("Au moins 2 scans sur 7 jours pour afficher la courbe.")
+            if daySlots.compactMap(\.value).isEmpty {
+                Text("En attente du premier point de mesure.")
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
                     .frame(maxWidth: .infinity, minHeight: 100, alignment: .center)
@@ -1111,6 +1107,12 @@ private struct FaceScanWhoopIndicatorTrendCard: View {
                     color: kind.trendColor
                 )
                 .frame(height: 148)
+
+                if daySlots.compactMap(\.value).count < 2 {
+                    Text("Encore quelques scans pour tracer la courbe complète.")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(FaceScanWhoopPalette.secondary)
+                }
             }
         }
         .padding(16)
@@ -1146,7 +1148,7 @@ private struct FaceScanWhoopChartDaySlot: Identifiable {
         }
 
         var latestByDay: [Date: FaceScanResult] = [:]
-        for scan in history where scan.source == .daily {
+        for scan in history {
             let day = calendar.startOfDay(for: scan.createdAt)
             guard day >= start, day <= today else { continue }
             if let existing = latestByDay[day], existing.createdAt > scan.createdAt { continue }
@@ -1294,7 +1296,6 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
 
     let result: FaceScanResult
     let history: [FaceScanResult]
-    let analysis: FaceScanAnalysisContent
 
     private var recentScans: [FaceScanResult] {
         Array(history.sorted { $0.createdAt > $1.createdAt }.prefix(12))
@@ -1362,51 +1363,6 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
                             }
                         }
 
-                        if analysis.isValid {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("ANALYSE IA")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(FaceScanWhoopPalette.secondary)
-                                    .tracking(0.8)
-
-                                Text(analysis.summary)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(FaceScanWhoopPalette.label)
-                                    .fixedSize(horizontal: false, vertical: true)
-
-                                ForEach(analysis.signals, id: \.self) { signal in
-                                    Text("• \(signal)")
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(FaceScanWhoopPalette.secondary)
-                                }
-
-                                if !analysis.evolution.isEmpty {
-                                    Text(analysis.evolution)
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.86))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-
-                                ForEach(analysis.tips, id: \.self) { tip in
-                                    HStack(alignment: .top, spacing: 8) {
-                                        Image(systemName: "arrow.right.circle.fill")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundStyle(FaceScanWhoopPalette.optimal)
-                                        Text(tip)
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundStyle(FaceScanWhoopPalette.label)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                }
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background {
-                                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                    .fill(FaceScanWhoopPalette.card)
-                            }
-                        }
-
                         Text("L’accueil et l’anneau affichent le score global.")
                             .font(.system(size: 12))
                             .foregroundStyle(FaceScanWhoopPalette.secondary)
@@ -1416,7 +1372,7 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
                     .padding(.bottom, 32)
                 }
             }
-            .navigationTitle("Détails du scan")
+            .navigationTitle("Historique")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(FaceScanWhoopPalette.canvas, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -1573,10 +1529,7 @@ private struct FaceScanDetailHistoryRow: View {
     }
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "EEE d MMM · HH:mm"
-        return formatter.string(from: scan.createdAt).capitalized
+        FaceScanWhoopDateLabel.historyRow(for: scan.createdAt)
     }
 
     private func loadThumbnail() {

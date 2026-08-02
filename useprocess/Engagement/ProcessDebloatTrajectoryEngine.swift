@@ -67,10 +67,13 @@ enum ProcessDebloatTrajectoryEngine {
         record: DebloatDayRecord,
         consecutiveCardioMissesBefore: Int,
         scanScore: Double?,
-        isPaused: Bool
+        isPaused: Bool,
+        now: Date = Date()
     ) -> DebloatDayVerdict {
         if isPaused { return .paused }
-        if !record.checkInSubmitted { return .missed }
+        if !record.checkInSubmitted {
+            return unsubmittedVerdict(for: record.dayKey, now: now)
+        }
 
         let effectiveScan = scanScore ?? 0.5
         let validated = countsAsValidatedDay(
@@ -95,6 +98,14 @@ enum ProcessDebloatTrajectoryEngine {
         }
 
         return .onTrack
+    }
+
+    static func unsubmittedVerdict(for dayKey: String, now: Date = Date()) -> DebloatDayVerdict {
+        guard let date = date(from: dayKey) else { return .missed }
+        if ProcessEveningCheckInSchedule.isOverdue(for: date, now: now) {
+            return .missed
+        }
+        return .pending
     }
 
     private static func behaviorScore(from record: DebloatDayRecord) -> Double {
@@ -129,8 +140,8 @@ enum ProcessDebloatTrajectoryEngine {
         graceAvailable: Bool
     ) -> (streak: Int, consecutiveMisses: Int, graceUsed: Bool) {
         switch verdict {
-        case .paused:
-            return (previousStreak, 0, false)
+        case .paused, .pending:
+            return (previousStreak, consecutiveMisses, false)
 
         case .excellent, .onTrack:
             return (previousStreak + 1, 0, false)
@@ -139,17 +150,14 @@ enum ProcessDebloatTrajectoryEngine {
             return (previousStreak, 0, false)
 
         case .regression:
-            return (max(0, previousStreak - 3), 0, false)
+            return (max(0, previousStreak - 1), 0, false)
 
         case .missed:
-            if graceAvailable {
-                return (previousStreak + 1, 0, true)
-            }
             let misses = consecutiveMisses + 1
             if misses >= 2 {
                 return (0, misses, false)
             }
-            return (max(0, previousStreak - 5), misses, false)
+            return (max(0, previousStreak - 1), misses, false)
         }
     }
 
@@ -162,18 +170,32 @@ enum ProcessDebloatTrajectoryEngine {
         return previousMisses + 1
     }
 
-    static func currentStreak(from records: [DebloatDayRecord], today: Date, calendar: Calendar = .current) -> Int {
+    static func currentStreak(
+        from records: [DebloatDayRecord],
+        today: Date,
+        calendar: Calendar = .current,
+        now: Date = Date()
+    ) -> Int {
         let todayKey = ProcessStreakStore.dayKey(for: today, calendar: calendar)
-        if let todayRecord = records.first(where: { $0.dayKey == todayKey }) {
+        let recordsByKey = Dictionary(uniqueKeysWithValues: records.map { ($0.dayKey, $0) })
+
+        if let todayRecord = recordsByKey[todayKey],
+           todayRecord.countsAsValidatedDay(
+            consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
+                before: todayKey,
+                in: recordsByKey
+            )
+           ) {
             return todayRecord.streakAfterDay
         }
 
-        var cursor = today
-        if let yesterday = calendar.date(byAdding: .day, value: -1, to: cursor) {
-            cursor = calendar.startOfDay(for: yesterday)
+        // Most recent prior day only — never walk the calendar unbounded (empty /
+        // unvalidated-today histories used to spin forever on MainActor).
+        guard let latestPriorKey = recordsByKey.keys.filter({ $0 < todayKey }).max(),
+              let record = recordsByKey[latestPriorKey] else {
+            return 0
         }
-        let key = ProcessStreakStore.dayKey(for: cursor, calendar: calendar)
-        return records.first(where: { $0.dayKey == key })?.streakAfterDay ?? 0
+        return record.streakAfterDay
     }
 
     // MARK: - Tendance
@@ -230,6 +252,8 @@ enum ProcessDebloatTrajectoryEngine {
             return "Journée partielle — hydratation et repas debloat requis pour valider."
         case .regression:
             return "Régression — protocole debloat incomplet (eau + repas + cardio)."
+        case .pending:
+            return "Bilan du soir en attente — valide ce soir pour compter la journée."
         case .missed:
             return "Bilan non validé — ta trajectoire est en pause ce jour-là."
         case .paused:

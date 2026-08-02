@@ -3,7 +3,7 @@ import Foundation
 @MainActor
 enum CoachPostReplyService {
 
-    static func applySideEffects(parsed: CoachParsedReply, userText: String, rawAssistantText: String) {
+    static func applySideEffects(parsed: CoachParsedReply, userText: String, rawAssistantText _: String) {
         for update in parsed.memoryUpdates {
             CoachMyMemoryStore.shared.add(category: update.category, text: update.text)
         }
@@ -27,12 +27,6 @@ enum CoachPostReplyService {
             )
         }
 
-        if parsed.foodLogged {
-            let hasStructuredMeal = CoachMealMessageDetector.mealContent(from: rawAssistantText)?.isValid == true
-            if !hasStructuredMeal {
-                _ = CoachFoodLogService.tryLogMeal(from: rawAssistantText, userText: userText)
-            }
-        }
     }
 }
 

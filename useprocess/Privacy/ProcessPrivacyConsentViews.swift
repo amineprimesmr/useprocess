@@ -23,7 +23,7 @@ struct ThirdPartyAIConsentView: View {
                         items: [
                             "Messages écrits ou dictés au coach",
                             "Profil (prénom, âge, objectifs, sport, nutrition)",
-                            "Résumés santé HealthKit (pas, sommeil, fréquence cardiaque, readiness)",
+                            "Résumés santé HealthKit (pas, sommeil, fréquence cardiaque)",
                             "Historique de scans et scores visage",
                             "Photos que tu envoies volontairement au coach ou pour les repas"
                         ]

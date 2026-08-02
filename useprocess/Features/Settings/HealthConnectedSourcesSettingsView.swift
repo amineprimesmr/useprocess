@@ -23,7 +23,7 @@ struct HealthConnectedSourcesSettingsView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, GroupedSettingsMetrics.rowVerticalPadding)
                     } else if !healthManager.isAuthorized {
-                        Text("Autorise l'accès à tes données pour alimenter le readiness, le plan personnalisé et le coach.")
+                        Text("Autorise l'accès à tes données pour alimenter le plan personnalisé et le coach.")
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                             .frame(maxWidth: .infinity, alignment: .leading)

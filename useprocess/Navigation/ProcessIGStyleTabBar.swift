@@ -8,20 +8,17 @@ enum ProcessIGTabMetrics {
     static let horizontalInset: CGFloat = 20
     static let chromePadding: CGFloat = 4
     static let clusterSpacing: CGFloat = 10
-    static let bottomPadding: CGFloat = 8
+    /// Marge au-dessus de l’indicateur d’accueil (tab bar flottante).
+    static let tabBarBottomInset: CGFloat = 2
     static let collapseDistance: CGFloat = 100
     static let minScale: CGFloat = 0.85
 
-    static var accessoryHeight: CGFloat { 48 }
-    static var protocolSetupAccessoryHeight: CGFloat { 56 }
+    static var tabBarOverlayClearance: CGFloat {
+        tabBarHeight + (chromePadding * 2) + tabBarBottomInset + UIApplication.safeAreaBottom
+    }
 
     static func chromeHeight(hasCompletedWelcomePlan: Bool) -> CGFloat {
-        let accessory = hasCompletedWelcomePlan ? accessoryHeight : protocolSetupAccessoryHeight
-        return accessory
-            + clusterSpacing
-            + tabBarHeight
-            + (chromePadding * 2)
-            + bottomPadding
+        tabBarHeight + (chromePadding * 2) + tabBarBottomInset
     }
 
     static var collapseAnimation: Animation {
@@ -235,52 +232,43 @@ final class ProcessIGSegmentedControl: UISegmentedControl {
 
 struct ProcessIGTabShell<Content: View>: View {
     @Binding var selectedSection: ProcessMainSection
-    var coachZoomNamespace: Namespace.ID
-    let onPresentCoach: () -> Void
     @ViewBuilder let content: () -> Content
 
-    @Environment(\.appTheme) private var theme
     @State private var progress: CGFloat = 0
 
     private var scale: CGFloat {
         1 - (progress * (1 - ProcessIGTabMetrics.minScale))
     }
 
-    private var isCollapsed: Bool {
-        progress > 0.55
-    }
-
     var body: some View {
         content()
             .environment(\.processIGTabBarProgress, $progress)
             .overlay(alignment: .bottom) {
-                chrome
+                if selectedSection != .coach {
+                    chrome
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .move(edge: .bottom).combined(with: .opacity)
+                            )
+                        )
+                }
             }
+            .animation(ProcessGlass.spring, value: selectedSection == .coach)
             .onChange(of: selectedSection) { _, _ in
                 expandIfNeeded()
             }
     }
 
     private var chrome: some View {
-        VStack(spacing: ProcessIGTabMetrics.clusterSpacing) {
-            ProcessCoachTabAccessory(
-                namespace: coachZoomNamespace,
-                isInlinePlacement: isCollapsed,
-                onTap: {
-                    expandIfNeeded()
-                    onPresentCoach()
-                }
-            )
-
-            ProcessIGStyleTabBar(selection: $selectedSection) {
-                expandIfNeeded()
-            }
-            .padding(ProcessIGTabMetrics.chromePadding)
-            .modifier(ProcessIGTabBarGlassChrome())
+        ProcessIGStyleTabBar(selection: $selectedSection) {
+            expandIfNeeded()
         }
+        .padding(ProcessIGTabMetrics.chromePadding)
+        .modifier(ProcessIGTabBarGlassChrome())
         .scaleEffect(scale, anchor: .bottom)
         .padding(.horizontal, ProcessIGTabMetrics.horizontalInset)
-        .safeAreaPadding(.bottom, ProcessIGTabMetrics.bottomPadding)
+        .padding(.bottom, ProcessIGTabMetrics.tabBarBottomInset)
         .accessibilityElement(children: .contain)
     }
 

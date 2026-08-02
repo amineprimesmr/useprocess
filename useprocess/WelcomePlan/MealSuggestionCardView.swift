@@ -195,7 +195,7 @@ struct MealSuggestionCardView: View {
             }
 
             VStack(spacing: 8) {
-                ForEach(content.items) { item in
+                ForEach(content.foodItems) { item in
                     if coachListStyle {
                         coachIngredientRow(item)
                     } else {

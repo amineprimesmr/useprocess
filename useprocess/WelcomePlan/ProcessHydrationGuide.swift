@@ -5,12 +5,12 @@ enum ProcessHydrationGuide {
 
     static var dailyLiters: String { ProcessDailyTargets.hydrationLabel }
 
-    static let morningLine = "500 ml d'eau au réveil, citron facultatif — électrolytes seulement après forte transpiration."
+    static let morningLine = "3 grands verres d'eau (~750 ml) au réveil, citron facultatif — électrolytes seulement après forte transpiration."
 
-    /// Hydratation matinale recommandée avec chaque petit-déjeuner catalogue.
-    static let morningWaterMilliliters = 500
+    /// Hydratation Accueil uniquement — jamais injectée dans les repas / recettes.
+    static let morningWaterMilliliters = 750
     static var morningWaterLabel: String { "\(morningWaterMilliliters) ml" }
-    static let morningWaterItemName = "2 grands verres d'eau filtrée, citron facultatif"
+    static let morningWaterItemName = "3 grands verres d'eau filtrée, citron facultatif"
 
     /// Classement eaux (minéraux naturels).
     static let rankedWaters: [(rank: Int, name: String, detail: String)] = [

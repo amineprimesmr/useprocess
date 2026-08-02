@@ -162,6 +162,31 @@ final class FaceScanHistoryStore {
         Array(history.prefix(limit))
     }
 
+    /// Plus ancien scan (historique trié newest-first).
+    var oldestResult: FaceScanResult? { history.last }
+
+    /// Plus ancien scan encore pourvu d'une vidéo locale lisible.
+    func oldestResultWithResolvableVideo() -> FaceScanResult? {
+        history.reversed().first { result in
+            let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+            return FaceScanImageStore.resolvedVideoURL(for: reconciled) != nil
+        }
+    }
+
+    /// Plus ancien scan avec vidéo, sinon snapshot, sinon le plus ancien enregistrement.
+    func oldestResultForProfileIdentity() -> FaceScanResult? {
+        if let withVideo = oldestResultWithResolvableVideo() {
+            return withVideo
+        }
+        if let withSnapshot = history.reversed().first(where: { result in
+            let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
+            return FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) != nil
+        }) {
+            return withSnapshot
+        }
+        return oldestResult
+    }
+
     private func importOnboardingSnapshotIfNeeded() {
         guard !didImportOnboarding else { return }
         didImportOnboarding = true

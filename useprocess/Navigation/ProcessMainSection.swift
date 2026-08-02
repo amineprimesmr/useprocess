@@ -3,21 +3,23 @@ import SwiftUI
 enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     case coach
     case plan
+    case statistics
     case profile
 
     var id: String { rawValue }
 
-    static let tabOrder: [ProcessMainSection] = [.plan, .profile]
+    static let tabOrder: [ProcessMainSection] = [.plan, .statistics, .coach, .profile]
 
     var isShellTab: Bool {
-        self == .plan || self == .profile
+        Self.tabOrder.contains(self)
     }
 
     var label: String {
         switch self {
-        case .coach: "Coach"
+        case .coach: "Process IA"
         case .plan: "Accueil"
-        case .profile: "Profil"
+        case .statistics: "Streak"
+        case .profile: "Réglages"
         }
     }
 
@@ -25,7 +27,8 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .coach: "sparkles"
         case .plan: "house.fill"
-        case .profile: "chart.bar.fill"
+        case .statistics: "flame.fill"
+        case .profile: "gearshape.fill"
         }
     }
 }

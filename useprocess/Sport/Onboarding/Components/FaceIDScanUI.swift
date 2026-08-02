@@ -61,11 +61,16 @@ struct FaceMorphClipShape: InsettableShape {
     }
 
     private func morphPath(in rect: CGRect, inset: CGFloat) -> Path {
+        guard rect.width.isFinite, rect.height.isFinite, rect.width > 0, rect.height > 0 else {
+            return Path()
+        }
         let adjusted = rect.insetBy(dx: inset, dy: inset)
+        guard adjusted.width > 0, adjusted.height > 0 else { return Path() }
         let maxRadius = min(adjusted.width, adjusted.height) / 2
+        let safeMorph = morph.isFinite ? min(1, max(0, morph)) : 0
         let cornerRadius = FaceScanViewportMetrics.roundedCornerRadius
-            + (maxRadius - FaceScanViewportMetrics.roundedCornerRadius) * morph
-        return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).path(in: adjusted)
+            + (maxRadius - FaceScanViewportMetrics.roundedCornerRadius) * safeMorph
+        return RoundedRectangle(cornerRadius: max(0, cornerRadius), style: .continuous).path(in: adjusted)
     }
 }
 
@@ -196,13 +201,17 @@ struct FaceScannerViewport<Camera: View, Overlay: View>: View {
     @ViewBuilder let overlay: () -> Overlay
 
     var body: some View {
+        let safeWidth = size.width.isFinite ? max(size.width, 1) : 1
+        let safeHeight = size.height.isFinite ? max(size.height, 1) : 1
+        let safeMorph = morphToCircle.isFinite ? min(1, max(0, morphToCircle)) : 0
+
         ZStack {
             camera()
-                .clipShape(FaceMorphClipShape(morph: morphToCircle))
+                .clipShape(FaceMorphClipShape(morph: safeMorph))
 
             overlay()
         }
-        .frame(width: size.width, height: size.height)
+        .frame(width: safeWidth, height: safeHeight)
     }
 }
 
@@ -506,5 +515,11 @@ struct FaceIDContinueButton: View {
                 .background(FaceIDScanColors.continueFill, in: Capsule())
         }
         .buttonStyle(.plain)
+        .contentShape(Capsule())
+        .highPriorityGesture(
+            TapGesture().onEnded {
+                action()
+            }
+        )
     }
 }

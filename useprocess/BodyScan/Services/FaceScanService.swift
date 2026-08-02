@@ -13,11 +13,6 @@ enum FaceScanService {
         let scanId = payload.scanId
         let health = HealthManager.shared
 
-        var snapshotFilename: String?
-        if let snapshot = payload.snapshot {
-            snapshotFilename = FaceScanImageStore.save(image: snapshot, scanId: scanId)
-        }
-
         let absoluteDayScore = FaceWellnessScore.dayScore(from: markers)
         let relativeAssessment = FaceWellnessScore.relativeAssessment(
             current: markers,
@@ -33,11 +28,11 @@ enum FaceScanService {
 
         let scanSource: FaceScanSource = AppSession.shared.hasCompletedOnboarding ? .daily : .onboarding
 
-        var result = FaceScanResult(
+        let result = FaceScanResult(
             id: scanId,
             userId: userId,
             markers: markers,
-            snapshotFilename: snapshotFilename,
+            snapshotFilename: nil,
             videoFilename: payload.videoFilename,
             source: scanSource,
             sleepHoursAtScan: sleepHours,
@@ -48,29 +43,63 @@ enum FaceScanService {
             baselineSampleCount: relativeAssessment.baselineSampleCount,
             relativeSignals: relativeAssessment.signals
         )
-        result = FaceScanImageStore.reconcileMediaMetadata(for: result)
 
-        OnboardingFaceMarkersStore.save(
-            markers: markers,
-            mesh: payload.mesh,
-            scanId: scanId,
-            snapshotFilename: result.snapshotFilename,
-            videoFilename: result.videoFilename,
-            capturedAt: result.createdAt
+        enqueueScanPersistence(
+            result: result,
+            payload: payload,
+            markers: markers
         )
-        FaceScanHistoryStore.shared.push(result)
-        ProcessDebloatTrajectoryStore.shared.recordScan(result)
-
-        if var plan = WelcomePlanStore.shared.plan {
-            PlanRecalibrationService.applyBaselineScan(to: &plan, markers: markers)
-            _ = PlanRecalibrationService.recalibrate(plan: &plan, latestScan: result)
-            WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
-            ProcessPlanProgressStore.shared.evaluateAfterScan(plan: plan, latestScan: result)
-        }
-
-        enqueuePostScanEnhancements(for: result, profile: profile)
 
         return result
+    }
+
+    private static func enqueueScanPersistence(
+        result: FaceScanResult,
+        payload: FaceScanCapturePayload,
+        markers: FaceWellnessMarkers
+    ) {
+        Task.detached(priority: .utility) {
+            let snapshotFilename = payload.snapshot.flatMap {
+                FaceScanImageStore.save(image: $0, scanId: payload.scanId)
+            }
+
+            await MainActor.run {
+                var persisted = result
+                if let snapshotFilename {
+                    persisted.snapshotFilename = snapshotFilename
+                }
+
+                OnboardingFaceMarkersStore.save(
+                    markers: markers,
+                    mesh: payload.mesh,
+                    scanId: payload.scanId,
+                    snapshotFilename: persisted.snapshotFilename,
+                    videoFilename: persisted.videoFilename,
+                    capturedAt: persisted.createdAt
+                )
+                FaceScanHistoryStore.shared.push(persisted)
+                ProcessDebloatTrajectoryStore.shared.recordScan(persisted)
+
+                enqueuePlanRecalibration(for: persisted, markers: markers)
+                enqueuePostScanEnhancements(
+                    for: persisted,
+                    profile: UnifiedProfileService.shared.currentProfile
+                )
+            }
+        }
+    }
+
+    private static func enqueuePlanRecalibration(for result: FaceScanResult, markers: FaceWellnessMarkers) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            if var plan = WelcomePlanStore.shared.plan {
+                PlanRecalibrationService.applyBaselineScan(to: &plan, markers: markers)
+                _ = PlanRecalibrationService.recalibrate(plan: &plan, latestScan: result)
+                WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
+                ProcessPlanProgressStore.shared.evaluateAfterScan(plan: plan, latestScan: result)
+            }
+        }
     }
 
     /// Travail réseau / IA — ne bloque pas l’écran d’analyse ni les résultats WHOOP.
@@ -79,6 +108,8 @@ enum FaceScanService {
         profile: UnifiedUserProfile?
     ) {
         Task { @MainActor in
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
             var enhanced = result
 
             if ClaudeConfiguration.isConfigured,

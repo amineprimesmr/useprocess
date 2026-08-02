@@ -116,7 +116,6 @@ struct PlanNutritionDaySection: View {
     let day: OriginProgramDay
     var selectedDate: Date
     var isEditable: Bool = true
-    var isPlanActive: Bool = true
     var healthKitWaterLiters: Double = 0
     var mealZoomNamespace: Namespace.ID
 
@@ -125,7 +124,6 @@ struct PlanNutritionDaySection: View {
 
     @State private var selectedEntry: PlanDayMealEntry?
     @State private var showMealIdeasCatalog = false
-    @State private var showHydrationHub = false
     @State private var scrollPosition: MealTimeSlot?
 
     private var store: WelcomePlanStore { WelcomePlanStore.shared }
@@ -189,15 +187,6 @@ struct PlanNutritionDaySection: View {
             .environmentObject(profileService)
             .processZoomTransition(id: .mealCatalog, namespace: mealZoomNamespace)
         }
-        .fullScreenCover(isPresented: $showHydrationHub) {
-            PlanHydrationExperienceView(
-                plan: livePlan,
-                day: day,
-                selectedDate: selectedDate
-            )
-            .environmentObject(profileService)
-            .processZoomTransition(id: .hydrationHub, namespace: mealZoomNamespace)
-        }
     }
 
     private var entriesValidationToken: String {
@@ -218,10 +207,8 @@ struct PlanNutritionDaySection: View {
             selectedDate: selectedDate,
             dayId: day.id,
             healthKitWaterLiters: healthKitWaterLiters,
-            isPlanActive: isPlanActive,
             scrollPosition: $scrollPosition,
             mealZoomNamespace: mealZoomNamespace,
-            onOpenHydration: { showHydrationHub = true },
             onSelect: {
                 ProcessPerformanceTrace.beginMealOpen()
                 selectedEntry = $0
@@ -250,10 +237,8 @@ private struct PlanMealCoverFlowCarousel: View {
     let selectedDate: Date
     let dayId: String
     let healthKitWaterLiters: Double
-    let isPlanActive: Bool
     @Binding var scrollPosition: MealTimeSlot?
     let mealZoomNamespace: Namespace.ID
-    var onOpenHydration: () -> Void
     var onSelect: (PlanDayMealEntry) -> Void
     var onBrowseCatalog: () -> Void
 
@@ -274,10 +259,7 @@ private struct PlanMealCoverFlowCarousel: View {
                 targetMilliliters: hydrationTargetMilliliters,
                 selectedDate: selectedDate,
                 dayId: dayId,
-                healthKitWaterLiters: healthKitWaterLiters,
-                isMotionActive: isPlanActive,
-                zoomNamespace: mealZoomNamespace,
-                onOpenHydration: onOpenHydration
+                healthKitWaterLiters: healthKitWaterLiters
             )
             .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                 content
@@ -323,36 +305,36 @@ private struct PlanHydrationCarouselCard: View {
     let selectedDate: Date
     let dayId: String
     let healthKitWaterLiters: Double
-    var isMotionActive: Bool = true
-    let zoomNamespace: Namespace.ID
-    var onOpenHydration: () -> Void
 
     @Environment(\.appTheme) private var theme
-    @StateObject private var waterEngine = ProcessFluidWaterMotionEngine()
     @Bindable private var hydrationStore = ProcessHydrationLogStore.shared
-    @State private var isDraggingWater = false
+    @State private var animatedFill: CGFloat = 0.08
 
+    private var healthKitMilliliters: Int {
+        Int((healthKitWaterLiters * 1000).rounded())
+    }
+
+    /// Si l'utilisateur a déjà ajusté dans l'app, on suit le journal local (pour pouvoir descendre).
     private var effectiveMilliliters: Int {
-        max(
+        if hydrationStore.hasLocalAdjustments(for: selectedDate) {
+            return max(0, hydrationStore.milliliters(for: selectedDate))
+        }
+        return max(
             hydrationStore.milliliters(for: selectedDate),
-            Int((healthKitWaterLiters * 1000).rounded())
+            healthKitMilliliters
         )
     }
 
-    private var progress: CGFloat {
-        guard targetMilliliters > 0 else { return 0 }
-        return min(1, CGFloat(effectiveMilliliters) / CGFloat(targetMilliliters))
+    private var targetFill: CGFloat {
+        guard targetMilliliters > 0 else { return 0.08 }
+        return max(0.08, min(1, CGFloat(effectiveMilliliters) / CGFloat(targetMilliliters)))
     }
 
-    private var millilitersLabel: String {
-        "\(formattedMilliliters(effectiveMilliliters)) / \(formattedMilliliters(targetMilliliters)) ML"
+    private var litersLabel: String {
+        "\(formatLiters(effectiveMilliliters)) / \(formatLiters(targetMilliliters)) L"
     }
 
-    private var percentageLabel: String {
-        guard targetMilliliters > 0 else { return "0%" }
-        let value = Int((Double(effectiveMilliliters) / Double(targetMilliliters) * 100).rounded())
-        return "\(min(999, max(0, value)))%"
-    }
+    private var canRemoveWater: Bool { effectiveMilliliters > 0 }
 
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
@@ -364,11 +346,7 @@ private struct PlanHydrationCarouselCard: View {
 
             amountLabelLayer
 
-            bottomMillilitersLabel
-
             waterLayer
-
-            cardTapLayer
 
             addButton
                 .padding(.top, 14)
@@ -378,25 +356,46 @@ private struct PlanHydrationCarouselCard: View {
             width: PlanMealCarouselLayout.cardWidth,
             height: PlanMealCarouselLayout.cardHeight
         )
-        .processGlassButton(in: cardShape)
+        // Glass non interactif : un appui ne doit ni compresser ni animer la surface d’eau.
+        .processGlassEffect(in: cardShape, interactive: false)
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
-        .processZoomSource(id: .hydrationHub, namespace: zoomNamespace)
-        .simultaneousGesture(
-            waterInteractionGesture(
-                in: CGSize(
-                    width: PlanMealCarouselLayout.cardWidth,
-                    height: PlanMealCarouselLayout.cardHeight
-                )
-            )
-        )
-        .onAppear { updateMotionEngineState() }
-        .onDisappear { waterEngine.stop() }
-        .onChange(of: isMotionActive) { _, _ in
-            updateMotionEngineState()
+        .contentShape(cardShape)
+        .contextMenu {
+            hydrationAdjustMenu
         }
-        .accessibilityAddTraits(.isButton)
-        .accessibilityLabel("Hydratation \(millilitersLabel). Ajouter 500 millilitres ou ouvrir la page hydratation.")
+        .onAppear { animatedFill = targetFill }
+        .onChange(of: effectiveMilliliters) { _, _ in
+            withAnimation(.easeOut(duration: 0.95)) {
+                animatedFill = targetFill
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Hydratation \(litersLabel)")
+        .accessibilityHint("Appui long pour ajuster le niveau d'eau")
+    }
+
+    @ViewBuilder
+    private var hydrationAdjustMenu: some View {
+        Button {
+            addWater()
+        } label: {
+            Label("Ajouter 500 ml", systemImage: "plus.circle")
+        }
+
+        if canRemoveWater {
+            Button {
+                removeWater()
+            } label: {
+                Label("Retirer 500 ml", systemImage: "minus.circle")
+            }
+
+            Button(role: .destructive) {
+                resetWater()
+            } label: {
+                Label("Remettre à zéro", systemImage: "arrow.counterclockwise")
+            }
+        }
     }
 
     private var cardBackground: some View {
@@ -415,67 +414,35 @@ private struct PlanHydrationCarouselCard: View {
         )
     }
 
-    private var cardTapLayer: some View {
-        Color.clear
-            .contentShape(cardShape)
-            .onTapGesture {
-                HapticManager.shared.impact(.light)
-                onOpenHydration()
-            }
-    }
-
     private var amountLabelLayer: some View {
         GeometryReader { proxy in
-            Text(percentageLabel)
-                .font(.system(size: 54, weight: .bold, design: .rounded))
+            Text(litersLabel)
+                .font(.system(size: 36, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .minimumScaleFactor(0.55)
                 .foregroundStyle(amountTextColor)
                 .shadow(color: amountShadowColor, radius: 10, y: 4)
                 .contentTransition(.numericText())
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 12)
                 .position(
                     x: proxy.size.width * 0.5,
                     y: amountLabelY(in: proxy.size)
                 )
         }
         .allowsHitTesting(false)
-        .animation(.spring(response: 0.56, dampingFraction: 0.82), value: effectiveMilliliters)
-    }
-
-    private var bottomMillilitersLabel: some View {
-        VStack {
-            Spacer()
-
-            Text(millilitersLabel)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .foregroundStyle(bottomTextColor)
-                .shadow(color: amountShadowColor, radius: 8, y: 3)
-                .contentTransition(.numericText())
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background {
-                    Capsule(style: .continuous)
-                        .fill(theme.isDark ? Color.black.opacity(0.18) : Color.white.opacity(0.22))
-                }
-                .padding(.bottom, 16)
-        }
-        .allowsHitTesting(false)
-        .animation(.spring(response: 0.56, dampingFraction: 0.82), value: effectiveMilliliters)
+        .animation(.easeOut(duration: 0.45), value: effectiveMilliliters)
     }
 
     @ViewBuilder
     private var waterLayer: some View {
         GeometryReader { proxy in
+            // Surface figée (pas de gyro / tap / vague) — seul le niveau de remplissage change.
             let shape = PlanHydrationCardWaterShape(
-                fillLevel: max(0.08, progress),
-                roll: waterEngine.roll,
-                pitch: waterEngine.pitch,
-                wavePhase: waterEngine.wavePhase
+                fillLevel: animatedFill,
+                roll: 0,
+                pitch: 0,
+                wavePhase: 0
             )
 
             if #available(iOS 26.0, *) {
@@ -501,8 +468,7 @@ private struct PlanHydrationCarouselCard: View {
             }
         }
         .allowsHitTesting(false)
-        .transaction { $0.animation = nil }
-        .animation(.spring(response: 0.56, dampingFraction: 0.82), value: progress)
+        .animation(.easeOut(duration: 0.95), value: animatedFill)
     }
 
     private var amountTextColor: Color {
@@ -515,12 +481,6 @@ private struct PlanHydrationCarouselCard: View {
         theme.isDark
             ? Color.black.opacity(0.42)
             : Color.white.opacity(0.72)
-    }
-
-    private var bottomTextColor: Color {
-        theme.isDark
-            ? Color.white.opacity(0.90)
-            : Color(red: 0.02, green: 0.24, blue: 0.32).opacity(0.88)
     }
 
     private var addButton: some View {
@@ -539,54 +499,59 @@ private struct PlanHydrationCarouselCard: View {
     private func addWater() {
         HapticManager.shared.impact(.medium)
         ProcessSoundPlayer.playPouringWater()
-        hydrationStore.addWater(
-            milliliters: 500,
+        // Premier geste : part du niveau affiché (app ou HealthKit), puis +500 ml.
+        let baseline = effectiveMilliliters
+        if hydrationStore.hasLocalAdjustments(for: selectedDate) {
+            hydrationStore.addWater(
+                milliliters: 500,
+                for: selectedDate,
+                dayId: dayId,
+                targetMilliliters: targetMilliliters
+            )
+        } else {
+            hydrationStore.setMilliliters(
+                baseline + 500,
+                for: selectedDate,
+                dayId: dayId,
+                targetMilliliters: targetMilliliters
+            )
+        }
+    }
+
+    private func removeWater() {
+        guard canRemoveWater else { return }
+        HapticManager.shared.impact(.light)
+        let baseline = effectiveMilliliters
+        hydrationStore.setMilliliters(
+            max(0, baseline - 500),
             for: selectedDate,
             dayId: dayId,
             targetMilliliters: targetMilliliters
         )
-        waterEngine.bumpWave()
     }
 
-    private func waterInteractionGesture(in size: CGSize) -> some Gesture {
-        DragGesture(minimumDistance: 0, coordinateSpace: .local)
-            .onChanged { value in
-                if !isDraggingWater {
-                    isDraggingWater = true
-                    waterEngine.beginInteraction(at: value.location, in: size)
-                } else {
-                    waterEngine.updateInteraction(at: value.location, in: size)
-                }
-            }
-            .onEnded { _ in
-                isDraggingWater = false
-                waterEngine.endInteraction()
-            }
+    private func resetWater() {
+        HapticManager.shared.selection()
+        hydrationStore.resetToday(for: selectedDate, dayId: dayId)
     }
 
-    private func updateMotionEngineState() {
-        if isMotionActive {
-            waterEngine.start()
-        } else {
-            waterEngine.stop()
-        }
-    }
-
-    private func formattedMilliliters(_ value: Int) -> String {
+    private func formatLiters(_ milliliters: Int) -> String {
+        let liters = Double(milliliters) / 1000.0
         let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "fr_FR")
         formatter.numberStyle = .decimal
-        formatter.groupingSeparator = " "
-        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 1
+        return formatter.string(from: NSNumber(value: liters)) ?? String(format: "%.1f", liters)
     }
 
     private func amountLabelY(in size: CGSize) -> CGFloat {
         guard size.width > 0, size.height > 0 else { return PlanMealCarouselLayout.cardHeight * 0.5 }
 
-        let fill = max(0.08, progress)
-        let depth = fill * size.height
+        let depth = animatedFill * size.height
         let restY = size.height - depth
         let surfaceY = min(size.height - 1, max(1, restY))
-        return min(size.height - 34, max(42, surfaceY + 30))
+        return min(size.height - 28, max(42, surfaceY + 30))
     }
 }
 
@@ -596,12 +561,10 @@ private struct PlanHydrationCardWaterShape: Shape {
     var pitch: CGFloat
     var wavePhase: CGFloat
 
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(fillLevel, wavePhase) }
-        set {
-            fillLevel = newValue.first
-            wavePhase = newValue.second
-        }
+    /// Only the fill level interpolates — wave/tilt stay live and snappy.
+    var animatableData: CGFloat {
+        get { fillLevel }
+        set { fillLevel = newValue }
     }
 
     func path(in rect: CGRect) -> Path {
@@ -663,7 +626,7 @@ private struct PlanMealCatalogBrowseCard: View {
             onTap()
         } label: {
             VStack(spacing: 12) {
-                Text("Toutes les recettes")
+                Text("Recettes Debloat")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                     .multilineTextAlignment(.center)
@@ -696,7 +659,7 @@ private struct PlanMealCatalogBrowseCard: View {
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .mealCatalog, namespace: zoomNamespace)
-        .accessibilityLabel("Voir tous les repas debloat du catalogue")
+        .accessibilityLabel("Ouvrir le catalogue d’aliments pour un visage dégonflé")
     }
 
     @ViewBuilder

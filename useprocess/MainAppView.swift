@@ -11,15 +11,12 @@ private struct RequiredEveningCheckInTarget: Identifiable, Equatable {
     }
 }
 
-/// Shell principal — tab bar Bevel (liquid glass iOS 26 + fallback flottant).
+/// Shell principal — tab bar (Accueil · Process IA · Streak · Réglages).
 struct MainAppView: View {
-    @Namespace private var coachZoomNamespace
-
     @State private var selectedSection: ProcessMainSection = .plan
-    @State private var isCoachPresented = false
+    @State private var tabBeforeCoach: ProcessMainSection = .plan
     @State private var requiredEveningCheckIn: RequiredEveningCheckInTarget?
     @State private var lastPresentedEveningCheckInDayKey: String?
-    @State private var tabBeforeCoach: ProcessMainSection = .plan
     @State private var coachViewModel = CoachChatViewModel()
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var coachTracker = CoachPresentationTracker.shared
@@ -27,6 +24,10 @@ struct MainAppView: View {
     @Bindable private var screenFlash = FaceScanScreenFlash.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.appTheme) private var theme
+
+    private var isCoachTabActive: Bool {
+        selectedSection == .coach
+    }
 
     var body: some View {
         ZStack {
@@ -45,18 +46,6 @@ struct MainAppView: View {
                 .processClearUIKitHostingBackground()
         }
         .animation(.easeInOut(duration: 0.22), value: screenFlash.isActive)
-        .fullScreenCover(isPresented: $isCoachPresented) {
-            if isCoachPresented {
-                CoachFullScreenPresentationView(
-                    selectedSection: $selectedSection,
-                    viewModel: coachViewModel,
-                    onDismiss: dismissCoachPresentation,
-                    onOpenProfile: openProfileFromCoach,
-                    onOpenWelcomePlan: openWelcomePlanFromCoach
-                )
-                .processCoachZoomTransition(namespace: coachZoomNamespace)
-            }
-        }
         .sheet(item: $requiredEveningCheckIn, onDismiss: handleEveningCheckInDismiss) { target in
             ProcessEveningCheckInSheet(
                 targetDate: target.date,
@@ -71,29 +60,25 @@ struct MainAppView: View {
         }
         .onAppear {
             _ = UserSessionCoordinator.shared
-            CoachPresentationTracker.shared.isCoachPresented = isCoachPresented
+            syncCoachPresentationState()
             evaluateRequiredEveningCheckIn()
         }
-        .onChange(of: isCoachPresented) { _, presented in
-            CoachPresentationTracker.shared.isCoachPresented = presented
-            if !presented {
-                CoachPresentationTracker.shared.isCoachChatActive = false
-                HapticManager.shared.endTypewriterSession()
-                evaluateRequiredEveningCheckIn()
+        .onChange(of: selectedSection) { oldValue, newValue in
+            if newValue == .coach, oldValue != .coach {
+                tabBeforeCoach = oldValue
             }
+            handleSectionChange(to: newValue)
         }
         .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
             if completed {
-                WelcomePlanStore.shared.reloadForCurrentUser()
-                evaluateRequiredEveningCheckIn()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    evaluateRequiredEveningCheckIn()
+                }
             }
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             evaluateRequiredEveningCheckIn()
-        }
-        .onChange(of: selectedSection) { oldValue, newValue in
-            handleSectionChange(from: oldValue, to: newValue)
         }
         .onChange(of: planBridge.shouldOpenCoach) { _, should in
             guard should else { return }
@@ -121,41 +106,23 @@ struct MainAppView: View {
         }
     }
 
-    // MARK: - Instagram-style floating tab bar
+    // MARK: - Tab shell
 
     private var igTabShell: some View {
-        ProcessIGTabShell(
-            selectedSection: $selectedSection,
-            coachZoomNamespace: coachZoomNamespace,
-            onPresentCoach: openCoachFromAccessory
-        ) {
-            if #available(iOS 26.0, *) {
-                TabView(selection: $selectedSection) {
-                    Tab("", systemImage: ProcessMainSection.plan.icon, value: ProcessMainSection.plan) {
-                        planTabRoot
-                            .processHideNativeTabBar()
-                    }
-                    .accessibilityLabel(ProcessMainSection.plan.label)
-
-                    Tab("", systemImage: ProcessMainSection.profile.icon, value: ProcessMainSection.profile) {
-                        profileTabRoot
-                            .processHideNativeTabBar()
-                    }
-                    .accessibilityLabel(ProcessMainSection.profile.label)
-                }
-                .processHideNativeTabBar()
-                .background(Color.clear)
-                .tint(theme.primaryText)
-            } else {
-                Group {
-                    switch selectedSection {
-                    case .plan, .coach:
-                        planTabRoot
-                    case .profile:
-                        profileTabRoot
-                    }
+        ProcessIGTabShell(selectedSection: $selectedSection) {
+            Group {
+                switch selectedSection {
+                case .plan:
+                    planTabRoot
+                case .coach:
+                    coachTabRoot
+                case .statistics:
+                    statisticsTabRoot
+                case .profile:
+                    profileTabRoot
                 }
             }
+            .background(Color.clear)
         }
     }
 
@@ -166,36 +133,62 @@ struct MainAppView: View {
             selectedSection: $selectedSection,
             isTabActive: selectedSection == .plan
         )
-            .background(Color.clear)
+        .background(Color.clear)
+    }
+
+    private var coachTabRoot: some View {
+        CoachChatView(
+            selectedSection: $selectedSection,
+            viewModel: coachViewModel,
+            isTabActive: isCoachTabActive,
+            onDismiss: dismissCoachTab,
+            onOpenProfile: openProfile,
+            onOpenWelcomePlan: openWelcomePlanFromCoach
+        )
+        .background(Color.clear)
     }
 
     private var profileTabRoot: some View {
-        ProcessProfileView(
+        ProcessProfileSettingsTabView(
             selectedSection: $selectedSection,
             isTabActive: selectedSection == .profile
         )
+            .environmentObject(UnifiedProfileService.shared)
+            .environmentObject(HealthManager.shared)
             .background(Color.clear)
+    }
+
+    private var statisticsTabRoot: some View {
+        ProcessProfileView(
+            selectedSection: $selectedSection,
+            isTabActive: selectedSection == .statistics
+        )
+        .background(Color.clear)
     }
 
     // MARK: - Navigation
 
-    private func handleSectionChange(from oldValue: ProcessMainSection, to newValue: ProcessMainSection) {
+    private func handleSectionChange(to newValue: ProcessMainSection) {
         resignFirstResponder()
+        syncCoachPresentationState()
 
-        if newValue == .profile {
+        if newValue == .statistics {
             ProcessPerformanceTrace.beginProfileOpen()
         }
-        guard newValue == .coach else { return }
-        tabBeforeCoach = oldValue.isShellTab ? oldValue : tabBeforeCoach
-        selectedSection = tabBeforeCoach
-        openCoach()
+        if newValue == .coach {
+            ProcessPerformanceTrace.beginCoachOpen()
+        }
+        if newValue != .coach {
+            HapticManager.shared.endTypewriterSession()
+            evaluateRequiredEveningCheckIn()
+        }
     }
 
-    private func openCoachFromAccessory() {
-        if selectedSection.isShellTab {
-            tabBeforeCoach = selectedSection
+    private func syncCoachPresentationState() {
+        CoachPresentationTracker.shared.isCoachPresented = isCoachTabActive
+        if !isCoachTabActive {
+            CoachPresentationTracker.shared.isCoachChatActive = false
         }
-        presentCoachSurface()
     }
 
     private func queueCoachPresentationFromBridge() {
@@ -203,21 +196,21 @@ struct MainAppView: View {
             planBridge.shouldOpenCoach = true
             return
         }
-        let delay: TimeInterval = planBridge.hasPendingFaceScanHandoff ? 0 : 0.12
+        let delay: TimeInterval = planBridge.hasPendingFaceScanHandoff ? 0 : 0.08
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            presentCoachSurface()
+            openCoachTab()
         }
     }
 
     private func flushQueuedCoachPresentationIfNeeded() {
         guard planBridge.shouldOpenCoach else { return }
         planBridge.shouldOpenCoach = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
-            presentCoachSurface()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            openCoachTab()
         }
     }
 
-    private func presentCoachSurface() {
+    private func openCoachTab() {
         if coachTracker.isMealDetailPresented {
             planBridge.shouldOpenCoach = true
             return
@@ -226,20 +219,23 @@ struct MainAppView: View {
         resignFirstResponder()
         HapticManager.shared.impact(.light)
 
-        if isCoachPresented {
-            return
+        if selectedSection != .coach {
+            tabBeforeCoach = selectedSection
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = .coach
+            }
+        } else {
+            Task { await coachViewModel.consumePendingNavigationIfNeeded() }
         }
-
-        ProcessPerformanceTrace.beginCoachOpen()
-        isCoachPresented = true
     }
 
-    private func openCoach() {
-        presentCoachSurface()
-    }
-
-    private func presentCoach() {
-        presentCoachSurface()
+    private func dismissCoachTab() {
+        resignFirstResponder()
+        HapticManager.shared.endTypewriterSession()
+        HapticManager.shared.impact(.light)
+        withAnimation(ProcessGlass.spring) {
+            selectedSection = tabBeforeCoach
+        }
     }
 
     private func handleEveningCheckInDismiss() {
@@ -260,7 +256,7 @@ struct MainAppView: View {
             requiredEveningCheckIn = nil
             return
         }
-        guard !isCoachPresented else { return }
+        guard !isCoachTabActive else { return }
         guard let target = firstRequiredEveningCheckInTarget() else {
             requiredEveningCheckIn = nil
             return
@@ -270,14 +266,11 @@ struct MainAppView: View {
         }
     }
 
-    /// Un seul rappel soft : hier. Pas de rattrapage forcé des jours plus anciens.
     private func firstRequiredEveningCheckInTarget(
         now: Date = Date(),
         calendar: Calendar = .current
     ) -> RequiredEveningCheckInTarget? {
         let eveningStore = ProcessEveningCheckInStore.shared
-        eveningStore.reload()
-        ProcessActivityStatusStore.shared.reload()
 
         guard let plan = WelcomePlanStore.shared.plan else { return nil }
         let today = calendar.startOfDay(for: now)
@@ -290,29 +283,16 @@ struct MainAppView: View {
         return target
     }
 
-    private func dismissCoachPresentation() {
-        isCoachPresented = false
-    }
-
-    private func openProfileFromCoach() {
-        dismissCoachPresentation()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            openProfile()
-        }
-    }
-
     private func openWelcomePlanFromCoach() {
-        presentCoachSurface()
+        withAnimation(ProcessGlass.spring) {
+            selectedSection = .plan
+        }
     }
 
     private func openProfile() {
         withAnimation(ProcessGlass.spring) {
             selectedSection = .profile
         }
-    }
-
-    private func openWelcomePlanConfiguration() {
-        presentCoachSurface()
     }
 
     private func resignFirstResponder() {

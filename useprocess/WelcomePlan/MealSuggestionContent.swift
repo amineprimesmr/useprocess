@@ -33,6 +33,23 @@ struct MealSuggestionItem: Codable, Equatable, Identifiable, Hashable {
     var ingredientDisplayLine: String {
         MealSuggestionItemDisplay.fullLine(quantity: quantity, name: name)
     }
+
+    /// Boisson (eau, eau de coco…) — hors repas : gérée via l’hydratation Accueil.
+    var isBeverageIngredient: Bool {
+        let role = role.lowercased()
+        if role.contains("hydrat") { return true }
+
+        let name = name
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
+            .lowercased()
+        if name.contains("eau de coco") || name.contains("eau coco") { return true }
+        if name.contains("verre") && name.contains("eau") { return true }
+        if name.hasPrefix("eau ") || name == "eau" { return true }
+        if name.contains("eau filtree") || name.contains("eau minerale") || name.contains("eau citron") {
+            return true
+        }
+        return false
+    }
 }
 
 enum MealSuggestionItemDisplay {
@@ -127,6 +144,11 @@ struct MealSuggestionContent: Codable, Equatable {
     }
 
     var timeSlot: MealTimeSlot { MealTimeSlot.from(mealType: mealType) }
+
+    /// Ingrédients alimentaires uniquement — exclut eau / eau de coco (hydratation Accueil).
+    var foodItems: [MealSuggestionItem] {
+        items.filter { !$0.isBeverageIngredient }
+    }
 
     var resolvedSubScores: MealSubScores {
         if let subScores { return subScores }
@@ -432,17 +454,21 @@ enum MealSuggestionParser {
     static func stripStructuredMealBlock(from raw: String) -> String {
         let kept = raw
             .components(separatedBy: .newlines)
-            .filter { line in
+            .compactMap { line -> String? in
                 let trimmed = line.trimmingCharacters(in: .whitespaces)
-                guard !trimmed.isEmpty else { return false }
+                guard !trimmed.isEmpty else { return nil }
                 let upper = trimmed.uppercased()
-                if upper.hasPrefix("INTRO:") { return true }
-                if upper.hasPrefix("MEAL_") || upper.hasPrefix("NOM:") || upper.hasPrefix("TYPE:") { return false }
-                if upper.hasPrefix("SCORE") || upper.hasPrefix("ITEM_") || upper.hasPrefix("INGREDIENT_") { return false }
-                if upper.hasPrefix("PREP") || upper.hasPrefix("TIP:") || upper.hasPrefix("CONSEIL:") { return false }
-                if upper.hasPrefix("TAG_") || upper.hasPrefix("IMAGE_") { return false }
-                if upper.hasPrefix("ACTION_") { return false }
-                return true
+                if upper.hasPrefix("INTRO:") {
+                    return labeledValue(in: trimmed, labels: ["INTRO"])
+                }
+                if upper.hasPrefix("MEAL_") || upper.hasPrefix("NOM:") || upper.hasPrefix("TYPE:") { return nil }
+                if upper.hasPrefix("SCORE") || upper.hasPrefix("ITEM_") || upper.hasPrefix("INGREDIENT_") { return nil }
+                if upper.hasPrefix("PREP") || upper.hasPrefix("TIP:") || upper.hasPrefix("CONSEIL:") { return nil }
+                if upper.hasPrefix("TAG_") || upper.hasPrefix("IMAGE_") { return nil }
+                if upper.hasPrefix("ACTION_") { return nil }
+                if upper.hasPrefix("FOLLOW_UP") || upper.hasPrefix("DEEP_LINK") || upper.hasPrefix("FOOD_LOG") { return nil }
+                if upper.hasPrefix("MEMORY_UPDATE") || upper.hasPrefix("ARTIFACT") || upper.hasPrefix("REASONING") { return nil }
+                return trimmed
             }
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -643,14 +669,14 @@ enum MealPreparationStepsParser {
         return parts
     }
 
+    /// Séparateur d’étapes volontaire (` — `), jamais les tirets de durée (`4–5 min`).
     private static func extractDashSeparatedSteps(from text: String) -> [String]? {
-        guard text.contains("—") || text.contains("–") else { return nil }
+        let separator = " — "
+        guard text.contains(separator) else { return nil }
 
         let parts = text
-            .replacingOccurrences(of: " – ", with: " — ")
-            .replacingOccurrences(of: "–", with: "—")
-            .split(separator: "—", omittingEmptySubsequences: true)
-            .map { cleanStep(String($0)) }
+            .components(separatedBy: separator)
+            .map(cleanStep)
             .filter { !$0.isEmpty }
 
         guard parts.count >= 2 else { return nil }

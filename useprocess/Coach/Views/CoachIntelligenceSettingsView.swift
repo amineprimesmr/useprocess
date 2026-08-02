@@ -242,7 +242,7 @@ struct CoachIntelligenceSettingsView: View {
             VStack(spacing: 0) {
                 settingsToggleRow(
                     title: "Brief matin",
-                    subtitle: "Une notification quotidienne : plan du jour, readiness, scan si besoin.",
+                    subtitle: "Une notification quotidienne : plan du jour, sommeil, scan si besoin.",
                     isOn: Binding(
                         get: { CoachDailyRhythmService.morningOutlookEnabled },
                         set: { CoachDailyRhythmService.morningOutlookEnabled = $0 }
@@ -299,14 +299,6 @@ struct CoachIntelligenceSettingsView: View {
             sectionTitle("Personnalisation")
 
             VStack(spacing: 0) {
-                settingsToggleRow(
-                    title: "Étapes de réflexion étendues",
-                    subtitle: "Afficher les étapes de raisonnement pour chaque réponse par défaut.",
-                    isOn: $store.showsExtendedReasoning
-                )
-
-                settingsDivider
-
                 settingsToggleRow(
                     title: "Suivis suggérés",
                     subtitle: "Afficher les questions de suivi rapide après chaque réponse.",

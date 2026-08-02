@@ -90,7 +90,7 @@ final class CoachIntelligenceSettingsStore {
         isEnabled = UserDefaults.standard.object(forKey: "\(prefix).enabled") as? Bool ?? true
         let personalityRaw = UserDefaults.standard.string(forKey: "\(prefix).personality") ?? CoachIntelligencePersonality.dataNerd.rawValue
         personality = CoachIntelligencePersonality(rawValue: personalityRaw) ?? .dataNerd
-        showsExtendedReasoning = UserDefaults.standard.object(forKey: "\(prefix).extendedReasoning") as? Bool ?? true
+        showsExtendedReasoning = false
         showsSuggestedFollowUps = UserDefaults.standard.object(forKey: "\(prefix).followUps") as? Bool ?? true
         sharesReproductiveHealth = UserDefaults.standard.object(forKey: "\(prefix).reproductiveHealth") as? Bool ?? false
 

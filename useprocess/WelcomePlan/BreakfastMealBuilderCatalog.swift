@@ -4,7 +4,6 @@ import Foundation
 // MARK: - Catégories
 
 enum BreakfastBuilderCategory: String, CaseIterable, Identifiable {
-    case hydration
     case protein
     case fruit
     case vegetable
@@ -14,7 +13,6 @@ enum BreakfastBuilderCategory: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .hydration: return "Hydratation"
         case .protein: return "Protéine"
         case .fruit: return "Fruits potassium"
         case .vegetable: return "Légumes frais"
@@ -24,7 +22,6 @@ enum BreakfastBuilderCategory: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .hydration: return "Obligatoire — au réveil"
         case .protein: return "Obligatoire — 1 choix"
         case .fruit: return "Optionnel — max 2"
         case .vegetable: return "Optionnel — max 2"
@@ -34,7 +31,6 @@ enum BreakfastBuilderCategory: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .hydration: return "drop.fill"
         case .protein: return "bolt.fill"
         case .fruit: return "leaf.fill"
         case .vegetable: return "carrot.fill"
@@ -44,13 +40,13 @@ enum BreakfastBuilderCategory: String, CaseIterable, Identifiable {
 
     var maxSelections: Int {
         switch self {
-        case .hydration, .protein: return 1
+        case .protein: return 1
         case .fruit, .vegetable, .finish: return 2
         }
     }
 
     var isRequired: Bool {
-        self == .hydration || self == .protein
+        self == .protein
     }
 }
 
@@ -109,7 +105,6 @@ enum BreakfastMealBuilderCatalog {
 
     static var defaultSelections: BreakfastBuilderSelections {
         BreakfastBuilderSelections(
-            hydration: "water_salt",
             protein: "eggs_2",
             fruits: [],
             vegetables: [],
@@ -126,8 +121,8 @@ enum BreakfastMealBuilderCatalog {
             mealType: MealTimeSlot.breakfast.rawValue,
             items: items,
             prepMinutes: 12,
-            prepSummary: "Compose ton petit-déj debloat — protéine + hydratation + potassium.",
-            coachTip: "Eau salée en premier. Pas de pain ni céréales industrielles au matin.",
+            prepSummary: "Compose ton petit-déj debloat — protéine + potassium, sans boisson dans le repas.",
+            coachTip: "Pas de pain ni céréales industrielles au matin. L’eau se gère à part sur l’Accueil.",
             tags: ["builder", "debloat", "petit-dejeuner"],
             imageAssetName: heroImageAsset(for: selections)
         )
@@ -176,50 +171,8 @@ enum BreakfastMealBuilderCatalog {
 
     // MARK: - Data
 
-    private static let allOptions: [BreakfastBuilderOption] = hydrationOptions
-        + proteinOptions + fruitOptions + vegetableOptions + finishOptions
-
-    private static let hydrationOptions: [BreakfastBuilderOption] = [
-        make(
-            id: "water_salt",
-            category: .hydration,
-            cardTitle: "eau\nsalée",
-            badge: "500 ml",
-            itemName: ProcessHydrationGuide.morningWaterItemName,
-            quantity: ProcessHydrationGuide.morningWaterLabel,
-            role: "Hydratation",
-            layer: "breakfast_layer_water",
-            preview: "breakfast_card_water_salt",
-            calories: 0,
-            placement: .init(x: 0.22, y: 0.38, scale: 0.72, zIndex: 1)
-        ),
-        make(
-            id: "water_lemon",
-            category: .hydration,
-            cardTitle: "eau\ncitron",
-            badge: "500 ml",
-            itemName: "2 grands verres d'eau filtrée + citron frais",
-            quantity: ProcessHydrationGuide.morningWaterLabel,
-            role: "Hydratation",
-            layer: "breakfast_layer_water_lemon",
-            preview: "breakfast_card_water_lemon",
-            calories: 5,
-            placement: .init(x: 0.22, y: 0.38, scale: 0.72, zIndex: 1)
-        ),
-        make(
-            id: "water_mineral",
-            category: .hydration,
-            cardTitle: "eau\nminérale",
-            badge: "500 ml",
-            itemName: "Eau minérale légère (Rozana / Volvic)",
-            quantity: ProcessHydrationGuide.morningWaterLabel,
-            role: "Hydratation",
-            layer: "breakfast_layer_water_bottle",
-            preview: "breakfast_card_water_mineral",
-            calories: 0,
-            placement: .init(x: 0.24, y: 0.40, scale: 0.68, zIndex: 1)
-        )
-    ]
+    private static let allOptions: [BreakfastBuilderOption] =
+        proteinOptions + fruitOptions + vegetableOptions + finishOptions
 
     private static let proteinOptions: [BreakfastBuilderOption] = [
         make(
@@ -458,14 +411,13 @@ enum BreakfastMealBuilderCatalog {
 // MARK: - Sélections
 
 struct BreakfastBuilderSelections: Equatable {
-    var hydration: String
     var protein: String
     var fruits: Set<String>
     var vegetables: Set<String>
     var finishes: Set<String>
 
     var allSelectedOptionIDs: [String] {
-        [hydration, protein]
+        [protein]
             + fruits.sorted()
             + vegetables.sorted()
             + finishes.sorted()
@@ -477,7 +429,6 @@ struct BreakfastBuilderSelections: Equatable {
 
     func isSelected(_ option: BreakfastBuilderOption) -> Bool {
         switch option.category {
-        case .hydration: return hydration == option.id
         case .protein: return protein == option.id
         case .fruit: return fruits.contains(option.id)
         case .vegetable: return vegetables.contains(option.id)
@@ -488,8 +439,6 @@ struct BreakfastBuilderSelections: Equatable {
     mutating func toggle(_ option: BreakfastBuilderOption) {
         let max = option.category.maxSelections
         switch option.category {
-        case .hydration:
-            hydration = option.id
         case .protein:
             protein = option.id
         case .fruit:

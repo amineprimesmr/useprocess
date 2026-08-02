@@ -24,9 +24,16 @@ final class FaceScanVideoRecorder {
     }
 
     func start(at url: URL) {
-        cancel()
-        outputURL = url
-        try? FileManager.default.removeItem(at: url)
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.assetWriter?.cancelWriting()
+            if let existing = self.outputURL, existing != url {
+                try? FileManager.default.removeItem(at: existing)
+            }
+            self.cleanup()
+            self.outputURL = url
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     func append(pixelBuffer: CVPixelBuffer, timestamp: TimeInterval) {
@@ -51,18 +58,27 @@ final class FaceScanVideoRecorder {
     func finish() async -> URL? {
         await withCheckedContinuation { continuation in
             queue.async { [weak self] in
-                continuation.resume(returning: self?.finishLocked())
+                guard let self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                self.finishLocked { url in
+                    continuation.resume(returning: url)
+                }
             }
         }
     }
 
+    /// Never blocks the caller — tearDown runs on Main and must not `queue.sync`
+    /// while `finishWriting` may still be in flight on this queue.
     func cancel() {
-        queue.sync {
-            assetWriter?.cancelWriting()
-            if let url = outputURL {
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.assetWriter?.cancelWriting()
+            if let url = self.outputURL {
                 try? FileManager.default.removeItem(at: url)
             }
-            cleanup()
+            self.cleanup()
         }
     }
 
@@ -147,28 +163,39 @@ final class FaceScanVideoRecorder {
         }
     }
 
-    private func finishLocked() -> URL? {
-        defer { cleanup() }
-        guard let writer = assetWriter, let input = videoInput, let url = outputURL else { return nil }
+    private func finishLocked(completion: @escaping (URL?) -> Void) {
+        guard let writer = assetWriter, let input = videoInput, let url = outputURL else {
+            cleanup()
+            completion(nil)
+            return
+        }
         guard sessionStarted else {
             try? FileManager.default.removeItem(at: url)
-            return nil
+            cleanup()
+            completion(nil)
+            return
         }
+
+        // Clear local refs before async finalize so a concurrent cancel() is a no-op.
+        assetWriter = nil
+        videoInput = nil
+        adaptor = nil
+        outputURL = nil
+        sessionStarted = false
+        firstTimestamp = nil
+        lastSampledTargetIndex = -1
+        writtenFrameCount = -1
 
         input.markAsFinished()
-        let group = DispatchGroup()
-        group.enter()
         writer.finishWriting {
-            group.leave()
+            guard writer.status == .completed else {
+                try? FileManager.default.removeItem(at: url)
+                completion(nil)
+                return
+            }
+            FaceScanImageStore.finalizeRecordedVideo(at: url)
+            completion(url)
         }
-        group.wait()
-
-        guard writer.status == .completed else {
-            try? FileManager.default.removeItem(at: url)
-            return nil
-        }
-        FaceScanImageStore.finalizeRecordedVideo(at: url)
-        return url
     }
 
     private func cleanup() {

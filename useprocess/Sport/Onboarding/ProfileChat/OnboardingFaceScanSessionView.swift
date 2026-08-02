@@ -14,68 +14,56 @@ struct OnboardingFaceScanSessionView: View {
     var onResultReady: (FaceScanResult) -> Void
     var onContinueAfterResults: () -> Void
 
-    @State private var phase: Phase = .capturing
+    @State private var captureInput: CaptureInput?
     @State private var completedResult: FaceScanResult?
 
-    private enum Phase {
-        case capturing
-        case analyzing(FaceScanCapturePayload, FaceWellnessMarkers)
-        case results
+    private struct CaptureInput {
+        let payload: FaceScanCapturePayload
+        let markers: FaceWellnessMarkers
     }
 
     var body: some View {
-        Group {
-            switch phase {
-            case .capturing:
-                FaceScanCaptureScreen(
-                    presentation: .fullScreen,
-                    onBack: onCancel,
-                    showsMediaImport: false,
-                    allowsScreenFlash: true
-                ) { payload, markers in
-                    let calibrated = OnboardingFaceScanMarkerCalibration.calibrate(markers)
-                    withAnimation(.easeInOut(duration: 0.28)) {
-                        phase = .analyzing(payload, calibrated)
-                    }
-                }
-                .transition(.opacity)
-
-            case .analyzing(let payload, let markers):
+        ZStack {
+            if let input = captureInput, completedResult == nil {
                 FaceScanAnalysisFlowView(
-                    payload: payload,
-                    markers: markers,
+                    payload: input.payload,
+                    markers: input.markers,
                     profile: profileService.currentProfile,
                     showsResultScreen: false,
                     onDismiss: {},
                     onComplete: { result in
                         completedResult = result
                         onResultReady(result)
-                        withAnimation(.easeInOut(duration: 0.28)) {
-                            phase = .results
-                        }
                     }
                 )
                 .transition(.opacity)
-
-            case .results:
-                if let result = completedResult {
-                    OnboardingDedicatedFaceScanResultsView(
-                        result: result,
-                        isSigningIn: isSigningIn,
-                        onContinue: onContinueAfterResults
-                    )
-                    .transition(.opacity)
-                }
+                .zIndex(1)
+            } else if let result = completedResult {
+                OnboardingDedicatedFaceScanResultsView(
+                    result: result,
+                    isSigningIn: isSigningIn,
+                    onContinue: onContinueAfterResults
+                )
+                .transition(.opacity)
+                .zIndex(2)
+            } else {
+                FaceScanCaptureScreen(
+                    presentation: .fullScreen,
+                    onBack: onCancel,
+                    showsMediaImport: false,
+                    allowsScreenFlash: true,
+                    onContinue: advanceToAnalysis
+                )
+                .transition(.opacity)
+                .zIndex(0)
             }
         }
-        .animation(.easeInOut(duration: 0.28), value: phaseToken)
+        .animation(.easeInOut(duration: 0.24), value: captureInput?.payload.scanId)
+        .animation(.easeInOut(duration: 0.24), value: completedResult?.id)
     }
 
-    private var phaseToken: String {
-        switch phase {
-        case .capturing: return "capturing"
-        case .analyzing(let payload, _): return "analyzing-\(payload.scanId)"
-        case .results: return "results-\(completedResult?.id ?? "")"
-        }
+    @MainActor
+    private func advanceToAnalysis(_ payload: FaceScanCapturePayload, _ markers: FaceWellnessMarkers) {
+        captureInput = CaptureInput(payload: payload, markers: markers)
     }
 }

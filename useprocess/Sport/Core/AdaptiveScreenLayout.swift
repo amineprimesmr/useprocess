@@ -16,12 +16,15 @@ enum AdaptiveScreenLayout {
         height: CGFloat,
         horizontalSizeClass: UserInterfaceSizeClass?
     ) -> CGFloat {
+        let safeWidth = width.isFinite ? max(width, 0) : 0
+        let safeHeight = height.isFinite ? max(height, 0) : 0
+
         if isRegularWidth(horizontalSizeClass) {
-            let horizontalLimit = width - 96
-            let verticalLimit = height * 0.40
+            let horizontalLimit = safeWidth - 96
+            let verticalLimit = safeHeight * 0.40
             return min(380, max(300, min(horizontalLimit, verticalLimit)))
         }
-        return min(width - 56, 296)
+        return max(200, min(safeWidth - 56, 296))
     }
 
     static func faceScanCameraZoom(horizontalSizeClass: UserInterfaceSizeClass?) -> CGFloat {

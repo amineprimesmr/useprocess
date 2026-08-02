@@ -160,11 +160,11 @@ struct PaywallSpinWinbackView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 24)
-                .padding(.top, max(4, OnboardingConstants.backOnlyContentTopInset - 38))
+                .padding(.top, max(2, OnboardingConstants.backOnlyContentTopInset - 56))
 
             rewardOfferHero
                 .padding(.horizontal, 40)
-                .padding(.top, 20)
+                .padding(.top, 16)
 
             rewardInlinePricing
                 .padding(.top, 26)
@@ -174,7 +174,7 @@ struct PaywallSpinWinbackView: View {
                 .padding(.horizontal, 32)
 
             PaywallSpinOfferCountdown(endDate: offerCountdownEndDate)
-                .padding(.top, 22)
+                .padding(.top, 44)
 
             Spacer(minLength: 12)
                 .frame(maxHeight: .infinity)
@@ -570,9 +570,16 @@ struct PaywallSpinWinbackView: View {
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
 
-                    Text("12 mois • \(SubscriptionConfiguration.winbackAnnualPrice)")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                    (
+                        Text(SubscriptionConfiguration.winbackCompareAtAnnualPrice)
+                            .strikethrough(
+                                true,
+                                color: PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.7)
+                            )
+                        + Text(" • \(SubscriptionConfiguration.winbackAnnualPrice)")
+                    )
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 }
 
                 Spacer(minLength: 8)

@@ -28,14 +28,11 @@ struct PlanFaceDaySection: View {
 
     var body: some View {
         let items = carouselItems
-        let morningMinutes = FaceMorningRoutineCatalog.estimatedMinutes(targets: targets)
 
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
                 title: "Routine quotidienne",
-                trailing: items.isEmpty
-                    ? nil
-                    : "\(items.count) actions · ~\(morningMinutes) min au réveil"
+                trailing: nil
             )
 
             if items.isEmpty {

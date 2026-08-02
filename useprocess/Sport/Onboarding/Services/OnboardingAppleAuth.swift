@@ -11,6 +11,11 @@ enum OnboardingAppleAuth {
         viewModel.commitPendingStepAnswers()
         viewModel.saveProgress()
 
+        guard AppConfiguration.firebaseConfigured else {
+            PostOnboardingActivationService.migrateOnboardingFaceScanData()
+            return
+        }
+
         if AuthUser.current == nil {
             try await signInWithApple(
                 authManager: authManager,

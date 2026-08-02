@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum ProcessActivityStatus: String, Codable, CaseIterable, Identifiable, Equatable {
+enum ProcessActivityStatus: String, nonisolated Codable, CaseIterable, Identifiable, Equatable, Sendable {
     case active
     case sick
     case injured
@@ -63,7 +63,7 @@ enum ProcessActivityStatus: String, Codable, CaseIterable, Identifiable, Equatab
     }
 }
 
-struct ProcessActivityStatusState: Codable, Equatable {
+struct ProcessActivityStatusState: nonisolated Codable, Equatable, Sendable {
     var hasSeenIntro: Bool = false
     var statusByDayKey: [String: String] = [:]
 }

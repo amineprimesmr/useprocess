@@ -163,7 +163,7 @@ struct ProfileProgramDayStrip: View {
                 .foregroundStyle(Color(red: 0.45, green: 0.72, blue: 0.95))
                 .frame(height: 18)
         } else if isValidated {
-            let tint = verdict?.chartColor ?? ProfileProgramDayStripDesign.validatedGreen
+            let tint = verdict?.chartColor ?? ProfileProgramDayStripDesign.validatedAccent
             ZStack {
                 if isSelected {
                     Circle()
@@ -195,7 +195,7 @@ struct ProfileProgramDayStrip: View {
 // MARK: - Design
 
 private enum ProfileProgramDayStripDesign {
-    static let validatedGreen = Color(red: 0.35, green: 0.78, blue: 0.45)
+    static let validatedAccent = ProcessStreakPalette.flame
     static let cellWidth: CGFloat = 44
     static let cellHeight: CGFloat = 56
     static let slotWidth: CGFloat = 50

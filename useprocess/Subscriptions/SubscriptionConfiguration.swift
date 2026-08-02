@@ -63,6 +63,8 @@ enum SubscriptionConfiguration {
 
     /// Winback roue : 1re année à 19,99 € (offre promo ASC `winback_1999` sur l’annuel).
     static let winbackAnnualPrice = "19,99 €"
+    /// Prix annuel barré affiché à côté de l’offre winback.
+    static let winbackCompareAtAnnualPrice = "49,99 €"
     /// Équivalent mensuel affiché (19,99 € / 12).
     static let winbackMonthlyEquivalent = "1,67 €"
     static let winbackOfferID = "winback_1999"

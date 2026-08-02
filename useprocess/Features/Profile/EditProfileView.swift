@@ -1,20 +1,14 @@
 import SwiftUI
 
-/// Hub paramètres — catégories + sous-pages.
+/// Hub réglages modal (depuis Accueil) — même contenu que l’onglet, avec en-tête fermer.
 struct EditProfileView: View {
+    var showsDismissHeader: Bool = true
     var onLogout: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
-    @Bindable private var activityStatusStore = ProcessActivityStatusStore.shared
     @State private var profileStore = SocialProfileStore.shared
-    @State private var showPhotoFlow = false
-    @State private var showActivityStatusSheet = false
-    @State private var activityStatusDate = Calendar.current.startOfDay(for: Date())
-    @State private var photoMenuAnchor = CGPoint(
-        x: UIScreen.main.bounds.midX,
-        y: UIScreen.main.bounds.height * 0.22
-    )
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
@@ -22,99 +16,90 @@ struct EditProfileView: View {
 
     private var initials: String {
         let first = profile?.firstName.first.map(String.init) ?? "?"
-        let last = profile?.lastName?.first.map(String.init) ?? ""
-        return (first + last).uppercased()
+        return first.uppercased()
     }
 
     private var firstName: String {
         let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
             ?? profileStore.profile?.displayName
-            ?? "Mon profil"
-        return name.isEmpty ? "Mon profil" : name
-    }
-
-    private var currentActivityStatus: ProcessActivityStatus {
-        activityStatusStore.status(for: activityStatusDate)
+            ?? "Réglages"
+        return name.isEmpty ? "Réglages" : name
     }
 
     var body: some View {
         VStack(spacing: 0) {
+            if showsDismissHeader {
                 AccountDetailsGlassHeader(
-                    title: nil,
+                    title: "Réglages",
                     onBack: { dismiss() },
-                    onSave: { dismiss() },
-                    saveDisabled: true
+                    showsSave: false
                 )
+            }
 
-                ScrollView {
-                    VStack(spacing: 0) {
-                    VStack(spacing: 14) {
-                        AccountDetailsAvatarSection(
-                            displayName: firstName,
-                            initials: initials,
-                            image: profileStore.profilePhoto,
-                            onChangePhoto: { showPhotoFlow = true }
-                        )
-
-                        ProfileSettingsActivityStatusPill(
-                            status: currentActivityStatus,
-                            action: openActivityStatusSheet
-                        )
-                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    if !showsDismissHeader {
+                        Text("Réglages")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(theme.primaryText)
+                            .padding(.top, 10)
                     }
-                    .frame(maxWidth: .infinity)
+
+                    identityBlock
 
                     ProfileSettingsHubLinksSection()
-                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                        .padding(.top, 20)
 
-                        VStack(spacing: AccountDetailsTheme.rowSpacing) {
-                            AccountDetailsActionButton(title: "Se déconnecter") {
-                                onLogout()
-                            }
-                        }
-                        .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                        .padding(.top, 28)
+                    AccountDetailsActionButton(title: "Se déconnecter") {
+                        onLogout()
                     }
-                    .padding(.bottom, 32)
+                    .padding(.top, 8)
                 }
-                .scrollIndicators(.hidden)
-                .processTransparentScrollSurface()
-        }
-        .toolbar(.hidden, for: .navigationBar)
-        .profilePhotoFlow(
-            isPresented: $showPhotoFlow,
-            menuAnchor: photoMenuAnchor,
-            hasExistingPhoto: profileStore.hasProfilePhoto,
-            onApply: { image in
-                withAnimation(ProfileEditTheme.spring) {
-                    profileStore.applyProfilePhoto(image)
-                }
-            },
-            onDelete: {
-                withAnimation(ProfileEditTheme.spring) {
-                    profileStore.removeAllPhotos()
-                }
+                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                .padding(.bottom, 32)
             }
-        )
+            .scrollIndicators(.hidden)
+            .processTransparentScrollSurface()
+            .processAdoptForIGTabBar()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.clear)
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .processClearUIKitHostingBackground()
         .task {
             if profileService.currentProfile == nil {
                 await profileService.loadProfile()
             }
             profileStore.bind(unified: profileService.currentProfile)
+            FaceScanHistoryStore.shared.reloadForUser(
+                userId: UserScopedStorage.currentUserId()
+            )
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
-            activityStatusStore.reload()
-        }
-        .sheet(isPresented: $showActivityStatusSheet) {
-            ProcessActivityStatusSheet(selectedDate: $activityStatusDate)
         }
     }
 
-    private func openActivityStatusSheet() {
-        HapticManager.shared.impact(.light)
-        activityStatusDate = Calendar.current.startOfDay(for: Date())
-        showActivityStatusSheet = true
+    private var identityBlock: some View {
+        VStack(spacing: 12) {
+            ProfileFirstScanAvatar(
+                size: 132,
+                isPlaybackActive: true,
+                initials: initials
+            )
+            .shadow(
+                color: Color.black.opacity(theme.isDark ? 0.28 : 0.08),
+                radius: 14,
+                y: 8
+            )
+
+            Text(firstName)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(theme.primaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, showsDismissHeader ? 4 : 2)
+        .padding(.bottom, 4)
     }
 }

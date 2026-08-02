@@ -27,6 +27,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     @Binding var isDeviceSupported: Bool
     @Binding var isLowLight: Bool
     var isPreviewOnly: Bool = false
+    var isSessionRunning: Bool = true
     var allowsScreenFlash: Bool = true
     var cameraZoom: CGFloat = 1
     var onComplete: (FaceScanCapturePayload) -> Void
@@ -86,7 +87,12 @@ struct FaceMeshScanView: UIViewRepresentable {
             context.coordinator.isDeviceSupported = true
         }
 
-        context.coordinator.startSession(on: view)
+        context.coordinator.isSessionRunning = isSessionRunning
+        if isSessionRunning {
+            context.coordinator.startSession(on: view)
+        } else {
+            context.coordinator.isSessionPaused = true
+        }
         return view
     }
 
@@ -95,9 +101,22 @@ struct FaceMeshScanView: UIViewRepresentable {
         context.coordinator.isPreviewOnly = isPreviewOnly
         context.coordinator.allowsScreenFlash = allowsScreenFlash
         context.coordinator.cameraZoom = cameraZoom
+        context.coordinator.onComplete = onComplete
         context.coordinator.updateViewportSize(uiView.bounds.size)
+
+        if isSessionRunning != context.coordinator.isSessionRunning {
+            context.coordinator.isSessionRunning = isSessionRunning
+            if isSessionRunning {
+                context.coordinator.resumeSessionIfPaused()
+            } else {
+                context.coordinator.pauseSession()
+            }
+        }
+
         if isPreviewOnly, !wasPreview {
             context.coordinator.enterPreviewMode()
+        } else if !isPreviewOnly, wasPreview {
+            context.coordinator.exitPreviewMode()
         }
     }
 
@@ -124,7 +143,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         @Binding var isLowLight: Bool
         var allowsScreenFlash: Bool
         var cameraZoom: CGFloat
-        let onComplete: (FaceScanCapturePayload) -> Void
+        var onComplete: (FaceScanCapturePayload) -> Void
 
         weak var arView: ARSCNView?
         weak var faceNode: SCNNode?
@@ -153,8 +172,11 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         var completed = false
+        var didDeliverCapture = false
         var isTornDown = false
         var isPreviewOnly = false
+        var isSessionRunning = true
+        var isSessionPaused = false
         var scanStartTime: Date?
         var trackedFrameCount = 0
         var stableFrameCount = 0
@@ -243,10 +265,33 @@ struct FaceMeshScanView: UIViewRepresentable {
         func enterPreviewMode() {
             guard !isTornDown else { return }
             completed = false
+            didDeliverCapture = false
             scanExhausted = false
             resetScanTracking(soft: false)
             publishUI(force: true) {
                 self.instruction = ""
+                self.frameHint = nil
+                self.progress = 0
+                self.ringProgress = 0
+                self.activeTickSectors = []
+                self.overlayMode = .orbitTicks
+                self.tiltHoldProgress = 0
+                self.tiltDirection = .none
+                self.tiltIsEngaged = false
+            }
+        }
+
+        /// Passe en mode scan actif sans interrompre la session AR (expansion inline accueil).
+        func exitPreviewMode() {
+            guard !isTornDown else { return }
+            isPreviewOnly = false
+            completed = false
+            didDeliverCapture = false
+            scanExhausted = false
+            resetScanTracking(soft: false)
+            publishUI(force: true) {
+                self.isFaceDetected = self.trackedFrameCount >= 4
+                self.instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
                 self.frameHint = nil
                 self.progress = 0
                 self.ringProgress = 0
@@ -276,9 +321,22 @@ struct FaceMeshScanView: UIViewRepresentable {
             config.isLightEstimationEnabled = true
             config.maximumNumberOfTrackedFaces = 1
             view.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+            isSessionPaused = false
+        }
+
+        func pauseSession() {
+            guard !isSessionPaused, let view = arView else { return }
+            view.session.pause()
+            isSessionPaused = true
+        }
+
+        func resumeSessionIfPaused() {
+            guard isSessionPaused, !isTornDown, let view = arView else { return }
+            startSession(on: view)
         }
 
         func recoverSessionIfNeeded() {
+            guard isSessionRunning, !isSessionPaused else { return }
             guard !isTornDown, !completed, let view = arView else { return }
             guard sessionRecoveryAttempts < 2 else { return }
             sessionRecoveryAttempts += 1
@@ -485,6 +543,8 @@ struct FaceMeshScanView: UIViewRepresentable {
             lastPublishedSectorSignature = 0
 
             if !soft {
+                completed = false
+                didDeliverCapture = false
                 filledTickSectors.removeAll()
                 angleSamples.removeAll()
                 sampledMeshes.removeAll()
@@ -785,6 +845,16 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.frameHint = hintText
             }
 
+            if !isFirstSide && holdRatio >= 1 {
+                let bestMesh = resolveBestMesh()
+                if FaceScanQualityValidator.meshIsSolid(bestMesh) {
+                    finishScan()
+                } else {
+                    handleQualityFailure()
+                }
+                return
+            }
+
             if tiltHoldFrames >= tiltHoldFramesRequired {
                 if isFirstSide {
                     livePhase = .fluidTiltRight
@@ -949,6 +1019,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         private func finishScan() {
+            guard !completed, !didDeliverCapture else { return }
             let mesh = resolveBestMesh()
             guard FaceScanQualityValidator.meshIsSolid(mesh) else {
                 handleQualityFailure()
@@ -956,46 +1027,45 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
 
             completed = true
+            didDeliverCapture = true
+            pauseSession()
+
             let shapes = blendShapeAccumulators.mapValues { $0.sum / Float($0.count) }
             let scanId = activeScanId
             let snapshot = bestSnapshot
             let fluidShift = computeFluidShiftScore()
 
-            Task {
-                let videoURL = await videoRecorder.finish()
-                let videoFilename: String?
-                if let videoURL, FileManager.default.fileExists(atPath: videoURL.path) {
-                    videoFilename = "\(scanId)_face.mp4"
-                } else {
-                    videoFilename = nil
-                }
+            let deliverCapture: @MainActor () -> Void = { [weak self] in
+                guard let self, !self.isTornDown else { return }
+                self.progress = 1
+                self.ringProgress = 1
+                self.activeTickSectors = self.filledTickSectors
+                self.overlayMode = .orbitTicks
+                self.tiltHoldProgress = 0
+                self.tiltDirection = .none
+                self.tiltIsEngaged = false
+                self.instruction = "Scan terminé."
+                self.frameHint = nil
+                HapticManager.shared.notification(.success)
 
                 let payload = FaceScanCapturePayload(
                     scanId: scanId,
                     mesh: mesh,
                     snapshot: snapshot,
-                    videoFilename: videoFilename,
+                    videoFilename: nil,
                     averageBlendShapes: shapes,
                     yawCoverage: Double(self.filledTickSectors.count) / Double(self.tickCount),
                     fluidShiftScore: fluidShift
                 )
+                self.onComplete(payload)
+            }
 
-                await MainActor.run {
-                    guard !self.isTornDown else { return }
-                    self.publishUI(force: true) {
-                        self.progress = 1
-                        self.ringProgress = 1
-                        self.activeTickSectors = self.filledTickSectors
-                        self.overlayMode = .orbitTicks
-                        self.tiltHoldProgress = 0
-                        self.tiltDirection = .none
-                        self.tiltIsEngaged = false
-                        self.instruction = "Analyse terminée."
-                        self.frameHint = nil
-                        HapticManager.shared.notification(.success)
-                        self.onComplete(payload)
-                    }
-                }
+            Task { @MainActor in
+                deliverCapture()
+            }
+
+            Task { [weak self] in
+                _ = await self?.videoRecorder.finish()
             }
         }
 
@@ -1147,11 +1217,13 @@ struct FaceMeshScanView: UIViewRepresentable {
             force: Bool,
             _ block: @escaping () -> Void
         ) {
+            guard !isTornDown, !completed else { return }
             let now = CACurrentMediaTime()
             if !force, now - lastUIUpdate < uiUpdateMinInterval { return }
             lastUIUpdate = now
 
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self, !self.isTornDown, !self.completed else { return }
                 if let ring { self.ringProgress = ring }
                 if let progress { self.progress = progress }
                 block()

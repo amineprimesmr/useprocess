@@ -2,21 +2,15 @@ import SwiftUI
 
 struct CoachMessageEnrichmentView: View {
     let enrichment: CoachMessageEnrichment
-    var showsReasoning: Bool
     var showsFollowUps: Bool
     var onFollowUp: (String) -> Void
     var onDeepLink: (CoachDeepLink) -> Void
     var onContextualAction: ((CoachContextualAction) -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
-    @State private var isReasoningExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if showsReasoning, let reasoning = enrichment.reasoning {
-                reasoningBlock(reasoning)
-            }
-
             if showsFollowUps, !enrichment.followUps.isEmpty {
                 followUpChips
             }
@@ -35,52 +29,13 @@ struct CoachMessageEnrichmentView: View {
         .padding(.top, 6)
     }
 
-    private func reasoningBlock(_ reasoning: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Button {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                    isReasoningExpanded.toggle()
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text(isReasoningExpanded ? "Masquer le raisonnement" : "Voir le raisonnement")
-                        .font(.caption.weight(.semibold))
-                    Spacer()
-                    Image(systemName: isReasoningExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                }
-                .foregroundStyle(theme.secondaryText)
-            }
-            .buttonStyle(.plain)
-
-            if isReasoningExpanded {
-                Text(reasoning)
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(theme.coachSecondaryFill.opacity(theme.isDark ? 0.55 : 1))
-        )
-        .overlay {
-            if !theme.isDark {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(theme.coachSurfaceStroke.opacity(0.5), lineWidth: 0.5)
-            }
-        }
-    }
-
     private var followUpChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(Array(enrichment.followUps.enumerated()), id: \.offset) { _, question in
+                    let chipShape = Capsule(style: .continuous)
                     Button {
+                        HapticManager.shared.impact(.light)
                         onFollowUp(question)
                     } label: {
                         Text(question)
@@ -88,24 +43,9 @@ struct CoachMessageEnrichmentView: View {
                             .foregroundStyle(theme.primaryText)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
-                            .background(
-                                Capsule()
-                                    .fill(theme.isDark
-                                        ? theme.cardBackgroundStrong.opacity(0.88)
-                                        : Color.white
-                                    )
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(theme.coachSurfaceStroke.opacity(theme.isDark ? 0.16 : 0.75), lineWidth: 0.75)
-                            )
-                            .shadow(
-                                color: theme.isDark ? .clear : theme.coachSurfaceStroke.opacity(0.14),
-                                radius: 6,
-                                y: 2
-                            )
+                            .contentShape(chipShape)
                     }
-                    .buttonStyle(.plain)
+                    .processGlassButton(in: chipShape)
                 }
             }
         }

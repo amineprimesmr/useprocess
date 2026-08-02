@@ -7,7 +7,6 @@ enum ProcessZoomTransitionID: Hashable {
     case faceScanDetail(String)
     case mealDetail(MealTimeSlot)
     case mealCatalog
-    case hydrationHub
     case trainingDay
     case postureCircuit
     case protocolItem(String)
@@ -28,8 +27,6 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_MEAL_DETAIL_\(slot.rawValue)"
         case .mealCatalog:
             return "PROCESS_MEAL_CATALOG"
-        case .hydrationHub:
-            return "PROCESS_HYDRATION_HUB"
         case .trainingDay:
             return "PROCESS_TRAINING_DAY"
         case .postureCircuit:

@@ -4,8 +4,9 @@ enum ProcessColors {
     static let primary = Color(red: 0.243, green: 0.510, blue: 0.510)
     static let primaryDark = Color(red: 0.180, green: 0.420, blue: 0.420)
     static let background = Color(UIColor { traits in
+        // Aligné sur ProcessScreenBackground (pas le noir système).
         traits.userInterfaceStyle == .dark
-            ? .systemBackground
+            ? UIColor(red: 0.07, green: 0.08, blue: 0.11, alpha: 1)
             : UIColor(
                 red: 0.968,
                 green: 0.972,

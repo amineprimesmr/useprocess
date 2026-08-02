@@ -23,8 +23,6 @@ struct ProcessProfileView: View {
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @State private var profileStore = SocialProfileStore.shared
 
-    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
-
     @State private var selectedAnalysisScan: FaceScanResult?
 
     @State private var chartHistories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
@@ -33,53 +31,27 @@ struct ProcessProfileView: View {
     @State private var isReloadingCharts = false
     @State private var chartDataRevision = 0
 
-    private var isHeroPlaybackActive: Bool {
+    private var isFlamePlaybackActive: Bool {
         isTabActive && scenePhase == .active
-    }
-
-    private var resolvedProfile: SocialProfile {
-        if let profile = profileStore.profile {
-            return profile
-        }
-        if let unified = profileService.currentProfile {
-            return SocialProfile.from(unified: unified)
-        }
-        return .guest
     }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 0) {
-                    ProfileStreakAchievementsSection(selectedDate: $selectedProfileDate)
-
-                    ProfileScanEvolutionHero(
-                        historyStore: faceHistoryStore,
-                        selectedDate: $selectedProfileDate,
-                        isPlaybackActive: isHeroPlaybackActive,
-                        onOpenScan: { selectedAnalysisScan = $0 }
-                    )
+                // VStack (pas LazyVStack) en tête : TimelineView de la flamme doit rester actif.
+                VStack(spacing: 0) {
+                    ProfileStreakAchievementsSection(isPlaybackActive: isFlamePlaybackActive)
 
                     Color.clear
                         .frame(height: 0)
                         .id(ProfileStatisticsAnchor.id)
 
-                    ProfileDebloatTrajectoryChart(
-                        points: debloatChartPoints,
-                        trend: debloatChartTrend,
-                        velocityLabel: debloatVelocityLabel
-                    )
-                    .padding(.horizontal, ProfileTheme.horizontalPadding)
-                    .padding(.top, 14)
-                    .padding(.bottom, 20)
-
-                    profileScrollContent(resolvedProfile)
+                    profileScrollContent
                 }
+                .frame(maxWidth: .infinity, alignment: .top)
                 .processReportsTabBarScrollOffset()
             }
             .coordinateSpace(name: "processMainScroll")
-            .scrollClipDisabled()
-            .ignoresSafeArea(edges: .top)
             .scrollIndicators(.hidden)
             .processAdoptForIGTabBar()
             .processTransparentScrollSurface()
@@ -95,6 +67,7 @@ struct ProcessProfileView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.clear)
         .processClearUIKitHostingBackground()
         .fullScreenCover(item: $selectedAnalysisScan) { scan in
             FaceScanResultContent(
@@ -104,6 +77,8 @@ struct ProcessProfileView: View {
             )
         }
         .task(id: profileService.currentProfile?.userId) {
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
             if profileService.currentProfile == nil {
                 await profileService.loadProfile()
             }
@@ -115,7 +90,6 @@ struct ProcessProfileView: View {
             ProcessDebloatTrajectoryStore.shared.reload()
             ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
             ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
-            ProcessStreakStore.shared.sync(from: WelcomePlanStore.shared.plan)
             rebuildPresentations()
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
@@ -132,42 +106,11 @@ struct ProcessProfileView: View {
         }
     }
 
-    private var debloatChartPoints: [DebloatTrajectoryPoint] {
-        let calendar = Calendar.current
-        let dayEnd = calendar.date(
-            byAdding: .day,
-            value: 1,
-            to: calendar.startOfDay(for: selectedProfileDate)
-        ) ?? selectedProfileDate
-        return trajectoryStore.snapshot.chartPoints.filter { $0.date < dayEnd }
-    }
-
-    private var debloatChartTrend: TrajectoryTrend {
-        ProcessDebloatTrajectoryEngine.trajectoryTrend(for: debloatChartPoints)
-    }
-
-    private var debloatVelocityLabel: String {
-        guard debloatChartPoints.count >= 3 else { return TrajectoryTrend.unknown.label }
-        let slope = ProcessDebloatTrajectoryEngine.velocitySlope(for: debloatChartPoints)
-        if slope > 2.5 { return TrajectoryTrend.accelerating.label }
-        if slope < -2.5 { return TrajectoryTrend.regressing.label }
-        return TrajectoryTrend.stable.label
-    }
-
-    @ViewBuilder
-    private func profileScrollContent(_ profile: SocialProfile) -> some View {
-        VStack(alignment: .leading, spacing: 24) {
-            ProfileIdentityBlock(
-                displayName: profile.displayName,
-                isPrivate: profile.isPrivate
-            )
-
-            profileChartsSection
-        }
-        .padding(.horizontal, ProfileTheme.horizontalPadding)
-        .padding(.top, 20)
-        .padding(.bottom, 32)
-        .safeAreaPadding(.bottom, 8)
+    private var profileScrollContent: some View {
+        profileChartsSection
+            .padding(.horizontal, ProfileTheme.horizontalPadding)
+            .padding(.top, 20)
+            .padding(.bottom, 32)
     }
 
     private var profileChartsSection: some View {
@@ -320,7 +263,6 @@ struct ProcessProfileView: View {
     }
 
     private func refreshProfile(forceHealthRefresh: Bool) async {
-        ProcessDebloatTrajectoryStore.shared.reload()
         ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
         ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
         if forceHealthRefresh {

@@ -39,10 +39,6 @@ final class CoachChatViewModel {
         libraryStore.activeConversationId
     }
 
-    var isSidebarEnabled: Bool {
-        !isSending && !isVoiceRecording
-    }
-
     var homePrompt: CoachHomePrompt {
         if let handoff = activeMealHandoff {
             return CoachMealHandoffBuilder.homePrompt(for: handoff, profile: profile)
@@ -52,9 +48,7 @@ final class CoachChatViewModel {
 
     var showsContextualHome: Bool {
         guard !CoachPlanNavigationBridge.shared.hasPendingFaceScanHandoff else { return false }
-        return !hasThreadContent
-            && !isSending
-            && !isComposingMessage
+        return !hasThreadContent && !isSending
     }
 
     private var hasThreadContent: Bool {
@@ -64,23 +58,6 @@ final class CoachChatViewModel {
                 || FaceScanCoachInsightService.isCoachInsightMessage(message)
         }
     }
-
-    var showsHomeInsteadOfInput: Bool {
-        showsContextualHome && homePrompt.replacesChatInput && !homeInputUnlocked
-    }
-
-    var homeActionsRevealed = false
-    var homeInputUnlocked = false
-
-    /// Vrai dès qu'une saisie est en cours — pas au simple focus du champ.
-    var isComposingMessage: Bool {
-        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || !pendingAttachmentImages.isEmpty
-            || isVoiceRecording
-    }
-
-    /// Accueils déjà animés (par conversation + texte d’accueil).
-    private var completedHomePresentationKeys: Set<String> = []
 
     private var activePlanFocus: CoachPlanFocus?
     var activeMealHandoff: CoachMealHandoff?
@@ -171,7 +148,6 @@ final class CoachChatViewModel {
                 await sendMealCoachPrompt(prompt, handoff: handoff)
             } else {
                 activeMealHandoff = handoff
-                resetHomePresentation()
             }
             return
         }
@@ -189,7 +165,7 @@ final class CoachChatViewModel {
         activeMealHandoff = nil
 
         let reply = handoff.assistantMessage
-        let conversationId = CoachDebloatJourneyStore.ensureConversation()
+        let conversationId = CoachDebloatJourneyStore.ensureConversation(in: CoachConversationLibraryStore.shared)
         let scanNumber = FaceScanHistoryStore.shared.history.count
         let userMessage = CoachDebloatJourneyStore.faceScanUserMessage(
             scanId: handoff.resultId,
@@ -210,9 +186,6 @@ final class CoachChatViewModel {
 
         // État UI atomique — jamais d’accueil « Salut… » entre-temps.
         messages = thread
-        homeActionsRevealed = true
-        homeInputUnlocked = false
-        completedHomePresentationKeys.insert(homePresentationKey())
 
         await persistPreGeneratedAssistantMessage(reply, conversationId: conversationId)
     }
@@ -301,25 +274,18 @@ final class CoachChatViewModel {
             var deepLink = base.deepLink
             if isFaceScanInsight {
                 deepLink = nil
-            } else if resolvedActions.contains(where: { $0.kind == .openPlan || $0.kind == .openJournal }) {
+            } else if deepLink?.action == .plan {
                 deepLink = nil
-            } else if let link = deepLink, link.action == .plan {
-                let userText = precedingUserText(for: message)
-                if !CoachPlanModificationService.shouldOfferOpenPlanAction(
-                    userText: userText,
-                    assistantText: message.text,
-                    hasPendingPlanPatch: pendingPlanPatches[message.id] != nil
-                ) {
-                    deepLink = nil
-                }
+            } else if resolvedActions.contains(where: { $0.kind == .openJournal }) {
+                deepLink = nil
             }
 
             return CoachMessageEnrichment(
                 displayText: base.displayText,
-                reasoning: base.reasoning,
+                reasoning: nil,
                 followUps: displayFollowUps,
-                deepLink: deepLink,
-                contextualActions: resolvedActions
+                deepLink: nil,
+                contextualActions: resolvedActions.filter { $0.kind == .applyPlanChanges }
             )
         }
 
@@ -329,7 +295,7 @@ final class CoachChatViewModel {
             reasoning: nil,
             followUps: displayFollowUps,
             deepLink: nil,
-            contextualActions: resolvedActions
+            contextualActions: resolvedActions.filter { $0.kind == .applyPlanChanges }
         )
     }
 
@@ -338,20 +304,13 @@ final class CoachChatViewModel {
             return []
         }
         let userText = precedingUserText(for: message)
-        let meal = CoachMealMessageDetector.mealContent(from: message.text, userText: userText)
         return CoachContextualActionResolver.resolve(
             userText: userText,
             assistantText: message.text,
             parsedActions: message.resolvedContextualActions,
-            meal: meal,
+            meal: nil,
             hasPendingPlanPatch: pendingPlanPatches[message.id] != nil
         )
-    }
-
-    func mealOnlyContextualActions(for message: CoachMessage) -> [CoachContextualAction] {
-        contextualActions(for: message).filter { action in
-            action.kind != .validateMeal && action.kind != .modifyMeal
-        }
     }
 
     func executeContextualAction(_ action: CoachContextualAction, for message: CoachMessage) async {
@@ -463,7 +422,6 @@ final class CoachChatViewModel {
         draftSessionId = UUID()
         libraryStore.clearActiveSelection()
         messages = []
-        resetHomePresentation()
     }
 
     private func ensurePersistedConversationId() async -> UUID {
@@ -490,7 +448,6 @@ final class CoachChatViewModel {
             streamingText = ""
             errorMessage = nil
             messages = []
-            resetHomePresentation()
         }
 
         await CoachSyncService.deleteConversation(id: id, userId: userId)
@@ -532,59 +489,10 @@ final class CoachChatViewModel {
         if messages.count != stored.messages.count {
             libraryStore.setActiveMessages(messages)
         }
-        syncHomePresentationFromCache()
-    }
-
-    func onHomeGreetingComplete() {
-        completedHomePresentationKeys.insert(homePresentationKey())
-        guard !homeActionsRevealed else { return }
-        withAnimation(OnboardingProfileChatAnswerReveal.spring) {
-            homeActionsRevealed = true
-        }
-    }
-
-    func resetHomePresentation() {
-        homeActionsRevealed = false
-        homeInputUnlocked = false
-    }
-
-    func homePresentationKey() -> String {
-        let conversationPart = libraryStore.activeConversationId?.uuidString
-            ?? draftSessionId?.uuidString
-            ?? "draft"
-        return "\(conversationPart)|\(homePrompt.greetingText)"
-    }
-
-    var shouldSkipHomeAnimation: Bool {
-        guard showsContextualHome else { return false }
-        return completedHomePresentationKeys.contains(homePresentationKey())
-    }
-
-    func restoreHomePresentationIfNeeded() {
-        guard shouldSkipHomeAnimation else { return }
-        if !homeActionsRevealed {
-            homeActionsRevealed = true
-        }
-    }
-
-    func syncHomePresentationFromCache() {
-        if shouldSkipHomeAnimation {
-            homeActionsRevealed = true
-        } else {
-            homeActionsRevealed = false
-        }
     }
 
     func onActiveConversationChanged() {
-        homeInputUnlocked = false
         activeMealHandoff = nil
-        syncHomePresentationFromCache()
-    }
-
-    func unlockHomeChatInput() {
-        withAnimation(OnboardingProfileChatAnswerReveal.spring) {
-            homeInputUnlocked = true
-        }
     }
 
     private static func filteredCoachMessages(_ messages: [CoachMessage]) -> [CoachMessage] {
@@ -711,11 +619,11 @@ final class CoachChatViewModel {
         if let handoff = activeMealHandoff {
             let augmented = CoachMealHandoffBuilder.augmentedPrompt(suggestion.prompt, handoff: handoff)
             activeMealHandoff = nil
-            await sendPrompt(augmented, userDisplayText: suggestion.label, persistUserMessage: true)
+            await sendPrompt(augmented, userDisplayText: suggestion.userMessage, persistUserMessage: true)
         } else {
             await sendPrompt(
                 suggestion.prompt,
-                userDisplayText: suggestion.label,
+                userDisplayText: suggestion.userMessage,
                 persistUserMessage: true
             )
         }
@@ -1141,20 +1049,25 @@ final class CoachChatViewModel {
         createdAt: Date = Date()
     ) -> CoachMessage {
         let base = CoachMessage.assistant(from: parsed, modelUsed: modelUsed)
-        let persistedText = MealSuggestionParser.parse(rawText)?.isValid == true
-            ? rawText
-            : parsed.displayText
+        let text: String = {
+            if let intro = MealSuggestionParser.coachIntro(from: rawText),
+               MealSuggestionParser.parse(rawText)?.isValid == true {
+                return intro
+            }
+            let display = parsed.displayText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return display.isEmpty ? base.text : display
+        }()
 
         return CoachMessage(
             id: id,
             role: .assistant,
-            text: persistedText,
+            text: text,
             createdAt: createdAt,
             modelUsed: modelUsed,
-            reasoning: base.reasoning,
+            reasoning: nil,
             followUps: base.followUps,
-            deepLinkAction: base.deepLinkAction,
-            deepLinkLabel: base.deepLinkLabel,
+            deepLinkAction: nil,
+            deepLinkLabel: nil,
             contextualActions: base.contextualActions
         )
     }

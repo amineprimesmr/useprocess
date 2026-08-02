@@ -142,8 +142,11 @@ enum FaceScanCoachInsightService {
         guard !prompt.isEmpty else { return persistFallback(for: result, insight: insight) }
 
         do {
-            let journeyId = CoachDebloatJourneyStore.ensureConversation()
-            let history = CoachDebloatJourneyStore.chatHistory(for: journeyId)
+            let journeyId = CoachDebloatJourneyStore.ensureConversation(in: CoachConversationLibraryStore.shared)
+            let history = CoachDebloatJourneyStore.chatHistory(
+                for: journeyId,
+                in: CoachConversationLibraryStore.shared
+            )
             let reply = try await CoachEngine.sendChatMessage(
                 prompt,
                 profile: profile,

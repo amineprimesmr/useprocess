@@ -90,15 +90,21 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     func handlePopupAnswer(_ answer: Bool) {
         guard popupPhaseIndex >= 0, let popupKind = activePopup?.kind else { return }
 
-        isPaused = false
         activePopup = nil
-        popupPhaseIndex = -1
 
-        Task { @MainActor in
-            if popupKind == .healthKit {
+        // HealthKit: keep progress paused until the system sheet finishes.
+        // Otherwise bar 2 starts while the permission dialog is still open.
+        if popupKind == .healthKit {
+            Task { @MainActor in
                 await handleHealthKitPopupAnswer(answer)
+                isPaused = false
+                popupPhaseIndex = -1
             }
+            return
         }
+
+        isPaused = false
+        popupPhaseIndex = -1
     }
 
     func submitContinue() {
@@ -274,11 +280,14 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         onboardingViewModel.isRequestingHealthKit = true
 
         if answer {
-            await healthManager.requestAuthorizationAsync()
+            // Wait for the system sheets only — sync runs after progress resumes
+            // so bar 2 isn't blocked behind a long HealthKit import.
+            await healthManager.requestAuthorizationAsync(syncAfterwards: false)
             if let permissionsManager {
                 _ = await permissionsManager.requestMotionPermission()
             }
             HapticManager.shared.notification(.success)
+            Task { await healthManager.performFullSync() }
         }
 
         onboardingViewModel.healthKitGranted = healthManager.isAuthorized

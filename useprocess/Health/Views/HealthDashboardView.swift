@@ -13,17 +13,13 @@ struct ProfileHealthSection: View {
                 subtitle: "Données du jour · Apple Santé"
             )
 
-            if healthManager.readinessScore > 0 {
-                ReadinessScoreGaugeView(
-                    score: healthManager.readinessScore,
-                    label: healthManager.readinessLabel,
-                    subtitle: healthManager.readinessFactors.prefix(2).joined(separator: " · ")
-                )
-            }
-
             HealthTodayMetricsCard()
         }
-        .task { await ProfileHealthSection.refreshAll(force: false) }
+        .task {
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled else { return }
+            await ProfileHealthSection.refreshAll(force: false)
+        }
     }
 
     private static var lastRefresh: Date?
@@ -53,7 +49,7 @@ struct HealthDashboardView: View {
     var body: some View {
         ProcessProfileView(selectedSection: $selectedSection)
             .onAppear {
-                selectedSection = .profile
+                selectedSection = .statistics
             }
     }
 }

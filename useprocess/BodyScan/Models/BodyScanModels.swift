@@ -152,7 +152,7 @@ struct PostureMetrics: Codable, Hashable {
     var kneeValgusIndicator: Double?
 }
 
-struct FaceWellnessMarkers: Codable, Hashable {
+struct FaceWellnessMarkers: nonisolated Codable, Hashable, Sendable {
     var puffinessScore: Int
     var underEyeFatigueScore: Int
     var jawTensionScore: Int

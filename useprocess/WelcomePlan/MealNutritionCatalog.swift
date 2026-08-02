@@ -16,6 +16,29 @@ struct MealNutritionProfile: Hashable {
     let sugarG: Double
     let sodiumMg: Double
     let potassiumMg: Double
+    let magnesiumMg: Double
+
+    init(
+        calories: Int,
+        proteinG: Double,
+        carbsG: Double,
+        fatsG: Double,
+        fiberG: Double,
+        sugarG: Double,
+        sodiumMg: Double,
+        potassiumMg: Double,
+        magnesiumMg: Double = 0
+    ) {
+        self.calories = calories
+        self.proteinG = proteinG
+        self.carbsG = carbsG
+        self.fatsG = fatsG
+        self.sugarG = sugarG
+        self.fiberG = fiberG
+        self.sodiumMg = sodiumMg
+        self.potassiumMg = potassiumMg
+        self.magnesiumMg = magnesiumMg
+    }
 
     var potassiumSodiumRatio: Double {
         potassiumMg / max(sodiumMg, 1)
@@ -42,10 +65,31 @@ enum MealNutritionCatalog {
     static func profile(for meal: MealSuggestionContent) -> MealNutritionProfile {
         for asset in imageAssetCandidates(for: meal) {
             if let known = profilesByAsset[asset] {
-                return known
+                return enrichMagnesiumIfNeeded(known, meal: meal)
             }
         }
         return estimate(from: meal)
+    }
+
+    private static func enrichMagnesiumIfNeeded(
+        _ profile: MealNutritionProfile,
+        meal: MealSuggestionContent
+    ) -> MealNutritionProfile {
+        guard profile.magnesiumMg <= 0 else { return profile }
+        let mg = matchedFoods(for: meal).reduce(0.0) { partial, food in
+            partial + (food.magnesiumMgPer100g ?? 0) * 0.45
+        }
+        return MealNutritionProfile(
+            calories: profile.calories,
+            proteinG: profile.proteinG,
+            carbsG: profile.carbsG,
+            fatsG: profile.fatsG,
+            fiberG: profile.fiberG,
+            sugarG: profile.sugarG,
+            sodiumMg: profile.sodiumMg,
+            potassiumMg: profile.potassiumMg,
+            magnesiumMg: max(40, mg)
+        )
     }
 
     /// Score Debloat global : équilibre hydrique 50 %, confort digestif 30 %,
@@ -55,7 +99,9 @@ enum MealNutritionCatalog {
         let ratio = potassiumSodiumRatioScore(nutrition)
         let sodium = lowSodiumScore(nutrition)
         let potassium = potassiumScore(nutrition)
-        let electrolyte = ratio * 0.30 + sodium * 0.38 + potassium * 0.32
+        let magnesium = magnesiumScore(nutrition)
+        // Visage dégonflé : K + Na bas dominent, Mg en soutien (~18 %).
+        let electrolyte = ratio * 0.24 + sodium * 0.30 + potassium * 0.28 + magnesium * 0.18
 
         let tolerance = digestiveToleranceScore(for: meal)
         let fiber = fiberComfortScore(nutrition)
@@ -96,10 +142,15 @@ enum MealNutritionCatalog {
             .init(id: "kna", name: "Équilibre K/Na", percentage: potassiumSodiumRatioScore(profile)),
             .init(id: "potassium", name: "Potassium", percentage: potassiumScore(profile)),
             .init(id: "sodium", name: "Sodium bas", percentage: lowSodiumScore(profile)),
+            .init(id: "magnesium", name: "Magnésium", percentage: magnesiumScore(profile)),
             .init(id: "fiber", name: "Fibres tolérées", percentage: fiberComfortScore(profile)),
-            .init(id: "fats", name: "Charge lipidique", percentage: fatComfortScore(profile)),
             .init(id: "portion", name: "Portion digeste", percentage: portionComfortScore(profile))
         ]
+    }
+
+    /// Matching repas → aliments catalogue (noms normalisés).
+    static func matchedFoods(for meal: MealSuggestionContent) -> [DebloatFoodItem] {
+        meal.foodItems.compactMap { DebloatFoodCatalog.item(matchingName: $0.name) }
     }
 
     static func resolvedImageAsset(
@@ -257,8 +308,19 @@ enum MealNutritionCatalog {
             fiberG: 8.0, sugarG: 8.0, sodiumMg: 198, potassiumMg: 1150
         ),
         "meal_debloat_eggs_banana_kiwi": .init(
-            calories: 385, proteinG: 22, carbsG: 38, fatsG: 16,
-            fiberG: 6.5, sugarG: 22, sodiumMg: 180, potassiumMg: 880
+            calories: 430, proteinG: 28, carbsG: 38, fatsG: 20,
+            fiberG: 6.5, sugarG: 22, sodiumMg: 210, potassiumMg: 920,
+            magnesiumMg: 55
+        ),
+        "meal_debloat_yogurt_blueberry": .init(
+            calories: 280, proteinG: 14, carbsG: 36, fatsG: 9,
+            fiberG: 4.0, sugarG: 28, sodiumMg: 95, potassiumMg: 520,
+            magnesiumMg: 50
+        ),
+        "meal_debloat_salmon_avocado_bowl": .init(
+            calories: 420, proteinG: 32, carbsG: 12, fatsG: 28,
+            fiberG: 7.5, sugarG: 3.0, sodiumMg: 140, potassiumMg: 980,
+            magnesiumMg: 70
         ),
         "meal_debloat_eggs_avocado": .init(
             calories: 405, proteinG: 27, carbsG: 12, fatsG: 26,
@@ -291,6 +353,10 @@ enum MealNutritionCatalog {
         "meal_debloat_steak_salad_potato": .init(
             calories: 520, proteinG: 44, carbsG: 36, fatsG: 22,
             fiberG: 6.8, sugarG: 4.5, sodiumMg: 175, potassiumMg: 980
+        ),
+        "meal_debloat_sweet_potato_meat_avocado": .init(
+            calories: 620, proteinG: 38, carbsG: 52, fatsG: 28,
+            fiberG: 14.0, sugarG: 14.0, sodiumMg: 165, potassiumMg: 1450
         ),
         "meal_debloat_chicken_salad_bowl": .init(
             calories: 465, proteinG: 46, carbsG: 16, fatsG: 24,
@@ -356,6 +422,15 @@ enum MealNutritionCatalog {
         if profile.sodiumMg <= 450 { return 100 }
         if profile.sodiumMg >= 1_100 { return 10 }
         return 100 - ((profile.sodiumMg - 450) / 650) * 90
+    }
+
+    /// Repère par repas : ~80–150 mg Mg soutient l’équilibre hydrique.
+    private static func magnesiumScore(_ profile: MealNutritionProfile) -> Double {
+        if profile.magnesiumMg >= 140 { return 100 }
+        if profile.magnesiumMg >= 70 {
+            return 55 + ((profile.magnesiumMg - 70) / 70) * 45
+        }
+        return clampScore((profile.magnesiumMg / 70) * 55, minimum: 8)
     }
 
     /// Courbe en cloche : trop peu aide peu le transit, trop d'un coup peut fermenter.
@@ -483,10 +558,11 @@ enum MealNutritionCatalog {
         var carbs = 0.0
         var fats = 0.0
         var potassium = 0.0
+        var sodium = 200.0
+        var magnesium = 0.0
 
-        for item in meal.items {
+        for item in meal.foodItems {
             let role = item.role.lowercased()
-            let name = item.name.lowercased()
 
             switch role {
             case let r where r.contains("prot"):
@@ -503,11 +579,11 @@ enum MealNutritionCatalog {
                 carbs += 8
             }
 
-            if name.contains("patate") || name.contains("pomme de terre") { potassium += 320 }
-            if name.contains("avocat") { potassium += 240 }
-            if name.contains("épinard") || name.contains("epinard") { potassium += 260 }
-            if name.contains("banane") { potassium += 220 }
-            if name.contains("courgette") { potassium += 120 }
+            if let food = DebloatFoodCatalog.item(matchingName: item.name) {
+                potassium += (food.potassiumMgPer100g ?? 0) * 0.85
+                sodium += (food.sodiumMgPer100g ?? 0) * 0.35
+                magnesium += (food.magnesiumMgPer100g ?? 0) * 0.55
+            }
         }
 
         let calories = Int(protein * 4 + carbs * 4 + fats * 9)
@@ -518,8 +594,9 @@ enum MealNutritionCatalog {
             fatsG: max(fats, 10),
             fiberG: 6.5,
             sugarG: 5.0,
-            sodiumMg: 200,
-            potassiumMg: max(potassium, 650)
+            sodiumMg: min(900, max(120, sodium)),
+            potassiumMg: max(potassium, 650),
+            magnesiumMg: max(magnesium, 45)
         )
     }
 
@@ -533,6 +610,7 @@ enum MealNutritionCatalog {
         potassiumSodiumRatioScore(profile) >= 68
             && lowSodiumScore(profile) >= 68
             && potassiumScore(profile) >= 62
+            && magnesiumScore(profile) >= 50
     }
 }
 

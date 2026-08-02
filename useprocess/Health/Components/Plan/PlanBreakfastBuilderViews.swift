@@ -128,7 +128,6 @@ struct PlanBreakfastBuilderSection: View {
         for item in meal.items {
             guard let match = BreakfastMealBuilderCatalog.option(matching: item) else { continue }
             switch match.category {
-            case .hydration: result.hydration = match.id
             case .protein: result.protein = match.id
             case .fruit: result.fruits.insert(match.id)
             case .vegetable: result.vegetables.insert(match.id)

@@ -25,7 +25,7 @@ struct PlanHomeLayoutEditorSheet: View {
                     PlanHomeTopChrome(
                         selectedSection: $selectedSection,
                         selectedDate: $selectedDate,
-                        showSettings: .constant(false),
+                        showCalendar: .constant(false),
                         onOpenStreak: {}
                     )
 

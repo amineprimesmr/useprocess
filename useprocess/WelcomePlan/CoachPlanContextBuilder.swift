@@ -111,7 +111,7 @@ enum CoachPlanContextBuilder {
                 status = "proposition Process (non validé)"
             }
 
-            let ingredients = entry.meal.items
+            let ingredients = entry.meal.foodItems
                 .map { "\($0.name) (\($0.quantity))" }
                 .joined(separator: ", ")
 

@@ -2,10 +2,14 @@ import Foundation
 
 struct CoachHomeSuggestion: Identifiable, Equatable, Sendable {
     let id: String
+    /// Titre court sur la carte.
     let label: String
     let subtitle: String
     let icon: String
+    /// Prompt envoyé à l'IA.
     let prompt: String
+    /// Texte affiché dans la bulle utilisateur (question naturelle).
+    let userMessage: String
 }
 
 enum CoachHomePromptKind: Equatable {
@@ -28,7 +32,11 @@ struct CoachHomePrompt: Equatable {
 }
 
 enum CoachHomeContext {
-    private static let answerStyle = " Réponds en 2-3 phrases, tutoiement, concret, sans markdown."
+    private static let answerStyle = """
+     Réponds en français, tutoiement, concret.
+    Si tu listes des repas, étapes ou options, mets chaque point sur une nouvelle ligne avec un tiret (– ).
+    Pas de markdown (** #), pas de fiche repas structurée.
+    """
 
     static func isLegacyWelcomeMessage(_ message: CoachMessage) -> Bool {
         guard message.role == .assistant else { return false }
@@ -58,28 +66,29 @@ enum CoachHomeContext {
             ? .scanDue(firstScan: !hasPreviousScan)
             : .greeting
 
-        let suggestions: [CoachHomeSuggestion] = []
-
         if scanDue {
-            let greeting: String
-            let buttonTitle: String
-            if hasPreviousScan {
-                greeting = hasName
-                    ? "Salut \(trimmedName). Tu n'as pas encore fait ton scan du jour."
-                    : "Salut. Tu n'as pas encore fait ton scan du jour."
-                buttonTitle = "Faire mon scan"
-            } else {
-                greeting = hasName
-                    ? "Salut \(trimmedName). On commence par ton premier scan ?"
-                    : "Salut. On commence par ton premier scan ?"
-                buttonTitle = "Faire mon premier scan"
-            }
+            let greeting = hasName ? "Salut \(trimmedName)." : "Salut."
+            let scanSuggestion = suggestion(
+                id: "scan",
+                title: "Scan visage",
+                subtitle: hasPreviousScan ? "Suivi debloat · 30 s" : "Premier scan · 30 s",
+                icon: "📸",
+                question: hasPreviousScan
+                    ? "Analyse ma progression debloat avec mon scan du jour."
+                    : "Guide-moi pour mon premier scan visage."
+            )
+            var daySuggestions = buildSuggestions(
+                profile: profile,
+                context: UserContextBuilder.build(profile: profile),
+                plan: WelcomePlanStore.shared.plan
+            )
+            daySuggestions.insert(scanSuggestion, at: 0)
             return CoachHomePrompt(
                 kind: kind,
                 greetingText: greeting,
-                primaryActionTitle: buttonTitle,
-                replacesChatInput: true,
-                suggestions: suggestions
+                primaryActionTitle: nil,
+                replacesChatInput: false,
+                suggestions: Array(daySuggestions.prefix(3))
             )
         }
 
@@ -119,7 +128,8 @@ enum CoachHomeContext {
             label: title,
             subtitle: subtitle,
             icon: icon,
-            prompt: prompt
+            prompt: prompt,
+            userMessage: question
         )
     }
 
@@ -142,65 +152,63 @@ enum CoachHomeContext {
     ) -> [CoachHomeSuggestion] {
         var items: [CoachHomeSuggestion] = []
 
+        items.append(
+            suggestion(
+                id: "today",
+                title: "Mon focus du jour",
+                subtitle: day.title,
+                icon: "🎯",
+                question: "C'est quoi mon focus aujourd'hui sur mon plan debloat ?",
+                hint: "Jour du plan : \(day.title)"
+            )
+        )
+
         if let training = day.training {
             items.append(
                 suggestion(
                     id: "training",
-                    title: "Créez un modèle d'entraînement",
-                    subtitle: "Conçu pour vos objectifs",
+                    title: "Ma séance",
+                    subtitle: "\(training.sessionName) · \(training.durationMinutes) min",
                     icon: "💪",
-                    question: "C'est quoi ma séance aujourd'hui ?",
-                    hint: "\(training.sessionName), \(training.durationMinutes) min, readiness \(context.health?.readinessScore.map(String.init) ?? "—")/100"
+                    question: "Explique-moi ma séance d'aujourd'hui et comment bien la faire.",
+                    hint: "\(training.sessionName), \(training.durationMinutes) min"
                 )
             )
         } else {
             items.append(
                 suggestion(
                     id: "training-rest",
-                    title: "Créez un programme d'entraînement",
-                    subtitle: "Personnalisé pour vous",
-                    icon: "📋",
-                    question: "Pas de séance aujourd'hui, je fais quoi ?",
+                    title: "Jour de repos",
+                    subtitle: "Que faire aujourd'hui ?",
+                    icon: "🧘",
+                    question: "C'est un jour de repos — comment je récupère bien sans perdre le rythme ?",
                     hint: "Jour du plan : \(day.title)"
                 )
             )
         }
 
         let nutritionLine = OriginPlanPresenter.nutritionOneLiner(day: day, plan: plan)
-        let mealQuestion = plan.progress.validatedMeals[day.id]?.isEmpty == false
-            ? "Comment optimiser mon repas validé ?"
-            : "Propose-moi une idée de repas pour aujourd'hui"
         items.append(
             suggestion(
-                id: "meal",
-                title: "Enregistrer un aliment",
-                subtitle: "Suivez votre nutrition quotidienne",
+                id: "meals",
+                title: "Mes repas",
+                subtitle: "Ce que le plan prévoit",
                 icon: "🍽️",
-                question: mealQuestion,
+                question: "Quels sont mes repas prévus aujourd'hui, et pourquoi ils collent au debloat ?",
                 hint: nutritionLine
             )
         )
 
-        if day.morning.contains(where: { $0.title.lowercased().contains("alimentation") }) {
-            items.append(
-                suggestion(
-                    id: "nutrition-day",
-                    title: "Analyse d'images",
-                    subtitle: "Ce qui affecte ta forme",
-                    icon: "📸",
-                    question: "Comment je mange parfaitement aujourd'hui ?",
-                    hint: "Alimentation parfaite"
-                )
-            )
-        } else {
+        if items.count < 3 {
+            let sleepHours = context.health?.sleepHours.map { String(format: "%.1f h", $0) } ?? "—"
             items.append(
                 suggestion(
                     id: "sleep",
-                    title: "Faire un point de suivi",
-                    subtitle: "Planifiez des points réguliers",
+                    title: "Sommeil",
+                    subtitle: "Préparer ce soir",
                     icon: "😴",
-                    question: "Comment je prépare mon sommeil ce soir ?",
-                    hint: "Coucher \(day.sleep.targetBedtime), réveil \(day.sleep.targetWake), \(String(format: "%.1f", day.sleep.targetHours)) h"
+                    question: "Comment je prépare mon sommeil ce soir pour demain ?",
+                    hint: "Coucher \(day.sleep.targetBedtime), réveil \(day.sleep.targetWake), besoin \(String(format: "%.1f", day.sleep.targetHours)) h, sommeil récent \(sleepHours)"
                 )
             )
         }
@@ -212,38 +220,34 @@ enum CoachHomeContext {
         profile: UnifiedUserProfile?,
         context: CoachUserContext
     ) -> [CoachHomeSuggestion] {
-        let sportsLine = profile?.sports.prefix(2).map(\.name).joined(separator: ", ") ?? "—"
         let goal = profile?.weightGoal?.rawValue ?? "forme"
-        let sessions = profile?.sessionsPerWeek.map { "\($0) séances/sem" } ?? "—"
-        let readiness = context.health?.readinessScore.map(String.init) ?? "—"
-        let readinessWord = context.health?.readinessLabel ?? "—"
         let sleepHours = context.health?.sleepHours.map { String(format: "%.1f h", $0) } ?? "—"
-        let nutrition = profile?.nutritionProfile?.nutritionQuality?.rawValue ?? "—"
+        let sportsLine = profile?.sports.prefix(2).map(\.name).joined(separator: ", ") ?? "—"
 
         return [
             suggestion(
-                id: "training",
-                title: "Créez un modèle d'entraînement",
-                subtitle: "Conçu pour vos objectifs",
-                icon: "💪",
-                question: "C'est quoi mon entraînement aujourd'hui ?",
-                hint: "\(sportsLine), \(sessions), objectif \(goal), readiness \(readiness)/100"
-            ),
-            suggestion(
-                id: "meal",
-                title: "Enregistrer un aliment",
-                subtitle: "Suivez votre nutrition quotidienne",
-                icon: "🍽️",
-                question: "Je mange quoi au prochain repas ?",
-                hint: "Objectif \(goal), habitudes \(nutrition)"
-            ),
-            suggestion(
                 id: "today",
-                title: "Faire un point de suivi",
-                subtitle: "Planifiez des points réguliers",
-                icon: "📊",
-                question: "Qu'est-ce que je fais aujourd'hui ?",
-                hint: "Readiness \(readiness)/100 (\(readinessWord)), sommeil récent \(sleepHours)"
+                title: "Par où je commence ?",
+                subtitle: "Priorité du moment",
+                icon: "🎯",
+                question: "Par où je commence aujourd'hui pour avancer sur mon objectif ?",
+                hint: "Objectif \(goal)"
+            ),
+            suggestion(
+                id: "training",
+                title: "Entraînement",
+                subtitle: sportsLine == "—" ? "Conseil du jour" : sportsLine,
+                icon: "💪",
+                question: "Que me conseilles-tu pour l'entraînement aujourd'hui ?",
+                hint: "Sports : \(sportsLine), objectif \(goal)"
+            ),
+            suggestion(
+                id: "meals",
+                title: "Nutrition",
+                subtitle: "Repas & debloat",
+                icon: "🍽️",
+                question: "Comment je mange aujourd'hui pour rester aligné avec le debloat ?",
+                hint: "Objectif \(goal), sommeil récent \(sleepHours)"
             ),
         ]
     }

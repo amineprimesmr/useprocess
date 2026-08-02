@@ -72,9 +72,8 @@ enum FaceScanEvolutionEngine {
     static func build(
         for result: FaceScanResult,
         history: [FaceScanResult],
-        context: FaceScanInsightContext? = nil
+        context _: FaceScanInsightContext? = nil
     ) -> FaceScanEvolutionFacts {
-        let resolvedContext = context ?? FaceScanInsightContext.fromTodayHealth()
         let dailyHistory = history.filter { $0.source == .daily }
         let trajectory = ProcessDebloatTrajectoryStore.shared.snapshot
 
@@ -105,8 +104,8 @@ enum FaceScanEvolutionEngine {
         let retention = FaceScanMetricDisplay.item(for: .retention, result: result, previous: previous)
         let retentionLoad = FaceScanIndicators.displayPercent(for: .retention, result: result)
 
-        if result.relativeSignals?.baselineLabel == "Premier scan de référence" {
-            return "Premier scan de référence : les prochains scans montreront ce qui monte ou descend."
+        if result.relativeSignals?.baselineLabel == "Premier scan de référence" || previous == nil {
+            return "Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend."
         }
 
         var parts: [String] = []

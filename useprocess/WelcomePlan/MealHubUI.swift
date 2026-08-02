@@ -294,7 +294,7 @@ struct MealComparisonSheet: View {
                     .font(.title3.weight(.black))
                     .foregroundStyle(theme.primaryText)
             }
-            ForEach(meal.items.prefix(4)) { item in
+            ForEach(meal.foodItems.prefix(4)) { item in
                 Text("• \(item.name)")
                     .font(.caption2)
                     .foregroundStyle(theme.secondaryText)

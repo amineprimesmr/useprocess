@@ -2,7 +2,6 @@ import Foundation
 
 /// Actions rapides du chat — prompts structurés pour Claude.
 enum CoachTool: String, CaseIterable, Identifiable, Sendable {
-    case explainReadiness
     case analyzeWeek
     case compareScans
     case nutritionAdvice
@@ -13,7 +12,6 @@ enum CoachTool: String, CaseIterable, Identifiable, Sendable {
 
     var label: String {
         switch self {
-        case .explainReadiness: return "Readiness"
         case .analyzeWeek: return "Ma semaine"
         case .compareScans: return "Comparer scans"
         case .nutritionAdvice: return "Nutrition"
@@ -24,7 +22,6 @@ enum CoachTool: String, CaseIterable, Identifiable, Sendable {
 
     var icon: String {
         switch self {
-        case .explainReadiness: return "bolt.heart.fill"
         case .analyzeWeek: return "calendar"
         case .compareScans: return "arrow.left.arrow.right"
         case .nutritionAdvice: return "fork.knife"
@@ -35,15 +32,11 @@ enum CoachTool: String, CaseIterable, Identifiable, Sendable {
 
     func buildPrompt(context: CoachUserContext) -> String {
         switch self {
-        case .explainReadiness:
-            return """
-            Explique mon score readiness actuel (\(context.health?.readinessScore.map(String.init) ?? "—")/100) \
-            en 5-7 phrases : cause biologique probable, impact sur la journée, 2 actions concrètes aujourd'hui.
-            """
         case .analyzeWeek:
             return """
             Analyse ma semaine santé avec les données disponibles dans le CONTEXTE UTILISATEUR.
             Tendances sommeil / effort / récupération. 3 insights + 3 priorités pour les 7 prochains jours.
+            N’utilise jamais le mot readiness.
             """
         case .compareScans:
             let count = BodyScanHistoryStore.shared.history.count

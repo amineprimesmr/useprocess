@@ -1,92 +1,44 @@
 import SwiftUI
 
-/// Accueil contextuel du coach — même rendu typewriter que le Plan personnalisé.
+/// Salutation d’accueil du coach — inline dans le scroll ou plein écran.
 struct CoachContextualHomeView: View {
     let prompt: CoachHomePrompt
     var mealHandoff: CoachMealHandoff? = nil
-    var startsComplete: Bool = false
-    var onGreetingComplete: () -> Void
+    var embeddedInScroll: Bool = false
 
     @Environment(\.appTheme) private var theme
-    @State private var typewriter = CoachTypewriterController()
 
-    private let messageLineSpacing: CGFloat = 7
-    private let horizontalPadding: CGFloat = 28
+    private let messageLineSpacing: CGFloat = 5
+    private let horizontalPadding: CGFloat = 20
 
     var body: some View {
-        GeometryReader { geometry in
-            VStack(alignment: .leading, spacing: 0) {
-                if let handoff = mealHandoff {
-                    CoachMealSuggestionMessageView(
-                        content: CoachMealContentEnricher.enrich(handoff.meal)
-                    )
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.top, topContentPadding)
-                        .padding(.bottom, 18)
-                }
-
-                typewriterText
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, mealHandoff == nil ? topContentPadding : 0)
-
-                Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 0) {
+            if let handoff = mealHandoff {
+                CoachMealSuggestionMessageView(
+                    content: CoachMealContentEnricher.enrich(handoff.meal)
+                )
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, topContentPadding)
+                .padding(.bottom, 14)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .mask(topFadeMask)
-        }
-        .task(id: presentationTaskID) {
-            if startsComplete {
-                typewriter.showImmediately(text: prompt.greetingText)
-                return
-            }
-            await typewriter.run(text: prompt.greetingText)
-            guard !Task.isCancelled else { return }
-            onGreetingComplete()
-        }
-        .onDisappear {
-            typewriter.reset()
-            HapticManager.shared.endTypewriterSession()
-        }
-    }
 
-    private var presentationTaskID: String {
-        let mealPart = mealHandoff.map { "\($0.meal.name)|\($0.slot.rawValue)" } ?? "none"
-        return "\(mealPart)|\(prompt.greetingText)|complete:\(startsComplete)"
-    }
-
-    private var topContentPadding: CGFloat {
-        ProcessMainChromeMetrics.topSafeInset + 118
-    }
-
-    private var typewriterText: some View {
-        ZStack(alignment: .topLeading) {
             Text(prompt.greetingText)
-                .font(.system(size: OnboardingProfileChatDepthStyle.activeFontSize, weight: .regular))
-                .foregroundStyle(.clear)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(theme.primaryText)
                 .lineSpacing(messageLineSpacing)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
-                .accessibilityHidden(true)
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, mealHandoff == nil ? topContentPadding : 0)
+                .padding(.bottom, embeddedInScroll ? 12 : 0)
 
-            if !typewriter.displayedText.isEmpty {
-                Text(typewriter.displayedText)
-                    .font(.system(size: OnboardingProfileChatDepthStyle.activeFontSize, weight: .regular))
-                    .foregroundStyle(theme.primaryText)
-                    .lineSpacing(messageLineSpacing)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
+            if !embeddedInScroll {
+                Spacer(minLength: 0)
             }
         }
-        .animation(nil, value: typewriter.displayedText)
+        .frame(maxWidth: .infinity, maxHeight: embeddedInScroll ? nil : .infinity, alignment: .topLeading)
     }
 
-    private var topFadeMask: some View {
-        VStack(spacing: 0) {
-            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                .frame(height: 110)
-            Rectangle().fill(.black)
-        }
-    }
+    private var topContentPadding: CGFloat { 16 }
 }

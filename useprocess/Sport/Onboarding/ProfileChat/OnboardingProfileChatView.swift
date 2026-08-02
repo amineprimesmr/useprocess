@@ -22,6 +22,7 @@ struct OnboardingProfileChatView: View {
     @State private var signInError: String?
     @State private var faceScanScrollProxy: ScrollViewProxy?
     @State private var showsOnboardingFaceScanSession = false
+    @State private var pendingFaceScanSessionFinish = false
 
     private let messageLineSpacing: CGFloat = 7
     private let horizontalPadding: CGFloat = 28
@@ -103,6 +104,7 @@ struct OnboardingProfileChatView: View {
             OnboardingFaceScanSessionView(
                 isSigningIn: isSigningIn,
                 onCancel: {
+                    pendingFaceScanSessionFinish = false
                     showsOnboardingFaceScanSession = false
                     chatViewModel.isSubmittingAnswer = false
                     if chatViewModel.currentQuestion?.id == "face_scan_offer" {
@@ -113,11 +115,17 @@ struct OnboardingProfileChatView: View {
                     chatViewModel.adoptDedicatedFaceScanResult(result)
                 },
                 onContinueAfterResults: {
-                    Task { await authenticateAndFinishFromFaceAnalysis() }
+                    pendingFaceScanSessionFinish = true
+                    showsOnboardingFaceScanSession = false
+                    Task { await completePendingFaceScanSessionFinish() }
                 }
             )
             .environmentObject(profileService)
             .interactiveDismissDisabled(isSigningIn)
+        }
+        .onChange(of: showsOnboardingFaceScanSession) { _, isPresented in
+            guard !isPresented, pendingFaceScanSessionFinish else { return }
+            Task { await completePendingFaceScanSessionFinish() }
         }
         .task(id: onboardingViewModel.currentStep) {
             chatViewModel.bind(
@@ -628,14 +636,17 @@ struct OnboardingProfileChatView: View {
         onboardingViewModel.saveProgress()
 
         do {
-            try await OnboardingAppleAuth.authenticateAndMigrate(
-                authManager: authManager,
-                profileService: profileService,
-                viewModel: onboardingViewModel
-            )
+            if AppConfiguration.firebaseConfigured {
+                try await OnboardingAppleAuth.authenticateAndMigrate(
+                    authManager: authManager,
+                    profileService: profileService,
+                    viewModel: onboardingViewModel
+                )
+            }
             HapticManager.shared.notification(.success)
             isSigningIn = false
             chatViewModel.submitContinueAfterAnalysis()
+            chatViewModel.finish(onComplete: onComplete)
         } catch {
             HapticManager.shared.notification(.error)
             signInError = error.localizedDescription
@@ -644,27 +655,36 @@ struct OnboardingProfileChatView: View {
     }
 
     @MainActor
-    private func authenticateAndFinishFromFaceAnalysis() async {
+    private func completePendingFaceScanSessionFinish() async {
+        guard pendingFaceScanSessionFinish else { return }
+        pendingFaceScanSessionFinish = false
+        await completeFaceScanOnboarding()
+    }
+
+    @MainActor
+    private func completeFaceScanOnboarding() async {
         guard !isSigningIn else { return }
         isSigningIn = true
         signInError = nil
+        defer { isSigningIn = false }
+
         chatViewModel.prepareAnswersForAuthentication()
         onboardingViewModel.saveProgress()
 
         do {
-            try await OnboardingAppleAuth.authenticateAndMigrate(
-                authManager: authManager,
-                profileService: profileService,
-                viewModel: onboardingViewModel
-            )
+            if AppConfiguration.firebaseConfigured {
+                try await OnboardingAppleAuth.authenticateAndMigrate(
+                    authManager: authManager,
+                    profileService: profileService,
+                    viewModel: onboardingViewModel
+                )
+            }
             HapticManager.shared.notification(.success)
-            isSigningIn = false
-            showsOnboardingFaceScanSession = false
             chatViewModel.finishAfterDedicatedFaceAnalysis()
+            chatViewModel.finish(onComplete: onComplete)
         } catch {
             HapticManager.shared.notification(.error)
             signInError = error.localizedDescription
-            isSigningIn = false
         }
     }
 

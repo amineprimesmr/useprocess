@@ -7,6 +7,7 @@ final class ProcessStreakStore {
 
     private(set) var snapshot: ProcessStreakSnapshot = .empty
     private var state = ProcessStreakState()
+    private var persistenceGeneration: UInt64 = 0
 
     private init() {
         state = loadState() ?? ProcessStreakState()
@@ -16,9 +17,8 @@ final class ProcessStreakStore {
         state = loadState() ?? ProcessStreakState()
     }
 
-    func sync(from plan: FaceOriginPlan?, now: Date = Date()) {
-        ProcessDebloatTrajectoryStore.shared.sync(from: plan)
-    }
+    /// No-op — la trajectoire debloat pousse déjà le snapshot via `applyTrajectorySnapshot`.
+    func sync(from plan: FaceOriginPlan?, now: Date = Date()) {}
 
     /// Appelé par ProcessDebloatTrajectoryStore après recalcul.
     func applyTrajectorySnapshot(
@@ -71,8 +71,15 @@ final class ProcessStreakStore {
     private func persist() {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("process.streak", userId: uid)
-        if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: key)
+        let stateSnapshot = state
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.store(
+                stateSnapshot,
+                forKey: key,
+                generation: generation
+            )
         }
     }
 

@@ -8,7 +8,7 @@ enum ProcessDailyTargets {
     static var hydrationLabel: String { "\(hydrationLitersPerDay) L" }
 
     // MARK: - Matin
-    static let morningLightMinutes = 15
+    static let morningLightMinutes = 100
     static let faceScanSeconds = 30
     static let coldFaceRinseSeconds = 30
 

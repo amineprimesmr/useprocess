@@ -2,7 +2,10 @@ import Foundation
 
 extension FaceOriginPlan {
     var resolvedDailyTargets: OriginPersonalizedDailyTargets {
-        personalizedTargets ?? .default
+        var targets = personalizedTargets ?? .default
+        // Cible produit courante — ignore d’anciennes valeurs persistées (ex. 15 min).
+        targets.morningLightMinutes = ProcessDailyTargets.morningLightMinutes
+        return targets
     }
 
     /// Regénère le contenu du plan en conservant id, userId, createdAt et la progression.

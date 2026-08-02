@@ -94,52 +94,17 @@ struct PlanLastFaceScanSection: View {
         isScanAvailable || isScanFlowActive
     }
 
-    private var showsTodayInsight: Bool {
-        guard let latest else { return false }
-        return Calendar.current.isDateInToday(latest.createdAt) && !isScanDue && !isScanFlowActive
-    }
-
-    private func insightContext() -> FaceScanInsightContext {
-        healthMetrics.insightContext()
-    }
-
-    private func todayInsight(for result: FaceScanResult) -> FaceScanAIInsight {
-        let history = FaceScanEvolutionEngine.dailyHistory(from: FaceScanHistoryStore.shared.history)
-        return FaceScanAIInsightBuilder.insight(
-            for: result,
-            history: history,
-            context: insightContext()
-        )
-    }
-
-    @MainActor
-    private func openLatestScanAnalysis() {
-        guard let latest else { return }
-        HapticManager.shared.impact(.light)
-        latestAnalysisScan = latest
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
-            Group {
-                if showsUnifiedScanCard {
-                    unifiedScanDueCard
-                } else if isInteractive {
-                    Button(action: handlePrimaryTap) {
-                        postScanCardContent
-                    }
-                    .buttonStyle(.plain)
-                } else {
+        Group {
+            if showsUnifiedScanCard {
+                unifiedScanDueCard
+            } else if isInteractive {
+                Button(action: handlePrimaryTap) {
                     postScanCardContent
                 }
-            }
-
-            if showsTodayInsight, let latest {
-                FaceScanAIInsightFooter(
-                    insight: todayInsight(for: latest),
-                    onTap: { openLatestScanAnalysis() }
-                )
-                .zIndex(1)
+                .buttonStyle(.plain)
+            } else {
+                postScanCardContent
             }
         }
         .background {
@@ -147,13 +112,13 @@ struct PlanLastFaceScanSection: View {
                 .fill(.clear)
                 .processGlassEffect(
                     in: cardShape,
-                    interactive: isInteractive && !isScanFlowActive && !showsTodayInsight
+                    interactive: isInteractive && !isScanFlowActive
                 )
         }
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
-        .animation(.spring(response: 0.58, dampingFraction: 0.86), value: isScanFlowActive)
+        .animation(.spring(response: 0.56, dampingFraction: 0.84), value: isScanFlowActive)
         .onAppear {
             displayPreferences.reload()
         }
@@ -174,6 +139,13 @@ struct PlanLastFaceScanSection: View {
         .fullScreenCover(item: $latestAnalysisScan) { scan in
             latestAnalysisCover(for: scan)
         }
+    }
+
+    @MainActor
+    private func openLatestScanAnalysis() {
+        guard latest != nil else { return }
+        HapticManager.shared.impact(.light)
+        latestAnalysisScan = latest
     }
 
     private func handlePrimaryTap() {
@@ -208,7 +180,7 @@ struct PlanLastFaceScanSection: View {
                 ? expandedScanSectionHeight(viewportDiameter: viewportDiameter)
                 : Layout.scanAvailableHeight
 
-            HStack(spacing: 0) {
+            ZStack(alignment: .topLeading) {
                 inlineScanCaptureLayer(
                     expanded: expanded,
                     compactVideoWidth: compactVideoWidth,
@@ -217,12 +189,17 @@ struct PlanLastFaceScanSection: View {
                 )
 
                 if !expanded {
-                    compactScanDueTrailingColumnContent
+                    HStack(spacing: 0) {
+                        Spacer(minLength: compactVideoWidth)
+                        compactScanDueTrailingColumnContent
+                    }
+                    .transition(.opacity)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(height: unifiedScanCardHeight)
+        .clipped()
     }
 
     private var unifiedScanCardHeight: CGFloat {
@@ -247,7 +224,8 @@ struct PlanLastFaceScanSection: View {
             ),
             showsInlineHeader: false,
             onBack: closeInlineScan,
-            allowsScreenFlash: isScanFlowActive,
+            allowsScreenFlash: expanded,
+            isCameraSessionActive: isPlanActive,
             onContinue: { payload, markers in
                 withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
                     isScanFlowActive = false
@@ -255,6 +233,7 @@ struct PlanLastFaceScanSection: View {
                 analysisSession = InlineFaceScanAnalysisSession(payload: payload, markers: markers)
             }
         )
+        .id("plan-inline-face-scan")
         .frame(
             width: expanded ? nil : compactVideoWidth,
             height: expanded ? nil : Layout.scanAvailableHeight,
@@ -574,15 +553,7 @@ enum PlanFaceScanPreScanAction {
 // MARK: - Bande basse prochain scan
 
 enum PlanFaceScanChrome {
-    /// Bleu foncé légèrement lumineux — trait et compte à rebours.
     static let luminousBlue = Color(red: 0.26, green: 0.48, blue: 0.84)
-    static let luminousBlueGlow = Color(red: 0.34, green: 0.58, blue: 0.94)
-
-    static func insightFooterFill(isDark: Bool) -> Color {
-        isDark
-            ? Color(red: 0.08, green: 0.12, blue: 0.21).opacity(0.78)
-            : Color(red: 0.90, green: 0.94, blue: 0.99).opacity(0.92)
-    }
 }
 
 private struct PlanFaceScanNextScanFooter: View {

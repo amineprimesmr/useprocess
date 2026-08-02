@@ -120,7 +120,21 @@ enum ProcessPlanProgressEngine {
         earlyCompletion: Bool = false,
         now: Date = Date()
     ) -> ProcessPlanProgressState {
-        guard plan != nil else { return state }
+        guard let plan else { return state }
+
+        let hasSubmittedCheckIn = records.contains(where: \.checkInSubmitted)
+        let programStarted = plan.calendar.startedAt != nil
+
+        if !programStarted || !hasSubmittedCheckIn {
+            var cleared = state
+            cleared.adjustmentDays = 0
+            cleared.events = []
+            cleared.appliedTokens = []
+            if cleared.schemaVersion < 2 {
+                cleared.schemaVersion = 2
+            }
+            return cleared
+        }
 
         var updated = state
         var tokens = updated.appliedTokens
@@ -129,7 +143,7 @@ enum ProcessPlanProgressEngine {
 
         func apply(delta: Int, token: String, reason: PlanDurationEvolutionReason, message: String) {
             guard !tokens.contains(token) else { return }
-            let baseDays = max(7, plan.map { canonicalBaseProgramDays(plan: $0) } ?? 7)
+            let baseDays = max(7, canonicalBaseProgramDays(plan: plan))
             let next = clampAdjustment(adjustment + delta, baseDays: baseDays)
             guard next != adjustment else { return }
 
@@ -170,8 +184,6 @@ enum ProcessPlanProgressEngine {
             )
         }
 
-        // Prolongation uniquement après 2 bilans manqués d'affilée (sans grâce).
-        // Un seul jour oublié ne doit pas rallonger le programme.
         if consecutiveMisses >= 2 {
             apply(
                 delta: 3,
@@ -181,7 +193,7 @@ enum ProcessPlanProgressEngine {
             )
         } else {
             tokens.remove("consecutive_misses")
-            let baseDays = max(7, plan.map { canonicalBaseProgramDays(plan: $0) } ?? 7)
+            let baseDays = max(7, canonicalBaseProgramDays(plan: plan))
             reconcileLegacyRegressionExtension(adjustment: &adjustment, tokens: &tokens, baseDays: baseDays)
         }
 
@@ -222,6 +234,9 @@ enum ProcessPlanProgressEngine {
         updated.adjustmentDays = adjustment
         updated.appliedTokens = tokens
         updated.events = Array(events.prefix(12)).map { sanitizeEvent($0) }
+        if updated.schemaVersion < 2 {
+            updated.schemaVersion = 2
+        }
         return updated
     }
 

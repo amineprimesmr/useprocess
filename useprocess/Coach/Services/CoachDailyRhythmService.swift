@@ -123,9 +123,9 @@ enum CoachDailyRhythmService {
            let dayTitle = OriginPlanPresenter.todayDayTitle(in: plan) {
             return dayTitle
         }
-        let readiness = HealthManager.shared.readinessScore
-        if readiness >= 67 { return "Bonne récup — prêt à avancer" }
-        if readiness >= 34 { return "Journée modérée" }
+        let sleep = HealthManager.shared.todaySnapshot.sleep.sleepDuration
+        if sleep >= 7.5 { return "Bonne nuit — prêt à avancer" }
+        if sleep >= 6 { return "Journée modérée" }
         return "Priorité récup aujourd'hui"
     }
 
@@ -144,9 +144,9 @@ enum CoachDailyRhythmService {
             }
         }
 
-        let readiness = HealthManager.shared.readinessScore
-        if readiness > 0 {
-            parts.append("Readiness \(readiness)%")
+        let sleep = HealthManager.shared.todaySnapshot.sleep.sleepDuration
+        if sleep > 0 {
+            parts.append(String(format: "Sommeil %.1fh", sleep))
         }
 
         if FaceScanCadence.isScanDue(since: FaceScanHistoryStore.shared.latestResult?.createdAt) {

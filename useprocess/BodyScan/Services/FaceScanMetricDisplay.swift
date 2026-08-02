@@ -22,7 +22,9 @@ enum FaceScanMetricDisplay {
         let value: Int
 
         var deltaLabel: String {
-            guard let delta else { return "—" }
+            guard let delta else {
+                return comparisonKind == .reference ? "base" : "—"
+            }
             if delta == 0 { return "0" }
             return delta > 0 ? "+\(delta)" : "\(delta)"
         }
@@ -109,8 +111,8 @@ enum FaceScanMetricDisplay {
         let retention = item(for: .retention, result: result, previous: previous)
         let retentionLoad = FaceScanIndicators.displayPercent(for: .retention, result: result)
 
-        if result.relativeSignals?.baselineLabel == "Premier scan de référence" {
-            return "Premier scan de référence : les prochains scans montreront ce qui monte ou descend."
+        if result.relativeSignals?.baselineLabel == "Premier scan de référence" || previous == nil {
+            return "Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend."
         }
 
         if retentionLoad >= 62 {

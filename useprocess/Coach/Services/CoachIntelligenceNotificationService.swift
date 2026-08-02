@@ -239,7 +239,7 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
                 CoachPlanNavigationBridge.shared.openCoachWithCheckIn(prompt: prompt)
             case "daily_outlook":
                 CoachPlanNavigationBridge.shared.openCoachWithCheckIn(
-                    prompt: "Donne-moi mon brief matin : readiness, jour du plan personnalisé et 1 action prioritaire."
+                    prompt: "Donne-moi mon brief matin : sommeil, jour du plan personnalisé et 1 action prioritaire."
                 )
             case "daily_review":
                 CoachPlanNavigationBridge.shared.openEveningCheckIn()

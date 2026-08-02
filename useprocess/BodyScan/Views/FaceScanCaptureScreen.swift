@@ -30,6 +30,7 @@ struct FaceScanCaptureScreen: View {
     var compactSkipAction: Bool = false
     var skipButtonTitle: String = "Continuer sans scan"
     var allowsScreenFlash: Bool = true
+    var isCameraSessionActive: Bool = true
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
     @State private var scanProgress: Double = 0
@@ -46,6 +47,7 @@ struct FaceScanCaptureScreen: View {
     @State private var isDeviceSupported = ARFaceTrackingConfiguration.isSupported
     @State private var phase: FaceScanPhase = .positioning
     @State private var scanSessionID = UUID()
+    @State private var inlineMeshResetNonce = 0
     @State private var capturedPayload: FaceScanCapturePayload?
     @State private var capturedMarkers: FaceWellnessMarkers?
     @State private var canSkipScan = false
@@ -54,6 +56,8 @@ struct FaceScanCaptureScreen: View {
     @State private var showGalleryPicker = false
     @State private var isImportingMedia = false
     @State private var importErrorMessage: String?
+    @State private var hasSubmittedCapture = false
+    @State private var captureSessionPaused = false
 
     private var cameraZoom: CGFloat {
         AdaptiveScreenLayout.faceScanCameraZoom(horizontalSizeClass: horizontalSizeClass)
@@ -65,7 +69,9 @@ struct FaceScanCaptureScreen: View {
         case completed
     }
 
-    /// Visage bien cadré en phase de positionnement (distance OK, pas de hint).
+    private var isARSessionActive: Bool {
+        isCameraSessionActive && !captureSessionPaused && phase != .completed
+    }
     private var isPositioningWellFramed: Bool {
         frameHint == nil && isFaceDetected
     }
@@ -171,7 +177,8 @@ struct FaceScanCaptureScreen: View {
                 FaceScanScreenFlash.shared.deactivate()
                 resetCaptureState(instruction: "")
             } else {
-                resetCaptureState(instruction: "Rapproche-toi pour que ton visage remplisse le cadre.")
+                instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
+                frameHint = nil
             }
         }
         .onChange(of: scanProgress) { oldValue, value in
@@ -182,9 +189,7 @@ struct FaceScanCaptureScreen: View {
                 }
             }
             if value >= 1, phase != .completed, capturedPayload != nil {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    phase = .completed
-                }
+                phase = .completed
             } else if value < 0.03, oldValue > 0.15, phase == .scanning {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     phase = .positioning
@@ -269,6 +274,7 @@ struct FaceScanCaptureScreen: View {
 
                     cameraSection(viewportSize: viewportSize)
                         .padding(.top, AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) ? 12 : 8)
+                        .allowsHitTesting(phase != .completed)
 
                     instructionBlock
                         .padding(.top, 22)
@@ -298,6 +304,7 @@ struct FaceScanCaptureScreen: View {
                     bottomAction
                         .padding(.horizontal, 24)
                         .padding(.bottom, max(safeArea.bottom + 16, 28))
+                        .zIndex(20)
                 }
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
             }
@@ -380,6 +387,10 @@ struct FaceScanCaptureScreen: View {
                 embeddedControlsBlock
                     .padding(.horizontal, Layout.cardPadding)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                bottomAction
+                    .padding(.horizontal, Layout.cardPadding)
+                    .padding(.top, 4)
 
                 Spacer(minLength: 0)
             }
@@ -634,11 +645,12 @@ struct FaceScanCaptureScreen: View {
                             isDeviceSupported: $isDeviceSupported,
                             isLowLight: $isLowLight,
                             isPreviewOnly: isInlinePreview,
+                            isSessionRunning: isARSessionActive,
                             allowsScreenFlash: allowsScreenFlash,
                             cameraZoom: cameraZoom,
                             onComplete: handleCapture
                         )
-                        .id(scanSessionID)
+                        .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
                         .scaleEffect(cameraZoom)
                         .blur(radius: scanBlockedByLighting ? 7 : 0)
                     },
@@ -680,10 +692,10 @@ struct FaceScanCaptureScreen: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: isInlinePreview ? .leading : .center)
-        .animation(.interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
-        .animation(.easeInOut(duration: 0.25), value: phase)
-        .animation(.easeInOut(duration: 0.2), value: showsFrameCorners)
-        .animation(.easeInOut(duration: 0.2), value: showsScanRing)
+        .animation(phase == .completed ? nil : .interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
+        .animation(phase == .completed ? nil : .easeInOut(duration: 0.25), value: phase)
+        .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsFrameCorners)
+        .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsScanRing)
 
         return Group {
             if isInlinePreview {
@@ -798,19 +810,31 @@ struct FaceScanCaptureScreen: View {
 
     @ViewBuilder
     private var bottomAction: some View {
-        if phase == .completed, capturedPayload?.mesh.isValid == true, capturedMarkers != nil {
+        if phase == .completed, let payload = capturedPayload, payload.mesh.isValid {
             FaceIDContinueButton {
-                HapticManager.shared.impact(.medium)
-                FaceScanScreenFlash.shared.deactivate()
-                if let payload = capturedPayload, let markers = capturedMarkers {
-                    onContinue(payload, markers)
-                }
+                submitCapturedScan()
             }
             .transition(.opacity.combined(with: .move(edge: .bottom)))
         } else if canSkipScan {
             skipScanButton
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
+    }
+
+    @MainActor
+    private func submitCapturedScan() {
+        guard !hasSubmittedCapture else { return }
+        guard let payload = capturedPayload, payload.mesh.isValid else { return }
+
+        hasSubmittedCapture = true
+        captureSessionPaused = true
+
+        let markers = capturedMarkers ?? FaceWellnessAnalyzer.analyze(from: payload)
+        capturedMarkers = markers
+
+        HapticManager.shared.impact(.medium)
+        FaceScanScreenFlash.shared.deactivate()
+        onContinue(payload, markers)
     }
 
     @ViewBuilder
@@ -865,30 +889,19 @@ struct FaceScanCaptureScreen: View {
 
     // MARK: - Actions
 
+    @MainActor
     private func handleCapture(_ payload: FaceScanCapturePayload) {
-        guard payload.mesh.isValid, FaceScanQualityValidator.meshIsSolid(payload.mesh) else {
-            restartScan()
-            return
-        }
+        guard !hasSubmittedCapture else { return }
+        guard payload.mesh.isValid else { return }
 
-        let markers = FaceWellnessAnalyzer.analyze(from: payload)
+        captureSessionPaused = true
         capturedPayload = payload
-        capturedMarkers = markers
+        capturedMarkers = FaceWellnessAnalyzer.analyze(from: payload)
 
         FaceScanScreenFlash.shared.deactivate(animated: true)
         isFlashEnabled = false
-
         HapticManager.shared.notification(.success)
-
-        withAnimation(.easeInOut(duration: 0.28)) {
-            phase = .completed
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(isInlineHome ? 520 : 380))
-            guard capturedPayload?.scanId == payload.scanId else { return }
-            onContinue(payload, markers)
-        }
+        phase = .completed
     }
 
     private func importImage(_ image: UIImage) {
@@ -921,19 +934,22 @@ struct FaceScanCaptureScreen: View {
     }
 
     private func submitImportedMedia(_ payload: FaceScanCapturePayload, markers: FaceWellnessMarkers) {
+        guard !hasSubmittedCapture else { return }
         capturedPayload = payload
         capturedMarkers = markers
+        captureSessionPaused = true
         FaceScanScreenFlash.shared.deactivate(animated: true)
         isFlashEnabled = false
         HapticManager.shared.notification(.success)
-        withAnimation(.easeInOut(duration: 0.25)) {
-            phase = .completed
-        }
-        onContinue(payload, markers)
+        phase = .completed
     }
 
     private func restartScan() {
-        scanSessionID = UUID()
+        if isInlineHome {
+            inlineMeshResetNonce += 1
+        } else {
+            scanSessionID = UUID()
+        }
         resetCaptureState(instruction: "Place ton visage dans le cadre.")
         withAnimation(.easeInOut(duration: 0.2)) {
             phase = .positioning
@@ -948,6 +964,8 @@ struct FaceScanCaptureScreen: View {
     }
 
     private func resetCaptureState(instruction: String) {
+        hasSubmittedCapture = false
+        captureSessionPaused = false
         scanProgress = 0
         ringProgress = 0
         activeTickSectors = []

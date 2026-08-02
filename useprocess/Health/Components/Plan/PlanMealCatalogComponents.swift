@@ -1,12 +1,13 @@
 import SwiftUI
 
-// MARK: - Layout
+// MARK: - Layout (aligné sur les cartes repas Accueil)
 
 enum PlanMealCatalogLayout {
-    static let cardWidth: CGFloat = 172
-    static let cardHeight: CGFloat = 260
-    static let cornerRadius: CGFloat = 28
-    static let spacing: CGFloat = 14
+    static let cardWidth: CGFloat = 212
+    static let cardHeight: CGFloat = 268
+    static let imageDiameter: CGFloat = 152
+    static let cornerRadius: CGFloat = 30
+    static let spacing: CGFloat = 10
 }
 
 // MARK: - Carousel
@@ -31,20 +32,21 @@ struct PlanMealCatalogCarousel: View {
                     )
                     .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                         content
-                            .scaleEffect(phase.isIdentity ? 1 : 0.94)
-                            .opacity(phase.isIdentity ? 1 : 0.82)
+                            .scaleEffect(phase.isIdentity ? 1 : 0.9)
+                            .opacity(phase.isIdentity ? 1 : 0.78)
                     }
                 }
             }
             .scrollTargetLayout()
             .padding(.vertical, 4)
+            .padding(.trailing, 20)
         }
         .scrollTargetBehavior(.viewAligned)
         .scrollClipDisabled()
     }
 }
 
-// MARK: - Carte catalogue (style produit)
+// MARK: - Carte catalogue (liquid glass — même langage que Accueil)
 
 struct PlanMealCatalogCard: View {
     let meal: MealSuggestionContent
@@ -58,6 +60,7 @@ struct PlanMealCatalogCard: View {
     private var assessment: MealDebloatAssessment {
         MealNutritionCatalog.debloatAssessment(for: meal)
     }
+
     private var imageAsset: String {
         MealNutritionCatalog.resolvedImageAsset(
             for: meal,
@@ -67,97 +70,78 @@ struct PlanMealCatalogCard: View {
         )
     }
 
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: PlanMealCatalogLayout.cornerRadius, style: .continuous)
+    }
+
     var body: some View {
         Button {
             HapticManager.shared.impact(.light)
             onTap()
         } label: {
-            ZStack {
-                mealImage
+            VStack(spacing: 12) {
+                Text(meal.name)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 18)
 
-                LinearGradient(
-                    colors: [
-                        .black.opacity(0.08),
-                        .clear,
-                        .black.opacity(0.22),
-                        .black.opacity(0.82)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .allowsHitTesting(false)
+                ZStack(alignment: .bottom) {
+                    mealImageCircle
 
-                VStack(spacing: 0) {
-                    scorePill
-                        .padding(.top, 14)
-
-                    Spacer(minLength: 0)
-
-                    titleBlock
-                        .padding(.horizontal, 14)
-                        .padding(.bottom, 10)
-
-                    scoreFooter
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 12)
+                    MealDebloatScorePill(assessment: assessment)
+                        .padding(.bottom, 2)
                 }
+                .frame(height: PlanMealCatalogLayout.imageDiameter + 10)
+
+                Spacer(minLength: 0)
             }
-            .frame(width: PlanMealCatalogLayout.cardWidth, height: PlanMealCatalogLayout.cardHeight)
-            .clipShape(RoundedRectangle(cornerRadius: PlanMealCatalogLayout.cornerRadius, style: .continuous))
-            .overlay {
-                PlanTrainingCardReliefOverlay(
-                    cornerRadius: PlanMealCatalogLayout.cornerRadius,
-                    isDark: theme.isDark
-                )
-            }
+            .frame(
+                width: PlanMealCatalogLayout.cardWidth,
+                height: PlanMealCatalogLayout.cardHeight
+            )
         }
-        .buttonStyle(PlanTrainingCard3DPressStyle(restTilt: 3))
-        .shadow(color: .black.opacity(theme.isDark ? 0.45 : 0.12), radius: 2, y: 2)
-        .shadow(color: .black.opacity(theme.isDark ? 0.38 : 0.14), radius: 14, y: 8)
+        .buttonStyle(.plain)
+        .frame(
+            width: PlanMealCatalogLayout.cardWidth,
+            height: PlanMealCatalogLayout.cardHeight
+        )
+        .processGlassButton(in: cardShape)
+        .clipShape(cardShape)
+        .processHomeGlassCardShadow(isDark: theme.isDark)
+        .accessibilityLabel("\(meal.name), score Debloat \(assessment.score)")
     }
 
-    private var mealImage: some View {
-        Group {
-            if ProcessAssetCatalog.contains(imageAsset) {
-                Image(imageAsset)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                ZStack {
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.88, green: 0.94, blue: 0.90),
-                            Color(red: 0.72, green: 0.86, blue: 0.78)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+    @ViewBuilder
+    private var mealImageCircle: some View {
+        if ProcessAssetCatalog.contains(imageAsset) {
+            Image(imageAsset)
+                .resizable()
+                .scaledToFill()
+                .frame(
+                    width: PlanMealCatalogLayout.imageDiameter,
+                    height: PlanMealCatalogLayout.imageDiameter
+                )
+                .clipShape(Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
+                }
+        } else {
+            Circle()
+                .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.35))
+                .frame(
+                    width: PlanMealCatalogLayout.imageDiameter,
+                    height: PlanMealCatalogLayout.imageDiameter
+                )
+                .overlay {
                     Image(systemName: slot.icon)
-                        .font(.system(size: 36, weight: .semibold))
-                        .foregroundStyle(theme.onboardingAccent.opacity(0.75))
+                        .font(.system(size: 34, weight: .semibold))
+                        .foregroundStyle(theme.onboardingAccent.opacity(0.8))
                 }
-            }
         }
-        .frame(width: PlanMealCatalogLayout.cardWidth, height: PlanMealCatalogLayout.cardHeight)
-        .clipped()
-    }
-
-    private var scorePill: some View {
-        MealDebloatScorePill(assessment: assessment, usesDarkImageStyle: true)
-    }
-
-    private var titleBlock: some View {
-        Text(meal.name)
-            .font(.system(size: 24, weight: .bold, design: .rounded))
-            .italic()
-            .foregroundStyle(.white)
-            .multilineTextAlignment(.leading)
-            .lineLimit(3)
-            .minimumScaleFactor(0.82)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var scoreFooter: some View {
-        MealDebloatScoreFooter(assessment: assessment)
     }
 }

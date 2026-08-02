@@ -281,12 +281,12 @@ struct OriginLifestyleExtras: Codable, Equatable {
             ],
             recoveryProtocol: [
                 "Deload semaine 4 et 8",
-                "Sommeil > séance supplémentaire si readiness basse"
+                "Sommeil > séance supplémentaire si fatigue ou nuit courte"
             ],
             trackingChecklist: [
                 "Scan visage : semaines 1, 4, 8, 13",
                 "Photos profil : même lumière, même angle",
-                "Readiness + pas via Santé chaque matin"
+                "Sommeil + pas via Santé chaque matin"
             ],
             weeklyReviews: [],
             bonusProposals: [

@@ -22,7 +22,7 @@ enum CoachContextualActionKind: String, Codable, Equatable, CaseIterable {
         case .addToShoppingList: return "Liste de courses"
         case .applyPlanChanges: return "Appliquer au programme"
         case .swapWorkout: return "Changer la séance"
-        case .openPlan: return "Voir mon plan"
+        case .openPlan: return "Ouvrir l'accueil"
         case .openJournal: return "Ouvrir le journal"
         case .takePhoto: return "Prendre une photo"
         case .followUp: return "Continuer"

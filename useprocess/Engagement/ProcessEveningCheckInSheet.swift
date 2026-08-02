@@ -48,6 +48,7 @@ struct ProcessEveningCheckInSheet: View {
     @State private var analyzingLabel = "Enregistrement…"
     @State private var validationTask: Task<Void, Never>?
     @State private var submittedDayValidated = false
+    @State private var hydrationPrefill: ProcessHydrationEveningPrefill?
 
     private enum Phase {
         case form
@@ -62,8 +63,18 @@ struct ProcessEveningCheckInSheet: View {
         static let rowHeight: CGFloat = 52
     }
 
+    private var visibleQuestions: [EveningCheckInQuestion] {
+        EveningCheckInQuestion.allCases.filter { question in
+            if question == .water, hydrationPrefill != nil {
+                return false
+            }
+            return true
+        }
+    }
+
     private var isFormComplete: Bool {
-        EveningCheckInQuestion.allCases.allSatisfy { answers[$0.id] != nil }
+        visibleQuestions.allSatisfy { answers[$0.id] != nil }
+            && answers[EveningCheckInQuestionID.water] != nil
     }
 
     private var hasSubmittedTargetDate: Bool {
@@ -92,7 +103,7 @@ struct ProcessEveningCheckInSheet: View {
         .presentationCornerRadius(Metrics.cornerRadius)
         .interactiveDismissDisabled(phase == .analyzing || (isRequired && phase != .validated))
         .onAppear {
-            answers = eveningStore.answers(for: targetDate)
+            applyInitialAnswers()
         }
         .onDisappear {
             validationTask?.cancel()
@@ -106,7 +117,11 @@ struct ProcessEveningCheckInSheet: View {
             headerRow
 
             VStack(spacing: 10) {
-                ForEach(EveningCheckInQuestion.allCases) { question in
+                if let hydrationPrefill {
+                    hydrationPrefillRow(hydrationPrefill)
+                }
+
+                ForEach(visibleQuestions) { question in
                     questionRow(question)
                 }
             }
@@ -154,6 +169,53 @@ struct ProcessEveningCheckInSheet: View {
 
     private func questionTitle(_ question: EveningCheckInQuestion) -> String {
         question.prompt()
+    }
+
+    private func hydrationPrefillRow(_ prefill: ProcessHydrationEveningPrefill) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: prefill.metTarget ? "drop.fill" : "drop")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(
+                    prefill.metTarget
+                        ? Color(red: 0.35, green: 0.78, blue: 0.45)
+                        : theme.secondaryText
+                )
+
+            Text(prefill.statusLine)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(theme.primaryText)
+                .lineLimit(2)
+                .minimumScaleFactor(0.9)
+
+            Spacer(minLength: 8)
+
+            Text("Auto")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(theme.secondaryText)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(theme.primaryText.opacity(theme.isDark ? 0.1 : 0.06))
+                )
+        }
+        .padding(.horizontal, 14)
+        .frame(height: Metrics.rowHeight)
+        .frame(maxWidth: .infinity)
+        .processEveningCheckInGlass(in: Metrics.rowShape)
+        .accessibilityLabel(prefill.statusLine)
+        .accessibilityHint("Réponse remplie depuis ton suivi d'eau dans l'app")
+    }
+
+    private func applyInitialAnswers() {
+        var next = eveningStore.answers(for: targetDate)
+        let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate)
+        hydrationPrefill = prefill
+        if let prefill {
+            // Le suivi Accueil prime sur une ancienne réponse manuelle non soumise.
+            next[EveningCheckInQuestionID.water] = prefill.answer
+        }
+        answers = next
     }
 
     private func answerIconButton(
@@ -225,7 +287,10 @@ struct ProcessEveningCheckInSheet: View {
     }
 
     private var subtitleText: String {
-        "Eau + repas debloat obligatoires · cardio min. 3/semaine."
+        if hydrationPrefill != nil {
+            return "Eau déjà suivie · repas debloat obligatoire · cardio min. 3/semaine."
+        }
+        return "Eau + repas debloat obligatoires · cardio min. 3/semaine."
     }
 
     private var footerBlock: some View {
@@ -371,6 +436,11 @@ struct ProcessEveningCheckInSheet: View {
     // MARK: - Actions
 
     private func submitCheckIn() {
+        // Re-sync eau depuis l'Accueil au moment de valider.
+        if let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate) {
+            hydrationPrefill = prefill
+            answers[EveningCheckInQuestionID.water] = prefill.answer
+        }
         guard isFormComplete else { return }
         HapticManager.shared.impact(.medium)
         phase = .analyzing
@@ -594,7 +664,7 @@ struct ProcessEveningCheckInEntryButton: View {
     }
 
     private var isEveningWindow: Bool {
-        Calendar.current.component(.hour, from: Date()) >= 21
+        ProcessEveningCheckInSchedule.isAvailable()
     }
 
     @ViewBuilder

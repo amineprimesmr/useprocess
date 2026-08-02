@@ -5,6 +5,8 @@ struct AppShellView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @Bindable private var session = AppSession.shared
+    @State private var didPrepareMainApp = false
+    @State private var didPrepareCoachRuntime = false
 
     private var theme: AppTheme {
         AppTheme(appearance: session.appearance, colorScheme: colorScheme)
@@ -29,10 +31,6 @@ struct AppShellView: View {
             CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
             guard phase == .active else { return }
             ProcessAudioSession.configureForMixingWithOthersIfIdle()
-            Task { @MainActor in
-                ProcessEveningCheckInStore.shared.reload()
-                ProcessStreakStore.shared.sync(from: WelcomePlanStore.shared.plan)
-            }
         }
         .environment(\.appTheme, theme)
         .processThirdPartyAIConsentSheet()
@@ -43,7 +41,15 @@ struct AppShellView: View {
         .environmentObject(PermissionsManager.shared)
         .environmentObject(DailyDataManager.shared)
         .task(id: session.hasCompletedOnboarding) {
-            guard session.hasCompletedOnboarding else { return }
+            guard session.hasCompletedOnboarding else {
+                didPrepareMainApp = false
+                didPrepareCoachRuntime = false
+                return
+            }
+            guard !didPrepareMainApp else { return }
+            didPrepareMainApp = true
+            try? await Task.sleep(for: .milliseconds(650))
+            guard !Task.isCancelled, session.hasCompletedOnboarding else { return }
             WelcomePlanStore.shared.reloadForCurrentUser()
             PostOnboardingActivationService.prepareFirstAppEntry(
                 profile: UnifiedProfileService.shared.currentProfile
@@ -53,7 +59,16 @@ struct AppShellView: View {
             }
         }
         .task(id: session.hasCompletedWelcomePlanChat) {
-            guard session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat else { return }
+            guard session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat else {
+                didPrepareCoachRuntime = false
+                return
+            }
+            guard !didPrepareCoachRuntime else { return }
+            didPrepareCoachRuntime = true
+            try? await Task.sleep(for: .milliseconds(900))
+            guard !Task.isCancelled,
+                  session.hasCompletedOnboarding,
+                  session.hasCompletedWelcomePlanChat else { return }
             WelcomePlanStore.shared.reloadForCurrentUser()
             await CoachMemorySummarizer.refreshIfNeeded(
                 profile: UnifiedProfileService.shared.currentProfile,

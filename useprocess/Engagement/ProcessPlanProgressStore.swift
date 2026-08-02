@@ -7,6 +7,7 @@ final class ProcessPlanProgressStore {
 
     private(set) var snapshot: PlanProgressSnapshot = .empty
     private var state = ProcessPlanProgressState()
+    private var persistenceGeneration: UInt64 = 0
 
     private init() {
         state = ProcessPlanProgressEngine.sanitizeState(loadState() ?? ProcessPlanProgressState())
@@ -107,8 +108,15 @@ final class ProcessPlanProgressStore {
     private func persist() {
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("process.plan.progress", userId: uid)
-        if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: key)
+        let stateSnapshot = state
+        persistenceGeneration &+= 1
+        let generation = persistenceGeneration
+        Task.detached(priority: .utility) {
+            await ProcessPersistenceWriter.shared.store(
+                stateSnapshot,
+                forKey: key,
+                generation: generation
+            )
         }
     }
 
