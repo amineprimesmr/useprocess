@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import FirebaseCore
 import UIKit
 
 final class ProcessAppDelegate: NSObject, UIApplicationDelegate {}
@@ -14,18 +13,21 @@ struct useprocessApp: App {
     @UIApplicationDelegateAdaptor(ProcessAppDelegate.self) private var appDelegate
 
     init() {
+        // Bootstrap minimal sync — Firebase / MetricKit / gestures hors de ce chemin.
         iOS26Stability.configureAtLaunch()
         ProcessAudioSession.configureForMixingWithOthers()
-        FirebaseBootstrap.configure()
-        ProcessMetricKitMonitor.shared.start()
     }
 
     var body: some Scene {
         WindowGroup {
             AppShellView()
                 .task {
+                    // Après le 1er frame : Firebase (si pas déjà tiré par Auth) + services.
+                    FirebaseBootstrap.configure()
+                    ProcessMetricKitMonitor.shared.start()
+
                     await PermissionsManager.shared.clearAppBadge()
-                    try? await Task.sleep(for: .milliseconds(350))
+                    try? await Task.sleep(for: .milliseconds(300))
                     CoachIntelligenceNotificationService.configure()
                     SubscriptionService.shared.configure()
                 }

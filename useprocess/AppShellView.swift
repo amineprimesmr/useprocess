@@ -7,6 +7,8 @@ struct AppShellView: View {
     @Bindable private var session = AppSession.shared
     @State private var didPrepareMainApp = false
     @State private var didPrepareCoachRuntime = false
+    /// Armé après le cold start — évite de monter le deferral Home pendant le 1er frame Review.
+    @State private var isHomeSwipeArmed = false
 
     private var theme: AppTheme {
         AppTheme(appearance: session.appearance, colorScheme: colorScheme)
@@ -27,8 +29,10 @@ struct AppShellView: View {
             }
         }
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
-        // Double-swipe Home dès le téléchargement jusqu’à l’accès app (après paiement).
-        .processPreAccessDoubleHomeSwipe(isActive: !session.hasCompletedOnboarding)
+        // Double-swipe Home après stabilisation du launch (pas au tout premier frame).
+        .processPreAccessDoubleHomeSwipe(
+            isActive: !session.hasCompletedOnboarding && isHomeSwipeArmed
+        )
         .onChange(of: scenePhase) { _, phase in
             CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
             guard phase == .active else { return }
@@ -42,6 +46,15 @@ struct AppShellView: View {
         .environmentObject(HealthManager.shared)
         .environmentObject(PermissionsManager.shared)
         .environmentObject(DailyDataManager.shared)
+        .task {
+            // Laisse le 1er frame se peindre avant d’armer le double-swipe Home.
+            try? await Task.sleep(for: .milliseconds(900))
+            guard !Task.isCancelled else { return }
+            isHomeSwipeArmed = !session.hasCompletedOnboarding
+        }
+        .onChange(of: session.hasCompletedOnboarding) { _, completed in
+            if completed { isHomeSwipeArmed = false }
+        }
         .task(id: session.hasCompletedOnboarding) {
             guard session.hasCompletedOnboarding else {
                 didPrepareMainApp = false
