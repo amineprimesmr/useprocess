@@ -1,12 +1,15 @@
 import Foundation
 
 enum EveningCheckInQuestionID {
+    static let morningRoutine = "morningRoutine"
     static let water = "water"
     static let debloatMeal = "debloatMeal"
     static let cardio = "cardio"
     static let legacyPostureCircuit = "postureCircuit"
 
-    static let all: [String] = [water, debloatMeal, cardio]
+    /// Les leviers comptant dans le score debloat (excluant morningRoutine).
+    static let debloatLevers: [String] = [water, debloatMeal, cardio]
+    static let all: [String] = [morningRoutine, water, debloatMeal, cardio]
 }
 
 struct ProcessEveningCheckInDayRecord: nonisolated Codable, Equatable, Sendable {
@@ -83,6 +86,14 @@ final class ProcessEveningCheckInStore {
 
         let dayId = day.id
         let planStore = WelcomePlanStore.shared
+
+        if let morning = answers[EveningCheckInQuestionID.morningRoutine] {
+            planStore.setJournalTaskStatus(
+                morning == "yes" ? .completed : .failed,
+                taskId: "\(dayId).core.morning",
+                dayId: dayId
+            )
+        }
 
         if let water = answers[EveningCheckInQuestionID.water] {
             planStore.setJournalTaskStatus(

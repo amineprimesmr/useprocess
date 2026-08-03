@@ -203,7 +203,7 @@ struct PlanNutritionDaySection: View {
         PlanMealCoverFlowCarousel(
             entries: entries,
             previewImageAssets: ProcessDebloatMealLibrary.fullCatalogPreviewImageAssets(),
-            hydrationTargetMilliliters: livePlan.resolvedDailyTargets.hydrationLitersPerDay * 1000,
+            hydrationTargetMilliliters: ProcessDailyTargets.hydrationTargetMilliliters,
             selectedDate: selectedDate,
             dayId: day.id,
             healthKitWaterLiters: healthKitWaterLiters,

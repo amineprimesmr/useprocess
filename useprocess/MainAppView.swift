@@ -15,13 +15,13 @@ private struct RequiredEveningCheckInTarget: Identifiable, Equatable {
 struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var tabBeforeCoach: ProcessMainSection = .plan
-    @State private var requiredEveningCheckIn: RequiredEveningCheckInTarget?
     @State private var lastPresentedEveningCheckInDayKey: String?
     @State private var coachViewModel = CoachChatViewModel()
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var coachTracker = CoachPresentationTracker.shared
     @Bindable private var session = AppSession.shared
     @Bindable private var screenFlash = FaceScanScreenFlash.shared
+    @Bindable private var eveningPresenter = ProcessEveningCheckInPresenter.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.appTheme) private var theme
 
@@ -46,18 +46,7 @@ struct MainAppView: View {
                 .processClearUIKitHostingBackground()
         }
         .animation(.easeInOut(duration: 0.22), value: screenFlash.isActive)
-        .sheet(item: $requiredEveningCheckIn, onDismiss: handleEveningCheckInDismiss) { target in
-            ProcessEveningCheckInSheet(
-                targetDate: target.date,
-                isRequired: true,
-                onCompleted: {
-                    lastPresentedEveningCheckInDayKey = nil
-                }
-            )
-            .onAppear {
-                lastPresentedEveningCheckInDayKey = target.id
-            }
-        }
+        .eveningCheckInIsland()
         .onAppear {
             _ = UserSessionCoordinator.shared
             syncCoachPresentationState()
@@ -239,9 +228,8 @@ struct MainAppView: View {
     }
 
     private func handleEveningCheckInDismiss() {
-        let dayKey = lastPresentedEveningCheckInDayKey ?? requiredEveningCheckIn?.id
+        let dayKey = lastPresentedEveningCheckInDayKey
         lastPresentedEveningCheckInDayKey = nil
-        requiredEveningCheckIn = nil
 
         guard let dayKey,
               !ProcessEveningCheckInStore.shared.submittedDayKeys.contains(dayKey) else { return }
@@ -253,16 +241,24 @@ struct MainAppView: View {
 
     private func evaluateRequiredEveningCheckIn() {
         guard session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat else {
-            requiredEveningCheckIn = nil
+            ProcessEveningCheckInPresenter.shared.clear()
             return
         }
         guard !isCoachTabActive else { return }
         guard let target = firstRequiredEveningCheckInTarget() else {
-            requiredEveningCheckIn = nil
+            ProcessEveningCheckInPresenter.shared.clear()
             return
         }
-        if requiredEveningCheckIn?.id != target.id {
-            requiredEveningCheckIn = target
+        if !ProcessEveningCheckInPresenter.shared.isPresented
+            || lastPresentedEveningCheckInDayKey != target.id {
+            lastPresentedEveningCheckInDayKey = target.id
+            ProcessEveningCheckInPresenter.shared.present(
+                targetDate: target.date,
+                isRequired: true,
+                onCompleted: {
+                    self.lastPresentedEveningCheckInDayKey = nil
+                }
+            )
         }
     }
 

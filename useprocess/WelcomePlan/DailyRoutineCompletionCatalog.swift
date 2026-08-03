@@ -1,13 +1,15 @@
 import Foundation
 
-/// Validation granulaire des cartes « Routine quotidienne » (maintenir 5 s).
+/// Validation granulaire des cartes « Routine matinale » (maintenir 5 s).
 enum DailyRoutineCompletionCatalog {
     static let holdDurationSeconds: TimeInterval = 5
 
     static let morningCarouselItemIds: Set<String> = [
-        "daily-routine-soleil",
-        "daily-routine-corde",
-        "daily-routine-eau"
+        "daily-routine-eautiede",
+        "daily-routine-sauts",
+        "daily-routine-genoux",
+        "daily-routine-bras",
+        "daily-routine-glacons"
     ]
 
     static func taskId(dayId: String, carouselItemId: String) -> String {

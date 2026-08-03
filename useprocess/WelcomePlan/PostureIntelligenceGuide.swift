@@ -13,7 +13,7 @@ enum PostureIntelligenceGuide {
         - Tête en avant = compensation airways étroites (palais récessif) — pas seulement « muscles faibles »
         - Chin tucks seuls insuffisants sans habitudes orofaciales (langue, déglution, respiration nasale)
         - Nuque droite 24/7 (pas chin tuck permanent) — SCM sur-sollicité = boucle tête en avant
-        - Exercices maison : chin tuck (mur/lit), neck curls (tête dans le vide), extension nuque au sol, rétraction scapulaire au mur
+        - Exercices maison : chin tuck (mur/lit), extension nuque, rétraction scapulaire au mur
         - Corps : APT → étirement fléchisseurs hanche, pont fessier, marche consciente (orteils dedans)
         - Pieds nus ~30 min/j — muscles intrinsiques = fondation squelette
         - Sommeil latéral : coussin tête + entre genoux + à hugger — airways ouvertes
@@ -44,15 +44,13 @@ enum PostureIntelligenceGuide {
 
     static let maleHomeMobilityBlocks: [String] = [
         "Chin tuck — dos au mur ou tête hors lit, 3×10, maintien 2–3 s",
-        "Neck curls — buste sur lit ou canapé, tête dans le vide, menton vers poitrine, 3×10–12",
-        "Extension nuque (face au sol) — mains au front, 3×10 sans charge",
+        "Extension nuque — mains au front, 3×10 sans charge",
         "Rétraction scapulaire au mur — bras en Y, omoplates serrées, 2×12",
         "Pont fessier + étirement fléchisseurs hanche — 2×15 + 45 s/jambe"
     ]
 
     static let femaleHomeMobilityBlocks: [String] = [
         "Chin tuck — assis ou debout, menton rentré, 3×10, maintien 2–3 s",
-        "Neck curls — buste sur lit ou canapé, tête dans le vide, menton vers poitrine, 3×10–12",
         "Wall angels — dos au mur, bras en W→Y, 2×10",
         "Pont fessier + clamshell — 2×15 + 12/côté (bassin stable)",
         "Ouverture thoracique au sol — serviette roulée sous omoplates, 2 min"
@@ -60,26 +58,22 @@ enum PostureIntelligenceGuide {
 
     static let neutralHomeMobilityBlocks: [String] = [
         "Chin tuck — debout ou allongé, 3×10, maintien 2–3 s",
-        "Neck curls — buste sur lit/canapé, tête dans le vide, 3×10–12",
         "Rétraction scapulaire + wall angels — 2×12",
         "Pont fessier + mobilité hanches — 2×15"
     ]
 
     static let lightMaleHomeBlocks: [String] = [
         "Chin tuck classique — 2×12, maintien 2–3 s",
-        "Neck curls légers — tête hors lit ou canapé, 2×12",
         "Mobilité épaules debout — cercles + rétraction, 2 min"
     ]
 
     static let lightFemaleHomeBlocks: [String] = [
         "Chin tuck classique — 2×12",
-        "Neck curls légers — tête hors lit ou canapé, 2×12",
         "Chat-vache + respiration nasale — 2 min"
     ]
 
     static let lightNeutralHomeBlocks: [String] = [
         "Chin tuck classique — 2×12",
-        "Neck curls légers — tête hors lit ou canapé, 2×12",
         "Mobilité nuque + épaules — 2 min"
     ]
 

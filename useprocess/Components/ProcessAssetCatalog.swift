@@ -97,6 +97,11 @@ enum ProcessAssetCatalog {
         "routinemewing",
         "routineposture",
         "routinesoleil",
+        "routineeautiede",
+        "routinesauts",
+        "routinegenoux",
+        "routinebras",
+        "routineglacons",
         "session_cardio",
         "training_see_all",
         "vitacoco"

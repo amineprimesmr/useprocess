@@ -5,6 +5,7 @@ extension FaceOriginPlan {
         var targets = personalizedTargets ?? .default
         // Cible produit courante — ignore d’anciennes valeurs persistées (ex. 15 min).
         targets.morningLightMinutes = ProcessDailyTargets.morningLightMinutes
+        targets.hydrationLitersPerDay = ProcessDailyTargets.hydrationLitersPerDay
         return targets
     }
 

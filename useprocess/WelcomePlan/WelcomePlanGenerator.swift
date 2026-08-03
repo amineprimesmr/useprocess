@@ -501,7 +501,7 @@ enum WelcomePlanGenerator {
         var faceProtocol = OriginFaceProtocol(
             focusAreas: Array(Set(focus)),
             jawAndTongueWork: [],
-            lymphAndFascia: FaceMorningRoutineCatalog.buildSteps(targets: targets),
+            lymphAndFascia: FaceMorningRoutineCatalog.buildSteps(),
             scanCadence: ""
         )
 
@@ -519,7 +519,7 @@ enum WelcomePlanGenerator {
             answers: answers
         )
 
-        faceProtocol.lymphAndFascia = FaceMorningRoutineCatalog.buildSteps(targets: targets)
+        faceProtocol.lymphAndFascia = FaceMorningRoutineCatalog.buildSteps()
 
         return faceProtocol
     }

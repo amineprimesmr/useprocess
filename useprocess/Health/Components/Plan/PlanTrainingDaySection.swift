@@ -41,7 +41,7 @@ struct PlanTrainingDaySection: View {
     }
 
     private var sectionHeaderTrailing: String? {
-        DebloatCardioDayCatalog.frequencyCaption
+        nil
     }
 
     private func zoomID(for item: PlanProtocolCarouselItem) -> ProcessZoomTransitionID {

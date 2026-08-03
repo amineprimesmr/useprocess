@@ -31,7 +31,7 @@ struct PlanFaceDaySection: View {
 
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Routine quotidienne",
+                title: "Routine matinale",
                 trailing: nil
             )
 

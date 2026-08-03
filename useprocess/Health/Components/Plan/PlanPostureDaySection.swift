@@ -19,6 +19,7 @@ enum PlanPostureCircuitContent {
 
     nonisolated private static func shouldHideProtocolLine(_ line: String) -> Bool {
         let lower = line.lowercased()
+        if lower.contains("neck curl") { return true }
         return lower.contains("respiration nasale lente") && lower.contains("5 min")
     }
 

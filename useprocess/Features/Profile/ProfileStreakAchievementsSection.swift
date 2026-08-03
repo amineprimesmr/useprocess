@@ -41,6 +41,10 @@ struct ProfileStreakAchievementsSection: View {
             statsGrid
                 .opacity(statsAppeared ? 1 : 0)
                 .offset(y: statsAppeared ? 0 : 14)
+
+            checkButton
+                .opacity(statsAppeared ? 1 : 0)
+                .offset(y: statsAppeared ? 0 : 14)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, ProfileTheme.horizontalPadding)
@@ -68,6 +72,45 @@ struct ProfileStreakAchievementsSection: View {
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(theme.primaryText)
             .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Check button
+
+    private var checkButton: some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            ProcessEveningCheckInPresenter.shared.present()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "checkmark.square.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(ProfileStreakDesign.accent)
+
+                Text("Faire mon check")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(theme.secondaryText.opacity(0.7))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(theme.isDark ? Color.white.opacity(0.07) : Color.white.opacity(0.72))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(
+                                theme.isDark ? Color.white.opacity(0.10) : Color.black.opacity(0.07),
+                                lineWidth: 1
+                            )
+                    }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Hero flamme

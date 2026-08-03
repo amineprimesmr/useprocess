@@ -18,7 +18,7 @@ enum ProcessDebloatTrajectoryEngine {
     }
 
     static func yesCount(from answers: [String: String]) -> Int {
-        EveningCheckInQuestionID.all.filter { answers[$0] == "yes" }.count
+        EveningCheckInQuestionID.debloatLevers.filter { answers[$0] == "yes" }.count
     }
 
     static func countsAsValidatedDay(

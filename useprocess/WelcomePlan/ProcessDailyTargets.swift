@@ -4,13 +4,20 @@ import Foundation
 enum ProcessDailyTargets {
 
     // MARK: - Hydratation
-    static let hydrationLitersPerDay = 2
+    static let hydrationLitersPerDay = 3
+    static let hydrationTargetMilliliters = 3000
     static var hydrationLabel: String { "\(hydrationLitersPerDay) L" }
 
     // MARK: - Matin
     static let morningLightMinutes = 100
+    static let warmWaterOnWakeML = 500
     static let faceScanSeconds = 30
     static let coldFaceRinseSeconds = 30
+
+    // MARK: - Lymphatique matin
+    static let lymphJumpSeconds = 60
+    static let lymphKneeRaisesSeconds = 60
+    static let lymphArmSwingsSeconds = 60
 
     // MARK: - Journée
     static let dailySteps = 8000

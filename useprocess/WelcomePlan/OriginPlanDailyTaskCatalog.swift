@@ -14,7 +14,7 @@ enum OriginPlanDailyTaskCatalog {
     _ = plan
     _ = dayIndex
 
-    return FaceMorningRoutineCatalog.buildSteps(targets: targets).enumerated().map { index, line in
+    return FaceMorningRoutineCatalog.buildSteps().enumerated().map { index, line in
       let parts = splitTitleAndDetail(line)
       return journalTask(
         id: "\(dayId).face.morning.\(index)",
@@ -129,9 +129,9 @@ enum OriginPlanDailyTaskCatalog {
 
   private static func repMinutes(from line: String, targets: OriginPersonalizedDailyTargets) -> Int? {
     let lower = line.lowercased()
-    if lower.contains("soleil") { return targets.morningLightMinutes }
-    if lower.contains("corde") || lower.contains("sauts sur place") || lower.contains("saut sur place") {
-      return FaceMorningRoutineCatalog.jumpActivationMinutes
+    if lower.contains("eau tiede") || lower.contains("eau tiède") { return 1 }
+    if lower.contains("saut") || lower.contains("corde") || lower.contains("genoux") || lower.contains("bras") {
+      return 1
     }
     if lower.contains("massage") { return targets.lymphFaceMassageMinutes }
     if lower.contains("glacon") || lower.contains("glaçon") || lower.contains("eau froide") { return 1 }

@@ -9,9 +9,9 @@ enum JournalCoreTaskCatalog {
         journalTask(
             id: "\(dayId).core.cardio",
             title: "Cardio debloat",
-            detail: "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min · \(DebloatCardioDayCatalog.inclinePercent)% · \(String(format: "%.1f", DebloatCardioDayCatalog.paceKmh)) km/h — idéal chaque jour · min. \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.",
+            detail: "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min",
             pillar: "Cardio",
-            minutes: 25
+            minutes: DebloatCardioDayCatalog.durationMinutes
         )
     }
 
@@ -67,10 +67,10 @@ enum JournalCoreTaskCatalog {
     private static func morningRoutineTask(dayId: String) -> OriginPlanTask {
         journalTask(
             id: "\(dayId).core.morning",
-            title: "Routine matin visage",
-            detail: "\(ProcessDailyTargets.morningLightMinutes) min lumière · \(FaceMorningRoutineCatalog.jumpActivationMinutes) min corde/sauts · glaçons",
+            title: "Routine matinale",
+            detail: "Eau tiède \(ProcessDailyTargets.warmWaterOnWakeML) ml · sauts \(ProcessDailyTargets.lymphJumpSeconds) s · montées genoux \(ProcessDailyTargets.lymphKneeRaisesSeconds) s · bras alternés \(ProcessDailyTargets.lymphArmSwingsSeconds) s · glaçons",
             pillar: "Visage",
-            minutes: ProcessDailyTargets.morningLightMinutes + FaceMorningRoutineCatalog.jumpActivationMinutes + 1
+            minutes: FaceMorningRoutineCatalog.estimatedMinutes()
         )
     }
 

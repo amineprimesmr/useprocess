@@ -17,7 +17,7 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
         case .nutrition: "Repas debloat du jour"
         case .training: "Cardio et Circuit"
         case .posture: "Posture & circuit quotidien"
-        case .faceRoutine: "Routine quotidienne"
+        case .faceRoutine: "Routine matinale"
         case .resources: "Aller plus loin"
         }
     }

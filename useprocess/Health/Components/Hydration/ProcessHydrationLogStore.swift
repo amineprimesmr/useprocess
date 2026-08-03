@@ -168,13 +168,7 @@ final class ProcessHydrationLogStore {
     ) -> ProcessHydrationEveningPrefill? {
         guard hasLocalAdjustments(for: date) else { return nil }
 
-        let resolvedTargetLiters = max(
-            1,
-            targetLiters
-                ?? WelcomePlanStore.shared.plan?.resolvedDailyTargets.hydrationLitersPerDay
-                ?? ProcessDailyTargets.hydrationLitersPerDay
-        )
-        let targetMilliliters = resolvedTargetLiters * 1000
+        let targetMilliliters = ProcessDailyTargets.hydrationTargetMilliliters
         let milliliters = max(0, self.milliliters(for: date))
         let metTarget = milliliters >= targetMilliliters
 
@@ -200,7 +194,8 @@ final class ProcessHydrationLogStore {
     }
 
     private func syncJournalTask(dayId: String, totalMilliliters: Int, targetMilliliters: Int) {
-        let status: JournalTaskStatus? = totalMilliliters >= targetMilliliters ? .completed : nil
+        let canonical = ProcessDailyTargets.hydrationTargetMilliliters
+        let status: JournalTaskStatus? = totalMilliliters >= canonical ? .completed : nil
         WelcomePlanStore.shared.setJournalTaskStatus(
             status,
             taskId: "\(dayId).core.hydrate",

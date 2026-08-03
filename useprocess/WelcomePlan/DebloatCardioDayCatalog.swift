@@ -1,10 +1,10 @@
 import Foundation
 
-/// Cardio debloat unique Process — marche inclinée uniquement (pas de rotation d’autres cardio).
+/// Cardio debloat unique Process — marche inclinée uniquement (pas de rotation d'autres cardio).
 enum DebloatCardioDayCatalog {
 
     /// Prescription fixe : durée, pente, allure.
-    static let durationMinutes = 30
+    static let durationMinutes = 25
     static let inclinePercent = 10
     static let paceKmh = 5.0
 
@@ -26,7 +26,7 @@ enum DebloatCardioDayCatalog {
         }
 
         var badgeLabel: String {
-            "\(minutes) min · \(inclinePercent)% · \(paceLabel)"
+            "\(minutes) min"
         }
 
         var prescriptionLine: String {
@@ -41,11 +41,7 @@ enum DebloatCardioDayCatalog {
         return Session(
             id: "cardio-day-incline-walk",
             title: "Marche inclinée",
-            detail: """
-            \(durationMinutes) min sur tapis · pente \(inclinePercent)% · allure \(String(format: "%.1f", paceKmh)) km/h.
-            Bras libres, pas d’appui sur les barres. Respiration confortable (tu peux parler).
-            Idéal chaque jour · minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.
-            """,
+            detail: "\(durationMinutes) min sur tapis · pente \(inclinePercent)% · allure \(String(format: "%.1f", paceKmh)) km/h. Bras libres, pas d'appui sur les barres. Respiration confortable (tu peux parler). Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.",
             minutes: durationMinutes,
             inclinePercent: inclinePercent,
             paceKmh: paceKmh,
@@ -55,6 +51,6 @@ enum DebloatCardioDayCatalog {
     }
 
     static var frequencyCaption: String {
-        "Idéal chaque jour · minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine"
+        "Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine"
     }
 }
