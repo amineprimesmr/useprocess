@@ -20,10 +20,10 @@ extension DynamicIslandToastMessage {
             symbol: validatedToday ? "checkmark.circle.fill" : "flame.fill",
             symbolFont: .system(size: 32, weight: .semibold),
             symbolForegroundStyle: (.white, ProcessStreakPalette.flame),
-            title: validatedToday ? snapshot.streakTitle : "Bilan du soir",
+            title: validatedToday ? snapshot.streakTitle : "Check du jour",
             message: validatedToday
                 ? snapshot.encouragement(firstName: firstName)
-                : "Valide ton bilan ce soir pour compter ce jour."
+                : "Valide ton check pour compter ce jour."
         )
     }
 }

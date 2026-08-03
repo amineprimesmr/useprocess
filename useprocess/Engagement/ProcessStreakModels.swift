@@ -111,7 +111,7 @@ struct ProcessStreakSnapshot: Equatable {
         if totalCompletedDays >= 7 { return "Tu gères vraiment bien, \(trimmed) !" }
         if totalCompletedDays > 0 { return "Continue comme ça, \(trimmed) !" }
         if isTodayComplete { return "Bien joué \(trimmed), reviens demain." }
-        return "Complète ton bilan du soir pour lancer ta trajectoire, \(trimmed)."
+        return "Complète ton check pour lancer ta trajectoire, \(trimmed)."
     }
 
     var headline: String {
@@ -121,8 +121,8 @@ struct ProcessStreakSnapshot: Equatable {
             case .onTrack: return "Tu restes sur la bonne voie."
             case .partial: return "Journée partielle — serre le protocole demain."
             case .regression: return "Régression détectée — on recale ensemble."
-            case .pending: return "Bilan du soir en attente — valide ce soir."
-            case .missed: return "Bilan manqué — reviens ce soir."
+            case .pending: return "Check du jour en attente — valide-le."
+            case .missed: return "Check manqué — rattrape-toi."
             case .paused: return "Jour en pause — compteur gelé."
             }
         }
@@ -130,7 +130,7 @@ struct ProcessStreakSnapshot: Equatable {
         case 0 where isTodayComplete:
             return "Premier jour validé — continue demain."
         case 0:
-            return "Complète ton bilan du soir pour valider ta journée."
+            return "Complète ton check pour valider ta journée."
         case 1:
             return "Bien joué. Enchaîne demain."
         case 2..<7:

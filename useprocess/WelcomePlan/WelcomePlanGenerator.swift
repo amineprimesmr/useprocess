@@ -344,8 +344,9 @@ enum WelcomePlanGenerator {
         ]
         let morning: [String] = [
             "Réveil même heure (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min max, week-end inclus)",
-            "Lumière naturelle dans les \(ProcessDailyTargets.morningLightMinutes) min",
-            "Eau froide sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) sec",
+            "\(ProcessDailyTargets.warmWaterOnWakeML) ml d'eau tiède au réveil",
+            "Circuit lymphatique — sauts, genoux, bras alternés (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
+            "Glaçons sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) s",
             "Hydratation + sel / citron — pas de téléphone au lit"
         ]
 

@@ -6,12 +6,15 @@ private enum ProfileStreakDesign {
     static var accent: Color { ProcessStreakPalette.flame }
     static var accentDeep: Color { ProcessStreakPalette.flameDeep }
     static var accentGlow: Color { ProcessStreakPalette.flameGlow }
+    static let missedFill = Color(red: 0.17, green: 0.17, blue: 0.18)
+    static let pillHeight: CGFloat = 52
     static let statCardRadius: CGFloat = 18
 }
 
 // MARK: - Section principale
 
 struct ProfileStreakAchievementsSection: View {
+    @Binding var selectedDate: Date
     /// Pause l’anim hors onglet / app inactive — la flamme bouge même si streak = 0.
     var isPlaybackActive: Bool = true
 
@@ -20,14 +23,30 @@ struct ProfileStreakAchievementsSection: View {
     @Environment(\.scenePhase) private var scenePhase
     @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var planStore = WelcomePlanStore.shared
+    @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
+    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
+    @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
 
     @State private var heroAppeared = false
     @State private var statsAppeared = false
     @State private var glowPulse = false
 
     private var snapshot: ProcessStreakSnapshot { streakStore.snapshot }
+    private var progress: PlanProgressSnapshot { planProgressStore.snapshot }
     private var flameShouldAnimate: Bool {
         isPlaybackActive && scenePhase == .active
+    }
+
+    private var hasSubmittedToday: Bool {
+        eveningStore.hasSubmittedToday
+    }
+
+    private var programDays: [ProfileProgramStreakDay] {
+        ProcessStreakStore.buildProgramStreakWindow(
+            plan: planStore.plan,
+            progress: progress,
+            recordsByDay: trajectoryStore.allRecordsByDay
+        )
     }
 
     var body: some View {
@@ -38,6 +57,16 @@ struct ProfileStreakAchievementsSection: View {
                 .opacity(heroAppeared ? 1 : 0)
                 .offset(y: heroAppeared ? 0 : 18)
 
+            if !programDays.isEmpty {
+                programWeekTracker
+                    .opacity(heroAppeared ? 1 : 0)
+                    .offset(y: heroAppeared ? 0 : 12)
+            }
+
+            bilanNowButton
+                .opacity(statsAppeared ? 1 : 0)
+                .offset(y: statsAppeared ? 0 : 10)
+
             statsGrid
                 .opacity(statsAppeared ? 1 : 0)
                 .offset(y: statsAppeared ? 0 : 14)
@@ -47,10 +76,23 @@ struct ProfileStreakAchievementsSection: View {
         .padding(.top, 16)
         .padding(.bottom, 12)
         .onAppear {
-            ProcessDebloatTrajectoryStore.shared.reload()
-            ProcessDebloatTrajectoryStore.shared.sync(from: planStore.plan)
+            refreshStores()
             runEntranceAnimations()
         }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            refreshStores()
+        }
+        .onChange(of: trajectoryStore.snapshot.totalValidatedDays) { _, _ in
+            streakStore.sync(from: planStore.plan)
+        }
+    }
+
+    private func refreshStores() {
+        ProcessDebloatTrajectoryStore.shared.reload()
+        ProcessDebloatTrajectoryStore.shared.sync(from: planStore.plan)
+        ProcessPlanProgressStore.shared.reload(plan: planStore.plan)
+        streakStore.sync(from: planStore.plan)
     }
 
     private func runEntranceAnimations() {
@@ -64,10 +106,19 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var sectionHeader: some View {
-        Text("Streak")
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(theme.primaryText)
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 6) {
+            Text("Streak")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(theme.primaryText)
+                .frame(maxWidth: .infinity)
+
+            if progress.hasPlan {
+                Text("Programme debloat · Jour \(progress.elapsedProgramDays)/\(progress.totalProgramDays)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(theme.secondaryText)
+                    .monospacedDigit()
+            }
+        }
     }
 
     // MARK: - Hero flamme
@@ -133,32 +184,39 @@ struct ProfileStreakAchievementsSection: View {
         snapshot.currentStreak <= 1 ? "jour de suite" : "jours de suite"
     }
 
+    private var showsCountdownBadge: Bool {
+        if snapshot.isTodayComplete && snapshot.currentStreak == 0 { return false }
+        if !snapshot.isTodayComplete, !hasSubmittedToday { return true }
+        return snapshot.currentStreak == 0
+    }
+
     private var consistencyBadge: some View {
         let capsule = Capsule(style: .continuous)
 
-        return HStack(spacing: 6) {
-            Text(consistencyEmoji)
-                .font(.system(size: 14))
-            Text(consistencyMessage)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(ProfileStreakDesign.accentDeep)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background {
-            capsule.fill(.clear)
-        }
-        .processGlassEffect(in: capsule, interactive: false)
-        .overlay {
-            capsule.strokeBorder(
-                Color.white.opacity(colorScheme == .dark ? 0.14 : 0.22),
-                lineWidth: 1
-            )
+        return TimelineView(.periodic(from: .now, by: 30)) { context in
+            let message = consistencyMessage(at: context.date)
+            let isCountdown = showsCountdownBadge
+
+            HStack(spacing: isCountdown ? 8 : 6) {
+                Text(consistencyEmoji)
+                    .font(.system(size: isCountdown ? 16 : 14))
+                Text(message)
+                    .font(.system(size: isCountdown ? 15 : 13, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .minimumScaleFactor(0.85)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, isCountdown ? 18 : 14)
+            .padding(.vertical, isCountdown ? 11 : 8)
+            .processGlassEffect(in: capsule, interactive: false)
+            .animation(.easeInOut(duration: 0.25), value: message)
         }
     }
 
     private var consistencyEmoji: String {
         if snapshot.isTodayComplete && snapshot.currentStreak == 0 { return "✅" }
+        if showsCountdownBadge { return "⏳" }
         switch snapshot.currentStreak {
         case 0: return "💪"
         case 1...2: return "🔥"
@@ -168,13 +226,17 @@ struct ProfileStreakAchievementsSection: View {
         }
     }
 
-    private var consistencyMessage: String {
+    private func consistencyMessage(at date: Date = Date()) -> String {
         if snapshot.isTodayComplete && snapshot.currentStreak == 0 {
             return "Premier jour validé !"
         }
+        // Compte à rebours tant que le check du jour n'est pas validé.
+        if !snapshot.isTodayComplete, !hasSubmittedToday {
+            return ProcessEveningCheckInSchedule.streakLaunchMessage(from: date)
+        }
         switch snapshot.currentStreak {
         case 0:
-            return ProcessEveningCheckInSchedule.streakLaunchMessage()
+            return ProcessEveningCheckInSchedule.streakLaunchMessage(from: date)
         case 1...2:
             return "Belle régularité !"
         case 3...6:
@@ -184,6 +246,168 @@ struct ProfileStreakAchievementsSection: View {
         default:
             return "Mode Process activé"
         }
+    }
+
+    // MARK: - Semaine programme
+
+    private var streakRange: ClosedRange<Int>? {
+        guard let todayIdx = programDays.firstIndex(where: { $0.isToday }) else {
+            guard let lastComplete = programDays.lastIndex(where: { $0.isComplete }) else { return nil }
+            return lastComplete...lastComplete
+        }
+        var start = todayIdx
+        var end = todayIdx
+        while start > 0, programDays[start - 1].isComplete {
+            start -= 1
+        }
+        while end < programDays.count - 1, programDays[end + 1].isComplete {
+            end += 1
+        }
+        return start...end
+    }
+
+    private var programWeekTracker: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 0) {
+                ForEach(programDays) { day in
+                    Button {
+                        HapticManager.shared.selection()
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                            selectedDate = day.date
+                        }
+                    } label: {
+                        Text(day.label)
+                            .font(.system(size: 11, weight: day.isToday ? .bold : .medium))
+                            .foregroundStyle(dayLabelColor(day))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            GeometryReader { geometry in
+                let count = max(programDays.count, 1)
+                let columnWidth = geometry.size.width / CGFloat(count)
+
+                ZStack(alignment: .leading) {
+                    if let range = streakRange {
+                        Capsule(style: .continuous)
+                            .fill(ProfileStreakDesign.accent)
+                            .frame(
+                                width: columnWidth * CGFloat(range.count) + 4,
+                                height: ProfileStreakDesign.pillHeight
+                            )
+                            .offset(x: columnWidth * CGFloat(range.lowerBound) - 2)
+                            .animation(.spring(response: 0.45, dampingFraction: 0.82), value: range.lowerBound)
+                            .animation(.spring(response: 0.45, dampingFraction: 0.82), value: range.upperBound)
+                    }
+
+                    HStack(spacing: 0) {
+                        ForEach(Array(programDays.enumerated()), id: \.element.id) { index, day in
+                            programDayColumn(
+                                day,
+                                inActivePill: streakRange?.contains(index) ?? false
+                            )
+                            .frame(width: columnWidth)
+                        }
+                    }
+                }
+            }
+            .frame(height: ProfileStreakDesign.pillHeight)
+        }
+    }
+
+    private func dayLabelColor(_ day: ProfileProgramStreakDay) -> Color {
+        if day.isToday { return theme.primaryText }
+        if Calendar.current.isDate(day.date, inSameDayAs: selectedDate) {
+            return ProfileStreakDesign.accent
+        }
+        return theme.secondaryText.opacity(0.75)
+    }
+
+    @ViewBuilder
+    private func programDayColumn(_ day: ProfileProgramStreakDay, inActivePill: Bool) -> some View {
+        Group {
+            if day.isFuture {
+                Circle()
+                    .strokeBorder(Color.white.opacity(theme.isDark ? 0.18 : 0.22), lineWidth: 1.5)
+                    .frame(width: 28, height: 28)
+            } else if day.isComplete {
+                ZStack {
+                    Circle()
+                        .fill(inActivePill ? Color.black.opacity(0.22) : ProfileStreakDesign.missedFill)
+                        .frame(width: 28, height: 28)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(inActivePill ? Color.black.opacity(0.85) : ProfileStreakDesign.accent)
+                }
+            } else if day.isToday {
+                ProfileStreakTodaySpinner(onPill: inActivePill)
+            } else if day.isMissed {
+                ZStack {
+                    Circle()
+                        .fill(ProfileStreakDesign.missedFill)
+                        .frame(width: 28, height: 28)
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color.white.opacity(0.35))
+                }
+            } else {
+                Circle()
+                    .fill(theme.secondaryText.opacity(0.18))
+                    .frame(width: 8, height: 8)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.spring(response: 0.38, dampingFraction: 0.78), value: day.isComplete)
+    }
+
+    // MARK: - Check du jour
+
+    private var bilanNowButton: some View {
+        Button {
+            HapticManager.shared.impact(.medium)
+            ProcessEveningCheckInPresenter.shared.present(
+                targetDate: Date(),
+                isRequired: false
+            )
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: hasSubmittedToday ? "pencil.line" : "checkmark.seal.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                Text(hasSubmittedToday ? "Modifier mon check" : "Faire mon check")
+                    .font(.system(size: 15, weight: .bold))
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .opacity(0.7)
+            }
+            .foregroundStyle(hasSubmittedToday ? theme.primaryText : Color.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 15)
+            .frame(maxWidth: .infinity)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(
+                        hasSubmittedToday
+                            ? (theme.isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.06))
+                            : ProfileStreakDesign.accent
+                    )
+            }
+            .overlay {
+                if hasSubmittedToday {
+                    Capsule(style: .continuous)
+                        .strokeBorder(
+                            theme.isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08),
+                            lineWidth: 1
+                        )
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            hasSubmittedToday ? "Modifier mon check" : "Faire mon check"
+        )
     }
 
     // MARK: - Stats
@@ -232,6 +456,33 @@ struct ProfileStreakAchievementsSection: View {
                         lineWidth: 1
                     )
             }
+    }
+}
+
+private struct ProfileStreakTodaySpinner: View {
+    var onPill: Bool = true
+    @State private var rotation: Double = 0
+
+    var body: some View {
+        let track = onPill ? Color.black.opacity(0.12) : Color.primary.opacity(0.14)
+        let arc = onPill ? Color.black.opacity(0.55) : ProfileStreakDesign.accent
+
+        ZStack {
+            Circle()
+                .strokeBorder(track, lineWidth: 2)
+                .frame(width: 28, height: 28)
+
+            Circle()
+                .trim(from: 0, to: 0.28)
+                .stroke(arc, style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
+                .frame(width: 28, height: 28)
+                .rotationEffect(.degrees(rotation))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 1.1).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+        }
     }
 }
 

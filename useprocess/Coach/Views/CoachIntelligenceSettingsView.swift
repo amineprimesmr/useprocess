@@ -252,8 +252,8 @@ struct CoachIntelligenceSettingsView: View {
                 settingsDivider
 
                 settingsToggleRow(
-                    title: "Bilan du soir",
-                    subtitle: "Rappel pour valider ta journée avant de dormir.",
+                    title: "Check du jour",
+                    subtitle: "Rappel pour valider ta journée.",
                     isOn: Binding(
                         get: { CoachDailyRhythmService.eveningReviewEnabled },
                         set: { CoachDailyRhythmService.eveningReviewEnabled = $0 }

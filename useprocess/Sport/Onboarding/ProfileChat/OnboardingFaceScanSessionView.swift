@@ -10,6 +10,8 @@ struct OnboardingFaceScanSessionView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
 
     var isSigningIn: Bool
+    /// Relance après kill app : ouvre directement les résultats (Sign in Apple).
+    var initialResult: FaceScanResult? = nil
     var onCancel: () -> Void
     var onResultReady: (FaceScanResult) -> Void
     var onContinueAfterResults: () -> Void
@@ -60,6 +62,12 @@ struct OnboardingFaceScanSessionView: View {
         }
         .animation(.easeInOut(duration: 0.24), value: captureInput?.payload.scanId)
         .animation(.easeInOut(duration: 0.24), value: completedResult?.id)
+        .onAppear {
+            if completedResult == nil, let initialResult {
+                completedResult = initialResult
+                onResultReady(initialResult)
+            }
+        }
     }
 
     @MainActor

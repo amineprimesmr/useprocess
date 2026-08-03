@@ -129,7 +129,9 @@ struct SportOnboardingView: View {
                 }
                 checkPermissions()
 
-                if AuthUser.current != nil, profileService.currentProfile == nil {
+                if FirebaseBootstrap.isConfigured,
+                   AuthUser.current != nil,
+                   profileService.currentProfile == nil {
                     await profileService.loadProfile()
                 }
 

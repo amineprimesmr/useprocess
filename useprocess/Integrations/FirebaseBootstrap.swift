@@ -4,11 +4,12 @@ import FirebaseFirestore
 import Foundation
 
 enum FirebaseBootstrap {
-    private static let lock = NSLock()
+    /// Recursive : `FirebaseApp.configure()` peut rappeler du code app qui re-entre ici.
+    private static let lock = NSRecursiveLock()
     private static var didConfigure = false
 
     /// Configure Firebase de façon idempotente.
-    /// Appelé au premier besoin (Auth / AppSession), pas obligatoirement dans `App.init`.
+    /// Doit être appelé dès `App.init` — avant tout accès Auth / AppSession / onboarding.
     static func configure() {
         lock.lock()
         defer { lock.unlock() }
@@ -39,5 +40,12 @@ enum FirebaseBootstrap {
         lock.lock()
         defer { lock.unlock() }
         return didConfigure
+    }
+
+    /// `true` seulement si le default app existe déjà (sans forcer configure).
+    static var isAppReady: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return didConfigure || FirebaseApp.app() != nil
     }
 }

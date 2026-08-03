@@ -4,7 +4,7 @@ import Foundation
 enum DebloatCardioDayCatalog {
 
     /// Prescription fixe : durée, pente, allure.
-    static let durationMinutes = 30
+    static let durationMinutes = 25
     static let inclinePercent = 10
     static let paceKmh = 5.0
 
@@ -26,7 +26,7 @@ enum DebloatCardioDayCatalog {
         }
 
         var badgeLabel: String {
-            "\(minutes) min · \(inclinePercent)% · \(paceLabel)"
+            "\(minutes) min"
         }
 
         var prescriptionLine: String {
@@ -44,7 +44,7 @@ enum DebloatCardioDayCatalog {
             detail: """
             \(durationMinutes) min sur tapis · pente \(inclinePercent)% · allure \(String(format: "%.1f", paceKmh)) km/h.
             Bras libres, pas d’appui sur les barres. Respiration confortable (tu peux parler).
-            Idéal chaque jour · minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.
+            Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.
             """,
             minutes: durationMinutes,
             inclinePercent: inclinePercent,
@@ -55,6 +55,6 @@ enum DebloatCardioDayCatalog {
     }
 
     static var frequencyCaption: String {
-        "Idéal chaque jour · minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine"
+        "Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine"
     }
 }

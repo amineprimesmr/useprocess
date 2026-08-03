@@ -108,10 +108,12 @@ enum PlanProtocolCarouselBuilder {
         id: String,
         fallback: String,
         category: String? = nil,
-        assetName: String? = nil
+        assetName: String? = nil,
+        repBadge: String? = nil
     ) -> PlanProtocolCarouselItem {
         let parts = PlanProtocolLineParser.splitTitleAndDetail(line)
-        let badge = PlanProtocolLineParser.repBadge(from: line)
+        let badge = repBadge
+            ?? PlanProtocolLineParser.repBadge(from: line)
             ?? PlanProtocolLineParser.repBadge(from: parts.detail)
 
         let detailText: String

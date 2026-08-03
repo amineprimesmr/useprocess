@@ -24,7 +24,7 @@ struct PlanTrainingDaySection: View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
                 title: "Cardio et Circuit",
-                trailing: sectionHeaderTrailing
+                trailing: nil
             )
 
             PlanDayProtocolCarousel(
@@ -38,10 +38,6 @@ struct PlanTrainingDaySection: View {
         .sheet(item: $selectedProtocolItem) { item in
             PlanProtocolItemDetailSheet(item: item)
         }
-    }
-
-    private var sectionHeaderTrailing: String? {
-        DebloatCardioDayCatalog.frequencyCaption
     }
 
     private func zoomID(for item: PlanProtocolCarouselItem) -> ProcessZoomTransitionID {

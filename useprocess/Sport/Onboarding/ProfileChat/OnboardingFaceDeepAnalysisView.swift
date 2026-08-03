@@ -65,7 +65,6 @@ struct OnboardingFaceDeepAnalysisView: View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader(
                 title: "Signaux ouverts",
-                subtitle: "Lisibles dès maintenant",
                 locked: false
             )
             .padding(.horizontal, 16)
@@ -94,6 +93,11 @@ struct OnboardingFaceDeepAnalysisView: View {
         .liquidGlassCard(isDark: theme.isDark)
     }
 
+    /// Bleu uniquement pour la barre « rapport graisse / rétention ».
+    private var retentionRatioAccent: Color {
+        Color(red: 0.32, green: 0.58, blue: 0.96)
+    }
+
     private func volumeCompositionRow(
         _ composition: OnboardingFaceDeepAnalysis.FacialVolumeComposition
     ) -> some View {
@@ -104,17 +108,10 @@ struct OnboardingFaceDeepAnalysisView: View {
                     .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.78))
                     .frame(width: 22)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("COMPOSITION DU VOLUME")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(FaceScanWhoopPalette.label)
-                        .tracking(0.3)
-
-                    Text(composition.phrase)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(FaceScanWhoopPalette.secondary)
-                        .lineLimit(2)
-                }
+                Text("RAPPORT GRAISSE / RÉTENTION")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(FaceScanWhoopPalette.label)
+                    .tracking(0.3)
             }
 
             GeometryReader { geometry in
@@ -125,7 +122,7 @@ struct OnboardingFaceDeepAnalysisView: View {
                         .frame(width: max(4, fatWidth))
 
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(FaceScanWhoopPalette.ringColor(for: .insufficient))
+                        .fill(retentionRatioAccent)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -138,9 +135,9 @@ struct OnboardingFaceDeepAnalysisView: View {
 
                 Spacer(minLength: 8)
 
-                Text("Gonflement \(composition.bloatedPercent)%")
+                Text("Rétention \(composition.bloatedPercent)%")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.ringColor(for: .insufficient))
+                    .foregroundStyle(retentionRatioAccent)
             }
 
             VolumeCompositionGoodNewsCallout(text: composition.goodNewsPhrase)
@@ -325,16 +322,18 @@ struct OnboardingFaceDeepAnalysisView: View {
 
     // MARK: - Shared chrome
 
-    private func cardHeader(title: String, subtitle: String, locked: Bool) -> some View {
+    private func cardHeader(title: String, subtitle: String? = nil, locked: Bool) -> some View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
 
-                Text(subtitle)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(FaceScanWhoopPalette.secondary)
+                }
             }
 
             Spacer(minLength: 0)
@@ -440,7 +439,7 @@ private enum LockedCategory: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Bonne nouvelle (composition du volume)
+// MARK: - Bonne nouvelle (rapport graisse / rétention)
 
 private struct VolumeCompositionGoodNewsCallout: View {
     let text: String

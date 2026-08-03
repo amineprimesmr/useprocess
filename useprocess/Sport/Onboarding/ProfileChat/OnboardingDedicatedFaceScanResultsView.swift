@@ -3,11 +3,13 @@
 //  useprocess
 //
 
+import StoreKit
 import SwiftUI
 
 /// Page dédiée du premier scan : anneau + indicateurs ouverts/verrouillés, sans « Ce qui change ».
 struct OnboardingDedicatedFaceScanResultsView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.requestReview) private var requestReview
 
     let result: FaceScanResult
     var isSigningIn: Bool
@@ -61,6 +63,13 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                 bottomCTA
             }
         }
+        .task {
+            guard !OnboardingAppStoreRatingPrompt.hasBeenShown else { return }
+            try? await Task.sleep(for: .milliseconds(900))
+            guard !Task.isCancelled else { return }
+            OnboardingAppStoreRatingPrompt.markShown()
+            requestReview()
+        }
     }
 
     private var header: some View {
@@ -80,13 +89,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
 
     private var bottomCTA: some View {
         VStack(spacing: 10) {
-            if needsAppleSignIn {
-                Text("Connecte-toi pour sauvegarder ton analyse et retrouver ton plan sur tous tes appareils.")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(FaceScanWhoopPalette.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-            } else {
+            if !needsAppleSignIn {
                 Text("Ton analyse est prête. Continue pour créer ton plan.")
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
@@ -135,6 +138,14 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                 }
             }
             .opacity(isSigningIn ? 0.72 : 1)
+
+            if needsAppleSignIn {
+                Text("Connecte-toi pour sauvegarder ton analyse")
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+            }
         }
         .padding(.horizontal, 24)
         .padding(.top, 14)

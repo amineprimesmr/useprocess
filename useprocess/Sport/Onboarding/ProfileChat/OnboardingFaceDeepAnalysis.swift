@@ -9,7 +9,7 @@ struct OnboardingFaceDeepAnalysis: Equatable {
     let strengths: [String]
     let summary: String
 
-    /// Part graisse vs gonflement / liquide retenu sur le volume facial perçu.
+    /// Part graisse vs rétention / liquide retenu sur le volume facial perçu.
     struct FacialVolumeComposition: Equatable {
         let fatPercent: Int
         let bloatedPercent: Int

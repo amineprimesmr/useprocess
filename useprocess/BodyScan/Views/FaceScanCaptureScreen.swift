@@ -735,7 +735,7 @@ struct FaceScanCaptureScreen: View {
                     isEngaged: tiltIsEngaged,
                     isLightBackdrop: isFlashEnabled
                 )
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .transition(.opacity)
             } else {
                 FaceIDTickProgressRing(
                     activeSectors: activeTickSectors,
@@ -758,7 +758,9 @@ struct FaceScanCaptureScreen: View {
             .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.88) : OnboardingTheme.primaryText)
             .multilineTextAlignment(.center)
             .lineSpacing(4)
-            .padding(.horizontal, 32)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 28)
             .animation(.easeInOut(duration: 0.2), value: instruction)
     }
 

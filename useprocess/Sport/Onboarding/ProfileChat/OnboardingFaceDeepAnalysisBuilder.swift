@@ -77,19 +77,19 @@ enum OnboardingFaceDeepAnalysisBuilder {
 
         let phrase: String = {
             if fatPercent <= 10 {
-                return "Peu de graisse — surtout un visage gonflé"
+                return "Peu de graisse — surtout de la rétention"
             }
             if bloatedPercent >= 90 {
-                return "Volume surtout dû au gonflement, pas à la graisse"
+                return "Volume surtout dû à la rétention, pas à la graisse"
             }
-            return "Le gonflement pèse plus que la graisse faciale"
+            return "La rétention pèse plus que la graisse faciale"
         }()
 
         let goodNewsPhrase: String = {
             if bloatedPercent >= 90 {
-                return "Bonne nouvelle : c’est surtout du gonflement — donc réversible avec ton plan, pas de la graisse."
+                return "Bonne nouvelle : c’est surtout de la rétention — donc réversible avec ton plan, pas de la graisse."
             }
-            return "Bonne nouvelle : ton volume facial se corrige — le gonflement part plus vite que la graisse."
+            return "Bonne nouvelle : ton volume facial se corrige — la rétention part plus vite que la graisse."
         }()
 
         return .init(

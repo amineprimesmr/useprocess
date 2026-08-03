@@ -19,19 +19,22 @@ enum PlanPostureCircuitContent {
 
     nonisolated private static func shouldHideProtocolLine(_ line: String) -> Bool {
         let lower = line.lowercased()
-        return lower.contains("respiration nasale lente") && lower.contains("5 min")
+        if lower.contains("respiration nasale lente") && lower.contains("5 min") {
+            return true
+        }
+        if lower.contains("neck curl") {
+            return true
+        }
+        return false
     }
 
     nonisolated private static func sanitizeLegacyHomeLine(_ line: String) -> String {
         let lower = line.lowercased()
-        if lower.contains("neck curl") && !lower.contains("vide") && !lower.contains("lit") && !lower.contains("canapé") {
-            return "Neck curls — buste sur lit ou canapé, tête dans le vide, menton vers poitrine, 3×10–12"
-        }
         if lower.contains("face pull") {
             return "Rétraction scapulaire au mur — bras en Y, omoplates serrées, 2×12"
         }
-        if lower.contains("câble") || lower.contains("plaque légère") {
-            return "Extension nuque (face au sol) — mains au front, 3×10 sans charge"
+        if lower.contains("câble") || lower.contains("plaque légère") || lower.contains("extension nuque") {
+            return "Extension nuque — mains au front, 3×10 sans charge"
         }
         if lower.contains("banc") && lower.contains("chin tuck") {
             return "Chin tuck — dos au mur ou tête hors lit, 3×10, maintien 2–3 s"

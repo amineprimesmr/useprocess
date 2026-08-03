@@ -2,7 +2,8 @@
 //  TickPicker.swift
 //  useprocess
 //
-//  Picker horizontal à graduations — aligné sur TickPickerView (Balaji Venkatesh).
+//  Picker horizontal à graduations.
+//  `scrollPosition` seul est trop fragile au montage — on force via ScrollViewReader.
 //
 
 import SwiftUI
@@ -38,97 +39,161 @@ struct TickPicker: View {
     var config: TickConfig = .init()
     @Binding var selection: Int
 
-    @State private var scrollIndex: Int = 0
-    @State private var scrollPosition: Int?
+    @State private var centeredIndex: Int
+    @State private var animationRange: ClosedRange<Int>
     @State private var scrollPhase: ScrollPhase = .idle
-    @State private var animationRange: ClosedRange<Int> = 0...0
-    @State private var isInitialSetupDone: Bool = false
+    @State private var isReady = false
+    @State private var isProgrammaticScroll = false
+
+    init(count: Int, config: TickConfig = .init(), selection: Binding<Int>) {
+        self.count = count
+        self.config = config
+        self._selection = selection
+        let safe = Self.clamped(selection.wrappedValue, count: count)
+        _centeredIndex = State(initialValue: safe)
+        _animationRange = State(initialValue: safe...safe)
+    }
 
     var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size
+        GeometryReader { geometry in
+            let sidePad = max(0, (geometry.size.width - tickSlotWidth) / 2)
 
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: 0) {
-                    ForEach(0...count, id: \.self) { index in
-                        TickView(index)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    // HStack (pas Lazy) : tous les ticks existent pour que scrollTo marche au 1er frame.
+                    HStack(spacing: 0) {
+                        ForEach(0...count, id: \.self) { index in
+                            tickView(index)
+                                .id(index)
+                        }
+                    }
+                    .frame(height: config.tickHeight)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(.rect)
+                    .scrollTargetLayout()
+                }
+                .scrollIndicators(.hidden)
+                .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
+                .safeAreaPadding(.horizontal, sidePad)
+                .onScrollGeometryChange(for: CGFloat.self) {
+                    $0.contentOffset.x + $0.contentInsets.leading
+                } action: { _, newValue in
+                    guard isReady, !isProgrammaticScroll else { return }
+                    guard scrollPhase != .idle else { return }
+
+                    let index = Self.clamped(
+                        Int((newValue / tickSlotWidth).rounded()),
+                        count: count
+                    )
+                    let previous = centeredIndex
+                    guard index != previous else { return }
+
+                    centeredIndex = index
+                    let lo = min(previous, index)
+                    let hi = max(previous, index)
+                    animationRange = lo...hi
+
+                    if selection != index {
+                        selection = index
                     }
                 }
-                .frame(height: config.tickHeight)
-                .frame(maxHeight: .infinity)
-                .contentShape(.rect)
-                .scrollTargetLayout()
-            }
-            .scrollIndicators(.hidden)
-            .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
-            .scrollPosition(id: $scrollPosition, anchor: .center)
-            .safeAreaPadding(.horizontal, (size.width - width) / 2)
-            .onScrollGeometryChange(for: CGFloat.self) {
-                $0.contentOffset.x + $0.contentInsets.leading
-            } action: { _, newValue in
-                guard scrollPhase != .idle else { return }
-                let index = max(min(Int((newValue / width).rounded()), count), 0)
-                let previousScrollIndex = scrollIndex
-                scrollIndex = index
-
-                let isGreater = scrollIndex > previousScrollIndex
-                let leadingBound = isGreater ? previousScrollIndex : scrollIndex
-                let trailingBound = !isGreater ? previousScrollIndex : scrollIndex
-
-                animationRange = leadingBound...trailingBound
-            }
-            .onScrollPhaseChange { _, newPhase in
-                scrollPhase = newPhase
-                animationRange = scrollIndex...scrollIndex
-
-                if newPhase == .idle && scrollPosition != scrollIndex {
-                    withAnimation(config.animation) {
-                        scrollPosition = scrollIndex
+                .onScrollPhaseChange { _, newPhase in
+                    scrollPhase = newPhase
+                    if newPhase == .idle {
+                        animationRange = centeredIndex...centeredIndex
+                        // Snap final au centre si besoin.
+                        if isReady, !isProgrammaticScroll {
+                            snap(to: centeredIndex, proxy: proxy, animated: true)
+                        }
                     }
+                }
+                .task {
+                    await settleInitialScroll(proxy: proxy)
+                }
+                .onChange(of: selection) { _, newValue in
+                    let safe = Self.clamped(newValue, count: count)
+                    guard isReady, safe != centeredIndex else { return }
+                    snap(to: safe, proxy: proxy, animated: true)
                 }
             }
         }
         .frame(height: config.interactionHeight)
-        .onAppear {
-            updateScrollPosition(selection: selection)
-            isInitialSetupDone = true
-        }
-        .onChange(of: scrollIndex) { _, newValue in
-            Task { @MainActor in
-                selection = newValue
-            }
-        }
-        .onChange(of: selection) { _, newValue in
-            guard scrollIndex != newValue else { return }
-            updateScrollPosition(selection: newValue)
-        }
     }
 
     @ViewBuilder
-    func TickView(_ index: Int) -> some View {
-        let height = config.tickHeight
+    private func tickView(_ index: Int) -> some View {
         let isInside = animationRange.contains(index)
-        let fillColor = scrollIndex == index ? config.activeTint : config.inActiveTint.opacity(isInside ? 1 : 0.4)
+        let isActive = centeredIndex == index
+        let fillColor = isActive
+            ? config.activeTint
+            : config.inActiveTint.opacity(isInside ? 1 : 0.4)
 
         Rectangle()
             .fill(fillColor)
             .frame(
                 width: config.tickWidth,
-                height: height * (isInside ? 1 : config.inActiveHeightProgress)
+                height: config.tickHeight * (isInside || isActive ? 1 : config.inActiveHeightProgress)
             )
-            .frame(width: width, height: height, alignment: config.alignment.value)
+            .frame(width: tickSlotWidth, height: config.tickHeight, alignment: config.alignment.value)
             .clipped()
-            .animation(isInside || !isInitialSetupDone ? .none : config.animation, value: isInside)
+            .animation(isReady ? config.animation : nil, value: isInside)
+            .animation(isReady ? config.animation : nil, value: isActive)
     }
 
-    func updateScrollPosition(selection: Int) {
-        let safeSelection = max(min(selection, count), 0)
-        scrollPosition = safeSelection
-        scrollIndex = safeSelection
-        animationRange = safeSelection...safeSelection
+    @MainActor
+    private func settleInitialScroll(proxy: ScrollViewProxy) async {
+        isProgrammaticScroll = true
+        let target = Self.clamped(selection, count: count)
+
+        // Plusieurs passes : le layout horizontal n’est pas fiable au 1er frame.
+        for delayMs in [0, 16, 48, 120] as [UInt64] {
+            if delayMs > 0 {
+                try? await Task.sleep(for: .milliseconds(delayMs))
+            }
+            snap(to: target, proxy: proxy, animated: false)
+            await Task.yield()
+        }
+
+        centeredIndex = target
+        animationRange = target...target
+        isReady = true
+        isProgrammaticScroll = false
     }
 
-    var width: CGFloat {
+    @MainActor
+    private func snap(to index: Int, proxy: ScrollViewProxy, animated: Bool) {
+        let safe = Self.clamped(index, count: count)
+        isProgrammaticScroll = true
+        centeredIndex = safe
+        animationRange = safe...safe
+
+        if animated {
+            withAnimation(config.animation) {
+                proxy.scrollTo(safe, anchor: .center)
+            }
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                proxy.scrollTo(safe, anchor: .center)
+            }
+        }
+
+        if selection != safe {
+            selection = safe
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(animated ? 280 : 30))
+            isProgrammaticScroll = false
+        }
+    }
+
+    private var tickSlotWidth: CGFloat {
         config.tickWidth + (config.tickHPadding * 2)
+    }
+
+    private static func clamped(_ value: Int, count: Int) -> Int {
+        max(0, min(value, count))
     }
 }

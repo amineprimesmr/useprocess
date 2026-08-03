@@ -48,8 +48,8 @@ enum CoachDebloatJourneyStore {
 
         let summary = record.aiSummary ?? record.verdict.shortLabel
         let text = """
-        [Bilan du soir — \(record.dayKey)]
-        Eau: \(answers[EveningCheckInQuestionID.water] == "yes" ? "oui" : "non") · Repas debloat: \(answers[EveningCheckInQuestionID.debloatMeal] == "yes" ? "oui" : "non") · Cardio: \(answers[EveningCheckInQuestionID.cardio] == "yes" ? "oui" : "non")
+        [Check du jour — \(record.dayKey)]
+        Eau: \(answers[EveningCheckInQuestionID.water] == "yes" ? "oui" : "non") · Repas debloat: \(answers[EveningCheckInQuestionID.debloatMeal] == "yes" ? "oui" : "non") · Cardio: \(answers[EveningCheckInQuestionID.cardio] == "yes" ? "oui" : "non") · Routine: \(answers[EveningCheckInQuestionID.morningRoutine] == "yes" ? "oui" : "non")
         Score trajectoire: \(Int(record.compositeScore))/100 · Verdict: \(record.verdict.shortLabel) · Streak: \(record.streakAfterDay)
         \(summary)
         """

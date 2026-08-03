@@ -49,7 +49,9 @@ extension SportOnboardingView {
                 },
                 onContinue: nextStep // ✅ NOUVEAU: Passer à l'étape suivante depuis le clavier
             )
-        case .heightWeight, .bodyScan, .primaryGoal, .weightGoal, .sportClub, .experienceLevel, .hardestMeal,
+        case .heightWeight, .bodyScan, .primaryGoal, .weightGoal, .idealWeight, .weightGoalIncompatible,
+             .notificationPermission,
+             .sportClub, .experienceLevel, .hardestMeal,
              .appleSignIn,
              .yearsOfExperience, .deadlineSelection, .eventDetails,
              .potentialPace, .trainingFrequency, .nutritionScanFeature,
@@ -81,38 +83,6 @@ extension SportOnboardingView {
                 onValidationChanged: { isValid in
                     viewModel.isFirstNameEntered = isValid
                 }
-            )
-        case .idealWeight:
-            if viewModel.shouldSkipIdealWeightStep {
-                EmptyView()
-                    .onAppear { skipTransientStep() }
-            } else {
-                IdealWeightStepView(
-                    idealWeight: $viewModel.idealWeightValue,
-                    currentWeight: viewModel.selectedWeight,
-                    recommendedIdealWeight: viewModel.recommendedIdealWeight(),
-                    onValidationChanged: { isValid in
-                        viewModel.isIdealWeightEntered = isValid
-                        if isValid {
-                            viewModel.applyHasWeightGoal(true)
-                            viewModel.syncInferredWeightGoal()
-                            viewModel.saveProgress()
-                        }
-                    },
-                    onContinue: nextStep,
-                    onPersistAnswers: {
-                        viewModel.saveProgress()
-                    }
-                )
-            }
-        case .weightGoalIncompatible:
-            WeightGoalIncompatibleStepView(
-                firstName: viewModel.firstName,
-                currentWeight: viewModel.selectedWeight,
-                height: viewModel.selectedHeight,
-                selectedGoal: viewModel.selectedWeightGoal ?? .lose,
-                onBack: previousStep,
-                onValidationChanged: { _ in }
             )
         case .weightMotivation:
             OnboardingProfileChatView(
@@ -154,9 +124,6 @@ extension SportOnboardingView {
                 // Réinitialiser l'état quand on arrive sur cette page
                 biometricAuthCompleted = false
             }
-        case .notificationPermission:
-            NotificationPermissionStepView(onComplete: nextStep, onBack: previousStep)
-                .environmentObject(permissionsManager)
         case .transformationPreview:
             TransformationPreviewStepView(onComplete: nextStep, onBack: previousStep)
         case .programCreation:

@@ -1,4 +1,5 @@
 import FirebaseAuth
+import FirebaseCore
 import Foundation
 
 enum AuthUser {
@@ -19,16 +20,15 @@ enum AuthUser {
     }
 
     static var current: Session? {
+        guard AppConfiguration.firebaseConfigured else { return nil }
         FirebaseBootstrap.configure()
-        if FirebaseBootstrap.isConfigured,
-           let user = Auth.auth().currentUser {
-            return Session(
-                uid: user.uid,
-                displayName: user.displayName,
-                email: user.email
-            )
-        }
-        return nil
+        guard FirebaseBootstrap.isConfigured, FirebaseApp.app() != nil else { return nil }
+        guard let user = Auth.auth().currentUser else { return nil }
+        return Session(
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email
+        )
     }
 }
 

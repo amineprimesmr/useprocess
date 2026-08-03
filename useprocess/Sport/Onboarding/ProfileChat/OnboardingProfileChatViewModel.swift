@@ -97,9 +97,13 @@ final class OnboardingProfileChatViewModel {
         !shouldFinish && (programCreationPhase == .running || programCreationPhase == .complete)
     }
 
-    var showsContinueAfterAnalysis: Bool {
-        analysisLetsGoUnlocked
-    }
+    /// Ancien CTA Apple dans le chat — toujours off. Auth uniquement sur la page résultats scan.
+    var showsContinueAfterAnalysis: Bool { false }
+
+    /// Après relance : rouvrir la page résultats (Sign in Apple) si scan déjà fait.
+    private(set) var pendingDedicatedResultsReopen: FaceScanResult?
+    /// Après relance : chat terminé sans auth à refaire → enchaîner l’étape suivante.
+    private(set) var shouldAutoFinishAfterResume = false
 
     private func animate(_ animation: Animation, _ changes: () -> Void) {
         withAnimation(animation, changes)
@@ -178,10 +182,19 @@ final class OnboardingProfileChatViewModel {
         let allQuestionIDs = Set(questions.map(\.id))
 
         if allQuestionIDs.isSubset(of: completed) {
-            analysisLetsGoUnlocked = true
+            analysisLetsGoUnlocked = false
             currentQuestion = nil
             isQuestionReadyForAnswers = false
             isMessageAnimating = false
+
+            if let result = restoredFaceScanResultForAuthGate() {
+                inlineFaceScanResult = result
+                pendingDedicatedResultsReopen = result
+                return
+            }
+
+            // Scan sauté / déjà connecté / pas de Firebase → on enchaîne, pas de Sign in dans le chat.
+            shouldAutoFinishAfterResume = true
             return
         }
 
@@ -528,9 +541,9 @@ final class OnboardingProfileChatViewModel {
         }
         currentQuestion = nil
         isQuestionReadyForAnswers = false
-        animate(OnboardingProfileChatAnswerReveal.spring) {
-            analysisLetsGoUnlocked = true
-        }
+        analysisLetsGoUnlocked = false
+        // Pas de Sign in Apple dans le chat — on enchaîne directement.
+        shouldFinish = true
         isSubmittingAnswer = false
     }
 
@@ -887,8 +900,8 @@ final class OnboardingProfileChatViewModel {
 
             animate(OnboardingProfileChatAnswerReveal.spring) {
                 programCreationPhase = .idle
-                analysisLetsGoUnlocked = true
             }
+            shouldFinish = true
         }
 
         await programCreationTask?.value
@@ -927,9 +940,40 @@ final class OnboardingProfileChatViewModel {
         try? await Task.sleep(nanoseconds: 180_000_000)
         guard currentQuestion?.kind == .answersAnalysis else { return }
 
-        animate(OnboardingProfileChatAnswerReveal.spring) {
-            analysisLetsGoUnlocked = true
+        // Ancien CTA « Continuer avec Apple » retiré du chat.
+        markQuestionCompleted(currentQuestion?.id ?? "answers_analysis")
+        if advanceToNextQuestion() {
+            await presentCurrentQuestion(initialDelay: false)
+        } else {
+            shouldFinish = true
         }
+    }
+
+    /// Scan déjà capturé + pas encore connecté → rouvrir la page résultats (seul endroit du Sign in Apple).
+    private func restoredFaceScanResultForAuthGate() -> FaceScanResult? {
+        guard AppConfiguration.firebaseConfigured, AuthUser.current == nil else { return nil }
+        guard onboardingViewModel?.isFaceAnalysisCompleted == true else { return nil }
+
+        if let latest = FaceScanHistoryStore.shared.latestResult {
+            return latest
+        }
+
+        guard let markers = onboardingViewModel?.onboardingFaceMarkers ?? OnboardingFaceMarkersStore.load() else {
+            return nil
+        }
+
+        return FaceScanResult(
+            id: "onboarding-restored-scan",
+            userId: UserScopedStorage.currentUserId() ?? "local-user",
+            markers: markers,
+            source: .onboarding
+        )
+    }
+
+    func consumePendingDedicatedResultsReopen() -> FaceScanResult? {
+        let result = pendingDedicatedResultsReopen
+        pendingDedicatedResultsReopen = nil
+        return result
     }
 
     private func startAnswersAnalysisAnimation() {

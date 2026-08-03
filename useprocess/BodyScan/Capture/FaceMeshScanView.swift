@@ -752,10 +752,11 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.overlayMode = .tiltHold
                 self.activeTickSectors = []
                 self.tiltHoldProgress = 0
-                self.tiltDirection = .either
+                // Gauche d’abord, puis droite — jamais les deux en même temps.
+                self.tiltDirection = .left
                 self.tiltIsEngaged = false
-                self.instruction = "Regarde la caméra. Penche la tête sur un côté."
-                self.frameHint = "Oreille vers l’épaule, sans tourner le visage."
+                self.instruction = "Regarde la caméra. Penche la tête à gauche."
+                self.frameHint = "Oreille gauche vers l’épaule, sans tourner le visage."
             }
         }
 
@@ -770,22 +771,22 @@ struct FaceMeshScanView: UIViewRepresentable {
             let rollMagnitude = abs(roll)
             let isFirstSide = livePhase == .fluidTiltLeft
 
+            // Convention ARKit : roll < 0 ≈ penché à gauche, roll > 0 ≈ à droite.
             let correctSide: Bool
             let wrongSide: Bool
             if isFirstSide {
-                correctSide = rollMagnitude >= minTiltRoll
-                wrongSide = false
+                correctSide = roll <= -minTiltRoll
+                wrongSide = roll >= minTiltRoll
             } else {
-                let needed = -firstTiltSign
-                correctSide = needed != 0 && roll * needed >= minTiltRoll
-                wrongSide = firstTiltSign != 0 && roll * firstTiltSign >= minTiltRoll
+                correctSide = roll >= minTiltRoll
+                wrongSide = roll <= -minTiltRoll
             }
 
             if lookingAtCamera && correctSide {
                 tiltHoldFrames += 1
                 let mesh = extractMesh(from: faceAnchor.geometry)
                 if isFirstSide {
-                    if firstTiltSign == 0 { firstTiltSign = roll >= 0 ? 1 : -1 }
+                    firstTiltSign = -1
                     if rollMagnitude > abs(peakLeftRoll) {
                         peakLeftRoll = roll
                         leftTiltMesh = mesh
@@ -814,19 +815,21 @@ struct FaceMeshScanView: UIViewRepresentable {
                 instructionText = "Garde les yeux vers la caméra."
                 hintText = "Penche seulement la tête, sans tourner le visage."
             } else if wrongSide {
-                instructionText = "Penche de l’autre côté."
+                instructionText = isFirstSide
+                    ? "Penche à gauche, pas à droite."
+                    : "Penche à droite maintenant."
                 hintText = "Oreille vers l’épaule, regard fixe."
             } else if !correctSide {
                 instructionText = isFirstSide
-                    ? "Regarde la caméra. Penche la tête sur un côté."
-                    : "Regarde la caméra. Penche la tête de l’autre côté."
+                    ? "Regarde la caméra. Penche la tête à gauche."
+                    : "Regarde la caméra. Penche la tête à droite."
                 hintText = "Un peu plus fort, puis tiens la pose."
             } else if holdRatio < 1 {
                 instructionText = "Tiens cette position…"
                 hintText = nil
             } else {
                 instructionText = isFirstSide
-                    ? "Parfait. Maintenant l’autre côté."
+                    ? "Parfait. Maintenant à droite."
                     : "Finalisation du scan…"
                 hintText = nil
             }
@@ -864,10 +867,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                         self.overlayMode = .tiltHold
                         self.activeTickSectors = []
                         self.tiltHoldProgress = 0
-                        self.tiltDirection = self.tiltDirectionForPhase(isFirstSide: false)
+                        self.tiltDirection = .right
                         self.tiltIsEngaged = false
-                        self.instruction = "Regarde la caméra. Penche la tête de l’autre côté."
-                        self.frameHint = "Oreille vers l’épaule, sans tourner le visage."
+                        self.instruction = "Regarde la caméra. Penche la tête à droite."
+                        self.frameHint = "Oreille droite vers l’épaule, sans tourner le visage."
                     }
                     return
                 }
@@ -959,14 +962,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         private func tiltDirectionForPhase(isFirstSide: Bool) -> FaceScanTiltDirection {
-            if isFirstSide {
-                if firstTiltSign > 0 { return .right }
-                if firstTiltSign < 0 { return .left }
-                return .either
-            }
-            if firstTiltSign > 0 { return .left }
-            if firstTiltSign < 0 { return .right }
-            return .either
+            isFirstSide ? .left : .right
         }
 
         private func resetOverlayToOrbit() {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Habitudes 24/7 — intégrées au carousel Routine quotidienne + guide debloat.
+/// Habitudes 24/7 — guide debloat et coach (hors routine matinale).
 enum ProcessContinuousHabits {
 
     static let mewingTitle = "Mewing 24/24"

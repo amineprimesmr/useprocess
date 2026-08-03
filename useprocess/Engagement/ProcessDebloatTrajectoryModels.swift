@@ -268,13 +268,13 @@ struct DebloatTrajectorySnapshot: Equatable {
         case .regression:
             return "Régression détectée\(nameSuffix) — le coach t’aide à recaler."
         case .missed:
-            return "Bilan manqué — valide ce soir pour continuer."
+            return "Check manqué — valide-le pour continuer."
         case .pending:
-            return "Bilan du soir en attente — valide quand la fenêtre s'ouvre."
+            return "Check du jour en attente — valide-le quand tu veux."
         case .paused, .none:
             if totalValidatedDays >= 7 { return "Régularité solide\(nameSuffix) — ne lâche pas." }
             if totalValidatedDays > 0 { return "Continue comme ça\(nameSuffix) !" }
-            return "Complète ton bilan du soir pour lancer ta trajectoire\(nameSuffix)."
+            return "Complète ton check pour lancer ta trajectoire\(nameSuffix)."
         }
     }
 

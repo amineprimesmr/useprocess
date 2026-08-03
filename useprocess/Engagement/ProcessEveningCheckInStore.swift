@@ -4,9 +4,13 @@ enum EveningCheckInQuestionID {
     static let water = "water"
     static let debloatMeal = "debloatMeal"
     static let cardio = "cardio"
+    static let morningRoutine = "morningRoutine"
     static let legacyPostureCircuit = "postureCircuit"
 
-    static let all: [String] = [water, debloatMeal, cardio]
+    /// Leviers debloat — score, streak et validation jour.
+    static let debloatLevers: [String] = [water, debloatMeal, cardio]
+    /// Toutes les questions affichées dans la checklist.
+    static let all: [String] = [morningRoutine] + debloatLevers
 }
 
 struct ProcessEveningCheckInDayRecord: nonisolated Codable, Equatable, Sendable {
@@ -107,6 +111,14 @@ final class ProcessEveningCheckInStore {
                 dayId: dayId
             )
         }
+
+        if let morning = answers[EveningCheckInQuestionID.morningRoutine] {
+            planStore.setJournalTaskStatus(
+                morning == "yes" ? .completed : .failed,
+                taskId: "\(dayId).core.morning",
+                dayId: dayId
+            )
+        }
     }
 
     private func persist() {
@@ -177,19 +189,19 @@ enum ProcessEveningCheckInSchedule {
 
     @MainActor
     static func streakLaunchMessage(from now: Date = Date(), calendar: Calendar = .current) -> String {
-        let isFirstBilan = ProcessEveningCheckInStore.shared.submittedDayKeys.isEmpty
+        let isFirstCheck = ProcessEveningCheckInStore.shared.submittedDayKeys.isEmpty
             || ProcessStreakStore.shared.snapshot.totalCompletedDays == 0
 
         if isAvailable(at: now, calendar: calendar) {
-            return isFirstBilan
-                ? "Valide ton premier bilan pour lancer la série"
-                : "Valide ton bilan du soir pour lancer la série"
+            return isFirstCheck
+                ? "Valide ton premier check pour lancer la série"
+                : "Valide ton check pour lancer la série"
         }
 
         let countdown = opensInLabel(from: now, calendar: calendar)
-        if isFirstBilan {
-            return countdown.isEmpty ? "Premier bilan ce soir" : "Premier bilan \(countdown)"
+        if isFirstCheck {
+            return countdown.isEmpty ? "Premier check ce soir" : "Premier check \(countdown)"
         }
-        return countdown.isEmpty ? "Prochain bilan ce soir" : "Prochain bilan \(countdown)"
+        return countdown.isEmpty ? "Prochain check ce soir" : "Prochain check \(countdown)"
     }
 }

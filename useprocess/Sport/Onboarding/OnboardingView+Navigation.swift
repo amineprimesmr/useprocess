@@ -14,8 +14,12 @@ extension SportOnboardingView {
 
 /// Avance automatiquement à travers une étape transitoire (sans validation).
 func skipTransientStep() {
+    // Évite les re-entrées pendant le montage (plusieurs EmptyView.onAppear).
+    guard !isTransitioning else { return }
+
     guard let nextStepIndex = navigationEngine.resolveNextVisibleStep(from: viewModel.currentStep),
-          nextStepIndex < totalSteps else {
+          nextStepIndex < totalSteps,
+          nextStepIndex != viewModel.currentStep else {
         return
     }
 

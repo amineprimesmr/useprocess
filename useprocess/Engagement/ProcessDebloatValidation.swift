@@ -47,15 +47,15 @@ enum ProcessDebloatValidation {
     static func failureMessage(_ failure: Failure) -> String {
         switch failure {
         case .notSubmitted:
-            return "Bilan non validé — ta trajectoire est en pause ce jour-là."
+            return "Check non validé — ta trajectoire est en pause ce jour-là."
         case .missingHydration:
             return "Hydratation manquante — objectif eau non atteint, jour non validé."
         case .missingNutrition:
             return "Alimentation debloat manquante — équilibre Na/K/Mg requis pour valider."
         case .cardioSlump(let days):
-            return "Cardio absent \(days) jours d'affilée — minimum 3/semaine. Fais une séance pour relancer."
+            return "Marche inclinée absente \(days) jours d'affilée — minimum 3/semaine. Relance une séance."
         case .weeklyCardioDeficit(let sessions):
-            return "Cardio insuffisant cette semaine (\(sessions)/\(weeklyCardioMinimum)) — ajoute une séance légère."
+            return "Marche inclinée insuffisante cette semaine (\(sessions)/\(weeklyCardioMinimum))."
         }
     }
 

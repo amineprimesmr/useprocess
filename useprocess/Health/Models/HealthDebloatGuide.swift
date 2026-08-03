@@ -288,7 +288,7 @@ enum HealthDebloatGuide {
             body: "Le froid resserre les vaisseaux superficiels et donne un effet « dégonflé » immédiat. Ça ne remplace pas la nutrition, mais c’est un bon levier matinal.",
             bullets: [
                 "Rinçage visage \(ProcessDailyTargets.coldFaceRinseSeconds) s après le réveil",
-                "Combine avec \(ProcessDailyTargets.morningLightMinutes) min de lumière naturelle le matin"
+                "Circuit lymphatique matinal — sauts, genoux, bras alternés pour activer la lymphe"
             ],
             accent: .action,
             pillar: .face

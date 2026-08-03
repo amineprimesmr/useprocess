@@ -62,7 +62,7 @@ var canContinue: Bool {
 }
 
 var shouldShowNoWeightGoalLink: Bool {
-    viewModel.currentStep == OnboardingStep.idealWeight.rawValue
+    false
 }
 
 var shouldHideButtonUntilValidated: Bool {

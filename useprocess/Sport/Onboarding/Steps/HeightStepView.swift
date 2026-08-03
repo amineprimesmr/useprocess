@@ -15,14 +15,15 @@ struct HeightStepView: View {
     var onValidationChanged: ((Bool) -> Void)?
 
     @State private var unit: HeightUnit = .cm
-    /// Index 0 = 140 cm, index `tickIndexMax` = 220 cm (pas de 1 cm). Utilisé avec `TickPicker` (iOS 18+).
-    @State private var tickSelection: Int = 36
-    @State private var sliderValue: Double = 0.5
+    /// Index 0 = 140 cm, index `tickIndexMax` = 220 cm (pas de 1 cm). Défaut 170 → index 30.
+    @State private var tickSelection: Int = 30
+    @State private var sliderValue: Double = 0.375
     @State private var lastHapticHeight: Int = -1
     @State private var saveTask: Task<Void, Never>?
 
     private let minHeightCM: Double = 140
     private let maxHeightCM: Double = 220
+    private let defaultHeightCM: Double = 170
     /// Nombre d'intervalles : 140…220 cm → 81 valeurs, indices 0…80.
     private let tickIndexMax: Int = 80
 
@@ -30,11 +31,18 @@ struct HeightStepView: View {
         _selectedHeight = selectedHeight
         self.onValidationChanged = onValidationChanged
 
-        let cm = selectedHeight.wrappedValue
-        if cm > 0 {
-            let clamped = min(max(Int(cm.rounded()), 140), 220)
-            _tickSelection = State(initialValue: clamped - 140)
+        var cm = selectedHeight.wrappedValue
+        if cm <= 0 {
+            cm = 170
+            selectedHeight.wrappedValue = 170
         }
+        let clamped = min(max(Int(cm.rounded()), 140), 220)
+        if Double(clamped) != selectedHeight.wrappedValue {
+            selectedHeight.wrappedValue = Double(clamped)
+        }
+        _tickSelection = State(initialValue: clamped - 140)
+        _sliderValue = State(initialValue: Double(clamped - 140) / 80.0)
+        _lastHapticHeight = State(initialValue: clamped)
     }
 
     enum HeightUnit {
@@ -142,7 +150,7 @@ struct HeightStepView: View {
                 if let profile = profileService.currentProfile, profile.height > 0 {
                     selectedHeight = profile.height
                 } else {
-                    selectedHeight = 176.0
+                    selectedHeight = defaultHeightCM
                 }
             }
 

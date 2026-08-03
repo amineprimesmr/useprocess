@@ -22,7 +22,7 @@ class OnboardingViewModel: ObservableObject {
     // MARK: - Informations personnelles
     @Published var selectedGender: Gender? = nil
     @Published var selectedAge: Int = 21
-    @Published var selectedHeight: Double = 175 // cm
+    @Published var selectedHeight: Double = 170 // cm — défaut 1m70
     @Published var selectedWeight: Double = 0 // kg — 0 = pas encore saisi
     @Published var firstName: String = ""
     @Published var idealWeightValue: Double = 0
@@ -339,16 +339,13 @@ class OnboardingViewModel: ObservableObject {
         )
     }
 
-    /// Passe l'étape poids idéal si le rapport taille/poids est déjà bon (debloat seul).
-    var shouldSkipIdealWeightStep: Bool {
-        guard Self.isPlausibleWeight(selectedWeight), selectedHeight >= 120 else { return false }
-        return bodyCompositionAssessment?.shouldAskIdealWeight == false
-    }
+    /// Étape « poids de référence / objectif de poids » retirée du parcours — toujours sautée.
+    var shouldSkipIdealWeightStep: Bool { true }
 
     func refreshBodyCompositionRouting() {
-        if shouldSkipIdealWeightStep {
-            applyFitProfileDebloatDefaults()
-        }
+        // Défauts debloat une seule fois — évite une tempête de @Published pendant la nav.
+        guard hasWeightGoal != false else { return }
+        applyFitProfileDebloatDefaults()
     }
 
     /// Profil déjà fit — pas d'objectif poids, trajectoire debloat visage.

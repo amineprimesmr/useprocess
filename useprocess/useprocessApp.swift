@@ -13,16 +13,17 @@ struct useprocessApp: App {
     @UIApplicationDelegateAdaptor(ProcessAppDelegate.self) private var appDelegate
 
     init() {
-        // Bootstrap minimal sync — Firebase / MetricKit / gestures hors de ce chemin.
+        // Sync avant tout View / Auth / AppSession — sinon Auth.auth() crashe le cold launch.
         iOS26Stability.configureAtLaunch()
         ProcessAudioSession.configureForMixingWithOthers()
+        FirebaseBootstrap.configure()
     }
 
     var body: some Scene {
         WindowGroup {
             AppShellView()
                 .task {
-                    // Après le 1er frame : Firebase (si pas déjà tiré par Auth) + services.
+                    // Idempotent si déjà fait dans init ; MetricKit / notifs hors chemin critique.
                     FirebaseBootstrap.configure()
                     ProcessMetricKitMonitor.shared.start()
 

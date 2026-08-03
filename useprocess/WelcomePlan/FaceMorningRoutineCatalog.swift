@@ -1,24 +1,81 @@
 import Foundation
 
-/// Routine quotidienne — actions matin + habitudes 24/7 (carousel Plan).
+/// Routine matinale — eau tiède, circuit lymphatique, glaçons (carousel Plan).
 enum FaceMorningRoutineCatalog {
 
-    /// Activation lymphatique matinale (corde à sauter ou sauts sur place).
-    static let jumpActivationMinutes = 5
+    static let warmWaterML = ProcessDailyTargets.warmWaterOnWakeML
+    static let lymphJumpSeconds = ProcessDailyTargets.lymphJumpSeconds
+    static let lymphKneeRaiseSeconds = ProcessDailyTargets.lymphKneeRaiseSeconds
+    static let lymphArmRaiseSeconds = ProcessDailyTargets.lymphArmRaiseSeconds
+
+    /// Durée totale estimée du circuit lymphatique (sauts + genoux + bras).
+    static var lymphCircuitSeconds: Int {
+        lymphJumpSeconds + lymphKneeRaiseSeconds + lymphArmRaiseSeconds
+    }
+
+    static var lymphCircuitMinutesLabel: String {
+        let minutes = max(1, lymphCircuitSeconds / 60)
+        return "\(minutes) min"
+    }
 
     enum Step: Int, CaseIterable {
-        case soleilAuReveil
-        case cordeOuSauts
-        case eauFroide
+        case eauTiede
+        case sautsSurPlace
+        case monteesGenoux
+        case brasAlternes
+        case glaconsVisage
 
         func canonicalLine(targets: OriginPersonalizedDailyTargets) -> String {
+            _ = targets
             switch self {
-            case .soleilAuReveil:
-                return "Soleil au réveil — \(ProcessDailyTargets.morningLightMinutes) min de lumière naturelle"
-            case .cordeOuSauts:
-                return "Corde à sauter ou sauts sur place — \(FaceMorningRoutineCatalog.jumpActivationMinutes) min pour activer le drainage lymphatique"
-            case .eauFroide:
-                return "Glaçons sur le visage"
+            case .eauTiede:
+                return "Eau tiède au réveil — \(FaceMorningRoutineCatalog.warmWaterML) ml pour relancer digestion et hydratation"
+            case .sautsSurPlace:
+                return "Sauts sur place — 1 min, bras levés, rebonds légers pour pomper la lymphe"
+            case .monteesGenoux:
+                return "Montées de genoux — tapote chaque genou avec les mains, 1 min en rythme"
+            case .brasAlternes:
+                return "Bras alternés — lève bras gauche puis droit au-dessus de la tête, 1 min"
+            case .glaconsVisage:
+                return "Glaçons sur le visage — \(ProcessDailyTargets.coldFaceRinseSeconds) s pour vasoconstriction et dégonflement"
+            }
+        }
+
+        var carouselId: String {
+            switch self {
+            case .eauTiede: return "daily-routine-eau-tiede"
+            case .sautsSurPlace: return "daily-routine-sauts"
+            case .monteesGenoux: return "daily-routine-genoux"
+            case .brasAlternes: return "daily-routine-bras"
+            case .glaconsVisage: return "daily-routine-glacons"
+            }
+        }
+
+        var fallbackIcon: String {
+            switch self {
+            case .eauTiede: return "mug.fill"
+            case .sautsSurPlace: return "figure.jumprope"
+            case .monteesGenoux: return "figure.run"
+            case .brasAlternes: return "figure.arms.open"
+            case .glaconsVisage: return "snowflake"
+            }
+        }
+
+        var assetName: String? {
+            switch self {
+            case .eauTiede: return RoutineAssetCatalog.eauTiede
+            case .sautsSurPlace: return RoutineAssetCatalog.sauts
+            case .monteesGenoux: return RoutineAssetCatalog.genoux
+            case .brasAlternes: return RoutineAssetCatalog.bras
+            case .glaconsVisage: return RoutineAssetCatalog.glacons
+            }
+        }
+
+        var repBadge: String? {
+            switch self {
+            case .eauTiede: return "\(warmWaterML) ml"
+            case .sautsSurPlace, .monteesGenoux, .brasAlternes: return "1 min"
+            case .glaconsVisage: return "\(ProcessDailyTargets.coldFaceRinseSeconds) s"
             }
         }
     }
@@ -27,84 +84,42 @@ enum FaceMorningRoutineCatalog {
         Step.allCases.map { $0.canonicalLine(targets: targets) }
     }
 
-    /// Matin + habitudes 24/7 — tout le carousel « Routine quotidienne ».
-    static func dailyRoutineLines(
-        storedLines: [String],
-        targets: OriginPersonalizedDailyTargets
-    ) -> [String] {
-        _ = storedLines
-        var lines = buildSteps(targets: targets)
-
-        for habit in ProcessContinuousHabits.all {
-            lines.append("\(habit.title) — \(habit.detail)")
-        }
-
-        return lines
-    }
-
-    /// Lignes pour le carousel — priorité fixe, texte canonique (ignore pollution stockée).
     static func displaySteps(
         storedLines: [String],
         targets: OriginPersonalizedDailyTargets
     ) -> [String] {
-        dailyRoutineLines(storedLines: storedLines, targets: targets)
+        _ = storedLines
+        return buildSteps(targets: targets)
     }
 
     static func estimatedMinutes(targets: OriginPersonalizedDailyTargets) -> Int {
-        targets.morningLightMinutes + jumpActivationMinutes + 1
+        _ = targets
+        let drinkMinutes = 2
+        let circuitMinutes = max(1, lymphCircuitSeconds / 60)
+        let iceMinutes = 1
+        return drinkMinutes + circuitMinutes + iceMinutes
     }
 
     static func dailyRoutineActionCount(targets: OriginPersonalizedDailyTargets) -> Int {
         carouselItems(targets: targets).count
     }
 
-    /// Cartes carousel avec visuels routine (`routinesoleil`, `routineau`, etc.).
     static func carouselItems(targets: OriginPersonalizedDailyTargets) -> [PlanProtocolCarouselItem] {
-        let category = "Routine quotidienne"
-        var items: [PlanProtocolCarouselItem] = []
-
-        items.append(PlanProtocolCarouselBuilder.lineItem(
-            Step.soleilAuReveil.canonicalLine(targets: targets),
-            id: "daily-routine-soleil",
-            fallback: "sun.max.fill",
-            category: category,
-            assetName: RoutineAssetCatalog.soleil
-        ))
-        items.append(PlanProtocolCarouselBuilder.lineItem(
-            Step.cordeOuSauts.canonicalLine(targets: targets),
-            id: "daily-routine-corde",
-            fallback: "figure.jumprope",
-            category: category,
-            assetName: RoutineAssetCatalog.corde
-        ))
-        items.append(PlanProtocolCarouselBuilder.lineItem(
-            Step.eauFroide.canonicalLine(targets: targets),
-            id: "daily-routine-eau",
-            fallback: "drop.fill",
-            category: category,
-            assetName: RoutineAssetCatalog.eau
-        ))
-
-        for (index, habit) in ProcessContinuousHabits.all.enumerated() {
-            let line = "\(habit.title) — \(habit.detail)"
-            items.append(PlanProtocolCarouselBuilder.lineItem(
-                line,
-                id: "daily-routine-habit-\(index)",
-                fallback: habitFallbackIcon(for: habit.title),
+        let category = "Routine matinale"
+        return Step.allCases.map { step in
+            PlanProtocolCarouselBuilder.lineItem(
+                step.canonicalLine(targets: targets),
+                id: step.carouselId,
+                fallback: step.fallbackIcon,
                 category: category,
-                assetName: RoutineAssetCatalog.asset(forHabitTitle: habit.title)
-            ))
+                assetName: step.assetName,
+                repBadge: step.repBadge
+            )
         }
-
-        return items
     }
 
-    private static func habitFallbackIcon(for title: String) -> String {
-        switch title {
-        case ProcessContinuousHabits.mewingTitle: return "mouth.fill"
-        case ProcessContinuousHabits.postureTitle: return "figure.stand"
-        case ProcessContinuousHabits.sideSleepTitle: return "bed.double.fill"
-        default: return "sun.max.fill"
-        }
+    /// Texte court pour journal / checklist.
+    static var journalSummary: String {
+        "\(warmWaterML) ml eau tiède · circuit lymphatique \(lymphCircuitMinutesLabel) · glaçons"
     }
 }

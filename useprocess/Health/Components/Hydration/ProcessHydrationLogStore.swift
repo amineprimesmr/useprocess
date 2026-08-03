@@ -35,7 +35,8 @@ struct ProcessHydrationEveningPrefill: Equatable, Sendable {
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 1
         let current = formatter.string(from: NSNumber(value: Double(milliliters) / 1000.0)) ?? "0"
-        let target = formatter.string(from: NSNumber(value: Double(targetMilliliters) / 1000.0)) ?? "2"
+        let target = formatter.string(from: NSNumber(value: Double(targetMilliliters) / 1000.0))
+            ?? "\(ProcessDailyTargets.hydrationLitersPerDay)"
         return "\(current) / \(target) L"
     }
 
@@ -161,20 +162,13 @@ final class ProcessHydrationLogStore {
         !(logsByDay[dayKey(for: date)]?.entries.isEmpty ?? true)
     }
 
-    /// Prefill bilan du soir : si l'utilisateur a suivi l'eau dans l'app, on ne repose pas la question.
+    /// Prefill checklist : reflète le journal in-app, objectif fixe 3 L.
     func eveningCheckInPrefill(
-        for date: Date = Date(),
-        targetLiters: Int? = nil
+        for date: Date = Date()
     ) -> ProcessHydrationEveningPrefill? {
         guard hasLocalAdjustments(for: date) else { return nil }
 
-        let resolvedTargetLiters = max(
-            1,
-            targetLiters
-                ?? WelcomePlanStore.shared.plan?.resolvedDailyTargets.hydrationLitersPerDay
-                ?? ProcessDailyTargets.hydrationLitersPerDay
-        )
-        let targetMilliliters = resolvedTargetLiters * 1000
+        let targetMilliliters = ProcessDailyTargets.hydrationTargetMilliliters
         let milliliters = max(0, self.milliliters(for: date))
         let metTarget = milliliters >= targetMilliliters
 
@@ -200,7 +194,9 @@ final class ProcessHydrationLogStore {
     }
 
     private func syncJournalTask(dayId: String, totalMilliliters: Int, targetMilliliters: Int) {
-        let status: JournalTaskStatus? = totalMilliliters >= targetMilliliters ? .completed : nil
+        _ = targetMilliliters
+        let canonicalTarget = ProcessDailyTargets.hydrationTargetMilliliters
+        let status: JournalTaskStatus? = totalMilliliters >= canonicalTarget ? .completed : nil
         WelcomePlanStore.shared.setJournalTaskStatus(
             status,
             taskId: "\(dayId).core.hydrate",

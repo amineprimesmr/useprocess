@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Routine quotidienne — carousel matin + habitudes 24/7.
+/// Routine quotidienne — carousel matin (circuit lymphatique).
 struct PlanFaceDaySection: View {
     let plan: FaceOriginPlan
     let day: OriginProgramDay
@@ -31,8 +31,8 @@ struct PlanFaceDaySection: View {
 
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Routine quotidienne",
-                trailing: nil
+                title: "Routine matinale",
+                trailing: FaceMorningRoutineCatalog.lymphCircuitMinutesLabel
             )
 
             if items.isEmpty {

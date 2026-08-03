@@ -117,16 +117,25 @@ final class AuthenticationManager: NSObject, ObservableObject {
     override private init() {
         super.init()
         FirebaseBootstrap.configure()
-        guard firebaseAuthReady else {
-            hasCompletedOnboarding = UserDefaults.standard.bool(
-                forKey: UserScopedStorage.key("onboarding.completed", userId: nil)
-            )
-            return
-        }
 
+        let uid = firebaseAuthReady ? currentFirebaseUser?.uid : nil
         hasCompletedOnboarding = UserDefaults.standard.bool(
-            forKey: UserScopedStorage.key("onboarding.completed", userId: currentFirebaseUser?.uid)
+            forKey: UserScopedStorage.key("onboarding.completed", userId: uid)
         )
+        // Ne pas publier / enregistrer le listener Auth pendant l'init :
+        // le callback synchrone d'Auth invalidait SwiftUI au milieu du montage
+        // de SportOnboardingView (@StateObject) → EXC_BAD_ACCESS.
+        isAuthenticated = uid != nil
+
+        guard firebaseAuthReady else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.attachAuthStateListenerIfNeeded()
+        }
+    }
+
+    private func attachAuthStateListenerIfNeeded() {
+        guard firebaseAuthReady, authListenerHandle == nil else { return }
 
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
@@ -140,7 +149,6 @@ final class AuthenticationManager: NSObject, ObservableObject {
                 }
             }
         }
-        isAuthenticated = currentFirebaseUser != nil
     }
 
     func resetSession() {

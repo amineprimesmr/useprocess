@@ -394,7 +394,7 @@ final class ProcessDebloatTrajectoryStore {
 
     private func scanSummary(puffinessDelta: Int?) -> String {
         guard let delta = puffinessDelta else {
-            return "Scan enregistré — bilan du soir pour compléter la trajectoire."
+            return "Scan enregistré — fais ton check pour compléter la trajectoire."
         }
         if delta <= -4 { return "Scan : moins gonflé qu'à l'habitude." }
         if delta >= 6 { return "Scan : rétention en hausse — eau régulière, sodium modéré, potassium alimentaire." }

@@ -1,4 +1,5 @@
 import FirebaseAuth
+import FirebaseCore
 import FirebaseFirestore
 import Foundation
 
@@ -13,6 +14,7 @@ final class ProcessUsernameRegistry {
 
     private var isCloudReady: Bool {
         FirebaseBootstrap.isConfigured
+            && FirebaseApp.app() != nil
             && Auth.auth().currentUser != nil
     }
 

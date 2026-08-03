@@ -4,11 +4,9 @@ import Foundation
 enum DailyRoutineCompletionCatalog {
     static let holdDurationSeconds: TimeInterval = 5
 
-    static let morningCarouselItemIds: Set<String> = [
-        "daily-routine-soleil",
-        "daily-routine-corde",
-        "daily-routine-eau"
-    ]
+    static let morningCarouselItemIds: Set<String> = Set(
+        FaceMorningRoutineCatalog.Step.allCases.map(\.carouselId)
+    )
 
     static func taskId(dayId: String, carouselItemId: String) -> String {
         "\(dayId).routine.\(carouselItemId)"

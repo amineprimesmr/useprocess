@@ -40,7 +40,10 @@ struct ProcessProfileView: View {
             ScrollView {
                 // VStack (pas LazyVStack) en tête : TimelineView de la flamme doit rester actif.
                 VStack(spacing: 0) {
-                    ProfileStreakAchievementsSection(isPlaybackActive: isFlamePlaybackActive)
+                    ProfileStreakAchievementsSection(
+                        selectedDate: $selectedProfileDate,
+                        isPlaybackActive: isFlamePlaybackActive
+                    )
 
                     Color.clear
                         .frame(height: 0)

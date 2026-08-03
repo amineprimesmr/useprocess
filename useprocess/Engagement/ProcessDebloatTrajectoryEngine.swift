@@ -18,7 +18,7 @@ enum ProcessDebloatTrajectoryEngine {
     }
 
     static func yesCount(from answers: [String: String]) -> Int {
-        EveningCheckInQuestionID.all.filter { answers[$0] == "yes" }.count
+        EveningCheckInQuestionID.debloatLevers.filter { answers[$0] == "yes" }.count
     }
 
     static func countsAsValidatedDay(
@@ -253,9 +253,9 @@ enum ProcessDebloatTrajectoryEngine {
         case .regression:
             return "Régression — protocole debloat incomplet (eau + repas + cardio)."
         case .pending:
-            return "Bilan du soir en attente — valide ce soir pour compter la journée."
+            return "Check du jour en attente — valide-le pour compter la journée."
         case .missed:
-            return "Bilan non validé — ta trajectoire est en pause ce jour-là."
+            return "Check non validé — ta trajectoire est en pause ce jour-là."
         case .paused:
             return "Jour en pause — compteur gelé."
         }

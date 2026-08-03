@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SportOnboardingRootView: View {
     @Bindable private var session = AppSession.shared
-    @ObservedObject private var authManager = AuthenticationManager.shared
 
     var body: some View {
         SportOnboardingView()
@@ -13,6 +12,8 @@ struct SportOnboardingRootView: View {
 
     @MainActor
     private func syncAuthWithSessionIfNeeded() {
+        // Accès lazy — après le 1er frame, Firebase déjà configuré dans App.init.
+        let authManager = AuthenticationManager.shared
         if authManager.hasCompletedOnboarding != session.hasCompletedOnboarding {
             authManager.hasCompletedOnboarding = session.hasCompletedOnboarding
         }

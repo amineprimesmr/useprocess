@@ -41,7 +41,11 @@ enum UserScopedStorage {
     ]
 
     static func currentUserId() -> String? {
-        AuthUser.current?.uid
+        // Ne force pas Auth tant que Firebase n'est pas prêt (évite le log I-COR000003).
+        guard FirebaseBootstrap.isAppReady || AppConfiguration.firebaseConfigured else {
+            return nil
+        }
+        return AuthUser.current?.uid
     }
 
     static func key(_ base: String, userId: String? = currentUserId()) -> String {

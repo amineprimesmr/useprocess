@@ -100,24 +100,15 @@ class OnboardingNavigationEngine {
             if !isSimulatingNavigation {
                 viewModel.refreshBodyCompositionRouting()
             }
-            if viewModel.shouldSkipIdealWeightStep {
-                return OnboardingStep.firstNameInput.rawValue
-            }
-            return OnboardingStep.idealWeight.rawValue
+            return OnboardingStep.firstNameInput.rawValue
         case .heightWeight:
             return OnboardingStep.firstNameInput.rawValue
         case .firstNameInput:
             return OnboardingStep.weightMotivation.rawValue
         case .personalizedWelcome, .processResultsDurability:
-            return OnboardingStep.idealWeight.rawValue
-        case .primaryGoal:
-            if viewModel.hasWeightGoal == true {
-                return OnboardingStep.idealWeight.rawValue
-            }
-            if viewModel.hasWeightGoal == false {
-                return OnboardingStep.weightEstimation.rawValue
-            }
-            return OnboardingStep.idealWeight.rawValue
+            return OnboardingStep.weightMotivation.rawValue
+        case .primaryGoal, .idealWeight, .weightGoalIncompatible:
+            return OnboardingStep.firstNameInput.rawValue
         default:
             break
         }
@@ -169,20 +160,15 @@ class OnboardingNavigationEngine {
             return OnboardingStep.ageSelection.rawValue
         case .weight:
             return OnboardingStep.height.rawValue
-        case .idealWeight:
+        case .idealWeight, .weightGoalIncompatible, .primaryGoal:
             return OnboardingStep.weight.rawValue
         case .heightWeight:
             return OnboardingStep.ageSelection.rawValue
         case .firstNameInput:
-            if viewModel.shouldSkipIdealWeightStep {
-                return OnboardingStep.weight.rawValue
-            }
-            return OnboardingStep.idealWeight.rawValue
+            return OnboardingStep.weight.rawValue
         case .bodyScan:
             return OnboardingStep.weight.rawValue
         case .personalizedWelcome, .processResultsDurability:
-            return OnboardingStep.firstNameInput.rawValue
-        case .primaryGoal:
             return OnboardingStep.firstNameInput.rawValue
         default:
             break
@@ -229,20 +215,7 @@ class OnboardingNavigationEngine {
         case .weightGoal:
             return getNextStepInQueue(after: .weightGoal) ?? OnboardingStep.hasSportActivity.rawValue
             
-        case .weightGoalIncompatible:
-            return OnboardingStep.idealWeight.rawValue
-            
-        case .idealWeight:
-            if isSimulatingNavigation {
-                if wouldWeightGoalBeIncompatibleWithBMI() {
-                    return OnboardingStep.weightGoalIncompatible.rawValue
-                }
-            } else {
-                viewModel.syncInferredWeightGoal()
-                if viewModel.isWeightGoalIncompatibleWithBMI() {
-                    return OnboardingStep.weightGoalIncompatible.rawValue
-                }
-            }
+        case .weightGoalIncompatible, .idealWeight:
             return OnboardingStep.firstNameInput.rawValue
             
         case .weightMotivation:
@@ -344,10 +317,7 @@ class OnboardingNavigationEngine {
         case .carryOverCalories:
             return OnboardingStep.biometricAuth.rawValue
             
-        case .biometricAuth:
-            return OnboardingStep.notificationPermission.rawValue
-            
-        case .notificationPermission:
+        case .biometricAuth, .notificationPermission:
             return OnboardingStep.transformationPreview.rawValue
 
         case .transformationPreview:
@@ -368,10 +338,7 @@ class OnboardingNavigationEngine {
     
     private func getPreviousStepInSpecificFlow(from current: OnboardingStep) -> Int? {
         switch current {
-        case .weightGoalIncompatible:
-            return OnboardingStep.idealWeight.rawValue
-            
-        case .idealWeight:
+        case .weightGoalIncompatible, .idealWeight:
             return OnboardingStep.weight.rawValue
             
         case .weightMotivation:
@@ -465,7 +432,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.biometricAuth.rawValue
 
         case .transformationPreview:
-            return OnboardingStep.notificationPermission.rawValue
+            return OnboardingStep.biometricAuth.rawValue
 
         case .payment:
             return OnboardingStep.transformationPreview.rawValue

@@ -60,7 +60,7 @@ enum CoachDailyRhythmService {
         if eveningReviewEnabled {
             await schedule(
                 id: reviewID,
-                title: "Bilan du soir",
+                title: "Check du jour",
                 body: eveningReviewBody(),
                 hour: 21,
                 minute: 0,
@@ -159,7 +159,7 @@ enum CoachDailyRhythmService {
     private static func eveningReviewBody() -> String {
         let validatedDays = ProcessStreakStore.shared.snapshot.totalCompletedDays
         if validatedDays > 0 {
-            return "\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Valide ton bilan sur l'accueil avant de dormir."
+            return "\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Ouvre Process et fais ton check."
         }
         return "Deux minutes sur l'accueil pour valider ta journée."
     }

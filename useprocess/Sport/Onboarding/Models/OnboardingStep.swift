@@ -23,7 +23,7 @@ enum OnboardingStep: Int, CaseIterable {
     // Questions spécifiques selon l'objectif poids
     case weightGoal = 8                    // Conservé compat sauvegarde — perdre/prendre supprimé, saut auto
     case weightGoalIncompatible = 9        // ✨ Objectif incompatible avec IMC (blocage)
-    case idealWeight = 10                   // Poids idéal (si objectif poids = Oui)
+    case idealWeight = 10                   // Conservé compat sauvegarde — poids de référence retiré, saut auto
     case weightMotivation = 11                // ✨ Page de motivation après poids idéal
     case hasSportActivity = 12              // ✨ Pratiques-tu une activité sportive ? (Oui/Non)
     case sportSelection = 13                // Si primaryGoal = cardio / récupération / énergie (boostPerformance…)
@@ -85,7 +85,7 @@ enum OnboardingStep: Int, CaseIterable {
     case carryOverCalories = 56                // ✨ Reportez-vous aux calories supplémentaires au lendemain ?
     case programCreation = 57               // ✨ Création du programme (analyse habitudes, plan 13 semaines)
     case biometricAuth = 58                    // ✨ Authentification biométrique (empreinte digitale)
-    case notificationPermission = 59           // ✨ Demande de permission notifications
+    case notificationPermission = 59           // Conservé compat sauvegarde — notifs retirées, saut auto
     case transformationPreview = 64            // ✨ Aperçu avant / après (slider) avant le paywall
     case payment = 60
     case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
@@ -213,7 +213,9 @@ enum OnboardingStep: Int, CaseIterable {
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
              .personalizedWelcome, .processResultsDurability,
              .sleepDataRecovery, .primaryGoal, .goalProjection,
-             .healthKitPermissions:
+             .healthKitPermissions,
+             .idealWeight, .weightGoalIncompatible,
+             .notificationPermission:
             return true
         default:
             return false

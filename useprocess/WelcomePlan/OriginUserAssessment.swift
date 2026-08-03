@@ -581,7 +581,7 @@ enum OriginUserAssessment {
 
         if let weight = profile?.weight, weight > 0 {
             let liters = Int((weight * 0.033).rounded())
-            targets.hydrationLitersPerDay = min(4, max(2, liters))
+            targets.hydrationLitersPerDay = min(4, max(ProcessDailyTargets.hydrationLitersPerDay, liters))
         }
 
         if choice("hydration_level", in: answers) == HydrationLevel.poor.rawValue

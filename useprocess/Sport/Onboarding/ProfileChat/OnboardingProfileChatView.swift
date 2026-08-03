@@ -22,6 +22,7 @@ struct OnboardingProfileChatView: View {
     @State private var signInError: String?
     @State private var faceScanScrollProxy: ScrollViewProxy?
     @State private var showsOnboardingFaceScanSession = false
+    @State private var restoredFaceScanResult: FaceScanResult?
 
     private let messageLineSpacing: CGFloat = 7
     private let horizontalPadding: CGFloat = 28
@@ -47,24 +48,7 @@ struct OnboardingProfileChatView: View {
 
                 standardChatLayout(layout: layout)
                     .zIndex(1)
-
-                if chatViewModel.showsContinueAfterAnalysis {
-                    VStack(spacing: 10) {
-                        Text("Connecte-toi pour sauvegarder tes réponses et retrouver ton programme sur tous tes appareils.")
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundStyle(OnboardingTheme.mutedText.opacity(0.9))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 8)
-
-                        continueAfterAnalysisButton
-                    }
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.bottom, 50)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    .zIndex(5)
-                }
             }
-            .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
             .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnalysisSection)
             .ignoresSafeArea(edges: .top)
             .clipped()
@@ -102,9 +86,11 @@ struct OnboardingProfileChatView: View {
         .fullScreenCover(isPresented: $showsOnboardingFaceScanSession) {
             OnboardingFaceScanSessionView(
                 isSigningIn: isSigningIn,
+                initialResult: restoredFaceScanResult,
                 onCancel: {
                     guard !isSigningIn else { return }
                     showsOnboardingFaceScanSession = false
+                    restoredFaceScanResult = nil
                     chatViewModel.isSubmittingAnswer = false
                     if chatViewModel.currentQuestion?.id == "face_scan_offer" {
                         chatViewModel.restoreFaceScanOfferAnswers()
@@ -118,7 +104,8 @@ struct OnboardingProfileChatView: View {
                 }
             )
             .environmentObject(profileService)
-            .interactiveDismissDisabled(isSigningIn)
+            // Pas de swipe-dismiss : Sign in Apple vit uniquement ici (pas dans le chat).
+            .interactiveDismissDisabled(true)
             .alert("Connexion impossible", isPresented: Binding(
                 get: { signInError != nil },
                 set: { if !$0 { signInError = nil } }
@@ -139,6 +126,13 @@ struct OnboardingProfileChatView: View {
             }
             onboardingViewModel.syncInferredWeightGoal()
             await chatViewModel.startIfNeeded()
+
+            if let restored = chatViewModel.consumePendingDedicatedResultsReopen() {
+                restoredFaceScanResult = restored
+                showsOnboardingFaceScanSession = true
+            } else if chatViewModel.shouldAutoFinishAfterResume {
+                chatViewModel.finish(onComplete: onComplete)
+            }
         }
         .onDisappear {
             if onboardingViewModel.profileChatBackHandler != nil {
@@ -157,15 +151,14 @@ struct OnboardingProfileChatView: View {
                     ? layout.compactHistorySlotHeight
                     : layout.historySlotHeight
             )
-            activeSlot(layout: layout, bottomPadding: chatViewModel.showsContinueAfterAnalysis ? 110 : 36)
+            activeSlot(layout: layout, bottomPadding: 36)
             Spacer(minLength: 0)
         }
         .animation(OnboardingProfileChatDepthStyle.historySpring, value: chatViewModel.messages.count)
         .animation(OnboardingProfileChatDepthStyle.historySpring, value: chatViewModel.showsInlineFaceScanFlow)
         .padding(.horizontal, horizontalPadding)
         .padding(.top, layout.contentTopPadding + OnboardingConstants.backOnlyContentTopInset)
-        .padding(.bottom, chatViewModel.showsContinueAfterAnalysis ? 110 : 36)
-        .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
+        .padding(.bottom, 36)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
         .mask(topFadeMask)
@@ -319,7 +312,6 @@ struct OnboardingProfileChatView: View {
         }
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsProgramCreationSection)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsAnalysisSection)
-        .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.showsContinueAfterAnalysis)
         .animation(OnboardingProfileChatAnswerReveal.spring, value: chatViewModel.faceScanInlinePhase)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisProgress)
         .animation(.easeInOut(duration: 0.2), value: chatViewModel.analysisDisplayedPercentage)
@@ -596,64 +588,7 @@ struct OnboardingProfileChatView: View {
         .padding(.top, 10)
     }
 
-    // MARK: - Analysis & CTA
-
-    private var continueAfterAnalysisButton: some View {
-        Button {
-            guard !isSigningIn else { return }
-            HapticManager.shared.impact(.medium)
-            Task { await authenticateAndContinue() }
-        } label: {
-            HStack(spacing: 10) {
-                if isSigningIn {
-                    ProgressView()
-                        .tint(.black)
-                } else if AuthUser.current == nil {
-                    Image(systemName: "apple.logo")
-                        .font(.system(size: 20, weight: .semibold))
-                    Text("Continuer avec Apple")
-                        .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
-                } else {
-                    Text("Continuer")
-                        .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
-                }
-            }
-                .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .contentShape(answerButtonShape)
-        }
-        .onboardingPrimaryActionStyle()
-        .disabled(isSigningIn)
-        .opacity(isSigningIn ? 0.72 : 1)
-    }
-
-    @MainActor
-    private func authenticateAndContinue() async {
-        guard !isSigningIn else { return }
-        isSigningIn = true
-        signInError = nil
-        chatViewModel.prepareAnswersForAuthentication()
-        onboardingViewModel.saveProgress()
-
-        do {
-            if AppConfiguration.firebaseConfigured {
-                try await OnboardingAppleAuth.authenticateAndMigrate(
-                    authManager: authManager,
-                    profileService: profileService,
-                    viewModel: onboardingViewModel
-                )
-            }
-            HapticManager.shared.notification(.success)
-            isSigningIn = false
-            chatViewModel.submitContinueAfterAnalysis()
-            chatViewModel.finish(onComplete: onComplete)
-        } catch {
-            HapticManager.shared.notification(.error)
-            signInError = error.localizedDescription
-            isSigningIn = false
-        }
-    }
+    // MARK: - Face scan CTA (Sign in Apple uniquement sur la page résultats)
 
     @MainActor
     private func completeFaceScanOnboarding() async {
@@ -676,6 +611,7 @@ struct OnboardingProfileChatView: View {
             chatViewModel.finishAfterDedicatedFaceAnalysis()
             // Ferme la page résultats seulement après une connexion réussie.
             showsOnboardingFaceScanSession = false
+            restoredFaceScanResult = nil
             isSigningIn = false
             chatViewModel.finish(onComplete: onComplete)
         } catch {

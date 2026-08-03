@@ -46,17 +46,19 @@ struct MainAppView: View {
                 .processClearUIKitHostingBackground()
         }
         .animation(.easeInOut(duration: 0.22), value: screenFlash.isActive)
-        .sheet(item: $requiredEveningCheckIn, onDismiss: handleEveningCheckInDismiss) { target in
-            ProcessEveningCheckInSheet(
+        .eveningCheckInIsland { submitted in
+            handleEveningCheckInDismiss(submitted: submitted)
+        }
+        .onChange(of: requiredEveningCheckIn) { _, target in
+            guard let target else { return }
+            lastPresentedEveningCheckInDayKey = target.id
+            ProcessEveningCheckInPresenter.shared.present(
                 targetDate: target.date,
                 isRequired: true,
                 onCompleted: {
                     lastPresentedEveningCheckInDayKey = nil
                 }
             )
-            .onAppear {
-                lastPresentedEveningCheckInDayKey = target.id
-            }
         }
         .onAppear {
             _ = UserSessionCoordinator.shared
@@ -238,12 +240,14 @@ struct MainAppView: View {
         }
     }
 
-    private func handleEveningCheckInDismiss() {
+    private func handleEveningCheckInDismiss(submitted: Bool) {
         let dayKey = lastPresentedEveningCheckInDayKey ?? requiredEveningCheckIn?.id
         lastPresentedEveningCheckInDayKey = nil
         requiredEveningCheckIn = nil
 
-        guard let dayKey,
+        // Bilan volontaire (aujourd'hui) — pas de re-prompt.
+        guard let dayKey else { return }
+        guard !submitted,
               !ProcessEveningCheckInStore.shared.submittedDayKeys.contains(dayKey) else { return }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {

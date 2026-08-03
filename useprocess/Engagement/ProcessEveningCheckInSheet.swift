@@ -3,12 +3,14 @@ import SwiftUI
 // MARK: - Modèle
 
 private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
+    case morningRoutine
     case water
     case debloatMeal
     case cardio
 
     var id: String {
         switch self {
+        case .morningRoutine: return EveningCheckInQuestionID.morningRoutine
         case .water: return EveningCheckInQuestionID.water
         case .debloatMeal: return EveningCheckInQuestionID.debloatMeal
         case .cardio: return EveningCheckInQuestionID.cardio
@@ -18,29 +20,39 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
     var yesValue: String { "yes" }
     var noValue: String { "no" }
 
-    func prompt() -> String {
+    var title: String {
         switch self {
+        case .morningRoutine:
+            return "Routine"
         case .water:
-            return "Bu \(ProcessDailyTargets.hydrationLabel) d'eau ?"
+            return "\(ProcessDailyTargets.hydrationLabel) d'eau"
         case .debloatMeal:
-            return "Respecté tes repas debloat ?"
+            return "Repas debloat"
         case .cardio:
-            return "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min (\(DebloatCardioDayCatalog.inclinePercent)%) ?"
+            return "Cardio"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .morningRoutine: return "sun.max.fill"
+        case .water: return "drop.fill"
+        case .debloatMeal: return "fork.knife"
+        case .cardio: return "figure.run"
         }
     }
 }
 
-/// Bilan du soir — 3 questions binaires, tout visible sans scroll.
-struct ProcessEveningCheckInSheet: View {
+// MARK: - Contenu (capsule Dynamic Island)
+
+struct ProcessEveningCheckInIslandContent: View {
     var targetDate: Date = Date()
     var isRequired: Bool = false
-    var onCompleted: (() -> Void)? = nil
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.appTheme) private var theme
+    var isExpanded: Bool = true
+    var onSubmitted: (() -> Void)? = nil
+    var onFinished: (() -> Void)? = nil
 
     @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
-    @Bindable private var streakStore = ProcessStreakStore.shared
     @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
 
     @State private var phase: Phase = .form
@@ -50,35 +62,28 @@ struct ProcessEveningCheckInSheet: View {
     @State private var submittedDayValidated = false
     @State private var hydrationPrefill: ProcessHydrationEveningPrefill?
 
-    private enum Phase {
+    private enum Phase: Equatable {
         case form
         case analyzing
         case validated
     }
 
-    enum Metrics {
-        static let sheetHeight: CGFloat = 340
-        static let cornerRadius: CGFloat = 28
-        static let rowShape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-        static let rowHeight: CGFloat = 52
-    }
-
     private var visibleQuestions: [EveningCheckInQuestion] {
         EveningCheckInQuestion.allCases.filter { question in
-            if question == .water, hydrationPrefill != nil {
-                return false
+            if question == .water {
+                // Eau suivie in-app → ligne dédiée (prefill), pas le toggle manuel.
+                if hydrationPrefill != nil { return false }
             }
             return true
         }
     }
 
-    private var isFormComplete: Bool {
-        visibleQuestions.allSatisfy { answers[$0.id] != nil }
-            && answers[EveningCheckInQuestionID.water] != nil
-    }
-
     private var hasSubmittedTargetDate: Bool {
         eveningStore.hasSubmitted(on: targetDate)
+    }
+
+    private var isYesterdayCheckIn: Bool {
+        Calendar.current.isDateInYesterday(targetDate)
     }
 
     var body: some View {
@@ -97,13 +102,15 @@ struct ProcessEveningCheckInSheet: View {
         }
         .animation(.spring(response: 0.46, dampingFraction: 0.86), value: phase)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .processAppPresentationBackground()
-        .presentationDetents([.height(Metrics.sheetHeight)])
-        .presentationDragIndicator(.hidden)
-        .presentationCornerRadius(Metrics.cornerRadius)
-        .interactiveDismissDisabled(phase == .analyzing || (isRequired && phase != .validated))
+        .padding(.top, 28)
+        .padding(.bottom, 20)
         .onAppear {
             applyInitialAnswers()
+        }
+        .onChange(of: isExpanded) { _, expanded in
+            if expanded {
+                applyInitialAnswers()
+            }
         }
         .onDisappear {
             validationTask?.cancel()
@@ -116,95 +123,103 @@ struct ProcessEveningCheckInSheet: View {
         VStack(spacing: 0) {
             headerRow
 
-            VStack(spacing: 10) {
+            ScrollView {
+                VStack(spacing: 10) {
                 if let hydrationPrefill {
-                    hydrationPrefillRow(hydrationPrefill)
+                    EveningCheckInHabitRow(
+                        title: "\(ProcessDailyTargets.hydrationLabel) d'eau",
+                        systemImage: "drop.fill",
+                        isChecked: hydrationPrefill.metTarget,
+                        isLocked: hydrationPrefill.metTarget,
+                        subtitle: hydrationPrefill.litersLabel
+                    )
                 }
 
-                ForEach(visibleQuestions) { question in
-                    questionRow(question)
+                    ForEach(visibleQuestions) { question in
+                        EveningCheckInHabitRow(
+                            title: question.title,
+                            systemImage: question.systemImage,
+                            isChecked: answers[question.id] == question.yesValue,
+                            isLocked: false
+                        ) {
+                            toggleQuestion(question)
+                        }
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 20)
+                .padding(.bottom, 4)
             }
-            .padding(.horizontal, 20)
-
-            Spacer(minLength: 0)
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            .padding(.top, 6)
 
             footerBlock
+                .padding(.top, 6)
+                .padding(.bottom, 4)
         }
     }
 
-    private func questionRow(_ question: EveningCheckInQuestion) -> some View {
-        HStack(spacing: 12) {
-            Text(questionTitle(question))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(theme.primaryText)
-                .lineLimit(2)
-                .minimumScaleFactor(0.9)
+    private var checklistTotalCount: Int {
+        visibleQuestions.count + (hydrationPrefill != nil ? 1 : 0)
+    }
 
-            Spacer(minLength: 8)
-
-            HStack(spacing: 10) {
-                answerIconButton(
-                    systemName: "checkmark",
-                    selected: answers[question.id] == question.yesValue,
-                    tint: Color(red: 0.35, green: 0.78, blue: 0.45)
-                ) {
-                    answers[question.id] = question.yesValue
-                }
-
-                answerIconButton(
-                    systemName: "xmark",
-                    selected: answers[question.id] == question.noValue,
-                    tint: Color(red: 0.92, green: 0.38, blue: 0.38)
-                ) {
-                    answers[question.id] = question.noValue
-                }
-            }
+    private var checklistDoneCount: Int {
+        var count = 0
+        if let hydrationPrefill, hydrationPrefill.metTarget {
+            count += 1
         }
-        .padding(.horizontal, 14)
-        .frame(height: Metrics.rowHeight)
+        for question in visibleQuestions where answers[question.id] == question.yesValue {
+            count += 1
+        }
+        return count
+    }
+
+    private var headerRow: some View {
+        VStack(spacing: 8) {
+            EveningCheckInProgressRing(
+                done: checklistDoneCount,
+                total: max(checklistTotalCount, 1)
+            )
+            .padding(.top, 4)
+            .padding(.bottom, 6)
+
+            Text(titleText)
+                .font(.system(size: 19, weight: .bold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+
+            Text(subtitleText)
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(.white.opacity(0.78))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
+        }
         .frame(maxWidth: .infinity)
-        .processEveningCheckInGlass(in: Metrics.rowShape)
+        .padding(.horizontal, 22)
+        .padding(.top, 16)
+        .padding(.bottom, 10)
     }
 
-    private func questionTitle(_ question: EveningCheckInQuestion) -> String {
-        question.prompt()
-    }
-
-    private func hydrationPrefillRow(_ prefill: ProcessHydrationEveningPrefill) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: prefill.metTarget ? "drop.fill" : "drop")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(
-                    prefill.metTarget
-                        ? Color(red: 0.35, green: 0.78, blue: 0.45)
-                        : theme.secondaryText
-                )
-
-            Text(prefill.statusLine)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(theme.primaryText)
-                .lineLimit(2)
-                .minimumScaleFactor(0.9)
-
-            Spacer(minLength: 8)
-
-            Text("Auto")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(theme.primaryText.opacity(theme.isDark ? 0.1 : 0.06))
-                )
+    private var titleText: String {
+        if isYesterdayCheckIn {
+            return "Checklist d'hier"
         }
-        .padding(.horizontal, 14)
-        .frame(height: Metrics.rowHeight)
-        .frame(maxWidth: .infinity)
-        .processEveningCheckInGlass(in: Metrics.rowShape)
-        .accessibilityLabel(prefill.statusLine)
-        .accessibilityHint("Réponse remplie depuis ton suivi d'eau dans l'app")
+        if Calendar.current.isDateInToday(targetDate) {
+            return "Checklist du jour"
+        }
+        return "Checklist du \(Self.shortDateFormatter.string(from: targetDate))"
+    }
+
+    private var subtitleText: String {
+        if isYesterdayCheckIn {
+            return "Termine les tâches pour garder ta série intacte."
+        }
+        if checklistDoneCount >= checklistTotalCount, checklistTotalCount > 0 {
+            return "Tout est coché — valide pour enregistrer ta journée."
+        }
+        return "Coche tes tâches pour valider ta journée et ta série."
     }
 
     private func applyInitialAnswers() {
@@ -212,126 +227,83 @@ struct ProcessEveningCheckInSheet: View {
         let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate)
         hydrationPrefill = prefill
         if let prefill {
-            // Le suivi Accueil prime sur une ancienne réponse manuelle non soumise.
-            next[EveningCheckInQuestionID.water] = prefill.answer
+            next[EveningCheckInQuestionID.water] = prefill.metTarget ? prefill.answer : EveningCheckInQuestion.water.noValue
+        }
+        if next[EveningCheckInQuestionID.morningRoutine] == nil,
+           morningRoutinePrefillAnswer(for: targetDate) == EveningCheckInQuestion.morningRoutine.yesValue {
+            next[EveningCheckInQuestionID.morningRoutine] = EveningCheckInQuestion.morningRoutine.yesValue
+        }
+        // Non répondu = non validé (pas de croix).
+        for question in EveningCheckInQuestion.allCases where next[question.id] == nil {
+            next[question.id] = question.noValue
         }
         answers = next
+        if phase != .analyzing {
+            phase = .form
+        }
     }
 
-    private func answerIconButton(
-        systemName: String,
-        selected: Bool,
-        tint: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
+    private func morningRoutinePrefillAnswer(for date: Date) -> String? {
+        guard let plan = WelcomePlanStore.shared.plan else { return nil }
+        guard let day = OriginPlanPresenter.programDay(in: plan, for: date)
+            ?? OriginPlanPresenter.todayDay(in: plan, date: date)
+        else { return nil }
+        let taskId = "\(day.id).core.morning"
+        return plan.progress.status(for: taskId, dayId: day.id) == .completed
+            ? EveningCheckInQuestion.morningRoutine.yesValue
+            : nil
+    }
+
+    private func toggleQuestion(_ question: EveningCheckInQuestion) {
+        let isYes = answers[question.id] == question.yesValue
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
+            answers[question.id] = isYes ? question.noValue : question.yesValue
+        }
+        if isYes {
             HapticManager.shared.selection()
-            action()
-        } label: {
-            Image(systemName: systemName)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(selected ? .white : theme.secondaryText)
-                .frame(width: 36, height: 36)
-                .background {
-                    Circle()
-                        .fill(selected ? tint : theme.primaryText.opacity(theme.isDark ? 0.1 : 0.06))
-                }
-                .overlay {
-                    Circle()
-                        .strokeBorder(
-                            selected ? tint.opacity(0.5) : theme.coachSurfaceStroke.opacity(0.5),
-                            lineWidth: selected ? 0 : 0.75
-                        )
-                }
+        } else {
+            HapticManager.shared.impact(.medium)
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private var isYesterdayCheckIn: Bool {
-        Calendar.current.isDateInYesterday(targetDate)
-    }
-
-    private var headerRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(titleText)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(theme.primaryText)
-
-            if !isYesterdayCheckIn {
-                Text(subtitleText)
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-            }
-
-            if !isYesterdayCheckIn, streakStore.displayValidatedDays > 0, !hasSubmittedTargetDate {
-                Text("\(streakStore.displayValidatedDays) jour\(streakStore.displayValidatedDays > 1 ? "s" : "") validé\(streakStore.displayValidatedDays > 1 ? "s" : "") · valide ce soir")
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.top, 22)
-        .padding(.bottom, 16)
-    }
-
-    private var titleText: String {
-        if isYesterdayCheckIn {
-            return "Hier tu as…"
-        }
-        if Calendar.current.isDateInToday(targetDate) {
-            return "Bilan du soir"
-        }
-        return "Bilan du \(Self.shortDateFormatter.string(from: targetDate))"
-    }
-
-    private var subtitleText: String {
-        if hydrationPrefill != nil {
-            return "Eau déjà suivie · repas debloat obligatoire · cardio idéal chaque jour (min. 3/sem)."
-        }
-        return "Eau + repas debloat obligatoires · cardio idéal chaque jour (min. 3/sem)."
     }
 
     private var footerBlock: some View {
-        Button(action: submitCheckIn) {
-            Text(hasSubmittedTargetDate ? "Mettre à jour" : "Valider mon bilan")
+        let shape = Capsule(style: .continuous)
+        return Button {
+            guard phase == .form else { return }
+            submitCheckIn()
+        } label: {
+            Text(hasSubmittedTargetDate ? "Mettre à jour" : "Valider mon jour")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(theme.primaryText.opacity(isFormComplete ? 0.92 : 0.45))
+                .foregroundStyle(Color.black)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
-                .processEveningCheckInGlass(
-                    in: Capsule(style: .continuous),
-                    interactive: isFormComplete,
-                    selected: false
-                )
+                .background(shape.fill(Color.white))
+                .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .disabled(!isFormComplete)
-        .accessibilityLabel("Valider mon bilan du soir")
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 24)
+        .allowsHitTesting(phase == .form)
+        .accessibilityLabel("Valider mon jour")
+        .padding(.horizontal, 16)
     }
 
     // MARK: - Analyzing
 
     private var analyzingContent: some View {
-        VStack(spacing: 22) {
-            Spacer(minLength: 80)
+        VStack(spacing: 20) {
+            Spacer(minLength: 40)
 
             ProgressView()
                 .controlSize(.large)
-                .tint(theme.onboardingAccent)
+                .tint(ProcessStreakPalette.flame)
 
             Text(analyzingLabel)
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(theme.primaryText)
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
-            Text("On enregistre ton bilan.")
+            Text("On enregistre ton check.")
                 .font(.subheadline)
-                .foregroundStyle(theme.secondaryText)
+                .foregroundStyle(.white.opacity(0.6))
 
             Spacer()
         }
@@ -341,15 +313,15 @@ struct ProcessEveningCheckInSheet: View {
     // MARK: - Validated
 
     private var validatedContent: some View {
-        VStack(spacing: 20) {
-            Spacer(minLength: 72)
+        VStack(spacing: 18) {
+            Spacer(minLength: 28)
 
             ZStack {
                 Circle()
-                    .fill(validatedAccent.opacity(0.18))
-                    .frame(width: 88, height: 88)
+                    .fill(validatedAccent.opacity(0.22))
+                    .frame(width: 84, height: 84)
                 Image(systemName: validatedSymbol)
-                    .font(.system(size: 52, weight: .semibold))
+                    .font(.system(size: 48, weight: .semibold))
                     .foregroundStyle(validatedAccent)
                     .symbolEffect(.bounce, value: phase)
             }
@@ -357,33 +329,29 @@ struct ProcessEveningCheckInSheet: View {
             VStack(spacing: 8) {
                 Text(validatedTitle)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(theme.primaryText)
+                    .foregroundStyle(.white)
 
                 Text(validatedSubtitle)
                     .font(.subheadline)
-                    .foregroundStyle(theme.secondaryText)
+                    .foregroundStyle(.white.opacity(0.65))
                     .multilineTextAlignment(.center)
             }
 
-            Spacer()
+            Spacer(minLength: 12)
 
             Button(action: finishAndDismiss) {
                 Text("Terminer")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText.opacity(0.92))
+                    .foregroundStyle(.white.opacity(0.95))
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .processEveningCheckInGlass(
-                        in: Capsule(style: .continuous),
-                        interactive: true,
-                        selected: false
-                    )
+                    .contentShape(Capsule(style: .continuous))
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 22)
+            .processGlassEffect(in: Capsule(style: .continuous), interactive: false)
+            .padding(.horizontal, 16)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
     }
 
     private var validatedAccent: Color {
@@ -397,7 +365,7 @@ struct ProcessEveningCheckInSheet: View {
     }
 
     private var validatedTitle: String {
-        submittedDayValidated ? "Jour validé" : "Bilan enregistré"
+        submittedDayValidated ? "Jour validé" : "Check enregistré"
     }
 
     private var validatedSubtitle: String {
@@ -436,12 +404,15 @@ struct ProcessEveningCheckInSheet: View {
     // MARK: - Actions
 
     private func submitCheckIn() {
-        // Re-sync eau depuis l'Accueil au moment de valider.
         if let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate) {
             hydrationPrefill = prefill
-            answers[EveningCheckInQuestionID.water] = prefill.answer
+            answers[EveningCheckInQuestionID.water] = prefill.metTarget
+                ? prefill.answer
+                : EveningCheckInQuestion.water.noValue
         }
-        guard isFormComplete else { return }
+        for question in EveningCheckInQuestion.allCases where answers[question.id] == nil {
+            answers[question.id] = question.noValue
+        }
         HapticManager.shared.impact(.medium)
         phase = .analyzing
         analyzingLabel = "Enregistrement…"
@@ -451,7 +422,7 @@ struct ProcessEveningCheckInSheet: View {
             try? await Task.sleep(for: .milliseconds(700))
             guard !Task.isCancelled else { return }
 
-            analyzingLabel = "Analyse de ton bilan…"
+            analyzingLabel = "Analyse de ton check…"
             try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
@@ -464,7 +435,7 @@ struct ProcessEveningCheckInSheet: View {
                         in: ProcessDebloatTrajectoryStore.shared.allRecordsByDay
                     )
                 ) == true
-            onCompleted?()
+            onSubmitted?()
 
             withAnimation(.spring(response: 0.44, dampingFraction: 0.82)) {
                 phase = .validated
@@ -485,7 +456,7 @@ struct ProcessEveningCheckInSheet: View {
 
     private func finishAndDismiss() {
         validationTask?.cancel()
-        dismiss()
+        onFinished?()
     }
 
     private static let shortDateFormatter: DateFormatter = {
@@ -496,54 +467,377 @@ struct ProcessEveningCheckInSheet: View {
     }()
 }
 
-// MARK: - Glass
+// MARK: - Progress ring (header)
 
-private struct ProcessEveningCheckInGlassModifier<S: InsettableShape>: ViewModifier {
-    @Environment(\.appTheme) private var theme
+private struct EveningCheckInProgressRing: View {
+    let done: Int
+    let total: Int
 
-    let shape: S
-    let interactive: Bool
-    let selected: Bool
+    private let ringSize: CGFloat = 78
+    private let lineWidth: CGFloat = 4.5
+    private let arcBlue = Color(red: 0.58, green: 0.76, blue: 1.0)
 
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(
-                    interactive ? ProcessGlass.regular : ProcessGlass.regularSurface,
-                    in: shape
+    private var progress: CGFloat {
+        guard total > 0 else { return 0 }
+        return min(1, max(0, CGFloat(done) / CGFloat(total)))
+    }
+
+    var body: some View {
+        ZStack {
+            if progress > 0.001 {
+                // Glow sous l’arc uniquement (pas de cercle plein).
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        arcBlue.opacity(0.32),
+                        style: StrokeStyle(lineWidth: lineWidth + 4, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .blur(radius: 3)
+
+                EveningCheckInProgressArc(
+                    progress: progress,
+                    lineWidth: lineWidth,
+                    color: arcBlue
                 )
-                .overlay {
-                    if selected {
-                        shape.strokeBorder(Color.primary.opacity(0.24), lineWidth: 1.2)
-                    } else if !theme.isDark {
-                        shape.strokeBorder(theme.coachSurfaceStroke.opacity(0.72), lineWidth: 0.75)
+            }
+
+            Text("\(done)/\(total)")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.4, dampingFraction: 0.82), value: done)
+        }
+        .frame(width: ringSize, height: ringSize)
+        .animation(.spring(response: 0.48, dampingFraction: 0.82), value: progress)
+        .accessibilityLabel("\(done) sur \(total) tâches cochées")
+    }
+}
+
+/// Un seul arc (pas un cercle fermé) avec fondu aux extrémités.
+private struct EveningCheckInProgressArc: View, Animatable {
+    var progress: CGFloat
+    var lineWidth: CGFloat
+    var color: Color
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        Canvas { context, size in
+            let clamped = min(1, max(0, progress))
+            guard clamped > 0.001 else { return }
+
+            let center = CGPoint(x: size.width * 0.5, y: size.height * 0.5)
+            let radius = (min(size.width, size.height) - lineWidth) * 0.5
+
+            // Fondu début / fin le long de l’arc.
+            let fadeCount = 24
+            for i in 0..<fadeCount {
+                let t0 = CGFloat(i) / CGFloat(fadeCount)
+                let t1 = CGFloat(i + 1) / CGFloat(fadeCount)
+                let mid = (t0 + t1) * 0.5
+                let opacity = Self.tipFade(along: mid)
+                guard opacity > 0.02 else { continue }
+
+                let a0 = Angle.degrees(-90 + 360 * clamped * Double(t0))
+                let a1 = Angle.degrees(-90 + 360 * clamped * Double(t1))
+
+                var segment = Path()
+                segment.addArc(
+                    center: center,
+                    radius: radius,
+                    startAngle: a0,
+                    endAngle: a1,
+                    clockwise: false
+                )
+
+                context.stroke(
+                    segment,
+                    with: .color(color.opacity(opacity)),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+                )
+            }
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    /// Fondu sur ~18 % au début et à la fin de l’arc.
+    private static func tipFade(along t: CGFloat) -> Double {
+        let edge: CGFloat = 0.18
+        if t < edge { return Double(t / edge) }
+        if t > 1 - edge { return Double((1 - t) / edge) }
+        return 1
+    }
+}
+
+// MARK: - Habit row (check + strikethrough + sparks)
+
+private struct EveningCheckInHabitRow: View {
+    let title: String
+    let systemImage: String
+    let isChecked: Bool
+    var isLocked: Bool = false
+    var subtitle: String? = nil
+    var onToggle: (() -> Void)? = nil
+
+    @State private var strikeProgress: CGFloat = 0
+    @State private var textWidth: CGFloat = 0
+    @State private var checkScale: CGFloat = 1
+    @State private var sparksLive = false
+
+    private let doneGreen = Color(red: 0.30, green: 0.82, blue: 0.48)
+    private let strikeDuration: TimeInterval = 0.95
+
+    var body: some View {
+        Button {
+            guard !isLocked else { return }
+            onToggle?()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(isChecked ? 0.38 : 0.78))
+                    .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    titleStrikeBlock
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.42))
                     }
                 }
-        } else {
-            content
-                .processGlassEffect(in: shape, interactive: interactive)
-                .overlay {
-                    if selected {
-                        shape.strokeBorder(Color.primary.opacity(0.22), lineWidth: 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                checkControl
+                    .offset(y: 2)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(minHeight: 58)
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color.white.opacity(isChecked ? 0.05 : 0.08))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(isLocked)
+        .accessibilityLabel(title)
+        .accessibilityValue(isChecked ? "Validé" : "Non validé")
+        .accessibilityAddTraits(isChecked ? .isSelected : [])
+        .onAppear {
+            strikeProgress = isChecked ? 1 : 0
+            sparksLive = false
+            checkScale = 1
+        }
+        .onChange(of: isChecked) { _, checked in
+            if checked {
+                sparksLive = true
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.62)) {
+                    checkScale = 1.12
+                }
+                withAnimation(.easeInOut(duration: strikeDuration)) {
+                    strikeProgress = 1
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
+                        checkScale = 1
                     }
                 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + strikeDuration + 0.12) {
+                    withAnimation(.easeOut(duration: 0.28)) {
+                        sparksLive = false
+                    }
+                }
+            } else {
+                sparksLive = false
+                withAnimation(.easeIn(duration: 0.2)) {
+                    strikeProgress = 0
+                    checkScale = 1
+                }
+            }
+        }
+    }
+
+    private var titleStrikeBlock: some View {
+        Text(title)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(isChecked ? Color.white.opacity(0.42) : Color.white.opacity(0.94))
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .background {
+                // Mesure la largeur intrinsèque du texte (pas toute la row).
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .hidden()
+                    .background {
+                        GeometryReader { geo in
+                            Color.clear
+                                .preference(key: EveningCheckInTextWidthKey.self, value: geo.size.width)
+                        }
+                    }
+            }
+            .onPreferenceChange(EveningCheckInTextWidthKey.self) { textWidth = $0 }
+            .overlay(alignment: .leading) {
+                ZStack(alignment: .leading) {
+                    Capsule(style: .continuous)
+                        .fill(Color.white)
+                        .frame(width: max(0, textWidth * strikeProgress), height: 2.4)
+                        .shadow(color: .white.opacity(0.8), radius: 3.5, y: 0)
+
+                    // Étincelles hors du texte — pas de clip pour qu’elles “sortent”.
+                    EveningCheckInTravelingSparks(
+                        progress: strikeProgress,
+                        textWidth: textWidth,
+                        isActive: sparksLive
+                    )
+                    .frame(width: max(textWidth + 28, 1), height: 44)
+                    .offset(x: -6, y: -11)
+                }
+                .allowsHitTesting(false)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 22, alignment: .leading)
+    }
+
+    private var checkControl: some View {
+        ZStack {
+            if isChecked {
+                Circle()
+                    .fill(doneGreen)
+                    .frame(width: 34, height: 34)
+                    .shadow(color: doneGreen.opacity(0.45), radius: 8, y: 2)
+
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+            } else {
+                Circle()
+                    .strokeBorder(
+                        Color.white.opacity(0.28),
+                        style: StrokeStyle(lineWidth: 1.6, dash: [3.2, 2.6])
+                    )
+                    .frame(width: 34, height: 34)
+
+                Image(systemName: "checkmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.48))
+            }
+        }
+        .scaleEffect(checkScale)
+        .animation(.spring(response: 0.36, dampingFraction: 0.72), value: isChecked)
+    }
+}
+
+private struct EveningCheckInTextWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// Étincelles qui partent de la pointe du trait et s’éloignent.
+private struct EveningCheckInTravelingSparks: View {
+    var progress: CGFloat
+    var textWidth: CGFloat
+    var isActive: Bool
+
+    private struct Spark: Identifiable {
+        let id: Int
+        let angle: Double
+        let speed: CGFloat
+        let size: CGFloat
+        let phase: Double
+        let birthOffset: Double
+    }
+
+    private let sparks: [Spark] = [
+        .init(id: 0, angle: -1.15, speed: 18, size: 2.8, phase: 0.0, birthOffset: 0.00),
+        .init(id: 1, angle: -0.55, speed: 22, size: 2.1, phase: 0.8, birthOffset: 0.04),
+        .init(id: 2, angle: 0.35, speed: 20, size: 2.4, phase: 1.5, birthOffset: 0.08),
+        .init(id: 3, angle: 1.05, speed: 24, size: 1.8, phase: 2.2, birthOffset: 0.02),
+        .init(id: 4, angle: -1.55, speed: 16, size: 2.0, phase: 2.9, birthOffset: 0.11),
+        .init(id: 5, angle: 1.45, speed: 19, size: 1.7, phase: 3.6, birthOffset: 0.06),
+        .init(id: 6, angle: -0.25, speed: 26, size: 2.5, phase: 4.1, birthOffset: 0.13),
+        .init(id: 7, angle: 0.75, speed: 17, size: 1.9, phase: 4.8, birthOffset: 0.09),
+        .init(id: 8, angle: -0.85, speed: 21, size: 2.2, phase: 5.3, birthOffset: 0.15),
+        .init(id: 9, angle: 0.15, speed: 23, size: 1.6, phase: 5.9, birthOffset: 0.01)
+    ]
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isActive)) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+            let tipX = 6 + max(0, textWidth * progress)
+            let tipY: CGFloat = 22
+            let baseOpacity: Double = {
+                guard isActive, progress > 0.03 else { return 0 }
+                if progress > 0.97 { return max(0, 1 - Double((progress - 0.97) / 0.03)) }
+                return 1
+            }()
+
+            Canvas { context, _ in
+                guard baseOpacity > 0.01 else { return }
+                for spark in sparks {
+                    // Cycle de vie court qui se relance — sensation d’émission continue.
+                    let life = (time * 1.55 + spark.birthOffset + spark.phase * 0.08)
+                        .truncatingRemainder(dividingBy: 0.55) / 0.55
+                    let ease = 1 - pow(1 - life, 2)
+                    let travel = CGFloat(ease) * spark.speed
+                    let x = tipX + CGFloat(cos(spark.angle)) * travel
+                    let y = tipY + CGFloat(sin(spark.angle)) * travel * 0.85
+                    let fade = baseOpacity * (1 - life) * (0.75 + 0.25 * sin(time * 16 + spark.phase))
+                    let size = spark.size * (1.15 - CGFloat(life) * 0.55)
+
+                    var circle = Path()
+                    circle.addEllipse(in: CGRect(
+                        x: x - size / 2,
+                        y: y - size / 2,
+                        width: size,
+                        height: size
+                    ))
+                    context.fill(circle, with: .color(.white.opacity(fade)))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .opacity(baseOpacity)
+            .animation(.easeOut(duration: 0.18), value: isActive)
         }
     }
 }
 
-private extension View {
-    func processEveningCheckInGlass<S: InsettableShape>(
-        in shape: S,
-        interactive: Bool = false,
-        selected: Bool = false
-    ) -> some View {
-        modifier(
-            ProcessEveningCheckInGlassModifier(
-                shape: shape,
-                interactive: interactive,
-                selected: selected
-            )
-        )
+// MARK: - Compat sheet (anciens call sites éventuels)
+
+/// Ancien sheet — redirige vers le presenter Dynamic Island.
+struct ProcessEveningCheckInSheet: View {
+    var targetDate: Date = Date()
+    var isRequired: Bool = false
+    var onCompleted: (() -> Void)? = nil
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onAppear {
+                dismiss()
+                ProcessEveningCheckInPresenter.shared.present(
+                    targetDate: targetDate,
+                    isRequired: isRequired,
+                    onCompleted: onCompleted
+                )
+            }
     }
 }
 
@@ -600,20 +894,15 @@ struct ProcessEveningCheckInEntryButton: View {
                         .lineLimit(2)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 0)
 
-                if !isDayValidated, streakStore.displayValidatedDays > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption.weight(.bold))
-                        Text("\(streakStore.displayValidatedDays)")
-                            .font(.caption.weight(.bold))
-                            .monospacedDigit()
-                    }
-                    .foregroundStyle(ProcessStreakPalette.flame)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(ProcessStreakPalette.flame.opacity(0.12), in: Capsule())
+                if isDayValidated {
+                    Text("OK")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color(red: 0.35, green: 0.78, blue: 0.45))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(ProcessStreakPalette.flame.opacity(0.12), in: Capsule())
                 }
 
                 Image(systemName: "chevron.right")
@@ -625,13 +914,13 @@ struct ProcessEveningCheckInEntryButton: View {
             .background(entryBackground)
         }
         .buttonStyle(ProcessGlassPressStyle())
-        .accessibilityLabel(isDayValidated ? "Jour validé" : "Ouvrir le bilan du soir")
+        .accessibilityLabel(isDayValidated ? "Jour validé" : "Ouvrir le check du jour")
     }
 
     private var entrySymbol: String {
         if isDayValidated { return "checkmark.seal.fill" }
         if hasSubmittedToday { return "exclamationmark.circle.fill" }
-        return "moon.stars.fill"
+        return "checkmark.seal.fill"
     }
 
     private var entrySymbolColor: Color {
@@ -646,8 +935,8 @@ struct ProcessEveningCheckInEntryButton: View {
 
     private var entryTitle: String {
         if isDayValidated { return "Jour validé" }
-        if hasSubmittedToday { return "Bilan enregistré" }
-        return "Bilan du soir"
+        if hasSubmittedToday { return "Check enregistré" }
+        return "Check du jour"
     }
 
     private var subtitle: String {
@@ -655,16 +944,9 @@ struct ProcessEveningCheckInEntryButton: View {
             return "Tu peux modifier tes réponses si besoin."
         }
         if hasSubmittedToday {
-            return "Eau + repas debloat obligatoires. Cardio idéal chaque jour · min. 3/semaine."
+            return "Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée."
         }
-        if isEveningWindow {
-            return "Eau · repas Na/K/Mg · marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min (\(DebloatCardioDayCatalog.inclinePercent)%)."
-        }
-        return "Protocole debloat : hydratation + alimentation obligatoires."
-    }
-
-    private var isEveningWindow: Bool {
-        ProcessEveningCheckInSchedule.isAvailable()
+        return "Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min."
     }
 
     @ViewBuilder

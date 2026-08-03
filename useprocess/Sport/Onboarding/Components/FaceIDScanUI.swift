@@ -328,7 +328,7 @@ struct FaceIDTiltHoldRing: View {
     }
 }
 
-// MARK: - Flèche d’inclinaison (penché latéral)
+// MARK: - Silhouette d’inclinaison (par-dessus la caméra)
 
 struct FaceScanTiltArrowHint: View {
     let direction: FaceScanTiltDirection
@@ -336,60 +336,77 @@ struct FaceScanTiltArrowHint: View {
     var isEngaged: Bool
     var isLightBackdrop: Bool = false
 
-    @State private var pulse = false
-    @State private var bob = false
+    /// 0 = droit, 1 = penché — joué une seule fois par côté.
+    @State private var tiltAmount: CGFloat = 0
+    @State private var demoTask: Task<Void, Never>?
 
-    private var arrowColor: Color {
-        if isEngaged { return FaceIDScanColors.activeTick }
-        return isLightBackdrop ? Color.black.opacity(0.72) : Color.white.opacity(0.94)
+    private let maxTiltDegrees: Double = 32
+
+    private var accentColor: Color {
+        if isEngaged { return FaceIDScanColors.activeTick.opacity(0.9) }
+        return isLightBackdrop ? Color.black.opacity(0.85) : Color.white.opacity(0.92)
+    }
+
+    private var silhouetteSize: CGFloat {
+        cameraDiameter * 0.70
+    }
+
+    /// Gauche d’abord (`.either` / `.left`), puis droite.
+    private var tiltSign: Double {
+        switch direction {
+        case .left, .either: return -1
+        case .right: return 1
+        case .none: return 0
+        }
+    }
+
+    private var currentRotation: Double {
+        Double(tiltAmount) * maxTiltDegrees * tiltSign
     }
 
     var body: some View {
-        let radial = cameraDiameter / 2 + 34
-
         Group {
-            switch direction {
-            case .none:
-                EmptyView()
-            case .left:
-                tiltArrow(systemName: "arrow.turn.down.left")
-                    .offset(x: -radial * 0.52, y: -radial * 0.08)
-            case .right:
-                tiltArrow(systemName: "arrow.turn.down.right")
-                    .offset(x: radial * 0.52, y: -radial * 0.08)
-            case .either:
-                ZStack {
-                    tiltArrow(systemName: "arrow.turn.down.left")
-                        .opacity(bob ? 1 : 0.22)
-                        .offset(x: -radial * 0.48, y: -radial * 0.06)
-                    tiltArrow(systemName: "arrow.turn.down.right")
-                        .opacity(bob ? 0.22 : 1)
-                        .offset(x: radial * 0.48, y: -radial * 0.06)
-                }
+            if direction != .none {
+                Image("face_tilt_silhouette")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .foregroundStyle(accentColor)
+                    .frame(width: silhouetteSize, height: silhouetteSize)
+                    .rotationEffect(.degrees(currentRotation))
+                    .shadow(
+                        color: (isLightBackdrop ? Color.white : Color.black).opacity(0.3),
+                        radius: 5,
+                        y: 1
+                    )
+                    .opacity(isEngaged ? 0.28 : 0.85)
+                    .allowsHitTesting(false)
+                    .accessibilityLabel("Penche la tête comme la silhouette")
             }
         }
-        .animation(.smooth(duration: 0.32), value: direction)
-        .animation(.smooth(duration: 0.28), value: isEngaged)
-        .onAppear { startAnimations() }
-        .onChange(of: direction) { _, _ in startAnimations() }
+        // Même taille que le cercle caméra — centré par-dessus, sans décaler la page.
+        .frame(width: cameraDiameter, height: cameraDiameter)
+        .onAppear { playTiltDemoOnce() }
+        .onChange(of: direction) { _, _ in playTiltDemoOnce() }
+        .onDisappear {
+            demoTask?.cancel()
+            demoTask = nil
+        }
     }
 
-    @ViewBuilder
-    private func tiltArrow(systemName: String) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: 30, weight: .semibold))
-            .foregroundStyle(arrowColor)
-            .shadow(color: .black.opacity(isLightBackdrop ? 0.12 : 0.38), radius: 5, y: 2)
-            .scaleEffect(pulse ? 1.08 : 0.92)
-            .rotationEffect(.degrees(pulse ? 2 : -2))
-    }
+    /// Droit → penche une fois, puis reste penché (pas de boucle).
+    private func playTiltDemoOnce() {
+        demoTask?.cancel()
+        demoTask = nil
+        tiltAmount = 0
+        guard direction != .none else { return }
 
-    private func startAnimations() {
-        pulse = false
-        bob = false
-        withAnimation(.easeInOut(duration: 0.85).repeatForever(autoreverses: true)) {
-            pulse = true
-            bob = true
+        demoTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.85)) {
+                tiltAmount = 1
+            }
         }
     }
 }
