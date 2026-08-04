@@ -1,0 +1,290 @@
+/**
+ * Process — thème sombre (useprocess.xyz)
+ * Overrides des styles myfidpass clair hérités.
+ */
+
+:root {
+  --fidpass-surface: #0d0d12;
+  --fidpass-site-bg: #09090b;
+  --process-bg: #09090b;
+  --process-bg-elevated: #111118;
+  --process-bg-card: #16161f;
+  --process-bg-card-hover: #1c1c26;
+  --process-text: #f1f5f9;
+  --process-text-muted: #94a3b8;
+  --process-text-subtle: #64748b;
+  --process-border: rgba(255, 255, 255, 0.08);
+  --process-accent: #0a98ff;
+  --process-accent-soft: rgba(10, 152, 255, 0.14);
+  --process-mint: #27f3a9;
+}
+
+html,
+body {
+  background: var(--process-bg) !important;
+  color: var(--process-text) !important;
+}
+
+#landing {
+  background: var(--process-bg);
+  color: var(--process-text);
+}
+
+/* ——— LP shell ——— */
+.fintap-landing {
+  --fintap-bg: var(--process-bg);
+  --fintap-ink: var(--process-text);
+  --fintap-muted: var(--process-text-muted);
+  --fintap-line: var(--process-border);
+  background: var(--process-bg);
+  color: var(--process-text);
+}
+
+/* Hero — panneau bleu nuit */
+.fintap-hero-iphone.fintap-hero-iphone--scroll::before {
+  background:
+    radial-gradient(ellipse 100% 85% at 50% -30%, rgba(10, 152, 255, 0.28) 0%, transparent 55%),
+    radial-gradient(ellipse 72% 58% at 0% 5%, rgba(10, 152, 255, 0.16) 0%, transparent 58%),
+    radial-gradient(ellipse 72% 58% at 100% 5%, rgba(39, 243, 169, 0.1) 0%, transparent 56%),
+    linear-gradient(180deg, #0a1420 0%, #0c1a2e 22%, #0f2340 48%, #0a1628 78%, #060a10 100%);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+.fintap-hero-iphone.fintap-hero-iphone--scroll .fintap-hero-iphone__h1,
+.fintap-hero-iphone.fintap-hero-iphone--scroll .fintap-hero-iphone__lead,
+.fintap-hero-iphone.fintap-hero-iphone--scroll .fintap-hero-iphone__actions-title {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.fintap-hero-media-badge {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.fintap-hero-media-badge__kicker {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Nav liquid glass — sombre */
+#landing-liquid-glass {
+  --c-glass: #1a1a24;
+  --c-light: #f1f5f9;
+  --c-dark: #ffffff;
+  --c-content: #cbd5e1;
+  --c-bg: #09090b;
+  --glass-reflex-dark: 2.2;
+  --glass-reflex-light: 0.25;
+  --saturation: 120%;
+}
+
+#landing-liquid-glass .switcher {
+  background-color: color-mix(in srgb, #1a1a24 72%, transparent);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Carrousel */
+.fintap-content-carousel {
+  background: var(--process-bg);
+}
+
+.fintap-content-carousel-card {
+  background: var(--process-bg-card);
+  border-color: var(--process-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Features */
+.fintap-features-grid {
+  --fintap-features-bg: var(--process-bg);
+  --fintap-steps-muted: var(--process-text-muted);
+  background: var(--process-bg);
+}
+
+.fintap-features-grid .fintap-steps-scroll__h2,
+.fintap-steps-scroll__h2 {
+  background: linear-gradient(142deg, #ffffff 0%, #cbd5e1 38%, #64748b 72%, #475569 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.fintap-features-grid__intro,
+.fintap-steps-scroll__intro {
+  color: var(--process-text-muted);
+}
+
+.fintap-features-grid__card {
+  background: var(--process-bg-card);
+  border: 1px solid var(--process-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.fintap-features-grid__visual {
+  background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+}
+
+.fintap-features-grid__title {
+  color: var(--process-text);
+}
+
+.fintap-features-grid__desc {
+  color: var(--process-text-muted);
+}
+
+.fintap-features-grid__cta {
+  background: var(--process-text) !important;
+  color: var(--process-bg) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.fintap-features-grid__cta:hover {
+  background: #e2e8f0 !important;
+}
+
+.fintap-var-cards {
+  background: var(--process-bg);
+}
+
+.fintap-var-cards__card {
+  border: 1px solid var(--process-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.fintap-var-cards__chevron {
+  background: rgba(22, 22, 31, 0.92);
+  border: 1px solid var(--process-border);
+  color: var(--process-text);
+}
+
+/* Engagement visual (carte features) */
+.fintap-engagement-visual__row {
+  background: linear-gradient(145deg, rgba(22, 22, 31, 0.95) 0%, rgba(17, 17, 24, 0.98) 100%);
+  border-color: var(--process-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.fintap-engagement-visual__label {
+  color: var(--process-text-subtle);
+}
+
+.fintap-engagement-visual__value {
+  color: var(--process-text);
+}
+
+.fintap-engagement-visual__brand {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* 3 étapes */
+.fintap-steps-scroll {
+  --fintap-steps-bg: var(--process-bg);
+  --fintap-steps-card: var(--process-bg-card);
+  --fintap-steps-ink: var(--process-text);
+  --fintap-steps-muted: var(--process-text-muted);
+  --fintap-steps-line: rgba(255, 255, 255, 0.1);
+  background: var(--process-bg);
+}
+
+.fintap-steps-card__footer-num {
+  background: var(--process-accent);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(10, 152, 255, 0.35);
+}
+
+.fintap-steps-card__grey-panel {
+  background: var(--process-bg-card);
+  border: 1px solid var(--process-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.fintap-steps-card__title {
+  color: var(--process-text);
+}
+
+.fintap-steps-card__desc {
+  color: var(--process-text-muted);
+}
+
+.fintap-steps-scroll__card {
+  background: var(--process-bg-card);
+  border: 1px solid var(--process-border);
+}
+
+.fintap-steps-scroll__card-title {
+  color: var(--process-text);
+}
+
+.fintap-steps-scroll__card-desc {
+  color: var(--process-text-muted);
+}
+
+.fintap-steps-scroll__pill {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--process-text);
+  border: 1px solid var(--process-border);
+}
+
+/* Simulateur — fond sombre, carte bleue conservée */
+.fintap-revenue-simulator {
+  background: var(--process-bg);
+  color: var(--process-text);
+}
+
+.fintap-revenue-simulator__title {
+  background: linear-gradient(142deg, #ffffff 0%, #cbd5e1 42%, #64748b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fintap-revenue-simulator__lead {
+  color: var(--process-text-muted);
+}
+
+.fintap-revenue-simulator__cta {
+  background: var(--process-text);
+  color: var(--process-bg);
+}
+
+.fintap-revenue-simulator__cta:hover {
+  background: #e2e8f0;
+}
+
+/* FAQ — déjà sombre, renforcer la continuité */
+.landing-launch-sf {
+  margin-top: 0;
+  border-radius: 0;
+}
+
+/* Page 404 */
+#page-404 {
+  background: var(--process-bg);
+  color: var(--process-text);
+}
+
+#page-404 a {
+  color: var(--process-accent);
+}
+
+/* Scrollbar discrète */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--process-bg);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a36;
+    border-radius: 4px;
+  }
+}

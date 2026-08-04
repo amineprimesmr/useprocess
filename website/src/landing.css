@@ -2,8 +2,8 @@
 @import "./landing-launch-section.css";
 
 #landing {
-  --landing-bg: #f5f5f7;
-  --landing-surface: #f5f5f7;
+  --landing-bg: #09090b;
+  --landing-surface: #111118;
   --landing-border: #e5e5e5;
   --landing-text: #1a1a1a;
   --landing-muted: #6b7280;

@@ -1,12 +1,12 @@
 /* FinTap — page complète (réf. fintap.framer.website) */
 
 .fintap-landing {
-  --fintap-bg: #f5f5f7;
+  --fintap-bg: #09090b;
   --fintap-blue: #0a98ff;
   --fintap-mint: #27f3a9;
-  --fintap-ink: #0a0a0a;
-  --fintap-muted: #636363;
-  --fintap-line: rgba(0, 0, 0, 0.08);
+  --fintap-ink: #f1f5f9;
+  --fintap-muted: #94a3b8;
+  --fintap-line: rgba(255, 255, 255, 0.08);
   /* Marge de sécurité pour ombres larges (mockup 50–100px, cartes, halos) */
   --fintap-shadow-bleed: clamp(2.75rem, 10vw, 7.5rem);
   position: relative;
