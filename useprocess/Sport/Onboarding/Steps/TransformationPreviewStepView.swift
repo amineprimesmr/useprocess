@@ -46,36 +46,44 @@ enum TransformationCaseStudyCatalog {
     /// Ajoute une paire `avant` / `après` dans Assets + ProcessAssetCatalog pour l'afficher.
     static let all: [TransformationCaseStudy] = [
         .init(
-            id: "imran",
-            name: "Imran",
-            beforeVideoName: "imran",
-            afterVideoName: "imranprime",
-            durationWeeks: 5,
-            memberSince: "📅 Membre depuis mai 2026"
-        ),
-        .init(
-            id: "daniel",
-            name: "Daniel",
-            beforeVideoName: "daniel",
-            afterVideoName: "danielprime",
-            durationWeeks: 4,
-            memberSince: "📅 Membre depuis juin 2026"
-        ),
-        .init(
             id: "leo",
-            name: "Léo",
+            name: "Enzo",
             beforeImageName: "leo",
             afterImageName: "leoprime",
             durationWeeks: 3,
             memberSince: "📅 Membre depuis juin 2026"
         ),
         .init(
+            id: "daniel",
+            name: "Daniel",
+            beforeImageName: "daniel",
+            afterImageName: "danielprime",
+            durationWeeks: 4,
+            memberSince: "📅 Membre depuis juin 2026"
+        ),
+        .init(
             id: "esteban",
-            name: "Esteban",
+            name: "Amir",
             beforeImageName: "esteban",
             afterImageName: "estebanprime",
             durationWeeks: 8,
             memberSince: "📅 Membre depuis avr. 2026"
+        ),
+        .init(
+            id: "lucas",
+            name: "Ken",
+            beforeImageName: "lucas",
+            afterImageName: "lucasprime",
+            durationWeeks: 6,
+            memberSince: "📅 Membre depuis juil. 2026"
+        ),
+        .init(
+            id: "imran",
+            name: "Malik",
+            beforeImageName: "imran",
+            afterImageName: "imranprime",
+            durationWeeks: 5,
+            memberSince: "📅 Membre depuis mai 2026"
         ),
     ]
 
@@ -161,7 +169,7 @@ struct TransformationPreviewStepView: View {
     }
 
     private var communityAvatarNames: [String] {
-        ["fille1", "gars1", "leo", "estebanprime", "imranprime"]
+        ["fille1", "gars1", "leo", "estebanprime", "lucasprime", "imranprime"]
             .filter { ProcessAssetCatalog.contains($0) }
     }
 

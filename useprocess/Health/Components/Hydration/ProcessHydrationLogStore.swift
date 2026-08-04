@@ -64,6 +64,10 @@ final class ProcessHydrationLogStore {
         logsByDay = loadState()?.logsByDay ?? [:]
     }
 
+    func clearAllData() {
+        logsByDay = [:]
+    }
+
     func milliliters(for date: Date = Date()) -> Int {
         logsByDay[dayKey(for: date)]?.milliliters ?? 0
     }
@@ -160,6 +164,27 @@ final class ProcessHydrationLogStore {
 
     func hasLocalAdjustments(for date: Date = Date()) -> Bool {
         !(logsByDay[dayKey(for: date)]?.entries.isEmpty ?? true)
+    }
+
+    /// Quand la checklist valide 3 L d'eau, remplit le journal affiché sur l'accueil.
+    @discardableResult
+    func applyEveningCheckInWaterAnswer(
+        _ answer: String,
+        for date: Date = Date(),
+        dayId: String?
+    ) -> Int {
+        guard answer == "yes" else { return milliliters(for: date) }
+
+        let target = ProcessDailyTargets.hydrationTargetMilliliters
+        let current = milliliters(for: date)
+        guard current < target || !hasLocalAdjustments(for: date) else { return current }
+
+        return setMilliliters(
+            max(current, target),
+            for: date,
+            dayId: dayId,
+            targetMilliliters: target
+        )
     }
 
     /// Prefill checklist : reflète le journal in-app, objectif fixe 3 L.

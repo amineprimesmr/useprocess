@@ -13,6 +13,7 @@
 		67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = RC1A2B3C52FD90001006422D /* RevenueCat */; };
 		67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C82FD90001006422D /* FirebaseAppCheck */; };
 		LT1A2B3C62FD90001006422D /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = LT1A2B3C52FD90001006422D /* Lottie */; };
+		PH1A2B3C62FD90001006422D /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = PH1A2B3C52FD90001006422D /* PostHog */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 				67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */,
 				67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */,
 				LT1A2B3C62FD90001006422D /* Lottie in Frameworks */,
+				PH1A2B3C62FD90001006422D /* PostHog in Frameworks */,
 				67E2B31F2FDD8C240016422D /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -86,6 +88,7 @@
 				F1A2B3C82FD90001006422D /* FirebaseAppCheck */,
 				RC1A2B3C52FD90001006422D /* RevenueCat */,
 				LT1A2B3C52FD90001006422D /* Lottie */,
+				PH1A2B3C52FD90001006422D /* PostHog */,
 			);
 			productName = useprocess;
 			productReference = 67E2AE312FDD89E60016422D /* useprocess.app */;
@@ -119,6 +122,7 @@
 				F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				RC1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */,
+				PH1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67E2AE322FDD89E60016422D /* Products */;
@@ -419,6 +423,14 @@
 				minimumVersion = 4.5.0;
 			};
 		};
+		PH1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.59.0;
+			};
+		};
 		RC1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
@@ -454,6 +466,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */;
 			productName = Lottie;
+		};
+		PH1A2B3C52FD90001006422D /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PH1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 		RC1A2B3C52FD90001006422D /* RevenueCat */ = {
 			isa = XCSwiftPackageProductDependency;

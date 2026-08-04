@@ -64,13 +64,13 @@ final class UserSessionCoordinator {
         SocialProfileStore.shared.bind(unified: nil)
         BodyScanHistoryStore.shared.clearForUser(userId: nil)
         FaceScanHistoryStore.shared.clearForUser(userId: nil)
-        Task { await SubscriptionService.shared.syncAppUserID(nil) }
+        Task { await SubscriptionService.shared.logOutAfterAccountDeletion() }
     }
 
     private func handleSignedOut() {
         activeUserId = nil
         UnifiedProfileService.shared.clearLocalProfile()
         SocialProfileStore.shared.bind(unified: nil)
-        Task { await SubscriptionService.shared.syncAppUserID(nil) }
+        Task { await SubscriptionService.shared.logOutAfterAccountDeletion() }
     }
 }

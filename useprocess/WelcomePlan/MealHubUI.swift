@@ -535,10 +535,19 @@ struct MealItemAlternativesBar: View {
 // MARK: - Photo frigo
 
 struct MealPhotoScanSheet: View {
+    let panelHeight: CGFloat
     var onCapture: (UIImage) -> Void
     var onCancel: () -> Void
 
     var body: some View {
-        CoachChatCameraSheet(onCapture: onCapture, onCancel: onCancel)
+        CoachInlineBottomCameraPanel(
+            panelHeight: panelHeight,
+            showsDismissButton: false,
+            useGlassCaptureButton: true,
+            controlsVerticalOffset: 12,
+            onCapture: onCapture,
+            onPickFromGallery: onCapture,
+            onCancel: onCancel
+        )
     }
 }

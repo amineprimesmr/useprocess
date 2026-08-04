@@ -153,34 +153,31 @@ enum OriginMealSuggestionService {
         profile: UnifiedUserProfile?,
         slot: MealTimeSlot
     ) async throws -> MealSuggestionContent {
-        guard let jpeg = image.jpegData(compressionQuality: 0.72) else {
-            throw MealHubError.photoRequired
-        }
-
-        let context = UserContextBuilder.build(profile: profile)
-        let principles = day.nutrition.principles.joined(separator: " · ")
-
-        let prompt = """
-        \(UserContextBuilder.compactPromptBlock(from: context))
-
-        Jour protocole : \(day.title)
-        Créneau : \(slot.rawValue)
-        Principes : \(principles)
-
-        Analyse cette photo (frigo, placard ou ingrédients visibles).
-        Compose UN repas réalisable avec ce que tu vois, aligné sur le plan personnalisé.
-        """
-
-        let text = try await CoachAPITransport.complete(
-            task: .chat,
-            system: systemPrompt + "\n\nObjectif plan : \(plan.primaryFaceGoal)",
-            userText: prompt,
-            model: ClaudeModel.preferred(for: .chat),
-            imageBase64: jpeg.base64EncodedString(),
-            maxTokens: 520
+        _ = (plan, day)
+        return try await MealPhotoScanAnalysisService.analyzePhoto(
+            image: image,
+            slot: slot,
+            profile: profile
         )
+    }
 
-        return try decode(text)
+    /// Propose une version optimisée debloat d'un repas scanné (score insuffisant).
+    @MainActor
+    static func suggestOptimizedVariant(
+        from meal: MealSuggestionContent,
+        plan: FaceOriginPlan,
+        day: OriginProgramDay,
+        profile: UnifiedUserProfile?,
+        slot: MealTimeSlot,
+        assessment: MealDebloatAssessment
+    ) async throws -> MealSuggestionContent {
+        _ = (plan, day)
+        return try await MealPhotoScanAnalysisService.optimizeScannedMeal(
+            meal,
+            assessment: assessment,
+            slot: slot,
+            profile: profile
+        )
     }
 
     // MARK: - Private
@@ -327,4 +324,5 @@ enum MealHubError: Error {
     case noAlternatives
     case photoRequired
     case invalidResponse
+    case noFoodVisible
 }

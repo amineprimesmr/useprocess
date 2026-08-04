@@ -128,6 +128,7 @@ struct PaywallView: View {
         }
         .onAppear {
             refreshMeasuredTopSafeInset()
+            trackPaywallAppear()
         }
         .onChange(of: subscriptionService.subscriptionStatus) { oldValue, newValue in
             if newValue.isActive && !oldValue.isActive {
@@ -179,6 +180,10 @@ struct PaywallView: View {
         } else {
             dismiss()
         }
+    }
+
+    private func trackPaywallAppear() {
+        ProcessAnalytics.trackPaywallViewed(source: "onboarding_or_paywall")
     }
 
     // MARK: - Header
@@ -396,16 +401,23 @@ struct PaywallView: View {
         purchaseError = nil
         defer { isPurchasing = false }
 
+        let plan = selectedBillingPlan.rawValue
+        ProcessAnalytics.trackPurchaseStarted(plan: plan)
+
         do {
             try await subscriptionService.purchase(plan: selectedBillingPlan)
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
+                ProcessAnalytics.trackPurchaseCompleted(plan: plan)
                 completePaywallFlow()
             }
         } catch SubscriptionError.userCancelled {
+            ProcessAnalytics.trackPurchaseCancelled(plan: plan)
             presentSpinWinbackIfNeeded()
         } catch {
-            purchaseError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            ProcessAnalytics.trackPurchaseFailed(plan: plan, error: message)
+            purchaseError = message
         }
     }
 
@@ -432,7 +444,9 @@ struct PaywallView: View {
 
         do {
             try await subscriptionService.restorePurchases()
-            if subscriptionService.subscriptionStatus.isActive {
+            let active = subscriptionService.subscriptionStatus.isActive
+            ProcessAnalytics.trackRestoreCompleted(isActive: active)
+            if active {
                 completePaywallFlow()
             } else {
                 purchaseError = "Aucun abonnement actif trouvé."

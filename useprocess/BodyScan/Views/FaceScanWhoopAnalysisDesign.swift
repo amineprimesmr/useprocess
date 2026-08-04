@@ -1018,7 +1018,11 @@ private struct FaceScanWhoopMetricRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            FaceScanWhoopZoneBar(activeZone: zone, style: style)
+            FaceScanWhoopZoneBar(
+                activeZone: zone,
+                higherIsWorse: kind.higherIsWorse,
+                style: style
+            )
                 .frame(width: 92)
                 .opacity(zoneBarProgress)
 
@@ -1085,24 +1089,32 @@ private struct FaceScanWhoopMetricRow: View {
 
 struct FaceScanWhoopZoneBar: View {
     let activeZone: FaceScanIndicators.WellnessZone
+    /// Charge / signal défavorable : % élevé = tiret à droite (orange), % bas = à gauche (vert).
+    var higherIsWorse: Bool = false
     var style: FaceScanWhoopResultsStyle = .immersive
 
     private let segmentHeight: CGFloat = 4
     private let spacing: CGFloat = 2
 
+    /// Index du segment actif (0 = gauche, 2 = droite).
+    private var activeSegmentIndex: Int {
+        let base = activeZone.rawValue
+        return higherIsWorse ? (2 - base) : base
+    }
+
     var body: some View {
         HStack(spacing: spacing) {
-            segment(for: .insufficient)
-            segment(for: .sufficient)
-            segment(for: .optimal)
+            ForEach(0..<3, id: \.self) { index in
+                segment(at: index)
+            }
         }
     }
 
     @ViewBuilder
-    private func segment(for zone: FaceScanIndicators.WellnessZone) -> some View {
-        let isActive = zone == activeZone
+    private func segment(at index: Int) -> some View {
+        let isActive = index == activeSegmentIndex
         RoundedRectangle(cornerRadius: 2, style: .continuous)
-            .fill(isActive ? color(for: zone) : idleColor)
+            .fill(isActive ? color(for: activeZone) : idleColor)
             .frame(height: isActive ? segmentHeight + 1 : segmentHeight)
             .frame(maxWidth: .infinity)
     }

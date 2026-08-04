@@ -49,6 +49,11 @@ struct AppShellView: View {
         .task {
             // Garantit Firebase prêt avant tout usage Auth tardif.
             FirebaseBootstrap.configure()
+            ProcessAnalytics.configure()
+            ProcessAnalytics.trackAppOpened(hasCompletedOnboarding: session.hasCompletedOnboarding)
+            if let uid = AuthUser.current?.uid {
+                ProcessAnalytics.identify(userId: uid)
+            }
             // Laisse le 1er frame se peindre avant d’armer le double-swipe Home.
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }
@@ -101,21 +106,12 @@ struct AppShellView: View {
         }
         .overlay {
             if session.isAccountWipeInProgress {
-                ZStack {
-                    Color.black.opacity(0.45).ignoresSafeArea()
-                    VStack(spacing: 14) {
-                        ProgressView()
-                            .controlSize(.large)
-                        Text("Suppression du compte…")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.primary)
-                    }
-                    .padding(28)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                }
-                .allowsHitTesting(false)
+                AccountDeletionOverlayView(statusMessage: session.accountDeletionStatusMessage)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    .zIndex(999)
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: session.isAccountWipeInProgress)
         .alert(
             "Suppression impossible",
             isPresented: Binding(

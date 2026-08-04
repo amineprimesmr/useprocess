@@ -6,6 +6,11 @@ import UIKit
 /// Caméra intégrée au bas du chat — preview pleine largeur jusqu’au bord inférieur.
 struct CoachInlineBottomCameraPanel: View {
     let panelHeight: CGFloat
+    var dismissIcon: String = "chevron.down"
+    var showsDismissButton: Bool = true
+    var useGlassCaptureButton: Bool = false
+    /// Positive values move shutter / gallery controls upward inside the panel.
+    var controlsVerticalOffset: CGFloat = 0
     var onCapture: (UIImage) -> Void
     var onPickFromGallery: (UIImage) -> Void
     var onCancel: () -> Void
@@ -47,13 +52,16 @@ struct CoachInlineBottomCameraPanel: View {
                 .allowsHitTesting(false)
 
                 CoachCameraControlsBar(
-                    dismissIcon: "chevron.down",
+                    dismissIcon: dismissIcon,
+                    showsDismiss: showsDismissButton,
+                    useGlassCaptureButton: useGlassCaptureButton,
                     onDismiss: onCancel,
                     onCapture: capturePhoto,
                     onOpenGallery: { showGalleryPicker = true }
                 )
                 .padding(.horizontal, 22)
                 .padding(.bottom, max(geo.safeAreaInsets.bottom, 10) + 6)
+                .offset(y: -controlsVerticalOffset)
             }
         }
         .frame(maxWidth: .infinity)
@@ -245,31 +253,87 @@ struct CoachChatCameraSheet: View {
 
 private struct CoachCameraControlsBar: View {
     let dismissIcon: String
+    var showsDismiss: Bool = true
+    var useGlassCaptureButton: Bool = false
     var onDismiss: () -> Void
     var onCapture: () -> Void
     var onOpenGallery: () -> Void
 
     var body: some View {
         HStack(alignment: .center) {
-            CoachCameraGlassButton(systemName: dismissIcon, action: onDismiss)
+            if showsDismiss {
+                CoachCameraGlassButton(systemName: dismissIcon, action: onDismiss)
+            } else {
+                Color.clear
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
+            }
 
             Spacer(minLength: 0)
 
-            Button(action: onCapture) {
-                ZStack {
-                    Circle()
-                        .strokeBorder(Color.white.opacity(0.95), lineWidth: 4)
-                        .frame(width: 74, height: 74)
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 62, height: 62)
+            if useGlassCaptureButton {
+                CoachCameraCaptureGlassButton(action: onCapture)
+            } else {
+                Button(action: onCapture) {
+                    ZStack {
+                        Circle()
+                            .strokeBorder(Color.white.opacity(0.95), lineWidth: 4)
+                            .frame(width: 74, height: 74)
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 62, height: 62)
+                    }
                 }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             Spacer(minLength: 0)
 
             CoachCameraGlassButton(systemName: "photo.on.rectangle", action: onOpenGallery)
+        }
+    }
+}
+
+private struct CoachCameraCaptureGlassButton: View {
+    let action: () -> Void
+
+    private let outerSize: CGFloat = 72
+    private let innerSize: CGFloat = 58
+
+    var body: some View {
+        Button {
+            HapticManager.shared.impact(.medium)
+            action()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.96))
+                    .frame(width: innerSize, height: innerSize)
+            }
+            .frame(width: outerSize, height: outerSize)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .modifier(CoachCameraGlassCircleModifier(diameter: outerSize))
+        .accessibilityLabel("Prendre une photo")
+    }
+}
+
+private struct CoachCameraGlassCircleModifier: ViewModifier {
+    let diameter: CGFloat
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(ProcessGlass.tinted(.white, opacity: 0.24), in: Circle())
+        } else {
+            content
+                .background {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
+                }
+                .buttonStyle(ProcessGlassPressStyle())
         }
     }
 }
@@ -291,27 +355,9 @@ private struct CoachCameraGlassButton: View {
                 .frame(width: size, height: size)
                 .contentShape(Circle())
         }
-        .modifier(CoachCameraGlassButtonStyle())
+        .buttonStyle(.plain)
+        .modifier(CoachCameraGlassCircleModifier(diameter: size))
         .accessibilityLabel(systemName == "photo.on.rectangle" ? "Galerie" : "Retour")
-    }
-}
-
-private struct CoachCameraGlassButtonStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .buttonStyle(.plain)
-                .glassEffect(ProcessGlass.tinted(.white, opacity: 0.24), in: Circle())
-        } else {
-            content
-                .buttonStyle(.plain)
-                .background {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
-                }
-                .buttonStyle(ProcessGlassPressStyle())
-        }
     }
 }
 

@@ -46,6 +46,7 @@ struct PlanDashboardView: View {
                         selectedSection: $selectedSection,
                         selectedDate: $selectedPlanDate,
                         showCalendar: $showCalendar,
+                        plan: livePlan,
                         onOpenStreak: presentStreakToast
                     )
 
@@ -61,14 +62,6 @@ struct PlanDashboardView: View {
             .processMorphingRefreshable {
                 planStore.reloadForCurrentUser(force: true)
                 refreshPlanHealthMetrics()
-            }
-            .sheet(isPresented: $showCalendar) {
-                PlanHomeCalendarSheet(
-                    selectedDate: $selectedPlanDate,
-                    plan: livePlan
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
             }
             .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast, onTap: openProfileStatistics)
             .onAppear {

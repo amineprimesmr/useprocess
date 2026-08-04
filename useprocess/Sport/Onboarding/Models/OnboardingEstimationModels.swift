@@ -66,7 +66,7 @@ struct OnboardingEstimationGraphSnapshot {
             calendar.dateComponents([.day], from: referenceDate, to: debloatDate).day ?? 0
         )
 
-        let pointCount = 7
+        let pointCount = 13
         let seed = Int(debloatDate.timeIntervalSince1970) % 997
         let descentValues = makeIrregularDescent(pointCount: pointCount, seed: seed)
 
@@ -94,26 +94,54 @@ struct OnboardingEstimationGraphSnapshot {
         )
     }
 
-    /// Courbe descendante : 7 points max, irrégularité légère (pas de zigzag).
+    /// Courbe descendante organique — paliers, micro-variations, pas de sinusoïde régulière.
     private static func makeIrregularDescent(pointCount: Int, seed: Int) -> [Double] {
-        let count = min(7, max(5, pointCount))
+        let count = min(14, max(10, pointCount))
         guard count >= 2 else { return [0.92, 0.08] }
 
-        var values: [Double] = []
         let seedD = Double(seed)
+        var values: [Double] = []
+
+        func jitter(_ t: Double, freq: Double, amp: Double, phase: Double) -> Double {
+            sin(t * freq + phase) * amp + cos(t * (freq * 0.67) + phase * 1.3) * amp * 0.55
+        }
 
         for index in 0..<count {
             let t = Double(index) / Double(count - 1)
-            var level = 1.0 - pow(t, 1.18)
+            var level: Double
 
-            // Légères variations lentes — pas de haute fréquence.
-            level += sin(t * 2.8 + seedD * 0.05) * 0.045 * (1.0 - t * 0.5)
-            level += cos(t * 1.6 + seedD * 0.08) * 0.025
+            switch t {
+            case ..<0.18:
+                // Plateau haut — gonflement encore présent
+                level = 0.93 - t * 0.35 + jitter(t, freq: 6.2, amp: 0.028, phase: seedD * 0.04)
+            case ..<0.38:
+                // Première chute lente puis accélération
+                level = 0.87 - (t - 0.18) * 1.05 + jitter(t, freq: 4.1, amp: 0.04, phase: seedD * 0.07)
+            case ..<0.58:
+                // Petit rebond visuel (rétention qui repique) puis reprise
+                level = 0.66 - (t - 0.38) * 0.75 + jitter(t, freq: 8.5, amp: 0.05, phase: seedD * 0.05)
+            case ..<0.76:
+                // Descente plus nette
+                level = 0.51 - (t - 0.58) * 1.35 + jitter(t, freq: 3.4, amp: 0.032, phase: seedD * 0.09)
+            default:
+                // Fin de trajectoire — dégonflement marqué
+                level = 0.27 - (t - 0.76) * 0.82 + jitter(t, freq: 5.7, amp: 0.022, phase: seedD * 0.11)
+            }
 
             values.append(max(0.06, min(0.98, level)))
         }
 
         values[0] = 0.94
+        values[values.count - 1] = 0.07
+
+        // Tendance globalement descendante sans zigzag agressif
+        for index in 1..<values.count {
+            let floor = values[index - 1] - 0.045
+            if values[index] > floor {
+                values[index] = floor
+            }
+        }
+
         values[values.count - 1] = 0.07
         return values
     }

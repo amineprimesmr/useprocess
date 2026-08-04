@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     case coach
@@ -8,7 +9,16 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
-    static let tabOrder: [ProcessMainSection] = [.plan, .statistics, .coach, .profile]
+    static let isCoachTabEnabled = false
+
+    static var tabOrder: [ProcessMainSection] {
+        var tabs: [ProcessMainSection] = [.plan, .statistics]
+        if isCoachTabEnabled {
+            tabs.append(.coach)
+        }
+        tabs.append(.profile)
+        return tabs
+    }
 
     var isShellTab: Bool {
         Self.tabOrder.contains(self)
@@ -31,6 +41,39 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         case .profile: "gearshape.fill"
         }
     }
+
+    /// Icône custom tab bar (Assets) — `nil` = SF Symbol fallback.
+    var tabIconAsset: String? {
+        switch self {
+        case .plan: "tab_icon_home"
+        case .statistics: "tab_icon_streak"
+        case .profile: "tab_icon_settings"
+        case .coach: nil
+        }
+    }
+
+    func tabBarUIImage() -> UIImage? {
+        if let asset = tabIconAsset, let image = UIImage(named: asset) {
+            return Self.sizedTabIcon(image)
+        }
+        return UIImage(systemName: icon)?
+            .withConfiguration(
+                UIImage.SymbolConfiguration(
+                    font: .systemFont(ofSize: ProcessIGTabMetrics.iconSize, weight: .semibold)
+                )
+            )
+            .withRenderingMode(.alwaysTemplate)
+    }
+
+    private static func sizedTabIcon(_ image: UIImage) -> UIImage {
+        let side = ProcessIGTabMetrics.iconSize
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        let rendered = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: CGSize(width: side, height: side)))
+        }
+        return rendered.withRenderingMode(.alwaysTemplate)
+    }
 }
 
 // MARK: - Tab bar icons
@@ -45,13 +88,28 @@ struct ProcessMainTabIcon: View {
     var appliesSelectionStyle: Bool = true
 
     var body: some View {
-        Image(systemName: section.icon)
-            .font(.system(size: size, weight: .semibold))
-            .symbolRenderingMode(.monochrome)
-            .foregroundStyle(
-                appliesSelectionStyle
-                    ? (isSelected ? theme.primaryText : theme.secondaryText)
-                    : theme.primaryText
-            )
+        Group {
+            if let asset = section.tabIconAsset {
+                Image(asset)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: size, height: size)
+                    .foregroundStyle(
+                        appliesSelectionStyle
+                            ? (isSelected ? theme.primaryText : theme.secondaryText)
+                            : theme.primaryText
+                    )
+            } else {
+                Image(systemName: section.icon)
+                    .font(.system(size: size, weight: .semibold))
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(
+                        appliesSelectionStyle
+                            ? (isSelected ? theme.primaryText : theme.secondaryText)
+                            : theme.primaryText
+                    )
+            }
+        }
     }
 }

@@ -305,7 +305,7 @@ private extension OnboardingProgramCreationViewModel {
     }
 
     static func irregularMilestones(forPhase phase: Int) -> [ProgressMilestone] {
-        let stepCount = 18 + phase * 3
+        let stepCount = 16 + phase * 2
         var milestones: [ProgressMilestone] = []
 
         for step in 1...stepCount {
@@ -314,10 +314,10 @@ private extension OnboardingProgramCreationViewModel {
             let previous = milestones.last?.value ?? 0
             let value = max(previous, min(1, eased))
 
-            let baseDelay = UInt64.random(in: 72_000_000...130_000_000)
-            let stallMultiplier: UInt64 = (step % 7 == 0) ? 2 : 1
+            let baseDelay = UInt64.random(in: 118_000_000...205_000_000)
+            let stallMultiplier: UInt64 = (step % 7 == 0) ? 3 : 1
             let delayNs = baseDelay * stallMultiplier
-            let animationDuration = Double.random(in: 0.32...0.52)
+            let animationDuration = Double.random(in: 0.48...0.72)
 
             milestones.append(
                 ProgressMilestone(
@@ -331,8 +331,8 @@ private extension OnboardingProgramCreationViewModel {
         milestones.append(
             ProgressMilestone(
                 value: 1,
-                delayNs: 180_000_000,
-                animationDuration: 0.38
+                delayNs: 320_000_000,
+                animationDuration: 0.52
             )
         )
 

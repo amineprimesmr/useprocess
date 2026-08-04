@@ -259,11 +259,32 @@ struct ProcessEveningCheckInIslandContent: View {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
             answers[question.id] = isYes ? question.noValue : question.yesValue
         }
+        if question == .water, !isYes {
+            syncWaterFromChecklistToHome()
+        }
         if isYes {
             HapticManager.shared.selection()
         } else {
             HapticManager.shared.impact(.medium)
         }
+    }
+
+    private func syncWaterFromChecklistToHome() {
+        guard let dayId = programDayId(for: targetDate) else { return }
+        ProcessHydrationLogStore.shared.applyEveningCheckInWaterAnswer(
+            EveningCheckInQuestion.water.yesValue,
+            for: targetDate,
+            dayId: dayId
+        )
+        hydrationPrefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate)
+    }
+
+    private func programDayId(for date: Date) -> String? {
+        guard let plan = WelcomePlanStore.shared.plan else { return nil }
+        guard let day = OriginPlanPresenter.programDay(in: plan, for: date)
+            ?? OriginPlanPresenter.todayDay(in: plan, date: date)
+        else { return nil }
+        return day.id
     }
 
     private var footerBlock: some View {

@@ -127,11 +127,22 @@ struct OnboardingProfileChatView: View {
             onboardingViewModel.syncInferredWeightGoal()
             await chatViewModel.startIfNeeded()
 
-            if let restored = chatViewModel.consumePendingDedicatedResultsReopen() {
+            if onboardingViewModel.shouldReopenFaceScanResultsAfterBack,
+               let restored = chatViewModel.restoredFaceScanResultIfAvailable() {
+                onboardingViewModel.shouldReopenFaceScanResultsAfterBack = false
+                chatViewModel.prepareForFaceScanResultsReopen()
                 restoredFaceScanResult = restored
                 showsOnboardingFaceScanSession = true
-            } else if chatViewModel.shouldAutoFinishAfterResume {
+            } else if let restored = chatViewModel.consumePendingDedicatedResultsReopen() {
+                restoredFaceScanResult = restored
+                showsOnboardingFaceScanSession = true
+            } else if chatViewModel.shouldAutoFinishAfterResume,
+                      !onboardingViewModel.suppressProfileChatAutoFinish {
                 chatViewModel.finish(onComplete: onComplete)
+            }
+
+            if onboardingViewModel.suppressProfileChatAutoFinish {
+                onboardingViewModel.suppressProfileChatAutoFinish = false
             }
         }
         .onDisappear {

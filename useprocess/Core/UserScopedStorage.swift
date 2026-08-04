@@ -33,11 +33,30 @@ enum UserScopedStorage {
         "process.plan.progress",
         "process.activity.status",
         "process.debloat.food_prefs",
+        "process.hydration_log",
         "plan.home.layout",
+        "plan.home.face_scan.shows_video",
         "referral.program",
         "creator.mode.unlocked",
         "creator.mode.quality",
-        "creator.mode.look"
+        "creator.mode.look",
+        "coach.my_memory",
+        "coach.checkins",
+        "coach.process_files",
+        "onboarding.face_markers",
+        "onboarding.face_mesh",
+        "onboarding.face_scan_payload",
+        "welcome.plan.progress"
+    ]
+
+    /// Sous-clés connues pour les préfixes composés (coach.intelligence.*, coach.daily_rhythm.*).
+    private static let prefixedUserDataSuffixes: [String: [String]] = [
+        "coach.intelligence": [
+            "enabled", "personality", "followUps", "reproductiveHealth",
+            "weeklyCount", "extraCredits", "weeklyReset", "subscriberGrantWeek"
+        ],
+        "coach.my_memory": ["enabled"],
+        "coach.checkins": ["enabled"]
     ]
 
     static func currentUserId() -> String? {
@@ -68,6 +87,24 @@ enum UserScopedStorage {
     static func clearAllUserData(userId: String) {
         for base in userDataKeys {
             UserDefaults.standard.removeObject(forKey: key(base, userId: userId))
+        }
+
+        for (prefix, suffixes) in prefixedUserDataSuffixes {
+            let root = key(prefix, userId: userId)
+            UserDefaults.standard.removeObject(forKey: root)
+            for suffix in suffixes {
+                UserDefaults.standard.removeObject(forKey: "\(root).\(suffix)")
+            }
+        }
+
+        clearDailyRhythmKeys(userId: userId)
+    }
+
+    private static func clearDailyRhythmKeys(userId: String) {
+        let rhythmPrefix = key("coach.daily_rhythm.", userId: userId)
+        let defaults = UserDefaults.standard
+        for entry in defaults.dictionaryRepresentation().keys where entry.hasPrefix(rhythmPrefix) {
+            defaults.removeObject(forKey: entry)
         }
     }
 }

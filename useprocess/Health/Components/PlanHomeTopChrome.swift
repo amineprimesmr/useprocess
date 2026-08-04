@@ -5,7 +5,10 @@ struct PlanHomeTopChrome: View {
     @Binding var selectedSection: ProcessMainSection
     @Binding var selectedDate: Date
     @Binding var showCalendar: Bool
+    var plan: FaceOriginPlan? = nil
     var onOpenStreak: () -> Void
+
+    @Namespace private var calendarZoomNamespace
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
@@ -44,6 +47,13 @@ struct PlanHomeTopChrome: View {
         }
         .onChange(of: planStore.plan?.id) { _, _ in
             syncProgramProgress()
+        }
+        .fullScreenCover(isPresented: $showCalendar) {
+            PlanProgramCalendarView(
+                selectedDate: $selectedDate,
+                plan: plan ?? planStore.plan
+            )
+            .processZoomTransition(id: .planCalendar, namespace: calendarZoomNamespace)
         }
     }
 
@@ -90,6 +100,7 @@ struct PlanHomeTopChrome: View {
                     .buttonStyle(ProcessGlassPressStyle())
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0.0)
                     .zIndex(0)
+                    .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
                     .accessibilityLabel("Calendrier, choisir une date")
                 }
             }
@@ -109,6 +120,7 @@ struct PlanHomeTopChrome: View {
                 }
                 .buttonStyle(ProcessGlassPressStyle())
                 .zIndex(0)
+                .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
                 .accessibilityLabel("Calendrier, choisir une date")
             }
         }
@@ -169,59 +181,13 @@ struct PlanHomeTopChrome: View {
 
     private func openCalendar() {
         HapticManager.shared.impact(.light)
-        showCalendar = true
+        withAnimation(ProcessZoomTransitionID.presentationSpring) {
+            showCalendar = true
+        }
     }
 
     private func openStreak() {
         onOpenStreak()
-    }
-}
-
-// MARK: - Calendrier accueil
-
-struct PlanHomeCalendarSheet: View {
-    @Binding var selectedDate: Date
-    let plan: FaceOriginPlan?
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.appTheme) private var theme
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    if let plan {
-                        JournalWeekDayStrip(
-                            selectedDate: $selectedDate,
-                            plan: plan
-                        )
-                    }
-
-                    DatePicker(
-                        "Date",
-                        selection: $selectedDate,
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-                    .environment(\.locale, Locale(identifier: "fr_FR"))
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
-            }
-            .scrollIndicators(.hidden)
-            .navigationTitle("Calendrier")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("OK") {
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
-                }
-            }
-        }
-        .processAppPageBackground()
     }
 }
 

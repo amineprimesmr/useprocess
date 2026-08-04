@@ -156,6 +156,7 @@ func triggerBiometricAuthAndContinue() async {
 }
 
 func previousStep() {
+    guard !isTransitioning else { return }
     HapticManager.shared.impact(.light)
 
     viewModel.visitedSteps = normalizeOnboardingVisitedStack(
@@ -167,17 +168,24 @@ func previousStep() {
         return
     }
 
-    if viewModel.visitedSteps.last == viewModel.currentStep {
-        viewModel.visitedSteps.removeLast()
-    } else if let index = viewModel.visitedSteps.lastIndex(of: viewModel.currentStep) {
-        viewModel.visitedSteps = Array(viewModel.visitedSteps.prefix(index))
+    var stack = viewModel.visitedSteps
+    if stack.last == viewModel.currentStep {
+        stack.removeLast()
+    } else if let index = stack.lastIndex(of: viewModel.currentStep) {
+        stack = Array(stack.prefix(index))
     } else {
         return
     }
 
-    guard let stepToGoBackTo = viewModel.visitedSteps.last else {
+    guard let stepToGoBackTo = stack.last else {
         return
     }
+
+    if let targetStep = OnboardingStep(rawValue: stepToGoBackTo) {
+        viewModel.prepareForBackNavigation(to: targetStep)
+    }
+
+    viewModel.visitedSteps = stack
 
     previousStepIndex = viewModel.currentStep
     transitionDirection = .backward
@@ -198,12 +206,58 @@ func previousStep() {
 
 /// Retour header : dans la discussion, remonte le fil ; sinon étape précédente.
 func handleOnboardingBack() {
+    guard !isTransitioning else { return }
+
+    if OnboardingStep(rawValue: viewModel.currentStep) == .programCreation {
+        handleBackFromProgramCreation()
+        return
+    }
+
     if OnboardingStep(rawValue: viewModel.currentStep) == .weightMotivation,
        viewModel.profileChatBackHandler?() == true {
         HapticManager.shared.impact(.light)
         return
     }
     previousStep()
+}
+
+/// Retour création programme → réouvre l'analyse du premier scan (pas la discussion).
+func handleBackFromProgramCreation() {
+    HapticManager.shared.impact(.light)
+    viewModel.isProgramCreationCompleted = false
+
+    if let result = viewModel.restoredFaceScanResultForNavigation() {
+        viewModel.isFaceAnalysisCompleted = true
+        viewModel.presentedFaceScanResult = result
+        return
+    }
+
+    if let targetStep = OnboardingStep(rawValue: OnboardingStep.weightMotivation.rawValue) {
+        viewModel.prepareForBackNavigation(to: targetStep)
+    }
+    previousStep()
+}
+
+@MainActor
+func completeProgramCreationBackFaceScan() async {
+    guard viewModel.presentedFaceScanResult != nil else { return }
+
+    if AuthUser.current == nil, AppConfiguration.firebaseConfigured {
+        do {
+            try await OnboardingAppleAuth.authenticateAndMigrate(
+                authManager: authManager,
+                profileService: profileService,
+                viewModel: viewModel
+            )
+            HapticManager.shared.notification(.success)
+        } catch {
+            HapticManager.shared.notification(.error)
+            viewModel.errorMessage = error.localizedDescription
+            return
+        }
+    }
+
+    viewModel.presentedFaceScanResult = nil
 }
 
 /// Ajoute une étape visible à la pile (tronque une éventuelle branche future).
@@ -326,8 +380,10 @@ func checkPermissions() {
             try await OnboardingService.shared.completeOnboarding()
             OnboardingProgressService.shared.resetProgress()
             AppSession.shared.completeOnboarding()
+            ProcessAnalytics.trackOnboardingCompleted()
             HapticManager.shared.notification(.success)
         } catch {
+            ProcessAnalytics.trackOnboardingFailed(error: error.localizedDescription)
             HapticManager.shared.notification(.error)
             viewModel.errorMessage = "Erreur lors de la finalisation. Veuillez réessayer."
         }

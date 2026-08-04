@@ -73,6 +73,7 @@ enum FaceScanService {
         )
         FaceScanHistoryStore.shared.push(result)
         ProcessDebloatTrajectoryStore.shared.recordScan(result)
+        ProcessAnalytics.trackFaceScanCompleted(source: scanSource.rawValue)
 
         enqueuePlanRecalibration(for: result, markers: resolvedMarkers)
         enqueuePostScanEnhancements(

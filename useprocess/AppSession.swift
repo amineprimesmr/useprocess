@@ -1,5 +1,12 @@
 import SwiftUI
 
+enum AccountDeletionPhase: Equatable {
+    case idle
+    case remote
+    case local
+    case finishing
+}
+
 /// État global de l'application.
 @MainActor
 @Observable
@@ -11,15 +18,52 @@ final class AppSession {
     var appearance: AppAppearance
     /// Empêche UserSessionCoordinator de recharger l'onboarding pendant une suppression.
     private(set) var isAccountWipeInProgress = false
+    private(set) var accountDeletionPhase: AccountDeletionPhase = .idle
     var accountDeletionErrorMessage: String?
+
+    var accountDeletionStatusMessage: String {
+        switch accountDeletionPhase {
+        case .idle:
+            return "Patiente quelques instants…"
+        case .remote:
+            return "Suppression sur nos serveurs…"
+        case .local:
+            return "Effacement des données locales…"
+        case .finishing:
+            return "Finalisation…"
+        }
+    }
 
     func beginAccountDeletion() {
         isAccountWipeInProgress = true
+        accountDeletionPhase = .remote
         accountDeletionErrorMessage = nil
     }
 
     func cancelAccountDeletion() {
         isAccountWipeInProgress = false
+        accountDeletionPhase = .idle
+    }
+
+    /// Point d'entrée unique depuis les réglages — overlay immédiat + gestion d'erreur.
+    func performAccountDeletionFromUI() async {
+        if !isAccountWipeInProgress {
+            beginAccountDeletion()
+        }
+
+        do {
+            try await deleteAccount()
+        } catch let error as AccountDeletionError {
+            if case .cancelled = error {
+                cancelAccountDeletion()
+                return
+            }
+            cancelAccountDeletion()
+            accountDeletionErrorMessage = error.localizedDescription
+        } catch {
+            cancelAccountDeletion()
+            accountDeletionErrorMessage = error.localizedDescription
+        }
     }
 
     private init() {
@@ -89,6 +133,7 @@ final class AppSession {
 
         OnboardingProgressService.shared.resetProgress()
         WelcomePlanStore.shared.resetForCurrentUser()
+        ProcessAnalytics.reset()
 
         AuthenticationManager.shared.applyPostAccountDeletion()
         AuthenticationManager.shared.startOnboarding()
@@ -97,32 +142,54 @@ final class AppSession {
     /// Suppression complète du compte : Firebase d'abord, puis données locales + retour onboarding.
     func deleteAccount() async throws {
         accountDeletionErrorMessage = nil
-        isAccountWipeInProgress = true
-        defer { isAccountWipeInProgress = false }
+        if !isAccountWipeInProgress {
+            beginAccountDeletion()
+        }
+        defer {
+            isAccountWipeInProgress = false
+            accountDeletionPhase = .idle
+        }
 
+        accountDeletionPhase = .remote
         try await AuthenticationManager.shared.deleteRemoteAccount()
+
+        accountDeletionPhase = .local
 
         let primaryUID = UserScopedStorage.currentUserId()
             ?? UnifiedProfileService.shared.currentProfile?.userId
             ?? "local-user"
 
+        let userIds = UserScopedStorage.likelyUserIds(primary: primaryUID)
+
         CoachConversationStore.resetThread()
         CoachConversationLibraryStore.shared.clearStoredData(userId: primaryUID)
         CoachMemoryStore.shared.clearForUser(userId: primaryUID)
+        CoachIntelligenceSettingsStore.shared.deleteAllCoachFiles(userId: primaryUID)
+        CoachMyMemoryStore.shared.deleteAll()
+        CoachProcessFilesStore.shared.deleteAll()
+        CoachCheckInStore.shared.reload()
         SocialProfileStore.shared.resetForUser(userId: primaryUID)
         BodyScanHistoryStore.shared.clearForUser(userId: primaryUID)
         FaceScanHistoryStore.shared.clearForUser(userId: primaryUID)
         FaceScanImageStore.deleteAllStoredMedia()
+        BodyScanImageStore.deleteAllStoredMedia()
+        CoachChatAttachmentImageStore.deleteAllStoredMedia()
         OnboardingFaceMarkersStore.clear()
+        ProcessHydrationLogStore.shared.clearAllData()
+        ProcessCreatorModeStore.shared.syncFromCurrentProfile()
 
-        for uid in UserScopedStorage.likelyUserIds(primary: primaryUID) {
+        for uid in userIds {
             UserScopedStorage.clearAllUserData(userId: uid)
             UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("onboarding.completed", userId: uid))
             UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan.chat.completed", userId: uid))
+            ProcessPrivacyConsentStore.shared.clearForUser(userId: uid)
         }
+
+        accountDeletionPhase = .finishing
 
         UnifiedProfileService.shared.clearLocalProfile()
         resetAfterAccountDeletion(primaryUID: primaryUID)
+        await SubscriptionService.shared.logOutAfterAccountDeletion()
         UserSessionCoordinator.shared.handleAccountDeleted()
     }
 

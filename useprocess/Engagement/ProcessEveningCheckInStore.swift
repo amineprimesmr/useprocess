@@ -89,6 +89,13 @@ final class ProcessEveningCheckInStore {
         let planStore = WelcomePlanStore.shared
 
         if let water = answers[EveningCheckInQuestionID.water] {
+            if water == "yes" {
+                ProcessHydrationLogStore.shared.applyEveningCheckInWaterAnswer(
+                    water,
+                    for: date,
+                    dayId: dayId
+                )
+            }
             planStore.setJournalTaskStatus(
                 water == "yes" ? .completed : .failed,
                 taskId: "\(dayId).core.hydrate",

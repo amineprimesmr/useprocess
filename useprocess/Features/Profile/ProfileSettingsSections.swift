@@ -140,15 +140,7 @@ struct ProfileSettingsAccountDetailView: View {
         }
 
         Task { @MainActor in
-            session.accountDeletionErrorMessage = nil
-            do {
-                try await session.deleteAccount()
-            } catch let error as AccountDeletionError {
-                if case .cancelled = error { return }
-                session.accountDeletionErrorMessage = error.localizedDescription
-            } catch {
-                session.accountDeletionErrorMessage = error.localizedDescription
-            }
+            await session.performAccountDeletionFromUI()
         }
     }
 }

@@ -90,13 +90,41 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func syncAppUserID(_ userID: String?) async {
-        guard isConfigured, let userID, !userID.isEmpty else { return }
+        guard isConfigured else { return }
+
+        guard let userID, !userID.isEmpty else {
+            await logOutAfterAccountDeletion()
+            return
+        }
+
+        ProcessAnalytics.identify(userId: userID)
         do {
             _ = try await Purchases.shared.logIn(userID)
             await checkSubscriptionStatus()
         } catch {
             return
         }
+    }
+
+    /// Délie RevenueCat après suppression de compte (utilisateur anonyme).
+    func logOutAfterAccountDeletion() async {
+        ProcessAnalytics.reset()
+        guard isConfigured else {
+            subscriptionStatus = .notSubscribed
+            isInFreeTrial = false
+            trialExpirationDate = nil
+            return
+        }
+
+        do {
+            _ = try await Purchases.shared.logOut()
+        } catch {
+            // Compte déjà anonyme ou session expirée — on continue le wipe local.
+        }
+
+        subscriptionStatus = .notSubscribed
+        isInFreeTrial = false
+        trialExpirationDate = nil
     }
 
     func displayProduct(for plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {

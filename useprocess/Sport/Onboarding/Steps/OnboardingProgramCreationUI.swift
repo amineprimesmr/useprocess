@@ -8,7 +8,14 @@ import SwiftUI
 enum OnboardingProgramCreationPalette {
     static var background: Color { OnboardingTheme.screenBackground }
     static let accent = Color(hex: "aeb2fa")
-    static var barTrack: Color { OnboardingTheme.analysisProgressTrack }
+    /// Piste neutre bleu-gris — pas le violet des barres d'analyse chat.
+    static var barTrack: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.14, green: 0.16, blue: 0.20, alpha: 1)
+                : UIColor(red: 0.90, green: 0.93, blue: 0.97, alpha: 1)
+        })
+    }
     static var subtitle: Color { OnboardingTheme.primaryText }
     static var hint: Color { OnboardingTheme.mutedText }
 }
@@ -103,11 +110,27 @@ struct OnboardingProgramCreationBadge: View {
 // MARK: - Progress bars
 
 struct OnboardingProgramCreationProgressBars: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let labels: [String]
     let progresses: [Double]
     var visibleCount: Int = 1
 
     private let barHeight: CGFloat = 16
+
+    private var fillGradient: LinearGradient {
+        PaywallBevelTheme.paywallProTitleGradient(for: colorScheme)
+    }
+
+    private var fillGlow: Color {
+        PaywallBevelTheme.accentBlueGlow(for: colorScheme)
+    }
+
+    private var completeAccent: Color {
+        colorScheme == .dark
+            ? Color(red: 0.52, green: 0.88, blue: 1.0)
+            : Color(red: 0.14, green: 0.50, blue: 0.96)
+    }
 
     private var clampedVisibleCount: Int {
         min(max(visibleCount, 1), labels.count)
@@ -138,7 +161,7 @@ struct OnboardingProgramCreationProgressBars: View {
                 if isComplete {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(OnboardingProgramCreationPalette.accent)
+                        .foregroundStyle(completeAccent)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -153,11 +176,11 @@ struct OnboardingProgramCreationProgressBars: View {
                         .fill(OnboardingProgramCreationPalette.barTrack)
 
                     Capsule()
-                        .fill(OnboardingTheme.analysisProgressFillGradient)
+                        .fill(fillGradient)
                         .frame(width: fillWidth, height: barHeight)
                         .shadow(
-                            color: OnboardingProgramCreationPalette.accent.opacity(0.22),
-                            radius: 6,
+                            color: fillGlow.opacity(colorScheme == .dark ? 0.45 : 0.55),
+                            radius: 8,
                             x: 0,
                             y: 0
                         )

@@ -14,6 +14,10 @@ enum ProcessZoomTransitionID: Hashable {
     case activityStatus
     case settings
     case planResource(PlanResourceSheet)
+    case planCalendar
+
+    /// Spring partagé — ouverture/fermeture zoom (repas, calendrier, protocoles).
+    static let presentationSpring = Animation.spring(response: 0.44, dampingFraction: 0.88)
 
     var sourceID: String {
         switch self {
@@ -41,6 +45,8 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_SETTINGS"
         case .planResource(let sheet):
             return "PROCESS_PLAN_RESOURCE_\(sheet.id)"
+        case .planCalendar:
+            return "PROCESS_PLAN_CALENDAR"
         }
     }
 }
@@ -128,7 +134,7 @@ extension View {
         if #available(iOS 18.0, *) {
             navigationTransition(.zoom(sourceID: id.sourceID, in: namespace))
         } else {
-            self
+            transition(.scale(scale: 0.94).combined(with: .opacity))
         }
     }
 

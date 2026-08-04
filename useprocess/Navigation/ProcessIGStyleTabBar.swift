@@ -8,8 +8,13 @@ enum ProcessIGTabMetrics {
     static let horizontalInset: CGFloat = 20
     static let chromePadding: CGFloat = 4
     static let clusterSpacing: CGFloat = 10
+    static let iconSize: CGFloat = 24
+    /// Hauteur totale d’un cluster tab bar (contenu + padding glass).
+    static var chromeOuterSize: CGFloat {
+        tabBarHeight + (chromePadding * 2)
+    }
     /// Marge au-dessus de l’indicateur d’accueil (tab bar flottante).
-    static let tabBarBottomInset: CGFloat = 2
+    static let tabBarBottomInset: CGFloat = 0
     static let collapseDistance: CGFloat = 100
     static let minScale: CGFloat = 0.85
 
@@ -95,7 +100,7 @@ private struct ProcessIGTabBarScrollTracking: ViewModifier {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
             .simultaneousGesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .scrollView)
+                DragGesture(minimumDistance: 8, coordinateSpace: .scrollView)
                     .updating($isDragging) { _, out, _ in
                         out = true
                     }
@@ -153,13 +158,12 @@ struct ProcessIGStyleTabBar: UIViewRepresentable {
     var onInteraction: () -> Void
 
     func makeUIView(context: Context) -> ProcessIGSegmentedControl {
-        let images = tabs.compactMap { tab -> UIImage? in
-            UIImage(systemName: tab.icon)?
-                .withConfiguration(UIImage.SymbolConfiguration(font: .systemFont(ofSize: 20, weight: .semibold)))
-        }
+        let images = tabs.compactMap { $0.tabBarUIImage() }
         let control = ProcessIGSegmentedControl(items: images)
         control.selectedSegmentIndex = tabs.firstIndex(of: selection) ?? 0
         control.selectedSegmentTintColor = UIColor.label.withAlphaComponent(0.12)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.label], for: .selected)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.secondaryLabel], for: .normal)
         control.addTarget(
             context.coordinator,
             action: #selector(Coordinator.valueChanged(_:)),
@@ -232,6 +236,8 @@ final class ProcessIGSegmentedControl: UISegmentedControl {
 
 struct ProcessIGTabShell<Content: View>: View {
     @Binding var selectedSection: ProcessMainSection
+    var onMealScan: (() -> Void)? = nil
+    var hidesTabChrome: Bool = false
     @ViewBuilder let content: () -> Content
 
     @State private var progress: CGFloat = 0
@@ -243,50 +249,73 @@ struct ProcessIGTabShell<Content: View>: View {
     }
 
     private var showsTabChrome: Bool {
-        selectedSection != .coach && !profileSubrouteActive
+        selectedSection != .coach && !profileSubrouteActive && !hidesTabChrome
     }
 
     var body: some View {
-        content()
-            .environment(\.processIGTabBarProgress, $progress)
-            .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
-                guard selectedSection == .profile else {
-                    profileSubrouteActive = false
-                    return
+        ZStack(alignment: .bottom) {
+            content()
+                .environment(\.processIGTabBarProgress, $progress)
+                .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
+                    guard selectedSection == .profile else {
+                        profileSubrouteActive = false
+                        return
+                    }
+                    profileSubrouteActive = active
                 }
-                profileSubrouteActive = active
-            }
-            .overlay(alignment: .bottom) {
-                if showsTabChrome {
-                    chrome
-                        .transition(
-                            .asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .move(edge: .bottom).combined(with: .opacity)
-                            )
+
+            if showsTabChrome {
+                tabBarChrome
+                    .padding(.horizontal, ProcessIGTabMetrics.horizontalInset)
+                    .padding(.bottom, ProcessIGTabMetrics.tabBarBottomInset)
+                    .zIndex(100)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
                         )
-                }
+                    )
             }
-            .animation(ProcessGlass.spring, value: selectedSection == .coach)
-            .animation(ProcessGlass.spring, value: profileSubrouteActive)
-            .onChange(of: selectedSection) { _, section in
-                if section != .profile {
-                    profileSubrouteActive = false
-                }
-                expandIfNeeded()
+        }
+        .animation(ProcessGlass.spring, value: selectedSection == .coach)
+        .animation(ProcessGlass.spring, value: profileSubrouteActive)
+        .animation(ProcessGlass.spring, value: showsTabChrome)
+        .onChange(of: selectedSection) { _, section in
+            if section != .profile {
+                profileSubrouteActive = false
             }
+            expandIfNeeded()
+        }
     }
 
-    private var chrome: some View {
+    /// Bandeau flottant — fond intercepte les taps (évite de toucher le scroll derrière).
+    private var tabBarChrome: some View {
+        HStack(alignment: .center, spacing: ProcessIGTabMetrics.clusterSpacing) {
+            mainTabCluster
+
+            if let onMealScan {
+                ProcessIGMealScanButton(action: onMealScan)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .background {
+            Color.clear
+                .contentShape(Rectangle())
+        }
+        .scaleEffect(scale, anchor: .bottom)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var mainTabCluster: some View {
         ProcessIGStyleTabBar(selection: $selectedSection) {
             expandIfNeeded()
         }
+        .frame(height: ProcessIGTabMetrics.tabBarHeight)
+        .frame(maxWidth: .infinity)
         .padding(ProcessIGTabMetrics.chromePadding)
-        .modifier(ProcessIGTabBarGlassChrome())
-        .scaleEffect(scale, anchor: .bottom)
-        .padding(.horizontal, ProcessIGTabMetrics.horizontalInset)
-        .padding(.bottom, ProcessIGTabMetrics.tabBarBottomInset)
-        .accessibilityElement(children: .contain)
+        .frame(height: ProcessIGTabMetrics.chromeOuterSize)
+        .contentShape(Capsule(style: .continuous))
+        .modifier(ProcessIGTabBarGlassChrome(style: .capsule))
     }
 
     private func expandIfNeeded() {
@@ -297,12 +326,63 @@ struct ProcessIGTabShell<Content: View>: View {
     }
 }
 
+// MARK: - Bouton scan repas (+)
+
+/// Zone tactile pleine — le glass seul laissait passer les taps vers le scroll derrière.
+private struct ProcessIGMealScanButton: View {
+    let action: () -> Void
+
+    private var hitSize: CGFloat { ProcessIGTabMetrics.chromeOuterSize + 4 }
+
+    var body: some View {
+        Button {
+            HapticManager.shared.impact(.medium)
+            action()
+        } label: {
+            Color.clear
+                .frame(width: hitSize, height: hitSize)
+                .overlay {
+                    Image(systemName: "plus")
+                        .font(.system(size: ProcessIGTabMetrics.iconSize, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                        .frame(
+                            width: ProcessIGTabMetrics.tabBarHeight,
+                            height: ProcessIGTabMetrics.tabBarHeight
+                        )
+                }
+        }
+        .buttonStyle(.plain)
+        .frame(width: hitSize, height: hitSize)
+        .contentShape(Circle())
+        .modifier(ProcessIGTabBarGlassChrome(style: .circle))
+        .clipShape(Circle())
+        .accessibilityLabel("Scanner un repas")
+        .accessibilityHint("Ouvre la caméra ou la pellicule pour analyser ton repas")
+    }
+}
+
 private struct ProcessIGTabBarGlassChrome: ViewModifier {
+    enum Style {
+        case capsule
+        case circle
+    }
+
+    var style: Style = .capsule
+
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(ProcessGlass.regular, in: Capsule())
-        } else {
-            content.processGlassEffect(in: Capsule(style: .continuous), interactive: true)
+        switch style {
+        case .capsule:
+            if #available(iOS 26.0, *) {
+                content.glassEffect(ProcessGlass.regular, in: Capsule())
+            } else {
+                content.processGlassEffect(in: Capsule(style: .continuous), interactive: true)
+            }
+        case .circle:
+            if #available(iOS 26.0, *) {
+                content.glassEffect(ProcessGlass.regular, in: Circle())
+            } else {
+                content.processGlassEffect(in: Circle(), interactive: true)
+            }
         }
     }
 }

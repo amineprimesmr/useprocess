@@ -33,6 +33,7 @@ struct SportOnboardingView: View {
     @State var flowTotalSteps: Int = 1
     @State var flowGlowProgressCount: Int = 1
     @State private var isOnboardingRestoreComplete = false
+    @State private var isProgramCreationBackSigningIn = false
 
     @State var animatedContinueBottomOffset: CGFloat = 50
 
@@ -151,6 +152,10 @@ struct SportOnboardingView: View {
                 refreshOnboardingFlowProgress()
                 updateContinueButtonLayout(animated: false)
                 isOnboardingRestoreComplete = true
+
+                let step = OnboardingStep(rawValue: viewModel.currentStep)
+                ProcessAnalytics.trackOnboardingStarted(step: step)
+                ProcessAnalytics.trackOnboardingStep(step: step)
             }
         }
         .onChange(of: profileService.currentProfile) { _, newValue in
@@ -164,9 +169,10 @@ struct SportOnboardingView: View {
                 refreshOnboardingFlowProgress()
             }
         }
-        .onChange(of: viewModel.currentStep) { _, _ in
+        .onChange(of: viewModel.currentStep) { _, newStep in
             viewModel.saveProgress()
             updateContinueButtonLayout(animated: true)
+            ProcessAnalytics.trackOnboardingStep(step: OnboardingStep(rawValue: newStep))
 
             Task { @MainActor in
                 refreshOnboardingFlowProgress()
@@ -213,6 +219,25 @@ struct SportOnboardingView: View {
             }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .fullScreenCover(item: $viewModel.presentedFaceScanResult) { result in
+            OnboardingFaceScanSessionView(
+                isSigningIn: isProgramCreationBackSigningIn,
+                initialResult: result,
+                onCancel: {
+                    viewModel.presentedFaceScanResult = nil
+                },
+                onResultReady: { _ in },
+                onContinueAfterResults: {
+                    Task {
+                        isProgramCreationBackSigningIn = true
+                        await completeProgramCreationBackFaceScan()
+                        isProgramCreationBackSigningIn = false
+                    }
+                }
+            )
+            .environmentObject(profileService)
+            .interactiveDismissDisabled(true)
         }
     }
 

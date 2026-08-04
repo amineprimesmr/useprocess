@@ -178,6 +178,11 @@ final class OnboardingProfileChatViewModel {
 
     private func resumeFromSavedProgress() async {
         guard let viewModel = onboardingViewModel else { return }
+
+        if viewModel.shouldReopenFaceScanResultsAfterBack || viewModel.presentedFaceScanResult != nil {
+            return
+        }
+
         let completed = viewModel.completedProfileChatQuestionIDs
         let allQuestionIDs = Set(questions.map(\.id))
 
@@ -951,7 +956,12 @@ final class OnboardingProfileChatViewModel {
 
     /// Scan déjà capturé + pas encore connecté → rouvrir la page résultats (seul endroit du Sign in Apple).
     private func restoredFaceScanResultForAuthGate() -> FaceScanResult? {
-        guard AppConfiguration.firebaseConfigured, AuthUser.current == nil else { return nil }
+        guard AuthUser.current == nil else { return nil }
+        return restoredFaceScanResultIfAvailable()
+    }
+
+    /// Premier scan déjà fait — réafficher la page d'analyse (ex. retour depuis création programme).
+    func restoredFaceScanResultIfAvailable() -> FaceScanResult? {
         guard onboardingViewModel?.isFaceAnalysisCompleted == true else { return nil }
 
         if let latest = FaceScanHistoryStore.shared.latestResult {
@@ -974,6 +984,25 @@ final class OnboardingProfileChatViewModel {
         let result = pendingDedicatedResultsReopen
         pendingDedicatedResultsReopen = nil
         return result
+    }
+
+    /// Réinitialise l'état terminal du chat avant de rouvrir la page résultats du scan.
+    func prepareForFaceScanResultsReopen() {
+        didFinish = false
+        shouldFinish = false
+        shouldAutoFinishAfterResume = false
+        programCreationPhase = .idle
+        programCreationProgress = 0
+        analysisPhase = .idle
+        analysisProgressPanelVisible = false
+        typewriterTask?.cancel()
+        analysisTask?.cancel()
+        programCreationTask?.cancel()
+        inlineFaceScanTask?.cancel()
+        stopAnalysisElapsedTimer()
+        stopInlineFaceScanElapsedTimer()
+        isMessageAnimating = false
+        isSubmittingAnswer = false
     }
 
     private func startAnswersAnalysisAnimation() {

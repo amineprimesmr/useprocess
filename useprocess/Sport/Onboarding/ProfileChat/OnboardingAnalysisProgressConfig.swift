@@ -196,7 +196,7 @@ enum OnboardingAnalysisProgressConfig {
         ),
         .init(
             kind: .yesNo,
-            question: "As-tu déjà téléchargé une application de tracking personnalisé ?"
+            question: "As-tu déjà essayé de dégonfler ton visage ?"
         ),
         nil
     ]

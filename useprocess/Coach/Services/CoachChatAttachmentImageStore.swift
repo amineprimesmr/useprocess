@@ -50,6 +50,17 @@ enum CoachChatAttachmentImageStore {
         return images
     }
 
+    static func deleteAllStoredMedia() {
+        let folder = directoryURL
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: nil
+        ) else { return }
+        for fileURL in contents {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+    }
+
     private static func protectLocalURL(_ url: URL, isDirectory: Bool) {
         var protectedURL = url
         var values = URLResourceValues()

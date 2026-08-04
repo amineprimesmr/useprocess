@@ -130,7 +130,7 @@ extension SportOnboardingView {
             OnboardingProgramCreationStepView(
                 viewModel: viewModel,
                 onComplete: nextStep,
-                onBack: previousStep
+                onBack: handleBackFromProgramCreation
             )
         case .payment:
             PaywallView(

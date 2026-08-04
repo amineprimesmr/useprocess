@@ -15,8 +15,10 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     var isSigningIn: Bool
     var onContinue: () -> Void
 
+    /// Premier scan onboarding : Apple tant qu’aucune session Firebase n’existe.
+    /// (Ne pas lier l’affichage à `firebaseConfigured` — sinon le CTA retombe sur « Continuer » sans logo Apple.)
     private var needsAppleSignIn: Bool {
-        AppConfiguration.firebaseConfigured && AuthUser.current == nil
+        AuthUser.current == nil
     }
 
     private var appleButtonBackground: Color {

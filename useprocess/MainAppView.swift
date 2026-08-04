@@ -11,7 +11,7 @@ private struct RequiredEveningCheckInTarget: Identifiable, Equatable {
     }
 }
 
-/// Shell principal — tab bar (Accueil · Process IA · Streak · Réglages).
+/// Shell principal — tab bar (Accueil · Streak · Réglages).
 struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var tabBeforeCoach: ProcessMainSection = .plan
@@ -21,6 +21,7 @@ struct MainAppView: View {
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var coachTracker = CoachPresentationTracker.shared
     @Bindable private var session = AppSession.shared
+    @State private var showMealPhotoScan = false
     @Bindable private var screenFlash = FaceScanScreenFlash.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.appTheme) private var theme
@@ -64,10 +65,15 @@ struct MainAppView: View {
             _ = UserSessionCoordinator.shared
             syncCoachPresentationState()
             evaluateRequiredEveningCheckIn()
+            redirectFromDisabledCoachTabIfNeeded()
         }
         .onChange(of: selectedSection) { oldValue, newValue in
-            if newValue == .coach, oldValue != .coach {
+            if ProcessMainSection.isCoachTabEnabled, newValue == .coach, oldValue != .coach {
                 tabBeforeCoach = oldValue
+            }
+            if !ProcessMainSection.isCoachTabEnabled, newValue == .coach {
+                selectedSection = .plan
+                return
             }
             handleSectionChange(to: newValue)
         }
@@ -83,7 +89,10 @@ struct MainAppView: View {
             evaluateRequiredEveningCheckIn()
         }
         .onChange(of: planBridge.shouldOpenCoach) { _, should in
-            guard should else { return }
+            guard should, ProcessMainSection.isCoachTabEnabled else {
+                planBridge.shouldOpenCoach = false
+                return
+            }
             planBridge.shouldOpenCoach = false
             queueCoachPresentationFromBridge()
         }
@@ -98,6 +107,11 @@ struct MainAppView: View {
             }
             planBridge.shouldOpenPlan = false
         }
+        .modifier(MealPhotoScanCoverModifier(
+            isPresented: $showMealPhotoScan,
+            selectedSection: $selectedSection,
+            planBridge: planBridge
+        ))
         .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
             guard should else { return }
             planBridge.shouldOpenEveningCheckIn = false
@@ -110,22 +124,35 @@ struct MainAppView: View {
 
     // MARK: - Tab shell
 
+    @ViewBuilder
     private var igTabShell: some View {
-        ProcessIGTabShell(selectedSection: $selectedSection) {
-            Group {
-                switch selectedSection {
-                case .plan:
-                    planTabRoot
-                case .coach:
-                    coachTabRoot
-                case .statistics:
-                    statisticsTabRoot
-                case .profile:
-                    profileTabRoot
-                }
-            }
-            .background(Color.clear)
+        ProcessIGTabShell(
+            selectedSection: $selectedSection,
+            onMealScan: openMealPhotoScan
+        ) {
+            tabContent
         }
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        Group {
+            switch selectedSection {
+            case .plan:
+                planTabRoot
+            case .coach:
+                if ProcessMainSection.isCoachTabEnabled {
+                    coachTabRoot
+                } else {
+                    planTabRoot
+                }
+            case .statistics:
+                statisticsTabRoot
+            case .profile:
+                profileTabRoot
+            }
+        }
+        .background(Color.clear)
     }
 
     // MARK: - Tab roots
@@ -213,6 +240,10 @@ struct MainAppView: View {
     }
 
     private func openCoachTab() {
+        guard ProcessMainSection.isCoachTabEnabled else {
+            planBridge.shouldOpenCoach = false
+            return
+        }
         if coachTracker.isMealDetailPresented {
             planBridge.shouldOpenCoach = true
             return
@@ -287,10 +318,20 @@ struct MainAppView: View {
         return target
     }
 
+    private func openMealPhotoScan() {
+        resignFirstResponder()
+        showMealPhotoScan = true
+    }
+
     private func openWelcomePlanFromCoach() {
         withAnimation(ProcessGlass.spring) {
             selectedSection = .plan
         }
+    }
+
+    private func redirectFromDisabledCoachTabIfNeeded() {
+        guard !ProcessMainSection.isCoachTabEnabled, selectedSection == .coach else { return }
+        selectedSection = .plan
     }
 
     private func openProfile() {
@@ -306,5 +347,39 @@ struct MainAppView: View {
             from: nil,
             for: nil
         )
+    }
+}
+
+// MARK: - Scan repas (fullScreenCover extrait pour le type-checker)
+
+private struct MealPhotoScanCoverModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @Binding var selectedSection: ProcessMainSection
+    var planBridge: CoachPlanNavigationBridge
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            if isPresented {
+                MealPhotoScanFlowView(
+                    onDismiss: { isPresented = false },
+                    onValidated: { _, _ in
+                        selectedSection = .plan
+                        planBridge.shouldOpenPlan = true
+                    }
+                )
+                .environmentObject(UnifiedProfileService.shared)
+                .transition(.opacity)
+                .zIndex(200)
+                .onDisappear {
+                    // Filet de sécurité — le tab bar ne doit jamais rester masqué.
+                    DispatchQueue.main.async {
+                        if isPresented {
+                            isPresented = false
+                        }
+                    }
+                }
+            }
+        }
+        .animation(MealPhotoScanCameraPresentation.spring, value: isPresented)
     }
 }

@@ -25,9 +25,10 @@ struct ProcessSettingsFullScreenView: View {
                     .reportsProfileSubrouteActive(true)
                     .environment(\.profileAccountDeletionHandler) {
                         Task { @MainActor in
+                            session.beginAccountDeletion()
                             dismiss()
-                            try? await Task.sleep(for: .milliseconds(450))
-                            await performAccountDeletion()
+                            try? await Task.sleep(for: .milliseconds(280))
+                            await session.performAccountDeletionFromUI()
                         }
                     }
             }
@@ -54,19 +55,6 @@ struct ProcessSettingsFullScreenView: View {
             }
         } message: {
             Text("Tu pourras te reconnecter à tout moment.")
-        }
-    }
-
-    private func performAccountDeletion() async {
-        session.accountDeletionErrorMessage = nil
-
-        do {
-            try await session.deleteAccount()
-        } catch let error as AccountDeletionError {
-            if case .cancelled = error { return }
-            session.accountDeletionErrorMessage = error.localizedDescription
-        } catch {
-            session.accountDeletionErrorMessage = error.localizedDescription
         }
     }
 }
@@ -101,7 +89,7 @@ struct ProcessProfileSettingsTabView: View {
                     .reportsProfileSubrouteActive(true)
                     .environment(\.profileAccountDeletionHandler) {
                         Task { @MainActor in
-                            await performAccountDeletion()
+                            await session.performAccountDeletionFromUI()
                         }
                     }
             }
@@ -125,19 +113,6 @@ struct ProcessProfileSettingsTabView: View {
             }
         } message: {
             Text("Tu pourras te reconnecter à tout moment.")
-        }
-    }
-
-    private func performAccountDeletion() async {
-        session.accountDeletionErrorMessage = nil
-
-        do {
-            try await session.deleteAccount()
-        } catch let error as AccountDeletionError {
-            if case .cancelled = error { return }
-            session.accountDeletionErrorMessage = error.localizedDescription
-        } catch {
-            session.accountDeletionErrorMessage = error.localizedDescription
         }
     }
 }

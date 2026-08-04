@@ -697,6 +697,59 @@ class OnboardingViewModel: ObservableObject {
     /// Handler retour discussion — `true` si le back a été consommé dans le chat.
     var profileChatBackHandler: (() -> Bool)?
 
+    /// Après un retour manuel vers le chat : ne pas enchaîner automatiquement vers la création du programme.
+    var suppressProfileChatAutoFinish = false
+
+    /// Retour depuis « Création du programme » : rouvrir la page résultats du premier scan.
+    var shouldReopenFaceScanResultsAfterBack = false
+
+    /// Résultats scan en plein écran — retour depuis création programme (sans repasser par le chat).
+    @Published var presentedFaceScanResult: FaceScanResult?
+
+    /// Données du premier scan disponibles pour réafficher l'analyse.
+    func restoredFaceScanResultForNavigation() -> FaceScanResult? {
+        if let latest = FaceScanHistoryStore.shared.latestResult {
+            return latest
+        }
+
+        if let markers = onboardingFaceMarkers ?? OnboardingFaceMarkersStore.load() {
+            return FaceScanResult(
+                id: "onboarding-restored-scan",
+                userId: UserScopedStorage.currentUserId() ?? "local-user",
+                markers: markers,
+                source: .onboarding
+            )
+        }
+
+        return nil
+    }
+
+    /// Réinitialise les validations bloquantes quand l'utilisateur revient en arrière.
+    func prepareForBackNavigation(to targetStep: OnboardingStep) {
+        if let current = OnboardingStep(rawValue: currentStep),
+           current == .programCreation || current.rawValue > OnboardingStep.programCreation.rawValue,
+           targetStep.rawValue <= OnboardingStep.programCreation.rawValue {
+            isProgramCreationCompleted = false
+        }
+
+        if targetStep == .weightMotivation {
+            isWeightMotivationCompleted = false
+            suppressProfileChatAutoFinish = true
+
+            if let current = OnboardingStep(rawValue: currentStep),
+               current == .programCreation,
+               isFaceAnalysisCompleted {
+                shouldReopenFaceScanResultsAfterBack = true
+                return
+            }
+
+            let orderedIDs = OnboardingProfileChatQuestionBank.questions(for: self).map(\.id)
+            if let lastCompleted = orderedIDs.last(where: { completedProfileChatQuestionIDs.contains($0) }) {
+                rewindProfileChat(from: lastCompleted, orderedQuestionIDs: orderedIDs)
+            }
+        }
+    }
+
     private func hasReachedFaceScanStep(savedStep: Int, visited: [Int]) -> Bool {
         if visited.contains(OnboardingStep.faceAnalysis.rawValue) {
             return true

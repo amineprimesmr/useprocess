@@ -165,7 +165,11 @@ struct OnboardingFaceDeepAnalysisView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            FaceScanWhoopZoneBar(activeZone: metric.zone, style: .immersive)
+            FaceScanWhoopZoneBar(
+                activeZone: metric.zone,
+                higherIsWorse: metric.kind.higherIsWorse,
+                style: .immersive
+            )
                 .frame(width: 92)
 
             Text("\(metric.percent)%")
@@ -228,7 +232,11 @@ struct OnboardingFaceDeepAnalysisView: View {
                 .tracking(0.3)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            FaceScanWhoopZoneBar(activeZone: metric.zone, style: .immersive)
+            FaceScanWhoopZoneBar(
+                activeZone: metric.zone,
+                higherIsWorse: metric.kind.higherIsWorse,
+                style: .immersive
+            )
                 .frame(width: 84)
 
             Text("\(metric.percent)%")

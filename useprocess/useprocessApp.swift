@@ -17,6 +17,7 @@ struct useprocessApp: App {
         iOS26Stability.configureAtLaunch()
         ProcessAudioSession.configureForMixingWithOthers()
         FirebaseBootstrap.configure()
+        ProcessAnalytics.configure()
     }
 
     var body: some Scene {
@@ -25,6 +26,7 @@ struct useprocessApp: App {
                 .task {
                     // Idempotent si déjà fait dans init ; MetricKit / notifs hors chemin critique.
                     FirebaseBootstrap.configure()
+                    ProcessAnalytics.configure()
                     ProcessMetricKitMonitor.shared.start()
 
                     await PermissionsManager.shared.clearAppBadge()

@@ -8,12 +8,52 @@
 import SwiftUI
 
 struct OnboardingEstimationGraphView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let snapshot: OnboardingEstimationGraphSnapshot
     let curveAnimationProgress: Double
 
     private let graphCornerRadius: CGFloat = 20
     private let topInset: CGFloat = 44
     private let bottomInset: CGFloat = 8
+
+    private var fillGradient: LinearGradient {
+        let colors = strokeGradientColors
+        return LinearGradient(
+            stops: [
+                .init(color: colors[0].opacity(0.55), location: 0.0),
+                .init(color: colors[1].opacity(0.42), location: 0.4),
+                .init(color: colors[2].opacity(0.18), location: 0.72),
+                .init(color: Color.clear, location: 1.0)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var strokeGradientColors: [Color] {
+        colorScheme == .dark
+            ? [
+                Color(red: 0.52, green: 0.88, blue: 1.0),
+                Color(red: 0.34, green: 0.72, blue: 1.0),
+                Color(red: 0.20, green: 0.56, blue: 0.98)
+            ]
+            : [
+                Color(red: 0.28, green: 0.66, blue: 1.0),
+                Color(red: 0.14, green: 0.50, blue: 0.96),
+                Color(red: 0.08, green: 0.38, blue: 0.90)
+            ]
+    }
+
+    private var markerBlue: Color {
+        strokeGradientColors[1]
+    }
+
+    private var endpointDotColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.52, green: 0.88, blue: 1.0)
+            : Color(red: 0.08, green: 0.38, blue: 0.90)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,23 +86,19 @@ struct OnboardingEstimationGraphView: View {
                         curveStroke(
                             points: points,
                             lineWidth: 5,
-                            color: OnboardingTheme.graphTooltip,
+                            color: strokeGradientColors[2].opacity(0.35),
                             yOffset: 2,
                             blur: 3
                         )
                         curveStroke(
                             points: points,
                             lineWidth: 4,
-                            gradient: [
-                                Color(red: 0.77, green: 0.64, blue: 0.97),
-                                Color(red: 0.6, green: 0.4, blue: 0.8),
-                                Color(red: 0.42, green: 0.05, blue: 0.51)
-                            ]
+                            gradient: strokeGradientColors
                         )
 
                         if let lastPoint = points.last {
                             Circle()
-                                .fill(OnboardingTheme.primaryText)
+                                .fill(endpointDotColor)
                                 .frame(width: 11, height: 11)
                                 .position(lastPoint)
                                 .opacity(curveAnimationProgress >= 0.98 ? 1 : 0)
@@ -201,7 +237,7 @@ struct OnboardingEstimationGraphView: View {
             )
 
             Circle()
-                .fill(Color(red: 0.6, green: 0.4, blue: 0.8))
+                .fill(markerBlue)
                 .frame(width: 9, height: 9)
                 .position(point)
 
@@ -237,18 +273,7 @@ struct OnboardingEstimationGraphView: View {
             path.addLine(to: CGPoint(x: 0, y: bottomY))
             path.closeSubpath()
         }
-        .fill(
-            LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0.7, green: 0.55, blue: 0.85).opacity(0.65), location: 0.0),
-                    .init(color: Color(red: 0.5, green: 0.3, blue: 0.7).opacity(0.85), location: 0.45),
-                    .init(color: Color(red: 0.4, green: 0.2, blue: 0.6).opacity(0.35), location: 0.75),
-                    .init(color: Color.clear, location: 1.0)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
+        .fill(fillGradient)
         .mask(alignment: .leading) {
             Rectangle()
                 .frame(width: width * curveAnimationProgress)
@@ -295,15 +320,16 @@ struct OnboardingEstimationGraphView: View {
             let previous = adjusted[index - 1]
             let current = adjusted[index]
             let span = max(0.001, current.x - previous.x)
-            let tension: CGFloat = 0.38
+            let tension: CGFloat = 0.42
 
+            let dy = current.y - previous.y
             let control1 = CGPoint(
                 x: previous.x + span * tension,
-                y: previous.y
+                y: previous.y + dy * 0.08
             )
             let control2 = CGPoint(
                 x: current.x - span * tension,
-                y: current.y
+                y: current.y - dy * 0.08
             )
             path.addCurve(to: current, control1: control1, control2: control2)
         }

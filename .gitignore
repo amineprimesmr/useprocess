@@ -3,6 +3,7 @@
 **/BodyScanSecrets.plist
 **/CoachSecrets.plist
 **/RevenueCatSecrets.plist
+**/PostHogSecrets.plist
 .secrets/
 firebase/functions/node_modules/
 .DS_Store

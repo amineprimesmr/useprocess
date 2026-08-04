@@ -41,6 +41,17 @@ enum BodyScanImageStore {
         guard let data = loadData(filename: filename) else { return nil }
         return RGBAImage.decodeThumbnail(data: data, maxPixel: maxPixel)
     }
+
+    static func deleteAllStoredMedia() {
+        let folder = directoryURL
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: nil
+        ) else { return }
+        for fileURL in contents {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+    }
 }
 
 /// Buffer RGBA décodé une seule fois — sampling direct sans UIImage.
