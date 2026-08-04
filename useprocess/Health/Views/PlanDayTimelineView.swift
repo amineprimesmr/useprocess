@@ -68,7 +68,7 @@ struct PlanDayChronologicalTimeline: View {
                     .strokeBorder(theme.onboardingAccent.opacity(0.22), lineWidth: 0.5)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .accessibilityLabel("Tout valider — \(coreCompletedCount) sur \(checklistTasks.count)")
     }
 }
@@ -104,7 +104,7 @@ struct PlanInfoLinkButton: View {
                     .fill(theme.coachUserBubble.opacity(theme.isDark ? 0.22 : 0.4))
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 }
 

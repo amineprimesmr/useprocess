@@ -13,6 +13,8 @@ struct HasSportActivityStepView: View {
 
     var onValidationChanged: ((Bool) -> Void)?
 
+    private let choiceShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+
     var body: some View {
         OnboardingStandardStepLayout("Pratiques-tu une", "activité sportive actuellement ?") {
             VStack(spacing: 20) {
@@ -46,9 +48,9 @@ struct HasSportActivityStepView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .glassStyle()
-                .buttonBorderShape(.roundedRectangle(radius: 16))
+                .processGlassButton(in: choiceShape)
                 .opacity(hasSportActivity == true ? 1.0 : 0.6)
 
                 Button(action: {
@@ -81,9 +83,9 @@ struct HasSportActivityStepView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .glassStyle()
-                .buttonBorderShape(.roundedRectangle(radius: 16))
+                .processGlassButton(in: choiceShape)
                 .opacity(hasSportActivity == false ? 1.0 : 0.6)
             }
             .padding(.horizontal, 40)

@@ -75,8 +75,9 @@ struct MealTimelineTabs: View {
                             Capsule()
                                 .fill(selected == slot ? theme.onboardingAccent.opacity(0.18) : theme.cardBackground.opacity(0.4))
                         }
+                        .contentShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
             }
         }
@@ -192,7 +193,7 @@ struct MealShoppingListSection: View {
                                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(item.isChecked ? .green : theme.secondaryText)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.processPlain)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(item.name)
@@ -252,7 +253,7 @@ struct MealComparisonSheet: View {
                                 .background(theme.onboardingAccent, in: Capsule())
                                 .foregroundStyle(OnboardingTheme.actionButtonText)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.processPlain)
 
                         Button {
                             HapticManager.shared.selection()
@@ -262,7 +263,7 @@ struct MealComparisonSheet: View {
                                 .font(.subheadline.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.processPlain)
                     }
                 }
                 .padding(20)
@@ -419,7 +420,7 @@ struct MealFeedbackSheet: View {
                                     Image(systemName: star <= rating ? "star.fill" : "star")
                                         .foregroundStyle(.orange)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.processPlain)
                             }
                         }
                     }
@@ -443,7 +444,7 @@ struct MealFeedbackSheet: View {
                                     .background(feeling == option ? theme.onboardingAccent.opacity(0.2) : theme.cardBackground.opacity(0.5))
                                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.processPlain)
                             }
                         }
                     }
@@ -472,7 +473,7 @@ struct MealFeedbackSheet: View {
                             .background(theme.onboardingAccent, in: Capsule())
                             .foregroundStyle(OnboardingTheme.actionButtonText)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
                 .padding(20)
             }
@@ -523,7 +524,7 @@ struct MealItemAlternativesBar: View {
                                     .background(theme.onboardingAccent.opacity(0.15))
                                     .clipShape(Capsule())
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.processPlain)
                         }
                     }
                 }

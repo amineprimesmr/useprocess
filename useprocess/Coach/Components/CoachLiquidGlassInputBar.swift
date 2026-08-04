@@ -254,7 +254,7 @@ struct CoachLiquidGlassInputBar: View {
                 .frame(width: actionButtonSize, height: actionButtonSize)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .disabled(isDisabled)
     }
 
@@ -321,7 +321,7 @@ struct CoachLiquidGlassInputBar: View {
                     .background(.ultraThinMaterial, in: Circle())
                     .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .offset(x: 6, y: -6)
         }
         .transition(.scale(scale: 0.88).combined(with: .opacity))

@@ -34,7 +34,7 @@ struct ProfileSettingsAccountDetailView: View {
                             )
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
 
                     NavigationLink(value: ProfileEditDestination.gender) {
                         AccountDetailsGlassRow {
@@ -45,7 +45,7 @@ struct ProfileSettingsAccountDetailView: View {
                             )
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
 
                     NavigationLink(value: ProfileEditDestination.birthDate) {
                         AccountDetailsGlassRow {
@@ -56,7 +56,7 @@ struct ProfileSettingsAccountDetailView: View {
                             )
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
 
                     AccountDetailsGlassRow {
                         ProfileEditListRow(
@@ -168,7 +168,7 @@ struct ProfileSettingsHealthDetailView: View {
                             )
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
 
                     AccountDetailsGlassRow {
                         Button {
@@ -188,7 +188,7 @@ struct ProfileSettingsHealthDetailView: View {
                                 placeholder: "Autoriser l'accès"
                             )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.processPlain)
                     }
 
                     NavigationLink {
@@ -206,7 +206,7 @@ struct ProfileSettingsHealthDetailView: View {
                             )
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
             }
@@ -247,7 +247,7 @@ struct ProfileSettingsAppDetailView: View {
                                         valueIsMuted: session.appearance != mode
                                     )
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.processPlain)
                             }
                         }
                     }
@@ -304,7 +304,7 @@ struct ProfileSettingsLegalDetailView: View {
                             )
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
 
                     AccountDetailsGlassRow {
                         Button { inAppSafariURL = ProcessLegalURLs.supportPage } label: {
@@ -314,7 +314,7 @@ struct ProfileSettingsLegalDetailView: View {
                                 placeholder: "FAQ et assistance"
                             )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.processPlain)
                     }
 
                     AccountDetailsGlassRow {
@@ -325,7 +325,7 @@ struct ProfileSettingsLegalDetailView: View {
                                 placeholder: "E-mail à l'équipe"
                             )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.processPlain)
                     }
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
@@ -377,7 +377,7 @@ struct ProfileSettingsLegalDetailView: View {
             Button { inAppSafariURL = url } label: {
                 ProfileEditListRow(label: title, value: nil, placeholder: "Ouvrir")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         }
     }
 }

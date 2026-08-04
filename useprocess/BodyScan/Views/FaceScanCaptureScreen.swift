@@ -437,7 +437,7 @@ struct FaceScanCaptureScreen: View {
                             .fill(appTheme.isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.06))
                     }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .accessibilityLabel("Fermer le scan")
         }
     }
@@ -513,7 +513,7 @@ struct FaceScanCaptureScreen: View {
                         }
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .accessibilityLabel(accessibilityLabel)
     }
 
@@ -599,7 +599,7 @@ struct FaceScanCaptureScreen: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(appTheme.onboardingAccent)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         }
     }
 
@@ -798,8 +798,7 @@ struct FaceScanCaptureScreen: View {
             .frame(maxWidth: .infinity)
             .frame(height: 50)
         }
-        .glassStyle()
-        .buttonBorderShape(.roundedRectangle(radius: 50))
+        .processGlassButton(in: Capsule())
         .disabled(isImportingMedia)
         .opacity(isImportingMedia ? 0.55 : 1)
     }
@@ -811,8 +810,10 @@ struct FaceScanCaptureScreen: View {
                 Text("Recommencer le scan")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.55) : OnboardingTheme.mutedText)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 12)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         }
     }
 
@@ -871,7 +872,7 @@ struct FaceScanCaptureScreen: View {
                     .frame(height: compactSkipAction ? nil : 50)
                     .padding(.vertical, compactSkipAction ? 6 : 0)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .modifier(SkipScanButtonChromeModifier(compact: compactSkipAction, isFlashEnabled: isFlashEnabled))
         }
     }
@@ -1011,8 +1012,7 @@ private struct SkipScanButtonChromeModifier: ViewModifier {
             content
         } else {
             content
-                .glassStyle()
-                .buttonBorderShape(.roundedRectangle(radius: 50))
+                .processGlassButton(in: Capsule())
         }
     }
 }
@@ -1035,8 +1035,9 @@ struct FaceScanFlashToggle: View {
                     width: OnboardingConstants.backButtonSize,
                     height: OnboardingConstants.backButtonSize
                 )
+                .contentShape(Circle())
         }
-        .glassStyle()
+        .glassCircleStyle()
         .accessibilityLabel(isEnabled ? "Désactiver le flash écran" : "Activer le flash écran")
     }
 

@@ -31,7 +31,7 @@ struct NotificationPermissionStepView: View {
                 Spacer()
                     .frame(height: OnboardingConstants.backOnlyContentTopInset)
 
-                (Text("Tu recevras un message ") + Text("à la fin").foregroundColor(OnboardingTheme.accentHighlight) + Text(" de ton essai"))
+                (Text("Tu recevras un rappel ") + Text("important").foregroundColor(OnboardingTheme.accentHighlight) + Text(" de Process"))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
                     .multilineTextAlignment(.center)
@@ -89,7 +89,8 @@ struct NotificationPermissionStepView: View {
         let granted = await permissionsManager.requestNotificationPermission()
 
         if granted {
-            if let days = SubscriptionConfiguration.freeTrialDays(for: .annual), days > 0 {
+            if SubscriptionService.shared.isRetentionTrialOfferActive,
+               let days = SubscriptionConfiguration.retentionTrialDays(for: .annual), days > 0 {
                 await PaywallTrialNotificationService.shared.scheduleTrialEndingReminder(days: days)
             }
             HapticManager.shared.notification(.success)

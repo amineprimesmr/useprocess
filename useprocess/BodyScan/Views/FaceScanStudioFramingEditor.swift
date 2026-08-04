@@ -137,7 +137,7 @@ struct FaceScanStudioFramingEditor: View {
                 .padding(.vertical, 16)
                 .background(Capsule().fill(Color.white))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 
     private var dragGesture: some Gesture {

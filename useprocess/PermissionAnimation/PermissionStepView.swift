@@ -68,6 +68,7 @@ struct PermissionStepView: View {
                                     OnboardingTheme.filledButtonBackground(for: colorScheme),
                                     in: RoundedRectangle(cornerRadius: 27)
                                 )
+                                .contentShape(RoundedRectangle(cornerRadius: 27, style: .continuous))
                         }
                         .disabled(isRequesting)
 
@@ -80,8 +81,7 @@ struct PermissionStepView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
                         }
-                        .glassStyle()
-                        .buttonBorderShape(.roundedRectangle(radius: 25))
+                        .processGlassButton(in: RoundedRectangle(cornerRadius: 25, style: .continuous))
                         .disabled(isRequesting)
                     }
                 }

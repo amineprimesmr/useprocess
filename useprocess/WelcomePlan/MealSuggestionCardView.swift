@@ -190,7 +190,7 @@ struct MealSuggestionCardView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.onboardingAccent)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
             }
 
@@ -430,7 +430,7 @@ struct MealSuggestionItemRow: View {
             .background(theme.cardBackground.opacity(0.45))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .disabled(!isEditable)
     }
 }
@@ -504,7 +504,7 @@ struct MealItemEditSheet: View {
                                     .background(theme.cardBackground.opacity(0.6))
                                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.processPlain)
                         }
                     }
 
@@ -528,7 +528,7 @@ struct MealItemEditSheet: View {
                             .padding(.vertical, 16)
                             .background(theme.onboardingAccent, in: Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                     .disabled(instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .opacity(instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
                 }

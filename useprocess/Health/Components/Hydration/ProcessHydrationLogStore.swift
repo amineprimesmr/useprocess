@@ -105,6 +105,10 @@ final class ProcessHydrationLogStore {
         log.entries.insert(ProcessHydrationEntry(milliliters: amount), at: 0)
         logsByDay[key] = log
         persist()
+        ProcessAnalytics.trackHydrationLogged(
+            milliliters: amount,
+            totalMilliliters: log.milliliters
+        )
 
         if let dayId {
             syncJournalTask(dayId: dayId, totalMilliliters: log.milliliters, targetMilliliters: targetMilliliters)

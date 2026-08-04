@@ -89,8 +89,9 @@ struct CoachConversationsSidebar: View {
                             .foregroundStyle(theme.secondaryText)
                             .frame(width: 20, height: 20)
                             .background(Circle().fill(theme.secondaryText.opacity(0.18)))
+                            .contentShape(Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
             }
             .padding(.horizontal, 12)
@@ -106,6 +107,7 @@ struct CoachConversationsSidebar: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                     .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
             }
             .processGlassButton(in: chromeShape)
             .accessibilityLabel("Nouvelle conversation")
@@ -160,6 +162,8 @@ struct CoachConversationsSidebar: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
             .background {
                 if isHighlighted {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -167,7 +171,7 @@ struct CoachConversationsSidebar: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 
     private func handleDestinationTap(_ destination: CoachSidebarDestination) {
@@ -254,6 +258,8 @@ struct CoachConversationsSidebar: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
             .background {
                 if isActive {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -261,7 +267,7 @@ struct CoachConversationsSidebar: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .contextMenu {
             Button(role: .destructive) {
                 onDelete(conversation.id)
@@ -296,8 +302,10 @@ struct CoachConversationsSidebar: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 }
 

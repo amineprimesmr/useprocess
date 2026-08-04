@@ -14,11 +14,10 @@
   max-width: 100vw;
   box-sizing: border-box;
 
-  border-radius: 40px 40px 0 0;
+  border-radius: 0;
   background:
-    radial-gradient(120% 95% at 18% 10%, rgba(33, 34, 42, 0.55) 0%, rgba(33, 34, 42, 0) 56%),
-    radial-gradient(95% 80% at 86% 68%, rgba(33, 34, 42, 0.42) 0%, rgba(33, 34, 42, 0) 62%),
-    linear-gradient(128deg, #030808 0%, #0b1014 38%, #171d24 64%, #0a0a0a 88%, #000 100%);
+    radial-gradient(120% 95% at 18% 10%, rgba(10, 152, 255, 0.08) 0%, transparent 56%),
+    linear-gradient(180deg, #09090b 0%, #0a0a0a 100%);
 
   font-family:
     "Inter",
@@ -79,7 +78,7 @@
   font-weight: 560;
   letter-spacing: -0.03em;
   line-height: 1.06;
-  background: linear-gradient(142deg, #ffffff 0%, #ecfdf5 24%, #86efac 48%, #e0f2fe 72%, #f8fafc 100%);
+  background: linear-gradient(142deg, #f8fafc 0%, #cbd5e1 40%, #64748b 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

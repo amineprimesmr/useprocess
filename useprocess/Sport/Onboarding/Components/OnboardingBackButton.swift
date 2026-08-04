@@ -22,8 +22,9 @@ struct OnboardingBackButton: View {
                     width: OnboardingConstants.backButtonSize,
                     height: OnboardingConstants.backButtonSize
                 )
+                .contentShape(Circle())
         }
-        .glassStyle()
+        .glassCircleStyle()
 
     }
 }

@@ -108,7 +108,7 @@ struct PlanProgramCalendarView: View {
                             .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.95 : 0.82))
                     )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .accessibilityLabel("Fermer")
 
             Spacer(minLength: 8)
@@ -142,7 +142,7 @@ struct PlanProgramCalendarView: View {
                                 .fill(theme.onboardingAccent.opacity(0.14))
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             } else {
                 Color.clear.frame(width: 36, height: 36)
             }
@@ -257,7 +257,7 @@ struct PlanProgramCalendarView: View {
                     .foregroundStyle(canGoToPreviousMonth(plan: plan) ? theme.primaryText : theme.secondaryText.opacity(0.35))
                     .frame(width: 40, height: 40)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .disabled(!canGoToPreviousMonth(plan: plan))
 
             Spacer()
@@ -277,7 +277,7 @@ struct PlanProgramCalendarView: View {
                     .foregroundStyle(canGoToNextMonth(plan: plan) ? theme.primaryText : theme.secondaryText.opacity(0.35))
                     .frame(width: 40, height: 40)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .disabled(!canGoToNextMonth(plan: plan))
         }
     }

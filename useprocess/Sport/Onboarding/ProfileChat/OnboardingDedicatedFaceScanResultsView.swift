@@ -8,26 +8,10 @@ import SwiftUI
 
 /// Page dédiée du premier scan : anneau + indicateurs ouverts/verrouillés, sans « Ce qui change ».
 struct OnboardingDedicatedFaceScanResultsView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.requestReview) private var requestReview
 
     let result: FaceScanResult
-    var isSigningIn: Bool
     var onContinue: () -> Void
-
-    /// Premier scan onboarding : Apple tant qu’aucune session Firebase n’existe.
-    /// (Ne pas lier l’affichage à `firebaseConfigured` — sinon le CTA retombe sur « Continuer » sans logo Apple.)
-    private var needsAppleSignIn: Bool {
-        AuthUser.current == nil
-    }
-
-    private var appleButtonBackground: Color {
-        colorScheme == .dark ? .white : .black
-    }
-
-    private var appleButtonForeground: Color {
-        colorScheme == .dark ? .black : .white
-    }
 
     private var fullDateTitle: String {
         let formatter = DateFormatter()
@@ -91,62 +75,15 @@ struct OnboardingDedicatedFaceScanResultsView: View {
 
     private var bottomCTA: some View {
         VStack(spacing: 10) {
-            if !needsAppleSignIn {
-                Text("Ton analyse est prête. Continue pour créer ton plan.")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(FaceScanWhoopPalette.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-            }
+            Text("Ton analyse est prête. Continue pour créer ton plan.")
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(FaceScanWhoopPalette.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
 
-            Group {
-                if isSigningIn {
-                    HStack {
-                        Spacer(minLength: 0)
-                        ProgressView()
-                            .tint(needsAppleSignIn ? appleButtonForeground : .black)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .background(
-                        Capsule().fill(
-                            needsAppleSignIn ? appleButtonBackground : FaceIDScanColors.continueFill
-                        )
-                    )
-                } else if needsAppleSignIn {
-                    Button {
-                        HapticManager.shared.impact(.medium)
-                        onContinue()
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "apple.logo")
-                                .font(.system(size: 20, weight: .semibold))
-                            Text("Continuer avec Apple")
-                                .font(.system(size: 17, weight: .bold))
-                        }
-                        .foregroundStyle(appleButtonForeground)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(Capsule().fill(appleButtonBackground))
-                        .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    FaceIDContinueButton {
-                        HapticManager.shared.impact(.medium)
-                        onContinue()
-                    }
-                }
-            }
-            .opacity(isSigningIn ? 0.72 : 1)
-
-            if needsAppleSignIn {
-                Text("Connecte-toi pour sauvegarder ton analyse")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(FaceScanWhoopPalette.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
+            FaceIDContinueButton {
+                HapticManager.shared.impact(.medium)
+                onContinue()
             }
         }
         .padding(.horizontal, 24)

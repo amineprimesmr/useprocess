@@ -144,7 +144,7 @@ struct CoachIntelligenceSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
         }
         .padding(.bottom, 4)
@@ -229,7 +229,7 @@ struct CoachIntelligenceSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
             .background(cardBackground)
         }
@@ -289,7 +289,7 @@ struct CoachIntelligenceSettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .background(cardBackground)
         }
     }

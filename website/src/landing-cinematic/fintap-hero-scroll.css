@@ -2,8 +2,8 @@
 
 .fintap-hero-iphone {
   --fintap-hero-bg: transparent;
-  --fintap-hero-ink: #0a0a0a;
-  --fintap-hero-muted: #555;
+  --fintap-hero-ink: #f8fafc;
+  --fintap-hero-muted: #94a3b8;
   --fintap-hero-bottom-bleed: clamp(2.75rem, 8vw, 6.5rem);
   position: relative;
   padding: clamp(6.5rem, 14vw, 10rem) 0 calc(clamp(2rem, 5vw, 3.5rem) + var(--fintap-hero-bottom-bleed));

@@ -36,7 +36,7 @@ struct CoachConnectorsSheet: View {
                             .padding(.horizontal, 20)
                             .padding(.vertical, 14)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.processPlain)
                     }
                 }
                 .padding(.vertical, 8)

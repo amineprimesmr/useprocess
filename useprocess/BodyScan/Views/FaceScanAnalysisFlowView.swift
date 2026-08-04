@@ -100,7 +100,8 @@ struct FaceScanAnalysisFlowView: View {
                                 progress: analysisProgress,
                                 elapsedSeconds: analysisElapsedSeconds,
                                 isVisible: true,
-                                steps: steps
+                                steps: steps,
+                                stepIconAccentColor: FaceScanWhoopPalette.accentBlue
                             )
                             .padding(.horizontal, 20)
                             .padding(.bottom, 36)

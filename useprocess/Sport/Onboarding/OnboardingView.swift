@@ -33,7 +33,6 @@ struct SportOnboardingView: View {
     @State var flowTotalSteps: Int = 1
     @State var flowGlowProgressCount: Int = 1
     @State private var isOnboardingRestoreComplete = false
-    @State private var isProgramCreationBackSigningIn = false
 
     @State var animatedContinueBottomOffset: CGFloat = 50
 
@@ -149,6 +148,8 @@ struct SportOnboardingView: View {
                     viewModel: viewModel,
                     navigationEngine: navigationEngine
                 )
+                await SubscriptionService.shared.checkSubscriptionStatus()
+                reconcilePostPaymentStepIfNeeded()
                 refreshOnboardingFlowProgress()
                 updateContinueButtonLayout(animated: false)
                 isOnboardingRestoreComplete = true
@@ -222,18 +223,13 @@ struct SportOnboardingView: View {
         }
         .fullScreenCover(item: $viewModel.presentedFaceScanResult) { result in
             OnboardingFaceScanSessionView(
-                isSigningIn: isProgramCreationBackSigningIn,
                 initialResult: result,
                 onCancel: {
                     viewModel.presentedFaceScanResult = nil
                 },
                 onResultReady: { _ in },
                 onContinueAfterResults: {
-                    Task {
-                        isProgramCreationBackSigningIn = true
-                        await completeProgramCreationBackFaceScan()
-                        isProgramCreationBackSigningIn = false
-                    }
+                    viewModel.presentedFaceScanResult = nil
                 }
             )
             .environmentObject(profileService)
@@ -270,9 +266,12 @@ struct SportOnboardingView: View {
                     Text("Passer — je me concentre sur mon visage")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(OnboardingTheme.mutedText.opacity(0.75))
-                        .padding(.top, 8)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity)
+                        .processTappableButtonLabel(maxWidth: true)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
 
             Spacer()

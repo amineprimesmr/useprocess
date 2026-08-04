@@ -55,12 +55,12 @@ enum OnboardingAnalysisProgressConfig {
     static let faceScanAnalysisSteps: [ProgressStep] = [
         .init(
             id: "mesh",
-            phaseLabel: "Mesh facial",
-            query: "Reconstruction 3D du visage…",
+            phaseLabel: "Scan vidéo",
+            query: "Analyse de ta capture vidéo…",
             resultCount: nil,
             sources: [
                 .init(id: "faceScan", systemImage: "faceid", label: "Scan visage"),
-                .init(id: "arkit", systemImage: "cube.transparent", label: "Mesh ARKit")
+                .init(id: "video", systemImage: "video.fill", label: "Vidéo")
             ]
         ),
         .init(
@@ -69,7 +69,7 @@ enum OnboardingAnalysisProgressConfig {
             query: "Rétention, cortisol et signaux faciaux…",
             resultCount: 2,
             sources: [
-                .init(id: "process", imageName: "caochiaicon", label: "Process"),
+                .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
                 .init(id: "retention", systemImage: "drop.fill", label: "Rétention"),
                 .init(id: "cortisol", systemImage: "waveform.path.ecg", label: "Cortisol")
             ]
@@ -80,7 +80,7 @@ enum OnboardingAnalysisProgressConfig {
             query: "Yeux, jawline, pommettes, maxillaire, harmonie…",
             resultCount: 15,
             sources: [
-                .init(id: "process", imageName: "caochiaicon", label: "Process"),
+                .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
                 .init(id: "symmetry", systemImage: "arrow.left.and.right", label: "Symétrie"),
                 .init(id: "bone", systemImage: "cube.fill", label: "Osseux")
             ]
@@ -99,12 +99,11 @@ enum OnboardingAnalysisProgressConfig {
         ),
         .init(
             id: "claude",
-            phaseLabel: "Synthèse",
-            query: "Défauts, atouts et résumé personnalisé…",
+            phaseLabel: "Synthèse Claude",
+            query: "Claude rédige ton résumé personnalisé…",
             resultCount: nil,
             sources: [
-                .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
-                .init(id: "coach", imageName: "caochiaicon", label: "Coach Process")
+                .init(id: "claude", imageName: "claudeLogo", label: "Claude")
             ]
         )
     ]

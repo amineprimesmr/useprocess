@@ -158,7 +158,7 @@ struct PlanMealsOverviewSheet: View {
                             .fill(theme.onboardingAccent.opacity(theme.isDark ? 0.12 : 0.08))
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
         }
     }
@@ -362,7 +362,7 @@ private struct PlanMealsOverviewMealRow: View {
                     .fill(theme.cardBackground.opacity(theme.isDark ? 0.35 : 0.55))
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .processZoomSource(id: .mealDetail(entry.slot), namespace: mealZoomNamespace)
     }
 }

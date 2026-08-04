@@ -11,6 +11,8 @@ struct WeightFailureReasonsStepView: View {
     @Binding var selectedReasons: Set<NutritionObstacle>
     var onValidationChanged: ((Bool) -> Void)?
 
+    private let choiceShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -63,9 +65,9 @@ struct WeightFailureReasonsStepView: View {
                                     }
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .glassStyle()
-                                .buttonBorderShape(.roundedRectangle(radius: 16))
+                                .processGlassButton(in: choiceShape)
                                 .opacity(selectedReasons.contains(obstacle) ? 1.0 : 0.6)
                             }
                         }

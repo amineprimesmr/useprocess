@@ -1,8 +1,10 @@
-import { FinTapVarCardsSection } from "./FinTapVarCardsSection.jsx";
 import { ScrollReveal } from "./ScrollReveal.jsx";
+import { PROCESS_FEATURES } from "./process-features-data.js";
+import { ProcessFeatureIcon } from "./ProcessFeatureIcon.jsx";
 import "./fintap-features-grid.css";
+import "./process-feature-cards.css";
 
-/** Section fonctionnalités — carousel var1–3 pleine largeur (mobile et desktop). */
+/** Section fonctionnalités Process — cartes sombres texte + icônes. */
 export function FinTapFeaturesGridSection() {
   return (
     <section
@@ -25,7 +27,19 @@ export function FinTapFeaturesGridSection() {
         </header>
       </div>
 
-      <FinTapVarCardsSection embedded />
+      <ScrollReveal delay={0.06}>
+        <ul className="process-feature-cards" role="list">
+          {PROCESS_FEATURES.map((feature) => (
+            <li key={feature.id} className="process-feature-card" role="listitem">
+              <span className="process-feature-card__icon" aria-hidden="true">
+                <ProcessFeatureIcon name={feature.icon} />
+              </span>
+              <h3 className="process-feature-card__title">{feature.title}</h3>
+              <p className="process-feature-card__desc">{feature.desc}</p>
+            </li>
+          ))}
+        </ul>
+      </ScrollReveal>
 
       <div className="fintap-section-inner fintap-features-grid__inner">
         <div className="fintap-features-grid__cta-wrap">

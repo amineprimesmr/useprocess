@@ -74,6 +74,26 @@ enum FaceScanService {
         FaceScanHistoryStore.shared.push(result)
         ProcessDebloatTrajectoryStore.shared.recordScan(result)
         ProcessAnalytics.trackFaceScanCompleted(source: scanSource.rawValue)
+        var scoreProps: [String: Any] = [
+            "source": scanSource.rawValue,
+            "face_puffiness": resolvedMarkers.puffinessScore,
+            "face_under_eye": resolvedMarkers.underEyeFatigueScore,
+            "face_jaw_tension": resolvedMarkers.jawTensionScore,
+            "face_symmetry": resolvedMarkers.facialSymmetryScore,
+            "face_skin_clarity": resolvedMarkers.skinClarityScore,
+            "face_day_score": absoluteDayScore
+        ]
+        if let definition = resolvedMarkers.faceDefinitionScore {
+            scoreProps["face_definition"] = definition
+        }
+        ProcessAnalytics.capture(
+            "face_scan_scores",
+            properties: scoreProps,
+            userProperties: [
+                "last_face_puffiness": resolvedMarkers.puffinessScore,
+                "last_face_day_score": absoluteDayScore
+            ]
+        )
 
         enqueuePlanRecalibration(for: result, markers: resolvedMarkers)
         enqueuePostScanEnhancements(

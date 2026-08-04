@@ -1,10 +1,22 @@
 import SwiftUI
 
+struct ProcessPlainButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+    }
+}
+
+extension ButtonStyle where Self == ProcessPlainButtonStyle {
+    static var processPlain: ProcessPlainButtonStyle { ProcessPlainButtonStyle() }
+}
+
 private struct GlassFallbackStyle: ButtonStyle {
     @Environment(\.appTheme) private var theme
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .contentShape(Capsule())
             .background(.ultraThinMaterial, in: .rect(cornerRadius: 50))
             .overlay(
                 RoundedRectangle(cornerRadius: 50)
@@ -17,6 +29,7 @@ private struct GlassFallbackStyle: ButtonStyle {
 private struct GlassCircleFallbackStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .contentShape(Circle())
             .background(.ultraThinMaterial, in: Circle())
             .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
@@ -27,6 +40,7 @@ private struct GlassCircleFallbackStyle: ButtonStyle {
 private struct GlassCapsuleFallbackStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .contentShape(Capsule())
             .background(.ultraThinMaterial, in: Capsule())
             .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
@@ -34,18 +48,22 @@ private struct GlassCapsuleFallbackStyle: ButtonStyle {
     }
 }
 
-private struct OnboardingPrimaryActionModifier: ViewModifier {
+private struct OnboardingPrimaryActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
 
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if colorScheme == .light {
-            content
-                .buttonStyle(.plain)
-                .background(Color.black, in: Capsule())
-        } else {
-            content.glassStyle()
+    func makeBody(configuration: Configuration) -> some View {
+        Group {
+            if colorScheme == .light {
+                configuration.label
+                    .contentShape(Capsule())
+                    .background(Color.black, in: Capsule())
+            } else {
+                configuration.label
+                    .contentShape(Capsule())
+                    .processGlassEffect(in: Capsule())
+            }
         }
+        .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -90,6 +108,6 @@ extension View {
     }
 
     func onboardingPrimaryActionStyle() -> some View {
-        modifier(OnboardingPrimaryActionModifier())
+        buttonStyle(OnboardingPrimaryActionButtonStyle())
     }
 }

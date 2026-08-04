@@ -1,0 +1,77 @@
+/**
+ * Shell minimal Process LP — remplace landing.css (4000+ lignes myfidpass).
+ */
+
+#landing {
+  background: #09090b;
+  color: #f1f5f9;
+}
+
+#landing .landing-main-cinematic {
+  background: #09090b;
+}
+
+#landing .landing-faq-list {
+  display: grid;
+  gap: 0.85rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#landing .landing-launch-sf-faq-item {
+  padding: 0;
+}
+
+#landing .landing-faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+#landing .landing-faq-icon {
+  font-size: 1.25rem;
+  transition: transform 0.2s ease;
+  opacity: 0.7;
+}
+
+#landing .landing-faq-item.is-open .landing-faq-icon {
+  transform: rotate(45deg);
+}
+
+#landing .landing-faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  padding: 0 1.1rem;
+  transition: grid-template-rows 0.25s ease;
+}
+
+#landing .landing-faq-item.is-open .landing-faq-answer {
+  grid-template-rows: 1fr;
+  padding-bottom: 1rem;
+}
+
+#landing .landing-faq-answer p {
+  margin: 0;
+  overflow: hidden;
+}
+
+#landing .landing-faq-answer a {
+  color: #0a98ff;
+}
+
+.landing-footer-sf-soc__a {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}

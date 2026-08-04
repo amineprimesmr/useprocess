@@ -531,7 +531,7 @@ struct FaceIDContinueButton: View {
                 .frame(height: 54)
                 .background(FaceIDScanColors.continueFill, in: Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .contentShape(Capsule())
         .highPriorityGesture(
             TapGesture().onEnded {

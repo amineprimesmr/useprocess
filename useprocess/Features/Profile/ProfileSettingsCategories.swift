@@ -164,8 +164,9 @@ struct ProfileSettingsActivityStatusPill: View {
                 radius: 10,
                 y: 4
             )
+            .contentShape(shape)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .frame(maxWidth: .infinity)
         .accessibilityLabel("Statut d'activité, \(status.title)")
         .accessibilityValue("Modifiable")
@@ -190,7 +191,7 @@ struct ProfileSettingsHubLinksSection: View {
                 NavigationLink(value: category) {
                     ProfileSettingsCategoryHubRow(category: category)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
         }
     }

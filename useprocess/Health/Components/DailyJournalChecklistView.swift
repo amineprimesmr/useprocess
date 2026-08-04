@@ -450,7 +450,7 @@ private struct JournalDayCompletionCard: View {
                     .foregroundStyle(theme.secondaryText)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -985,7 +985,7 @@ struct JournalTriStateControl: View {
             }
             .frame(width: 34, height: 28)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 }
 

@@ -181,7 +181,7 @@ struct PlanBreakfastBuilderHeroCard: View {
                 )
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .shadow(color: .black.opacity(theme.isDark ? 0.42 : 0.12), radius: 16, y: 8)
     }
 
@@ -270,7 +270,7 @@ struct PlanBreakfastBuilderHeroCard: View {
                     .foregroundStyle(.white)
                     .frame(width: 48, height: 48)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .accessibilityLabel("Valider ce petit-déjeuner")
         }
         .frame(height: 52)

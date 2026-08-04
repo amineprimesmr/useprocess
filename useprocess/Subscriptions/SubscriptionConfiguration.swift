@@ -19,19 +19,21 @@ enum SubscriptionConfiguration {
     /// Groupe d'abonnements App Store (StoreKit + éligibilité intro).
     static let subscriptionGroupID = "21482999"
 
-    /// Essai gratuit désactivé (plus d'offre intro côté produit).
-    static let freeTrialDays = 0
+    /// Essai gratuit annuel — réservé à la quick action rétention (long-press icône).
+    static let retentionQuickActionTrialDays = 3
 
-    static func freeTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
-        guard freeTrialDays > 0 else { return nil }
+    static func retentionTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
+        guard retentionQuickActionTrialDays > 0 else { return nil }
         switch plan {
-        case .annual: return freeTrialDays
+        case .annual: return retentionQuickActionTrialDays
         case .monthly: return nil
         }
     }
 
+    /// Le paywall standard n’expose jamais l’essai — uniquement le flux quick action.
     static func supportsFreeTrial(_ plan: SubscriptionBillingPlan) -> Bool {
-        freeTrialDays(for: plan) != nil
+        _ = plan
+        return false
     }
 
     /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR).
@@ -61,18 +63,14 @@ enum SubscriptionConfiguration {
         return "\(numberPart)€"
     }
 
-    /// Winback roue : 1re année à 19,99 € (offre promo ASC `winback_1999` sur l’annuel).
-    static let winbackAnnualPrice = "19,99 €"
-    /// Prix annuel barré affiché à côté de l’offre winback.
-    static let winbackCompareAtAnnualPrice = "49,99 €"
-    /// Équivalent mensuel affiché (19,99 € / 12).
-    static let winbackMonthlyEquivalent = "1,67 €"
-    static let winbackOfferID = "winback_1999"
-    /// Produit alternatif (si tu préfères un SKU dédié plutôt qu’une promo).
-    static let winbackAnnualProductID = "com.useprocess.annual.winback"
-
-    /// Affiché sur la roue / copy winback (marketing — pas le calcul réel 49→19,99).
-    static let winbackDiscountPercent = 78
+    /// Winback roue : accès à vie à 19 € (achat unique non consommable).
+    static let lifetimeProductID = "com.useprocess.lifetime"
+    static let winbackLifetimePrice = "19€"
+    /// Prix barré (référence annuel) affiché à côté de l’offre lifetime.
+    static let winbackCompareAtPrice = "49€"
+    static let winbackOfferID = "lifetime_19"
+    /// Label jackpot roue / hero offre.
+    static let winbackJackpotTitle = "À VIE"
 }
 
 enum SubscriptionBillingPlan: String, CaseIterable, Identifiable {

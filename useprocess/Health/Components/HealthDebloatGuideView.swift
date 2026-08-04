@@ -109,8 +109,9 @@ struct HealthDebloatGuideView: View {
                         .padding(.top, 4)
                 }
                 .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: 10) {
@@ -243,8 +244,10 @@ struct HealthDebloatGuideView: View {
                                 .font(.caption2)
                         }
                         .foregroundStyle(theme.onboardingAccent)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
             }
 

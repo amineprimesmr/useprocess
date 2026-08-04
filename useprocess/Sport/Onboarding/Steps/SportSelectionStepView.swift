@@ -315,7 +315,7 @@ struct SportSelectionStepView: View {
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 10)
                         }
-                        .glassStyle()
+                        .processGlassButton(in: Capsule())
 
                     }
                     .padding(.vertical, 40)
@@ -394,7 +394,7 @@ struct SportSelectionStepView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
                         }
-                        .glassStyle()
+                        .processGlassButton(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                         .controlSize(.large)
                         .opacity(showSearchField ? 0 : 0.6)
@@ -418,8 +418,7 @@ struct SportSelectionStepView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
                         }
-                        .glassStyle()
-
+                        .processGlassButton(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         .controlSize(.large)
                         .allowsHitTesting(false)
 
@@ -453,8 +452,9 @@ struct SportSelectionStepView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(OnboardingTheme.footnoteText)
                                     .font(.system(size: 18))
+                                    .processTappableButtonLabel(in: Circle())
                             }
-                                .buttonStyle(.plain)
+                            .buttonStyle(.processPlain)
                         }
 
                         Button(action: {
@@ -470,8 +470,11 @@ struct SportSelectionStepView: View {
                             Text("Annuler")
                                 .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(OnboardingTheme.primaryText)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .processTappableButtonLabel(in: Capsule())
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.processPlain)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
@@ -673,6 +676,8 @@ struct SportRowButton: View {
     let isSelected: Bool
     let onTap: () -> Void
 
+    private let rowShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+
     private var sportEmoji: String {
         // Extrait l'emoji du sport (premiers caractères jusqu'au premier espace)
         if let spaceIndex = sport.firstIndex(of: " ") {
@@ -713,8 +718,9 @@ struct SportRowButton: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .glassStyle()
+        .processGlassButton(in: rowShape)
 
         .opacity(isSelected ? 1.0 : 0.6)
     }
@@ -726,6 +732,8 @@ struct SportCard: View {
     let isSelected: Bool
     let onTap: () -> Void
 
+    private let cardShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+
     var body: some View {
         Button(action: onTap) {
             Text(sport)
@@ -735,7 +743,7 @@ struct SportCard: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 60)
         }
-        .glassStyle()
+        .processGlassButton(in: cardShape)
 
         .controlSize(.large)
         .opacity(isSelected ? 1.0 : 0.7)

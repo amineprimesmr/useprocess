@@ -86,7 +86,7 @@ private struct CoachHomeSuggestionCard: View {
             .padding(.horizontal, 12)
             .contentShape(cardShape)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .processGlassEffect(in: cardShape, interactive: true)
         .disabled(isDisabled)
         .opacity(opacity)

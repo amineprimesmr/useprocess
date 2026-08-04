@@ -43,6 +43,9 @@ enum FaceScanWhoopPalette {
     static let sufficient = Color(red: 0.95, green: 0.78, blue: 0.22)
     static let optimal = Color(red: 0.36, green: 0.78, blue: 0.58)
 
+    /// Accent analyse (icônes étapes — remplace le violet onboarding).
+    static let accentBlue = Color(red: 0.34, green: 0.72, blue: 1.0)
+
     static func ringColor(for zone: FaceScanIndicators.WellnessZone) -> Color {
         switch zone {
         case .insufficient: return insufficient

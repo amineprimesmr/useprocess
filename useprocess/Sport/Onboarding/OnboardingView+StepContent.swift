@@ -52,7 +52,6 @@ extension SportOnboardingView {
         case .heightWeight, .bodyScan, .primaryGoal, .weightGoal, .idealWeight, .weightGoalIncompatible,
              .notificationPermission,
              .sportClub, .experienceLevel, .hardestMeal,
-             .appleSignIn,
              .yearsOfExperience, .deadlineSelection, .eventDetails,
              .potentialPace, .trainingFrequency, .nutritionScanFeature,
              .hasDietaryRestrictions, .whichRestrictions,
@@ -135,9 +134,16 @@ extension SportOnboardingView {
         case .payment:
             PaywallView(
                 onComplete: {
-                    Task { await completeOnboarding() }
+                    advanceFromPaymentToPostPaymentWelcome()
                 },
                 onBack: previousStep
+            )
+        case .appleSignIn:
+            OnboardingPostPaymentThankYouView(
+                viewModel: viewModel,
+                onComplete: {
+                    Task { await completeOnboarding() }
+                }
             )
         case .complete:
             Color.clear

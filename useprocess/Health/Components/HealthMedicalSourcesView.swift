@@ -91,8 +91,10 @@ struct HealthMedicalSourcesView: View {
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(theme.secondaryText)
                     }
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

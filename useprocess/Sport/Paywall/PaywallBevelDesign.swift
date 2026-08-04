@@ -397,7 +397,7 @@ struct PaywallBevelPlanSegmentPicker: View {
             .frame(maxWidth: .infinity, minHeight: segmentHeight, alignment: .leading)
             .contentShape(RoundedRectangle(cornerRadius: pillCornerRadius, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 
     @ViewBuilder
@@ -564,7 +564,7 @@ struct PaywallBevelPlanCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 

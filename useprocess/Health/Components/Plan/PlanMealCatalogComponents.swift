@@ -104,7 +104,7 @@ struct PlanMealCatalogCard: View {
                 height: PlanMealCatalogLayout.cardHeight
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .frame(
             width: PlanMealCatalogLayout.cardWidth,
             height: PlanMealCatalogLayout.cardHeight

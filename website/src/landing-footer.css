@@ -101,18 +101,19 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: #ffffff;
-  color: #000;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition:
     transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.22s ease;
+    box-shadow 0.22s ease,
+    background 0.22s ease;
 }
 
 .landing-footer-sf-soc__a:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 4px 14px rgba(255, 255, 255, 0.15),
-    0 2px 4px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .landing-footer-sf-soc__a svg {
@@ -125,7 +126,7 @@
   width: 15px;
   height: 15px;
   object-fit: contain;
-  filter: saturate(0) brightness(0.25);
+  filter: brightness(0) invert(1) opacity(0.72);
 }
 
 @media (max-width: 640px) {

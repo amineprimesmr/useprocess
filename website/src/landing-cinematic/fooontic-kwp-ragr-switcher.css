@@ -4,16 +4,15 @@
  * polluer #landing ni le hero.
  */
 #landing-liquid-glass {
-  --c-glass: #bbbbbc;
-  --c-light: #fff;
-  --c-dark: #000;
-  --c-content: #224;
-  --c-action: #0052f5;
-  --c-bg: #e8e8e9;
-  --glass-reflex-dark: 1;
-  --glass-reflex-light: 1;
-  --saturation: 150%;
-  --fz: 1rem;
+  --c-glass: #1a1a24;
+  --c-light: #e2e8f0;
+  --c-dark: #f8fafc;
+  --c-content: #cbd5e1;
+  --c-bg: #09090b;
+  --c-action: #0a98ff;
+  --glass-reflex-dark: 2.5;
+  --glass-reflex-light: 0.2;
+  --saturation: 110%;
 }
 
 .switcher {

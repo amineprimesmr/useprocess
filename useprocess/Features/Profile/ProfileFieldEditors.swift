@@ -211,7 +211,7 @@ struct ProfileGenderEditorView: View {
                                 .contentShape(Rectangle())
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.processPlain)
                     }
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)

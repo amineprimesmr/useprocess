@@ -1,11 +1,11 @@
 /* Section « 3 étapes » — shell + typo partagée ; scrolly desktop ≥901px */
 
 .fintap-steps-scroll {
-  --fintap-steps-bg: #f5f5f7;
-  --fintap-steps-card: #ececee;
-  --fintap-steps-ink: #0a0a0a;
-  --fintap-steps-muted: #5c5c5c;
-  --fintap-steps-line: rgba(0, 0, 0, 0.14);
+  --fintap-steps-bg: #09090b;
+  --fintap-steps-card: #16161f;
+  --fintap-steps-ink: #f1f5f9;
+  --fintap-steps-muted: #94a3b8;
+  --fintap-steps-line: rgba(255, 255, 255, 0.1);
   --fintap-steps-nav-clear: max(6.5rem, calc(env(safe-area-inset-top, 0px) + 5.35rem));
   position: relative;
   overflow: visible;
@@ -25,7 +25,7 @@
   line-height: 1.06;
   text-align: center;
   text-wrap: balance;
-  background: linear-gradient(142deg, #01040d 0%, #0b1120 34%, #334155 68%, #f1f5f9 100%);
+  background: linear-gradient(142deg, #f8fafc 0%, #cbd5e1 38%, #64748b 72%, #475569 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

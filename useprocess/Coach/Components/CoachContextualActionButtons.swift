@@ -56,7 +56,7 @@ private struct CoachContextualActionGlassStyle: ViewModifier {
         if isPrimary {
             if #available(iOS 26.0, *) {
                 content
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                     .glassEffect(
                         ProcessGlass.tinted(theme.coachAccent, opacity: theme.isDark ? 0.42 : 0.48),
                         in: shape

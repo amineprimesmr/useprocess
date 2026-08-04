@@ -650,7 +650,7 @@ private struct PlanMealCatalogBrowseCard: View {
                 height: PlanMealCarouselLayout.cardHeight
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .frame(
             width: PlanMealCarouselLayout.cardWidth,
             height: PlanMealCarouselLayout.cardHeight
@@ -783,7 +783,7 @@ private struct PlanMealCarouselCard: View {
                 height: PlanMealCarouselLayout.cardHeight
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .frame(
             width: PlanMealCarouselLayout.cardWidth,
             height: PlanMealCarouselLayout.cardHeight

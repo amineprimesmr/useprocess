@@ -361,8 +361,9 @@ struct OnboardingProgramCreationSuccessFooter: View {
                     .frame(height: 58)
                     .background(OnboardingTheme.filledButtonBackground(for: colorScheme))
                     .clipShape(Capsule())
+                    .contentShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .opacity(isRevealed ? 1 : 0)
             .offset(y: isRevealed ? 0 : 28)
             .animation(.spring(response: 0.55, dampingFraction: 0.86).delay(0.14), value: isRevealed)

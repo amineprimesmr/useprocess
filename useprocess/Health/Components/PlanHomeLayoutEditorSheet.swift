@@ -77,7 +77,7 @@ struct PlanHomeLayoutEditorSheet: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
 
             Spacer(minLength: 8)
 
@@ -106,7 +106,7 @@ struct PlanHomeLayoutEditorSheet: View {
                             .fill(theme.onboardingAccent.opacity(0.14))
                     )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -220,7 +220,7 @@ struct PlanHomeLayoutEditableSection<Content: View>: View {
                             .fill(theme.isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.05))
                     )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .accessibilityLabel(isVisible ? "Masquer la section" : "Afficher la section")
         }
         .padding(.horizontal, 12)

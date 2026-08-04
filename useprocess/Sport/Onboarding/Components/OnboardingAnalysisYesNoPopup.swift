@@ -121,6 +121,7 @@ struct OnboardingAnalysisYesNoPopup: View {
             .foregroundColor(.black)
             .frame(maxWidth: .infinity)
             .frame(height: 72)
+            .contentShape(actionButtonShape)
         }
         .background(
             LinearGradient(

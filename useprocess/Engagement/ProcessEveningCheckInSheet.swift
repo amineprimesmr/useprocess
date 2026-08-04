@@ -301,7 +301,7 @@ struct ProcessEveningCheckInIslandContent: View {
                 .background(shape.fill(Color.white))
                 .contentShape(shape)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .allowsHitTesting(phase == .form)
         .accessibilityLabel("Valider mon jour")
         .padding(.horizontal, 16)
@@ -368,7 +368,7 @@ struct ProcessEveningCheckInIslandContent: View {
                     .frame(height: 52)
                     .contentShape(Capsule(style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .processGlassEffect(in: Capsule(style: .continuous), interactive: false)
             .padding(.horizontal, 16)
         }
@@ -651,7 +651,7 @@ private struct EveningCheckInHabitRow: View {
                     .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .disabled(isLocked)
         .accessibilityLabel(title)
         .accessibilityValue(isChecked ? "Validé" : "Non validé")

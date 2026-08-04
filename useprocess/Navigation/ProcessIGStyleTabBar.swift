@@ -351,7 +351,7 @@ private struct ProcessIGMealScanButton: View {
                         )
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .frame(width: hitSize, height: hitSize)
         .contentShape(Circle())
         .modifier(ProcessIGTabBarGlassChrome(style: .circle))

@@ -238,7 +238,7 @@ private struct ProfilePhotoSourceMenu: View {
             .frame(height: 48)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 
     private func clampedMenuX(tapX: CGFloat, containerWidth: CGFloat) -> CGFloat {

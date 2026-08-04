@@ -103,7 +103,7 @@ struct ProcessCreatorStudioHubLink: View {
                         .processGlassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         }
     }
 }

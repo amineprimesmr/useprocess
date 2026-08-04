@@ -64,7 +64,9 @@ struct OnboardingUnitSegmentToggle: View {
                             y: 1
                         )
                 )
+                .processTappableButtonLabel(in: RoundedRectangle(cornerRadius: 24, style: .continuous), maxWidth: true)
         }
+        .buttonStyle(.processPlain)
     }
 }
 

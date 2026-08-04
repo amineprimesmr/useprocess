@@ -57,7 +57,7 @@ struct AnimatedDeleteButton<Content: View, Label: View>: View {
         }, action: { newValue in
             properties.sourceLocation = newValue
         })
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .fullScreenCover(isPresented: $properties.showDeleteView) {
             DeleteButtonConfirmationView(
                 customAction: customAction,

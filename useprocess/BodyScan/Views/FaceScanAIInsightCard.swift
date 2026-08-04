@@ -714,7 +714,7 @@ struct FaceScanAIInsightCard: View {
         Group {
             if let onTap {
                 Button(action: onTap) { cardContent }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
             } else {
                 cardContent
             }

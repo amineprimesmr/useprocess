@@ -73,8 +73,9 @@ struct PlanHomeFaceScanDueCard: View {
             .background(cardBackground)
             .overlay(cardBorder)
             .clipShape(RoundedRectangle(cornerRadius: cardRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: cardRadius, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .accessibilityLabel("Scanner le visage")
     }
 

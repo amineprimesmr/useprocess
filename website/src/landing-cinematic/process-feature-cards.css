@@ -1,0 +1,80 @@
+/* Grille fonctionnalités Process — cartes sombres sans visuels myfidpass */
+
+.process-feature-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0 clamp(1.25rem, 4vw, 2rem);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1rem, 2.5vw, 1.35rem);
+  max-width: 70rem;
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+  .process-feature-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+  }
+}
+
+.process-feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: clamp(1.25rem, 2.5vw, 1.5rem);
+  border-radius: clamp(1.1rem, 2vw, 1.35rem);
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.process-feature-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  color: #0a98ff;
+  background: rgba(10, 152, 255, 0.12);
+  border: 1px solid rgba(10, 152, 255, 0.2);
+}
+
+.process-feature-card__icon-svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.process-feature-card__title {
+  margin: 0;
+  font-size: clamp(1.05rem, 2vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: #f1f5f9;
+}
+
+.process-feature-card__desc {
+  margin: 0;
+  font-size: clamp(0.88rem, 1.5vw, 0.95rem);
+  line-height: 1.55;
+  color: #94a3b8;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .process-feature-card {
+    transition:
+      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.35s ease,
+      box-shadow 0.35s ease;
+  }
+
+  .process-feature-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(10, 152, 255, 0.22);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(10, 152, 255, 0.12);
+  }
+}

@@ -32,6 +32,7 @@ struct PaywallView: View {
     @State private var didPresentSpinWinback = false
     @State private var showsStayPopup = false
     @State private var lastHandledSwipeToken = 0
+    @State private var didCompletePaywallFlow = false
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
 
@@ -82,10 +83,12 @@ struct PaywallView: View {
             if showsStayPopup {
                 PaywallStayRetentionOverlay(
                     onTryLuck: {
+                        ProcessAnalytics.trackPaywallStayPopupAction("try_luck_spin")
                         dismissStayPopup()
                         presentSpinWinbackIfNeeded(force: true)
                     },
                     onStay: {
+                        ProcessAnalytics.trackPaywallStayPopupAction("stay")
                         dismissStayPopup()
                     }
                 )
@@ -156,6 +159,14 @@ struct PaywallView: View {
         .onChange(of: showsSpinWinback) { _, isPresented in
             homeSwipeGate.retentionSurface = isPresented ? .spinWinback : .paywall
         }
+        .onChange(of: selectedBillingPlan) { _, plan in
+            ProcessAnalytics.trackPaywallPlanSelected(plan: plan.rawValue, source: "paywall")
+        }
+        .onChange(of: showsStayPopup) { _, isShowing in
+            if isShowing {
+                ProcessAnalytics.trackPaywallStayPopupShown(trigger: "home_swipe_or_close")
+            }
+        }
         .onChange(of: homeSwipeGate.swipeToken) { _, token in
             guard token != lastHandledSwipeToken else { return }
             lastHandledSwipeToken = token
@@ -168,6 +179,7 @@ struct PaywallView: View {
         guard homeSwipeGate.shouldShowPaywallStayPopup else { return }
         guard !showsSpinWinback, !showsStayPopup else { return }
         HapticManager.shared.notification(.warning)
+        ProcessAnalytics.trackPaywallCloseTapped(source: "home_swipe")
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
             showsStayPopup = true
         }
@@ -175,6 +187,8 @@ struct PaywallView: View {
     }
 
     func completePaywallFlow() {
+        guard !didCompletePaywallFlow else { return }
+        didCompletePaywallFlow = true
         if let onComplete {
             onComplete()
         } else {
@@ -200,7 +214,7 @@ struct PaywallView: View {
                     .frame(width: 32, height: 32)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .accessibilityLabel("Options et informations légales")
             .popover(isPresented: $showsPaywallLegalMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
                 paywallLegalMenuPopover
@@ -210,6 +224,7 @@ struct PaywallView: View {
             Spacer(minLength: 0)
 
             Button {
+                ProcessAnalytics.trackPaywallCloseTapped(source: "xmark")
                 shakeContinueButton()
             } label: {
                 Image(systemName: "xmark")
@@ -381,7 +396,7 @@ struct PaywallView: View {
             .padding(.vertical, 11)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .disabled(title == "Restaurer" && (isRestoring || isPurchasing))
     }
 
@@ -402,21 +417,27 @@ struct PaywallView: View {
         defer { isPurchasing = false }
 
         let plan = selectedBillingPlan.rawValue
-        ProcessAnalytics.trackPurchaseStarted(plan: plan)
+        ProcessAnalytics.trackPaywallCTATapped(plan: plan, source: "paywall")
+        ProcessAnalytics.trackPurchaseStarted(plan: plan, offer: "standard", source: "paywall")
 
         do {
             try await subscriptionService.purchase(plan: selectedBillingPlan)
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
-                ProcessAnalytics.trackPurchaseCompleted(plan: plan)
+                ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: "standard", source: "paywall")
                 completePaywallFlow()
             }
         } catch SubscriptionError.userCancelled {
-            ProcessAnalytics.trackPurchaseCancelled(plan: plan)
+            ProcessAnalytics.trackPurchaseCancelled(plan: plan, offer: "standard", source: "paywall")
             presentSpinWinbackIfNeeded()
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            ProcessAnalytics.trackPurchaseFailed(plan: plan, error: message)
+            ProcessAnalytics.trackPurchaseFailed(
+                plan: plan,
+                error: message,
+                offer: "standard",
+                source: "paywall"
+            )
             purchaseError = message
         }
     }
@@ -427,10 +448,18 @@ struct PaywallView: View {
             return
         }
         if didPresentSpinWinback, force {
+            ProcessAnalytics.capture("spin_wheel_presented", properties: [
+                "source": "stay_popup_or_retry",
+                "force": true
+            ])
             showsSpinWinback = true
             return
         }
         didPresentSpinWinback = true
+        ProcessAnalytics.capture("spin_wheel_presented", properties: [
+            "source": "purchase_cancelled",
+            "force": false
+        ])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
             showsSpinWinback = true
         }
@@ -522,15 +551,17 @@ private struct PaywallStayRetentionOverlay: View {
                                 .fill(Color.primary.opacity(colorScheme == .dark ? 0.92 : 0.94))
                         }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
                 .padding(.top, 4)
 
                 Button(action: onStay) {
                     Text("Rester sur l’offre")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
                 .padding(.bottom, 2)
             }
             .padding(.horizontal, 22)
@@ -713,7 +744,7 @@ struct PaywallFaceScanHero: View {
 
 // MARK: - Safari in-app
 
-private struct PaywallInAppSafariView: UIViewControllerRepresentable {
+struct PaywallInAppSafariView: UIViewControllerRepresentable {
     let url: URL
 
     func makeUIViewController(context: Context) -> SFSafariViewController {

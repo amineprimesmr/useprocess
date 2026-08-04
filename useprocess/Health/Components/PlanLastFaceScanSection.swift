@@ -108,8 +108,9 @@ struct PlanLastFaceScanSection: View {
             } else if isInteractive {
                 Button(action: handlePrimaryTap) {
                     postScanCardContent
+                        .contentShape(cardShape)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             } else {
                 postScanCardContent
             }

@@ -273,7 +273,7 @@ struct GroupedSettingsDestructiveRow: View {
             .padding(.vertical, GroupedSettingsMetrics.rowVerticalPadding)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 }
 
@@ -301,7 +301,7 @@ struct GroupedSettingsLogoutRow: View {
             .padding(.vertical, GroupedSettingsMetrics.rowVerticalPadding)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 }
 
@@ -374,7 +374,7 @@ struct GroupedSettingsLastSyncSection: View {
             .padding(.vertical, GroupedSettingsMetrics.rowVerticalPadding)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 }
 

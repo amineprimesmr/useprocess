@@ -9,8 +9,7 @@ import SwiftUI
 struct OnboardingFaceScanSessionView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
 
-    var isSigningIn: Bool
-    /// Relance après kill app : ouvre directement les résultats (Sign in Apple).
+    /// Relance après kill app : ouvre directement les résultats.
     var initialResult: FaceScanResult? = nil
     var onCancel: () -> Void
     var onResultReady: (FaceScanResult) -> Void
@@ -43,7 +42,6 @@ struct OnboardingFaceScanSessionView: View {
             } else if let result = completedResult {
                 OnboardingDedicatedFaceScanResultsView(
                     result: result,
-                    isSigningIn: isSigningIn,
                     onContinue: onContinueAfterResults
                 )
                 .transition(.opacity)

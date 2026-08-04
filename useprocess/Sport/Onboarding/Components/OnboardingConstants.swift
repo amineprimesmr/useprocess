@@ -91,7 +91,7 @@ enum OnboardingHeaderLayout {
     static func usesDedicatedFullScreenChrome(currentStep: Int) -> Bool {
         guard let step = OnboardingStep(rawValue: currentStep) else { return false }
         switch step {
-        case .videoIntroduction, .faceAnalysis, .payment,
+        case .videoIntroduction, .faceAnalysis, .payment, .appleSignIn,
              .processWelcome, .featuresUnlock, .complete,
              .healthKitPermissions, .sleepDataRecovery:
             return true

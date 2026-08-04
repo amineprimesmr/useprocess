@@ -153,7 +153,7 @@ struct DebloatFoodHubView: View {
                             )
                         }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
         }
     }
@@ -177,7 +177,7 @@ struct DebloatFoodHubView: View {
                             }
                         }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
         }
     }
@@ -558,7 +558,7 @@ private struct DebloatFoodRow: View {
                     Image(systemName: prefs.isLiked(food.id) ? "heart.fill" : "heart")
                         .foregroundStyle(prefs.isLiked(food.id) ? Color.pink : theme.secondaryText)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
             .padding(12)
             .background(
@@ -566,7 +566,7 @@ private struct DebloatFoodRow: View {
                     .fill(theme.isDark ? Color.white.opacity(0.05) : Color.white.opacity(0.72))
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 
     private var badgeColor: Color {

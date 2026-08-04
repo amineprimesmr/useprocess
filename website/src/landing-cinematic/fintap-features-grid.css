@@ -1,11 +1,12 @@
 /* Grille fonctionnalités — fond gris clair, cartes blanches type référence */
 
 .fintap-features-grid {
-  --fintap-features-bg: #f5f5f7;
+  --fintap-features-bg: #09090b;
+  --fintap-ink: #f1f5f9;
+  --fintap-muted: #94a3b8;
   --fintap-features-card-radius: clamp(1.25rem, 2.5vw, 1.75rem);
   --fintap-features-gap: clamp(1.25rem, 3vw, 2rem);
-  /* Même ancrage typo / couleur intro que `.fintap-steps-scroll` */
-  --fintap-steps-muted: #5c5c5c;
+  --fintap-steps-muted: #94a3b8;
   --fintap-steps-nav-clear: max(6.5rem, calc(env(safe-area-inset-top, 0px) + 5.35rem));
   position: relative;
   overflow: visible;
@@ -69,11 +70,10 @@
   flex-direction: column;
   margin: 0;
   padding: clamp(1.1rem, 2.2vw, 1.35rem);
-  background: #fff;
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--fintap-features-card-radius);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
 
@@ -86,7 +86,7 @@
   min-height: clamp(10rem, 28vw, 14rem);
   padding: clamp(0.75rem, 2vw, 1.25rem);
   border-radius: calc(var(--fintap-features-card-radius) - 6px);
-  background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+  background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
 }
 
 .fintap-features-grid__visual--engagement {
@@ -182,16 +182,17 @@
   font-weight: 650;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: #fff;
+  color: #09090b !important;
   text-decoration: none;
-  background: #0a0a0a;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  background: #f1f5f9;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   transition: transform 0.16s ease, box-shadow 0.2s ease;
 }
 
 .fintap-features-grid__cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
 }
 
 .fintap-features-grid__cta:focus-visible {
@@ -236,7 +237,7 @@
     }
 
     .fintap-features-grid__card:hover .fintap-features-grid__visual {
-      background: linear-gradient(180deg, #f5f5f5 0%, #eaeaea 100%);
+      background: linear-gradient(180deg, #1e1e28 0%, #14141c 100%);
     }
 
     .fintap-features-grid__visual {

@@ -146,7 +146,7 @@ private struct ProcessCoachTabAccessoryContent: View {
             .frame(maxWidth: .infinity)
             .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .modifier(ProcessCoachAccessoryChrome(isInline: isInlinePlacement))
         .matchedTransitionSource(id: ProcessCoachZoomTransition.sourceID, in: namespace)
         .accessibilityLabel(prompt)
@@ -276,7 +276,7 @@ struct ProcessBevelLegacyTabShell<Content: View>: View {
         } label: {
             legacyTabLabel(section: section, isSelected: isSelected, tabShape: tabShape)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .accessibilityLabel(section.label)
     }
 
@@ -305,7 +305,7 @@ struct ProcessBevelLegacyTabShell<Content: View>: View {
             ProcessMainTabIcon(section: section, size: 20, isSelected: true)
                 .frame(width: BevelTabMetrics.plusSize, height: BevelTabMetrics.plusSize)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .processGlassCircle(interactive: true)
         .accessibilityLabel(section.label)
     }

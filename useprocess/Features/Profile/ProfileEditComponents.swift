@@ -145,6 +145,7 @@ struct ProfileInterestChip: View {
                 .padding(.vertical, 10)
                 .background(isSelected ? ProfileEditTheme.chipSelected : ProfileEditTheme.chipBackground)
                 .clipShape(Capsule())
+                .contentShape(Capsule())
                 .overlay {
                     if isSelected {
                         Capsule()
@@ -152,7 +153,7 @@ struct ProfileInterestChip: View {
                     }
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .animation(ProfileEditTheme.spring, value: isSelected)
     }
 }
@@ -359,7 +360,7 @@ struct AccountDetailsAvatarSection: View {
                 .frame(width: 110, height: 110)
                 .clipShape(Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .accessibilityLabel("Photo de profil")
             .accessibilityHint("Modifier la photo")
 
@@ -555,7 +556,7 @@ struct ProfileEditAvatarButton: View {
             .frame(width: 118, height: 118)
             .clipShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .padding(.vertical, 28)
     }
 }

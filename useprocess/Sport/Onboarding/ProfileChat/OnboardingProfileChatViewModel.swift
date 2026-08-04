@@ -15,8 +15,9 @@ final class OnboardingProfileChatViewModel {
         case complete
     }
 
-    var messages: [OnboardingProfileChatMessage] = []
-    var isMessageAnimating = false
+    private(set) var conversationEngine: MossConversationEngine!
+
+    var isMessageAnimating: Bool { conversationEngine?.isTyping ?? false }
     var isSubmittingAnswer = false
     var shouldFinish = false
     var currentQuestion: OnboardingProfileChatQuestion?
@@ -61,9 +62,11 @@ final class OnboardingProfileChatViewModel {
     }
 
     var showsInlineFaceScanSection: Bool {
-        currentQuestion?.id == "face_scan_offer"
+        guard let conversationEngine else { return false }
+        return currentQuestion?.id == "face_scan_offer"
             && !shouldFinish
-            && !isMessageAnimating
+            && conversationEngine.controlsVisible
+            && !conversationEngine.isTyping
             && !isSubmittingAnswer
             && isQuestionReadyForAnswers
     }
@@ -78,8 +81,10 @@ final class OnboardingProfileChatViewModel {
     private var inlineFaceScanElapsedTask: Task<Void, Never>?
 
     var showsAnswerOptions: Bool {
-        !shouldFinish
-            && !isMessageAnimating
+        guard let conversationEngine else { return false }
+        return !shouldFinish
+            && conversationEngine.controlsVisible
+            && !conversationEngine.isTyping
             && !isSubmittingAnswer
             && !showsInlineFaceScanFlow
             && currentQuestion != nil
@@ -118,18 +123,17 @@ final class OnboardingProfileChatViewModel {
     private var currentIndex = 0
     private var hasStarted = false
     private var didFinish = false
-    private var typewriterTask: Task<Void, Never>?
     private var analysisTask: Task<Void, Never>?
     private var programCreationTask: Task<Void, Never>?
     private var analysisElapsedTask: Task<Void, Never>?
-    private var pendingTypewriterMessageID: UUID?
-    private var pendingTypewriterText: String?
 
     func bind(
         _ viewModel: OnboardingViewModel,
+        engine: MossConversationEngine,
         healthManager: HealthManager,
         permissionsManager: PermissionsManager
     ) {
+        conversationEngine = engine
         onboardingViewModel = viewModel
         self.healthManager = healthManager
         self.permissionsManager = permissionsManager
@@ -158,22 +162,12 @@ final class OnboardingProfileChatViewModel {
 
     private func restoreConversationFromSavedProgress() {
         guard let viewModel = onboardingViewModel else { return }
-        let completed = viewModel.completedProfileChatQuestionIDs
-
-        messages.removeAll(keepingCapacity: true)
-
-        for question in questions where completed.contains(question.id) {
-            let resolved = OnboardingProfileChatQuestionBank.resolvedQuestion(question, for: viewModel)
-            for block in resolved.assistantPresentationBlocks {
-                appendAssistantMessageInstant(block)
-            }
-            if let answer = OnboardingProfileChatQuestionBank.savedAnswerDisplay(
-                for: resolved.id,
-                viewModel: viewModel
-            ) {
-                appendUserMessage(answer)
-            }
-        }
+        OnboardingMossChatHelpers.replaySavedConversation(
+            engine: conversationEngine,
+            questions: questions,
+            completedIDs: Set(viewModel.completedProfileChatQuestionIDs),
+            viewModel: viewModel
+        )
     }
 
     private func resumeFromSavedProgress() async {
@@ -190,7 +184,6 @@ final class OnboardingProfileChatViewModel {
             analysisLetsGoUnlocked = false
             currentQuestion = nil
             isQuestionReadyForAnswers = false
-            isMessageAnimating = false
 
             if let result = restoredFaceScanResultForAuthGate() {
                 inlineFaceScanResult = result
@@ -212,7 +205,6 @@ final class OnboardingProfileChatViewModel {
         questions[currentIndex] = question
         currentQuestion = question
         isQuestionReadyForAnswers = false
-        isMessageAnimating = false
 
         appendAssistantMessagesInstant(for: question)
 
@@ -234,14 +226,41 @@ final class OnboardingProfileChatViewModel {
         }
     }
 
-    private func appendAssistantMessageInstant(_ text: String) {
-        messages.append(
-            .init(
-                role: .assistant,
-                text: text,
-                layoutAnchorText: text
-            )
+    private func appendAssistantMessagesInstant(for question: OnboardingProfileChatQuestion) {
+        conversationEngine.speak(
+            OnboardingMossChatHelpers.mossLines(for: question),
+            instant: true
         )
+    }
+
+    private func presentCurrentQuestion(initialDelay: Bool) async {
+        guard let question = currentQuestion else { return }
+
+        isQuestionReadyForAnswers = false
+
+        let lines = OnboardingMossChatHelpers.mossLines(
+            for: question,
+            emotionalFirstBlock: question.id == "intro_swollen_face"
+        )
+        guard !lines.isEmpty else {
+            await finalizeQuestionPresentation()
+            return
+        }
+
+        if initialDelay {
+            try? await Task.sleep(nanoseconds: 320_000_000)
+        }
+
+        await speakMossLines(lines)
+        await finalizeQuestionPresentation()
+    }
+
+    private func speakMossLines(_ lines: [MossLine]) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            conversationEngine.speak(lines, onBatchDone: {
+                continuation.resume()
+            })
+        }
     }
 
     private func presentFirstQuestionAfterOpening() async {
@@ -272,16 +291,13 @@ final class OnboardingProfileChatViewModel {
         guard let viewModel = onboardingViewModel else { return false }
 
         // Annule animations / jobs en cours pour pouvoir remonter proprement.
-        typewriterTask?.cancel()
+        conversationEngine.reset()
         analysisTask?.cancel()
         programCreationTask?.cancel()
         inlineFaceScanTask?.cancel()
         stopAnalysisElapsedTimer()
         stopInlineFaceScanElapsedTimer()
-        isMessageAnimating = false
         isSubmittingAnswer = false
-        pendingTypewriterMessageID = nil
-        pendingTypewriterText = nil
 
         // Scan inline : d’abord sortir du flux capture/analyse/résultats.
         if faceScanInlinePhase != .idle {
@@ -342,71 +358,17 @@ final class OnboardingProfileChatViewModel {
         return true
     }
 
-    private func appendAssistantMessagesInstant(for question: OnboardingProfileChatQuestion) {
-        for block in question.assistantPresentationBlocks {
-            appendAssistantMessageInstant(block)
-        }
-    }
-
-    private func presentCurrentQuestion(initialDelay: Bool) async {
-        guard let question = currentQuestion else { return }
-
-        isQuestionReadyForAnswers = false
-        let blocks = question.assistantPresentationBlocks
-        guard !blocks.isEmpty else {
-            await finalizeQuestionPresentation()
-            return
-        }
-
-        if initialDelay {
-            try? await Task.sleep(nanoseconds: 320_000_000)
-        }
-
-        for (index, block) in blocks.enumerated() {
-            let messageID = UUID()
-            pendingTypewriterMessageID = messageID
-            pendingTypewriterText = block
-
-            animate(OnboardingProfileChatDepthStyle.historySpring) {
-                messages.append(
-                    .init(
-                        id: messageID,
-                        role: .assistant,
-                        text: "",
-                        layoutAnchorText: block
-                    )
-                )
-                isMessageAnimating = true
-            }
-
-            await runTypewriter(initialDelay: initialDelay && index == 0)
-
-            if index < blocks.count - 1 {
-                try? await Task.sleep(nanoseconds: 520_000_000)
-            }
-        }
-
-        await finalizeQuestionPresentation()
-    }
-
     private func rebuildMessages(upToCompletedExclusiveOf excludedID: String) {
         guard let viewModel = onboardingViewModel else { return }
-        let completed = viewModel.completedProfileChatQuestionIDs
-
-        messages.removeAll(keepingCapacity: true)
-
-        for question in questions where completed.contains(question.id) && question.id != excludedID {
-            let resolved = OnboardingProfileChatQuestionBank.resolvedQuestion(question, for: viewModel)
-            for block in resolved.assistantPresentationBlocks {
-                appendAssistantMessageInstant(block)
-            }
-            if let answer = OnboardingProfileChatQuestionBank.savedAnswerDisplay(
-                for: resolved.id,
-                viewModel: viewModel
-            ) {
-                appendUserMessage(answer)
-            }
-        }
+        let completed = Set(
+            viewModel.completedProfileChatQuestionIDs.filter { $0 != excludedID }
+        )
+        OnboardingMossChatHelpers.replaySavedConversation(
+            engine: conversationEngine,
+            questions: questions,
+            completedIDs: completed,
+            viewModel: viewModel
+        )
     }
 
     private func clearSideEffectsIfNeeded(rewindingFrom questionID: String) {
@@ -526,8 +488,9 @@ final class OnboardingProfileChatViewModel {
             ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
 
-        if messages.last?.role != .user || messages.last?.text != "Lancer le scan" {
-            appendUserMessage("Lancer le scan")
+        if conversationEngine.messages.last?.sender != .user
+            || conversationEngine.messages.last?.text != "Lancer le scan" {
+            conversationEngine.userReplied("Lancer le scan")
         }
         isQuestionReadyForAnswers = false
         isSubmittingAnswer = false
@@ -541,8 +504,9 @@ final class OnboardingProfileChatViewModel {
         onboardingViewModel?.onboardingFaceMesh = nil
         onboardingViewModel?.onboardingFaceMarkers = nil
         markQuestionCompleted("face_scan_offer")
-        if messages.last?.role != .user || messages.last?.text != "Faire mon scan plus tard" {
-            appendUserMessage("Faire mon scan plus tard")
+        if conversationEngine.messages.last?.sender != .user
+            || conversationEngine.messages.last?.text != "Faire mon scan plus tard" {
+            conversationEngine.userReplied("Faire mon scan plus tard")
         }
         currentQuestion = nil
         isQuestionReadyForAnswers = false
@@ -570,7 +534,7 @@ final class OnboardingProfileChatViewModel {
         // Compat — plus utilisé (page dédiée hors chat).
     }
 
-    /// Persiste le scan et clôture la discussion après Sign in with Apple.
+    /// Persiste le scan et clôture la discussion (connexion Apple après le paywall).
     func finishAfterDedicatedFaceAnalysis() {
         if let result = inlineFaceScanResult {
             onboardingViewModel?.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
@@ -593,7 +557,7 @@ final class OnboardingProfileChatViewModel {
     func finish(onComplete: () -> Void) {
         guard !didFinish else { return }
         didFinish = true
-        typewriterTask?.cancel()
+        conversationEngine.reset()
         analysisTask?.cancel()
         inlineFaceScanTask?.cancel()
         programCreationTask?.cancel()
@@ -783,20 +747,33 @@ final class OnboardingProfileChatViewModel {
     }
 
     private func recordAnswer(display: String, questionID: String? = nil) async {
-        typewriterTask?.cancel()
         let completedQuestionID = questionID ?? currentQuestion?.id
         if let completedQuestionID {
             markQuestionCompleted(completedQuestionID)
+            var props: [String: Any] = [
+                "question_id": completedQuestionID,
+                "answer_display": display,
+                "answer_length": display.count
+            ]
+            if let vm = onboardingViewModel {
+                if let gender = vm.selectedGender { props["gender"] = gender.rawValue }
+                if vm.isAgeSelected { props["age"] = vm.selectedAge }
+                if OnboardingViewModel.isPlausibleWeight(vm.selectedWeight) {
+                    props["weight_kg"] = vm.selectedWeight
+                }
+                if vm.selectedHeight > 0 { props["height_cm"] = vm.selectedHeight }
+                let name = vm.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if OnboardingViewModel.isRealUserFirstName(name) {
+                    props["first_name"] = name
+                }
+            }
+            ProcessAnalytics.capture("onboarding_chat_answer", properties: props)
         }
         isQuestionReadyForAnswers = false
         currentQuestion = nil
 
-        var shouldTypeNextQuestion = false
-
-        animate(OnboardingProfileChatDepthStyle.historySpring) {
-            appendUserMessage(display)
-            shouldTypeNextQuestion = advanceToNextQuestion()
-        }
+        conversationEngine.userReplied(display)
+        let shouldTypeNextQuestion = advanceToNextQuestion()
 
         if shouldTypeNextQuestion {
             await presentCurrentQuestion(initialDelay: false)
@@ -915,37 +892,22 @@ final class OnboardingProfileChatViewModel {
     private func presentAnalysisDetailMessage() async {
         guard let detail = currentQuestion?.detailText, !detail.isEmpty else { return }
 
-        isMessageAnimating = true
         analysisLetsGoUnlocked = false
 
-        animate(OnboardingProfileChatDepthStyle.historySpring) {
+        animate(OnboardingProfileChatAnswerReveal.spring) {
             analysisProgressPanelVisible = false
         }
 
         try? await Task.sleep(nanoseconds: 320_000_000)
         guard currentQuestion?.kind == .answersAnalysis else { return }
 
-        let messageID = UUID()
-        pendingTypewriterMessageID = messageID
-        pendingTypewriterText = detail
-
-        animate(OnboardingProfileChatDepthStyle.historySpring) {
-            messages.append(
-                .init(
-                    id: messageID,
-                    role: .assistant,
-                    text: "",
-                    layoutAnchorText: detail
-                )
-            )
-        }
-
-        await runTypewriter(initialDelay: false)
+        await speakMossLines([
+            MossLine("process.chat.answers_analysis.detail", detail, profile: .explanatory)
+        ])
 
         try? await Task.sleep(nanoseconds: 180_000_000)
         guard currentQuestion?.kind == .answersAnalysis else { return }
 
-        // Ancien CTA « Continuer avec Apple » retiré du chat.
         markQuestionCompleted(currentQuestion?.id ?? "answers_analysis")
         if advanceToNextQuestion() {
             await presentCurrentQuestion(initialDelay: false)
@@ -995,13 +957,12 @@ final class OnboardingProfileChatViewModel {
         programCreationProgress = 0
         analysisPhase = .idle
         analysisProgressPanelVisible = false
-        typewriterTask?.cancel()
+        conversationEngine.reset()
         analysisTask?.cancel()
         programCreationTask?.cancel()
         inlineFaceScanTask?.cancel()
         stopAnalysisElapsedTimer()
         stopInlineFaceScanElapsedTimer()
-        isMessageAnimating = false
         isSubmittingAnswer = false
     }
 
@@ -1041,7 +1002,6 @@ final class OnboardingProfileChatViewModel {
             analysisPhaseIndex = steps.count - 1
             analysisPhaseLabel = steps.last?.phaseLabel ?? analysisPhaseLabel
             analysisPhase = .complete
-            isMessageAnimating = true
         }
     }
 
@@ -1052,9 +1012,6 @@ final class OnboardingProfileChatViewModel {
         if currentIndex >= questions.count {
             isQuestionReadyForAnswers = false
             shouldFinish = true
-            pendingTypewriterMessageID = nil
-            pendingTypewriterText = nil
-            isMessageAnimating = false
             return false
         }
 
@@ -1083,90 +1040,5 @@ final class OnboardingProfileChatViewModel {
         if shouldType {
             await presentCurrentQuestion(initialDelay: true)
         }
-    }
-
-    private func appendUserMessage(_ text: String) {
-        messages.append(.init(role: .user, text: text))
-    }
-
-    private func appendAssistantMessage(_ text: String) async {
-        let messageID = UUID()
-        pendingTypewriterMessageID = messageID
-        pendingTypewriterText = text
-        messages.append(
-            .init(
-                id: messageID,
-                role: .assistant,
-                text: "",
-                layoutAnchorText: text
-            )
-        )
-        isMessageAnimating = true
-        await runTypewriter(initialDelay: true)
-    }
-
-    private func runTypewriter(initialDelay: Bool) async {
-        typewriterTask?.cancel()
-        guard let messageID = pendingTypewriterMessageID,
-              let text = pendingTypewriterText else {
-            isMessageAnimating = false
-            return
-        }
-
-        isMessageAnimating = true
-
-        if initialDelay {
-            try? await Task.sleep(nanoseconds: 450_000_000)
-        } else {
-            try? await Task.sleep(nanoseconds: 80_000_000)
-        }
-
-        typewriterTask = Task {
-            var displayed = ""
-            for character in Array(text) {
-                guard !Task.isCancelled else { return }
-
-                let delayNs = typewriterDelay(for: character)
-                try? await Task.sleep(nanoseconds: delayNs)
-                guard !Task.isCancelled else { return }
-
-                displayed.append(character)
-                updateMessage(id: messageID, text: displayed)
-
-                // Tick à chaque glyphe pour sentir le texte s’écrire.
-                if !character.isWhitespace {
-                    HapticManager.shared.impact(.soft)
-                }
-                if character == "!" || character == "." || character == "?" {
-                    HapticManager.shared.impact(.light)
-                }
-            }
-        }
-
-        await typewriterTask?.value
-        isMessageAnimating = false
-        pendingTypewriterMessageID = nil
-        pendingTypewriterText = nil
-    }
-
-    private func typewriterDelay(for character: Character) -> UInt64 {
-        switch character {
-        case " ", "\n", "\t":
-            return 20_000_000
-        case ".", "!", "?", "…":
-            return 115_000_000
-        case ",", ";", ":":
-            return 72_000_000
-        case "%":
-            return 58_000_000
-        default:
-            return 36_000_000
-        }
-    }
-
-    private func updateMessage(id: UUID, text: String) {
-        guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
-        let anchor = messages[index].layoutAnchorText
-        messages[index] = .init(id: id, role: .assistant, text: text, layoutAnchorText: anchor)
     }
 }

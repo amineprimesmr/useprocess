@@ -1,0 +1,20 @@
+================================================================================
+PROCESS DEBLOAT — APP STORE LISTING (ENGLISH U.S.) — Version 1.04
+Copy into App Store Connect → Distribution → iOS App → 1.04 → English (U.S.)
+================================================================================
+
+WHAT'S NEW (What's New in This Version)
+================================================================================
+
+• New conversational onboarding — smoother chat flow with tactile typing feedback
+• Sign in with Apple now comes after subscription, on a dedicated thank-you screen
+• Fixed post-payment navigation so you never loop back to earlier onboarding steps
+• Lifetime offer (€19) on the winback wheel when you cancel checkout
+• Larger tap targets across onboarding and settings for easier navigation
+
+================================================================================
+BUILD
+================================================================================
+
+Version: 1.04
+Build: 27

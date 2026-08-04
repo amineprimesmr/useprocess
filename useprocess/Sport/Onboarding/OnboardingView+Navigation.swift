@@ -44,6 +44,68 @@ func skipTransientStep() {
     refreshOnboardingFlowProgress()
 }
 
+/// Après un paiement réussi : page merci + Apple Sign In (sans repasser par le moteur sleep/finalization).
+func advanceFromPaymentToPostPaymentWelcome() {
+    guard OnboardingStep(rawValue: viewModel.currentStep) == .payment else {
+        nextStep()
+        return
+    }
+
+    let targetStep = OnboardingStep.appleSignIn.rawValue
+
+    HapticManager.shared.notification(.success)
+    ProcessAnalytics.trackOnboardingAnswer(step: .payment, viewModel: viewModel)
+
+    OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
+    commitVisibleStepToHistory(viewModel.currentStep)
+
+    previousStepIndex = viewModel.currentStep
+    transitionDirection = .forward
+    isTransitioning = true
+
+    withAnimation(.onboardingTransition) {
+        viewModel.currentStep = targetStep
+    }
+
+    commitVisibleStepToHistory(targetStep)
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        isTransitioning = false
+    }
+
+    OnboardingProgressService.shared.saveCurrentStep(targetStep)
+    viewModel.saveProgress()
+    refreshOnboardingFlowProgress()
+}
+
+func reconcilePostPaymentStepIfNeeded() {
+    guard !AppSession.shared.hasCompletedOnboarding else { return }
+    guard SubscriptionService.shared.subscriptionStatus.isActive else { return }
+    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return }
+
+    let shouldSkipToThankYou: Bool
+    switch step {
+    case .biometricAuth, .transformationPreview, .payment:
+        shouldSkipToThankYou = true
+    default:
+        shouldSkipToThankYou = false
+    }
+
+    guard shouldSkipToThankYou else { return }
+
+    let targetStep = OnboardingStep.appleSignIn.rawValue
+    guard viewModel.currentStep != targetStep else { return }
+
+    viewModel.currentStep = targetStep
+    OnboardingProgressService.shared.saveCurrentStep(targetStep)
+    viewModel.saveProgress()
+    reconcileVisitedStepsForRestore(
+        viewModel: viewModel,
+        navigationEngine: navigationEngine
+    )
+    refreshOnboardingFlowProgress()
+}
+
 func nextStep() {
     viewModel.commitPendingStepAnswers()
 
@@ -58,6 +120,10 @@ func nextStep() {
     guard let nextStepIndex = navigationEngine.resolveNextVisibleStep(from: viewModel.currentStep),
           nextStepIndex < totalSteps else {
         return
+    }
+
+    if let answeredStep = OnboardingStep(rawValue: viewModel.currentStep) {
+        ProcessAnalytics.trackOnboardingAnswer(step: answeredStep, viewModel: viewModel)
     }
 
     HapticManager.shared.impact(.medium)
@@ -92,6 +158,8 @@ func continueFromNutritionQuality() {
         nextStep()
         return
     }
+
+    ProcessAnalytics.trackOnboardingAnswer(step: .nutritionQuality, viewModel: viewModel)
 
     let nextStepIndex = OnboardingStep.biometricAuth.rawValue
 
@@ -240,23 +308,6 @@ func handleBackFromProgramCreation() {
 
 @MainActor
 func completeProgramCreationBackFaceScan() async {
-    guard viewModel.presentedFaceScanResult != nil else { return }
-
-    if AuthUser.current == nil, AppConfiguration.firebaseConfigured {
-        do {
-            try await OnboardingAppleAuth.authenticateAndMigrate(
-                authManager: authManager,
-                profileService: profileService,
-                viewModel: viewModel
-            )
-            HapticManager.shared.notification(.success)
-        } catch {
-            HapticManager.shared.notification(.error)
-            viewModel.errorMessage = error.localizedDescription
-            return
-        }
-    }
-
     viewModel.presentedFaceScanResult = nil
 }
 
@@ -329,6 +380,7 @@ func restoreOnboardingProgressFromSavedState() {
         viewModel: viewModel,
         navigationEngine: navigationEngine
     )
+    reconcilePostPaymentStepIfNeeded()
     viewModel.saveProgress()
 }
 
@@ -380,7 +432,7 @@ func checkPermissions() {
             try await OnboardingService.shared.completeOnboarding()
             OnboardingProgressService.shared.resetProgress()
             AppSession.shared.completeOnboarding()
-            ProcessAnalytics.trackOnboardingCompleted()
+            ProcessAnalytics.trackOnboardingCompletedWithProfile(viewModel: viewModel)
             HapticManager.shared.notification(.success)
         } catch {
             ProcessAnalytics.trackOnboardingFailed(error: error.localizedDescription)

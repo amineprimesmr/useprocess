@@ -78,7 +78,7 @@ enum OnboardingStep: Int, CaseIterable {
     case sleepWindowReveal = 49                // Conservé compat sauvegarde — écran supprimé, saut auto
     case planReady = 50                        // ✨ Ton programme personnalisé est prêt
     case onboardingInfo = 51                   // ✨ Page d'information (texte + bouton continuer)
-    case appleSignIn = 52                   // Conservé compat sauvegarde — auth sur welcome, saut auto
+    case appleSignIn = 52                   // ✨ Thank you + Sign in with Apple (après paywall)
     case referralCode = 53                     // ✨ Entrez le code de parrainage (facultatif)
     case appRating = 54                        // Conservé compat sauvegarde — écran supprimé, saut auto
     case caloriesGoal = 55                     // ✨ Ajouter les calories brûlées à votre objectif quotidien ?
@@ -174,7 +174,6 @@ enum OnboardingStep: Int, CaseIterable {
         .sleepWindowReveal,
         .planReady,
         .onboardingInfo,
-        .appleSignIn,
         .referralCode,
         .appRating,
         .caloriesGoal,
@@ -183,6 +182,7 @@ enum OnboardingStep: Int, CaseIterable {
         .notificationPermission,
         .transformationPreview,
         .payment,
+        .appleSignIn,
         .processWelcome,
         .referralReward,
         .featuresUnlock,
@@ -197,7 +197,6 @@ enum OnboardingStep: Int, CaseIterable {
     var isTransientSkippedStep: Bool {
         switch self {
         case .videoIntroduction, .heightWeight, .bodyScan, .weightGoal, .sportClub, .experienceLevel, .hardestMeal,
-             .appleSignIn,
              .yearsOfExperience, .deadlineSelection, .eventDetails,
              .potentialPace, .trainingFrequency, .nutritionScanFeature,
              .hasDietaryRestrictions, .whichRestrictions,

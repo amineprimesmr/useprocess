@@ -53,8 +53,9 @@ struct PermissionButton: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .glassStyle()
+        .processGlassButton(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
         .disabled(isGranted || isLoading)
     }

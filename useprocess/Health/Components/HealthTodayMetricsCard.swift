@@ -97,7 +97,7 @@ struct HealthTodayMetricsCard: View {
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
             .foregroundStyle(theme.secondaryText)
         }
         .padding(14)

@@ -55,8 +55,9 @@ struct GenderSelectionStepView: View {
                                 .foregroundStyle(OnboardingTheme.primaryText)
                                 .opacity(selectedGender == .male ? 1.0 : 0.6)
                         }
+                        .processTappableButtonLabel(in: Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                     .scaleEffect(selectedGender == .male ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedGender)
 
@@ -85,8 +86,9 @@ struct GenderSelectionStepView: View {
                                 .foregroundStyle(OnboardingTheme.primaryText)
                                 .opacity(selectedGender == .female ? 1.0 : 0.6)
                         }
+                        .processTappableButtonLabel(in: Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                     .scaleEffect(selectedGender == .female ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedGender)
 

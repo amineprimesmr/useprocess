@@ -253,7 +253,7 @@ struct MealPhotoScanFlowView: View {
                             .frame(height: 52)
                             .background(Capsule(style: .continuous).fill(theme.onboardingAccent))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
@@ -321,7 +321,7 @@ struct MealPhotoScanFlowView: View {
                             )
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
                 .disabled(tab == .optimized && viewModel.optimizedMeal == nil)
             }
         }

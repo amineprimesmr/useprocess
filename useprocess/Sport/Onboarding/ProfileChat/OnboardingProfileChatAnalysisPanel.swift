@@ -14,6 +14,7 @@ struct OnboardingProfileChatAnalysisPanel: View {
     let isPaused: Bool
     let isVisible: Bool
     let steps: [OnboardingAnalysisProgressConfig.ProgressStep]
+    let stepIconAccentColor: Color?
 
     init(
         phaseLabel: String,
@@ -23,10 +24,12 @@ struct OnboardingProfileChatAnalysisPanel: View {
         elapsedSeconds: Int = 0,
         isPaused: Bool = false,
         isVisible: Bool,
-        steps: [OnboardingAnalysisProgressConfig.ProgressStep] = OnboardingAnalysisProgressConfig.answersAnalysisSteps
+        steps: [OnboardingAnalysisProgressConfig.ProgressStep] = OnboardingAnalysisProgressConfig.answersAnalysisSteps,
+        stepIconAccentColor: Color? = nil
     ) {
         self.steps = steps
         self.phaseLabel = phaseLabel
+        self.stepIconAccentColor = stepIconAccentColor
         self.phaseIndex = phaseIndex
             ?? steps.firstIndex(where: { $0.phaseLabel == phaseLabel })
             ?? min(
@@ -77,7 +80,10 @@ struct OnboardingProfileChatAnalysisPanel: View {
 
     private var thinkingHeader: some View {
         HStack(spacing: 10) {
-            ThinkingDotGrid(isAnimating: !isComplete && !isPaused)
+            ThinkingDotGrid(
+                isAnimating: !isComplete && !isPaused,
+                dotColor: stepIconAccentColor ?? OnboardingTheme.bodyText
+            )
 
             Text(thinkingTitle)
                 .font(.system(size: 15, weight: .medium))
@@ -120,6 +126,19 @@ struct OnboardingProfileChatAnalysisPanel: View {
         return .active
     }
 
+    private func stepIconColor(for state: StepVisualState) -> Color {
+        if let stepIconAccentColor {
+            switch state {
+            case .completed: return stepIconAccentColor
+            case .active: return stepIconAccentColor.opacity(0.88)
+            }
+        }
+        switch state {
+        case .completed: return OnboardingProfileChatDepthStyle.chatAccentViolet
+        case .active: return OnboardingTheme.bodyText
+        }
+    }
+
     @ViewBuilder
     private func analysisStepBlock(
         step: OnboardingAnalysisProgressConfig.ProgressStep,
@@ -132,11 +151,7 @@ struct OnboardingProfileChatAnalysisPanel: View {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: state == .completed ? "checkmark.circle.fill" : "magnifyingglass")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(
-                        state == .completed
-                            ? OnboardingProfileChatDepthStyle.chatAccentViolet
-                            : OnboardingTheme.bodyText
-                    )
+                    .foregroundStyle(stepIconColor(for: state))
                     .frame(width: 18, height: 18)
                     .symbolEffect(.pulse, options: .repeating, isActive: isActive && !isPaused)
 
@@ -205,6 +220,7 @@ struct OnboardingProfileChatAnalysisPanel: View {
 
 private struct ThinkingDotGrid: View {
     let isAnimating: Bool
+    var dotColor: Color = OnboardingTheme.bodyText
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 0.16, paused: !isAnimating)) { context in
@@ -216,7 +232,7 @@ private struct ThinkingDotGrid: View {
                         ForEach(0..<3, id: \.self) { column in
                             let index = row * 3 + column
                             Circle()
-                                .fill(OnboardingTheme.bodyText.opacity(dotOpacity(index: index, pulsePhase: pulsePhase)))
+                                .fill(dotColor.opacity(dotOpacity(index: index, pulsePhase: pulsePhase)))
                                 .frame(width: 4, height: 4)
                         }
                     }

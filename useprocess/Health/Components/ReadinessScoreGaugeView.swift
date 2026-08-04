@@ -130,8 +130,10 @@ struct ReadinessScoreGaugeView: View {
             Text(isLoadingDetails ? "Analyse…" : "Comprendre mon score")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(theme.onboardingAccent)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 4)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .disabled(isLoadingDetails)
     }
 }

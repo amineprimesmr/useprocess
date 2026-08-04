@@ -176,7 +176,7 @@ private struct ProcessReferralProgramScrollContent: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(ProcessReferralTheme.textSecondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
                 .accessibilityLabel("Informations sur le parrainage")
             }
 
@@ -197,7 +197,7 @@ private struct ProcessReferralProgramScrollContent: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(ProcessReferralTheme.textSecondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
                 .accessibilityLabel("Copier le lien")
             }
             .padding(.horizontal, 16)
@@ -228,7 +228,7 @@ private struct ProcessReferralProgramScrollContent: View {
             .frame(height: 52)
             .background(Color.black, in: Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 
     private var termsLine: some View {
@@ -241,7 +241,7 @@ private struct ProcessReferralProgramScrollContent: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 
     private var rewardsSection: some View {
@@ -391,7 +391,7 @@ private struct ProcessReferralRewardCard: View {
                     .padding(.vertical, 10)
                     .background(Color.black, in: Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         } else {
             HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
@@ -435,7 +435,7 @@ struct ProcessReferralToolbarButton: View {
                         .fill(Color(UIColor.secondarySystemGroupedBackground))
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
     }
 }
 

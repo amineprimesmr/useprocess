@@ -5,6 +5,7 @@ struct AppShellView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @Bindable private var session = AppSession.shared
+    @Bindable private var launchRouter = AppLaunchRouter.shared
     @State private var didPrepareMainApp = false
     @State private var didPrepareCoachRuntime = false
     /// Armé après le cold start — évite de monter le deferral Home pendant le 1er frame Review.
@@ -37,6 +38,11 @@ struct AppShellView: View {
             CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
             guard phase == .active else { return }
             ProcessAudioSession.configureForMixingWithOthersIfIdle()
+            ProcessHomeScreenQuickActions.syncForCurrentUser()
+            if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
+                delegate.consumePendingLaunchShortcut()
+            }
+            launchRouter.flushPendingPresentation()
         }
         .environment(\.appTheme, theme)
         .processThirdPartyAIConsentSheet()
@@ -58,6 +64,11 @@ struct AppShellView: View {
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }
             isHomeSwipeArmed = !session.hasCompletedOnboarding
+            ProcessHomeScreenQuickActions.syncForCurrentUser()
+            if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
+                delegate.consumePendingLaunchShortcut()
+            }
+            launchRouter.flushPendingPresentation()
         }
         .onChange(of: session.hasCompletedOnboarding) { _, completed in
             if completed { isHomeSwipeArmed = false }
@@ -124,6 +135,19 @@ struct AppShellView: View {
             }
         } message: {
             Text(session.accountDeletionErrorMessage ?? "Réessaie dans un instant.")
+        }
+        .fullScreenCover(isPresented: $launchRouter.showsTrialRetentionOffer) {
+            PaywallTrialRetentionView(
+                source: launchRouter.activeTrialRetentionSource,
+                onDismiss: {
+                    launchRouter.clearTrialRetentionPresentation()
+                },
+                onSubscribed: {
+                    launchRouter.clearTrialRetentionPresentation()
+                    ProcessHomeScreenQuickActions.syncForCurrentUser()
+                }
+            )
+            .interactiveDismissDisabled()
         }
     }
 }

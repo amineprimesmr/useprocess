@@ -9,8 +9,8 @@ struct SubscriptionTrialInfo: Equatable {
 
     static var configured: SubscriptionTrialInfo {
         SubscriptionTrialInfo(
-            days: SubscriptionConfiguration.freeTrialDays,
-            isEligible: SubscriptionConfiguration.freeTrialDays > 0
+            days: SubscriptionConfiguration.retentionQuickActionTrialDays,
+            isEligible: SubscriptionConfiguration.retentionQuickActionTrialDays > 0
         )
     }
 
@@ -73,7 +73,7 @@ enum SubscriptionIntroOfferParser {
         case .year:
             return max(1, period.value * 365)
         @unknown default:
-            return max(1, SubscriptionConfiguration.freeTrialDays)
+            return max(1, SubscriptionConfiguration.retentionQuickActionTrialDays)
         }
     }
 }

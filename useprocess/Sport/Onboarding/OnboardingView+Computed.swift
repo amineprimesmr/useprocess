@@ -141,7 +141,7 @@ var isImmersiveOnboardingStep: Bool {
     guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
     // Paywall en immersif : évite le remount `.id(onboarding_content_…)` qui cassait
     // le double-swipe Home (« Attends ! ») juste après la fin de l’onboarding.
-    return step == .videoIntroduction || step == .faceAnalysis || step == .payment
+    return step == .videoIntroduction || step == .faceAnalysis || step == .payment || step == .appleSignIn
 }
 
 var shouldShowBackButton: Bool {
@@ -154,7 +154,7 @@ var shouldShowBackButton: Bool {
     }
 
     let blockedSteps: Set<OnboardingStep> = [
-        .videoIntroduction, .payment, .processWelcome, .featuresUnlock, .complete, .faceAnalysis
+        .videoIntroduction, .payment, .appleSignIn, .processWelcome, .featuresUnlock, .complete, .faceAnalysis
     ]
     if blockedSteps.contains(currentStep) {
         return false
@@ -169,7 +169,7 @@ var shouldAddTopPadding: Bool {
     }
 
     // Pages avec titre en overlay : pas de padding parent (évite le double décalage).
-    if step == .videoIntroduction || step == .payment || step == .processWelcome || step == .faceAnalysis
+    if step == .videoIntroduction || step == .payment || step == .appleSignIn || step == .processWelcome || step == .faceAnalysis
         || step == .genderSelection || step == .ageSelection || step == .height || step == .weight
         || step == .heightWeight || step == .firstNameInput
         || step == .weightEstimation || step == .goalProjection

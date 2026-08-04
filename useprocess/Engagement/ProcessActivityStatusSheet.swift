@@ -76,7 +76,7 @@ struct ProcessActivityStatusSheet: View {
                         .frame(width: 34, height: 34)
                         .processGlassCircle(interactive: true)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
                 Spacer()
             }
 
@@ -103,8 +103,9 @@ struct ProcessActivityStatusSheet: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
                     .background(Capsule(style: .continuous).fill(theme.isDark ? Color.white : Color.black))
+                    .contentShape(Capsule(style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.processPlain)
         }
         .padding(.horizontal, 22)
         .padding(.top, 16)
@@ -128,7 +129,7 @@ struct ProcessActivityStatusSheet: View {
                         isSelected: draft == status
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
             }
         }
     }
@@ -154,7 +155,7 @@ struct ProcessActivityStatusSheet: View {
                         .frame(width: 34, height: 34)
                         .processGlassCircle(interactive: true)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
                 .accessibilityLabel(openedFromIntro ? "Retour" : "Fermer")
 
                 Spacer()
@@ -179,7 +180,7 @@ struct ProcessActivityStatusSheet: View {
                             isSelected: draft == status
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
             }
 
@@ -192,7 +193,7 @@ struct ProcessActivityStatusSheet: View {
                         .frame(height: 52)
                         .processNeutralLiquidGlass(in: Capsule(style: .continuous), interactive: true)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.processPlain)
 
                 Text("La mise à jour de votre statut historique l'appliquera à toutes les activités et tendances de cette journée.")
                     .font(.caption)
@@ -242,6 +243,7 @@ private struct ProcessActivityStatusIntroTile: View {
             }
             .scaleEffect(isSelected ? 1.02 : 1)
             .animation(.spring(response: 0.32, dampingFraction: 0.78), value: isSelected)
+            .contentShape(shape)
             .accessibilityLabel(status.title)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -287,6 +289,7 @@ private struct ProcessActivityStatusPickerRow: View {
             }
         }
         .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 72)
         .processNeutralLiquidGlass(in: shape, interactive: true)
         .overlay {

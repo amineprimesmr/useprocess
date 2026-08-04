@@ -1,4 +1,5 @@
-/* FinTap — page complète (réf. fintap.framer.website) */
+/* FinTap — page complète Process debloat */
+@import "../process-dark-theme.css";
 
 .fintap-landing {
   --fintap-bg: #09090b;

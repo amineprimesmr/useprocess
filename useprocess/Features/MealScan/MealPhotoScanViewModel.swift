@@ -146,6 +146,10 @@ final class MealPhotoScanViewModel {
             }
 
             phase = .result
+            ProcessAnalytics.trackMealScanCompleted(
+                slot: selectedSlot.rawValue,
+                optimized: optimizedMeal != nil
+            )
             HapticManager.shared.notification(.success)
         } catch let error as ProcessPrivacyConsentError {
             fail(error.localizedDescription ?? "Autorise l'analyse IA dans les réglages.")
@@ -195,6 +199,7 @@ final class MealPhotoScanViewModel {
     private func fail(_ message: String) {
         errorMessage = message
         phase = .camera
+        ProcessAnalytics.trackMealScanFailed(error: message)
         HapticManager.shared.notification(.warning)
     }
 

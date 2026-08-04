@@ -281,7 +281,7 @@ struct ProfileStreakAchievementsSection: View {
                             .foregroundStyle(dayLabelColor(day))
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
             }
 
@@ -404,7 +404,7 @@ struct ProfileStreakAchievementsSection: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .accessibilityLabel(
             hasSubmittedToday ? "Modifier mon check" : "Faire mon check"
         )

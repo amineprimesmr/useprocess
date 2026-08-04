@@ -98,7 +98,7 @@ struct CoachFilesSheet: View {
                                 }
                                 .padding(.vertical, 4)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.processPlain)
                         }
                         .onDelete { indexSet in
                             for index in indexSet {

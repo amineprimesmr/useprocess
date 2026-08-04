@@ -283,9 +283,6 @@ class OnboardingNavigationEngine {
     
     private func getNextStepInSleepFlow(from current: OnboardingStep) -> Int? {
         switch current {
-        case .appleSignIn:
-            return OnboardingStep.biometricAuth.rawValue
-
         case .healthKitPermissions:
             return OnboardingStep.biometricAuth.rawValue
 
@@ -302,9 +299,6 @@ class OnboardingNavigationEngine {
     
     private func getNextStepInFinalizationFlow(from current: OnboardingStep) -> Int? {
         switch current {
-        case .appleSignIn:
-            return OnboardingStep.biometricAuth.rawValue
-            
         case .referralCode:
             return OnboardingStep.biometricAuth.rawValue
             
@@ -324,6 +318,10 @@ class OnboardingNavigationEngine {
             return OnboardingStep.payment.rawValue
 
         case .payment:
+            return OnboardingStep.appleSignIn.rawValue
+
+        case .appleSignIn:
+            // Étape terminale post-paiement — fin du parcours onboarding.
             return nil
 
         case .processWelcome, .referralReward, .featuresUnlock, .complete:
@@ -403,9 +401,6 @@ class OnboardingNavigationEngine {
         case .healthKitPermissions:
             return OnboardingStep.weightEstimation.rawValue
 
-        case .appleSignIn:
-            return OnboardingStep.weightEstimation.rawValue
-
         case .alarmConfiguration, .sleepWindowReveal:
             return OnboardingStep.weightEstimation.rawValue
 
@@ -436,6 +431,9 @@ class OnboardingNavigationEngine {
 
         case .payment:
             return OnboardingStep.transformationPreview.rawValue
+
+        case .appleSignIn:
+            return OnboardingStep.payment.rawValue
             
         case .processWelcome, .referralReward, .featuresUnlock, .complete:
             return OnboardingStep.payment.rawValue

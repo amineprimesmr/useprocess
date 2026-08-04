@@ -103,7 +103,7 @@ struct OnboardingProfileChatSportPicker: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(OnboardingTheme.mutedText)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.processPlain)
                 }
             }
             .padding(.horizontal, 18)

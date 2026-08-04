@@ -42,15 +42,22 @@ extension View {
     }
 
     /// Bouton liquid glass — capsules / formes custom (pre-26 + surfaces non-button).
-    @ViewBuilder
     func processGlassButton(in shape: some InsettableShape, interactive: Bool = true) -> some View {
-        if #available(iOS 26.0, *) {
-            buttonStyle(.plain)
-                .processGlassEffect(in: shape, interactive: interactive)
+        buttonStyle(ProcessGlassLabelButtonStyle(shape: shape, interactive: interactive))
+    }
+
+    /// Étend la zone cliquable au label entier (pas seulement le texte) pour `.buttonStyle(.plain)`.
+    @ViewBuilder
+    func processTappableButtonLabel<S: Shape>(
+        in shape: S = Rectangle(),
+        maxWidth: Bool = false,
+        alignment: Alignment = .center
+    ) -> some View {
+        if maxWidth {
+            frame(maxWidth: .infinity, alignment: alignment)
+                .contentShape(shape)
         } else {
-            buttonStyle(.plain)
-                .processGlassEffect(in: shape, interactive: interactive)
-                .buttonStyle(ProcessGlassPressStyle())
+            contentShape(shape)
         }
     }
 
@@ -85,6 +92,19 @@ extension View {
         } else {
             buttonStyle(ProcessGlassPressStyle())
         }
+    }
+}
+
+private struct ProcessGlassLabelButtonStyle<S: InsettableShape>: ButtonStyle {
+    let shape: S
+    let interactive: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(shape)
+            .processGlassEffect(in: shape, interactive: interactive)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
     }
 }
 

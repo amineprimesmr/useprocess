@@ -85,6 +85,7 @@ final class AppSession {
         hasCompletedOnboarding = true
         UserDefaults.standard.set(true, forKey: onboardingStorageKey)
         AuthenticationManager.shared.completeOnboarding()
+        ProcessHomeScreenQuickActions.syncForCurrentUser()
         // Plus de questionnaire post-onboarding : accès direct à l'app.
     }
 

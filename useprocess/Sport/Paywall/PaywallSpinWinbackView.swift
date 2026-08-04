@@ -7,6 +7,7 @@ private struct PaywallSpinSegment: Identifiable, Equatable {
     enum Kind: Equatable {
         case percent(Int)
         case jackpot(Int)
+        case lifetime
     }
 
     let id: String
@@ -14,8 +15,10 @@ private struct PaywallSpinSegment: Identifiable, Equatable {
     let tint: Color
 
     var isJackpot: Bool {
-        if case .jackpot = kind { return true }
-        return false
+        switch kind {
+        case .jackpot, .lifetime: return true
+        case .percent: return false
+        }
     }
 
     var isFivePercent: Bool {
@@ -27,6 +30,8 @@ private struct PaywallSpinSegment: Identifiable, Equatable {
         switch kind {
         case .percent(let value), .jackpot(let value):
             return "\(value)%"
+        case .lifetime:
+            return SubscriptionConfiguration.winbackJackpotTitle
         }
     }
 }
@@ -40,29 +45,51 @@ private enum PaywallSpinPhase: Equatable {
     case won
 }
 
+enum PaywallSpinWinbackPresentation: Equatable {
+    /// Roue complète puis page offre.
+    case spinWheel
+    /// Page offre uniquement (ex. quick action « 3 jours offerts »).
+    case offerOnly
+}
+
 // MARK: - Vue principale
 
 struct PaywallSpinWinbackView: View {
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var subscriptionService = SubscriptionService.shared
 
+    let presentation: PaywallSpinWinbackPresentation
+    let analyticsSource: String?
     let onClaimed: () -> Void
 
     @State private var phase: PaywallSpinPhase = .readyFirst
     @State private var rotation: Double = 0
     @State private var isPurchasing = false
     @State private var purchaseError: String?
-    @State private var showOfferCard = false
+    @State private var showOfferCard: Bool
     @State private var showWinReveal = false
     @State private var showSpinAgainSheet = false
     @State private var winRevealNumberVisible = false
     @State private var winRevealSubtitleVisible = false
     @State private var confettiBurst = false
-    @State private var rewardHeroAppeared = false
+    @State private var rewardHeroAppeared: Bool
     @State private var offerCountdownEndDate = Date().addingTimeInterval(180)
     @State private var lastTickIndex = -1
     @State private var spinTask: Task<Void, Never>?
     @State private var revealTask: Task<Void, Never>?
+
+    init(
+        presentation: PaywallSpinWinbackPresentation = .spinWheel,
+        analyticsSource: String? = nil,
+        onClaimed: @escaping () -> Void
+    ) {
+        self.presentation = presentation
+        self.analyticsSource = analyticsSource
+        self.onClaimed = onClaimed
+        let startsOnOffer = presentation == .offerOnly
+        _showOfferCard = State(initialValue: startsOnOffer)
+        _rewardHeroAppeared = State(initialValue: startsOnOffer)
+    }
 
     /// Couleurs type référence : gris clair / menthe / jaune jackpot.
     private static let colorLight = Color(red: 0.86, green: 0.90, blue: 0.90)
@@ -70,14 +97,28 @@ struct PaywallSpinWinbackView: View {
     private static let colorJackpot = Color(red: 0.93, green: 0.82, blue: 0.38)
     private static let discountHighlight = Color(red: 0.95, green: 0.42, blue: 0.48)
 
-    private var winDiscountPercent: Int { SubscriptionConfiguration.winbackDiscountPercent }
+    private var winJackpotTitle: String { SubscriptionConfiguration.winbackJackpotTitle }
 
-    /// Ordre type image : 5, jackpot, 5, 10, 5, 25, 5, 10
+    private var isTrialRetentionOffer: Bool {
+        presentation == .offerOnly
+    }
+
+    private var trialDays: Int {
+        if isTrialRetentionOffer {
+            return SubscriptionConfiguration.retentionQuickActionTrialDays
+        }
+        return subscriptionService.trialInfo(for: .annual).days
+    }
+
+    private var trialAnnualStrikethroughPrice: String {
+        SubscriptionConfiguration.winbackCompareAtPrice
+    }
+
+    /// Ordre type image : 5, jackpot à vie, 5, 10, 5, 25, 5, 10
     private var segments: [PaywallSpinSegment] {
-        let jackpot = winDiscountPercent
         return [
             .init(id: "0", kind: .percent(5), tint: Self.colorLight),
-            .init(id: "1", kind: .jackpot(jackpot), tint: Self.colorJackpot),
+            .init(id: "1", kind: .lifetime, tint: Self.colorJackpot),
             .init(id: "2", kind: .percent(5), tint: Self.colorLight),
             .init(id: "3", kind: .percent(10), tint: Self.colorMint),
             .init(id: "4", kind: .percent(5), tint: Self.colorLight),
@@ -145,10 +186,53 @@ struct PaywallSpinWinbackView: View {
         }
         .onAppear {
             ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .spinWinback
+            if presentation == .offerOnly {
+                offerCountdownEndDate = Date().addingTimeInterval(180)
+                SubscriptionService.shared.setRetentionTrialOfferActive(true)
+                let source = analyticsSource ?? "offer_only"
+                ProcessAnalytics.trackPaywallViewed(source: source)
+                ProcessAnalytics.trackSpinOfferShown(source: source)
+            } else {
+                ProcessAnalytics.trackSpinWheelViewed(
+                    source: analyticsSource ?? "paywall_cancel_or_exit"
+                )
+            }
+        }
+        .onChange(of: showOfferCard) { _, isShowing in
+            guard isShowing, presentation == .spinWheel else { return }
+            ProcessAnalytics.trackSpinOfferShown(source: "spin_wheel")
+        }
+        .onChange(of: showSpinAgainSheet) { _, isShowing in
+            if isShowing {
+                ProcessAnalytics.trackSpinAgainSheetShown()
+            }
+        }
+        .onChange(of: showWinReveal) { _, isShowing in
+            if isShowing {
+                ProcessAnalytics.trackSpinWinRevealShown(jackpotTitle: winJackpotTitle)
+            }
+        }
+        .task {
+            guard presentation == .offerOnly else { return }
+            await subscriptionService.loadSubscriptions()
+            await subscriptionService.checkSubscriptionStatus()
+            if subscriptionService.subscriptionStatus.isActive {
+                onClaimed()
+            }
+        }
+        .onChange(of: subscriptionService.subscriptionStatus) { oldValue, newValue in
+            guard presentation == .offerOnly else { return }
+            if newValue.isActive, !oldValue.isActive {
+                isPurchasing = false
+                onClaimed()
+            }
         }
         .onDisappear {
             spinTask?.cancel()
             revealTask?.cancel()
+            if presentation == .offerOnly {
+                SubscriptionService.shared.setRetentionTrialOfferActive(false)
+            }
             if ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface == .spinWinback {
                 ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .paywall
             }
@@ -199,25 +283,41 @@ struct PaywallSpinWinbackView: View {
         }
         .onAppear {
             offerCountdownEndDate = Date().addingTimeInterval(180)
-            withAnimation(.spring(response: 0.62, dampingFraction: 0.82)) {
+            if presentation == .offerOnly {
                 rewardHeroAppeared = true
+            } else {
+                withAnimation(.spring(response: 0.62, dampingFraction: 0.82)) {
+                    rewardHeroAppeared = true
+                }
             }
         }
     }
 
     private var rewardInlinePricing: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(SubscriptionConfiguration.fallbackAnnualMonthlyEquivalent + "/mois")
-                .font(PaywallBevelTheme.paywallHeroTitleFont(size: 26))
-                .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.72))
-                .strikethrough(
-                    true,
-                    color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.55)
-                )
+        Group {
+            if isTrialRetentionOffer {
+                Text(trialAnnualStrikethroughPrice)
+                    .font(PaywallBevelTheme.paywallHeroTitleFont(size: 26))
+                    .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.72))
+                    .strikethrough(
+                        true,
+                        color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.55)
+                    )
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(SubscriptionConfiguration.winbackCompareAtPrice)
+                        .font(PaywallBevelTheme.paywallHeroTitleFont(size: 26))
+                        .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.72))
+                        .strikethrough(
+                            true,
+                            color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.55)
+                        )
 
-            Text(SubscriptionConfiguration.winbackMonthlyEquivalent + "/mois")
-                .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 20))
-                .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
+                    Text(SubscriptionConfiguration.winbackLifetimePrice)
+                        .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 20))
+                        .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .opacity(rewardHeroAppeared ? 1 : 0)
@@ -229,9 +329,13 @@ struct PaywallSpinWinbackView: View {
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
 
-            Text("Économise \(winDiscountPercent)% avec le plan annuel.")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+            Text(
+                isTrialRetentionOffer
+                    ? "Accès illimité au coach, aux scans et à ton plan pendant \(trialDays) jours."
+                    : "Accès premium à vie — paiement unique, sans abonnement."
+            )
+            .font(.system(size: 14, weight: .regular))
+            .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
         }
         .multilineTextAlignment(.center)
         .opacity(rewardHeroAppeared ? 1 : 0)
@@ -242,7 +346,7 @@ struct PaywallSpinWinbackView: View {
             PaywallSpinOfferStars()
 
             VStack(spacing: 6) {
-                Text("−\(winDiscountPercent)% POUR")
+                Text(isTrialRetentionOffer ? "\(trialDays) JOURS" : "ACCÈS")
                     .font(PaywallBevelTheme.paywallHeroTitleFont(size: 32))
                     .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                     .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
@@ -250,7 +354,7 @@ struct PaywallSpinWinbackView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
 
-                Text("TOUJOURS")
+                Text(isTrialRetentionOffer ? "OFFERTS" : winJackpotTitle)
                     .font(PaywallBevelTheme.paywallHeroTitleFont(size: 32))
                     .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                     .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
@@ -320,14 +424,22 @@ struct PaywallSpinWinbackView: View {
             offerCard
 
             PaywallBevelContinueButton(
-                title: "Réclamer mon offre",
+                title: rewardClaimButtonTitle,
                 isLoading: isPurchasing,
-                isEnabled: !isPurchasing
+                isEnabled: !isPurchasing && (
+                    isTrialRetentionOffer
+                        ? subscriptionService.hasLiveAnnualProduct
+                        : subscriptionService.hasLiveLifetimeProduct
+                )
             ) {
                 Task { await claimOffer() }
             }
 
-            Text("Sans engagement, annulable à tout moment.")
+            Text(
+                isTrialRetentionOffer
+                    ? "Sans engagement, annulable à tout moment."
+                    : "Paiement unique — accès à vie, sans renouvellement."
+            )
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -442,7 +554,7 @@ struct PaywallSpinWinbackView: View {
                             .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                             .foregroundStyle(titleColor)
 
-                        Text("Tu es tombé sur 5%.\nLa meilleure remise est encore sur la roue — retente avant que l’offre disparaisse.")
+                        Text("Tu es tombé sur 5%.\nL’accès à vie est encore sur la roue — retente avant que l’offre disparaisse.")
                             .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 16))
                             .foregroundStyle(bodyColor)
                             .fixedSize(horizontal: false, vertical: true)
@@ -486,6 +598,7 @@ struct PaywallSpinWinbackView: View {
 
     private func beginSecondSpinFromSheet() {
         HapticManager.shared.impact(.medium)
+        ProcessAnalytics.trackSpinAgainTapped()
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
             showSpinAgainSheet = false
             phase = .readySecond
@@ -500,11 +613,10 @@ struct PaywallSpinWinbackView: View {
 
     private var winRevealOverlay: some View {
         VStack(spacing: 14) {
-            Text("−\(winDiscountPercent)%")
+            Text(winJackpotTitle)
                 .font(PaywallBevelTheme.paywallHeroTitleFont(size: 84))
                 .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                 .foregroundStyle(PaywallBevelTheme.paywallProTitleGradient(for: colorScheme))
-                .monospacedDigit()
                 .minimumScaleFactor(0.72)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
@@ -514,7 +626,7 @@ struct PaywallSpinWinbackView: View {
                 .blur(radius: winRevealNumberVisible ? 0 : 6)
                 .animation(.spring(response: 0.52, dampingFraction: 0.78), value: winRevealNumberVisible)
 
-            Text("sur l’abonnement annuel")
+            Text("à \(SubscriptionConfiguration.winbackLifetimePrice) — accès premium")
                 .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 18))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -560,13 +672,20 @@ struct PaywallSpinWinbackView: View {
         colorScheme == .dark ? .black : .white
     }
 
+    private var rewardClaimButtonTitle: String {
+        if isTrialRetentionOffer {
+            return subscriptionService.trialInfo(for: .annual).ctaTitle(fallback: "Commencer mon essai")
+        }
+        return "Réclamer mon offre"
+    }
+
     private var offerCard: some View {
         let cardShape = RoundedRectangle(cornerRadius: 18, style: .continuous)
         let headerFill = colorScheme == .dark ? Color.white : Color.black
         let headerText = colorScheme == .dark ? Color.black : Color.white
 
         return VStack(spacing: 0) {
-            Text("OFFRE UNIQUE")
+            Text(isTrialRetentionOffer ? "ESSAI GRATUIT" : "ACCÈS À VIE")
                 .font(.system(size: 12, weight: .bold))
                 .tracking(0.8)
                 .foregroundStyle(headerText)
@@ -576,27 +695,43 @@ struct PaywallSpinWinbackView: View {
 
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Plan annuel")
+                    Text("Accès à vie")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
 
-                    (
-                        Text(SubscriptionConfiguration.winbackCompareAtAnnualPrice)
+                    if isTrialRetentionOffer {
+                        Text(trialAnnualStrikethroughPrice)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                             .strikethrough(
                                 true,
                                 color: PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.7)
                             )
-                        + Text(" • \(SubscriptionConfiguration.winbackAnnualPrice)")
-                    )
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                    } else {
+                        (
+                            Text(SubscriptionConfiguration.winbackCompareAtPrice)
+                                .strikethrough(
+                                    true,
+                                    color: PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.7)
+                                )
+                            + Text(" • \(SubscriptionConfiguration.winbackLifetimePrice)")
+                        )
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
+                    }
                 }
 
                 Spacer(minLength: 8)
 
-                Text("\(SubscriptionConfiguration.winbackMonthlyEquivalent)/mois")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
+                if !isTrialRetentionOffer {
+                    Text(SubscriptionConfiguration.winbackLifetimePrice)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
+                } else {
+                    Text("\(trialDays) j. gratuits")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
+                }
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
@@ -626,6 +761,7 @@ struct PaywallSpinWinbackView: View {
         HapticManager.shared.impact(.medium)
 
         let isFirst = phase == .readyFirst
+        ProcessAnalytics.trackSpinStarted(attempt: isFirst ? 1 : 2)
         let targetIndex = isFirst ? fivePercentIndex : jackpotIndex
         phase = isFirst ? .spinningFirst : .spinningSecond
 
@@ -690,12 +826,14 @@ struct PaywallSpinWinbackView: View {
     private func finishSpin(isFirst: Bool) {
         spinTask?.cancel()
         if isFirst {
+            ProcessAnalytics.trackSpinFinished(attempt: 1, result: "lost_5_percent")
             HapticManager.shared.notification(.warning)
             withAnimation(.spring(response: 0.48, dampingFraction: 0.84)) {
                 phase = .lost
                 showSpinAgainSheet = true
             }
         } else {
+            ProcessAnalytics.trackSpinFinished(attempt: 2, result: "won_jackpot")
             HapticManager.shared.notification(.success)
             confettiBurst = true
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) {
@@ -872,19 +1010,42 @@ struct PaywallSpinWinbackView: View {
         purchaseError = nil
         defer { isPurchasing = false }
 
+        let source = analyticsSource
+            ?? (isTrialRetentionOffer ? "trial_retention_offer" : "spin_wheel")
+        let plan = isTrialRetentionOffer ? "annual" : "winback_lifetime"
+        let offer = isTrialRetentionOffer
+            ? "retention_trial"
+            : SubscriptionConfiguration.winbackOfferID
+
+        ProcessAnalytics.trackSpinOfferCTATapped(source: source)
+        ProcessAnalytics.trackPurchaseStarted(plan: plan, offer: offer, source: source)
+
         do {
             if !subscriptionService.canPurchase {
                 await subscriptionService.loadSubscriptions()
             }
-            try await subscriptionService.purchaseWinbackAnnual()
+            if isTrialRetentionOffer {
+                try await subscriptionService.purchaseRetentionTrialAnnual()
+            } else {
+                try await subscriptionService.purchaseWinbackLifetime()
+            }
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
+                ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: offer, source: source)
                 onClaimed()
             }
         } catch SubscriptionError.userCancelled {
+            ProcessAnalytics.trackPurchaseCancelled(plan: plan, offer: offer, source: source)
             return
         } catch {
-            purchaseError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            ProcessAnalytics.trackPurchaseFailed(
+                plan: plan,
+                error: message,
+                offer: offer,
+                source: source
+            )
+            purchaseError = message
         }
     }
 }
@@ -973,7 +1134,13 @@ private struct PaywallSpinWheelDisk: View {
                 ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                     ZStack {
                         Group {
-                            if segment.isJackpot {
+                            if case .lifetime = segment.kind {
+                                Text(segment.labelText)
+                                    .font(.system(size: 13, weight: .black, design: .rounded))
+                                    .foregroundStyle(Color(red: 0.12, green: 0.13, blue: 0.15))
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 52)
+                            } else if segment.isJackpot {
                                 Image(systemName: "gift.fill")
                                     .font(.system(size: 24, weight: .black))
                                     .foregroundStyle(Color(red: 0.12, green: 0.13, blue: 0.15))

@@ -612,7 +612,7 @@ struct OriginMealSuggestionCard: View {
                 .padding(.vertical, 8)
                 .background(theme.cardBackground.opacity(0.55), in: Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .disabled(viewModel.isLoading)
     }
 

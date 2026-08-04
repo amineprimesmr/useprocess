@@ -4,7 +4,21 @@
 
   ],
   "products" : [
-
+    {
+      "displayPrice" : "19.00",
+      "familyShareable" : false,
+      "internalID" : "6738292001",
+      "localizations" : [
+        {
+          "description" : "Accès premium Process à vie — paiement unique",
+          "displayName" : "Process Premium — À vie",
+          "locale" : "fr_FR"
+        }
+      ],
+      "productID" : "com.useprocess.lifetime",
+      "referenceName" : "Premium Lifetime",
+      "type" : "NonConsumable"
+    }
   ],
   "settings" : {
     "_applicationInternalID" : "0",
@@ -62,6 +76,12 @@
             }
           ],
           "productID" : "com.useprocess.annual",
+          "introductoryOffer" : {
+            "internalID" : "6738291202",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
           "promotionalOffers" : [
             {
               "displayPrice" : "19.99",

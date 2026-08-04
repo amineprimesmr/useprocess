@@ -69,8 +69,9 @@ struct LanguageSelectorView: View {
                     width: OnboardingConstants.backButtonSize,
                     height: OnboardingConstants.backButtonSize
                 )
+                .contentShape(Circle())
         }
-        .glassStyle()
+        .glassCircleStyle()
 
         .onAppear {
             // Charger la langue actuelle depuis les préférences
