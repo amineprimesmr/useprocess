@@ -1,0 +1,294 @@
+/* Section « 3 étapes » — shell + typo partagée ; scrolly desktop ≥901px */
+
+.fintap-steps-scroll {
+  --fintap-steps-bg: #f5f5f7;
+  --fintap-steps-card: #ececee;
+  --fintap-steps-ink: #0a0a0a;
+  --fintap-steps-muted: #5c5c5c;
+  --fintap-steps-line: rgba(0, 0, 0, 0.14);
+  --fintap-steps-nav-clear: max(6.5rem, calc(env(safe-area-inset-top, 0px) + 5.35rem));
+  position: relative;
+  overflow: visible;
+  background: var(--fintap-steps-bg);
+  scroll-margin-top: var(--fintap-steps-nav-clear);
+}
+
+/* Même traitement que `.fintap-hero-iphone__actions-title` — titre centré, plus grand */
+.fintap-steps-scroll__h2 {
+  margin: 0 auto 1rem;
+  width: 100%;
+  max-width: min(100%, 38rem);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: clamp(2.35rem, 7.8vw, 3.55rem);
+  font-weight: 560;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  text-align: center;
+  text-wrap: balance;
+  background: linear-gradient(142deg, #01040d 0%, #0b1120 34%, #334155 68%, #f1f5f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.fintap-steps-scroll__intro {
+  margin: 0 auto 1.6rem;
+  max-width: min(34ch, 100%);
+  font-size: clamp(0.78rem, 1.35vw, 0.9rem);
+  line-height: 1.38;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--fintap-steps-muted);
+}
+
+@media (min-width: 1024px) {
+  .fintap-steps-scroll__h2 {
+    max-width: min(100%, 42rem);
+    font-size: clamp(2.55rem, 4.5vw, 3.75rem);
+  }
+
+  .fintap-steps-scroll__intro {
+    max-width: min(34ch, 100%);
+    font-size: clamp(0.82rem, 1.15vw, 0.94rem);
+  }
+}
+
+/* Cartes : typo partagée (titres / texte sous les visuels) */
+.fintap-steps-card__title {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--fintap-steps-ink);
+}
+
+.fintap-steps-card__desc {
+  margin: 0 0 0.65rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--fintap-steps-muted);
+}
+
+/* Cartes : panneau gris unique (image + texte), les 3 étapes */
+.fintap-steps-card--etape-media {
+  background: transparent;
+}
+
+.fintap-steps-card__grey-panel {
+  position: relative;
+  background: var(--fintap-steps-card);
+  text-align: center;
+  border-radius: 1.65rem;
+  overflow: hidden;
+  padding: 0 clamp(0.85rem, 2.5vw, 1.15rem) clamp(1.1rem, 2.5vw, 1.35rem);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.fintap-steps-card__grey-panel-media {
+  padding: 2.65rem 0 0.95rem;
+  margin: 0;
+}
+
+.fintap-steps-card__footer-num {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.65rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  background: #0a0a0a;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 1;
+}
+
+.fintap-steps-card__grey-panel .fintap-steps-card__title {
+  margin: 0 auto 0.4rem;
+  max-width: min(32ch, 100%);
+}
+
+.fintap-steps-card__grey-panel .fintap-steps-card__desc {
+  margin: 0 auto;
+  margin-bottom: 0;
+  max-width: min(40ch, 100%);
+}
+
+/* ─── Desktop : flex stretch — gauche + rail sticky, droite en scroll réel ─── */
+@media (min-width: 901px) {
+  .fintap-steps-scroll__track {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .fintap-steps-scroll__desktop-row {
+    display: flex;
+    align-items: stretch;
+    gap: clamp(1.25rem, 4vw, 2.75rem);
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1.25rem, 4vw, 2.5rem) clamp(2rem, 5vw, 3.5rem);
+    box-sizing: border-box;
+  }
+
+  .fintap-steps-scroll__left-col {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: min(100%, 26rem);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+  }
+
+  /* Bloc titre + intro : ancrage piloté en JS (flow → fixed → absolute bas). */
+  .fintap-steps-scroll__left-sticky {
+    position: relative;
+    z-index: 4;
+    width: 100%;
+    max-width: min(100%, 26rem);
+    box-sizing: border-box;
+    padding-top: 0.15rem;
+  }
+
+  .fintap-steps-scroll__left-sticky.is-left-pinned {
+    background: var(--fintap-steps-bg);
+    padding-right: 0.35rem;
+    margin-right: -0.35rem;
+    box-shadow: 8px 0 20px -6px color-mix(in srgb, var(--fintap-steps-bg) 88%, transparent);
+  }
+
+  .fintap-steps-scroll__left-sticky.is-left-docked {
+    background: var(--fintap-steps-bg);
+  }
+
+  .fintap-steps-scroll__left {
+    max-width: min(100%, 26rem);
+  }
+
+  .fintap-steps-scroll__left-sticky .fintap-steps-scroll__h2 {
+    margin-left: 0;
+    margin-right: 0;
+    text-align: left;
+  }
+
+  .fintap-steps-scroll__left-sticky .fintap-steps-scroll__intro {
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    text-align: left;
+    max-width: min(38ch, 100%);
+  }
+
+  .fintap-steps-scroll__rail {
+    flex: 0 0 3.25rem;
+    position: relative;
+    align-self: stretch;
+    min-height: 100%;
+  }
+
+  .fintap-steps-scroll__rail-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 2px dashed var(--fintap-steps-line);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .fintap-steps-scroll__badge {
+    position: -webkit-sticky;
+    position: sticky;
+    top: clamp(7rem, 36vh, 20rem);
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: #0a0a0a;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18), 0 0 0 3px rgba(10, 152, 255, 0.15);
+    z-index: 1;
+    transition:
+      transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1),
+      box-shadow 0.35s ease,
+      background 0.25s ease;
+  }
+
+  .fintap-steps-scroll__right {
+    flex: 1.08 1 0;
+    min-width: 0;
+  }
+
+  .fintap-steps-scroll__cards {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.25rem, 5vh, 3.75rem);
+    width: 100%;
+  }
+
+  .fintap-steps-scroll__right .fintap-steps-card {
+    position: relative;
+    margin: 0 auto;
+    max-width: 460px;
+    width: 100%;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    scroll-margin-top: calc(var(--fintap-steps-nav-clear) + 0.75rem);
+    min-height: min(78vh, 620px);
+    transition: box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .fintap-steps-scroll__right .fintap-steps-card.is-active .fintap-steps-card__grey-panel {
+    box-shadow:
+      0 1px 0 rgba(0, 0, 0, 0.04),
+      0 16px 52px rgba(0, 0, 0, 0.13),
+      0 0 0 1px rgba(10, 152, 255, 0.12);
+    transform: translate3d(0, -3px, 0);
+  }
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: reduce) {
+  .fintap-steps-scroll__right .fintap-steps-card {
+    transition: none;
+  }
+
+  .fintap-steps-scroll__badge {
+    transition: none;
+  }
+}
+
+/* Panneaux étapes (desktop + mobile) : survol souris */
+@media (hover: hover) and (pointer: fine) {
+  @media (prefers-reduced-motion: no-preference) {
+    .fintap-steps-card__grey-panel {
+      transition:
+        transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
+        box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .fintap-steps-card__grey-panel:hover {
+      transform: translate3d(0, -8px, 0);
+      box-shadow:
+        0 1px 0 rgba(0, 0, 0, 0.05),
+        0 20px 48px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(10, 152, 255, 0.14),
+        0 0 32px rgba(39, 243, 169, 0.08);
+    }
+  }
+}

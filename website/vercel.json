@@ -1,6 +1,12 @@
 {
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/get", "destination": "/index.html" },
+    { "source": "/telecharger", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

@@ -1,0 +1,73 @@
+================================================================================
+PROCESS DEBLOAT — APP STORE LISTING (ENGLISH U.S.) — Version 1.03
+Copy into App Store Connect → Distribution → iOS App → 1.03 → English (U.S.)
+================================================================================
+
+NAME (30)
+Process Debloat
+
+SUBTITLE (30)
+Anti water retention
+
+PROMOTIONAL TEXT (170)
+Scan your face, follow your anti-retention plan, and debloat for real. Personalized protocol.
+
+SUPPORT URL
+https://useprocess.xyz/support
+
+MARKETING URL (optional)
+https://useprocess.xyz
+
+PRIVACY POLICY URL (also required in App Privacy)
+https://useprocess.xyz/confidentialite
+
+================================================================================
+DESCRIPTION
+================================================================================
+
+Debloat your face with a daily scan and a personalized anti-retention plan.
+
+Process Debloat helps reduce facial puffiness linked to water retention, sleep, hydration, and nutrition.
+
+WHAT YOU DO EVERY DAY
+• Daily face scan: retention, under-eyes, jawline, skin, estimated cortisol
+• Clear checklist so you always know what to do next
+• Guided hydration
+• Debloat meals and meal photo analysis
+• Sleep and recovery built into your protocol
+• AI coach focused on your face
+
+WHY PROCESS
+• A personal anti-retention protocol
+• Concrete scores to track progress
+• A simple loop: scan → actions → results
+
+If your face looks puffy in the morning, start today.
+
+Subscription may be required for full access. Prices are shown in the app before purchase. Manage or cancel anytime in iOS Settings → Subscriptions.
+
+Terms of Use: https://useprocess.xyz/cgu
+Privacy Policy: https://useprocess.xyz/confidentialite
+Support: https://useprocess.xyz/support
+
+MEDICAL NOTICE
+Process Debloat provides general wellness estimates and guidance. It is not a medical device. If you have health concerns, consult a professional.
+
+================================================================================
+KEYWORDS (100 max, no spaces after commas)
+================================================================================
+
+puffy,swelling,edema,jawline,drainage,bags,scan,hydration,detox,cortisol,skin,face,puffiness,bloat
+
+================================================================================
+WHAT'S NEW
+================================================================================
+
+Process Debloat update: clearer anti-retention positioning, face scan flow improvements, and a tighter daily protocol (scan, hydration, meals, recovery).
+
+================================================================================
+APP PRIVACY
+================================================================================
+
+Privacy Policy URL:
+https://useprocess.xyz/confidentialite

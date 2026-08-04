@@ -1,0 +1,576 @@
+/* Hero FinTap — mockup + scroll 3D (contre-plongée → droit) */
+
+.fintap-hero-iphone {
+  --fintap-hero-bg: transparent;
+  --fintap-hero-ink: #0a0a0a;
+  --fintap-hero-muted: #555;
+  --fintap-hero-bottom-bleed: clamp(2.75rem, 8vw, 6.5rem);
+  position: relative;
+  padding: clamp(6.5rem, 14vw, 10rem) 0 calc(clamp(2rem, 5vw, 3.5rem) + var(--fintap-hero-bottom-bleed));
+  background: var(--fintap-hero-bg);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: visible;
+}
+
+.fintap-hero-iphone__text {
+  text-align: center;
+  margin: 0 auto 2.25rem;
+  padding: 0 clamp(2.25rem, 8vw, 6rem);
+  max-width: 1200px;
+}
+
+.fintap-hero-iphone__h1 {
+  font-family: "Inter", system-ui, sans-serif !important;
+  font-weight: 900;
+  font-size: clamp(2.5rem, 7.2vw, 4.8rem);
+  line-height: 0.98;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  color: var(--fintap-hero-ink);
+  margin: 0 0 1rem;
+}
+
+.fintap-hero-iphone__lead {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--fintap-hero-muted);
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* perspective sur le parent (obligatoire y compris mobile, sinon le rotateX ne “mord” pas) */
+#phoneWrapper.fintap-hero-iphone__scene,
+.fintap-hero-iphone__scene {
+  /* Marge fixe : l’espace 24→200px du scroll est intégré au translate3d du mockup (compositing) */
+  margin: 24px auto 0;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+  padding: 0.5rem 0 clamp(2.75rem, 7vw, 5.5rem);
+  min-height: min(48vh, 400px);
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.fintap-hero-iphone__experience {
+  width: 100%;
+}
+
+/* Ancrage nav / deep link : marge sous la barre Liquid Glass */
+#fintap-commerce-onboarding {
+  scroll-margin-top: max(5.5rem, calc(env(safe-area-inset-top, 0px) + 4.25rem));
+}
+
+@media (max-width: 767.98px) {
+  #fintap-commerce-onboarding {
+    scroll-margin-top: 0.75rem;
+    scroll-margin-bottom: max(4.75rem, calc(env(safe-area-inset-bottom, 0px) + 3.85rem));
+  }
+}
+
+.fintap-hero-iphone__actions {
+  display: flex;
+  gap: 0.7rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 2.2rem auto 0;
+  padding: 0 max(0.85rem, env(safe-area-inset-left)) 0.75rem max(0.85rem, env(safe-area-inset-right));
+  width: 100%;
+  max-width: 760px;
+  box-sizing: border-box;
+  opacity: 0;
+  transform: translateY(18px) scale(0.985);
+  pointer-events: none;
+  filter: blur(4px);
+  transition:
+    opacity 0.46s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fintap-hero-iphone__actions.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+}
+
+.fintap-hero-iphone__actions-title {
+  width: 100%;
+  margin: 0 0 0.35rem;
+  text-align: center !important;
+  align-self: center !important;
+  font-size: clamp(2.15rem, 7.3vw, 3.45rem);
+  font-weight: 560;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  background: linear-gradient(142deg, #01040d 0%, #0b1120 34%, #334155 68%, #f1f5f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.34s ease, transform 0.34s ease;
+}
+
+.fintap-hero-iphone__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.fintap-hero-iphone__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  flex: 1 1 auto;
+  width: min(100%, 420px);
+  max-width: 420px;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  padding: 0.4rem 0.7rem 0.4rem 0.56rem;
+  box-sizing: border-box;
+  position: relative;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.fintap-hero-iphone__search-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 0.95rem;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+  z-index: 30;
+}
+
+.fintap-hero-iphone__search-option {
+  width: 100%;
+  border: 0;
+  background: #fff;
+  text-align: left;
+  padding: 0.6rem 0.78rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  cursor: pointer;
+}
+
+.fintap-hero-iphone__search-option + .fintap-hero-iphone__search-option {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.fintap-hero-iphone__search-option:hover {
+  background: #f8fafc;
+}
+
+.fintap-hero-iphone__search-option-main {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.fintap-hero-iphone__search-option-sub {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.fintap-hero-iphone__search-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  flex-shrink: 0;
+}
+
+.fintap-hero-iphone__search-icon img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  /* Le fichier icone.png contient encore un mat blanc : ce blend le neutralise visuellement ici. */
+  mix-blend-mode: multiply;
+}
+
+.fintap-hero-iphone__search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.98rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  padding: 0 0.2rem 0 0;
+}
+
+.fintap-hero-iphone__search-input::placeholder {
+  color: #64748b;
+}
+
+.fintap-hero-iphone__search-cta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #111827 0%, #020617 100%);
+  color: #fff !important;
+  text-decoration: none;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.16);
+}
+
+.fintap-hero-iphone__search-cta svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+
+.fintap-hero-iphone__search-cta--busy {
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.fintap-hero-iphone__search-cta__spinner {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: fintapHeroCtaSpin 0.72s linear infinite;
+}
+
+@keyframes fintapHeroCtaSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fintap-hero-iphone__search-empty-hint {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 26rem;
+  margin: 0.35rem auto 0;
+  padding: 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.fintap-hero-iphone__search-conflict {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 26rem;
+  margin: 0.35rem auto 0;
+  padding: 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #b91c1c;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.fintap-hero-iphone__btn--primary {
+  background: linear-gradient(180deg, #111827 0%, #020617 100%);
+  color: #fff !important;
+  box-shadow: 0 6px 16px rgba(2, 6, 23, 0.22);
+  flex: 0 0 auto;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.42s ease, transform 0.42s ease;
+}
+
+.fintap-hero-iphone__actions.is-visible .fintap-hero-iphone__actions-title {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.08s;
+}
+
+.fintap-hero-iphone__actions.is-visible .fintap-hero-iphone__search {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.14s;
+}
+
+.fintap-hero-iphone__actions.is-visible .fintap-hero-iphone__btn--primary {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.2s;
+}
+
+.fintap-hero-iphone__btn:hover {
+  transform: translateY(-1px);
+}
+
+#iphoneMockup.iphone-mockup.fintap-iphone-mockup,
+#iphoneMockup.fintap-iphone-mockup,
+.iphone-mockup.fintap-iphone-mockup {
+  position: relative;
+  width: 280px;
+  max-width: 100%;
+  line-height: 0;
+  z-index: 0;
+  transform-origin: center bottom;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  /* pas de transition sur transform/ombre (animation pilotée en JS) */
+  transition: none;
+  background: transparent;
+}
+
+#iphoneMockup .fintap-iphone-mockup__img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  background: transparent;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* État initial 3D (avant 1er run JS) : même base que ratio 0 — plus zoomé qu’en fin d’anim */
+#iphoneMockup.fintap-iphone-mockup {
+  transform: translate3d(0, -44px, 0) rotateX(38deg) rotateY(0deg) rotateZ(0deg) scale(1.52);
+  box-shadow: none;
+}
+
+@media (min-width: 768px) {
+  .fintap-hero-iphone__scene {
+    min-height: min(58vh, 480px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .fintap-hero-iphone__experience {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 3rem);
+    position: relative;
+    min-height: 700px;
+  }
+
+  .fintap-hero-iphone__scene {
+    margin: 24px auto 0;
+    justify-content: center;
+    min-height: 560px;
+    padding-bottom: clamp(3rem, 8vw, 6rem);
+  }
+
+  .fintap-hero-iphone__actions {
+    position: absolute;
+    right: clamp(1rem, 4vw, 3rem);
+    top: 46%;
+    margin: 0;
+    max-width: 460px;
+    padding: 0;
+    width: min(42vw, 460px);
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .fintap-hero-iphone__actions-title {
+    text-align: left !important;
+    align-self: flex-start !important;
+    font-size: clamp(2.1rem, 3.5vw, 3rem);
+  }
+
+  .fintap-hero-iphone__btn--primary {
+    display: none;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  @media (prefers-reduced-motion: no-preference) {
+    .fintap-hero-iphone__scene {
+      transition: filter 0.5s ease;
+    }
+
+    .fintap-hero-iphone__scene:hover {
+      filter:
+        drop-shadow(0 26px 52px rgba(10, 152, 255, 0.14))
+        drop-shadow(0 10px 28px rgba(39, 243, 169, 0.08));
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fintap-hero-iphone__scene {
+    perspective: none;
+  }
+
+  #iphoneMockup.fintap-iphone-mockup {
+    will-change: auto;
+    transform: translate3d(0, 0, 0) rotateX(0) rotateY(0) rotateZ(0) scale(1);
+    box-shadow: none;
+  }
+
+  .fintap-hero-iphone__actions {
+    transition: none;
+    filter: none;
+  }
+
+  .fintap-hero-iphone__actions-title,
+  .fintap-hero-iphone__search,
+  .fintap-hero-iphone__btn--primary {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Conversion mobile : champ commerce sous l'accroche, AVANT l'iPhone, toujours visible */
+@media (max-width: 767.98px) {
+  .fintap-hero-iphone__text {
+    margin-bottom: 0.25rem;
+  }
+
+  .fintap-hero-iphone__h1 {
+    margin-bottom: 0.4rem;
+  }
+
+  .fintap-hero-iphone__lead {
+    margin-top: 0;
+    line-height: 1.32;
+  }
+
+  .fintap-hero-iphone__experience {
+    display: flex;
+    flex-direction: column;
+  }
+  #fintap-commerce-onboarding.fintap-hero-iphone__actions {
+    order: -1;
+    margin: 1.65rem auto 2rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    pointer-events: auto;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .fintap-hero-iphone__download-wrap {
+    order: -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+  }
+  .fintap-hero-iphone.fintap-hero-iphone--scroll .fintap-hero-iphone__download-app,
+  .fintap-hero-iphone.fintap-hero-iphone--scroll .fintap-hero-iphone__download-app-label {
+    color: #fff;
+  }
+
+  .fintap-hero-iphone__download-app {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.55rem;
+    width: auto;
+    max-width: min(100%, 17.5rem);
+    min-height: 2.85rem;
+    padding: 0.28rem 0.28rem 0.28rem 0.95rem;
+    border-radius: 999px;
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-decoration: none;
+    background: #000;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.2),
+      0 8px 20px rgba(0, 0, 0, 0.24);
+  }
+  .fintap-hero-iphone__download-app-label {
+    flex: 0 1 auto;
+    text-align: left;
+    padding-left: 0;
+    white-space: nowrap;
+  }
+  .fintap-hero-iphone__download-app-arrow {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: #fff;
+    color: #000;
+  }
+  .fintap-hero-iphone__download-app-arrow svg {
+    width: 0.92rem;
+    height: 0.92rem;
+    display: block;
+  }
+  .fintap-hero-iphone__download-caption {
+    margin: 0;
+    max-width: 22ch;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.96);
+    text-shadow: 0 1px 12px rgba(0, 45, 95, 0.22);
+  }
+  #fintap-commerce-onboarding .fintap-hero-iphone__actions-title {
+    display: none;
+  }
+  /* Le champ est au-dessus du mockup : compacter le panneau bleu (badge en flux sous l’iPhone) */
+  .fintap-hero-iphone.fintap-hero-iphone--scroll {
+    --fintap-hero-bottom-bleed: clamp(0.75rem, 2.5vw, 1.35rem);
+    padding-bottom: clamp(0.35rem, 1.2vw, 0.65rem);
+  }
+  .fintap-hero-iphone__scene {
+    margin-top: clamp(5rem, 15vw, 6.75rem);
+    min-height: 0;
+    padding-top: 0.65rem;
+    padding-bottom: clamp(0.35rem, 1.5vw, 0.75rem);
+  }
+  .fintap-hero-iphone__btn--primary { display: none; }
+}

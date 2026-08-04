@@ -1,0 +1,279 @@
+/**
+ * CodePen fooontic/KwpRaGr — styles du switcher uniquement.
+ * Variables couleur scopées sur #landing-liquid-glass pour ne pas
+ * polluer #landing ni le hero.
+ */
+#landing-liquid-glass {
+  --c-glass: #bbbbbc;
+  --c-light: #fff;
+  --c-dark: #000;
+  --c-content: #224;
+  --c-action: #0052f5;
+  --c-bg: #e8e8e9;
+  --glass-reflex-dark: 1;
+  --glass-reflex-light: 1;
+  --saturation: 150%;
+  --fz: 1rem;
+}
+
+.switcher {
+ --sw-pad-x: 8px;
+ --sw-pad-y: 4px;
+ --sw-pad-yb: 4px;
+ --sw-gap: 6px;
+ --sw-track: calc(100% - 2 * var(--sw-pad-x) - 2 * var(--sw-gap));
+ --sw-slot: calc(var(--sw-track) / 3);
+ --sw-shift: calc(var(--sw-slot) + var(--sw-gap));
+
+ position: fixed;
+ z-index: 1;
+ top: 40px;
+ left: 50%;
+ translate: -50%;
+ display: flex;
+ align-items: center;
+ gap: var(--sw-gap);
+ width: min(228px, calc(100vw - 1.5rem));
+ max-width: min(228px, calc(100vw - 1.5rem));
+ height: 44px;
+ box-sizing: border-box;
+ padding: var(--sw-pad-y) var(--sw-pad-x) var(--sw-pad-yb);
+ margin: 0;
+ border: none;
+ border-radius: 99em;
+ font-size: var(--fz);
+ isolation: isolate;
+ overflow: hidden;
+ min-inline-size: 0;
+ background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+ backdrop-filter: blur(10px) saturate(var(--saturation));
+ -webkit-backdrop-filter: blur(10px) saturate(var(--saturation));
+ box-shadow: 
+ inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
+ inset 1.8px 3px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent), 
+ inset -2px -2px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 80%), transparent), 
+ inset -3px -8px 1px -6px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 60%), transparent), 
+ inset -0.3px -1px 4px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 12%), transparent), 
+ inset -1.5px 2.5px 0px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+ inset 0px 3px 4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+ inset 2px -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+ 0px 1px 5px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+ 0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
+ transition: 
+ background-color 400ms 
+ cubic-bezier(1, 0.0, 0.4, 1),
+ box-shadow 400ms
+ cubic-bezier(1, 0.0, 0.4, 1);
+}
+
+.switcher__legend {
+ position: absolute;
+ width: 1px;
+ height: 1px;
+ margin: -1px;
+ border: 0;
+ padding: 0;
+ white-space: nowrap;
+ clip-path: inset(100%);
+ clip: rect(0 0 0 0);
+ overflow: hidden;
+}
+
+.switcher__input {
+ clip: rect(0 0 0 0);
+ clip-path: inset(100%);
+ height: 1px;
+ width: 1px;
+ overflow: hidden;
+ position: absolute;
+ left: 50%;
+ top: 50%;
+ translate: -50% -50%;
+ margin: 0;
+ white-space: nowrap;
+}
+
+.switcher__icon {
+ display: block;
+ flex-shrink: 0;
+ width: 1.35rem;
+ height: 1.35rem;
+ margin: 0;
+ transition: scale 200ms cubic-bezier(0.5, 0, 0, 1);
+}
+
+.switcher__icon--download {
+ width: 1.72rem;
+ height: 1.72rem;
+}
+
+.switcher__icon--whatsapp {
+ width: 1.35rem;
+ height: 1.35rem;
+}
+
+.switcher__filter {
+ position: absolute;
+ width: 0;
+ height: 0;
+ z-index: -1;
+}
+
+.switcher__option {
+ --c: var(--c-content);
+ position: relative;
+ z-index: 1;
+ flex: 1 1 0;
+ min-width: 0;
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ padding: 0;
+ height: 100%;
+ box-sizing: border-box;
+ border-radius: 99em;
+ opacity: 1;
+ transition: all 160ms;
+ background: transparent;
+ box-shadow: none;
+}
+
+.switcher__option:hover {
+ --c: var(--c-action);
+ cursor: pointer;
+}
+
+.switcher__option:hover .switcher__icon {
+ scale: 1.2;
+}
+
+.switcher__option:hover .switcher__icon--download {
+ scale: 1.08;
+}
+
+.switcher__option:has(input:checked) {
+ --c: var(--c-content);
+ cursor: auto;
+}
+
+.switcher__option:has(input:checked) .switcher__icon {
+ scale: 1;
+}
+
+.switcher::after {
+ content: '';
+ position: absolute;
+ left: var(--sw-pad-x);
+ top: var(--sw-pad-y);
+ bottom: var(--sw-pad-yb);
+ width: var(--sw-slot);
+ box-sizing: border-box;
+ border-radius: 99em;
+ background-color: color-mix(in srgb, var(--c-glass) 36%, transparent);
+ z-index: 0;
+ box-shadow: 
+ inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
+ inset 2px 1px 0px -1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent), 
+ inset -1.5px -1px 0px -1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 80%), transparent), 
+ inset -2px -6px 1px -5px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 60%), transparent), 
+ inset -1px 2px 3px -1px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+ inset 0px -4px 1px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+ 0px 3px 6px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
+}
+
+.switcher:has(input[c-option="1"]:checked)::after {
+ left: var(--sw-pad-x);
+ transform-origin: right;
+ transition: 
+ background-color 400ms 
+ cubic-bezier(1, 0.0, 0.4, 1),
+ box-shadow 400ms
+ cubic-bezier(1, 0.0, 0.4, 1),
+ left 400ms 
+ cubic-bezier(1, 0.0, 0.4, 1);
+ animation: scaleToggle 440ms ease; 
+}
+
+.switcher:has(input[c-option="2"]:checked)::after {
+ left: calc(var(--sw-pad-x) + var(--sw-shift));
+ transform-origin: left;
+ transition: 
+ background-color 400ms 
+ cubic-bezier(1, 0.0, 0.4, 1),
+ box-shadow 400ms
+ cubic-bezier(1, 0.0, 0.4, 1),
+ left 400ms 
+ cubic-bezier(1, 0.0, 0.4, 1);
+ animation: scaleToggle2 440ms ease; 
+}
+
+.switcher[c-previous="1"]:has(input[c-option="2"]:checked)::after {
+ transform-origin: left;
+}
+
+.switcher[c-previous="3"]:has(input[c-option="2"]:checked)::after {
+ transform-origin: right;
+}
+
+.switcher:has(input[c-option="3"]:checked)::after {
+ left: calc(var(--sw-pad-x) + 2 * var(--sw-shift));
+ transform-origin: left;
+ transition: 
+ background-color 400ms 
+ cubic-bezier(1, 0.0, 0.4, 1),
+ box-shadow 400ms
+ cubic-bezier(1, 0.0, 0.4, 1),
+ left 400ms 
+ cubic-bezier(1, 0.0, 0.4, 1);
+ animation: scaleToggle3 440ms ease; 
+}
+
+@keyframes scaleToggle {
+ 0% { scale: 1 1; }
+ 50% { scale: 1.1 1; }
+ 100% { scale: 1 1; }
+}
+
+@keyframes scaleToggle2{
+ 0% { scale: 1 1; }
+ 50% { scale: 1.2 1; }
+ 100% { scale: 1 1; }
+} 
+
+@keyframes scaleToggle3 {
+ 0% { scale: 1 1; }
+ 50% { scale: 1.1 1; }
+ 100% { scale: 1 1; }
+}
+
+/* Mobile : barre de navigation en bas (safe area) */
+@media (max-width: 767.98px) {
+  #landing-liquid-glass .switcher {
+    top: auto;
+    bottom: max(1.15rem, calc(env(safe-area-inset-bottom, 0px) + 0.62rem));
+    translate: -50% 0;
+    --sw-pad-x: 11px;
+    --sw-pad-y: 7px;
+    --sw-pad-yb: 7px;
+    --sw-gap: 9px;
+    --fz: 1.0625rem;
+    width: min(264px, calc(100vw - 2rem));
+    max-width: min(264px, calc(100vw - 2rem));
+    height: 54px;
+  }
+
+  #landing-liquid-glass .switcher__icon {
+    width: 1.52rem;
+    height: 1.52rem;
+  }
+
+  #landing-liquid-glass .switcher__icon--download {
+    width: 1.95rem;
+    height: 1.95rem;
+  }
+
+  #landing-liquid-glass .switcher__icon--whatsapp {
+    width: 1.52rem;
+    height: 1.52rem;
+  }
+}

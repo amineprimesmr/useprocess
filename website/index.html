@@ -1,119 +1,164 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Process AI — Santé, sport et coach IA</title>
-  <meta name="description" content="Process AI : coach intelligent, suivi Apple Santé, scan visage et plan personnalisé sport, nutrition et récupération. Application iOS.">
-  <meta property="og:title" content="Process AI">
-  <meta property="og:description" content="Application santé tout-en-un : coach IA, Apple Santé, scan visage et protocole sur mesure.">
-  <meta property="og:url" content="https://useprocess.xyz/">
-  <meta property="og:type" content="website">
-  <meta name="theme-color" content="#111111">
-  <link rel="canonical" href="https://useprocess.xyz/">
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body>
-  <main class="wrap">
-    <header class="site">
-      <a class="brand" href="/">
-        <span class="brand-mark" aria-hidden="true">P</span>
-        <span class="brand-name">Process AI</span>
-      </a>
-      <p class="tagline">Santé, sport et récupération — sur iPhone et iPad.</p>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      document.documentElement.classList.add("app-booting");
+    </script>
+    <style>
+      .hidden { display: none !important; }
+      html.app-booting #landing { visibility: hidden; }
+    </style>
+    <meta
+      name="description"
+      content="Process — Coach IA, scan visage et protocole debloat personnalisé. Dégonfle ton visage avec nutrition, hydratation et suivi Apple Santé."
+    />
+    <meta property="og:title" content="Process AI" />
+    <meta
+      property="og:description"
+      content="Coach IA, scan visage et protocole debloat — application iOS."
+    />
+    <meta property="og:url" content="https://useprocess.xyz/" />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#f5f5f7" />
+    <link rel="canonical" href="https://useprocess.xyz/" />
+    <link rel="icon" type="image/png" href="/assets/icone.png?v=20260804" />
+    <link rel="apple-touch-icon" href="/assets/icone.png?v=20260804" />
+    <title>Process — Coach IA &amp; protocole debloat visage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/landing.css" />
+    <link rel="stylesheet" href="/src/get-app-page.css" />
+    <link rel="stylesheet" href="/src/landing-testimonials-faq.css" />
+    <link rel="stylesheet" href="/src/landing-liquid-nav.css" />
+    <link rel="stylesheet" href="/src/landing-footer.css" />
+  </head>
+  <body>
+    <div id="landing">
+      <div id="landing-liquid-glass" class="landing-liquid-nav-host"></div>
 
-    <section class="hero">
-      <p class="hero-badge">Application iOS</p>
-      <h1>Ton protocole santé, guidé par l'IA.</h1>
-      <p class="hero-lead">
-        Coach intelligent, connexion Apple Santé, scan visage et programme personnalisé
-        pour le sport, la nutrition et la récupération.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="https://apps.apple.com/fr/search?term=Process%20AI">Trouver sur l'App Store</a>
-        <a class="btn btn-secondary" href="/support">Contacter le support</a>
-      </div>
-    </section>
+      <main id="landing-main" class="landing-main landing-main-cinematic">
+        <div id="landing-cinematic-root" class="landing-cinematic-shell"></div>
+      </main>
 
-    <section class="card">
-      <h2>Fonctionnalités</h2>
-      <div class="feature-grid">
-        <div class="feature">
-          <strong>Coach IA</strong>
-          <span>Conseils motivationnels et pratiques adaptés à ton profil, ton activité et tes habitudes.</span>
+      <section id="lancez-vous-rapidement" class="landing-launch-sf" aria-labelledby="landing-launch-heading">
+        <div class="landing-launch-sf-inner">
+          <h2 id="landing-launch-heading" class="landing-launch-sf-heading">Lancez-vous rapidement</h2>
+          <div class="landing-launch-sf-body">
+            <ul class="landing-launch-sf-faq landing-faq-list">
+              <li class="landing-faq-item landing-launch-sf-faq-item">
+                <button type="button" class="landing-faq-question" aria-expanded="false">
+                  <span>Comment fonctionne Process&nbsp;?</span>
+                  <span class="landing-faq-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="landing-faq-answer" aria-hidden="true">
+                  <p>
+                    Tu scans ton visage, Process analyse ton profil et te propose un protocole debloat :
+                    aliments drainants, hydratation, sommeil et activité — synchronisé avec Apple Santé.
+                  </p>
+                </div>
+              </li>
+              <li class="landing-faq-item landing-launch-sf-faq-item">
+                <button type="button" class="landing-faq-question" aria-expanded="false">
+                  <span>Combien ça coûte&nbsp;?</span>
+                  <span class="landing-faq-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="landing-faq-answer" aria-hidden="true">
+                  <p>
+                    Essai gratuit de 3 jours, puis abonnement Process AI Premium (mensuel ou annuel — prix
+                    affichés dans l&apos;app). Annulable dans Réglages iOS &gt; Abonnements.
+                  </p>
+                </div>
+              </li>
+              <li class="landing-faq-item landing-launch-sf-faq-item">
+                <button type="button" class="landing-faq-question" aria-expanded="false">
+                  <span>Process remplace-t-il un médecin&nbsp;?</span>
+                  <span class="landing-faq-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="landing-faq-answer" aria-hidden="true">
+                  <p>
+                    Non. Process fournit des estimations bien-être et des recommandations générales. Ce
+                    n&apos;est pas un dispositif médical.
+                  </p>
+                </div>
+              </li>
+              <li class="landing-faq-item landing-launch-sf-faq-item">
+                <button type="button" class="landing-faq-question" aria-expanded="false">
+                  <span>Quelles données utilise le scan visage&nbsp;?</span>
+                  <span class="landing-faq-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="landing-faq-answer" aria-hidden="true">
+                  <p>
+                    Le scan ARKit reste sur ton iPhone. Process en déduit des indicateurs de gonflement.
+                    Détails dans notre
+                    <a href="/confidentialite#donnees-faciales">politique de confidentialité</a>.
+                  </p>
+                </div>
+              </li>
+              <li class="landing-faq-item landing-launch-sf-faq-item">
+                <button type="button" class="landing-faq-question" aria-expanded="false">
+                  <span>Puis-je annuler à tout moment&nbsp;?</span>
+                  <span class="landing-faq-icon" aria-hidden="true">+</span>
+                </button>
+                <div class="landing-faq-answer" aria-hidden="true">
+                  <p>
+                    Oui, via Réglages iOS &gt; ton nom &gt; Abonnements. Tu gardes l&apos;accès jusqu&apos;à la
+                    fin de la période en cours.
+                  </p>
+                </div>
+              </li>
+            </ul>
+            <a href="/get" class="landing-launch-sf-download-app">
+              <span class="landing-launch-sf-download-app__label">Télécharger Process</span>
+              <span class="landing-launch-sf-download-app__arrow" aria-hidden="true">
+                <svg viewBox="0 0 20 20" focusable="false">
+                  <path d="M4.5 10h9m0 0-3.5-3.5M13.5 10l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </a>
+          </div>
         </div>
-        <div class="feature">
-          <strong>Apple Santé</strong>
-          <span>Pas, sommeil, fréquence cardiaque, calories et score de readiness du jour.</span>
-        </div>
-        <div class="feature">
-          <strong>Scan visage</strong>
-          <span>Indicateurs visage via scan ARKit, historique et tendances sur plusieurs semaines.</span>
-        </div>
-        <div class="feature">
-          <strong>Plan personnalisé</strong>
-          <span>Plan d'entraînement, nutrition et habitudes quotidiennes calibrés à ton rythme.</span>
-        </div>
-      </div>
-      <div class="notice notice-warn">
-        Process AI fournit des estimations bien-être et des recommandations générales.
-        Ce n'est pas un dispositif médical. Consulte un professionnel en cas de doute sur ta santé.
-        <a href="/sources-sante">Sources et références</a>
-      </div>
-    </section>
+      </section>
 
-    <section class="card">
-      <h2>Abonnement Process AI Premium</h2>
-      <p>
-        L'accès complet (coach IA, protocole avancé, scan visage, suivi détaillé) nécessite un abonnement
-        <strong>Process AI Premium</strong> après un essai gratuit de 3 jours.
-      </p>
-      <ul>
-        <li>Formules mensuelle ou annuelle — prix affichés dans l'app avant achat.</li>
-        <li>Renouvellement automatique jusqu'à annulation dans Réglages iOS, puis Abonnements Apple.</li>
-        <li>Restauration des achats disponible dans l'application.</li>
-      </ul>
-    </section>
+      <footer id="site-footer-process" class="landing-footer landing-footer--sf">
+        <div class="landing-footer-sf-inner">
+          <nav class="landing-footer-sf-nav" aria-label="Liens pied de page">
+            <a href="/cgu">CGU</a>
+            <a href="/confidentialite">Confidentialité</a>
+            <a href="/support">Support</a>
+            <a href="/sources-sante">Sources santé</a>
+          </nav>
+          <div class="landing-footer-sf-bot">
+            <p class="landing-footer-sf-copy">© Process</p>
+          </div>
+        </div>
+      </footer>
 
-    <section class="card">
-      <h1>Informations légales</h1>
-      <p class="meta">Documents officiels requis pour l'App Store et la transparence sur vos données.</p>
-      <div class="links">
-        <a class="link-row" href="/confidentialite">
-          <span>Politique de confidentialité</span>
-          <small>Données et droits RGPD</small>
-        </a>
-        <a class="link-row" href="/cgu">
-          <span>Conditions d'utilisation</span>
-          <small>CGU / EULA</small>
-        </a>
-        <a class="link-row" href="/mentions-legales">
-          <span>Mentions légales</span>
-          <small>Éditeur et hébergement</small>
-        </a>
-        <a class="link-row" href="/support">
-          <span>Support</span>
-          <small>Contact et assistance</small>
-        </a>
-        <a class="link-row" href="/sources-sante">
-          <span>Sources santé</span>
-          <small>Références médicales</small>
-        </a>
+      <main id="landing-legal" class="landing-legal hidden">
+        <div class="landing-legal-inner">
+          <a href="/" class="landing-btn landing-btn-secondary" style="margin-bottom: 1.5rem">← Retour</a>
+          <div id="landing-legal-content"></div>
+        </div>
+      </main>
+    </div>
+
+    <div id="page-404" class="hidden" aria-hidden="true">
+      <div style="font-family: Inter, system-ui, sans-serif; max-width: 28rem; margin: 4rem auto; padding: 2rem; text-align: center">
+        <h1>Page introuvable</h1>
+        <p><a href="/">Retour à l&apos;accueil</a></p>
       </div>
-    </section>
+    </div>
 
-    <footer class="site">
-      <nav>
-        <a href="/confidentialite">Confidentialité</a>
-        <a href="/cgu">CGU</a>
-        <a href="/mentions-legales">Mentions légales</a>
-        <a href="/support">Support</a>
-        <a href="/sources-sante">Sources santé</a>
-      </nav>
-      <p>© <span id="year"></span> Process. Tous droits réservés.</p>
-    </footer>
-  </main>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-</body>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
