@@ -26,11 +26,20 @@ La clé `appl_` est **publique** (prévue pour le client). Ne jamais committer u
 |---------|--------|
 | Bundle ID | `com.useprocess` |
 | Entitlement | `premium` |
-| Offering (Current) | `Premium` |
-| Mensuel | `com.useprocess.monthly` |
-| Annuel | `com.useprocess.annual` |
+| Offering (legacy) | `Premium` |
+| Offering A (A/B) | `Premium_A` — weekly899 + annual3499 |
+| Offering B (A/B) | `Premium_B` — monthly999 + annual4999 |
+| ASC group ID | `21837790` (Process Premium) |
+| Mensuel (legacy) | `com.useprocess.monthly` |
+| Annuel (legacy) | `com.useprocess.annual` |
+| Hebdo A | `com.useprocess.weekly899` |
+| Annuel A | `com.useprocess.annual3499` |
+| Mensuel B | `com.useprocess.monthly999` |
+| Annuel B | `com.useprocess.annual4999` |
 | Lifetime | `com.useprocess.lifetime` |
-| Packages | `$rc_monthly` / `$rc_annual` |
+| Packages | `$rc_weekly` / `$rc_monthly` / `$rc_annual` |
+
+Voir aussi `docs/PAYWALL_PRICING_AB_TEST.md` pour la checklist A/B complète.
 
 Vérifier aussi : **Apps** → app iOS liée avec credentials App Store Connect.
 

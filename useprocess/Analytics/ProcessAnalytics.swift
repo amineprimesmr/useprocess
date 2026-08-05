@@ -7,6 +7,7 @@ enum ProcessAnalytics {
     private static var didConfigure = false
     private static var didTrackOnboardingStarted = false
     private static var lastOnboardingStepName: String?
+    private static var lastTrackedFirstName: String?
 
     // MARK: - Lifecycle
 
@@ -48,14 +49,39 @@ enum ProcessAnalytics {
 
     static func identify(userId: String?, properties: [String: Any] = [:]) {
         guard isReady, let userId, !userId.isEmpty else { return }
-        PostHogSDK.shared.identify(userId, userProperties: properties)
+        var props = properties
+        // Attache le prénom au person profile dès l'identify (différencier les users dans PostHog).
+        if props["first_name"] == nil,
+           let name = resolvedFirstName(from: UnifiedProfileService.shared.currentProfile?.firstName) {
+            props["first_name"] = name
+            props["name"] = name
+            registerFirstNameSuperProperties(name)
+        }
+        PostHogSDK.shared.identify(userId, userProperties: props.isEmpty ? nil : props)
     }
 
     static func reset() {
         guard isReady else { return }
+        PostHogSDK.shared.unregister("first_name")
+        PostHogSDK.shared.unregister("name")
         PostHogSDK.shared.reset()
         didTrackOnboardingStarted = false
         lastOnboardingStepName = nil
+        lastTrackedFirstName = nil
+    }
+
+    /// Enregistre le prénom pour différencier les users (event + person + super properties).
+    static func trackFirstNameSet(_ raw: String, source: String = "unknown") {
+        applyFirstName(raw, source: source, emitEvent: true)
+    }
+
+    /// Resync prénom depuis le profil local (app open / login) — sans nouvel event.
+    static func syncFirstNameFromProfile() {
+        applyFirstName(
+            UnifiedProfileService.shared.currentProfile?.firstName,
+            source: "profile_sync",
+            emitEvent: false
+        )
     }
 
     // MARK: - Core capture
@@ -136,35 +162,43 @@ enum ProcessAnalytics {
 
     // MARK: - Main paywall
 
+    private static func withPricingVariant(_ properties: [String: Any]) -> [String: Any] {
+        var props = properties
+        for (key, value) in PaywallPricingExperiment.shared.analyticsProperties {
+            props[key] = value
+        }
+        return props
+    }
+
     static func trackPaywallViewed(source: String = "unknown") {
-        capture("paywall_viewed", properties: ["source": source])
+        capture("paywall_viewed", properties: withPricingVariant(["source": source]))
         screen("paywall")
     }
 
     static func trackPaywallPlanSelected(plan: String, source: String = "paywall") {
-        capture("paywall_plan_selected", properties: [
+        capture("paywall_plan_selected", properties: withPricingVariant([
             "plan": plan,
             "source": source
-        ])
+        ]))
     }
 
     static func trackPaywallCloseTapped(source: String = "paywall") {
-        capture("paywall_close_tapped", properties: ["source": source])
+        capture("paywall_close_tapped", properties: withPricingVariant(["source": source]))
     }
 
     static func trackPaywallStayPopupShown(trigger: String = "home_swipe") {
-        capture("paywall_stay_popup_shown", properties: ["trigger": trigger])
+        capture("paywall_stay_popup_shown", properties: withPricingVariant(["trigger": trigger]))
     }
 
     static func trackPaywallStayPopupAction(_ action: String) {
-        capture("paywall_stay_popup_action", properties: ["action": action])
+        capture("paywall_stay_popup_action", properties: withPricingVariant(["action": action]))
     }
 
     static func trackPaywallCTATapped(plan: String, source: String = "paywall") {
-        capture("paywall_cta_tapped", properties: [
+        capture("paywall_cta_tapped", properties: withPricingVariant([
             "plan": plan,
             "source": source
-        ])
+        ]))
     }
 
     // MARK: - Spin / winback funnel (lifetime 19 €)
@@ -240,7 +274,7 @@ enum ProcessAnalytics {
         var props: [String: Any] = ["plan": plan]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_started", properties: props)
+        capture("purchase_started", properties: withPricingVariant(props))
     }
 
     static func trackPurchaseCompleted(
@@ -251,7 +285,7 @@ enum ProcessAnalytics {
         var props: [String: Any] = ["plan": plan]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_completed", properties: props)
+        capture("purchase_completed", properties: withPricingVariant(props))
     }
 
     static func trackPurchaseCancelled(
@@ -262,7 +296,7 @@ enum ProcessAnalytics {
         var props: [String: Any] = ["plan": plan]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_cancelled", properties: props)
+        capture("purchase_cancelled", properties: withPricingVariant(props))
     }
 
     static func trackPurchaseFailed(
@@ -277,7 +311,7 @@ enum ProcessAnalytics {
         ]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_failed", properties: props)
+        capture("purchase_failed", properties: withPricingVariant(props))
     }
 
     static func trackRestoreCompleted(isActive: Bool) {
@@ -325,6 +359,43 @@ enum ProcessAnalytics {
             "step_raw": step.rawValue,
             "step_index": step.semanticOrderIndex
         ]
+    }
+
+    private static func resolvedFirstName(from raw: String?) -> String? {
+        let name = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard OnboardingViewModel.isRealUserFirstName(name) else { return nil }
+        return name
+    }
+
+    private static func applyFirstName(
+        _ raw: String?,
+        source: String,
+        emitEvent: Bool
+    ) {
+        guard let name = resolvedFirstName(from: raw) else { return }
+
+        registerFirstNameSuperProperties(name)
+        setPersonProperties([
+            "first_name": name,
+            "name": name
+        ])
+
+        guard emitEvent, lastTrackedFirstName != name else { return }
+        lastTrackedFirstName = name
+        capture("first_name_set", properties: [
+            "first_name": name,
+            "first_name_length": name.count,
+            "source": source
+        ])
+    }
+
+    private static func registerFirstNameSuperProperties(_ name: String) {
+        guard isReady else { return }
+        // Super properties → first_name présent sur tous les events suivants (paywall, purchase…).
+        PostHogSDK.shared.register([
+            "first_name": name,
+            "name": name
+        ])
     }
 }
 

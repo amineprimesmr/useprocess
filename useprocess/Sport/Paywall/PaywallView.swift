@@ -46,11 +46,16 @@ struct PaywallView: View {
         _ = onBack
     }
 
+    private var pricingVariant: PaywallPricingExperiment.Variant {
+        PaywallPricingExperiment.shared.activeVariant
+    }
+
+    private var shortBillingPlan: SubscriptionBillingPlan {
+        pricingVariant.shortPlan
+    }
+
     private var selectedPlanAvailableOnStore: Bool {
-        switch selectedBillingPlan {
-        case .annual: subscriptionService.hasLiveAnnualProduct
-        case .monthly: subscriptionService.hasLiveMonthlyProduct
-        }
+        subscriptionService.hasLiveProduct(for: selectedBillingPlan)
     }
 
     private var paywallRootTopPadding: CGFloat {
@@ -124,12 +129,13 @@ struct PaywallView: View {
             }
         }
         .task {
+            await PaywallPricingExperiment.shared.resolveWhenFlagsReady()
             await subscriptionService.loadSubscriptions()
             if !didSetInitialPlan {
                 if subscriptionService.hasLiveAnnualProduct {
                     selectedBillingPlan = .annual
-                } else if subscriptionService.hasLiveMonthlyProduct {
-                    selectedBillingPlan = .monthly
+                } else if subscriptionService.hasLiveProduct(for: shortBillingPlan) {
+                    selectedBillingPlan = shortBillingPlan
                 }
                 didSetInitialPlan = true
             }
@@ -345,9 +351,11 @@ struct PaywallView: View {
         VStack(spacing: 12) {
             PaywallBevelPlanSegmentPicker(
                 selection: $selectedBillingPlan,
-                annualComparePrice: subscriptionService.displayProduct(for: .monthly).paywallAnnualStrikethroughComparePrice,
+                shortPlan: shortBillingPlan,
+                annualComparePrice: subscriptionService.displayProduct(for: shortBillingPlan)
+                    .paywallAnnualStrikethroughComparePrice,
                 annualPrice: annualPrimaryPrice,
-                monthlyPrice: monthlyPrimaryPrice
+                shortPlanPrice: shortPlanPrimaryPrice
             )
 
             PaywallBevelContinueButton(
@@ -389,8 +397,9 @@ struct PaywallView: View {
         subscriptionService.displayProduct(for: .annual).paywallPrimaryMonthlyPriceLabel
     }
 
-    private var monthlyPrimaryPrice: String {
-        subscriptionService.displayProduct(for: .monthly).paywallPrimaryMonthlyPriceLabel
+    private var shortPlanPrimaryPrice: String {
+        let display = subscriptionService.displayProduct(for: shortBillingPlan)
+        return display.paywallShortPlanPriceLabel(for: shortBillingPlan)
     }
 
     private var paywallContinueButtonTitle: String {

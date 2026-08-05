@@ -52,6 +52,11 @@ struct SubscriptionTrialInfo: Equatable {
                 "Aucun paiement aujourd'hui, puis \(normalized)/mois",
                 en: "No payment today, then \(normalized)/mo"
             )
+        case .weekly:
+            return AppCopy.t(
+                "Aucun paiement aujourd'hui, puis \(normalized)/semaine",
+                en: "No payment today, then \(normalized)/week"
+            )
         }
     }
 
@@ -59,10 +64,9 @@ struct SubscriptionTrialInfo: Equatable {
         for plan: SubscriptionBillingPlan,
         annualMonthlyEquivalent: String
     ) -> String {
-        switch plan {
-        case .monthly, .annual:
-            return ""
-        }
+        _ = plan
+        _ = annualMonthlyEquivalent
+        return ""
     }
 }
 

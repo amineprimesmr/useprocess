@@ -14,9 +14,11 @@ final class AppIntegrations {
     func refresh() {
         firebaseReady = AppConfiguration.firebaseConfigured
         authReady = firebaseReady && AuthUser.current != nil
-        analyticsReady = ProcessAnalytics.isReady
-        SubscriptionService.shared.configure()
+        // Analytics avant abonnements — le flag A/B tarifs dépend de PostHog.
         ProcessAnalytics.configure()
+        analyticsReady = ProcessAnalytics.isReady
+        PaywallPricingExperiment.shared.resolve()
+        SubscriptionService.shared.configure()
     }
 
     var summary: String {

@@ -336,9 +336,11 @@ struct PaywallBevelAutoScrollingFeatures: View {
 struct PaywallBevelPlanSegmentPicker: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var selection: SubscriptionBillingPlan
+    /// Plan court de la variante A/B (`.weekly` ou `.monthly`).
+    let shortPlan: SubscriptionBillingPlan
     let annualComparePrice: String
     let annualPrice: String
-    let monthlyPrice: String
+    let shortPlanPrice: String
     var onSelectionChange: ((SubscriptionBillingPlan) -> Void)?
 
     @Namespace private var pillNamespace
@@ -351,7 +353,7 @@ struct PaywallBevelPlanSegmentPicker: View {
     var body: some View {
         HStack(spacing: 0) {
             segmentButton(.annual)
-            segmentButton(.monthly)
+            segmentButton(shortPlan)
         }
         .padding(inset)
         .background {
@@ -403,9 +405,7 @@ struct PaywallBevelPlanSegmentPicker: View {
     @ViewBuilder
     private func segmentContent(plan: SubscriptionBillingPlan, isSelected: Bool) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(plan == .annual
-                ? OnboardingCopy.t("Annuel", en: "Yearly")
-                : OnboardingCopy.t("Mensuel", en: "Monthly"))
+            Text(plan.shortPickerTitle)
                 .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: isSelected ? 18 : 17))
                 .fontWeight(isSelected ? .bold : .semibold)
                 .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)
@@ -413,7 +413,7 @@ struct PaywallBevelPlanSegmentPicker: View {
             if plan == .annual {
                 annualPriceRow(isSelected: isSelected)
             } else {
-                Text(monthlyPrice)
+                Text(shortPlanPrice)
                     .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 18))
                     .fontWeight(isSelected ? .bold : .semibold)
                     .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)

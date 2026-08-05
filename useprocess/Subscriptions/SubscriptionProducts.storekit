@@ -27,7 +27,7 @@
   },
   "subscriptionGroups" : [
     {
-      "id" : "21482999",
+      "id" : "21837790",
       "localizations" : [
 
       ],
@@ -54,7 +54,7 @@
           "productID" : "com.useprocess.monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Premium Monthly",
-          "subscriptionGroupID" : "21482999",
+          "subscriptionGroupID" : "21837790",
           "type" : "RecurringSubscription"
         },
         {
@@ -78,7 +78,103 @@
           "productID" : "com.useprocess.annual",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Premium Yearly",
-          "subscriptionGroupID" : "21482999",
+          "subscriptionGroupID" : "21837790",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "8.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6738291003",
+          "localizations" : [
+            {
+              "description" : "Accès premium hebdomadaire à Process",
+              "displayName" : "Process Premium — Hebdomadaire",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.useprocess.weekly899",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Premium Weekly 8.99",
+          "subscriptionGroupID" : "21837790",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "34.99",
+          "familyShareable" : false,
+          "groupNumber" : 4,
+          "internalID" : "6738291004",
+          "localizations" : [
+            {
+              "description" : "Accès premium annuel à Process",
+              "displayName" : "Process Premium — Annuel",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.useprocess.annual3499",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly 34.99",
+          "subscriptionGroupID" : "21837790",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 5,
+          "internalID" : "6738291005",
+          "localizations" : [
+            {
+              "description" : "Accès premium mensuel à Process",
+              "displayName" : "Process Premium — Mensuel",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.useprocess.monthly999",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium Monthly 9.99",
+          "subscriptionGroupID" : "21837790",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 6,
+          "internalID" : "6738291006",
+          "localizations" : [
+            {
+              "description" : "Accès premium annuel à Process",
+              "displayName" : "Process Premium — Annuel",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "com.useprocess.annual4999",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly 49.99",
+          "subscriptionGroupID" : "21837790",
           "type" : "RecurringSubscription"
         }
       ]

@@ -9,8 +9,10 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
     @Published private(set) var isLoading = false
+    @Published private(set) var weeklyDisplay: SubscriptionProductDisplay?
     @Published private(set) var monthlyDisplay: SubscriptionProductDisplay?
     @Published private(set) var annualDisplay: SubscriptionProductDisplay?
+    @Published private(set) var weeklyStoreProduct: Product?
     @Published private(set) var monthlyStoreProduct: Product?
     @Published private(set) var annualStoreProduct: Product?
     @Published private(set) var isInFreeTrial = false
@@ -23,10 +25,24 @@ final class SubscriptionService: NSObject, ObservableObject {
     var monthlyProduct: Product? { monthlyStoreProduct }
 
     private var isConfigured = false
+    private var weeklyPackage: Package?
     private var monthlyPackage: Package?
     private var annualPackage: Package?
+    private var weeklyStoreProductRC: StoreProduct?
     private var monthlyStoreProductRC: StoreProduct?
     private var annualStoreProductRC: StoreProduct?
+
+    var pricingVariant: PaywallPricingExperiment.Variant {
+        PaywallPricingExperiment.shared.activeVariant
+    }
+
+    var shortBillingPlan: SubscriptionBillingPlan {
+        pricingVariant.shortPlan
+    }
+
+    var hasLiveWeeklyProduct: Bool {
+        weeklyPackage != nil || weeklyStoreProductRC != nil || weeklyStoreProduct != nil
+    }
 
     var hasLiveMonthlyProduct: Bool {
         monthlyPackage != nil || monthlyStoreProductRC != nil || monthlyStoreProduct != nil
@@ -34,6 +50,14 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     var hasLiveAnnualProduct: Bool {
         annualPackage != nil || annualStoreProductRC != nil || annualStoreProduct != nil
+    }
+
+    var hasLiveShortPlanProduct: Bool {
+        switch shortBillingPlan {
+        case .weekly: return hasLiveWeeklyProduct
+        case .monthly: return hasLiveMonthlyProduct
+        case .annual: return hasLiveAnnualProduct
+        }
     }
 
     var hasLiveLifetimeProduct: Bool {
@@ -52,7 +76,15 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     var canPurchase: Bool {
-        hasLiveMonthlyProduct || hasLiveAnnualProduct
+        hasLiveShortPlanProduct || hasLiveAnnualProduct
+    }
+
+    func hasLiveProduct(for plan: SubscriptionBillingPlan) -> Bool {
+        switch plan {
+        case .weekly: return hasLiveWeeklyProduct
+        case .monthly: return hasLiveMonthlyProduct
+        case .annual: return hasLiveAnnualProduct
+        }
     }
 
     #if DEBUG
@@ -76,6 +108,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         guard RevenueCatConfiguration.isConfigured, let apiKey = RevenueCatConfiguration.apiKey else {
             // DEBUG only: StoreKit local pour itérer sans dashboard.
             // Release sans clé = zéro tracking RevenueCat (bug prod historique).
+            PaywallPricingExperiment.shared.resolve()
             applyFallbackProducts()
             Task {
                 await loadSubscriptions()
@@ -94,6 +127,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
 
         Task {
+            PaywallPricingExperiment.shared.resolve()
             await loadSubscriptions()
             await checkSubscriptionStatus()
         }
@@ -139,6 +173,8 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     func displayProduct(for plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
         switch plan {
+        case .weekly:
+            return weeklyDisplay ?? .fallback(for: .weekly)
         case .monthly:
             return monthlyDisplay ?? .fallback(for: .monthly)
         case .annual:
@@ -169,10 +205,25 @@ final class SubscriptionService: NSObject, ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        let ids = [
-            SubscriptionConfiguration.monthlyProductID,
-            SubscriptionConfiguration.annualProductID
-        ]
+        // Prefer async flag load when called from paywall; sync resolve is a no-op if sticky.
+        PaywallPricingExperiment.shared.resolve()
+        let variant = pricingVariant
+        let shortPlan = variant.shortPlan
+        let ids = variant.allProductIDs
+
+        // Reset packages hors variante active.
+        weeklyPackage = nil
+        monthlyPackage = nil
+        if shortPlan != .weekly {
+            weeklyDisplay = nil
+            weeklyStoreProduct = nil
+            weeklyStoreProductRC = nil
+        }
+        if shortPlan != .monthly {
+            monthlyDisplay = nil
+            monthlyStoreProduct = nil
+            monthlyStoreProductRC = nil
+        }
 
         guard isConfigured else {
             let storeKitProducts = await fetchDirectStoreKitProducts(ids: ids)
@@ -191,24 +242,37 @@ final class SubscriptionService: NSObject, ObservableObject {
 
             applyDirectStoreProducts(storeProducts)
 
-            let offering = offerings.offering(identifier: SubscriptionConfiguration.defaultOfferingID)
+            let offering = offerings.offering(identifier: variant.offeringID)
+                ?? offerings.offering(identifier: SubscriptionConfiguration.defaultOfferingID)
                 ?? offerings.current
 
-            monthlyPackage = resolvePackage(
-                in: offering,
-                productID: SubscriptionConfiguration.monthlyProductID,
-                packageID: SubscriptionConfiguration.monthlyPackageID,
-                fallbackType: .monthly
-            )
+            switch shortPlan {
+            case .weekly:
+                weeklyPackage = resolvePackage(
+                    in: offering,
+                    productID: variant.shortProductID,
+                    packageID: SubscriptionConfiguration.weeklyPackageID,
+                    fallbackType: .weekly
+                )
+                applyPackageDisplay(weeklyPackage, plan: .weekly)
+            case .monthly:
+                monthlyPackage = resolvePackage(
+                    in: offering,
+                    productID: variant.shortProductID,
+                    packageID: SubscriptionConfiguration.monthlyPackageID,
+                    fallbackType: .monthly
+                )
+                applyPackageDisplay(monthlyPackage, plan: .monthly)
+            case .annual:
+                break
+            }
 
             annualPackage = resolvePackage(
                 in: offering,
-                productID: SubscriptionConfiguration.annualProductID,
+                productID: variant.annualProductID,
                 packageID: SubscriptionConfiguration.annualPackageID,
                 fallbackType: .annual
             )
-
-            applyPackageDisplay(monthlyPackage, plan: .monthly)
             applyPackageDisplay(annualPackage, plan: .annual)
             await refreshIntroOfferEligibility()
         } catch {
@@ -232,6 +296,9 @@ final class SubscriptionService: NSObject, ObservableObject {
         let storeProduct: StoreProduct?
 
         switch plan {
+        case .weekly:
+            package = weeklyPackage
+            storeProduct = weeklyStoreProductRC
         case .monthly:
             package = monthlyPackage
             storeProduct = monthlyStoreProductRC
@@ -416,6 +483,9 @@ final class SubscriptionService: NSObject, ObservableObject {
         isIntroOfferEligible = false
         isRetentionTrialOfferActive = false
 
+        if let weeklyDisplay {
+            self.weeklyDisplay = weeklyDisplay.updatingIntroEligibility(false)
+        }
         if let monthlyDisplay {
             self.monthlyDisplay = monthlyDisplay.updatingIntroEligibility(false)
         }
@@ -466,40 +536,64 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func applyFallbackProducts() {
-        monthlyDisplay = .fallback(for: .monthly)
+        let short = shortBillingPlan
+        switch short {
+        case .weekly:
+            weeklyDisplay = .fallback(for: .weekly)
+            monthlyDisplay = nil
+        case .monthly:
+            monthlyDisplay = .fallback(for: .monthly)
+            weeklyDisplay = nil
+        case .annual:
+            break
+        }
         annualDisplay = .fallback(for: .annual)
         isIntroOfferEligible = false
         isRetentionTrialOfferActive = false
     }
 
     private func applyDirectStoreProducts(_ storeProducts: [StoreProduct]) {
+        let variant = pricingVariant
         for product in storeProducts {
-            switch product.productIdentifier {
-            case SubscriptionConfiguration.monthlyProductID:
-                monthlyStoreProductRC = product
-                monthlyDisplay = makeDisplay(from: product, plan: .monthly)
-                monthlyStoreProduct = product.sk2Product
-            case SubscriptionConfiguration.annualProductID:
+            let id = product.productIdentifier
+            if id == variant.shortProductID {
+                switch variant.shortPlan {
+                case .weekly:
+                    weeklyStoreProductRC = product
+                    weeklyDisplay = makeDisplay(from: product, plan: .weekly)
+                    weeklyStoreProduct = product.sk2Product
+                case .monthly:
+                    monthlyStoreProductRC = product
+                    monthlyDisplay = makeDisplay(from: product, plan: .monthly)
+                    monthlyStoreProduct = product.sk2Product
+                case .annual:
+                    break
+                }
+            } else if id == variant.annualProductID {
                 annualStoreProductRC = product
                 annualDisplay = makeDisplay(from: product, plan: .annual)
                 annualStoreProduct = product.sk2Product
-            default:
-                break
             }
         }
     }
 
     private func applyDirectStoreKitProducts(_ products: [Product]) {
+        let variant = pricingVariant
         for product in products {
-            switch product.id {
-            case SubscriptionConfiguration.monthlyProductID:
-                monthlyStoreProduct = product
-                monthlyDisplay = makeDisplay(from: product, plan: .monthly)
-            case SubscriptionConfiguration.annualProductID:
+            if product.id == variant.shortProductID {
+                switch variant.shortPlan {
+                case .weekly:
+                    weeklyStoreProduct = product
+                    weeklyDisplay = makeDisplay(from: product, plan: .weekly)
+                case .monthly:
+                    monthlyStoreProduct = product
+                    monthlyDisplay = makeDisplay(from: product, plan: .monthly)
+                case .annual:
+                    break
+                }
+            } else if product.id == variant.annualProductID {
                 annualStoreProduct = product
                 annualDisplay = makeDisplay(from: product, plan: .annual)
-            default:
-                break
             }
         }
     }
@@ -521,6 +615,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
 
         switch fallbackType {
+        case .weekly: return offering.weekly
         case .monthly: return offering.monthly
         case .annual: return offering.annual
         default: return nil
@@ -532,6 +627,10 @@ final class SubscriptionService: NSObject, ObservableObject {
 
         let display = makeDisplay(from: package.storeProduct, plan: plan)
         switch plan {
+        case .weekly:
+            weeklyDisplay = display
+            weeklyStoreProductRC = package.storeProduct
+            weeklyStoreProduct = package.storeProduct.sk2Product ?? weeklyStoreProduct
         case .monthly:
             monthlyDisplay = display
             monthlyStoreProductRC = package.storeProduct
@@ -548,14 +647,8 @@ final class SubscriptionService: NSObject, ObservableObject {
         let trialDays: Int?
         let introEligible: Bool
 
-        switch plan {
-        case .monthly:
-            trialDays = configuredTrialDays(from: product, plan: .monthly)
-            introEligible = trialDays != nil && isIntroOfferEligible
-        case .annual:
-            trialDays = configuredTrialDays(from: product, plan: .annual)
-            introEligible = trialDays != nil && isIntroOfferEligible
-        }
+        trialDays = configuredTrialDays(from: product, plan: plan)
+        introEligible = trialDays != nil && isIntroOfferEligible
 
         // Paywall FR + storefront USD (sandbox / compte US) → prix marketing EUR, jamais $.
         if SubscriptionConfiguration.shouldUseEuroPaywallDisplay(storeCurrencyCode: currency) {
@@ -573,6 +666,21 @@ final class SubscriptionService: NSObject, ObservableObject {
         let name = product.localizedTitle.isEmpty ? plan.title : product.localizedTitle
 
         switch plan {
+        case .weekly:
+            return SubscriptionProductDisplay(
+                productID: product.productIdentifier,
+                displayName: name,
+                displayPrice: price,
+                periodLabel: OnboardingCopy.t("par semaine", en: "per week"),
+                monthlyEquivalentPrice: nil,
+                paywallStrikethroughAnnualTotal: SubscriptionConfiguration.paywallStrikethroughAnnualTotal(
+                    fromShortPlanPrice: product.price as Decimal,
+                    shortPlan: .weekly,
+                    currencyCode: currency
+                ),
+                freeTrialDays: trialDays,
+                isIntroOfferEligible: introEligible
+            )
         case .monthly:
             return SubscriptionProductDisplay(
                 productID: product.productIdentifier,
@@ -581,7 +689,8 @@ final class SubscriptionService: NSObject, ObservableObject {
                 periodLabel: OnboardingCopy.t("par mois", en: "per month"),
                 monthlyEquivalentPrice: nil,
                 paywallStrikethroughAnnualTotal: SubscriptionConfiguration.paywallStrikethroughAnnualTotal(
-                    fromMonthlyPrice: product.price as Decimal,
+                    fromShortPlanPrice: product.price as Decimal,
+                    shortPlan: .monthly,
                     currencyCode: currency
                 ),
                 freeTrialDays: trialDays,
@@ -620,17 +729,23 @@ final class SubscriptionService: NSObject, ObservableObject {
             currencyCode: currency
         )
 
+        let periodLabel: String
+        switch plan {
+        case .weekly: periodLabel = OnboardingCopy.t("par semaine", en: "per week")
+        case .monthly: periodLabel = OnboardingCopy.t("par mois", en: "per month")
+        case .annual: periodLabel = OnboardingCopy.t("par an", en: "per year")
+        }
+
         return SubscriptionProductDisplay(
             productID: product.id,
             displayName: product.displayName.isEmpty ? plan.title : product.displayName,
             displayPrice: price,
-            periodLabel: plan == .monthly
-                ? OnboardingCopy.t("par mois", en: "per month")
-                : OnboardingCopy.t("par an", en: "per year"),
+            periodLabel: periodLabel,
             monthlyEquivalentPrice: plan == .annual ? monthlyEquivalent(from: product) : nil,
-            paywallStrikethroughAnnualTotal: plan == .monthly
+            paywallStrikethroughAnnualTotal: (plan == .weekly || plan == .monthly)
                 ? SubscriptionConfiguration.paywallStrikethroughAnnualTotal(
-                    fromMonthlyPrice: product.price,
+                    fromShortPlanPrice: product.price,
+                    shortPlan: plan,
                     currencyCode: currency
                 )
                 : nil,
@@ -675,6 +790,8 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func purchaseWithStoreKit(plan: SubscriptionBillingPlan) async throws {
         let product: Product?
         switch plan {
+        case .weekly:
+            product = weeklyStoreProduct
         case .monthly:
             product = monthlyStoreProduct
         case .annual:
@@ -699,11 +816,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func checkStoreKitSubscriptionStatus() async {
-        let premiumProductIDs: Set<String> = [
-            SubscriptionConfiguration.monthlyProductID,
-            SubscriptionConfiguration.annualProductID,
-            SubscriptionConfiguration.lifetimeProductID
-        ]
+        let premiumProductIDs = SubscriptionConfiguration.allPremiumProductIDs
 
         var activeExpirationDate: Date?
         var hasActiveEntitlement = false
