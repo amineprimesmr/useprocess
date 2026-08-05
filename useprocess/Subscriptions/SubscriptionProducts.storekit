@@ -76,48 +76,8 @@
             }
           ],
           "productID" : "com.useprocess.annual",
-          "introductoryOffer" : {
-            "internalID" : "6738291202",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D"
-          },
-          "promotionalOffers" : [
-            {
-              "displayPrice" : "19.99",
-              "internalID" : "6738291201",
-              "numberOfPeriods" : 1,
-              "offerID" : "winback_1999",
-              "paymentMode" : "payUpFront",
-              "subscriptionPeriod" : "P1Y"
-            }
-          ],
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Premium Yearly",
-          "subscriptionGroupID" : "21482999",
-          "type" : "RecurringSubscription"
-        },
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "19.99",
-          "familyShareable" : false,
-          "groupNumber" : 3,
-          "internalID" : "6738291003",
-          "localizations" : [
-            {
-              "description" : "Accès premium annuel winback Process",
-              "displayName" : "Process Premium — Annuel Winback",
-              "locale" : "fr_FR"
-            }
-          ],
-          "productID" : "com.useprocess.annual.winback",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Premium Yearly Winback",
           "subscriptionGroupID" : "21482999",
           "type" : "RecurringSubscription"
         }

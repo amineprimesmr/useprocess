@@ -51,23 +51,24 @@ struct OnboardingFaceDeepAnalysis: Equatable {
 
         var id: String { rawValue }
 
+        @MainActor
         var title: String {
             switch self {
-            case .eyes: return "Yeux"
-            case .midFace: return "Milieu du visage"
+            case .eyes: return OnboardingCopy.t("Yeux", en: "Eyes")
+            case .midFace: return OnboardingCopy.t("Milieu du visage", en: "Mid-face")
             case .lowerThird: return "Jawline"
             case .upperThird: return "Jawline"
-            case .orbitalDepth: return "Cernes"
-            case .underEyeHealth: return "Santé sous les yeux"
-            case .nasolabialFold: return "Ligne nasogénienne"
-            case .cheekbones: return "Pommettes"
-            case .maxillary: return "Maxillaire"
-            case .nose: return "Nez"
-            case .skin: return "Peau"
-            case .harmony: return "Harmonie"
-            case .symmetry: return "Symétrie"
-            case .neckWidth: return "Largeur du cou"
-            case .boneMass: return "Masse osseuse"
+            case .orbitalDepth: return OnboardingCopy.t("Cernes", en: "Dark circles")
+            case .underEyeHealth: return OnboardingCopy.t("Santé sous les yeux", en: "Under-eye health")
+            case .nasolabialFold: return OnboardingCopy.t("Ligne nasogénienne", en: "Nasolabial fold")
+            case .cheekbones: return OnboardingCopy.t("Pommettes", en: "Cheekbones")
+            case .maxillary: return OnboardingCopy.t("Maxillaire", en: "Maxilla")
+            case .nose: return OnboardingCopy.t("Nez", en: "Nose")
+            case .skin: return OnboardingCopy.t("Peau", en: "Skin")
+            case .harmony: return OnboardingCopy.t("Harmonie", en: "Harmony")
+            case .symmetry: return OnboardingCopy.t("Symétrie", en: "Symmetry")
+            case .neckWidth: return OnboardingCopy.t("Largeur du cou", en: "Neck width")
+            case .boneMass: return OnboardingCopy.t("Masse osseuse", en: "Bone mass")
             }
         }
 

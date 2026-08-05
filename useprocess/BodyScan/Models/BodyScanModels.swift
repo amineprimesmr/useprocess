@@ -21,40 +21,58 @@ nonisolated enum ScanPoseKind: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .turntable: return "Scan 360°"
-        case .faceMesh: return "Scan visage (legacy)"
-        case .frontStanding: return "Face"
-        case .leftProfile: return "Profil gauche"
-        case .rightProfile: return "Profil droit"
-        case .backStanding: return "Dos"
-        case .frontArmsRaised: return "Bras en T"
-        case .faceFront: return "Visage"
-        case .faceLeft, .faceRight: return "Profil visage"
+        case .turntable: return AppCopy.tSync("Scan 360°", en: "360° scan")
+        case .faceMesh: return AppCopy.tSync("Scan visage (legacy)", en: "Face scan (legacy)")
+        case .frontStanding: return AppCopy.tSync("Face", en: "Front")
+        case .leftProfile: return AppCopy.tSync("Profil gauche", en: "Left profile")
+        case .rightProfile: return AppCopy.tSync("Profil droit", en: "Right profile")
+        case .backStanding: return AppCopy.tSync("Dos", en: "Back")
+        case .frontArmsRaised: return AppCopy.tSync("Bras en T", en: "T-pose arms")
+        case .faceFront: return AppCopy.tSync("Visage", en: "Face")
+        case .faceLeft, .faceRight: return AppCopy.tSync("Profil visage", en: "Face profile")
         }
     }
 
     var instruction: String {
         switch self {
         case .turntable:
-            return "Tourne lentement sur toi-même"
+            return AppCopy.tSync("Tourne lentement sur toi-même", en: "Turn slowly in place")
         case .faceMesh:
-            return "Approche ton visage — tourne lentement la tête"
+            return AppCopy.tSync(
+                "Approche ton visage — tourne lentement la tête",
+                en: "Move your face closer — slowly turn your head"
+            )
         case .frontStanding:
-            return "Debout face caméra, bras le long du corps"
+            return AppCopy.tSync(
+                "Debout face caméra, bras le long du corps",
+                en: "Stand facing the camera, arms at your sides"
+            )
         case .leftProfile:
-            return "Tourne-toi vers la gauche — profil complet"
+            return AppCopy.tSync(
+                "Tourne-toi vers la gauche — profil complet",
+                en: "Turn left — full profile"
+            )
         case .rightProfile:
-            return "Tourne-toi vers la droite — profil complet"
+            return AppCopy.tSync(
+                "Tourne-toi vers la droite — profil complet",
+                en: "Turn right — full profile"
+            )
         case .backStanding:
-            return "Dos à la caméra — bras le long du corps"
+            return AppCopy.tSync(
+                "Dos à la caméra — bras le long du corps",
+                en: "Back to the camera — arms at your sides"
+            )
         case .frontArmsRaised:
-            return "Face caméra — bras tendus en T"
+            return AppCopy.tSync(
+                "Face caméra — bras tendus en T",
+                en: "Face the camera — arms out in a T"
+            )
         case .faceFront:
-            return "Centre ton visage dans le cadre"
+            return AppCopy.tSync("Centre ton visage dans le cadre", en: "Center your face in the frame")
         case .faceLeft:
-            return "Tourne la tête vers la gauche"
+            return AppCopy.tSync("Tourne la tête vers la gauche", en: "Turn your head to the left")
         case .faceRight:
-            return "Tourne la tête vers la droite"
+            return AppCopy.tSync("Tourne la tête vers la droite", en: "Turn your head to the right")
         }
     }
 
@@ -87,7 +105,7 @@ enum BodyTurntablePass: Int, Equatable, Codable {
 
     var duration: TimeInterval { Self.scanDuration }
 
-    var instruction: String { "TOURNE SUR TOI" }
+    var instruction: String { AppCopy.tSync("TOURNE SUR TOI", en: "TURN AROUND") }
 
     var armStyle: BodyArmStyle { .atSides }
 }

@@ -277,7 +277,7 @@ struct PaywallBevelAlsoIncludesDivider: View {
             Rectangle()
                 .fill(PaywallBevelTheme.dividerLine(for: colorScheme))
                 .frame(height: 1)
-            Text("inclut également")
+            Text(OnboardingCopy.t("inclut également", en: "also includes"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(PaywallBevelTheme.dividerLabel(for: colorScheme))
                 .textCase(.lowercase)
@@ -403,7 +403,9 @@ struct PaywallBevelPlanSegmentPicker: View {
     @ViewBuilder
     private func segmentContent(plan: SubscriptionBillingPlan, isSelected: Bool) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(plan == .annual ? "Annuel" : "Mensuel")
+            Text(plan == .annual
+                ? OnboardingCopy.t("Annuel", en: "Yearly")
+                : OnboardingCopy.t("Mensuel", en: "Monthly"))
                 .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: isSelected ? 18 : 17))
                 .fontWeight(isSelected ? .bold : .semibold)
                 .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)
@@ -684,33 +686,51 @@ private struct PaywallBevelPressStyle: ButtonStyle {
 // MARK: - Features Process
 
 enum PaywallBevelFeatureCatalog {
-    static let primary: [PaywallFeatureItem] = [
-        PaywallFeatureItem(
-            id: "plan",
-            title: "Plan personnalisé anti-rétention",
-            symbol: "list.clipboard"
-        ),
-        PaywallFeatureItem(
-            id: "scan",
-            title: "Scans visage illimités",
-            symbol: "viewfinder"
-        ),
-        PaywallFeatureItem(
-            id: "hydration",
-            title: "Hydratation guidée au quotidien",
-            symbol: "drop"
-        ),
-        PaywallFeatureItem(
-            id: "coach",
-            title: "Coach IA dédié à ton visage",
-            symbol: "bubble.left.and.bubble.right"
-        ),
-        PaywallFeatureItem(
-            id: "nutrition",
-            title: "Nutrition et repas anti-rétention",
-            symbol: "fork.knife"
-        ),
-    ]
+    @MainActor
+    static var primary: [PaywallFeatureItem] {
+        [
+            PaywallFeatureItem(
+                id: "plan",
+                title: OnboardingCopy.t(
+                    "Plan personnalisé anti-rétention",
+                    en: "Personalized anti-bloat plan"
+                ),
+                symbol: "list.clipboard"
+            ),
+            PaywallFeatureItem(
+                id: "scan",
+                title: OnboardingCopy.t(
+                    "Scans visage illimités",
+                    en: "Unlimited face scans"
+                ),
+                symbol: "viewfinder"
+            ),
+            PaywallFeatureItem(
+                id: "hydration",
+                title: OnboardingCopy.t(
+                    "Hydratation guidée au quotidien",
+                    en: "Daily guided hydration"
+                ),
+                symbol: "drop"
+            ),
+            PaywallFeatureItem(
+                id: "coach",
+                title: OnboardingCopy.t(
+                    "Coach IA dédié à ton visage",
+                    en: "AI coach for your face"
+                ),
+                symbol: "bubble.left.and.bubble.right"
+            ),
+            PaywallFeatureItem(
+                id: "nutrition",
+                title: OnboardingCopy.t(
+                    "Nutrition et repas anti-rétention",
+                    en: "Anti-bloat nutrition & meals"
+                ),
+                symbol: "fork.knife"
+            ),
+        ]
+    }
 
     static let alsoIncluded: [PaywallFeatureItem] = []
 }

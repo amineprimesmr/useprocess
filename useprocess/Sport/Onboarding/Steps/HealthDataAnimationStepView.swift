@@ -77,11 +77,13 @@ struct HealthDataAnimationStepView: View {
     @State var completedSleepDebt: Set<String> = []
 
     // ✨ Types de données sous "Santé Apple" (toujours les mêmes)
-    let healthDataTypes: [String] = [
-        "Minutes d'exercice",
-        "Entraînements",
-        "Sommeil"
-    ]
+    var healthDataTypes: [String] {
+        [
+            OnboardingCopy.t("Minutes d'exercice", en: "Exercise minutes"),
+            OnboardingCopy.t("Entraînements", en: "Workouts"),
+            OnboardingCopy.t("Sommeil", en: "Sleep")
+        ]
+    }
 
     // ✨ Sources par défaut à afficher sous "Santé Apple" (toujours les mêmes)
     let defaultHealthSources: [String] = [
@@ -91,21 +93,25 @@ struct HealthDataAnimationStepView: View {
     ]
 
     // ✨ Types de données "Besoin de sommeil"
-    let sleepNeedTypes: [String] = [
-        "Trouvé les jours précoces et tardifs",
-        "Moyenne de la différence"
-    ]
+    var sleepNeedTypes: [String] {
+        [
+            OnboardingCopy.t("Trouvé les jours précoces et tardifs", en: "Found early and late days"),
+            OnboardingCopy.t("Moyenne de la différence", en: "Average difference")
+        ]
+    }
 
     // ✨ Types de données "Capacité d'entrainement" (dynamiques avec valeurs réelles)
 
     // Données à afficher (section finale)
-    let dataItems = [
-        ("Pas aujourd'hui", "steps", "steps"),
-        ("Calories brûlées", "activeEnergyBurned", "kcal"),
-        ("Étages montés", "flightsClimbed", "étages"),
-        ("BPM moyen", "heartRate", "bpm"),
-        ("Score d'effort", "effortScore", "%")
-    ]
+    var dataItems: [(String, String, String)] {
+        [
+            (OnboardingCopy.t("Pas aujourd'hui", en: "Steps today"), "steps", "steps"),
+            (OnboardingCopy.t("Calories brûlées", en: "Calories burned"), "activeEnergyBurned", "kcal"),
+            (OnboardingCopy.t("Étages montés", en: "Flights climbed"), "flightsClimbed", OnboardingCopy.t("étages", en: "flights")),
+            (OnboardingCopy.t("BPM moyen", en: "Avg BPM"), "heartRate", "bpm"),
+            (OnboardingCopy.t("Score d'effort", en: "Effort score"), "effortScore", "%")
+        ]
+    }
 
     enum AnimationSection {
         case sources
@@ -142,7 +148,7 @@ struct HealthDataAnimationStepView: View {
                     HapticManager.shared.impact(.medium)
                     onComplete?()
                 }) {
-                    Text("Continuer")
+                    Text(OnboardingCopy.continueCTA)
                         .font(.system(size: 20, weight: .black))
                         .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                         .frame(maxWidth: .infinity)

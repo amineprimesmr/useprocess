@@ -145,18 +145,24 @@ enum AccountDeletionRemoteService {
 
     private static func userMessage(for status: Int, body: String) -> String {
         if status == 401 {
-            return "Session expirée — réessaie."
+            return AppCopy.tSync("Session expirée — réessaie.", en: "Session expired — try again.")
         }
         if status == 404 {
-            return "Service de suppression indisponible."
+            return AppCopy.tSync(
+                "Service de suppression indisponible.",
+                en: "Deletion service unavailable."
+            )
         }
         if status >= 500 {
-            return "Suppression serveur impossible. Réessaie dans un instant."
+            return AppCopy.tSync(
+                "Suppression serveur impossible. Réessaie dans un instant.",
+                en: "Server deletion failed. Try again in a moment."
+            )
         }
         if body.contains("error"), let parsed = try? JSONDecoder().decode([String: String].self, from: Data(body.utf8)),
            let message = parsed["error"], !message.isEmpty {
             return message
         }
-        return "Erreur serveur (\(status))."
+        return AppCopy.tSync("Erreur serveur (\(status)).", en: "Server error (\(status)).")
     }
 }

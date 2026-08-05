@@ -39,8 +39,11 @@ struct ProcessMotionTiltImageCard: View {
             )
             .onAppear { motion.start() }
             .onDisappear { motion.stop() }
-            .accessibilityLabel("Carte repas")
-            .accessibilityHint("Bouge ton téléphone pour voir l’effet 3D")
+            .accessibilityLabel(AppCopy.t("Carte repas", en: "Meal card"))
+            .accessibilityHint(AppCopy.t(
+                "Bouge ton téléphone pour voir l’effet 3D",
+                en: "Move your phone to see the 3D effect"
+            ))
     }
 }
 

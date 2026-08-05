@@ -77,19 +77,34 @@ enum OnboardingFaceDeepAnalysisBuilder {
 
         let phrase: String = {
             if fatPercent <= 10 {
-                return "Peu de graisse — surtout de la rétention"
+                return AppCopy.tSync(
+                    "Peu de graisse — surtout de la rétention",
+                    en: "Little fat — mostly retention"
+                )
             }
             if bloatedPercent >= 90 {
-                return "Volume surtout dû à la rétention, pas à la graisse"
+                return AppCopy.tSync(
+                    "Volume surtout dû à la rétention, pas à la graisse",
+                    en: "Volume mostly from retention, not fat"
+                )
             }
-            return "La rétention pèse plus que la graisse faciale"
+            return AppCopy.tSync(
+                "La rétention pèse plus que la graisse faciale",
+                en: "Retention outweighs facial fat"
+            )
         }()
 
         let goodNewsPhrase: String = {
             if bloatedPercent >= 90 {
-                return "Bonne nouvelle : c’est surtout de la rétention — donc réversible avec ton plan, pas de la graisse."
+                return AppCopy.tSync(
+                    "Bonne nouvelle : c’est surtout de la rétention — donc réversible avec ton plan, pas de la graisse.",
+                    en: "Good news: it’s mostly retention — reversible with your plan, not fat."
+                )
             }
-            return "Bonne nouvelle : ton volume facial se corrige — la rétention part plus vite que la graisse."
+            return AppCopy.tSync(
+                "Bonne nouvelle : ton volume facial se corrige — la rétention part plus vite que la graisse.",
+                en: "Good news: your facial volume can improve — retention clears faster than fat."
+            )
         }()
 
         return .init(
@@ -194,10 +209,16 @@ enum OnboardingFaceDeepAnalysisBuilder {
         var flaws: [String] = []
 
         if retention >= 62 {
-            flaws.append("Rétention faciale marquée — volume et gonflement visibles")
+            flaws.append(AppCopy.tSync(
+                "Rétention faciale marquée — volume et gonflement visibles",
+                en: "Marked facial retention — visible volume and puffiness"
+            ))
         }
         if cortisol >= 62 {
-            flaws.append("Charge cortisol élevée — tension et fatigue lisibles")
+            flaws.append(AppCopy.tSync(
+                "Charge cortisol élevée — tension et fatigue lisibles",
+                en: "High cortisol load — readable tension and fatigue"
+            ))
         }
 
         let weakQuality = metrics
@@ -216,8 +237,14 @@ enum OnboardingFaceDeepAnalysisBuilder {
 
         if flaws.isEmpty {
             flaws = [
-                "Léger déséquilibre de la jawline à surveiller",
-                "Définition maxillaire encore perfectible"
+                AppCopy.tSync(
+                    "Léger déséquilibre de la jawline à surveiller",
+                    en: "Slight jawline imbalance to watch"
+                ),
+                AppCopy.tSync(
+                    "Définition maxillaire encore perfectible",
+                    en: "Maxillary definition still improvable"
+                )
             ]
         }
 
@@ -244,8 +271,14 @@ enum OnboardingFaceDeepAnalysisBuilder {
 
         if items.isEmpty {
             items = [
-                "Structure osseuse globalement cohérente",
-                "Symétrie dans une fourchette exploitable"
+                AppCopy.tSync(
+                    "Structure osseuse globalement cohérente",
+                    en: "Overall coherent bone structure"
+                ),
+                AppCopy.tSync(
+                    "Symétrie dans une fourchette exploitable",
+                    en: "Symmetry in a workable range"
+                )
             ]
         }
         return Array(items.prefix(4))
@@ -259,64 +292,71 @@ enum OnboardingFaceDeepAnalysisBuilder {
     ) -> String {
         let retentionBit: String = {
             switch retention {
-            case ..<48: return "peu de rétention visible"
-            case 48..<78: return "une rétention modérée à traiter"
-            default: return "une rétention marquée qui alourdit le visage"
+            case ..<48: return AppCopy.tSync("peu de rétention visible", en: "little visible retention")
+            case 48..<78: return AppCopy.tSync("une rétention modérée à traiter", en: "moderate retention to address")
+            default: return AppCopy.tSync("une rétention marquée qui alourdit le visage", en: "marked retention that weighs down the face")
             }
         }()
         let cortisolBit: String = {
             switch cortisol {
-            case ..<42: return "une charge stress contenue"
-            case 42..<78: return "une tension cortisol encore active"
-            default: return "un cortisol clairement élevé"
+            case ..<42: return AppCopy.tSync("une charge stress contenue", en: "contained stress load")
+            case 42..<78: return AppCopy.tSync("une tension cortisol encore active", en: "still-active cortisol tension")
+            default: return AppCopy.tSync("un cortisol clairement élevé", en: "clearly elevated cortisol")
             }
         }()
 
-        let flawHint = flaws.first.map { "Priorité : \($0.prefix(1).lowercased() + $0.dropFirst())." } ?? ""
-        let strengthHint = strengths.first.map { "Atout : \($0.prefix(1).lowercased() + $0.dropFirst())." } ?? ""
+        let flawPrefix = AppCopy.tSync("Priorité", en: "Priority")
+        let strengthPrefix = AppCopy.tSync("Atout", en: "Strength")
+        let closing = AppCopy.tSync(
+            "L’analyse structurelle complète détaille yeux, jawline, pommettes, maxillaire et harmonie.",
+            en: "The full structural analysis covers eyes, jawline, cheekbones, maxilla, and harmony."
+        )
 
-        return "\(retentionBit.prefix(1).uppercased() + retentionBit.dropFirst()), \(cortisolBit). \(flawHint) \(strengthHint) L’analyse structurelle complète détaille yeux, jawline, pommettes, maxillaire et harmonie."
+        let flawHint = flaws.first.map { "\(flawPrefix) : \($0.prefix(1).lowercased() + $0.dropFirst())." } ?? ""
+        let strengthHint = strengths.first.map { "\(strengthPrefix) : \($0.prefix(1).lowercased() + $0.dropFirst())." } ?? ""
+
+        return "\(retentionBit.prefix(1).uppercased() + retentionBit.dropFirst()), \(cortisolBit). \(flawHint) \(strengthHint) \(closing)"
             .replacingOccurrences(of: "  ", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func flawPhrase(for kind: OnboardingFaceDeepAnalysis.Kind, percent: Int) -> String {
         switch kind {
-        case .eyes: return "Regard moins ouvert — fatigue oculaire détectée"
-        case .midFace: return "Milieu du visage alourdi / moins sculpté"
-        case .lowerThird: return "Jawline peu définie"
-        case .upperThird: return "Jawline en retrait de fraîcheur"
-        case .orbitalDepth: return "Cernes peu contrastés"
-        case .underEyeHealth: return "Santé sous les yeux fragilisée"
-        case .nasolabialFold: return "Ligne nasogénienne plus marquée"
-        case .cheekbones: return "Projection des pommettes limitée"
-        case .maxillary: return "Soutien maxillaire à renforcer"
-        case .nose: return "Équilibre nasal légèrement décalé"
-        case .skin: return "Clarté de peau en dessous du potentiel"
-        case .harmony: return "Harmonie globale encore irrégulière"
-        case .symmetry: return "Asymétrie visible sur certains axes"
-        case .neckWidth: return "Transition cou / mâchoire à affiner"
-        case .boneMass: return "Lecture osseuse peu marquée (\(percent)%)"
+        case .eyes: return AppCopy.tSync("Regard moins ouvert — fatigue oculaire détectée", en: "Less open gaze — eye fatigue detected")
+        case .midFace: return AppCopy.tSync("Milieu du visage alourdi / moins sculpté", en: "Mid-face heavier / less sculpted")
+        case .lowerThird: return AppCopy.tSync("Jawline peu définie", en: "Softly defined jawline")
+        case .upperThird: return AppCopy.tSync("Jawline en retrait de fraîcheur", en: "Upper third lacking freshness")
+        case .orbitalDepth: return AppCopy.tSync("Cernes peu contrastés", en: "Under-eyes lacking contrast")
+        case .underEyeHealth: return AppCopy.tSync("Santé sous les yeux fragilisée", en: "Fragile under-eye health")
+        case .nasolabialFold: return AppCopy.tSync("Ligne nasogénienne plus marquée", en: "Deeper nasolabial fold")
+        case .cheekbones: return AppCopy.tSync("Projection des pommettes limitée", en: "Limited cheekbone projection")
+        case .maxillary: return AppCopy.tSync("Soutien maxillaire à renforcer", en: "Maxillary support to strengthen")
+        case .nose: return AppCopy.tSync("Équilibre nasal légèrement décalé", en: "Slightly off nasal balance")
+        case .skin: return AppCopy.tSync("Clarté de peau en dessous du potentiel", en: "Skin clarity below potential")
+        case .harmony: return AppCopy.tSync("Harmonie globale encore irrégulière", en: "Overall harmony still uneven")
+        case .symmetry: return AppCopy.tSync("Asymétrie visible sur certains axes", en: "Visible asymmetry on some axes")
+        case .neckWidth: return AppCopy.tSync("Transition cou / mâchoire à affiner", en: "Neck–jaw transition to refine")
+        case .boneMass: return AppCopy.tSync("Lecture osseuse peu marquée (\(percent)%)", en: "Soft bone reading (\(percent)%)")
         }
     }
 
     private static func strengthPhrase(for kind: OnboardingFaceDeepAnalysis.Kind, percent: Int) -> String {
         switch kind {
-        case .eyes: return "Yeux expressifs et bien ancrés"
-        case .midFace: return "Milieu du visage équilibré"
-        case .lowerThird: return "Bonne définition de la jawline"
-        case .upperThird: return "Jawline claire et aérée"
-        case .orbitalDepth: return "Cernes discrets"
-        case .underEyeHealth: return "Zone sous les yeux relativement saine"
-        case .nasolabialFold: return "Ligne nasogénienne discrète"
-        case .cheekbones: return "Pommettes bien projetées"
-        case .maxillary: return "Soutien maxillaire solide"
-        case .nose: return "Nez harmonieux dans le cadre facial"
-        case .skin: return "Peau globalement claire"
-        case .harmony: return "Bonne cohérence des proportions"
-        case .symmetry: return "Symétrie faciale favorable"
-        case .neckWidth: return "Largeur de cou proportionnée"
-        case .boneMass: return "Structure osseuse lisible (\(percent)%)"
+        case .eyes: return AppCopy.tSync("Yeux expressifs et bien ancrés", en: "Expressive, well-anchored eyes")
+        case .midFace: return AppCopy.tSync("Milieu du visage équilibré", en: "Balanced mid-face")
+        case .lowerThird: return AppCopy.tSync("Bonne définition de la jawline", en: "Good jawline definition")
+        case .upperThird: return AppCopy.tSync("Jawline claire et aérée", en: "Clear, open upper third")
+        case .orbitalDepth: return AppCopy.tSync("Cernes discrets", en: "Subtle under-eyes")
+        case .underEyeHealth: return AppCopy.tSync("Zone sous les yeux relativement saine", en: "Relatively healthy under-eye area")
+        case .nasolabialFold: return AppCopy.tSync("Ligne nasogénienne discrète", en: "Subtle nasolabial fold")
+        case .cheekbones: return AppCopy.tSync("Pommettes bien projetées", en: "Well-projected cheekbones")
+        case .maxillary: return AppCopy.tSync("Soutien maxillaire solide", en: "Solid maxillary support")
+        case .nose: return AppCopy.tSync("Nez harmonieux dans le cadre facial", en: "Nose harmonious in the facial frame")
+        case .skin: return AppCopy.tSync("Peau globalement claire", en: "Generally clear skin")
+        case .harmony: return AppCopy.tSync("Bonne cohérence des proportions", en: "Good proportion coherence")
+        case .symmetry: return AppCopy.tSync("Symétrie faciale favorable", en: "Favorable facial symmetry")
+        case .neckWidth: return AppCopy.tSync("Largeur de cou proportionnée", en: "Proportionate neck width")
+        case .boneMass: return AppCopy.tSync("Structure osseuse lisible (\(percent)%)", en: "Readable bone structure (\(percent)%)")
         }
     }
 

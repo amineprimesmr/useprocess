@@ -19,35 +19,35 @@ struct ThirdPartyAIConsentView: View {
                     headerBlock
 
                     disclosureSection(
-                        title: "Données envoyées",
+                        title: AppCopy.t("Données envoyées", en: "Data Shared"),
                         items: [
-                            "Messages écrits ou dictés au coach",
-                            "Profil (prénom, âge, objectifs, sport, nutrition)",
-                            "Résumés santé HealthKit (pas, sommeil, fréquence cardiaque)",
-                            "Historique de scans et scores visage",
-                            "Photos que tu envoies volontairement au coach ou pour les repas"
+                            AppCopy.t("Messages écrits ou dictés au coach", en: "Messages written or dictated to the coach"),
+                            AppCopy.t("Profil (prénom, âge, objectifs, sport, nutrition)", en: "Profile (first name, age, goals, activity, nutrition)"),
+                            AppCopy.t("Résumés santé HealthKit (pas, sommeil, fréquence cardiaque)", en: "HealthKit summaries (steps, sleep, heart rate)"),
+                            AppCopy.t("Historique de scans et scores visage", en: "Scan history and face scores"),
+                            AppCopy.t("Photos que tu envoies volontairement au coach ou pour les repas", en: "Photos you voluntarily send to the coach or for meals")
                         ]
                     )
 
                     disclosureSection(
-                        title: "Destinataire",
+                        title: AppCopy.t("Destinataire", en: "Recipient"),
                         items: [
-                            "Anthropic PBC — modèle Claude (IA conversationnelle)",
-                            "Transmis via Google Firebase Cloud Functions (proxy sécurisé)",
-                            "Anthropic ne utilise pas les données API pour entraîner ses modèles (conditions commerciales)"
+                            AppCopy.t("Anthropic PBC — modèle Claude (IA conversationnelle)", en: "Anthropic PBC — Claude model (conversational AI)"),
+                            AppCopy.t("Transmis via Google Firebase Cloud Functions (proxy sécurisé)", en: "Transmitted through Google Firebase Cloud Functions (secure proxy)"),
+                            AppCopy.t("Anthropic ne utilise pas les données API pour entraîner ses modèles (conditions commerciales)", en: "Anthropic does not use API data to train its models (commercial terms)")
                         ]
                     )
 
                     disclosureSection(
-                        title: "Finalités",
+                        title: AppCopy.t("Finalités", en: "Purposes"),
                         items: [
-                            "Réponses du coach personnalisées",
-                            "Génération de plan personnalisé et suggestions repas",
-                            "Analyses scan visage/corps (si tu l'autorises séparément)"
+                            AppCopy.t("Réponses du coach personnalisées", en: "Personalized coach responses"),
+                            AppCopy.t("Génération de plan personnalisé et suggestions repas", en: "Personalized plan generation and meal suggestions"),
+                            AppCopy.t("Analyses scan visage/corps (si tu l'autorises séparément)", en: "Face/body scan analyses (if you authorize them separately)")
                         ]
                     )
 
-                    Text("Tu peux refuser : le coach IA, les suggestions repas IA et les analyses cloud seront désactivés. Le suivi local (Santé, scans sans IA) reste disponible.")
+                    Text(AppCopy.t("Tu peux refuser : le coach IA, les suggestions repas IA et les analyses cloud seront désactivés. Le suivi local (Santé, scans sans IA) reste disponible.", en: "You can decline: the AI coach, AI meal suggestions, and cloud analyses will be disabled. Local tracking (Health, non-AI scans) remains available."))
                         .font(.footnote)
                         .foregroundStyle(theme.secondaryText)
 
@@ -57,17 +57,17 @@ struct ThirdPartyAIConsentView: View {
                 .padding(.bottom, 12)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Coach IA")
+            .navigationTitle(AppCopy.t("Coach IA", en: "AI Coach"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Plus tard", action: onDecline)
+                    Button(AppCopy.t("Plus tard", en: "Not Now"), action: onDecline)
                 }
             }
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 10) {
                     Button(action: onAccept) {
-                        Text("J'accepte — activer le coach IA")
+                        Text(AppCopy.t("J'accepte — activer le coach IA", en: "I Agree — Enable AI Coach"))
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -75,7 +75,7 @@ struct ThirdPartyAIConsentView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(theme.onboardingAccent)
 
-                    Button("Refuser", action: onDecline)
+                    Button(AppCopy.t("Refuser", en: "Decline"), action: onDecline)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(theme.secondaryText)
                 }
@@ -98,10 +98,10 @@ struct ThirdPartyAIConsentView: View {
 
     private var headerBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Données personnelles et IA", systemImage: "sparkles")
+            Label(AppCopy.t("Données personnelles et IA", en: "Personal Data and AI"), systemImage: "sparkles")
                 .font(.title3.weight(.bold))
                 .foregroundStyle(theme.primaryText)
-            Text("Process envoie certaines données à un service d'intelligence artificielle tiers pour le coach et les fonctionnalités IA. Apple exige que tu sois informé et que tu donnes ton accord explicite.")
+            Text(AppCopy.t("Process envoie certaines données à un service d'intelligence artificielle tiers pour le coach et les fonctionnalités IA. Apple exige que tu sois informé et que tu donnes ton accord explicite.", en: "Process sends certain data to a third-party artificial intelligence service for the coach and AI features. Apple requires that you are informed and give explicit consent."))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
         }
@@ -113,7 +113,7 @@ struct ThirdPartyAIConsentView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "hand.raised.fill")
-                Text("Lire la politique de confidentialité")
+                Text(AppCopy.t("Lire la politique de confidentialité", en: "Read the Privacy Policy"))
             }
             .font(.subheadline.weight(.semibold))
         }

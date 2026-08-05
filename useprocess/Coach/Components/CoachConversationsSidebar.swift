@@ -74,7 +74,7 @@ struct CoachConversationsSidebar: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(theme.secondaryText)
 
-                TextField("Rechercher", text: $searchText)
+                TextField(AppCopy.search, text: $searchText)
                     .font(.body)
                     .foregroundStyle(theme.primaryText)
                     .focused($isSearchFocused)
@@ -110,7 +110,7 @@ struct CoachConversationsSidebar: View {
                     .contentShape(Rectangle())
             }
             .processGlassButton(in: chromeShape)
-            .accessibilityLabel("Nouvelle conversation")
+            .accessibilityLabel(AppCopy.t("Nouvelle conversation", en: "New conversation"))
         }
     }
 
@@ -201,7 +201,7 @@ struct CoachConversationsSidebar: View {
 
     private var conversationsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Conversations")
+            Text(AppCopy.t("Conversations", en: "Conversations"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
                 .padding(.bottom, 10)
@@ -224,11 +224,11 @@ struct CoachConversationsSidebar: View {
 
     private var emptyConversationsState: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Aucune conversation pour l'instant.")
+            Text(AppCopy.t("Aucune conversation pour l'instant.", en: "No conversations yet."))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
 
-            Text("Commencez une conversation pour la voir ici.")
+            Text(AppCopy.t("Commencez une conversation pour la voir ici.", en: "Start a conversation to see it here."))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText.opacity(0.82))
                 .fixedSize(horizontal: false, vertical: true)
@@ -272,7 +272,7 @@ struct CoachConversationsSidebar: View {
             Button(role: .destructive) {
                 onDelete(conversation.id)
             } label: {
-                Label("Supprimer", systemImage: "trash")
+                Label(AppCopy.delete, systemImage: "trash")
             }
         }
     }
@@ -290,7 +290,7 @@ struct CoachConversationsSidebar: View {
                     .foregroundStyle(theme.primaryText.opacity(0.92))
                     .frame(width: 22)
 
-                Text("Paramètres")
+                Text(AppCopy.settings)
                     .font(.body.weight(.medium))
                     .foregroundStyle(theme.primaryText)
 
@@ -339,7 +339,7 @@ private struct CoachIntegrationProgressIcon: View {
 private extension Date {
     var coachRelativeLabel: String {
         let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: self, relativeTo: Date())
     }

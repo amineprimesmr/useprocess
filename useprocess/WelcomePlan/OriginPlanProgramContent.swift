@@ -11,7 +11,10 @@ struct OriginPlanHeaderCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Mon plan · S\(week)/\(plan.totalWeeks)")
+                    Text(AppCopy.t(
+                        "Mon plan · S\(week)/\(plan.totalWeeks)",
+                        en: "My plan · W\(week)/\(plan.totalWeeks)"
+                    ))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
                     if let snapshot = plan.assessmentSnapshot {
@@ -47,7 +50,7 @@ struct OriginPlanHeaderCard: View {
 
     private var successCriteriaRow: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Objectifs")
+            Text(AppCopy.t("Objectifs", en: "Goals"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
             ForEach(plan.successCriteria.prefix(3)) { criterion in
@@ -80,7 +83,7 @@ struct OriginPlanSuccessCriteriaCard: View {
         if criteria.isEmpty { EmptyView() }
         else {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Objectifs du plan personnalisé")
+                Text(AppCopy.t("Objectifs du plan personnalisé", en: "Personalized plan goals"))
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(theme.primaryText)
                 ForEach(criteria) { criterion in

@@ -1,0 +1,10 @@
+/* Privacy — English (App Store US / anglophone devices) */
+"NSCameraUsageDescription" = "The front and rear cameras power local face scans, posture analysis, and body scans. A photo is sent to Anthropic Claude only if you explicitly enable AI analysis.";
+"NSPhotoLibraryUsageDescription" = "Photo Library lets you choose a profile photo or send an image to the coach.";
+"NSHealthShareUsageDescription" = "Process reads your Health data (steps, sleep, heart rate) to calculate your readiness score and personalize your program. These summaries may be shared with the AI coach if you allow it.";
+"NSHealthUpdateUsageDescription" = "Process can save your workouts and activity data to Health to keep your fitness tracking in one place.";
+"NSFaceIDUsageDescription" = "The front camera is used for local face scans (facial mesh and indicators). Process does not create a facial identification model.";
+"NSMotionUsageDescription" = "Process uses motion sensors to estimate your daily activity and complement Health data. For example: counting steps when you walk without an Apple Watch.";
+"NSUserNotificationsUsageDescription" = "Notifications remind you about your sessions and recovery.";
+"NSMicrophoneUsageDescription" = "The microphone lets you record voice messages that are converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
+"NSSpeechRecognitionUsageDescription" = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";

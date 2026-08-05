@@ -53,7 +53,7 @@ struct BeforeAfterComparisonSlider: View {
                     videoName: afterVideoName,
                     width: width,
                     height: height,
-                    accessibilityLabel: "Après"
+                    accessibilityLabel: OnboardingCopy.t("Après", en: "After")
                 )
 
                 comparisonLayer(
@@ -61,7 +61,7 @@ struct BeforeAfterComparisonSlider: View {
                     videoName: beforeVideoName,
                     width: width,
                     height: height,
-                    accessibilityLabel: "Avant"
+                    accessibilityLabel: OnboardingCopy.t("Avant", en: "Before")
                 )
                 .mask(alignment: .leading) {
                     Rectangle()
@@ -134,7 +134,7 @@ struct BeforeAfterComparisonSlider: View {
         }
         .frame(width: handleSize, height: handleSize)
         .contentShape(Circle())
-        .accessibilityLabel("Curseur avant après")
+        .accessibilityLabel(OnboardingCopy.t("Curseur avant après", en: "Before and after slider"))
         .accessibilityAddTraits(.allowsDirectInteraction)
     }
 

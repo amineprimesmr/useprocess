@@ -56,6 +56,7 @@ enum PlanProtocolCarouselBuilder {
     static let compactPostureItemLimit = 4
 
     /// Accueil Plan — cardio du jour + circuit / postures (plus de muscu).
+    @MainActor
     static func cardioAndCircuitItems(
         plan: FaceOriginPlan,
         date: Date = Date()
@@ -63,6 +64,7 @@ enum PlanProtocolCarouselBuilder {
         [cardioDayItem(for: date)] + compactPostureItems(from: plan)
     }
 
+    @MainActor
     static func cardioDayItem(for date: Date = Date()) -> PlanProtocolCarouselItem {
         let session = DebloatCardioDayCatalog.session(for: date)
         return PlanProtocolCarouselItem(
@@ -75,6 +77,7 @@ enum PlanProtocolCarouselBuilder {
         )
     }
 
+    @MainActor
     static func compactPostureItems(from plan: FaceOriginPlan) -> [PlanProtocolCarouselItem] {
         PlanPostureCircuitContent.compactLines(
             for: plan,
@@ -87,7 +90,7 @@ enum PlanProtocolCarouselBuilder {
                 line,
                 id: "posture-\(index)",
                 fallback: postureFallback(for: line),
-                category: "Cardio et Circuit"
+                category: PlanHomeSectionKind.training.title
             )
         }
     }
@@ -550,11 +553,11 @@ struct PlanProtocolItemDetailSheet: View {
                 .padding(20)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Exercice")
+            .navigationTitle(AppCopy.t("Exercice", en: "Exercise"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
         }
@@ -572,13 +575,13 @@ struct PlanContinuousHabitsInlineSection: View {
                 Image(systemName: "infinity")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(theme.onboardingAccent)
-                Text("À faire 24/7")
+                Text(AppCopy.t("À faire 24/7", en: "Do all day"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                     .textCase(.uppercase)
             }
 
-            Text("Habitudes continues — pas des exercices à timer, mais à garder toute la journée.")
+            Text(AppCopy.t("Habitudes continues — pas des exercices à timer, mais à garder toute la journée.", en: "Ongoing habits — not timed exercises, but ones to keep all day."))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -624,18 +627,20 @@ struct PlanProtocolSectionHeader: View {
 // MARK: - Pas / marche
 
 enum PlanStepsProgressFormatter {
-    private static let numberFormatter: NumberFormatter = {
+    @MainActor
+    private static var numberFormatter: NumberFormatter {
         let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.numberStyle = .decimal
-        formatter.groupingSeparator = " "
         return formatter
-    }()
+    }
 
+    @MainActor
     static func formatted(_ value: Int) -> String {
         numberFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 
+    @MainActor
     static func stepsRatio(current: Int, target: Int) -> String {
         "\(formatted(current)) / \(formatted(target))"
     }

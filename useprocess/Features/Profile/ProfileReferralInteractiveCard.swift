@@ -50,8 +50,8 @@ struct ProfileReferralInteractiveCard: View {
                     endInteraction()
                 }
             }
-            .accessibilityLabel("Carte parrainage")
-            .accessibilityHint("Maintiens et fais glisser pour incliner la carte")
+            .accessibilityLabel(AppCopy.t("Carte parrainage", en: "Referral card"))
+            .accessibilityHint(AppCopy.t("Maintiens et fais glisser pour incliner la carte", en: "Touch and drag to tilt the card"))
     }
 
     private func interactionGesture(cardSize: CGSize) -> some Gesture {

@@ -202,7 +202,7 @@ struct GroupedSettingsEditableIntRow: View {
     let title: String
     @Binding var value: Int
     let range: ClosedRange<Int>
-    var zeroLabel: String = "Illimité"
+    var zeroLabel: String = ""
 
     @State private var draft: String = ""
     @FocusState private var isFocused: Bool
@@ -212,7 +212,7 @@ struct GroupedSettingsEditableIntRow: View {
             Text(title)
                 .font(.body.weight(.medium))
                 .foregroundStyle(Color(UIColor.label))
-            TextField("", text: $draft, prompt: Text(zeroLabel).foregroundStyle(Color(UIColor.secondaryLabel)))
+            TextField("", text: $draft, prompt: Text(resolvedZeroLabel).foregroundStyle(Color(UIColor.secondaryLabel)))
                 .keyboardType(.numberPad)
                 .focused($isFocused)
                 .multilineTextAlignment(.trailing)
@@ -243,6 +243,10 @@ struct GroupedSettingsEditableIntRow: View {
 
     private func syncDraftFromValue() {
         draft = value == 0 ? "" : String(value)
+    }
+
+    private var resolvedZeroLabel: String {
+        zeroLabel.isEmpty ? AppCopy.t("Illimité", en: "Unlimited") : zeroLabel
     }
 
     private func commitDraft() {
@@ -292,7 +296,7 @@ struct GroupedSettingsLogoutRow: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Color.orange)
                 }
-                Text("Se déconnecter")
+                Text(AppCopy.t("Se déconnecter", en: "Log Out"))
                     .font(.body.weight(.medium))
                     .foregroundStyle(Color(UIColor.label))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -314,15 +318,18 @@ struct GroupedSettingsLastSyncSection: View {
     var showsSyncNowButton: Bool = true
     var onSyncStarted: (() -> Void)? = nil
 
-    private static let relativeSyncFormatter: RelativeDateTimeFormatter = {
+    @MainActor
+    private static var relativeSyncFormatter: RelativeDateTimeFormatter {
         let f = RelativeDateTimeFormatter()
-        f.locale = Locale(identifier: "fr_FR")
+        f.locale = ProcessAppLanguage.shared.locale
         f.unitsStyle = .abbreviated
         return f
-    }()
+    }
 
     private var lastSyncText: String {
-        guard let d = healthManager.lastSyncDate else { return "Jamais" }
+        guard let d = healthManager.lastSyncDate else {
+            return AppCopy.t("Jamais", en: "Never")
+        }
         return Self.relativeSyncFormatter.localizedString(for: d, relativeTo: Date())
     }
 
@@ -341,7 +348,7 @@ struct GroupedSettingsLastSyncSection: View {
             GroupedSettingsIconBox(systemName: "arrow.triangle.2.circlepath")
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Dernière synchro")
+                    Text(AppCopy.t("Dernière synchro", en: "Last Sync"))
                         .font(.body.weight(.medium))
                         .foregroundStyle(Color(UIColor.label))
                     Spacer(minLength: 8)
@@ -365,7 +372,7 @@ struct GroupedSettingsLastSyncSection: View {
         } label: {
             HStack(spacing: 12) {
                 GroupedSettingsIconBox(systemName: "arrow.clockwise")
-                Text("Synchroniser maintenant")
+                Text(AppCopy.t("Synchroniser maintenant", en: "Sync Now"))
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Color(UIColor.label))
                 Spacer(minLength: 0)

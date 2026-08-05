@@ -188,11 +188,19 @@ enum AppleSignInError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidCredential: return "Identifiants Apple invalides"
-        case .missingNonce: return "Nonce de sécurité manquant"
-        case .missingToken: return "Jeton Apple manquant"
-        case .firebaseNotConfigured: return "Firebase non configuré"
-        case .requestInProgress: return "Une authentification Apple est déjà en cours"
+        case .invalidCredential:
+            return AppCopy.tSync("Identifiants Apple invalides", en: "Invalid Apple credentials")
+        case .missingNonce:
+            return AppCopy.tSync("Nonce de sécurité manquant", en: "Missing security nonce")
+        case .missingToken:
+            return AppCopy.tSync("Jeton Apple manquant", en: "Missing Apple token")
+        case .firebaseNotConfigured:
+            return AppCopy.tSync("Firebase non configuré", en: "Firebase not configured")
+        case .requestInProgress:
+            return AppCopy.tSync(
+                "Une authentification Apple est déjà en cours",
+                en: "An Apple sign-in is already in progress"
+            )
         }
     }
 }

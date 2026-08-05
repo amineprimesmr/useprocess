@@ -17,7 +17,7 @@ struct CoachMyMemoryView: View {
                     addEntryCard
 
                     if store.entries.isEmpty {
-                        Text("Ajoute ce que le coach doit retenir : objectifs, contraintes, préférences, événements.")
+                        Text(AppCopy.t("Ajoute ce que le coach doit retenir : objectifs, contraintes, préférences, événements.", en: "Add what the coach should remember: goals, constraints, preferences, events."))
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                             .padding(.horizontal, 4)
@@ -28,7 +28,7 @@ struct CoachMyMemoryView: View {
                 .padding(16)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Ma mémoire")
+            .navigationTitle(AppCopy.t("Ma mémoire", en: "My memory"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -48,10 +48,10 @@ struct CoachMyMemoryView: View {
     private var toggleCard: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Utiliser Ma mémoire")
+                Text(AppCopy.t("Utiliser Ma mémoire", en: "Use My Memory"))
                     .font(.body.weight(.medium))
                     .foregroundStyle(theme.primaryText)
-                Text("Le coach s'appuie sur ces notes pour personnaliser ses réponses.")
+                Text(AppCopy.t("Le coach s'appuie sur ces notes pour personnaliser ses réponses.", en: "The coach uses these notes to personalize its responses."))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
             }
@@ -66,7 +66,7 @@ struct CoachMyMemoryView: View {
 
     private var addEntryCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Catégorie", selection: $selectedCategory) {
+            Picker(AppCopy.t("Catégorie", en: "Category"), selection: $selectedCategory) {
                 ForEach(CoachMyMemoryCategory.allCases) { category in
                     Text(category.label).tag(category)
                 }
@@ -82,7 +82,7 @@ struct CoachMyMemoryView: View {
                         .fill(theme.cardBackgroundStrong.opacity(0.65))
                 )
 
-            Button("Ajouter") {
+            Button(AppCopy.t("Ajouter", en: "Add")) {
                 store.add(category: selectedCategory, text: draftText)
                 draftText = ""
             }

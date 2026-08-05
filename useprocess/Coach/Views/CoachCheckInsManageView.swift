@@ -11,15 +11,15 @@ struct CoachCheckInsManageView: View {
         NavigationStack {
             List {
                 Section {
-                    Toggle("Check-ins actifs", isOn: $store.proactiveCheckInsEnabled)
+                    Toggle(AppCopy.t("Check-ins actifs", en: "Active check-ins"), isOn: $store.proactiveCheckInsEnabled)
                         .tint(.green)
                 } footer: {
-                    Text("Les rappels ouvrent le coach avec un prompt contextualisé.")
+                    Text(AppCopy.t("Les rappels ouvrent le coach avec un prompt contextualisé.", en: "Reminders open the coach with a contextual prompt."))
                 }
 
-                Section("Programmés") {
+                Section(AppCopy.t("Programmés", en: "Scheduled")) {
                     if store.checkIns.isEmpty {
-                        Text("Aucun check-in.")
+                        Text(AppCopy.t("Aucun check-in.", en: "No check-ins."))
                             .foregroundStyle(theme.secondaryText)
                     } else {
                         ForEach(store.checkIns) { checkIn in
@@ -33,7 +33,7 @@ struct CoachCheckInsManageView: View {
                     }
                 }
 
-                Section("Modèles") {
+                Section(AppCopy.t("Modèles", en: "Templates")) {
                     ForEach(CoachCheckInTemplate.allCases) { template in
                         Button {
                             store.add(from: template, hour: defaultHour(for: template), minute: 0)
@@ -50,7 +50,7 @@ struct CoachCheckInsManageView: View {
                     }
                 }
             }
-            .navigationTitle("Check-ins")
+            .navigationTitle(AppCopy.t("Check-ins", en: "Check-ins"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

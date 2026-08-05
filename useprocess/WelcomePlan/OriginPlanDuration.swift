@@ -8,15 +8,29 @@ struct OriginPlanDuration: Equatable {
     let archetype: OriginPlanArchetype?
 
     var rangeLabel: String {
-        if minWeeks == maxWeeks { return "\(minWeeks) semaine\(minWeeks > 1 ? "s" : "")" }
-        return "\(minWeeks) à \(maxWeeks) semaines"
+        if minWeeks == maxWeeks {
+            return AppCopy.tSync(
+                "\(minWeeks) semaine\(minWeeks > 1 ? "s" : "")",
+                en: minWeeks == 1 ? "1 week" : "\(minWeeks) weeks"
+            )
+        }
+        return AppCopy.tSync(
+            "\(minWeeks) à \(maxWeeks) semaines",
+            en: "\(minWeeks) to \(maxWeeks) weeks"
+        )
     }
 
     var headlineLabel: String {
         if let archetype {
-            return "\(archetype.label) — \(totalWeeks) sem."
+            return AppCopy.tSync(
+                "\(archetype.label) — \(totalWeeks) sem.",
+                en: "\(archetype.label) — \(totalWeeks) wk"
+            )
         }
-        return "Plan personnalisé — \(totalWeeks) semaines"
+        return AppCopy.tSync(
+            "Plan personnalisé — \(totalWeeks) semaines",
+            en: "Personalized plan — \(totalWeeks) weeks"
+        )
     }
 
     /// Fins de phase inclusives pour le calendrier (une entrée par phase).
@@ -73,8 +87,10 @@ struct OriginPlanDuration: Equatable {
     }
 
     static func weeksRangeLabel(from start: Int, through end: Int) -> String {
-        if start >= end { return "Semaine \(start)" }
-        return "Semaines \(start)–\(end)"
+        if start >= end {
+            return AppCopy.tSync("Semaine \(start)", en: "Week \(start)")
+        }
+        return AppCopy.tSync("Semaines \(start)–\(end)", en: "Weeks \(start)–\(end)")
     }
 
     func phaseBlock(for week: Int, roadmap: [OriginPlanPhaseBlock]) -> OriginPlanPhaseBlock {
@@ -86,7 +102,7 @@ struct OriginPlanDuration: Equatable {
         return roadmap.last ?? .init(
             id: "default",
             weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: totalWeeks),
-            title: "Plan personnalisé",
+            title: AppCopy.tSync("Plan personnalisé", en: "Personalized plan"),
             objectives: [],
             habits: []
         )
@@ -109,7 +125,10 @@ enum ProcessDurationFormat {
     }
 
     static func weeksLabel(count: Int) -> String {
-        count == 1 ? "1 semaine" : "\(count) semaines"
+        if count == 1 {
+            return AppCopy.tSync("1 semaine", en: "1 week")
+        }
+        return AppCopy.tSync("\(count) semaines", en: "\(count) weeks")
     }
 
     static func weeksLabel(fromDays days: Int) -> String {
@@ -118,6 +137,9 @@ enum ProcessDurationFormat {
 
     static func weeksShort(fromDays days: Int) -> String {
         let weeks = weekCount(fromDays: days)
-        return weeks == 1 ? "1 sem." : "\(weeks) sem."
+        if weeks == 1 {
+            return AppCopy.tSync("1 sem.", en: "1 wk")
+        }
+        return AppCopy.tSync("\(weeks) sem.", en: "\(weeks) wk")
     }
 }

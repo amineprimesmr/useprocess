@@ -85,14 +85,16 @@ struct OnboardingProgramCreationBadge: View {
 
     let style: Style
 
+    /// Assets FR (`reward*`) / EN (`reward*EN`) — texte baked dans les PNG.
     private var assetName: String {
+        let english = ProcessAppLanguage.shared.isEnglish
         switch style {
         case .scienceApproved:
-            return "rewardScience"
+            return english ? "rewardScienceEN" : "rewardScience"
         case .programsGenerated:
-            return "rewardProgram"
+            return english ? "rewardProgramEN" : "rewardProgram"
         case .download:
-            return "rewardDL"
+            return english ? "rewardDLEN" : "rewardDL"
         }
     }
 
@@ -104,6 +106,7 @@ struct OnboardingProgramCreationBadge: View {
             .frame(height: 106)
             .accessibilityHidden(true)
             .transition(.opacity.combined(with: .scale(scale: 0.97)))
+            .id(assetName)
     }
 }
 
@@ -312,11 +315,11 @@ struct OnboardingProgramCreationSuccessView: View {
                 .padding(.bottom, 34)
 
             VStack(spacing: 10) {
-                Text("Tout est prêt.")
+                Text(OnboardingCopy.t("Tout est prêt.", en: "You're all set."))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
 
-                Text("Merci pour vos réponses.")
+                Text(OnboardingCopy.t("Merci pour vos réponses.", en: "Thanks for your answers."))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
             }
@@ -354,7 +357,7 @@ struct OnboardingProgramCreationSuccessFooter: View {
     var body: some View {
         VStack(spacing: 18) {
             Button(action: onContinue) {
-                Text("Commencer")
+                Text(OnboardingCopy.t("Commencer", en: "Get started"))
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
                     .frame(maxWidth: .infinity)
@@ -368,7 +371,10 @@ struct OnboardingProgramCreationSuccessFooter: View {
             .offset(y: isRevealed ? 0 : 28)
             .animation(.spring(response: 0.55, dampingFraction: 0.86).delay(0.14), value: isRevealed)
 
-            Text("Process ne remplace pas les conseils d'un médecin. Consulte toujours ton médecin en premier lieu.")
+            Text(OnboardingCopy.t(
+                "Process ne remplace pas les conseils d'un médecin. Consulte toujours ton médecin en premier lieu.",
+                en: "Process doesn't replace medical advice. Always check with your doctor first."
+            ))
                 .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(OnboardingTheme.mutedText)
                 .multilineTextAlignment(.center)

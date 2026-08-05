@@ -45,7 +45,7 @@ struct WeightFailureReasonsStepView: View {
                                     onValidationChanged?(!selectedReasons.isEmpty)
                                 }) {
                                     HStack(spacing: 12) {
-                                        Text(OnboardingCopy.choiceLabel(index: index, sport: obstacle.rawValue))
+                                        Text(obstacle.title)
                                             .font(.system(size: 16, weight: .semibold))
                                             .foregroundStyle(OnboardingTheme.primaryText)
                                             .multilineTextAlignment(.leading)
@@ -81,7 +81,10 @@ struct WeightFailureReasonsStepView: View {
 
                 // ✅ Titre en OVERLAY - Position ABSOLUE depuis le haut de l'écran
                 VStack {
-                    OnboardingTitleView("Qu'est-ce qui", "t'empêche de réussir ?")
+                    OnboardingTitleView(
+                        OnboardingCopy.t("Qu'est-ce qui", en: "What's getting"),
+                        OnboardingCopy.t("t'empêche de réussir ?", en: "in your way?")
+                    )
                         .padding(.top, OnboardingConstants.titleTopPadding)
                     Spacer()
                 }

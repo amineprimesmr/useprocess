@@ -37,7 +37,7 @@ struct PlanMealDetailView: View {
         _assessment = State(initialValue: entry.assessment)
         _preparationPresentation = State(
             initialValue: MealPreparationStepsParser.presentation(
-                from: entry.meal.prepSummary,
+                from: entry.meal.localizedPrep,
                 prepMinutes: entry.meal.prepMinutes
             )
         )
@@ -54,12 +54,22 @@ struct PlanMealDetailView: View {
                     VStack(spacing: 22) {
                         mealHeroHeader
 
-                        Text(displayedMeal.name)
+                        Text(displayedMeal.localizedDisplayName)
                             .font(.system(size: 26, weight: .bold))
                             .multilineTextAlignment(.center)
                             .foregroundStyle(theme.primaryText)
                             .padding(.horizontal, 4)
                             .id("meal-title-\(displayedMeal.name)")
+
+                        let summary = displayedMeal.localizedSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !summary.isEmpty {
+                            Text(summary)
+                                .font(.subheadline)
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(theme.secondaryText)
+                                .padding(.horizontal, 8)
+                                .id("meal-summary-\(displayedMeal.name)")
+                        }
 
                         MealDebloatScoreDetailCard(assessment: assessment)
                             .id("meal-score-\(displayedMeal.name)")
@@ -82,7 +92,7 @@ struct PlanMealDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer", action: onDismiss)
+                    Button(AppCopy.close, action: onDismiss)
                 }
             }
             .onAppear {
@@ -137,7 +147,7 @@ struct PlanMealDetailView: View {
             HStack(spacing: 10) {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 15, weight: .semibold))
-                Text("Changez de repas")
+                Text(AppCopy.t("Changez de repas", en: "Change meal"))
                     .font(.system(size: 16, weight: .semibold))
             }
             .foregroundStyle(theme.primaryText.opacity(0.92))
@@ -149,8 +159,8 @@ struct PlanMealDetailView: View {
         .buttonStyle(ProcessGlassPressStyle())
         .padding(.horizontal, 20)
         .padding(.bottom, 12)
-        .accessibilityLabel("Changez de repas")
-        .accessibilityHint("Affiche une autre proposition du catalogue pour ce créneau")
+        .accessibilityLabel(AppCopy.t("Changez de repas", en: "Change meal"))
+        .accessibilityHint(AppCopy.t("Affiche une autre proposition du catalogue pour ce créneau", en: "Shows another catalog suggestion for this slot"))
     }
 
     private func cycleToNextMeal() {
@@ -167,7 +177,7 @@ struct PlanMealDetailView: View {
 
     private var ingredientsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Ingrédients", systemImage: "leaf.fill")
+            Label(AppCopy.t("Ingrédients", en: "Ingredients"), systemImage: "leaf.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
 
@@ -205,7 +215,7 @@ struct PlanMealDetailView: View {
     private var preparationSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
-                Label("Préparation", systemImage: "list.number")
+                Label(AppCopy.t("Préparation", en: "Preparation"), systemImage: "list.number")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
 
@@ -233,12 +243,12 @@ struct PlanMealDetailView: View {
                     .foregroundStyle(theme.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text("Aucune étape de préparation pour ce repas.")
+                Text(AppCopy.t("Aucune étape de préparation pour ce repas.", en: "No preparation steps for this meal."))
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             }
 
-            let tip = displayedMeal.coachTip.trimmingCharacters(in: .whitespacesAndNewlines)
+            let tip = displayedMeal.localizedCoachTip.trimmingCharacters(in: .whitespacesAndNewlines)
             if !tip.isEmpty {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "lightbulb.fill")
@@ -311,7 +321,7 @@ struct PlanMealDetailView: View {
     private func refreshDerivedPresentation() {
         assessment = MealNutritionCatalog.debloatAssessment(for: displayedMeal)
         preparationPresentation = MealPreparationStepsParser.presentation(
-            from: displayedMeal.prepSummary,
+            from: displayedMeal.localizedPrep,
             prepMinutes: displayedMeal.prepMinutes
         )
     }

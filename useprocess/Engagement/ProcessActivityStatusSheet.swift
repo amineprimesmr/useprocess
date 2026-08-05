@@ -83,12 +83,12 @@ struct ProcessActivityStatusSheet: View {
             introStatusGrid
 
             VStack(spacing: 10) {
-                Text("Statut d'activité")
+                Text(AppCopy.t("Statut d'activité", en: "Activity Status"))
                     .font(.title3.weight(.bold))
                     .foregroundStyle(theme.primaryText)
 
                 Text(
-                    "Définissez votre statut sur Actif(ve), Malade, Blessé(e) ou En pause. Process ajustera ses recommandations en fonction de votre état."
+                    AppCopy.t("Définissez votre statut sur Actif(ve), Malade, Blessé(e) ou En pause. Process ajustera ses recommandations en fonction de votre état.", en: "Set your status to Active, Sick, Injured, or On Pause. Process will adjust its recommendations based on your condition.")
                 )
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
@@ -97,7 +97,7 @@ struct ProcessActivityStatusSheet: View {
             }
 
             Button(action: confirmIntroSelection) {
-                Text("Continuer")
+                Text(AppCopy.continueCTA)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(theme.isDark ? .black : .white)
                     .frame(maxWidth: .infinity)
@@ -156,11 +156,11 @@ struct ProcessActivityStatusSheet: View {
                         .processGlassCircle(interactive: true)
                 }
                 .buttonStyle(.processPlain)
-                .accessibilityLabel(openedFromIntro ? "Retour" : "Fermer")
+                .accessibilityLabel(openedFromIntro ? AppCopy.back : AppCopy.close)
 
                 Spacer()
 
-                Text("Statut d'activité")
+                Text(AppCopy.t("Statut d'activité", en: "Activity Status"))
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
 
@@ -186,7 +186,7 @@ struct ProcessActivityStatusSheet: View {
 
             VStack(spacing: 12) {
                 Button(action: applySelection) {
-                    Text("Mettre à jour")
+                    Text(AppCopy.t("Mettre à jour", en: "Update"))
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(theme.primaryText.opacity(0.92))
                         .frame(maxWidth: .infinity)
@@ -195,7 +195,7 @@ struct ProcessActivityStatusSheet: View {
                 }
                 .buttonStyle(.processPlain)
 
-                Text("La mise à jour de votre statut historique l'appliquera à toutes les activités et tendances de cette journée.")
+                Text(AppCopy.t("La mise à jour de votre statut historique l'appliquera à toutes les activités et tendances de cette journée.", en: "Updating your historical status will apply it to all activity and trends for this day."))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -348,6 +348,6 @@ struct ProcessActivityStatusBadge: View {
 
     var body: some View {
         ProcessActivityStatusIconBadge(status: status, size: size, iconSize: iconSize)
-            .accessibilityLabel("Statut d'activité : \(status.title)")
+            .accessibilityLabel(AppCopy.t("Statut d'activité : \(status.title)", en: "Activity Status: \(status.title)"))
     }
 }

@@ -12,23 +12,25 @@ enum FaceScanIndicators {
 
         var id: String { rawValue }
 
+        @MainActor
         var title: String {
             switch self {
-            case .retention: return "Rétention"
-            case .recovery: return "Cernes et fatigue"
-            case .skin: return "Peau"
-            case .definition: return "Mâchoire"
-            case .stressLoad: return "Charge stress"
+            case .retention: return AppCopy.t("Rétention", en: "Retention")
+            case .recovery: return AppCopy.t("Cernes et fatigue", en: "Under-eyes & fatigue")
+            case .skin: return AppCopy.t("Peau", en: "Skin")
+            case .definition: return AppCopy.t("Mâchoire", en: "Jawline")
+            case .stressLoad: return AppCopy.t("Charge stress", en: "Stress load")
             }
         }
 
+        @MainActor
         var subtitle: String {
             switch self {
-            case .retention: return "Rétention d'eau / debloat"
-            case .recovery: return "Cernes et fatigue"
-            case .skin: return "Régénération cutanée"
-            case .definition: return "Mâchoire et pommettes"
-            case .stressLoad: return "Cortisol estimé"
+            case .retention: return AppCopy.t("Rétention d'eau / debloat", en: "Water retention / debloat")
+            case .recovery: return AppCopy.t("Cernes et fatigue", en: "Under-eyes & fatigue")
+            case .skin: return AppCopy.t("Régénération cutanée", en: "Skin regeneration")
+            case .definition: return AppCopy.t("Mâchoire et pommettes", en: "Jawline & cheekbones")
+            case .stressLoad: return AppCopy.t("Cortisol estimé", en: "Estimated cortisol")
             }
         }
 
@@ -40,13 +42,14 @@ enum FaceScanIndicators {
             }
         }
 
+        @MainActor
         var whoopLabel: String {
             switch self {
-            case .retention: return "RÉTENTION D'EAU"
-            case .recovery: return "CERNES ET FATIGUE"
-            case .skin: return "QUALITÉ DE PEAU (BETA)"
-            case .definition: return "MÂCHOIRE ET POMMETTES"
-            case .stressLoad: return "CORTISOL ESTIMÉ"
+            case .retention: return AppCopy.t("RÉTENTION D'EAU", en: "WATER RETENTION")
+            case .recovery: return AppCopy.t("CERNES ET FATIGUE", en: "UNDER-EYES & FATIGUE")
+            case .skin: return AppCopy.t("QUALITÉ DE PEAU (BETA)", en: "SKIN QUALITY (BETA)")
+            case .definition: return AppCopy.t("MÂCHOIRE ET POMMETTES", en: "JAWLINE & CHEEKBONES")
+            case .stressLoad: return AppCopy.t("CORTISOL ESTIMÉ", en: "ESTIMATED CORTISOL")
             }
         }
 
@@ -66,11 +69,12 @@ enum FaceScanIndicators {
         case sufficient = 1
         case optimal = 2
 
+        @MainActor
         var title: String {
             switch self {
-            case .insufficient: return "Médiocre"
-            case .sufficient: return "Dégradé"
-            case .optimal: return "Optimal"
+            case .insufficient: return AppCopy.t("Médiocre", en: "Poor")
+            case .sufficient: return AppCopy.t("Dégradé", en: "Degraded")
+            case .optimal: return AppCopy.t("Optimal", en: "Optimal")
             }
         }
     }
@@ -141,24 +145,24 @@ enum FaceScanIndicators {
         switch kind {
         case .retention:
             switch load {
-            case ..<48: return "peu de rétention visible"
-            case 48..<62: return "gonflement modéré"
-            case 62..<78: return "visage nettement gonflé"
-            default: return "rétention d'eau très marquée"
+            case ..<48: return AppCopy.tSync("peu de rétention visible", en: "little visible retention")
+            case 48..<62: return AppCopy.tSync("gonflement modéré", en: "moderate puffiness")
+            case 62..<78: return AppCopy.tSync("visage nettement gonflé", en: "clearly puffy face")
+            default: return AppCopy.tSync("rétention d'eau très marquée", en: "very marked water retention")
             }
         case .recovery:
             switch load {
-            case ..<48: return "regard reposé"
-            case 48..<62: return "fatigue légère"
-            case 62..<78: return "fatigue visible"
-            default: return "récupération très insuffisante"
+            case ..<48: return AppCopy.tSync("regard reposé", en: "rested look")
+            case 48..<62: return AppCopy.tSync("fatigue légère", en: "mild fatigue")
+            case 62..<78: return AppCopy.tSync("fatigue visible", en: "visible fatigue")
+            default: return AppCopy.tSync("récupération très insuffisante", en: "very poor recovery")
             }
         case .stressLoad:
             switch load {
-            case ..<42: return "charge stress basse"
-            case 42..<62: return "tension modérée"
-            case 62..<78: return "charge stress élevée"
-            default: return "cortisol très actif"
+            case ..<42: return AppCopy.tSync("charge stress basse", en: "low stress load")
+            case 42..<62: return AppCopy.tSync("tension modérée", en: "moderate tension")
+            case 62..<78: return AppCopy.tSync("charge stress élevée", en: "high stress load")
+            default: return AppCopy.tSync("cortisol très actif", en: "very active cortisol")
             }
         case .skin, .definition:
             return ""
@@ -316,38 +320,38 @@ enum FaceScanIndicators {
         switch kind {
         case .retention:
             switch value {
-            case 78...: return "Très marquée"
-            case 62..<78: return "Marquée"
-            case 50..<62: return "Modérée"
-            default: return "Faible"
+            case 78...: return AppCopy.tSync("Très marquée", en: "Very marked")
+            case 62..<78: return AppCopy.tSync("Marquée", en: "Marked")
+            case 50..<62: return AppCopy.tSync("Modérée", en: "Moderate")
+            default: return AppCopy.tSync("Faible", en: "Low")
             }
         case .recovery:
             switch value {
-            case 78...: return "Très fatigué"
-            case 62..<78: return "Fatigué"
-            case 52..<62: return "Cernes visibles"
-            default: return "Reposé"
+            case 78...: return AppCopy.tSync("Très fatigué", en: "Very tired")
+            case 62..<78: return AppCopy.tSync("Fatigué", en: "Tired")
+            case 52..<62: return AppCopy.tSync("Cernes visibles", en: "Visible under-eyes")
+            default: return AppCopy.tSync("Reposé", en: "Rested")
             }
         case .skin:
             switch value {
-            case 72...: return "Nette"
-            case 55..<72: return "Correcte"
-            case 42..<55: return "Terne"
-            default: return "Très terne"
+            case 72...: return AppCopy.tSync("Nette", en: "Clear")
+            case 55..<72: return AppCopy.tSync("Correcte", en: "Fair")
+            case 42..<55: return AppCopy.tSync("Terne", en: "Dull")
+            default: return AppCopy.tSync("Très terne", en: "Very dull")
             }
         case .definition:
             switch value {
-            case 74...: return "Bien définie"
-            case 58..<74: return "Correcte"
-            case 45..<58: return "Peu marquée"
-            default: return "Plate / bouffie"
+            case 74...: return AppCopy.tSync("Bien définie", en: "Well defined")
+            case 58..<74: return AppCopy.tSync("Correcte", en: "Fair")
+            case 45..<58: return AppCopy.tSync("Peu marquée", en: "Softly defined")
+            default: return AppCopy.tSync("Plate / bouffie", en: "Flat / puffy")
             }
         case .stressLoad:
             switch value {
-            case 72...: return "Élevée"
-            case 58..<72: return "Modérée"
-            case 45..<58: return "Légère"
-            default: return "Basse"
+            case 72...: return AppCopy.tSync("Élevée", en: "High")
+            case 58..<72: return AppCopy.tSync("Modérée", en: "Moderate")
+            case 45..<58: return AppCopy.tSync("Légère", en: "Light")
+            default: return AppCopy.tSync("Basse", en: "Low")
             }
         }
     }

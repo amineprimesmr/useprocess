@@ -280,7 +280,7 @@ final class OnboardingProfileChatViewModel {
               question.kind == .infoContinue else { return }
         isSubmittingAnswer = true
         await recordAnswer(
-            display: question.continueLabel ?? "Continuer",
+            display: question.continueLabel ?? OnboardingCopy.continueCTA,
             questionID: question.id
         )
     }
@@ -402,7 +402,11 @@ final class OnboardingProfileChatViewModel {
     func submitYesNo(_ yes: Bool) async {
         guard !isSubmittingAnswer, currentQuestion != nil else { return }
         isSubmittingAnswer = true
-        await recordAnswer(display: yes ? "Oui" : "Non")
+        await recordAnswer(
+            display: yes
+                ? OnboardingCopy.t("Oui", en: "Yes")
+                : OnboardingCopy.t("Non", en: "No")
+        )
     }
 
     func submitSingleChoice(_ choiceId: String) async {
@@ -488,9 +492,10 @@ final class OnboardingProfileChatViewModel {
             ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
 
+        let launchScanLabel = OnboardingCopy.t("Lancer le scan", en: "Start the scan")
         if conversationEngine.messages.last?.sender != .user
-            || conversationEngine.messages.last?.text != "Lancer le scan" {
-            conversationEngine.userReplied("Lancer le scan")
+            || conversationEngine.messages.last?.text != launchScanLabel {
+            conversationEngine.userReplied(launchScanLabel)
         }
         isQuestionReadyForAnswers = false
         isSubmittingAnswer = false
@@ -504,9 +509,10 @@ final class OnboardingProfileChatViewModel {
         onboardingViewModel?.onboardingFaceMesh = nil
         onboardingViewModel?.onboardingFaceMarkers = nil
         markQuestionCompleted("face_scan_offer")
+        let scanLaterLabel = OnboardingCopy.t("Faire mon scan plus tard", en: "I’ll scan later")
         if conversationEngine.messages.last?.sender != .user
-            || conversationEngine.messages.last?.text != "Faire mon scan plus tard" {
-            conversationEngine.userReplied("Faire mon scan plus tard")
+            || conversationEngine.messages.last?.text != scanLaterLabel {
+            conversationEngine.userReplied(scanLaterLabel)
         }
         currentQuestion = nil
         isQuestionReadyForAnswers = false

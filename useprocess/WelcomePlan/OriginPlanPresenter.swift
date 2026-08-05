@@ -75,8 +75,8 @@ enum OriginPlanPresenter {
         if !lastNight.isEmpty {
             phases.append(.init(
                 id: "lastNight",
-                title: "Hier soir",
-                timeHint: "Avant le coucher",
+                title: AppCopy.tSync("Hier soir", en: "Last night"),
+                timeHint: AppCopy.tSync("Avant le coucher", en: "Before bed"),
                 kind: .checklist(lastNight)
             ))
         }
@@ -84,8 +84,8 @@ enum OriginPlanPresenter {
         if !morning.isEmpty {
             phases.append(.init(
                 id: "morning",
-                title: "Matin",
-                timeHint: "Au réveil",
+                title: AppCopy.tSync("Matin", en: "Morning"),
+                timeHint: AppCopy.tSync("Au réveil", en: "On waking"),
                 kind: .checklist(morning)
             ))
         }
@@ -93,7 +93,7 @@ enum OriginPlanPresenter {
         if includeMeals {
             phases.append(.init(
                 id: "meals",
-                title: "Repas",
+                title: AppCopy.tSync("Repas", en: "Meals"),
                 timeHint: mealPhaseHint(for: day),
                 kind: .meals
             ))
@@ -103,7 +103,7 @@ enum OriginPlanPresenter {
             let cardio = DebloatCardioDayCatalog.session()
             phases.append(.init(
                 id: "training",
-                title: "Cardio et Circuit",
+                title: AppCopy.tSync("Cardio et Circuit", en: "Cardio & Circuit"),
                 timeHint: cardio.prescriptionLine,
                 kind: .autoTracking
             ))
@@ -112,8 +112,8 @@ enum OriginPlanPresenter {
         if includeAutoTracking {
             phases.append(.init(
                 id: "movement",
-                title: "Mouvement",
-                timeHint: "Suivi automatique · Santé",
+                title: AppCopy.tSync("Mouvement", en: "Movement"),
+                timeHint: AppCopy.tSync("Suivi automatique · Santé", en: "Auto tracking · Health"),
                 kind: .autoTracking
             ))
         }
@@ -121,8 +121,8 @@ enum OriginPlanPresenter {
         if !posture.isEmpty {
             phases.append(.init(
                 id: "posture",
-                title: "Posture",
-                timeHint: "Dans la journée",
+                title: AppCopy.tSync("Posture", en: "Posture"),
+                timeHint: AppCopy.tSync("Dans la journée", en: "During the day"),
                 kind: .checklist(posture)
             ))
         }
@@ -130,8 +130,8 @@ enum OriginPlanPresenter {
         if !face.isEmpty {
             phases.append(.init(
                 id: "face",
-                title: "Visage",
-                timeHint: "Routine",
+                title: AppCopy.tSync("Visage", en: "Face"),
+                timeHint: AppCopy.tSync("Routine", en: "Routine"),
                 kind: .checklist(face)
             ))
         }
@@ -139,8 +139,8 @@ enum OriginPlanPresenter {
         if !evening.isEmpty {
             phases.append(.init(
                 id: "evening",
-                title: "Soir",
-                timeHint: nightRangeLabel(for: day, calendar: calendar) ?? "Avant le coucher",
+                title: AppCopy.tSync("Soir", en: "Evening"),
+                timeHint: nightRangeLabel(for: day, calendar: calendar) ?? AppCopy.tSync("Avant le coucher", en: "Before bed"),
                 kind: .checklist(evening)
             ))
         }
@@ -149,13 +149,13 @@ enum OriginPlanPresenter {
     }
 
     private static func mealPhaseHint(for day: OriginProgramDay) -> String {
-        if day.nutrition.isOMAD { return "Un repas principal" }
+        if day.nutrition.isOMAD { return AppCopy.tSync("Un repas principal", en: "One main meal") }
         let configured = [
-            day.nutrition.breakfast.isEmpty ? nil : "Petit-déj",
-            day.nutrition.lunch.isEmpty ? nil : "Déjeuner",
-            day.nutrition.dinner.isEmpty ? nil : "Dîner"
+            day.nutrition.breakfast.isEmpty ? nil : AppCopy.tSync("Petit-déj", en: "Breakfast"),
+            day.nutrition.lunch.isEmpty ? nil : AppCopy.tSync("Déjeuner", en: "Lunch"),
+            day.nutrition.dinner.isEmpty ? nil : AppCopy.tSync("Dîner", en: "Dinner")
         ].compactMap { $0 }
-        if configured.isEmpty { return "Valide un repas debloat" }
+        if configured.isEmpty { return AppCopy.tSync("Valide un repas debloat", en: "Log a debloat meal") }
         return configured.joined(separator: " · ")
     }
 
@@ -195,23 +195,23 @@ enum OriginPlanPresenter {
         switch true {
         case isHydrationJournalTask(task):
             score = 0
-        case text.contains("repas tardif"):
+        case text.contains("repas tardif") || text.contains("late meal"):
             score = 15
-        case text.contains("lumiere") || text.contains("lumière"):
+        case text.contains("lumiere") || text.contains("lumière") || text.contains("morning light") || text.contains("natural light"):
             score = 20
-        case text.contains("alcool"):
+        case text.contains("alcool") || text.contains("alcohol"):
             score = 25
-        case text.contains("eau froide"):
+        case text.contains("eau froide") || text.contains("cold water"):
             score = 30
         case text.contains("lymph") || text.contains("massage"):
             score = 35
-        case text.contains("orofacial") || text.contains("langue") || text.contains("tape zyg"):
+        case text.contains("orofacial") || text.contains("langue") || text.contains("tongue") || text.contains("tape zyg") || text.contains("zyg tape"):
             score = 32
-        case text.contains("sommeil") && text.contains("côté"):
+        case (text.contains("sommeil") || text.contains("sleep")) && (text.contains("côté") || text.contains("side")):
             score = 38
         case text.contains("posture"):
             score = 40
-        case text.contains("ecran") || text.contains("écran") || text.contains("couvre-feu"):
+        case text.contains("ecran") || text.contains("écran") || text.contains("screen") || text.contains("couvre-feu") || text.contains("curfew"):
             score = 45
         default:
             score = 50
@@ -240,23 +240,27 @@ enum OriginPlanPresenter {
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
             .lowercased()
 
-        if text.contains("hydrat") || text.contains("alcool") || text.contains("repas") {
+        if text.contains("hydrat") || text.contains("alcool") || text.contains("alcohol")
+            || text.contains("repas") || text.contains("meal") {
             return "nutrition"
         }
-        if pillar.contains("sommeil") || text.contains("ecran") || text.contains("écran")
-            || text.contains("couvre-feu") || text.contains("langue sur palais") {
+        if pillar.contains("sommeil") || pillar.contains("sleep") || text.contains("ecran") || text.contains("écran")
+            || text.contains("screen") || text.contains("couvre-feu") || text.contains("curfew")
+            || text.contains("langue sur palais") || text.contains("tongue on palate") {
             return "hormones"
         }
-        if pillar.contains("hormone") || text.contains("lumiere") || text.contains("lumière") {
+        if pillar.contains("hormone") || text.contains("lumiere") || text.contains("lumière")
+            || text.contains("morning light") || text.contains("natural light") {
             return "hormones"
         }
-        if pillar.contains("visage") || text.contains("eau froide") || text.contains("lymph") || text.contains("massage") {
+        if pillar.contains("visage") || pillar.contains("face") || text.contains("eau froide")
+            || text.contains("cold water") || text.contains("lymph") || text.contains("massage") {
             return "visage"
         }
         if pillar.contains("posture") {
             return "posture"
         }
-        if pillar.contains("entrain") {
+        if pillar.contains("entrain") || pillar.contains("training") {
             return "training"
         }
         return pillar
@@ -268,8 +272,8 @@ enum OriginPlanPresenter {
             .lowercased()
         if normalized.contains("hormone") { return "hormones" }
         if normalized.contains("posture") || normalized.contains("fascia") { return "posture" }
-        if normalized.contains("visage") || normalized.contains("result") { return "visage" }
-        if normalized.contains("entrain") { return "training" }
+        if normalized.contains("visage") || normalized.contains("face") || normalized.contains("result") { return "visage" }
+        if normalized.contains("entrain") || normalized.contains("training") { return "training" }
         if normalized.contains("nutrition") { return "nutrition" }
         return normalized
     }
@@ -285,8 +289,10 @@ enum OriginPlanPresenter {
     static func isAutomaticStepsTask(_ task: OriginPlanTask) -> Bool {
         let text = searchableText(for: task)
         return text.contains("marche")
+            || text.contains("walk")
             || text.contains("healthkit")
             || text.contains("objectif \(ProcessDailyTargets.dailySteps) pas")
+            || text.contains("goal \(ProcessDailyTargets.dailySteps) steps")
             || text.contains("steps")
     }
 
@@ -298,12 +304,13 @@ enum OriginPlanPresenter {
         let text = searchableText(for: task)
         if isAutomaticStepsTask(task) { return true }
         if text.contains("mewing") { return true }
-        if text.contains("mastication") || text.contains("machées") || text.contains("mâchées") { return true }
-        if text.contains("routine soir") { return true }
-        if (text.contains("dîner") || text.contains("diner")) && text.contains("debloat") { return true }
-        if text.contains("telephone") && text.contains("lit") { return true }
-        if text.contains("alimentation parfaite") { return true }
-        if text.contains("scan visage") { return true }
+        if text.contains("mastication") || text.contains("machées") || text.contains("mâchées")
+            || text.contains("chews") || text.contains("chewing") { return true }
+        if text.contains("routine soir") || text.contains("evening routine") { return true }
+        if (text.contains("dîner") || text.contains("diner") || text.contains("dinner")) && text.contains("debloat") { return true }
+        if (text.contains("telephone") || text.contains("phone")) && (text.contains("lit") || text.contains("bed")) { return true }
+        if text.contains("alimentation parfaite") || text.contains("solid nutrition") { return true }
+        if text.contains("scan visage") || text.contains("face scan") { return true }
         return false
     }
 
@@ -312,6 +319,7 @@ enum OriginPlanPresenter {
         let text = searchableText(for: task)
         if text.contains("hydrat") { return true }
         if text.contains("boire") && text.contains("litre") { return true }
+        if text.contains("drink") && text.contains("liter") { return true }
         return task.title == ProcessHydrationGuide.dailyTaskTitle
     }
 
@@ -465,6 +473,7 @@ enum OriginPlanPresenter {
         let validatedMeal: String?
     }
 
+    @MainActor
     static func journalCompletionSummary(
         plan: FaceOriginPlan,
         day: OriginProgramDay,
@@ -475,31 +484,43 @@ enum OriginPlanPresenter {
         let failed = tasks.filter { plan.progress.status(for: $0.id, dayId: day.id) == .failed }
 
         let df = DateFormatter()
-        df.locale = Locale(identifier: "fr_FR")
+        df.locale = ProcessAppLanguage.shared.locale
         df.setLocalizedDateFormatFromTemplate("EEEE d MMMM")
         let dateLabel = df.string(from: date).capitalized
 
         var analysisParts: [String] = []
         if failed.isEmpty, completed.count == tasks.count {
-            analysisParts.append("Toutes tes habitudes du jour sont validées.")
+            analysisParts.append(AppCopy.t(
+                "Toutes tes habitudes du jour sont validées.",
+                en: "All your habits for the day are validated."
+            ))
         } else if failed.isEmpty {
-            analysisParts.append("\(completed.count)/\(tasks.count) habitudes validées.")
+            analysisParts.append(AppCopy.t(
+                "\(completed.count)/\(tasks.count) habitudes validées.",
+                en: "\(completed.count)/\(tasks.count) habits validated."
+            ))
         } else {
-            analysisParts.append("\(completed.count) validées, \(failed.count) à reprendre demain.")
+            analysisParts.append(AppCopy.t(
+                "\(completed.count) validées, \(failed.count) à reprendre demain.",
+                en: "\(completed.count) validated, \(failed.count) to retry tomorrow."
+            ))
         }
 
         let phase = phaseHeadline(plan, date: date)
-        analysisParts.append("Phase : \(phase).")
+        analysisParts.append(AppCopy.t("Phase : \(phase).", en: "Phase: \(phase)."))
 
         if let meal = plan.progress.validatedMeals[day.id], !meal.isEmpty {
             let mealLabel = MealSuggestionContent.fromStored(meal)?.name ?? truncate(meal, max: 72)
-            analysisParts.append("Repas : \(mealLabel).")
+            analysisParts.append(AppCopy.t("Repas : \(mealLabel).", en: "Meal: \(mealLabel)."))
         } else if let priority = impactPriorities(from: plan, limit: 1).first {
-            analysisParts.append("Levier prioritaire : \(priority.pillar.lowercased()).")
+            analysisParts.append(AppCopy.t(
+                "Levier prioritaire : \(priority.pillar.lowercased()).",
+                en: "Priority lever: \(priority.pillar.lowercased())."
+            ))
         }
 
         return JournalDayCompletionSummary(
-            title: "Analyse de ta journée",
+            title: AppCopy.t("Analyse de ta journée", en: "Your day analysis"),
             dateLabel: dateLabel,
             analysis: analysisParts.joined(separator: " "),
             completedCount: completed.count,
@@ -509,6 +530,7 @@ enum OriginPlanPresenter {
         )
     }
 
+    @MainActor
     static func nightRangeLabel(for day: OriginProgramDay, calendar: OriginProgramCalendar) -> String? {
         guard let start = calendar.startedAt else { return nil }
         let cal = Calendar.current
@@ -517,7 +539,7 @@ enum OriginPlanPresenter {
         else { return nil }
 
         let df = DateFormatter()
-        df.locale = Locale(identifier: "fr_FR")
+        df.locale = ProcessAppLanguage.shared.locale
         df.setLocalizedDateFormatFromTemplate("d MMM")
         return "\(df.string(from: evening)) – \(df.string(from: morning))"
     }
@@ -568,10 +590,10 @@ enum OriginPlanPresenter {
 
     static func impactLabel(for score: Int) -> String {
         switch score {
-        case ..<45: return "Impact maximal"
-        case 45..<60: return "Fort impact"
-        case 60..<75: return "Impact modéré"
-        default: return "Maintien"
+        case ..<45: return AppCopy.tSync("Impact maximal", en: "Maximum impact")
+        case 45..<60: return AppCopy.tSync("Fort impact", en: "High impact")
+        case 60..<75: return AppCopy.tSync("Impact modéré", en: "Moderate impact")
+        default: return AppCopy.tSync("Maintien", en: "Maintain")
         }
     }
 
@@ -588,7 +610,7 @@ enum OriginPlanPresenter {
         if let block = plan.phaseRoadmap.first(where: { rangeContains(week, in: $0.weeksRange) }) {
             return block.title
         }
-        return plan.phaseRoadmap.first?.title ?? "Fondations"
+        return plan.phaseRoadmap.first?.title ?? AppCopy.tSync("Fondations", en: "Foundations")
     }
 
     static func nutritionOneLiner(day: OriginProgramDay, plan: FaceOriginPlan) -> String {
@@ -599,7 +621,7 @@ enum OriginPlanPresenter {
         if !principles.isEmpty {
             return truncate(principles, max: 56)
         }
-        return "Demande une idée de repas à l'IA"
+        return AppCopy.tSync("Demande une idée de repas à l'IA", en: "Ask AI for a meal idea")
     }
 
     static func sleepOneLiner(_ sleep: OriginDaySleep) -> String {
@@ -619,7 +641,7 @@ enum OriginPlanPresenter {
 
     private static func firstSentence(_ text: String, maxLength: Int) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "Plan personnalisé" }
+        guard !trimmed.isEmpty else { return AppCopy.tSync("Plan personnalisé", en: "Personalized plan") }
         let sentence = trimmed.split(separator: ".").first.map(String.init) ?? trimmed
         return truncate(sentence, max: maxLength)
     }

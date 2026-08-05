@@ -394,11 +394,27 @@ final class ProcessDebloatTrajectoryStore {
 
     private func scanSummary(puffinessDelta: Int?) -> String {
         guard let delta = puffinessDelta else {
-            return "Scan enregistré — fais ton check pour compléter la trajectoire."
+            return AppCopy.t(
+                "Scan enregistré — fais ton check pour compléter la trajectoire.",
+                en: "Scan saved — complete your check-in to finish the trajectory."
+            )
         }
-        if delta <= -4 { return "Scan : moins gonflé qu'à l'habitude." }
-        if delta >= 6 { return "Scan : rétention en hausse — eau régulière, sodium modéré, potassium alimentaire." }
-        return "Scan : signaux stables vs ta baseline."
+        if delta <= -4 {
+            return AppCopy.t(
+                "Scan : moins gonflé qu'à l'habitude.",
+                en: "Scan: less puffy than usual."
+            )
+        }
+        if delta >= 6 {
+            return AppCopy.t(
+                "Scan : rétention en hausse — eau régulière, sodium modéré, potassium alimentaire.",
+                en: "Scan: retention up — steady water, moderate sodium, dietary potassium."
+            )
+        }
+        return AppCopy.t(
+            "Scan : signaux stables vs ta baseline.",
+            en: "Scan: signals stable vs your baseline."
+        )
     }
 
     // MARK: - Snapshot

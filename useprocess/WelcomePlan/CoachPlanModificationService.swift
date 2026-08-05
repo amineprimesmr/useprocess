@@ -175,7 +175,10 @@ enum CoachPlanModificationService {
     static func confirmationPrefix(changes: [String]) -> String {
         guard !changes.isEmpty else { return "" }
         let list = changes.map { "• \($0)" }.joined(separator: "\n")
-        return "✅ Modifié dans ton programme\n\(list)\n\n"
+        return AppCopy.tSync(
+            "✅ Modifié dans ton programme\n\(list)\n\n",
+            en: "✅ Updated in your program\n\(list)\n\n"
+        )
     }
 
     // MARK: - Contextual actions

@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 extension WelcomePlanQuestionBank {
 
     /// Réponses équilibrées pour générer un protocole complet en un tap (circuits inclus).

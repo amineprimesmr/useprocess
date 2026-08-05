@@ -209,7 +209,7 @@ struct UnifiedUserProfile: Codable, Identifiable, Equatable {
         if let idealWeight = idealWeight {
             return "\(String(format: "%.1f", idealWeight)) kg"
         }
-        return "Non défini"
+        return AppCopy.tSync("Non défini", en: "Not set")
     }
 
     var downloadDateFormatted: String {
@@ -235,11 +235,20 @@ struct UnifiedUserProfile: Codable, Identifiable, Equatable {
     var calibrationStatus: String {
         switch daysSinceDownload {
         case 0..<4:
-            return "Calibration en cours (\(daysSinceDownload)/4 jours)"
+            return AppCopy.tSync(
+                "Calibration en cours (\(daysSinceDownload)/4 jours)",
+                en: "Calibration in progress (\(daysSinceDownload)/4 days)"
+            )
         case 4..<14:
-            return "Calibration partielle (\(daysSinceDownload)/14 jours)"
+            return AppCopy.tSync(
+                "Calibration partielle (\(daysSinceDownload)/14 jours)",
+                en: "Partial calibration (\(daysSinceDownload)/14 days)"
+            )
         default:
-            return "Calibration complète (\(daysSinceDownload) jours)"
+            return AppCopy.tSync(
+                "Calibration complète (\(daysSinceDownload) jours)",
+                en: "Calibration complete (\(daysSinceDownload) days)"
+            )
         }
     }
 
@@ -497,12 +506,13 @@ enum Gender: String, CaseIterable, Codable {
     case other = "other"
     case preferNotToSay = "prefer_not_to_say"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .male: return "Homme"
-        case .female: return "Femme"
-        case .other: return "Autre"
-        case .preferNotToSay: return "Préfère ne pas dire"
+        case .male: return AppCopy.t("Homme", en: "Male")
+        case .female: return AppCopy.t("Femme", en: "Female")
+        case .other: return AppCopy.t("Autre", en: "Other")
+        case .preferNotToSay: return AppCopy.t("Préfère ne pas dire", en: "Prefer not to say")
         }
     }
 }
@@ -513,12 +523,13 @@ enum BMICategory: String, CaseIterable, Codable {
     case overweight = "overweight"
     case obese = "obese"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .underweight: return "Sous-poids"
-        case .normal: return "Poids normal"
-        case .overweight: return "Surpoids"
-        case .obese: return "Obésité"
+        case .underweight: return AppCopy.t("Sous-poids", en: "Underweight")
+        case .normal: return AppCopy.t("Poids normal", en: "Normal weight")
+        case .overweight: return AppCopy.t("Surpoids", en: "Overweight")
+        case .obese: return AppCopy.t("Obésité", en: "Obesity")
         }
     }
 
@@ -615,16 +626,17 @@ enum SportCategory: String, CaseIterable, Codable {
     case combat = "combat"
     case other = "other"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .cardio: return "Cardio"
-        case .strength: return "Musculation"
-        case .flexibility: return "Flexibilité"
-        case .team: return "Sport d'équipe"
-        case .individual: return "Sport individuel"
-        case .water: return "Sport aquatique"
-        case .combat: return "Sport de combat"
-        case .other: return "Autre"
+        case .cardio: return AppCopy.t("Cardio", en: "Cardio")
+        case .strength: return AppCopy.t("Musculation", en: "Strength")
+        case .flexibility: return AppCopy.t("Flexibilité", en: "Flexibility")
+        case .team: return AppCopy.t("Sport d'équipe", en: "Team sport")
+        case .individual: return AppCopy.t("Sport individuel", en: "Individual sport")
+        case .water: return AppCopy.t("Sport aquatique", en: "Water sport")
+        case .combat: return AppCopy.t("Sport de combat", en: "Combat sport")
+        case .other: return AppCopy.t("Autre", en: "Other")
         }
     }
 }
@@ -636,13 +648,14 @@ enum SportFrequency: String, CaseIterable, Codable {
     case monthly = "monthly"
     case occasional = "occasional"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .daily: return "Quotidien"
-        case .weekly: return "Hebdomadaire"
-        case .biweekly: return "Bi-hebdomadaire"
-        case .monthly: return "Mensuel"
-        case .occasional: return "Occasionnel"
+        case .daily: return AppCopy.t("Quotidien", en: "Daily")
+        case .weekly: return AppCopy.t("Hebdomadaire", en: "Weekly")
+        case .biweekly: return AppCopy.t("Bi-hebdomadaire", en: "Biweekly")
+        case .monthly: return AppCopy.t("Mensuel", en: "Monthly")
+        case .occasional: return AppCopy.t("Occasionnel", en: "Occasional")
         }
     }
 }
@@ -653,12 +666,13 @@ enum SportIntensity: String, CaseIterable, Codable {
     case high = "high"
     case veryHigh = "very_high"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .low: return "Faible"
-        case .moderate: return "Modérée"
-        case .high: return "Élevée"
-        case .veryHigh: return "Très élevée"
+        case .low: return AppCopy.t("Faible", en: "Low")
+        case .moderate: return AppCopy.t("Modérée", en: "Moderate")
+        case .high: return AppCopy.t("Élevée", en: "High")
+        case .veryHigh: return AppCopy.t("Très élevée", en: "Very high")
         }
     }
 }
@@ -669,11 +683,12 @@ enum ChronotypeEnergy: String, Codable, CaseIterable, Equatable {
     case neutral = "neutral"    // Neutre
     case evening = "evening"    // Couche-tard (owls)
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .morning: return "Personne du matin"
-        case .neutral: return "Rythme neutre"
-        case .evening: return "Personne du soir"
+        case .morning: return AppCopy.t("Personne du matin", en: "Morning person")
+        case .neutral: return AppCopy.t("Rythme neutre", en: "Neutral rhythm")
+        case .evening: return AppCopy.t("Personne du soir", en: "Evening person")
         }
     }
 
@@ -707,7 +722,7 @@ struct UserPreferences: Codable, Equatable {
     var dataSharingEnabled: Bool = false
     var analyticsEnabled: Bool = true
     var darkModeEnabled: Bool = false
-    var language: String = "fr"
+    var language: String = ProcessAppLanguage.resolveFromDevice().rawValue
     var timezone: String = "Europe/Paris"
     var units: MeasurementUnits = .metric
 
@@ -722,10 +737,11 @@ enum MeasurementUnits: String, CaseIterable, Codable {
     case metric = "metric"
     case imperial = "imperial"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .metric: return "Métrique"
-        case .imperial: return "Impérial"
+        case .metric: return OnboardingCopy.t("Métrique", en: "Metric")
+        case .imperial: return OnboardingCopy.t("Impérial", en: "Imperial")
         }
     }
 }

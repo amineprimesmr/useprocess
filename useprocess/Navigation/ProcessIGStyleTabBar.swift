@@ -143,9 +143,7 @@ private struct ProcessIGTabBarScrollTracking: ViewModifier {
 
                 let rawProgress = (newValue - shiftOffset) / distance
                 let clampedProgress = max(0, min(1, rawProgress))
-                withAnimation(animation) {
-                    progress = clampedProgress
-                }
+                progress = clampedProgress
             })
     }
 }
@@ -356,8 +354,11 @@ private struct ProcessIGMealScanButton: View {
         .contentShape(Circle())
         .modifier(ProcessIGTabBarGlassChrome(style: .circle))
         .clipShape(Circle())
-        .accessibilityLabel("Scanner un repas")
-        .accessibilityHint("Ouvre la caméra ou la pellicule pour analyser ton repas")
+        .accessibilityLabel(AppCopy.t("Scanner un repas", en: "Scan a meal"))
+        .accessibilityHint(AppCopy.t(
+            "Ouvre la caméra ou la pellicule pour analyser ton repas",
+            en: "Opens the camera or photo library to analyze your meal"
+        ))
     }
 }
 

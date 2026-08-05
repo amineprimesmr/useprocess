@@ -20,7 +20,7 @@ struct AgeSelectionStepView: View {
     @EnvironmentObject var profileService: UnifiedProfileService
 
     var body: some View {
-        OnboardingStandardStepLayout(title: "Quel est ton âge ?") {
+        OnboardingStandardStepLayout(title: OnboardingCopy.t("Quel est ton âge ?", en: "How old are you?")) {
             VStack(spacing: 0) {
                 Spacer()
                     .frame(height: 40)

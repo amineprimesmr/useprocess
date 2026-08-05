@@ -32,11 +32,21 @@ struct CoachHomePrompt: Equatable {
 }
 
 enum CoachHomeContext {
-    private static let answerStyle = """
-     Réponds en français, tutoiement, concret.
-    Si tu listes des repas, étapes ou options, mets chaque point sur une nouvelle ligne avec un tiret (– ).
-    Pas de markdown (** #), pas de fiche repas structurée.
-    """
+    @MainActor
+    private static var answerStyle: String {
+        AppCopy.t(
+            """
+             Réponds en français, tutoiement, concret.
+            Si tu listes des repas, étapes ou options, mets chaque point sur une nouvelle ligne avec un tiret (– ).
+            Pas de markdown (** #), pas de fiche repas structurée.
+            """,
+            en: """
+             Reply in American English, concrete and direct.
+            If you list meals, steps, or options, put each point on a new line with a dash (– ).
+            No markdown (** #), no structured meal sheet.
+            """
+        )
+    }
 
     static func isLegacyWelcomeMessage(_ message: CoachMessage) -> Bool {
         guard message.role == .assistant else { return false }
@@ -67,15 +77,25 @@ enum CoachHomeContext {
             : .greeting
 
         if scanDue {
-            let greeting = hasName ? "Salut \(trimmedName)." : "Salut."
+            let greeting = hasName
+                ? AppCopy.t("Salut \(trimmedName).", en: "Hi \(trimmedName).")
+                : AppCopy.t("Salut.", en: "Hi.")
             let scanSuggestion = suggestion(
                 id: "scan",
-                title: "Scan visage",
-                subtitle: hasPreviousScan ? "Suivi debloat · 30 s" : "Premier scan · 30 s",
+                title: AppCopy.t("Scan visage", en: "Face scan"),
+                subtitle: hasPreviousScan
+                    ? AppCopy.t("Suivi debloat · 30 s", en: "Debloat check-in · 30 s")
+                    : AppCopy.t("Premier scan · 30 s", en: "First scan · 30 s"),
                 icon: "📸",
                 question: hasPreviousScan
-                    ? "Analyse ma progression debloat avec mon scan du jour."
-                    : "Guide-moi pour mon premier scan visage."
+                    ? AppCopy.t(
+                        "Analyse ma progression debloat avec mon scan du jour.",
+                        en: "Analyze my debloat progress with today's scan."
+                    )
+                    : AppCopy.t(
+                        "Guide-moi pour mon premier scan visage.",
+                        en: "Guide me through my first face scan."
+                    )
             )
             var daySuggestions = buildSuggestions(
                 profile: profile,
@@ -93,8 +113,8 @@ enum CoachHomeContext {
         }
 
         let greeting = hasName
-            ? "Salut \(trimmedName), quoi de neuf ?"
-            : "Salut, quoi de neuf ?"
+            ? AppCopy.t("Salut \(trimmedName), quoi de neuf ?", en: "Hi \(trimmedName), what's up?")
+            : AppCopy.t("Salut, quoi de neuf ?", en: "Hi, what's up?")
         return CoachHomePrompt(
             kind: kind,
             greetingText: greeting,
@@ -109,6 +129,7 @@ enum CoachHomeContext {
     }
 
     /// Carte affichée + prompt IA (question + contexte discret).
+    @MainActor
     private static func suggestion(
         id: String,
         title: String,
@@ -119,7 +140,8 @@ enum CoachHomeContext {
     ) -> CoachHomeSuggestion {
         let prompt: String
         if let hint, !hint.isEmpty {
-            prompt = "\(question) Contexte : \(hint).\(answerStyle)"
+            let contextLabel = AppCopy.t("Contexte", en: "Context")
+            prompt = "\(question) \(contextLabel) : \(hint).\(answerStyle)"
         } else {
             prompt = "\(question)\(answerStyle)"
         }
@@ -145,6 +167,7 @@ enum CoachHomeContext {
         return profileDaySuggestions(profile: profile, context: context)
     }
 
+    @MainActor
     private static func planDaySuggestions(
         day: OriginProgramDay,
         plan: FaceOriginPlan,
@@ -155,11 +178,14 @@ enum CoachHomeContext {
         items.append(
             suggestion(
                 id: "today",
-                title: "Mon focus du jour",
+                title: AppCopy.t("Mon focus du jour", en: "My focus today"),
                 subtitle: day.title,
                 icon: "🎯",
-                question: "C'est quoi mon focus aujourd'hui sur mon plan debloat ?",
-                hint: "Jour du plan : \(day.title)"
+                question: AppCopy.t(
+                    "C'est quoi mon focus aujourd'hui sur mon plan debloat ?",
+                    en: "What's my focus today on my debloat plan?"
+                ),
+                hint: AppCopy.t("Jour du plan : \(day.title)", en: "Plan day: \(day.title)")
             )
         )
 
@@ -167,10 +193,13 @@ enum CoachHomeContext {
         items.append(
             suggestion(
                 id: "cardio-circuit",
-                title: "Cardio et Circuit",
+                title: AppCopy.t("Cardio et Circuit", en: "Cardio & Circuit"),
                 subtitle: cardio.prescriptionLine,
                 icon: "🏃",
-                question: "Explique-moi ma marche inclinée (durée, pente, allure) et le circuit posture pour le debloat.",
+                question: AppCopy.t(
+                    "Explique-moi ma marche inclinée (durée, pente, allure) et le circuit posture pour le debloat.",
+                    en: "Explain my incline walk (duration, incline, pace) and the posture circuit for debloat."
+                ),
                 hint: "\(cardio.title) · \(cardio.prescriptionLine) · \(DebloatCardioDayCatalog.frequencyCaption)"
             )
         )
@@ -179,10 +208,13 @@ enum CoachHomeContext {
         items.append(
             suggestion(
                 id: "meals",
-                title: "Mes repas",
-                subtitle: "Ce que le plan prévoit",
+                title: AppCopy.t("Mes repas", en: "My meals"),
+                subtitle: AppCopy.t("Ce que le plan prévoit", en: "What the plan includes"),
                 icon: "🍽️",
-                question: "Quels sont mes repas prévus aujourd'hui, et pourquoi ils collent au debloat ?",
+                question: AppCopy.t(
+                    "Quels sont mes repas prévus aujourd'hui, et pourquoi ils collent au debloat ?",
+                    en: "What meals are planned for today, and why do they fit the debloat plan?"
+                ),
                 hint: nutritionLine
             )
         )
@@ -192,11 +224,17 @@ enum CoachHomeContext {
             items.append(
                 suggestion(
                     id: "sleep",
-                    title: "Sommeil",
-                    subtitle: "Préparer ce soir",
+                    title: AppCopy.t("Sommeil", en: "Sleep"),
+                    subtitle: AppCopy.t("Préparer ce soir", en: "Prep tonight"),
                     icon: "😴",
-                    question: "Comment je prépare mon sommeil ce soir pour demain ?",
-                    hint: "Coucher \(day.sleep.targetBedtime), réveil \(day.sleep.targetWake), besoin \(String(format: "%.1f", day.sleep.targetHours)) h, sommeil récent \(sleepHours)"
+                    question: AppCopy.t(
+                        "Comment je prépare mon sommeil ce soir pour demain ?",
+                        en: "How should I prepare my sleep tonight for tomorrow?"
+                    ),
+                    hint: AppCopy.t(
+                        "Coucher \(day.sleep.targetBedtime), réveil \(day.sleep.targetWake), besoin \(String(format: "%.1f", day.sleep.targetHours)) h, sommeil récent \(sleepHours)",
+                        en: "Bedtime \(day.sleep.targetBedtime), wake \(day.sleep.targetWake), need \(String(format: "%.1f", day.sleep.targetHours)) h, recent sleep \(sleepHours)"
+                    )
                 )
             )
         }
@@ -204,6 +242,7 @@ enum CoachHomeContext {
         return Array(items.prefix(3))
     }
 
+    @MainActor
     private static func profileDaySuggestions(
         profile: UnifiedUserProfile?,
         context: CoachUserContext
@@ -215,27 +254,42 @@ enum CoachHomeContext {
         return [
             suggestion(
                 id: "today",
-                title: "Par où je commence ?",
-                subtitle: "Priorité du moment",
+                title: AppCopy.t("Par où je commence ?", en: "Where do I start?"),
+                subtitle: AppCopy.t("Priorité du moment", en: "Priority right now"),
                 icon: "🎯",
-                question: "Par où je commence aujourd'hui pour avancer sur mon objectif ?",
-                hint: "Objectif \(goal)"
+                question: AppCopy.t(
+                    "Par où je commence aujourd'hui pour avancer sur mon objectif ?",
+                    en: "Where should I start today to move toward my goal?"
+                ),
+                hint: AppCopy.t("Objectif \(goal)", en: "Goal \(goal)")
             ),
             suggestion(
                 id: "cardio-circuit",
-                title: "Cardio et Circuit",
+                title: AppCopy.t("Cardio et Circuit", en: "Cardio & Circuit"),
                 subtitle: sportsLine == "—" ? DebloatCardioDayCatalog.frequencyCaption : sportsLine,
                 icon: "🏃",
-                question: "Que me conseilles-tu comme cardio léger et circuit posture aujourd'hui pour le debloat ?",
-                hint: "Cardio du jour · \(DebloatCardioDayCatalog.frequencyCaption) · sports : \(sportsLine)"
+                question: AppCopy.t(
+                    "Que me conseilles-tu comme cardio léger et circuit posture aujourd'hui pour le debloat ?",
+                    en: "What light cardio and posture circuit do you recommend today for debloat?"
+                ),
+                hint: AppCopy.t(
+                    "Cardio du jour · \(DebloatCardioDayCatalog.frequencyCaption) · sports : \(sportsLine)",
+                    en: "Today's cardio · \(DebloatCardioDayCatalog.frequencyCaption) · sports: \(sportsLine)"
+                )
             ),
             suggestion(
                 id: "meals",
-                title: "Nutrition",
-                subtitle: "Repas & debloat",
+                title: AppCopy.t("Nutrition", en: "Nutrition"),
+                subtitle: AppCopy.t("Repas & debloat", en: "Meals & debloat"),
                 icon: "🍽️",
-                question: "Comment je mange aujourd'hui pour rester aligné avec le debloat ?",
-                hint: "Objectif \(goal), sommeil récent \(sleepHours)"
+                question: AppCopy.t(
+                    "Comment je mange aujourd'hui pour rester aligné avec le debloat ?",
+                    en: "How should I eat today to stay aligned with the debloat plan?"
+                ),
+                hint: AppCopy.t(
+                    "Objectif \(goal), sommeil récent \(sleepHours)",
+                    en: "Goal \(goal), recent sleep \(sleepHours)"
+                )
             ),
         ]
     }

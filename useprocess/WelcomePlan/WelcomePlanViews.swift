@@ -11,12 +11,15 @@ struct WelcomePlanCompactCard: View {
 
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Semaine \(week)/\(plan.totalWeeks)")
+                Text(AppCopy.t("Semaine \(week)/\(plan.totalWeeks)", en: "Week \(week)/\(plan.totalWeeks)"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                 Spacer()
                 if counts.total > 0 {
-                    Text("\(counts.done)/\(counts.total) tâches")
+                    Text(AppCopy.t(
+                        "\(counts.done)/\(counts.total) tâches",
+                        en: "\(counts.done)/\(counts.total) tasks"
+                    ))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.onboardingAccent)
                 }
@@ -44,10 +47,14 @@ struct WelcomePlanCompactCard: View {
     }
 
     private func shortPillar(_ name: String) -> String {
-        if name.contains("Hormones") { return "Hormones" }
-        if name.contains("Entraînement") { return "Sport" }
-        if name.contains("Posture") { return "Posture" }
-        if name.contains("Maxillaire") { return "Mâchoire" }
-        return "Visage"
+        if name.contains("Hormones") { return AppCopy.t("Hormones", en: "Hormones") }
+        if name.contains("Entraînement") || name.contains("Training") {
+            return AppCopy.t("Sport", en: "Training")
+        }
+        if name.contains("Posture") { return AppCopy.t("Posture", en: "Posture") }
+        if name.contains("Maxillaire") || name.contains("Jaw") {
+            return AppCopy.t("Mâchoire", en: "Jaw")
+        }
+        return AppCopy.t("Visage", en: "Face")
     }
 }

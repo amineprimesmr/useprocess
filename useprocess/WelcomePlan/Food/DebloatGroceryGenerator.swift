@@ -10,11 +10,33 @@ struct DebloatGroceryRequest: Equatable {
 struct DebloatGroceryLine: Identifiable, Equatable {
     let id: String
     let foodID: String
+    /// Nom FR persisté. Affichage : `localizedName`.
     let name: String
+    /// Quantité FR persistée. Affichage : `localizedQuantity`.
     let quantity: String
     let aisle: DebloatGroceryAisle
     let isAvoidWarning: Bool
+    /// Swap FR persisté. Affichage : `localizedSuggestedSwapName`.
     let suggestedSwapName: String?
+
+    @MainActor
+    var localizedName: String {
+        DebloatFoodCatalog.item(id: foodID)?.localizedName ?? name
+    }
+
+    @MainActor
+    var localizedQuantity: String {
+        ProcessLocalizedDebloatFoodContent.portionHint(quantity)
+    }
+
+    @MainActor
+    var localizedSuggestedSwapName: String? {
+        guard let suggestedSwapName else { return nil }
+        if let food = DebloatFoodCatalog.item(matchingName: suggestedSwapName) {
+            return food.localizedName
+        }
+        return suggestedSwapName
+    }
 }
 
 struct DebloatGroceryPlan: Equatable {
@@ -104,14 +126,14 @@ enum DebloatGroceryGenerator {
     static func warning(for itemName: String) -> (message: String, swap: String?)? {
         guard let food = DebloatFoodCatalog.item(matchingName: itemName) else { return nil }
         guard food.tier == .avoid || food.exceedsSaltLabelThreshold else { return nil }
-        let swap = DebloatFoodCatalog.swapItems(for: food).first?.name
-        let saltNote = food.exceedsSaltLabelThreshold
-            ? " (> 1,5 g de sel / 100 g)"
-            : ""
-        return (
-            "« \(food.name) » freine le visage dégonflé\(saltNote).",
-            swap
+        let swapFood = DebloatFoodCatalog.swapItems(for: food).first
+        let saltNoteFR = food.exceedsSaltLabelThreshold ? " (> 1,5 g de sel / 100 g)" : ""
+        let saltNoteEN = food.exceedsSaltLabelThreshold ? " (> 1.5 g salt / 100 g)" : ""
+        let message = AppCopy.t(
+            "« \(food.name) » freine le visage dégonflé\(saltNoteFR).",
+            en: "“\(food.localizedName)” slows a debloated face\(saltNoteEN)."
         )
+        return (message, swapFood?.localizedName ?? swapFood?.name)
     }
 
     // MARK: - Private
@@ -161,9 +183,12 @@ enum DebloatGroceryGenerator {
         }
         let factor = dayCount >= 7 ? 2 : 1
         let comfortBoost = budget == .comfort ? 1 : 0
+        // Quantités FR persistées — affichage via `DebloatGroceryLine.localizedQuantity`.
         switch food.category {
         case .legumes, .fruits:
-            return factor + comfortBoost >= 2 ? "×\(factor + comfortBoost) portions" : (food.portionHint ?? "1 portion")
+            return factor + comfortBoost >= 2
+                ? "×\(factor + comfortBoost) portions"
+                : (food.portionHint ?? "1 portion")
         case .protein:
             return dayCount >= 7 ? "3–4 portions" : "2 portions"
         case .drinks:
@@ -173,7 +198,7 @@ enum DebloatGroceryGenerator {
         case .magnesium, .potassium:
             return food.portionHint ?? "1 paquet"
         case .avoidSodium, .avoidOther:
-            return "à éviter"
+            return AppCopy.tSync("à éviter", en: "avoid")
         }
     }
 

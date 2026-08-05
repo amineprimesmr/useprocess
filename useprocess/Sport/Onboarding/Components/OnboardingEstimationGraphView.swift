@@ -132,7 +132,7 @@ struct OnboardingEstimationGraphView: View {
 
     private var chartHeader: some View {
         HStack {
-            Text("Ta trajectoire")
+            Text(OnboardingCopy.t("Ta trajectoire", en: "Your trajectory"))
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.primaryText.opacity(0.85))
                 .padding(.leading, 12)
@@ -141,10 +141,12 @@ struct OnboardingEstimationGraphView: View {
             Spacer()
 
             HStack(spacing: 4) {
-                Text("Dans")
+                Text(OnboardingCopy.t("Dans", en: "In"))
                 Text("\(snapshot.countdownDays)")
                     .fontWeight(.bold)
-                Text(snapshot.countdownDays <= 1 ? "jour" : "jours")
+                Text(snapshot.countdownDays <= 1
+                    ? OnboardingCopy.t("jour", en: "day")
+                    : OnboardingCopy.t("jours", en: "days"))
             }
             .font(.system(size: 14, weight: .medium))
             .foregroundStyle(OnboardingTheme.bodyText)
@@ -156,7 +158,7 @@ struct OnboardingEstimationGraphView: View {
     private var graphDateAxis: some View {
         HStack(alignment: .top, spacing: 0) {
             axisDateLabel(
-                caption: "Aujourd'hui",
+                caption: OnboardingCopy.t("Aujourd'hui", en: "Today"),
                 dateText: formatGraphDate(snapshot.referenceDate),
                 alignment: .leading
             )
@@ -172,7 +174,7 @@ struct OnboardingEstimationGraphView: View {
             }
 
             axisDateLabel(
-                caption: "Objectif",
+                caption: OnboardingCopy.t("Objectif", en: "Goal"),
                 dateText: formatGraphDate(snapshot.endDate),
                 alignment: .trailing
             )
@@ -379,7 +381,7 @@ struct OnboardingEstimationGraphView: View {
 
     private func formatGraphDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = Locale(identifier: ProcessAppLanguage.shared.isEnglish ? "en_US" : "fr_FR")
         formatter.dateFormat = "d MMM"
         return formatter.string(from: date)
     }

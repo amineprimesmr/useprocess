@@ -23,11 +23,11 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .morningRoutine:
-            return "Routine"
+            return AppCopy.t("Routine", en: "Routine")
         case .water:
-            return "\(ProcessDailyTargets.hydrationLabel) d'eau"
+            return AppCopy.t("\(ProcessDailyTargets.hydrationLabel) d'eau", en: "\(ProcessDailyTargets.hydrationLabel) of water")
         case .debloatMeal:
-            return "Repas debloat"
+            return AppCopy.t("Repas debloat", en: "Debloat Meal")
         case .cardio:
             return "Cardio"
         }
@@ -57,7 +57,7 @@ struct ProcessEveningCheckInIslandContent: View {
 
     @State private var phase: Phase = .form
     @State private var answers: [String: String] = [:]
-    @State private var analyzingLabel = "Enregistrement…"
+    @State private var analyzingLabel = AppCopy.t("Enregistrement…", en: "Saving…")
     @State private var validationTask: Task<Void, Never>?
     @State private var submittedDayValidated = false
     @State private var hydrationPrefill: ProcessHydrationEveningPrefill?
@@ -127,7 +127,7 @@ struct ProcessEveningCheckInIslandContent: View {
                 VStack(spacing: 10) {
                 if let hydrationPrefill {
                     EveningCheckInHabitRow(
-                        title: "\(ProcessDailyTargets.hydrationLabel) d'eau",
+                        title: AppCopy.t("\(ProcessDailyTargets.hydrationLabel) d'eau", en: "\(ProcessDailyTargets.hydrationLabel) of water"),
                         systemImage: "drop.fill",
                         isChecked: hydrationPrefill.metTarget,
                         isLocked: hydrationPrefill.metTarget,
@@ -204,22 +204,22 @@ struct ProcessEveningCheckInIslandContent: View {
 
     private var titleText: String {
         if isYesterdayCheckIn {
-            return "Checklist d'hier"
+            return AppCopy.t("Checklist d'hier", en: "Yesterday's Checklist")
         }
         if Calendar.current.isDateInToday(targetDate) {
-            return "Checklist du jour"
+            return AppCopy.t("Checklist du jour", en: "Today's Checklist")
         }
-        return "Checklist du \(Self.shortDateFormatter.string(from: targetDate))"
+        return AppCopy.t("Checklist du \(Self.shortDateFormatter.string(from: targetDate))", en: "Checklist for \(Self.shortDateFormatter.string(from: targetDate))")
     }
 
     private var subtitleText: String {
         if isYesterdayCheckIn {
-            return "Termine les tâches pour garder ta série intacte."
+            return AppCopy.t("Termine les tâches pour garder ta série intacte.", en: "Complete the tasks to keep your streak intact.")
         }
         if checklistDoneCount >= checklistTotalCount, checklistTotalCount > 0 {
-            return "Tout est coché — valide pour enregistrer ta journée."
+            return AppCopy.t("Tout est coché — valide pour enregistrer ta journée.", en: "Everything is checked — validate your day to save it.")
         }
-        return "Coche tes tâches pour valider ta journée et ta série."
+        return AppCopy.t("Coche tes tâches pour valider ta journée et ta série.", en: "Check off your tasks to validate your day and streak.")
     }
 
     private func applyInitialAnswers() {
@@ -293,7 +293,7 @@ struct ProcessEveningCheckInIslandContent: View {
             guard phase == .form else { return }
             submitCheckIn()
         } label: {
-            Text(hasSubmittedTargetDate ? "Mettre à jour" : "Valider mon jour")
+            Text(hasSubmittedTargetDate ? AppCopy.t("Mettre à jour", en: "Update") : AppCopy.t("Valider mon jour", en: "Validate My Day"))
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(Color.black)
                 .frame(maxWidth: .infinity)
@@ -303,7 +303,7 @@ struct ProcessEveningCheckInIslandContent: View {
         }
         .buttonStyle(.processPlain)
         .allowsHitTesting(phase == .form)
-        .accessibilityLabel("Valider mon jour")
+        .accessibilityLabel(AppCopy.t("Valider mon jour", en: "Validate My Day"))
         .padding(.horizontal, 16)
     }
 
@@ -322,7 +322,7 @@ struct ProcessEveningCheckInIslandContent: View {
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
-            Text("On enregistre ton check.")
+            Text(AppCopy.t("On enregistre ton check.", en: "We're saving your check-in."))
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.6))
 
@@ -361,7 +361,7 @@ struct ProcessEveningCheckInIslandContent: View {
             Spacer(minLength: 12)
 
             Button(action: finishAndDismiss) {
-                Text("Terminer")
+                Text(AppCopy.done)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.95))
                     .frame(maxWidth: .infinity)
@@ -386,7 +386,7 @@ struct ProcessEveningCheckInIslandContent: View {
     }
 
     private var validatedTitle: String {
-        submittedDayValidated ? "Jour validé" : "Check enregistré"
+        submittedDayValidated ? AppCopy.t("Jour validé", en: "Day Validated") : AppCopy.t("Check enregistré", en: "Check-In Saved")
     }
 
     private var validatedSubtitle: String {
@@ -395,10 +395,10 @@ struct ProcessEveningCheckInIslandContent: View {
             let yesCount = record?.yesCount
                 ?? ProcessDebloatTrajectoryEngine.yesCount(from: answers)
             if record?.water != true {
-                return "Hydratation manquante — objectif eau requis pour valider."
+                return AppCopy.t("Hydratation manquante — objectif eau requis pour valider.", en: "Hydration is missing — your water goal is required to validate.")
             }
             if record?.debloatMeal != true {
-                return "Repas debloat manquant — équilibre Na/K/Mg requis pour valider."
+                return AppCopy.t("Repas debloat manquant — équilibre Na/K/Mg requis pour valider.", en: "Debloat meal is missing — Na/K/Mg balance is required to validate.")
             }
             if let record,
                let failure = ProcessDebloatValidation.failure(
@@ -410,16 +410,16 @@ struct ProcessEveningCheckInIslandContent: View {
                ) {
                 return ProcessDebloatValidation.failureMessage(failure)
             }
-            return "\(yesCount)/3 leviers — protocole debloat incomplet."
+            return AppCopy.t("\(yesCount)/3 leviers — protocole debloat incomplet.", en: "\(yesCount)/3 levers — debloat protocol incomplete.")
         }
         if let summary = ProcessDebloatTrajectoryStore.shared.record(for: targetDate)?.aiSummary {
             return summary
         }
         let snapshot = trajectoryStore.snapshot
         if Calendar.current.isDateInToday(targetDate), let verdict = snapshot.todayVerdict {
-            return "\(verdict.shortLabel) — score \(Int(snapshot.todayCompositeScore))/100 · \(snapshot.totalValidatedDays) j validés"
+            return AppCopy.t("\(verdict.shortLabel) — score \(Int(snapshot.todayCompositeScore))/100 · \(snapshot.totalValidatedDays) j validés", en: "\(verdict.shortLabel) — score \(Int(snapshot.todayCompositeScore))/100 · \(snapshot.totalValidatedDays) validated days")
         }
-        return "Ta trajectoire debloat est à jour."
+        return AppCopy.t("Ta trajectoire debloat est à jour.", en: "Your debloat trajectory is up to date.")
     }
 
     // MARK: - Actions
@@ -436,14 +436,14 @@ struct ProcessEveningCheckInIslandContent: View {
         }
         HapticManager.shared.impact(.medium)
         phase = .analyzing
-        analyzingLabel = "Enregistrement…"
+        analyzingLabel = AppCopy.t("Enregistrement…", en: "Saving…")
 
         validationTask?.cancel()
         validationTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(700))
             guard !Task.isCancelled else { return }
 
-            analyzingLabel = "Analyse de ton check…"
+            analyzingLabel = AppCopy.t("Analyse de ton check…", en: "Analyzing your check-in…")
             try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
@@ -482,7 +482,7 @@ struct ProcessEveningCheckInIslandContent: View {
 
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.dateFormat = "d MMM"
         return formatter
     }()
@@ -532,7 +532,7 @@ private struct EveningCheckInProgressRing: View {
         }
         .frame(width: ringSize, height: ringSize)
         .animation(.spring(response: 0.48, dampingFraction: 0.82), value: progress)
-        .accessibilityLabel("\(done) sur \(total) tâches cochées")
+        .accessibilityLabel(AppCopy.t("\(done) sur \(total) tâches cochées", en: "\(done) of \(total) tasks checked"))
     }
 }
 
@@ -654,7 +654,7 @@ private struct EveningCheckInHabitRow: View {
         .buttonStyle(.processPlain)
         .disabled(isLocked)
         .accessibilityLabel(title)
-        .accessibilityValue(isChecked ? "Validé" : "Non validé")
+        .accessibilityValue(isChecked ? AppCopy.t("Validé", en: "Validated") : AppCopy.t("Non validé", en: "Not validated"))
         .accessibilityAddTraits(isChecked ? .isSelected : [])
         .onAppear {
             strikeProgress = isChecked ? 1 : 0
@@ -935,7 +935,7 @@ struct ProcessEveningCheckInEntryButton: View {
             .background(entryBackground)
         }
         .buttonStyle(ProcessGlassPressStyle())
-        .accessibilityLabel(isDayValidated ? "Jour validé" : "Ouvrir le check du jour")
+        .accessibilityLabel(isDayValidated ? AppCopy.t("Jour validé", en: "Day Validated") : AppCopy.t("Ouvrir le check du jour", en: "Open Today's Check-In"))
     }
 
     private var entrySymbol: String {
@@ -955,19 +955,19 @@ struct ProcessEveningCheckInEntryButton: View {
     }
 
     private var entryTitle: String {
-        if isDayValidated { return "Jour validé" }
-        if hasSubmittedToday { return "Check enregistré" }
-        return "Check du jour"
+        if isDayValidated { return AppCopy.t("Jour validé", en: "Day Validated") }
+        if hasSubmittedToday { return AppCopy.t("Check enregistré", en: "Check-In Saved") }
+        return AppCopy.t("Check du jour", en: "Today's Check-In")
     }
 
     private var subtitle: String {
         if isDayValidated {
-            return "Tu peux modifier tes réponses si besoin."
+            return AppCopy.t("Tu peux modifier tes réponses si besoin.", en: "You can update your answers if needed.")
         }
         if hasSubmittedToday {
-            return "Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée."
+            return AppCopy.t("Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée.", en: "Water \(ProcessDailyTargets.hydrationLabel) · meal · incline walk.")
         }
-        return "Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min."
+        return AppCopy.t("Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min.", en: "Water \(ProcessDailyTargets.hydrationLabel) · meal · incline walk \(DebloatCardioDayCatalog.durationMinutes) min.")
     }
 
     @ViewBuilder

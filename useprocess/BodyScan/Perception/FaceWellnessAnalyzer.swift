@@ -11,7 +11,7 @@ enum FaceWellnessAnalyzer {
         guard capture.mesh.isValid else {
             return markers(
                 puffiness: 50, fatigue: 50, jaw: 50, symmetry: 50, clarity: 50,
-                notes: ["Scan 3D incomplet — approche ton visage et réessaie."]
+                notes: [AppCopy.tSync("Scan 3D incomplet — approche ton visage et réessaie.", en: "Incomplete 3D scan — move closer and try again.")]
             )
         }
 
@@ -35,17 +35,17 @@ enum FaceWellnessAnalyzer {
 
         var notes: [String] = []
         if capture.yawCoverage >= 0.7 {
-            notes.append("Scan 3D multi-angles capturé (\(Int(capture.yawCoverage * 100)) % du cercle).")
+            notes.append(AppCopy.tSync("Scan 3D multi-angles capturé (\(Int(capture.yawCoverage * 100)) % du cercle).", en: "Multi-angle 3D scan captured (\(Int(capture.yawCoverage * 100))% of the circle)."))
         } else {
-            notes.append("Scan 3D capturé — couverture angulaire partielle.")
+            notes.append(AppCopy.tSync("Scan 3D capturé — couverture angulaire partielle.", en: "3D scan captured — partial angular coverage."))
         }
 
         if capture.fluidShiftScore >= 0.22 {
             let boost = Int(round(capture.fluidShiftScore * 16))
             puffiness = min(92, puffiness + boost)
-            notes.append("Test de rétention : le liquide se déplace quand tu penches la tête.")
+            notes.append(AppCopy.tSync("Test de rétention : le liquide se déplace quand tu penches la tête.", en: "Retention test: fluid shifts when you tilt your head."))
         } else if capture.fluidShiftScore >= 0.08 {
-            notes.append("Test de rétention : léger déplacement de liquide au penché.")
+            notes.append(AppCopy.tSync("Test de rétention : léger déplacement de liquide au penché.", en: "Retention test: slight fluid shift on tilt."))
         }
 
         appendWellnessNotes(fatigue: fatigue, puffiness: puffiness, jaw: jaw, into: &notes)
@@ -92,7 +92,7 @@ enum FaceWellnessAnalyzer {
         do {
             try handler.perform([faceRequest, landmarksRequest])
         } catch {
-            notes.append("Analyse faciale limitée — qualité d'image insuffisante.")
+            notes.append(AppCopy.tSync("Analyse faciale limitée — qualité d'image insuffisante.", en: "Limited face analysis — insufficient image quality."))
             return markers(puffiness: 50, fatigue: 50, jaw: 50, symmetry: 50, clarity: 50, notes: notes)
         }
 
@@ -208,16 +208,16 @@ enum FaceWellnessAnalyzer {
     ) {
         let cheekHollow = meshCheekHollowness(mesh)
         if cheekHollow > 0.55 {
-            notes.append("Joues légèrement creusées — sommeil, nutrition ou hydratation à surveiller.")
+            notes.append(AppCopy.tSync("Joues légèrement creusées — sommeil, nutrition ou hydratation à surveiller.", en: "Slightly hollow cheeks — watch sleep, nutrition, or hydration."))
         }
         if clarity < 55 {
             notes.append("Texture de peau en baisse — sommeil, stress (cortisol) ou routine skincare.")
         }
         if fatigue > 68 && puffiness > 62 {
-            notes.append("Profil compatible rétention d'eau + fatigue (cernes / gonflement).")
+            notes.append(AppCopy.tSync("Profil compatible rétention d'eau + fatigue (cernes / gonflement).", en: "Profile consistent with water retention + fatigue (under-eyes / puffiness)."))
         }
         if jaw > 65 && symmetry < 58 {
-            notes.append("Tension mâchoire + alignement de scan irrégulier — bruxisme, posture ou stress chronique possibles.")
+            notes.append(AppCopy.tSync("Tension mâchoire + alignement de scan irrégulier — bruxisme, posture ou stress chronique possibles.", en: "Jaw tension + uneven scan alignment — bruxism, posture, or chronic stress possible."))
         }
     }
 
@@ -264,9 +264,9 @@ enum FaceWellnessAnalyzer {
     }
 
     private static func appendWellnessNotes(fatigue: Int, puffiness: Int, jaw: Int, into notes: inout [String]) {
-        if fatigue > 65 { notes.append("Signaux compatibles avec une fatigue perçue (cernes / regard).") }
-        if puffiness > 60 { notes.append("Léger gonflement perçu — hydratation, sel, sommeil et stress.") }
-        if jaw > 62 { notes.append("Tension mandibulaire possible — stress ou mâchoire serrée.") }
+        if fatigue > 65 { notes.append(AppCopy.tSync("Signaux compatibles avec une fatigue perçue (cernes / regard).", en: "Signals consistent with perceived fatigue (under-eyes / gaze).")) }
+        if puffiness > 60 { notes.append(AppCopy.tSync("Léger gonflement perçu — hydratation, sel, sommeil et stress.", en: "Mild perceived puffiness — hydration, salt, sleep, and stress.")) }
+        if jaw > 62 { notes.append(AppCopy.tSync("Tension mandibulaire possible — stress ou mâchoire serrée.", en: "Possible jaw tension — stress or clenched jaw.")) }
     }
 
     private static func clampedInt(_ value: Double, min: Int, max: Int) -> Int {

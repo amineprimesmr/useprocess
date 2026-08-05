@@ -11,14 +11,15 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .faceScan: "Dernier scan"
-        case .nutrition: "Repas debloat du jour"
-        case .training: "Cardio et Circuit"
-        case .posture: "Posture & circuit quotidien"
-        case .faceRoutine: "Routine matinale"
-        case .resources: "Aller plus loin"
+        case .faceScan: AppCopy.t("Dernier scan", en: "Latest scan")
+        case .nutrition: AppCopy.t("Repas debloat du jour", en: "Today's debloat meals")
+        case .training: AppCopy.t("Cardio et Circuit", en: "Cardio & Circuit")
+        case .posture: AppCopy.t("Posture & circuit quotidien", en: "Daily posture & circuit")
+        case .faceRoutine: AppCopy.t("Routine matinale", en: "Morning routine")
+        case .resources: AppCopy.t("Aller plus loin", en: "Go further")
         }
     }
 

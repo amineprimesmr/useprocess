@@ -71,10 +71,20 @@ enum CoachFoodLogService {
 
     private static func inferredMealType(from text: String) -> String {
         let lower = text.lowercased()
-        if lower.contains("petit") { return "Petit-déjeuner" }
-        if lower.contains("dîner") || lower.contains("diner") || lower.contains("soir") { return "Dîner" }
-        if lower.contains("collation") { return "Collation" }
-        return "Déjeuner"
+        if lower.contains("petit") {
+            return AppCopy.tSync("Petit-déjeuner", en: "Breakfast")
+        }
+        if lower.contains("dîner") || lower.contains("diner") || lower.contains("soir")
+            || lower.contains("dinner") {
+            return AppCopy.tSync("Dîner", en: "Dinner")
+        }
+        if lower.contains("collation") || lower.contains("snack") {
+            return AppCopy.tSync("Collation", en: "Snack")
+        }
+        if lower.contains("lunch") || lower.contains("déjeuner") || lower.contains("dejeuner") {
+            return AppCopy.tSync("Déjeuner", en: "Lunch")
+        }
+        return AppCopy.tSync("Déjeuner", en: "Lunch")
     }
 }
 

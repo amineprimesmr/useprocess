@@ -13,25 +13,25 @@ enum CoachMyMemoryCategory: String, CaseIterable, Identifiable, Codable {
 
     var label: String {
         switch self {
-        case .goals: return "Objectifs"
-        case .identity: return "Identité"
-        case .lifestyle: return "Style de vie"
-        case .preferences: return "Préférences coach"
-        case .events: return "Événements"
-        case .healthHistory: return "Historique santé"
-        case .mood: return "Humeur"
+        case .goals: return AppCopy.t("Objectifs", en: "Goals")
+        case .identity: return AppCopy.t("Identité", en: "Identity")
+        case .lifestyle: return AppCopy.t("Style de vie", en: "Lifestyle")
+        case .preferences: return AppCopy.t("Préférences coach", en: "Coach preferences")
+        case .events: return AppCopy.t("Événements", en: "Events")
+        case .healthHistory: return AppCopy.t("Historique santé", en: "Health history")
+        case .mood: return AppCopy.t("Humeur", en: "Mood")
         }
     }
 
     var placeholder: String {
         switch self {
-        case .goals: return "Ex : debloat visage, -5 kg, 3 séances/semaine"
-        case .identity: return "Ex : travail de bureau, parent, Paris"
-        case .lifestyle: return "Ex : coucher 23h, OMAD, marche quotidienne"
-        case .preferences: return "Ex : réponses courtes, pas de moraline"
-        case .events: return "Ex : voyage dans 5 jours, compétition dimanche"
-        case .healthHistory: return "Ex : blessure genou, reflux, GLP-1"
-        case .mood: return "Ex : stressé cette semaine, motivé"
+        case .goals: return AppCopy.t("Ex : debloat visage, -5 kg, 3 séances/semaine", en: "e.g., reduce facial puffiness, lose 11 lb, work out 3 times a week")
+        case .identity: return AppCopy.t("Ex : travail de bureau, parent, Paris", en: "e.g., office worker, parent, New York")
+        case .lifestyle: return AppCopy.t("Ex : coucher 23h, OMAD, marche quotidienne", en: "e.g., bedtime 11 PM, OMAD, daily walks")
+        case .preferences: return AppCopy.t("Ex : réponses courtes, pas de moraline", en: "e.g., short answers, no lecturing")
+        case .events: return AppCopy.t("Ex : voyage dans 5 jours, compétition dimanche", en: "e.g., trip in 5 days, competition Sunday")
+        case .healthHistory: return AppCopy.t("Ex : blessure genou, reflux, GLP-1", en: "e.g., knee injury, reflux, GLP-1")
+        case .mood: return AppCopy.t("Ex : stressé cette semaine, motivé", en: "e.g., stressed this week, motivated")
         }
     }
 }

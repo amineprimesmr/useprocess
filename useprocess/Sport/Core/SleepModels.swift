@@ -19,6 +19,19 @@ enum OnboardingSleepQuality: String, Codable, CaseIterable, Identifiable, Equata
 
     var id: String { rawValue }
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .excellent: return AppCopy.t("Excellent", en: "Excellent")
+        case .veryGood: return AppCopy.t("Très bon", en: "Very good")
+        case .good: return AppCopy.t("Bon", en: "Good")
+        case .average: return AppCopy.t("Moyen", en: "Average")
+        case .poor: return AppCopy.t("Mauvais", en: "Poor")
+        case .veryPoor: return AppCopy.t("Très mauvais", en: "Very poor")
+        }
+    }
+
     var emoji: String {
         switch self {
         case .excellent: return "😴"
@@ -30,14 +43,15 @@ enum OnboardingSleepQuality: String, Codable, CaseIterable, Identifiable, Equata
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
-        case .excellent: return "Je me réveille toujours reposé à 100%"
-        case .veryGood: return "Je me réveille généralement bien reposé"
-        case .good: return "Je me réveille assez reposé la plupart du temps"
-        case .average: return "Parfois reposé, parfois fatigué"
-        case .poor: return "Je me réveille souvent fatigué"
-        case .veryPoor: return "Je me réveille toujours épuisé"
+        case .excellent: return AppCopy.t("Je me réveille toujours reposé à 100%", en: "I always wake up fully rested")
+        case .veryGood: return AppCopy.t("Je me réveille généralement bien reposé", en: "I usually wake up well rested")
+        case .good: return AppCopy.t("Je me réveille assez reposé la plupart du temps", en: "I wake up fairly rested most of the time")
+        case .average: return AppCopy.t("Parfois reposé, parfois fatigué", en: "Sometimes rested, sometimes tired")
+        case .poor: return AppCopy.t("Je me réveille souvent fatigué", en: "I often wake up tired")
+        case .veryPoor: return AppCopy.t("Je me réveille toujours épuisé", en: "I always wake up exhausted")
         }
     }
 
@@ -63,6 +77,18 @@ enum FatigueFrequency: String, Codable, CaseIterable, Identifiable, Equatable {
 
     var id: String { rawValue }
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .never: return AppCopy.t("Jamais", en: "Never")
+        case .rarely: return AppCopy.t("Rarement", en: "Rarely")
+        case .sometimes: return AppCopy.t("Parfois", en: "Sometimes")
+        case .often: return AppCopy.t("Souvent", en: "Often")
+        case .always: return AppCopy.t("Toujours", en: "Always")
+        }
+    }
+
     var emoji: String {
         switch self {
         case .never: return "⚡"
@@ -73,13 +99,14 @@ enum FatigueFrequency: String, Codable, CaseIterable, Identifiable, Equatable {
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
-        case .never: return "Je suis toujours plein d'énergie"
-        case .rarely: return "Je me sens fatigué de temps en temps"
-        case .sometimes: return "J'ai des moments de fatigue"
-        case .often: return "Je me sens souvent fatigué"
-        case .always: return "Je suis constamment fatigué"
+        case .never: return AppCopy.t("Je suis toujours plein d'énergie", en: "I'm always full of energy")
+        case .rarely: return AppCopy.t("Je me sens fatigué de temps en temps", en: "I feel tired every now and then")
+        case .sometimes: return AppCopy.t("J'ai des moments de fatigue", en: "I have spells of fatigue")
+        case .often: return AppCopy.t("Je me sens souvent fatigué", en: "I often feel tired")
+        case .always: return AppCopy.t("Je suis constamment fatigué", en: "I'm constantly tired")
         }
     }
 
@@ -104,6 +131,18 @@ enum FatiguePeaks: String, Codable, CaseIterable, Identifiable, Equatable {
 
     var id: String { rawValue }
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .morning: return AppCopy.t("Le matin", en: "In the morning")
+        case .afternoon: return AppCopy.t("L'après-midi", en: "In the afternoon")
+        case .evening: return AppCopy.t("Le soir", en: "In the evening")
+        case .noPeaks: return AppCopy.t("Pas de pics particuliers", en: "No particular peaks")
+        case .allDay: return AppCopy.t("Toute la journée", en: "All day")
+        }
+    }
+
     var emoji: String {
         switch self {
         case .morning: return "🌅"
@@ -114,13 +153,14 @@ enum FatiguePeaks: String, Codable, CaseIterable, Identifiable, Equatable {
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
-        case .morning: return "Je suis le plus fatigué au réveil"
-        case .afternoon: return "J'ai un coup de barre après le déjeuner"
-        case .evening: return "Je suis épuisé en fin de journée"
-        case .noPeaks: return "Ma fatigue est constante"
-        case .allDay: return "Je suis fatigué du matin au soir"
+        case .morning: return AppCopy.t("Je suis le plus fatigué au réveil", en: "I'm most tired when I wake up")
+        case .afternoon: return AppCopy.t("J'ai un coup de barre après le déjeuner", en: "I crash after lunch")
+        case .evening: return AppCopy.t("Je suis épuisé en fin de journée", en: "I'm wiped out by end of day")
+        case .noPeaks: return AppCopy.t("Ma fatigue est constante", en: "My fatigue is steady")
+        case .allDay: return AppCopy.t("Je suis fatigué du matin au soir", en: "I'm tired from morning to night")
         }
     }
 }
@@ -187,17 +227,27 @@ struct CalculatedSleepNeed: Equatable {
     var currentAverage: Double?  // Moyenne actuelle (si disponible)
     var deficit: Double?  // Déficit par rapport à l'optimal
 
+    @MainActor
     var recommendation: String {
         if let current = currentAverage {
             if current < minimumHours {
-                return "Tu dors en dessous du minimum recommandé"
+                return AppCopy.t(
+                    "Tu dors en dessous du minimum recommandé",
+                    en: "You're sleeping below the recommended minimum"
+                )
             } else if current < optimalHours {
-                return "Tu es proche de l'optimal, on peut encore améliorer"
+                return AppCopy.t(
+                    "Tu es proche de l'optimal, on peut encore améliorer",
+                    en: "You're close to optimal — we can still improve"
+                )
             } else {
-                return "Tu dors dans la zone optimale"
+                return AppCopy.t("Tu dors dans la zone optimale", en: "You're sleeping in the optimal zone")
             }
         }
-        return "On va t'aider à trouver ton rythme optimal"
+        return AppCopy.t(
+            "On va t'aider à trouver ton rythme optimal",
+            en: "We'll help you find your optimal rhythm"
+        )
     }
 }
 
@@ -211,14 +261,14 @@ struct OptimalSleepWindow: Equatable {
     var bedtimeString: String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         return formatter.string(from: recommendedBedtime)
     }
 
     var wakeTimeString: String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         return formatter.string(from: recommendedWakeTime)
     }
 }

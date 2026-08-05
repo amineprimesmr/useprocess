@@ -2,7 +2,7 @@
 //  PaywallTrialRetentionView.swift
 //  useprocess
 //
-//  Quick Action rétention — même page offre que après la roue winback.
+//  Quick Action rétention — même page offre lifetime que la fin de la roue winback.
 //
 
 import SwiftUI

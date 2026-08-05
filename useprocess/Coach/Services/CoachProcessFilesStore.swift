@@ -76,24 +76,27 @@ final class CoachProcessFilesStore {
     func syncFromExchange(userText: String, assistantText: String, plan: FaceOriginPlan?) {
         if let plan {
             upsert(
-                title: "Plan actif",
-                content: "Objectif : \(plan.primaryFaceGoal). Semaine \(plan.calendar.currentWeekNumber())/13. Jour : \(OriginPlanPresenter.todayDayTitle(in: plan) ?? "—")."
+                title: AppCopy.t("Plan actif", en: "Active plan"),
+                content: AppCopy.t(
+                    "Objectif : \(plan.primaryFaceGoal). Semaine \(plan.calendar.currentWeekNumber())/13. Jour : \(OriginPlanPresenter.todayDayTitle(in: plan) ?? "—").",
+                    en: "Goal: \(plan.primaryFaceGoal). Week \(plan.calendar.currentWeekNumber())/13. Day: \(OriginPlanPresenter.todayDayTitle(in: plan) ?? "—")."
+                )
             )
         }
 
         let lower = userText.lowercased()
-        if lower.contains("objectif") || lower.contains("but ") {
-            upsert(title: "Objectifs debloat", content: String(userText.prefix(280)))
+        if lower.contains("objectif") || lower.contains("but ") || lower.contains("goal") {
+            upsert(title: AppCopy.t("Objectifs debloat", en: "Debloat goals"), content: String(userText.prefix(280)))
         }
-        if lower.contains("bless") || lower.contains("douleur") {
-            upsert(title: "Contraintes santé", content: String(userText.prefix(280)))
+        if lower.contains("bless") || lower.contains("douleur") || lower.contains("pain") || lower.contains("injur") {
+            upsert(title: AppCopy.t("Contraintes santé", en: "Health constraints"), content: String(userText.prefix(280)))
         }
-        if lower.contains("voyage") || lower.contains("week-end") || lower.contains("weekend") {
-            upsert(title: "Événements à venir", content: String(userText.prefix(280)))
+        if lower.contains("voyage") || lower.contains("week-end") || lower.contains("weekend") || lower.contains("travel") {
+            upsert(title: AppCopy.t("Événements à venir", en: "Upcoming events"), content: String(userText.prefix(280)))
         }
 
         if assistantText.count > 40 {
-            upsert(title: "Dernière synthèse coach", content: String(assistantText.prefix(400)))
+            upsert(title: AppCopy.t("Dernière synthèse coach", en: "Latest coach summary"), content: String(assistantText.prefix(400)))
         }
     }
 
@@ -106,8 +109,11 @@ final class CoachProcessFilesStore {
     private func seedFromPlanIfNeeded() {
         guard files.isEmpty, let plan = WelcomePlanStore.shared.plan else { return }
         upsert(
-            title: "Plan actif",
-            content: "Objectif : \(plan.primaryFaceGoal). Nutrition : \(plan.nutritionStructureLabel)."
+            title: AppCopy.t("Plan actif", en: "Active plan"),
+            content: AppCopy.t(
+                "Objectif : \(plan.primaryFaceGoal). Nutrition : \(plan.nutritionStructureLabel).",
+                en: "Goal: \(plan.primaryFaceGoal). Nutrition: \(plan.nutritionStructureLabel)."
+            )
         )
     }
 

@@ -23,7 +23,7 @@ struct PlanTrainingDaySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Cardio et Circuit",
+                title: PlanHomeSectionKind.training.title,
                 trailing: nil
             )
 

@@ -29,18 +29,12 @@ struct FaceScanAnalysisFlowView: View {
         OnboardingAnalysisProgressConfig.faceScanAnalysisSteps
     }
 
-    private var showsCreatorControls: Bool {
-        creatorMode.isUnlocked && showsResultScreen && baseResult != nil
+    private var isCreatorUnlocked: Bool {
+        creatorMode.isUnlocked(forFirstName: profile?.firstName)
     }
 
-    private var qualityDraftLabel: String {
-        switch qualityDraft {
-        case ..<0.2: return "Mauvais"
-        case ..<0.4: return "Faible"
-        case ..<0.6: return "Réaliste"
-        case ..<0.8: return "Bon"
-        default: return "Excellent"
-        }
+    private var showsCreatorControls: Bool {
+        isCreatorUnlocked && showsResultScreen && baseResult != nil
     }
 
     /// Résultat affiché — éventuellement ajusté par le slider studio.
@@ -76,15 +70,16 @@ struct FaceScanAnalysisFlowView: View {
                                 studioFraming: framingDraft,
                                 onStudioFramingChange: { framing in
                                     framingDraft = framing.clamped()
+                                },
+                                bottomAccessory: {
+                                    if showsCreatorControls {
+                                        FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
+                                            creatorMode.resultQuality = value
+                                        }
+                                        .padding(.top, 16)
+                                    }
                                 }
-                            ) {
-                                if showsCreatorControls {
-                                    creatorQualitySlider
-                                        .padding(.horizontal, 16)
-                                        .padding(.top, 28)
-                                        .padding(.bottom, 8)
-                                }
-                            }
+                            )
                             // Identité stable : ne JAMAIS remonter la page quand le slider bouge.
                             .id(base.id)
                             .transition(.opacity)
@@ -127,59 +122,18 @@ struct FaceScanAnalysisFlowView: View {
         }
         .animation(.easeInOut(duration: 0.28), value: baseResult?.id)
         .task(id: payload.scanId) {
+            ProcessCreatorModeStore.shared.evaluate(firstName: profile?.firstName)
+            ProcessCreatorModeStore.shared.syncFromCurrentProfile()
             await runAnalysis()
+        }
+        .onAppear {
+            ProcessCreatorModeStore.shared.evaluate(firstName: profile?.firstName)
+            ProcessCreatorModeStore.shared.syncFromCurrentProfile()
         }
         .onDisappear {
             guard !didCompleteAnalysis else { return }
             analysisTask?.cancel()
             elapsedTask?.cancel()
-        }
-    }
-
-    private var creatorQualitySlider: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Rendu résultats")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.secondary)
-                Spacer()
-                Text(qualityDraftLabel)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(FaceScanWhoopPalette.label)
-                    .contentTransition(.opacity)
-            }
-
-            Slider(
-                value: Binding(
-                    get: { qualityDraft },
-                    set: { newValue in
-                        // Pas d’animations implicites sur toute la page pendant le drag.
-                        var transaction = Transaction()
-                        transaction.disablesAnimations = true
-                        withTransaction(transaction) {
-                            qualityDraft = newValue
-                        }
-                    }
-                ),
-                in: 0...1,
-                onEditingChanged: { editing in
-                    // Persist uniquement en fin de geste — pas de UserDefaults / @Published à chaque tick.
-                    if !editing {
-                        creatorMode.resultQuality = qualityDraft
-                    }
-                }
-            )
-            .tint(FaceScanWhoopPalette.label)
-
-            HStack {
-                Text("Mauvais")
-                Spacer()
-                Text("Réaliste")
-                Spacer()
-                Text("Excellent")
-            }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(FaceScanWhoopPalette.secondary)
         }
     }
 
@@ -227,7 +181,7 @@ struct FaceScanAnalysisFlowView: View {
 
             Spacer(minLength: 0)
 
-            Text(displayResult == nil ? "ANALYSE DU SCAN" : formattedHeaderDate)
+            Text(displayResult == nil ? AppCopy.t("ANALYSE DU SCAN", en: "SCAN ANALYSIS") : formattedHeaderDate)
                 .font(.system(size: displayResult == nil ? 13 : 15, weight: .semibold))
                 .foregroundStyle(headerForeground)
                 .tracking(displayResult == nil ? 0.6 : 0)
@@ -237,7 +191,7 @@ struct FaceScanAnalysisFlowView: View {
             Spacer(minLength: 0)
 
             if displayResult != nil, showsResultScreen {
-                Button("Terminer") {
+                Button(AppCopy.done) {
                     if let result = displayResult {
                         complete(with: result)
                     }
@@ -293,10 +247,11 @@ struct FaceScanAnalysisFlowView: View {
             baseResult = result
         } else {
             // Onboarding / flux sans résultats inline : applique le rendu studio si besoin.
-            let final = creatorMode.isUnlocked
+            let unlocked = isCreatorUnlocked
+            let final = unlocked
                 ? creatorMode.rebuildResult(result, quality: creatorMode.resultQuality)
                 : result
-            if creatorMode.isUnlocked {
+            if unlocked {
                 FaceScanHistoryStore.shared.update(final)
             }
             complete(with: final)

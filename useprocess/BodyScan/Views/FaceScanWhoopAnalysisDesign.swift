@@ -56,17 +56,21 @@ enum FaceScanWhoopPalette {
 }
 
 enum FaceScanWhoopDateLabel {
+    @MainActor
     static func header(for date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "EEEE d MMMM"
+        formatter.locale = ProcessAppLanguage.shared.locale
+        formatter.dateFormat = ProcessAppLanguage.shared.isEnglish ? "EEEE, MMMM d" : "EEEE d MMMM"
         return formatter.string(from: date)
     }
 
+    @MainActor
     static func historyRow(for date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "EEEE d MMMM · HH:mm"
+        formatter.locale = ProcessAppLanguage.shared.locale
+        formatter.dateFormat = ProcessAppLanguage.shared.isEnglish
+            ? "EEEE, MMMM d · h:mm a"
+            : "EEEE d MMMM · HH:mm"
         return formatter.string(from: date)
     }
 }
@@ -78,7 +82,7 @@ struct FaceScanWhoopAnalysisScreen: View {
     var previous: FaceScanResult?
     var history: [FaceScanResult] = []
     var showsDoneButton: Bool = false
-    var doneButtonTitle: String = "Terminer"
+    var doneButtonTitle: String? = nil
     var onDone: (() -> Void)?
     var bottomContentInset: CGFloat = 40
 
@@ -87,9 +91,26 @@ struct FaceScanWhoopAnalysisScreen: View {
     @Bindable private var historyStore = FaceScanHistoryStore.shared
     @State private var showsAnalysisInfo = false
     @State private var framingDraft: FaceScanStudioFraming = .identity
+    @State private var qualityDraft: Double = 0.5
+    /// Ancre stable pour le slider (évite de re-lerp un résultat déjà ajusté).
+    @State private var studioBaseResult: FaceScanResult?
 
-    private var displayResult: FaceScanResult {
+    private var storedResult: FaceScanResult {
         historyStore.history.first(where: { $0.id == result.id }) ?? result
+    }
+
+    private var isCreatorUnlocked: Bool {
+        creatorMode.isUnlocked(forFirstName: UnifiedProfileService.shared.currentProfile?.firstName)
+    }
+
+    /// Résultat affiché — live via slider studio si débloqué.
+    private var displayResult: FaceScanResult {
+        guard isCreatorUnlocked, let base = studioBaseResult else {
+            return storedResult
+        }
+        var rebuilt = creatorMode.rebuildResult(base, quality: qualityDraft)
+        rebuilt.studioFraming = framingDraft.isIdentity ? nil : framingDraft.clamped()
+        return rebuilt
     }
 
     private var resolvedHistory: [FaceScanResult] {
@@ -106,7 +127,7 @@ struct FaceScanWhoopAnalysisScreen: View {
     private var evolutionHistory: [FaceScanResult] {
         FaceScanWhoopEvolutionHistory.resolve(
             from: resolvedHistory,
-            ensuring: displayResult
+            ensuring: studioBaseResult ?? displayResult
         )
     }
 
@@ -124,12 +145,10 @@ struct FaceScanWhoopAnalysisScreen: View {
                     FaceScanWhoopScoreRing(
                         result: displayResult,
                         studioFraming: framingDraft,
-                        allowsStudioFraming: creatorMode.isUnlocked,
+                        allowsStudioFraming: isCreatorUnlocked,
                         onStudioFramingChange: { framing in
                             framingDraft = framing.clamped()
-                            var updated = displayResult
-                            updated.studioFraming = framing.isIdentity ? nil : framing.clamped()
-                            FaceScanHistoryStore.shared.update(updated)
+                            persistStudioEdits()
                         }
                     )
                         .padding(.bottom, 22)
@@ -137,13 +156,22 @@ struct FaceScanWhoopAnalysisScreen: View {
                     FaceScanWhoopMetricsCard(
                         result: displayResult,
                         previous: previousForDisplay,
-                        hidesComparisons: creatorMode.isUnlocked,
-                        emphasizesLabels: creatorMode.isUnlocked
+                        hidesComparisons: isCreatorUnlocked,
+                        emphasizesLabels: isCreatorUnlocked
                     )
                         .padding(.horizontal, 16)
 
+                    if isCreatorUnlocked {
+                        FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
+                            creatorMode.resultQuality = value
+                            persistStudioEdits()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                    }
+
                     FaceScanWhoopEvolutionSummaryCard(
-                        result: displayResult,
+                        result: studioBaseResult ?? displayResult,
                         previous: previousForDisplay,
                         history: evolutionHistory
                     )
@@ -159,10 +187,18 @@ struct FaceScanWhoopAnalysisScreen: View {
             }
         }
         .onAppear {
-            framingDraft = displayResult.resolvedStudioFraming
+            ProcessCreatorModeStore.shared.syncFromCurrentProfile()
+            framingDraft = storedResult.resolvedStudioFraming
+            qualityDraft = creatorMode.resultQuality
+            if studioBaseResult == nil {
+                // Baseline = markers « réalistes » inversés depuis le rendu courant si besoin.
+                studioBaseResult = storedResult
+            }
         }
-        .onChange(of: displayResult.id) { _, _ in
-            framingDraft = displayResult.resolvedStudioFraming
+        .onChange(of: storedResult.id) { _, _ in
+            framingDraft = storedResult.resolvedStudioFraming
+            studioBaseResult = storedResult
+            qualityDraft = creatorMode.resultQuality
         }
         .sheet(isPresented: $showsAnalysisInfo) {
             FaceScanWhoopAnalysisInfoSheet(
@@ -170,6 +206,13 @@ struct FaceScanWhoopAnalysisScreen: View {
                 history: resolvedHistory
             )
         }
+    }
+
+    private func persistStudioEdits() {
+        guard isCreatorUnlocked else { return }
+        var updated = displayResult
+        updated.studioFraming = framingDraft.isIdentity ? nil : framingDraft.clamped()
+        FaceScanHistoryStore.shared.update(updated)
     }
 
     private var headerBar: some View {
@@ -197,8 +240,8 @@ struct FaceScanWhoopAnalysisScreen: View {
             Spacer()
 
             if showsDoneButton {
-                if let onDone, !doneButtonTitle.isEmpty {
-                    Button(doneButtonTitle, action: onDone)
+                if let onDone {
+                    Button(doneButtonTitle ?? AppCopy.done, action: onDone)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(FaceScanWhoopPalette.label)
                         .frame(minWidth: 44, alignment: .trailing)
@@ -214,7 +257,7 @@ struct FaceScanWhoopAnalysisScreen: View {
                         .foregroundStyle(FaceScanWhoopPalette.label)
                         .frame(width: 44, height: 44, alignment: .trailing)
                 }
-                .accessibilityLabel("Historique des scans")
+                .accessibilityLabel(AppCopy.t("Historique des scans", en: "Scan history"))
             }
         }
     }
@@ -354,6 +397,8 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
             )
                 .padding(.horizontal, metricsHorizontalPadding)
 
+            bottomAccessory()
+
             if style == .immersive {
                 FaceScanWhoopEvolutionSummaryCard(
                     result: evolutionSource,
@@ -369,8 +414,6 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 28)
             }
-
-            bottomAccessory()
 
             Spacer(minLength: showsTrends ? 40 : (style == .chatThread ? 0 : 12))
         }
@@ -440,7 +483,7 @@ struct FaceScanWhoopScoreRing: View {
                             .monospacedDigit()
                             .contentTransition(.numericText())
 
-                        Text("SCORE GLOBAL")
+                        Text(AppCopy.t("SCORE GLOBAL", en: "OVERALL SCORE"))
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.82))
                             .tracking(1.2)
@@ -827,9 +870,24 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
 
     private var baselineBadge: String {
         if previous == nil || result.relativeSignals?.baselineLabel == "Premier scan de référence" {
-            return "Point de départ"
+            return AppCopy.t("Point de départ", en: "Starting point")
         }
-        return result.relativeSignals?.baselineLabel ?? "Référence en cours"
+        if let label = result.relativeSignals?.baselineLabel {
+            if label == "Référence en cours" {
+                return AppCopy.t("Référence en cours", en: "Building baseline")
+            }
+            if label == "Premier scan de référence" {
+                return AppCopy.t("Point de départ", en: "Starting point")
+            }
+            if label == "Comparé à ta moyenne récente" {
+                return AppCopy.t("Comparé à ta moyenne récente", en: "Compared to your recent average")
+            }
+            if label == "Comparé à tes premiers scans" {
+                return AppCopy.t("Comparé à tes premiers scans", en: "Compared to your first scans")
+            }
+            return label
+        }
+        return AppCopy.t("Référence en cours", en: "Building baseline")
     }
 
     private var cardShape: RoundedRectangle {
@@ -839,7 +897,7 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Ce qui change")
+                Text(AppCopy.t("Ce qui change", en: "What’s changing"))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
 
@@ -1153,15 +1211,21 @@ private struct FaceScanWhoopIndicatorTrendsSection: View {
 
     private var sectionSubtitle: String {
         if plottedScanCount < 2 {
-            return "Point de départ — l’évolution se remplit à chaque nouveau scan (7 jours)."
+            return AppCopy.t(
+                "Point de départ — l’évolution se remplit à chaque nouveau scan (7 jours).",
+                en: "Starting point — the trend fills in with each new scan (7 days)."
+            )
         }
-        return "Évolution par rapport aux 7 jours précédents"
+        return AppCopy.t(
+            "Évolution par rapport aux 7 jours précédents",
+            en: "Change vs the previous 7 days"
+        )
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Santé visage")
+                Text(AppCopy.t("Santé visage", en: "Face health"))
                     .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
 
@@ -1287,7 +1351,10 @@ private struct FaceScanWhoopIndicatorTrendCard: View {
             }
 
             if daySlots.compactMap(\.value).isEmpty {
-                Text("En attente du premier point de mesure.")
+                Text(AppCopy.t(
+                    "En attente du premier point de mesure.",
+                    en: "Waiting for the first measurement point."
+                ))
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
                     .frame(maxWidth: .infinity, minHeight: 100, alignment: .center)
@@ -1299,7 +1366,10 @@ private struct FaceScanWhoopIndicatorTrendCard: View {
                 .frame(height: 148)
 
                 if daySlots.compactMap(\.value).count < 2 {
-                    Text("Encore quelques scans pour tracer la courbe complète.")
+                    Text(AppCopy.t(
+                        "Encore quelques scans pour tracer la courbe complète.",
+                        en: "A few more scans to complete the curve."
+                    ))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(FaceScanWhoopPalette.secondary)
                 }
@@ -1459,7 +1529,7 @@ private struct FaceScanWhoopLineChart: View {
 
     private func axisLabel(for day: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.dateFormat = "EEE"
         return formatter.string(from: day)
             .lowercased()
@@ -1506,15 +1576,21 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
 
                         VStack(spacing: 12) {
                             FaceScanDetailInfoCard(
-                                title: "Score global",
+                                title: AppCopy.t("Score global", en: "Overall score"),
                                 value: "\(result.displayWellnessScore)%",
-                                detail: "Moyenne des 5 indicateurs du scan"
+                                detail: AppCopy.t(
+                                    "Moyenne des 5 indicateurs du scan",
+                                    en: "Average of the scan’s 5 indicators"
+                                )
                             )
 
                             FaceScanDetailInfoCard(
-                                title: "Score relatif",
+                                title: AppCopy.t("Score relatif", en: "Relative score"),
                                 value: "\(result.resolvedFaceDayScore)%",
-                                detail: "Variation vs ton historique, pas l’état absolu du jour"
+                                detail: AppCopy.t(
+                                    "Variation vs ton historique, pas l’état absolu du jour",
+                                    en: "Change vs your history, not today’s absolute state"
+                                )
                             )
 
                             if let label = result.relativeSignals?.baselineLabel {
@@ -1528,7 +1604,7 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
 
                         if !recentScans.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Derniers scans")
+                                Text(AppCopy.t("Derniers scans", en: "Recent scans"))
                                     .font(.system(size: 17, weight: .bold))
                                     .foregroundStyle(FaceScanWhoopPalette.label)
 
@@ -1553,7 +1629,10 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
                             }
                         }
 
-                        Text("L’accueil et l’anneau affichent le score global.")
+                        Text(AppCopy.t(
+                            "L’accueil et l’anneau affichent le score global.",
+                            en: "Home and the ring show the overall score."
+                        ))
                             .font(.system(size: 12))
                             .foregroundStyle(FaceScanWhoopPalette.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -1562,13 +1641,13 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
                     .padding(.bottom, 32)
                 }
             }
-            .navigationTitle("Historique")
+            .navigationTitle(AppCopy.t("Historique", en: "History"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(FaceScanWhoopPalette.canvas, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                         .foregroundStyle(FaceScanWhoopPalette.label)
                 }
             }
@@ -1616,7 +1695,7 @@ private struct FaceScanDetailConfidenceRing: View {
                         .foregroundStyle(FaceScanWhoopPalette.label)
                         .monospacedDigit()
 
-                    Text("CONFIANCE")
+                    Text(AppCopy.t("CONFIANCE", en: "CONFIDENCE"))
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(FaceScanWhoopPalette.secondary)
                         .tracking(1.1)
@@ -1702,7 +1781,7 @@ private struct FaceScanDetailHistoryRow: View {
             Spacer(minLength: 8)
 
             if isCurrent {
-                Text("Actuel")
+                Text(AppCopy.t("Actuel", en: "Current"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(FaceScanWhoopPalette.optimal)
                     .padding(.horizontal, 10)

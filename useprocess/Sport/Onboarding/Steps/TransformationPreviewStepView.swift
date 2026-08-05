@@ -40,6 +40,19 @@ struct TransformationCaseStudy: Identifiable, Equatable {
     var usesVideo: Bool {
         beforeVideoName != nil && afterVideoName != nil
     }
+
+    @MainActor
+    var localizedMemberSince: String {
+        let monthEN: String
+        switch memberSince {
+        case "juin 2026": monthEN = "June 2026"
+        case "avr. 2026": monthEN = "Apr 2026"
+        case "juil. 2026": monthEN = "Jul 2026"
+        case "mai 2026": monthEN = "May 2026"
+        default: monthEN = memberSince
+        }
+        return OnboardingCopy.t("📅 Membre depuis \(memberSince)", en: "📅 Member since \(monthEN)")
+    }
 }
 
 enum TransformationCaseStudyCatalog {
@@ -51,7 +64,7 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "leo",
             afterImageName: "leoprime",
             durationWeeks: 3,
-            memberSince: "📅 Membre depuis juin 2026"
+            memberSince: "juin 2026"
         ),
         .init(
             id: "daniel",
@@ -59,7 +72,7 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "daniel",
             afterImageName: "danielprime",
             durationWeeks: 4,
-            memberSince: "📅 Membre depuis juin 2026"
+            memberSince: "juin 2026"
         ),
         .init(
             id: "esteban",
@@ -67,7 +80,7 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "esteban",
             afterImageName: "estebanprime",
             durationWeeks: 8,
-            memberSince: "📅 Membre depuis avr. 2026"
+            memberSince: "avr. 2026"
         ),
         .init(
             id: "lucas",
@@ -75,7 +88,7 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "lucas",
             afterImageName: "lucasprime",
             durationWeeks: 6,
-            memberSince: "📅 Membre depuis juil. 2026"
+            memberSince: "juil. 2026"
         ),
         .init(
             id: "imran",
@@ -83,7 +96,7 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "imran",
             afterImageName: "imranprime",
             durationWeeks: 5,
-            memberSince: "📅 Membre depuis mai 2026"
+            memberSince: "mai 2026"
         ),
     ]
 
@@ -139,7 +152,8 @@ struct TransformationPreviewStepView: View {
 
     private var header: some View {
         VStack(spacing: 14) {
-            (Text("Visualise ta ") + Text("transformation").foregroundColor(OnboardingTheme.accentHighlight))
+            (Text(OnboardingCopy.t("Visualise ta ", en: "See your "))
+                + Text(OnboardingCopy.t("transformation", en: "transformation")).foregroundColor(OnboardingTheme.accentHighlight))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(OnboardingTheme.primaryText)
                 .multilineTextAlignment(.center)
@@ -157,10 +171,13 @@ struct TransformationPreviewStepView: View {
                 }
             }
 
-            (Text("+\(TransformationCaseStudyCatalog.transformedPeopleCount) personnes")
+            (Text(OnboardingCopy.t(
+                "+\(TransformationCaseStudyCatalog.transformedPeopleCount) personnes",
+                en: "+\(TransformationCaseStudyCatalog.transformedPeopleCount) people"
+            ))
                 .fontWeight(.bold)
                 .foregroundColor(OnboardingTheme.accentHighlight)
-                + Text(" ont dégonflé leur visage avec Process"))
+                + Text(OnboardingCopy.t(" ont dégonflé leur visage avec Process", en: " debloated their face with Process")))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(OnboardingTheme.bodyText)
                 .multilineTextAlignment(.center)
@@ -190,7 +207,7 @@ struct TransformationPreviewStepView: View {
             HapticManager.shared.impact(.medium)
             onComplete()
         } label: {
-            Text("CONTINUER")
+            Text(OnboardingCopy.continueCTAUpper)
                 .font(.system(size: 22, weight: .black))
                 .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                 .frame(maxWidth: .infinity)

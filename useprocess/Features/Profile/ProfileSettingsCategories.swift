@@ -10,13 +10,14 @@ enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .referral: return "Parrainage"
-        case .account: return "Compte"
-        case .health: return "Santé & données"
-        case .app: return "Application"
-        case .legal: return "Aide & confidentialité"
+        case .referral: return AppCopy.t("Parrainage", en: "Referral Program")
+        case .account: return AppCopy.t("Compte", en: "Account")
+        case .health: return AppCopy.t("Santé & données", en: "Health & Data")
+        case .app: return AppCopy.t("Application", en: "App")
+        case .legal: return AppCopy.t("Aide & confidentialité", en: "Help & Privacy")
         }
     }
 }
@@ -137,7 +138,7 @@ struct ProfileSettingsActivityStatusPill: View {
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(theme.primaryText)
 
-                    Text("Modifiable")
+                    Text(AppCopy.t("Modifiable", en: "Editable"))
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .lineLimit(1)
@@ -168,9 +169,9 @@ struct ProfileSettingsActivityStatusPill: View {
         }
         .buttonStyle(.processPlain)
         .frame(maxWidth: .infinity)
-        .accessibilityLabel("Statut d'activité, \(status.title)")
-        .accessibilityValue("Modifiable")
-        .accessibilityHint("Modifier le statut du jour")
+        .accessibilityLabel(AppCopy.t("Statut d'activité, \(status.title)", en: "Activity status, \(status.title)"))
+        .accessibilityValue(AppCopy.t("Modifiable", en: "Editable"))
+        .accessibilityHint(AppCopy.t("Modifier le statut du jour", en: "Change today's status"))
     }
 
     private var pillFill: Color {

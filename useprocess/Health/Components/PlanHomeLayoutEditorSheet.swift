@@ -73,7 +73,7 @@ struct PlanHomeLayoutEditorSheet: View {
                 }
                 HapticManager.shared.notification(.success)
             } label: {
-                Text("Réinitialiser")
+                Text(AppCopy.t("Réinitialiser", en: "Reset"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
             }
@@ -82,10 +82,10 @@ struct PlanHomeLayoutEditorSheet: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 2) {
-                Text("Réorganiser l’accueil")
+                Text(AppCopy.t("Réorganiser l’accueil", en: "Reorder Home"))
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(theme.primaryText)
-                Text("Glisse · masque · réordonne")
+                Text(AppCopy.t("Glisse · masque · réordonne", en: "Drag · hide · reorder"))
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(theme.secondaryText)
             }
@@ -134,7 +134,10 @@ struct PlanHomeLayoutEditorSheet: View {
                         .fill(theme.onboardingAccent.opacity(0.12))
                 )
 
-            Text("Maintiens et glisse une section pour changer l’ordre. L’œil masque ou réaffiche un bloc sur l’accueil.")
+            Text(AppCopy.t(
+                "Maintiens et glisse une section pour changer l’ordre. L’œil masque ou réaffiche un bloc sur l’accueil.",
+                en: "Hold and drag a section to change the order. The eye hides or shows a block on Home."
+            ))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -221,7 +224,11 @@ struct PlanHomeLayoutEditableSection<Content: View>: View {
                     )
             }
             .buttonStyle(.processPlain)
-            .accessibilityLabel(isVisible ? "Masquer la section" : "Afficher la section")
+            .accessibilityLabel(
+                isVisible
+                    ? AppCopy.t("Masquer la section", en: "Hide section")
+                    : AppCopy.t("Afficher la section", en: "Show section")
+            )
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -320,7 +327,7 @@ struct PlanHomeCustomizeFloatingButton: View {
                             .fill(theme.isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.06))
                     )
 
-                Text("Modifier l’accueil")
+                Text(AppCopy.t("Modifier l’accueil", en: "Edit Home"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(theme.primaryText.opacity(0.92))
 
@@ -334,6 +341,9 @@ struct PlanHomeCustomizeFloatingButton: View {
         }
         .buttonStyle(ProcessGlassPressStyle())
         .processZoomSource(id: .homeLayoutEditor, namespace: zoomNamespace)
-        .accessibilityLabel("Personnaliser la page d’accueil")
+        .accessibilityLabel(AppCopy.t(
+            "Personnaliser la page d’accueil",
+            en: "Customize Home"
+        ))
     }
 }

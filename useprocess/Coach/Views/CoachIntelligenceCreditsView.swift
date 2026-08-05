@@ -20,7 +20,7 @@ struct CoachIntelligenceCreditsView: View {
                 .padding(16)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Crédits coach")
+            .navigationTitle(AppCopy.t("Crédits coach", en: "Coach credits"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -48,7 +48,7 @@ struct CoachIntelligenceCreditsView: View {
 
     private var usageCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Limite hebdomadaire")
+            Text(AppCopy.t("Limite hebdomadaire", en: "Weekly limit"))
                 .font(.headline.weight(.semibold))
             Text(store.weeklyUsageLabel)
                 .font(.title3.weight(.bold))
@@ -63,11 +63,11 @@ struct CoachIntelligenceCreditsView: View {
 
     private var creditsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Crédits supplémentaires")
+            Text(AppCopy.t("Crédits supplémentaires", en: "Extra credits"))
                 .font(.headline.weight(.semibold))
             Text("\(store.extraCredits)")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
-            Text("Utilisés uniquement après la limite hebdomadaire.")
+            Text(AppCopy.t("Utilisés uniquement après la limite hebdomadaire.", en: "Used only after your weekly limit."))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }
@@ -78,8 +78,8 @@ struct CoachIntelligenceCreditsView: View {
 
     private var explanation: some View {
         Text(subscriptionService.subscriptionStatus.isActive
-             ? "Abonné PRO : tu reçois 50 crédits bonus à chaque reset hebdomadaire."
-             : "Passe PRO pour recevoir 50 crédits bonus par semaine en plus de ta limite.")
+             ? AppCopy.t("Abonné PRO : tu reçois 50 crédits bonus à chaque reset hebdomadaire.", en: "PRO subscriber: you receive 50 bonus credits at each weekly reset.")
+             : AppCopy.t("Passe PRO pour recevoir 50 crédits bonus par semaine en plus de ta limite.", en: "Go PRO to receive 50 bonus credits per week in addition to your limit."))
             .font(.subheadline)
             .foregroundStyle(theme.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
@@ -91,7 +91,7 @@ struct CoachIntelligenceCreditsView: View {
                 Button {
                     showsPaywall = true
                 } label: {
-                    Text("Passer PRO")
+                    Text(AppCopy.t("Passer PRO", en: "Go PRO"))
                         .font(.body.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
                         .frame(maxWidth: .infinity)
@@ -101,7 +101,7 @@ struct CoachIntelligenceCreditsView: View {
             }
 
             #if DEBUG
-            Button("Ajouter 10 crédits (debug)") {
+            Button(AppCopy.t("Ajouter 10 crédits (debug)", en: "Add 10 credits (debug)")) {
                 store.grantDebugCredits(10)
             }
             .font(.caption)

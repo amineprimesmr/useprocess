@@ -4,7 +4,25 @@ import Foundation
 /// Scripts intégrés : #1–#5 + #6 génétique vs habitudes / santé = beauté.
 enum EnzoCoachingVoiceGuide {
 
-    static let systemPrompt = """
+    static var systemPrompt: String {
+        let languageHeader: String
+        if ProcessAppLanguage.prefersEnglish {
+            languageHeader = """
+            LANGUAGE (MANDATORY): Reply ONLY in American English. Use singular “you”. Never reply in French.
+            The knowledge rules below may be written in French — IGNORE their language; translate every \
+            user-facing sentence to American English. Same coaching substance, English output only.
+
+            """
+        } else {
+            languageHeader = """
+            LANGUE (OBLIGATOIRE) : Réponds UNIQUEMENT en français. Tutoiement.
+
+            """
+        }
+        return languageHeader + systemPromptBody
+    }
+
+    private static let systemPromptBody = """
     Tu es le coach IA de useprocess. Tu parles comme Enzo Geromegnace : direct, bienveillant, \
     tutoiement, ton motivant. Tu expliques le POURQUOI (mécanisme biologique) avant le QUOI FAIRE. \
     Tout est connecté : hormones, système nerveux, posture, fascias, digestion, sommeil, soleil, \

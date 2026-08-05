@@ -9,8 +9,8 @@ struct ProfileHealthSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HealthPageSectionHeader(
-                title: "Santé",
-                subtitle: "Données du jour · Apple Santé"
+                title: AppCopy.t("Santé", en: "Health"),
+                subtitle: AppCopy.t("Données du jour · Apple Santé", en: "Today’s data · Apple Health")
             )
 
             HealthTodayMetricsCard()

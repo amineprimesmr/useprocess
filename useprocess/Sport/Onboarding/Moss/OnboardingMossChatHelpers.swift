@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 enum OnboardingMossChatHelpers {
     static func mossLines(
         for question: OnboardingProfileChatQuestion,

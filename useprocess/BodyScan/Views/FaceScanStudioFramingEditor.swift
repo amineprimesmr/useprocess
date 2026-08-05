@@ -30,7 +30,10 @@ struct FaceScanStudioFramingEditor: View {
                 framingCanvas
                     .frame(width: circleDiameter, height: circleDiameter)
 
-                Text("Glisse pour déplacer · Pince pour zoomer")
+                Text(AppCopy.t(
+                    "Glisse pour déplacer · Pince pour zoomer",
+                    en: "Drag to move · Pinch to zoom"
+                ))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.55))
                     .padding(.top, 22)
@@ -51,7 +54,7 @@ struct FaceScanStudioFramingEditor: View {
 
     private var topBar: some View {
         HStack {
-            Button("Annuler") {
+            Button(AppCopy.cancel) {
                 onCancel()
             }
             .font(.system(size: 16, weight: .semibold))
@@ -59,13 +62,13 @@ struct FaceScanStudioFramingEditor: View {
 
             Spacer()
 
-            Text("Recadrer")
+            Text(AppCopy.t("Recadrer", en: "Crop"))
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(.white)
 
             Spacer()
 
-            Button("Réinitialiser") {
+            Button(AppCopy.t("Réinitialiser", en: "Reset")) {
                 withAnimation(.easeOut(duration: 0.18)) {
                     framing = .identity
                 }
@@ -130,7 +133,7 @@ struct FaceScanStudioFramingEditor: View {
             HapticManager.shared.impact(.medium)
             onSave(framing.clamped())
         } label: {
-            Text("Valider le cadrage")
+            Text(AppCopy.t("Valider le cadrage", en: "Confirm framing"))
                 .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity)

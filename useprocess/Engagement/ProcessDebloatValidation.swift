@@ -47,15 +47,30 @@ enum ProcessDebloatValidation {
     static func failureMessage(_ failure: Failure) -> String {
         switch failure {
         case .notSubmitted:
-            return "Check non validé — ta trajectoire est en pause ce jour-là."
+            return AppCopy.tSync(
+                "Check non validé — ta trajectoire est en pause ce jour-là.",
+                en: "Check-in not validated — your trajectory is paused for that day."
+            )
         case .missingHydration:
-            return "Hydratation manquante — objectif eau non atteint, jour non validé."
+            return AppCopy.tSync(
+                "Hydratation manquante — objectif eau non atteint, jour non validé.",
+                en: "Hydration missing — water goal not met, day not validated."
+            )
         case .missingNutrition:
-            return "Alimentation debloat manquante — équilibre Na/K/Mg requis pour valider."
+            return AppCopy.tSync(
+                "Alimentation debloat manquante — équilibre Na/K/Mg requis pour valider.",
+                en: "Debloat nutrition missing — Na/K/Mg balance required to validate."
+            )
         case .cardioSlump(let days):
-            return "Marche inclinée absente \(days) jours d'affilée — minimum 3/semaine. Relance une séance."
+            return AppCopy.tSync(
+                "Marche inclinée absente \(days) jours d'affilée — minimum 3/semaine. Relance une séance.",
+                en: "No incline walk for \(days) days in a row — minimum 3/week. Start a session."
+            )
         case .weeklyCardioDeficit(let sessions):
-            return "Marche inclinée insuffisante cette semaine (\(sessions)/\(weeklyCardioMinimum))."
+            return AppCopy.tSync(
+                "Marche inclinée insuffisante cette semaine (\(sessions)/\(weeklyCardioMinimum)).",
+                en: "Not enough incline walks this week (\(sessions)/\(weeklyCardioMinimum))."
+            )
         }
     }
 

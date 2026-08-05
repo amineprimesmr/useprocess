@@ -204,11 +204,20 @@ func triggerBiometricAuthAndContinue() async {
 
     switch biometricType {
     case .faceID:
-        reason = "Utilise Face ID pour confirmer ton engagement"
+        reason = OnboardingCopy.t(
+            "Utilise Face ID pour confirmer ton engagement",
+            en: "Use Face ID to confirm your commitment"
+        )
     case .touchID:
-        reason = "Restez appuyé avec votre doigt pour confirmer votre engagement"
+        reason = OnboardingCopy.t(
+            "Restez appuyé avec votre doigt pour confirmer votre engagement",
+            en: "Keep your finger on the sensor to confirm your commitment"
+        )
     default:
-        reason = "Authentifie-toi pour confirmer ton engagement"
+        reason = OnboardingCopy.t(
+            "Authentifie-toi pour confirmer ton engagement",
+            en: "Authenticate to confirm your commitment"
+        )
     }
 
     do {
@@ -437,7 +446,10 @@ func checkPermissions() {
         } catch {
             ProcessAnalytics.trackOnboardingFailed(error: error.localizedDescription)
             HapticManager.shared.notification(.error)
-            viewModel.errorMessage = "Erreur lors de la finalisation. Veuillez réessayer."
+            viewModel.errorMessage = OnboardingCopy.t(
+                "Erreur lors de la finalisation. Veuillez réessayer.",
+                en: "Couldn't finish setup. Please try again."
+            )
         }
 
         viewModel.isCompleting = false

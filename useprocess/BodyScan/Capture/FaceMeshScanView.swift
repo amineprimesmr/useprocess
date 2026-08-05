@@ -69,7 +69,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         guard ARFaceTrackingConfiguration.isSupported else {
             DispatchQueue.main.async {
                 context.coordinator.isDeviceSupported = false
-                instruction = "Caméra avant requise — utilise un iPhone avec Face ID."
+                instruction = AppCopy.tSync("Caméra avant requise — utilise un iPhone avec Face ID.", en: "Front camera required — use an iPhone with Face ID.")
                 frameHint = nil
                 isFaceDetected = false
                 progress = 0
@@ -291,7 +291,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             resetScanTracking(soft: false)
             publishUI(force: true) {
                 self.isFaceDetected = self.trackedFrameCount >= 4
-                self.instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
+                self.instruction = AppCopy.tSync("Rapproche-toi pour que ton visage remplisse le cadre.", en: "Move closer so your face fills the frame.")
                 self.frameHint = nil
                 self.progress = 0
                 self.ringProgress = 0
@@ -381,15 +381,15 @@ struct FaceMeshScanView: UIViewRepresentable {
             guard !isTornDown, !completed else { return }
             recoverSessionIfNeeded()
             DispatchQueue.main.async {
-                self.instruction = "Reconnexion caméra…"
-                self.frameHint = "Garde ton visage dans le cadre."
+                self.instruction = AppCopy.tSync("Reconnexion caméra…", en: "Reconnecting camera…")
+                self.frameHint = AppCopy.tSync("Garde ton visage dans le cadre.", en: "Keep your face in the frame.")
             }
         }
 
         func sessionWasInterrupted(_ session: ARSession) {
             guard !isTornDown, !completed else { return }
             DispatchQueue.main.async {
-                self.instruction = "Scan interrompu — reprends quand tu es prêt."
+                self.instruction = AppCopy.tSync("Scan interrompu — reprends quand tu es prêt.", en: "Scan interrupted — resume when you’re ready.")
                 self.frameHint = nil
             }
         }
@@ -467,8 +467,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                Date().timeIntervalSince(scanStart) > 2.5,
                progressValue(elapsed: Date().timeIntervalSince(scanStart)) > 0.2 {
                 publishUI(force: true) {
-                    self.instruction = "Visage perdu — replace-toi dans le cadre."
-                    self.frameHint = "Le scan reprend automatiquement."
+                    self.instruction = AppCopy.tSync("Visage perdu — replace-toi dans le cadre.", en: "Face lost — move back into the frame.")
+                    self.frameHint = AppCopy.tSync("Le scan reprend automatiquement.", en: "The scan resumes automatically.")
                 }
                 resetScanTracking(soft: true)
                 return
@@ -494,10 +494,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.activeTickSectors = []
                 self.resetOverlayToOrbit()
                 if !self.allowsScreenFlash && self.isLowLight {
-                    self.instruction = "Pas assez de lumière pour lancer le scan."
-                    self.frameHint = "Place-toi face à une fenêtre ou une lampe."
+                    self.instruction = AppCopy.tSync("Pas assez de lumière pour lancer le scan.", en: "Not enough light to start the scan.")
+                    self.frameHint = AppCopy.tSync("Place-toi face à une fenêtre ou une lampe.", en: "Face a window or a lamp.")
                 } else {
-                    self.instruction = "Place ton visage dans le cadre."
+                    self.instruction = AppCopy.tSync("Place ton visage dans le cadre.", en: "Place your face in the frame.")
                     self.frameHint = nil
                 }
             }
@@ -512,8 +512,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                 if faceVisible {
                     self.isFaceDetected = true
                 }
-                self.instruction = "Pas assez de lumière pour lancer le scan."
-                self.frameHint = "Place-toi face à une fenêtre ou une lampe."
+                self.instruction = AppCopy.tSync("Pas assez de lumière pour lancer le scan.", en: "Not enough light to start the scan.")
+                self.frameHint = AppCopy.tSync("Place-toi face à une fenêtre ou une lampe.", en: "Face a window or a lamp.")
                 self.activeTickSectors = []
                 self.resetOverlayToOrbit()
             }
@@ -522,7 +522,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         private func clearInsufficientLightLock() {
             guard !completed, !isTornDown, !isPreviewOnly, scanStartTime == nil else { return }
             publishUI(force: true) {
-                self.instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
+                self.instruction = AppCopy.tSync("Rapproche-toi pour que ton visage remplisse le cadre.", en: "Move closer so your face fills the frame.")
                 self.frameHint = nil
             }
         }
@@ -590,7 +590,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             publishUI(ring: 0, progress: 0.02, force: true) {
                 HapticManager.shared.impact(.soft)
                 self.isFaceDetected = true
-                self.instruction = "Tourne lentement la tête pour compléter le cercle."
+                self.instruction = AppCopy.tSync("Tourne lentement la tête pour compléter le cercle.", en: "Slowly turn your head to complete the circle.")
                 self.frameHint = nil
                 self.activeTickSectors = []
                 self.ringProgress = 0
@@ -654,8 +654,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                 guard trackedFrameCount >= minTrackedFramesBeforeScan else {
                     publishUI(force: false) {
                         self.isFaceDetected = false
-                        self.instruction = "Place ton visage dans le cadre."
-                        self.frameHint = "Rapproche-toi pour bien remplir le cadre."
+                        self.instruction = AppCopy.tSync("Place ton visage dans le cadre.", en: "Place your face in the frame.")
+                        self.frameHint = AppCopy.tSync("Rapproche-toi pour bien remplir le cadre.", en: "Move closer to fill the frame.")
                     }
                     return
                 }
@@ -664,7 +664,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                     publishUI(force: false) {
                         self.isFaceDetected = true
                         self.instruction = FaceScanQualityValidator.distanceInstruction(for: .ok)
-                        self.frameHint = "Ne bouge plus. Le scan va démarrer."
+                        self.frameHint = AppCopy.tSync("Ne bouge plus. Le scan va démarrer.", en: "Hold still. The scan is about to start.")
                     }
                     return
                 }
@@ -696,13 +696,22 @@ struct FaceMeshScanView: UIViewRepresentable {
 
             let instructionText: String
             if tickProgress < 0.35 {
-                instructionText = "Tourne lentement la tête. Gauche, droite, haut, bas."
+                instructionText = AppCopy.tSync(
+                    "Tourne lentement la tête. Gauche, droite, haut, bas.",
+                    en: "Slowly turn your head. Left, right, up, down."
+                )
             } else if tickProgress < minTickProgress {
-                instructionText = "Continue à tourner la tête pour compléter le cercle."
+                instructionText = AppCopy.tSync(
+                    "Continue à tourner la tête pour compléter le cercle.",
+                    en: "Keep turning your head to complete the circle."
+                )
             } else if !orbitQualityReady(elapsed: elapsed, tickProgress: tickProgress) {
                 instructionText = qualityHint(elapsed: elapsed, tickProgress: tickProgress)
             } else {
-                instructionText = "Parfait. Passe au test de rétention."
+                instructionText = AppCopy.tSync(
+                    "Parfait. Passe au test de rétention.",
+                    en: "Perfect. Move on to the retention test."
+                )
             }
 
             let sectorSignature = filledTickSectors.reduce(0) { $0 ^ ($1 &* 31) }
@@ -755,8 +764,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                 // Gauche d’abord, puis droite — jamais les deux en même temps.
                 self.tiltDirection = .left
                 self.tiltIsEngaged = false
-                self.instruction = "Regarde la caméra. Penche la tête à gauche."
-                self.frameHint = "Oreille gauche vers l’épaule, sans tourner le visage."
+                self.instruction = AppCopy.tSync("Regarde la caméra. Penche la tête à gauche.", en: "Look at the camera. Tilt your head left.")
+                self.frameHint = AppCopy.tSync("Oreille gauche vers l’épaule, sans tourner le visage.", en: "Left ear toward the shoulder, without turning your face.")
             }
         }
 
@@ -812,25 +821,37 @@ struct FaceMeshScanView: UIViewRepresentable {
             let instructionText: String
             let hintText: String?
             if !lookingAtCamera {
-                instructionText = "Garde les yeux vers la caméra."
-                hintText = "Penche seulement la tête, sans tourner le visage."
+                instructionText = AppCopy.tSync(
+                    "Garde les yeux vers la caméra.",
+                    en: "Keep your eyes on the camera."
+                )
+                hintText = AppCopy.tSync(
+                    "Penche seulement la tête, sans tourner le visage.",
+                    en: "Only tilt your head — don't turn your face."
+                )
             } else if wrongSide {
                 instructionText = isFirstSide
-                    ? "Penche à gauche, pas à droite."
-                    : "Penche à droite maintenant."
-                hintText = "Oreille vers l’épaule, regard fixe."
+                    ? AppCopy.tSync("Penche à gauche, pas à droite.", en: "Tilt left, not right.")
+                    : AppCopy.tSync("Penche à droite maintenant.", en: "Tilt right now.")
+                hintText = AppCopy.tSync(
+                    "Oreille vers l’épaule, regard fixe.",
+                    en: "Ear toward your shoulder, eyes fixed."
+                )
             } else if !correctSide {
                 instructionText = isFirstSide
-                    ? "Regarde la caméra. Penche la tête à gauche."
-                    : "Regarde la caméra. Penche la tête à droite."
-                hintText = "Un peu plus fort, puis tiens la pose."
+                    ? AppCopy.tSync("Regarde la caméra. Penche la tête à gauche.", en: "Look at the camera. Tilt your head left.")
+                    : AppCopy.tSync("Regarde la caméra. Penche la tête à droite.", en: "Look at the camera. Tilt your head right.")
+                hintText = AppCopy.tSync(
+                    "Un peu plus fort, puis tiens la pose.",
+                    en: "A bit more, then hold the pose."
+                )
             } else if holdRatio < 1 {
-                instructionText = "Tiens cette position…"
+                instructionText = AppCopy.tSync("Tiens cette position…", en: "Hold this position…")
                 hintText = nil
             } else {
                 instructionText = isFirstSide
-                    ? "Parfait. Maintenant à droite."
-                    : "Finalisation du scan…"
+                    ? AppCopy.tSync("Parfait. Maintenant à droite.", en: "Perfect. Now to the right.")
+                    : AppCopy.tSync("Finalisation du scan…", en: "Finishing the scan…")
                 hintText = nil
             }
 
@@ -869,8 +890,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                         self.tiltHoldProgress = 0
                         self.tiltDirection = .right
                         self.tiltIsEngaged = false
-                        self.instruction = "Regarde la caméra. Penche la tête à droite."
-                        self.frameHint = "Oreille droite vers l’épaule, sans tourner le visage."
+                        self.instruction = AppCopy.tSync("Regarde la caméra. Penche la tête à droite.", en: "Look at the camera. Tilt your head right.")
+                        self.frameHint = AppCopy.tSync("Oreille droite vers l’épaule, sans tourner le visage.", en: "Right ear toward the shoulder, without turning your face.")
                     }
                     return
                 }
@@ -936,10 +957,16 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         private func qualityHint(elapsed: TimeInterval, tickProgress: Double) -> String {
             if tickProgress < minTickProgress {
-                return "Tourne plus la tête pour remplir le cercle."
+                return AppCopy.tSync(
+                    "Tourne plus la tête pour remplir le cercle.",
+                    en: "Turn your head more to fill the circle."
+                )
             }
             if !FaceScanQualityValidator.headSpreadIsSufficient(angleSamples) {
-                return "Fais de plus grands mouvements de tête."
+                return AppCopy.tSync(
+                    "Fais de plus grands mouvements de tête.",
+                    en: "Make bigger head movements."
+                )
             }
             let flashActive = FaceScanScreenFlash.shared.isActive
             if !FaceScanQualityValidator.snapshotIsUsable(
@@ -948,17 +975,26 @@ struct FaceMeshScanView: UIViewRepresentable {
                 screenFlashActive: flashActive
             ) {
                 return flashActive
-                    ? "Garde le visage centré face à l'écran."
+                    ? AppCopy.tSync(
+                        "Garde le visage centré face à l'écran.",
+                        en: "Keep your face centered toward the screen."
+                    )
                     : (isLowLight
                         ? (allowsScreenFlash
-                            ? "Active le flash ou rapproche-toi."
-                            : "Pas assez de lumière. Rapproche-toi d'une source lumineuse.")
-                        : "Cherche plus de lumière.")
+                            ? AppCopy.tSync(
+                                "Active le flash ou rapproche-toi.",
+                                en: "Turn on the flash or move closer."
+                            )
+                            : AppCopy.tSync(
+                                "Pas assez de lumière. Rapproche-toi d'une source lumineuse.",
+                                en: "Not enough light. Move closer to a light source."
+                            ))
+                        : AppCopy.tSync("Cherche plus de lumière.", en: "Find more light."))
             }
             if elapsed < scanDuration * 0.90 {
-                return "Encore quelques secondes…"
+                return AppCopy.tSync("Encore quelques secondes…", en: "A few more seconds…")
             }
-            return "Finalisation…"
+            return AppCopy.tSync("Finalisation…", en: "Finishing…")
         }
 
         private func tiltDirectionForPhase(isFirstSide: Bool) -> FaceScanTiltDirection {
@@ -983,9 +1019,15 @@ struct FaceMeshScanView: UIViewRepresentable {
                     scanExhausted = true
                     publishUI(force: true) {
                         self.instruction = self.allowsScreenFlash
-                            ? "Scan difficile. Active le flash et réessaie."
-                            : "Scan difficile. Cherche plus de lumière et réessaie."
-                        self.frameHint = "Rapproche-toi puis replace ton visage dans le cadre."
+                            ? AppCopy.tSync(
+                                "Scan difficile. Active le flash et réessaie.",
+                                en: "Scan is hard. Turn on the flash and try again."
+                            )
+                            : AppCopy.tSync(
+                                "Scan difficile. Cherche plus de lumière et réessaie.",
+                                en: "Scan is hard. Find more light and try again."
+                            )
+                        self.frameHint = AppCopy.tSync("Rapproche-toi puis replace ton visage dans le cadre.", en: "Move closer, then put your face back in the frame.")
                     }
                     HapticManager.shared.notification(.warning)
                 }
@@ -998,9 +1040,11 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.ringProgress = 0
                 self.activeTickSectors = []
                 self.resetOverlayToOrbit()
-                self.instruction = "On recommence. Tourne la tête plus lentement."
+                self.instruction = AppCopy.tSync("On recommence. Tourne la tête plus lentement.", en: "Starting over. Turn your head more slowly.")
                 self.frameHint = self.isLowLight
-                    ? (self.allowsScreenFlash ? "Environnement sombre" : "Pas assez de lumière")
+                    ? (self.allowsScreenFlash
+                        ? AppCopy.tSync("Environnement sombre", en: "Dark environment")
+                        : AppCopy.tSync("Pas assez de lumière", en: "Not enough light"))
                     : nil
                 HapticManager.shared.notification(.warning)
             }
@@ -1061,7 +1105,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                     self.tiltHoldProgress = 0
                     self.tiltDirection = .none
                     self.tiltIsEngaged = false
-                    self.instruction = "Scan terminé."
+                    self.instruction = AppCopy.tSync("Scan terminé.", en: "Scan complete.")
                     self.frameHint = nil
                     HapticManager.shared.notification(.success)
                     self.onComplete(payload)

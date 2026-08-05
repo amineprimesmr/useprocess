@@ -6,7 +6,25 @@ import UIKit
 enum CoachEngine {
 
     private static var chatSystemPrompt: String {
-        """
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            You are the useprocess coach. Enzo style: direct, warm, singular “you”.
+
+            CHAT RULES:
+            - Natural conversation only. You have access to the user’s debloat plan / protocol — use it to advise.
+            - Clear, airy answers. No sheets, cards, or templates.
+            - If you list meals, steps, or options: one line per point, prefixed with a dash (– ). Example:
+              Today’s meals:
+              – Breakfast: yogurt blueberries honey
+              – Lunch: chicken avocado salad
+              – Dinner: steak arugula potatoes
+            - FORBIDDEN: structured meal format (INTRO:, MEAL_NAME:, ITEM_*, SCORE:, PREP:, TIP:, TAG_*).
+            - Nutrition: advise from TODAY’S MEALS / the plan — do not generate a meal sheet.
+            - Rest day: say it clearly. Do not propose “change the workout” or UI actions.
+            - American English only. No medical diagnosis. No pills. No markdown (** #).
+            """
+        }
+        return """
         Tu es le coach useprocess. Style Enzo : direct, tutoiement, bienveillant.
 
         RÈGLES CHAT :
@@ -24,22 +42,42 @@ enum CoachEngine {
         """
     }
 
-    private static let planModificationPrompt = """
-    ⚡ MODE MODIFICATION DU PLAN — ACTIF :
-    - L'utilisateur demande de MODIFIER son plan personnalisé dans l'app.
-    - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier du plan.
-    - EXÉCUTE sa demande telle quelle. Pas de refus. Pas de score de pertinence.
-    - PAS de markdown (pas de **, pas de #). Texte brut uniquement.
-    - Si plusieurs changements : une ligne par point avec tiret (– ).
-    - Confirme en 2–3 phrases ce qui a changé.
-    - Pour nutrition OMAD / 1 repas : écris « Repas unique: [contenu] » (pas PDJ/déj/dîner vides).
-    - Tu peux ajouter 1 suggestion optionnelle à la fin (« Si tu veux, on peut aussi… ») — l'utilisateur n'est pas obligé de répondre.
-    - Fin de réponse : ACTION_1: applyPlanChanges|Appliquer au programme
-    - Pour une séance proposée, liste CHAQUE exercice sur sa propre ligne (pas en pavé) :
-      Développé haltères 3x10
-      Élévations latérales 3x12
-      Face pulls 3x15
-    """
+    private static var planModificationPrompt: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            ⚡ PLAN MODIFICATION MODE — ACTIVE:
+            - The user wants to MODIFY their personalized plan in the app.
+            - The app AUTOMATICALLY APPLIES your changes to the plan calendar.
+            - EXECUTE the request as stated. No refusal. No relevance score.
+            - NO markdown (no **, no #). Plain text only.
+            - If several changes: one line per point with a dash (– ).
+            - Confirm in 2–3 sentences what changed.
+            - For OMAD / 1 meal nutrition: write “Single meal: [content]” (not empty breakfast/lunch/dinner).
+            - You may add 1 optional suggestion at the end (“If you want, we can also…”) — the user is not required to answer.
+            - End of reply: ACTION_1: applyPlanChanges|Apply to program
+            - For a proposed session, list EACH exercise on its own line:
+              Dumbbell press 3x10
+              Lateral raises 3x12
+              Face pulls 3x15
+            """
+        }
+        return """
+        ⚡ MODE MODIFICATION DU PLAN — ACTIF :
+        - L'utilisateur demande de MODIFIER son plan personnalisé dans l'app.
+        - L'application APPLIQUE AUTOMATIQUEMENT tes changements dans le calendrier du plan.
+        - EXÉCUTE sa demande telle quelle. Pas de refus. Pas de score de pertinence.
+        - PAS de markdown (pas de **, pas de #). Texte brut uniquement.
+        - Si plusieurs changements : une ligne par point avec tiret (– ).
+        - Confirme en 2–3 phrases ce qui a changé.
+        - Pour nutrition OMAD / 1 repas : écris « Repas unique: [contenu] » (pas PDJ/déj/dîner vides).
+        - Tu peux ajouter 1 suggestion optionnelle à la fin (« Si tu veux, on peut aussi… ») — l'utilisateur n'est pas obligé de répondre.
+        - Fin de réponse : ACTION_1: applyPlanChanges|Appliquer au programme
+        - Pour une séance proposée, liste CHAQUE exercice sur sa propre ligne (pas en pavé) :
+          Développé haltères 3x10
+          Élévations latérales 3x12
+          Face pulls 3x15
+        """
+    }
 
     private static func contextualSystem(profile: UnifiedUserProfile?, planFocus: CoachPlanFocus? = nil, userText: String? = nil) -> String {
         CoachMemoryStore.shared.refreshConversationDigests(
@@ -352,22 +390,32 @@ enum CoachEngine {
             .filter { $0.id != current.id && $0.source == .daily }
             .sorted { $0.createdAt > $1.createdAt }
             .prefix(14)
-        guard !past.isEmpty else { return "Historique : aucun scan précédent enregistré." }
+        guard !past.isEmpty else {
+            return AppCopy.tSync(
+                "Historique : aucun scan précédent enregistré.",
+                en: "History: no previous scan on record."
+            )
+        }
 
         let formatter = DateFormatter()
         formatter.dateStyle = .short
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
+        let en = ProcessAppLanguage.prefersEnglish
 
         let lines = past.map { scan in
             let date = formatter.string(from: scan.createdAt)
             if let signals = scan.relativeSignals {
-                return "- \(date) : score relatif \(scan.resolvedFaceDayScore), gonflement \(signed(signals.puffinessDelta)), cernes \(signed(signals.underEyeFatigueDelta)), mâchoire \(signed(signals.jawTensionDelta))"
+                return en
+                    ? "- \(date): relative score \(scan.resolvedFaceDayScore), puffiness \(signed(signals.puffinessDelta)), under-eyes \(signed(signals.underEyeFatigueDelta)), jaw \(signed(signals.jawTensionDelta))"
+                    : "- \(date) : score relatif \(scan.resolvedFaceDayScore), gonflement \(signed(signals.puffinessDelta)), cernes \(signed(signals.underEyeFatigueDelta)), mâchoire \(signed(signals.jawTensionDelta))"
             } else {
                 let m = scan.markers
-                return "- \(date) : scores bruts gonflement \(m.puffinessScore), cernes \(m.underEyeFatigueScore), mâchoire \(m.jawTensionScore)"
+                return en
+                    ? "- \(date): raw scores puffiness \(m.puffinessScore), under-eyes \(m.underEyeFatigueScore), jaw \(m.jawTensionScore)"
+                    : "- \(date) : scores bruts gonflement \(m.puffinessScore), cernes \(m.underEyeFatigueScore), mâchoire \(m.jawTensionScore)"
             }
         }
-        return "Historique récent :\n" + lines.joined(separator: "\n")
+        return AppCopy.tSync("Historique récent :\n", en: "Recent history:\n") + lines.joined(separator: "\n")
     }
 
     private static func relativeFaceScanBlock(_ result: FaceScanResult) -> String {

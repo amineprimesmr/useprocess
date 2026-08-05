@@ -8,6 +8,15 @@ enum ProfileAnalyticsRange: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
+    var title: String {
+        switch self {
+        case .week: return AppCopy.t("Semaine", en: "Week")
+        case .month: return AppCopy.t("Mois", en: "Month")
+        case .all: return AppCopy.t("Tout", en: "All")
+        }
+    }
+
     /// Fenêtre par défaut sur le profil — 30 derniers jours pour limiter le coût de rendu.
     static let profileDefault: ProfileAnalyticsRange = .month
 }
@@ -31,7 +40,7 @@ struct ProfilePageTopBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("Profil")
+            Text(AppCopy.t("Profil", en: "Profile"))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(theme.primaryText)
 
@@ -44,7 +53,7 @@ struct ProfilePageTopBar: View {
                     .frame(width: 40, height: 40)
             }
             .processGlassIconButtonStyle()
-            .accessibilityLabel("Paramètres")
+            .accessibilityLabel(AppCopy.settings)
         }
         .padding(.horizontal, 20)
     }
@@ -122,7 +131,7 @@ private struct ProfileAvatarButton: View {
             DragGesture(minimumDistance: 0, coordinateSpace: .global)
                 .onEnded { value in onPhotoTap(value.location) }
         )
-        .accessibilityLabel("Photo de profil")
-        .accessibilityHint("Touchez pour la modifier")
+        .accessibilityLabel(AppCopy.t("Photo de profil", en: "Profile Photo"))
+        .accessibilityHint(AppCopy.t("Touchez pour la modifier", en: "Tap to edit"))
     }
 }

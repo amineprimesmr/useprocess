@@ -20,7 +20,7 @@ struct CoachDailyBriefCard: View {
 
             if !content.actions.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("À faire")
+                    Text(AppCopy.t("À faire", en: "To do"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
                         .textCase(.uppercase)

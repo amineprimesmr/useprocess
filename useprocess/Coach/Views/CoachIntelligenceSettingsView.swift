@@ -57,28 +57,28 @@ struct CoachIntelligenceSettingsView: View {
                                     .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.95 : 0.82))
                             )
                     }
-                    .accessibilityLabel("Fermer")
+                    .accessibilityLabel(AppCopy.close)
                 }
             }
             .confirmationDialog(
-                "Supprimer toutes les conversations ?",
+                AppCopy.t("Supprimer toutes les conversations ?", en: "Delete all conversations?"),
                 isPresented: $showsDeleteConversationsConfirm,
                 titleVisibility: .visible
             ) {
-                Button("Supprimer toutes les conversations", role: .destructive) {
+                Button(AppCopy.t("Supprimer toutes les conversations", en: "Delete all conversations"), role: .destructive) {
                     Task { await onDeleteAllConversations() }
                 }
-                Button("Annuler", role: .cancel) {}
+                Button(AppCopy.cancel, role: .cancel) {}
             }
             .confirmationDialog(
-                "Supprimer tous les fichiers ?",
+                AppCopy.t("Supprimer tous les fichiers ?", en: "Delete all files?"),
                 isPresented: $showsDeleteFilesConfirm,
                 titleVisibility: .visible
             ) {
-                Button("Supprimer tous les fichiers", role: .destructive) {
+                Button(AppCopy.t("Supprimer tous les fichiers", en: "Delete all files"), role: .destructive) {
                     onDeleteAllFiles()
                 }
-                Button("Annuler", role: .cancel) {}
+                Button(AppCopy.cancel, role: .cancel) {}
             }
             .sheet(isPresented: $showsPersonalityPicker) {
                 personalityPickerSheet
@@ -110,7 +110,7 @@ struct CoachIntelligenceSettingsView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(theme.primaryText)
 
-                Text("Un guide intelligent intégré dans vos activités, vos tendances et vos objectifs quotidiens.")
+                Text(AppCopy.t("Un guide intelligent intégré dans vos activités, vos tendances et vos objectifs quotidiens.", en: "An intelligent guide integrated with your activity, trends, and daily goals."))
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -130,7 +130,7 @@ struct CoachIntelligenceSettingsView: View {
                     showsPersonalityPicker = true
                 } label: {
                     HStack {
-                        Text("Personnalité")
+                        Text(AppCopy.t("Personnalité", en: "Personality"))
                             .font(.body)
                             .foregroundStyle(theme.primaryText)
                         Spacer()
@@ -178,7 +178,7 @@ struct CoachIntelligenceSettingsView: View {
     }
 
     private var disclaimerText: some View {
-        Text("Process n'est pas un dispositif médical et ne doit pas être utilisé pour diagnostiquer ou traiter une condition médicale. Consultez toujours un professionnel de santé qualifié.")
+        Text(AppCopy.t("Process n'est pas un dispositif médical et ne doit pas être utilisé pour diagnostiquer ou traiter une condition médicale. Consultez toujours un professionnel de santé qualifié.", en: "Process is not a medical device and must not be used to diagnose or treat a medical condition. Always consult a qualified health professional."))
             .font(.caption)
             .foregroundStyle(theme.secondaryText.opacity(0.88))
             .fixedSize(horizontal: false, vertical: true)
@@ -188,11 +188,11 @@ struct CoachIntelligenceSettingsView: View {
 
     private var usageSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Utilisation")
+            sectionTitle(AppCopy.t("Utilisation", en: "Usage"))
 
             VStack(spacing: 0) {
                 usageMetricRow(
-                    title: "Limites hebdomadaires",
+                    title: AppCopy.t("Limites hebdomadaires", en: "Weekly limit"),
                     value: store.weeklyUsageLabel,
                     progress: Double(store.weeklyUsagePercent) / 100
                 )
@@ -207,7 +207,7 @@ struct CoachIntelligenceSettingsView: View {
                 settingsDivider
 
                 usageMetricRow(
-                    title: "Crédits supplémentaires",
+                    title: AppCopy.t("Crédits supplémentaires", en: "Extra credits"),
                     value: store.creditsLabel,
                     progress: store.extraCredits > 0 ? 0.35 : 0
                 )
@@ -218,7 +218,7 @@ struct CoachIntelligenceSettingsView: View {
                     showsCredits = true
                 } label: {
                     HStack {
-                        Text("Gérer les crédits")
+                        Text(AppCopy.t("Gérer les crédits", en: "Manage credits"))
                             .font(.body)
                             .foregroundStyle(theme.primaryText)
                         Spacer()
@@ -237,12 +237,12 @@ struct CoachIntelligenceSettingsView: View {
 
     private var proactiveSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Notifications")
+            sectionTitle(AppCopy.t("Notifications", en: "Notifications"))
 
             VStack(spacing: 0) {
                 settingsToggleRow(
-                    title: "Brief matin",
-                    subtitle: "Une notification quotidienne : plan du jour, sommeil, scan si besoin.",
+                    title: AppCopy.t("Brief matin", en: "Morning brief"),
+                    subtitle: AppCopy.t("Une notification quotidienne : plan du jour, sommeil, scan si besoin.", en: "A daily notification: your plan, sleep, and a scan when needed."),
                     isOn: Binding(
                         get: { CoachDailyRhythmService.morningOutlookEnabled },
                         set: { CoachDailyRhythmService.morningOutlookEnabled = $0 }
@@ -252,8 +252,8 @@ struct CoachIntelligenceSettingsView: View {
                 settingsDivider
 
                 settingsToggleRow(
-                    title: "Check du jour",
-                    subtitle: "Rappel pour valider ta journée.",
+                    title: AppCopy.t("Check du jour", en: "Daily check-in"),
+                    subtitle: AppCopy.t("Rappel pour valider ta journée.", en: "A reminder to complete your day."),
                     isOn: Binding(
                         get: { CoachDailyRhythmService.eveningReviewEnabled },
                         set: { CoachDailyRhythmService.eveningReviewEnabled = $0 }
@@ -266,17 +266,17 @@ struct CoachIntelligenceSettingsView: View {
 
     private var myMemorySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Ma mémoire")
+            sectionTitle(AppCopy.t("Ma mémoire", en: "My memory"))
 
             Button {
                 showsMyMemory = true
             } label: {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Gérer Ma mémoire")
+                        Text(AppCopy.t("Gérer Ma mémoire", en: "Manage My Memory"))
                             .font(.body)
                             .foregroundStyle(theme.primaryText)
-                        Text("Objectifs, contraintes, préférences — comme WHOOP My Memory.")
+                        Text(AppCopy.t("Objectifs, contraintes, préférences — comme WHOOP My Memory.", en: "Goals, constraints, preferences — like WHOOP My Memory."))
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                             .multilineTextAlignment(.leading)
@@ -296,12 +296,12 @@ struct CoachIntelligenceSettingsView: View {
 
     private var personalizationSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Personnalisation")
+            sectionTitle(AppCopy.t("Personnalisation", en: "Personalization"))
 
             VStack(spacing: 0) {
                 settingsToggleRow(
-                    title: "Suivis suggérés",
-                    subtitle: "Afficher les questions de suivi rapide après chaque réponse.",
+                    title: AppCopy.t("Suivis suggérés", en: "Suggested follow-ups"),
+                    subtitle: AppCopy.t("Afficher les questions de suivi rapide après chaque réponse.", en: "Show quick follow-up questions after each response."),
                     isOn: $store.showsSuggestedFollowUps
                 )
             }
@@ -311,12 +311,12 @@ struct CoachIntelligenceSettingsView: View {
 
     private var dataSharingSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Partage des données")
+            sectionTitle(AppCopy.t("Partage des données", en: "Data sharing"))
 
             VStack(spacing: 0) {
                 settingsToggleRow(
-                    title: "Santé reproductive",
-                    subtitle: "Autorisez l'accès aux données sur la santé reproductive dans le journal et le suivi du cycle.",
+                    title: AppCopy.t("Santé reproductive", en: "Reproductive health"),
+                    subtitle: AppCopy.t("Autorisez l'accès aux données sur la santé reproductive dans le journal et le suivi du cycle.", en: "Allow reproductive-health data in your journal and cycle tracking."),
                     isOn: $store.sharesReproductiveHealth
                 )
             }
@@ -325,7 +325,7 @@ struct CoachIntelligenceSettingsView: View {
     }
 
     private var footerNote: some View {
-        Text("Les crédits supplémentaires ne sont utilisés qu'une fois que votre limite hebdomadaire est atteinte.")
+        Text(AppCopy.t("Les crédits supplémentaires ne sont utilisés qu'une fois que votre limite hebdomadaire est atteinte.", en: "Extra credits are only used after you reach your weekly limit."))
             .font(.caption)
             .foregroundStyle(theme.secondaryText.opacity(0.88))
             .fixedSize(horizontal: false, vertical: true)
@@ -333,7 +333,9 @@ struct CoachIntelligenceSettingsView: View {
 
     private var actionButtons: some View {
         VStack(spacing: 10) {
-            actionButton(title: isResyncing ? "Synchronisation…" : "Re-synchroniser l'historique des conversations") {
+            actionButton(title: isResyncing
+                         ? AppCopy.t("Synchronisation…", en: "Syncing…")
+                         : AppCopy.t("Re-synchroniser l'historique des conversations", en: "Resync conversation history")) {
                 guard !isResyncing else { return }
                 isResyncing = true
                 Task {
@@ -342,11 +344,11 @@ struct CoachIntelligenceSettingsView: View {
                 }
             }
 
-            actionButton(title: "Supprimer toutes les conversations", destructive: true) {
+            actionButton(title: AppCopy.t("Supprimer toutes les conversations", en: "Delete all conversations"), destructive: true) {
                 showsDeleteConversationsConfirm = true
             }
 
-            actionButton(title: "Supprimer tous les fichiers", destructive: true) {
+            actionButton(title: AppCopy.t("Supprimer tous les fichiers", en: "Delete all files"), destructive: true) {
                 showsDeleteFilesConfirm = true
             }
         }
@@ -458,11 +460,11 @@ struct CoachIntelligenceSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Personnalité")
+            .navigationTitle(AppCopy.t("Personnalité", en: "Personality"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { showsPersonalityPicker = false }
+                    Button(AppCopy.close) { showsPersonalityPicker = false }
                 }
             }
         }

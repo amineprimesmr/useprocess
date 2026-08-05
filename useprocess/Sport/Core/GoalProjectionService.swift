@@ -239,11 +239,11 @@ class GoalProjectionService {
         weightGoal: WeightGoal?
     ) -> String {
         guard let date = projectedDate else {
-            return "Tu progresseras à ton rythme"
+            return AppCopy.tSync("Tu progresseras à ton rythme", en: "You'll progress at your own pace")
         }
 
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         formatter.dateFormat = "d MMMM"
         let dateString = formatter.string(from: date)
 
@@ -254,7 +254,7 @@ class GoalProjectionService {
             weightGoal: weightGoal
         )
 
-        return "\(clearGoal) le \(dateString)"
+        return AppCopy.tSync("\(clearGoal) le \(dateString)", en: "\(clearGoal) by \(dateString)")
     }
 
     /// ✨ Détermine l'objectif principal clair de l'utilisateur
@@ -267,10 +267,16 @@ class GoalProjectionService {
         weightGoal: WeightGoal?
     ) -> String {
         if primaryGoals.contains(.manageWeight), let ideal = idealWeight {
-            return "Tu feras \(String(format: "%.0f", ideal)) kg"
+            return AppCopy.tSync(
+                "Tu feras \(String(format: "%.0f", ideal)) kg",
+                en: "You'll reach \(String(format: "%.0f", ideal)) kg"
+            )
         }
 
-        return "Tu auras atteint 100% de ton potentiel"
+        return AppCopy.tSync(
+            "Tu auras atteint 100% de ton potentiel",
+            en: "You'll have reached 100% of your potential"
+        )
     }
 
     /// Calcule les données pour la courbe de progression avec irrégularités réalistes

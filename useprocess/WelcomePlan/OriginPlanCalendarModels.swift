@@ -273,26 +273,50 @@ struct OriginLifestyleExtras: Codable, Equatable {
     static var `default`: OriginLifestyleExtras {
         OriginLifestyleExtras(
             sunlightProtocol: [
-                "\(ProcessDailyTargets.morningLightMinutes) min lumière naturelle dans l'heure après le réveil",
-                "Marche outdoor \(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/sem"
+                AppCopy.tSync(
+                    "\(ProcessDailyTargets.morningLightMinutes) min lumière naturelle dans l'heure après le réveil",
+                    en: "\(ProcessDailyTargets.morningLightMinutes) min natural light within an hour of waking"
+                ),
+                AppCopy.tSync(
+                    "Marche outdoor \(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/sem",
+                    en: "Outdoor walk \(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/wk"
+                )
             ],
             stressRegulation: [
-                "Pas de téléphone au lit — validé le lendemain matin dans le journal"
+                AppCopy.tSync(
+                    "Pas de téléphone au lit — validé le lendemain matin dans le journal",
+                    en: "No phone in bed — checked the next morning in the journal"
+                )
             ],
             recoveryProtocol: [
-                "Deload semaine 4 et 8",
-                "Sommeil > séance supplémentaire si fatigue ou nuit courte"
+                AppCopy.tSync("Deload semaine 4 et 8", en: "Deload weeks 4 and 8"),
+                AppCopy.tSync(
+                    "Sommeil > séance supplémentaire si fatigue ou nuit courte",
+                    en: "Sleep > extra session if fatigued or short night"
+                )
             ],
             trackingChecklist: [
-                "Scan visage : semaines 1, 4, 8, 13",
-                "Photos profil : même lumière, même angle",
-                "Sommeil + pas via Santé chaque matin"
+                AppCopy.tSync(
+                    "Scan visage : semaines 1, 4, 8, 13",
+                    en: "Face scan: weeks 1, 4, 8, 13"
+                ),
+                AppCopy.tSync(
+                    "Photos profil : même lumière, même angle",
+                    en: "Profile photos: same light, same angle"
+                ),
+                AppCopy.tSync(
+                    "Sommeil + pas via Santé chaque matin",
+                    en: "Sleep + steps via Health every morning"
+                )
             ],
             weeklyReviews: [],
             bonusProposals: [
                 ProcessContinuousHabits.masticationDetail,
                 ProcessContinuousHabits.mewingDetail,
-                "Chambre fraîche (\(ProcessDailyTargets.bedroomTempCelsius) °C) + obscurité totale"
+                AppCopy.tSync(
+                    "Chambre fraîche (\(ProcessDailyTargets.bedroomTempCelsius) °C) + obscurité totale",
+                    en: "Cool room (\(ProcessDailyTargets.bedroomTempCelsius) °C) + total darkness"
+                )
             ]
         )
     }

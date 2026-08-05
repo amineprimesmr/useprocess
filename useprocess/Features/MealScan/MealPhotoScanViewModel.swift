@@ -11,9 +11,17 @@ final class MealPhotoScanViewModel {
         case result
     }
 
-    enum ResultTab: String, CaseIterable {
-        case scanned = "Scanné"
-        case optimized = "Optimisé"
+    enum ResultTab: CaseIterable {
+        case scanned
+        case optimized
+
+        @MainActor
+        var title: String {
+            switch self {
+            case .scanned: return AppCopy.t("Scanné", en: "Scanned")
+            case .optimized: return AppCopy.t("Optimisé", en: "Optimized")
+            }
+        }
     }
 
     private(set) var phase: Phase = .camera
@@ -22,7 +30,7 @@ final class MealPhotoScanViewModel {
     private(set) var optimizedMeal: MealSuggestionContent?
     private(set) var selectedResultTab: ResultTab = .scanned
     private(set) var errorMessage: String?
-    private(set) var analysisStatus = "Analyse du repas…"
+    private(set) var analysisStatus = AppCopy.t("Analyse du repas…", en: "Analyzing meal…")
 
     var selectedSlot: MealTimeSlot = .lunch
 
@@ -63,7 +71,7 @@ final class MealPhotoScanViewModel {
         capturedImage = image
         errorMessage = nil
         phase = .analyzing
-        analysisStatus = "Analyse du repas…"
+        analysisStatus = AppCopy.t("Analyse du repas…", en: "Analyzing meal…")
 
         Task {
             await analyze(image: image, plan: plan, profile: profile)
@@ -91,12 +99,18 @@ final class MealPhotoScanViewModel {
 
     private func analyze(image: UIImage, plan: FaceOriginPlan?, profile: UnifiedUserProfile?) async {
         guard let plan else {
-            fail("Complète ton plan pour analyser un repas.")
+            fail(AppCopy.t(
+                "Complète ton plan pour analyser un repas.",
+                en: "Finish your plan to analyze a meal."
+            ))
             return
         }
 
         guard ClaudeConfiguration.isConfigured else {
-            fail("Coach IA indisponible — configure l'API Claude.")
+            fail(AppCopy.t(
+                "Coach IA indisponible — configure l'API Claude.",
+                en: "AI coach unavailable — configure the Claude API."
+            ))
             return
         }
 
@@ -112,12 +126,18 @@ final class MealPhotoScanViewModel {
 
         guard OriginPlanPresenter.programDay(in: plan) != nil
             || OriginPlanPresenter.todayDay(in: plan) != nil else {
-            fail("Aucun jour de programme disponible.")
+            fail(AppCopy.t(
+                "Aucun jour de programme disponible.",
+                en: "No program day available."
+            ))
             return
         }
 
         do {
-            analysisStatus = "Identification des aliments visibles…"
+            analysisStatus = AppCopy.t(
+                "Identification des aliments visibles…",
+                en: "Identifying visible foods…"
+            )
             let meal = try await MealPhotoScanAnalysisService.analyzePhoto(
                 image: image,
                 slot: selectedSlot,
@@ -128,7 +148,10 @@ final class MealPhotoScanViewModel {
 
             if needsOptimization(for: meal) {
                 phase = .optimizing
-                analysisStatus = "Optimisation debloat de ton repas…"
+                analysisStatus = AppCopy.t(
+                    "Optimisation debloat de ton repas…",
+                    en: "Debloat-optimizing your meal…"
+                )
                 let assessment = MealNutritionCatalog.debloatAssessment(for: meal)
                 do {
                     let optimized = try await MealPhotoScanAnalysisService.optimizeScannedMeal(
@@ -152,42 +175,62 @@ final class MealPhotoScanViewModel {
             )
             HapticManager.shared.notification(.success)
         } catch let error as ProcessPrivacyConsentError {
-            fail(error.localizedDescription ?? "Autorise l'analyse IA dans les réglages.")
+            fail(error.localizedDescription ?? AppCopy.t(
+                "Autorise l'analyse IA dans les réglages.",
+                en: "Allow AI analysis in Settings."
+            ))
         } catch let error as MealHubError {
             fail(message(for: error))
         } catch let error as ClaudeAPIError {
             fail(claudeMessage(for: error))
         } catch let error as CoachRemoteError {
-            fail(error.localizedDescription ?? "Coach indisponible. Réessaie.")
+            fail(error.localizedDescription ?? AppCopy.t(
+                "Coach indisponible. Réessaie.",
+                en: "Coach unavailable. Try again."
+            ))
         } catch {
-            fail("Connexion ou analyse indisponible. Réessaie dans un instant.")
+            fail(AppCopy.t(
+                "Connexion ou analyse indisponible. Réessaie dans un instant.",
+                en: "Connection or analysis unavailable. Try again in a moment."
+            ))
         }
     }
 
     private func claudeMessage(for error: ClaudeAPIError) -> String {
         switch error {
         case .missingAPIKey:
-            return "Coach IA indisponible — configure l'API Claude."
+            return AppCopy.t(
+                "Coach IA indisponible — configure l'API Claude.",
+                en: "AI coach unavailable — configure the Claude API."
+            )
         case .invalidResponse:
-            return "Réponse IA vide. Réessaie."
+            return AppCopy.t("Réponse IA vide. Réessaie.", en: "Empty AI response. Try again.")
         case .httpError(let status, _):
-            if status == 429 { return "Trop de requêtes — attends quelques secondes." }
-            return "Erreur réseau (\(status)). Réessaie."
+            if status == 429 {
+                return AppCopy.t(
+                    "Trop de requêtes — attends quelques secondes.",
+                    en: "Too many requests — wait a few seconds."
+                )
+            }
+            return AppCopy.t("Erreur réseau (\(status)). Réessaie.", en: "Network error (\(status)). Try again.")
         case .network:
-            return "Connexion instable. Réessaie."
+            return AppCopy.t("Connexion instable. Réessaie.", en: "Unstable connection. Try again.")
         }
     }
 
     private func message(for error: MealHubError) -> String {
         switch error {
         case .noFoodVisible:
-            return "Aucun repas visible — cadre ton assiette ou ton plat."
+            return AppCopy.t(
+                "Aucun repas visible — cadre ton assiette ou ton plat.",
+                en: "No meal visible — frame your plate or dish."
+            )
         case .photoRequired:
-            return "Photo illisible. Réessaie."
+            return AppCopy.t("Photo illisible. Réessaie.", en: "Unreadable photo. Try again.")
         case .invalidResponse:
-            return "Analyse interrompue. Réessaie."
+            return AppCopy.t("Analyse interrompue. Réessaie.", en: "Analysis interrupted. Try again.")
         case .noAlternatives:
-            return "Analyse interrompue. Réessaie."
+            return AppCopy.t("Analyse interrompue. Réessaie.", en: "Analysis interrupted. Try again.")
         }
     }
 

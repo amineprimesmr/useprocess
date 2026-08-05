@@ -363,10 +363,16 @@ enum UserContextBuilder {
         ))
 
         if lines.isEmpty {
-            return "CONTEXTE : profil useprocess (données limitées)."
+            return AppCopy.tSync(
+                "CONTEXTE : profil useprocess (données limitées).",
+                en: "CONTEXT: useprocess profile (limited data)."
+            )
         }
 
-        return "CONTEXTE (résumé — ne pas tout reciter) :\n" + lines.joined(separator: "\n")
+        return AppCopy.tSync(
+            "CONTEXTE (résumé — ne pas tout reciter) :\n",
+            en: "CONTEXT (summary — do not recite everything):\n"
+        ) + lines.joined(separator: "\n")
     }
 
     static func promptBlock(from context: CoachUserContext) -> String {

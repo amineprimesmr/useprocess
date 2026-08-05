@@ -28,9 +28,13 @@ enum BodyYawEstimator {
 
     static func facingLabel(yaw: Double) -> String {
         let a = abs(yaw)
-        if a < 25 { return "FACE" }
-        if a < 80 { return yaw > 0 ? "DROITE" : "GAUCHE" }
-        return "DOS"
+        if a < 25 { return AppCopy.tSync("FACE", en: "FRONT") }
+        if a < 80 {
+            return yaw > 0
+                ? AppCopy.tSync("DROITE", en: "RIGHT")
+                : AppCopy.tSync("GAUCHE", en: "LEFT")
+        }
+        return AppCopy.tSync("DOS", en: "BACK")
     }
 
     static func shouldCapture(

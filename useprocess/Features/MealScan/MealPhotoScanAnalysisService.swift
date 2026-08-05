@@ -369,6 +369,7 @@ enum MealPhotoScanAnalysisService {
         return cleaned
     }
 
+    @MainActor
     private static func clampOptimizedToScanBasis(
         _ optimized: MealSuggestionContent,
         scanned: MealSuggestionContent
@@ -383,12 +384,21 @@ enum MealPhotoScanAnalysisService {
         guard novelCount > 2 else { return optimized }
 
         var fallback = scanned
-        fallback.name = "Version debloat — \(scanned.name)"
+        fallback.name = AppCopy.t(
+            "Version debloat — \(scanned.name)",
+            en: "Debloat version — \(scanned.name)"
+        )
         fallback.coachTip = optimized.coachTip.isEmpty
-            ? "Retire ou remplace les éléments les plus sodés/lactés visibles sur ta photo."
+            ? AppCopy.t(
+                "Retire ou remplace les éléments les plus sodés/lactés visibles sur ta photo.",
+                en: "Remove or swap the saltiest / dairy items visible in your photo."
+            )
             : optimized.coachTip
         fallback.scoreSummary = optimized.scoreSummary.isEmpty
-            ? "Optimisation légère basée sur ton scan."
+            ? AppCopy.t(
+                "Optimisation légère basée sur ton scan.",
+                en: "Light optimization based on your scan."
+            )
             : optimized.scoreSummary
         fallback.protocolScore = min(100, scanned.protocolScore + 8)
         fallback.showsScore = true

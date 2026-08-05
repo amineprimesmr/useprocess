@@ -6,6 +6,7 @@ struct AppShellView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Bindable private var session = AppSession.shared
     @Bindable private var launchRouter = AppLaunchRouter.shared
+    @Bindable private var appLanguage = ProcessAppLanguage.shared
     @State private var didPrepareMainApp = false
     @State private var didPrepareCoachRuntime = false
     /// Armé après le cold start — évite de monter le deferral Home pendant le 1er frame Review.
@@ -22,13 +23,14 @@ struct AppShellView: View {
             if session.hasCompletedOnboarding {
                 MainAppView()
                     .transition(.opacity)
-                    .id("main-app")
+                    .id("main-app-\(appLanguage.code.rawValue)")
             } else {
                 SportOnboardingRootView()
                     .transition(.opacity)
-                    .id("welcome-onboarding")
+                    .id("welcome-onboarding-\(appLanguage.code.rawValue)")
             }
         }
+        .environment(\.locale, appLanguage.locale)
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
         // Double-swipe Home après stabilisation du launch (pas au tout premier frame).
         .processPreAccessDoubleHomeSwipe(
@@ -124,7 +126,7 @@ struct AppShellView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: session.isAccountWipeInProgress)
         .alert(
-            "Suppression impossible",
+            AppCopy.t("Suppression impossible", en: "Deletion Failed"),
             isPresented: Binding(
                 get: { session.accountDeletionErrorMessage != nil },
                 set: { if !$0 { session.accountDeletionErrorMessage = nil } }
@@ -134,16 +136,16 @@ struct AppShellView: View {
                 session.accountDeletionErrorMessage = nil
             }
         } message: {
-            Text(session.accountDeletionErrorMessage ?? "Réessaie dans un instant.")
+            Text(session.accountDeletionErrorMessage ?? AppCopy.t("Réessaie dans un instant.", en: "Please try again in a moment."))
         }
-        .fullScreenCover(isPresented: $launchRouter.showsTrialRetentionOffer) {
+        .fullScreenCover(isPresented: $launchRouter.showsLifetimeRetentionOffer) {
             PaywallTrialRetentionView(
-                source: launchRouter.activeTrialRetentionSource,
+                source: launchRouter.activeLifetimeOfferSource,
                 onDismiss: {
-                    launchRouter.clearTrialRetentionPresentation()
+                    launchRouter.clearLifetimeOfferPresentation()
                 },
                 onSubscribed: {
-                    launchRouter.clearTrialRetentionPresentation()
+                    launchRouter.clearLifetimeOfferPresentation()
                     ProcessHomeScreenQuickActions.syncForCurrentUser()
                 }
             )

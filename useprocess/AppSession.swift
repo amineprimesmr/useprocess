@@ -24,13 +24,13 @@ final class AppSession {
     var accountDeletionStatusMessage: String {
         switch accountDeletionPhase {
         case .idle:
-            return "Patiente quelques instants…"
+            return AppCopy.t("Patiente quelques instants…", en: "Hang tight for a moment…")
         case .remote:
-            return "Suppression sur nos serveurs…"
+            return AppCopy.t("Suppression sur nos serveurs…", en: "Deleting from our servers…")
         case .local:
-            return "Effacement des données locales…"
+            return AppCopy.t("Effacement des données locales…", en: "Erasing local data…")
         case .finishing:
-            return "Finalisation…"
+            return AppCopy.t("Finalisation…", en: "Finishing up…")
         }
     }
 

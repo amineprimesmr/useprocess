@@ -16,7 +16,7 @@ struct ProfileAchievementsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Succès")
+                Text(AppCopy.t("Succès", en: "Achievements"))
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                 Spacer()

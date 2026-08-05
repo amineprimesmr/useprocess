@@ -1,7 +1,7 @@
 import Foundation
 
 /// Nom d'affichage de l'app — remplace « Process » dans tous les textes utilisateur.
-enum AppBranding {
+nonisolated enum AppBranding {
     static var name: String {
         AppConfiguration.appDisplayName
     }

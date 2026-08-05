@@ -7,9 +7,21 @@ struct AnimatedButtonCornerRadius {
 
 struct CustomDeleteAction {
     var confirmTitle: String
-    var cancelTitle: String = "Annuler"
+    var cancelTitle: String
     var background: Color
     var foreground: Color
+
+    init(
+        confirmTitle: String,
+        cancelTitle: String = AppCopy.cancel,
+        background: Color,
+        foreground: Color
+    ) {
+        self.confirmTitle = confirmTitle
+        self.cancelTitle = cancelTitle
+        self.background = background
+        self.foreground = foreground
+    }
 }
 
 private struct AnimatedButtonProperties {
@@ -157,7 +169,7 @@ private struct DeleteButtonConfirmationView<Content: View>: View {
             Button {
                 dismiss(confirmed: false)
             } label: {
-                Text(customAction?.cancelTitle ?? "Annuler")
+                Text(customAction?.cancelTitle ?? AppCopy.cancel)
                     .foregroundStyle(Color.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
@@ -176,7 +188,7 @@ private struct DeleteButtonConfirmationView<Content: View>: View {
                         .background(customAction.background.gradient)
                         .clipShape(.capsule)
                 } else {
-                    Text("Supprimer")
+                    Text(AppCopy.delete)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)

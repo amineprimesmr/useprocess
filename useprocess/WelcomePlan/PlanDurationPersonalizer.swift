@@ -9,8 +9,8 @@ enum TrajectoryMode: String, Codable, Equatable {
 
     var label: String {
         switch self {
-        case .debloatFirst: return "Debloat puis poids"
-        case .weightFirst: return "Debloat visage prioritaire"
+        case .debloatFirst: return AppCopy.tSync("Debloat puis poids", en: "Debloat then weight")
+        case .weightFirst: return AppCopy.tSync("Debloat visage prioritaire", en: "Face debloat first")
         }
     }
 }
@@ -213,9 +213,15 @@ enum PlanDurationPersonalizer {
         let summary: String
         let debloatFmt = formatShortDate(debloatDate)
         if hasWeightGoal, let weight = weightLabel {
-            summary = "Profil jeune et actif — visage dégonflé d'ici \(debloatFmt), \(weight) sur la trajectoire."
+            summary = AppCopy.tSync(
+                "Profil jeune et actif — visage dégonflé d'ici \(debloatFmt), \(weight) sur la trajectoire.",
+                en: "Young active profile — face debloated by \(debloatFmt), \(weight) on the trajectory."
+            )
         } else {
-            summary = "Visage visiblement moins gonflé d'ici \(debloatFmt) — trajectoire optimiste calibrée sur ton profil."
+            summary = AppCopy.tSync(
+                "Visage visiblement moins gonflé d'ici \(debloatFmt) — trajectoire optimiste calibrée sur ton profil.",
+                en: "Face visibly less puffy by \(debloatFmt) — optimistic trajectory calibrated to your profile."
+            )
         }
 
         return TrajectoryTimeline(
@@ -419,8 +425,14 @@ enum PlanDurationPersonalizer {
 
     static func formatShortDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "d MMM"
+        // Nonisolated-safe: read stored code without hopping to MainActor.
+        let stored = UserDefaults.standard.string(forKey: "process.app.language")
+            ?? UserDefaults.standard.string(forKey: "selectedLanguage")
+            ?? Locale.preferredLanguages.first
+            ?? "en"
+        let code = ProcessAppLanguage.normalize(stored)
+        formatter.locale = Locale(identifier: code.localeIdentifier)
+        formatter.dateFormat = code == .english ? "MMM d" : "d MMM"
         return formatter.string(from: date)
     }
 

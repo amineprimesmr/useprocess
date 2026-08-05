@@ -29,7 +29,7 @@ extension HealthDataAnimationStepView {
                 VStack(alignment: .leading, spacing: 16) {
                     // Titre (sans fond séparé)
                     HStack {
-                        Text("Sources de données")
+                        Text(OnboardingCopy.t("Sources de données", en: "Data sources"))
                             .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(OnboardingTheme.primaryText)
             Spacer()
@@ -81,7 +81,7 @@ extension HealthDataAnimationStepView {
                 // Mode animation : 2 sous-parties
                 VStack(alignment: .leading, spacing: 24) {
                     HStack {
-                        Text("Sources de données")
+                        Text(OnboardingCopy.t("Sources de données", en: "Data sources"))
                             .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
 
@@ -131,7 +131,7 @@ extension HealthDataAnimationStepView {
                 }
                 .frame(width: 24, height: 24)
 
-                Text("Mouvement du téléphone")
+                Text(OnboardingCopy.t("Mouvement du téléphone", en: "Phone motion"))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(OnboardingTheme.narrativeText)
 
@@ -200,7 +200,7 @@ extension HealthDataAnimationStepView {
                     maxWidth: 28
                 )
 
-                Text("Santé Apple")
+                Text(OnboardingCopy.t("Santé Apple", en: "Apple Health"))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(OnboardingTheme.narrativeText)
 
@@ -332,7 +332,7 @@ extension HealthDataAnimationStepView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Aujourd'hui")
+                        Text(OnboardingCopy.t("Aujourd'hui", en: "Today"))
                             .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(OnboardingTheme.primaryText)
 
@@ -345,7 +345,7 @@ extension HealthDataAnimationStepView {
                                 .foregroundStyle(OnboardingTheme.screenBackground)
                                 .contentTransition(.numericText()) // ✨ Animation fluide du compteur
 
-                            Text("JOURS TROUVÉS")
+                            Text(OnboardingCopy.t("JOURS TROUVÉS", en: "DAYS FOUND"))
                                 .font(.system(size: 10, weight: .regular))
                                 .foregroundStyle(OnboardingTheme.screenBackground)
                         }
@@ -411,7 +411,7 @@ extension HealthDataAnimationStepView {
                     maxWidth: 24
                 )
 
-                Text("Récupération")
+                Text(OnboardingCopy.t("Récupération", en: "Recovery"))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(OnboardingTheme.narrativeText)
 
@@ -498,7 +498,7 @@ extension HealthDataAnimationStepView {
                     maxWidth: 24
                 )
 
-                Text("Récupération")
+                Text(OnboardingCopy.t("Récupération", en: "Recovery"))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(OnboardingTheme.narrativeText)
 
@@ -584,7 +584,7 @@ extension HealthDataAnimationStepView {
                     maxWidth: 28
                 )
 
-                Text("Capacité d'entrainement")
+                Text(OnboardingCopy.t("Capacité d'entrainement", en: "Training capacity"))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(OnboardingTheme.narrativeText)
 

@@ -30,8 +30,8 @@ nonisolated enum VisionPoseExtractor {
             return ScanQualityFeedback(
                 isReady: faceOK,
                 message: faceOK
-                    ? "Visage détecté — capture automatique…"
-                    : "Centre ton visage dans le cadre.",
+                    ? AppCopy.tSync("Visage détecté — capture automatique…", en: "Face detected — auto capture…")
+                    : AppCopy.tSync("Centre ton visage dans le cadre.", en: "Center your face in the frame."),
                 score: faceOK ? 85 : 20
             )
         }
@@ -41,7 +41,9 @@ nonisolated enum VisionPoseExtractor {
             let bodyOK = count >= 6 && (segmentationCoverage > 0.14 || humanDetected)
             return ScanQualityFeedback(
                 isReady: bodyOK,
-                message: bodyOK ? "Corps détecté — continue de tourner" : "Recule — corps entier visible",
+                message: bodyOK
+                    ? AppCopy.tSync("Corps détecté — continue de tourner", en: "Body detected — keep turning")
+                    : AppCopy.tSync("Recule — corps entier visible", en: "Step back — full body visible"),
                 score: bodyOK ? 70 : 25
             )
         }
@@ -59,7 +61,10 @@ nonisolated enum VisionPoseExtractor {
         if !bodyVisible {
             return ScanQualityFeedback(
                 isReady: false,
-                message: "Recule — tout ton corps doit être visible.",
+                message: AppCopy.tSync(
+                    "Recule — tout ton corps doit être visible.",
+                    en: "Step back — your whole body must be visible."
+                ),
                 score: segmentationCoverage * 100
             )
         }
@@ -67,7 +72,10 @@ nonisolated enum VisionPoseExtractor {
         if !fullBody {
             return ScanQualityFeedback(
                 isReady: false,
-                message: "Encore un peu — on doit voir tête, buste et jambes.",
+                message: AppCopy.tSync(
+                    "Encore un peu — on doit voir tête, buste et jambes.",
+                    en: "A bit more — we need to see head, torso, and legs."
+                ),
                 score: 25 + segmentationCoverage * 80
             )
         }
@@ -83,7 +91,7 @@ nonisolated enum VisionPoseExtractor {
         if fill > 0.97 {
             return ScanQualityFeedback(
                 isReady: false,
-                message: "Trop près — recule d'un pas.",
+                message: AppCopy.tSync("Trop près — recule d'un pas.", en: "Too close — take a step back."),
                 score: 40
             )
         }
@@ -97,7 +105,10 @@ nonisolated enum VisionPoseExtractor {
         if visionReady {
             return ScanQualityFeedback(
                 isReady: true,
-                message: "Corps détecté — reste immobile, capture auto…",
+                message: AppCopy.tSync(
+                    "Corps détecté — reste immobile, capture auto…",
+                    en: "Body detected — stay still, auto capture…"
+                ),
                 score: score
             )
         }

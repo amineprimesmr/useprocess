@@ -126,7 +126,10 @@ final class WelcomePlanChatViewModel {
             if !answers.isEmpty {
                 restoreConversationHistory()
             }
-            appendAssistantMessageInstant("Ton plan personnalisé est déjà prêt — tu peux entrer dans l'app.")
+            appendAssistantMessageInstant(AppCopy.t(
+                "Ton plan personnalisé est déjà prêt — tu peux entrer dans l'app.",
+                en: "Your personalized plan is already ready — you can enter the app."
+            ))
             withAnimation(OnboardingProfileChatAnswerReveal.spring) {
                 showsEnterButton = true
             }
@@ -158,7 +161,7 @@ final class WelcomePlanChatViewModel {
         await recordAnswer(
             question: question,
             answer: WelcomePlanAnswer(choiceIds: [id]),
-            display: yes ? "Oui" : "Non"
+            display: yes ? AppCopy.yes : AppCopy.no
         )
     }
 
@@ -199,7 +202,7 @@ final class WelcomePlanChatViewModel {
         await recordAnswer(
             question: question,
             answer: WelcomePlanAnswer(choiceIds: ["continue"]),
-            display: "Continuer"
+            display: AppCopy.continueCTA
         )
     }
 
@@ -366,12 +369,15 @@ final class WelcomePlanChatViewModel {
         showsGenerationProgress = true
         generationProgress = 0
         generationDisplayedPercentage = 0
-        generationPhaseLabel = "Lecture de ton profil…"
+        generationPhaseLabel = AppCopy.t("Lecture de ton profil…", en: "Reading your profile…")
         currentQuestion = nil
         isQuestionReadyForAnswers = false
         showsEnterButton = false
 
-        appendAssistantMessageInstant("Je compile ton plan personnalisé…")
+        appendAssistantMessageInstant(AppCopy.t(
+            "Je compile ton plan personnalisé…",
+            en: "I’m building your personalized plan…"
+        ))
         startGenerationProgressAnimation()
 
         async let builtPlan: FaceOriginPlan = buildGeneratedPlan()
@@ -385,7 +391,7 @@ final class WelcomePlanChatViewModel {
 
         generationProgress = 1
         generationDisplayedPercentage = 100
-        generationPhaseLabel = "Plan prêt"
+        generationPhaseLabel = AppCopy.t("Plan prêt", en: "Plan ready")
         HapticManager.shared.notification(.success)
         try? await Task.sleep(for: .milliseconds(350))
 
@@ -414,17 +420,20 @@ final class WelcomePlanChatViewModel {
     }
 
     private func completionMessage() -> String {
-        "C'est prêt. Retrouve ton plan complet dans Santé."
+        AppCopy.t(
+            "C'est prêt. Retrouve ton plan complet dans Santé.",
+            en: "You’re all set. Find your full plan in Health."
+        )
     }
 
     private func startGenerationProgressAnimation() {
         generationTask?.cancel()
 
         let phases = [
-            "Lecture de ton profil…",
-            "Calibrage sommeil & nutrition…",
-            "Assemblage du plan personnalisé…",
-            "Dernières touches…"
+            AppCopy.t("Lecture de ton profil…", en: "Reading your profile…"),
+            AppCopy.t("Calibrage sommeil & nutrition…", en: "Calibrating sleep & nutrition…"),
+            AppCopy.t("Assemblage du plan personnalisé…", en: "Assembling your personalized plan…"),
+            AppCopy.t("Dernières touches…", en: "Final touches…")
         ]
 
         generationTask = Task {

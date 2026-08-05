@@ -29,19 +29,35 @@ enum ProcessUsernameTag {
 
     static func validate(_ tag: String) throws {
         guard tag.count >= minLength else {
-            throw ProcessUsernameError.invalid("Minimum \(minLength) caractères.")
+            throw ProcessUsernameError.invalid(
+                AppCopy.tSync("Minimum \(minLength) caractères.", en: "Minimum \(minLength) characters.")
+            )
         }
         guard tag.count <= maxLength else {
-            throw ProcessUsernameError.invalid("Maximum \(maxLength) caractères.")
+            throw ProcessUsernameError.invalid(
+                AppCopy.tSync("Maximum \(maxLength) caractères.", en: "Maximum \(maxLength) characters.")
+            )
         }
         guard let first = tag.first, first.isLetter || first.isNumber else {
-            throw ProcessUsernameError.invalid("Doit commencer par une lettre ou un chiffre.")
+            throw ProcessUsernameError.invalid(
+                AppCopy.tSync(
+                    "Doit commencer par une lettre ou un chiffre.",
+                    en: "Must start with a letter or number."
+                )
+            )
         }
         guard tag.contains(where: \.isLetter) else {
-            throw ProcessUsernameError.invalid("Doit contenir au moins une lettre.")
+            throw ProcessUsernameError.invalid(
+                AppCopy.tSync(
+                    "Doit contenir au moins une lettre.",
+                    en: "Must contain at least one letter."
+                )
+            )
         }
         guard !reserved.contains(tag) else {
-            throw ProcessUsernameError.invalid("Ce tag est réservé.")
+            throw ProcessUsernameError.invalid(
+                AppCopy.tSync("Ce tag est réservé.", en: "This tag is reserved.")
+            )
         }
     }
 
@@ -63,11 +79,14 @@ enum ProcessUsernameError: LocalizedError, Equatable {
         case .invalid(let message):
             return message
         case .taken:
-            return "Ce tag est déjà pris."
+            return AppCopy.tSync("Ce tag est déjà pris.", en: "This tag is already taken.")
         case .notFound:
-            return "Aucun utilisateur avec ce tag."
+            return AppCopy.tSync("Aucun utilisateur avec ce tag.", en: "No user found with this tag.")
         case .notAuthenticated:
-            return "Connecte-toi pour enregistrer ton tag."
+            return AppCopy.tSync(
+                "Connecte-toi pour enregistrer ton tag.",
+                en: "Sign in to save your tag."
+            )
         case .cloudUnavailable(let message):
             return message
         }

@@ -10,10 +10,10 @@ enum CoachSidebarDestination: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .integration: return "Configuration"
-        case .healthRecords: return "Dossiers de santé"
-        case .files: return "Fichiers"
-        case .tracking: return "Points de suivi"
+        case .integration: return AppCopy.t("Configuration", en: "Setup")
+        case .healthRecords: return AppCopy.t("Dossiers de santé", en: "Health records")
+        case .files: return AppCopy.t("Fichiers", en: "Files")
+        case .tracking: return AppCopy.t("Points de suivi", en: "Progress tracking")
         }
     }
 
@@ -37,7 +37,7 @@ struct CoachHealthRecordsSheet: View {
         NavigationStack {
             HealthConnectedSourcesSettingsView()
                 .processTransparentScrollSurface()
-                .navigationTitle("Dossiers de santé")
+                .navigationTitle(AppCopy.t("Dossiers de santé", en: "Health records"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -74,9 +74,9 @@ struct CoachFilesSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Fichiers Process") {
+                Section(AppCopy.t("Fichiers Process", en: "Process files")) {
                     if processFilesStore.files.isEmpty {
-                        Text("Le coach crée des fichiers au fil des échanges (objectifs, synthèses, contraintes).")
+                        Text(AppCopy.t("Le coach crée des fichiers au fil des échanges (objectifs, synthèses, contraintes).", en: "The coach creates files as you chat (goals, summaries, constraints)."))
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                     } else {
@@ -108,17 +108,17 @@ struct CoachFilesSheet: View {
                     }
                 }
 
-                Section("Scans visage") {
+                Section(AppCopy.t("Scans visage", en: "Face scans")) {
                     if faceHistoryStore.history.isEmpty {
-                        Text("Aucun scan enregistré.")
+                        Text(AppCopy.t("Aucun scan enregistré.", en: "No scans saved."))
                             .foregroundStyle(theme.secondaryText)
                     } else {
                         ForEach(faceHistoryStore.history) { scan in
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Scan du \(scan.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                                    Text(AppCopy.t("Scan du \(scan.createdAt.formatted(date: .abbreviated, time: .omitted))", en: "Scan from \(scan.createdAt.formatted(date: .abbreviated, time: .omitted))"))
                                         .font(.body.weight(.medium))
-                                    Text("Score \(scan.displayWellnessScore)/100")
+                                    Text(AppCopy.t("Score \(scan.displayWellnessScore)/100", en: "Score \(scan.displayWellnessScore)/100"))
                                         .font(.caption)
                                         .foregroundStyle(theme.secondaryText)
                                 }
@@ -128,13 +128,13 @@ struct CoachFilesSheet: View {
                     }
                 }
 
-                Section("Conversations") {
-                    Text("Les photos partagées dans le coach restent liées à leurs conversations.")
+                Section(AppCopy.t("Conversations", en: "Conversations")) {
+                    Text(AppCopy.t("Les photos partagées dans le coach restent liées à leurs conversations.", en: "Photos shared with the coach remain linked to their conversations."))
                         .font(.subheadline)
                         .foregroundStyle(theme.secondaryText)
                 }
             }
-            .navigationTitle("Fichiers")
+            .navigationTitle(AppCopy.t("Fichiers", en: "Files"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -198,7 +198,7 @@ struct CoachTrackingSheet: View {
                     if let plan = planStore.plan {
                         journalPreview(plan: plan)
                     } else {
-                        Text("Termine l'intégration pour activer le suivi quotidien.")
+                        Text(AppCopy.t("Termine l'intégration pour activer le suivi quotidien.", en: "Finish setup to activate daily tracking."))
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                             .padding(.horizontal, 4)
@@ -207,7 +207,7 @@ struct CoachTrackingSheet: View {
                 .padding(16)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Points de suivi")
+            .navigationTitle(AppCopy.t("Points de suivi", en: "Progress tracking"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -223,7 +223,7 @@ struct CoachTrackingSheet: View {
 
     private var streakSummaryCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Jours validés")
+            Text(AppCopy.t("Jours validés", en: "Completed days"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
                 .textCase(.uppercase)
@@ -232,12 +232,14 @@ struct CoachTrackingSheet: View {
                 Text("\(snapshot.totalCompletedDays)")
                     .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundStyle(theme.primaryText)
-                Text("jours")
+                Text(AppCopy.t("jours", en: "days"))
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
             }
 
-            Text(snapshot.totalCompletedDays <= 1 ? "Journée cumulée" : "Total cumulé")
+            Text(snapshot.totalCompletedDays <= 1
+                 ? AppCopy.t("Journée cumulée", en: "Total day")
+                 : AppCopy.t("Total cumulé", en: "Total days"))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
         }
@@ -251,7 +253,7 @@ struct CoachTrackingSheet: View {
 
     private func journalPreview(plan: FaceOriginPlan) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Journal du jour")
+            Text(AppCopy.t("Journal du jour", en: "Today's journal"))
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
 

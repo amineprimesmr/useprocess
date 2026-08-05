@@ -42,8 +42,16 @@ extension View {
     }
 
     /// Bouton liquid glass — capsules / formes custom (pre-26 + surfaces non-button).
+    ///
+    /// Le glass est appliqué en `.background` (comme les cartes Accueil), pas seulement via
+    /// `ButtonStyle` : un `.buttonStyle(.processPlain)` voisin ne peut plus le faire disparaître.
     func processGlassButton(in shape: some InsettableShape, interactive: Bool = true) -> some View {
-        buttonStyle(ProcessGlassLabelButtonStyle(shape: shape, interactive: interactive))
+        buttonStyle(ProcessGlassLabelButtonStyle(shape: shape))
+            .background {
+                shape
+                    .fill(.clear)
+                    .processGlassEffect(in: shape, interactive: interactive)
+            }
     }
 
     /// Étend la zone cliquable au label entier (pas seulement le texte) pour `.buttonStyle(.plain)`.
@@ -97,12 +105,10 @@ extension View {
 
 private struct ProcessGlassLabelButtonStyle<S: InsettableShape>: ButtonStyle {
     let shape: S
-    let interactive: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(shape)
-            .processGlassEffect(in: shape, interactive: interactive)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
     }

@@ -62,7 +62,7 @@ struct DailyJournalChecklistView: View {
     }
 
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             if showHeader {
                 journalHeader
                     .padding(.bottom, 18)
@@ -88,13 +88,15 @@ struct DailyJournalChecklistView: View {
                     homeSectionView(section)
                         .padding(.top, sectionTopSpacing(for: section, index: index))
                 }
-                .animation(.spring(response: 0.44, dampingFraction: 0.86), value: layoutStore.visibleSectionIDs)
             }
 
             if case .future = dayAvailability, !showChecklist {
                 journalUnavailableCard(
-                    title: "Jour à venir",
-                    message: "Le contenu de cette journée sera disponible le jour J.",
+                    title: AppCopy.t("Jour à venir", en: "Upcoming day"),
+                    message: AppCopy.t(
+                        "Le contenu de cette journée sera disponible le jour J.",
+                        en: "This day's content will be available on the day itself."
+                    ),
                     systemImage: "calendar.badge.clock"
                 )
                 .padding(.top, 20)
@@ -102,8 +104,11 @@ struct DailyJournalChecklistView: View {
 
             if case .outsidePlan = dayAvailability {
                 journalUnavailableCard(
-                    title: "Hors plan",
-                    message: "Cette date n'est pas couverte par ton calendrier du plan personnalisé.",
+                    title: AppCopy.t("Hors plan", en: "Outside plan"),
+                    message: AppCopy.t(
+                        "Cette date n'est pas couverte par ton calendrier du plan personnalisé.",
+                        en: "This date isn't covered by your personalized plan calendar."
+                    ),
                     systemImage: "calendar.badge.exclamationmark"
                 )
                 .padding(.top, 20)
@@ -227,8 +232,11 @@ struct DailyJournalChecklistView: View {
                 ))
             case .future where showChecklist:
                 journalUnavailableCard(
-                    title: "Jour à venir",
-                    message: "Tu pourras remplir ta checklist une fois cette journée commencée.",
+                    title: AppCopy.t("Jour à venir", en: "Upcoming day"),
+                    message: AppCopy.t(
+                        "Tu pourras remplir ta checklist une fois cette journée commencée.",
+                        en: "You'll be able to fill in your checklist once this day starts."
+                    ),
                     systemImage: "calendar.badge.clock"
                 )
                 .transition(.opacity)
@@ -275,7 +283,7 @@ struct DailyJournalChecklistView: View {
 
     private var journalHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Journal")
+            Text(AppCopy.t("Journal", en: "Journal"))
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(theme.primaryText)
             Text(monthYearLabel(for: selectedDate))
@@ -378,7 +386,7 @@ struct DailyJournalChecklistView: View {
 
     private func monthYearLabel(for date: Date) -> String {
         let df = DateFormatter()
-        df.locale = Locale(identifier: "fr_FR")
+        df.locale = ProcessAppLanguage.shared.locale
         df.setLocalizedDateFormatFromTemplate("MMMM yyyy")
         return df.string(from: date)
     }
@@ -432,12 +440,15 @@ private struct JournalDayCompletionCard: View {
                 confirmationRow(
                     icon: "checkmark.circle.fill",
                     tint: JournalDesign.progressGreen,
-                    text: "Tes réponses sont enregistrées."
+                    text: AppCopy.t("Tes réponses sont enregistrées.", en: "Your answers are saved.")
                 )
                 confirmationRow(
                     icon: "arrow.triangle.2.circlepath",
                     tint: theme.onboardingAccent,
-                    text: "Ton plan personnalisé a été mis à jour."
+                    text: AppCopy.t(
+                        "Ton plan personnalisé a été mis à jour.",
+                        en: "Your personalized plan has been updated."
+                    )
                 )
             }
             .padding(12)
@@ -445,7 +456,7 @@ private struct JournalDayCompletionCard: View {
             .background(theme.coachUserBubble.opacity(theme.isDark ? 0.22 : 0.35), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             Button(action: onEdit) {
-                Text("Modifier mes réponses")
+                Text(AppCopy.t("Modifier mes réponses", en: "Edit my answers"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                     .frame(maxWidth: .infinity)
@@ -586,11 +597,17 @@ struct JournalWeekDayStrip: View {
     private func accessibilityLabel(for date: Date, programDay: String, isToday: Bool, isComplete: Bool) -> String {
         var parts: [String] = []
         if programDay != "·" {
-            parts.append("Jour \(programDay) du plan personnalisé")
+            parts.append(AppCopy.t(
+                "Jour \(programDay) du plan personnalisé",
+                en: "Day \(programDay) of your personalized plan"
+            ))
         }
-        parts.append(date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-        if isToday { parts.append("aujourd'hui") }
-        if isComplete { parts.append("complet") }
+        let df = DateFormatter()
+        df.locale = ProcessAppLanguage.shared.locale
+        df.setLocalizedDateFormatFromTemplate("EEEE d MMMM")
+        parts.append(df.string(from: date))
+        if isToday { parts.append(AppCopy.today.lowercased()) }
+        if isComplete { parts.append(AppCopy.t("complet", en: "complete")) }
         return parts.joined(separator: ", ")
     }
 
@@ -1008,12 +1025,12 @@ private struct JournalAutoStepsRow: View {
                 .font(.system(size: 26))
                 .frame(width: 32, alignment: .center)
 
-            Text("\(formatted(target))+ pas")
+            Text(AppCopy.t("\(formatted(target))+ pas", en: "\(formatted(target))+ steps"))
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(theme.primaryText)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(steps > 0 ? formatted(steps) + " pas" : "—")
+            Text(steps > 0 ? AppCopy.t("\(formatted(steps)) pas", en: "\(formatted(steps)) steps") : "—")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(theme.secondaryText)
                 .monospacedDigit()
@@ -1035,9 +1052,8 @@ private struct JournalAutoStepsRow: View {
 
     private func formatted(_ value: Int) -> String {
         let nf = NumberFormatter()
-        nf.locale = Locale(identifier: "fr_FR")
+        nf.locale = ProcessAppLanguage.shared.locale
         nf.numberStyle = .decimal
-        nf.groupingSeparator = " "
         return nf.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }
@@ -1059,7 +1075,7 @@ private struct JournalAutoExerciseRow: View {
                 .font(.system(size: 26))
                 .frame(width: 32, alignment: .center)
 
-            Text("Exercice")
+            Text(AppCopy.t("Exercice", en: "Exercise"))
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(theme.primaryText)
                 .frame(maxWidth: .infinity, alignment: .leading)

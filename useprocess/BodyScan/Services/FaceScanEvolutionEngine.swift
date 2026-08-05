@@ -34,13 +34,25 @@ struct FaceScanIndicatorTrend: Equatable {
         let name = kind.title.lowercased()
         switch direction {
         case .rising:
-            return "\(name) en hausse sur \(spanDays) j (\(signed(pointDelta)))"
+            return AppCopy.tSync(
+                "\(name) en hausse sur \(spanDays) j (\(signed(pointDelta)))",
+                en: "\(name) rising over \(spanDays)d (\(signed(pointDelta)))"
+            )
         case .falling:
-            return "\(name) en baisse sur \(spanDays) j (\(signed(pointDelta)))"
+            return AppCopy.tSync(
+                "\(name) en baisse sur \(spanDays) j (\(signed(pointDelta)))",
+                en: "\(name) falling over \(spanDays)d (\(signed(pointDelta)))"
+            )
         case .plateau:
-            return "\(name) stable depuis \(spanDays) scans"
+            return AppCopy.tSync(
+                "\(name) stable depuis \(spanDays) scans",
+                en: "\(name) stable for \(spanDays) scans"
+            )
         case .stable:
-            return "\(name) peu variable sur \(spanDays) j"
+            return AppCopy.tSync(
+                "\(name) peu variable sur \(spanDays) j",
+                en: "\(name) little change over \(spanDays)d"
+            )
         }
     }
 
@@ -105,30 +117,33 @@ enum FaceScanEvolutionEngine {
         let retentionLoad = FaceScanIndicators.displayPercent(for: .retention, result: result)
 
         if result.relativeSignals?.baselineLabel == "Premier scan de référence" || previous == nil {
-            return "Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend."
+            return AppCopy.tSync("Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend.", en: "Starting point saved: all your indicators are tracked. Next scans will show what rises or falls.")
         }
 
         var parts: [String] = []
 
         if retentionLoad >= 62 {
             if facts.retentionPersistingScans >= 3 {
-                parts.append("Tu as encore de la rétention d'eau visible (\(retentionLoad) %) — \(facts.retentionPersistingScans) scans d'affilée au-dessus de ta référence.")
+                parts.append(AppCopy.tSync(
+                    "Tu as encore de la rétention d'eau visible (\(retentionLoad) %) — \(facts.retentionPersistingScans) scans d'affilée au-dessus de ta référence.",
+                    en: "You still have visible water retention (\(retentionLoad)%) — \(facts.retentionPersistingScans) scans in a row above your baseline."
+                ))
             } else if let delta = retention.delta, delta >= 4 {
-                parts.append("Tu as encore de la rétention d'eau visible (\(retentionLoad) %) et elle monte vs ta moyenne récente (\(retention.deltaLabel)).")
+                parts.append(AppCopy.tSync("Tu as encore de la rétention d'eau visible (\(retentionLoad) %) et elle monte vs ta moyenne récente (\(retention.deltaLabel)).", en: "You still have visible water retention (\(retentionLoad)%) and it's rising vs your recent average (\(retention.deltaLabel))."))
             } else if let delta = retention.delta, delta <= -6 {
-                parts.append("La rétention descend (\(retention.deltaLabel)) mais reste encore visible à \(retentionLoad) %.")
+                parts.append(AppCopy.tSync("La rétention descend (\(retention.deltaLabel)) mais reste encore visible à \(retentionLoad) %.", en: "Retention is falling (\(retention.deltaLabel)) but still visible at \(retentionLoad)%."))
             } else {
-                parts.append("Tu as encore de la rétention d'eau visible (\(retentionLoad) %) : surveille eau, sodium et potassium alimentaire.")
+                parts.append(AppCopy.tSync("Tu as encore de la rétention d'eau visible (\(retentionLoad) %) : surveille eau, sodium et potassium alimentaire.", en: "You still have visible water retention (\(retentionLoad)%): watch water, sodium, and dietary potassium."))
             }
         } else if let delta = retention.delta, delta <= -6 {
-            parts.append("La rétention descend (\(retention.deltaLabel)) : visage moins gonflé que ta référence récente.")
+            parts.append(AppCopy.tSync("La rétention descend (\(retention.deltaLabel)) : visage moins gonflé que ta référence récente.", en: "Retention is falling (\(retention.deltaLabel)): face less puffy than your recent baseline."))
         } else {
             let changed = FaceScanMetricDisplay.keyItems(for: result, previous: previous, limit: 2)
                 .filter { abs($0.delta ?? 0) >= 4 }
             if changed.isEmpty {
-                parts.append("Évolution stable vs ta moyenne récente.")
+                parts.append(AppCopy.tSync("Évolution stable vs ta moyenne récente.", en: "Stable trend vs your recent average."))
             } else {
-                parts.append(changed.map { "\($0.title.lowercased()) \($0.deltaLabel)" }.joined(separator: ", ") + " vs référence récente.")
+                parts.append(changed.map { "\($0.title.lowercased()) \($0.deltaLabel)" }.joined(separator: ", ") + AppCopy.tSync(" vs référence récente.", en: " vs recent baseline."))
             }
         }
 
@@ -137,8 +152,13 @@ enum FaceScanEvolutionEngine {
         }
 
         if let month = facts.monthWellnessDelta, abs(month) >= 4 {
-            let dir = month >= 0 ? "au-dessus" : "en dessous"
-            parts.append("Score global \(dir) de ta moyenne du mois (\(month >= 0 ? "+" : "")\(month) pts).")
+            let signedPts = "\(month >= 0 ? "+" : "")\(month)"
+            parts.append(
+                AppCopy.tSync(
+                    "Score global \(month >= 0 ? "au-dessus" : "en dessous") de ta moyenne du mois (\(signedPts) pts).",
+                    en: "Overall score \(month >= 0 ? "above" : "below") your monthly average (\(signedPts) pts)."
+                )
+            )
         }
 
         if let nutrition = nutritionContextLine(facts: facts, context: resolvedContext) {
@@ -185,9 +205,9 @@ enum FaceScanEvolutionEngine {
         if (recovery.delta ?? 0) >= 6 || (stress.delta ?? 0) >= 6 {
             return pickUnused(
                 candidates: [
-                    "Priorité aujourd'hui : sommeil plus tôt, respiration nasale, pas d'effort intense tardif.",
-                    "Priorité aujourd'hui : coucher 30 min plus tôt, lumière douce ce soir, pas de cardio intense.",
-                    "Priorité aujourd'hui : pause sans écran, respiration nasale 5 min, réveil régulier demain."
+                    AppCopy.tSync("Priorité aujourd'hui : sommeil plus tôt, respiration nasale, pas d'effort intense tardif.", en: "Priority today: earlier sleep, nasal breathing, no late intense effort."),
+                    AppCopy.tSync("Priorité aujourd'hui : coucher 30 min plus tôt, lumière douce ce soir, pas de cardio intense.", en: "Priority today: bed 30 min earlier, soft light tonight, no intense cardio."),
+                    AppCopy.tSync("Priorité aujourd'hui : pause sans écran, respiration nasale 5 min, réveil régulier demain.", en: "Priority today: screen-free break, 5 min nasal breathing, steady wake tomorrow.")
                 ],
                 recent: facts.recentSuggestedActions,
                 seed: result.id
@@ -195,10 +215,10 @@ enum FaceScanEvolutionEngine {
         }
 
         if hydrationLow {
-            return "Priorité aujourd'hui : rattraper l'hydratation par petites prises régulières, puis rescan demain matin."
+            return AppCopy.tSync("Priorité aujourd'hui : rattraper l'hydratation par petites prises régulières, puis rescan demain matin.", en: "Priority today: catch up hydration with small regular sips, then rescan tomorrow morning.")
         }
 
-        return "Priorité aujourd'hui : garder l'hydratation et refaire le scan dans les mêmes conditions."
+        return AppCopy.tSync("Priorité aujourd'hui : garder l'hydratation et refaire le scan dans les mêmes conditions.", en: "Priority today: keep hydration and rescan under the same conditions.")
     }
 
     @MainActor
@@ -315,7 +335,7 @@ enum FaceScanEvolutionEngine {
                 facts.summaryLine = (facts.summaryLine ?? "") + " — \(first)"
             }
         } else if let avgElectrolyte, avgElectrolyte >= 76 {
-            facts.summaryLine = "Hier bon équilibre électrolytes (score \(avgElectrolyte)/100) — garde ce profil."
+            facts.summaryLine = AppCopy.tSync("Hier bon équilibre électrolytes (score \(avgElectrolyte)/100) — garde ce profil.", en: "Good electrolyte balance yesterday (score \(avgElectrolyte)/100) — keep that profile.")
         }
 
         return facts
@@ -349,25 +369,25 @@ enum FaceScanEvolutionEngine {
         var candidates: [String] = []
 
         if hydrationLow {
-            candidates.append("Priorité aujourd'hui : rattraper l'eau par petites prises, sel modéré, potassium au repas (banane, épinards, patate douce).")
+            candidates.append(AppCopy.tSync("Priorité aujourd'hui : rattraper l'eau par petites prises, sel modéré, potassium au repas (banane, épinards, patate douce).", en: "Priority today: catch up water with small sips, moderate salt, potassium at meals (banana, spinach, sweet potato)."))
         }
 
         if facts.nutritionYesterday.isHighSodium || facts.nutritionYesterday.isPoorElectrolyteBalance {
-            candidates.append("Priorité aujourd'hui : moins de sel/processés, repas riches en potassium, 15 min de marche pour relancer le drainage.")
+            candidates.append(AppCopy.tSync("Priorité aujourd'hui : moins de sel/processés, repas riches en potassium, 15 min de marche pour relancer le drainage.", en: "Priority today: less salt/processed food, potassium-rich meals, 15-min walk to restart drainage."))
             if let line = facts.nutritionYesterday.summaryLine {
-                candidates.append("Priorité aujourd'hui : \(line) — reproduis un repas du plan plus riche en potassium.")
+                candidates.append(AppCopy.tSync("Priorité aujourd'hui : \(line) — reproduis un repas du plan plus riche en potassium.", en: "Priority today: \(line) — repeat a plan meal richer in potassium."))
             }
         } else if facts.nutritionYesterday.electrolyteScore ?? 0 >= 76 {
-            candidates.append("Priorité aujourd'hui : garde le profil repas d'hier (bon K/Na), eau régulière, pas de grignotage salé.")
+            candidates.append(AppCopy.tSync("Priorité aujourd'hui : garde le profil repas d'hier (bon K/Na), eau régulière, pas de grignotage salé.", en: "Priority today: keep yesterday's meal profile (good K/Na), steady water, no salty snacking."))
         }
 
         if persisting {
-            candidates.append("Priorité aujourd'hui : rétention qui persiste — eau régulière, sodium modéré, marche 15 min, coucher plus tôt ce soir.")
-            candidates.append("Priorité aujourd'hui : le gonflement persiste — vérifie sel/processés, ajoute légumes potassium, respiration nasale 5 min.")
+            candidates.append(AppCopy.tSync("Priorité aujourd'hui : rétention qui persiste — eau régulière, sodium modéré, marche 15 min, coucher plus tôt ce soir.", en: "Priority today: lingering retention — steady water, moderate sodium, 15-min walk, earlier bed tonight."))
+            candidates.append(AppCopy.tSync("Priorité aujourd'hui : le gonflement persiste — vérifie sel/processés, ajoute légumes potassium, respiration nasale 5 min.", en: "Priority today: puffiness persists — check salt/processed food, add potassium veggies, 5 min nasal breathing."))
         }
 
-        candidates.append("Priorité aujourd'hui : limiter sodium/processés, garder l'eau régulière, ajouter potassium alimentaire.")
-        candidates.append("Priorité aujourd'hui : hydratation régulière, sel modéré, aliments riches en potassium au repas.")
+        candidates.append(AppCopy.tSync("Priorité aujourd'hui : limiter sodium/processés, garder l'eau régulière, ajouter potassium alimentaire.", en: "Priority today: limit sodium/processed food, keep water steady, add dietary potassium."))
+        candidates.append(AppCopy.tSync("Priorité aujourd'hui : hydratation régulière, sel modéré, aliments riches en potassium au repas.", en: "Priority today: steady hydration, moderate salt, potassium-rich foods at meals."))
 
         return pickUnused(
             candidates: candidates,

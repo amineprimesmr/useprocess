@@ -37,17 +37,17 @@ struct MealDebloatScorePill: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background {
+            let pill = Capsule(style: .continuous)
             ZStack {
-                Capsule(style: .continuous)
-                    .fill(scoreColor.opacity(usesDarkImageStyle ? 0.18 : 0.10))
-
-                Capsule(style: .continuous)
-                    .processGlassEffect(in: Capsule(style: .continuous), interactive: false)
+                pill.fill(scoreColor.opacity(usesDarkImageStyle ? 0.22 : 0.14))
+                pill
+                    .fill(.clear)
+                    .processGlassEffect(in: pill, interactive: false)
             }
         }
         .shadow(color: .black.opacity(theme.isDark || usesDarkImageStyle ? 0.24 : 0.08), radius: 9, y: 4)
-        .accessibilityLabel("Score Debloat \(assessment.score) sur 100")
-        .accessibilityHint(assessment.isEstimated ? "Estimation nutritionnelle" : assessment.label)
+        .accessibilityLabel(AppCopy.t("Score Debloat \(assessment.score) sur 100", en: "Debloat score \(assessment.score) out of 100"))
+        .accessibilityHint(assessment.isEstimated ? AppCopy.t("Estimation nutritionnelle", en: "Nutrition estimate") : assessment.label)
     }
 }
 
@@ -80,8 +80,8 @@ struct MealDebloatScoreGlassPill: View {
                 .processGlassEffect(in: Capsule(style: .continuous), interactive: false)
         }
         .shadow(color: .black.opacity(theme.isDark ? 0.30 : 0.10), radius: 10, y: 4)
-        .accessibilityLabel("Score Debloat \(assessment.score) sur 100")
-        .accessibilityHint(assessment.isEstimated ? "Estimation nutritionnelle" : assessment.label)
+        .accessibilityLabel(AppCopy.t("Score Debloat \(assessment.score) sur 100", en: "Debloat score \(assessment.score) out of 100"))
+        .accessibilityHint(assessment.isEstimated ? AppCopy.t("Estimation nutritionnelle", en: "Nutrition estimate") : assessment.label)
     }
 }
 
@@ -153,17 +153,17 @@ struct MealDebloatScoreBreakdownView: View {
     var body: some View {
         VStack(spacing: compact ? 8 : 11) {
             scoreBar(
-                title: "Équilibre hydrique",
+                title: AppCopy.t("Équilibre hydrique", en: "Fluid balance"),
                 value: assessment.electrolyteScore,
                 color: MealElectrolytePalette.potassium
             )
             scoreBar(
-                title: "Confort digestif",
+                title: AppCopy.t("Confort digestif", en: "Digestive comfort"),
                 value: assessment.digestiveScore,
                 color: Color(red: 0.43, green: 0.70, blue: 0.96)
             )
             scoreBar(
-                title: "Qualité du repas",
+                title: AppCopy.t("Qualité du repas", en: "Meal quality"),
                 value: assessment.foodQualityScore,
                 color: Color(red: 0.75, green: 0.58, blue: 0.96)
             )
@@ -222,7 +222,7 @@ struct MealDebloatScoreDetailCard: View {
             HStack(spacing: 8) {
                 Label("K/Na \(assessment.balance.ratioLabel)", systemImage: "arrow.left.arrow.right")
                 Label(
-                    assessment.balance.isDebloatOptimized ? "Électrolytes optimisés" : "Électrolytes à ajuster",
+                    assessment.balance.isDebloatOptimized ? AppCopy.t("Électrolytes optimisés", en: "Electrolytes optimized") : AppCopy.t("Électrolytes à ajuster", en: "Electrolytes to adjust"),
                     systemImage: assessment.balance.isDebloatOptimized
                         ? "checkmark.seal.fill"
                         : "exclamationmark.circle.fill"
@@ -243,7 +243,7 @@ struct MealDebloatScoreDetailCard: View {
             Text(
                 assessment.isEstimated
                     ? "≈ Estimation basée sur les ingrédients. Le score peut varier selon les quantités et ta tolérance."
-                    : "Estimation nutritionnelle — la tolérance digestive reste individuelle."
+                    : AppCopy.t("Estimation nutritionnelle — la tolérance digestive reste individuelle.", en: "Nutrition estimate — digestive tolerance is still individual.")
             )
             .font(.caption2)
             .foregroundStyle(theme.secondaryText.opacity(0.78))

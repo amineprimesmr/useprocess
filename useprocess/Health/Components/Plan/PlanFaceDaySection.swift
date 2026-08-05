@@ -31,12 +31,15 @@ struct PlanFaceDaySection: View {
 
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Routine matinale",
+                title: PlanHomeSectionKind.faceRoutine.title,
                 trailing: FaceMorningRoutineCatalog.lymphCircuitMinutesLabel
             )
 
             if items.isEmpty {
-                Text("Aucune action quotidienne planifiée.")
+                Text(AppCopy.t(
+                    "Aucune action quotidienne planifiée.",
+                    en: "No daily actions planned."
+                ))
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             } else {

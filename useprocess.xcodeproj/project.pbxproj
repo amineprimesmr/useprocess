@@ -115,6 +115,7 @@
 			knownRegions = (
 				en,
 				Base,
+				fr,
 			);
 			mainGroup = 67E2AE282FDD89E60016422D;
 			minimizedProjectReferenceProxies = 1;
@@ -283,7 +284,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				ENABLE_APP_SANDBOX = NO;
@@ -293,13 +294,13 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Process;
-				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra avant et la caméra arrière permettent le scan visage, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "La caméra avant est utilisée pour le scan visage (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Le micro permet d'enregistrer des messages vocaux convertis en texte pour le coach. Le texte peut être envoyé au service IA Anthropic (Claude) si tu l'autorises.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "L'activité physique permet d'adapter ton programme.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "La dictée transforme ta voix en texte sur l'appareil pour discuter avec le coach. Le texte peut ensuite être envoyé à Anthropic (Claude) si tu l'autorises.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The front and rear cameras power local face scans, posture analysis, and body scans. Photos may be analyzed by our AI service (Anthropic Claude) if you allow it.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "The front camera is used for face scans (facial mesh and indicators). Face ID may also be used for secure sign-in if you enable it.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Your Health data is used to personalize your program.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Your Health data is used to personalize your program.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Physical activity data helps adapt your program.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -337,7 +338,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = useprocess/useprocess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F2CJGJ69XU;
 				ENABLE_APP_SANDBOX = NO;
@@ -347,13 +348,13 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Process;
-				INFOPLIST_KEY_NSCameraUsageDescription = "La caméra avant et la caméra arrière permettent le scan visage, l'analyse de posture et le scan corps. Les photos peuvent être analysées par notre service IA (Anthropic Claude) si tu l'autorises.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "La caméra avant est utilisée pour le scan visage (mesh facial et indicateurs). Face ID peut aussi servir à la connexion sécurisée si tu l'actives.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Tes données santé servent à personnaliser ton programme sport.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Le micro permet d'enregistrer des messages vocaux convertis en texte pour le coach. Le texte peut être envoyé au service IA Anthropic (Claude) si tu l'autorises.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "L'activité physique permet d'adapter ton programme.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "La dictée transforme ta voix en texte sur l'appareil pour discuter avec le coach. Le texte peut ensuite être envoyé à Anthropic (Claude) si tu l'autorises.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The front and rear cameras power local face scans, posture analysis, and body scans. Photos may be analyzed by our AI service (Anthropic Claude) if you allow it.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "The front camera is used for face scans (facial mesh and indicators). Face ID may also be used for secure sign-in if you enable it.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Your Health data is used to personalize your program.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Your Health data is used to personalize your program.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Physical activity data helps adapt your program.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

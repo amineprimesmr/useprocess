@@ -7,46 +7,63 @@ enum HealthMedicalSources {
         let url: URL
     }
 
-    static let disclaimer =
-        "Les scores, rapports et recommandations Process sont des estimations bien-être. Ils ne remplacent pas un avis médical, kinésithérapique ou dermatologique."
-
-    static let references: [Reference] = [
-        .init(
-            id: "apple_health",
-            title: "Apple Santé — données et confidentialité",
-            url: URL(string: "https://www.apple.com/fr/health/")!
-        ),
-        .init(
-            id: "who_activity",
-            title: "OMS — activité physique et santé",
-            url: URL(string: "https://www.who.int/fr/news-room/fact-sheets/detail/physical-activity")!
-        ),
-        .init(
-            id: "cdc_activity",
-            title: "CDC — bases de l'activité physique",
-            url: URL(string: "https://www.cdc.gov/physical-activity-basics/?CDC_AAref_Val=https://www.cdc.gov/physicalactivity/basics/index.htm")!
-        ),
-        .init(
-            id: "aha_fitness",
-            title: "American Heart Association — fitness",
-            url: URL(string: "https://www.heart.org/en/healthy-living/fitness")!
-        ),
-        .init(
-            id: "nih_sleep",
-            title: "NIH — sommeil et santé",
-            url: URL(string: "https://www.nhlbi.nih.gov/health/sleep")!
-        ),
-        .init(
-            id: "who_sodium_potassium",
-            title: "OMS — sel et potassium",
-            url: URL(string: "https://www.who.int/news/item/31-01-2013-who-issues-new-guidance-on-dietary-salt-and-potassium")!
-        ),
-        .init(
-            id: "ncbi_potassium",
-            title: "NCBI — apport en potassium",
-            url: URL(string: "https://www.ncbi.nlm.nih.gov/books/NBK132453/")!
+    @MainActor
+    static var disclaimer: String {
+        AppCopy.t(
+            "Les scores, rapports et recommandations Process sont des estimations bien-être. Ils ne remplacent pas un avis médical, kinésithérapique ou dermatologique.",
+            en: "Process scores, reports, and recommendations are wellness estimates. They do not replace medical, physiotherapy, or dermatology advice."
         )
-    ]
+    }
+
+    @MainActor
+    static var references: [Reference] {
+        [
+            .init(
+                id: "apple_health",
+                title: AppCopy.t(
+                    "Apple Santé — données et confidentialité",
+                    en: "Apple Health — data & privacy"
+                ),
+                url: URL(string: "https://www.apple.com/fr/health/")!
+            ),
+            .init(
+                id: "who_activity",
+                title: AppCopy.t(
+                    "OMS — activité physique et santé",
+                    en: "WHO — physical activity & health"
+                ),
+                url: URL(string: "https://www.who.int/fr/news-room/fact-sheets/detail/physical-activity")!
+            ),
+            .init(
+                id: "cdc_activity",
+                title: AppCopy.t(
+                    "CDC — bases de l'activité physique",
+                    en: "CDC — physical activity basics"
+                ),
+                url: URL(string: "https://www.cdc.gov/physical-activity-basics/?CDC_AAref_Val=https://www.cdc.gov/physicalactivity/basics/index.htm")!
+            ),
+            .init(
+                id: "aha_fitness",
+                title: "American Heart Association — fitness",
+                url: URL(string: "https://www.heart.org/en/healthy-living/fitness")!
+            ),
+            .init(
+                id: "nih_sleep",
+                title: AppCopy.t("NIH — sommeil et santé", en: "NIH — sleep & health"),
+                url: URL(string: "https://www.nhlbi.nih.gov/health/sleep")!
+            ),
+            .init(
+                id: "who_sodium_potassium",
+                title: AppCopy.t("OMS — sel et potassium", en: "WHO — salt & potassium"),
+                url: URL(string: "https://www.who.int/news/item/31-01-2013-who-issues-new-guidance-on-dietary-salt-and-potassium")!
+            ),
+            .init(
+                id: "ncbi_potassium",
+                title: AppCopy.t("NCBI — apport en potassium", en: "NCBI — potassium intake"),
+                url: URL(string: "https://www.ncbi.nlm.nih.gov/books/NBK132453/")!
+            )
+        ]
+    }
 }
 
 struct HealthMedicalSourcesView: View {
@@ -70,7 +87,7 @@ struct HealthMedicalSourcesView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text("Sources et références")
+            Text(AppCopy.t("Sources et références", en: "Sources & references"))
                 .font(style == .compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
 

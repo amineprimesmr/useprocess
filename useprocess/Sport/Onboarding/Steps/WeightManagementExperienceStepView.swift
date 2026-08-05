@@ -14,12 +14,14 @@ struct WeightManagementExperienceStepView: View {
     var onValidationChanged: ((Bool) -> Void)?
 
     private var actionText: String {
-        guard let goal = weightGoal else { return "perdre ou prendre" }
+        guard let goal = weightGoal else {
+            return OnboardingCopy.t("perdre ou prendre", en: "lose or gain")
+        }
         switch goal {
         case .lose:
-            return "perdre"
+            return OnboardingCopy.t("perdre", en: "lose")
         case .gain:
-            return "prendre"
+            return OnboardingCopy.t("prendre", en: "gain")
         }
     }
 
@@ -50,7 +52,7 @@ struct WeightManagementExperienceStepView: View {
                                     onValidationChanged?(true)
                                 }) {
                                     HStack(spacing: 12) {
-                                        Text(OnboardingCopy.choiceLabel(index: index, sport: experience.rawValue))
+                                        Text(experience.title)
                                             .font(.system(size: 16, weight: .semibold))
                                             .foregroundStyle(OnboardingTheme.primaryText)
 
@@ -84,7 +86,10 @@ struct WeightManagementExperienceStepView: View {
 
                 // ✅ Titre en OVERLAY - Position ABSOLUE depuis le haut de l'écran
                 VStack {
-                    OnboardingTitleView("As-tu déjà", "essayé de \(actionText) du poids ?")
+                    OnboardingTitleView(
+                        OnboardingCopy.t("As-tu déjà", en: "Have you ever"),
+                        OnboardingCopy.t("essayé de \(actionText) du poids ?", en: "tried to \(actionText) weight?")
+                    )
                         .padding(.top, OnboardingConstants.titleTopPadding) // Position ABSOLUE : 55pt depuis le haut
                     Spacer()
                 }

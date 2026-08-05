@@ -11,79 +11,105 @@ struct HealthTodayMetricsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HealthHubDesign.sectionHeader("Aujourd'hui", subtitle: "Apple Santé", theme: theme)
+            HealthHubDesign.sectionHeader(
+                AppCopy.today,
+                subtitle: AppCopy.t("Apple Santé", en: "Apple Health"),
+                theme: theme
+            )
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                metricChip("Pas", value: metricValue(snapshot.effort.steps), icon: "figure.walk")
-                metricChip("Sommeil", value: formatSleep(snapshot.sleep.sleepDuration), icon: "bed.double.fill")
+                metricChip(AppCopy.t("Pas", en: "Steps"), value: metricValue(snapshot.effort.steps), icon: "figure.walk")
+                metricChip(AppCopy.t("Sommeil", en: "Sleep"), value: formatSleep(snapshot.sleep.sleepDuration), icon: "bed.double.fill")
                 metricChip("HRV", value: snapshot.vitals.hrv > 0 ? String(format: "%.0f", snapshot.vitals.hrv) : "—", icon: "waveform.path.ecg")
-                metricChip("Calories", value: snapshot.effort.activeEnergyBurned > 0 ? "\(Int(snapshot.effort.activeEnergyBurned))" : "—", icon: "flame.fill")
-                metricChip("Exercice", value: snapshot.effort.exerciseMinutes > 0 ? "\(Int(snapshot.effort.exerciseMinutes))m" : "—", icon: "figure.run")
-                metricChip("FC repos", value: snapshot.vitals.restingHeartRate > 0 ? "\(Int(snapshot.vitals.restingHeartRate))" : "—", icon: "heart.fill")
+                metricChip(AppCopy.t("Calories", en: "Calories"), value: snapshot.effort.activeEnergyBurned > 0 ? "\(Int(snapshot.effort.activeEnergyBurned))" : "—", icon: "flame.fill")
+                metricChip(AppCopy.t("Exercice", en: "Exercise"), value: snapshot.effort.exerciseMinutes > 0 ? "\(Int(snapshot.effort.exerciseMinutes))m" : "—", icon: "figure.run")
+                metricChip(AppCopy.t("FC repos", en: "Resting HR"), value: snapshot.vitals.restingHeartRate > 0 ? "\(Int(snapshot.vitals.restingHeartRate))" : "—", icon: "heart.fill")
             }
 
             if showDetails {
                 VStack(spacing: 8) {
-                    detailSection("Activité", icon: "figure.run") {
+                    detailSection(AppCopy.t("Activité", en: "Activity"), icon: "figure.run") {
                         let e = snapshot.effort
-                        detailRow("Effort Process", e.effortScore > 0 ? "\(Int(e.effortScore)) %" : "—")
-                        detailRow("Distance", formatDistance(e.distanceKm))
-                        detailRow("Séances", metricValue(e.workoutCount))
-                        detailRow("Étages", metricValue(e.flightsClimbed))
-                        detailRow("Heures debout", metricValue(snapshot.activity.standHours))
+                        detailRow(AppCopy.t("Effort Process", en: "Process Effort"), e.effortScore > 0 ? "\(Int(e.effortScore)) %" : "—")
+                        detailRow(AppCopy.t("Distance", en: "Distance"), formatDistance(e.distanceKm))
+                        detailRow(AppCopy.t("Séances", en: "Workouts"), metricValue(e.workoutCount))
+                        detailRow(AppCopy.t("Étages", en: "Flights"), metricValue(e.flightsClimbed))
+                        detailRow(AppCopy.t("Heures debout", en: "Stand hours"), metricValue(snapshot.activity.standHours))
                     }
 
-                    detailSection("Sommeil", icon: "bed.double.fill") {
+                    detailSection(AppCopy.t("Sommeil", en: "Sleep"), icon: "bed.double.fill") {
                         let s = snapshot.sleep
-                        detailRow("Profond", s.deepSleepHours > 0 ? String(format: "%.1f h", s.deepSleepHours) : "—")
+                        detailRow(AppCopy.t("Profond", en: "Deep"), s.deepSleepHours > 0 ? String(format: "%.1f h", s.deepSleepHours) : "—")
                         detailRow("REM", s.remSleepHours > 0 ? String(format: "%.1f h", s.remSleepHours) : "—")
-                        detailRow("Dette", s.sleepDebt > 0 ? String(format: "%.1f h", s.sleepDebt) : "Aucune")
+                        detailRow(
+                            AppCopy.t("Dette", en: "Debt"),
+                            s.sleepDebt > 0
+                                ? String(format: "%.1f h", s.sleepDebt)
+                                : AppCopy.t("Aucune", en: "None")
+                        )
                         if let bed = s.bedtime {
-                            detailRow("Coucher", bed.formatted(date: .omitted, time: .shortened))
+                            detailRow(AppCopy.t("Coucher", en: "Bedtime"), bed.formatted(date: .omitted, time: .shortened))
                         }
                         if let wake = s.wakeTime {
-                            detailRow("Réveil", wake.formatted(date: .omitted, time: .shortened))
+                            detailRow(AppCopy.t("Réveil", en: "Wake"), wake.formatted(date: .omitted, time: .shortened))
                         }
                     }
 
-                    detailSection("Signes vitaux", icon: "heart.fill") {
+                    detailSection(AppCopy.t("Signes vitaux", en: "Vitals"), icon: "heart.fill") {
                         let v = snapshot.vitals
                         let b = healthManager.baselines
-                        detailRow("FC moyenne", v.heartRate > 0 ? "\(Int(v.heartRate)) bpm" : "—")
+                        detailRow(AppCopy.t("FC moyenne", en: "Avg HR"), v.heartRate > 0 ? "\(Int(v.heartRate)) bpm" : "—")
                         detailRow("SpO2", v.spo2 > 0 ? String(format: "%.0f %%", v.spo2) : "—")
-                        detailRow("Fréq. respiratoire", v.respiratoryRate > 0 ? String(format: "%.0f /min", v.respiratoryRate) : "—")
+                        detailRow(
+                            AppCopy.t("Fréq. respiratoire", en: "Resp. rate"),
+                            v.respiratoryRate > 0 ? String(format: "%.0f /min", v.respiratoryRate) : "—"
+                        )
                         detailRow("VO2 max", snapshot.activity.vo2Max > 0 ? String(format: "%.1f", snapshot.activity.vo2Max) : "—")
-                        if b.hrv > 0 { detailRow("HRV baseline", String(format: "%.0f ms", b.hrv)) }
-                        if b.restingHeartRate > 0 { detailRow("FC repos baseline", String(format: "%.0f bpm", b.restingHeartRate)) }
+                        if b.hrv > 0 { detailRow(AppCopy.t("HRV baseline", en: "HRV baseline"), String(format: "%.0f ms", b.hrv)) }
+                        if b.restingHeartRate > 0 {
+                            detailRow(
+                                AppCopy.t("FC repos baseline", en: "Resting HR baseline"),
+                                String(format: "%.0f bpm", b.restingHeartRate)
+                            )
+                        }
                     }
 
-                    detailSection("Corps", icon: "figure.stand") {
+                    detailSection(AppCopy.t("Corps", en: "Body"), icon: "figure.stand") {
                         let v = snapshot.vitals
                         let profile = profileService.currentProfile
                         let weightKg = v.bodyMass > 0 ? v.bodyMass : (profile?.weight ?? 0)
-                        detailRow("Poids", weightKg > 0 ? String(format: "%.1f kg", weightKg) : "—")
+                        detailRow(AppCopy.t("Poids", en: "Weight"), weightKg > 0 ? String(format: "%.1f kg", weightKg) : "—")
                         if let profile, profile.height > 0 {
-                            detailRow("Taille", "\(Int(profile.height)) cm")
+                            detailRow(AppCopy.t("Taille", en: "Height"), "\(Int(profile.height)) cm")
                         }
-                        detailRow("Masse grasse", v.bodyFatPercentage > 0 ? String(format: "%.1f %%", v.bodyFatPercentage) : "—")
+                        detailRow(
+                            AppCopy.t("Masse grasse", en: "Body fat"),
+                            v.bodyFatPercentage > 0 ? String(format: "%.1f %%", v.bodyFatPercentage) : "—"
+                        )
                     }
 
-                    detailSection("Nutrition", icon: "fork.knife") {
+                    detailSection(AppCopy.t("Nutrition", en: "Nutrition"), icon: "fork.knife") {
                         let n = snapshot.nutrition
-                        detailRow("Calories", n.caloriesConsumed > 0 ? "\(Int(n.caloriesConsumed)) kcal" : "—")
-                        detailRow("Protéines", n.proteinGrams > 0 ? "\(Int(n.proteinGrams)) g" : "—")
-                        detailRow("Glucides", n.carbsGrams > 0 ? "\(Int(n.carbsGrams)) g" : "—")
-                        detailRow("Lipides", n.fatGrams > 0 ? "\(Int(n.fatGrams)) g" : "—")
-                        detailRow("Eau", n.waterLiters > 0 ? String(format: "%.1f L", n.waterLiters) : "—")
+                        detailRow(AppCopy.t("Calories", en: "Calories"), n.caloriesConsumed > 0 ? "\(Int(n.caloriesConsumed)) kcal" : "—")
+                        detailRow(AppCopy.t("Protéines", en: "Protein"), n.proteinGrams > 0 ? "\(Int(n.proteinGrams)) g" : "—")
+                        detailRow(AppCopy.t("Glucides", en: "Carbs"), n.carbsGrams > 0 ? "\(Int(n.carbsGrams)) g" : "—")
+                        detailRow(AppCopy.t("Lipides", en: "Fat"), n.fatGrams > 0 ? "\(Int(n.fatGrams)) g" : "—")
+                        detailRow(AppCopy.t("Eau", en: "Water"), n.waterLiters > 0 ? String(format: "%.1f L", n.waterLiters) : "—")
                     }
 
                     if healthManager.baselines.daysOfData > 0 {
-                        detailSection("Moyennes (14 j)", icon: "chart.line.uptrend.xyaxis") {
+                        detailSection(AppCopy.t("Moyennes (14 j)", en: "Averages (14 d)"), icon: "chart.line.uptrend.xyaxis") {
                             let b = healthManager.baselines
-                            detailRow("Jours de données", "\(b.daysOfData)")
-                            detailRow("Sommeil cible", b.sleepNeedHours > 0 ? String(format: "%.1f h", b.sleepNeedHours) : "—")
-                            detailRow("Pas (14 j)", b.avgDailySteps > 0 ? "\(Int(b.avgDailySteps))" : "—")
-                            detailRow("Calories (14 j)", b.avgActiveCalories > 0 ? "\(Int(b.avgActiveCalories)) kcal" : "—")
+                            detailRow(AppCopy.t("Jours de données", en: "Days of data"), "\(b.daysOfData)")
+                            detailRow(
+                                AppCopy.t("Sommeil cible", en: "Sleep target"),
+                                b.sleepNeedHours > 0 ? String(format: "%.1f h", b.sleepNeedHours) : "—"
+                            )
+                            detailRow(AppCopy.t("Pas (14 j)", en: "Steps (14 d)"), b.avgDailySteps > 0 ? "\(Int(b.avgDailySteps))" : "—")
+                            detailRow(
+                                AppCopy.t("Calories (14 j)", en: "Calories (14 d)"),
+                                b.avgActiveCalories > 0 ? "\(Int(b.avgActiveCalories)) kcal" : "—"
+                            )
                         }
                     }
                 }
@@ -93,7 +119,12 @@ struct HealthTodayMetricsCard: View {
             Button {
                 withAnimation(.easeInOut(duration: 0.22)) { showDetails.toggle() }
             } label: {
-                Label(showDetails ? "Réduire" : "Plus de détails", systemImage: showDetails ? "chevron.up" : "chevron.down")
+                Label(
+                    showDetails
+                        ? AppCopy.t("Réduire", en: "Show less")
+                        : AppCopy.t("Plus de détails", en: "More details"),
+                    systemImage: showDetails ? "chevron.up" : "chevron.down"
+                )
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }

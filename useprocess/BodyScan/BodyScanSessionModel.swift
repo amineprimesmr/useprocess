@@ -8,11 +8,15 @@ import UIKit
 final class BodyScanSessionModel {
     var phase: BodyScanPhase = .intro
     var captures: [BodyScanCaptureRecord] = []
-    var liveFeedback = ScanQualityFeedback(isReady: false, message: "RECULE", score: 0)
+    var liveFeedback = ScanQualityFeedback(
+        isReady: false,
+        message: AppCopy.t("RECULE", en: "STEP BACK"),
+        score: 0
+    )
     var liveLandmarks: [BodyLandmark] = []
     var turntableProgress: Double = 0
     var turntableTimeRemaining: Int = Int(BodyTurntablePass.scanDuration)
-    var mainInstruction: String = "RECULE"
+    var mainInstruction: String = AppCopy.t("RECULE", en: "STEP BACK")
     var capturedAnglesCount: Int = 0
     var isCountdownActive = false
 
@@ -40,9 +44,13 @@ final class BodyScanSessionModel {
         isCountdownActive = false
         bodyDetectionStreak = 0
         capturedAnglesCount = captures.filter { $0.poseKind == .turntable }.count
-        mainInstruction = "RECULE"
+        mainInstruction = AppCopy.t("RECULE", en: "STEP BACK")
         phase = .bodyTurntable(.standard)
-        liveFeedback = ScanQualityFeedback(isReady: false, message: "RECULE", score: 0)
+        liveFeedback = ScanQualityFeedback(
+            isReady: false,
+            message: AppCopy.t("RECULE", en: "STEP BACK"),
+            score: 0
+        )
     }
 
     nonisolated func enqueueFrame(_ sampleBuffer: CMSampleBuffer) {
@@ -69,10 +77,14 @@ final class BodyScanSessionModel {
         }
 
         if !isCountdownActive {
-            mainInstruction = bodyOK ? "PARFAIT" : "RECULE"
+            mainInstruction = bodyOK
+                ? AppCopy.t("PARFAIT", en: "PERFECT")
+                : AppCopy.t("RECULE", en: "STEP BACK")
             liveFeedback = ScanQualityFeedback(
                 isReady: bodyOK,
-                message: bodyOK ? "PRÊT" : "RECULE",
+                message: bodyOK
+                    ? AppCopy.t("PRÊT", en: "READY")
+                    : AppCopy.t("RECULE", en: "STEP BACK"),
                 score: analysis.feedback.score
             )
 
@@ -92,9 +104,17 @@ final class BodyScanSessionModel {
                 yaw: yaw,
                 quality: analysis.feedback.score
             )
-            liveFeedback = ScanQualityFeedback(isReady: true, message: "TOURNE", score: analysis.feedback.score)
+            liveFeedback = ScanQualityFeedback(
+                isReady: true,
+                message: AppCopy.t("TOURNE", en: "TURN"),
+                score: analysis.feedback.score
+            )
         } else {
-            liveFeedback = ScanQualityFeedback(isReady: false, message: "RECULE", score: analysis.feedback.score)
+            liveFeedback = ScanQualityFeedback(
+                isReady: false,
+                message: AppCopy.t("RECULE", en: "STEP BACK"),
+                score: analysis.feedback.score
+            )
         }
     }
 
@@ -102,7 +122,7 @@ final class BodyScanSessionModel {
         guard !isCountdownActive else { return }
         isCountdownActive = true
         turntableStart = Date()
-        mainInstruction = "TOURNE"
+        mainInstruction = AppCopy.t("TOURNE", en: "TURN")
         HapticManager.shared.impact(.medium)
         startTurntableTimer()
     }

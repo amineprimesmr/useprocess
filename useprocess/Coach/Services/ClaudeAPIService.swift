@@ -165,14 +165,20 @@ enum ClaudeAPIError: LocalizedError {
     case httpError(status: Int, body: String)
     case network(Error)
 
-    var errorDescription: String? {
+    nonisolated var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            return "Le coach est momentanément indisponible. Réessaie dans quelques instants."
+            return AppCopy.tSync(
+                "Le coach est momentanément indisponible. Réessaie dans quelques instants.",
+                en: "The coach is temporarily unavailable. Try again in a moment."
+            )
         case .invalidResponse:
-            return "Réponse Claude invalide"
+            return AppCopy.tSync("Réponse Claude invalide", en: "Invalid Claude response")
         case .httpError(let status, let body):
-            return "Claude HTTP \(status): \(body.prefix(200))"
+            return AppCopy.tSync(
+                "Claude HTTP \(status): \(body.prefix(200))",
+                en: "Claude HTTP \(status): \(body.prefix(200))"
+            )
         case .network(let error):
             return error.localizedDescription
         }
@@ -423,7 +429,7 @@ enum ClaudeLocalAPIService {
                         }
                         throw ClaudeAPIError.httpError(
                             status: http.statusCode,
-                            body: String(data: errorBody, encoding: .utf8) ?? "Réponse vide"
+                            body: String(data: errorBody, encoding: .utf8) ?? AppCopy.tSync("Réponse vide", en: "Empty response")
                         )
                     }
 

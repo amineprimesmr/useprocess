@@ -22,33 +22,82 @@ enum MewingIntelligenceGuide {
 
     // MARK: - Habitudes 24/7
 
-    static let suctionMewDetail = """
-    Suction mew — langue en vide sur le palais (pas poussée) : « T », sourire + yeux ouverts, \
-    déglutitions jusqu'à salive épuisée. Semaine 1 : rappel toutes les heures.
-    """
+    static var suctionMewDetail: String {
+        AppCopy.tSync(
+            """
+            Suction mew — langue en vide sur le palais (pas poussée) : « T », sourire + yeux ouverts, \
+            déglutitions jusqu'à salive épuisée. Semaine 1 : rappel toutes les heures.
+            """,
+            en: """
+            Suction mew — tongue suctioned to the palate (not pushed): "T", smile + eyes open, \
+            swallow until saliva is gone. Week 1: hourly reminders.
+            """
+        )
+    }
 
-    static let lipSealDetail = "Lèvres closes, dents en contact léger — tape zyg + mentalis la nuit si besoin."
+    static var lipSealDetail: String {
+        AppCopy.tSync(
+            "Lèvres closes, dents en contact léger — tape zyg + mentalis la nuit si besoin.",
+            en: "Lips closed, teeth lightly touching — zyg + mentalis tape at night if needed."
+        )
+    }
 
     // MARK: - Routine orofaciale (face protocol)
 
-    static let coreMewingRoutine: [String] = [
-        "Suction mew — T spot, sourire + yeux hauts, déglutitions jusqu'à vide (matin + soir)",
-        "Rééducation semaine 1 — toutes les heures : tenir la suction le plus longtemps possible",
-        "Étirement tongue tie — T spot, doigt résistance 70 %, 30 s × 2 séries",
-        "Tongue chewing — gomme mastic, pointe langue sur palais ~10 min/j",
-        "Thumb pull — 8 semaines (expansion palais, langue comme retainer)"
-    ]
+    static var coreMewingRoutine: [String] {
+        [
+            AppCopy.tSync(
+                "Suction mew — T spot, sourire + yeux hauts, déglutitions jusqu'à vide (matin + soir)",
+                en: "Suction mew — T spot, smile + eyes up, swallow until empty (morning + evening)"
+            ),
+            AppCopy.tSync(
+                "Rééducation semaine 1 — toutes les heures : tenir la suction le plus longtemps possible",
+                en: "Week 1 re-education — every hour: hold suction as long as possible"
+            ),
+            AppCopy.tSync(
+                "Étirement tongue tie — T spot, doigt résistance 70 %, 30 s × 2 séries",
+                en: "Tongue-tie stretch — T spot, finger resistance 70%, 30 s × 2 sets"
+            ),
+            AppCopy.tSync(
+                "Tongue chewing — gomme mastic, pointe langue sur palais ~10 min/j",
+                en: "Tongue chewing — mastic gum, tongue tip on palate ~10 min/day"
+            ),
+            AppCopy.tSync(
+                "Thumb pull — 8 semaines (expansion palais, langue comme retainer)",
+                en: "Thumb pull — 8 weeks (palate expansion, tongue as retainer)"
+            )
+        ]
+    }
 
-    static let lightMewingRoutine: [String] = [
-        "Suction mew 2×/jour — T spot + déglutitions conscientes",
-        "Langue sur palais à chaque déglutition — lèvres closes"
-    ]
+    static var lightMewingRoutine: [String] {
+        [
+            AppCopy.tSync(
+                "Suction mew 2×/jour — T spot + déglutitions conscientes",
+                en: "Suction mew 2×/day — T spot + mindful swallows"
+            ),
+            AppCopy.tSync(
+                "Langue sur palais à chaque déglutition — lèvres closes",
+                en: "Tongue on palate at every swallow — lips closed"
+            )
+        ]
+    }
 
-    static let sleepMewingSteps: [String] = [
-        "Avant coucher : suction mew complète (T + swallows jusqu'à salive épuisée)",
-        "Dormir sur le côté — pas sur le dos (langue tombe avec gravité)",
-        "Coussin entre genoux + tape zygomatique + mentalis pour lip seal"
-    ]
+    static var sleepMewingSteps: [String] {
+        [
+            AppCopy.tSync(
+                "Avant coucher : suction mew complète (T + swallows jusqu'à salive épuisée)",
+                en: "Before bed: full suction mew (T + swallows until saliva is gone)"
+            ),
+            AppCopy.tSync(
+                "Dormir sur le côté — pas sur le dos (langue tombe avec gravité)",
+                en: "Sleep on your side — not on your back (tongue drops with gravity)"
+            ),
+            AppCopy.tSync(
+                "Coussin entre genoux + tape zygomatique + mentalis pour lip seal",
+                en: "Pillow between knees + zygomatic + mentalis tape for lip seal"
+            )
+        ]
+    }
 
     // MARK: - Génération protocole
 
@@ -71,13 +120,22 @@ enum MewingIntelligenceGuide {
 
     static func dailyMewingChecks(for answers: [String: WelcomePlanAnswer]) -> [String] {
         var checks: [String] = [
-            "Suction mew — \(suctionMewDetail)",
+            AppCopy.tSync(
+                "Suction mew — \(suctionMewDetail)",
+                en: "Suction mew — \(suctionMewDetail)"
+            ),
             lipSealDetail
         ]
         if choice("mouth_breathing", in: answers) == "yes" {
-            checks.append("Respiration nasale uniquement — bouche fermée au repos")
+            checks.append(AppCopy.tSync(
+                "Respiration nasale uniquement — bouche fermée au repos",
+                en: "Nasal breathing only — mouth closed at rest"
+            ))
         }
-        checks.append("Tongue chewing ~10 min/j — genioglossus / styloglossus")
+        checks.append(AppCopy.tSync(
+            "Tongue chewing ~10 min/j — genioglossus / styloglossus",
+            en: "Tongue chewing ~10 min/day — genioglossus / styloglossus"
+        ))
         return checks
     }
 
@@ -87,14 +145,29 @@ enum MewingIntelligenceGuide {
         faceScore: Int?
     ) -> [String] {
         var hints: [String] = []
-        hints.append("Script #9 : langue sur palais 24/7 en suction — pas pousser ; compounding temps")
-        hints.append("Suction mew : T → sourire + yeux + swallows jusqu'à vide ; semaine 1 rappel horaire")
+        hints.append(AppCopy.tSync(
+            "Script #9 : langue sur palais 24/7 en suction — pas pousser ; compounding temps",
+            en: "Script #9: tongue on palate 24/7 in suction — don't push; time compounds"
+        ))
+        hints.append(AppCopy.tSync(
+            "Suction mew : T → sourire + yeux + swallows jusqu'à vide ; semaine 1 rappel horaire",
+            en: "Suction mew: T → smile + eyes + swallows until empty; week 1 hourly reminders"
+        ))
         if mouthBreathing || forwardHead {
-            hints.append("Sommeil côté + tapes zyg/mentalis — mewing passif nocturne")
-            hints.append("Tongue tie stretch + tongue chewing avant suction tenable")
+            hints.append(AppCopy.tSync(
+                "Sommeil côté + tapes zyg/mentalis — mewing passif nocturne",
+                en: "Side sleep + zyg/mentalis tape — passive nighttime mewing"
+            ))
+            hints.append(AppCopy.tSync(
+                "Tongue tie stretch + tongue chewing avant suction tenable",
+                en: "Tongue-tie stretch + tongue chewing before durable suction"
+            ))
         }
         if let score = faceScore, score < 65 {
-            hints.append("Maxillaire récessif réversible — thumb pull + ostéoblastes si muscles activés")
+            hints.append(AppCopy.tSync(
+                "Maxillaire récessif réversible — thumb pull + ostéoblastes si muscles activés",
+                en: "Recessed maxilla is reversible — thumb pull + osteoblasts if muscles are active"
+            ))
         }
         return hints
     }

@@ -25,15 +25,33 @@ enum SideSleepIntelligenceGuide {
     ) -> [String] {
         if full {
             return [
-                "Spot T + sourire max + 3 déglutitions — maintenir langue sur palais",
-                "Tape zyg sur joues + menton — lip seal, asymétrie, fascias",
-                "Respiration vers l'arrière dans le visage (pas vers le crâne) — thorax + nuque",
-                "Dormir sur le côté — coussin entre cuisses + main sous tête (pas le dos ~8 h/j)"
+                AppCopy.tSync(
+                    "Spot T + sourire max + 3 déglutitions — maintenir langue sur palais",
+                    en: "Spot T + max smile + 3 swallows — keep tongue on palate"
+                ),
+                AppCopy.tSync(
+                    "Tape zyg sur joues + menton — lip seal, asymétrie, fascias",
+                    en: "Zyg tape on cheeks + chin — lip seal, asymmetry, fascia"
+                ),
+                AppCopy.tSync(
+                    "Respiration vers l'arrière dans le visage (pas vers le crâne) — thorax + nuque",
+                    en: "Breathe back into the face (not into the skull) — thorax + neck"
+                ),
+                AppCopy.tSync(
+                    "Dormir sur le côté — coussin entre cuisses + main sous tête (pas le dos ~8 h/j)",
+                    en: "Sleep on your side — pillow between thighs + hand under head (not on your back ~8 h/day)"
+                )
             ]
         }
         return [
-            "Dormir sur le côté — langue sur palais ; dos = visage recule avec gravité",
-            "Spot T + 3 déglutitions avant coucher si pas encore automatique"
+            AppCopy.tSync(
+                "Dormir sur le côté — langue sur palais ; dos = visage recule avec gravité",
+                en: "Sleep on your side — tongue on palate; back sleeping = face slides back with gravity"
+            ),
+            AppCopy.tSync(
+                "Spot T + 3 déglutitions avant coucher si pas encore automatique",
+                en: "Spot T + 3 swallows before bed if not automatic yet"
+            )
         ]
     }
 
@@ -71,10 +89,22 @@ enum SideSleepIntelligenceGuide {
     static func pillarHints(sideSleepPriority: Bool) -> [String] {
         guard sideSleepPriority else { return [] }
         return [
-            "Script #13 : dos 8 h/j = langue basse → visage recule — côté + langue sur palais",
-            "Ligne frontale superficielle : langue basse restreint crâne et posture cervicale",
-            "Spot T + 3 swallows + tape zyg joues/menton + côté coussin genoux main sous tête",
-            "Respiration vers l'arrière dans le visage avant sommeil — fascia thoracique"
+            AppCopy.tSync(
+                "Script #13 : dos 8 h/j = langue basse → visage recule — côté + langue sur palais",
+                en: "Script #13: back 8 h/day = low tongue → face slides back — side + tongue on palate"
+            ),
+            AppCopy.tSync(
+                "Ligne frontale superficielle : langue basse restreint crâne et posture cervicale",
+                en: "Superficial front line: low tongue restricts skull and cervical posture"
+            ),
+            AppCopy.tSync(
+                "Spot T + 3 swallows + tape zyg joues/menton + côté coussin genoux main sous tête",
+                en: "Spot T + 3 swallows + zyg tape cheeks/chin + side pillow knees hand under head"
+            ),
+            AppCopy.tSync(
+                "Respiration vers l'arrière dans le visage avant sommeil — fascia thoracique",
+                en: "Breathe back into the face before sleep — thoracic fascia"
+            )
         ]
     }
 
@@ -95,11 +125,16 @@ enum SideSleepIntelligenceGuide {
     private static func isSleepRoutineLine(_ line: String) -> Bool {
         let lower = line.lowercased()
         return lower.contains("côté")
+            || lower.contains("side")
             || lower.contains("spot t")
             || lower.contains("tape zyg")
+            || lower.contains("zyg tape")
             || lower.contains("respiration vers")
+            || lower.contains("breathe back")
             || lower.contains("déglutition")
+            || lower.contains("swallow")
             || lower.contains("langue sur palais")
+            || lower.contains("tongue on palate")
     }
 
     private static func normalizedSleepLine(_ line: String) -> String {

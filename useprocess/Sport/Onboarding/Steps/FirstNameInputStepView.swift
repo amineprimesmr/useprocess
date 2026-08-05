@@ -33,7 +33,7 @@ struct FirstNameInputStepView: View {
                 TextField(
                     "",
                     text: $firstName,
-                    prompt: Text(OnboardingCopy.text("Comment devons-nous t'appeler ?", blank: "Saisie libre"))
+                    prompt: Text(OnboardingCopy.t("Comment devons-nous t'appeler ?", en: "What should we call you?"))
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(OnboardingTheme.mutedText)
                 )

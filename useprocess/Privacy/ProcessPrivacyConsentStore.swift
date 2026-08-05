@@ -8,11 +8,20 @@ enum ProcessPrivacyConsentError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .thirdPartyAINotAccepted:
-            return "Autorise le coach IA dans les paramètres de confidentialité pour continuer."
+            return AppCopy.tSync(
+                "Autorise le coach IA dans les paramètres de confidentialité pour continuer.",
+                en: "Allow the AI coach in privacy settings to continue."
+            )
         case .faceScanCaptureNotAccepted:
-            return "Autorise le scan visage avant de continuer."
+            return AppCopy.tSync(
+                "Autorise le scan visage avant de continuer.",
+                en: "Allow face scan before continuing."
+            )
         case .faceScanAINotAccepted:
-            return "Autorise l'analyse IA du scan visage pour continuer."
+            return AppCopy.tSync(
+                "Autorise l'analyse IA du scan visage pour continuer.",
+                en: "Allow AI analysis of your face scan to continue."
+            )
         }
     }
 }

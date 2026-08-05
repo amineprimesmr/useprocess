@@ -146,11 +146,21 @@ enum OriginPlanDailyTaskCatalog {
 
   private static func checklistTitle(for line: String, index: Int) -> String {
     let lower = line.lowercased()
-    if lower.contains("côté") || lower.contains("dos") { return "Sommeil sur le côté" }
-    if lower.contains("spot t") || lower.contains("déglut") { return "Langue sur palais (nuit)" }
-    if lower.contains("tape") { return "Tape zyg / mentalis" }
-    if lower.contains("respiration") { return "Respiration fasciale" }
-    if index == 0 { return "Préparation sommeil" }
-    return "Routine nocturne"
+    if lower.contains("côté") || lower.contains("dos") {
+      return AppCopy.tSync("Sommeil sur le côté", en: "Side sleep")
+    }
+    if lower.contains("spot t") || lower.contains("déglut") {
+      return AppCopy.tSync("Langue sur palais (nuit)", en: "Tongue on palate (night)")
+    }
+    if lower.contains("tape") {
+      return AppCopy.tSync("Tape zyg / mentalis", en: "Zyg / mentalis tape")
+    }
+    if lower.contains("respiration") {
+      return AppCopy.tSync("Respiration fasciale", en: "Facial breathing")
+    }
+    if index == 0 {
+      return AppCopy.tSync("Préparation sommeil", en: "Sleep prep")
+    }
+    return AppCopy.tSync("Routine nocturne", en: "Night routine")
   }
 }

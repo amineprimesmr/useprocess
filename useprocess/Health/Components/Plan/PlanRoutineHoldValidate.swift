@@ -272,11 +272,11 @@ struct PlanRoutineHoldValidateOverlay<Content: View>: View {
                     onEnded: endHold
                 )
             }
-            .accessibilityLabel(isCompleted ? "Routine validée" : "Routine")
+            .accessibilityLabel(isCompleted ? AppCopy.t("Routine validée", en: "Routine completed") : AppCopy.t("Routine", en: "Routine"))
             .accessibilityHint(
                 isCompleted
-                    ? "Validée pour aujourd'hui"
-                    : "Maintiens 5 secondes pour valider, ou tape pour les détails"
+                    ? AppCopy.t("Validée pour aujourd'hui", en: "Completed for today")
+                    : AppCopy.t("Maintiens 5 secondes pour valider, ou tape pour les détails", en: "Hold for 5 seconds to complete, or tap for details")
             )
     }
 

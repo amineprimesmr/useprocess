@@ -20,18 +20,39 @@ struct MealSuggestionItem: Codable, Equatable, Identifiable, Hashable {
     }
 
     /// Nom seul pour la liste détail (sans rôle nutritionnel).
+    @MainActor
     var ingredientDisplayName: String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
+        localizedName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Rôle nutritionnel affiché (Protéine / Protein, etc.) — `role` FR inchangé en stockage.
+    @MainActor
+    var localizedRole: String {
+        ProcessLocalizedMealContent.role(role)
+    }
+
+    /// Nom affiché — catalogue repas / Debloat / builder petit-déj.
+    @MainActor
+    var localizedName: String {
+        ProcessDebloatMealLibrary.localizedItemName(for: name)
+    }
+
+    /// Quantité affichée — unités FR → EN.
+    @MainActor
+    var localizedQuantity: String {
+        ProcessDebloatMealLibrary.localizedQuantity(for: quantity)
     }
 
     /// Quantité formatée pour affichage (nil si absente ou déjà intégrée au libellé comptage).
+    @MainActor
     var ingredientDisplayQuantity: String? {
-        MealSuggestionItemDisplay.trailingQuantity(quantity: quantity, name: name)
+        MealSuggestionItemDisplay.trailingQuantity(quantity: localizedQuantity, name: localizedName)
     }
 
     /// Ligne complète « 2 œufs », « 180 g poulet » — pour listes compactes.
+    @MainActor
     var ingredientDisplayLine: String {
-        MealSuggestionItemDisplay.fullLine(quantity: quantity, name: name)
+        MealSuggestionItemDisplay.fullLine(quantity: localizedQuantity, name: localizedName)
     }
 
     /// Boisson (eau, eau de coco…) — hors repas : gérée via l’hydratation Accueil.
@@ -165,6 +186,48 @@ struct MealSuggestionContent: Codable, Equatable {
         return "\(name) — \(ingredients). \(prepSummary)"
     }
 
+    /// Nom UI bilingue — persistance / matching restent sur `name` (FR catalogue).
+    @MainActor
+    var localizedDisplayName: String {
+        ProcessDebloatMealLibrary.localizedName(for: name)
+    }
+
+    /// Tip coach UI bilingue.
+    @MainActor
+    var localizedCoachTip: String {
+        ProcessDebloatMealLibrary.localizedTip(for: coachTip)
+    }
+
+    /// Résumé / blurb catalogue UI bilingue.
+    @MainActor
+    var localizedSummary: String {
+        ProcessDebloatMealLibrary.localizedSummary(for: scoreSummary)
+    }
+
+    /// Préparation UI bilingue (bloc multi-lignes).
+    @MainActor
+    var localizedPrep: String {
+        ProcessDebloatMealLibrary.localizedPrep(for: prepSummary)
+    }
+
+    /// Items avec nom / quantité localisés — `role` FR conservé (icônes / matching).
+    @MainActor
+    var localizedItems: [MealSuggestionItem] {
+        items.map {
+            MealSuggestionItem(
+                name: ProcessDebloatMealLibrary.localizedItemName(for: $0.name),
+                quantity: ProcessDebloatMealLibrary.localizedQuantity(for: $0.quantity),
+                role: $0.role
+            )
+        }
+    }
+
+    /// Ingrédients alimentaires localisés (hors boissons).
+    @MainActor
+    var localizedFoodItems: [MealSuggestionItem] {
+        localizedItems.filter { !$0.isBeverageIngredient }
+    }
+
     // MARK: - Persistance (validatedMeals reste [String: String])
 
     func encodedForStorage() -> String {
@@ -208,13 +271,14 @@ struct MealSuggestionContent: Codable, Equatable {
         prepSummary: String,
         coachTip: String,
         tags: [String],
-        imageAssetName: String?
+        imageAssetName: String?,
+        catalogSummary: String = ""
     ) -> MealSuggestionContent {
         MealSuggestionContent(
             name: name,
             mealType: mealType,
             protocolScore: 100,
-            scoreSummary: "",
+            scoreSummary: catalogSummary,
             items: items,
             prepMinutes: prepMinutes,
             prepSummary: prepSummary,

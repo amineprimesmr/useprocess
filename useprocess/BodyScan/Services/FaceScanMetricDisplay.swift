@@ -112,28 +112,28 @@ enum FaceScanMetricDisplay {
         let retentionLoad = FaceScanIndicators.displayPercent(for: .retention, result: result)
 
         if result.relativeSignals?.baselineLabel == "Premier scan de référence" || previous == nil {
-            return "Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend."
+            return AppCopy.tSync("Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend.", en: "Starting point saved: all your indicators are tracked. Next scans will show what rises or falls.")
         }
 
         if retentionLoad >= 62 {
             if let delta = retention.delta, delta >= 4 {
-                return "Tu as encore de la rétention d'eau visible (\(retentionLoad) %) et elle monte vs ta moyenne récente."
+                return AppCopy.tSync("Tu as encore de la rétention d'eau visible (\(retentionLoad) %) et elle monte vs ta moyenne récente.", en: "You still have visible water retention (\(retentionLoad)%) and it's rising vs your recent average.")
             }
             if let delta = retention.delta, delta <= -6 {
-                return "La rétention descend (\(retention.deltaLabel)) mais reste encore visible à \(retentionLoad) %."
+                return AppCopy.tSync("La rétention descend (\(retention.deltaLabel)) mais reste encore visible à \(retentionLoad) %.", en: "Retention is falling (\(retention.deltaLabel)) but still visible at \(retentionLoad)%.")
             }
-            return "Tu as encore de la rétention d'eau visible (\(retentionLoad) %) : surveille eau, sodium et potassium alimentaire."
+            return AppCopy.tSync("Tu as encore de la rétention d'eau visible (\(retentionLoad) %) : surveille eau, sodium et potassium alimentaire.", en: "You still have visible water retention (\(retentionLoad)%): watch water, sodium, and dietary potassium.")
         }
 
         if let delta = retention.delta, delta <= -6 {
-            return "La rétention descend (\(retention.deltaLabel)) : visage moins gonflé que ta référence récente."
+            return AppCopy.tSync("La rétention descend (\(retention.deltaLabel)) : visage moins gonflé que ta référence récente.", en: "Retention is falling (\(retention.deltaLabel)): face less puffy than your recent baseline.")
         }
 
         guard !changedKey.isEmpty else {
-            return "Évolution stable : continue de comparer tes scans dans les mêmes conditions."
+            return AppCopy.tSync("Évolution stable : continue de comparer tes scans dans les mêmes conditions.", en: "Stable trend: keep comparing scans under the same conditions.")
         }
 
-        return changedKey.map { "\($0.title.lowercased()) \($0.deltaLabel)" }.joined(separator: ", ") + " vs référence récente."
+        return changedKey.map { "\($0.title.lowercased()) \($0.deltaLabel)" }.joined(separator: ", ") + AppCopy.tSync(" vs référence récente.", en: " vs recent baseline.")
     }
 
     private static func legacyActionSentence(
@@ -155,16 +155,16 @@ enum FaceScanMetricDisplay {
 
         if retentionLoad >= 62 || (retention.delta ?? 0) >= 6 {
             if hydrationLow {
-                return "Priorité aujourd'hui : hydratation régulière, sel modéré, aliments riches en potassium au repas."
+                return AppCopy.tSync("Priorité aujourd'hui : hydratation régulière, sel modéré, aliments riches en potassium au repas.", en: "Priority today: steady hydration, moderate salt, potassium-rich foods at meals.")
             }
-            return "Priorité aujourd'hui : limiter sodium/processés, garder l'eau régulière, ajouter potassium alimentaire."
+            return AppCopy.tSync("Priorité aujourd'hui : limiter sodium/processés, garder l'eau régulière, ajouter potassium alimentaire.", en: "Priority today: limit sodium/processed foods, keep water steady, add dietary potassium.")
         }
 
         if (recovery.delta ?? 0) >= 6 || (stress.delta ?? 0) >= 6 {
-            return "Priorité aujourd'hui : sommeil plus tôt, respiration nasale, pas d'effort intense tardif."
+            return AppCopy.tSync("Priorité aujourd'hui : sommeil plus tôt, respiration nasale, pas d'effort intense tardif.", en: "Priority today: earlier sleep, nasal breathing, no late intense effort.")
         }
 
-        return "Priorité aujourd'hui : garder l'hydratation et refaire le scan dans les mêmes conditions."
+        return AppCopy.tSync("Priorité aujourd'hui : garder l'hydratation et refaire le scan dans les mêmes conditions.", en: "Priority today: keep hydration and rescan under the same conditions.")
     }
 
     private static func item(
@@ -242,18 +242,24 @@ enum FaceScanMetricDisplay {
         isFirstScan: Bool
     ) -> (String, ComparisonKind, String) {
         if isFirstScan {
-            return ("Premier scan", .reference, "flag.fill")
+            return (AppCopy.tSync("Premier scan", en: "First scan"), .reference, "flag.fill")
         }
 
         guard let delta else {
-            return (usesBaseline ? "Référence en cours" : "Premier scan", .reference, "flag.fill")
+            return (
+                usesBaseline
+                    ? AppCopy.tSync("Référence en cours", en: "Building baseline")
+                    : AppCopy.tSync("Premier scan", en: "First scan"),
+                .reference,
+                "flag.fill"
+            )
         }
 
         let signed = delta > 0 ? "+\(delta)" : "\(delta)"
         let suffix = comparisonSuffix(usesBaseline: usesBaseline, previous: previous)
 
         guard abs(delta) >= 4 else {
-            return ("Stable", .stable, "arrow.right")
+            return (AppCopy.tSync("Stable", en: "Stable"), .stable, "arrow.right")
         }
 
         if higherIsWorse {
@@ -270,8 +276,8 @@ enum FaceScanMetricDisplay {
     }
 
     private static func comparisonSuffix(usesBaseline: Bool, previous: FaceScanResult?) -> String {
-        if usesBaseline { return "vs moyenne" }
-        guard let previous else { return "vs référence" }
+        if usesBaseline { return AppCopy.tSync("vs moyenne", en: "vs avg") }
+        guard let previous else { return AppCopy.tSync("vs référence", en: "vs baseline") }
 
         let days = Calendar.current.dateComponents(
             [.day],
@@ -280,9 +286,9 @@ enum FaceScanMetricDisplay {
         ).day ?? 0
 
         switch days {
-        case 0: return "vs aujourd'hui"
-        case 1: return "vs hier"
-        default: return "vs il y a \(days) j"
+        case 0: return AppCopy.tSync("vs aujourd'hui", en: "vs today")
+        case 1: return AppCopy.tSync("vs hier", en: "vs yesterday")
+        default: return AppCopy.tSync("vs il y a \(days) j", en: "vs \(days)d ago")
         }
     }
 }

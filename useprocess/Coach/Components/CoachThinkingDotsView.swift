@@ -17,7 +17,7 @@ struct CoachThinkingDotsView: View {
             }
             .padding(.horizontal, 4)
             .padding(.vertical, 10)
-            .accessibilityLabel("Réponse en cours")
+            .accessibilityLabel(AppCopy.t("Réponse en cours", en: "Response in progress"))
         }
     }
 

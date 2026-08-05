@@ -12,28 +12,30 @@ struct CountryPickerView: View {
     @Binding var selectedCountryFlag: String
     @Binding var isPresented: Bool
 
-    let countries = [
-        ("🇫🇷", "+33", "France"),
-        ("🇺🇸", "+1", "États-Unis"),
-        ("🇬🇧", "+44", "Royaume-Uni"),
-        ("🇩🇪", "+49", "Allemagne"),
-        ("🇪🇸", "+34", "Espagne"),
-        ("🇮🇹", "+39", "Italie"),
-        ("🇨🇦", "+1", "Canada"),
-        ("🇦🇺", "+61", "Australie"),
-        ("🇯🇵", "+81", "Japon"),
-        ("🇰🇷", "+82", "Corée du Sud"),
-        ("🇨🇳", "+86", "Chine"),
-        ("🇮🇳", "+91", "Inde"),
-        ("🇧🇷", "+55", "Brésil"),
-        ("🇲🇽", "+52", "Mexique"),
-        ("🇷🇺", "+7", "Russie"),
-        ("🇿🇦", "+27", "Afrique du Sud"),
-        ("🇳🇱", "+31", "Pays-Bas"),
-        ("🇧🇪", "+32", "Belgique"),
-        ("🇨🇭", "+41", "Suisse"),
-        ("🇦🇹", "+43", "Autriche")
-    ]
+    private var countries: [(String, String, String)] {
+        [
+            ("🇫🇷", "+33", OnboardingCopy.t("France", en: "France")),
+            ("🇺🇸", "+1", OnboardingCopy.t("États-Unis", en: "United States")),
+            ("🇬🇧", "+44", OnboardingCopy.t("Royaume-Uni", en: "United Kingdom")),
+            ("🇩🇪", "+49", OnboardingCopy.t("Allemagne", en: "Germany")),
+            ("🇪🇸", "+34", OnboardingCopy.t("Espagne", en: "Spain")),
+            ("🇮🇹", "+39", OnboardingCopy.t("Italie", en: "Italy")),
+            ("🇨🇦", "+1", OnboardingCopy.t("Canada", en: "Canada")),
+            ("🇦🇺", "+61", OnboardingCopy.t("Australie", en: "Australia")),
+            ("🇯🇵", "+81", OnboardingCopy.t("Japon", en: "Japan")),
+            ("🇰🇷", "+82", OnboardingCopy.t("Corée du Sud", en: "South Korea")),
+            ("🇨🇳", "+86", OnboardingCopy.t("Chine", en: "China")),
+            ("🇮🇳", "+91", OnboardingCopy.t("Inde", en: "India")),
+            ("🇧🇷", "+55", OnboardingCopy.t("Brésil", en: "Brazil")),
+            ("🇲🇽", "+52", OnboardingCopy.t("Mexique", en: "Mexico")),
+            ("🇷🇺", "+7", OnboardingCopy.t("Russie", en: "Russia")),
+            ("🇿🇦", "+27", OnboardingCopy.t("Afrique du Sud", en: "South Africa")),
+            ("🇳🇱", "+31", OnboardingCopy.t("Pays-Bas", en: "Netherlands")),
+            ("🇧🇪", "+32", OnboardingCopy.t("Belgique", en: "Belgium")),
+            ("🇨🇭", "+41", OnboardingCopy.t("Suisse", en: "Switzerland")),
+            ("🇦🇹", "+43", OnboardingCopy.t("Autriche", en: "Austria"))
+        ]
+    }
 
     var body: some View {
         NavigationView {
@@ -73,11 +75,11 @@ struct CountryPickerView: View {
                     .buttonStyle(.processPlain)
                 }
             }
-            .navigationTitle("Sélectionner un pays")
+            .navigationTitle(OnboardingCopy.t("Sélectionner un pays", en: "Select a country"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Fermer") {
+                    Button(OnboardingCopy.t("Fermer", en: "Close")) {
                         isPresented = false
                     }
 }

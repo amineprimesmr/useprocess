@@ -6,7 +6,8 @@ import Speech
 final class CoachSpeechTranscriber {
     static let shared = CoachSpeechTranscriber()
 
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "fr_FR"))
+    private var speechRecognizer: SFSpeechRecognizer?
+    private var speechRecognizerLocaleIdentifier: String?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
@@ -47,6 +48,7 @@ final class CoachSpeechTranscriber {
 
     func startRecording() throws {
         guard !isRecording else { return }
+        refreshSpeechRecognizerIfNeeded()
         guard speechRecognizer?.isAvailable == true else {
             throw CoachSpeechError.recognizerUnavailable
         }
@@ -106,7 +108,17 @@ final class CoachSpeechTranscriber {
 
     // MARK: - Recognition (continue jusqu'à arrêt manuel)
 
+    private func refreshSpeechRecognizerIfNeeded() {
+        let locale = ProcessAppLanguage.shared.locale
+        guard speechRecognizerLocaleIdentifier != locale.identifier else { return }
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        speechRecognizer = SFSpeechRecognizer(locale: locale)
+        speechRecognizerLocaleIdentifier = locale.identifier
+    }
+
     private func beginRecognitionRequest() {
+        refreshSpeechRecognizerIfNeeded()
         recognitionTask?.cancel()
         recognitionTask = nil
 
@@ -256,12 +268,12 @@ enum CoachSpeechError: LocalizedError {
     case recognizerUnavailable
     case permissionDenied
 
-    var errorDescription: String? {
+    nonisolated var errorDescription: String? {
         switch self {
         case .recognizerUnavailable:
-            "La dictée n'est pas disponible sur cet appareil."
+            AppCopy.tSync("La dictée n'est pas disponible sur cet appareil.", en: "Dictation is unavailable on this device.")
         case .permissionDenied:
-            "Autorise le micro et la reconnaissance vocale dans Réglages."
+            AppCopy.tSync("Autorise le micro et la reconnaissance vocale dans Réglages.", en: "Allow microphone and speech recognition access in Settings.")
         }
     }
 }

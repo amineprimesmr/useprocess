@@ -39,7 +39,10 @@ struct HealthDebloatGuideView: View {
             Image(systemName: "arrow.down.circle.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.onboardingAccent)
-            Text("Du plus impactant (#1) au complémentaire — tout sur une page.")
+            Text(AppCopy.t(
+                "Du plus impactant (#1) au complémentaire — tout sur une page.",
+                en: "From highest impact (#1) to complementary — all on one page."
+            ))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -224,7 +227,7 @@ struct HealthDebloatGuideView: View {
 
     private var sourcesFooter: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Sources")
+            Text(AppCopy.t("Sources", en: "Sources"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
 

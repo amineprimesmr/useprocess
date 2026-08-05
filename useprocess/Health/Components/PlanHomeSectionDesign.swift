@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Tokens visuels communs aux blocs de la page Accueil / Plan.
 enum PlanHomeSectionDesign {
-    static let sectionSpacing: CGFloat = 58
+    static let sectionSpacing: CGFloat = 36
     static let firstSectionTopSpacing: CGFloat = 8
     /// Marge supplémentaire au-dessus du scan quand c’est la première section.
     static let faceScanTopSpacing: CGFloat = 12

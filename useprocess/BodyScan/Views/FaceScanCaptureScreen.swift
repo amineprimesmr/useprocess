@@ -28,7 +28,7 @@ struct FaceScanCaptureScreen: View {
     var onSkip: (() -> Void)? = nil
     var showsMediaImport: Bool = false
     var compactSkipAction: Bool = false
-    var skipButtonTitle: String = "Continuer sans scan"
+    var skipButtonTitle: String = AppCopy.t("Passer pour le moment", en: "Skip for now")
     var allowsScreenFlash: Bool = true
     var isCameraSessionActive: Bool = true
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
@@ -40,7 +40,7 @@ struct FaceScanCaptureScreen: View {
     @State private var tiltHoldProgress: Double = 0
     @State private var tiltDirection: FaceScanTiltDirection = .none
     @State private var tiltIsEngaged: Bool = false
-    @State private var instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
+    @State private var instruction = AppCopy.t("Rapproche-toi pour que ton visage remplisse le cadre.", en: "Move closer so your face fills the frame.")
     @State private var frameHint: String?
     @State private var isFaceDetected = false
     @State private var isLowLight = false
@@ -177,7 +177,7 @@ struct FaceScanCaptureScreen: View {
                 FaceScanScreenFlash.shared.deactivate()
                 resetCaptureState(instruction: "")
             } else {
-                instruction = "Rapproche-toi pour que ton visage remplisse le cadre."
+                instruction = AppCopy.t("Rapproche-toi pour que ton visage remplisse le cadre.", en: "Move closer so your face fills the frame.")
                 frameHint = nil
             }
         }
@@ -226,17 +226,17 @@ struct FaceScanCaptureScreen: View {
             .ignoresSafeArea()
         }
         .alert(
-            "Import impossible",
+            AppCopy.t("Import impossible", en: "Import failed"),
             isPresented: Binding(
                 get: { importErrorMessage != nil },
                 set: { if !$0 { importErrorMessage = nil } }
             )
         ) {
-            Button("OK", role: .cancel) {
+            Button(AppCopy.t("OK", en: "OK"), role: .cancel) {
                 importErrorMessage = nil
             }
         } message: {
-            Text(importErrorMessage ?? "Réessaie avec un autre fichier.")
+            Text(importErrorMessage ?? AppCopy.t("Réessaie avec un autre fichier.", en: "Try another file."))
         }
         .overlay {
             if isImportingMedia {
@@ -245,7 +245,7 @@ struct FaceScanCaptureScreen: View {
                     ProgressView()
                         .tint(.white)
                         .controlSize(.large)
-                    Text("Analyse du média…")
+                    Text(AppCopy.t("Analyse du média…", en: "Analyzing media…"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
                 }
@@ -292,7 +292,14 @@ struct FaceScanCaptureScreen: View {
                     if phase != .completed {
                         retryScanButton
                             .padding(.horizontal, 24)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 4)
+
+                        // Skip visible dès que la caméra tourne (sous Recommencer).
+                        if onSkip != nil {
+                            skipScanButton
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 8)
+                        }
 
                         if showsMediaImport {
                             importMediaButton
@@ -413,10 +420,10 @@ struct FaceScanCaptureScreen: View {
     private var inlineHomeScanHeader: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Scan du jour")
+                Text(AppCopy.t("Scan du jour", en: "Today’s scan"))
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(appTheme.primaryText)
-                Text(phase == .completed ? "Terminé" : "Cadre ton visage")
+                Text(phase == .completed ? AppCopy.done : AppCopy.t("Cadre ton visage", en: "Frame your face"))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(appTheme.secondaryText)
             }
@@ -438,7 +445,7 @@ struct FaceScanCaptureScreen: View {
                     }
             }
             .buttonStyle(.processPlain)
-            .accessibilityLabel("Fermer le scan")
+            .accessibilityLabel(AppCopy.t("Fermer le scan", en: "Close scan"))
         }
     }
 
@@ -473,7 +480,7 @@ struct FaceScanCaptureScreen: View {
         inlineChromeIconButton(
             systemImage: isFlashEnabled ? "bolt.fill" : "bolt.slash",
             tint: isFlashEnabled ? Color(red: 0.95, green: 0.78, blue: 0.12) : appTheme.secondaryText,
-            accessibilityLabel: isFlashEnabled ? "Désactiver le flash" : "Activer le flash"
+            accessibilityLabel: isFlashEnabled ? AppCopy.t("Désactiver le flash", en: "Turn flash off") : AppCopy.t("Activer le flash", en: "Turn flash on")
         ) {
             HapticManager.shared.impact(.light)
             userFlashOverride = true
@@ -485,7 +492,7 @@ struct FaceScanCaptureScreen: View {
         inlineChromeIconButton(
             systemImage: "xmark",
             tint: appTheme.secondaryText,
-            accessibilityLabel: "Fermer le scan"
+            accessibilityLabel: AppCopy.t("Fermer le scan", en: "Close scan")
         ) {
             HapticManager.shared.impact(.light)
             FaceScanScreenFlash.shared.deactivate()
@@ -539,7 +546,7 @@ struct FaceScanCaptureScreen: View {
         if phase != .completed, isDeviceSupported {
             if allowsScreenFlash, isFlashEnabled {
                 Label(
-                    userFlashOverride ? "Flash activé" : "Flash auto",
+                    userFlashOverride ? AppCopy.t("Flash activé", en: "Flash on") : AppCopy.t("Flash auto", en: "Auto flash"),
                     systemImage: "bolt.fill"
                 )
                 .font(.caption.weight(.semibold))
@@ -547,8 +554,8 @@ struct FaceScanCaptureScreen: View {
             } else if isLowLight, allowsScreenFlash {
                 Text(
                     allowsScreenFlash
-                        ? "Environnement sombre"
-                        : "Pas assez de lumière — place-toi face à une fenêtre ou une lampe."
+                        ? AppCopy.t("Environnement sombre", en: "Low light")
+                        : AppCopy.t("Pas assez de lumière — place-toi face à une fenêtre ou une lampe.", en: "Not enough light — face a window or lamp.")
                 )
                 .font(.caption.weight(.medium))
                 .foregroundStyle(appTheme.secondaryText)
@@ -595,7 +602,7 @@ struct FaceScanCaptureScreen: View {
     private var embeddedRetryButton: some View {
         if isDeviceSupported, scanProgress > 0.02, scanProgress < 1 {
             Button(action: restartScan) {
-                Text("Recommencer")
+                Text(AppCopy.t("Recommencer", en: "Start over"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(appTheme.onboardingAccent)
             }
@@ -769,13 +776,13 @@ struct FaceScanCaptureScreen: View {
         if phase != .completed, isDeviceSupported {
             if isFlashEnabled {
                 Label(
-                    userFlashOverride ? "Flash activé" : "Flash auto — environnement sombre",
+                    userFlashOverride ? AppCopy.t("Flash activé", en: "Flash on") : AppCopy.t("Flash auto — environnement sombre", en: "Auto flash — low light"),
                     systemImage: "bolt.fill"
                 )
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.55) : .yellow)
             } else if isLowLight {
-                Label("Environnement sombre — active le flash", systemImage: "moon.fill")
+                Label(AppCopy.t("Environnement sombre — active le flash", en: "Low light — turn on flash"), systemImage: "moon.fill")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.5) : OnboardingTheme.mutedText)
             }
@@ -791,7 +798,7 @@ struct FaceScanCaptureScreen: View {
             HStack(spacing: 10) {
                 Image(systemName: "photo.on.rectangle.angled")
                     .font(.system(size: 16, weight: .semibold))
-                Text("Importer photo ou vidéo")
+                Text(AppCopy.t("Importer photo ou vidéo", en: "Import photo or video"))
                     .font(.system(size: 16, weight: .semibold))
             }
             .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.82) : OnboardingTheme.primaryText)
@@ -807,7 +814,7 @@ struct FaceScanCaptureScreen: View {
     private var retryScanButton: some View {
         if isDeviceSupported, scanProgress > 0.02, scanProgress < 1 {
             Button(action: restartScan) {
-                Text("Recommencer le scan")
+                Text(AppCopy.t("Recommencer le scan", en: "Restart scan"))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(isFlashEnabled ? Color.black.opacity(0.55) : OnboardingTheme.mutedText)
                     .padding(.vertical, 10)
@@ -831,7 +838,8 @@ struct FaceScanCaptureScreen: View {
                 submitCapturedScan()
             }
             .transition(.opacity.combined(with: .move(edge: .bottom)))
-        } else if canSkipScan {
+        } else if canSkipScan, isEmbedded {
+            // Plein écran : le skip est déjà sous « Recommencer le scan ».
             skipScanButton
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
@@ -862,19 +870,31 @@ struct FaceScanCaptureScreen: View {
                 onSkip()
             }) {
                 Text(skipButtonTitle)
-                    .font(.system(size: compactSkipAction ? 13 : 17, weight: compactSkipAction ? .regular : .black))
-                    .foregroundStyle(
-                        compactSkipAction
-                            ? OnboardingTheme.mutedText.opacity(isFlashEnabled ? 0.62 : 0.52)
-                            : (isFlashEnabled ? Color.black : OnboardingTheme.actionButtonText)
-                    )
+                    .font(.system(
+                        size: isEmbedded && compactSkipAction ? 13 : 16,
+                        weight: isEmbedded && compactSkipAction ? .regular : .semibold
+                    ))
+                    .foregroundStyle(skipScanButtonForeground)
                     .frame(maxWidth: .infinity)
-                    .frame(height: compactSkipAction ? nil : 50)
-                    .padding(.vertical, compactSkipAction ? 6 : 0)
+                    .frame(height: isEmbedded && compactSkipAction ? nil : 50)
+                    .padding(.vertical, isEmbedded && compactSkipAction ? 6 : 0)
             }
             .buttonStyle(.processPlain)
-            .modifier(SkipScanButtonChromeModifier(compact: compactSkipAction, isFlashEnabled: isFlashEnabled))
+            .modifier(SkipScanButtonChromeModifier(
+                compact: isEmbedded && compactSkipAction,
+                isFlashEnabled: isFlashEnabled
+            ))
         }
+    }
+
+    private var skipScanButtonForeground: Color {
+        if isEmbedded && compactSkipAction {
+            return OnboardingTheme.mutedText.opacity(isFlashEnabled ? 0.62 : 0.52)
+        }
+        if isFlashEnabled {
+            return Color.black.opacity(0.82)
+        }
+        return OnboardingTheme.primaryText
     }
 
     private var unsupportedSection: some View {
@@ -882,13 +902,13 @@ struct FaceScanCaptureScreen: View {
             Image(systemName: "faceid")
                 .font(.system(size: 48))
                 .foregroundStyle(OnboardingTheme.mutedText)
-            Text("Caméra avant requise")
+            Text(AppCopy.t("Caméra avant requise", en: "Front camera required"))
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.primaryText)
             Text(
                 showsMediaImport
-                    ? "Utilise un appareil avec Face ID\n(iPhone ou iPad Pro), ou importe une photo / vidéo."
-                    : "Utilise un appareil avec Face ID\n(iPhone ou iPad Pro)."
+                    ? AppCopy.t("Utilise un appareil avec Face ID\n(iPhone ou iPad Pro), ou importe une photo / vidéo.", en: "Use a Face ID device\n(iPhone or iPad Pro), or import a photo / video.")
+                    : AppCopy.t("Utilise un appareil avec Face ID\n(iPhone ou iPad Pro).", en: "Use a Face ID device\n(iPhone or iPad Pro).")
             )
                 .font(.system(size: 15))
                 .foregroundStyle(OnboardingTheme.footnoteText)
@@ -969,7 +989,7 @@ struct FaceScanCaptureScreen: View {
         } else {
             scanSessionID = UUID()
         }
-        resetCaptureState(instruction: "Place ton visage dans le cadre.")
+        resetCaptureState(instruction: AppCopy.t("Place ton visage dans le cadre.", en: "Place your face in the frame."))
         withAnimation(.easeInOut(duration: 0.2)) {
             phase = .positioning
         }
@@ -1038,7 +1058,7 @@ struct FaceScanFlashToggle: View {
                 .contentShape(Circle())
         }
         .glassCircleStyle()
-        .accessibilityLabel(isEnabled ? "Désactiver le flash écran" : "Activer le flash écran")
+        .accessibilityLabel(isEnabled ? AppCopy.t("Désactiver le flash écran", en: "Turn screen flash off") : AppCopy.t("Activer le flash écran", en: "Turn screen flash on"))
     }
 
     private var iconColor: Color {

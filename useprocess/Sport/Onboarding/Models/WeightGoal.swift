@@ -12,10 +12,11 @@ enum WeightGoal: String, CaseIterable, Codable {
     case gain = "Prendre du poids"
 
     /// Libellé produit (debloat), jamais de framing poids.
+    @MainActor
     var title: String {
         switch self {
-        case .lose: return "Réduire la rétention"
-        case .gain: return "Consolider mon ovale"
+        case .lose: return OnboardingCopy.t("Réduire la rétention", en: "Reduce retention")
+        case .gain: return OnboardingCopy.t("Consolider mon ovale", en: "Strengthen my face shape")
         }
     }
 
@@ -26,10 +27,19 @@ enum WeightGoal: String, CaseIterable, Codable {
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
-        case .lose: return "Diminuer gonflement et rétention d’eau du visage"
-        case .gain: return "Renforcer définition et structure faciale"
+        case .lose:
+            return OnboardingCopy.t(
+                "Diminuer gonflement et rétention d’eau du visage",
+                en: "Reduce facial puffiness and water retention"
+            )
+        case .gain:
+            return OnboardingCopy.t(
+                "Renforcer définition et structure faciale",
+                en: "Strengthen facial definition and structure"
+            )
         }
     }
 }

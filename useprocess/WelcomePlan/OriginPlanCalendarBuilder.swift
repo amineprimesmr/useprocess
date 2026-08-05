@@ -2,7 +2,17 @@ import Foundation
 
 enum OriginPlanCalendarBuilder {
 
-    private static let weekdayLabels = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+    private static var weekdayLabels: [String] {
+        [
+            AppCopy.tSync("Lundi", en: "Monday"),
+            AppCopy.tSync("Mardi", en: "Tuesday"),
+            AppCopy.tSync("Mercredi", en: "Wednesday"),
+            AppCopy.tSync("Jeudi", en: "Thursday"),
+            AppCopy.tSync("Vendredi", en: "Friday"),
+            AppCopy.tSync("Samedi", en: "Saturday"),
+            AppCopy.tSync("Dimanche", en: "Sunday")
+        ]
+    }
 
     static func build(
         from plan: FaceOriginPlan,
@@ -23,6 +33,7 @@ enum OriginPlanCalendarBuilder {
 
         var weeks: [OriginProgramWeek] = []
         var globalDay = 0
+        let labels = weekdayLabels
 
         for weekNum in 1...totalWeeks {
             let phase = duration.phaseBlock(for: weekNum, roadmap: plan.phaseRoadmap)
@@ -40,8 +51,8 @@ enum OriginPlanCalendarBuilder {
                         globalDayIndex: globalDay,
                         weekNumber: weekNum,
                         weekdayIndex: weekday,
-                        weekdayLabel: weekdayLabels[weekday],
-                        title: dayTitle(week: weekNum, weekday: weekday),
+                        weekdayLabel: labels[weekday],
+                        title: dayTitle(week: weekNum, weekday: weekday, labels: labels),
                         morning: morningTasks(plan: plan, targets: targets, dayId: dayId),
                         nutrition: nutrition,
                         training: nil,
@@ -98,9 +109,17 @@ enum OriginPlanCalendarBuilder {
         phase: OriginPlanPhaseBlock
     ) -> OriginDayNutrition {
         var principles = Array(plan.nutritionProtocol.principles.prefix(3))
-        if week == 1 { principles.append("Semaine 1 : zéro ultra-transformé") }
+        if week == 1 {
+            principles.append(AppCopy.tSync(
+                "Semaine 1 : zéro ultra-transformé",
+                en: "Week 1: zero ultra-processed"
+            ))
+        }
         if phase.id == "recomp" || phase.title.contains("Recomposition") {
-            principles.append("Déficit léger via densité — dîner léger en sel")
+            principles.append(AppCopy.tSync(
+                "Déficit léger via densité — dîner léger en sel",
+                en: "Light deficit via density — low-salt dinner"
+            ))
         }
 
         return OriginDayNutrition(
@@ -124,8 +143,11 @@ enum OriginPlanCalendarBuilder {
         [
             task(
                 ProcessHydrationGuide.dailyTaskTitle,
-                "Objectif \(targets.hydrationLabel) dans la journée",
-                "Nutrition",
+                AppCopy.tSync(
+                    "Objectif \(targets.hydrationLabel) dans la journée",
+                    en: "Goal \(targets.hydrationLabel) across the day"
+                ),
+                AppCopy.tSync("Nutrition", en: "Nutrition"),
                 nil,
                 dayId: dayId
             )
@@ -138,12 +160,22 @@ enum OriginPlanCalendarBuilder {
         archetype: OriginPlanArchetype?
     ) -> String {
         if week == 1 {
-            return "Semaine 1 : exécution stricte. \(phase.objectives.first ?? "Les bases d'abord.")"
+            let fallback = AppCopy.tSync("Les bases d'abord.", en: "Basics first.")
+            return AppCopy.tSync(
+                "Semaine 1 : exécution stricte. \(phase.objectives.first ?? fallback)",
+                en: "Week 1: strict execution. \(phase.objectives.first ?? fallback)"
+            )
         }
         if archetype == .habitReset {
-            return "Semaine \(week) : reset debloat — consistance > perfection."
+            return AppCopy.tSync(
+                "Semaine \(week) : reset debloat — consistance > perfection.",
+                en: "Week \(week): debloat reset — consistency > perfection."
+            )
         }
-        return "Semaine \(week) : \(phase.title). Consistance > intensité."
+        return AppCopy.tSync(
+            "Semaine \(week) : \(phase.title). Consistance > intensité.",
+            en: "Week \(week): \(phase.title). Consistency > intensity."
+        )
     }
 
     private static func task(_ title: String, _ detail: String, _ pillar: String, _ minutes: Int?, dayId: String) -> OriginPlanTask {
@@ -166,9 +198,17 @@ enum OriginPlanCalendarBuilder {
             .replacingOccurrences(of: "'", with: "")
     }
 
-    private static func dayTitle(week: Int, weekday: Int) -> String {
-        if weekday == 6 { return "Semaine \(week) — Récupération" }
-        return "Semaine \(week) — \(weekdayLabels[weekday]) · Cardio & circuit"
+    private static func dayTitle(week: Int, weekday: Int, labels: [String]) -> String {
+        if weekday == 6 {
+            return AppCopy.tSync(
+                "Semaine \(week) — Récupération",
+                en: "Week \(week) — Recovery"
+            )
+        }
+        return AppCopy.tSync(
+            "Semaine \(week) — \(labels[weekday]) · Cardio & circuit",
+            en: "Week \(week) — \(labels[weekday]) · Cardio & circuit"
+        )
     }
 }
 

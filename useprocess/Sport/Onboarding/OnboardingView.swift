@@ -35,6 +35,7 @@ struct SportOnboardingView: View {
     @State private var isOnboardingRestoreComplete = false
 
     @State var animatedContinueBottomOffset: CGFloat = 50
+    @Bindable private var appLanguage = ProcessAppLanguage.shared
 
     var navigationEngine: OnboardingNavigationEngine {
         OnboardingNavigationEngine(viewModel: viewModel, profileService: profileService)
@@ -55,6 +56,7 @@ struct SportOnboardingView: View {
                         onboardingStepContent(for: step)
                     }
                 }
+                .id(appLanguage.code)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
             } else {
@@ -76,6 +78,7 @@ struct SportOnboardingView: View {
                             }
                     }
                 }
+                .id(appLanguage.code)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, shouldAddTopPadding ? OnboardingConstants.titleTopPaddingFromScreenTop : 0)
                 .ignoresSafeArea(.all)
@@ -211,10 +214,13 @@ struct SportOnboardingView: View {
             viewModel.saveProgress()
             OnboardingProgressService.shared.flush()
         }
-        .alert("Finalisation impossible", isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
+        .alert(
+            OnboardingCopy.t("Finalisation impossible", en: "Couldn't finish setup"),
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )
+        ) {
             Button("OK", role: .cancel) {
                 viewModel.errorMessage = nil
             }
@@ -245,7 +251,7 @@ struct SportOnboardingView: View {
             Button(action: {
                 handleContinueButtonTap()
             }) {
-                Text("CONTINUER")
+                Text(OnboardingCopy.continueCTAUpper)
                     .font(.system(size: 22, weight: .black))
                     .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                     .id("continue_button_label_\(viewModel.currentStep)")
@@ -263,7 +269,7 @@ struct SportOnboardingView: View {
 
             if shouldShowNoWeightGoalLink {
                 Button(action: skipWeightGoalFromIdealWeight) {
-                    Text("Passer — je me concentre sur mon visage")
+                    Text(OnboardingCopy.t("Passer — je me concentre sur mon visage", en: "Skip — I'm focusing on my face"))
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(OnboardingTheme.mutedText.opacity(0.75))
                         .padding(.vertical, 12)

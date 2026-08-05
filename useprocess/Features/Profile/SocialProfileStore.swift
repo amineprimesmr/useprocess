@@ -265,9 +265,15 @@ final class SocialProfileStore {
         guard let profile else { return "Process" }
         let tag = ProcessUsernameTag.display(profile.username)
         if tag.isEmpty {
-            return "Profil Process — \(profile.displayName)"
+            return AppCopy.t(
+                "Profil Process — \(profile.displayName)",
+                en: "Process Profile — \(profile.displayName)"
+            )
         }
-        return "Profil Process — \(profile.displayName) (\(tag))"
+        return AppCopy.t(
+            "Profil Process — \(profile.displayName) (\(tag))",
+            en: "Process Profile — \(profile.displayName) (\(tag))"
+        )
     }
 
     private func image(for filename: String?) -> UIImage? {

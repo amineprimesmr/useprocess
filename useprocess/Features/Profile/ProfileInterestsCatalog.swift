@@ -17,74 +17,47 @@ struct ProfileInterestCategory: Identifiable {
 enum ProfileInterestsCatalog {
     static let maxSelection = 10
 
-    static let categories: [ProfileInterestCategory] = [
-        category("animaux", "Animaux", [
-            ("🐱", "Chats"), ("🐶", "Chiens"), ("🐴", "Chevaux"), ("🐠", "Poissons"),
-            ("🐰", "Lapins"), ("🐹", "Rongeurs"), ("🦎", "Reptiles"), ("🐦", "Oiseaux")
-        ]),
-        category("arts", "Arts et Loisirs", [
-            ("🎨", "Art"), ("📚", "Collection De Livres"), ("💃", "Danse"), ("🎸", "Guitare"),
-            ("🎹", "Piano"), ("🎻", "Instrument De Musique"), ("🎤", "K-Pop"), ("🧱", "Légos"),
-            ("🎭", "Musique Et Arts"), ("🎬", "Théâtre")
-        ]),
-        category("autre", "Autre", [
-            ("🎯", "Chasse"), ("📈", "Investissement")
-        ]),
-        category("media", "Divertissement et Médias", [
-            ("🎌", "Anime"), ("🍿", "Cinéma"), ("🎞️", "Critiques De Films"), ("🎥", "Films"),
-            ("☕️", "Gilmore Girls"), ("🌸", "Ginny Et Georgia"), ("👠", "Gossip Girl"),
-            ("🏥", "Grey's Anatomy"), ("🏝️", "Love Island"), ("🦸", "Marvel"), ("😂", "Mèmes"),
-            ("📺", "Netflix"), ("🌊", "Outer Banks"), ("🦑", "Squid Game"), ("🔦", "Stranger Things"),
-            ("👻", "Supernatural"), ("📀", "Séries"), ("🏢", "The Office"), ("🚔", "The Rookie"),
-            ("☀️", "The Summer I Turned Pretty")
-        ]),
-        category("food", "Nourriture et Boissons", [
-            ("🍺", "Brassage De Bière"), ("☕️", "Café"), ("🧀", "Fabrication De Fromage"),
-            ("🍽️", "Manger"), ("🍔", "Nourriture"), ("🥐", "Pâtisserie")
-        ]),
-        category("spiritual", "Spiritualité et Croyances", [
-            ("🤔", "Agnosticisme"), ("⚛️", "Athéisme"), ("☸️", "Bouddhisme"), ("✝️", "Christianisme"),
-            ("☪️", "Islam"), ("✡️", "Judaïsme"), ("🕉️", "Hindouisme"), ("🔮", "Spiritualité")
-        ]),
-        category("sports", "Sports et Remise en forme", [
-            ("⚾️", "Baseball"), ("🏀", "Basketball"), ("💪", "Entraînement"), ("🧗", "Escalade"),
-            ("⚽️", "Football"), ("🤸", "Gymnastique"), ("🏋️", "Haltérophilie"), ("🤼", "Lutte"),
-            ("📣", "Pom-Pom Girls"), ("⛷️", "Ski"), ("🥎", "Softball"), ("🎾", "Tennis"), ("🏇", "Équitation")
-        ]),
-        category("vehicles", "Sports mécaniques et Véhicules", [
-            ("🛣️", "Cours De Conduite"), ("🏎️", "F1 / Formule 1"), ("🏍️", "Motos"),
-            ("📸", "Photographie Automobile"), ("🏁", "Sports Mécaniques"), ("🚗", "Voitures")
-        ]),
-        category("lifestyle", "Style de vie et Bien-être", [
-            ("👯", "Amis"), ("🧴", "Bronzage"), ("🌅", "Couchers De Soleil"), ("👨‍👩‍👧‍👦", "Famille"),
-            ("💄", "Maquillage"), ("🧘", "Méditation"), ("💅", "Ongles"), ("🏖️", "Plage"),
-            ("🛍️", "Shopping"), ("✈️", "Voyages Et Tourisme"), ("🧘‍♀️", "Yoga"), ("☀️", "Été")
-        ]),
-        category("tech", "Technologie", [
-            ("🎮", "Roblox"), ("💻", "Technologie"), ("🤳", "Tiktok")
-        ])
-    ]
+    @MainActor static var categories: [ProfileInterestCategory] {
+        [
+            category("animaux", "Animaux", "Animals", [("🐱", "Chats", "Cats"), ("🐶", "Chiens", "Dogs"), ("🐴", "Chevaux", "Horses"), ("🐠", "Poissons", "Fish"), ("🐰", "Lapins", "Rabbits"), ("🐹", "Rongeurs", "Rodents"), ("🦎", "Reptiles", "Reptiles"), ("🐦", "Oiseaux", "Birds")]),
+            category("arts", "Arts et Loisirs", "Arts & Hobbies", [("🎨", "Art", "Art"), ("📚", "Collection De Livres", "Book Collecting"), ("💃", "Danse", "Dance"), ("🎸", "Guitare", "Guitar"), ("🎹", "Piano", "Piano"), ("🎻", "Instrument De Musique", "Musical Instruments"), ("🎤", "K-Pop", "K-Pop"), ("🧱", "Légos", "Legos"), ("🎭", "Musique Et Arts", "Music & Arts"), ("🎬", "Théâtre", "Theater")]),
+            category("autre", "Autre", "Other", [("🎯", "Chasse", "Hunting"), ("📈", "Investissement", "Investing")]),
+            category("media", "Divertissement et Médias", "Entertainment & Media", [("🎌", "Anime", "Anime"), ("🍿", "Cinéma", "Movies"), ("🎞️", "Critiques De Films", "Movie Reviews"), ("🎥", "Films", "Films"), ("☕️", "Gilmore Girls", "Gilmore Girls"), ("🌸", "Ginny Et Georgia", "Ginny & Georgia"), ("👠", "Gossip Girl", "Gossip Girl"), ("🏥", "Grey's Anatomy", "Grey's Anatomy"), ("🏝️", "Love Island", "Love Island"), ("🦸", "Marvel", "Marvel"), ("😂", "Mèmes", "Memes"), ("📺", "Netflix", "Netflix"), ("🌊", "Outer Banks", "Outer Banks"), ("🦑", "Squid Game", "Squid Game"), ("🔦", "Stranger Things", "Stranger Things"), ("👻", "Supernatural", "Supernatural"), ("📀", "Séries", "TV Shows"), ("🏢", "The Office", "The Office"), ("🚔", "The Rookie", "The Rookie"), ("☀️", "The Summer I Turned Pretty", "The Summer I Turned Pretty")]),
+            category("food", "Nourriture et Boissons", "Food & Drinks", [("🍺", "Brassage De Bière", "Brewing"), ("☕️", "Café", "Coffee"), ("🧀", "Fabrication De Fromage", "Cheesemaking"), ("🍽️", "Manger", "Eating"), ("🍔", "Nourriture", "Food"), ("🥐", "Pâtisserie", "Baking")]),
+            category("spiritual", "Spiritualité et Croyances", "Spirituality & Beliefs", [("🤔", "Agnosticisme", "Agnosticism"), ("⚛️", "Athéisme", "Atheism"), ("☸️", "Bouddhisme", "Buddhism"), ("✝️", "Christianisme", "Christianity"), ("☪️", "Islam", "Islam"), ("✡️", "Judaïsme", "Judaism"), ("🕉️", "Hindouisme", "Hinduism"), ("🔮", "Spiritualité", "Spirituality")]),
+            category("sports", "Sports et Remise en forme", "Sports & Fitness", [("⚾️", "Baseball", "Baseball"), ("🏀", "Basketball", "Basketball"), ("💪", "Entraînement", "Working Out"), ("🧗", "Escalade", "Climbing"), ("⚽️", "Football", "Soccer"), ("🤸", "Gymnastique", "Gymnastics"), ("🏋️", "Haltérophilie", "Weightlifting"), ("🤼", "Lutte", "Wrestling"), ("📣", "Pom-Pom Girls", "Cheerleading"), ("⛷️", "Ski", "Skiing"), ("🥎", "Softball", "Softball"), ("🎾", "Tennis", "Tennis"), ("🏇", "Équitation", "Horseback Riding")]),
+            category("vehicles", "Sports mécaniques et Véhicules", "Motorsports & Vehicles", [("🛣️", "Cours De Conduite", "Driving Lessons"), ("🏎️", "F1 / Formule 1", "F1 / Formula 1"), ("🏍️", "Motos", "Motorcycles"), ("📸", "Photographie Automobile", "Automotive Photography"), ("🏁", "Sports Mécaniques", "Motorsports"), ("🚗", "Voitures", "Cars")]),
+            category("lifestyle", "Style de vie et Bien-être", "Lifestyle & Wellness", [("👯", "Amis", "Friends"), ("🧴", "Bronzage", "Tanning"), ("🌅", "Couchers De Soleil", "Sunsets"), ("👨‍👩‍👧‍👦", "Famille", "Family"), ("💄", "Maquillage", "Makeup"), ("🧘", "Méditation", "Meditation"), ("💅", "Ongles", "Nails"), ("🏖️", "Plage", "Beach"), ("🛍️", "Shopping", "Shopping"), ("✈️", "Voyages Et Tourisme", "Travel & Tourism"), ("🧘‍♀️", "Yoga", "Yoga"), ("☀️", "Été", "Summer")]),
+            category("tech", "Technologie", "Technology", [("🎮", "Roblox", "Roblox"), ("💻", "Technologie", "Technology"), ("🤳", "Tiktok", "TikTok")])
+        ]
+    }
 
-    static var allInterests: [ProfileInterest] {
+    @MainActor static var allInterests: [ProfileInterest] {
         categories.flatMap(\.interests)
     }
 
-    static func interest(id: String) -> ProfileInterest? {
+    @MainActor static func interest(id: String) -> ProfileInterest? {
         allInterests.first { $0.id == id }
     }
 
-    static func summary(for ids: [String]) -> String? {
+    @MainActor static func summary(for ids: [String]) -> String? {
         let titles = ids.compactMap { interest(id: $0)?.title }
         guard !titles.isEmpty else { return nil }
         return titles.joined(separator: ", ")
     }
 
-    private static func category(_ id: String, _ title: String, _ items: [(String, String)]) -> ProfileInterestCategory {
+    @MainActor
+    private static func category(
+        _ id: String,
+        _ title: String,
+        _ englishTitle: String,
+        _ items: [(String, String, String)]
+    ) -> ProfileInterestCategory {
         ProfileInterestCategory(
             id: id,
-            title: title,
-            interests: items.map { emoji, name in
-                ProfileInterest(id: slug(name), emoji: emoji, title: name)
+            title: AppCopy.t(title, en: englishTitle),
+            interests: items.map { emoji, name, englishName in
+                ProfileInterest(id: slug(name), emoji: emoji, title: AppCopy.t(name, en: englishName))
             }
         )
     }

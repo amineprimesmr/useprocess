@@ -30,12 +30,36 @@ final class ProcessCreatorModeStore: ObservableObject {
     }
 
     static func matchesUnlockName(_ name: String) -> Bool {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
-            .caseInsensitiveCompare(unlockFirstName) == .orderedSame
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        if trimmed.caseInsensitiveCompare(unlockFirstName) == .orderedSame {
+            return true
+        }
+        // Tolère typos / espaces internes (« Amine prcs », « amine-prcs »).
+        let compact = trimmed
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: "_", with: "")
+        return compact == unlockFirstName.lowercased()
+    }
+
+    /// Unlock live sans dépendre uniquement du flag UserDefaults.
+    func isUnlocked(forFirstName firstName: String?) -> Bool {
+        if isUnlocked { return true }
+        if Self.matchesUnlockName(firstName ?? "") { return true }
+        if Self.matchesUnlockName(UnifiedProfileService.shared.currentProfile?.firstName ?? "") {
+            return true
+        }
+        return false
     }
 
     func evaluate(firstName: String?) {
-        let unlocked = Self.matchesUnlockName(firstName ?? "")
+        // Ne jamais verrouiller tant que le prénom n’est pas connu (profil pas encore hydraté).
+        let trimmed = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return }
+
+        let unlocked = Self.matchesUnlockName(trimmed)
         guard unlocked != isUnlocked else { return }
         isUnlocked = unlocked
         UserDefaults.standard.set(unlocked, forKey: Self.storageKey(Self.unlockedKeyBase))
@@ -43,7 +67,49 @@ final class ProcessCreatorModeStore: ObservableObject {
     }
 
     func syncFromCurrentProfile() {
-        evaluate(firstName: UnifiedProfileService.shared.currentProfile?.firstName)
+        let firstName = UnifiedProfileService.shared.currentProfile?.firstName
+        // Recharge aussi depuis le storage user courant (clé anonymous → uid Firebase).
+        reloadFromStorage()
+        evaluate(firstName: firstName)
+        // Si le prénom match mais le flag storage est faux (wipe), force le déblocage.
+        if !isUnlocked, Self.matchesUnlockName(firstName ?? "") {
+            isUnlocked = true
+            UserDefaults.standard.set(true, forKey: Self.storageKey(Self.unlockedKeyBase))
+            objectWillChange.send()
+        }
+    }
+
+    /// Relit le flag unlock / qualité pour la clé UserDefaults actuelle.
+    func reloadFromStorage() {
+        let defaults = UserDefaults.standard
+        let unlockedKey = Self.storageKey(Self.unlockedKeyBase)
+        let qualityKey = Self.storageKey(Self.qualityKeyBase)
+
+        // Migration : si la clé user est vide, récupère l’ancienne clé anonymous/local.
+        if defaults.object(forKey: unlockedKey) == nil {
+            for legacyUID in ["anonymous", "local-user"] {
+                let legacy = UserScopedStorage.key(Self.unlockedKeyBase, userId: legacyUID)
+                if defaults.object(forKey: legacy) != nil {
+                    defaults.set(defaults.bool(forKey: legacy), forKey: unlockedKey)
+                    let legacyQuality = UserScopedStorage.key(Self.qualityKeyBase, userId: legacyUID)
+                    if defaults.object(forKey: legacyQuality) != nil {
+                        defaults.set(defaults.double(forKey: legacyQuality), forKey: qualityKey)
+                    }
+                    break
+                }
+            }
+        }
+
+        let unlocked = defaults.bool(forKey: unlockedKey)
+        if unlocked != isUnlocked {
+            isUnlocked = unlocked
+        }
+        if defaults.object(forKey: qualityKey) != nil {
+            let stored = min(1, max(0, defaults.double(forKey: qualityKey)))
+            if abs(stored - resultQuality) > 0.0001 {
+                resultQuality = stored
+            }
+        }
     }
 
     var allowsUnlimitedScans: Bool { isUnlocked }
@@ -51,11 +117,11 @@ final class ProcessCreatorModeStore: ObservableObject {
 
     var qualityLabel: String {
         switch resultQuality {
-        case ..<0.2: return "Mauvais"
-        case ..<0.4: return "Faible"
-        case ..<0.6: return "Réaliste"
-        case ..<0.8: return "Bon"
-        default: return "Excellent"
+        case ..<0.2: return AppCopy.t("Mauvais", en: "Poor")
+        case ..<0.4: return AppCopy.t("Faible", en: "Weak")
+        case ..<0.6: return AppCopy.t("Réaliste", en: "Realistic")
+        case ..<0.8: return AppCopy.t("Bon", en: "Good")
+        default: return AppCopy.t("Excellent", en: "Excellent")
         }
     }
 

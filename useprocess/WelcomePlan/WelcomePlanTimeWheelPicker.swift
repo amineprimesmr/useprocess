@@ -236,7 +236,7 @@ struct WelcomePlanTimeWheelPicker: View {
     static func label(for minutes: Int) -> String {
         guard let date = date(fromMinutes: minutes) else { return "00:00" }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
     }

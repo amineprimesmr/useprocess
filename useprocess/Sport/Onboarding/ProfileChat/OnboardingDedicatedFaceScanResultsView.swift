@@ -15,8 +15,8 @@ struct OnboardingDedicatedFaceScanResultsView: View {
 
     private var fullDateTitle: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
-        formatter.dateFormat = "EEEE d MMMM"
+        formatter.locale = ProcessAppLanguage.shared.locale
+        formatter.dateFormat = ProcessAppLanguage.shared.isEnglish ? "EEEE, MMMM d" : "EEEE d MMMM"
         let raw = formatter.string(from: result.createdAt)
         return raw.prefix(1).uppercased() + raw.dropFirst()
     }
@@ -60,7 +60,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Text("Premier scan")
+            Text(OnboardingCopy.t("Premier scan", en: "First scan"))
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(FaceScanWhoopPalette.secondary)
                 .textCase(.uppercase)
@@ -75,7 +75,10 @@ struct OnboardingDedicatedFaceScanResultsView: View {
 
     private var bottomCTA: some View {
         VStack(spacing: 10) {
-            Text("Ton analyse est prête. Continue pour créer ton plan.")
+            Text(OnboardingCopy.t(
+                "Ton analyse est prête. Continue pour créer ton plan.",
+                en: "Your analysis is ready. Continue to create your plan."
+            ))
                 .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(FaceScanWhoopPalette.secondary)
                 .multilineTextAlignment(.center)

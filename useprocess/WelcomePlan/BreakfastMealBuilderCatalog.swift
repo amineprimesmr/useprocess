@@ -11,21 +11,23 @@ enum BreakfastBuilderCategory: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .protein: return "Protéine"
-        case .fruit: return "Fruits potassium"
-        case .vegetable: return "Légumes frais"
-        case .finish: return "Finition"
+        case .protein: return AppCopy.t("Protéine", en: "Protein")
+        case .fruit: return AppCopy.t("Fruits potassium", en: "Potassium fruits")
+        case .vegetable: return AppCopy.t("Légumes frais", en: "Fresh vegetables")
+        case .finish: return AppCopy.t("Finition", en: "Finishing touches")
         }
     }
 
+    @MainActor
     var subtitle: String {
         switch self {
-        case .protein: return "Obligatoire — 1 choix"
-        case .fruit: return "Optionnel — max 2"
-        case .vegetable: return "Optionnel — max 2"
-        case .finish: return "Optionnel — max 2"
+        case .protein: return AppCopy.t("Obligatoire — 1 choix", en: "Required — 1 choice")
+        case .fruit: return AppCopy.t("Optionnel — max 2", en: "Optional — max 2")
+        case .vegetable: return AppCopy.t("Optionnel — max 2", en: "Optional — max 2")
+        case .finish: return AppCopy.t("Optionnel — max 2", en: "Optional — max 2")
         }
     }
 
@@ -62,8 +64,9 @@ struct BreakfastLayerPlacement: Equatable {
 struct BreakfastBuilderOption: Identifiable, Equatable {
     let id: String
     let category: BreakfastBuilderCategory
-    /// Titre carte carousel (peut contenir \n pour 2 lignes).
+    /// Titre carte FR persisté (peut contenir \n pour 2 lignes). Affichage : `localizedCardTitle`.
     let cardTitle: String
+    /// Badge FR persisté. Affichage : `localizedBadge`.
     let badge: String
     let item: MealSuggestionItem
     /// PNG calque sur le hero (transparent).
@@ -73,8 +76,24 @@ struct BreakfastBuilderOption: Identifiable, Equatable {
     let calories: Int
     let placement: BreakfastLayerPlacement?
 
+    @MainActor
     var displayTitle: String {
-        cardTitle.replacingOccurrences(of: "\n", with: " ")
+        localizedCardTitle.replacingOccurrences(of: "\n", with: " ")
+    }
+
+    @MainActor
+    var localizedCardTitle: String {
+        ProcessLocalizedBreakfastBuilderContent.cardTitle(for: self)
+    }
+
+    @MainActor
+    var localizedBadge: String {
+        ProcessLocalizedBreakfastBuilderContent.badge(for: self)
+    }
+
+    @MainActor
+    var localizedItemName: String {
+        ProcessLocalizedBreakfastBuilderContent.itemName(for: self)
     }
 }
 
@@ -112,8 +131,10 @@ enum BreakfastMealBuilderCatalog {
         )
     }
 
+    @MainActor
     static func buildMeal(from selections: BreakfastBuilderSelections) -> MealSuggestionContent {
         let items = selections.allSelectedOptionIDs.compactMap { option(id: $0)?.item }
+        // Nom FR persisté — l’UI affiche `localizedComposedName` / lookup meal.
         let name = composedName(from: selections)
 
         return MealSuggestionContent.asProcessDefault(
@@ -121,6 +142,7 @@ enum BreakfastMealBuilderCatalog {
             mealType: MealTimeSlot.breakfast.rawValue,
             items: items,
             prepMinutes: 12,
+            // FR persisté — affichage via `localizedPrep` / `localizedCoachTip`.
             prepSummary: "Compose ton petit-déj debloat — protéine + potassium, sans boisson dans le repas.",
             coachTip: "Pas de pain ni céréales industrielles au matin. L’eau se gère à part sur l’Accueil.",
             tags: ["builder", "debloat", "petit-dejeuner"],
@@ -128,7 +150,26 @@ enum BreakfastMealBuilderCatalog {
         )
     }
 
+    /// Nom repas FR persisté (matching). Affichage via `localizedDisplayName` / builder.
     static func composedName(from selections: BreakfastBuilderSelections) -> String {
+        var parts: [String] = []
+        if let protein = option(id: selections.protein) {
+            parts.append(protein.cardTitle.replacingOccurrences(of: "\n", with: " "))
+        }
+        let fruits = selections.fruits.compactMap {
+            option(id: $0)?.cardTitle.replacingOccurrences(of: "\n", with: " ")
+        }
+        let veggies = selections.vegetables.compactMap {
+            option(id: $0)?.cardTitle.replacingOccurrences(of: "\n", with: " ")
+        }
+        parts.append(contentsOf: fruits)
+        parts.append(contentsOf: veggies)
+        if parts.isEmpty { return "Petit-déj debloat" }
+        return parts.joined(separator: " · ")
+    }
+
+    @MainActor
+    static func localizedComposedName(from selections: BreakfastBuilderSelections) -> String {
         var parts: [String] = []
         if let protein = option(id: selections.protein) {
             parts.append(protein.displayTitle)
@@ -137,17 +178,21 @@ enum BreakfastMealBuilderCatalog {
         let veggies = selections.vegetables.compactMap { option(id: $0)?.displayTitle }
         parts.append(contentsOf: fruits)
         parts.append(contentsOf: veggies)
-        if parts.isEmpty { return "Petit-déj debloat" }
+        if parts.isEmpty {
+            return AppCopy.t("Petit-déj debloat", en: "Debloat breakfast")
+        }
         return parts.joined(separator: " · ")
     }
 
+    @MainActor
     static func heroCardTitle(from selections: BreakfastBuilderSelections) -> String {
-        let protein = option(id: selections.protein)?.cardTitle ?? "petit\ndéj"
+        let protein = option(id: selections.protein)?.localizedCardTitle
+            ?? AppCopy.t("petit\ndéj", en: "break\nfast")
         if selections.fruits.isEmpty && selections.vegetables.isEmpty {
             return protein
         }
-        let accent = selections.fruits.compactMap { option(id: $0)?.cardTitle }.first
-            ?? selections.vegetables.compactMap { option(id: $0)?.cardTitle }.first
+        let accent = selections.fruits.compactMap { option(id: $0)?.localizedCardTitle }.first
+            ?? selections.vegetables.compactMap { option(id: $0)?.localizedCardTitle }.first
             ?? ""
         if accent.isEmpty { return protein }
         return "\(protein)\n\(accent)"

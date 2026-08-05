@@ -19,7 +19,7 @@ struct OnboardingProfileChatInlineFaceScanSection: View {
             HapticManager.shared.impact(.medium)
             onLaunchScan()
         } label: {
-            Text("Lancer le scan")
+            Text(OnboardingCopy.t("Lancer le scan", en: "Start the scan"))
                 .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize + 1, weight: .bold))
                 .foregroundStyle(
                     isSubmitting

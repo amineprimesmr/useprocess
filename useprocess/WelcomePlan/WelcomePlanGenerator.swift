@@ -110,17 +110,20 @@ enum WelcomePlanGenerator {
     ) -> OriginLifestyleExtras {
         var extras = OriginLifestyleExtras.default
         if choice("screen_before_bed", in: answers) == "yes" {
-            extras.stressRegulation.append("Priorité : couper les écrans 60 min avant le coucher")
+            extras.stressRegulation.append(AppCopy.tSync("Priorité : couper les écrans 60 min avant le coucher", en: "Priority: cut screens 60 min before bed"))
         }
         if multi("face_concerns", in: answers).contains("dark_circles") {
-            extras.bonusProposals.insert("Cernes = sommeil + lymphe : marche + hydratation minérale avant crème", at: 0)
+            extras.bonusProposals.insert(AppCopy.tSync("Cernes = sommeil + lymphe : marche + hydratation minérale avant crème", en: "Under-eyes = sleep + lymph: walk + mineral hydration before cream"), at: 0)
         }
         if choice("alcohol_frequency", in: answers) == "often" || choice("alcohol_frequency", in: answers) == "weekly" {
-            extras.stressRegulation.append("Alcool le soir = debloat garanti — réduire en phase 1")
+            extras.stressRegulation.append(AppCopy.tSync("Alcool le soir = debloat garanti — réduire en phase 1", en: "Evening alcohol = guaranteed bloat — cut in phase 1"))
         }
         if snapshot.primaryBlocker == .composition, let gap = snapshot.estimatedBodyFatPercent {
             extras.bonusProposals.insert(
-                "Composition ~\(Int(gap.rounded())) % → cible ~\(Int(snapshot.targetBodyFatPercent)) % — densité alimentaire, pas famine",
+                AppCopy.tSync(
+                    "Composition ~\(Int(gap.rounded())) % → cible ~\(Int(snapshot.targetBodyFatPercent)) % — densité alimentaire, pas famine",
+                    en: "Composition ~\(Int(gap.rounded()))% → target ~\(Int(snapshot.targetBodyFatPercent))% — food density, not starvation"
+                ),
                 at: 0
             )
         }
@@ -140,7 +143,10 @@ enum WelcomePlanGenerator {
     private static func primaryGoalLabel(_ answers: [String: WelcomePlanAnswer]) -> String {
         let concerns = multi("face_concerns", in: answers)
         guard !concerns.isEmpty else {
-            return "Plan personnalisé — transformation globale"
+            return AppCopy.tSync(
+                "Plan personnalisé — transformation globale",
+                en: "Personalized plan — full transformation"
+            )
         }
         return concerns.prefix(3).map {
             WelcomePlanQuestionBank.choiceLabel(for: "face_concerns", choiceId: $0)
@@ -206,10 +212,33 @@ enum WelcomePlanGenerator {
         else if assessment.bodyFatGap >= 4 { results -= 8 }
 
         return [
-            .init(pillar: "Hormones & système nerveux", score: clamp(hormones), focus: hormones < 60 ? "Sommeil + lumière + stress" : "Consolidation circadienne"),
-            .init(pillar: "Entraînement adapté", score: clamp(training), focus: "Progression \(OriginUserAssessment.sessionsFromAnswers(answers))×/sem"),
-            .init(pillar: "Posture & fascias", score: clamp(posture), focus: posture < 55 ? "Chaîne postérieure + mewing" : "Maintenance fasciale"),
-            .init(pillar: "Résultats (visage)", score: clamp(results), focus: assessment.blockerSummary)
+            .init(
+                pillar: AppCopy.tSync("Hormones & système nerveux", en: "Hormones & nervous system"),
+                score: clamp(hormones),
+                focus: hormones < 60
+                    ? AppCopy.tSync("Sommeil + lumière + stress", en: "Sleep + light + stress")
+                    : AppCopy.tSync("Consolidation circadienne", en: "Circadian consolidation")
+            ),
+            .init(
+                pillar: AppCopy.tSync("Entraînement adapté", en: "Adapted training"),
+                score: clamp(training),
+                focus: AppCopy.tSync(
+                    "Progression \(OriginUserAssessment.sessionsFromAnswers(answers))×/sem",
+                    en: "Progression \(OriginUserAssessment.sessionsFromAnswers(answers))×/wk"
+                )
+            ),
+            .init(
+                pillar: AppCopy.tSync("Posture & fascias", en: "Posture & fascia"),
+                score: clamp(posture),
+                focus: posture < 55
+                    ? AppCopy.tSync("Chaîne postérieure + mewing", en: "Posterior chain + mewing")
+                    : AppCopy.tSync("Maintenance fasciale", en: "Fascia maintenance")
+            ),
+            .init(
+                pillar: AppCopy.tSync("Résultats (visage)", en: "Results (face)"),
+                score: clamp(results),
+                focus: assessment.blockerSummary
+            )
         ]
     }
 
@@ -222,19 +251,82 @@ enum WelcomePlanGenerator {
         snapshot: OriginPlanAssessmentSnapshot
     ) -> [OriginDailyHabit] {
         var habits: [OriginDailyHabit] = [
-            .init(id: "sun", title: "Lumière matinale", detail: "\(targets.morningLightMinutes) min de lumière naturelle dans l'heure après le réveil.", pillar: "Hormones", timing: "Réveil"),
-            .init(id: "cold_face", title: "Eau froide sur le visage", detail: "\(targets.coldFaceRinseSeconds) sec au réveil — stimule la lymphe et dégonfle.", pillar: "Visage", timing: "Réveil"),
-            .init(id: "nutrition", title: "Alimentation parfaite", detail: "Repas denses, zéro ultra-transformé — valide ton repas du jour.", pillar: "Nutrition", timing: "Journée"),
-            .init(id: "walk", title: "Marche", detail: "\(targets.dailySteps) pas — mouvement quotidien.", pillar: "Posture", timing: "Journée"),
-            .init(id: "hydrate", title: ProcessHydrationGuide.dailyTaskTitle, detail: "Objectif \(targets.hydrationLabel) — répartis dans la journée.", pillar: "Nutrition", timing: "Journée")
+            .init(
+                id: "sun",
+                title: AppCopy.tSync("Lumière matinale", en: "Morning light"),
+                detail: AppCopy.tSync(
+                    "\(targets.morningLightMinutes) min de lumière naturelle dans l'heure après le réveil.",
+                    en: "\(targets.morningLightMinutes) min of natural light within an hour of waking."
+                ),
+                pillar: AppCopy.tSync("Hormones", en: "Hormones"),
+                timing: AppCopy.tSync("Réveil", en: "Wake")
+            ),
+            .init(
+                id: "cold_face",
+                title: AppCopy.tSync("Eau froide sur le visage", en: "Cold water on the face"),
+                detail: AppCopy.tSync(
+                    "\(targets.coldFaceRinseSeconds) sec au réveil — stimule la lymphe et dégonfle.",
+                    en: "\(targets.coldFaceRinseSeconds) sec on waking — boosts lymph and debloats."
+                ),
+                pillar: AppCopy.tSync("Visage", en: "Face"),
+                timing: AppCopy.tSync("Réveil", en: "Wake")
+            ),
+            .init(
+                id: "nutrition",
+                title: AppCopy.tSync("Alimentation parfaite", en: "Solid nutrition"),
+                detail: AppCopy.tSync(
+                    "Repas denses, zéro ultra-transformé — valide ton repas du jour.",
+                    en: "Dense meals, zero ultra-processed — log your meal for the day."
+                ),
+                pillar: AppCopy.tSync("Nutrition", en: "Nutrition"),
+                timing: AppCopy.tSync("Journée", en: "Daytime")
+            ),
+            .init(
+                id: "walk",
+                title: AppCopy.tSync("Marche", en: "Walk"),
+                detail: AppCopy.tSync(
+                    "\(targets.dailySteps) pas — mouvement quotidien.",
+                    en: "\(targets.dailySteps) steps — daily movement."
+                ),
+                pillar: AppCopy.tSync("Posture", en: "Posture"),
+                timing: AppCopy.tSync("Journée", en: "Daytime")
+            ),
+            .init(
+                id: "hydrate",
+                title: ProcessHydrationGuide.dailyTaskTitle,
+                detail: AppCopy.tSync(
+                    "Objectif \(targets.hydrationLabel) — répartis dans la journée.",
+                    en: "Goal \(targets.hydrationLabel) — spread across the day."
+                ),
+                pillar: AppCopy.tSync("Nutrition", en: "Nutrition"),
+                timing: AppCopy.tSync("Journée", en: "Daytime")
+            )
         ]
 
         if gender == .female {
-            habits.append(.init(id: "cycle", title: "Sync cycle", detail: "Adapter l'intensité selon la phase — moins de stress nerveux en phase lutéale.", pillar: "Entraînement", timing: "Hebdo"))
+            habits.append(.init(
+                id: "cycle",
+                title: AppCopy.tSync("Sync cycle", en: "Cycle sync"),
+                detail: AppCopy.tSync(
+                    "Adapter l'intensité selon la phase — moins de stress nerveux en phase lutéale.",
+                    en: "Match intensity to your phase — less nervous stress in luteal."
+                ),
+                pillar: AppCopy.tSync("Entraînement", en: "Training"),
+                timing: AppCopy.tSync("Hebdo", en: "Weekly")
+            ))
         }
 
         if multi("face_concerns", in: answers).contains("dark_circles") {
-            habits.append(.init(id: "sleep_face", title: "Sommeil prioritaire visage", detail: "\(Int(targets.sleepHours)) h par nuit. Les cernes = cortisol + lymphe stagnante.", pillar: "Visage", timing: "Nuit"))
+            habits.append(.init(
+                id: "sleep_face",
+                title: AppCopy.tSync("Sommeil prioritaire visage", en: "Face-first sleep"),
+                detail: AppCopy.tSync(
+                    "\(Int(targets.sleepHours)) h par nuit. Les cernes = cortisol + lymphe stagnante.",
+                    en: "\(Int(targets.sleepHours)) h per night. Under-eyes = cortisol + stagnant lymph."
+                ),
+                pillar: AppCopy.tSync("Visage", en: "Face"),
+                timing: AppCopy.tSync("Nuit", en: "Night")
+            ))
         }
 
         return habits
@@ -242,9 +334,30 @@ enum WelcomePlanGenerator {
 
     private static func buildWeeklyRhythm(sessions: Int, targets: OriginPersonalizedDailyTargets) -> [OriginWeeklyBlock] {
         [
-            .init(id: "w1", title: "Structure hebdo", detail: "\(sessions) séances force + marche quotidienne"),
-            .init(id: "w2", title: "Récupération", detail: "\(targets.restDaysPerWeek) jours off complets. Sommeil > séance supplémentaire si fatigue."),
-            .init(id: "w3", title: "Soleil & nature", detail: "\(targets.outdoorWalkSessionsPerWeek) sessions outdoor/sem — lumière + grounding.")
+            .init(
+                id: "w1",
+                title: AppCopy.tSync("Structure hebdo", en: "Weekly structure"),
+                detail: AppCopy.tSync(
+                    "\(sessions) séances force + marche quotidienne",
+                    en: "\(sessions) strength sessions + daily walks"
+                )
+            ),
+            .init(
+                id: "w2",
+                title: AppCopy.tSync("Récupération", en: "Recovery"),
+                detail: AppCopy.tSync(
+                    "\(targets.restDaysPerWeek) jours off complets. Sommeil > séance supplémentaire si fatigue.",
+                    en: "\(targets.restDaysPerWeek) full rest days. Sleep > extra session if fatigued."
+                )
+            ),
+            .init(
+                id: "w3",
+                title: AppCopy.tSync("Soleil & nature", en: "Sun & nature"),
+                detail: AppCopy.tSync(
+                    "\(targets.outdoorWalkSessionsPerWeek) sessions outdoor/sem — lumière + grounding.",
+                    en: "\(targets.outdoorWalkSessionsPerWeek) outdoor sessions/wk — light + grounding."
+                )
+            )
         ]
     }
 
@@ -254,53 +367,111 @@ enum WelcomePlanGenerator {
         snapshot: OriginPlanAssessmentSnapshot,
         targets: OriginPersonalizedDailyTargets
     ) -> OriginNutritionProtocol {
-        let reduce: [String] = ["Ultra-transformés", "Huiles de graines industrielles", "Sucre ajouté quotidien"]
-        var prioritize: [String] = ["Œufs", "Tubercules cuits (rôtis/mijotés)", "Fruits modérés"]
+        let reduce: [String] = [
+            AppCopy.tSync("Ultra-transformés", en: "Ultra-processed"),
+            AppCopy.tSync("Huiles de graines industrielles", en: "Industrial seed oils"),
+            AppCopy.tSync("Sucre ajouté quotidien", en: "Daily added sugar")
+        ]
+        var prioritize: [String] = [
+            AppCopy.tSync("Œufs", en: "Eggs"),
+            AppCopy.tSync("Tubercules cuits (rôtis/mijotés)", en: "Cooked tubers (roasted/stewed)"),
+            AppCopy.tSync("Fruits modérés", en: "Moderate fruit")
+        ]
         var principles: [String] = [
-            "Alimentation dense = moins de volume, plus de nutriments — digestion légère",
-            "Zéro complément isolé : cofacteurs viennent des aliments entiers",
-            "Électrolytes via sel minéral et laitiers de qualité — pas de sachets"
+            AppCopy.tSync(
+                "Alimentation dense = moins de volume, plus de nutriments — digestion légère",
+                en: "Dense food = less volume, more nutrients — light digestion"
+            ),
+            AppCopy.tSync(
+                "Zéro complément isolé : cofacteurs viennent des aliments entiers",
+                en: "Zero isolated supplements: cofactors come from whole foods"
+            ),
+            AppCopy.tSync(
+                "Électrolytes via sel minéral et laitiers de qualité — pas de sachets",
+                en: "Electrolytes via mineral salt and quality dairy — no packets"
+            )
         ]
 
         let restrictions = multi("dietary_restrictions", in: answers)
         if restrictions.contains(DietaryRestriction.vegetarian.rawValue) ||
             restrictions.contains(DietaryRestriction.vegan.rawValue) {
-            prioritize = ["Œufs", "Laitiers entiers", "Poisson (si pescétarien)", "Tubercules", "Fruits modérés"]
-            principles.append("Aliments entiers denses — pas de multivitamines")
+            prioritize = [
+                AppCopy.tSync("Œufs", en: "Eggs"),
+                AppCopy.tSync("Laitiers entiers", en: "Full-fat dairy"),
+                AppCopy.tSync("Poisson (si pescétarien)", en: "Fish (if pescatarian)"),
+                AppCopy.tSync("Tubercules", en: "Tubers"),
+                AppCopy.tSync("Fruits modérés", en: "Moderate fruit")
+            ]
+            principles.append(AppCopy.tSync(
+                "Aliments entiers denses — pas de multivitamines",
+                en: "Dense whole foods — no multivitamins"
+            ))
         }
         if restrictions.contains(DietaryRestriction.lactoseFree.rawValue) {
-            prioritize.removeAll { $0.contains("Laitiers") }
+            prioritize.removeAll {
+                $0.contains("Laitiers") || $0.localizedCaseInsensitiveContains("dairy")
+            }
         }
 
         if bodyFat == "soft" || bodyFat == "high" || snapshot.bodyFatGap >= 4 {
-            principles.append("Léger déficit via densité alimentaire — pas de famine (préserve le visage)")
+            principles.append(AppCopy.tSync(
+                "Léger déficit via densité alimentaire — pas de famine (préserve le visage)",
+                en: "Light deficit via food density — no crash dieting (protects the face)"
+            ))
         } else if bodyFat == "very_lean" || bodyFat == "athletic" || snapshot.bodyFatGap < 2 {
-            principles.append("Maintien ou léger surplus via laitiers / tubercules — pas de restriction")
+            principles.append(AppCopy.tSync(
+                "Maintien ou léger surplus via laitiers / tubercules — pas de restriction",
+                en: "Maintain or slight surplus via dairy / tubers — no restriction"
+            ))
         }
 
         if multi("animal_protein", in: answers).contains("none") {
-            principles.append("Protéines animales ou œufs à chaque repas principal — carences = peau terne")
+            principles.append(AppCopy.tSync(
+                "Protéines animales ou œufs à chaque repas principal — carences = peau terne",
+                en: "Animal protein or eggs at every main meal — deficiencies = dull skin"
+            ))
         }
 
         if choice("alcohol_frequency", in: answers) == "often" {
-            principles.append("Alcool = debloat garanti — couper en semaine 1")
+            principles.append(AppCopy.tSync(
+                "Alcool = debloat garanti — couper en semaine 1",
+                en: "Alcohol = guaranteed bloat — cut in week 1"
+            ))
         }
 
         if choice("processed_food", in: answers) == "most_meals" || choice("processed_food", in: answers) == "daily" {
-            principles.append("Priorité : remplacer l'industriel par des repas simples faits maison")
+            principles.append(AppCopy.tSync(
+                "Priorité : remplacer l'industriel par des repas simples faits maison",
+                en: "Priority: replace ultra-processed with simple home-cooked meals"
+            ))
         }
 
         var nutrition = OriginNutritionProtocol(
             principles: principles,
             dailyStructure: [
-                "Repas denses : protéines + tubercule ou légumes cuits",
-                "Idées de repas via l'IA dans le journal (pas de menu imposé)",
-                "Collation optionnelle si faim réelle : fromage entier ou fruit",
-                "Dîner léger si sommeil fragile"
+                AppCopy.tSync(
+                    "Repas denses : protéines + tubercule ou légumes cuits",
+                    en: "Dense meals: protein + tuber or cooked vegetables"
+                ),
+                AppCopy.tSync(
+                    "Idées de repas via l'IA dans le journal (pas de menu imposé)",
+                    en: "Meal ideas via AI in the journal (no fixed menu)"
+                ),
+                AppCopy.tSync(
+                    "Collation optionnelle si faim réelle : fromage entier ou fruit",
+                    en: "Optional snack if truly hungry: full-fat cheese or fruit"
+                ),
+                AppCopy.tSync(
+                    "Dîner léger si sommeil fragile",
+                    en: "Lighter dinner if sleep is fragile"
+                )
             ],
             foodsToPrioritize: prioritize,
             foodsToReduce: reduce,
-            hydrationGuide: "Objectif \(targets.hydrationLabel)/jour — répartis, pas d'excès le soir (debloat visage)",
+            hydrationGuide: AppCopy.tSync(
+                "Objectif \(targets.hydrationLabel)/jour — répartis, pas d'excès le soir (debloat visage)",
+                en: "Goal \(targets.hydrationLabel)/day — spread out, no excess at night (face debloat)"
+            ),
             mealExamples: [],
             mealPlanStyle: nil,
             currentMealsPerDay: nil,
@@ -338,20 +509,50 @@ enum WelcomePlanGenerator {
         let hours = max(targets.sleepHours, computedSleepHours(bedtime: bedtime, wake: wake))
 
         var evening: [String] = [
-            "Lumière chaude / tamisée 2 h avant le coucher",
-            "Dernière caféine avant \(ProcessDailyTargets.caffeineCutoffHour) h",
-            "Chambre fraîche (\(ProcessDailyTargets.bedroomTempCelsius) °C), obscurité totale"
+            AppCopy.tSync(
+                "Lumière chaude / tamisée 2 h avant le coucher",
+                en: "Warm / dim light 2 h before bed"
+            ),
+            AppCopy.tSync(
+                "Dernière caféine avant \(ProcessDailyTargets.caffeineCutoffHour) h",
+                en: "Last caffeine before \(ProcessDailyTargets.caffeineCutoffHour):00"
+            ),
+            AppCopy.tSync(
+                "Chambre fraîche (\(ProcessDailyTargets.bedroomTempCelsius) °C), obscurité totale",
+                en: "Cool room (\(ProcessDailyTargets.bedroomTempCelsius) °C), total darkness"
+            )
         ]
         let morning: [String] = [
-            "Réveil même heure (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min max, week-end inclus)",
-            "\(ProcessDailyTargets.warmWaterOnWakeML) ml d'eau tiède au réveil",
-            "Circuit lymphatique — sauts, genoux, bras alternés (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
-            "Glaçons sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) s",
-            "Hydratation + sel / citron — pas de téléphone au lit"
+            AppCopy.tSync(
+                "Réveil même heure (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min max, week-end inclus)",
+                en: "Wake at the same time (\(ProcessDailyTargets.sleepScheduleMarginMinutes) min max margin, weekends included)"
+            ),
+            AppCopy.tSync(
+                "\(ProcessDailyTargets.warmWaterOnWakeML) ml d'eau tiède au réveil",
+                en: "\(ProcessDailyTargets.warmWaterOnWakeML) ml warm water on waking"
+            ),
+            AppCopy.tSync(
+                "Circuit lymphatique — sauts, genoux, bras alternés (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
+                en: "Lymph circuit — jumps, knees, alternating arms (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))"
+            ),
+            AppCopy.tSync(
+                "Glaçons sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) s",
+                en: "Ice on the face \(ProcessDailyTargets.coldFaceRinseSeconds) s"
+            ),
+            AppCopy.tSync(
+                "Hydratation + sel / citron — pas de téléphone au lit",
+                en: "Hydration + salt / lemon — no phone in bed"
+            )
         ]
 
         if choice("screen_before_bed", in: answers) == "yes" {
-            evening.insert("Mode avion ou téléphone hors chambre \(ProcessDailyTargets.screenCurfewMinutes) min avant", at: 0)
+            evening.insert(
+                AppCopy.tSync(
+                    "Mode avion ou téléphone hors chambre \(ProcessDailyTargets.screenCurfewMinutes) min avant",
+                    en: "Airplane mode or phone out of the room \(ProcessDailyTargets.screenCurfewMinutes) min before"
+                ),
+                at: 0
+            )
         }
 
         if GutHealthIntelligenceGuide.needsGutReset(answers: answers, snapshot: snapshot) {
@@ -363,13 +564,25 @@ enum WelcomePlanGenerator {
         }
 
         if choice("caffeine_afternoon", in: answers) == "yes" {
-            evening.insert("Pas de caféine après \(ProcessDailyTargets.caffeineCutoffHour) h — impact direct sur le debloat matinal", at: 0)
+            evening.insert(
+                AppCopy.tSync(
+                    "Pas de caféine après \(ProcessDailyTargets.caffeineCutoffHour) h — impact direct sur le debloat matinal",
+                    en: "No caffeine after \(ProcessDailyTargets.caffeineCutoffHour):00 — direct impact on morning debloat"
+                ),
+                at: 0
+            )
         }
 
         var sleepProtocol = OriginSleepProtocol(
             targetHours: hours,
-            bedtimeWindow: "Cible \(bedtime) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
-            wakeWindow: "Cible \(wake) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
+            bedtimeWindow: AppCopy.tSync(
+                "Cible \(bedtime) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
+                en: "Target \(bedtime) (\(ProcessDailyTargets.sleepScheduleMarginMinutes) min margin)"
+            ),
+            wakeWindow: AppCopy.tSync(
+                "Cible \(wake) (marge \(ProcessDailyTargets.sleepScheduleMarginMinutes) min)",
+                en: "Target \(wake) (\(ProcessDailyTargets.sleepScheduleMarginMinutes) min margin)"
+            ),
             eveningRoutine: evening,
             morningRoutine: morning
         )
@@ -392,40 +605,81 @@ enum WelcomePlanGenerator {
 
         if gender == .female {
             template = [
-                "Séance A : Fessiers / hanches + chaîne postérieure",
-                "Séance B (option) : Haut du corps léger + core",
-                "Marche quotidienne prioritaire sur le cardio intensif"
+                AppCopy.tSync(
+                    "Séance A : Fessiers / hanches + chaîne postérieure",
+                    en: "Session A: Glutes / hips + posterior chain"
+                ),
+                AppCopy.tSync(
+                    "Séance B (option) : Haut du corps léger + core",
+                    en: "Session B (optional): Light upper body + core"
+                ),
+                AppCopy.tSync(
+                    "Marche quotidienne prioritaire sur le cardio intensif",
+                    en: "Daily walking prioritized over intense cardio"
+                )
             ]
         } else {
             template = [
-                "Séance A : Push (épaules, trapèzes, pec) + cou",
-                "Séance B : Pull (dos, rear delts) + face pulls",
-                "Séance C : Jambes + fessiers + chaîne postérieure"
+                AppCopy.tSync(
+                    "Séance A : Push (épaules, trapèzes, pec) + cou",
+                    en: "Session A: Push (shoulders, traps, chest) + neck"
+                ),
+                AppCopy.tSync(
+                    "Séance B : Pull (dos, rear delts) + face pulls",
+                    en: "Session B: Pull (back, rear delts) + face pulls"
+                ),
+                AppCopy.tSync(
+                    "Séance C : Jambes + fessiers + chaîne postérieure",
+                    en: "Session C: Legs + glutes + posterior chain"
+                )
             ]
         }
 
         if sessions <= 2 {
             template = Array(template.prefix(2))
         } else if sessions == 1 {
-            template = ["Full body 2× mouvements composés + face pulls + marche"]
+            template = [
+                AppCopy.tSync(
+                    "Full body 2× mouvements composés + face pulls + marche",
+                    en: "Full body 2× compound moves + face pulls + walking"
+                )
+            ]
         }
 
-        var recovery = ["Sommeil > séance extra", "Deload aux fins de phase"]
+        var recovery = [
+            AppCopy.tSync("Sommeil > séance extra", en: "Sleep > extra session"),
+            AppCopy.tSync("Deload aux fins de phase", en: "Deload at phase ends")
+        ]
         if injuries.contains("lower_back") {
-            recovery.append("Éviter charges axiales lourdes — hip hinge technique d'abord")
+            recovery.append(AppCopy.tSync(
+                "Éviter charges axiales lourdes — hip hinge technique d'abord",
+                en: "Avoid heavy axial loading — hip-hinge technique first"
+            ))
         }
         if injuries.contains("knees") {
-            recovery.append("Genoux : privilégier hip thrust, RDL léger — pas de squat profond douloureux")
+            recovery.append(AppCopy.tSync(
+                "Genoux : privilégier hip thrust, RDL léger — pas de squat profond douloureux",
+                en: "Knees: prefer hip thrust, light RDL — no painful deep squats"
+            ))
         }
         if injuries.contains("shoulders") || injuries.contains("neck") {
-            recovery.append("Épaules/nuque : face pulls et mobilité avant charges lourdes")
+            recovery.append(AppCopy.tSync(
+                "Épaules/nuque : face pulls et mobilité avant charges lourdes",
+                en: "Shoulders/neck: face pulls and mobility before heavy loads"
+            ))
         }
         if snapshot.archetype == .stressRecovery || snapshot.archetype == .habitReset {
-            recovery.append("RPE 6–7 max — récupération prioritaire")
+            recovery.append(AppCopy.tSync(
+                "RPE 6–7 max — récupération prioritaire",
+                en: "RPE 6–7 max — recovery first"
+            ))
         }
         if choice("fatigue_frequency", in: answers) == FatigueFrequency.often.rawValue ||
             choice("fatigue_frequency", in: answers) == FatigueFrequency.always.rawValue {
-            recovery.append("RPE 6–7 max — récupération prioritaire si fatigue fréquente")
+            recovery.append(AppCopy.tSync(
+                "RPE 6–7 max — récupération prioritaire si fatigue fréquente",
+                en: "RPE 6–7 max — recovery first if fatigue is frequent"
+            ))
         }
         for rule in OriginScriptRulesEngine.trainingConstraints(snapshot: snapshot, answers: answers) {
             if !recovery.contains(rule) { recovery.append(rule) }
@@ -436,13 +690,36 @@ enum WelcomePlanGenerator {
 
         let locationNote: String = {
             switch location {
-            case "home": return "Maison — haltères / bandes / poids du corps"
-            case "gym": return "Salle — machines + libre"
-            case "outdoor": return "Extérieur — parc, anneaux, marche"
-            case "mixed": return "Mixte — adapter selon le jour"
-            default: return gender == .female
-                ? "1–2 séances intensité + marche — cycle menstruel respecté"
-                : "3–4 séances — accent clavicules, trapèzes, épaules, chaîne postérieure"
+            case "home":
+                return AppCopy.tSync(
+                    "Maison — haltères / bandes / poids du corps",
+                    en: "Home — dumbbells / bands / bodyweight"
+                )
+            case "gym":
+                return AppCopy.tSync(
+                    "Salle — machines + libre",
+                    en: "Gym — machines + free weights"
+                )
+            case "outdoor":
+                return AppCopy.tSync(
+                    "Extérieur — parc, anneaux, marche",
+                    en: "Outdoors — park, rings, walking"
+                )
+            case "mixed":
+                return AppCopy.tSync(
+                    "Mixte — adapter selon le jour",
+                    en: "Mixed — adapt by day"
+                )
+            default:
+                return gender == .female
+                    ? AppCopy.tSync(
+                        "1–2 séances intensité + marche — cycle menstruel respecté",
+                        en: "1–2 intensity sessions + walking — menstrual cycle respected"
+                    )
+                    : AppCopy.tSync(
+                        "3–4 séances — accent clavicules, trapèzes, épaules, chaîne postérieure",
+                        en: "3–4 sessions — focus clavicles, traps, shoulders, posterior chain"
+                    )
             }
         }()
 
@@ -477,7 +754,10 @@ enum WelcomePlanGenerator {
             dailyChecks: checks,
             mobilityBlocks: postureMobilityBlocks(for: answers, gender: gender),
             breathingWork: PostureIntelligenceGuide.breathingWork(for: answers),
-            walkingTargets: "Objectif \(targets.dailySteps) pas + marche consciente (orteils dedans) — HealthKit"
+            walkingTargets: AppCopy.tSync(
+                "Objectif \(targets.dailySteps) pas + marche consciente (orteils dedans) — HealthKit",
+                en: "Goal \(targets.dailySteps) steps + mindful walking (toes in) — HealthKit"
+            )
         )
     }
 
@@ -532,18 +812,39 @@ enum WelcomePlanGenerator {
         snapshot: OriginPlanAssessmentSnapshot
     ) -> [String] {
         var notes = [
-            "Profil : \(snapshot.archetype.label) — \(snapshot.blockerSummary)",
-            "10 % des actions (sommeil, alimentation dense, mewing + posture) = 90 % du résultat visage.",
-            "Pas de raccourci artificiel. La beauté est la conséquence d'une biologie en ordre."
+            AppCopy.tSync(
+                "Profil : \(snapshot.archetype.label) — \(snapshot.blockerSummary)",
+                en: "Profile: \(snapshot.archetype.label) — \(snapshot.blockerSummary)"
+            ),
+            AppCopy.tSync(
+                "10 % des actions (sommeil, alimentation dense, mewing + posture) = 90 % du résultat visage.",
+                en: "10% of actions (sleep, dense nutrition, mewing + posture) = 90% of face results."
+            ),
+            AppCopy.tSync(
+                "Pas de raccourci artificiel. La beauté est la conséquence d'une biologie en ordre.",
+                en: "No artificial shortcuts. Beauty is the consequence of ordered biology."
+            )
         ]
         if duration.totalWeeks <= 3 {
-            notes.insert("Plan court : exécution stricte > perfection.", at: 1)
+            notes.insert(
+                AppCopy.tSync(
+                    "Plan court : exécution stricte > perfection.",
+                    en: "Short plan: strict execution > perfection."
+                ),
+                at: 1
+            )
         }
         if supplements == "many" || supplements == "basic" {
-            notes.append("On remplace les compléments par des aliments entiers — œufs, laitiers, viande rouge.")
+            notes.append(AppCopy.tSync(
+                "On remplace les compléments par des aliments entiers — œufs, laitiers, viande rouge.",
+                en: "We replace supplements with whole foods — eggs, dairy, red meat."
+            ))
         }
         if choice("commit_plan", in: answers) == "no" {
-            notes.append("Reviens quand tu es prêt à t'engager — les bases demandent de la constance.")
+            notes.append(AppCopy.tSync(
+                "Reviens quand tu es prêt à t'engager — les bases demandent de la constance.",
+                en: "Come back when you're ready to commit — the basics need consistency."
+            ))
         }
         return notes
     }
@@ -559,28 +860,52 @@ enum WelcomePlanGenerator {
         var parts: [String] = []
         let snapshot = assessment.snapshot
 
-        parts.append("Priorités : \(faceGoal).")
-        parts.append("\(snapshot.archetype.label) — \(duration.rangeLabel) (\(duration.totalWeeks) sem. calendrier).")
+        parts.append(AppCopy.tSync("Priorités : \(faceGoal).", en: "Priorities: \(faceGoal)."))
+        parts.append(AppCopy.tSync(
+            "\(snapshot.archetype.label) — \(duration.rangeLabel) (\(duration.totalWeeks) sem. calendrier).",
+            en: "\(snapshot.archetype.label) — \(duration.rangeLabel) (\(duration.totalWeeks) wk calendar)."
+        ))
         parts.append(snapshot.blockerSummary + ".")
 
         if let bmi = snapshot.bmi {
-            parts.append(String(format: "Profil : %.1f m · %.0f kg · IMC %.1f.", (snapshot.heightCm ?? 0) / 100, snapshot.weightKg ?? 0, bmi))
+            parts.append(AppCopy.tSync(
+                String(format: "Profil : %.1f m · %.0f kg · IMC %.1f.", (snapshot.heightCm ?? 0) / 100, snapshot.weightKg ?? 0, bmi),
+                en: String(format: "Profile: %.1f m · %.0f kg · BMI %.1f.", (snapshot.heightCm ?? 0) / 100, snapshot.weightKg ?? 0, bmi)
+            ))
         }
         if let bf = snapshot.estimatedBodyFatPercent {
-            parts.append(String(format: "Masse grasse estimée ~%.0f %% → cible ~%.0f %%.", bf, snapshot.targetBodyFatPercent))
+            parts.append(AppCopy.tSync(
+                String(format: "Masse grasse estimée ~%.0f %% → cible ~%.0f %%.", bf, snapshot.targetBodyFatPercent),
+                en: String(format: "Estimated body fat ~%.0f%% → target ~%.0f%%.", bf, snapshot.targetBodyFatPercent)
+            ))
         }
 
         if sleepQ?.contains("Mauvais") == true || sleepQ?.contains("mauvais") == true {
-            parts.append("Priorité #1 : sommeil et rythme circadien — sans ça, le visage reste gonflé.")
+            parts.append(AppCopy.tSync(
+                "Priorité #1 : sommeil et rythme circadien — sans ça, le visage reste gonflé.",
+                en: "Priority #1: sleep and circadian rhythm — without it, the face stays puffy."
+            ))
         }
         if choice("processed_food", in: answers) == "daily" || choice("processed_food", in: answers) == "most_meals" {
-            parts.append("Alimentation industrielle détectée : transition vers repas denses faits maison.")
+            parts.append(AppCopy.tSync(
+                "Alimentation industrielle détectée : transition vers repas denses faits maison.",
+                en: "Ultra-processed diet detected: transition to dense home-cooked meals."
+            ))
         }
         let planType = ProcessMealPlanConfiguration.readTargetPlan(from: answers)
-        parts.append("Structure repas : \(planType.label).")
-        parts.append("\(sessions) séances/semaine + marche (HealthKit) + mewing & travail maxillaire.")
+        parts.append(AppCopy.tSync(
+            "Structure repas : \(planType.label).",
+            en: "Meal structure: \(planType.label)."
+        ))
+        parts.append(AppCopy.tSync(
+            "\(sessions) séances/semaine + marche (HealthKit) + mewing & travail maxillaire.",
+            en: "\(sessions) sessions/week + walking (HealthKit) + mewing & maxillary work."
+        ))
         if let firstPhase = assessment.phaseRoadmap.first {
-            parts.append("\(firstPhase.weeksRange) : \(firstPhase.title). Le visage suit la biologie, pas l'inverse.")
+            parts.append(AppCopy.tSync(
+                "\(firstPhase.weeksRange) : \(firstPhase.title). Le visage suit la biologie, pas l'inverse.",
+                en: "\(firstPhase.weeksRange): \(firstPhase.title). The face follows biology, not the reverse."
+            ))
         }
 
         return parts.joined(separator: " ")

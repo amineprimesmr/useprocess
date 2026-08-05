@@ -15,17 +15,17 @@ enum CoachContextualActionKind: String, Codable, Equatable, CaseIterable {
 
     var defaultLabel: String {
         switch self {
-        case .validateMeal: return "Valider dans mon plan"
-        case .saveMealDraft: return "Garder comme suggestion"
-        case .modifyMeal: return "Ajuster ce repas"
-        case .anotherMeal: return "Autre idée"
-        case .addToShoppingList: return "Liste de courses"
-        case .applyPlanChanges: return "Appliquer au programme"
-        case .swapWorkout: return "Changer le cardio"
-        case .openPlan: return "Ouvrir l'accueil"
-        case .openJournal: return "Ouvrir le journal"
-        case .takePhoto: return "Prendre une photo"
-        case .followUp: return "Continuer"
+        case .validateMeal: return AppCopy.t("Valider dans mon plan", en: "Confirm in my plan")
+        case .saveMealDraft: return AppCopy.t("Garder comme suggestion", en: "Keep as a suggestion")
+        case .modifyMeal: return AppCopy.t("Ajuster ce repas", en: "Adjust this meal")
+        case .anotherMeal: return AppCopy.t("Autre idée", en: "Another idea")
+        case .addToShoppingList: return AppCopy.t("Liste de courses", en: "Shopping list")
+        case .applyPlanChanges: return AppCopy.t("Appliquer au programme", en: "Apply to program")
+        case .swapWorkout: return AppCopy.t("Changer le cardio", en: "Change cardio")
+        case .openPlan: return AppCopy.t("Ouvrir l'accueil", en: "Open Home")
+        case .openJournal: return AppCopy.t("Ouvrir le journal", en: "Open journal")
+        case .takePhoto: return AppCopy.t("Prendre une photo", en: "Take a photo")
+        case .followUp: return AppCopy.continueCTA
         }
     }
 

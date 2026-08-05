@@ -175,13 +175,13 @@ enum FaceScanAIInsightBuilder {
     private static func titledPrimary(_ cause: FaceScanPrimaryCause, result: FaceScanResult) -> String {
         let value = metricValue(for: cause, result: result)
         switch cause {
-        case .retention: return "Rétention d'eau · \(value)%"
-        case .cortisol: return "Cortisol estimé · \(value)%"
-        case .recovery: return "Cernes et fatigue · \(value)%"
-        case .skin: return "Qualité de peau · \(value)%"
-        case .definition: return "Définition faciale · \(value)%"
-        case .balanced: return "Visage en forme · \(value)%"
-        case .mixed: return "Signaux visage · \(value)%"
+        case .retention: return AppCopy.tSync("Rétention d'eau · \(value)%", en: "Water retention · \(value)%")
+        case .cortisol: return AppCopy.tSync("Cortisol estimé · \(value)%", en: "Estimated cortisol · \(value)%")
+        case .recovery: return AppCopy.tSync("Cernes et fatigue · \(value)%", en: "Under-eyes & fatigue · \(value)%")
+        case .skin: return AppCopy.tSync("Qualité de peau · \(value)%", en: "Skin quality · \(value)%")
+        case .definition: return AppCopy.tSync("Définition faciale · \(value)%", en: "Facial definition · \(value)%")
+        case .balanced: return AppCopy.tSync("Visage en forme · \(value)%", en: "Face looking good · \(value)%")
+        case .mixed: return AppCopy.tSync("Signaux visage · \(value)%", en: "Face signals · \(value)%")
         }
     }
 
@@ -227,8 +227,8 @@ enum FaceScanAIInsightBuilder {
                 for: .cortisol,
                 facts: facts,
                 defaults: [
-                    "Pour redescendre : 5 min de respiration nasale, pas de cardio intense ce soir, coucher plus tôt.",
-                    "Pour redescendre : marche douce 15 min, pas d'écran 1 h avant le coucher, caféine limitée."
+                    AppCopy.tSync("Pour redescendre : 5 min de respiration nasale, pas de cardio intense ce soir, coucher plus tôt.", en: "To come down: 5 min nasal breathing, no intense cardio tonight, earlier bedtime."),
+                    AppCopy.tSync("Pour redescendre : marche douce 15 min, pas d'écran 1 h avant le coucher, caféine limitée.", en: "To come down: easy 15-min walk, no screens 1 h before bed, limit caffeine.")
                 ]
             )
         case .recovery:
@@ -237,8 +237,8 @@ enum FaceScanAIInsightBuilder {
                 for: .recovery,
                 facts: facts,
                 defaults: [
-                    "Pour récupérer : pause 20 min sans écran, lumière douce ce soir, vise +45 min de sommeil.",
-                    "Pour récupérer : coucher 30 min plus tôt, pas d'alcool ce soir, respiration nasale 5 min."
+                    AppCopy.tSync("Pour récupérer : pause 20 min sans écran, lumière douce ce soir, vise +45 min de sommeil.", en: "To recover: 20-min screen-free break, soft light tonight, aim for +45 min sleep."),
+                    AppCopy.tSync("Pour récupérer : coucher 30 min plus tôt, pas d'alcool ce soir, respiration nasale 5 min.", en: "To recover: bed 30 min earlier, no alcohol tonight, 5 min nasal breathing.")
                 ]
             )
         case .skin:
@@ -247,8 +247,8 @@ enum FaceScanAIInsightBuilder {
                 for: .skin,
                 facts: facts,
                 defaults: [
-                    "Pour retrouver de l'éclat : eau régulière, repas anti-inflammatoires, pas d'alcool ni sucre ajouté.",
-                    "Pour retrouver de l'éclat : légumes verts au déjeuner, hydratation, pas de grignotage sucré."
+                    AppCopy.tSync("Pour retrouver de l'éclat : eau régulière, repas anti-inflammatoires, pas d'alcool ni sucre ajouté.", en: "For glow: steady water, anti-inflammatory meals, no alcohol or added sugar."),
+                    AppCopy.tSync("Pour retrouver de l'éclat : légumes verts au déjeuner, hydratation, pas de grignotage sucré.", en: "For glow: greens at lunch, hydration, no sugary snacking.")
                 ]
             )
         case .definition:
@@ -257,8 +257,8 @@ enum FaceScanAIInsightBuilder {
                 for: .definition,
                 facts: facts,
                 defaults: [
-                    "Pour retrouver les contours : dégonfle d'abord (eau + sel modéré), mâchoire relâchée, langue au palais.",
-                    "Pour retrouver les contours : marche 15 min, potassium au repas, pas de chewing-gum."
+                    AppCopy.tSync("Pour retrouver les contours : dégonfle d'abord (eau + sel modéré), mâchoire relâchée, langue au palais.", en: "For sharper contours: debloat first (water + moderate salt), relaxed jaw, tongue on palate."),
+                    AppCopy.tSync("Pour retrouver les contours : marche 15 min, potassium au repas, pas de chewing-gum.", en: "For sharper contours: 15-min walk, potassium at meals, no chewing gum.")
                 ]
             )
         case .balanced:
@@ -278,12 +278,12 @@ enum FaceScanAIInsightBuilder {
 
     private static func mixedWhy(facts: FaceScanEvolutionFacts) -> String {
         if facts.retentionPersistingScans >= 2 {
-            return "Plusieurs signaux se cumulent et la rétention persiste depuis \(facts.retentionPersistingScans) scans — sommeil, sel ou stress d'hier jouent probablement."
+            return AppCopy.tSync("Plusieurs signaux se cumulent et la rétention persiste depuis \(facts.retentionPersistingScans) scans — sommeil, sel ou stress d'hier jouent probablement.", en: "Several signals stack up and retention has persisted for \(facts.retentionPersistingScans) scans — yesterday's sleep, salt, or stress likely play a role.")
         }
         if let correlation = facts.correlations.first {
-            return "Plusieurs facteurs se cumulent — \(correlation.message.lowercased())."
+            return AppCopy.tSync("Plusieurs facteurs se cumulent — \(correlation.message.lowercased()).", en: "Several factors are stacking — \(correlation.message.lowercased()).")
         }
-        return "Plusieurs facteurs se cumulent sur ton visage ce matin — sommeil, stress ou alimentation d'hier."
+        return AppCopy.tSync("Plusieurs facteurs se cumulent sur ton visage ce matin — sommeil, stress ou alimentation d'hier.", en: "Several factors are stacking on your face this morning — yesterday's sleep, stress, or food.")
     }
 
     private static func pickVariedFix(
@@ -306,7 +306,7 @@ enum FaceScanAIInsightBuilder {
         let severity = FaceScanIndicators.adverseFacePhrase(for: .retention, load: load)
 
         if facts.retentionPersistingScans >= 3 {
-            var line = "Rétention encore visible (\(load) %) depuis \(facts.retentionPersistingScans) scans — \(severity)."
+            var line = AppCopy.tSync("Rétention encore visible (\(load) %) depuis \(facts.retentionPersistingScans) scans — \(severity).", en: "Retention still visible (\(load)%) for \(facts.retentionPersistingScans) scans — \(severity).")
             if let nutrition = facts.nutritionYesterday.summaryLine {
                 line += " \(nutrition)"
             }
@@ -314,76 +314,81 @@ enum FaceScanAIInsightBuilder {
         }
 
         if let delta = delta(for: .retention, result: result), delta >= 6 {
-            var line = "Tu es plus gonflé que d'habitude (\(load) %, \(signed(delta)) vs ta moyenne)."
+            var line = AppCopy.tSync("Tu es plus gonflé que d'habitude (\(load) %, \(signed(delta)) vs ta moyenne).", en: "You're puffier than usual (\(load)%, \(signed(delta)) vs your average).")
             if facts.nutritionYesterday.isHighSodium {
-                line += " Hier sodium élevé (~\(String(format: "%.1f", (facts.nutritionYesterday.estimatedSodiumMg ?? 0) / 1_000)) g) — classique."
+                line += AppCopy.tSync(" Hier sodium élevé (~\(String(format: "%.1f", (facts.nutritionYesterday.estimatedSodiumMg ?? 0) / 1_000)) g) — classique.", en: " High sodium yesterday (~\(String(format: "%.1f", (facts.nutritionYesterday.estimatedSodiumMg ?? 0) / 1_000)) g) — classic.")
             }
             return line
         }
 
         if health.sleepWasShort {
-            return "Ton visage montre \(severity) — classique après \(health.sleepHoursLabel ?? "une nuit courte"), quand l'aldostérone reste élevée."
+            let shortNight = AppCopy.tSync("une nuit courte", en: "a short night")
+            return AppCopy.tSync("Ton visage montre \(severity) — classique après \(health.sleepHoursLabel ?? shortNight), quand l'aldostérone reste élevée.", en: "Your face shows \(severity) — classic after \(health.sleepHoursLabel ?? shortNight), when aldosterone stays high.")
         }
         if health.hydrationWasLow {
-            return "Gonflement matinal (\(load) % de rétention) : ton corps compense une hydratation basse en stockant l'eau en surface."
+            return AppCopy.tSync("Gonflement matinal (\(load) % de rétention) : ton corps compense une hydratation basse en stockant l'eau en surface.", en: "Morning puffiness (\(load)% retention): your body is compensating for low hydration by storing water at the surface.")
         }
         if let nutrition = facts.nutritionYesterday.summaryLine, facts.nutritionYesterday.isPoorElectrolyteBalance {
-            return "Rétention à \(load) % : \(nutrition)"
+            return AppCopy.tSync(
+                "Rétention à \(load) % : \(nutrition)",
+                en: "Retention at \(load)%: \(nutrition)"
+            )
         }
-        return "Rétention à \(load) % : \(severity.capitalizedFirst) — joues et paupières en premier."
+        return AppCopy.tSync("Rétention à \(load) % : \(severity.capitalizedFirst) — joues et paupières en premier.", en: "Retention at \(load)%: \(severity.capitalizedFirst) — cheeks and eyelids first.")
     }
 
     private static func cortisolWhy(health: HealthContext, result: FaceScanResult, facts: FaceScanEvolutionFacts) -> String {
         let load = metricValue(for: .cortisol, result: result)
         let severity = FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: load)
         if health.hrvWasLow {
-            return "Charge stress haute (\(load) %) : HRV basse, le système nerveux n'a pas totalement récupéré."
+            return AppCopy.tSync("Charge stress haute (\(load) %) : HRV basse, le système nerveux n'a pas totalement récupéré.", en: "High stress load (\(load)%): low HRV — the nervous system hasn't fully recovered.")
         }
         if health.sleepWasShort {
-            return "\(severity.capitalizedFirst) — fréquent quand le sommeil est insuffisant ou fragmenté."
+            return AppCopy.tSync("\(severity.capitalizedFirst) — fréquent quand le sommeil est insuffisant ou fragmenté.", en: "\(severity.capitalizedFirst) — common when sleep is short or fragmented.")
         }
         if let correlation = facts.correlations.first(where: { $0.message.contains("HRV") || $0.message.contains("sommeil") }) {
             return "\(severity.capitalizedFirst) — \(correlation.message.lowercased())."
         }
-        return "Ton visage montre \(severity) : gonflement, cernes ou mâchoire serrée combinés."
+        return AppCopy.tSync("Ton visage montre \(severity) : gonflement, cernes ou mâchoire serrée combinés.", en: "Your face shows \(severity): puffiness, under-eyes, or jaw tension combined.")
     }
 
     private static func recoveryWhy(health: HealthContext, result: FaceScanResult, facts: FaceScanEvolutionFacts) -> String {
         let load = metricValue(for: .recovery, result: result)
         let severity = FaceScanIndicators.adverseFacePhrase(for: .recovery, load: load)
         if health.sleepWasShort {
-            return "\(severity.capitalizedFirst) : \(health.sleepHoursLabel ?? "peu de sommeil") ne laisse pas le visage se régénérer."
+            let littleSleep = AppCopy.tSync("peu de sommeil", en: "little sleep")
+            return AppCopy.tSync("\(severity.capitalizedFirst) : \(health.sleepHoursLabel ?? littleSleep) ne laisse pas le visage se régénérer.", en: "\(severity.capitalizedFirst): \(health.sleepHoursLabel ?? littleSleep) doesn't let the face regenerate.")
         }
         if health.hrvWasLow {
-            return "Récupération incomplète (\(load) %) — le visage trahit un système nerveux encore en alerte."
+            return AppCopy.tSync("Récupération incomplète (\(load) %) — le visage trahit un système nerveux encore en alerte.", en: "Incomplete recovery (\(load)%) — the face shows a nervous system still on alert.")
         }
         if let correlation = facts.correlations.first(where: { $0.message.contains("cernes") || $0.message.contains("6 h") }) {
             return "\(severity.capitalizedFirst) — \(correlation.message.lowercased())."
         }
-        return "\(severity.capitalizedFirst) autour des yeux : drainage lymphatique ralenti, teint moins lumineux."
+        return AppCopy.tSync("\(severity.capitalizedFirst) autour des yeux : drainage lymphatique ralenti, teint moins lumineux.", en: "\(severity.capitalizedFirst) around the eyes: slowed lymphatic drainage, duller complexion.")
     }
 
     private static func skinWhy(health: HealthContext, result: FaceScanResult) -> String {
         if health.sleepWasShort {
-            return "Peau terne : la régénération cutanée se fait surtout la nuit, et elle a été courte."
+            return AppCopy.tSync("Peau terne : la régénération cutanée se fait surtout la nuit, et elle a été courte.", en: "Dull skin: skin regeneration happens mostly at night, and it was short.")
         }
-        return "Texture moins nette — souvent inflammation légère, stress ou alimentation trop sucrée."
+        return AppCopy.tSync("Texture moins nette — souvent inflammation légère, stress ou alimentation trop sucrée.", en: "Less clear texture — often mild inflammation, stress, or too much sugar.")
     }
 
     private static func definitionWhy(health: HealthContext, result: FaceScanResult) -> String {
         if metricValue(for: .retention, result: result) >= 55 {
-            return "Mâchoire et pommettes noyées : la rétention masque ta structure faciale."
+            return AppCopy.tSync("Mâchoire et pommettes noyées : la rétention masque ta structure faciale.", en: "Jaw and cheekbones washed out: retention is masking your facial structure.")
         }
-        return "Contours mous ce matin — rétention, mâchoire tendue ou manque de drainage."
+        return AppCopy.tSync("Contours mous ce matin — rétention, mâchoire tendue ou manque de drainage.", en: "Soft contours this morning — retention, jaw tension, or low drainage.")
     }
 
     private static func shortSecondaryHint(_ secondary: FaceScanPrimaryCause) -> String {
         switch secondary {
-        case .recovery: return "La fatigue joue aussi."
-        case .cortisol: return "Le stress y contribue."
-        case .retention: return "La rétention amplifie l'effet."
-        case .skin: return "La peau en pâtit aussi."
-        case .definition: return "Les contours en souffrent."
+        case .recovery: return AppCopy.tSync("La fatigue joue aussi.", en: "Fatigue is also in play.")
+        case .cortisol: return AppCopy.tSync("Le stress y contribue.", en: "Stress is contributing.")
+        case .retention: return AppCopy.tSync("La rétention amplifie l'effet.", en: "Retention amplifies the effect.")
+        case .skin: return AppCopy.tSync("La peau en pâtit aussi.", en: "Skin is taking a hit too.")
+        case .definition: return AppCopy.tSync("Les contours en souffrent.", en: "Contours are suffering.")
         case .balanced, .mixed: return ""
         }
     }
@@ -391,14 +396,14 @@ enum FaceScanAIInsightBuilder {
     private static func balancedBody(health: HealthContext, facts: FaceScanEvolutionFacts) -> String {
         if health.sleepWasGood {
             if let month = facts.monthWellnessDelta, month >= 4 {
-                return "Signaux stables ce matin — visage au-dessus de ta moyenne du mois (+\(month) pts). Garde ta routine debloat."
+                return AppCopy.tSync("Signaux stables ce matin — visage au-dessus de ta moyenne du mois (+\(month) pts). Garde ta routine debloat.", en: "Stable signals this morning — face above your month average (+\(month) pts). Keep your debloat routine.")
             }
-            return "Signaux stables ce matin — sommeil solide, visage reposé. Garde ta routine debloat du jour."
+            return AppCopy.tSync("Signaux stables ce matin — sommeil solide, visage reposé. Garde ta routine debloat du jour.", en: "Stable signals this morning — solid sleep, rested face. Keep today's debloat routine.")
         }
         if let trend = facts.retentionTrend, trend.direction == .falling {
-            return "Bon équilibre facial aujourd'hui — \(trend.label.lowercased()). Continue hydratation et repas du plan."
+            return AppCopy.tSync("Bon équilibre facial aujourd'hui — \(trend.label.lowercased()). Continue hydratation et repas du plan.", en: "Good facial balance today — \(trend.label.lowercased()). Keep hydration and plan meals.")
         }
-        return "Bon équilibre facial aujourd'hui. Continue hydratation, repas du plan personnalisé et scan demain matin."
+        return AppCopy.tSync("Bon équilibre facial aujourd'hui. Continue hydratation, repas du plan personnalisé et scan demain matin.", en: "Good facial balance today. Keep hydration, personalized plan meals, and scan tomorrow morning.")
     }
 
     private static func emoji(for cause: FaceScanPrimaryCause) -> String {
@@ -510,7 +515,7 @@ enum FaceScanAIInsightBuilder {
 
     private static func baselineContextNote(for result: FaceScanResult) -> String? {
         guard let count = result.baselineSampleCount, count < 5 else { return nil }
-        if count <= 1 { return "Premier scan de référence." }
+        if count <= 1 { return AppCopy.tSync("Premier scan de référence.", en: "First baseline scan.") }
         return "Baseline en consolidation (\(count) scans)."
     }
 
@@ -650,13 +655,13 @@ enum FaceScanAIInsightBuilder {
 
     private static func label(for cause: FaceScanPrimaryCause) -> String {
         switch cause {
-        case .retention: return "rétention d'eau"
-        case .cortisol: return "charge cortisol"
-        case .recovery: return "récupération insuffisante"
-        case .skin: return "qualité de peau"
-        case .definition: return "définition faciale"
-        case .balanced: return "équilibre global"
-        case .mixed: return "signaux mixtes"
+        case .retention: return AppCopy.tSync("rétention d'eau", en: "water retention")
+        case .cortisol: return AppCopy.tSync("charge cortisol", en: "cortisol load")
+        case .recovery: return AppCopy.tSync("récupération insuffisante", en: "insufficient recovery")
+        case .skin: return AppCopy.tSync("qualité de peau", en: "skin quality")
+        case .definition: return AppCopy.tSync("définition faciale", en: "facial definition")
+        case .balanced: return AppCopy.tSync("équilibre global", en: "overall balance")
+        case .mixed: return AppCopy.tSync("signaux mixtes", en: "mixed signals")
         }
     }
 

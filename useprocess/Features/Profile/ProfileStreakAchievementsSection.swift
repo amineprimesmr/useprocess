@@ -113,7 +113,7 @@ struct ProfileStreakAchievementsSection: View {
                 .frame(maxWidth: .infinity)
 
             if progress.hasPlan {
-                Text("Programme debloat · Jour \(progress.elapsedProgramDays)/\(progress.totalProgramDays)")
+                Text(AppCopy.t("Programme debloat · Jour \(progress.elapsedProgramDays)/\(progress.totalProgramDays)", en: "Debloat Program · Day \(progress.elapsedProgramDays)/\(progress.totalProgramDays)"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(theme.secondaryText)
                     .monospacedDigit()
@@ -181,7 +181,9 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var streakDayLabel: String {
-        snapshot.currentStreak <= 1 ? "jour de suite" : "jours de suite"
+        snapshot.currentStreak <= 1
+            ? AppCopy.t("jour de suite", en: "day in a row")
+            : AppCopy.t("jours de suite", en: "days in a row")
     }
 
     private var showsCountdownBadge: Bool {
@@ -228,7 +230,7 @@ struct ProfileStreakAchievementsSection: View {
 
     private func consistencyMessage(at date: Date = Date()) -> String {
         if snapshot.isTodayComplete && snapshot.currentStreak == 0 {
-            return "Premier jour validé !"
+            return AppCopy.t("Premier jour validé !", en: "First day completed!")
         }
         // Compte à rebours tant que le check du jour n'est pas validé.
         if !snapshot.isTodayComplete, !hasSubmittedToday {
@@ -238,13 +240,13 @@ struct ProfileStreakAchievementsSection: View {
         case 0:
             return ProcessEveningCheckInSchedule.streakLaunchMessage(from: date)
         case 1...2:
-            return "Belle régularité !"
+            return AppCopy.t("Belle régularité !", en: "Great consistency!")
         case 3...6:
-            return "Tu construis l'habitude"
+            return AppCopy.t("Tu construis l'habitude", en: "You're building the habit")
         case 7...13:
-            return "Régularité incroyable !"
+            return AppCopy.t("Régularité incroyable !", en: "Incredible consistency!")
         default:
-            return "Mode Process activé"
+            return AppCopy.t("Mode Process activé", en: "Process mode activated")
         }
     }
 
@@ -375,7 +377,9 @@ struct ProfileStreakAchievementsSection: View {
             HStack(spacing: 10) {
                 Image(systemName: hasSubmittedToday ? "pencil.line" : "checkmark.seal.fill")
                     .font(.system(size: 15, weight: .semibold))
-                Text(hasSubmittedToday ? "Modifier mon check" : "Faire mon check")
+                Text(hasSubmittedToday
+                    ? AppCopy.t("Modifier mon check", en: "Edit my check-in")
+                    : AppCopy.t("Faire mon check", en: "Do my check-in"))
                     .font(.system(size: 15, weight: .bold))
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
@@ -406,7 +410,9 @@ struct ProfileStreakAchievementsSection: View {
         }
         .buttonStyle(.processPlain)
         .accessibilityLabel(
-            hasSubmittedToday ? "Modifier mon check" : "Faire mon check"
+            hasSubmittedToday
+                ? AppCopy.t("Modifier mon check", en: "Edit my check-in")
+                : AppCopy.t("Faire mon check", en: "Do my check-in")
         )
     }
 
@@ -414,9 +420,9 @@ struct ProfileStreakAchievementsSection: View {
 
     private var statsGrid: some View {
         HStack(spacing: 10) {
-            statCard(icon: "flame.fill", value: snapshot.currentStreak, label: "Série actuelle", accent: ProfileStreakDesign.accent)
-            statCard(icon: "rosette", value: snapshot.longestStreak, label: "Meilleure série")
-            statCard(icon: "checkmark.circle.fill", value: snapshot.totalCompletedDays, label: "Jours validés")
+            statCard(icon: "flame.fill", value: snapshot.currentStreak, label: AppCopy.t("Série actuelle", en: "Current Streak"), accent: ProfileStreakDesign.accent)
+            statCard(icon: "rosette", value: snapshot.longestStreak, label: AppCopy.t("Meilleure série", en: "Best Streak"))
+            statCard(icon: "checkmark.circle.fill", value: snapshot.totalCompletedDays, label: AppCopy.t("Jours validés", en: "Completed Days"))
         }
     }
 

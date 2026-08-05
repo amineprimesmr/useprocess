@@ -58,7 +58,7 @@ struct AccountDeletionOverlayView: View {
                 }
 
                 VStack(spacing: 8) {
-                    Text("Suppression du compte")
+                    Text(AppCopy.t("Suppression du compte", en: "Deleting Account"))
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.primary)
 
@@ -69,7 +69,7 @@ struct AccountDeletionOverlayView: View {
                         .contentTransition(.opacity)
                         .animation(.easeInOut(duration: 0.28), value: statusMessage)
 
-                    Text("Ne ferme pas l’application")
+                    Text(AppCopy.t("Ne ferme pas l’application", en: "Don't close the app"))
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(.tertiary)
                         .padding(.top, 2)

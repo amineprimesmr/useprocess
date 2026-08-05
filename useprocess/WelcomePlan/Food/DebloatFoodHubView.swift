@@ -75,13 +75,13 @@ struct DebloatFoodHubView: View {
             }
             .navigationTitle(
                 Self.showsFoodsSectionTemporarily && mode == .foods
-                    ? "Aliments Debloat"
-                    : "Recettes Debloat"
+                    ? AppCopy.t("Aliments Debloat", en: "Debloat Foods")
+                    : AppCopy.t("Recettes Debloat", en: "Debloat Recipes")
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
             .sheet(item: $selectedFood) { food in
@@ -126,7 +126,10 @@ struct DebloatFoodHubView: View {
     // MARK: - Header / pickers
 
     private var header: some View {
-        Text("Aliments pour un visage dégonflé")
+        Text(AppCopy.t(
+            "Aliments pour un visage dégonflé",
+            en: "Foods for a debloated face"
+        ))
             .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
             .foregroundStyle(theme.primaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -201,7 +204,7 @@ struct DebloatFoodHubView: View {
         VStack(alignment: .leading, spacing: 22) {
             ForEach(recipeSections) { section in
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(section.title)
+                    Text(localizedCatalogSectionTitle(section))
                         .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
                         .foregroundStyle(theme.primaryText)
 
@@ -252,7 +255,7 @@ struct DebloatFoodHubView: View {
                 emptyTastes
             } else {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Tes likes")
+                    Text(AppCopy.t("Tes likes", en: "Your likes"))
                         .font(.headline)
                         .foregroundStyle(theme.primaryText)
                     ForEach(prefs.likedFoods) { food in
@@ -263,7 +266,7 @@ struct DebloatFoodHubView: View {
 
             if !prefs.haveAtHomeFoods.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Déjà chez toi")
+                    Text(AppCopy.t("Déjà chez toi", en: "Already at home"))
                         .font(.headline)
                         .foregroundStyle(theme.primaryText)
                     ForEach(prefs.haveAtHomeFoods) { food in
@@ -276,10 +279,13 @@ struct DebloatFoodHubView: View {
 
     private var emptyTastes: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Aucun like pour l’instant")
+            Text(AppCopy.t("Aucun like pour l’instant", en: "No likes yet"))
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
-            Text("Like des aliments dans Privilégier pour générer courses et recettes visage dégonflé.")
+            Text(AppCopy.t(
+                "Like des aliments dans Privilégier pour générer courses et recettes visage dégonflé.",
+                en: "Like foods in Prefer to generate groceries and debloat face recipes."
+            ))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
         }
@@ -305,7 +311,11 @@ struct DebloatFoodHubView: View {
                         tab = .prefer
                     }
                 } label: {
-                    Text(tab == .avoid ? "Voir les aliments à privilégier" : "Générer ma liste de courses")
+                    Text(
+                        tab == .avoid
+                            ? AppCopy.t("Voir les aliments à privilégier", en: "See foods to prefer")
+                            : AppCopy.t("Générer ma liste de courses", en: "Generate my grocery list")
+                    )
                         .font(.system(size: 17, weight: .bold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
@@ -315,7 +325,7 @@ struct DebloatFoodHubView: View {
                 .foregroundStyle(theme.isDark ? Color.black : Color.white)
 
                 if tab != .avoid {
-                    Button("Créer des recettes avec mes likes") {
+                    Button(AppCopy.t("Créer des recettes avec mes likes", en: "Create recipes from my likes")) {
                         showGeneratedRecipes = true
                     }
                     .font(.subheadline.weight(.semibold))
@@ -335,9 +345,9 @@ struct DebloatFoodHubView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("Budget")
+                    Text(AppCopy.t("Budget", en: "Budget"))
                         .font(.headline)
-                    Picker("Budget", selection: $groceryRequest.budget) {
+                    Picker(AppCopy.t("Budget", en: "Budget"), selection: $groceryRequest.budget) {
                         ForEach(DebloatGroceryBudget.allCases) { budget in
                             Text(budget.title).tag(budget)
                         }
@@ -349,15 +359,24 @@ struct DebloatFoodHubView: View {
                         .foregroundStyle(theme.secondaryText)
 
                     Stepper(
-                        "Durée : \(groceryRequest.dayCount) jours",
+                        AppCopy.t(
+                            "Durée : \(groceryRequest.dayCount) jours",
+                            en: "Duration: \(groceryRequest.dayCount) days"
+                        ),
                         value: $groceryRequest.dayCount,
                         in: 3...7
                     )
 
-                    Toggle("Inclure boissons drainantes", isOn: $groceryRequest.includeDrinks)
-                    Toggle("Inclure herbes anti-sel", isOn: $groceryRequest.includeHerbs)
+                    Toggle(
+                        AppCopy.t("Inclure boissons drainantes", en: "Include draining drinks"),
+                        isOn: $groceryRequest.includeDrinks
+                    )
+                    Toggle(
+                        AppCopy.t("Inclure herbes anti-sel", en: "Include anti-salt herbs"),
+                        isOn: $groceryRequest.includeHerbs
+                    )
 
-                    Button("Générer la liste visage dégonflé") {
+                    Button(AppCopy.t("Générer la liste visage dégonflé", en: "Generate debloat face list")) {
                         groceryPlan = DebloatGroceryGenerator.generate(request: groceryRequest)
                     }
                     .buttonStyle(.borderedProminent)
@@ -371,13 +390,16 @@ struct DebloatFoodHubView: View {
                                 ForEach(group.lines) { line in
                                     HStack {
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text(line.name)
+                                            Text(line.localizedName)
                                                 .font(.subheadline.weight(.semibold))
-                                            Text(line.quantity)
+                                            Text(line.localizedQuantity)
                                                 .font(.caption)
                                                 .foregroundStyle(theme.secondaryText)
-                                            if line.isAvoidWarning, let swap = line.suggestedSwapName {
-                                                Text("Piège Na — préfère \(swap)")
+                                            if line.isAvoidWarning, let swap = line.localizedSuggestedSwapName {
+                                                Text(AppCopy.t(
+                                                    "Piège Na — préfère \(swap)",
+                                                    en: "Sodium trap — prefer \(swap)"
+                                                ))
                                                     .font(.caption2.weight(.semibold))
                                                     .foregroundStyle(Color.orange)
                                             }
@@ -393,9 +415,9 @@ struct DebloatFoodHubView: View {
                             }
                         }
 
-                        Button("Ajouter à ma liste de courses") {
+                        Button(AppCopy.t("Ajouter à ma liste de courses", en: "Add to my grocery list")) {
                             store.mergeShoppingItems(DebloatGroceryGenerator.shoppingItems(from: groceryPlan))
-                            showToast("Liste ajoutée")
+                            showToast(AppCopy.t("Liste ajoutée", en: "List added"))
                             showGrocery = false
                         }
                         .buttonStyle(.borderedProminent)
@@ -404,11 +426,11 @@ struct DebloatFoodHubView: View {
                 }
                 .padding(20)
             }
-            .navigationTitle("Courses Debloat")
+            .navigationTitle(AppCopy.t("Courses Debloat", en: "Debloat Groceries"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { showGrocery = false }
+                    Button(AppCopy.close) { showGrocery = false }
                 }
             }
         }
@@ -430,19 +452,22 @@ struct DebloatFoodHubView: View {
         return NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Recettes à partir de tes likes")
+                    Text(AppCopy.t("Recettes à partir de tes likes", en: "Recipes from your likes"))
                         .font(.title3.weight(.bold))
-                    Text("Générateur offline — priorité potassium, zéro aliment à éviter.")
+                    Text(AppCopy.t(
+                        "Générateur offline — priorité potassium, zéro aliment à éviter.",
+                        en: "Offline generator — potassium first, zero avoid foods."
+                    ))
                         .font(.subheadline)
                         .foregroundStyle(theme.secondaryText)
 
                     ForEach(orderedSlots, id: \.self) { slot in
                         if let meal = meals[slot] {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(slot.rawValue)
+                                Text(slot.displayTitle)
                                     .font(.caption.weight(.bold))
                                     .foregroundStyle(theme.secondaryText)
-                                Text(meal.name)
+                                Text(meal.localizedDisplayName)
                                     .font(.headline)
                                 ForEach(meal.foodItems) { item in
                                     Text("• \(item.ingredientDisplayLine)")
@@ -459,37 +484,44 @@ struct DebloatFoodHubView: View {
                         }
                     }
 
-                    Button("Injecter dans mes repas du jour") {
+                    Button(AppCopy.t("Injecter dans mes repas du jour", en: "Add to today’s meals")) {
                         guard isEditable else {
-                            showToast("Jour non modifiable")
+                            showToast(AppCopy.t("Jour non modifiable", en: "Day can’t be edited"))
                             return
                         }
                         for (slot, meal) in meals {
                             store.saveDraftMeal(dayId: day.id, meal: meal, slot: slot)
                         }
-                        showToast("Repas du jour mis à jour")
+                        showToast(AppCopy.t("Repas du jour mis à jour", en: "Today’s meals updated"))
                         showGeneratedRecipes = false
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(theme.primaryText)
 
-                    Button("Autre suggestion") {
+                    Button(AppCopy.t("Autre suggestion", en: "Another suggestion")) {
                         recipeSeed += 1
                     }
                     .font(.subheadline.weight(.semibold))
                 }
                 .padding(20)
             }
-            .navigationTitle("Recettes likes")
+            .navigationTitle(AppCopy.t("Recettes likes", en: "Liked recipes"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { showGeneratedRecipes = false }
+                    Button(AppCopy.close) { showGeneratedRecipes = false }
                 }
             }
             .id(recipeSeed)
         }
         .processAppPageBackground()
+    }
+
+    private func localizedCatalogSectionTitle(_ section: ProcessDebloatMealLibrary.CatalogSection) -> String {
+        if section.sectionKey == "omad" {
+            return AppCopy.t("Repas OMAD", en: "OMAD meal")
+        }
+        return section.slot.displayTitle
     }
 
     private func rotatedLikes(seed: Int) -> [DebloatFoodItem] {
@@ -531,7 +563,7 @@ private struct DebloatFoodRow: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(food.name)
+                        Text(food.localizedName)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(theme.primaryText)
                             .lineLimit(1)
@@ -542,7 +574,7 @@ private struct DebloatFoodRow: View {
                             .padding(.vertical, 3)
                             .background(badgeColor.opacity(0.14), in: Capsule())
                     }
-                    Text(food.whyItHelpsOrHurts)
+                    Text(food.localizedWhyItHelpsOrHurts)
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .lineLimit(2)
@@ -599,24 +631,27 @@ private struct DebloatFoodDetailSheet: View {
                             .padding(.vertical, 5)
                             .background(Color.primary.opacity(0.08), in: Capsule())
                         Spacer()
-                        Text("Score ≈\(food.debloatScore)")
+                        Text(AppCopy.t("Score ≈\(food.debloatScore)", en: "Score ≈\(food.debloatScore)"))
                             .font(.title2.weight(.bold).monospacedDigit())
                     }
 
-                    Text(food.whyItHelpsOrHurts)
+                    Text(food.localizedWhyItHelpsOrHurts)
                         .font(.body)
                         .foregroundStyle(theme.primaryText)
 
                     metricsRow
 
-                    if let portion = food.portionHint {
+                    if let portion = food.localizedPortionHint {
                         Label(portion, systemImage: "scalemass")
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                     }
 
                     if food.exceedsSaltLabelThreshold {
-                        Text("Seuil dépassé : > 1,5 g de sel / 100 g — à éviter pour le visage.")
+                        Text(AppCopy.t(
+                            "Seuil dépassé : > 1,5 g de sel / 100 g — à éviter pour le visage.",
+                            en: "Over threshold: > 1.5 g salt / 100 g — avoid for your face."
+                        ))
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(Color.orange)
                     }
@@ -624,10 +659,10 @@ private struct DebloatFoodDetailSheet: View {
                     let swaps = DebloatFoodCatalog.swapItems(for: food)
                     if !swaps.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Alternatives visage")
+                            Text(AppCopy.t("Alternatives visage", en: "Face-friendly swaps"))
                                 .font(.headline)
                             ForEach(swaps) { swap in
-                                Text("→ \(swap.name)")
+                                Text("→ \(swap.localizedName)")
                                     .font(.subheadline)
                                     .foregroundStyle(theme.secondaryText)
                             }
@@ -635,18 +670,26 @@ private struct DebloatFoodDetailSheet: View {
                     }
 
                     HStack(spacing: 10) {
-                        Button(prefs.isLiked(food.id) ? "Liked" : "Like") {
+                        Button(
+                            prefs.isLiked(food.id)
+                                ? AppCopy.t("Liked", en: "Liked")
+                                : AppCopy.t("Like", en: "Like")
+                        ) {
                             prefs.toggleLike(food.id)
                         }
                         .buttonStyle(.bordered)
-                        Button(prefs.hasAtHome(food.id) ? "Chez moi" : "J’ai chez moi") {
+                        Button(
+                            prefs.hasAtHome(food.id)
+                                ? AppCopy.t("Chez moi", en: "At home")
+                                : AppCopy.t("J’ai chez moi", en: "I have this")
+                        ) {
                             prefs.toggleHaveAtHome(food.id)
                         }
                         .buttonStyle(.bordered)
                     }
 
                     if food.tier != .avoid {
-                        Button("Ajouter aux courses") {
+                        Button(AppCopy.t("Ajouter aux courses", en: "Add to groceries")) {
                             store.mergeShoppingItems([
                                 MealShoppingItem(
                                     name: food.name,
@@ -658,7 +701,10 @@ private struct DebloatFoodDetailSheet: View {
                         .buttonStyle(.borderedProminent)
                         .tint(theme.primaryText)
                     } else if let swap = swaps.first {
-                        Button("Remplacer par \(swap.name)") {
+                        Button(AppCopy.t(
+                            "Remplacer par \(swap.localizedName)",
+                            en: "Replace with \(swap.localizedName)"
+                        )) {
                             store.mergeShoppingItems([
                                 MealShoppingItem(name: swap.name, quantity: swap.portionHint ?? "1")
                             ])
@@ -668,17 +714,20 @@ private struct DebloatFoodDetailSheet: View {
                         .tint(theme.primaryText)
                     }
 
-                    Text("Valeurs approximatives pour 100 g. Ce n’est pas un avis médical.")
+                    Text(AppCopy.t(
+                        "Valeurs approximatives pour 100 g. Ce n’est pas un avis médical.",
+                        en: "Approximate values per 100 g. This is not medical advice."
+                    ))
                         .font(.caption2)
                         .foregroundStyle(theme.secondaryText)
                 }
                 .padding(20)
             }
-            .navigationTitle(food.name)
+            .navigationTitle(food.localizedName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
         }

@@ -1,74 +1,51 @@
-# Abonnements Process AI — RevenueCat + App Store Connect
+# RevenueCat — Process AI (prod)
 
-Deux offres :
-- **Mensuel** : `com.useprocess.monthly` — **5,99 € / mois**
-- **Annuel** : `com.useprocess.annual` — **29,99 € / an**
+## Pourquoi le dashboard était à 0
 
-Entitlement RevenueCat : **`premium`**
+L’archive App Store partait **sans clé** `appl_…` :
+seul `RevenueCatSecrets.plist.example` était embarqué.
+Sans clé → `Purchases.configure` n’est jamais appelé → achats Apple OK,
+mais **RevenueCat ne voit rien**.
 
----
+## Config app (fait)
 
-## 1. App Store Connect
+La clé publique iOS est embarquée dans :
 
-1. [App Store Connect](https://appstoreconnect.apple.com) → **Apps** → **Process AI** (`com.useprocess`)
-2. **Abonnements** → créer un groupe **Process AI Premium**
-3. Ajouter deux abonnements auto-renouvelables :
+`useprocess/Subscriptions/RevenueCatConfiguration.swift` → `bundledIOSPublicAPIKey`
 
-| Référence | Product ID | Durée | Prix (France) |
-|-----------|------------|-------|---------------|
-| Premium Monthly | `com.useprocess.monthly` | 1 mois | 5,99 € |
-| Premium Yearly | `com.useprocess.annual` | 1 an | 29,99 € |
+(+ copie locale gitignorée `RevenueCatSecrets.plist`).
 
-4. Renseigner nom, description et capture d’écran de review si demandé
-5. Soumettre les produits pour review (statut **Ready to Submit**)
+**À faire après ce fix :** Archive Xcode → upload App Store / TestFlight.
+Sans nouveau build, l’app déjà en prod reste sans tracking.
 
----
+La clé `appl_` est **publique** (prévue pour le client). Ne jamais committer une clé `sk_`.
 
-## 2. RevenueCat (projet `com.useprocess`)
+## Dashboard RevenueCat (projet Process)
 
-1. [RevenueCat](https://app.revenuecat.com) → projet **com.useprocess**
-2. **Apps** → lier l’app iOS `com.useprocess` (clé App Store Connect / clé API IAP)
-3. **Product catalog** → **Products** → importer les 2 Product IDs ci-dessus
-4. **Entitlements** → créer **`premium`**
-5. Attacher les 2 produits à l’entitlement `premium`
-6. **Offerings** → offering **`Premium`** (Current)
-   - Package **Monthly** → `com.useprocess.monthly`
-   - Package **Annual** → `com.useprocess.annual`
-7. **API keys** → copier la clé publique iOS (`appl_…`)
+| Élément | Valeur |
+|---------|--------|
+| Bundle ID | `com.useprocess` |
+| Entitlement | `premium` |
+| Offering (Current) | `Premium` |
+| Mensuel | `com.useprocess.monthly` |
+| Annuel | `com.useprocess.annual` |
+| Lifetime | `com.useprocess.lifetime` |
+| Packages | `$rc_monthly` / `$rc_annual` |
 
----
+Vérifier aussi : **Apps** → app iOS liée avec credentials App Store Connect.
 
-## 3. App iOS (déjà intégré dans le code)
+## Tests
 
-1. Copier le fichier exemple :
-   ```bash
-   cp useprocess/Subscriptions/RevenueCatSecrets.plist.example useprocess/Subscriptions/RevenueCatSecrets.plist
-   ```
-2. Coller ta clé `appl_…` dans `REVENUECAT_API_KEY`
-3. **Ne pas committer** `RevenueCatSecrets.plist` (secrets locaux)
+- **Prod réelle** : Overview, Sandbox data **OFF**
+- **TestFlight / sandbox Xcode** : Sandbox data **ON**
+- Scheme Xcode avec `SubscriptionProducts.storekit` = achats locaux, pas le flux App Store
 
-### Tests locaux (StoreKit)
-
-1. Xcode → **Product** → **Scheme** → **Edit Scheme** → **Run** → **Options**
-2. **StoreKit Configuration** → `SubscriptionProducts.storekit`
-3. Lancer sur simulateur : achats sandbox sans App Store Connect live
-
----
-
-## 4. Vérification
-
-- Paywall onboarding : toggle **Mensuel / Annuel**
-- Prix dynamiques depuis StoreKit / RevenueCat
-- **Restaurer les achats** via le menu paywall
-- Entitlement actif = accès premium (`SubscriptionService.subscriptionStatus.isActive`)
-
----
-
-## Identifiants (référence code)
+## Code
 
 ```swift
 SubscriptionConfiguration.entitlementID      // "premium"
-SubscriptionConfiguration.defaultOfferingID    // "Premium"
-SubscriptionConfiguration.monthlyProductID     // com.useprocess.monthly
-SubscriptionConfiguration.annualProductID      // com.useprocess.annual
+SubscriptionConfiguration.defaultOfferingID  // "Premium"
+SubscriptionConfiguration.monthlyProductID   // com.useprocess.monthly
+SubscriptionConfiguration.annualProductID    // com.useprocess.annual
+SubscriptionConfiguration.lifetimeProductID  // com.useprocess.lifetime
 ```

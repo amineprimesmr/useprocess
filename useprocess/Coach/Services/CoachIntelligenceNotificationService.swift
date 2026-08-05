@@ -17,7 +17,7 @@ enum CoachIntelligenceNotificationService {
 
         let open = UNNotificationAction(
             identifier: "OPEN_COACH",
-            title: "Ouvrir",
+            title: AppCopy.t("Ouvrir", en: "Open"),
             options: [.foreground]
         )
         let category = UNNotificationCategory(
@@ -106,7 +106,7 @@ enum CoachIntelligenceNotificationService {
         guard !cleaned.isEmpty else {
             return FormattedNotification(
                 title: headlineFallback(conversationTitle: conversationTitle),
-                body: "Ta réponse est prête — ouvre le coach pour la lire."
+                body: AppCopy.t("Ta réponse est prête — ouvre le coach pour la lire.", en: "Your response is ready — open the coach to read it.")
             )
         }
 
@@ -141,13 +141,13 @@ enum CoachIntelligenceNotificationService {
 
         switch CoachIntelligenceSettingsStore.shared.personality {
         case .dataNerd:
-            return "Analyse prête"
+            return AppCopy.t("Analyse prête", en: "Analysis ready")
         case .guardian:
-            return "Réponse Guardian"
+            return AppCopy.t("Réponse Guardian", en: "Guardian response")
         case .directCoach:
-            return "Réponse du coach"
+            return AppCopy.t("Réponse du coach", en: "Coach response")
         case .warmGuide:
-            return "Process t'a répondu"
+            return AppCopy.t("Process t'a répondu", en: "Process replied")
         }
     }
 
@@ -235,11 +235,11 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
                 let conversationId = (userInfo["conversationId"] as? String).flatMap(UUID.init(uuidString:))
                 CoachPlanNavigationBridge.shared.openCoach(conversationId: conversationId)
             case "coach_checkin":
-                let prompt = userInfo["prompt"] as? String ?? "Fais mon check-in du jour."
+                let prompt = userInfo["prompt"] as? String ?? AppCopy.t("Fais mon check-in du jour.", en: "Run my daily check-in.")
                 CoachPlanNavigationBridge.shared.openCoachWithCheckIn(prompt: prompt)
             case "daily_outlook":
                 CoachPlanNavigationBridge.shared.openCoachWithCheckIn(
-                    prompt: "Donne-moi mon brief matin : sommeil, jour du plan personnalisé et 1 action prioritaire."
+                    prompt: AppCopy.t("Donne-moi mon brief matin : sommeil, jour du plan personnalisé et 1 action prioritaire.", en: "Give me my morning brief: sleep, personalized plan day, and one priority action.")
                 )
             case "daily_review":
                 CoachPlanNavigationBridge.shared.openEveningCheckIn()

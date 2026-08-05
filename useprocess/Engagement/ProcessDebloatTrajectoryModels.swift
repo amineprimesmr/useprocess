@@ -21,15 +21,16 @@ enum DebloatDayVerdict: String, nonisolated Codable, Equatable, CaseIterable, Se
         }
     }
 
+    @MainActor
     var shortLabel: String {
         switch self {
-        case .excellent: return "Excellent"
-        case .onTrack: return "Sur la bonne voie"
-        case .partial: return "Partiel"
-        case .regression: return "Régression"
-        case .pending: return "En attente"
-        case .missed: return "Manqué"
-        case .paused: return "Pause"
+        case .excellent: return AppCopy.t("Excellent", en: "Excellent")
+        case .onTrack: return AppCopy.t("Sur la bonne voie", en: "On track")
+        case .partial: return AppCopy.t("Partiel", en: "Partial")
+        case .regression: return AppCopy.t("Régression", en: "Regression")
+        case .pending: return AppCopy.t("En attente", en: "Pending")
+        case .missed: return AppCopy.t("Manqué", en: "Missed")
+        case .paused: return AppCopy.t("Pause", en: "Paused")
         }
     }
 
@@ -59,12 +60,13 @@ enum TrajectoryTrend: String, nonisolated Codable, Equatable, Sendable {
     case regressing
     case unknown
 
+    @MainActor
     var label: String {
         switch self {
-        case .accelerating: return "Accélération"
-        case .stable: return "Stable"
-        case .regressing: return "Ralentissement"
-        case .unknown: return "En cours"
+        case .accelerating: return AppCopy.t("Accélération", en: "Accelerating")
+        case .stable: return AppCopy.t("Stable", en: "Stable")
+        case .regressing: return AppCopy.t("Ralentissement", en: "Slowing")
+        case .unknown: return AppCopy.t("En cours", en: "In progress")
         }
     }
 
@@ -232,6 +234,7 @@ struct DebloatTrajectorySnapshot: Equatable {
     let daysUntilNextMilestone: Int?
     let totalValidatedDays: Int
 
+    @MainActor
     var velocityLabel: String {
         if chartPoints.count < 3 { return TrajectoryTrend.unknown.label }
         if velocitySlope > 2.5 { return TrajectoryTrend.accelerating.label }
@@ -246,35 +249,71 @@ struct DebloatTrajectorySnapshot: Equatable {
         return .stable
     }
 
+    @MainActor
     var streakTitle: String {
         switch totalValidatedDays {
-        case 0: return "Jours validés"
-        case 1: return "1 jour validé"
-        default: return "\(totalValidatedDays) jours validés"
+        case 0: return AppCopy.t("Jours validés", en: "Validated Days")
+        case 1: return AppCopy.t("1 jour validé", en: "1 Validated Day")
+        default: return AppCopy.t(
+            "\(totalValidatedDays) jours validés",
+            en: "\(totalValidatedDays) Validated Days"
+        )
         }
     }
 
+    @MainActor
     func encouragement(firstName: String?) -> String {
         let trimmed = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let nameSuffix = trimmed.isEmpty ? "" : ", \(trimmed)"
 
         switch todayVerdict {
         case .excellent:
-            return "Journée solide\(nameSuffix) — ta trajectoire accélère."
+            return AppCopy.t(
+                "Journée solide\(nameSuffix) — ta trajectoire accélère.",
+                en: "Strong day\(nameSuffix) — your trajectory is accelerating."
+            )
         case .onTrack:
-            return "Tu restes sur la bonne voie\(nameSuffix)."
+            return AppCopy.t(
+                "Tu restes sur la bonne voie\(nameSuffix).",
+                en: "You're staying on track\(nameSuffix)."
+            )
         case .partial:
-            return "Journée partielle\(nameSuffix) — demain on serre le protocole."
+            return AppCopy.t(
+                "Journée partielle\(nameSuffix) — demain on serre le protocole.",
+                en: "Partial day\(nameSuffix) — tighten the protocol tomorrow."
+            )
         case .regression:
-            return "Régression détectée\(nameSuffix) — le coach t’aide à recaler."
+            return AppCopy.t(
+                "Régression détectée\(nameSuffix) — le coach t’aide à recaler.",
+                en: "Regression detected\(nameSuffix) — the coach will help you recalibrate."
+            )
         case .missed:
-            return "Check manqué — valide-le pour continuer."
+            return AppCopy.t(
+                "Check manqué — valide-le pour continuer.",
+                en: "Missed check-in — validate it to continue."
+            )
         case .pending:
-            return "Check du jour en attente — valide-le quand tu veux."
+            return AppCopy.t(
+                "Check du jour en attente — valide-le quand tu veux.",
+                en: "Today's check-in pending — validate it whenever you're ready."
+            )
         case .paused, .none:
-            if totalValidatedDays >= 7 { return "Régularité solide\(nameSuffix) — ne lâche pas." }
-            if totalValidatedDays > 0 { return "Continue comme ça\(nameSuffix) !" }
-            return "Complète ton check pour lancer ta trajectoire\(nameSuffix)."
+            if totalValidatedDays >= 7 {
+                return AppCopy.t(
+                    "Régularité solide\(nameSuffix) — ne lâche pas.",
+                    en: "Solid consistency\(nameSuffix) — don't quit."
+                )
+            }
+            if totalValidatedDays > 0 {
+                return AppCopy.t(
+                    "Continue comme ça\(nameSuffix) !",
+                    en: "Keep it up\(nameSuffix)!"
+                )
+            }
+            return AppCopy.t(
+                "Complète ton check pour lancer ta trajectoire\(nameSuffix).",
+                en: "Complete your check-in to start your trajectory\(nameSuffix)."
+            )
         }
     }
 

@@ -102,13 +102,14 @@ struct OnboardingProfileChatQuestion: Identifiable, Equatable {
     }
 }
 
+@MainActor
 enum OnboardingProfileChatQuestionBank {
     static func questions(for viewModel: OnboardingViewModel) -> [OnboardingProfileChatQuestion] {
         [
             introSwollenFaceQuestion(for: viewModel),
             .init(
                 id: "intro_causes",
-                prompt: """
+                prompt: OnboardingCopy.t("""
                 Dans 94% des cas, il s’agit de :
 
                 - rétention d’eau
@@ -117,45 +118,71 @@ enum OnboardingProfileChatQuestionBank {
                 - lymphe qui circule mal…
 
                 Tu n’as pas besoin de tout comprendre. Process est là pour ça.
-                """,
+                """, en: """
+                In 94% of cases, it’s:
+
+                - water retention
+                - inflammation
+                - cortisol
+                - poor lymph circulation…
+
+                You don’t need to understand it all. Process is here for that.
+                """),
                 kind: .infoContinue,
-                continueLabel: "Et ensuite ?"
+                continueLabel: OnboardingCopy.t("Et ensuite ?", en: "And then?")
             ),
             .init(
                 id: "intro_next",
-                prompt: """
+                prompt: OnboardingCopy.t("""
                 On va identifier ce qui te concerne, puis scanner ton visage pour créer ton plan personnalisé.
-                """,
+                """, en: """
+                We’ll figure out what applies to you, then scan your face to build your personalized plan.
+                """),
                 kind: .infoContinue,
-                continueLabel: "C’est parti"
+                continueLabel: OnboardingCopy.t("C’est parti", en: "Let’s go")
             ),
             .init(
                 id: "debloat_driver",
-                prompt: "Ton visage est plus gonflé au réveil ?",
+                prompt: OnboardingCopy.t(
+                    "Ton visage est plus gonflé au réveil ?",
+                    en: "Is your face more puffy when you wake up?"
+                ),
                 kind: .singleChoice,
                 choices: debloatDriverChoices
             ),
             .init(
                 id: "hydration_level",
-                prompt: "Combien d’eau tu bois par jour ?",
+                prompt: OnboardingCopy.t(
+                    "Combien d’eau tu bois par jour ?",
+                    en: "How much water do you drink per day?"
+                ),
                 kind: .singleChoice,
                 choices: hydrationChoices
             ),
             .init(
                 id: "junk_food",
-                prompt: "À quelle fréquence tu manges de la malbouffe ?",
+                prompt: OnboardingCopy.t(
+                    "À quelle fréquence tu manges de la malbouffe ?",
+                    en: "How often do you eat junk food?"
+                ),
                 kind: .singleChoice,
                 choices: junkFoodChoices
             ),
             .init(
                 id: "sleep_hours",
-                prompt: "Combien d’heures tu dors par nuit ?",
+                prompt: OnboardingCopy.t(
+                    "Combien d’heures tu dors par nuit ?",
+                    en: "How many hours do you sleep per night?"
+                ),
                 kind: .singleChoice,
                 choices: sleepHoursChoices
             ),
             .init(
                 id: "cardio_frequency",
-                prompt: "Combien de fois tu fais du cardio dans la semaine ?",
+                prompt: OnboardingCopy.t(
+                    "Combien de fois tu fais du cardio dans la semaine ?",
+                    en: "How many times a week do you do cardio?"
+                ),
                 kind: .singleChoice,
                 choices: cardioFrequencyChoices
             ),
@@ -176,19 +203,28 @@ enum OnboardingProfileChatQuestionBank {
             id: "intro_swollen_face",
             promptBlocks: [
                 introSwollenFaceOpeningLine(for: viewModel),
-                "C’est surtout du liquide retenue qui s’accumule sous ta peau."
+                OnboardingCopy.t(
+                    "C’est surtout du liquide retenue qui s’accumule sous ta peau.",
+                    en: "It’s mostly retained fluid building up under your skin."
+                )
             ],
             kind: .infoContinue,
-            continueLabel: "C’est quoi ce liquide ?"
+            continueLabel: OnboardingCopy.t("C’est quoi ce liquide ?", en: "What is that fluid?")
         )
     }
 
     private static func introSwollenFaceOpeningLine(for viewModel: OnboardingViewModel) -> String {
         let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         if OnboardingViewModel.isRealUserFirstName(trimmed) {
-            return "\(trimmed), un visage gonflé, ce n’est presque jamais de la graisse."
+            return OnboardingCopy.t(
+                "\(trimmed), un visage gonflé, ce n’est presque jamais de la graisse.",
+                en: "\(trimmed), a puffy face is almost never fat."
+            )
         }
-        return "Un visage gonflé, ce n’est presque jamais de la graisse."
+        return OnboardingCopy.t(
+            "Un visage gonflé, ce n’est presque jamais de la graisse.",
+            en: "A puffy face is almost never fat."
+        )
     }
 
     /// Conservé pour compat.
@@ -215,11 +251,11 @@ enum OnboardingProfileChatQuestionBank {
     ) -> String? {
         switch questionID {
         case "intro_swollen_face":
-            return "C’est quoi ce liquide ?"
+            return OnboardingCopy.t("C’est quoi ce liquide ?", en: "What is that fluid?")
         case "intro_causes":
-            return "Et ensuite ?"
+            return OnboardingCopy.t("Et ensuite ?", en: "And then?")
         case "intro_next":
-            return "C’est parti"
+            return OnboardingCopy.t("C’est parti", en: "Let’s go")
 
         case "debloat_driver":
             guard let driver = viewModel.onboardingDebloatDrivers.first else { return nil }
@@ -249,7 +285,7 @@ enum OnboardingProfileChatQuestionBank {
 
         case "face_scan_offer":
             guard viewModel.completedProfileChatQuestionIDs.contains(questionID) else { return nil }
-            return "Lancer le scan"
+            return OnboardingCopy.t("Lancer le scan", en: "Start the scan")
 
         case "sport_pick":
             guard let sport = OnboardingDataModel.shared.selectedSports.first else { return nil }
@@ -262,48 +298,82 @@ enum OnboardingProfileChatQuestionBank {
 
     // MARK: - Choices
 
-    private static let debloatDriverChoices: [OnboardingProfileChatChoice] = [
-        .init(id: OnboardingDebloatDriver.sleep.rawValue, label: "Oui, tous les matins"),
-        .init(id: OnboardingDebloatDriver.sedentary.rawValue, label: "Oui, certains jours"),
-        .init(id: OnboardingDebloatDriver.stress.rawValue, label: "Surtout en fin de journée"),
-        .init(id: OnboardingDebloatDriver.unknown.rawValue, label: "Non, pas vraiment")
-    ]
+    private static var debloatDriverChoices: [OnboardingProfileChatChoice] {
+        [
+            .init(
+                id: OnboardingDebloatDriver.sleep.rawValue,
+                label: OnboardingCopy.t("Oui, tous les matins", en: "Yes, every morning")
+            ),
+            .init(
+                id: OnboardingDebloatDriver.sedentary.rawValue,
+                label: OnboardingCopy.t("Oui, certains jours", en: "Yes, some days")
+            ),
+            .init(
+                id: OnboardingDebloatDriver.stress.rawValue,
+                label: OnboardingCopy.t("Surtout en fin de journée", en: "Mostly later in the day")
+            ),
+            .init(
+                id: OnboardingDebloatDriver.unknown.rawValue,
+                label: OnboardingCopy.t("Non, pas vraiment", en: "No, not really")
+            )
+        ]
+    }
 
-    private static let hydrationChoices: [OnboardingProfileChatChoice] = [
-        .init(id: HydrationLevel.poor.rawValue, label: "Moins d’1 L"),
-        .init(id: HydrationLevel.good.rawValue, label: "Environ 1 L"),
-        .init(id: HydrationLevel.veryGood.rawValue, label: "1,5 à 2 L"),
-        .init(id: HydrationLevel.excellent.rawValue, label: "Plus de 2 L")
-    ]
+    private static var hydrationChoices: [OnboardingProfileChatChoice] {
+        [
+            .init(id: HydrationLevel.poor.rawValue, label: OnboardingCopy.t("Moins d’1 L", en: "Less than 1 L")),
+            .init(id: HydrationLevel.good.rawValue, label: OnboardingCopy.t("Environ 1 L", en: "About 1 L")),
+            .init(id: HydrationLevel.veryGood.rawValue, label: OnboardingCopy.t("1,5 à 2 L", en: "1.5 to 2 L")),
+            .init(id: HydrationLevel.excellent.rawValue, label: OnboardingCopy.t("Plus de 2 L", en: "More than 2 L"))
+        ]
+    }
 
-    private static let junkFoodChoices: [OnboardingProfileChatChoice] = [
-        .init(id: NutritionQuality.veryPoor.rawValue, label: "Tous les jours"),
-        .init(id: NutritionQuality.poor.rawValue, label: "Plusieurs fois par semaine"),
-        .init(id: NutritionQuality.average.rawValue, label: "1 à 2 fois par semaine"),
-        .init(id: NutritionQuality.excellent.rawValue, label: "Rarement")
-    ]
+    private static var junkFoodChoices: [OnboardingProfileChatChoice] {
+        [
+            .init(id: NutritionQuality.veryPoor.rawValue, label: OnboardingCopy.t("Tous les jours", en: "Every day")),
+            .init(
+                id: NutritionQuality.poor.rawValue,
+                label: OnboardingCopy.t("Plusieurs fois par semaine", en: "Several times a week")
+            ),
+            .init(
+                id: NutritionQuality.average.rawValue,
+                label: OnboardingCopy.t("1 à 2 fois par semaine", en: "1 to 2 times a week")
+            ),
+            .init(id: NutritionQuality.excellent.rawValue, label: OnboardingCopy.t("Rarement", en: "Rarely"))
+        ]
+    }
 
     /// `id` = heures moyennes stockées dans `SleepProfile.averageSleepHours`.
-    private static let sleepHoursChoices: [OnboardingProfileChatChoice] = [
-        .init(id: "4.5", label: "Moins de 5 h"),
-        .init(id: "5.5", label: "5 à 6 h"),
-        .init(id: "6.5", label: "6 à 7 h"),
-        .init(id: "7.5", label: "7 à 8 h"),
-        .init(id: "8.5", label: "Plus de 8 h")
-    ]
+    private static var sleepHoursChoices: [OnboardingProfileChatChoice] {
+        [
+            .init(id: "4.5", label: OnboardingCopy.t("Moins de 5 h", en: "Less than 5 hrs")),
+            .init(id: "5.5", label: OnboardingCopy.t("5 à 6 h", en: "5 to 6 hrs")),
+            .init(id: "6.5", label: OnboardingCopy.t("6 à 7 h", en: "6 to 7 hrs")),
+            .init(id: "7.5", label: OnboardingCopy.t("7 à 8 h", en: "7 to 8 hrs")),
+            .init(id: "8.5", label: OnboardingCopy.t("Plus de 8 h", en: "More than 8 hrs"))
+        ]
+    }
 
-    private static let cardioFrequencyChoices: [OnboardingProfileChatChoice] = [
-        .init(id: "0-2", label: "Presque jamais"),
-        .init(id: "1-2", label: "1 à 2 fois"),
-        .init(id: "3-4", label: "3 à 4 fois"),
-        .init(id: "5+", label: "5 fois ou plus")
-    ]
+    private static var cardioFrequencyChoices: [OnboardingProfileChatChoice] {
+        [
+            .init(id: "0-2", label: OnboardingCopy.t("Presque jamais", en: "Almost never")),
+            .init(id: "1-2", label: OnboardingCopy.t("1 à 2 fois", en: "1 to 2 times")),
+            .init(id: "3-4", label: OnboardingCopy.t("3 à 4 fois", en: "3 to 4 times")),
+            .init(id: "5+", label: OnboardingCopy.t("5 fois ou plus", en: "5 times or more"))
+        ]
+    }
 
     private static func faceScanPrompt(for viewModel: OnboardingViewModel) -> String {
         let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         if OnboardingViewModel.isRealUserFirstName(trimmed) {
-            return "\(trimmed), on a ce qu’il faut. Scannons maintenant ton visage pour mesurer le gonflement."
+            return OnboardingCopy.t(
+                "\(trimmed), on a ce qu’il faut. Scannons maintenant ton visage pour mesurer le gonflement.",
+                en: "\(trimmed), we’ve got what we need. Let’s scan your face now to measure the puffiness."
+            )
         }
-        return "On a ce qu’il faut. Scannons maintenant ton visage pour mesurer le gonflement."
+        return OnboardingCopy.t(
+            "On a ce qu’il faut. Scannons maintenant ton visage pour mesurer le gonflement.",
+            en: "We’ve got what we need. Let’s scan your face now to measure the puffiness."
+        )
     }
 }

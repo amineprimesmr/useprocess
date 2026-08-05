@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 enum ProcessPlanProgressEngine {
 
     static let maxReductionDays = 21
@@ -21,6 +22,7 @@ enum ProcessPlanProgressEngine {
 
     // MARK: - Snapshot
 
+    @MainActor
     static func snapshot(
         plan: FaceOriginPlan?,
         trajectory: DebloatTrajectorySnapshot,
@@ -50,33 +52,35 @@ enum ProcessPlanProgressEngine {
             ? min(1, Double(trajectory.totalValidatedDays) / Double(totalDays))
             : 0
 
-        let daysLabel = totalDays == 1 ? "1 jour" : "\(totalDays) jours"
+        let daysLabel = totalDays == 1
+            ? AppCopy.t("1 jour", en: "1 day")
+            : AppCopy.t("\(totalDays) jours", en: "\(totalDays) days")
         let isComplete = elapsedDays >= totalDays
 
         let headline: String
         let subtitle: String
 
         if plan.calendar.startedAt == nil {
-            headline = "Programme debloat · \(daysLabel)"
+            headline = AppCopy.t("Programme debloat · \(daysLabel)", en: "Debloat Program · \(daysLabel)")
             if let endDate {
-                subtitle = "Debloat visé le \(Self.formatDate(endDate))"
+                subtitle = AppCopy.t("Debloat visé le \(Self.formatDate(endDate))", en: "Debloat target: \(Self.formatDate(endDate))")
             } else {
-                subtitle = "Calibré sur ton profil onboarding."
+                subtitle = AppCopy.t("Calibré sur ton profil onboarding.", en: "Calibrated to your onboarding profile.")
             }
         } else if isComplete {
-            headline = "Programme debloat terminé"
-            subtitle = "\(trajectory.totalValidatedDays) jour\(trajectory.totalValidatedDays > 1 ? "s" : "") validé\(trajectory.totalValidatedDays > 1 ? "s" : "")"
+            headline = AppCopy.t("Programme debloat terminé", en: "Debloat Program Complete")
+            subtitle = AppCopy.t("\(trajectory.totalValidatedDays) jour\(trajectory.totalValidatedDays > 1 ? "s" : "") validé\(trajectory.totalValidatedDays > 1 ? "s" : "")", en: "\(trajectory.totalValidatedDays) validated day\(trajectory.totalValidatedDays > 1 ? "s" : "")")
         } else {
-            headline = "Jour \(elapsedDays) / \(totalDays)"
+            headline = AppCopy.t("Jour \(elapsedDays) / \(totalDays)", en: "Day \(elapsedDays) / \(totalDays)")
             var parts: [String] = []
             if remaining > 0 {
-                parts.append("\(remaining) j restant\(remaining > 1 ? "s" : "")")
+                parts.append(AppCopy.t("\(remaining) j restant\(remaining > 1 ? "s" : "")", en: "\(remaining) day\(remaining > 1 ? "s" : "") remaining"))
             }
             if let endDate {
-                parts.append("debloat le \(Self.formatDate(endDate))")
+                parts.append(AppCopy.t("debloat le \(Self.formatDate(endDate))", en: "debloat by \(Self.formatDate(endDate))"))
             }
             if trajectory.totalValidatedDays > 0 {
-                parts.append("\(trajectory.totalValidatedDays) j validé\(trajectory.totalValidatedDays > 1 ? "s" : "")")
+                parts.append(AppCopy.t("\(trajectory.totalValidatedDays) j validé\(trajectory.totalValidatedDays > 1 ? "s" : "")", en: "\(trajectory.totalValidatedDays) validated day\(trajectory.totalValidatedDays > 1 ? "s" : "")"))
             }
             subtitle = parts.joined(separator: " · ")
         }
@@ -101,7 +105,7 @@ enum ProcessPlanProgressEngine {
             latestEvolutionNote: latestEvent.map { sanitizeEvolutionMessage($0) },
             trajectoryMode: nil,
             milestones: [],
-            activeMilestoneLabel: isComplete ? nil : "Debloat",
+            activeMilestoneLabel: isComplete ? nil : AppCopy.t("Debloat", en: "Debloat"),
             debloatTargetDays: baseDays,
             debloatEstimatedDate: endDate,
             debloatRemainingDays: remaining
@@ -261,6 +265,7 @@ enum ProcessPlanProgressEngine {
         )
     }
 
+    @MainActor
     static func sanitizeEvolutionMessage(_ event: PlanDurationEvolutionEvent) -> String {
         let lower = event.message.lowercased()
         if lower.contains("sem.") || lower.contains("semaine") {
@@ -269,6 +274,7 @@ enum ProcessPlanProgressEngine {
         return event.message
     }
 
+    @MainActor
     static func evolutionMessage(
         for reason: PlanDurationEvolutionReason,
         deltaDays: Int,
@@ -278,19 +284,19 @@ enum ProcessPlanProgressEngine {
         let days = abs(deltaDays)
         switch reason {
         case .earlyScanCompletion:
-            return "Objectifs atteints en avance — programme raccourci de \(days) jours."
+            return AppCopy.t("Objectifs atteints en avance — programme raccourci de \(days) jours.", en: "Goals reached early — program shortened by \(days) days.")
         case .streakMilestone:
             let streak = streakDays ?? days
-            return "\(streak) jours validés — programme accéléré de \(days) jours."
+            return AppCopy.t("\(streak) jours validés — programme accéléré de \(days) jours.", en: "\(streak) validated days — program accelerated by \(days) days.")
         case .consecutiveMisses:
-            return "Bilans manqués — programme prolongé de \(days) jours."
+            return AppCopy.t("Bilans manqués — programme prolongé de \(days) jours.", en: "Missed check-ins — program extended by \(days) days.")
         case .cardioConsecutiveMisses:
-            return "Cardio absent 3 jours d'affilée — programme prolongé de \(days) jours."
+            return AppCopy.t("Cardio absent 3 jours d'affilée — programme prolongé de \(days) jours.", en: "No cardio for 3 consecutive days — program extended by \(days) days.")
         case .cardioWeeklyDeficit:
             let count = cardioSessions ?? 0
-            return "Cardio insuffisant (\(count)/\(ProcessDebloatValidation.weeklyCardioMinimum) cette semaine) — +\(days) jours."
+            return AppCopy.t("Cardio insuffisant (\(count)/\(ProcessDebloatValidation.weeklyCardioMinimum) cette semaine) — +\(days) jours.", en: "Insufficient cardio (\(count)/\(ProcessDebloatValidation.weeklyCardioMinimum) this week) — +\(days) days.")
         case .regressionPattern:
-            return "Régression détectée — programme prolongé de \(days) jours."
+            return AppCopy.t("Régression détectée — programme prolongé de \(days) jours.", en: "Regression detected — program extended by \(days) days.")
         }
     }
 
@@ -313,9 +319,10 @@ enum ProcessPlanProgressEngine {
         adjustment = clampAdjustment(adjustment - 3, baseDays: baseDays)
     }
 
+    @MainActor
     private static func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.dateFormat = "d MMMM"
         return formatter.string(from: date)
     }

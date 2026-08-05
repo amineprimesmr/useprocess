@@ -17,33 +17,56 @@ enum GutHealthIntelligenceGuide {
     - Sommeil 7–9 h avant 23 h + mélatonine (tight junctions) ; alcool = progrès annulés
     """
 
-    static let foodsToAvoid: [String] = [
-        "Ultra-transformés et huiles de graines",
-        "Grains (lectines, gluten, phytates)",
-        "Légumes verts feuillus (oxalates élevés)",
-        "Noix et soja (antinutriments)",
-        "Lait A1 (lait industriel standard — BCM-7)",
-        "Alcool — priorité absolue à couper"
-    ]
+    static var foodsToAvoid: [String] {
+        [
+            AppCopy.tSync("Ultra-transformés et huiles de graines", en: "Ultra-processed foods and seed oils"),
+            AppCopy.tSync("Grains (lectines, gluten, phytates)", en: "Grains (lectins, gluten, phytates)"),
+            AppCopy.tSync("Légumes verts feuillus (oxalates élevés)", en: "Leafy greens (high oxalates)"),
+            AppCopy.tSync("Noix et soja (antinutriments)", en: "Nuts and soy (antinutrients)"),
+            AppCopy.tSync("Lait A1 (lait industriel standard — BCM-7)", en: "A1 milk (standard industrial milk — BCM-7)"),
+            AppCopy.tSync("Alcool — priorité absolue à couper", en: "Alcohol — absolute priority to cut")
+        ]
+    }
 
-    static let foodsToPrioritize: [String] = [
-        "Bouillon d'os bio grass-fed (matin, semaine reset)",
-        "Lait cru A2 / laitiers anciennes races",
-        "Viande rouge et abats (foie cru si source fiable)",
-        "Choucroute et aliments fermentés",
-        "Fruits — glucides digestes principaux",
-        "Carottes crues (endotoxines)",
-        "Vinaigre de cidre (probiotique)"
-    ]
+    static var foodsToPrioritize: [String] {
+        [
+            AppCopy.tSync("Bouillon d'os bio grass-fed (matin, semaine reset)", en: "Grass-fed organic bone broth (morning, reset week)"),
+            AppCopy.tSync("Lait cru A2 / laitiers anciennes races", en: "Raw A2 milk / heritage dairy"),
+            AppCopy.tSync("Viande rouge et abats (foie cru si source fiable)", en: "Red meat and organ meats (raw liver if trusted source)"),
+            AppCopy.tSync("Choucroute et aliments fermentés", en: "Sauerkraut and fermented foods"),
+            AppCopy.tSync("Fruits — glucides digestes principaux", en: "Fruit — main digestible carbs"),
+            AppCopy.tSync("Carottes crues (endotoxines)", en: "Raw carrots (endotoxins)"),
+            AppCopy.tSync("Vinaigre de cidre (probiotique)", en: "Apple cider vinegar (probiotic)")
+        ]
+    }
 
-    static let resetDailyStructure: [String] = [
-        "Matin : bouillon d'os + sel celtique avant premier repas (phase reset)",
-        "Repas : protéines animales + fruits + carottes crues",
-        "Limiter féculents (riz, patate) pendant le reset — pas élimination totale long terme",
-        "Eau + électrolytes (sel minéral) — pas dry fast"
-    ]
+    static var resetDailyStructure: [String] {
+        [
+            AppCopy.tSync(
+                "Matin : bouillon d'os + sel celtique avant premier repas (phase reset)",
+                en: "Morning: bone broth + Celtic salt before first meal (reset phase)"
+            ),
+            AppCopy.tSync(
+                "Repas : protéines animales + fruits + carottes crues",
+                en: "Meals: animal protein + fruit + raw carrots"
+            ),
+            AppCopy.tSync(
+                "Limiter féculents (riz, patate) pendant le reset — pas élimination totale long terme",
+                en: "Limit starches (rice, potato) during reset — not a long-term total ban"
+            ),
+            AppCopy.tSync(
+                "Eau + électrolytes (sel minéral) — pas dry fast",
+                en: "Water + electrolytes (mineral salt) — no dry fast"
+            )
+        ]
+    }
 
-    static let optionalFastNote = "Option reset : fast eau 24–36 h (autophagy) — pas quotidien, sel celtique sous la langue"
+    static var optionalFastNote: String {
+        AppCopy.tSync(
+            "Option reset : fast eau 24–36 h (autophagy) — pas quotidien, sel celtique sous la langue",
+            en: "Reset option: 24–36 h water fast (autophagy) — not daily, Celtic salt under the tongue"
+        )
+    }
 
     // MARK: - Génération protocole
 
@@ -87,25 +110,43 @@ enum GutHealthIntelligenceGuide {
         snapshot: OriginPlanAssessmentSnapshot
     ) -> [String] {
         var rules: [String] = [
-            "Intestin = centre de commande — peau et énergie suivent la muqueuse"
+            AppCopy.tSync(
+                "Intestin = centre de commande — peau et énergie suivent la muqueuse",
+                en: "Gut = command center — skin and energy follow the mucosa"
+            )
         ]
 
         if choice("processed_food", in: answers) == "daily" || choice("processed_food", in: answers) == "most_meals" {
-            rules.append("Éviter antinutriments (grains, légumes verts, noix, soja) + huiles de graines")
-            rules.append("Lait A2 cru uniquement — pas lait A1 industriel")
+            rules.append(AppCopy.tSync(
+                "Éviter antinutriments (grains, légumes verts, noix, soja) + huiles de graines",
+                en: "Avoid antinutrients (grains, leafy greens, nuts, soy) + seed oils"
+            ))
+            rules.append(AppCopy.tSync(
+                "Lait A2 cru uniquement — pas lait A1 industriel",
+                en: "Raw A2 milk only — no industrial A1 milk"
+            ))
         }
 
         if choice("alcohol_frequency", in: answers) == "often" || choice("alcohol_frequency", in: answers) == "weekly" {
-            rules.append("Alcool annule le reset intestin — couper complètement en phase protocole")
+            rules.append(AppCopy.tSync(
+                "Alcool annule le reset intestin — couper complètement en phase protocole",
+                en: "Alcohol cancels gut reset — cut completely during protocol phase"
+            ))
         }
 
         if snapshot.primaryBlocker == .nutrition || snapshot.archetype == .habitReset {
-            rules.append("Reset gut : bouillon d'os matin + carottes crues + probiotiques")
+            rules.append(AppCopy.tSync(
+                "Reset gut : bouillon d'os matin + carottes crues + probiotiques",
+                en: "Gut reset: morning bone broth + raw carrots + probiotics"
+            ))
         }
 
         let faceIds = answers["face_concerns"]?.choiceIds ?? []
         if faceIds.contains("acne") || faceIds.contains("dull_skin") || faceIds.contains("puffiness") {
-            rules.append("Peau = reflet intestin — probiotiques + muqueuse avant skincare")
+            rules.append(AppCopy.tSync(
+                "Peau = reflet intestin — probiotiques + muqueuse avant skincare",
+                en: "Skin = gut reflection — probiotics + mucosa before skincare"
+            ))
         }
 
         return rules
@@ -113,8 +154,14 @@ enum GutHealthIntelligenceGuide {
 
     static func sleepNotesForGutReset() -> [String] {
         [
-            "7–9 h de sommeil — mélatonine répare muqueuse (tight junctions)",
-            "Coucher avant 23 h + lunettes anti-lumière bleue le soir"
+            AppCopy.tSync(
+                "7–9 h de sommeil — mélatonine répare muqueuse (tight junctions)",
+                en: "7–9 h sleep — melatonin repairs mucosa (tight junctions)"
+            ),
+            AppCopy.tSync(
+                "Coucher avant 23 h + lunettes anti-lumière bleue le soir",
+                en: "Bed before 11 pm + blue-light glasses in the evening"
+            )
         ]
     }
 
@@ -124,14 +171,26 @@ enum GutHealthIntelligenceGuide {
         processedFoodHeavy: Bool
     ) -> [String] {
         var hints: [String] = []
-        hints.append("Script #10 : intestin → peau, humeur, inflammation — pas de suppléments sans reset alimentaire")
+        hints.append(AppCopy.tSync(
+            "Script #10 : intestin → peau, humeur, inflammation — pas de suppléments sans reset alimentaire",
+            en: "Script #10: gut → skin, mood, inflammation — no supplements without food reset"
+        ))
         if processedFoodHeavy {
-            hints.append("Couper grains/légumes verts/noix/soja + huiles de graines + lait A1")
+            hints.append(AppCopy.tSync(
+                "Couper grains/légumes verts/noix/soja + huiles de graines + lait A1",
+                en: "Cut grains/leafy greens/nuts/soy + seed oils + A1 milk"
+            ))
         }
         if skinClarityLow || puffinessHigh {
-            hints.append("Acné/gonflement : bouillon d'os + probiotiques + carottes crues + zéro alcool")
+            hints.append(AppCopy.tSync(
+                "Acné/gonflement : bouillon d'os + probiotiques + carottes crues + zéro alcool",
+                en: "Acne/puffiness: bone broth + probiotics + raw carrots + zero alcohol"
+            ))
         }
-        hints.append("Fast eau 24–36 h optionnel → autophagy ; puis bouillon d'os chaque matin 1 semaine")
+        hints.append(AppCopy.tSync(
+            "Fast eau 24–36 h optionnel → autophagy ; puis bouillon d'os chaque matin 1 semaine",
+            en: "Optional 24–36 h water fast → autophagy; then bone broth each morning for 1 week"
+        ))
         return hints
     }
 

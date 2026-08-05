@@ -46,8 +46,10 @@ enum FaceWellnessScore {
         if isBaselineScan {
             let absolute = absoluteDescriptors(from: markers)
             return Appreciation(
-                headline: "Référence enregistrée",
-                descriptors: absolute.isEmpty ? ["Premier scan"] : absolute,
+                headline: AppCopy.tSync("Référence enregistrée", en: "Baseline saved"),
+                descriptors: absolute.isEmpty
+                    ? [AppCopy.tSync("Premier scan", en: "First scan")]
+                    : absolute,
                 tone: .good
             )
         }
@@ -55,7 +57,7 @@ enum FaceWellnessScore {
         let parts = relativeSignals.map { relativeDescriptors(from: $0, markers: markers) }
             ?? absoluteDescriptors(from: markers)
 
-        let tone = tone(for: parts, markers: markers)
+        let tone = tone(for: parts, markers: markers, relativeSignals: relativeSignals)
         let headline = headline(for: parts, tone: tone)
 
         return Appreciation(
@@ -82,21 +84,21 @@ enum FaceWellnessScore {
     ) -> [String] {
         var parts: [String] = []
 
-        if signals.puffinessDelta >= 10 { parts.append("Très gonflé") }
-        else if signals.puffinessDelta >= 5 { parts.append("Gonflé") }
-        else if signals.puffinessDelta <= -6 { parts.append("Moins gonflé") }
+        if signals.puffinessDelta >= 10 { parts.append(AppCopy.tSync("Très gonflé", en: "Very puffy")) }
+        else if signals.puffinessDelta >= 5 { parts.append(AppCopy.tSync("Gonflé", en: "Puffy")) }
+        else if signals.puffinessDelta <= -6 { parts.append(AppCopy.tSync("Moins gonflé", en: "Less puffy")) }
         else if let d = puffinessDescriptor(markers.puffinessScore) { parts.append(d) }
 
-        if signals.underEyeFatigueDelta >= 10 { parts.append("Très fatigué") }
-        else if signals.underEyeFatigueDelta >= 5 { parts.append("Fatigué") }
-        else if signals.underEyeFatigueDelta <= -6 { parts.append("Cernes en baisse") }
+        if signals.underEyeFatigueDelta >= 10 { parts.append(AppCopy.tSync("Très fatigué", en: "Very tired")) }
+        else if signals.underEyeFatigueDelta >= 5 { parts.append(AppCopy.tSync("Fatigué", en: "Tired")) }
+        else if signals.underEyeFatigueDelta <= -6 { parts.append(AppCopy.tSync("Cernes en baisse", en: "Under-eyes improving")) }
         else if let d = fatigueDescriptor(markers.underEyeFatigueScore) { parts.append(d) }
 
-        if signals.jawTensionDelta >= 8 { parts.append("Mâchoire tendue") }
+        if signals.jawTensionDelta >= 8 { parts.append(AppCopy.tSync("Mâchoire tendue", en: "Jaw tension")) }
         else if let d = jawDescriptor(markers.jawTensionScore) { parts.append(d) }
 
-        if signals.skinClarityDelta <= -8 { parts.append("Peau terne") }
-        else if signals.skinClarityDelta >= 6 { parts.append("Peau plus nette") }
+        if signals.skinClarityDelta <= -8 { parts.append(AppCopy.tSync("Peau terne", en: "Dull skin")) }
+        else if signals.skinClarityDelta >= 6 { parts.append(AppCopy.tSync("Peau plus nette", en: "Clearer skin")) }
         else if let d = skinDescriptor(markers.skinClarityScore) { parts.append(d) }
 
         return dedupe(parts)
@@ -104,50 +106,56 @@ enum FaceWellnessScore {
 
     private static func puffinessDescriptor(_ value: Int) -> String? {
         switch value {
-        case 78...: return "Très gonflé"
-        case 62..<78: return "Nettement gonflé"
-        case 50..<62: return "Gonflement modéré"
+        case 78...: return AppCopy.tSync("Très gonflé", en: "Very puffy")
+        case 62..<78: return AppCopy.tSync("Nettement gonflé", en: "Clearly puffy")
+        case 50..<62: return AppCopy.tSync("Gonflement modéré", en: "Moderate puffiness")
         default: return nil
         }
     }
 
     private static func fatigueDescriptor(_ value: Int) -> String? {
         switch value {
-        case 78...: return "Très fatigué"
-        case 62..<78: return "Fatigué"
-        case 52..<62: return "Cernes visibles"
+        case 78...: return AppCopy.tSync("Très fatigué", en: "Very tired")
+        case 62..<78: return AppCopy.tSync("Fatigué", en: "Tired")
+        case 52..<62: return AppCopy.tSync("Cernes visibles", en: "Visible under-eyes")
         default: return nil
         }
     }
 
     private static func jawDescriptor(_ value: Int) -> String? {
         switch value {
-        case 72...: return "Mâchoire tendue"
-        case 58..<72: return "Tension légère"
+        case 72...: return AppCopy.tSync("Mâchoire tendue", en: "Jaw tension")
+        case 58..<72: return AppCopy.tSync("Tension légère", en: "Mild tension")
         default: return nil
         }
     }
 
     private static func skinDescriptor(_ value: Int) -> String? {
         switch value {
-        case ..<42: return "Peau très terne"
-        case 42..<55: return "Teint terne"
-        case 55..<68: return "Teint correct"
+        case ..<42: return AppCopy.tSync("Peau très terne", en: "Very dull skin")
+        case 42..<55: return AppCopy.tSync("Teint terne", en: "Dull complexion")
+        case 55..<68: return AppCopy.tSync("Teint correct", en: "Fair complexion")
         default: return nil
         }
     }
 
     private static func headline(for descriptors: [String], tone: Tone) -> String {
         switch tone {
-        case .excellent: return "Visage reposé"
-        case .good: return descriptors.isEmpty ? "État stable" : "Globalement ok"
-        case .moderate: return "Signaux à surveiller"
-        case .elevated: return "Rétention visible"
-        case .stressed: return "Visage en tension"
+        case .excellent: return AppCopy.tSync("Visage reposé", en: "Rested face")
+        case .good: return descriptors.isEmpty
+            ? AppCopy.tSync("État stable", en: "Stable state")
+            : AppCopy.tSync("Globalement ok", en: "Looking good overall")
+        case .moderate: return AppCopy.tSync("Signaux à surveiller", en: "Signals to watch")
+        case .elevated: return AppCopy.tSync("Rétention visible", en: "Visible retention")
+        case .stressed: return AppCopy.tSync("Visage en tension", en: "Face under stress")
         }
     }
 
-    private static func tone(for descriptors: [String], markers: FaceWellnessMarkers) -> Tone {
+    private static func tone(
+        for descriptors: [String],
+        markers: FaceWellnessMarkers,
+        relativeSignals: FaceScanRelativeSignals?
+    ) -> Tone {
         let stressLoad = Double(markers.puffinessScore) * 0.45
             + Double(markers.underEyeFatigueScore) * 0.55
             + Double(markers.jawTensionScore) * 0.08
@@ -159,7 +167,11 @@ enum FaceWellnessScore {
             return .good
         }
         if descriptors.count >= 2 || stressLoad >= 62 {
-            return descriptors.contains(where: { $0.contains("Très") }) ? .stressed : .elevated
+            let severeRelative = relativeSignals.map {
+                $0.puffinessDelta >= 10 || $0.underEyeFatigueDelta >= 10
+            } ?? false
+            let severeAbsolute = markers.puffinessScore >= 78 || markers.underEyeFatigueScore >= 78
+            return (severeRelative || severeAbsolute) ? .stressed : .elevated
         }
         return .moderate
     }
@@ -268,11 +280,12 @@ enum FaceWellnessScore {
         )
     }
 
+    @MainActor
     static func confidenceLabel(for confidence: Int) -> String {
         switch confidence {
-        case 82...: return "Confiance haute"
-        case 64..<82: return "Confiance correcte"
-        default: return "Confiance limitée"
+        case 82...: return AppCopy.t("Confiance haute", en: "High confidence")
+        case 64..<82: return AppCopy.t("Confiance correcte", en: "Fair confidence")
+        default: return AppCopy.t("Confiance limitée", en: "Limited confidence")
         }
     }
 

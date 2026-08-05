@@ -8,7 +8,10 @@ enum CoachPlanContextBuilder {
     @MainActor
     static func compactBlock(plan: FaceOriginPlan?, memory: CoachGlobalMemory) -> String {
         guard let plan else {
-            return "PLAN PERSONNALISÉ : en cours de préparation."
+            return AppCopy.tSync(
+                "PLAN PERSONNALISÉ : en cours de préparation.",
+                en: "PERSONALIZED PLAN: currently being prepared."
+            )
         }
 
         let dayIdx = plan.calendar.currentProgramDayIndex()

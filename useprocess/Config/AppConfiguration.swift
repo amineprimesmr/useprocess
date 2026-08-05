@@ -1,6 +1,6 @@
 import Foundation
 
-enum AppConfiguration {
+nonisolated enum AppConfiguration {
     static var appDisplayName: String {
         infoString(for: "CFBundleDisplayName") ?? "Process"
     }

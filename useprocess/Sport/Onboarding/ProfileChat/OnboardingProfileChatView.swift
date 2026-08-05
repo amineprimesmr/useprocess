@@ -54,6 +54,11 @@ struct OnboardingProfileChatView: View {
                         chatViewModel.restoreFaceScanOfferAnswers()
                     }
                 },
+                onSkip: {
+                    showsOnboardingFaceScanSession = false
+                    restoredFaceScanResult = nil
+                    chatViewModel.faceScanDidSkip()
+                },
                 onResultReady: { result in
                     chatViewModel.adoptDedicatedFaceScanResult(result)
                 },
@@ -226,7 +231,7 @@ struct OnboardingProfileChatView: View {
             switch question.kind {
             case .infoContinue:
                 MossChatPrimaryButton(
-                    title: question.continueLabel ?? "Continuer",
+                    title: question.continueLabel ?? OnboardingCopy.continueCTA,
                     enabled: !chatViewModel.isSubmittingAnswer
                 ) {
                     Task { await chatViewModel.submitInfoContinue() }
@@ -235,11 +240,11 @@ struct OnboardingProfileChatView: View {
 
             case .yesNo:
                 HStack(spacing: Theme.Space.s) {
-                    MossChip(title: "Oui", isSelected: false) {
+                    MossChip(title: OnboardingCopy.t("Oui", en: "Yes"), isSelected: false) {
                         Task { await chatViewModel.submitYesNo(true) }
                     }
                     .settleIn(0)
-                    MossChip(title: "Non", isSelected: false) {
+                    MossChip(title: OnboardingCopy.t("Non", en: "No"), isSelected: false) {
                         Task { await chatViewModel.submitYesNo(false) }
                     }
                     .settleIn(1)
@@ -286,7 +291,7 @@ struct OnboardingProfileChatView: View {
                 }
 
                 MossChatPrimaryButton(
-                    title: "Valider",
+                    title: OnboardingCopy.t("Valider", en: "Confirm"),
                     enabled: !multiSelection.isEmpty && !chatViewModel.isSubmittingAnswer
                 ) {
                     let selection = multiSelection

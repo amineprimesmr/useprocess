@@ -51,11 +51,11 @@ struct PlanMealsOverviewSheet: View {
                 .padding(.bottom, 100)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Repas & plan")
+            .navigationTitle(AppCopy.t("Repas & plan", en: "Meals & plan"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -102,11 +102,14 @@ struct PlanMealsOverviewSheet: View {
 
     private var overviewHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Planification repas")
+            Text(AppCopy.t("Planification repas", en: "Meal planning"))
                 .font(.title3.weight(.bold))
                 .foregroundStyle(theme.primaryText)
 
-            Text("Les \(min(visibleDayCount, dayBundles.count)) prochains jours de ton plan personnalisé — valide, ajuste avec l’IA, puis gère ta liste de courses.")
+            Text(AppCopy.t(
+                "Les \(min(visibleDayCount, dayBundles.count)) prochains jours de ton plan personnalisé — valide, ajuste avec l’IA, puis gère ta liste de courses.",
+                en: "The next \(min(visibleDayCount, dayBundles.count)) days of your personalized plan — validate, adjust with AI, then manage your grocery list."
+            ))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -116,8 +119,13 @@ struct PlanMealsOverviewSheet: View {
     private var upcomingDaysSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HealthHubDesign.sectionHeader(
-                "À venir",
-                subtitle: "\(dayBundles.count) jours dans le plan personnalisé",
+                AppCopy.t("À venir", en: "Upcoming"),
+                subtitle: AppCopy.t(
+                    "\(dayBundles.count) jours dans le plan personnalisé",
+                    en: dayBundles.count == 1
+                        ? "1 day in your personalized plan"
+                        : "\(dayBundles.count) days in your personalized plan"
+                ),
                 theme: theme
             )
 
@@ -144,9 +152,14 @@ struct PlanMealsOverviewSheet: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "chevron.down.circle.fill")
-                        Text("Afficher plus")
+                        Text(AppCopy.t("Afficher plus", en: "Show more"))
                             .font(.subheadline.weight(.semibold))
-                        Text("(\(dayBundles.count - visibleDayCount) jours restants)")
+                        Text(AppCopy.t(
+                            "(\(dayBundles.count - visibleDayCount) jours restants)",
+                            en: dayBundles.count - visibleDayCount == 1
+                                ? "(1 day left)"
+                                : "(\(dayBundles.count - visibleDayCount) days left)"
+                        ))
                             .font(.caption.weight(.medium))
                             .foregroundStyle(theme.secondaryText)
                     }
@@ -165,9 +178,12 @@ struct PlanMealsOverviewSheet: View {
 
     private var emptyDaysCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Aucun jour planifié")
+            Text(AppCopy.t("Aucun jour planifié", en: "No planned days"))
                 .font(.subheadline.weight(.semibold))
-            Text("Cette date est hors calendrier de ton plan personnalisé. Choisis un jour dans ton plan sur l’accueil.")
+            Text(AppCopy.t(
+                "Cette date est hors calendrier de ton plan personnalisé. Choisis un jour dans ton plan sur l’accueil.",
+                en: "This date is outside your personalized plan calendar. Pick a day from your plan on Home."
+            ))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }
@@ -179,7 +195,10 @@ struct PlanMealsOverviewSheet: View {
     private var shoppingPreviewSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             if shoppingItems.isEmpty {
-                Text("Ta liste de courses se remplit quand tu ajoutes des ingrédients depuis un repas.")
+                Text(AppCopy.t(
+                    "Ta liste de courses se remplit quand tu ajoutes des ingrédients depuis un repas.",
+                    en: "Your grocery list fills up when you add ingredients from a meal."
+                ))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -210,11 +229,16 @@ struct PlanMealsOverviewSheet: View {
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Liste de courses")
+                    Text(AppCopy.t("Liste de courses", en: "Grocery list"))
                         .font(.system(size: 16, weight: .semibold))
                     Text(activeShoppingCount == 0
-                         ? "Aucun article en attente"
-                         : "\(activeShoppingCount) article\(activeShoppingCount > 1 ? "s" : "") à acheter")
+                         ? AppCopy.t("Aucun article en attente", en: "No items pending")
+                         : AppCopy.t(
+                            "\(activeShoppingCount) article\(activeShoppingCount > 1 ? "s" : "") à acheter",
+                            en: activeShoppingCount == 1
+                                ? "1 item to buy"
+                                : "\(activeShoppingCount) items to buy"
+                         ))
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                 }
@@ -237,7 +261,7 @@ struct PlanMealsOverviewSheet: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 10)
         .padding(.top, 6)
-        .accessibilityLabel("Ouvrir la liste de courses")
+        .accessibilityLabel(AppCopy.t("Ouvrir la liste de courses", en: "Open grocery list"))
     }
 
     // MARK: - Actions
@@ -338,7 +362,7 @@ private struct PlanMealsOverviewMealRow: View {
                             .foregroundStyle(theme.onboardingAccent)
                     }
 
-                    Text(entry.meal.name)
+                    Text(entry.meal.localizedDisplayName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
                         .lineLimit(2)
@@ -390,11 +414,11 @@ struct PlanMealsShoppingSheet: View {
                 .padding(20)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Liste de courses")
+            .navigationTitle(AppCopy.t("Liste de courses", en: "Grocery list"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
         }

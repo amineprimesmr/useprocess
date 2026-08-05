@@ -60,7 +60,7 @@ enum CoachDailyRhythmService {
         if eveningReviewEnabled {
             await schedule(
                 id: reviewID,
-                title: "Check du jour",
+                title: AppCopy.t("Check du jour", en: "Daily check-in"),
                 body: eveningReviewBody(),
                 hour: 21,
                 minute: 0,
@@ -124,9 +124,9 @@ enum CoachDailyRhythmService {
             return dayTitle
         }
         let sleep = HealthManager.shared.todaySnapshot.sleep.sleepDuration
-        if sleep >= 7.5 { return "Bonne nuit — prêt à avancer" }
-        if sleep >= 6 { return "Journée modérée" }
-        return "Priorité récup aujourd'hui"
+        if sleep >= 7.5 { return AppCopy.t("Bonne nuit — prêt à avancer", en: "Great sleep — ready to go") }
+        if sleep >= 6 { return AppCopy.t("Journée modérée", en: "Take it moderately today") }
+        return AppCopy.t("Priorité récup aujourd'hui", en: "Prioritize recovery today")
     }
 
     private static func dailyOutlookBody() -> String {
@@ -134,7 +134,7 @@ enum CoachDailyRhythmService {
 
         if let plan = WelcomePlanStore.shared.plan {
             let dayIndex = plan.calendar.currentProgramDayIndex()
-            parts.append("Jour \(dayIndex + 1)")
+            parts.append(AppCopy.t("Jour \(dayIndex + 1)", en: "Day \(dayIndex + 1)"))
             if plan.calendar.day(globalIndex: dayIndex) != nil {
                 let cardio = DebloatCardioDayCatalog.session()
                 parts.append(cardio.prescriptionLine)
@@ -143,15 +143,15 @@ enum CoachDailyRhythmService {
 
         let sleep = HealthManager.shared.todaySnapshot.sleep.sleepDuration
         if sleep > 0 {
-            parts.append(String(format: "Sommeil %.1fh", sleep))
+            parts.append(AppCopy.t(String(format: "Sommeil %.1fh", sleep), en: String(format: "Sleep %.1f hr", sleep)))
         }
 
         if FaceScanCadence.isScanDue(since: FaceScanHistoryStore.shared.latestResult?.createdAt) {
-            parts.append("Scan visage à faire")
+            parts.append(AppCopy.t("Scan visage à faire", en: "Face scan due"))
         }
 
         if parts.isEmpty {
-            return "Ouvre Process pour ton plan du jour."
+            return AppCopy.t("Ouvre Process pour ton plan du jour.", en: "Open Process for today's plan.")
         }
         return parts.joined(separator: " · ")
     }
@@ -159,9 +159,9 @@ enum CoachDailyRhythmService {
     private static func eveningReviewBody() -> String {
         let validatedDays = ProcessStreakStore.shared.snapshot.totalCompletedDays
         if validatedDays > 0 {
-            return "\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Ouvre Process et fais ton check."
+            return AppCopy.t("\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Ouvre Process et fais ton check.", en: "\(validatedDays) day\(validatedDays == 1 ? "" : "s") completed. Open Process and check in.")
         }
-        return "Deux minutes sur l'accueil pour valider ta journée."
+        return AppCopy.t("Deux minutes sur l'accueil pour valider ta journée.", en: "Take two minutes on Home to complete your day.")
     }
 
     private static func settingsKey(_ suffix: String) -> String {

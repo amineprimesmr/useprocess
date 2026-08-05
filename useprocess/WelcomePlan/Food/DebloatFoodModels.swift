@@ -10,21 +10,23 @@ enum DebloatFoodTier: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
+    @MainActor
     var badgeLabel: String {
         switch self {
         case .hero: return "Hero K"
-        case .prefer: return "Drainant"
-        case .moderate: return "Modéré"
-        case .avoid: return "À éviter"
+        case .prefer: return AppCopy.t("Drainant", en: "Draining")
+        case .moderate: return AppCopy.t("Modéré", en: "Moderate")
+        case .avoid: return AppCopy.t("À éviter", en: "Avoid")
         }
     }
 
+    @MainActor
     var shortLabel: String {
         switch self {
-        case .hero: return "Prioritaire"
-        case .prefer: return "À privilégier"
-        case .moderate: return "Avec modération"
-        case .avoid: return "À éviter"
+        case .hero: return AppCopy.t("Prioritaire", en: "Priority")
+        case .prefer: return AppCopy.t("À privilégier", en: "Prefer")
+        case .moderate: return AppCopy.t("Avec modération", en: "In moderation")
+        case .avoid: return AppCopy.t("À éviter", en: "Avoid")
         }
     }
 }
@@ -42,17 +44,18 @@ enum DebloatFoodCategory: String, Codable, CaseIterable, Identifiable, Hashable 
 
     var id: String { rawValue }
 
+    @MainActor
     var sectionTitle: String {
         switch self {
-        case .legumes: return "Légumes drainants"
-        case .fruits: return "Fruits drainants"
-        case .potassium: return "Sources de potassium"
-        case .magnesium: return "Sources de magnésium"
-        case .protein: return "Protéines de qualité"
-        case .herbs: return "Herbes & condiments"
-        case .drinks: return "Boissons"
-        case .avoidSodium: return "Très riches en sodium"
-        case .avoidOther: return "Rétention / inflammation"
+        case .legumes: return AppCopy.t("Légumes drainants", en: "Draining vegetables")
+        case .fruits: return AppCopy.t("Fruits drainants", en: "Draining fruits")
+        case .potassium: return AppCopy.t("Sources de potassium", en: "Potassium sources")
+        case .magnesium: return AppCopy.t("Sources de magnésium", en: "Magnesium sources")
+        case .protein: return AppCopy.t("Protéines de qualité", en: "Quality proteins")
+        case .herbs: return AppCopy.t("Herbes & condiments", en: "Herbs & seasonings")
+        case .drinks: return AppCopy.t("Boissons", en: "Drinks")
+        case .avoidSodium: return AppCopy.t("Très riches en sodium", en: "Very high sodium")
+        case .avoidOther: return AppCopy.t("Rétention / inflammation", en: "Retention / inflammation")
         }
     }
 
@@ -76,13 +79,14 @@ enum DebloatGroceryAisle: String, Codable, CaseIterable, Identifiable, Hashable 
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .produce: return "Fruits & légumes"
-        case .protein: return "Protéines"
-        case .grocery: return "Épicerie"
-        case .drinks: return "Boissons"
-        case .herbs: return "Herbes & épices"
+        case .produce: return AppCopy.t("Fruits & légumes", en: "Produce")
+        case .protein: return AppCopy.t("Protéines", en: "Protein")
+        case .grocery: return AppCopy.t("Épicerie", en: "Grocery")
+        case .drinks: return AppCopy.t("Boissons", en: "Drinks")
+        case .herbs: return AppCopy.t("Herbes & épices", en: "Herbs & spices")
         }
     }
 
@@ -104,19 +108,30 @@ enum DebloatGroceryBudget: String, Codable, CaseIterable, Identifiable, Hashable
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .economy: return "Économique"
-        case .standard: return "Normal"
-        case .comfort: return "Confort"
+        case .economy: return AppCopy.t("Économique", en: "Budget")
+        case .standard: return AppCopy.t("Normal", en: "Standard")
+        case .comfort: return AppCopy.t("Confort", en: "Comfort")
         }
     }
 
+    @MainActor
     var subtitle: String {
         switch self {
-        case .economy: return "Essentiels high-K, peu de marques"
-        case .standard: return "Équilibre visage + variété"
-        case .comfort: return "Plus de choix drainants & boissons"
+        case .economy: return AppCopy.t(
+            "Essentiels high-K, peu de marques",
+            en: "High-K essentials, fewer brands"
+        )
+        case .standard: return AppCopy.t(
+            "Équilibre visage + variété",
+            en: "Face balance + variety"
+        )
+        case .comfort: return AppCopy.t(
+            "Plus de choix drainants & boissons",
+            en: "More draining options & drinks"
+        )
         }
     }
 }
@@ -125,6 +140,7 @@ enum DebloatGroceryBudget: String, Codable, CaseIterable, Identifiable, Hashable
 
 struct DebloatFoodItem: Identifiable, Hashable, Codable {
     let id: String
+    /// Nom FR persisté (matching / courses). Affichage : `localizedName`.
     let name: String
     let category: DebloatFoodCategory
     let tier: DebloatFoodTier
@@ -132,14 +148,31 @@ struct DebloatFoodItem: Identifiable, Hashable, Codable {
     let sodiumMgPer100g: Double?
     let magnesiumMgPer100g: Double?
     let debloatScore: Int
+    /// Texte FR persisté. Affichage : `localizedWhyItHelpsOrHurts`.
     let whyItHelpsOrHurts: String
     let tags: [String]
     let swaps: [String]
+    /// Portion FR persistée. Affichage : `localizedPortionHint`.
     let portionHint: String?
 
     var isEveningSafe: Bool { tags.contains("soir-safe") }
     var isHighPotassium: Bool { tags.contains("high-K") }
     var isTrend: Bool { tags.contains("tiktok-trend") }
+
+    @MainActor
+    var localizedName: String {
+        ProcessLocalizedDebloatFoodContent.name(for: self)
+    }
+
+    @MainActor
+    var localizedWhyItHelpsOrHurts: String {
+        ProcessLocalizedDebloatFoodContent.why(for: self)
+    }
+
+    @MainActor
+    var localizedPortionHint: String? {
+        ProcessLocalizedDebloatFoodContent.portion(for: self)
+    }
 
     var saltGramsPer100g: Double? {
         guard let sodium = sodiumMgPer100g else { return nil }

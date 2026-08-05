@@ -104,12 +104,12 @@ struct OnboardingProfileChatAnalysisPanel: View {
 
     private var thinkingTitle: String {
         if isComplete {
-            return "Analyse terminée"
+            return OnboardingCopy.t("Analyse terminée", en: "Analysis complete")
         }
         if isPaused {
-            return "En attente de ta réponse…"
+            return OnboardingCopy.t("En attente de ta réponse…", en: "Waiting for your answer…")
         }
-        return "Réflexion en cours"
+        return OnboardingCopy.t("Réflexion en cours", en: "Thinking")
     }
 
     // MARK: - Steps

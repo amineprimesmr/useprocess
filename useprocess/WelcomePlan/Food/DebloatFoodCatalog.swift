@@ -66,7 +66,7 @@ enum DebloatFoodCatalog {
                     return lhs.debloatScore > rhs.debloatScore
                 }
             guard !items.isEmpty else { return nil }
-            return DebloatFoodCatalogSection(id: category.rawValue, title: category.sectionTitle, items: items)
+            return DebloatFoodCatalogSection(id: category.rawValue, category: category, items: items)
         }
     }
 
@@ -120,8 +120,11 @@ enum DebloatFoodCatalog {
 
 struct DebloatFoodCatalogSection: Identifiable, Hashable {
     let id: String
-    let title: String
+    let category: DebloatFoodCategory
     let items: [DebloatFoodItem]
+
+    @MainActor
+    var title: String { category.sectionTitle }
 }
 
 enum DebloatFoodHubMode: String, CaseIterable, Identifiable {
@@ -130,10 +133,11 @@ enum DebloatFoodHubMode: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .foods: return "Aliments"
-        case .recipes: return "Recettes"
+        case .foods: return AppCopy.t("Aliments", en: "Foods")
+        case .recipes: return AppCopy.t("Recettes", en: "Recipes")
         }
     }
 }
@@ -145,11 +149,12 @@ enum DebloatFoodHubTab: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .prefer: return "Privilégier"
-        case .avoid: return "Éviter"
-        case .tastes: return "Mes goûts"
+        case .prefer: return AppCopy.t("Privilégier", en: "Prefer")
+        case .avoid: return AppCopy.t("Éviter", en: "Avoid")
+        case .tastes: return AppCopy.t("Mes goûts", en: "My tastes")
         }
     }
 }

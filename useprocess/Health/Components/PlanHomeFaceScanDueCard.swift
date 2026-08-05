@@ -38,13 +38,13 @@ struct PlanHomeFaceScanDueCard: View {
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(isFirstScan ? "Premier scan visage" : "C'est le moment")
+                        Text(isFirstScan ? AppCopy.t("Premier scan visage", en: "First face scan") : AppCopy.t("C'est le moment", en: "It's time"))
                             .font(.headline.weight(.bold))
                             .foregroundStyle(theme.primaryText)
 
                         Text(isFirstScan
-                            ? "30 secondes pour calibrer ton debloat et ta progression."
-                            : "Scan du jour — puis analyse avec le coach.")
+                            ? AppCopy.t("30 secondes pour calibrer ton debloat et ta progression.", en: "30 seconds to calibrate your debloat and progress.")
+                            : AppCopy.t("Scan du jour — puis analyse avec le coach.", en: "Today's scan — then analysis with your coach."))
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
@@ -58,7 +58,7 @@ struct PlanHomeFaceScanDueCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Label(isFirstScan ? "Lancer mon premier scan" : "Scanner maintenant", systemImage: "camera.fill")
+                Label(isFirstScan ? AppCopy.t("Lancer mon premier scan", en: "Start my first scan") : AppCopy.t("Scanner maintenant", en: "Scan now"), systemImage: "camera.fill")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(theme.onboardingAccent)
                     .frame(maxWidth: .infinity)
@@ -76,7 +76,7 @@ struct PlanHomeFaceScanDueCard: View {
             .contentShape(RoundedRectangle(cornerRadius: cardRadius, style: .continuous))
         }
         .buttonStyle(.processPlain)
-        .accessibilityLabel("Scanner le visage")
+        .accessibilityLabel(AppCopy.t("Scanner le visage", en: "Scan your face"))
     }
 
     private var cardBackground: some View {

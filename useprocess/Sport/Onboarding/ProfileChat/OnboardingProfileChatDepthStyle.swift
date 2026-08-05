@@ -166,7 +166,7 @@ struct OnboardingChatAmbientHeader: View {
 
     private var formattedDate: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         formatter.dateFormat = "EEE. d MMM"
         return formatter.string(from: Date()).lowercased()
     }

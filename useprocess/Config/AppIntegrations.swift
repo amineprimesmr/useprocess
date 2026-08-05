@@ -20,11 +20,18 @@ final class AppIntegrations {
     }
 
     var summary: String {
-        if !firebaseReady { return "Firebase non configuré" }
-        let sub = SubscriptionService.shared.subscriptionStatus.isActive ? "Premium actif" : "Premium inactif"
+        if !firebaseReady {
+            return AppCopy.t("Firebase non configuré", en: "Firebase not configured")
+        }
+        let sub = SubscriptionService.shared.subscriptionStatus.isActive
+            ? AppCopy.t("Premium actif", en: "Premium active")
+            : AppCopy.t("Premium inactif", en: "Premium inactive")
         let analytics = analyticsReady ? "PostHog" : "PostHog off"
         return authReady
             ? "Firebase · Auth · \(sub) · \(analytics)"
-            : "Firebase · Auth en attente · \(sub) · \(analytics)"
+            : AppCopy.t(
+                "Firebase · Auth en attente · \(sub) · \(analytics)",
+                en: "Firebase · Auth pending · \(sub) · \(analytics)"
+            )
     }
 }

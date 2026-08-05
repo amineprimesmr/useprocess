@@ -11,28 +11,45 @@ enum OriginPlanArchetype: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
     var label: String {
         switch self {
-        case .habitReset: return "Reset express"
-        case .recomposition: return "Recomposition"
-        case .foundationBuild: return "Fondations"
-        case .maintenancePolish: return "Affinage"
-        case .stressRecovery: return "Récupération stress"
+        case .habitReset: return AppCopy.t("Reset express", en: "Express reset")
+        case .recomposition: return AppCopy.t("Recomposition", en: "Recomposition")
+        case .foundationBuild: return AppCopy.t("Fondations", en: "Foundations")
+        case .maintenancePolish: return AppCopy.t("Affinage", en: "Refinement")
+        case .stressRecovery: return AppCopy.t("Récupération stress", en: "Stress recovery")
         }
     }
 
+    @MainActor
     var subtitle: String {
         switch self {
         case .habitReset:
-            return "Habitudes à corriger — composition déjà correcte"
+            return AppCopy.t(
+                "Habitudes à corriger — composition déjà correcte",
+                en: "Habits to fix — composition already solid"
+            )
         case .recomposition:
-            return "Perte de masse grasse avant affinage visage"
+            return AppCopy.t(
+                "Perte de masse grasse avant affinage visage",
+                en: "Fat loss before facial refinement"
+            )
         case .foundationBuild:
-            return "Construction progressive des 4 piliers"
+            return AppCopy.t(
+                "Construction progressive des 4 piliers",
+                en: "Progressive build of the 4 pillars"
+            )
         case .maintenancePolish:
-            return "Peaufinage posture, fascias et scan"
+            return AppCopy.t(
+                "Peaufinage posture, fascias et scan",
+                en: "Polish posture, fascia, and scan"
+            )
         case .stressRecovery:
-            return "Sommeil et cortisol avant tout le reste"
+            return AppCopy.t(
+                "Sommeil et cortisol avant tout le reste",
+                en: "Sleep and cortisol before everything else"
+            )
         }
     }
 }
@@ -682,13 +699,13 @@ enum OriginUserAssessment {
             .init(
                 id: "express",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: p1End),
-                title: "Reset debloat express",
+                title: AppCopy.tSync("Reset debloat express", en: "Express debloat reset"),
                 objectives: [
                     blockerObjective(blocker),
-                    "Dîner léger en sel — fini le gonflement matinal",
-                    "Hydratation \(dailyTargets.hydrationLabel) répartie dans la journée"
+                    AppCopy.tSync("Dîner léger en sel — fini le gonflement matinal", en: "Light low-salt dinner — end morning puffiness"),
+                    AppCopy.tSync("Hydratation \(dailyTargets.hydrationLabel) répartie dans la journée", en: "Hydration \(dailyTargets.hydrationLabel) spread across the day")
                 ],
-                habits: ["Scan visage J1 et J\(p1End)", "Repas structurés", "Sommeil \(Int(dailyTargets.sleepHours)) h"]
+                habits: [AppCopy.tSync("Scan visage J1 et J\(p1End)", en: "Face scan D1 and D\(p1End)"), AppCopy.tSync("Repas structurés", en: "Structured meals"), AppCopy.tSync("Sommeil \(Int(dailyTargets.sleepHours)) h", en: "Sleep \(Int(dailyTargets.sleepHours)) h")]
             )
         ]
         if total > p1End {
@@ -696,13 +713,13 @@ enum OriginUserAssessment {
                 .init(
                     id: "consolidate",
                     weeksRange: OriginPlanDuration.weeksRangeLabel(from: p1End + 1, through: total),
-                    title: "Consolidation",
+                    title: AppCopy.tSync("Consolidation", en: "Consolidation"),
                     objectives: [
-                        "Ancrer les nouvelles habitudes",
-                        "Comparer scan J1 vs fin du plan personnalisé",
-                        "Passer en mode maintenance si scores OK"
+                        AppCopy.tSync("Ancrer les nouvelles habitudes", en: "Lock in the new habits"),
+                        AppCopy.tSync("Comparer scan J1 vs fin du plan personnalisé", en: "Compare D1 scan vs end of personalized plan"),
+                        AppCopy.tSync("Passer en mode maintenance si scores OK", en: "Switch to maintenance if scores look good")
                     ],
-                    habits: ["Maintien 80 % des bases", "Scan comparatif", "Routine soir verrouillée"]
+                    habits: [AppCopy.tSync("Maintien 80 % des bases", en: "Keep 80% of the basics"), AppCopy.tSync("Scan comparatif", en: "Comparative scan"), AppCopy.tSync("Routine soir verrouillée", en: "Evening routine locked in")]
                 )
             )
         }
@@ -720,46 +737,46 @@ enum OriginUserAssessment {
             .init(
                 id: "reset",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: e[0]),
-                title: "Reset biologique",
+                title: AppCopy.tSync("Reset biologique", en: "Biological reset"),
                 objectives: [
-                    "Stabiliser sommeil et rythme circadien",
-                    "Alimentation dense — pas de famine (préserve le visage)",
-                    "Éliminer ultra-transformé et huiles de graines"
+                    AppCopy.tSync("Stabiliser sommeil et rythme circadien", en: "Stabilize sleep and circadian rhythm"),
+                    AppCopy.tSync("Alimentation dense — pas de famine (préserve le visage)", en: "Dense nutrition — no crash dieting (protects the face)"),
+                    AppCopy.tSync("Éliminer ultra-transformé et huiles de graines", en: "Cut ultra-processed food and seed oils")
                 ],
-                habits: ["Couvre-feu lumière", "Repas protéinés denses", "\(dailyTargets.dailySteps) pas/jour"]
+                habits: [AppCopy.tSync("Couvre-feu lumière", en: "Light curfew"), AppCopy.tSync("Repas protéinés denses", en: "Dense protein meals"), AppCopy.tSync("\(dailyTargets.dailySteps) pas/jour", en: "\(dailyTargets.dailySteps) steps/day")]
             ),
             .init(
                 id: "recomp",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[0] + 1, through: e[1]),
-                title: "Recomposition",
+                title: AppCopy.tSync("Recomposition", en: "Recomposition"),
                 objectives: [
-                    "Déficit léger via densité alimentaire",
-                    "\(sessions) séances/semaine progressive overload",
-                    "Sel modéré le soir pour debloat visage"
+                    AppCopy.tSync("Déficit léger via densité alimentaire", en: "Light deficit via food density"),
+                    AppCopy.tSync("\(sessions) séances/semaine progressive overload", en: "\(sessions) sessions/week progressive overload"),
+                    AppCopy.tSync("Sel modéré le soir pour debloat visage", en: "Moderate evening salt for face debloat")
                 ],
-                habits: ["Séances loguées", "Scan visage bi-hebdo", "Dîner protéines + légumes cuits"]
+                habits: [AppCopy.tSync("Séances loguées", en: "Logged sessions"), AppCopy.tSync("Scan visage bi-hebdo", en: "Biweekly face scan"), AppCopy.tSync("Dîner protéines + légumes cuits", en: "Dinner: protein + cooked veggies")]
             ),
             .init(
                 id: "face",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[1] + 1, through: e[2]),
-                title: "Affinage visage",
+                title: AppCopy.tSync("Affinage visage", en: "Face refinement"),
                 objectives: [
-                    "Fascias maxillaire et nuque",
-                    "Mewing + mastication consciente",
-                    "Affiner selon scan et énergie"
+                    AppCopy.tSync("Fascias maxillaire et nuque", en: "Maxillary and neck fascia"),
+                    AppCopy.tSync("Mewing + mastication consciente", en: "Mewing + mindful chewing"),
+                    AppCopy.tSync("Affiner selon scan et énergie", en: "Refine based on scan and energy")
                 ],
-                habits: ["Massage lymphatique", "Posture active", "Scan comparatif"]
+                habits: [AppCopy.tSync("Massage lymphatique", en: "Lymphatic massage"), AppCopy.tSync("Posture active", en: "Active posture"), AppCopy.tSync("Scan comparatif", en: "Comparative scan")]
             ),
             .init(
                 id: "anchor",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[2] + 1, through: total),
-                title: "Consolidation",
+                title: AppCopy.tSync("Consolidation", en: "Consolidation"),
                 objectives: [
-                    "Ancrer composition et habitudes",
-                    "Maintien 80 % des bases",
-                    "Plan de maintien"
+                    AppCopy.tSync("Ancrer composition et habitudes", en: "Lock composition and habits"),
+                    AppCopy.tSync("Maintien 80 % des bases", en: "Keep 80% of the basics"),
+                    AppCopy.tSync("Plan de maintien", en: "Maintenance plan")
                 ],
-                habits: ["Bilan scan final", "Routine automatique", "Mode maintenance"]
+                habits: [AppCopy.tSync("Bilan scan final", en: "Final scan review"), AppCopy.tSync("Routine automatique", en: "Automatic routine"), AppCopy.tSync("Mode maintenance", en: "Maintenance mode")]
             )
         ]
     }
@@ -775,30 +792,30 @@ enum OriginUserAssessment {
             .init(
                 id: "p1",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: e[0]),
-                title: "Fondations — Reset biologique",
-                objectives: ["Rythme circadien", "Alimentation dense", "Hydratation \(dailyTargets.hydrationLabel)"],
-                habits: ["Couvre-feu lumière", "Repas protéinés", "Marche \(dailyTargets.dailySteps) pas"]
+                title: AppCopy.tSync("Fondations — Reset biologique", en: "Foundations — Biological reset"),
+                objectives: [AppCopy.tSync("Rythme circadien", en: "Circadian rhythm"), AppCopy.tSync("Alimentation dense", en: "Dense nutrition"), AppCopy.tSync("Hydratation \(dailyTargets.hydrationLabel)", en: "Hydration \(dailyTargets.hydrationLabel)")],
+                habits: [AppCopy.tSync("Couvre-feu lumière", en: "Light curfew"), AppCopy.tSync("Repas protéinés", en: "Protein meals"), AppCopy.tSync("Marche \(dailyTargets.dailySteps) pas", en: "Walk \(dailyTargets.dailySteps) steps")]
             ),
             .init(
                 id: "p2",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[0] + 1, through: e[1]),
-                title: "Hormones & digestion",
-                objectives: ["Digestion optimale", "Stress ↓", "Mastication \(dailyTargets.chewsPerBite)×"],
-                habits: ["Minéraux naturels", "Routine soir", "Scan visage"]
+                title: AppCopy.tSync("Hormones & digestion", en: "Hormones & digestion"),
+                objectives: [AppCopy.tSync("Digestion optimale", en: "Optimal digestion"), AppCopy.tSync("Stress ↓", en: "Stress ↓"), AppCopy.tSync("Mastication \(dailyTargets.chewsPerBite)×", en: "Chewing \(dailyTargets.chewsPerBite)×")],
+                habits: [AppCopy.tSync("Minéraux naturels", en: "Natural minerals"), AppCopy.tSync("Routine soir", en: "Evening routine"), AppCopy.tSync("Scan visage", en: "Face scan")]
             ),
             .init(
                 id: "p3",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[1] + 1, through: e[2]),
-                title: "Entraînement & composition",
-                objectives: ["\(sessions) séances progressive overload", "Chaîne postérieure", "Composition corporelle"],
-                habits: ["Séances loguées", "Sommeil \(Int(dailyTargets.sleepHours)) h+", "Scan régulier"]
+                title: AppCopy.tSync("Entraînement & composition", en: "Training & composition"),
+                objectives: [AppCopy.tSync("\(sessions) séances progressive overload", en: "\(sessions) progressive-overload sessions"), AppCopy.tSync("Chaîne postérieure", en: "Posterior chain"), AppCopy.tSync("Composition corporelle", en: "Body composition")],
+                habits: [AppCopy.tSync("Séances loguées", en: "Logged sessions"), AppCopy.tSync("Sommeil \(Int(dailyTargets.sleepHours)) h+", en: "Sleep \(Int(dailyTargets.sleepHours)) h+"), AppCopy.tSync("Scan régulier", en: "Regular scan")]
             ),
             .init(
                 id: "p4",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[2] + 1, through: total),
-                title: "Affinage visage & consolidation",
-                objectives: ["Affiner si besoin", "Fascias maxillaire", "Ancrage long terme"],
-                habits: ["Bilan scan", "Maintien 80 % bases", "Plan de maintien"]
+                title: AppCopy.tSync("Affinage visage & consolidation", en: "Face refinement & consolidation"),
+                objectives: [AppCopy.tSync("Affiner si besoin", en: "Refine if needed"), AppCopy.tSync("Fascias maxillaire", en: "Maxillary fascia"), AppCopy.tSync("Ancrage long terme", en: "Long-term anchoring")],
+                habits: [AppCopy.tSync("Bilan scan", en: "Scan review"), AppCopy.tSync("Maintien 80 % bases", en: "Keep 80% basics"), AppCopy.tSync("Plan de maintien", en: "Maintenance plan")]
             )
         ]
     }
@@ -813,26 +830,26 @@ enum OriginUserAssessment {
             .init(
                 id: "sleep",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: e[0]),
-                title: "Sommeil & cortisol",
+                title: AppCopy.tSync("Sommeil & cortisol", en: "Sleep & cortisol"),
                 objectives: [
-                    "Priorité absolue : \(Int(dailyTargets.sleepHours)) h de sommeil",
-                    "Couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min"
+                    AppCopy.tSync("Priorité absolue : \(Int(dailyTargets.sleepHours)) h de sommeil", en: "Absolute priority: \(Int(dailyTargets.sleepHours)) h of sleep"),
+                    AppCopy.tSync("Couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min", en: "Screen curfew \(ProcessDailyTargets.screenCurfewMinutes) min")
                 ],
-                habits: ["Pas de caféine après \(ProcessDailyTargets.caffeineCutoffHour) h", "Chambre \(ProcessDailyTargets.bedroomTempCelsius) °C", "Scan visage"]
+                habits: [AppCopy.tSync("Pas de caféine après \(ProcessDailyTargets.caffeineCutoffHour) h", en: "No caffeine after \(ProcessDailyTargets.caffeineCutoffHour):00"), AppCopy.tSync("Chambre \(ProcessDailyTargets.bedroomTempCelsius) °C", en: "Room \(ProcessDailyTargets.bedroomTempCelsius) °C"), AppCopy.tSync("Scan visage", en: "Face scan")]
             ),
             .init(
                 id: "digest",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[0] + 1, through: e[1]),
-                title: "Digestion & debloat",
-                objectives: ["Repas denses anti-inflammatoires", "Sel modéré le soir", "Hydratation \(dailyTargets.hydrationLabel)"],
-                habits: ["Dîner léger", "Marche post-repas", "Scan comparatif"]
+                title: AppCopy.tSync("Digestion & debloat", en: "Digestion & debloat"),
+                objectives: [AppCopy.tSync("Repas denses anti-inflammatoires", en: "Dense anti-inflammatory meals"), AppCopy.tSync("Sel modéré le soir", en: "Moderate evening salt"), AppCopy.tSync("Hydratation \(dailyTargets.hydrationLabel)", en: "Hydration \(dailyTargets.hydrationLabel)")],
+                habits: [AppCopy.tSync("Dîner léger", en: "Light dinner"), AppCopy.tSync("Marche post-repas", en: "Post-meal walk"), AppCopy.tSync("Scan comparatif", en: "Comparative scan")]
             ),
             .init(
                 id: "build",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[1] + 1, through: total),
-                title: "Construction progressive",
-                objectives: ["Introduire entraînement léger", "Posture et mewing", "Consolidation visage"],
-                habits: ["2 séances max", "Routine soir", "Scan final"]
+                title: AppCopy.tSync("Construction progressive", en: "Progressive build"),
+                objectives: [AppCopy.tSync("Introduire entraînement léger", en: "Introduce light training"), AppCopy.tSync("Posture et mewing", en: "Posture and mewing"), AppCopy.tSync("Consolidation visage", en: "Face consolidation")],
+                habits: [AppCopy.tSync("2 séances max", en: "2 sessions max"), AppCopy.tSync("Routine soir", en: "Evening routine"), AppCopy.tSync("Scan final", en: "Final scan")]
             )
         ]
     }
@@ -847,16 +864,16 @@ enum OriginUserAssessment {
             .init(
                 id: "polish",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: 1, through: e[0]),
-                title: "Affinage posture & fascias",
-                objectives: ["Mewing intensif", "Travail SCM / nuque", "Massage lymphatique"],
-                habits: ["Mastication consciente", "Scan visage", "\(sessions) séances légères"]
+                title: AppCopy.tSync("Affinage posture & fascias", en: "Posture & fascia polish"),
+                objectives: [AppCopy.tSync("Mewing intensif", en: "Intensive mewing"), AppCopy.tSync("Travail SCM / nuque", en: "SCM / neck work"), AppCopy.tSync("Massage lymphatique", en: "Lymphatic massage")],
+                habits: [AppCopy.tSync("Mastication consciente", en: "Mindful chewing"), AppCopy.tSync("Scan visage", en: "Face scan"), AppCopy.tSync("\(sessions) séances légères", en: "\(sessions) light sessions")]
             ),
             .init(
                 id: "maintain",
                 weeksRange: OriginPlanDuration.weeksRangeLabel(from: e[0] + 1, through: total),
-                title: "Maintenance",
-                objectives: ["Verrouiller les bases", "Scan comparatif", "Mode long terme"],
-                habits: ["80 % des bases", "Scan final", "Routine automatique"]
+                title: AppCopy.tSync("Maintenance", en: "Maintenance"),
+                objectives: [AppCopy.tSync("Verrouiller les bases", en: "Lock the basics"), AppCopy.tSync("Scan comparatif", en: "Comparative scan"), AppCopy.tSync("Mode long terme", en: "Long-term mode")],
+                habits: [AppCopy.tSync("80 % des bases", en: "80% of the basics"), AppCopy.tSync("Scan final", en: "Final scan"), AppCopy.tSync("Routine automatique", en: "Automatic routine")]
             )
         ]
     }
@@ -873,24 +890,57 @@ enum OriginUserAssessment {
 
     private static func blockerObjective(_ blocker: OriginPrimaryBlocker) -> String {
         switch blocker {
-        case .sleep: return "Sommeil réparateur en priorité"
-        case .nutrition: return "Remplacer l'industriel par repas denses faits maison"
-        case .composition: return "Recomposition progressive — pas de famine"
-        case .posture: return "Posture cervicale + mewing quotidien"
-        case .stress: return "Baisser cortisol — sommeil et respiration d'abord"
-        case .habits: return "Reset habitudes debloat (sel, hydratation, repas)"
+        case .sleep: return AppCopy.tSync("Sommeil réparateur en priorité", en: "Restorative sleep first")
+        case .nutrition: return AppCopy.tSync(
+            "Remplacer l'industriel par repas denses faits maison",
+            en: "Replace ultra-processed food with dense home-cooked meals"
+        )
+        case .composition: return AppCopy.tSync(
+            "Recomposition progressive — pas de famine",
+            en: "Progressive recomposition — no crash dieting"
+        )
+        case .posture: return AppCopy.tSync(
+            "Posture cervicale + mewing quotidien",
+            en: "Neck posture + daily mewing"
+        )
+        case .stress: return AppCopy.tSync(
+            "Baisser cortisol — sommeil et respiration d'abord",
+            en: "Lower cortisol — sleep and breathing first"
+        )
+        case .habits: return AppCopy.tSync(
+            "Reset habitudes debloat (sel, hydratation, repas)",
+            en: "Reset debloat habits (salt, hydration, meals)"
+        )
         }
     }
 
     private static func blockerSummary(for blocker: OriginPrimaryBlocker, bodyFatGap: Double) -> String {
         switch blocker {
         case .composition:
-            return "Écart masse grasse ~\(Int(bodyFatGap.rounded())) pts vs cible — recomposition avant affinage max"
-        case .sleep: return "Sommeil fragile — sans ça le visage reste gonflé"
-        case .nutrition: return "Alimentation industrielle — transition vers repas denses"
-        case .posture: return "Posture et respiration impactent direct la structure faciale"
-        case .stress: return "Stress chronique — cortisol élevé, cernes et rétention d'eau"
-        case .habits: return "Habitudes à corriger — composition déjà proche de la cible"
+            return AppCopy.tSync(
+                "Écart masse grasse ~\(Int(bodyFatGap.rounded())) pts vs cible — recomposition avant affinage max",
+                en: "Body-fat gap ~\(Int(bodyFatGap.rounded())) pts vs target — recomp before max refinement"
+            )
+        case .sleep: return AppCopy.tSync(
+            "Sommeil fragile — sans ça le visage reste gonflé",
+            en: "Fragile sleep — without it the face stays puffy"
+        )
+        case .nutrition: return AppCopy.tSync(
+            "Alimentation industrielle — transition vers repas denses",
+            en: "Ultra-processed diet — transition to dense meals"
+        )
+        case .posture: return AppCopy.tSync(
+            "Posture et respiration impactent direct la structure faciale",
+            en: "Posture and breathing directly impact facial structure"
+        )
+        case .stress: return AppCopy.tSync(
+            "Stress chronique — cortisol élevé, cernes et rétention d'eau",
+            en: "Chronic stress — high cortisol, under-eyes, and water retention"
+        )
+        case .habits: return AppCopy.tSync(
+            "Habitudes à corriger — composition déjà proche de la cible",
+            en: "Habits to fix — composition already near target"
+        )
         }
     }
 
@@ -908,8 +958,8 @@ enum OriginUserAssessment {
         if let scan = baselineScan {
             criteria.append(
                 .init(
-                    label: "Gonflement visage",
-                    detail: "Réduire le score puffiness vs baseline",
+                    label: AppCopy.tSync("Gonflement visage", en: "Face puffiness"),
+                    detail: AppCopy.tSync("Réduire le score puffiness vs baseline", en: "Lower puffiness score vs baseline"),
                     metricKey: "puffinessScore",
                     targetValue: max(20, scan.puffinessScore - 15),
                     baselineValue: scan.puffinessScore
@@ -917,8 +967,8 @@ enum OriginUserAssessment {
             )
             criteria.append(
                 .init(
-                    label: "Teint / peau",
-                    detail: "Améliorer skinClarity (score plus bas = mieux)",
+                    label: AppCopy.tSync("Teint / peau", en: "Complexion / skin"),
+                    detail: AppCopy.tSync("Améliorer skinClarity (score plus bas = mieux)", en: "Improve skinClarity (lower score = better)"),
                     metricKey: "skinClarityScore",
                     targetValue: max(15, scan.skinClarityScore - 12),
                     baselineValue: scan.skinClarityScore
@@ -927,8 +977,8 @@ enum OriginUserAssessment {
         } else {
             criteria.append(
                 .init(
-                    label: "Scan baseline",
-                    detail: "Faire un scan visage en semaine 1 pour calibrer le suivi",
+                    label: AppCopy.tSync("Scan baseline", en: "Baseline scan"),
+                    detail: AppCopy.tSync("Faire un scan visage en semaine 1 pour calibrer le suivi", en: "Do a face scan in week 1 to calibrate tracking"),
                     metricKey: "baselineScan"
                 )
             )
@@ -937,8 +987,8 @@ enum OriginUserAssessment {
         if bodyFatGap >= 4 {
             criteria.append(
                 .init(
-                    label: "Composition",
-                    detail: "Viser ~\(Int(targetBF)) % masse grasse (estimation)",
+                    label: AppCopy.tSync("Composition", en: "Composition"),
+                    detail: AppCopy.tSync("Viser ~\(Int(targetBF)) % masse grasse (estimation)", en: "Target ~\(Int(targetBF))% body fat (estimate)"),
                     metricKey: "bodyFatPercent",
                     targetValue: Int(targetBF.rounded())
                 )
@@ -948,8 +998,8 @@ enum OriginUserAssessment {
         if multi("face_concerns", in: answers).contains("dark_circles") {
             criteria.append(
                 .init(
-                    label: "Cernes",
-                    detail: "underEyeFatigue en baisse sur 2+ scans",
+                    label: AppCopy.tSync("Cernes", en: "Under-eyes"),
+                    detail: AppCopy.tSync("underEyeFatigue en baisse sur 2+ scans", en: "underEyeFatigue down across 2+ scans"),
                     metricKey: "underEyeFatigueScore",
                     baselineValue: baselineScan?.underEyeFatigueScore
                 )
@@ -959,15 +1009,15 @@ enum OriginUserAssessment {
         switch archetype {
         case .habitReset:
             criteria.append(
-                .init(label: "Habitudes", detail: "7 jours consécutifs repas validés + sommeil cible")
+                .init(label: AppCopy.tSync("Habitudes", en: "Habits"), detail: AppCopy.tSync("7 jours consécutifs repas validés + sommeil cible", en: "7 consecutive days of logged meals + target sleep"))
             )
         case .recomposition:
             criteria.append(
-                .init(label: "Consistance", detail: "80 % des tâches journal complétées sur 4 semaines")
+                .init(label: AppCopy.tSync("Consistance", en: "Consistency"), detail: AppCopy.tSync("80 % des tâches journal complétées sur 4 semaines", en: "80% of journal tasks completed over 4 weeks"))
             )
         default:
             criteria.append(
-                .init(label: "Plan", detail: "Finir les phases avec scan comparatif positif")
+                .init(label: AppCopy.tSync("Plan", en: "Plan"), detail: AppCopy.tSync("Finir les phases avec scan comparatif positif", en: "Finish phases with a positive comparative scan"))
             )
         }
 

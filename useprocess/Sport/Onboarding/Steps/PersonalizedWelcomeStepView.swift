@@ -43,13 +43,16 @@ struct PersonalizedWelcomeStepView: View {
            profileFirstName != "Utilisateur" {
             return profileFirstName
         }
-        return "toi"
+        return OnboardingCopy.t("toi", en: "you")
     }
 
     // ✅ CRITIQUE: Propriété calculée pour obtenir le texte complet avec le prénom
     // Utilisée pour garantir que le texte est toujours disponible, même au premier rendu
     private var completeTextWithName: String {
-        "Ravi de te rencontrer \(userFirstName), découvrons ensemble comment optimiser ton potentiel"
+        OnboardingCopy.t(
+            "Ravi de te rencontrer \(userFirstName), découvrons ensemble comment optimiser ton potentiel",
+            en: "Great to meet you \(userFirstName) — let's figure out how to unlock your potential"
+        )
     }
 
     var body: some View {
@@ -107,7 +110,10 @@ struct PersonalizedWelcomeStepView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 // ✅ CRITIQUE: Initialiser le texte complet avec le prénom ACTUEL du ViewModel
                 let currentFirstName = userFirstName
-                fullTextToAnimate = "Ravi de te rencontrer \(currentFirstName), découvrons ensemble comment optimiser ton potentiel"
+                fullTextToAnimate = OnboardingCopy.t(
+                    "Ravi de te rencontrer \(currentFirstName), découvrons ensemble comment optimiser ton potentiel",
+                    en: "Great to meet you \(currentFirstName) — let's figure out how to unlock your potential"
+                )
 
                 // Animation machine à écrire lettre par lettre
                 startTypewriterAnimation()
@@ -122,7 +128,10 @@ struct PersonalizedWelcomeStepView: View {
             // ✅ Si le prénom change après l'apparition de la vue, relancer l'animation
             let newTrimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if !newTrimmed.isEmpty && newTrimmed != oldValue && displayedText.isEmpty {
-                fullTextToAnimate = "Ravi de te rencontrer \(newTrimmed), découvrons ensemble comment optimiser ton potentiel"
+                fullTextToAnimate = OnboardingCopy.t(
+                    "Ravi de te rencontrer \(newTrimmed), découvrons ensemble comment optimiser ton potentiel",
+                    en: "Great to meet you \(newTrimmed) — let's figure out how to unlock your potential"
+                )
                 startTypewriterAnimation()
             }
         }

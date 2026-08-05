@@ -36,11 +36,11 @@ struct PlanBreakfastBuilderSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
-                title: "Petit-déjeuner",
-                trailing: "Score Debloat \(assessment.scoreText)"
+                title: AppCopy.t("Petit-déjeuner", en: "Breakfast"),
+                trailing: AppCopy.t("Score Debloat \(assessment.scoreText)", en: "Debloat score \(assessment.scoreText)")
             )
 
-            Text("Compose ton assiette — fond fixe + aliments PNG. Swipe pour changer chaque catégorie.")
+            Text(AppCopy.t("Compose ton assiette — fond fixe + aliments PNG. Swipe pour changer chaque catégorie.", en: "Build your plate — fixed background + PNG foods. Swipe to change each category."))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -271,7 +271,7 @@ struct PlanBreakfastBuilderHeroCard: View {
                     .frame(width: 48, height: 48)
             }
             .buttonStyle(.processPlain)
-            .accessibilityLabel("Valider ce petit-déjeuner")
+            .accessibilityLabel(AppCopy.t("Valider ce petit-déjeuner", en: "Confirm this breakfast"))
         }
         .frame(height: 52)
         .background {
@@ -405,7 +405,7 @@ struct PlanBreakfastOptionCard: View {
                     Image(systemName: option.category.icon)
                         .font(.system(size: 36, weight: .semibold))
                         .foregroundStyle(theme.onboardingAccent.opacity(0.85))
-                    Text(option.displayTitle)
+                    Text(option.localizedCardTitle.replacingOccurrences(of: "\n", with: " "))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
                         .multilineTextAlignment(.center)
@@ -428,7 +428,7 @@ struct PlanBreakfastOptionCard: View {
 
     private var cardChrome: some View {
         VStack(spacing: 0) {
-            Text(option.badge)
+            Text(option.localizedBadge)
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.white.opacity(0.96))
                 .monospacedDigit()
@@ -442,7 +442,7 @@ struct PlanBreakfastOptionCard: View {
 
             Spacer(minLength: 0)
 
-            Text(option.cardTitle)
+            Text(option.localizedCardTitle)
                 .font(.system(size: 26, weight: .bold, design: .rounded))
                 .italic()
                 .foregroundStyle(.white)

@@ -177,7 +177,11 @@ struct MealPhotoScanFlowView: View {
                     .tint(theme.onboardingAccent)
 
                 VStack(spacing: 8) {
-                    Text(viewModel.phase == .optimizing ? "Optimisation debloat" : "Analyse IA")
+                    Text(
+                        viewModel.phase == .optimizing
+                            ? AppCopy.t("Optimisation debloat", en: "Debloat optimization")
+                            : AppCopy.t("Analyse IA", en: "AI analysis")
+                    )
                         .font(.title3.weight(.bold))
                         .foregroundStyle(theme.primaryText)
 
@@ -221,11 +225,11 @@ struct MealPhotoScanFlowView: View {
             }
             .scrollIndicators(.hidden)
             .background(ProcessScreenBackground())
-            .navigationTitle("Analyse repas")
+            .navigationTitle(AppCopy.t("Analyse repas", en: "Meal analysis"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Fermer", action: requestDismiss)
+                    Button(AppCopy.close, action: requestDismiss)
                         .fontWeight(.semibold)
                 }
             }
@@ -246,7 +250,7 @@ struct MealPhotoScanFlowView: View {
                     Button {
                         validateMeal(meal)
                     } label: {
-                        Text("Enregistrer le repas")
+                        Text(AppCopy.t("Enregistrer le repas", en: "Save meal"))
                             .font(.headline.weight(.bold))
                             .foregroundStyle(theme.isDark ? Color.black : Color.white)
                             .frame(maxWidth: .infinity)
@@ -276,7 +280,7 @@ struct MealPhotoScanFlowView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay(alignment: .bottomLeading) {
                 if viewModel.needsOptimization, viewModel.selectedResultTab == .optimized {
-                    Text("Version optimisée")
+                    Text(AppCopy.t("Version optimisée", en: "Optimized version"))
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 10)
@@ -294,7 +298,7 @@ struct MealPhotoScanFlowView: View {
                     viewModel.selectResultTab(tab)
                 } label: {
                     VStack(spacing: 4) {
-                        Text(tab.rawValue)
+                        Text(tab.title)
                             .font(.subheadline.weight(.bold))
                         if tab == .scanned, let score = viewModel.scannedAssessment?.score {
                             Text("\(score)/100")
@@ -329,18 +333,22 @@ struct MealPhotoScanFlowView: View {
 
     private func scoreHero(assessment: MealDebloatAssessment, meal: MealSuggestionContent) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(viewModel.selectedResultTab == .optimized ? "Version optimisée debloat" : "Détecté sur ta photo")
+            Text(
+                viewModel.selectedResultTab == .optimized
+                    ? AppCopy.t("Version optimisée debloat", en: "Debloat-optimized version")
+                    : AppCopy.t("Détecté sur ta photo", en: "Detected in your photo")
+            )
                 .font(.caption.weight(.bold))
                 .foregroundStyle(theme.onboardingAccent)
                 .textCase(.uppercase)
 
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(meal.name)
+                    Text(meal.localizedDisplayName)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(theme.primaryText)
 
-                    Text(meal.scoreSummary.isEmpty ? assessment.summary : meal.scoreSummary)
+                    Text(meal.localizedSummary.isEmpty ? assessment.summary : meal.localizedSummary)
                         .font(.subheadline)
                         .foregroundStyle(theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -357,7 +365,10 @@ struct MealPhotoScanFlowView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "sparkles")
                         .foregroundStyle(theme.onboardingAccent)
-                    Text("Une version optimisée debloat a été générée automatiquement.")
+                    Text(AppCopy.t(
+                        "Une version optimisée debloat a été générée automatiquement.",
+                        en: "A debloat-optimized version was generated automatically."
+                    ))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(theme.secondaryText)
                 }
@@ -374,7 +385,7 @@ struct MealPhotoScanFlowView: View {
 
     private func mealDetailsCard(meal: MealSuggestionContent, assessment: MealDebloatAssessment) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Composition visible")
+            Text(AppCopy.t("Composition visible", en: "Visible composition"))
                 .font(.headline.weight(.bold))
                 .foregroundStyle(theme.primaryText)
 
@@ -391,9 +402,9 @@ struct MealPhotoScanFlowView: View {
                 }
             }
 
-            if !meal.coachTip.isEmpty {
+            if !meal.localizedCoachTip.isEmpty {
                 Divider().opacity(0.35)
-                Label(meal.coachTip, systemImage: "lightbulb.fill")
+                Label(meal.localizedCoachTip, systemImage: "lightbulb.fill")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)

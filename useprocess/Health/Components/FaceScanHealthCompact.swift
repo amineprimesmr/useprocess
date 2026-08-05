@@ -28,7 +28,7 @@ struct FaceScanHealthCompact: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                HealthHubDesign.sectionHeader("Scan visage", subtitle: statusSubtitle, theme: theme)
+                HealthHubDesign.sectionHeader(AppCopy.t("Scan visage", en: "Face scan"), subtitle: statusSubtitle, theme: theme)
                 Spacer()
                 if let latest {
                     FaceWellnessAppreciationBadge(
@@ -50,14 +50,14 @@ struct FaceScanHealthCompact: View {
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text("Scan quotidien — fatigue, récupération, visage.")
+                Text(AppCopy.t("Scan quotidien — fatigue, récupération, visage.", en: "Daily scan — fatigue, recovery, face."))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
             }
 
             HStack(spacing: 10) {
                 Button(action: onScan) {
-                    Label(isScanDue ? "Scanner maintenant" : "Scanner", systemImage: "camera.fill")
+                    Label(isScanDue ? AppCopy.t("Scanner maintenant", en: "Scan now") : AppCopy.t("Scanner", en: "Scan"), systemImage: "camera.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 42)
@@ -73,7 +73,7 @@ struct FaceScanHealthCompact: View {
                 .buttonStyle(.bordered)
                 .tint(theme.primaryText)
                 .processZoomSource(id: .faceScanHistory, namespace: historyZoomNamespace)
-                .accessibilityLabel("Historique des scans visage")
+                .accessibilityLabel(AppCopy.t("Historique des scans visage", en: "Face scan history"))
             }
         }
         .padding(14)

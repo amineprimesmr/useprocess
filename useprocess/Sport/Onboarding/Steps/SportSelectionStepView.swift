@@ -287,11 +287,11 @@ struct SportSelectionStepView: View {
                             .font(.system(size: 40))
                             .foregroundStyle(OnboardingTheme.mutedText)
 
-                        Text("Aucun résultat")
+                        Text(OnboardingCopy.t("Aucun résultat", en: "No results"))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(OnboardingTheme.footnoteText)
 
-                        Text("Tu peux quand même ajouter ce sport manuellement")
+                        Text(OnboardingCopy.t("Tu peux quand même ajouter ce sport manuellement", en: "You can still add this sport manually"))
                             .font(.system(size: 14, weight: .regular))
                             .foregroundStyle(OnboardingTheme.mutedText)
                             .multilineTextAlignment(.center)
@@ -309,7 +309,7 @@ struct SportSelectionStepView: View {
                                 }
                             }
                         }) {
-                            Text("Ajouter \"\(searchText)\"")
+                            Text(OnboardingCopy.t("Ajouter \"\(searchText)\"", en: "Add \"\(searchText)\""))
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(OnboardingTheme.primaryText)
                                 .padding(.horizontal, 20)
@@ -385,7 +385,7 @@ struct SportSelectionStepView: View {
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(OnboardingTheme.bodyText)
 
-                                Text("Chercher un sport")
+                                Text(OnboardingCopy.t("Chercher un sport", en: "Search for a sport"))
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(OnboardingTheme.primaryText)
 
@@ -428,7 +428,7 @@ struct SportSelectionStepView: View {
                             .foregroundStyle(OnboardingTheme.bodyText)
                             .font(.system(size: 18, weight: .medium))
 
-                        TextField("Rechercher un sport...", text: $searchText)
+                        TextField(OnboardingCopy.t("Rechercher un sport...", en: "Search for a sport..."), text: $searchText)
                             .textFieldStyle(.plain)
                             .foregroundStyle(OnboardingTheme.primaryText)
                             .focused($isSearchFocused)
@@ -467,7 +467,7 @@ struct SportSelectionStepView: View {
                                     onSearchStateChanged?(false)
                             }
                         }) {
-                            Text("Annuler")
+                            Text(OnboardingCopy.t("Annuler", en: "Cancel"))
                                 .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(OnboardingTheme.primaryText)
                                 .padding(.horizontal, 8)
@@ -488,7 +488,10 @@ struct SportSelectionStepView: View {
 
             // ✅ Titre en OVERLAY - Position ABSOLUE depuis le haut de l'écran
             VStack {
-                OnboardingTitleView("Quel sport", "pratiques-tu ?")
+                OnboardingTitleView(
+                    OnboardingCopy.t("Quel sport", en: "Which sport"),
+                    OnboardingCopy.t("pratiques-tu ?", en: "do you play?")
+                )
                     .padding(.top, OnboardingConstants.titleTopPadding)
                 Spacer()
             }

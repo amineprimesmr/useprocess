@@ -213,13 +213,13 @@ struct CoachUserMessageContextOverlay: View {
 
     private var menuCard: some View {
         VStack(spacing: 0) {
-            menuRow(icon: "square.on.square", title: "Copier") {
+            menuRow(icon: "square.on.square", title: AppCopy.t("Copier", en: "Copy")) {
                 UIPasteboard.general.string = message.text
                 HapticManager.shared.notification(.success)
                 dismiss()
             }
 
-            menuRow(icon: "pencil", title: "Modifier") {
+            menuRow(icon: "pencil", title: AppCopy.t("Modifier", en: "Edit")) {
                 HapticManager.shared.impact(.light)
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

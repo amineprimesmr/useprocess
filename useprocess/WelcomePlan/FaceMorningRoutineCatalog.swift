@@ -25,19 +25,35 @@ enum FaceMorningRoutineCatalog {
         case brasAlternes
         case glaconsVisage
 
+        @MainActor
         func canonicalLine(targets: OriginPersonalizedDailyTargets) -> String {
             _ = targets
             switch self {
             case .eauTiede:
-                return "Eau tiède au réveil — \(FaceMorningRoutineCatalog.warmWaterML) ml pour relancer digestion et hydratation"
+                return AppCopy.t(
+                    "Eau tiède au réveil — \(FaceMorningRoutineCatalog.warmWaterML) ml pour relancer digestion et hydratation",
+                    en: "Warm water on waking — \(FaceMorningRoutineCatalog.warmWaterML) ml to restart digestion and hydration"
+                )
             case .sautsSurPlace:
-                return "Sauts sur place — 1 min, bras levés, rebonds légers pour pomper la lymphe"
+                return AppCopy.t(
+                    "Sauts sur place — 1 min, bras levés, rebonds légers pour pomper la lymphe",
+                    en: "Jumping in place — 1 min, arms up, light bounces to pump lymph"
+                )
             case .monteesGenoux:
-                return "Montées de genoux — tapote chaque genou avec les mains, 1 min en rythme"
+                return AppCopy.t(
+                    "Montées de genoux — tapote chaque genou avec les mains, 1 min en rythme",
+                    en: "High knees — tap each knee with your hands, 1 min in rhythm"
+                )
             case .brasAlternes:
-                return "Bras alternés — lève bras gauche puis droit au-dessus de la tête, 1 min"
+                return AppCopy.t(
+                    "Bras alternés — lève bras gauche puis droit au-dessus de la tête, 1 min",
+                    en: "Alternating arms — raise left then right above your head, 1 min"
+                )
             case .glaconsVisage:
-                return "Glaçons sur le visage — \(ProcessDailyTargets.coldFaceRinseSeconds) s pour vasoconstriction et dégonflement"
+                return AppCopy.t(
+                    "Glaçons sur le visage — \(ProcessDailyTargets.coldFaceRinseSeconds) s pour vasoconstriction et dégonflement",
+                    en: "Ice on the face — \(ProcessDailyTargets.coldFaceRinseSeconds) s for vasoconstriction and debloat"
+                )
             }
         }
 
@@ -80,10 +96,12 @@ enum FaceMorningRoutineCatalog {
         }
     }
 
+    @MainActor
     static func buildSteps(targets: OriginPersonalizedDailyTargets) -> [String] {
         Step.allCases.map { $0.canonicalLine(targets: targets) }
     }
 
+    @MainActor
     static func displaySteps(
         storedLines: [String],
         targets: OriginPersonalizedDailyTargets
@@ -100,12 +118,14 @@ enum FaceMorningRoutineCatalog {
         return drinkMinutes + circuitMinutes + iceMinutes
     }
 
+    @MainActor
     static func dailyRoutineActionCount(targets: OriginPersonalizedDailyTargets) -> Int {
         carouselItems(targets: targets).count
     }
 
+    @MainActor
     static func carouselItems(targets: OriginPersonalizedDailyTargets) -> [PlanProtocolCarouselItem] {
-        let category = "Routine matinale"
+        let category = PlanHomeSectionKind.faceRoutine.title
         return Step.allCases.map { step in
             PlanProtocolCarouselBuilder.lineItem(
                 step.canonicalLine(targets: targets),
@@ -119,7 +139,11 @@ enum FaceMorningRoutineCatalog {
     }
 
     /// Texte court pour journal / checklist.
+    @MainActor
     static var journalSummary: String {
-        "\(warmWaterML) ml eau tiède · circuit lymphatique \(lymphCircuitMinutesLabel) · glaçons"
+        AppCopy.t(
+            "\(warmWaterML) ml eau tiède · circuit lymphatique \(lymphCircuitMinutesLabel) · glaçons",
+            en: "\(warmWaterML) ml warm water · lymph circuit \(lymphCircuitMinutesLabel) · ice"
+        )
     }
 }

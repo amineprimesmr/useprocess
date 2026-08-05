@@ -214,7 +214,7 @@ struct CoachChatView: View {
             dismissCoachKeyboard()
             onDismiss?()
         }
-        .accessibilityLabel("Quitter Process IA")
+        .accessibilityLabel(AppCopy.t("Quitter Process IA", en: "Exit Process AI"))
     }
 
     private func presentCloseControlIfNeeded(animated: Bool = true) {
@@ -530,7 +530,7 @@ struct CoachChatView: View {
         HStack(spacing: 10) {
             Image(systemName: "key.fill")
                 .foregroundStyle(.orange)
-            Text("Le coach est momentanément indisponible. Réessaie dans quelques instants.")
+            Text(AppCopy.t("Le coach est momentanément indisponible. Réessaie dans quelques instants.", en: "The coach is temporarily unavailable. Try again in a moment."))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }

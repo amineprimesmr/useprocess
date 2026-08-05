@@ -12,6 +12,8 @@ struct OnboardingFaceScanSessionView: View {
     /// Relance après kill app : ouvre directement les résultats.
     var initialResult: FaceScanResult? = nil
     var onCancel: () -> Void
+    /// Skip pendant la capture (bouton sous « Recommencer le scan »).
+    var onSkip: (() -> Void)? = nil
     var onResultReady: (FaceScanResult) -> Void
     var onContinueAfterResults: () -> Void
 
@@ -50,7 +52,9 @@ struct OnboardingFaceScanSessionView: View {
                 FaceScanCaptureScreen(
                     presentation: .fullScreen,
                     onBack: onCancel,
+                    onSkip: onSkip,
                     showsMediaImport: false,
+                    skipButtonTitle: AppCopy.t("Passer pour le moment", en: "Skip for now"),
                     allowsScreenFlash: true,
                     onContinue: advanceToAnalysis
                 )

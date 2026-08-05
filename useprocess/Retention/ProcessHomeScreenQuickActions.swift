@@ -14,14 +14,11 @@ enum ProcessHomeScreenQuickActions {
             return
         }
 
-        let trialDays = SubscriptionConfiguration.retentionQuickActionTrialDays
-        let trialTitle = trialDays > 0 ? "🎁 \(trialDays) JOURS OFFERTS" : "🎁 ESSAI GRATUIT"
-
         application.shortcutItems = [
             UIApplicationShortcutItem(
-                type: ProcessHomeScreenQuickActionKind.trialOffer.rawValue,
-                localizedTitle: trialTitle,
-                localizedSubtitle: "Accès illimité à Process",
+                type: ProcessHomeScreenQuickActionKind.lifetimeOffer.rawValue,
+                localizedTitle: AppCopy.t("Accès à vie offert", en: "Lifetime Access Offer"),
+                localizedSubtitle: AppCopy.t("Offre exclusive — \(SubscriptionConfiguration.winbackLifetimePrice)", en: "Exclusive offer — \(SubscriptionConfiguration.winbackLifetimePrice)"),
                 icon: UIApplicationShortcutIcon(systemImageName: "gift.fill")
             )
         ]
@@ -29,7 +26,7 @@ enum ProcessHomeScreenQuickActions {
 
     @MainActor
     private static var shouldOfferRetentionShortcuts: Bool {
-        guard SubscriptionConfiguration.retentionQuickActionTrialDays > 0 else { return false }
+        guard SubscriptionConfiguration.retentionQuickActionLifetimeOfferEnabled else { return false }
         guard !SubscriptionService.shared.subscriptionStatus.isActive else { return false }
         return true
     }

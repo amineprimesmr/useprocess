@@ -144,7 +144,7 @@ enum CoachStructuredMessageParser {
             if !cleaned.isEmpty { return cleaned.capitalized }
         }
 
-        return "Séance"
+        return AppCopy.tSync("Séance", en: "Session")
     }
 
     private static func cleanedIntro(_ intro: String) -> String? {

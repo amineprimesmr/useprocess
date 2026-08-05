@@ -100,7 +100,7 @@ struct FaceScanRecordingMediaView: View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(Color.primary.opacity(0.08))
             .overlay {
-                Label("Vidéo indisponible", systemImage: "video.slash")
+                Label(AppCopy.t("Vidéo indisponible", en: "Video unavailable"), systemImage: "video.slash")
                     .font(displayMode == .thumbnail ? .caption2.weight(.semibold) : .caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .labelStyle(.iconOnly)

@@ -127,7 +127,9 @@ struct ReadinessScoreGaugeView: View {
     @ViewBuilder
     private func detailsButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(isLoadingDetails ? "Analyse…" : "Comprendre mon score")
+            Text(isLoadingDetails
+                 ? AppCopy.t("Analyse…", en: "Analyzing…")
+                 : AppCopy.t("Comprendre mon score", en: "Understand my score"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(theme.onboardingAccent)
                 .padding(.vertical, 10)
@@ -141,16 +143,18 @@ struct ReadinessScoreGaugeView: View {
 // MARK: - Copy helpers
 
 enum ReadinessGaugeCopy {
+    @MainActor
     static func displayStatusLabel(score: Int, label: String) -> String {
-        guard score > 0 else { return "En attente de données" }
+        guard score > 0 else { return AppCopy.t("En attente de données", en: "Waiting for data") }
         switch score {
-        case 80...: return "Pic de forme"
-        case 60..<80: return "État stable"
-        case 40..<60: return "Récupération modérée"
-        default: return "Priorité repos"
+        case 80...: return AppCopy.t("Pic de forme", en: "Peak form")
+        case 60..<80: return AppCopy.t("État stable", en: "Stable state")
+        case 40..<60: return AppCopy.t("Récupération modérée", en: "Moderate recovery")
+        default: return AppCopy.t("Priorité repos", en: "Rest priority")
         }
     }
 
+    @MainActor
     static func subtitle(score: Int, factor: String?) -> String {
         if let factor, !factor.isEmpty {
             return factor
@@ -158,13 +162,14 @@ enum ReadinessGaugeCopy {
         return defaultSubtitle(for: score)
     }
 
+    @MainActor
     static func defaultSubtitle(for score: Int) -> String {
         switch score {
-        case 80...: return "Continue — tu es prêt à performer"
-        case 60..<80: return "Continue — tu es sur la bonne voie"
-        case 40..<60: return "Écoute ton corps aujourd'hui"
-        case 1..<40: return "Priorité récupération et repos"
-        default: return "Connecte Apple Santé pour calculer ton score"
+        case 80...: return AppCopy.t("Continue — tu es prêt à performer", en: "Keep going — you're ready to perform")
+        case 60..<80: return AppCopy.t("Continue — tu es sur la bonne voie", en: "Keep going — you're on the right track")
+        case 40..<60: return AppCopy.t("Écoute ton corps aujourd'hui", en: "Listen to your body today")
+        case 1..<40: return AppCopy.t("Priorité récupération et repos", en: "Prioritize recovery and rest")
+        default: return AppCopy.t("Connecte Apple Santé pour calculer ton score", en: "Connect Apple Health to calculate your score")
         }
     }
 }

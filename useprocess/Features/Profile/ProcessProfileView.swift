@@ -118,7 +118,7 @@ struct ProcessProfileView: View {
 
     private var profileChartsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Indicateurs")
+            Text(AppCopy.t("Indicateurs", en: "Metrics"))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(theme.secondaryText)
 

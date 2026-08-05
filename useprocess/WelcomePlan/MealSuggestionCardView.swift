@@ -115,7 +115,7 @@ struct MealSuggestionCardView: View {
                     }
                 }
 
-                Text(content.name)
+                Text(content.localizedDisplayName)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(theme.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -127,7 +127,7 @@ struct MealSuggestionCardView: View {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.title2)
                     .foregroundStyle(.green)
-                    .accessibilityLabel("Repas validé")
+                    .accessibilityLabel(AppCopy.t("Repas validé", en: "Meal logged"))
             }
         }
     }
@@ -137,7 +137,7 @@ struct MealSuggestionCardView: View {
             MealProtocolScoreRing(score: debloatAssessment.score, theme: theme)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Score Debloat")
+                Text(AppCopy.t("Score Debloat", en: "Debloat score"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                 Text(debloatAssessment.summary)
@@ -171,7 +171,11 @@ struct MealSuggestionCardView: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(coachListStyle ? "Ingrédients" : "Composition")
+                Text(
+                    coachListStyle
+                        ? AppCopy.t("Ingrédients", en: "Ingredients")
+                        : AppCopy.t("Composition", en: "Composition")
+                )
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                     .textCase(.uppercase)
@@ -184,7 +188,9 @@ struct MealSuggestionCardView: View {
                         }
                     } label: {
                         Label(
-                            showsIngredients ? "Masquer" : "Voir ingrédients",
+                            showsIngredients
+                                ? AppCopy.t("Masquer", en: "Hide")
+                                : AppCopy.t("Voir ingrédients", en: "See ingredients"),
                             systemImage: showsIngredients ? "chevron.up" : "list.bullet"
                         )
                         .font(.caption.weight(.semibold))
@@ -228,7 +234,7 @@ struct MealSuggestionCardView: View {
 
                 if !item.role.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                    item.role.lowercased() != "autre" {
-                    Text(item.role)
+                    Text(item.localizedRole)
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                 }
@@ -259,8 +265,8 @@ struct MealSuggestionCardView: View {
                 Text("\(content.prepMinutes) min")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
-                if !content.prepSummary.isEmpty {
-                    Text(content.prepSummary)
+                if !content.localizedPrep.isEmpty {
+                    Text(content.localizedPrep)
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -275,7 +281,7 @@ struct MealSuggestionCardView: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.orange)
                 .padding(.top, 2)
-            Text(content.coachTip)
+            Text(content.localizedCoachTip)
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -290,16 +296,33 @@ struct MealSuggestionCardView: View {
     private var actionButtons: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let onAddToShoppingList {
-                mealActionButton("Ajouter à la liste courses", id: "shopping", action: onAddToShoppingList)
+                mealActionButton(
+                    AppCopy.t("Ajouter à la liste courses", en: "Add to grocery list"),
+                    id: "shopping",
+                    action: onAddToShoppingList
+                )
             }
             if let onValidate {
-                mealActionButton("Valider le repas", id: "validate", primary: true, action: onValidate)
+                mealActionButton(
+                    AppCopy.t("Valider le repas", en: "Log this meal"),
+                    id: "validate",
+                    primary: true,
+                    action: onValidate
+                )
             }
             if let onModify {
-                mealActionButton("Ajuster le repas", id: "modify", action: onModify)
+                mealActionButton(
+                    AppCopy.t("Ajuster le repas", en: "Adjust this meal"),
+                    id: "modify",
+                    action: onModify
+                )
             }
             if let onAnother {
-                mealActionButton("Autre idée", id: "another", action: onAnother)
+                mealActionButton(
+                    AppCopy.t("Autre idée", en: "Another idea"),
+                    id: "another",
+                    action: onAnother
+                )
             }
         }
         .padding(.top, 2)
@@ -381,7 +404,10 @@ struct MealProtocolScoreRing: View {
             }
         }
         .frame(width: 54, height: 54)
-        .accessibilityLabel("Score Debloat \(score) sur 100")
+        .accessibilityLabel(AppCopy.t(
+            "Score Debloat \(score) sur 100",
+            en: "Debloat score \(score) out of 100"
+        ))
     }
 }
 
@@ -407,7 +433,7 @@ struct MealSuggestionItemRow: View {
                     .frame(width: 22)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.name)
+                    Text(item.localizedName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
                     if isExpanded {
@@ -450,23 +476,25 @@ struct MealItemEditSheet: View {
     @State private var instruction = ""
     @FocusState private var isFocused: Bool
 
-    private let quickSwaps = [
-        "Remplacer par une autre protéine",
-        "Portion plus légère",
-        "Portion plus généreuse",
-        "Version végétarienne",
-        "Sans gluten"
-    ]
+    private var quickSwaps: [String] {
+        [
+            AppCopy.t("Remplacer par une autre protéine", en: "Swap for another protein"),
+            AppCopy.t("Portion plus légère", en: "Lighter portion"),
+            AppCopy.t("Portion plus généreuse", en: "Larger portion"),
+            AppCopy.t("Version végétarienne", en: "Vegetarian version"),
+            AppCopy.t("Sans gluten", en: "Gluten-free")
+        ]
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(item.name)
+                        Text(item.localizedName)
                             .font(.title3.weight(.bold))
                             .foregroundStyle(theme.primaryText)
-                        Text("\(item.quantity) · \(item.role)")
+                        Text("\(item.localizedQuantity) · \(item.localizedRole)")
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                     }
@@ -479,13 +507,16 @@ struct MealItemEditSheet: View {
                                 if let onSelectAlternative {
                                     onSelectAlternative(alt)
                                 } else {
-                                    instruction = "Remplacer par \(alt)"
+                                    instruction = AppCopy.t("Remplacer par \(alt)", en: "Replace with \(alt)")
                                 }
                             }
                         )
                     }
 
-                    Text("Que veux-tu changer dans « \(item.name) » ?")
+                    Text(AppCopy.t(
+                        "Que veux-tu changer dans « \(item.localizedName) » ?",
+                        en: "What do you want to change about “\(item.localizedName)”?"
+                    ))
                         .font(.subheadline)
                         .foregroundStyle(theme.secondaryText)
 
@@ -508,7 +539,11 @@ struct MealItemEditSheet: View {
                         }
                     }
 
-                    TextField("Ou décris ta modification…", text: $instruction, axis: .vertical)
+                    TextField(
+                        AppCopy.t("Ou décris ta modification…", en: "Or describe your change…"),
+                        text: $instruction,
+                        axis: .vertical
+                    )
                         .lineLimit(2...4)
                         .focused($isFocused)
                         .padding(14)
@@ -521,7 +556,7 @@ struct MealItemEditSheet: View {
                         guard !text.isEmpty else { return }
                         onApply(text)
                     } label: {
-                        Text("Appliquer la modification")
+                        Text(AppCopy.t("Appliquer la modification", en: "Apply change"))
                             .font(.headline)
                             .foregroundStyle(OnboardingTheme.actionButtonText)
                             .frame(maxWidth: .infinity)
@@ -535,11 +570,11 @@ struct MealItemEditSheet: View {
                 .padding(20)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Modifier")
+            .navigationTitle(AppCopy.t("Modifier", en: "Edit"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { onDismiss() }
+                    Button(AppCopy.cancel) { onDismiss() }
                 }
             }
             .onAppear { isFocused = true }

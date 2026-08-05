@@ -381,7 +381,7 @@ struct FaceScanTiltArrowHint: View {
                     )
                     .opacity(isEngaged ? 0.28 : 0.85)
                     .allowsHitTesting(false)
-                    .accessibilityLabel("Penche la tête comme la silhouette")
+                    .accessibilityLabel(OnboardingCopy.t("Penche la tête comme la silhouette", en: "Tilt your head like the silhouette"))
             }
         }
         // Même taille que le cercle caméra — centré par-dessus, sans décaler la page.
@@ -524,7 +524,7 @@ struct FaceIDContinueButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text("Continuer")
+            Text(OnboardingCopy.continueCTA)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity)

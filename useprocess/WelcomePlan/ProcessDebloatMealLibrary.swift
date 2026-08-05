@@ -73,6 +73,97 @@ enum ProcessDebloatMealLibrary {
         breakfastMeals + lunchMeals + dinnerMeals + omadMeals + snackMeals
     }
 
+    /// Nom affiché (EN via `AppCopy`) — `name` FR inchangé pour la persistance / matching.
+    @MainActor
+    static func localizedName(for name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let en = ProcessLocalizedMealContent.mealNamesFRToEN[trimmed] {
+            return ProcessLocalizedMealContent.name(trimmed, en: en)
+        }
+        let recipe = ProcessLocalizedDebloatFoodContent.localizedRecipeName(trimmed)
+        if recipe != trimmed || trimmed.hasPrefix("Matin dégonflé") || trimmed.hasPrefix("Bowl K")
+            || trimmed.hasPrefix("Dîner anti-rétention") || trimmed.hasPrefix("Collation drainante") {
+            return recipe
+        }
+        return ProcessLocalizedBreakfastBuilderContent.localizedComposedMealName(trimmed)
+    }
+
+    /// Tip coach affiché — lookup par texte FR persisté.
+    @MainActor
+    static func localizedTip(for tip: String) -> String {
+        let trimmed = tip.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        if let en = ProcessLocalizedMealContent.mealTipsFRToEN[trimmed] {
+            return ProcessLocalizedMealContent.tip(trimmed, en: en)
+        }
+        if let recipeTip = ProcessLocalizedDebloatFoodContent.localizedRecipeTip(trimmed) {
+            return recipeTip
+        }
+        if trimmed.hasPrefix("Pas de pain ni céréales industrielles") {
+            return AppCopy.t(
+                trimmed,
+                en: "No bread or industrial cereal in the morning. Water is tracked separately on Home."
+            )
+        }
+        return trimmed
+    }
+
+    /// Résumé / blurb catalogue — lookup par texte FR persisté (`scoreSummary`).
+    @MainActor
+    static func localizedSummary(for summary: String) -> String {
+        let trimmed = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        guard let en = ProcessLocalizedMealContent.mealSummariesFRToEN[trimmed] else {
+            return trimmed
+        }
+        return ProcessLocalizedMealContent.summary(trimmed, en: en)
+    }
+
+    /// Étapes de préparation catalogue — lookup par bloc FR normalisé.
+    @MainActor
+    static func localizedPrep(for prep: String) -> String {
+        let trimmed = prep.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        let key = ProcessLocalizedMealContent.normalizedPrepKey(trimmed)
+        if let en = ProcessLocalizedMealContent.mealPrepsFRToEN[key]
+            ?? ProcessLocalizedMealContent.mealPrepsFRToEN[trimmed] {
+            return ProcessLocalizedMealContent.prep(trimmed, en: en)
+        }
+        if let recipePrep = ProcessLocalizedDebloatFoodContent.localizedRecipePrep(trimmed) {
+            return recipePrep
+        }
+        // Builder petit-déj — prep déjà via AppCopy au build ; fallback FR.
+        if trimmed.hasPrefix("Compose ton petit-déj") {
+            return AppCopy.t(
+                trimmed,
+                en: "Build your debloat breakfast — protein + potassium, no drink in the meal."
+            )
+        }
+        return trimmed
+    }
+
+    /// Nom d’ingrédient catalogue / Debloat / builder.
+    @MainActor
+    static func localizedItemName(for name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        if let en = ProcessLocalizedMealContent.itemNamesFRToEN[trimmed] {
+            return ProcessLocalizedMealContent.itemName(trimmed, en: en)
+        }
+        return ProcessLocalizedMealContent.ingredientName(trimmed)
+    }
+
+    /// Quantité affichée (unités FR → EN si besoin).
+    @MainActor
+    static func localizedQuantity(for quantity: String) -> String {
+        let trimmed = quantity.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        if let en = ProcessLocalizedMealContent.quantitiesFRToEN[trimmed] {
+            return ProcessLocalizedMealContent.quantity(trimmed, en: en)
+        }
+        return ProcessLocalizedMealContent.ingredientQuantity(trimmed)
+    }
+
     struct CatalogSection: Identifiable, Equatable {
         let sectionKey: String
         let slot: MealTimeSlot
@@ -120,6 +211,9 @@ enum ProcessDebloatMealLibrary {
         }
         return assets
     }
+
+    /// Cache statique pour le carousel accueil — évite de reconstruire la liste à chaque frame.
+    static let homeCatalogPreviewImageAssets: [String] = fullCatalogPreviewImageAssets()
 
     /// Sections catalogue debloat — filtrées par type de plan (carousel du jour).
     static func catalogSections(for planType: NutritionPlanType) -> [CatalogSection] {
@@ -649,7 +743,7 @@ enum ProcessDebloatMealLibrary {
         name: String,
         slot: MealTimeSlot,
         score _: Int,
-        summary _: String,
+        summary: String,
         items: [MealSuggestionItem],
         prepMinutes: Int = 15,
         prep: String,
@@ -666,7 +760,8 @@ enum ProcessDebloatMealLibrary {
             prepSummary: prep,
             coachTip: tip,
             tags: tags,
-            imageAssetName: image
+            imageAssetName: image,
+            catalogSummary: summary
         )
     }
 }

@@ -12,23 +12,28 @@
 	<false/>
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>La caméra avant et la caméra arrière permettent le scan visage local, l'analyse de posture et le scan corps. Une photo n'est envoyée à Anthropic Claude que si tu actives explicitement l'analyse IA.</string>
+	<string>The front and rear cameras power local face scans, posture analysis, and body scans. A photo is sent to Anthropic Claude only if you explicitly enable AI analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>La photothèque permet de choisir une photo de profil ou d'envoyer une image au coach.</string>
+	<string>Photo Library lets you choose a profile photo or send an image to the coach.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Process lit tes données Santé (pas, sommeil, fréquence cardiaque) pour calculer ton score de readiness et personnaliser ton programme. Ces résumés peuvent être transmis au coach IA si tu l'autorises.</string>
+	<string>Process reads your Health data (steps, sleep, heart rate) to calculate your readiness score and personalize your program. These summaries may be shared with the AI coach if you allow it.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Process peut enregistrer tes séances et données d'activité dans Santé pour centraliser ton suivi sportif.</string>
+	<string>Process can save your workouts and activity data to Health to keep your fitness tracking in one place.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>La caméra avant est utilisée pour le scan visage local (mesh facial et indicateurs). Process ne crée pas de modèle d'identification faciale.</string>
+	<string>The front camera is used for local face scans (facial mesh and indicators). Process does not create a facial identification model.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Process utilise les capteurs de mouvement pour estimer ton activité quotidienne et compléter les données Santé. Exemple : compter tes pas quand tu marches sans Apple Watch.</string>
+	<string>Process uses motion sensors to estimate your daily activity and complement Health data. For example: counting steps when you walk without an Apple Watch.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Les notifications te rappellent tes séances et ta récupération.</string>
+	<string>Notifications remind you about your sessions and recovery.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Le micro permet d'enregistrer des messages vocaux convertis en texte pour le coach. Le texte peut être envoyé au service IA Anthropic (Claude) si tu l'autorises.</string>
+	<string>The microphone lets you record voice messages that are converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>La dictée transforme ta voix en texte sur l'appareil pour discuter avec le coach. Le texte peut ensuite être envoyé à Anthropic (Claude) si tu l'autorises.</string>
+	<string>Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.</string>
 </dict>
 </plist>

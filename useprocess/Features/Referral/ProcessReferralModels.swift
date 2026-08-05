@@ -4,10 +4,10 @@ enum ProcessReferralEntryStatus: String, Codable, Equatable {
     case pending
     case accepted
 
-    var label: String {
+    @MainActor var label: String {
         switch self {
-        case .pending: "En attente"
-        case .accepted: "Accepté"
+        case .pending: AppCopy.t("En attente", en: "Pending")
+        case .accepted: AppCopy.t("Accepté", en: "Accepted")
         }
     }
 }
@@ -42,38 +42,40 @@ struct ProcessReferralReward: Identifiable, Equatable {
     let iconSystemName: String
     let accentGradient: [String]
 
-    static let catalog: [ProcessReferralReward] = [
-        ProcessReferralReward(
+    @MainActor static var catalog: [ProcessReferralReward] {
+        [
+            ProcessReferralReward(
             id: "cash_15",
             requiredReferrals: 1,
-            title: "15 € sur ton abonnement",
+            title: AppCopy.t("15 € sur ton abonnement", en: "$15 off your subscription"),
             kind: .cashEUR,
             cashAmount: 15,
             proMonths: nil,
             iconSystemName: "eurosign.circle.fill",
             accentGradient: ["#34C759", "#30D158"]
-        ),
-        ProcessReferralReward(
+            ),
+            ProcessReferralReward(
             id: "pro_1m",
             requiredReferrals: 3,
-            title: "1 mois Process Pro gratuit",
+            title: AppCopy.t("1 mois Process Pro gratuit", en: "1 free month of Process Pro"),
             kind: .proMonths,
             cashAmount: nil,
             proMonths: 1,
             iconSystemName: "gift.fill",
             accentGradient: ["#5AC8FA", "#007AFF"]
-        ),
-        ProcessReferralReward(
+            ),
+            ProcessReferralReward(
             id: "pro_3m",
             requiredReferrals: 5,
-            title: "3 mois Process Pro gratuit",
+            title: AppCopy.t("3 mois Process Pro gratuit", en: "3 free months of Process Pro"),
             kind: .proMonths,
             cashAmount: nil,
             proMonths: 3,
             iconSystemName: "crown.fill",
             accentGradient: ["#AF52DE", "#5856D6"]
-        )
-    ]
+            )
+        ]
+    }
 }
 
 struct ProcessReferralSnapshot: Codable, Equatable {

@@ -32,7 +32,7 @@ struct FaceScanHealthSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
-                Label("Scan visage", systemImage: "face.smiling")
+                Label(AppCopy.t("Scan visage", en: "Face scan"), systemImage: "face.smiling")
                     .font(.headline)
                     .foregroundStyle(theme.primaryText)
 
@@ -61,7 +61,7 @@ struct FaceScanHealthSection: View {
 
             if !correlations.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Corrélations détectées")
+                    Text(AppCopy.t("Corrélations détectées", en: "Correlations found"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
                         .textCase(.uppercase)
@@ -83,7 +83,10 @@ struct FaceScanHealthSection: View {
 
             if let latest {
                 if let confidence = latest.scanConfidence {
-                    Text("\(FaceWellnessScore.confidenceLabel(for: confidence)) · score relatif à ta baseline, pas à ta forme de visage.")
+                    Text(AppCopy.t(
+                        "\(FaceWellnessScore.confidenceLabel(for: confidence)) · score relatif à ta baseline, pas à ta forme de visage.",
+                        en: "\(FaceWellnessScore.confidenceLabel(for: confidence)) · score relative to your baseline, not your face shape."
+                    ))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -117,18 +120,18 @@ struct FaceScanHealthSection: View {
                 }
             }
 
-                Text("Dernier scan : \(latest.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                Text(AppCopy.t("Dernier scan : \(latest.createdAt.formatted(date: .abbreviated, time: .shortened))", en: "Latest scan: \(latest.createdAt.formatted(date: .abbreviated, time: .shortened))"))
                     .font(.caption2)
                     .foregroundStyle(theme.secondaryText)
             } else {
-                Text("Scanne ton visage chaque jour pour suivre rétention, récupération, peau, définition et charge stress.")
+                Text(AppCopy.t("Scanne ton visage chaque jour pour suivre rétention, récupération, peau, définition et charge stress.", en: "Scan your face every day to track retention, recovery, skin, definition, and stress load."))
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             }
 
             HStack(spacing: 10) {
                 Button(action: onScan) {
-                    Label(isScanDue ? "Nouveau scan" : "Scanner quand même", systemImage: "camera.fill")
+                    Label(isScanDue ? AppCopy.t("Nouveau scan", en: "New scan") : AppCopy.t("Scanner quand même", en: "Scan anyway"), systemImage: "camera.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
@@ -153,23 +156,23 @@ struct FaceScanHealthSection: View {
     @ViewBuilder
     private var dailyNudge: some View {
         if latest == nil {
-            Label("Premier scan à faire", systemImage: "exclamationmark.circle")
+            Label(AppCopy.t("Premier scan à faire", en: "First scan to do"), systemImage: "exclamationmark.circle")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.orange)
         } else if isScanDue {
-            Label("Scan du jour à faire", systemImage: "bell.badge")
+            Label(AppCopy.t("Scan du jour à faire", en: "Today's scan to do"), systemImage: "bell.badge")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.orange)
         } else if let remaining = daysUntilNextScan, remaining == 1 {
-            Label("Prochain scan demain", systemImage: "checkmark.circle.fill")
+            Label(AppCopy.t("Prochain scan demain", en: "Next scan tomorrow"), systemImage: "checkmark.circle.fill")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.green)
         } else if let remaining = daysUntilNextScan, remaining > 1 {
-            Label("Prochain scan dans \(remaining) jours", systemImage: "checkmark.circle.fill")
+            Label(AppCopy.t("Prochain scan dans \(remaining) jours", en: remaining == 1 ? "Next scan in 1 day" : "Next scan in \(remaining) days"), systemImage: "checkmark.circle.fill")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.green)
         } else if let days = daysSinceLastScan, days == 0 {
-            Label("Scan enregistré aujourd'hui", systemImage: "checkmark.circle.fill")
+            Label(AppCopy.t("Scan enregistré aujourd'hui", en: "Scan saved today"), systemImage: "checkmark.circle.fill")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.green)
         }

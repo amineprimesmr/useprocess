@@ -12,6 +12,19 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
+    var title: String {
+        switch self {
+        case .weight: return AppCopy.t("Poids", en: "Weight")
+        case .cortisol: return "Cortisol"
+        case .recovery: return AppCopy.t("Cernes et fatigue", en: "Dark Circles & Fatigue")
+        case .retention: return AppCopy.t("Rétention", en: "Water Retention")
+        case .definition: return AppCopy.t("Mâchoire & pommettes", en: "Jawline & Cheekbones")
+        case .skin: return AppCopy.t("Peau", en: "Skin")
+        case .effort: return AppCopy.t("Effort", en: "Effort")
+        }
+    }
+
     static let profileDisplayOrder: [ProfileChartMetric] = [
         // .weight, // Temporairement masqué
         .cortisol,
@@ -33,39 +46,43 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
         }
     }
 
+    @MainActor
     var summarySubtitle: String {
         switch self {
-        case .weight: return "poids actuel"
-        case .cortisol: return "cortisol estimé"
-        case .recovery: return "cernes et fatigue"
-        case .retention: return "rétention d'eau"
-        case .definition: return "définition faciale"
-        case .skin: return "qualité de peau"
-        case .effort: return "score d'activité"
+        case .weight: return AppCopy.t("poids actuel", en: "current weight")
+        case .cortisol: return AppCopy.t("cortisol estimé", en: "estimated cortisol")
+        case .recovery: return AppCopy.t("cernes et fatigue", en: "dark circles and fatigue")
+        case .retention: return AppCopy.t("rétention d'eau", en: "water retention")
+        case .definition: return AppCopy.t("définition faciale", en: "facial definition")
+        case .skin: return AppCopy.t("qualité de peau", en: "skin quality")
+        case .effort: return AppCopy.t("score d'activité", en: "activity score")
         }
     }
 
+    @MainActor
     var emptySinglePointMessage: String {
         switch self {
-        case .weight: return "Une seule pesée — refais une mesure pour voir la courbe."
-        case .effort: return "Un seul jour d'activité — continue pour voir la courbe."
-        default: return "Un seul scan — refais un scan pour voir la courbe."
+        case .weight: return AppCopy.t("Une seule pesée — refais une mesure pour voir la courbe.", en: "Only one weigh-in—take another measurement to see the chart.")
+        case .effort: return AppCopy.t("Un seul jour d'activité — continue pour voir la courbe.", en: "Only one day of activity—keep going to see the chart.")
+        default: return AppCopy.t("Un seul scan — refais un scan pour voir la courbe.", en: "Only one scan—take another scan to see the chart.")
         }
     }
 
+    @MainActor
     var emptyNoDataMessage: String {
         switch self {
-        case .weight: return "Ajoute ton poids dans Santé ou ton profil."
-        case .effort: return "Active Apple Santé pour suivre ton effort."
-        default: return "Fais ton scan visage pour démarrer la courbe."
+        case .weight: return AppCopy.t("Ajoute ton poids dans Santé ou ton profil.", en: "Add your weight in Health or your profile.")
+        case .effort: return AppCopy.t("Active Apple Santé pour suivre ton effort.", en: "Enable Apple Health to track your effort.")
+        default: return AppCopy.t("Fais ton scan visage pour démarrer la courbe.", en: "Take a face scan to start your chart.")
         }
     }
 
+    @MainActor
     var emptyPeriodTitle: String {
         switch self {
-        case .weight: return "Aucune pesée"
-        case .effort: return "Aucune activité"
-        default: return "Aucun scan"
+        case .weight: return AppCopy.t("Aucune pesée", en: "No Weigh-ins")
+        case .effort: return AppCopy.t("Aucune activité", en: "No Activity")
+        default: return AppCopy.t("Aucun scan", en: "No Scans")
         }
     }
 }
@@ -78,8 +95,9 @@ enum ProfileChartVisualStyle {
 }
 
 extension FaceScanIndicators.WellnessZone {
+    @MainActor
     var profileBadgeLabel: String {
-        title.uppercased(with: Locale(identifier: "fr_FR"))
+        title.uppercased(with: ProcessAppLanguage.shared.locale)
     }
 
     var profileBadgeColor: Color {
@@ -152,11 +170,12 @@ enum ProfileChartAxisStyle {
         return (minV - padding, maxV + padding)
     }
 
+    @MainActor
     var accessibilityLabel: String {
         switch self {
-        case .kilograms: return "Courbe de poids"
-        case .percent: return "Courbe en pourcentage"
-        case .hours: return "Courbe de sommeil"
+        case .kilograms: return AppCopy.t("Courbe de poids", en: "Weight chart")
+        case .percent: return AppCopy.t("Courbe en pourcentage", en: "Percentage chart")
+        case .hours: return AppCopy.t("Courbe de sommeil", en: "Sleep chart")
         }
     }
 }

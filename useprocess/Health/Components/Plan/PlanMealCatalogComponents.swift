@@ -80,7 +80,7 @@ struct PlanMealCatalogCard: View {
             onTap()
         } label: {
             VStack(spacing: 12) {
-                Text(meal.name)
+                Text(meal.localizedDisplayName)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                     .multilineTextAlignment(.center)
@@ -109,10 +109,14 @@ struct PlanMealCatalogCard: View {
             width: PlanMealCatalogLayout.cardWidth,
             height: PlanMealCatalogLayout.cardHeight
         )
-        .processGlassButton(in: cardShape)
+        .background {
+            cardShape
+                .fill(.clear)
+                .processGlassEffect(in: cardShape)
+        }
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
-        .accessibilityLabel("\(meal.name), score Debloat \(assessment.score)")
+        .accessibilityLabel(AppCopy.t("\(meal.localizedDisplayName), score Debloat \(assessment.score)", en: "\(meal.localizedDisplayName), Debloat score \(assessment.score)"))
     }
 
     @ViewBuilder

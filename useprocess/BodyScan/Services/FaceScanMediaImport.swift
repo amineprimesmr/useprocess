@@ -14,11 +14,17 @@ enum FaceScanMediaImport {
         var errorDescription: String? {
             switch self {
             case .unreadableMedia:
-                return "Impossible de lire ce fichier."
+                return AppCopy.tSync("Impossible de lire ce fichier.", en: "Couldn't read this file.")
             case .noFaceDetected:
-                return "Aucun visage détecté — choisis une photo ou vidéo où ton visage est bien visible."
+                return AppCopy.tSync(
+                    "Aucun visage détecté — choisis une photo ou vidéo où ton visage est bien visible.",
+                    en: "No face detected — pick a photo or video where your face is clearly visible."
+                )
             case .videoProcessingFailed:
-                return "Impossible d'analyser cette vidéo."
+                return AppCopy.tSync(
+                    "Impossible d'analyser cette vidéo.",
+                    en: "Couldn't analyze this video."
+                )
             }
         }
     }
@@ -35,7 +41,10 @@ enum FaceScanMediaImport {
 
         let scanId = UUID().uuidString
         var markers = FaceWellnessAnalyzer.analyze(from: normalized, pose: .faceFront)
-        markers.notes.insert("Scan importé depuis une photo.", at: 0)
+        markers.notes.insert(
+            AppCopy.tSync("Scan importé depuis une photo.", en: "Scan imported from a photo."),
+            at: 0
+        )
 
         let payload = FaceScanCapturePayload(
             scanId: scanId,
@@ -83,7 +92,10 @@ enum FaceScanMediaImport {
         }
 
         var markers = FaceWellnessAnalyzer.analyze(from: normalized, pose: .faceFront)
-        markers.notes.insert("Scan importé depuis une vidéo.", at: 0)
+        markers.notes.insert(
+            AppCopy.tSync("Scan importé depuis une vidéo.", en: "Scan imported from a video."),
+            at: 0
+        )
 
         let payload = FaceScanCapturePayload(
             scanId: scanId,

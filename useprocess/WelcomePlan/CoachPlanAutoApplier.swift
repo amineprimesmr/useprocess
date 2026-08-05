@@ -145,22 +145,30 @@ enum CoachPlanAutoApplier {
         guard nutrition.mealPlanStyle != .omad else { return false }
 
         var changed = false
-        if let v = extractLabel("Petit-déjeuner", from: response) ?? extractLabel("PDJ", from: response) {
+        if let v = extractLabel("Petit-déjeuner", from: response)
+            ?? extractLabel("PDJ", from: response)
+            ?? extractLabel("Breakfast", from: response) {
             nutrition.breakfast = CoachFormattedText.sanitizeField(v); changed = true
         }
-        if let v = extractLabel("Déjeuner", from: response) {
+        if let v = extractLabel("Déjeuner", from: response)
+            ?? extractLabel("Lunch", from: response) {
             nutrition.lunch = CoachFormattedText.sanitizeField(v); changed = true
         }
-        if let v = extractLabel("Dîner", from: response) {
+        if let v = extractLabel("Dîner", from: response)
+            ?? extractLabel("Dinner", from: response) {
             nutrition.dinner = CoachFormattedText.sanitizeField(v); changed = true
         }
-        if let v = extractLabel("Collation", from: response) {
+        if let v = extractLabel("Collation", from: response)
+            ?? extractLabel("Snack", from: response) {
             nutrition.snack = CoachFormattedText.sanitizeField(v); changed = true
         }
-        if let v = extractLabel("Hydratation", from: response) {
+        if let v = extractLabel("Hydratation", from: response)
+            ?? extractLabel("Hydration", from: response) {
             nutrition.hydration = CoachFormattedText.sanitizeField(v); changed = true
         }
-        if let v = extractLabel("Repas unique", from: response) ?? extractLabel("OMAD", from: response) {
+        if let v = extractLabel("Repas unique", from: response)
+            ?? extractLabel("Single meal", from: response)
+            ?? extractLabel("OMAD", from: response) {
             nutrition.mealPlanStyle = .omad
             nutrition.omadMeal = CoachFormattedText.sanitizeField(v)
             nutrition.breakfast = ""
@@ -182,6 +190,7 @@ enum CoachPlanAutoApplier {
         var changed = false
 
         if let sessions = extractLabel("Séances", from: response).flatMap({ Int($0.filter(\.isNumber)) })
+            ?? extractLabel("Sessions", from: response).flatMap({ Int($0.filter(\.isNumber)) })
             ?? extractLabel("Cardio", from: response).flatMap({ Int($0.filter(\.isNumber)) }) {
             plan.trainingProtocol.sessionsPerWeek = max(sessions, ProcessDebloatValidation.weeklyCardioMinimum)
             changed = true
@@ -213,8 +222,15 @@ enum CoachPlanAutoApplier {
 
     private static func applySleep(_ response: String, to sleep: inout OriginDaySleep) -> Bool {
         var changed = false
-        if let v = extractLabel("Coucher", from: response) { sleep.targetBedtime = v; changed = true }
-        if let v = extractLabel("Réveil", from: response) { sleep.targetWake = v; changed = true }
+        if let v = extractLabel("Coucher", from: response)
+            ?? extractLabel("Bedtime", from: response) {
+            sleep.targetBedtime = v; changed = true
+        }
+        if let v = extractLabel("Réveil", from: response)
+            ?? extractLabel("Wake", from: response)
+            ?? extractLabel("Wake-up", from: response) {
+            sleep.targetWake = v; changed = true
+        }
         let bullets = extractBulletLines(from: response, fallback: [])
         if !bullets.isEmpty {
             sleep.eveningActions = Array(bullets.prefix(4))
@@ -252,11 +268,12 @@ enum CoachPlanAutoApplier {
         let bullets = extractBulletLines(from: response, fallback: [])
         guard !bullets.isEmpty else { return false }
 
-        if title.contains("Soleil") {
+        let lower = title.lowercased()
+        if lower.contains("soleil") || lower.contains("sun") || lower.contains("nature") {
             plan.lifestyleExtras.sunlightProtocol = bullets
-        } else if title.contains("Récupération") {
+        } else if lower.contains("récupération") || lower.contains("recuperation") || lower.contains("recovery") {
             plan.lifestyleExtras.recoveryProtocol = bullets
-        } else if title.contains("Suivi") {
+        } else if lower.contains("suivi") || lower.contains("tracking") {
             plan.lifestyleExtras.trackingChecklist = bullets
         } else {
             plan.lifestyleExtras.bonusProposals = bullets

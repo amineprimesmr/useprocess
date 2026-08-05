@@ -19,11 +19,23 @@ enum MealTimeSlot: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// Libellé UI bilingue — `rawValue` FR conservé pour la persistance.
+    @MainActor
+    var displayTitle: String {
+        switch self {
+        case .breakfast: return AppCopy.t("Petit-déjeuner", en: "Breakfast")
+        case .lunch: return AppCopy.t("Déjeuner", en: "Lunch")
+        case .dinner: return AppCopy.t("Dîner", en: "Dinner")
+        case .snack: return AppCopy.t("Collation", en: "Snack")
+        }
+    }
+
     static func from(mealType: String) -> MealTimeSlot {
         let lower = mealType.lowercased()
-        if lower.contains("petit") || lower.contains("pdj") { return .breakfast }
-        if lower.contains("dîner") || lower.contains("diner") { return .dinner }
+        if lower.contains("petit") || lower.contains("pdj") || lower.contains("breakfast") { return .breakfast }
+        if lower.contains("dîner") || lower.contains("diner") || lower.contains("dinner") { return .dinner }
         if lower.contains("collation") || lower.contains("snack") { return .snack }
+        if lower.contains("déjeuner") || lower.contains("dejeuner") || lower.contains("lunch") { return .lunch }
         return .lunch
     }
 }
@@ -118,6 +130,16 @@ enum MealFeeling: String, Codable, CaseIterable, Identifiable {
         case .ok: return "face.smiling"
         case .heavy: return "wind"
         case .tired: return "moon.zzz.fill"
+        }
+    }
+
+    @MainActor
+    var displayTitle: String {
+        switch self {
+        case .great: return AppCopy.t("Super", en: "Great")
+        case .ok: return AppCopy.t("Correct", en: "Okay")
+        case .heavy: return AppCopy.t("Ballonné", en: "Bloated")
+        case .tired: return AppCopy.t("Fatigué", en: "Tired")
         }
     }
 }

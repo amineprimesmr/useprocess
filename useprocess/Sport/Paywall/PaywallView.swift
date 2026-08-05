@@ -33,6 +33,11 @@ struct PaywallView: View {
     @State private var showsStayPopup = false
     @State private var lastHandledSwipeToken = 0
     @State private var didCompletePaywallFlow = false
+    /// Compteur croix — le pop rétention ne s’ouvre qu’au 3ᵉ tap.
+    @State private var closeXTapCount = 0
+    @State private var lastCloseXTapAt: Date?
+    private let closeXTapsBeforeRetention = 3
+    @Bindable private var appLanguage = ProcessAppLanguage.shared
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
 
@@ -57,28 +62,32 @@ struct PaywallView: View {
             PaywallBevelBackdrop()
 
             VStack(spacing: 0) {
+                // Croix toujours tappable pendant le pop (tap = fermer le pop, jamais la roue).
                 topChrome
 
-                titleBlock
-                    .padding(.horizontal, 24)
-                    .padding(.top, -6)
-                    .padding(.bottom, 14)
+                VStack(spacing: 0) {
+                    titleBlock
+                        .padding(.horizontal, 24)
+                        .padding(.top, -6)
+                        .padding(.bottom, 14)
 
-                PaywallBevelAutoScrollingFeatures(
-                    primary: PaywallBevelFeatureCatalog.primary,
-                    alsoIncluded: PaywallBevelFeatureCatalog.alsoIncluded,
-                    onNutritionSecretUnlock: activateDeveloperPremiumAccess
-                )
-                .padding(.top, 8)
-                .padding(.bottom, 16)
-                .frame(maxHeight: .infinity)
-                .layoutPriority(1)
+                    PaywallBevelAutoScrollingFeatures(
+                        primary: PaywallBevelFeatureCatalog.primary,
+                        alsoIncluded: PaywallBevelFeatureCatalog.alsoIncluded,
+                        onNutritionSecretUnlock: activateDeveloperPremiumAccess
+                    )
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
+                    .frame(maxHeight: .infinity)
+                    .layoutPriority(1)
 
-                bottomSection
+                    bottomSection
+                }
+                .allowsHitTesting(!showsStayPopup)
             }
+            .id(appLanguage.code)
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.paywallMaxWidth)
             .padding(.top, paywallRootTopPadding)
-            .allowsHitTesting(!showsStayPopup)
 
             if showsStayPopup {
                 PaywallStayRetentionOverlay(
@@ -175,15 +184,11 @@ struct PaywallView: View {
     }
 
     private func handleDeferredHomeSwipe() {
-        // 1er swipe Home uniquement → pop rétention (gate global pré-accès).
+        // Swipe Home → pop rétention (indépendant du compteur croix).
         guard homeSwipeGate.shouldShowPaywallStayPopup else { return }
         guard !showsSpinWinback, !showsStayPopup else { return }
-        HapticManager.shared.notification(.warning)
         ProcessAnalytics.trackPaywallCloseTapped(source: "home_swipe")
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
-            showsStayPopup = true
-        }
-        shakeContinueButton()
+        presentStayRetentionPopup()
     }
 
     func completePaywallFlow() {
@@ -215,7 +220,10 @@ struct PaywallView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.processPlain)
-            .accessibilityLabel("Options et informations légales")
+            .accessibilityLabel(OnboardingCopy.t(
+                "Options et informations légales",
+                en: "Options and legal information"
+            ))
             .popover(isPresented: $showsPaywallLegalMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
                 paywallLegalMenuPopover
                     .presentationCompactAdaptation(.popover)
@@ -224,8 +232,7 @@ struct PaywallView: View {
             Spacer(minLength: 0)
 
             Button {
-                ProcessAnalytics.trackPaywallCloseTapped(source: "xmark")
-                shakeContinueButton()
+                handlePaywallCloseAttempt(source: "xmark")
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .semibold))
@@ -233,15 +240,51 @@ struct PaywallView: View {
                     .frame(width: 36, height: 36)
             }
             .processGlassIconButtonStyle()
-            .accessibilityLabel("Fermer")
+            .accessibilityLabel(OnboardingCopy.t("Fermer", en: "Close"))
         }
         .padding(.horizontal, 18)
+    }
+
+    /// Croix : 1ʳᵉ + 2ᵉ = shake CTA seulement. 3ᵉ = pop « Attends ! ».
+    /// Jamais la roue depuis la croix (uniquement via « Tente ta chance »).
+    private func handlePaywallCloseAttempt(source: String) {
+        ProcessAnalytics.trackPaywallCloseTapped(source: source)
+        guard !showsSpinWinback else { return }
+
+        if showsStayPopup {
+            dismissStayPopup()
+            shakeContinueButton()
+            return
+        }
+
+        // Anti double-fire (bouton glass iOS 26) — un seul compte par geste.
+        let now = Date()
+        if let lastCloseXTapAt, now.timeIntervalSince(lastCloseXTapAt) < 0.40 {
+            return
+        }
+        lastCloseXTapAt = now
+
+        closeXTapCount += 1
+        shakeContinueButton()
+
+        guard closeXTapCount >= closeXTapsBeforeRetention else { return }
+        presentStayRetentionPopup()
+    }
+
+    private func presentStayRetentionPopup() {
+        guard !showsStayPopup, !showsSpinWinback else { return }
+        HapticManager.shared.notification(.warning)
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            showsStayPopup = true
+        }
     }
 
     private func dismissStayPopup() {
         withAnimation(.spring(response: 0.36, dampingFraction: 0.88)) {
             showsStayPopup = false
         }
+        // Nouvelle séquence de 3 croix pour le prochain pop.
+        closeXTapCount = 0
     }
 
     private func shakeContinueButton() {
@@ -263,7 +306,10 @@ struct PaywallView: View {
 
             VStack(spacing: 10) {
                 (
-                    Text("Débloque ton plan personnalisé avec ")
+                    Text(OnboardingCopy.t(
+                        "Débloque ton plan personnalisé avec ",
+                        en: "Unlock your personalized plan with "
+                    ))
                         .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
                     + Text("Pro")
                         .foregroundStyle(PaywallBevelTheme.paywallProTitleGradient(for: colorScheme))
@@ -287,7 +333,10 @@ struct PaywallView: View {
     }
 
     private var paywallCommunitySubtitle: String {
-        "Rejoins +\(TransformationCaseStudyCatalog.transformedPeopleCount) personnes qui ont déjà dégonflés leur visage avec Process."
+        OnboardingCopy.t(
+            "Rejoins +\(TransformationCaseStudyCatalog.transformedPeopleCount) personnes qui ont déjà dégonflés leur visage avec Process.",
+            en: "Join +\(TransformationCaseStudyCatalog.transformedPeopleCount) people who already debloated their face with Process."
+        )
     }
 
     // MARK: - Bas (forfaits + CTA)
@@ -310,14 +359,20 @@ struct PaywallView: View {
             }
             .modifier(PaywallContinueShakeEffect(shakes: continueShakeTicks))
 
-            Text("Sans engagement, annulable à tout moment.")
+            Text(OnboardingCopy.t(
+                "Sans engagement, annulable à tout moment.",
+                en: "No commitment — cancel anytime."
+            ))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.top, 2)
 
             if !subscriptionService.isLoading, !selectedPlanAvailableOnStore {
-                Text("Cette offre n'est pas encore disponible sur l'App Store. Réessayez dans quelques minutes.")
+                Text(OnboardingCopy.t(
+                    "Cette offre n'est pas encore disponible sur l'App Store. Réessayez dans quelques minutes.",
+                    en: "This offer isn’t available on the App Store yet. Try again in a few minutes."
+                ))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.red.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -339,7 +394,7 @@ struct PaywallView: View {
     }
 
     private var paywallContinueButtonTitle: String {
-        "Continuer, aucun engagement."
+        OnboardingCopy.t("Continuer, aucun engagement.", en: "Continue — no commitment.")
     }
 
     private var paywallContinueButtonEnabled: Bool {
@@ -357,20 +412,32 @@ struct PaywallView: View {
 
     private var paywallLegalMenuPopover: some View {
         VStack(alignment: .leading, spacing: 0) {
-            paywallLegalMenuRow(symbol: "hand.raised", title: "Politique de confidentialité") {
+            paywallLegalMenuRow(
+                symbol: "hand.raised",
+                title: OnboardingCopy.t("Politique de confidentialité", en: "Privacy Policy")
+            ) {
                 showsPaywallLegalMenu = false
                 legalSafariURL = privacyURL
             }
-            paywallLegalMenuRow(symbol: "doc.text", title: "Conditions (EULA)") {
+            paywallLegalMenuRow(
+                symbol: "doc.text",
+                title: OnboardingCopy.t("Conditions (EULA)", en: "Terms (EULA)")
+            ) {
                 showsPaywallLegalMenu = false
                 legalSafariURL = termsURL
             }
             Divider().padding(.horizontal, 12).padding(.vertical, 4)
-            paywallLegalMenuRow(symbol: "arrow.clockwise", title: "Restaurer") {
+            paywallLegalMenuRow(
+                symbol: "arrow.clockwise",
+                title: OnboardingCopy.t("Restaurer", en: "Restore")
+            ) {
                 showsPaywallLegalMenu = false
                 Task { await restorePurchases() }
             }
-            paywallLegalMenuRow(symbol: "tag", title: "Code promo Apple") {
+            paywallLegalMenuRow(
+                symbol: "tag",
+                title: OnboardingCopy.t("Code promo Apple", en: "Apple promo code")
+            ) {
                 showsPaywallLegalMenu = false
                 presentCodeRedemption()
             }
@@ -397,7 +464,10 @@ struct PaywallView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.processPlain)
-        .disabled(title == "Restaurer" && (isRestoring || isPurchasing))
+        .disabled(
+            (title == OnboardingCopy.t("Restaurer", en: "Restore"))
+                && (isRestoring || isPurchasing)
+        )
     }
 
     // MARK: - Achat
@@ -407,7 +477,10 @@ struct PaywallView: View {
         if !subscriptionService.canPurchase {
             await subscriptionService.loadSubscriptions()
             guard subscriptionService.canPurchase else {
-                purchaseError = "Les offres ne sont pas encore chargées. Réessayez dans quelques instants."
+                purchaseError = OnboardingCopy.t(
+                    "Les offres ne sont pas encore chargées. Réessayez dans quelques instants.",
+                    en: "Offers aren’t loaded yet. Try again in a moment."
+                )
                 return
             }
         }
@@ -478,7 +551,10 @@ struct PaywallView: View {
             if active {
                 completePaywallFlow()
             } else {
-                purchaseError = "Aucun abonnement actif trouvé."
+                purchaseError = OnboardingCopy.t(
+                    "Aucun abonnement actif trouvé.",
+                    en: "No active subscription found."
+                )
             }
         } catch {
             purchaseError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -492,10 +568,16 @@ struct PaywallView: View {
                 if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                     try await AppStore.presentOfferCodeRedeemSheet(in: windowScene)
                 } else {
-                    purchaseError = "Impossible d'ouvrir la page de code promo."
+                    purchaseError = OnboardingCopy.t(
+                        "Impossible d'ouvrir la page de code promo.",
+                        en: "Couldn’t open the promo code page."
+                    )
                 }
             } catch {
-                purchaseError = "Impossible d'ouvrir la page de code promo."
+                purchaseError = OnboardingCopy.t(
+                    "Impossible d'ouvrir la page de code promo.",
+                    en: "Couldn’t open the promo code page."
+                )
             }
         }
     }
@@ -530,18 +612,21 @@ private struct PaywallStayRetentionOverlay: View {
                     .foregroundStyle(Color(red: 0.98, green: 0.48, blue: 0.36))
                     .padding(.top, 4)
 
-                Text("Attends !")
+                Text(OnboardingCopy.t("Attends !", en: "Wait!"))
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
 
-                Text("Ne pars pas maintenant.\nTente ta chance — une offre exclusive t’attend.")
+                Text(OnboardingCopy.t(
+                    "Ne pars pas maintenant.\nTente ta chance — une offre exclusive t’attend.",
+                    en: "Don’t leave yet.\nTry your luck — an exclusive offer is waiting."
+                ))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(OnboardingTheme.bodyText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Button(action: onTryLuck) {
-                    Text("Tente ta chance")
+                    Text(OnboardingCopy.t("Tente ta chance", en: "Try your luck"))
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(colorScheme == .dark ? .black : .white)
                         .frame(maxWidth: .infinity)
@@ -555,7 +640,7 @@ private struct PaywallStayRetentionOverlay: View {
                 .padding(.top, 4)
 
                 Button(action: onStay) {
-                    Text("Rester sur l’offre")
+                    Text(OnboardingCopy.t("Rester sur l’offre", en: "Stay on this offer"))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                         .padding(.vertical, 12)

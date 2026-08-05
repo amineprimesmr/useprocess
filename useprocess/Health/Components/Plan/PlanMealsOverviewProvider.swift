@@ -44,17 +44,22 @@ enum PlanMealsOverviewProvider {
         return bundles
     }
 
+    @MainActor
     static func dayTitle(for date: Date, relativeTo now: Date = Date()) -> String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) { return "Aujourd’hui" }
-        if calendar.isDateInTomorrow(date) { return "Demain" }
+        if calendar.isDateInToday(date) { return AppCopy.today }
+        if calendar.isDateInTomorrow(date) { return AppCopy.t("Demain", en: "Tomorrow") }
         let df = DateFormatter()
-        df.locale = Locale(identifier: "fr_FR")
+        df.locale = ProcessAppLanguage.shared.locale
         df.setLocalizedDateFormatFromTemplate("EEEE d MMM")
         return df.string(from: date)
     }
 
+    @MainActor
     static func daySubtitle(for date: Date, day: OriginProgramDay) -> String {
-        "Jour \(day.globalDayIndex + 1) · \(day.weekdayLabel)"
+        AppCopy.t(
+            "Jour \(day.globalDayIndex + 1) · \(day.weekdayLabel)",
+            en: "Day \(day.globalDayIndex + 1) · \(day.weekdayLabel)"
+        )
     }
 }

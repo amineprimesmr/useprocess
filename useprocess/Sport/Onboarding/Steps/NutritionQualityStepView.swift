@@ -48,10 +48,7 @@ struct NutritionQualityStepView: View {
                             // ✅ Affichage simple de la qualité sélectionnée avec description
                             if let quality = selectedQuality {
                                 VStack(spacing: 12) {
-                                    Text(OnboardingCopy.choiceLabel(
-                                        index: nutritionQualities.firstIndex(of: quality) ?? 0,
-                                        sport: quality.comment
-                                    ))
+                                    Text(quality.title)
                                         .font(.system(size: 38, weight: .bold))
                                         .foregroundStyle(
                                             LinearGradient(
@@ -60,15 +57,15 @@ struct NutritionQualityStepView: View {
                                                 endPoint: .trailing
                                             )
                                         )
-                                        .id(quality.comment) // Force la réanimation lors du changement
+                                        .id(quality.title) // Force la réanimation lors du changement
                                     
-                                    Text(OnboardingCopy.text(quality.description, blank: "Description à personnaliser"))
+                                    Text(quality.localizedDescription)
                                         .font(.system(size: 14, weight: .regular))
                                         .foregroundStyle(OnboardingTheme.footnoteText)
                                         .multilineTextAlignment(.center)
                                         .lineSpacing(6)
                                         .padding(.horizontal, 40)
-                                        .id(quality.description) // Force la réanimation lors du changement
+                                        .id(quality.localizedDescription) // Force la réanimation lors du changement
                                 }
                                 .padding(.vertical, 20)
                                 .transition(.asymmetric(
@@ -222,7 +219,10 @@ struct NutritionQualityStepView: View {
                 
                 // ✅ Titre en OVERLAY - Position ABSOLUE depuis le haut de l'écran
                 VStack {
-                    OnboardingTitleView("Comment décrirais-tu", "ton alimentation ?")
+                    OnboardingTitleView(
+                        OnboardingCopy.t("Comment décrirais-tu", en: "How would you describe"),
+                        OnboardingCopy.t("ton alimentation ?", en: "your diet?")
+                    )
                         .padding(.top, OnboardingConstants.titleTopPadding)
                     Spacer()
                 }

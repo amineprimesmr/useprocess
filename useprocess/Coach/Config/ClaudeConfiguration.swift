@@ -47,7 +47,7 @@ enum ClaudeConfiguration {
         switch CoachAPITransport.activeMode {
         case .remote: return "Proxy Firebase"
         case .local: return "Direct (dev)"
-        case .unavailable: return "Non configuré"
+        case .unavailable: return AppCopy.tSync("Non configuré", en: "Not configured")
         }
     }
 

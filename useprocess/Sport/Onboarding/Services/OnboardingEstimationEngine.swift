@@ -57,14 +57,19 @@ final class OnboardingEstimationEngine {
         debloatDate(for: context, now: now)
     }
 
+    @MainActor
     func titleMessage(for context: OnboardingEstimationContext) -> String {
-        "Ton visage aura totalement dégonflé le"
+        OnboardingCopy.t("Ton visage aura totalement dégonflé le", en: "Your face will look fully debloated by")
     }
 
+    @MainActor
     func summaryLine(for context: OnboardingEstimationContext) -> String {
         let timeline = computeTimeline(for: context)
         let debloatFmt = PlanDurationPersonalizer.formatShortDate(timeline.debloatDate)
-        return "Calibré sur ton profil — visage visiblement moins gonflé d’ici \(debloatFmt)."
+        return OnboardingCopy.t(
+            "Calibré sur ton profil — visage visiblement moins gonflé d’ici \(debloatFmt).",
+            en: "Calibrated to your profile — a visibly less puffy face by \(debloatFmt)."
+        )
     }
 
     // MARK: - Weight goal timeline

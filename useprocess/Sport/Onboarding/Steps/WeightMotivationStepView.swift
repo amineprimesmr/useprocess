@@ -27,8 +27,12 @@ struct WeightMotivationStepView: View {
     }
 
     private var actionText: String {
-        guard let goal = weightGoal else { return "atteindre" }
-        return goal == .lose ? "perdre" : "prendre"
+        guard let goal = weightGoal else {
+            return OnboardingCopy.t("atteindre", en: "reach")
+        }
+        return goal == .lose
+            ? OnboardingCopy.t("perdre", en: "lose")
+            : OnboardingCopy.t("prendre", en: "gain")
     }
 
     private var firstNameSuffix: String {
@@ -39,23 +43,36 @@ struct WeightMotivationStepView: View {
 
     // Texte complet à animer
     private var fullText: String {
-        let sport = "\(actionText.capitalized) \(Int(weightDifference)) kg est un objectif réalisable\(firstNameSuffix). Ce n'est pas du tout difficile"
-        return OnboardingCopy.text(sport, blank: "Message de motivation à personnaliser")
+        let kg = Int(weightDifference)
+        return OnboardingCopy.t(
+            "\(actionText.capitalized) \(kg) kg est un objectif réalisable\(firstNameSuffix). Ce n'est pas du tout difficile",
+            en: "\(actionText.capitalized) \(kg) kg is a realistic goal\(firstNameSuffix). It's not hard at all"
+        )
+    }
+
+    private var highlightStart: String {
+        OnboardingCopy.t("Ce n'est pas", en: "It's not")
     }
 
     private var statisticsText: String {
-        let sport: String
         if let goal = weightGoal {
             switch goal {
             case .lose:
-                sport = "91% des utilisateurs de Process maintiennent leur perte de poids même 6 mois plus tard."
+                return OnboardingCopy.t(
+                    "91% des utilisateurs de Process maintiennent leur perte de poids même 6 mois plus tard.",
+                    en: "91% of Process users keep their weight loss even 6 months later."
+                )
             case .gain:
-                sport = "91% des utilisateurs de Process maintiennent leur prise de poids même 6 mois plus tard."
+                return OnboardingCopy.t(
+                    "91% des utilisateurs de Process maintiennent leur prise de poids même 6 mois plus tard.",
+                    en: "91% of Process users keep their weight gain even 6 months later."
+                )
             }
-        } else {
-            sport = "91% des utilisateurs de Process maintiennent leur objectif de poids même 6 mois plus tard."
         }
-        return OnboardingCopy.text(sport, blank: "Statistique à personnaliser")
+        return OnboardingCopy.t(
+            "91% des utilisateurs de Process maintiennent leur objectif de poids même 6 mois plus tard.",
+            en: "91% of Process users stick to their weight goal even 6 months later."
+        )
     }
 
     var body: some View {
@@ -69,7 +86,7 @@ struct WeightMotivationStepView: View {
                         fontWeight: .semibold,
                         defaultColor: OnboardingTheme.narrativeText,
                         highlightColor: Color(red: 0.13, green: 0.98, blue: 0.47),
-                        highlightStart: "Ce n'est pas"
+                        highlightStart: highlightStart
                     )
                     .multilineTextAlignment(.center)
                     .lineSpacing(6)

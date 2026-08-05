@@ -21,15 +21,15 @@ struct ProfileSettingsAccountDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: "Identité")
+                ProfileSummarySectionHeader(title: AppCopy.t("Identité", en: "Identity"))
 
                 AccountDetailsCard {
                     NavigationLink(value: ProfileEditDestination.firstName) {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
-                                label: "Prénom",
+                                label: AppCopy.t("Prénom", en: "First Name"),
                                 value: profile?.firstName,
-                                placeholder: "Non renseigné",
+                                placeholder: AppCopy.t("Non renseigné", en: "Not provided"),
                                 showsChevron: false
                             )
                         }
@@ -39,9 +39,9 @@ struct ProfileSettingsAccountDetailView: View {
                     NavigationLink(value: ProfileEditDestination.gender) {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
-                                label: "Sexe",
+                                label: AppCopy.t("Sexe", en: "Gender"),
                                 value: profile?.gender.displayName,
-                                placeholder: "Non renseigné"
+                                placeholder: AppCopy.t("Non renseigné", en: "Not provided")
                             )
                         }
                     }
@@ -50,9 +50,9 @@ struct ProfileSettingsAccountDetailView: View {
                     NavigationLink(value: ProfileEditDestination.birthDate) {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
-                                label: "Date de naissance",
+                                label: AppCopy.t("Date de naissance", en: "Date of Birth"),
                                 value: birthDateDisplay,
-                                placeholder: "Non renseigné"
+                                placeholder: AppCopy.t("Non renseigné", en: "Not provided")
                             )
                         }
                     }
@@ -60,7 +60,7 @@ struct ProfileSettingsAccountDetailView: View {
 
                     AccountDetailsGlassRow {
                         ProfileEditListRow(
-                            label: "Âge",
+                            label: AppCopy.t("Âge", en: "Age"),
                             value: ageText,
                             placeholder: "—",
                             showsChevron: false,
@@ -70,7 +70,7 @@ struct ProfileSettingsAccountDetailView: View {
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
 
-                ProfileSummarySectionHeader(title: "Informations")
+                ProfileSummarySectionHeader(title: AppCopy.t("Informations", en: "Information"))
 
                 AccountDetailsCard {
                     if let profile = profile {
@@ -78,7 +78,7 @@ struct ProfileSettingsAccountDetailView: View {
                             ProfileEditListRow(
                                 label: "E-mail",
                                 value: profile.email,
-                                placeholder: "Non renseigné",
+                                placeholder: AppCopy.t("Non renseigné", en: "Not provided"),
                                 showsChevron: false,
                                 valueIsMuted: true
                             )
@@ -88,7 +88,7 @@ struct ProfileSettingsAccountDetailView: View {
                     if let score = BodyScanHistoryStore.shared.latestResult?.postureScore {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
-                                label: "Dernier scan",
+                                label: AppCopy.t("Dernier scan", en: "Latest Scan"),
                                 value: "\(score)/100",
                                 placeholder: "—",
                                 showsChevron: false,
@@ -99,7 +99,7 @@ struct ProfileSettingsAccountDetailView: View {
 
                     AccountDetailsGlassRow {
                         ProfileEditListRow(
-                            label: "Appareil",
+                            label: AppCopy.t("Appareil", en: "Device"),
                             value: deviceLine,
                             placeholder: "—",
                             showsChevron: false,
@@ -117,14 +117,14 @@ struct ProfileSettingsAccountDetailView: View {
         }
         .scrollIndicators(.hidden)
         .processTransparentScrollSurface()
-        .navigationTitle("Compte")
+        .navigationTitle(AppCopy.t("Compte", en: "Account"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var birthDateDisplay: String? {
         guard let profile else { return nil }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.dateFormat = "d MMMM yyyy"
         return formatter.string(from: profile.birthDate)
     }
@@ -153,7 +153,7 @@ struct ProfileSettingsHealthDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: "Santé & outils")
+                ProfileSummarySectionHeader(title: AppCopy.t("Santé & outils", en: "Health & Tools"))
 
                 AccountDetailsCard {
                     NavigationLink {
@@ -162,9 +162,9 @@ struct ProfileSettingsHealthDetailView: View {
                     } label: {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
-                                label: "Mes rapports de scan",
+                                label: AppCopy.t("Mes rapports de scan", en: "My Scan Reports"),
                                 value: nil,
-                                placeholder: "Historique posture"
+                                placeholder: AppCopy.t("Historique posture", en: "Posture history")
                             )
                         }
                     }
@@ -181,11 +181,13 @@ struct ProfileSettingsHealthDetailView: View {
                             }
                         } label: {
                             ProfileEditListRow(
-                                label: healthManager.isAuthorized ? "Synchroniser Santé" : "Connecter Apple Santé",
+                                label: healthManager.isAuthorized
+                                    ? AppCopy.t("Synchroniser Santé", en: "Sync Health")
+                                    : AppCopy.t("Connecter Apple Santé", en: "Connect Apple Health"),
                                 value: healthManager.isAuthorized
-                                    ? (healthManager.hasAppleWatch ? "Apple Watch" : "App Santé")
+                                    ? (healthManager.hasAppleWatch ? "Apple Watch" : AppCopy.t("App Santé", en: "Health app"))
                                     : nil,
-                                placeholder: "Autoriser l'accès"
+                                placeholder: AppCopy.t("Autoriser l'accès", en: "Allow access")
                             )
                         }
                         .buttonStyle(.processPlain)
@@ -198,11 +200,11 @@ struct ProfileSettingsHealthDetailView: View {
                     } label: {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
-                                label: "Sources connectées",
+                                label: AppCopy.t("Sources connectées", en: "Connected Sources"),
                                 value: healthManager.connectedSources.isEmpty
                                     ? nil
                                     : "\(healthManager.connectedSources.count)",
-                                placeholder: "Apps et appareils"
+                                placeholder: AppCopy.t("Apps et appareils", en: "Apps and devices")
                             )
                         }
                     }
@@ -214,7 +216,7 @@ struct ProfileSettingsHealthDetailView: View {
         }
         .scrollIndicators(.hidden)
         .processTransparentScrollSurface()
-        .navigationTitle("Santé & données")
+        .navigationTitle(AppCopy.t("Santé & données", en: "Health & Data"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -227,7 +229,7 @@ struct ProfileSettingsAppDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: "Apparence")
+                ProfileSummarySectionHeader(title: AppCopy.t("Apparence", en: "Appearance"))
 
                 AccountDetailsCard {
                     ForEach(Array(AppAppearance.allCases.enumerated()), id: \.element.id) { index, mode in
@@ -241,7 +243,7 @@ struct ProfileSettingsAppDetailView: View {
                                 } label: {
                                     ProfileEditListRow(
                                         label: mode.label,
-                                        value: session.appearance == mode ? "Actif" : nil,
+                                        value: session.appearance == mode ? AppCopy.t("Actif", en: "Active") : nil,
                                         placeholder: "",
                                         showsChevron: false,
                                         valueIsMuted: session.appearance != mode
@@ -258,7 +260,7 @@ struct ProfileSettingsAppDetailView: View {
         }
         .scrollIndicators(.hidden)
         .processTransparentScrollSurface()
-        .navigationTitle("Application")
+        .navigationTitle(AppCopy.t("Application", en: "App"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -272,17 +274,17 @@ struct ProfileSettingsLegalDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: "Légal")
+                ProfileSummarySectionHeader(title: AppCopy.t("Légal", en: "Legal"))
 
                 AccountDetailsCard {
-                    legalRow(title: "Conditions d'utilisation", url: ProcessLegalURLs.termsOfUse)
-                    legalRow(title: "Politique de confidentialité", url: ProcessLegalURLs.privacyPolicy)
-                    legalRow(title: "Données faciales", url: ProcessLegalURLs.privacyPolicyFaceData)
-                    legalRow(title: "Mentions légales", url: ProcessLegalURLs.legalNotice)
+                    legalRow(title: AppCopy.t("Conditions d'utilisation", en: "Terms of Use"), url: ProcessLegalURLs.termsOfUse)
+                    legalRow(title: AppCopy.t("Politique de confidentialité", en: "Privacy Policy"), url: ProcessLegalURLs.privacyPolicy)
+                    legalRow(title: AppCopy.t("Données faciales", en: "Facial Data"), url: ProcessLegalURLs.privacyPolicyFaceData)
+                    legalRow(title: AppCopy.t("Mentions légales", en: "Legal Notice"), url: ProcessLegalURLs.legalNotice)
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
 
-                ProfileSummarySectionHeader(title: "Aide")
+                ProfileSummarySectionHeader(title: AppCopy.t("Aide", en: "Help"))
 
                 AccountDetailsCard {
                     NavigationLink {
@@ -292,15 +294,15 @@ struct ProfileSettingsLegalDetailView: View {
                                 .padding(.vertical, 16)
                         }
                         .processTransparentScrollSurface()
-                        .navigationTitle("Scores et recommandations")
+                        .navigationTitle(AppCopy.t("Scores et recommandations", en: "Scores and Recommendations"))
                         .navigationBarTitleDisplayMode(.inline)
                         .reportsProfileSubrouteActive(true)
                     } label: {
                         AccountDetailsGlassRow {
                             ProfileEditListRow(
-                                label: "Scores et recommandations",
+                                label: AppCopy.t("Scores et recommandations", en: "Scores and Recommendations"),
                                 value: nil,
-                                placeholder: "Sources et avertissements"
+                                placeholder: AppCopy.t("Sources et avertissements", en: "Sources and warnings")
                             )
                         }
                     }
@@ -309,9 +311,9 @@ struct ProfileSettingsLegalDetailView: View {
                     AccountDetailsGlassRow {
                         Button { inAppSafariURL = ProcessLegalURLs.supportPage } label: {
                             ProfileEditListRow(
-                                label: "Centre d'aide",
+                                label: AppCopy.t("Centre d'aide", en: "Help Center"),
                                 value: nil,
-                                placeholder: "FAQ et assistance"
+                                placeholder: AppCopy.t("FAQ et assistance", en: "FAQ and support")
                             )
                         }
                         .buttonStyle(.processPlain)
@@ -320,9 +322,9 @@ struct ProfileSettingsLegalDetailView: View {
                     AccountDetailsGlassRow {
                         Button { openURL(ProcessLegalURLs.supportMail) } label: {
                             ProfileEditListRow(
-                                label: "Contacter le support",
+                                label: AppCopy.t("Contacter le support", en: "Contact Support"),
                                 value: nil,
-                                placeholder: "E-mail à l'équipe"
+                                placeholder: AppCopy.t("E-mail à l'équipe", en: "Email the team")
                             )
                         }
                         .buttonStyle(.processPlain)
@@ -330,13 +332,13 @@ struct ProfileSettingsLegalDetailView: View {
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
 
-                ProfileSummarySectionHeader(title: "Services intelligents")
+                ProfileSummarySectionHeader(title: AppCopy.t("Services intelligents", en: "Smart Services"))
 
                 AccountDetailsCard {
                     AccountDetailsGlassRow {
                         ProfileEditListRow(
-                            label: "Coach IA",
-                            value: "Activé",
+                            label: AppCopy.t("Coach IA", en: "AI Coach"),
+                            value: AppCopy.t("Activé", en: "Enabled"),
                             placeholder: "—",
                             showsChevron: false,
                             valueIsMuted: true
@@ -345,8 +347,8 @@ struct ProfileSettingsLegalDetailView: View {
 
                     AccountDetailsGlassRow {
                         ProfileEditListRow(
-                            label: "Analyse scan visage",
-                            value: "Activée",
+                            label: AppCopy.t("Analyse scan visage", en: "Face Scan Analysis"),
+                            value: AppCopy.t("Activée", en: "Enabled"),
                             placeholder: "—",
                             showsChevron: false,
                             valueIsMuted: true
@@ -359,7 +361,7 @@ struct ProfileSettingsLegalDetailView: View {
         }
         .scrollIndicators(.hidden)
         .processTransparentScrollSurface()
-        .navigationTitle("Aide & confidentialité")
+        .navigationTitle(AppCopy.t("Aide & confidentialité", en: "Help & Privacy"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: Binding(
             get: { inAppSafariURL != nil },
@@ -375,7 +377,7 @@ struct ProfileSettingsLegalDetailView: View {
     private func legalRow(title: String, url: URL) -> some View {
         AccountDetailsGlassRow {
             Button { inAppSafariURL = url } label: {
-                ProfileEditListRow(label: title, value: nil, placeholder: "Ouvrir")
+                ProfileEditListRow(label: title, value: nil, placeholder: AppCopy.t("Ouvrir", en: "Open"))
             }
             .buttonStyle(.processPlain)
         }
@@ -401,9 +403,9 @@ struct BodyScanHistoryTabContent: View {
         List {
             if historyStore.history.isEmpty {
                 ContentUnavailableView(
-                    "Aucun rapport",
+                    AppCopy.t("Aucun rapport", en: "No Reports"),
                     systemImage: "doc.text",
-                    description: Text("Fais un scan pour générer ton premier rapport.")
+                    description: Text(AppCopy.t("Fais un scan pour générer ton premier rapport.", en: "Take a scan to generate your first report."))
                 )
             } else {
                 ForEach(historyStore.history) { result in
@@ -411,7 +413,7 @@ struct BodyScanHistoryTabContent: View {
                         BodyScanReportView(result: result) {}
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Score \(result.postureScore)/100")
+                            Text(AppCopy.t("Score \(result.postureScore)/100", en: "Score \(result.postureScore)/100"))
                                 .font(.headline)
                             Text(result.createdAt.formatted(date: .abbreviated, time: .shortened))
                                 .font(.caption)
@@ -421,7 +423,7 @@ struct BodyScanHistoryTabContent: View {
                 }
             }
         }
-        .navigationTitle("Rapports")
+        .navigationTitle(AppCopy.t("Rapports", en: "Reports"))
         .reportsProfileSubrouteActive(true)
     }
 }

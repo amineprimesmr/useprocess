@@ -31,7 +31,7 @@ struct ProfileProgramStreakDay: Identifiable, Equatable {
     let isFuture: Bool
     let isMissed: Bool
 
-    var label: String {
+    @MainActor var label: String {
         let raw = Self.weekdayLabelFormatter.string(from: date)
         let cleaned = raw
             .replacingOccurrences(of: ".", with: "")
@@ -40,12 +40,12 @@ struct ProfileProgramStreakDay: Identifiable, Equatable {
         return String(first).uppercased() + cleaned.dropFirst().lowercased()
     }
 
-    private static let weekdayLabelFormatter: DateFormatter = {
+    private static var weekdayLabelFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.dateFormat = "EEE"
         return formatter
-    }()
+    }
 }
 
 struct ProcessStreakMilestone: Identifiable, Equatable {
@@ -55,14 +55,16 @@ struct ProcessStreakMilestone: Identifiable, Equatable {
 
     var id: Int { days }
 
-    static let catalog: [ProcessStreakMilestone] = [
-        .init(days: 3, title: "3 jours", subtitle: "Le déclencheur"),
-        .init(days: 7, title: "7 jours", subtitle: "Une semaine solide"),
-        .init(days: 14, title: "14 jours", subtitle: "Habitude ancrée"),
-        .init(days: 30, title: "30 jours", subtitle: "Transformation visible"),
-        .init(days: 60, title: "60 jours", subtitle: "Mode Process"),
-        .init(days: 100, title: "100 jours", subtitle: "Elite debloat")
-    ]
+    @MainActor static var catalog: [ProcessStreakMilestone] {
+        [
+            .init(days: 3, title: AppCopy.t("3 jours", en: "3 Days"), subtitle: AppCopy.t("Le déclencheur", en: "The trigger")),
+            .init(days: 7, title: AppCopy.t("7 jours", en: "7 Days"), subtitle: AppCopy.t("Une semaine solide", en: "A strong week")),
+            .init(days: 14, title: AppCopy.t("14 jours", en: "14 Days"), subtitle: AppCopy.t("Habitude ancrée", en: "Habit established")),
+            .init(days: 30, title: AppCopy.t("30 jours", en: "30 Days"), subtitle: AppCopy.t("Transformation visible", en: "Visible transformation")),
+            .init(days: 60, title: AppCopy.t("60 jours", en: "60 Days"), subtitle: AppCopy.t("Mode Process", en: "Process mode")),
+            .init(days: 100, title: AppCopy.t("100 jours", en: "100 Days"), subtitle: AppCopy.t("Elite debloat", en: "Elite debloat"))
+        ]
+    }
 }
 
 struct ProcessStreakSnapshot: Equatable {
@@ -80,65 +82,65 @@ struct ProcessStreakSnapshot: Equatable {
     let trajectoryTrend: TrajectoryTrend
     let velocityLabel: String
 
-    var streakTitle: String {
+    @MainActor var streakTitle: String {
         switch totalCompletedDays {
-        case 0: return "Jours validés"
-        case 1: return "1 jour validé"
-        default: return "\(totalCompletedDays) jours validés"
+        case 0: return AppCopy.t("Jours validés", en: "Validated Days")
+        case 1: return AppCopy.t("1 jour validé", en: "1 Validated Day")
+        default: return AppCopy.t("\(totalCompletedDays) jours validés", en: "\(totalCompletedDays) Validated Days")
         }
     }
 
-    func encouragement(firstName: String?) -> String {
+    @MainActor func encouragement(firstName: String?) -> String {
         let trimmed = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let nameSuffix = trimmed.isEmpty ? "" : ", \(trimmed)"
 
         if let verdict = todayVerdict, isTodayComplete {
             switch verdict {
             case .excellent:
-                return "Journée excellente\(nameSuffix) — score \(Int(todayCompositeScore))/100."
+                return AppCopy.t("Journée excellente\(nameSuffix) — score \(Int(todayCompositeScore))/100.", en: "Excellent day\(nameSuffix) — score \(Int(todayCompositeScore))/100.")
             case .onTrack:
-                return "Sur la bonne voie\(nameSuffix) — \(velocityLabel.lowercased())."
+                return AppCopy.t("Sur la bonne voie\(nameSuffix) — \(velocityLabel.lowercased()).", en: "On track\(nameSuffix) — \(velocityLabel.lowercased()).")
             case .partial:
-                return "Journée partielle\(nameSuffix) — serre le protocole demain."
+                return AppCopy.t("Journée partielle\(nameSuffix) — serre le protocole demain.", en: "Partial day\(nameSuffix) — tighten up the protocol tomorrow.")
             case .regression:
-                return "Régression\(nameSuffix) — on recale ta trajectoire."
+                return AppCopy.t("Régression\(nameSuffix) — on recale ta trajectoire.", en: "Regression\(nameSuffix) — let's get your trajectory back on track.")
             case .pending, .paused, .missed:
                 break
             }
         }
 
         if trimmed.isEmpty { return headline }
-        if totalCompletedDays >= 7 { return "Tu gères vraiment bien, \(trimmed) !" }
-        if totalCompletedDays > 0 { return "Continue comme ça, \(trimmed) !" }
-        if isTodayComplete { return "Bien joué \(trimmed), reviens demain." }
-        return "Complète ton check pour lancer ta trajectoire, \(trimmed)."
+        if totalCompletedDays >= 7 { return AppCopy.t("Tu gères vraiment bien, \(trimmed) !", en: "You're doing great, \(trimmed)!") }
+        if totalCompletedDays > 0 { return AppCopy.t("Continue comme ça, \(trimmed) !", en: "Keep it up, \(trimmed)!") }
+        if isTodayComplete { return AppCopy.t("Bien joué \(trimmed), reviens demain.", en: "Nice work, \(trimmed). Come back tomorrow.") }
+        return AppCopy.t("Complète ton check pour lancer ta trajectoire, \(trimmed).", en: "Complete your check-in to start your trajectory, \(trimmed).")
     }
 
-    var headline: String {
+    @MainActor var headline: String {
         if let verdict = todayVerdict {
             switch verdict {
-            case .excellent: return "Journée excellente — trajectoire en hausse."
-            case .onTrack: return "Tu restes sur la bonne voie."
-            case .partial: return "Journée partielle — serre le protocole demain."
-            case .regression: return "Régression détectée — on recale ensemble."
-            case .pending: return "Check du jour en attente — valide-le."
-            case .missed: return "Check manqué — rattrape-toi."
-            case .paused: return "Jour en pause — compteur gelé."
+            case .excellent: return AppCopy.t("Journée excellente — trajectoire en hausse.", en: "Excellent day — your trajectory is improving.")
+            case .onTrack: return AppCopy.t("Tu restes sur la bonne voie.", en: "You're staying on track.")
+            case .partial: return AppCopy.t("Journée partielle — serre le protocole demain.", en: "Partial day — tighten up the protocol tomorrow.")
+            case .regression: return AppCopy.t("Régression détectée — on recale ensemble.", en: "Regression detected — let's get back on track together.")
+            case .pending: return AppCopy.t("Check du jour en attente — valide-le.", en: "Today's check-in is pending — validate it.")
+            case .missed: return AppCopy.t("Check manqué — rattrape-toi.", en: "Missed check-in — catch up.")
+            case .paused: return AppCopy.t("Jour en pause — compteur gelé.", en: "Day paused — streak frozen.")
             }
         }
         switch currentStreak {
         case 0 where isTodayComplete:
-            return "Premier jour validé — continue demain."
+            return AppCopy.t("Premier jour validé — continue demain.", en: "First day validated — keep going tomorrow.")
         case 0:
-            return "Complète ton check pour valider ta journée."
+            return AppCopy.t("Complète ton check pour valider ta journée.", en: "Complete your check-in to validate your day.")
         case 1:
-            return "Bien joué. Enchaîne demain."
+            return AppCopy.t("Bien joué. Enchaîne demain.", en: "Nice work. Keep it going tomorrow.")
         case 2..<7:
-            return "Tu construis l’habitude."
+            return AppCopy.t("Tu construis l’habitude.", en: "You're building the habit.")
         case 7..<30:
-            return "Régularité solide — ne lâche pas."
+            return AppCopy.t("Régularité solide — ne lâche pas.", en: "Strong consistency — keep it up.")
         default:
-            return "Tu es en mode Process."
+            return AppCopy.t("Tu es en mode Process.", en: "You're in Process mode.")
         }
     }
 }

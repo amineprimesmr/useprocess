@@ -51,24 +51,54 @@ enum DeadlineType: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    @MainActor
+    var localizedTitle: String {
+        switch self {
+        case .runningRace: return AppCopy.t("Course à pied", en: "Running race")
+        case .cyclingRace: return AppCopy.t("Compétition de vélo", en: "Cycling race")
+        case .swimmingCompetition: return AppCopy.t("Compétition de natation", en: "Swimming competition")
+        case .combat: return AppCopy.t("Combat/Match", en: "Fight / Match")
+        case .tournament: return AppCopy.t("Tournoi", en: "Tournament")
+        case .personalEvent: return AppCopy.t("Événement personnel", en: "Personal event")
+        case .specificDate: return AppCopy.t("Date spécifique", en: "Specific date")
+        case .noDeadline: return AppCopy.t("Pas de deadline", en: "No deadline")
+        }
+    }
+
+    @MainActor
     var description: String {
         switch self {
         case .runningRace:
-            return "Marathon, semi-marathon, 10km..."
+            return AppCopy.t("Marathon, semi-marathon, 10km...", en: "Marathon, half marathon, 10k…")
         case .cyclingRace:
-            return "Course cycliste, critérium, randonnée..."
+            return AppCopy.t(
+                "Course cycliste, critérium, randonnée...",
+                en: "Cycling race, criterium, ride…"
+            )
         case .swimmingCompetition:
-            return "Compétition de natation, triathlon..."
+            return AppCopy.t(
+                "Compétition de natation, triathlon...",
+                en: "Swim meet, triathlon…"
+            )
         case .combat:
-            return "Combat de boxe, MMA, arts martiaux..."
+            return AppCopy.t(
+                "Combat de boxe, MMA, arts martiaux...",
+                en: "Boxing, MMA, martial arts…"
+            )
         case .tournament:
-            return "Tournoi, championnat..."
+            return AppCopy.t("Tournoi, championnat...", en: "Tournament, championship…")
         case .personalEvent:
-            return "Mariage, vacances, événement spécial"
+            return AppCopy.t(
+                "Mariage, vacances, événement spécial",
+                en: "Wedding, vacation, special event"
+            )
         case .specificDate:
-            return "Une date précise en tête"
+            return AppCopy.t("Une date précise en tête", en: "A specific date in mind")
         case .noDeadline:
-            return "Je veux juste progresser à mon rythme"
+            return AppCopy.t(
+                "Je veux juste progresser à mon rythme",
+                en: "I just want to progress at my own pace"
+            )
         }
     }
 }
@@ -118,6 +148,35 @@ enum DeadlineDetail: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var localizedTitle: String {
+        switch self {
+        case .marathon: return AppCopy.t("Marathon (42,195 km)", en: "Marathon (26.2 mi)")
+        case .halfMarathon: return AppCopy.t("Semi-marathon (21,1 km)", en: "Half marathon (13.1 mi)")
+        case .tenKm: return AppCopy.t("10 km", en: "10K")
+        case .fiveKm: return AppCopy.t("5 km", en: "5K")
+        case .trail: return AppCopy.t("Trail", en: "Trail")
+        case .ultraMarathon: return AppCopy.t("Ultra-marathon", en: "Ultramarathon")
+        case .cyclingRace: return AppCopy.t("Course cycliste", en: "Cycling race")
+        case .criterium: return AppCopy.t("Critérium", en: "Criterium")
+        case .granFondo: return AppCopy.t("Gran Fondo", en: "Gran Fondo")
+        case .timeTrial: return AppCopy.t("Contre-la-montre", en: "Time trial")
+        case .swimmingCompetition: return AppCopy.t("Compétition de natation", en: "Swim meet")
+        case .triathlon: return AppCopy.t("Triathlon", en: "Triathlon")
+        case .openWater: return AppCopy.t("Natation en eau libre", en: "Open-water swimming")
+        case .boxingMatch: return AppCopy.t("Combat de boxe", en: "Boxing match")
+        case .mmaMatch: return AppCopy.t("Match de MMA", en: "MMA fight")
+        case .judoTournament: return AppCopy.t("Tournoi de judo", en: "Judo tournament")
+        case .karateMatch: return AppCopy.t("Combat de karaté", en: "Karate match")
+        case .muayThai: return AppCopy.t("Combat de Muay Thai", en: "Muay Thai fight")
+        case .bjjCompetition: return AppCopy.t("Compétition de BJJ", en: "BJJ competition")
+        case .championship: return AppCopy.t("Championnat", en: "Championship")
+        case .tournament: return AppCopy.t("Tournoi", en: "Tournament")
+        case .league: return AppCopy.t("Championnat en ligue", en: "League championship")
+        }
+    }
+
     var category: DeadlineDetailCategory {
         switch self {
         case .marathon, .halfMarathon, .tenKm, .fiveKm, .trail, .ultraMarathon:
@@ -146,26 +205,27 @@ struct GoalDeadline: Codable, Equatable {
         return type != .noDeadline
     }
 
+    @MainActor
     var displayText: String {
         switch type {
         case .noDeadline:
-            return "Pas de deadline"
+            return type.localizedTitle
         case .runningRace, .cyclingRace, .swimmingCompetition, .combat, .tournament, .personalEvent:
             if let detail = detail {
-                return detail.rawValue
+                return detail.localizedTitle
             }
             if let eventName = eventName, !eventName.isEmpty {
                 return eventName
             }
-            return type.rawValue
+            return type.localizedTitle
         case .specificDate:
             if let date = date {
                 let formatter = DateFormatter()
                 formatter.dateStyle = .long
-                formatter.locale = Locale(identifier: "fr_FR")
+                formatter.locale = ProcessAppLanguage.currentLocale
                 return formatter.string(from: date)
             }
-            return "Date spécifique"
+            return type.localizedTitle
         }
     }
 

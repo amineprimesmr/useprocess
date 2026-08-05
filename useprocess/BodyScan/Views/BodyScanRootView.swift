@@ -28,7 +28,7 @@ struct BodyScanRootView: View {
                         VStack(spacing: 20) {
                             lastScanCard(result)
 
-                            Button("Voir mon rapport") { showReport = true }
+                            Button(AppCopy.t("Voir mon rapport", en: "See my report")) { showReport = true }
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(theme.background)
                                 .frame(maxWidth: .infinity)
@@ -36,7 +36,7 @@ struct BodyScanRootView: View {
                                 .background(theme.primaryText, in: RoundedRectangle(cornerRadius: 26))
                                 .padding(.horizontal, 24)
 
-                            Button("Nouveau scan") { showScanner = true }
+                            Button(AppCopy.t("Nouveau scan", en: "New scan")) { showScanner = true }
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(theme.primaryText)
                                 .padding(.bottom, 8)
@@ -71,7 +71,7 @@ struct BodyScanRootView: View {
                         }
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Fermer") { showReport = false }
+                                Button(AppCopy.close) { showReport = false }
                             }
                         }
                     }
@@ -90,16 +90,19 @@ struct BodyScanRootView: View {
             Image(systemName: "viewfinder")
                 .font(.system(size: 64))
                 .foregroundStyle(theme.primaryText.opacity(0.8))
-            Text("Analyse ton corps en 360°")
+            Text(AppCopy.t("Analyse ton corps en 360°", en: "Scan your body in 360°"))
                 .font(.title2.bold())
                 .foregroundStyle(theme.primaryText)
-            Text("Posture, symétrie, visage et priorités musculaires personnalisées.")
+            Text(AppCopy.t(
+                "Posture, symétrie, visage et priorités musculaires personnalisées.",
+                en: "Posture, symmetry, face, and personalized muscle priorities."
+            ))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Spacer()
-            Button("Lancer mon premier scan") { showScanner = true }
+            Button(AppCopy.t("Lancer mon premier scan", en: "Start my first scan")) { showScanner = true }
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(theme.background)
                 .frame(maxWidth: .infinity)
@@ -112,11 +115,11 @@ struct BodyScanRootView: View {
 
     private func lastScanCard(_ result: BodyScanResult) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Dernier scan")
+            Text(AppCopy.t("Dernier scan", en: "Latest scan"))
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
             HStack {
-                Text("Score \(result.postureScore)/100")
+                Text(AppCopy.t("Score \(result.postureScore)/100", en: "Score \(result.postureScore)/100"))
                     .font(.title.bold())
                     .foregroundStyle(theme.primaryText)
                 Spacer()
@@ -125,7 +128,7 @@ struct BodyScanRootView: View {
                     .foregroundStyle(theme.secondaryText)
             }
             if result.aiEnhanced {
-                Label("Analyse Claude", systemImage: "sparkles")
+                Label(AppCopy.t("Analyse Claude", en: "Claude analysis"), systemImage: "sparkles")
                     .font(.caption)
                     .foregroundStyle(.orange)
             }

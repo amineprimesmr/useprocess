@@ -162,7 +162,7 @@ struct CoachLiquidGlassInputBar: View {
         TextField(
             "",
             text: $text,
-            prompt: Text("Demander à Process")
+            prompt: Text(AppCopy.t("Demander à Process", en: "Ask Process"))
                 .foregroundStyle(Color.primary.opacity(0.38)),
             axis: .vertical
         )

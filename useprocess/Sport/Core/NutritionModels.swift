@@ -29,24 +29,98 @@ enum NutritionQuality: String, Codable, CaseIterable {
 
     var description: String {
         switch self {
-        case .excellent: return "Je mange équilibré et varié tous les jours. Mon alimentation est optimale pour mes objectifs."
-        case .veryGood: return "Je fais attention à mon alimentation la plupart du temps"
-        case .good: return "Je mange plutôt bien mais je peux améliorer certains aspects de mon alimentation."
-        case .average: return "Je contrôle plus ou moins mon alimentation. Il y a des jours où je mange bien et d'autres moins."
-        case .poor: return "Je mange souvent n'importe quoi. Mon alimentation n'est pas adaptée à mes objectifs."
-        case .veryPoor: return "Je mange n'importe quoi. Je ne fais vraiment pas attention à ce que je mange."
+        case .excellent:
+            return AppCopy.tSync(
+                "Je mange équilibré et varié tous les jours. Mon alimentation est optimale pour mes objectifs.",
+                en: "I eat balanced and varied meals every day. My nutrition is on point for my goals."
+            )
+        case .veryGood:
+            return AppCopy.tSync(
+                "Je fais attention à mon alimentation la plupart du temps",
+                en: "I watch what I eat most of the time"
+            )
+        case .good:
+            return AppCopy.tSync(
+                "Je mange plutôt bien mais je peux améliorer certains aspects de mon alimentation.",
+                en: "I eat pretty well, but I can still improve some habits."
+            )
+        case .average:
+            return AppCopy.tSync(
+                "Je contrôle plus ou moins mon alimentation. Il y a des jours où je mange bien et d'autres moins.",
+                en: "My eating is hit or miss — some good days, some less so."
+            )
+        case .poor:
+            return AppCopy.tSync(
+                "Je mange souvent n'importe quoi. Mon alimentation n'est pas adaptée à mes objectifs.",
+                en: "I often eat whatever. My nutrition doesn't match my goals."
+            )
+        case .veryPoor:
+            return AppCopy.tSync(
+                "Je mange n'importe quoi. Je ne fais vraiment pas attention à ce que je mange.",
+                en: "I eat whatever and don't really pay attention to food."
+            )
+        }
+    }
+
+    /// Libellé UI onboarding (bilingue).
+    @MainActor
+    var localizedDescription: String {
+        switch self {
+        case .excellent:
+            return OnboardingCopy.t(
+                "Je mange équilibré et varié tous les jours. Mon alimentation est optimale pour mes objectifs.",
+                en: "I eat balanced and varied meals every day. My nutrition is on point for my goals."
+            )
+        case .veryGood:
+            return OnboardingCopy.t(
+                "Je fais attention à mon alimentation la plupart du temps",
+                en: "I watch what I eat most of the time"
+            )
+        case .good:
+            return OnboardingCopy.t(
+                "Je mange plutôt bien mais je peux améliorer certains aspects de mon alimentation.",
+                en: "I eat pretty well, but I can still improve some habits."
+            )
+        case .average:
+            return OnboardingCopy.t(
+                "Je contrôle plus ou moins mon alimentation. Il y a des jours où je mange bien et d'autres moins.",
+                en: "My eating is hit or miss — some good days, some less so."
+            )
+        case .poor:
+            return OnboardingCopy.t(
+                "Je mange souvent n'importe quoi. Mon alimentation n'est pas adaptée à mes objectifs.",
+                en: "I often eat whatever. My nutrition doesn't match my goals."
+            )
+        case .veryPoor:
+            return OnboardingCopy.t(
+                "Je mange n'importe quoi. Je ne fais vraiment pas attention à ce que je mange.",
+                en: "I eat whatever and don't really pay attention to food."
+            )
         }
     }
 
     // ✅ Commentaire principal pour chaque qualité
     var comment: String {
         switch self {
-        case .excellent: return "Excellente"
-        case .veryGood: return "Très bonne"
-        case .good: return "Bonne"
-        case .average: return "Améliorable"
-        case .poor: return "Non adaptée"
-        case .veryPoor: return "Très mauvaise"
+        case .excellent: return AppCopy.tSync("Excellente", en: "Excellent")
+        case .veryGood: return AppCopy.tSync("Très bonne", en: "Very good")
+        case .good: return AppCopy.tSync("Bonne", en: "Good")
+        case .average: return AppCopy.tSync("Améliorable", en: "Needs work")
+        case .poor: return AppCopy.tSync("Non adaptée", en: "Off track")
+        case .veryPoor: return AppCopy.tSync("Très mauvaise", en: "Very poor")
+        }
+    }
+
+    /// Titre UI onboarding (bilingue) — basé sur `comment`.
+    @MainActor
+    var title: String {
+        switch self {
+        case .excellent: return OnboardingCopy.t("Excellente", en: "Excellent")
+        case .veryGood: return OnboardingCopy.t("Très bonne", en: "Very good")
+        case .good: return OnboardingCopy.t("Bonne", en: "Good")
+        case .average: return OnboardingCopy.t("Améliorable", en: "Needs work")
+        case .poor: return OnboardingCopy.t("Non adaptée", en: "Off track")
+        case .veryPoor: return OnboardingCopy.t("Très mauvaise", en: "Very poor")
         }
     }
 
@@ -83,6 +157,28 @@ enum DietaryRestriction: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .none: return AppCopy.t("Aucune", en: "None")
+        case .vegan: return AppCopy.t("Végan", en: "Vegan")
+        case .vegetarian: return AppCopy.t("Végétarien", en: "Vegetarian")
+        case .pescatarian: return AppCopy.t("Pescétarien", en: "Pescatarian")
+        case .glutenFree: return AppCopy.t("Sans gluten", en: "Gluten-free")
+        case .lactoseFree: return AppCopy.t("Intolérant au lactose", en: "Lactose intolerant")
+        case .peanutAllergy: return AppCopy.t("Allergie aux arachides", en: "Peanut allergy")
+        case .shellfishAllergy: return AppCopy.t("Fruits de mer ou crustacés", en: "Shellfish allergy")
+        case .religiousPreferences: return AppCopy.t("Préférences religieuses", en: "Religious preferences")
+        case .other: return AppCopy.t("Autre", en: "Other")
+        case .halal: return AppCopy.t("Halal", en: "Halal")
+        case .kosher: return AppCopy.t("Cacher", en: "Kosher")
+        case .nutAllergy: return AppCopy.t("Allergie aux noix", en: "Nut allergy")
+        case .eggAllergy: return AppCopy.t("Allergie aux œufs", en: "Egg allergy")
+        case .soyAllergy: return AppCopy.t("Allergie au soja", en: "Soy allergy")
+        }
+    }
+
     var icon: String {
         switch self {
         case .none: return "checkmark.circle"
@@ -104,24 +200,24 @@ enum DietaryRestriction: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
-        case .none: return "Je n'ai aucune restriction"
-        case .vegan: return "Je ne mange aucun produit d'origine animale"
-        case .vegetarian: return "Je ne mange pas de viande"
-        case .pescatarian: return "Je mange du poisson mais pas de viande"
-        case .glutenFree: return "Je dois éviter le gluten"
-        case .lactoseFree: return "Je dois éviter le lactose"
-        case .peanutAllergy: return "Allergie aux arachides"
-        case .shellfishAllergy: return "Allergie aux fruits de mer ou crustacés"
-        case .religiousPreferences: return "Préférences religieuses (halal, casher, etc.)"
-        case .other: return "Autre restriction alimentaire"
-        // Anciennes options
-        case .halal: return "Alimentation conforme aux règles halal"
-        case .kosher: return "Alimentation conforme aux règles casher"
-        case .nutAllergy: return "Allergie aux noix et fruits à coque"
-        case .eggAllergy: return "Allergie aux œufs"
-        case .soyAllergy: return "Allergie au soja"
+        case .none: return AppCopy.t("Je n'ai aucune restriction", en: "I have no restrictions")
+        case .vegan: return AppCopy.t("Je ne mange aucun produit d'origine animale", en: "I don't eat any animal products")
+        case .vegetarian: return AppCopy.t("Je ne mange pas de viande", en: "I don't eat meat")
+        case .pescatarian: return AppCopy.t("Je mange du poisson mais pas de viande", en: "I eat fish but not meat")
+        case .glutenFree: return AppCopy.t("Je dois éviter le gluten", en: "I need to avoid gluten")
+        case .lactoseFree: return AppCopy.t("Je dois éviter le lactose", en: "I need to avoid lactose")
+        case .peanutAllergy: return AppCopy.t("Allergie aux arachides", en: "Peanut allergy")
+        case .shellfishAllergy: return AppCopy.t("Allergie aux fruits de mer ou crustacés", en: "Shellfish or crustacean allergy")
+        case .religiousPreferences: return AppCopy.t("Préférences religieuses (halal, casher, etc.)", en: "Religious preferences (halal, kosher, etc.)")
+        case .other: return AppCopy.t("Autre restriction alimentaire", en: "Other dietary restriction")
+        case .halal: return AppCopy.t("Alimentation conforme aux règles halal", en: "Halal diet")
+        case .kosher: return AppCopy.t("Alimentation conforme aux règles casher", en: "Kosher diet")
+        case .nutAllergy: return AppCopy.t("Allergie aux noix et fruits à coque", en: "Tree nut allergy")
+        case .eggAllergy: return AppCopy.t("Allergie aux œufs", en: "Egg allergy")
+        case .soyAllergy: return AppCopy.t("Allergie au soja", en: "Soy allergy")
         }
     }
 }
@@ -154,14 +250,61 @@ enum NutritionObstacle: String, Codable, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
-        case .snacking: return "Je grignote souvent entre les repas"
-        case .dontKnowWhatToBuy: return "Je ne sais pas quoi acheter au supermarché"
-        case .lackOfTime: return "Je n'ai pas le temps de cuisiner"
-        case .lackOfMotivation: return "Je manque de motivation pour bien manger"
-        case .emotionalEating: return "Je mange quand je suis stressé ou triste"
-        case .socialPressure: return "Les sorties sociales me font manger mal"
-        case .budget: return "Mon budget ne me permet pas de bien manger"
-        case .noObstacle: return "Je n'ai pas d'obstacle particulier"
+        case .snacking:
+            return AppCopy.tSync(
+                "Je grignote souvent entre les repas",
+                en: "I often snack between meals"
+            )
+        case .dontKnowWhatToBuy:
+            return AppCopy.tSync(
+                "Je ne sais pas quoi acheter au supermarché",
+                en: "I don't know what to buy at the store"
+            )
+        case .lackOfTime:
+            return AppCopy.tSync(
+                "Je n'ai pas le temps de cuisiner",
+                en: "I don't have time to cook"
+            )
+        case .lackOfMotivation:
+            return AppCopy.tSync(
+                "Je manque de motivation pour bien manger",
+                en: "I lack motivation to eat well"
+            )
+        case .emotionalEating:
+            return AppCopy.tSync(
+                "Je mange quand je suis stressé ou triste",
+                en: "I eat when I'm stressed or sad"
+            )
+        case .socialPressure:
+            return AppCopy.tSync(
+                "Les sorties sociales me font manger mal",
+                en: "Social outings make me eat poorly"
+            )
+        case .budget:
+            return AppCopy.tSync(
+                "Mon budget ne me permet pas de bien manger",
+                en: "My budget doesn't let me eat well"
+            )
+        case .noObstacle:
+            return AppCopy.tSync(
+                "Je n'ai pas d'obstacle particulier",
+                en: "I don't have a particular obstacle"
+            )
+        }
+    }
+
+    /// Titre UI onboarding (bilingue). rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .snacking: return OnboardingCopy.t("Grignotage", en: "Snacking")
+        case .dontKnowWhatToBuy: return OnboardingCopy.t("Ne pas savoir quoi acheter", en: "Not knowing what to buy")
+        case .lackOfTime: return OnboardingCopy.t("Manque de temps pour cuisiner", en: "No time to cook")
+        case .lackOfMotivation: return OnboardingCopy.t("Manque de motivation", en: "Lack of motivation")
+        case .emotionalEating: return OnboardingCopy.t("Manger par émotion", en: "Emotional eating")
+        case .socialPressure: return OnboardingCopy.t("Pression sociale", en: "Social pressure")
+        case .budget: return OnboardingCopy.t("Budget limité", en: "Limited budget")
+        case .noObstacle: return OnboardingCopy.t("Aucun obstacle", en: "No obstacles")
         }
     }
 }
@@ -184,12 +327,39 @@ enum WeightManagementExperience: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// Titre UI onboarding (bilingue). rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .neverTried: return OnboardingCopy.t("Jamais essayé", en: "Never tried")
+        case .triedMultiple: return OnboardingCopy.t("J'ai essayé plusieurs fois", en: "I've tried several times")
+        case .currentlyTrying: return OnboardingCopy.t("J'essaie actuellement", en: "I'm trying right now")
+        case .succeeded: return OnboardingCopy.t("J'ai réussi par le passé", en: "I've succeeded before")
+        }
+    }
+
     var description: String {
         switch self {
-        case .neverTried: return "C'est la première fois que j'essaie"
-        case .triedMultiple: return "J'ai essayé plusieurs fois dans le passé"
-        case .currentlyTrying: return "Je suis en train d'essayer actuellement"
-        case .succeeded: return "J'ai réussi à atteindre mon objectif avant"
+        case .neverTried:
+            return AppCopy.tSync(
+                "C'est la première fois que j'essaie",
+                en: "This is the first time I'm trying"
+            )
+        case .triedMultiple:
+            return AppCopy.tSync(
+                "J'ai essayé plusieurs fois dans le passé",
+                en: "I've tried several times in the past"
+            )
+        case .currentlyTrying:
+            return AppCopy.tSync(
+                "Je suis en train d'essayer actuellement",
+                en: "I'm currently trying"
+            )
+        case .succeeded:
+            return AppCopy.tSync(
+                "J'ai réussi à atteindre mon objectif avant",
+                en: "I've reached my goal before"
+            )
         }
     }
 }
@@ -203,6 +373,19 @@ enum HydrationLevel: String, Codable, CaseIterable {
     case poor = "Mauvaise"
     case veryPoor = "Très mauvaise"
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .excellent: return AppCopy.t("Excellente", en: "Excellent")
+        case .veryGood: return AppCopy.t("Très bonne", en: "Very good")
+        case .good: return AppCopy.t("Bonne", en: "Good")
+        case .average: return AppCopy.t("Moyenne", en: "Average")
+        case .poor: return AppCopy.t("Mauvaise", en: "Poor")
+        case .veryPoor: return AppCopy.t("Très mauvaise", en: "Very poor")
+        }
+    }
+
     var emoji: String {
         switch self {
         case .excellent: return "💧"
@@ -214,14 +397,15 @@ enum HydrationLevel: String, Codable, CaseIterable {
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
-        case .excellent: return "Je bois 2-3L d'eau par jour facilement"
-        case .veryGood: return "Je bois environ 1.5-2L par jour"
-        case .good: return "Je bois environ 1L par jour"
-        case .average: return "Je bois de l'eau mais pas régulièrement"
-        case .poor: return "Je bois rarement de l'eau"
-        case .veryPoor: return "Je ne bois presque jamais d'eau"
+        case .excellent: return AppCopy.t("Je bois 2-3L d'eau par jour facilement", en: "I easily drink 2–3 L of water a day")
+        case .veryGood: return AppCopy.t("Je bois environ 1.5-2L par jour", en: "I drink about 1.5–2 L a day")
+        case .good: return AppCopy.t("Je bois environ 1L par jour", en: "I drink about 1 L a day")
+        case .average: return AppCopy.t("Je bois de l'eau mais pas régulièrement", en: "I drink water, but not regularly")
+        case .poor: return AppCopy.t("Je bois rarement de l'eau", en: "I rarely drink water")
+        case .veryPoor: return AppCopy.t("Je ne bois presque jamais d'eau", en: "I almost never drink water")
         }
     }
 
@@ -245,6 +429,17 @@ enum HardestMeal: String, Codable, CaseIterable, Identifiable {
     case none = "Aucun"
 
     var id: String { rawValue }
+
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .breakfast: return AppCopy.t("Au petit-déjeuner", en: "At breakfast")
+        case .lunch: return AppCopy.t("Au déjeuner", en: "At lunch")
+        case .dinner: return AppCopy.t("Au dîner", en: "At dinner")
+        case .none: return AppCopy.t("Aucun", en: "None")
+        }
+    }
 
     var emoji: String {
         switch self {

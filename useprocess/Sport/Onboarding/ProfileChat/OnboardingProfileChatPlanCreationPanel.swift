@@ -14,22 +14,35 @@ struct OnboardingProfileChatPlanCreationPanel: View {
             statusIcon
 
             VStack(spacing: 10) {
-                Text(isComplete ? "Expérience personnalisée" : "Personnalisation de votre expérience...")
+                Text(
+                    isComplete
+                        ? OnboardingCopy.t("Expérience personnalisée", en: "Personalized experience")
+                        : OnboardingCopy.t(
+                            "Personnalisation de votre expérience...",
+                            en: "Personalizing your experience..."
+                        )
+                )
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(OnboardingTheme.primaryText)
                     .multilineTextAlignment(.center)
                     .contentTransition(.opacity)
 
                 if isComplete {
-                    Text("Tout est prêt pour toi.")
+                    Text(OnboardingCopy.t("Tout est prêt pour toi.", en: "Everything is ready for you."))
                         .font(.system(size: 15, weight: .regular))
                         .foregroundStyle(OnboardingTheme.mutedText)
                         .multilineTextAlignment(.center)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 } else {
                     VStack(spacing: 4) {
-                        Text("Cela peut prendre quelques secondes.")
-                        Text("Veuillez ne pas fermer l'application.")
+                        Text(OnboardingCopy.t(
+                            "Cela peut prendre quelques secondes.",
+                            en: "This may take a few seconds."
+                        ))
+                        Text(OnboardingCopy.t(
+                            "Veuillez ne pas fermer l'application.",
+                            en: "Please don’t close the app."
+                        ))
                     }
                     .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(OnboardingTheme.mutedText)

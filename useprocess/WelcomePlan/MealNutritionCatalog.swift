@@ -94,6 +94,7 @@ enum MealNutritionCatalog {
 
     /// Score Debloat global : équilibre hydrique 50 %, confort digestif 30 %,
     /// qualité nutritionnelle 20 %. Il s'agit d'une estimation, pas d'un diagnostic.
+    @MainActor
     static func debloatAssessment(for meal: MealSuggestionContent) -> MealDebloatAssessment {
         let nutrition = profile(for: meal)
         let ratio = potassiumSodiumRatioScore(nutrition)
@@ -137,14 +138,15 @@ enum MealNutritionCatalog {
     }
 
     /// 6 pétales — lecture scientifique du repas, sans faire des calories le score.
+    @MainActor
     static func debloatChartSegments(for profile: MealNutritionProfile) -> [MealChartSegment] {
         [
-            .init(id: "kna", name: "Équilibre K/Na", percentage: potassiumSodiumRatioScore(profile)),
-            .init(id: "potassium", name: "Potassium", percentage: potassiumScore(profile)),
-            .init(id: "sodium", name: "Sodium bas", percentage: lowSodiumScore(profile)),
-            .init(id: "magnesium", name: "Magnésium", percentage: magnesiumScore(profile)),
-            .init(id: "fiber", name: "Fibres tolérées", percentage: fiberComfortScore(profile)),
-            .init(id: "portion", name: "Portion digeste", percentage: portionComfortScore(profile))
+            .init(id: "kna", name: AppCopy.t("Équilibre K/Na", en: "K/Na balance"), percentage: potassiumSodiumRatioScore(profile)),
+            .init(id: "potassium", name: AppCopy.t("Potassium", en: "Potassium"), percentage: potassiumScore(profile)),
+            .init(id: "sodium", name: AppCopy.t("Sodium bas", en: "Low sodium"), percentage: lowSodiumScore(profile)),
+            .init(id: "magnesium", name: AppCopy.t("Magnésium", en: "Magnesium"), percentage: magnesiumScore(profile)),
+            .init(id: "fiber", name: AppCopy.t("Fibres tolérées", en: "Tolerated fiber"), percentage: fiberComfortScore(profile)),
+            .init(id: "portion", name: AppCopy.t("Portion digeste", en: "Digestible portion"), percentage: portionComfortScore(profile))
         ]
     }
 
@@ -468,6 +470,7 @@ enum MealNutritionCatalog {
         min(100, max(minimum, value))
     }
 
+    @MainActor
     private static func digestiveToleranceScore(
         for meal: MealSuggestionContent
     ) -> (score: Double, caution: String?) {
@@ -476,30 +479,36 @@ enum MealNutritionCatalog {
         var penalty = 0.0
         var triggers: [String] = []
 
-        func flag(_ tokens: [String], penalty value: Double, label: String) {
+        func flag(_ tokens: [String], penalty value: Double, labelFR: String, labelEN: String) {
             guard tokens.contains(where: { text.contains($0) }) else { return }
             penalty += value
+            let label = AppCopy.t(labelFR, en: labelEN)
             if !triggers.contains(label) { triggers.append(label) }
         }
 
-        flag(["oignon", "echalote"], penalty: 20, label: "oignon")
+        flag(["oignon", "echalote"], penalty: 20, labelFR: "oignon", labelEN: "onion")
         if text.contains("ail"),
            !text.contains("huile infusee a l'ail"),
            !text.contains("huile infusee a l ail") {
             penalty += 12
-            triggers.append("ail")
+            let label = AppCopy.t("ail", en: "garlic")
+            if !triggers.contains(label) { triggers.append(label) }
         }
-        flag(["haricot sec", "lentille", "pois chiche"], penalty: 18, label: "légumineuses")
-        flag(["yaourt", "lait", "creme"], penalty: 12, label: "lactose possible")
-        flag(["brocoli", "chou fleur"], penalty: 8, label: "crucifères")
-        flag(["avocat"], penalty: 6, label: "avocat")
-        flag(["banane bien mure"], penalty: 7, label: "banane très mûre")
-        flag(["sorbitol", "xylitol", "erythritol", "maltitol"], penalty: 25, label: "polyols")
+        flag(["haricot sec", "lentille", "pois chiche"], penalty: 18, labelFR: "légumineuses", labelEN: "legumes")
+        flag(["yaourt", "lait", "creme"], penalty: 12, labelFR: "lactose possible", labelEN: "possible lactose")
+        flag(["brocoli", "chou fleur"], penalty: 8, labelFR: "crucifères", labelEN: "crucifers")
+        flag(["avocat"], penalty: 6, labelFR: "avocat", labelEN: "avocado")
+        flag(["banane bien mure"], penalty: 7, labelFR: "banane très mûre", labelEN: "very ripe banana")
+        flag(["sorbitol", "xylitol", "erythritol", "maltitol"], penalty: 25, labelFR: "polyols", labelEN: "polyols")
 
         let score = max(35, 100 - penalty)
-        let caution = triggers.isEmpty
+        let joined = triggers.prefix(3).joined(separator: ", ")
+        let caution: String? = triggers.isEmpty
             ? nil
-            : "Tolérance individuelle à vérifier : \(triggers.prefix(3).joined(separator: ", "))."
+            : AppCopy.t(
+                "Tolérance individuelle à vérifier : \(joined).",
+                en: "Individual tolerance to check: \(joined)."
+            )
         return (score, caution)
     }
 
@@ -523,16 +532,18 @@ enum MealNutritionCatalog {
         return min(100, max(30, score))
     }
 
+    @MainActor
     private static func scoreLabel(_ score: Int) -> String {
         switch score {
-        case 88...100: return "Excellent équilibre"
-        case 76..<88: return "Très bon choix"
-        case 64..<76: return "Équilibre correct"
-        case 50..<64: return "À ajuster"
-        default: return "Peu adapté"
+        case 88...100: return AppCopy.t("Excellent équilibre", en: "Excellent balance")
+        case 76..<88: return AppCopy.t("Très bon choix", en: "Very good choice")
+        case 64..<76: return AppCopy.t("Équilibre correct", en: "Solid balance")
+        case 50..<64: return AppCopy.t("À ajuster", en: "Needs adjusting")
+        default: return AppCopy.t("Peu adapté", en: "Poor fit")
         }
     }
 
+    @MainActor
     private static func summary(
         score: Int,
         electrolyte: Int,
@@ -540,17 +551,32 @@ enum MealNutritionCatalog {
         balance: MealElectrolyteBalance
     ) -> String {
         if electrolyte >= 88, digestive >= 78 {
-            return "Très bon équilibre K/Na et charge digestive maîtrisée."
+            return AppCopy.t(
+                "Très bon équilibre K/Na et charge digestive maîtrisée.",
+                en: "Very good K/Na balance and controlled digestive load."
+            )
         }
         if electrolyte < digestive {
-            return "Électrolytes à améliorer, surtout sodium et potassium."
+            return AppCopy.t(
+                "Électrolytes à améliorer, surtout sodium et potassium.",
+                en: "Electrolytes to improve, especially sodium and potassium."
+            )
         }
         if digestive < 70 {
-            return "Équilibre minéral correct, mais tolérance digestive à surveiller."
+            return AppCopy.t(
+                "Équilibre minéral correct, mais tolérance digestive à surveiller.",
+                en: "Mineral balance is fine, but watch digestive tolerance."
+            )
         }
         return score >= 76
-            ? "Repas cohérent pour limiter rétention et lourdeur."
-            : "Quelques ajustements peuvent améliorer le confort après le repas."
+            ? AppCopy.t(
+                "Repas cohérent pour limiter rétention et lourdeur.",
+                en: "A coherent meal to limit retention and heaviness."
+            )
+            : AppCopy.t(
+                "Quelques ajustements peuvent améliorer le confort après le repas.",
+                en: "A few tweaks can improve comfort after the meal."
+            )
     }
 
     private static func estimate(from meal: MealSuggestionContent) -> MealNutritionProfile {

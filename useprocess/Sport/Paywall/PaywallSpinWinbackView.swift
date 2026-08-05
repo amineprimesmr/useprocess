@@ -48,7 +48,7 @@ private enum PaywallSpinPhase: Equatable {
 enum PaywallSpinWinbackPresentation: Equatable {
     /// Roue complète puis page offre.
     case spinWheel
-    /// Page offre uniquement (ex. quick action « 3 jours offerts »).
+    /// Page offre uniquement (ex. quick action « Accès à vie offert »).
     case offerOnly
 }
 
@@ -72,6 +72,7 @@ struct PaywallSpinWinbackView: View {
     @State private var winRevealNumberVisible = false
     @State private var winRevealSubtitleVisible = false
     @State private var confettiBurst = false
+    @State private var offerEntranceConfetti = false
     @State private var rewardHeroAppeared: Bool
     @State private var offerCountdownEndDate = Date().addingTimeInterval(180)
     @State private var lastTickIndex = -1
@@ -97,10 +98,12 @@ struct PaywallSpinWinbackView: View {
     private static let colorJackpot = Color(red: 0.93, green: 0.82, blue: 0.38)
     private static let discountHighlight = Color(red: 0.95, green: 0.42, blue: 0.48)
 
-    private var winJackpotTitle: String { SubscriptionConfiguration.winbackJackpotTitle }
+    private var winJackpotTitle: String {
+        OnboardingCopy.t(SubscriptionConfiguration.winbackJackpotTitle, en: "LIFETIME")
+    }
 
     private var isTrialRetentionOffer: Bool {
-        presentation == .offerOnly
+        false
     }
 
     private var trialDays: Int {
@@ -112,6 +115,11 @@ struct PaywallSpinWinbackView: View {
 
     private var trialAnnualStrikethroughPrice: String {
         SubscriptionConfiguration.winbackCompareAtPrice
+    }
+
+    /// Prix mensuel barré (ex. « 23€/mois ») — ancre visuelle vs lifetime.
+    private var monthlyStrikethroughLabel: String {
+        subscriptionService.displayProduct(for: .monthly).paywallPrimaryMonthlyPriceLabel
     }
 
     /// Ordre type image : 5, jackpot à vie, 5, 10, 5, 25, 5, 10
@@ -188,7 +196,6 @@ struct PaywallSpinWinbackView: View {
             ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .spinWinback
             if presentation == .offerOnly {
                 offerCountdownEndDate = Date().addingTimeInterval(180)
-                SubscriptionService.shared.setRetentionTrialOfferActive(true)
                 let source = analyticsSource ?? "offer_only"
                 ProcessAnalytics.trackPaywallViewed(source: source)
                 ProcessAnalytics.trackSpinOfferShown(source: source)
@@ -230,9 +237,6 @@ struct PaywallSpinWinbackView: View {
         .onDisappear {
             spinTask?.cancel()
             revealTask?.cancel()
-            if presentation == .offerOnly {
-                SubscriptionService.shared.setRetentionTrialOfferActive(false)
-            }
             if ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface == .spinWinback {
                 ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .paywall
             }
@@ -246,7 +250,7 @@ struct PaywallSpinWinbackView: View {
     /// Page finale — offre unique, structure alignée sur `PaywallView`.
     private var rewardLayout: some View {
         VStack(spacing: 0) {
-            Text("Ton offre unique")
+            Text(OnboardingCopy.t("Ton offre unique", en: "Your one-time offer"))
                 .font(PaywallBevelTheme.paywallHeroTitleFont(size: 31))
                 .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                 .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
@@ -260,31 +264,40 @@ struct PaywallSpinWinbackView: View {
                 .padding(.top, 16)
 
             rewardInlinePricing
-                .padding(.top, 26)
+                .padding(.top, 22)
 
             rewardOfferFooterCopy
-                .padding(.top, 18)
+                .padding(.top, 16)
                 .padding(.horizontal, 32)
 
-            PaywallSpinOfferCountdown(endDate: offerCountdownEndDate)
-                .padding(.top, 44)
-
-            Spacer(minLength: 12)
+            Spacer(minLength: 20)
                 .frame(maxHeight: .infinity)
                 .layoutPriority(1)
+
+            PaywallSpinOfferCountdown(endDate: offerCountdownEndDate)
+                .padding(.top, 8)
+                .padding(.bottom, 18)
 
             rewardBottomSection
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
-            PaywallSpinFallingConfetti()
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+            ZStack {
+                PaywallSpinFallingConfetti()
+                if offerEntranceConfetti {
+                    PaywallSpinConfetti()
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
         }
         .onAppear {
             offerCountdownEndDate = Date().addingTimeInterval(180)
+            offerEntranceConfetti = true
             if presentation == .offerOnly {
-                rewardHeroAppeared = true
+                withAnimation(.spring(response: 0.58, dampingFraction: 0.84)) {
+                    rewardHeroAppeared = true
+                }
             } else {
                 withAnimation(.spring(response: 0.62, dampingFraction: 0.82)) {
                     rewardHeroAppeared = true
@@ -304,18 +317,24 @@ struct PaywallSpinWinbackView: View {
                         color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.55)
                     )
             } else {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(SubscriptionConfiguration.winbackCompareAtPrice)
-                        .font(PaywallBevelTheme.paywallHeroTitleFont(size: 26))
-                        .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.72))
+                VStack(spacing: 6) {
+                    Text(monthlyStrikethroughLabel)
+                        .font(PaywallBevelTheme.paywallHeroTitleFont(size: 34))
+                        .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
+                        .foregroundStyle(PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.62))
                         .strikethrough(
                             true,
-                            color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.55)
+                            color: PaywallBevelTheme.planSecondaryPrice(for: colorScheme).opacity(0.5)
                         )
 
-                    Text(SubscriptionConfiguration.winbackLifetimePrice)
-                        .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 20))
-                        .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
+                    Text(
+                        OnboardingCopy.t(
+                            "\(SubscriptionConfiguration.winbackLifetimePrice) à vie",
+                            en: "\(SubscriptionConfiguration.winbackLifetimePrice) lifetime"
+                        )
+                    )
+                    .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 22))
+                    .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
                 }
             }
         }
@@ -325,14 +344,23 @@ struct PaywallSpinWinbackView: View {
 
     private var rewardOfferFooterCopy: some View {
         VStack(spacing: 8) {
-            Text("Si tu fermes cette offre, elle disparaît.")
+            Text(OnboardingCopy.t(
+                "Si tu fermes cette offre, elle disparaît.",
+                en: "If you close this offer, it’s gone."
+            ))
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
 
             Text(
                 isTrialRetentionOffer
-                    ? "Accès illimité au coach, aux scans et à ton plan pendant \(trialDays) jours."
-                    : "Accès premium à vie — paiement unique, sans abonnement."
+                    ? OnboardingCopy.t(
+                        "Accès illimité au coach, aux scans et à ton plan pendant \(trialDays) jours.",
+                        en: "Unlimited coach, scans, and your plan for \(trialDays) days."
+                    )
+                    : OnboardingCopy.t(
+                        "Accès premium à vie — paiement unique, sans abonnement.",
+                        en: "Lifetime premium access — one payment, no subscription."
+                    )
             )
             .font(.system(size: 14, weight: .regular))
             .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
@@ -342,11 +370,17 @@ struct PaywallSpinWinbackView: View {
     }
 
     private var rewardOfferHero: some View {
-        ZStack {
+        let heroShape = RoundedRectangle(cornerRadius: 28, style: .continuous)
+
+        return ZStack {
             PaywallSpinOfferStars()
 
             VStack(spacing: 6) {
-                Text(isTrialRetentionOffer ? "\(trialDays) JOURS" : "ACCÈS")
+                Text(
+                    isTrialRetentionOffer
+                        ? OnboardingCopy.t("\(trialDays) JOURS", en: "\(trialDays) DAYS")
+                        : OnboardingCopy.t("ACCÈS", en: "ACCESS")
+                )
                     .font(PaywallBevelTheme.paywallHeroTitleFont(size: 32))
                     .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                     .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
@@ -354,33 +388,28 @@ struct PaywallSpinWinbackView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
 
-                Text(isTrialRetentionOffer ? "OFFERTS" : winJackpotTitle)
+                Text(
+                    isTrialRetentionOffer
+                        ? OnboardingCopy.t("OFFERTS", en: "FREE")
+                        : winJackpotTitle
+                )
                     .font(PaywallBevelTheme.paywallHeroTitleFont(size: 32))
                     .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                     .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
                     .multilineTextAlignment(.center)
             }
-            .padding(.vertical, 34)
-            .padding(.horizontal, 28)
-            .frame(maxWidth: 268)
+            .padding(.vertical, 36)
+            .padding(.horizontal, 30)
+            .frame(maxWidth: 280)
             .background {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(.clear)
+                heroShape.fill(.clear)
             }
-            .processGlassEffect(in: RoundedRectangle(cornerRadius: 24, style: .continuous), interactive: false)
-            .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .strokeBorder(
-                        Color.white.opacity(colorScheme == .dark ? 0.14 : 0.22),
-                        lineWidth: 1
-                    )
-            }
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.32 : 0.10), radius: 24, y: 12)
+            .modifier(PaywallSpinLiquidGlassCard(shape: heroShape))
             .scaleEffect(rewardHeroAppeared ? 1 : 0.88)
             .opacity(rewardHeroAppeared ? 1 : 0)
             .frame(maxWidth: .infinity)
         }
-        .frame(height: 168)
+        .frame(height: 176)
     }
 
     private var spinningLayout: some View {
@@ -420,7 +449,7 @@ struct PaywallSpinWinbackView: View {
 
     /// Bas : carte plan + CTA + disclaimer (même repères que `PaywallView.bottomSection`).
     private var rewardBottomSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             offerCard
 
             PaywallBevelContinueButton(
@@ -443,10 +472,10 @@ struct PaywallSpinWinbackView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 .multilineTextAlignment(.center)
-                .padding(.top, 2)
+                .padding(.top, 4)
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 24)
+        .padding(.bottom, 44)
         .padding(.top, 2)
     }
 
@@ -481,9 +510,15 @@ struct PaywallSpinWinbackView: View {
     private var spinHeaderCopy: String {
         switch phase {
         case .readyFirst, .spinningFirst:
-            return "Tourne la roue\npour débloquer une remise"
+            return OnboardingCopy.t(
+                "Tourne la roue\npour débloquer une remise",
+                en: "Spin the wheel\nto unlock a discount"
+            )
         case .lost, .readySecond, .spinningSecond:
-            return "Encore un tour\npour débloquer une remise"
+            return OnboardingCopy.t(
+                "Encore un tour\npour débloquer une remise",
+                en: "One more spin\nto unlock a discount"
+            )
         case .won:
             return ""
         }
@@ -549,12 +584,15 @@ struct PaywallSpinWinbackView: View {
                         .font(.system(size: 30))
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Retente ta chance")
+                        Text(OnboardingCopy.t("Retente ta chance", en: "Try again"))
                             .font(PaywallBevelTheme.paywallHeroTitleFont(size: 26))
                             .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                             .foregroundStyle(titleColor)
 
-                        Text("Tu es tombé sur 5%.\nL’accès à vie est encore sur la roue — retente avant que l’offre disparaisse.")
+                        Text(OnboardingCopy.t(
+                            "Tu es tombé sur 5%.\nL’accès à vie est encore sur la roue — retente avant que l’offre disparaisse.",
+                            en: "You landed on 5%.\nLifetime access is still on the wheel — spin again before the offer disappears."
+                        ))
                             .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 16))
                             .foregroundStyle(bodyColor)
                             .fixedSize(horizontal: false, vertical: true)
@@ -564,7 +602,7 @@ struct PaywallSpinWinbackView: View {
                 Button {
                     beginSecondSpinFromSheet()
                 } label: {
-                    Text("Tourner encore")
+                    Text(OnboardingCopy.t("Tourner encore", en: "Spin again"))
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(Color(red: 0.10, green: 0.10, blue: 0.12))
                         .frame(maxWidth: .infinity)
@@ -626,7 +664,10 @@ struct PaywallSpinWinbackView: View {
                 .blur(radius: winRevealNumberVisible ? 0 : 6)
                 .animation(.spring(response: 0.52, dampingFraction: 0.78), value: winRevealNumberVisible)
 
-            Text("à \(SubscriptionConfiguration.winbackLifetimePrice) — accès premium")
+            Text(OnboardingCopy.t(
+                "à \(SubscriptionConfiguration.winbackLifetimePrice) — accès premium",
+                en: "for \(SubscriptionConfiguration.winbackLifetimePrice) — premium access"
+            ))
                 .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 18))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -653,7 +694,11 @@ struct PaywallSpinWinbackView: View {
         Button {
             startSpin()
         } label: {
-            Text(isSpinning ? "La roue tourne…" : "Tourner la roue")
+            Text(
+                isSpinning
+                    ? OnboardingCopy.t("La roue tourne…", en: "The wheel is spinning…")
+                    : OnboardingCopy.t("Tourner la roue", en: "Spin the wheel")
+            )
                 .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(paywallCTATextColor)
                 .frame(maxWidth: .infinity)
@@ -674,32 +719,29 @@ struct PaywallSpinWinbackView: View {
 
     private var rewardClaimButtonTitle: String {
         if isTrialRetentionOffer {
-            return subscriptionService.trialInfo(for: .annual).ctaTitle(fallback: "Commencer mon essai")
+            return subscriptionService.trialInfo(for: .annual).ctaTitle(
+                fallback: OnboardingCopy.t("Commencer mon essai", en: "Start my trial")
+            )
         }
-        return "Réclamer mon offre"
+        return OnboardingCopy.t("Réclamer mon offre", en: "Claim my offer")
     }
 
     private var offerCard: some View {
-        let cardShape = RoundedRectangle(cornerRadius: 18, style: .continuous)
-        let headerFill = colorScheme == .dark ? Color.white : Color.black
-        let headerText = colorScheme == .dark ? Color.black : Color.white
+        let cardShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
 
-        return VStack(spacing: 0) {
-            Text(isTrialRetentionOffer ? "ESSAI GRATUIT" : "ACCÈS À VIE")
-                .font(.system(size: 12, weight: .bold))
-                .tracking(0.8)
-                .foregroundStyle(headerText)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 11)
-                .background(headerFill)
+        return VStack(alignment: .leading, spacing: 10) {
+            if isTrialRetentionOffer {
+                Text(OnboardingCopy.t("ESSAI GRATUIT", en: "FREE TRIAL"))
+                    .font(.system(size: 12, weight: .bold))
+                    .tracking(0.9)
+                    .foregroundStyle(Self.discountHighlight)
 
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Accès à vie")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(OnboardingCopy.t("Accès premium", en: "Premium access"))
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
 
-                    if isTrialRetentionOffer {
                         Text(trialAnnualStrikethroughPrice)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
@@ -707,51 +749,52 @@ struct PaywallSpinWinbackView: View {
                                 true,
                                 color: PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.7)
                             )
-                    } else {
-                        (
-                            Text(SubscriptionConfiguration.winbackCompareAtPrice)
-                                .strikethrough(
-                                    true,
-                                    color: PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.7)
-                                )
-                            + Text(" • \(SubscriptionConfiguration.winbackLifetimePrice)")
-                        )
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                     }
+
+                    Spacer(minLength: 8)
+
+                    Text(OnboardingCopy.t(
+                        "\(trialDays) j. gratuits",
+                        en: "\(trialDays) free days"
+                    ))
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
                 }
+            } else {
+                Text(OnboardingCopy.t("-80% POUR TOUJOURS", en: "-80% FOREVER"))
+                    .font(.system(size: 13, weight: .heavy))
+                    .tracking(1.1)
+                    .foregroundStyle(Self.discountHighlight)
 
-                Spacer(minLength: 8)
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(OnboardingCopy.t("Accès à vie", en: "Lifetime access"))
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(PaywallBevelTheme.titleText(for: colorScheme))
 
-                if !isTrialRetentionOffer {
+                        Text(OnboardingCopy.t(
+                            "Paiement unique · sans abonnement",
+                            en: "One payment · no subscription"
+                        ))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme).opacity(0.9))
+                    }
+
+                    Spacer(minLength: 8)
+
                     Text(SubscriptionConfiguration.winbackLifetimePrice)
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
-                } else {
-                    Text("\(trialDays) j. gratuits")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                cardShape.fill(colorScheme == .dark ? Color(white: 0.11) : Color.white)
-            }
         }
-        .clipShape(cardShape)
-        .overlay {
-            cardShape.strokeBorder(
-                Color.primary.opacity(colorScheme == .dark ? 0.24 : 0.88),
-                lineWidth: 1.5
-            )
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            cardShape.fill(.clear)
         }
-        .shadow(
-            color: PaywallBevelTheme.cardShadow(for: colorScheme, selected: false),
-            radius: 6,
-            y: 2
-        )
+        .modifier(PaywallSpinLiquidGlassCard(shape: cardShape))
     }
 
     // MARK: - Spin logic
@@ -1010,12 +1053,9 @@ struct PaywallSpinWinbackView: View {
         purchaseError = nil
         defer { isPurchasing = false }
 
-        let source = analyticsSource
-            ?? (isTrialRetentionOffer ? "trial_retention_offer" : "spin_wheel")
-        let plan = isTrialRetentionOffer ? "annual" : "winback_lifetime"
-        let offer = isTrialRetentionOffer
-            ? "retention_trial"
-            : SubscriptionConfiguration.winbackOfferID
+        let source = analyticsSource ?? "spin_wheel"
+        let plan = "winback_lifetime"
+        let offer = SubscriptionConfiguration.winbackOfferID
 
         ProcessAnalytics.trackSpinOfferCTATapped(source: source)
         ProcessAnalytics.trackPurchaseStarted(plan: plan, offer: offer, source: source)
@@ -1024,11 +1064,7 @@ struct PaywallSpinWinbackView: View {
             if !subscriptionService.canPurchase {
                 await subscriptionService.loadSubscriptions()
             }
-            if isTrialRetentionOffer {
-                try await subscriptionService.purchaseRetentionTrialAnnual()
-            } else {
-                try await subscriptionService.purchaseWinbackLifetime()
-            }
+            try await subscriptionService.purchaseWinbackLifetime()
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
                 ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: offer, source: source)
@@ -1256,9 +1292,48 @@ private struct PaywallSpinPinShape: Shape {
     }
 }
 
+// MARK: - Liquid glass carte offre
+
+private struct PaywallSpinLiquidGlassCard<S: InsettableShape>: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    let shape: S
+
+    func body(content: Content) -> some View {
+        Group {
+            if #available(iOS 26.0, *) {
+                content
+                    .background {
+                        shape.fill(.clear)
+                    }
+                    .glassEffect(ProcessGlass.waterSurface, in: shape)
+            } else {
+                content
+                    .background(.ultraThinMaterial, in: shape)
+            }
+        }
+        .overlay {
+            shape.strokeBorder(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(colorScheme == .dark ? 0.48 : 0.62),
+                        Color.white.opacity(colorScheme == .dark ? 0.06 : 0.10),
+                        Color.white.opacity(colorScheme == .dark ? 0.26 : 0.34),
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: 1.15
+            )
+        }
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.30 : 0.11), radius: 20, y: 10)
+        .shadow(color: Color(red: 0.35, green: 0.82, blue: 0.94).opacity(0.14), radius: 24, y: 4)
+    }
+}
+
 // MARK: - Compte à rebours offre
 
 private struct PaywallSpinOfferCountdown: View {
+    @Environment(\.colorScheme) private var colorScheme
     let endDate: Date
 
     var body: some View {
@@ -1269,12 +1344,19 @@ private struct PaywallSpinOfferCountdown: View {
             let seconds = (totalCentiseconds % 6000) / 100
             let centiseconds = totalCentiseconds % 100
 
-            HStack(alignment: .center, spacing: 16) {
-                countdownUnit(value: minutes, label: "MIN")
-                countdownColon
-                countdownUnit(value: seconds, label: "SEC")
-                countdownColon
-                countdownUnit(value: centiseconds, label: "CS")
+            VStack(spacing: 10) {
+                Text(OnboardingCopy.t("Offre expire dans", en: "Offer expires in"))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .tracking(0.4)
+
+                HStack(alignment: .center, spacing: 14) {
+                    countdownUnit(value: minutes, label: "MIN")
+                    countdownColon
+                    countdownUnit(value: seconds, label: "SEC")
+                    countdownColon
+                    countdownUnit(value: centiseconds, label: "CS")
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 8)
@@ -1283,40 +1365,41 @@ private struct PaywallSpinOfferCountdown: View {
 
     private var countdownColon: some View {
         Text(":")
-            .font(.system(size: 18, weight: .bold, design: .rounded))
-            .foregroundStyle(Color.primary.opacity(0.72))
-            .padding(.bottom, 14)
+            .font(.system(size: 22, weight: .bold, design: .rounded))
+            .foregroundStyle(Color.primary.opacity(0.55))
+            .padding(.bottom, 16)
     }
 
     private func countdownUnit(value: Int, label: String) -> some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 6) {
             Text(String(format: "%02d", value))
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 26, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .monospacedDigit()
-                .frame(width: 48, height: 40)
+                .frame(width: 58, height: 48)
                 .background {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(white: 0.14),
-                                    Color.black,
+                                    Color(white: colorScheme == .dark ? 0.22 : 0.18),
+                                    Color.black.opacity(colorScheme == .dark ? 0.92 : 0.88),
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
                         .overlay {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.8)
                         }
+                        .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
                 }
 
             Text(label)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.42))
-                .tracking(0.8)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.48))
+                .tracking(1.0)
         }
     }
 }
@@ -1380,43 +1463,56 @@ private struct PaywallSpinOfferStars: View {
 // MARK: - Confetti tombant (page offre)
 
 private struct PaywallSpinFallingConfetti: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     private struct Piece: Identifiable {
         let id: Int
         let xRatio: CGFloat
         let size: CGFloat
-        let tone: Double
+        let colorIndex: Int
         let duration: Double
         let delay: Double
         let spin: Double
+        let drift: CGFloat
     }
 
+    private let palette: [Color] = [
+        Color(red: 0.93, green: 0.82, blue: 0.38),
+        Color(red: 0.55, green: 0.78, blue: 0.74),
+        Color(red: 0.95, green: 0.42, blue: 0.48),
+        Color(red: 0.98, green: 0.92, blue: 0.72),
+        Color.white.opacity(0.85),
+    ]
+
     private let pieces: [Piece] = [
-        (0.08, 7, 0.18, 3.2, 0.0, 220),
-        (0.16, 9, 0.24, 2.8, 0.4, 180),
-        (0.24, 6, 0.14, 3.6, 0.8, 260),
-        (0.32, 8, 0.20, 3.0, 1.1, 200),
-        (0.42, 7, 0.16, 3.4, 0.2, 240),
-        (0.52, 9, 0.22, 2.9, 1.4, 170),
-        (0.62, 6, 0.18, 3.5, 0.6, 300),
-        (0.72, 8, 0.15, 3.1, 1.8, 210),
-        (0.82, 7, 0.21, 2.7, 0.9, 250),
-        (0.90, 9, 0.17, 3.3, 1.6, 190),
-        (0.12, 6, 0.23, 3.7, 2.0, 230),
-        (0.28, 8, 0.19, 2.6, 1.2, 280),
-        (0.48, 7, 0.14, 3.8, 0.3, 200),
-        (0.68, 9, 0.20, 2.5, 1.0, 260),
-        (0.88, 6, 0.16, 3.9, 1.5, 220),
+        (0.06, 8, 0, 2.8, 0.0, 220, 18),
+        (0.14, 10, 1, 3.1, 0.25, 180, -14),
+        (0.22, 7, 2, 2.6, 0.55, 260, 22),
+        (0.30, 9, 0, 3.4, 0.15, 200, -10),
+        (0.38, 8, 3, 2.9, 0.75, 240, 16),
+        (0.46, 11, 1, 3.2, 0.35, 170, -20),
+        (0.54, 7, 2, 2.5, 0.95, 300, 12),
+        (0.62, 9, 0, 3.6, 0.45, 210, -18),
+        (0.70, 8, 4, 2.7, 0.10, 250, 24),
+        (0.78, 10, 1, 3.0, 0.65, 190, -12),
+        (0.86, 7, 2, 3.3, 0.85, 230, 15),
+        (0.94, 9, 3, 2.8, 0.20, 280, -22),
+        (0.10, 8, 0, 3.5, 1.10, 200, 10),
+        (0.26, 11, 1, 2.4, 1.30, 260, -16),
+        (0.42, 7, 2, 3.7, 0.50, 180, 20),
+        (0.58, 9, 4, 2.6, 1.05, 300, -8),
+        (0.74, 8, 0, 3.1, 0.70, 220, 14),
+        (0.90, 10, 3, 2.9, 1.20, 250, -19),
+        (0.18, 6, 1, 3.8, 0.40, 170, 11),
+        (0.66, 8, 2, 2.5, 1.40, 290, -13),
     ].enumerated().map { index, spec in
         Piece(
             id: index,
             xRatio: spec.0,
             size: spec.1,
-            tone: spec.2,
+            colorIndex: spec.2,
             duration: spec.3,
             delay: spec.4,
-            spin: spec.5
+            spin: spec.5,
+            drift: spec.6
         )
     }
 
@@ -1429,27 +1525,22 @@ private struct PaywallSpinFallingConfetti: View {
                     ForEach(pieces) { piece in
                         let cycle = (elapsed + piece.delay)
                             .truncatingRemainder(dividingBy: piece.duration) / piece.duration
-                        let y = -24 + cycle * (geo.size.height + 48)
+                        let y = -36 + cycle * (geo.size.height + 72)
+                        let x = geo.size.width * piece.xRatio
+                            + sin(cycle * .pi * 2) * piece.drift
 
                         Capsule()
-                            .fill(confettiColor(tone: piece.tone))
-                            .frame(width: piece.size * 0.42, height: piece.size)
+                            .fill(palette[piece.colorIndex % palette.count])
+                            .frame(width: piece.size * 0.45, height: piece.size)
                             .rotationEffect(.degrees(cycle * piece.spin))
-                            .position(x: geo.size.width * piece.xRatio, y: y)
-                            .opacity(0.16 + (1 - cycle) * 0.12)
+                            .position(x: x, y: y)
+                            .opacity(0.55 + (1 - cycle) * 0.35)
+                            .blur(radius: cycle > 0.85 ? 0.6 : 0)
                     }
                 }
             }
         }
         .allowsHitTesting(false)
-    }
-
-    private func confettiColor(tone: Double) -> Color {
-        if colorScheme == .dark {
-            Color.white.opacity(0.35 + tone)
-        } else {
-            Color(red: 0.18, green: 0.22, blue: 0.30).opacity(0.18 + tone)
-        }
     }
 }
 
@@ -1459,20 +1550,24 @@ private struct PaywallSpinConfetti: View {
     @State private var animate = false
 
     private let pieces: [(x: CGFloat, delay: Double, color: Color, size: CGFloat, spin: Double)] = [
-        (0.12, 0.00, Color(red: 0.93, green: 0.82, blue: 0.38), 8, 180),
-        (0.28, 0.04, Color(red: 0.55, green: 0.78, blue: 0.74), 7, 220),
-        (0.44, 0.08, Color(red: 0.95, green: 0.42, blue: 0.48), 9, 160),
-        (0.58, 0.02, Color(red: 0.93, green: 0.82, blue: 0.38), 6, 280),
-        (0.72, 0.10, Color(red: 0.55, green: 0.78, blue: 0.74), 8, 200),
-        (0.86, 0.06, Color(red: 0.95, green: 0.42, blue: 0.48), 7, 240),
-        (0.18, 0.14, Color(red: 0.93, green: 0.82, blue: 0.38), 6, 190),
-        (0.36, 0.18, Color(red: 0.55, green: 0.78, blue: 0.74), 9, 260),
-        (0.52, 0.12, Color(red: 0.95, green: 0.42, blue: 0.48), 7, 210),
-        (0.68, 0.20, Color(red: 0.93, green: 0.82, blue: 0.38), 8, 170),
-        (0.82, 0.16, Color(red: 0.55, green: 0.78, blue: 0.74), 6, 300),
-        (0.24, 0.26, Color(red: 0.95, green: 0.42, blue: 0.48), 8, 250),
-        (0.62, 0.28, Color(red: 0.93, green: 0.82, blue: 0.38), 9, 270),
-        (0.78, 0.30, Color(red: 0.55, green: 0.78, blue: 0.74), 7, 200),
+        (0.08, 0.00, Color(red: 0.93, green: 0.82, blue: 0.38), 10, 180),
+        (0.18, 0.03, Color(red: 0.55, green: 0.78, blue: 0.74), 8, 220),
+        (0.28, 0.06, Color(red: 0.95, green: 0.42, blue: 0.48), 11, 160),
+        (0.38, 0.02, Color(red: 0.98, green: 0.92, blue: 0.72), 7, 280),
+        (0.48, 0.08, Color(red: 0.93, green: 0.82, blue: 0.38), 9, 200),
+        (0.58, 0.04, Color(red: 0.55, green: 0.78, blue: 0.74), 10, 240),
+        (0.68, 0.10, Color(red: 0.95, green: 0.42, blue: 0.48), 8, 190),
+        (0.78, 0.05, Color(red: 0.93, green: 0.82, blue: 0.38), 11, 260),
+        (0.88, 0.12, Color(red: 0.55, green: 0.78, blue: 0.74), 7, 210),
+        (0.14, 0.16, Color(red: 0.95, green: 0.42, blue: 0.48), 9, 170),
+        (0.34, 0.18, Color(red: 0.93, green: 0.82, blue: 0.38), 8, 300),
+        (0.54, 0.14, Color(red: 0.98, green: 0.92, blue: 0.72), 10, 250),
+        (0.72, 0.20, Color(red: 0.55, green: 0.78, blue: 0.74), 9, 270),
+        (0.84, 0.22, Color(red: 0.95, green: 0.42, blue: 0.48), 8, 200),
+        (0.24, 0.26, Color(red: 0.93, green: 0.82, blue: 0.38), 10, 230),
+        (0.62, 0.28, Color(red: 0.55, green: 0.78, blue: 0.74), 7, 180),
+        (0.42, 0.30, Color(red: 0.95, green: 0.42, blue: 0.48), 11, 290),
+        (0.92, 0.24, Color(red: 0.98, green: 0.92, blue: 0.72), 8, 210),
     ]
 
     var body: some View {
@@ -1481,14 +1576,17 @@ private struct PaywallSpinConfetti: View {
                 ForEach(Array(pieces.enumerated()), id: \.offset) { _, piece in
                     Capsule()
                         .fill(piece.color)
-                        .frame(width: piece.size * 0.45, height: piece.size)
-                        .rotationEffect(.degrees(animate ? piece.spin : 0))
+                        .frame(width: piece.size * 0.48, height: piece.size)
+                        .rotationEffect(.degrees(animate ? piece.spin : -20))
                         .position(
                             x: geo.size.width * piece.x,
-                            y: animate ? geo.size.height * 0.92 : -24
+                            y: animate ? geo.size.height * 0.95 : -30
                         )
                         .opacity(animate ? 0 : 1)
-                        .animation(.easeIn(duration: 1.55).delay(piece.delay), value: animate)
+                        .animation(
+                            .easeIn(duration: 1.75).delay(piece.delay),
+                            value: animate
+                        )
                 }
             }
         }

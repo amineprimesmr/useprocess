@@ -1,8 +1,8 @@
 import SwiftUI
 
 enum FaceScanChartPeriod: String, CaseIterable, Identifiable {
-    case week = "7 j"
-    case month = "30 j"
+    case week
+    case month
 
     var id: String { rawValue }
 
@@ -12,16 +12,35 @@ enum FaceScanChartPeriod: String, CaseIterable, Identifiable {
         case .month: return 30
         }
     }
+
+    @MainActor
+    var title: String {
+        switch self {
+        case .week: return AppCopy.t("7 j", en: "7 d")
+        case .month: return AppCopy.t("30 j", en: "30 d")
+        }
+    }
 }
 
 enum FaceScanChartMetric: String, CaseIterable, Identifiable {
-    case retention = "Rétention"
-    case recovery = "Cernes et fatigue"
-    case skin = "Peau"
-    case definition = "Définition"
-    case stress = "Stress"
+    case retention
+    case recovery
+    case skin
+    case definition
+    case stress
 
     var id: String { rawValue }
+
+    @MainActor
+    var title: String {
+        switch self {
+        case .retention: return AppCopy.t("Rétention", en: "Retention")
+        case .recovery: return AppCopy.t("Cernes et fatigue", en: "Under-eyes & fatigue")
+        case .skin: return AppCopy.t("Peau", en: "Skin")
+        case .definition: return AppCopy.t("Définition", en: "Definition")
+        case .stress: return AppCopy.t("Stress", en: "Stress")
+        }
+    }
 
     private var kind: FaceScanIndicators.Kind {
         switch self {
@@ -79,23 +98,26 @@ struct FaceScanTrendChartView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Picker("Période", selection: $period) {
+                Picker(AppCopy.t("Période", en: "Period"), selection: $period) {
                     ForEach(FaceScanChartPeriod.allCases) { p in
-                        Text(p.rawValue).tag(p)
+                        Text(p.title).tag(p)
                     }
                 }
                 .pickerStyle(.segmented)
 
-                Picker("Métrique", selection: $metric) {
+                Picker(AppCopy.t("Métrique", en: "Metric"), selection: $metric) {
                     ForEach(FaceScanChartMetric.allCases) { m in
-                        Text(m.rawValue).tag(m)
+                        Text(m.title).tag(m)
                     }
                 }
                 .pickerStyle(.menu)
             }
 
             if dataPoints.count < 2 {
-                Text("Au moins 2 scans sur \(period.rawValue) pour afficher la courbe.")
+                Text(AppCopy.t(
+                    "Au moins 2 scans sur \(period.title) pour afficher la courbe.",
+                    en: "At least 2 scans over \(period.title) to show the chart."
+                ))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
                     .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)

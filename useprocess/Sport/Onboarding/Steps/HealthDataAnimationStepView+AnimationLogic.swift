@@ -15,16 +15,22 @@ extension HealthDataAnimationStepView {
         var types: [String] = []
 
         // ✅ Afficher les pas avec la valeur récupérée
-        types.append("Nombre de pas : \(displaySteps) / 9500")
+        types.append(OnboardingCopy.t("Nombre de pas : \(displaySteps) / 9500", en: "Step count: \(displaySteps) / 9500"))
 
         // ✅ Afficher les calories avec la valeur récupérée
         let calories = Int(displayCalories)
         let targetCalories = max(500, calories + 500) // Au moins 500 si calories = 0
-        types.append("Calories total : \(calories)kcal / \(targetCalories)kcal")
+        types.append(OnboardingCopy.t(
+            "Calories total : \(calories)kcal / \(targetCalories)kcal",
+            en: "Total calories: \(calories)kcal / \(targetCalories)kcal"
+        ))
 
         // ✅ Afficher le score d'effort avec la valeur récupérée
         let effortScore = Int(displayEffortScore)
-        types.append("Score effort aujourd'hui : \(effortScore)%")
+        types.append(OnboardingCopy.t(
+            "Score effort aujourd'hui : \(effortScore)%",
+            en: "Effort score today: \(effortScore)%"
+        ))
 
         return types
     }
@@ -35,7 +41,7 @@ extension HealthDataAnimationStepView {
         if let bedtime = displayBedtime {
             let formatter = DateFormatter()
             formatter.timeStyle = .short
-            formatter.locale = Locale(identifier: "fr_FR")
+            formatter.locale = Locale(identifier: ProcessAppLanguage.shared.isEnglish ? "en_US" : "fr_FR")
             bedtimeString = formatter.string(from: bedtime)
         } else {
             bedtimeString = "--:--"
@@ -51,21 +57,11 @@ extension HealthDataAnimationStepView {
         let sleepDebtMinutes = Int((displaySleepDebt - Double(sleepDebtHours)) * 60)
         let sleepDebtString = String(format: "%dh%02d", sleepDebtHours, sleepDebtMinutes)
 
-        // ✅ Si on a des données valides, afficher avec les valeurs, sinon juste les labels
-        if hasValidSleepData {
-            return [
-                "Heure de coucher : \(bedtimeString)",
-                "Durée de sommeil : \(sleepDurationString)",
-                "Dette de sommeil : \(sleepDebtString)"
-            ]
-        } else {
-            // Afficher quand même les valeurs récupérées (même si 0) pour debug
-            return [
-                "Heure de coucher : \(bedtimeString)",
-                "Durée de sommeil : \(sleepDurationString)",
-                "Dette de sommeil : \(sleepDebtString)"
-            ]
-        }
+        return [
+            OnboardingCopy.t("Heure de coucher : \(bedtimeString)", en: "Bedtime: \(bedtimeString)"),
+            OnboardingCopy.t("Durée de sommeil : \(sleepDurationString)", en: "Sleep duration: \(sleepDurationString)"),
+            OnboardingCopy.t("Dette de sommeil : \(sleepDebtString)", en: "Sleep debt: \(sleepDebtString)")
+        ]
     }
     func getValue(for key: String) -> String {
         let value: String

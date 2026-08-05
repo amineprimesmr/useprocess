@@ -139,7 +139,7 @@ struct HeightStepView: View {
             }
 
             VStack {
-                OnboardingTitleView("Quelle est ta taille ?")
+                OnboardingTitleView(OnboardingCopy.t("Quelle est ta taille ?", en: "What's your height?"))
                     .padding(.top, OnboardingConstants.titleTopPadding)
                 Spacer()
             }

@@ -297,22 +297,22 @@ struct PlanLastFaceScanSection: View {
 
     private var scanAvailableTitle: String {
         if isFirstScanPending {
-            return "Premier scan disponible"
+            return AppCopy.t("Premier scan disponible", en: "First scan available")
         }
-        return "Scan du jour disponible"
+        return AppCopy.t("Scan du jour disponible", en: "Today's scan available")
     }
 
     @ViewBuilder
     private var scanAvailableButton: some View {
         Button(action: beginInlineScan) {
-            Label("Faire mon scan", systemImage: "camera.fill")
+            Label(AppCopy.t("Faire mon scan", en: "Start my scan"), systemImage: "camera.fill")
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(theme.primaryText)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
         }
         .processGlassButton(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .accessibilityLabel("Faire mon scan")
+        .accessibilityLabel(AppCopy.t("Faire mon scan", en: "Start my scan"))
     }
 
     @ViewBuilder
@@ -381,7 +381,7 @@ struct PlanLastFaceScanSection: View {
 
     private var scanCardHeader: some View {
         HStack(alignment: .top, spacing: 8) {
-            Text("Dernier scan")
+            Text(PlanHomeSectionKind.faceScan.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
 
@@ -397,10 +397,10 @@ struct PlanLastFaceScanSection: View {
 
     private var preScanActionMessage: String {
         if isFirstScanPending {
-            return "Fais ton premier scan — 30 secondes."
+            return AppCopy.t("Fais ton premier scan — 30 secondes.", en: "Do your first scan — 30 seconds.")
         }
         if isScanDue {
-            return "Ton scan du jour est disponible."
+            return AppCopy.t("Ton scan du jour est disponible.", en: "Your scan for today is available.")
         }
         let targets = WelcomePlanStore.shared.plan?.personalizedTargets ?? .default
         return PlanFaceScanPreScanAction.message(
@@ -480,21 +480,21 @@ struct PlanLastFaceScanSection: View {
                     HapticManager.shared.selection()
                     displayPreferences.setShowsVideo(false)
                 } label: {
-                    Label("Masquer la vidéo", systemImage: "eye.slash")
+                    Label(AppCopy.t("Masquer la vidéo", en: "Hide video"), systemImage: "eye.slash")
                 }
             } else {
                 Button {
                     HapticManager.shared.selection()
                     displayPreferences.setShowsVideo(true)
                 } label: {
-                    Label("Afficher la vidéo", systemImage: "video")
+                    Label(AppCopy.t("Afficher la vidéo", en: "Show video"), systemImage: "video")
                 }
             }
 
             Button {
                 beginInlineScan()
             } label: {
-                Label("Refaire le scan", systemImage: "camera.fill")
+                Label(AppCopy.t("Refaire le scan", en: "Rescan"), systemImage: "camera.fill")
             }
         }
     }
@@ -507,6 +507,7 @@ struct PlanLastFaceScanSection: View {
 // MARK: - Messages courts (hydratation / marche — pas de routine)
 
 enum PlanFaceScanPreScanAction {
+    @MainActor
     static func message(
         for result: FaceScanResult?,
         stepsToday: Int,
@@ -515,7 +516,7 @@ enum PlanFaceScanPreScanAction {
         waterTargetLiters: Int
     ) -> String {
         guard result != nil else {
-            return "Fais ton premier scan — 30 secondes."
+            return AppCopy.t("Fais ton premier scan — 30 secondes.", en: "Do your first scan — 30 seconds.")
         }
 
         let waterTarget = max(1, waterTargetLiters)
@@ -527,34 +528,38 @@ enum PlanFaceScanPreScanAction {
 
         if hydrationLow {
             if waterGap >= 1 {
-                return String(format: "Encore %.1f L d'eau aujourd'hui.", waterGap)
+                let amount = String(format: "%.1f", waterGap)
+                return AppCopy.t(
+                    "Encore \(amount) L d'eau aujourd'hui.",
+                    en: "\(amount) L of water left today."
+                )
             }
-            return "Hydrate plus — il reste de l'eau à boire."
+            return AppCopy.t("Hydrate plus — il reste de l'eau à boire.", en: "Hydrate more — you still have water left to drink.")
         }
 
         if stepsLow {
             if stepsGap >= 2500 {
-                return "Peu de pas aujourd'hui — bouge un peu plus."
+                return AppCopy.t("Peu de pas aujourd'hui — bouge un peu plus.", en: "Low steps today — move a bit more.")
             }
-            return "Encore \(formattedSteps(stepsGap)) pas aujourd'hui."
+            return AppCopy.t("Encore \(formattedSteps(stepsGap)) pas aujourd'hui.", en: "\(formattedSteps(stepsGap)) steps left today.")
         }
 
         if !hydrationTracked {
-            return "N'oublie pas ton eau — cible \(waterTarget) L."
+            return AppCopy.t("N'oublie pas ton eau — cible \(waterTarget) L.", en: "Don't forget your water — aim for \(waterTarget) L.")
         }
 
         if let result, result.markers.puffinessScore >= 62 {
-            return "Gonflement visible — l'eau aide à dégonfler."
+            return AppCopy.t("Gonflement visible — l'eau aide à dégonfler.", en: "Puffiness visible — water helps debloat.")
         }
 
-        return "Bien hydraté et assez actif aujourd'hui."
+        return AppCopy.t("Bien hydraté et assez actif aujourd'hui.", en: "Well hydrated and active enough today.")
     }
 
+    @MainActor
     private static func formattedSteps(_ value: Int) -> String {
         let nf = NumberFormatter()
-        nf.locale = Locale(identifier: "fr_FR")
+        nf.locale = ProcessAppLanguage.shared.locale
         nf.numberStyle = .decimal
-        nf.groupingSeparator = " "
         return nf.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }
@@ -581,14 +586,14 @@ private struct PlanFaceScanNextScanFooter: View {
     }
 
     private var headline: String {
-        if latest == nil { return "Premier scan" }
-        if isScanDue { return "Scan disponible" }
-        return "Prochain scan"
+        if latest == nil { return AppCopy.t("Premier scan", en: "First scan") }
+        if isScanDue { return AppCopy.t("Scan disponible", en: "Scan available") }
+        return AppCopy.t("Prochain scan", en: "Next scan")
     }
 
     private var trailingLabel: String {
-        if latest == nil { return "À faire" }
-        if isScanDue { return "Maintenant" }
+        if latest == nil { return AppCopy.t("À faire", en: "To do") }
+        if isScanDue { return AppCopy.t("Maintenant", en: "Now") }
         return FaceScanCadence.countdownLabel(since: latest?.createdAt, now: now)
     }
 
@@ -719,7 +724,7 @@ private struct PlanFaceScanMediaPanel: View, Equatable {
             displayMode: .sidePanel,
             isPlaybackActive: isPlaybackActive
         )
-        .accessibilityLabel("Vidéo du dernier scan")
+        .accessibilityLabel(AppCopy.t("Vidéo du dernier scan", en: "Latest scan video"))
     }
 }
 
@@ -764,7 +769,7 @@ private struct PlanFaceScanLiveCameraPanel: View {
                 )
                 .background(Color.black)
             case .denied, .restricted:
-                liveCameraPlaceholder(systemImage: "camera.fill", message: "Caméra refusée")
+                liveCameraPlaceholder(systemImage: "camera.fill", message: AppCopy.t("Caméra refusée", en: "Camera denied"))
             default:
                 liveCameraPlaceholder(systemImage: "camera.fill", message: nil)
             }
@@ -779,7 +784,7 @@ private struct PlanFaceScanLiveCameraPanel: View {
         .onDisappear {
             camera.stop()
         }
-        .accessibilityLabel("Aperçu caméra frontale")
+        .accessibilityLabel(AppCopy.t("Aperçu caméra frontale", en: "Front camera preview"))
     }
 
     private func liveCameraPlaceholder(systemImage: String, message: String?) -> some View {

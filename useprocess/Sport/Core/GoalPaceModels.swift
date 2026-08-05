@@ -17,6 +17,18 @@ enum GoalPace: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .asFastAsPossible: return AppCopy.t("Le plus vite possible", en: "As fast as possible")
+        case .aggressive: return AppCopy.t("Rapidement", en: "Quickly")
+        case .moderate: return AppCopy.t("Progressivement", en: "Gradually")
+        case .relaxed: return AppCopy.t("À mon rythme", en: "At my own pace")
+        case .noRush: return AppCopy.t("Sans pression", en: "No pressure")
+        }
+    }
+
     var icon: String {
         switch self {
         case .asFastAsPossible:
@@ -32,18 +44,34 @@ enum GoalPace: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
         case .asFastAsPossible:
-            return "Je veux des résultats rapides, je suis prêt à m'investir à fond"
+            return AppCopy.t(
+                "Je veux des résultats rapides, je suis prêt à m'investir à fond",
+                en: "I want fast results and I'm ready to go all in"
+            )
         case .aggressive:
-            return "Je veux progresser rapidement avec un plan intensif"
+            return AppCopy.t(
+                "Je veux progresser rapidement avec un plan intensif",
+                en: "I want to progress quickly with an intensive plan"
+            )
         case .moderate:
-            return "Je préfère une progression régulière et équilibrée"
+            return AppCopy.t(
+                "Je préfère une progression régulière et équilibrée",
+                en: "I prefer steady, balanced progress"
+            )
         case .relaxed:
-            return "Je veux prendre mon temps et profiter du processus"
+            return AppCopy.t(
+                "Je veux prendre mon temps et profiter du processus",
+                en: "I want to take my time and enjoy the process"
+            )
         case .noRush:
-            return "Pas de stress, je veux juste progresser naturellement"
+            return AppCopy.t(
+                "Pas de stress, je veux juste progresser naturellement",
+                en: "No stress — I just want to progress naturally"
+            )
         }
     }
 

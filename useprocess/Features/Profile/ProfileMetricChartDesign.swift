@@ -61,7 +61,7 @@ private struct ProfileMetricChartSectionContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(metric.rawValue)
+            Text(metric.title)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(theme.secondaryText)
 
@@ -201,13 +201,15 @@ struct ProfileMetricChartRenderer: View {
 // MARK: - Shared chart helpers
 
 private enum ProfileMetricChartAxis {
-    static let weekdayFormatter: DateFormatter = {
+    @MainActor
+    static var weekdayFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.setLocalizedDateFormatFromTemplate("EEE")
         return formatter
-    }()
+    }
 
+    @MainActor
     static func xLabels(for points: [ProfileAnalyticsPoint], maxLabels: Int = 7) -> [String] {
         guard !points.isEmpty else { return [] }
         if points.count <= maxLabels {
@@ -608,14 +610,14 @@ struct ProfileMetricComparisonLabel: View {
     var body: some View {
         if let deltaVsPrevious, abs(deltaVsPrevious) >= deltaThreshold {
             HStack(spacing: 0) {
-                Text("Évolution : ")
+                Text(AppCopy.t("Évolution : ", en: "Change: "))
                 Text(metric.axisStyle.formatDelta(deltaVsPrevious))
                     .foregroundStyle(deltaColor(deltaVsPrevious))
                     .fontWeight(.bold)
-                Text(" vs période précédente.")
+                Text(AppCopy.t(" vs période précédente.", en: " vs. previous period."))
             }
         } else if deltaVsPrevious != nil {
-            Text("Stable vs la période précédente.")
+            Text(AppCopy.t("Stable vs la période précédente.", en: "Stable vs. previous period."))
         }
     }
 

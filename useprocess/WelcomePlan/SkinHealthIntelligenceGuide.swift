@@ -17,23 +17,62 @@ enum SkinHealthIntelligenceGuide {
     - Ponctuel : crème soufre sur bouton ; spray sel celtique après douche filtrée
     """
 
-    static let lymphAndSkinRoutine: [String] = [
-        "Filtre douche — eau sans chlore/fluor sur peau et cheveux",
-        "Pas crèmes skincare commerciales — racine = alimentation + intestin",
-        "Topique si besoin : suif ou crème coco crue (non comédogène)",
-        "Eau froide visage au réveil — drainage lymphatique",
-        "Spray sel celtique + eau après douche (exfoliation naturelle)",
-        "Soleil modéré — peau reflète santé interne"
-    ]
+    static var lymphAndSkinRoutine: [String] {
+        [
+            AppCopy.tSync(
+                "Filtre douche — eau sans chlore/fluor sur peau et cheveux",
+                en: "Shower filter — chlorine/fluoride-free water on skin and hair"
+            ),
+            AppCopy.tSync(
+                "Pas crèmes skincare commerciales — racine = alimentation + intestin",
+                en: "No commercial skincare creams — root cause = food + gut"
+            ),
+            AppCopy.tSync(
+                "Topique si besoin : suif ou crème coco crue (non comédogène)",
+                en: "Topical if needed: tallow or raw coconut cream (non-comedogenic)"
+            ),
+            AppCopy.tSync(
+                "Eau froide visage au réveil — drainage lymphatique",
+                en: "Cold water on face at wake — lymphatic drainage"
+            ),
+            AppCopy.tSync(
+                "Spray sel celtique + eau après douche (exfoliation naturelle)",
+                en: "Celtic salt + water spray after shower (natural exfoliation)"
+            ),
+            AppCopy.tSync(
+                "Soleil modéré — peau reflète santé interne",
+                en: "Moderate sun — skin reflects internal health"
+            )
+        ]
+    }
 
-    static let skinTimelineNote = "Peau claire : 8+ semaines minimum constant — 3–4 mois pour stabiliser (pas cheat meals)"
+    static var skinTimelineNote: String {
+        AppCopy.tSync(
+            "Peau claire : 8+ semaines minimum constant — 3–4 mois pour stabiliser (pas cheat meals)",
+            en: "Clear skin: 8+ weeks minimum consistency — 3–4 months to stabilize (no cheat meals)"
+        )
+    }
 
-    static let dietPrinciplesForSkin: [String] = [
-        "Viande + œufs quotidiens — gras saturés pour hormones",
-        "Lait A2 cru — pas lait A1 industriel",
-        "Cuisson en suif — pas huiles de graines",
-        "Fruits + hydratation alimentaire — pas excès eau plate sans électrolytes"
-    ]
+    static var dietPrinciplesForSkin: [String] {
+        [
+            AppCopy.tSync(
+                "Viande + œufs quotidiens — gras saturés pour hormones",
+                en: "Daily meat + eggs — saturated fats for hormones"
+            ),
+            AppCopy.tSync(
+                "Lait A2 cru — pas lait A1 industriel",
+                en: "Raw A2 milk — no industrial A1 milk"
+            ),
+            AppCopy.tSync(
+                "Cuisson en suif — pas huiles de graines",
+                en: "Cook in tallow — no seed oils"
+            ),
+            AppCopy.tSync(
+                "Fruits + hydratation alimentaire — pas excès eau plate sans électrolytes",
+                en: "Fruit + food hydration — no excess plain water without electrolytes"
+            )
+        ]
+    }
 
     // MARK: - Génération protocole
 
@@ -66,14 +105,22 @@ enum SkinHealthIntelligenceGuide {
             }
         }
 
-        let skinFoods = ["Viande rouge et œufs", "Lait A2 cru / mouton", "Fruits frais", "Suif (cuisson)"]
+        let skinFoods = [
+            AppCopy.tSync("Viande rouge et œufs", en: "Red meat and eggs"),
+            AppCopy.tSync("Lait A2 cru / mouton", en: "Raw A2 milk / sheep"),
+            AppCopy.tSync("Fruits frais", en: "Fresh fruit"),
+            AppCopy.tSync("Suif (cuisson)", en: "Tallow (cooking)")
+        ]
         for food in skinFoods {
             if !nutrition.foodsToPrioritize.contains(food) {
                 nutrition.foodsToPrioritize.append(food)
             }
         }
 
-        let avoid = ["Skincare commercial (soigner de l'intérieur)", "Huiles de graines et canola"]
+        let avoid = [
+            AppCopy.tSync("Skincare commercial (soigner de l'intérieur)", en: "Commercial skincare (heal from inside)"),
+            AppCopy.tSync("Huiles de graines et canola", en: "Seed oils and canola")
+        ]
         for item in avoid {
             if !nutrition.foodsToReduce.contains(item) {
                 nutrition.foodsToReduce.append(item)
@@ -90,12 +137,24 @@ enum SkinHealthIntelligenceGuide {
         acneOrDull: Bool
     ) -> [String] {
         var hints: [String] = []
-        hints.append("Script #11 : acné/rosacea = santé interne — pas type de peau ni crèmes")
+        hints.append(AppCopy.tSync(
+            "Script #11 : acné/rosacea = santé interne — pas type de peau ni crèmes",
+            en: "Script #11: acne/rosacea = internal health — not skin type or creams"
+        ))
         if acneOrDull || (skinClarityScore ?? 100) < 65 {
-            hints.append("Filtre douche + alimentation animale dense + reset intestin 8+ sem")
-            hints.append("Pas retinol/skincare — suif/coco crue si topique ; crème soufre ponctuelle boutons")
+            hints.append(AppCopy.tSync(
+                "Filtre douche + alimentation animale dense + reset intestin 8+ sem",
+                en: "Shower filter + dense animal nutrition + gut reset 8+ wk"
+            ))
+            hints.append(AppCopy.tSync(
+                "Pas retinol/skincare — suif/coco crue si topique ; crème soufre ponctuelle boutons",
+                en: "No retinol/skincare — tallow/raw coco if topical; spot sulfur cream on blemishes"
+            ))
         }
-        hints.append("Hydratation via fruits/lait — pas litres d'eau + sachets électrolytes")
+        hints.append(AppCopy.tSync(
+            "Hydratation via fruits/lait — pas litres d'eau + sachets électrolytes",
+            en: "Hydration via fruit/milk — not liters of water + electrolyte packets"
+        ))
         return hints
     }
 

@@ -77,8 +77,9 @@ struct WelcomePlanAnswer: Codable, Equatable {
     var timeValue: String?
     var skipped: Bool = false
 
+    @MainActor
     var displayText: String {
-        if skipped { return "Passer" }
+        if skipped { return AppCopy.t("Passer", en: "Skip") }
         if let timeValue, !timeValue.isEmpty { return timeValue }
         if let textValue, !textValue.isEmpty { return textValue }
         return choiceIds.joined(separator: ", ")
@@ -132,10 +133,18 @@ struct FaceOriginPlan: nonisolated Codable, Identifiable, Equatable, @unchecked 
     /// Cibles journalières adaptées au profil.
     var personalizedTargets: OriginPersonalizedDailyTargets?
 
-    static let noSupplementsPhilosophy = """
-    Zéro pilule, zéro complément isolé. Tout passe par l'alimentation dense, le sommeil, \
-    la lumière, le mouvement et la posture. Les électrolytes viennent des aliments — pas des sachets.
-    """
+    static var noSupplementsPhilosophy: String {
+        AppCopy.tSync(
+            """
+            Zéro pilule, zéro complément isolé. Tout passe par l'alimentation dense, le sommeil, \
+            la lumière, le mouvement et la posture. Les électrolytes viennent des aliments — pas des sachets.
+            """,
+            en: """
+            Zero pills, zero isolated supplements. Everything runs through dense nutrition, sleep, \
+            light, movement, and posture. Electrolytes come from food — not packets.
+            """
+        )
+    }
 
     init(
         id: String,

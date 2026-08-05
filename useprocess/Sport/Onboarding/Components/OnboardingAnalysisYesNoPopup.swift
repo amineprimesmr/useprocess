@@ -31,16 +31,16 @@ struct OnboardingAnalysisYesNoPopup: View {
         subtitle: String? = nil,
         headerImageName: String? = nil,
         question: String,
-        affirmativeTitle: String = "Oui",
-        negativeTitle: String = "Non",
+        affirmativeTitle: String? = nil,
+        negativeTitle: String? = nil,
         popupOffset: CGFloat = 0,
         onAnswer: @escaping (Bool) -> Void
     ) {
         self.subtitle = subtitle
         self.headerImageName = headerImageName
         self.question = question
-        self.affirmativeTitle = affirmativeTitle
-        self.negativeTitle = negativeTitle
+        self.affirmativeTitle = affirmativeTitle ?? OnboardingCopy.t("Oui", en: "Yes")
+        self.negativeTitle = negativeTitle ?? OnboardingCopy.t("Non", en: "No")
         self.popupOffset = popupOffset
         self.onAnswer = onAnswer
     }

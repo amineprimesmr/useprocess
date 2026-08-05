@@ -31,14 +31,14 @@ struct BodyScanReportView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Rapport corporel")
+            Text(AppCopy.t("Rapport corporel", en: "Body report"))
                 .font(.largeTitle.bold())
                 .foregroundStyle(theme.primaryText)
             Text(result.createdAt.formatted(date: .abbreviated, time: .shortened))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
             if result.aiEnhanced {
-                Label("Analyse Claude", systemImage: "sparkles")
+                Label(AppCopy.t("Analyse Claude", en: "Claude analysis"), systemImage: "sparkles")
                     .font(.caption)
                     .foregroundStyle(.orange)
             }
@@ -48,7 +48,7 @@ struct BodyScanReportView: View {
     private var scoreCard: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Score posture")
+                Text(AppCopy.t("Score posture", en: "Posture score"))
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
                 Text("\(result.postureScore)")
@@ -57,7 +57,7 @@ struct BodyScanReportView: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
-                Text("Confiance")
+                Text(AppCopy.t("Confiance", en: "Confidence"))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
                 Text("\(Int(result.confidence * 100)) %")
@@ -71,11 +71,11 @@ struct BodyScanReportView: View {
 
     private var metricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            metricTile("Épaules", result.metrics.shoulderAlignmentScore)
-            metricTile("Bassin", result.metrics.hipAlignmentScore)
-            metricTile("Colonne", result.metrics.spineAlignmentScore)
-            metricTile("Genoux", result.metrics.kneeAlignmentScore)
-            metricTile("Symétrie", result.metrics.leftRightSymmetryScore)
+            metricTile(AppCopy.t("Épaules", en: "Shoulders"), result.metrics.shoulderAlignmentScore)
+            metricTile(AppCopy.t("Bassin", en: "Hips"), result.metrics.hipAlignmentScore)
+            metricTile(AppCopy.t("Colonne", en: "Spine"), result.metrics.spineAlignmentScore)
+            metricTile(AppCopy.t("Genoux", en: "Knees"), result.metrics.kneeAlignmentScore)
+            metricTile(AppCopy.t("Symétrie", en: "Symmetry"), result.metrics.leftRightSymmetryScore)
         }
     }
 
@@ -94,7 +94,7 @@ struct BodyScanReportView: View {
     }
 
     private var zonesSection: some View {
-        section(title: "Zones corporelles") {
+        section(title: AppCopy.t("Zones corporelles", en: "Body zones")) {
             ForEach(result.bodyZones) { zone in
                 HStack {
                     Circle()
@@ -122,7 +122,7 @@ struct BodyScanReportView: View {
     }
 
     private var asymmetrySection: some View {
-        section(title: "Asymétries") {
+        section(title: AppCopy.t("Asymétries", en: "Asymmetries")) {
             ForEach(result.asymmetries, id: \.self) { item in
                 Label(item, systemImage: "arrow.left.and.right")
                     .font(.subheadline)
@@ -132,7 +132,7 @@ struct BodyScanReportView: View {
     }
 
     private var prioritiesSection: some View {
-        section(title: "Priorités musculaires") {
+        section(title: AppCopy.t("Priorités musculaires", en: "Muscle priorities")) {
             ForEach(result.musclePriorities) { item in
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(item.priority). \(item.name)")
@@ -148,12 +148,12 @@ struct BodyScanReportView: View {
     }
 
     private func faceSection(_ face: FaceWellnessMarkers) -> some View {
-        section(title: "Visage & bien-être") {
-            metricTile("Rétention", face.puffinessScore)
-            metricTile("Cernes et fatigue", face.underEyeFatigueScore)
-            metricTile("Peau", face.skinClarityScore)
-            metricTile("Définition", FaceScanIndicators.definitionScore(from: face))
-            metricTile("Charge stress", FaceScanIndicators.stressLoad(from: face))
+        section(title: AppCopy.t("Visage & bien-être", en: "Face & wellness")) {
+            metricTile(AppCopy.t("Rétention", en: "Retention"), face.puffinessScore)
+            metricTile(AppCopy.t("Cernes et fatigue", en: "Under-eye fatigue"), face.underEyeFatigueScore)
+            metricTile(AppCopy.t("Peau", en: "Skin"), face.skinClarityScore)
+            metricTile(AppCopy.t("Définition", en: "Definition"), FaceScanIndicators.definitionScore(from: face))
+            metricTile(AppCopy.t("Charge stress", en: "Stress load"), FaceScanIndicators.stressLoad(from: face))
             ForEach(face.notes, id: \.self) { note in
                 Text("• \(note)")
                     .font(.caption)
@@ -163,7 +163,7 @@ struct BodyScanReportView: View {
     }
 
     private var lifestyleSection: some View {
-        section(title: "Corrélations") {
+        section(title: AppCopy.t("Corrélations", en: "Correlations")) {
             ForEach(result.lifestyleInsights, id: \.self) { insight in
                 Text("• \(insight)")
                     .font(.subheadline)
@@ -173,7 +173,7 @@ struct BodyScanReportView: View {
     }
 
     private var narrativeSection: some View {
-        section(title: "Analyse détaillée") {
+        section(title: AppCopy.t("Analyse détaillée", en: "Detailed analysis")) {
             Text(result.narrativeReport)
                 .font(.subheadline)
                 .foregroundStyle(theme.primaryText)
@@ -190,7 +190,7 @@ struct BodyScanReportView: View {
 
     private var continueButton: some View {
         Button(action: onContinue) {
-            Text("Continuer")
+            Text(AppCopy.continueCTA)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(theme.background)
                 .frame(maxWidth: .infinity)

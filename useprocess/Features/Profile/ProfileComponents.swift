@@ -40,7 +40,7 @@ struct ProfileEmptyHeroSection: View {
                         .font(.system(size: ProfileTheme.emptyHeroIconSize, weight: .regular))
                         .foregroundStyle(ProfileTheme.textSecondary.opacity(0.85))
 
-                    Text("Clique ici pour ajouter une photo de profil")
+                    Text(AppCopy.t("Clique ici pour ajouter une photo de profil", en: "Tap here to add a profile photo"))
                         .font(.system(size: 14))
                         .foregroundStyle(ProfileTheme.textSecondary)
                         .multilineTextAlignment(.center)
@@ -194,7 +194,7 @@ struct ProfileActionButtons: View {
         VStack(spacing: 10) {
             ProfileReferralInteractiveCard()
 
-            ProcessGlassWideButton(title: "Voir les avantages", icon: "gift.fill", action: onReferral)
+            ProcessGlassWideButton(title: AppCopy.t("Voir les avantages", en: "View Benefits"), icon: "gift.fill", action: onReferral)
         }
     }
 }

@@ -33,11 +33,13 @@ struct BiometricAuthStepView: View {
     private let requiredPressDuration: TimeInterval = 4.0
     private let commitmentGreen = Color(red: 0.13, green: 0.98, blue: 0.47)
 
-    private let commitments = [
-        "Tenir mon plan 7 jours sur 7",
-        "Scanner mon visage et suivre mes progrès",
-        "Faire confiance à Process pour m'accompagner"
-    ]
+    private var commitments: [String] {
+        [
+            OnboardingCopy.t("Tenir mon plan 7 jours sur 7", en: "Stick to my plan 7 days a week"),
+            OnboardingCopy.t("Scanner mon visage et suivre mes progrès", en: "Scan my face and track my progress"),
+            OnboardingCopy.t("Faire confiance à Process pour m'accompagner", en: "Trust Process to guide me")
+        ]
+    }
 
     init(onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil, onAuthenticationComplete: ((Bool) -> Void)? = nil) {
         self.onComplete = onComplete
@@ -54,7 +56,7 @@ struct BiometricAuthStepView: View {
                 Spacer()
                     .frame(height: OnboardingConstants.titleTopPaddingFromScreenTop)
 
-                Text("Engage-toi envers toi-même")
+                Text(OnboardingCopy.t("Engage-toi envers toi-même", en: "Commit to yourself"))
                     .font(.system(size: 32, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
                     .multilineTextAlignment(.center)
@@ -62,7 +64,7 @@ struct BiometricAuthStepView: View {
                     .padding(.horizontal, 32)
                     .padding(.bottom, 72)
 
-                Text(OnboardingCopy.text("À partir de ce jour, je m'engage à :", blank: "Sous-titre à personnaliser"))
+                Text(OnboardingCopy.t("À partir de ce jour, je m'engage à :", en: "From this day on, I commit to:"))
                     .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(OnboardingTheme.bodyText)
                     .multilineTextAlignment(.leading)
@@ -86,7 +88,7 @@ struct BiometricAuthStepView: View {
             }
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
         }
-        .alert("Erreur", isPresented: $showError) {
+        .alert(OnboardingCopy.t("Erreur", en: "Error"), isPresented: $showError) {
             Button("OK") {
                 isAuthenticating = false
                 progress = 0.0

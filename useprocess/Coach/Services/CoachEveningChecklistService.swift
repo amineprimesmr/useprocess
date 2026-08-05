@@ -47,9 +47,9 @@ enum CoachEveningChecklistService {
 
     static func messageText(streak: Int) -> String {
         if streak > 0 {
-            return "Salut ! Avant de dormir, fais ta checklist du soir — ça compte pour garder ta streak de \(streak) jour\(streak > 1 ? "s" : "") 🔥"
+            return AppCopy.t("Salut ! Avant de dormir, fais ta checklist du soir — ça compte pour garder ta streak de \(streak) jour\(streak > 1 ? "s" : "") 🔥", en: "Hey! Before bed, complete your evening checklist — it helps maintain your \(streak)-day streak 🔥")
         }
-        return "Salut ! Deux minutes pour ta checklist du soir ? Ça lance ou garde ta streak 🔥"
+        return AppCopy.t("Salut ! Deux minutes pour ta checklist du soir ? Ça lance ou garde ta streak 🔥", en: "Hey! Two minutes for your evening checklist? It starts or maintains your streak 🔥")
     }
 
     private static func ensureTargetConversationId() -> UUID? {

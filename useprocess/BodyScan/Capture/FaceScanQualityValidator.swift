@@ -100,20 +100,26 @@ enum FaceScanQualityValidator {
         case .ok:
             return nil
         case .tooFar:
-            return "Ton visage doit bien remplir le cadre."
+            return AppCopy.tSync(
+                "Ton visage doit bien remplir le cadre.",
+                en: "Your face needs to fill the frame."
+            )
         case .tooClose:
-            return "Recule d'un tout petit peu."
+            return AppCopy.tSync(
+                "Recule d'un tout petit peu.",
+                en: "Move back just a little."
+            )
         }
     }
 
     static func distanceInstruction(for feedback: FaceDistanceFeedback) -> String {
         switch feedback {
         case .ok:
-            return "Parfait. Garde cette distance."
+            return AppCopy.tSync("Parfait. Garde cette distance.", en: "Perfect. Hold this distance.")
         case .tooFar:
-            return "Rapproche-toi de l'iPhone."
+            return AppCopy.tSync("Rapproche-toi de l'iPhone.", en: "Move closer to the iPhone.")
         case .tooClose:
-            return "Éloigne un peu l'iPhone."
+            return AppCopy.tSync("Éloigne un peu l'iPhone.", en: "Move the iPhone a bit farther.")
         }
     }
 }

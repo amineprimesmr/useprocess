@@ -48,12 +48,12 @@ struct CoachEveningChecklistCard: View {
                 Image(systemName: "checklist")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.onboardingAccent)
-                Text("Checklist du soir")
+                Text(AppCopy.t("Checklist du soir", en: "Evening checklist"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
                 Spacer(minLength: 0)
                 if isComplete {
-                    Label("Complet", systemImage: "checkmark.circle.fill")
+                    Label(AppCopy.t("Complet", en: "Complete"), systemImage: "checkmark.circle.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color(red: 0.35, green: 0.78, blue: 0.45))
                 }

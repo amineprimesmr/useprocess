@@ -29,23 +29,36 @@ enum DebloatCardioDayCatalog {
             "\(minutes) min"
         }
 
+        @MainActor
         var prescriptionLine: String {
-            "\(minutes) min · pente \(inclinePercent)% · allure \(paceLabel)"
+            AppCopy.t(
+                "\(minutes) min · pente \(inclinePercent)% · allure \(paceLabel)",
+                en: "\(minutes) min · \(inclinePercent)% incline · \(paceLabel) pace"
+            )
         }
     }
 
+    @MainActor
     static func session(for date: Date = Date()) -> Session {
         _ = date
         let asset = TrainingAssetCatalog.blockAsset(for: "Tapis incline")
             ?? TrainingAssetCatalog.blockAsset(for: "Marche")
+        let pace = String(format: "%.1f", paceKmh)
         return Session(
             id: "cardio-day-incline-walk",
-            title: "Marche inclinée",
-            detail: """
-            \(durationMinutes) min sur tapis · pente \(inclinePercent)% · allure \(String(format: "%.1f", paceKmh)) km/h.
-            Bras libres, pas d’appui sur les barres. Respiration confortable (tu peux parler).
-            Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.
-            """,
+            title: AppCopy.t("Marche inclinée", en: "Incline walk"),
+            detail: AppCopy.t(
+                """
+                \(durationMinutes) min sur tapis · pente \(inclinePercent)% · allure \(pace) km/h.
+                Bras libres, pas d’appui sur les barres. Respiration confortable (tu peux parler).
+                Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine.
+                """,
+                en: """
+                \(durationMinutes) min on a treadmill · \(inclinePercent)% incline · \(pace) km/h pace.
+                Arms free, no resting on the rails. Comfortable breathing (you can talk).
+                At least \(ProcessDebloatValidation.weeklyCardioMinimum)×/week.
+                """
+            ),
             minutes: durationMinutes,
             inclinePercent: inclinePercent,
             paceKmh: paceKmh,
@@ -54,7 +67,11 @@ enum DebloatCardioDayCatalog {
         )
     }
 
+    @MainActor
     static var frequencyCaption: String {
-        "Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine"
+        AppCopy.t(
+            "Minimum \(ProcessDebloatValidation.weeklyCardioMinimum)×/semaine",
+            en: "At least \(ProcessDebloatValidation.weeklyCardioMinimum)×/week"
+        )
     }
 }

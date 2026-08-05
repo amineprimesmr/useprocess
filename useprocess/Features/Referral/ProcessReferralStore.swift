@@ -43,7 +43,7 @@ final class ProcessReferralStore {
 
     var shareMessage: String {
         """
-        Rejoins Process avec mon lien — ton 1er mois à prix réduit, et je gagne 15 € si tu t'inscris :
+        \(AppCopy.t("Rejoins Process avec mon lien — ton 1er mois à prix réduit, et je gagne 15 € si tu t'inscris :", en: "Join Process with my link — your first month is discounted, and I earn $15 when you sign up:"))
         \(referralLink)
         """
     }

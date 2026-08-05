@@ -380,19 +380,19 @@ struct WelcomePlanChatView: View {
         VStack(alignment: .leading, spacing: 12) {
             switch question.kind {
             case .info:
-                chatPrimaryButton("Continuer") {
+                chatPrimaryButton(AppCopy.continueCTA) {
                     await viewModel.submitInfoContinue()
                 }
                 .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("continue"))
 
             case .yesNo:
                 HStack(spacing: 12) {
-                    chatChoiceButton(title: "Oui", centered: true) {
+                    chatChoiceButton(title: AppCopy.yes, centered: true) {
                         await viewModel.submitYesNo(true)
                     }
                     .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("yes"))
 
-                    chatChoiceButton(title: "Non", centered: true) {
+                    chatChoiceButton(title: AppCopy.no, centered: true) {
                         await viewModel.submitYesNo(false)
                     }
                     .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("no"))
@@ -439,7 +439,7 @@ struct WelcomePlanChatView: View {
                     }
                 }
 
-                chatPrimaryButton("Valider", disabled: multiSelection.isEmpty || viewModel.isSubmittingAnswer) {
+                chatPrimaryButton(AppCopy.validate, disabled: multiSelection.isEmpty || viewModel.isSubmittingAnswer) {
                     let selection = multiSelection
                     multiSelection = []
                     await viewModel.submitMultiChoice(selection)
@@ -455,13 +455,13 @@ struct WelcomePlanChatView: View {
                     .padding(.vertical, 4)
                     .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("time_picker"))
 
-                chatPrimaryButton("Continuer") {
+                chatPrimaryButton(AppCopy.continueCTA) {
                     await viewModel.submitTime(timeDraft)
                 }
                 .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("time_continue"))
 
             case .text:
-                TextField("Ta réponse…", text: $textDraft, axis: .vertical)
+                TextField(AppCopy.t("Ta réponse…", en: "Your answer…"), text: $textDraft, axis: .vertical)
                     .lineLimit(2...4)
                     .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize))
                     .foregroundStyle(OnboardingTheme.primaryText)
@@ -475,14 +475,14 @@ struct WelcomePlanChatView: View {
 
                 HStack(spacing: 12) {
                     if question.allowsSkip {
-                        chatChoiceButton(title: "Passer", centered: true) {
+                        chatChoiceButton(title: AppCopy.t("Passer", en: "Skip"), centered: true) {
                             await viewModel.submitText("", skipped: true)
                             textDraft = ""
                         }
                         .onboardingChatAnswerReveal(isRevealed: isAnswerRevealed("skip"))
                     }
 
-                    chatPrimaryButton("Envoyer", disabled: textDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                    chatPrimaryButton(AppCopy.send, disabled: textDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
                         await viewModel.submitText(textDraft)
                         textDraft = ""
                     }
@@ -514,7 +514,9 @@ struct WelcomePlanChatView: View {
     }
 
     private var enterButtonTitle: String {
-        embeddedInMainApp ? "Terminer la configuration" : "Entrer dans Process"
+        embeddedInMainApp
+            ? AppCopy.t("Terminer la configuration", en: "Finish setup")
+            : AppCopy.t("Entrer dans Process", en: "Enter Process")
     }
 
     // MARK: - Buttons

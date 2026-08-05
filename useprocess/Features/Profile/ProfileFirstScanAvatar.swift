@@ -37,7 +37,7 @@ struct ProfileFirstScanAvatar: View {
             Circle()
                 .strokeBorder(theme.cardStroke.opacity(0.55), lineWidth: 0.75)
         }
-        .accessibilityLabel("Premier scan visage")
+        .accessibilityLabel(AppCopy.t("Premier scan visage", en: "First face scan"))
         .onAppear(perform: refresh)
         .onChange(of: scanStore.history.count) { _, _ in
             refresh()

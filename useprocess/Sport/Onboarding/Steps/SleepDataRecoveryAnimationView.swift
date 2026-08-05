@@ -29,11 +29,11 @@ struct SleepDataRecoveryAnimationView: View {
 
                     // Titre
                     VStack(spacing: 16) {
-                        Text("Récupération")
+                        Text(OnboardingCopy.t("Récupération", en: "Recovering"))
                             .font(.system(size: 36, weight: .bold))
                             .foregroundStyle(OnboardingTheme.primaryText)
 
-                        Text("des données")
+                        Text(OnboardingCopy.t("des données", en: "your data"))
                             .font(.system(size: 36, weight: .bold))
                             .foregroundStyle(OnboardingTheme.primaryText)
                     }

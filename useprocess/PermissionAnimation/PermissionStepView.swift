@@ -37,16 +37,19 @@ struct PermissionStepView: View {
         ZStack {
             OnboardingTheme.screenBackground.ignoresSafeArea()
 
-            OnboardingStandardStepLayout("Connecte-toi à", "Santé Apple") {
+            OnboardingStandardStepLayout(
+                OnboardingCopy.t("Connecte-toi à", en: "Connect to"),
+                OnboardingCopy.t("Santé Apple", en: "Apple Health")
+            ) {
                 VStack(spacing: 28) {
                     Image(systemName: "heart.text.square.fill")
                         .font(.system(size: 56))
                         .foregroundStyle(.pink.opacity(0.9))
 
                     Text(
-                        OnboardingCopy.text(
+                        OnboardingCopy.t(
                             "Tes données restent privées et servent uniquement à personnaliser \(AppBranding.name).",
-                            blank: "Description permission à personnaliser"
+                            en: "Your data stays private and is only used to personalize \(AppBranding.name)."
                         )
                     )
                     .font(.system(size: 16, weight: .medium))
@@ -59,7 +62,7 @@ struct PermissionStepView: View {
                         Button {
                             Task { await requestAndContinue(healthKit: true) }
                         } label: {
-                            Text(OnboardingCopy.text("Autoriser l'accès", blank: "Autoriser"))
+                            Text(OnboardingCopy.t("Autoriser l'accès", en: "Allow access"))
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
                                 .frame(maxWidth: .infinity)
@@ -75,7 +78,7 @@ struct PermissionStepView: View {
                         Button {
                             onSkip?() ?? onComplete()
                         } label: {
-                            Text(OnboardingCopy.text("Plus tard", blank: "Ignorer"))
+                            Text(OnboardingCopy.t("Plus tard", en: "Later"))
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(OnboardingTheme.bodyText)
                                 .frame(maxWidth: .infinity)
@@ -99,19 +102,19 @@ struct PermissionStepView: View {
                 iPhoneTint: .gray,
                 buttonTint: .white,
                 initialDelay: 0.4,
-                title: OnboardingCopy.text(
+                title: OnboardingCopy.t(
                     "Reste informé avec\nles notifications",
-                    blank: "Permission\nnotifications"
+                    en: "Stay in the loop with\nnotifications"
                 ),
-                description: OnboardingCopy.text(
-                    AppBranding.replacingProcess(in: "\(AppBranding.name) t'enverra des rappels utiles\npour suivre ta progression."),
-                    blank: "Description permission à personnaliser"
+                description: OnboardingCopy.t(
+                    "\(AppBranding.name) t'enverra des rappels utiles\npour suivre ta progression.",
+                    en: "\(AppBranding.name) will send useful reminders\nto track your progress."
                 ),
                 alertButtons: .two,
                 activeTap: .two,
-                primaryTitle: OnboardingCopy.text("Activer les notifications", blank: "Autoriser"),
+                primaryTitle: OnboardingCopy.t("Activer les notifications", en: "Enable notifications"),
                 primaryAction: { Task { await requestAndContinue(notifications: true) } },
-                secondaryTitle: OnboardingCopy.text("Plus tard", blank: "Ignorer"),
+                secondaryTitle: OnboardingCopy.t("Plus tard", en: "Later"),
                 secondaryAction: { onSkip?() ?? onComplete() }
             )
 

@@ -98,7 +98,7 @@ struct OnboardingProgramCreationStepView: View {
 
             OnboardingProgramCreationHeroPercentage(value: creationViewModel.displayedPercentage)
 
-            Text("Création du programme")
+            Text(OnboardingCopy.t("Création du programme", en: "Building your program"))
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(OnboardingProgramCreationPalette.subtitle)
                 .padding(.top, 10)
@@ -136,9 +136,9 @@ struct OnboardingProgramCreationStepView: View {
     private func popupSubtitle(for kind: OnboardingAnalysisProgressConfig.PopupKind) -> String? {
         switch kind {
         case .healthKit:
-            return "Pour calibrer ton plan personnalisé"
+            return OnboardingCopy.t("Pour calibrer ton plan personnalisé", en: "To calibrate your personal plan")
         case .yesNo:
-            return "Pour pouvoir continuer, précise"
+            return OnboardingCopy.t("Pour pouvoir continuer, précise", en: "To continue, please confirm")
         }
     }
 }

@@ -48,7 +48,7 @@ struct PlanDayChronologicalTimeline: View {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.subheadline.weight(.semibold))
-                Text("Tout valider")
+                Text(AppCopy.t("Tout valider", en: "Complete all"))
                     .font(.subheadline.weight(.semibold))
                 Spacer(minLength: 0)
                 Text("\(coreCompletedCount)/\(checklistTasks.count)")
@@ -69,7 +69,7 @@ struct PlanDayChronologicalTimeline: View {
             }
         }
         .buttonStyle(.processPlain)
-        .accessibilityLabel("Tout valider — \(coreCompletedCount) sur \(checklistTasks.count)")
+        .accessibilityLabel(AppCopy.t("Tout valider — \(coreCompletedCount) sur \(checklistTasks.count)", en: "Complete all — \(coreCompletedCount) of \(checklistTasks.count)"))
     }
 }
 
@@ -119,11 +119,11 @@ struct PlanDebloatGuideSheet: View {
                     .padding()
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Comprendre le debloat")
+            .navigationTitle(AppCopy.t("Comprendre le debloat", en: "Understand debloat"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
         }
@@ -155,11 +155,11 @@ struct PlanResourcesFooter: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
-            PlanHomeSectionHeader(title: "Aller plus loin")
+            PlanHomeSectionHeader(title: PlanHomeSectionKind.resources.title)
 
             resourceLink(
                 sheet: .debloatGuide,
-                title: "Guide debloat & habitudes 24/7",
+                title: AppCopy.t("Guide debloat & habitudes 24/7", en: "Debloat guide & all-day habits"),
                 systemImage: "lightbulb.fill"
             )
         }
@@ -181,7 +181,7 @@ struct PlanContinuousHabitsSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Ces habitudes ne se cochent pas — elles s'appliquent en continu, toute la journée.")
+                    Text(AppCopy.t("Ces habitudes ne se cochent pas — elles s'appliquent en continu, toute la journée.", en: "These habits aren't checked off — they apply continuously, all day."))
                         .font(.subheadline)
                         .foregroundStyle(theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -202,11 +202,11 @@ struct PlanContinuousHabitsSheet: View {
                 .padding()
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Habitudes 24/7")
+            .navigationTitle(AppCopy.t("Habitudes 24/7", en: "All-day habits"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
         }

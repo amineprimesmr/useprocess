@@ -8,18 +8,18 @@ struct ProcessCreatorStudioView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Studio contenu")
+                Text(AppCopy.t("Studio contenu", en: "Content Studio"))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(theme.primaryText)
 
-                Text("Import photo illimité sur le scan. Sur l’écran résultats, un slider te laisse choisir un rendu de Mauvais → Réaliste → Excellent.")
+                Text(AppCopy.t("Import photo illimité sur le scan. Sur l’écran résultats, un slider te laisse choisir un rendu de Mauvais → Réaliste → Excellent.", en: "Unlimited photo import for scans. On the results screen, a slider lets you choose a result from Poor → Realistic → Excellent."))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Rendu par défaut")
+                        Text(AppCopy.t("Rendu par défaut", en: "Default Result"))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(theme.primaryText)
                         Spacer()
@@ -32,11 +32,11 @@ struct ProcessCreatorStudioView: View {
                         .tint(theme.onboardingAccent)
 
                     HStack {
-                        Text("Mauvais")
+                        Text(AppCopy.t("Mauvais", en: "Poor"))
                         Spacer()
-                        Text("Réaliste")
+                        Text(AppCopy.t("Réaliste", en: "Realistic"))
                         Spacer()
-                        Text("Excellent")
+                        Text(AppCopy.t("Excellent", en: "Excellent"))
                     }
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(theme.secondaryText)
@@ -48,7 +48,7 @@ struct ProcessCreatorStudioView: View {
                         .processGlassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
 
-                Text("Astuce : tu peux encore ajuster le slider pendant l’écran résultats, avant de taper Continuer.")
+                Text(AppCopy.t("Astuce : tu peux encore ajuster le slider pendant l’écran résultats, avant de taper Continuer.", en: "Tip: you can still adjust the slider on the results screen before tapping Continue."))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(theme.secondaryText.opacity(0.9))
                     .fixedSize(horizontal: false, vertical: true)
@@ -57,7 +57,7 @@ struct ProcessCreatorStudioView: View {
             .padding(.top, 12)
             .padding(.bottom, 36)
         }
-        .navigationTitle("Studio")
+        .navigationTitle(AppCopy.t("Studio", en: "Studio"))
         .navigationBarTitleDisplayMode(.inline)
         .reportsProfileSubrouteActive(true)
     }
@@ -81,10 +81,10 @@ struct ProcessCreatorStudioHubLink: View {
                         .frame(width: 28)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Studio contenu")
+                        Text(AppCopy.t("Studio contenu", en: "Content Studio"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(theme.primaryText)
-                        Text("Rendu : \(creator.qualityLabel)")
+                        Text(AppCopy.t("Rendu : \(creator.qualityLabel)", en: "Result: \(creator.qualityLabel)"))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(theme.secondaryText)
                     }

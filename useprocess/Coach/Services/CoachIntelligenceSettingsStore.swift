@@ -10,10 +10,10 @@ enum CoachIntelligencePersonality: String, CaseIterable, Identifiable, Codable {
 
     var label: String {
         switch self {
-        case .dataNerd: return "Nerd des données"
+        case .dataNerd: return AppCopy.t("Nerd des données", en: "Data nerd")
         case .guardian: return "Guardian"
-        case .warmGuide: return "Guide bienveillant"
-        case .directCoach: return "Commander"
+        case .warmGuide: return AppCopy.t("Guide bienveillant", en: "Warm guide")
+        case .directCoach: return AppCopy.t("Commander", en: "Direct coach")
         }
     }
 }
@@ -60,8 +60,10 @@ final class CoachIntelligenceSettingsStore {
         return min(100, Int((Double(weeklyMessageCount) / Double(weeklyLimit)) * 100))
     }
 
-    var weeklyUsageLabel: String { "\(weeklyUsagePercent) % utilisés" }
-    var creditsLabel: String { "\(extraCredits) crédit\(extraCredits > 1 ? "s" : "")" }
+    var weeklyUsageLabel: String { AppCopy.t("\(weeklyUsagePercent) % utilisés", en: "\(weeklyUsagePercent)% used") }
+    var creditsLabel: String {
+        AppCopy.t("\(extraCredits) crédit\(extraCredits > 1 ? "s" : "")", en: "\(extraCredits) credit\(extraCredits == 1 ? "" : "s")")
+    }
 
     var canSendCoachMessage: Bool {
         rollWeeklyUsageIfNeeded()
@@ -70,17 +72,17 @@ final class CoachIntelligenceSettingsStore {
     }
 
     var quotaExceededMessage: String {
-        "Limite hebdomadaire atteinte. Réinitialisation \(weeklyResetLabel.lowercased())."
+        AppCopy.t("Limite hebdomadaire atteinte. Réinitialisation \(weeklyResetLabel.lowercased()).", en: "Weekly limit reached. \(weeklyResetLabel).")
     }
 
     var weeklyResetLabel: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.dateFormat = "d MMMM"
         let day = formatter.string(from: weeklyResetAt)
         formatter.dateFormat = "HH:mm"
         let time = formatter.string(from: weeklyResetAt)
-        return "Limite réinitialisée à \(day) à \(time)"
+        return AppCopy.t("Limite réinitialisée à \(day) à \(time)", en: "Limit resets on \(day) at \(time)")
     }
 
     private init() {
@@ -180,7 +182,7 @@ final class CoachIntelligenceSettingsStore {
 
     private static func nextWeeklyReset(from date: Date) -> Date {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = Locale(identifier: "fr_FR")
+        calendar.locale = ProcessAppLanguage.shared.locale
         calendar.firstWeekday = 2
         let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
         return calendar.date(byAdding: .day, value: 7, to: startOfWeek)?

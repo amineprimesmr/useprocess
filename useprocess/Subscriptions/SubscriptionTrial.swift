@@ -18,14 +18,23 @@ struct SubscriptionTrialInfo: Equatable {
         isEligible && days > 0
     }
 
+    @MainActor
     var shortLabel: String {
-        "\(days) jours d'essai gratuits"
+        AppCopy.t(
+            "\(days) jours d'essai gratuits",
+            en: "\(days)-day free trial"
+        )
     }
 
-    func ctaTitle(fallback: String = "Continuer") -> String {
-        isActiveOffer ? "Démarrer mon essai gratuit" : fallback
+    @MainActor
+    func ctaTitle(fallback: String? = nil) -> String {
+        let resolvedFallback = fallback ?? AppCopy.continueCTA
+        return isActiveOffer
+            ? AppCopy.t("Démarrer mon essai gratuit", en: "Start my free trial")
+            : resolvedFallback
     }
 
+    @MainActor
     func ctaSubtitle(
         for plan: SubscriptionBillingPlan,
         displayPrice: String
@@ -34,9 +43,15 @@ struct SubscriptionTrialInfo: Equatable {
         let normalized = displayPrice.trimmingCharacters(in: .whitespacesAndNewlines)
         switch plan {
         case .annual:
-            return "Aucun paiement aujourd'hui, puis \(normalized) /an"
+            return AppCopy.t(
+                "Aucun paiement aujourd'hui, puis \(normalized) /an",
+                en: "No payment today, then \(normalized)/year"
+            )
         case .monthly:
-            return "Aucun paiement aujourd'hui, puis \(normalized)/mois"
+            return AppCopy.t(
+                "Aucun paiement aujourd'hui, puis \(normalized)/mois",
+                en: "No payment today, then \(normalized)/mo"
+            )
         }
     }
 
@@ -52,28 +67,19 @@ struct SubscriptionTrialInfo: Equatable {
 }
 
 enum SubscriptionIntroOfferParser {
+    /// Essais gratuits désactivés — ne jamais parser une intro offer StoreKit / ASC.
     static func trialDays(from product: Product?) -> Int? {
-        guard let offer = product?.subscription?.introductoryOffer,
-              offer.paymentMode == .freeTrial else { return nil }
-        return days(in: offer.period)
+        _ = product
+        return nil
     }
 
     static func trialDays(from storeProduct: StoreProduct?) -> Int? {
-        trialDays(from: storeProduct?.sk2Product)
+        _ = storeProduct
+        return nil
     }
 
     static func days(in period: Product.SubscriptionPeriod) -> Int {
-        switch period.unit {
-        case .day:
-            return max(1, period.value)
-        case .week:
-            return max(1, period.value * 7)
-        case .month:
-            return max(1, period.value * 30)
-        case .year:
-            return max(1, period.value * 365)
-        @unknown default:
-            return max(1, SubscriptionConfiguration.retentionQuickActionTrialDays)
-        }
+        _ = period
+        return 0
     }
 }

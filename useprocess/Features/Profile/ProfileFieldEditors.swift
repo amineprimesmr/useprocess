@@ -55,15 +55,15 @@ struct ProfileNameEditorView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: "Prénom", onDismiss: { dismiss() })
+                ProfileEditorHeader(title: AppCopy.t("Prénom", en: "First Name"), onDismiss: { dismiss() })
 
                 ProfileEditorHero(
-                    headline: "Comment tu t'appelles ? 👋",
-                    subtitle: "C'est le prénom qu'on utilise partout dans Process."
+                    headline: AppCopy.t("Comment tu t'appelles ? 👋", en: "What's your name? 👋"),
+                    subtitle: AppCopy.t("C'est le prénom qu'on utilise partout dans Process.", en: "This is the first name we use throughout Process.")
                 )
 
                 TextField("", text: $name, prompt:
-                    Text("Ton prénom")
+                    Text(AppCopy.t("Ton prénom", en: "Your first name"))
                         .foregroundStyle(ProfileEditTheme.placeholder)
                         .font(.system(size: 28, weight: .bold))
                 )
@@ -80,7 +80,7 @@ struct ProfileNameEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ProfileEditorBottomSaveButton(
-                title: "Enregistrer",
+                title: AppCopy.save,
                 disabled: trimmedName.isEmpty
             ) {
                 Task {
@@ -117,15 +117,15 @@ struct ProfileLastNameEditorView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: "Nom de famille", onDismiss: { dismiss() })
+                ProfileEditorHeader(title: AppCopy.t("Nom de famille", en: "Last Name"), onDismiss: { dismiss() })
 
                 ProfileEditorHero(
-                    headline: "Quel est ton nom ?",
-                    subtitle: "Il apparaît sur ton profil et dans les détails du compte."
+                    headline: AppCopy.t("Quel est ton nom ?", en: "What's your last name?"),
+                    subtitle: AppCopy.t("Il apparaît sur ton profil et dans les détails du compte.", en: "It appears on your profile and in your account details.")
                 )
 
                 TextField("", text: $lastName, prompt:
-                    Text("Ton nom de famille")
+                    Text(AppCopy.t("Ton nom de famille", en: "Your last name"))
                         .foregroundStyle(ProfileEditTheme.placeholder)
                         .font(.system(size: 28, weight: .bold))
                 )
@@ -142,7 +142,7 @@ struct ProfileLastNameEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ProfileEditorBottomSaveButton(
-                title: "Enregistrer",
+                title: AppCopy.save,
                 disabled: trimmedLastName.isEmpty
             ) {
                 Task {
@@ -178,7 +178,7 @@ struct ProfileGenderEditorView: View {
         ZStack {
             VStack(spacing: 0) {
                 ProfileEditorHeader(
-                    title: "Sexe",
+                    title: AppCopy.t("Sexe", en: "Gender"),
                     showsSave: true,
                     onDismiss: { dismiss() },
                     onSave: {
@@ -239,7 +239,7 @@ struct ProfileBirthDateEditorView: View {
         ZStack {
             VStack(spacing: 0) {
                 ProfileEditorHeader(
-                    title: "Date de naissance",
+                    title: AppCopy.t("Date de naissance", en: "Date of Birth"),
                     showsSave: true,
                     onDismiss: { dismiss() },
                     onSave: {
@@ -261,7 +261,7 @@ struct ProfileBirthDateEditorView: View {
                 )
                 .datePickerStyle(.wheel)
                 .labelsHidden()
-                .environment(\.locale, Locale(identifier: "fr_FR"))
+                .environment(\.locale, ProcessAppLanguage.shared.locale)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .accountDetailsGlassRelief()
@@ -301,14 +301,14 @@ struct ProfileBioEditorView: View {
                 )
 
                 ProfileEditorHero(
-                    headline: "Écris quelque chose sur toi 💭",
-                    subtitle: "Ce que tu aimes, ce que tu fais, ou tout ce qui te semble juste."
+                    headline: AppCopy.t("Écris quelque chose sur toi 💭", en: "Write something about yourself 💭"),
+                    subtitle: AppCopy.t("Ce que tu aimes, ce que tu fais, ou tout ce qui te semble juste.", en: "What you like, what you do, or anything that feels right.")
                 )
 
                 TextField(
                     "",
                     text: $bio,
-                    prompt: Text("Ajoute ta bio")
+                    prompt: Text(AppCopy.t("Ajoute ta bio", en: "Add your bio"))
                         .foregroundStyle(ProfileEditTheme.placeholder)
                         .font(.system(size: 22, weight: .bold)),
                     axis: .vertical
@@ -341,7 +341,9 @@ struct ProfileBioEditorView: View {
 
     private var bioCharacterLabel: String {
         let count = bio.count
-        return count <= 1 ? "\(count) caractère" : "\(count) caractères"
+        return count <= 1
+            ? AppCopy.t("\(count) caractère", en: "\(count) character")
+            : AppCopy.t("\(count) caractères", en: "\(count) characters")
     }
 
     private func save() {
@@ -365,15 +367,15 @@ struct ProfileEducationEditorView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: "Éducation", onDismiss: { dismiss() })
+                ProfileEditorHeader(title: AppCopy.t("Éducation", en: "Education"), onDismiss: { dismiss() })
 
                 ProfileEditorHero(
-                    headline: "Où tu étudies? 🎓",
-                    subtitle: "Ton école, ta filière, ou le campus où tu passes tes journées."
+                    headline: AppCopy.t("Où tu étudies? 🎓", en: "Where do you study? 🎓"),
+                    subtitle: AppCopy.t("Ton école, ta filière, ou le campus où tu passes tes journées.", en: "Your school, major, or the campus where you spend your days.")
                 )
 
                 TextField("", text: $education, prompt:
-                    Text("Ajoute ton école")
+                    Text(AppCopy.t("Ajoute ton école", en: "Add your school"))
                         .foregroundStyle(ProfileEditTheme.placeholder)
                         .font(.system(size: 28, weight: .bold))
                 )
@@ -390,7 +392,7 @@ struct ProfileEducationEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ProfileEditorBottomSaveButton(
-                title: "Enregistrer",
+                title: AppCopy.save,
                 disabled: trimmedEducation.isEmpty
             ) {
                 save()
@@ -443,7 +445,7 @@ struct ProfileInterestsEditorView: View {
         ZStack {
             VStack(spacing: 0) {
                 ProfileEditorHeader(
-                    title: "Intérêts",
+                    title: AppCopy.t("Intérêts", en: "Interests"),
                     showsSave: true,
                     onDismiss: { dismiss() },
                     onSave: {
@@ -456,14 +458,14 @@ struct ProfileInterestsEditorView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             ProfileEditorHero(
-                                headline: "Qu'est-ce qui te passionne en ce moment ? ✨",
-                                subtitle: "Musique, mèmes, cueillette de champignons : tout ce qui te passionne. Ajoute le tien si ce n'est pas répertorié."
+                                headline: AppCopy.t("Qu'est-ce qui te passionne en ce moment ? ✨", en: "What are you into right now? ✨"),
+                                subtitle: AppCopy.t("Musique, mèmes, cueillette de champignons : tout ce qui te passionne. Ajoute le tien si ce n'est pas répertorié.", en: "Music, memes, mushroom hunting—anything you're into. Add yours if it's not listed.")
                             )
                             .padding(.bottom, 4)
                         }
 
                         TextField("", text: $searchText, prompt:
-                            Text("Trouve ou ajoute ce que tu aimes...")
+                            Text(AppCopy.t("Trouve ou ajoute ce que tu aimes...", en: "Find or add something you like..."))
                                 .foregroundStyle(ProfileEditTheme.placeholder)
                                 .font(.system(size: 22, weight: .bold))
                         )
@@ -500,7 +502,7 @@ struct ProfileInterestsEditorView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .bottom) {
-            Text("Choisis-en jusqu'à \(ProfileInterestsCatalog.maxSelection)")
+            Text(AppCopy.t("Choisis-en jusqu'à \(ProfileInterestsCatalog.maxSelection)", en: "Choose up to \(ProfileInterestsCatalog.maxSelection)"))
                 .font(.system(size: 13))
                 .foregroundStyle(ProfileEditTheme.textSecondary)
                 .frame(maxWidth: .infinity)

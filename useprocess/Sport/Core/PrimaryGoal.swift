@@ -17,15 +17,16 @@ enum PrimaryGoal: String, Codable, CaseIterable {
     case improveFitness = "Meilleure condition physique"
 
     /// Libellé produit — jamais de framing perte de poids.
+    @MainActor
     var title: String {
         switch self {
-        case .improveSleep: return "Mieux dormir pour dégonfler"
-        case .increaseRecovery: return "Réduire cernes et fatigue"
-        case .boostPerformance: return "Activer drainage et définition"
-        case .optimizeEnergy: return "Limiter le cortisol facial"
-        case .manageWeight: return "Dégonfler mon visage"
-        case .reduceStress: return "Réduire rétention et inflammation"
-        case .improveFitness: return "Affiner mâchoire et ovale"
+        case .improveSleep: return AppCopy.t("Mieux dormir pour dégonfler", en: "Sleep better to debloat")
+        case .increaseRecovery: return AppCopy.t("Réduire cernes et fatigue", en: "Reduce under-eyes & fatigue")
+        case .boostPerformance: return AppCopy.t("Activer drainage et définition", en: "Activate drainage & definition")
+        case .optimizeEnergy: return AppCopy.t("Limiter le cortisol facial", en: "Limit facial cortisol")
+        case .manageWeight: return AppCopy.t("Dégonfler mon visage", en: "Debloat my face")
+        case .reduceStress: return AppCopy.t("Réduire rétention et inflammation", en: "Reduce retention & inflammation")
+        case .improveFitness: return AppCopy.t("Affiner mâchoire et ovale", en: "Refine jawline & face oval")
         }
     }
 
@@ -41,15 +42,44 @@ enum PrimaryGoal: String, Codable, CaseIterable {
         }
     }
 
+    @MainActor
     var description: String {
         switch self {
-        case .improveSleep: return "Améliorer sommeil pour un visage moins gonflé"
-        case .increaseRecovery: return "Mieux récupérer pour réduire cernes et fatigue visible"
-        case .boostPerformance: return "Bouger pour activer drainage et définition faciale"
-        case .optimizeEnergy: return "Stabiliser l’énergie pour limiter le cortisol facial"
-        case .manageWeight: return "Réduire gonflement, rétention d’eau et visage marqué"
-        case .reduceStress: return "Baisser inflammation, sel et tension qui font gonfler"
-        case .improveFitness: return "Retrouver une mâchoire et un ovale plus nets"
+        case .improveSleep:
+            return AppCopy.t(
+                "Améliorer sommeil pour un visage moins gonflé",
+                en: "Improve sleep for a less puffy face"
+            )
+        case .increaseRecovery:
+            return AppCopy.t(
+                "Mieux récupérer pour réduire cernes et fatigue visible",
+                en: "Recover better to reduce visible under-eyes & fatigue"
+            )
+        case .boostPerformance:
+            return AppCopy.t(
+                "Bouger pour activer drainage et définition faciale",
+                en: "Move to activate drainage and facial definition"
+            )
+        case .optimizeEnergy:
+            return AppCopy.t(
+                "Stabiliser l’énergie pour limiter le cortisol facial",
+                en: "Stabilize energy to limit facial cortisol"
+            )
+        case .manageWeight:
+            return AppCopy.t(
+                "Réduire gonflement, rétention d’eau et visage marqué",
+                en: "Reduce puffiness, water retention, and a marked face"
+            )
+        case .reduceStress:
+            return AppCopy.t(
+                "Baisser inflammation, sel et tension qui font gonfler",
+                en: "Lower inflammation, salt, and tension that cause bloating"
+            )
+        case .improveFitness:
+            return AppCopy.t(
+                "Retrouver une mâchoire et un ovale plus nets",
+                en: "Get a sharper jawline and face oval"
+            )
         }
     }
 }

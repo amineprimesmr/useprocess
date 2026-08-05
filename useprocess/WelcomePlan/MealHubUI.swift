@@ -8,9 +8,9 @@ struct MealScoreBreakdownView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            scoreBar(title: "Plan personnalisé", value: scores.protocolFit, color: theme.onboardingAccent)
-            scoreBar(title: "Satiété", value: scores.satiety, color: .green)
-            scoreBar(title: "Anti-gonflement", value: scores.antiBloat, color: .orange)
+            scoreBar(title: AppCopy.t("Plan personnalisé", en: "Personalized plan"), value: scores.protocolFit, color: theme.onboardingAccent)
+            scoreBar(title: AppCopy.t("Satiété", en: "Satiety"), value: scores.satiety, color: .green)
+            scoreBar(title: AppCopy.t("Anti-gonflement", en: "Anti-bloat"), value: scores.antiBloat, color: .orange)
         }
     }
 
@@ -60,7 +60,7 @@ struct MealTimelineTabs: View {
                         HStack(spacing: 6) {
                             Image(systemName: slot.icon)
                                 .font(.caption.weight(.bold))
-                            Text(slot.rawValue)
+                            Text(slot.displayTitle)
                                 .font(.caption.weight(.semibold))
                             if validatedSlots.contains(slot) {
                                 Image(systemName: "checkmark.circle.fill")
@@ -92,10 +92,17 @@ struct MealHistoryCarouselView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HealthHubDesign.sectionHeader("Repas récents", subtitle: "7 derniers jours", theme: theme)
+            HealthHubDesign.sectionHeader(
+                AppCopy.t("Repas récents", en: "Recent meals"),
+                subtitle: AppCopy.t("7 derniers jours", en: "Last 7 days"),
+                theme: theme
+            )
 
             if entries.isEmpty {
-                Text("Valide un repas pour alimenter ton historique.")
+                Text(AppCopy.t(
+                    "Valide un repas pour alimenter ton historique.",
+                    en: "Log a meal to start your history."
+                ))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
             } else {
@@ -124,7 +131,7 @@ private struct MealHistoryChip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(entry.mealSlot.rawValue)
+                Text(entry.mealSlot.displayTitle)
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(theme.onboardingAccent)
                 Spacer()
@@ -134,7 +141,7 @@ private struct MealHistoryChip: View {
                         .foregroundStyle(theme.primaryText)
                 }
             }
-            Text(content.name)
+            Text(content.localizedDisplayName)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
                 .lineLimit(2)
@@ -170,17 +177,24 @@ struct MealShoppingListSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                HealthHubDesign.sectionHeader("Liste courses", subtitle: "\(activeCount) articles", theme: theme)
+                HealthHubDesign.sectionHeader(
+                    AppCopy.t("Liste courses", en: "Grocery list"),
+                    subtitle: AppCopy.t("\(activeCount) articles", en: "\(activeCount) items"),
+                    theme: theme
+                )
                 Spacer()
                 if items.contains(where: \.isChecked) {
-                    Button("Effacer cochés", action: onClearChecked)
+                    Button(AppCopy.t("Effacer cochés", en: "Clear checked"), action: onClearChecked)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.onboardingAccent)
                 }
             }
 
             if items.isEmpty {
-                Text("Ajoute un repas à ta liste depuis une carte repas.")
+                Text(AppCopy.t(
+                    "Ajoute un repas à ta liste depuis une carte repas.",
+                    en: "Add a meal to your list from a meal card."
+                ))
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
             } else {
@@ -232,13 +246,13 @@ struct MealComparisonSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    Text("Compare avant de valider")
+                    Text(AppCopy.t("Compare avant de valider", en: "Compare before confirming"))
                         .font(.headline)
                         .foregroundStyle(theme.primaryText)
 
                     HStack(alignment: .top, spacing: 10) {
-                        compareColumn(title: "Actuel", meal: previous, accent: theme.secondaryText)
-                        compareColumn(title: "Nouveau", meal: candidate, accent: theme.onboardingAccent)
+                        compareColumn(title: AppCopy.t("Actuel", en: "Current"), meal: previous, accent: theme.secondaryText)
+                        compareColumn(title: AppCopy.t("Nouveau", en: "New"), meal: candidate, accent: theme.onboardingAccent)
                     }
 
                     VStack(spacing: 10) {
@@ -246,7 +260,7 @@ struct MealComparisonSheet: View {
                             HapticManager.shared.impact(.medium)
                             onChooseCandidate()
                         } label: {
-                            Text("Choisir le nouveau")
+                            Text(AppCopy.t("Choisir le nouveau", en: "Choose the new one"))
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -259,7 +273,7 @@ struct MealComparisonSheet: View {
                             HapticManager.shared.selection()
                             onKeepPrevious()
                         } label: {
-                            Text("Garder l'actuel")
+                            Text(AppCopy.t("Garder l'actuel", en: "Keep the current one"))
                                 .font(.subheadline.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                         }
@@ -269,11 +283,11 @@ struct MealComparisonSheet: View {
                 .padding(20)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Comparaison")
+            .navigationTitle(AppCopy.t("Comparaison", en: "Comparison"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { onDismiss() }
+                    Button(AppCopy.close) { onDismiss() }
                 }
             }
         }
@@ -287,7 +301,7 @@ struct MealComparisonSheet: View {
             Text(title)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(accent)
-            Text(meal.name)
+            Text(meal.localizedDisplayName)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(theme.primaryText)
             if meal.showsScore {
@@ -296,7 +310,7 @@ struct MealComparisonSheet: View {
                     .foregroundStyle(theme.primaryText)
             }
             ForEach(meal.foodItems.prefix(4)) { item in
-                Text("• \(item.name)")
+                Text("• \(item.ingredientDisplayLine)")
                     .font(.caption2)
                     .foregroundStyle(theme.secondaryText)
             }
@@ -322,16 +336,19 @@ struct MealQuickPickStackView: View {
     var body: some View {
         VStack(spacing: 14) {
             HStack {
-                Text("Mode rapide")
+                Text(AppCopy.t("Mode rapide", en: "Quick mode"))
                     .font(.headline)
                 Spacer()
-                Button("Fermer", action: onDismiss)
+                Button(AppCopy.close, action: onDismiss)
                     .font(.caption.weight(.semibold))
             }
             .foregroundStyle(theme.primaryText)
 
             if index >= meals.count {
-                Text("Plus d'idées — relance une génération.")
+                Text(AppCopy.t(
+                    "Plus d'idées — relance une génération.",
+                    en: "No more ideas — generate again."
+                ))
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             } else {
@@ -349,9 +366,9 @@ struct MealQuickPickStackView: View {
                 }
 
                 HStack(spacing: 24) {
-                    Label("Passer", systemImage: "xmark")
+                    Label(AppCopy.t("Passer", en: "Skip"), systemImage: "xmark")
                         .foregroundStyle(.red.opacity(0.85))
-                    Label("Valider", systemImage: "heart.fill")
+                    Label(AppCopy.validate, systemImage: "heart.fill")
                         .foregroundStyle(.green)
                 }
                 .font(.caption.weight(.semibold))
@@ -404,12 +421,15 @@ struct MealFeedbackSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Comment tu te sens après « \(mealName) » ?")
+                    Text(AppCopy.t(
+                        "Comment tu te sens après « \(mealName) » ?",
+                        en: "How do you feel after “\(mealName)”?"
+                    ))
                         .font(.headline)
                         .foregroundStyle(theme.primaryText)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Note")
+                        Text(AppCopy.t("Note", en: "Rating"))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(theme.secondaryText)
                         HStack(spacing: 8) {
@@ -426,7 +446,7 @@ struct MealFeedbackSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Ressenti")
+                        Text(AppCopy.t("Ressenti", en: "How it felt"))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(theme.secondaryText)
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
@@ -436,7 +456,7 @@ struct MealFeedbackSheet: View {
                                 } label: {
                                     HStack(spacing: 6) {
                                         Image(systemName: option.icon)
-                                        Text(option.rawValue)
+                                        Text(option.displayTitle)
                                     }
                                     .font(.caption.weight(.semibold))
                                     .frame(maxWidth: .infinity)
@@ -449,7 +469,7 @@ struct MealFeedbackSheet: View {
                         }
                     }
 
-                    TextField("Note optionnelle…", text: $note, axis: .vertical)
+                    TextField(AppCopy.t("Note optionnelle…", en: "Optional note…"), text: $note, axis: .vertical)
                         .lineLimit(2...4)
                         .padding(12)
                         .background(theme.cardBackground.opacity(0.55))
@@ -466,7 +486,7 @@ struct MealFeedbackSheet: View {
                         HapticManager.shared.notification(.success)
                         onSubmit()
                     } label: {
-                        Text("Enregistrer")
+                        Text(AppCopy.save)
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -478,11 +498,11 @@ struct MealFeedbackSheet: View {
                 .padding(20)
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Feedback repas")
+            .navigationTitle(AppCopy.t("Feedback repas", en: "Meal feedback"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Plus tard") { onDismiss() }
+                    Button(AppCopy.t("Plus tard", en: "Later")) { onDismiss() }
                 }
             }
         }
@@ -503,7 +523,7 @@ struct MealItemAlternativesBar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Alternatives IA")
+            Text(AppCopy.t("Alternatives IA", en: "AI alternatives"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
 

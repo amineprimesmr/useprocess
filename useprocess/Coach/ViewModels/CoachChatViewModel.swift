@@ -322,12 +322,15 @@ final class CoachChatViewModel {
                   meal.isValid,
                   let plan = WelcomePlanStore.shared.plan,
                   let day = OriginPlanPresenter.todayDay(in: plan) else {
-                errorMessage = "Impossible de valider ce repas pour aujourd'hui."
+                errorMessage = AppCopy.t(
+                    "Impossible de valider ce repas pour aujourd'hui.",
+                    en: "Couldn't log this meal for today."
+                )
                 return
             }
             WelcomePlanStore.shared.saveValidatedMeal(dayId: day.id, meal: meal, slot: meal.timeSlot)
             WelcomePlanStore.shared.clearDraftMeal(dayId: day.id, slot: meal.timeSlot)
-            lastActionFeedback = "✅ Repas ajouté à ton plan."
+            lastActionFeedback = AppCopy.t("✅ Repas ajouté à ton plan.", en: "✅ Meal added to your plan.")
 
         case .saveMealDraft:
             guard let meal = CoachMealMessageDetector.mealContent(from: message.text),
@@ -335,24 +338,28 @@ final class CoachChatViewModel {
                   let plan = WelcomePlanStore.shared.plan,
                   let day = OriginPlanPresenter.todayDay(in: plan) else { return }
             WelcomePlanStore.shared.saveDraftMeal(dayId: day.id, meal: meal, slot: meal.timeSlot)
-            lastActionFeedback = "Suggestion enregistrée."
+            lastActionFeedback = AppCopy.t("Suggestion enregistrée.", en: "Suggestion saved.")
 
         case .modifyMeal:
-            let prompt = action.payload.map { "Je veux ajuster ce repas (\($0)) : " }
-                ?? "Je veux ajuster ce repas : "
+            let prompt = action.payload.map {
+                AppCopy.t("Je veux ajuster ce repas (\($0)) : ", en: "I want to adjust this meal (\($0)): ")
+            } ?? AppCopy.t("Je veux ajuster ce repas : ", en: "I want to adjust this meal: ")
             inputText = prompt
             return
 
         case .anotherMeal:
-            let slot = action.payload ?? "ce créneau"
-            await sendFollowUp("Autre idée de repas pour \(slot).")
+            let slot = action.payload ?? AppCopy.t("ce créneau", en: "this slot")
+            await sendFollowUp(AppCopy.t(
+                "Autre idée de repas pour \(slot).",
+                en: "Another meal idea for \(slot)."
+            ))
 
         case .addToShoppingList:
             guard let meal = CoachMealMessageDetector.mealContent(from: message.text),
                   let plan = WelcomePlanStore.shared.plan,
                   let day = OriginPlanPresenter.todayDay(in: plan) else { return }
             WelcomePlanStore.shared.addMealToShoppingList(meal, dayId: day.id)
-            lastActionFeedback = "Ajouté à la liste de courses."
+            lastActionFeedback = AppCopy.t("Ajouté à la liste de courses.", en: "Added to grocery list.")
 
         case .applyPlanChanges:
             guard let patch = pendingPlanPatches[message.id],
@@ -366,11 +373,14 @@ final class CoachChatViewModel {
             WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
             pendingPlanPatches.removeValue(forKey: message.id)
             lastActionFeedback = changes.isEmpty
-                ? "Programme mis à jour."
+                ? AppCopy.t("Programme mis à jour.", en: "Program updated.")
                 : CoachPlanModificationService.confirmationPrefix(changes: changes).trimmingCharacters(in: .whitespacesAndNewlines)
 
         case .swapWorkout:
-            await sendFollowUp(action.payload ?? "Propose une autre séance adaptée à ma situation aujourd'hui.")
+            await sendFollowUp(action.payload ?? AppCopy.t(
+                "Propose une autre séance adaptée à ma situation aujourd'hui.",
+                en: "Suggest another session that fits my situation today."
+            ))
 
         case .openPlan, .openJournal:
             return
@@ -605,7 +615,7 @@ final class CoachChatViewModel {
         voiceAudioLevels = Array(repeating: 0.06, count: 52)
 
         guard !finalText.isEmpty else {
-            errorMessage = "Aucune voix détectée — réessaie."
+            errorMessage = AppCopy.t("Aucune voix détectée — réessaie.", en: "No voice detected — try again.")
             return false
         }
 

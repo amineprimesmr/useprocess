@@ -64,6 +64,7 @@ struct useprocessApp: App {
     init() {
         // Sync avant tout View / Auth / AppSession — sinon Auth.auth() crashe le cold launch.
         iOS26Stability.configureAtLaunch()
+        ProcessAppLanguage.shared.bootstrap()
         ProcessAudioSession.configureForMixingWithOthers()
         FirebaseBootstrap.configure()
         ProcessAnalytics.configure()

@@ -37,6 +37,10 @@ final class PlanHomeLayoutStore {
 
         orderedSections = Self.normalizedOrder(payload.order)
         hiddenSectionIDs = Set(payload.hidden.filter { PlanHomeSectionKind(rawValue: $0) != nil })
+        // Migration : les repas debloat restent toujours visibles sur l'accueil.
+        if hiddenSectionIDs.remove(PlanHomeSectionKind.nutrition.rawValue) != nil {
+            persist()
+        }
     }
 
     func moveSection(_ section: PlanHomeSectionKind, before target: PlanHomeSectionKind) {

@@ -125,12 +125,19 @@ struct PlanNutritionDaySection: View {
     @State private var selectedEntry: PlanDayMealEntry?
     @State private var showMealIdeasCatalog = false
     @State private var scrollPosition: MealTimeSlot?
+    @State private var mealEntries: [PlanDayMealEntry] = []
 
     private var store: WelcomePlanStore { WelcomePlanStore.shared }
     private var livePlan: FaceOriginPlan { store.plan ?? plan }
 
-    private var entries: [PlanDayMealEntry] {
-        PlanDayMealsProvider.entries(plan: livePlan, day: day, store: store)
+    private var entries: [PlanDayMealEntry] { mealEntries }
+
+    private var mealEntriesRefreshToken: String {
+        let validated = store.plan?.progress.validatedMealsBySlot[day.id] ?? [:]
+        let drafts = store.plan?.progress.draftMealsBySlot[day.id] ?? [:]
+        let validatedKey = validated.keys.sorted().map { "\($0)=\(validated[$0] ?? "")" }.joined(separator: ",")
+        let draftsKey = drafts.keys.sorted().map { "\($0)=\(drafts[$0] ?? "")" }.joined(separator: ",")
+        return "\(day.id)|\(livePlan.nutritionPlanType.rawValue)|\(validatedKey)|\(draftsKey)"
     }
 
     private var focusedMealSlot: MealTimeSlot {
@@ -148,17 +155,19 @@ struct PlanNutritionDaySection: View {
         }
         .task(id: day.id) {
             PlanDayMealsProvider.ensureDefaultDrafts(plan: livePlan, day: day, store: store)
+            reloadMealEntries()
             let target = focusedMealSlot
             if scrollPosition != target {
                 scrollPosition = target
             }
         }
+        .onChange(of: mealEntriesRefreshToken) { _, _ in
+            reloadMealEntries()
+        }
         .onChange(of: entriesValidationToken) { _, _ in
             let target = focusedMealSlot
             guard scrollPosition != target else { return }
-            withAnimation(.smooth(duration: 0.42)) {
-                scrollPosition = target
-            }
+            scrollPosition = target
         }
         .onChange(of: store.plan?.progress.draftMealsBySlot[day.id]) { _, _ in
             refreshSelectedEntryIfNeeded()
@@ -194,7 +203,7 @@ struct PlanNutritionDaySection: View {
     }
 
     private var headerRow: some View {
-        Text("Repas debloat du jour")
+        Text(PlanHomeSectionKind.nutrition.title)
             .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
             .foregroundStyle(theme.primaryText)
     }
@@ -202,7 +211,7 @@ struct PlanNutritionDaySection: View {
     private var mealCarousel: some View {
         PlanMealCoverFlowCarousel(
             entries: entries,
-            previewImageAssets: ProcessDebloatMealLibrary.fullCatalogPreviewImageAssets(),
+            previewImageAssets: ProcessDebloatMealLibrary.homeCatalogPreviewImageAssets,
             hydrationTargetMilliliters: ProcessDailyTargets.hydrationTargetMilliliters,
             selectedDate: selectedDate,
             dayId: day.id,
@@ -225,6 +234,10 @@ struct PlanNutritionDaySection: View {
     private func refreshSelectedEntryIfNeeded() {
         guard let current = selectedEntry else { return }
         selectedEntry = refreshedEntry(current)
+    }
+
+    private func reloadMealEntries() {
+        mealEntries = PlanDayMealsProvider.entries(plan: livePlan, day: day, store: store)
     }
 }
 
@@ -371,8 +384,11 @@ private struct PlanHydrationCarouselCard: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Hydratation \(litersLabel)")
-        .accessibilityHint("Appui long pour ajuster le niveau d'eau")
+        .accessibilityLabel(AppCopy.t("Hydratation \(litersLabel)", en: "Hydration \(litersLabel)"))
+        .accessibilityHint(AppCopy.t(
+            "Appui long pour ajuster le niveau d'eau",
+            en: "Long press to adjust water level"
+        ))
     }
 
     @ViewBuilder
@@ -380,20 +396,20 @@ private struct PlanHydrationCarouselCard: View {
         Button {
             addWater()
         } label: {
-            Label("Ajouter 500 ml", systemImage: "plus.circle")
+            Label(AppCopy.t("Ajouter 500 ml", en: "Add 500 ml"), systemImage: "plus.circle")
         }
 
         if canRemoveWater {
             Button {
                 removeWater()
             } label: {
-                Label("Retirer 500 ml", systemImage: "minus.circle")
+                Label(AppCopy.t("Retirer 500 ml", en: "Remove 500 ml"), systemImage: "minus.circle")
             }
 
             Button(role: .destructive) {
                 resetWater()
             } label: {
-                Label("Remettre à zéro", systemImage: "arrow.counterclockwise")
+                Label(AppCopy.t("Remettre à zéro", en: "Reset to zero"), systemImage: "arrow.counterclockwise")
             }
         }
     }
@@ -493,7 +509,7 @@ private struct PlanHydrationCarouselCard: View {
                 .frame(width: 36, height: 36)
         }
         .processGlassIconButtonStyle()
-        .accessibilityLabel("Ajouter 500 millilitres d'eau")
+        .accessibilityLabel(AppCopy.t("Ajouter 500 millilitres d'eau", en: "Add 500 milliliters of water"))
     }
 
     private func addWater() {
@@ -538,7 +554,7 @@ private struct PlanHydrationCarouselCard: View {
     private func formatLiters(_ milliliters: Int) -> String {
         let liters = Double(milliliters) / 1000.0
         let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 1
@@ -626,7 +642,7 @@ private struct PlanMealCatalogBrowseCard: View {
             onTap()
         } label: {
             VStack(spacing: 12) {
-                Text("Recettes Debloat")
+                Text(AppCopy.t("Recettes Debloat", en: "Debloat recipes"))
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                     .multilineTextAlignment(.center)
@@ -655,11 +671,18 @@ private struct PlanMealCatalogBrowseCard: View {
             width: PlanMealCarouselLayout.cardWidth,
             height: PlanMealCarouselLayout.cardHeight
         )
-        .processGlassButton(in: cardShape)
+        .background {
+            cardShape
+                .fill(.clear)
+                .processGlassEffect(in: cardShape)
+        }
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .mealCatalog, namespace: zoomNamespace)
-        .accessibilityLabel("Ouvrir le catalogue d’aliments pour un visage dégonflé")
+        .accessibilityLabel(AppCopy.t(
+            "Ouvrir le catalogue d’aliments pour un visage dégonflé",
+            en: "Open the food catalog for a less puffy face"
+        ))
     }
 
     @ViewBuilder
@@ -723,7 +746,7 @@ private struct PlanMealCatalogBrowseCard: View {
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(theme.onboardingAccent)
 
-            Text("Voir tout")
+            Text(AppCopy.t("Voir tout", en: "See all"))
                 .font(.caption.weight(.bold))
                 .foregroundStyle(theme.primaryText)
         }
@@ -759,7 +782,7 @@ private struct PlanMealCarouselCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 12) {
-                Text(entry.meal.name)
+                Text(entry.meal.localizedDisplayName)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                     .multilineTextAlignment(.center)
@@ -788,7 +811,11 @@ private struct PlanMealCarouselCard: View {
             width: PlanMealCarouselLayout.cardWidth,
             height: PlanMealCarouselLayout.cardHeight
         )
-        .processGlassButton(in: cardShape)
+        .background {
+            cardShape
+                .fill(.clear)
+                .processGlassEffect(in: cardShape)
+        }
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .mealDetail(entry.slot), namespace: zoomNamespace)

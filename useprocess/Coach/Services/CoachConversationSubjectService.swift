@@ -31,22 +31,40 @@ enum CoachConversationSubjectService {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 8 else { return nil }
 
-        let prompt = """
-        Extrais 2 à 4 mots-clés (substantifs) qui résument le SUJET principal de ce message utilisateur.
-        Pas une question. Pas une phrase complète. Français. Sépare par « · ».
-        Exemples:
-        - « Comment améliorer mon sommeil ? » → Sommeil · Récupération
-        - « J'ai mal au genou » → Genou · Douleur
-        - « Change mon cardio mardi » → Plan · Cardio
+        let prompt: String
+        let system: String
+        if ProcessAppLanguage.prefersEnglish {
+            prompt = """
+            Extract 2 to 4 keywords (nouns) that summarize the main TOPIC of this user message.
+            Not a question. Not a full sentence. American English. Separate with “ · ”.
+            Examples:
+            - “How can I improve my sleep?” → Sleep · Recovery
+            - “My knee hurts” → Knee · Pain
+            - “Change my Tuesday cardio” → Plan · Cardio
 
-        Message:
-        \(trimmed)
-        """
+            Message:
+            \(trimmed)
+            """
+            system = "Reply only with keywords separated by ·, with no final punctuation."
+        } else {
+            prompt = """
+            Extrais 2 à 4 mots-clés (substantifs) qui résument le SUJET principal de ce message utilisateur.
+            Pas une question. Pas une phrase complète. Français. Sépare par « · ».
+            Exemples:
+            - « Comment améliorer mon sommeil ? » → Sommeil · Récupération
+            - « J'ai mal au genou » → Genou · Douleur
+            - « Change mon cardio mardi » → Plan · Cardio
+
+            Message:
+            \(trimmed)
+            """
+            system = "Tu réponds uniquement par des mots-clés séparés par ·, sans ponctuation finale."
+        }
 
         do {
             let raw = try await CoachAPITransport.complete(
                 task: .programSummary,
-                system: "Tu réponds uniquement par des mots-clés séparés par ·, sans ponctuation finale.",
+                system: system,
                 userText: prompt,
                 model: ClaudeModel.preferred(for: .programSummary),
                 maxTokens: 32

@@ -315,7 +315,7 @@ private struct CoachCameraCaptureGlassButton: View {
         }
         .buttonStyle(.processPlain)
         .modifier(CoachCameraGlassCircleModifier(diameter: outerSize))
-        .accessibilityLabel("Prendre une photo")
+        .accessibilityLabel(AppCopy.t("Prendre une photo", en: "Take a photo"))
     }
 }
 
@@ -357,7 +357,9 @@ private struct CoachCameraGlassButton: View {
         }
         .buttonStyle(.processPlain)
         .modifier(CoachCameraGlassCircleModifier(diameter: size))
-        .accessibilityLabel(systemName == "photo.on.rectangle" ? "Galerie" : "Retour")
+        .accessibilityLabel(systemName == "photo.on.rectangle"
+                            ? AppCopy.t("Galerie", en: "Photo library")
+                            : AppCopy.back)
     }
 }
 

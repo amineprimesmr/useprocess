@@ -8,8 +8,8 @@ enum CoachAttachmentOption: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .camera: "Caméra"
-        case .photos: "Photos"
+        case .camera: AppCopy.t("Caméra", en: "Camera")
+        case .photos: AppCopy.t("Photos", en: "Photos")
         }
     }
 

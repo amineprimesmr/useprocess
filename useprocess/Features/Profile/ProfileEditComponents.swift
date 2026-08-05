@@ -7,26 +7,29 @@ enum AccountConfirmation: Identifiable {
 
     var id: Self { self }
 
+    @MainActor
     var title: String {
         switch self {
-        case .logout: return "Se déconnecter ?"
-        case .deleteAccount: return "Supprimer le compte ?"
+        case .logout: return AppCopy.t("Se déconnecter ?", en: "Log Out?")
+        case .deleteAccount: return AppCopy.t("Supprimer le compte ?", en: "Delete Account?")
         }
     }
 
+    @MainActor
     var message: String {
         switch self {
         case .logout:
-            return "Tu pourras te reconnecter à tout moment."
+            return AppCopy.t("Tu pourras te reconnecter à tout moment.", en: "You can log back in at any time.")
         case .deleteAccount:
-            return "Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process."
+            return AppCopy.t("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.", en: "This action is permanent. All your data will be erased and you'll return to the beginning of Process.")
         }
     }
 
+    @MainActor
     var confirmTitle: String {
         switch self {
-        case .logout: return "Se déconnecter"
-        case .deleteAccount: return "Supprimer le compte"
+        case .logout: return AppCopy.t("Se déconnecter", en: "Log Out")
+        case .deleteAccount: return AppCopy.t("Supprimer le compte", en: "Delete Account")
         }
     }
 }
@@ -64,7 +67,7 @@ struct ProfileEditorHeader: View {
 
                 if showsSave, let onSave {
                     Button(action: onSave) {
-                        Text("Enregistrer")
+                        Text(AppCopy.save)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
                             .padding(.horizontal, 18)
@@ -308,13 +311,13 @@ struct AccountDetailsGlassHeader: View {
                         .padding(.vertical, 10)
                 }
                 .processGlassButton(in: Capsule())
-                .accessibilityLabel("Fermer")
+                .accessibilityLabel(AppCopy.close)
 
                 Spacer()
 
                 if showsSave, let onSave {
                     Button(action: onSave) {
-                        Text("Enregistrer")
+                        Text(AppCopy.save)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
                             .padding(.horizontal, 18)
@@ -361,8 +364,8 @@ struct AccountDetailsAvatarSection: View {
                 .clipShape(Circle())
             }
             .buttonStyle(.processPlain)
-            .accessibilityLabel("Photo de profil")
-            .accessibilityHint("Modifier la photo")
+            .accessibilityLabel(AppCopy.t("Photo de profil", en: "Profile Photo"))
+            .accessibilityHint(AppCopy.t("Modifier la photo", en: "Edit photo"))
 
             Text(displayName)
                 .font(.system(size: 20, weight: .semibold))
@@ -452,8 +455,8 @@ struct AccountDeleteAnimatedButton: View {
                 destination: 28
             ),
             customAction: CustomDeleteAction(
-                confirmTitle: "Supprimer le compte",
-                cancelTitle: "Annuler",
+                confirmTitle: AppCopy.t("Supprimer le compte", en: "Delete Account"),
+                cancelTitle: AppCopy.cancel,
                 background: .red,
                 foreground: .white
             )
@@ -464,18 +467,18 @@ struct AccountDeleteAnimatedButton: View {
                     .foregroundStyle(.red)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("Supprimer le compte ?")
+                Text(AppCopy.t("Supprimer le compte ?", en: "Delete Account?"))
                     .font(.title2.bold())
                     .foregroundStyle(Color.primary)
 
-                Text("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.")
+                Text(AppCopy.t("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.", en: "This action is permanent. All your data will be erased and you'll return to the beginning of Process."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.bottom, 10)
         } label: {
-            Text("Supprimer le compte")
+            Text(AppCopy.t("Supprimer le compte", en: "Delete Account"))
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.red)
                 .frame(maxWidth: .infinity)

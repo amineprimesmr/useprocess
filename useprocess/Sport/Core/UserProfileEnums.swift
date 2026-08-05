@@ -15,6 +15,18 @@ enum StressLevel: String, CaseIterable, Codable, Equatable {
     case high = "Élevé"
     case veryHigh = "Très élevé"
 
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .veryLow: return AppCopy.t("Très faible", en: "Very low")
+        case .low: return AppCopy.t("Faible", en: "Low")
+        case .moderate: return AppCopy.t("Modéré", en: "Moderate")
+        case .high: return AppCopy.t("Élevé", en: "High")
+        case .veryHigh: return AppCopy.t("Très élevé", en: "Very high")
+        }
+    }
+
     var adjustment: Double {
         switch self {
         case .veryLow: return -5.0 // -5 min
@@ -33,6 +45,18 @@ enum Chronotype: String, CaseIterable, Codable, Equatable {
     case intermediate = "Intermédiaire"
     case late = "Tardif"
     case veryLate = "Très tardif"
+
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .veryEarly: return AppCopy.t("Très matinal", en: "Very early bird")
+        case .early: return AppCopy.t("Matinal", en: "Early bird")
+        case .intermediate: return AppCopy.t("Intermédiaire", en: "Intermediate")
+        case .late: return AppCopy.t("Tardif", en: "Night owl")
+        case .veryLate: return AppCopy.t("Très tardif", en: "Very late owl")
+        }
+    }
 
     var adjustment: Double {
         switch self {
@@ -85,16 +109,56 @@ enum StrainCategory: String, CaseIterable, Codable, Equatable {
 
     var physiologicalImpact: String {
         switch self {
-        case .totalRest: return "Besoin réduit car peu de dépense énergétique"
-        case .veryLow: return "Activité minimale, récupération rapide"
-        case .low: return "Niveau d'activité normal de la baseline"
-        case .moderateLow: return "Légère fatigue accumulée"
-        case .moderate: return "Début de fatigue musculaire"
-        case .moderateHigh: return "Fatigue significative, micro-déchirures musculaires"
-        case .high: return "Fatigue musculaire importante, inflammation"
-        case .veryHigh: return "Micro-lésions musculaires, cortisol élevé, stress oxydatif"
-        case .extreme: return "Épuisement des réserves énergétiques, glycogène bas"
-        case .maximum: return "Dommages musculaires majeurs, inflammation systémique"
+        case .totalRest:
+            return AppCopy.tSync(
+                "Besoin réduit car peu de dépense énergétique",
+                en: "Lower needs due to low energy expenditure"
+            )
+        case .veryLow:
+            return AppCopy.tSync(
+                "Activité minimale, récupération rapide",
+                en: "Minimal activity, fast recovery"
+            )
+        case .low:
+            return AppCopy.tSync(
+                "Niveau d'activité normal de la baseline",
+                en: "Normal baseline activity level"
+            )
+        case .moderateLow:
+            return AppCopy.tSync(
+                "Légère fatigue accumulée",
+                en: "Slight accumulated fatigue"
+            )
+        case .moderate:
+            return AppCopy.tSync(
+                "Début de fatigue musculaire",
+                en: "Early muscle fatigue"
+            )
+        case .moderateHigh:
+            return AppCopy.tSync(
+                "Fatigue significative, micro-déchirures musculaires",
+                en: "Significant fatigue, muscle micro-tears"
+            )
+        case .high:
+            return AppCopy.tSync(
+                "Fatigue musculaire importante, inflammation",
+                en: "Significant muscle fatigue, inflammation"
+            )
+        case .veryHigh:
+            return AppCopy.tSync(
+                "Micro-lésions musculaires, cortisol élevé, stress oxydatif",
+                en: "Muscle micro-damage, elevated cortisol, oxidative stress"
+            )
+        case .extreme:
+            return AppCopy.tSync(
+                "Épuisement des réserves énergétiques, glycogène bas",
+                en: "Depleted energy stores, low glycogen"
+            )
+        case .maximum:
+            return AppCopy.tSync(
+                "Dommages musculaires majeurs, inflammation systémique",
+                en: "Major muscle damage, systemic inflammation"
+            )
         }
     }
 }
@@ -106,12 +170,13 @@ enum ActivityLevel: String, CaseIterable, Codable, Equatable {
     case high = "high"
     case veryHigh = "veryHigh"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .low: return "Faible"
-        case .moderate: return "Modéré"
-        case .high: return "Élevé"
-        case .veryHigh: return "Très élevé"
+        case .low: return AppCopy.t("Faible", en: "Low")
+        case .moderate: return AppCopy.t("Modéré", en: "Moderate")
+        case .high: return AppCopy.t("Élevé", en: "High")
+        case .veryHigh: return AppCopy.t("Très élevé", en: "Very high")
         }
     }
 }
@@ -123,12 +188,13 @@ enum FitnessLevel: String, CaseIterable, Codable, Equatable {
     case advanced = "advanced"
     case expert = "expert"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .beginner: return "Débutant"
-        case .intermediate: return "Intermédiaire"
-        case .advanced: return "Avancé"
-        case .expert: return "Expert"
+        case .beginner: return AppCopy.t("Débutant", en: "Beginner")
+        case .intermediate: return AppCopy.t("Intermédiaire", en: "Intermediate")
+        case .advanced: return AppCopy.t("Avancé", en: "Advanced")
+        case .expert: return AppCopy.t("Expert", en: "Expert")
         }
     }
 }
@@ -142,14 +208,15 @@ enum FitnessGoalType: String, CaseIterable, Codable, Equatable {
     case flexibility = "flexibility"
     case generalHealth = "generalHealth"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .weightLoss: return "Perte de poids"
-        case .muscleGain: return "Prise de muscle"
-        case .endurance: return "Endurance"
-        case .strength: return "Force"
-        case .flexibility: return "Flexibilité"
-        case .generalHealth: return "Santé générale"
+        case .weightLoss: return AppCopy.t("Perte de poids", en: "Weight loss")
+        case .muscleGain: return AppCopy.t("Prise de muscle", en: "Muscle gain")
+        case .endurance: return AppCopy.t("Endurance", en: "Endurance")
+        case .strength: return AppCopy.t("Force", en: "Strength")
+        case .flexibility: return AppCopy.t("Flexibilité", en: "Flexibility")
+        case .generalHealth: return AppCopy.t("Santé générale", en: "General health")
         }
     }
 }
@@ -196,12 +263,13 @@ enum WorkoutIntensity: String, CaseIterable, Codable, Equatable {
     case high = "high"
     case veryHigh = "veryHigh"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .low: return "Faible"
-        case .moderate: return "Modérée"
-        case .high: return "Élevée"
-        case .veryHigh: return "Très élevée"
+        case .low: return AppCopy.t("Faible", en: "Low")
+        case .moderate: return AppCopy.t("Modérée", en: "Moderate")
+        case .high: return AppCopy.t("Élevée", en: "High")
+        case .veryHigh: return AppCopy.t("Très élevée", en: "Very high")
         }
     }
 }
@@ -217,16 +285,17 @@ enum Equipment: String, CaseIterable, Codable, Equatable {
     case bike = "bike"
     case fullGym = "fullGym"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .none: return "Aucun"
-        case .dumbbells: return "Haltères"
-        case .barbell: return "Barre"
-        case .resistanceBands: return "Élastiques"
-        case .yogaMat: return "Tapis de yoga"
-        case .treadmill: return "Tapis de course"
-        case .bike: return "Vélo"
-        case .fullGym: return "Salle complète"
+        case .none: return AppCopy.t("Aucun", en: "None")
+        case .dumbbells: return AppCopy.t("Haltères", en: "Dumbbells")
+        case .barbell: return AppCopy.t("Barre", en: "Barbell")
+        case .resistanceBands: return AppCopy.t("Élastiques", en: "Resistance bands")
+        case .yogaMat: return AppCopy.t("Tapis de yoga", en: "Yoga mat")
+        case .treadmill: return AppCopy.t("Tapis de course", en: "Treadmill")
+        case .bike: return AppCopy.t("Vélo", en: "Bike")
+        case .fullGym: return AppCopy.t("Salle complète", en: "Full gym")
         }
     }
 }
@@ -237,11 +306,12 @@ enum Sex: String, CaseIterable, Codable, Equatable {
     case female = "female"
     case other = "other"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .male: return "Homme"
-        case .female: return "Femme"
-        case .other: return "Autre"
+        case .male: return AppCopy.t("Homme", en: "Male")
+        case .female: return AppCopy.t("Femme", en: "Female")
+        case .other: return AppCopy.t("Autre", en: "Other")
         }
     }
 }
@@ -252,11 +322,12 @@ enum UserStatus: String, CaseIterable, Codable {
     case sick = "sick"
     case paused = "paused"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .active: return "Actif"
-        case .sick: return "Malade/Blessé"
-        case .paused: return "En pause"
+        case .active: return AppCopy.t("Actif", en: "Active")
+        case .sick: return AppCopy.t("Malade/Blessé", en: "Sick / Injured")
+        case .paused: return AppCopy.t("En pause", en: "Paused")
         }
     }
 
@@ -350,15 +421,16 @@ enum DayOfWeek: String, CaseIterable, Codable, Equatable {
     case saturday = "saturday"
     case sunday = "sunday"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .monday: return "Lundi"
-        case .tuesday: return "Mardi"
-        case .wednesday: return "Mercredi"
-        case .thursday: return "Jeudi"
-        case .friday: return "Vendredi"
-        case .saturday: return "Samedi"
-        case .sunday: return "Dimanche"
+        case .monday: return AppCopy.t("Lundi", en: "Monday")
+        case .tuesday: return AppCopy.t("Mardi", en: "Tuesday")
+        case .wednesday: return AppCopy.t("Mercredi", en: "Wednesday")
+        case .thursday: return AppCopy.t("Jeudi", en: "Thursday")
+        case .friday: return AppCopy.t("Vendredi", en: "Friday")
+        case .saturday: return AppCopy.t("Samedi", en: "Saturday")
+        case .sunday: return AppCopy.t("Dimanche", en: "Sunday")
         }
     }
 
@@ -400,13 +472,14 @@ enum WorkType: String, CaseIterable, Codable, Equatable {
     case field = "field"
     case shift = "shift"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .office: return "Bureau"
-        case .remote: return "Télétravail"
-        case .hybrid: return "Hybride"
-        case .field: return "Terrain"
-        case .shift: return "Posté"
+        case .office: return AppCopy.t("Bureau", en: "Office")
+        case .remote: return AppCopy.t("Télétravail", en: "Remote")
+        case .hybrid: return AppCopy.t("Hybride", en: "Hybrid")
+        case .field: return AppCopy.t("Terrain", en: "Field")
+        case .shift: return AppCopy.t("Posté", en: "Shift work")
         }
     }
 }
@@ -425,14 +498,15 @@ enum DietType: String, CaseIterable, Codable, Equatable {
     case paleo = "paleo"
     case mediterranean = "mediterranean"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .balanced: return "Équilibré"
-        case .vegetarian: return "Végétarien"
-        case .vegan: return "Végan"
-        case .keto: return "Keto"
-        case .paleo: return "Paléo"
-        case .mediterranean: return "Méditerranéen"
+        case .balanced: return AppCopy.t("Équilibré", en: "Balanced")
+        case .vegetarian: return AppCopy.t("Végétarien", en: "Vegetarian")
+        case .vegan: return AppCopy.t("Végan", en: "Vegan")
+        case .keto: return AppCopy.t("Keto", en: "Keto")
+        case .paleo: return AppCopy.t("Paléo", en: "Paleo")
+        case .mediterranean: return AppCopy.t("Méditerranéen", en: "Mediterranean")
         }
     }
 }
@@ -444,12 +518,13 @@ enum SmokingStatus: String, CaseIterable, Codable, Equatable {
     case current = "current"
     case occasional = "occasional"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .never: return "Jamais"
-        case .former: return "Ancien fumeur"
-        case .current: return "Fumeur actuel"
-        case .occasional: return "Occasionnel"
+        case .never: return AppCopy.t("Jamais", en: "Never")
+        case .former: return AppCopy.t("Ancien fumeur", en: "Former smoker")
+        case .current: return AppCopy.t("Fumeur actuel", en: "Current smoker")
+        case .occasional: return AppCopy.t("Occasionnel", en: "Occasional")
         }
     }
 }
@@ -461,12 +536,13 @@ enum AlcoholConsumption: String, CaseIterable, Codable, Equatable {
     case moderate = "moderate"
     case heavy = "heavy"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .none: return "Aucune"
-        case .light: return "Légère"
-        case .moderate: return "Modérée"
-        case .heavy: return "Importante"
+        case .none: return AppCopy.t("Aucune", en: "None")
+        case .light: return AppCopy.t("Légère", en: "Light")
+        case .moderate: return AppCopy.t("Modérée", en: "Moderate")
+        case .heavy: return AppCopy.t("Importante", en: "Heavy")
         }
     }
 }
@@ -496,15 +572,16 @@ enum WorkDay: String, CaseIterable, Codable, Equatable {
     case saturday = "saturday"
     case sunday = "sunday"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .monday: return "Lundi"
-        case .tuesday: return "Mardi"
-        case .wednesday: return "Mercredi"
-        case .thursday: return "Jeudi"
-        case .friday: return "Vendredi"
-        case .saturday: return "Samedi"
-        case .sunday: return "Dimanche"
+        case .monday: return AppCopy.t("Lundi", en: "Monday")
+        case .tuesday: return AppCopy.t("Mardi", en: "Tuesday")
+        case .wednesday: return AppCopy.t("Mercredi", en: "Wednesday")
+        case .thursday: return AppCopy.t("Jeudi", en: "Thursday")
+        case .friday: return AppCopy.t("Vendredi", en: "Friday")
+        case .saturday: return AppCopy.t("Samedi", en: "Saturday")
+        case .sunday: return AppCopy.t("Dimanche", en: "Sunday")
         }
     }
 }
@@ -528,13 +605,14 @@ enum MaritalStatus: String, CaseIterable, Codable, Equatable {
     case widowed = "widowed"
     case cohabiting = "cohabiting"
 
+    @MainActor
     var displayName: String {
         switch self {
-        case .single: return "Célibataire"
-        case .married: return "Marié(e)"
-        case .divorced: return "Divorcé(e)"
-        case .widowed: return "Veuf/Veuve"
-        case .cohabiting: return "En concubinage"
+        case .single: return AppCopy.t("Célibataire", en: "Single")
+        case .married: return AppCopy.t("Marié(e)", en: "Married")
+        case .divorced: return AppCopy.t("Divorcé(e)", en: "Divorced")
+        case .widowed: return AppCopy.t("Veuf/Veuve", en: "Widowed")
+        case .cohabiting: return AppCopy.t("En concubinage", en: "Cohabiting")
         }
     }
 }
@@ -546,6 +624,18 @@ enum SleepQuality: String, CaseIterable, Codable, Equatable {
     case fair = "Correct"
     case poor = "Mauvais"
     case veryPoor = "Très mauvais"
+
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .excellent: return AppCopy.t("Excellent", en: "Excellent")
+        case .good: return AppCopy.t("Bon", en: "Good")
+        case .fair: return AppCopy.t("Correct", en: "Fair")
+        case .poor: return AppCopy.t("Mauvais", en: "Poor")
+        case .veryPoor: return AppCopy.t("Très mauvais", en: "Very poor")
+        }
+    }
 
     var color: Color {
         switch self {

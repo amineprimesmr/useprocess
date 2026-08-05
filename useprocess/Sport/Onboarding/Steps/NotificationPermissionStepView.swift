@@ -31,7 +31,9 @@ struct NotificationPermissionStepView: View {
                 Spacer()
                     .frame(height: OnboardingConstants.backOnlyContentTopInset)
 
-                (Text("Tu recevras un rappel ") + Text("important").foregroundColor(OnboardingTheme.accentHighlight) + Text(" de Process"))
+                (Text(OnboardingCopy.t("Tu recevras un rappel ", en: "You'll get an "))
+                    + Text(OnboardingCopy.t("important", en: "important")).foregroundColor(OnboardingTheme.accentHighlight)
+                    + Text(OnboardingCopy.t(" de Process", en: " reminder from Process")))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
                     .multilineTextAlignment(.center)
@@ -61,7 +63,7 @@ struct NotificationPermissionStepView: View {
                                 )
                                 .scaleEffect(0.8)
                         }
-                        Text("CONTINUER")
+                        Text(OnboardingCopy.continueCTAUpper)
                             .font(.system(size: 22, weight: .black))
                     }
                     .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))

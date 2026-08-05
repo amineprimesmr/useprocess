@@ -52,7 +52,10 @@ final class OriginMealSuggestionViewModel {
         phase = .loading
 
         guard ClaudeConfiguration.isConfigured else {
-            errorMessage = "Coach IA indisponible — configure l'API Claude."
+            errorMessage = AppCopy.t(
+                "Coach IA indisponible — configure l'API Claude.",
+                en: "AI coach unavailable — configure the Claude API."
+            )
             phase = .idle
             return
         }
@@ -93,7 +96,10 @@ final class OriginMealSuggestionViewModel {
                 await revealActions()
             }
         } catch {
-            errorMessage = "Impossible de générer une idée. Réessaie."
+            errorMessage = AppCopy.t(
+                "Impossible de générer une idée. Réessaie.",
+                en: "Couldn’t generate an idea. Try again."
+            )
             phase = .idle
         }
     }
@@ -118,7 +124,7 @@ final class OriginMealSuggestionViewModel {
             )
             phase = .quickPick(meals)
         } catch {
-            errorMessage = "Mode rapide indisponible."
+            errorMessage = AppCopy.t("Mode rapide indisponible.", en: "Quick mode unavailable.")
             phase = .idle
         }
     }
@@ -150,7 +156,7 @@ final class OriginMealSuggestionViewModel {
             phase = .suggestion(content)
             await revealActions()
         } catch {
-            errorMessage = "Analyse photo impossible."
+            errorMessage = AppCopy.t("Analyse photo impossible.", en: "Photo analysis failed.")
             phase = .idle
         }
     }
@@ -388,7 +394,10 @@ struct OriginMealSuggestionCard: View {
         if let meal = store.validatedMealContent(for: day.id) {
             validatedContent(meal)
         } else {
-            Text("Aucun repas enregistré pour ce jour.")
+            Text(AppCopy.t(
+                "Aucun repas enregistré pour ce jour.",
+                en: "No meal logged for this day."
+            ))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }
@@ -401,13 +410,13 @@ struct OriginMealSuggestionCard: View {
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }
-        askMealButton("Générer un repas")
+        askMealButton(AppCopy.t("Générer un repas", en: "Generate a meal"))
     }
 
     private var loadingContent: some View {
         HStack(spacing: 8) {
             ProgressView().controlSize(.small)
-            Text("Le coach prépare ton repas…")
+            Text(AppCopy.t("Le coach prépare ton repas…", en: "Your coach is preparing your meal…"))
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
         }
@@ -469,13 +478,13 @@ struct OriginMealSuggestionCard: View {
 
             if isEditable {
                 VStack(alignment: .leading, spacing: 8) {
-                    Button("Feedback") {
+                    Button(AppCopy.t("Feedback", en: "Feedback")) {
                         showFeedback = true
                     }
                     .font(.caption.weight(.semibold))
 
                     HStack(spacing: 8) {
-                        compactMealButton("Modifier le repas", icon: "slider.horizontal.3") {
+                        compactMealButton(AppCopy.t("Modifier le repas", en: "Edit meal"), icon: "slider.horizontal.3") {
                             Task {
                                 await viewModel.requestMeal(
                                     plan: livePlan,
@@ -487,7 +496,7 @@ struct OriginMealSuggestionCard: View {
                             }
                         }
 
-                        compactMealButton("Nouveau repas", icon: "sparkles") {
+                        compactMealButton(AppCopy.t("Nouveau repas", en: "New meal"), icon: "sparkles") {
                             store.clearValidatedMeal(dayId: day.id, slot: selectedSlot)
                             store.clearDraftMeal(dayId: day.id, slot: selectedSlot)
                             viewModel.resetToIdle()
@@ -549,7 +558,7 @@ struct OriginMealSuggestionCard: View {
                                 mode: .modifyItem(
                                     current: content,
                                     item: item,
-                                    instruction: "Remplacer par \(alt)"
+                                    instruction: AppCopy.t("Remplacer par \(alt)", en: "Replace with \(alt)")
                                 )
                             )
                         }

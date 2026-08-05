@@ -41,7 +41,7 @@ struct PlanDashboardView: View {
                 selectedSection: $selectedSection,
                 pageSection: .plan
             ) {
-                LazyVStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 24) {
                     PlanHomeTopChrome(
                         selectedSection: $selectedSection,
                         selectedDate: $selectedPlanDate,
@@ -53,7 +53,7 @@ struct PlanDashboardView: View {
                     planContent
                 }
                 .padding()
-                .padding(.bottom, 24)
+                .padding(.bottom, ProcessIGTabMetrics.tabBarOverlayClearance + 12)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
@@ -70,17 +70,13 @@ struct PlanDashboardView: View {
                 }
                 refreshPlanHealthMetrics()
             }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active, isTabActive else { return }
+                refreshPlanHealthMetrics()
+            }
             .onChange(of: livePlan?.calendar.totalDays) { _, _ in
                 if let plan = livePlan {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
-                }
-            }
-            .task(id: isPlanRuntimeActive) {
-                guard isPlanRuntimeActive else { return }
-                refreshPlanHealthMetrics()
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(30))
-                    refreshPlanHealthMetrics()
                 }
             }
         }
@@ -110,7 +106,7 @@ struct PlanDashboardView: View {
 
     private var noPlanCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Ton plan")
+            Text(AppCopy.t("Ton plan", en: "Your plan"))
                 .font(.headline)
 
             Text(noPlanMessage)
@@ -126,7 +122,11 @@ struct PlanDashboardView: View {
                         if isRestoringPlan {
                             ProgressView().controlSize(.small)
                         }
-                        Text(isRestoringPlan ? "Restauration…" : "Restaurer mon plan personnalisé")
+                        Text(
+                            isRestoringPlan
+                                ? AppCopy.t("Restauration…", en: "Restoring…")
+                                : AppCopy.t("Restaurer mon plan personnalisé", en: "Restore my personalized plan")
+                        )
                             .font(.subheadline.weight(.semibold))
                     }
                     .frame(maxWidth: .infinity)
@@ -142,9 +142,15 @@ struct PlanDashboardView: View {
 
     private var noPlanMessage: String {
         if planStore.canRestorePlan {
-            return "Ton programme n'a pas pu être chargé. Restaure-le en un clic."
+            return AppCopy.t(
+                "Ton programme n'a pas pu être chargé. Restaure-le en un clic.",
+                en: "Your program couldn't be loaded. Restore it in one tap."
+            )
         }
-        return "Ton plan se prépare. Reviens dans un instant."
+        return AppCopy.t(
+            "Ton plan se prépare. Reviens dans un instant.",
+            en: "Your plan is getting ready. Check back in a moment."
+        )
     }
 
     private func restorePlan() async {

@@ -62,7 +62,7 @@ struct TransformationCaseStudyCard: View {
                     .shadow(color: .black.opacity(0.35), radius: 8, y: 2)
 
                 HStack(spacing: 8) {
-                    metadataChip(study.memberSince)
+                    metadataChip(study.localizedMemberSince)
                 }
             }
             .padding(.horizontal, 20)

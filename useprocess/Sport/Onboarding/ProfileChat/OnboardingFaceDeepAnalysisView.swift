@@ -40,14 +40,14 @@ struct OnboardingFaceDeepAnalysisView: View {
             }
 
             lockedTextCard(
-                title: "Défauts principaux",
-                subtitle: "Ce qui alourdit ton visage",
+                title: AppCopy.t("Défauts principaux", en: "Main flaws"),
+                subtitle: AppCopy.t("Ce qui alourdit ton visage", en: "What weighs down your face"),
                 lines: analysis.primaryFlaws,
                 linePrefix: "❌"
             )
             lockedTextCard(
-                title: "Atouts",
-                subtitle: "Tes points forts structurels",
+                title: AppCopy.t("Atouts", en: "Strengths"),
+                subtitle: AppCopy.t("Tes points forts structurels", en: "Your structural strengths"),
                 lines: analysis.strengths,
                 linePrefix: "✅"
             )
@@ -64,7 +64,7 @@ struct OnboardingFaceDeepAnalysisView: View {
     private var unlockedCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader(
-                title: "Signaux ouverts",
+                title: AppCopy.t("Signaux ouverts", en: "Unlocked signals"),
                 locked: false
             )
             .padding(.horizontal, 16)
@@ -108,7 +108,7 @@ struct OnboardingFaceDeepAnalysisView: View {
                     .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.78))
                     .frame(width: 22)
 
-                Text("RAPPORT GRAISSE / RÉTENTION")
+                Text(AppCopy.t("RAPPORT GRAISSE / RÉTENTION", en: "FAT / RETENTION RATIO"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
                     .tracking(0.3)
@@ -129,13 +129,19 @@ struct OnboardingFaceDeepAnalysisView: View {
             .frame(height: 8)
 
             HStack {
-                Text("Graisse \(composition.fatPercent)%")
+                Text(AppCopy.t(
+                    "Graisse \(composition.fatPercent)%",
+                    en: "Fat \(composition.fatPercent)%"
+                ))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
 
                 Spacer(minLength: 8)
 
-                Text("Rétention \(composition.bloatedPercent)%")
+                Text(AppCopy.t(
+                    "Rétention \(composition.bloatedPercent)%",
+                    en: "Retention \(composition.bloatedPercent)%"
+                ))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(retentionRatioAccent)
             }
@@ -153,7 +159,11 @@ struct OnboardingFaceDeepAnalysisView: View {
                 .frame(width: 22)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(metric.kind == .stressLoad ? "CORTISOL ESTIMÉ" : metric.kind.whoopLabel)
+                Text(
+                    metric.kind == .stressLoad
+                        ? AppCopy.t("CORTISOL ESTIMÉ", en: "ESTIMATED CORTISOL")
+                        : metric.kind.whoopLabel
+                )
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
                     .tracking(0.3)
@@ -276,7 +286,7 @@ struct OnboardingFaceDeepAnalysisView: View {
                 .blur(radius: 6.5)
                 .opacity(0.7)
 
-                lockedOverlay(title: "Contenu verrouillé")
+                lockedOverlay(title: AppCopy.t("Contenu verrouillé", en: "Content locked"))
                     .padding(.vertical, 18)
             }
         }
@@ -286,8 +296,8 @@ struct OnboardingFaceDeepAnalysisView: View {
     private var lockedSummaryCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader(
-                title: "Résumé",
-                subtitle: "Lecture globale de ton visage",
+                title: AppCopy.t("Résumé", en: "Summary"),
+                subtitle: AppCopy.t("Lecture globale de ton visage", en: "Overall reading of your face"),
                 locked: true
             )
             .padding(.horizontal, 16)
@@ -304,7 +314,7 @@ struct OnboardingFaceDeepAnalysisView: View {
                     .blur(radius: 6.5)
                     .opacity(0.7)
 
-                lockedOverlay(title: "Résumé verrouillé")
+                lockedOverlay(title: AppCopy.t("Résumé verrouillé", en: "Summary locked"))
                     .padding(.vertical, 18)
             }
         }
@@ -317,7 +327,10 @@ struct OnboardingFaceDeepAnalysisView: View {
         HStack(spacing: 10) {
             Image(systemName: "lock.fill")
                 .font(.system(size: 13, weight: .semibold))
-            Text("Débloque l’analyse complète après l’onboarding")
+            Text(AppCopy.t(
+                "Débloque l’analyse complète après l’onboarding",
+                en: "Unlock the full analysis after onboarding"
+            ))
                 .font(.system(size: 12.5, weight: .semibold))
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
@@ -356,7 +369,7 @@ struct OnboardingFaceDeepAnalysisView: View {
         HStack(spacing: 5) {
             Image(systemName: "lock.fill")
                 .font(.system(size: 10, weight: .bold))
-            Text("Locked")
+            Text(AppCopy.t("Locked", en: "Locked"))
                 .font(.system(size: 10, weight: .bold))
                 .textCase(.uppercase)
                 .tracking(0.4)
@@ -406,30 +419,33 @@ private enum LockedCategory: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .gaze: return "Regard"
-        case .structure: return "Structure du visage"
-        case .skin: return "Peau & texture"
-        case .harmony: return "Harmonie globale"
+        case .gaze: return AppCopy.t("Regard", en: "Gaze")
+        case .structure: return AppCopy.t("Structure du visage", en: "Face structure")
+        case .skin: return AppCopy.t("Peau & texture", en: "Skin & texture")
+        case .harmony: return AppCopy.t("Harmonie globale", en: "Overall harmony")
         }
     }
 
+    @MainActor
     var subtitle: String {
         switch self {
-        case .gaze: return "Yeux, cernes, zone sous les yeux"
-        case .structure: return "Jawline, pommettes, maxillaire, nez"
-        case .skin: return "Clarté et reliefs de surface"
-        case .harmony: return "Proportions, symétrie, volume"
+        case .gaze: return AppCopy.t("Yeux, cernes, zone sous les yeux", en: "Eyes, under-eyes, orbital area")
+        case .structure: return AppCopy.t("Jawline, pommettes, maxillaire, nez", en: "Jawline, cheekbones, maxilla, nose")
+        case .skin: return AppCopy.t("Clarté et reliefs de surface", en: "Clarity and surface relief")
+        case .harmony: return AppCopy.t("Proportions, symétrie, volume", en: "Proportions, symmetry, volume")
         }
     }
 
+    @MainActor
     var lockLabel: String {
         switch self {
-        case .gaze: return "3 indicateurs verrouillés"
-        case .structure: return "6 indicateurs verrouillés"
-        case .skin: return "2 indicateurs verrouillés"
-        case .harmony: return "4 indicateurs verrouillés"
+        case .gaze: return AppCopy.t("3 indicateurs verrouillés", en: "3 indicators locked")
+        case .structure: return AppCopy.t("6 indicateurs verrouillés", en: "6 indicators locked")
+        case .skin: return AppCopy.t("2 indicateurs verrouillés", en: "2 indicators locked")
+        case .harmony: return AppCopy.t("4 indicateurs verrouillés", en: "4 indicators locked")
         }
     }
 

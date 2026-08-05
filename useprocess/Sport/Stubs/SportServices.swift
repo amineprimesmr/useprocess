@@ -61,9 +61,9 @@ enum AccountDeletionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notSignedIn:
-            return "Aucune session active."
+            return AppCopy.tSync("Aucune session active.", en: "No active session.")
         case .cancelled:
-            return "Suppression annulée."
+            return AppCopy.tSync("Suppression annulée.", en: "Deletion cancelled.")
         case .remoteDeletionFailed(let message):
             return message
         }
@@ -481,9 +481,15 @@ enum OnboardingError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notAuthenticated: return "Utilisateur non authentifié"
-        case .healthKitNotAvailable: return "HealthKit non disponible"
-        case .dataCollectionFailed(let message): return "Erreur collecte données: \(message)"
+        case .notAuthenticated:
+            return AppCopy.tSync("Utilisateur non authentifié", en: "User not authenticated")
+        case .healthKitNotAvailable:
+            return AppCopy.tSync("HealthKit non disponible", en: "HealthKit unavailable")
+        case .dataCollectionFailed(let message):
+            return AppCopy.tSync(
+                "Erreur collecte données: \(message)",
+                en: "Data collection error: \(message)"
+            )
         }
     }
 }

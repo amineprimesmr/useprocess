@@ -9,11 +9,11 @@ enum CoachDeepLinkAction: String, Codable, Equatable {
 
     var defaultLabel: String {
         switch self {
-        case .plan: return "Ouvrir l'accueil"
-        case .journal: return "Ouvrir le journal"
-        case .scan: return "Faire mon scan"
-        case .streak: return "Voir ma streak"
-        case .integration: return "Continuer la configuration"
+        case .plan: return AppCopy.t("Ouvrir l'accueil", en: "Open Home")
+        case .journal: return AppCopy.t("Ouvrir le journal", en: "Open journal")
+        case .scan: return AppCopy.t("Faire mon scan", en: "Take my scan")
+        case .streak: return AppCopy.t("Voir ma streak", en: "View my streak")
+        case .integration: return AppCopy.t("Continuer la configuration", en: "Continue setup")
         }
     }
 }

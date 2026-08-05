@@ -26,12 +26,12 @@ struct ProcessReferralTrackingView: View {
                 }
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Suivre les parrainages")
+            .navigationTitle(AppCopy.t("Suivre les parrainages", en: "Track Referrals"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     ProcessReferralToolbarButton(systemName: "xmark", action: { dismiss() })
-                        .accessibilityLabel("Fermer")
+                        .accessibilityLabel(AppCopy.close)
                 }
             }
         }
@@ -51,11 +51,11 @@ struct ProcessReferralTrackingView: View {
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
 
-            Text("Aucun parrainage pour l'instant")
+            Text(AppCopy.t("Aucun parrainage pour l'instant", en: "No Referrals Yet"))
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(ProcessReferralTheme.textPrimary)
 
-            Text("Partage ton lien — tes invités apparaîtront ici avec leur statut.")
+            Text(AppCopy.t("Partage ton lien — tes invités apparaîtront ici avec leur statut.", en: "Share your link — your invites will appear here with their status."))
                 .font(.system(size: 14))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -68,13 +68,13 @@ struct ProcessReferralTrackingView: View {
 struct ProcessReferralTrackingRow: View {
     let entry: ProcessReferralEntry
 
-    private static let dateFormatter: DateFormatter = {
+    private static var dateFormatter: DateFormatter {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "fr_FR")
+        f.locale = ProcessAppLanguage.shared.locale
         f.dateStyle = .long
         f.timeStyle = .none
         return f
-    }()
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -83,7 +83,7 @@ struct ProcessReferralTrackingRow: View {
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(ProcessReferralTheme.textPrimary)
 
-                Text("Invité(e) le \(Self.dateFormatter.string(from: entry.invitedAt))")
+                Text(AppCopy.t("Invité(e) le \(Self.dateFormatter.string(from: entry.invitedAt))", en: "Invited on \(Self.dateFormatter.string(from: entry.invitedAt))"))
                     .font(.system(size: 13))
                     .foregroundStyle(ProcessReferralTheme.textSecondary)
             }

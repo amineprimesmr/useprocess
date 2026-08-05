@@ -60,7 +60,7 @@ struct OnboardingProfileChatSportPicker: View {
             }
 
             sportButton(
-                title: "Chercher un sport",
+                title: OnboardingCopy.t("Chercher un sport", en: "Search for a sport"),
                 emoji: nil,
                 systemImage: "magnifyingglass"
             ) {
@@ -84,7 +84,10 @@ struct OnboardingProfileChatSportPicker: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(OnboardingTheme.mutedText)
 
-                TextField("Rechercher un sport…", text: $searchText)
+                TextField(
+                    OnboardingCopy.t("Rechercher un sport…", en: "Search for a sport…"),
+                    text: $searchText
+                )
                     .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize, weight: .medium))
                     .foregroundStyle(OnboardingTheme.primaryText)
                     .tint(OnboardingTheme.primaryText)

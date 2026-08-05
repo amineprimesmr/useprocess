@@ -13,11 +13,11 @@ struct PostOnboardingView: View {
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
 
-                Text("Onboarding terminé")
+                Text(AppCopy.t("Onboarding terminé", en: "Onboarding complete"))
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.6))
 
-                Button("Rejouer l'onboarding") {
+                Button(AppCopy.t("Rejouer l'onboarding", en: "Replay onboarding")) {
                     session.resetOnboarding()
                 }
                 .buttonStyle(.bordered)

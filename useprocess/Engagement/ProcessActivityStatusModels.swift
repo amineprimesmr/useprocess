@@ -8,21 +8,21 @@ enum ProcessActivityStatus: String, nonisolated Codable, CaseIterable, Identifia
 
     var id: String { rawValue }
 
-    var title: String {
+    @MainActor var title: String {
         switch self {
-        case .active: return "Activité"
-        case .sick: return "Malade"
-        case .injured: return "Blessé(e)"
-        case .paused: return "En pause"
+        case .active: return AppCopy.t("Activité", en: "Active")
+        case .sick: return AppCopy.t("Malade", en: "Sick")
+        case .injured: return AppCopy.t("Blessé(e)", en: "Injured")
+        case .paused: return AppCopy.t("En pause", en: "On Pause")
         }
     }
 
-    var subtitle: String {
+    @MainActor var subtitle: String {
         switch self {
-        case .active: return "Rester actif(ve) et en bonne santé"
-        case .sick: return "Prendre du repos après une maladie"
-        case .injured: return "Récupérer après une blessure"
-        case .paused: return "Faire une pause d'entraînement"
+        case .active: return AppCopy.t("Rester actif(ve) et en bonne santé", en: "Stay active and healthy")
+        case .sick: return AppCopy.t("Prendre du repos après une maladie", en: "Rest and recover from illness")
+        case .injured: return AppCopy.t("Récupérer après une blessure", en: "Recover from an injury")
+        case .paused: return AppCopy.t("Faire une pause d'entraînement", en: "Take a break from training")
         }
     }
 
@@ -49,16 +49,16 @@ enum ProcessActivityStatus: String, nonisolated Codable, CaseIterable, Identifia
     }
 
     /// Recommandations coach / plan selon le statut.
-    var trainingGuidance: String {
+    @MainActor var trainingGuidance: String {
         switch self {
         case .active:
-            return "Séances et effort habituels."
+            return AppCopy.t("Séances et effort habituels.", en: "Usual sessions and effort.")
         case .sick:
-            return "Repos prioritaire — pas de séance intense."
+            return AppCopy.t("Repos prioritaire — pas de séance intense.", en: "Prioritize rest — no intense sessions.")
         case .injured:
-            return "Charge réduite — évite la zone douloureuse."
+            return AppCopy.t("Charge réduite — évite la zone douloureuse.", en: "Reduce training load — avoid the painful area.")
         case .paused:
-            return "Pause volontaire — récupération et mobilité légère."
+            return AppCopy.t("Pause volontaire — récupération et mobilité légère.", en: "Intentional pause — recovery and light mobility.")
         }
     }
 }

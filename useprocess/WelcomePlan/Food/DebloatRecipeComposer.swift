@@ -113,6 +113,7 @@ enum DebloatRecipeComposer {
         mg: DebloatFoodItem?,
         minutes: Int
     ) -> MealSuggestionContent {
+        // Noms / quantités FR persistés — rôles FR (affichage via `ProcessLocalizedMealContent.role`).
         var items: [MealSuggestionItem] = [
             .init(name: protein.name, quantity: protein.portionHint ?? "150 g", role: "Protéine"),
             .init(name: veg.name, quantity: veg.portionHint ?? "1 portion", role: "Légume"),
@@ -123,24 +124,15 @@ enum DebloatRecipeComposer {
             items.append(.init(name: mg.name, quantity: mg.portionHint ?? "20 g", role: "Gras"))
         }
 
-        let name: String
-        switch slot {
-        case .breakfast:
-            name = "Matin dégonflé · \(protein.name) & \(carb.name)"
-        case .lunch:
-            name = "Bowl K · \(protein.name), \(veg.name)"
-        case .dinner:
-            name = "Dîner anti-rétention · \(protein.name)"
-        case .snack:
-            name = "Collation drainante · \(veg.name)"
-        }
-
+        // Libellés FR persistés — affichage EN via `ProcessLocalizedDebloatFoodContent.recipe*`.
+        let name = recipeNameFR(slot: slot, protein: protein, veg: veg, carb: carb)
         let prep = """
         1. Prépare \(protein.name) sans sel (herbes + citron).
         2. Ajoute \(veg.name) et \(carb.name) cuits vapeur ou four.
         3. Finis avec \(boost.name)\(mg.map { " et \($0.name)" } ?? "").
         4. Zéro sauce industrielle — l’objectif est le visage dégonflé.
         """
+        let tip = "Priorité potassium : \(veg.name) + \(carb.name). Évite le sel ce repas."
 
         return MealSuggestionContent.asProcessDefault(
             name: name,
@@ -148,9 +140,23 @@ enum DebloatRecipeComposer {
             items: items,
             prepMinutes: minutes,
             prepSummary: prep,
-            coachTip: "Priorité potassium : \(veg.name) + \(carb.name). Évite le sel ce repas.",
+            coachTip: tip,
             tags: ["debloat", "from-likes", "high-K"],
             imageAssetName: nil
         )
+    }
+
+    private static func recipeNameFR(
+        slot: MealTimeSlot,
+        protein: DebloatFoodItem,
+        veg: DebloatFoodItem,
+        carb: DebloatFoodItem
+    ) -> String {
+        switch slot {
+        case .breakfast: return "Matin dégonflé · \(protein.name) & \(carb.name)"
+        case .lunch: return "Bowl K · \(protein.name), \(veg.name)"
+        case .dinner: return "Dîner anti-rétention · \(protein.name)"
+        case .snack: return "Collation drainante · \(veg.name)"
+        }
     }
 }

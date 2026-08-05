@@ -15,7 +15,7 @@ struct PlanProgramCalendarView: View {
 
     @State private var displayedMonth: Date
 
-    private var calendar: Calendar { Self.frenchCalendar }
+    private var calendar: Calendar { Self.appCalendar }
     private var progress: PlanProgressSnapshot { planProgressStore.snapshot }
 
     init(selectedDate: Binding<Date>, plan: FaceOriginPlan?) {
@@ -77,10 +77,13 @@ struct PlanProgramCalendarView: View {
             Image(systemName: "calendar.badge.exclamationmark")
                 .font(.system(size: 44, weight: .medium))
                 .foregroundStyle(theme.secondaryText.opacity(0.55))
-            Text("Aucun plan actif")
+            Text(AppCopy.t("Aucun plan actif", en: "No active plan"))
                 .font(.title3.weight(.bold))
                 .foregroundStyle(theme.primaryText)
-            Text("Complète la configuration pour afficher ton calendrier personnalisé.")
+            Text(AppCopy.t(
+                "Complète la configuration pour afficher ton calendrier personnalisé.",
+                en: "Finish setup to show your personalized calendar."
+            ))
                 .font(.subheadline)
                 .foregroundStyle(theme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -109,16 +112,21 @@ struct PlanProgramCalendarView: View {
                     )
             }
             .buttonStyle(.processPlain)
-            .accessibilityLabel("Fermer")
+            .accessibilityLabel(AppCopy.close)
 
             Spacer(minLength: 8)
 
             VStack(spacing: 2) {
-                Text("Calendrier")
+                Text(AppCopy.t("Calendrier", en: "Calendar"))
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(theme.primaryText)
                 if progress.hasPlan {
-                    Text("Programme debloat · \(progress.totalProgramDays) jours")
+                    Text(AppCopy.t(
+                        "Programme debloat · \(progress.totalProgramDays) jours",
+                        en: progress.totalProgramDays == 1
+                            ? "Debloat program · 1 day"
+                            : "Debloat program · \(progress.totalProgramDays) days"
+                    ))
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(theme.secondaryText)
                         .monospacedDigit()
@@ -132,7 +140,7 @@ struct PlanProgramCalendarView: View {
                     HapticManager.shared.impact(.light)
                     jumpToToday()
                 } label: {
-                    Text("Aujourd'hui")
+                    Text(AppCopy.today)
                         .font(.caption.weight(.bold))
                         .foregroundStyle(theme.onboardingAccent)
                         .padding(.horizontal, 12)
@@ -169,7 +177,7 @@ struct PlanProgramCalendarView: View {
             summaryMetric(
                 value: "\(progress.elapsedProgramDays)",
                 suffix: "/\(progress.totalProgramDays)",
-                label: "Jours écoulés",
+                label: AppCopy.t("Jours écoulés", en: "Days elapsed"),
                 tint: theme.onboardingAccent
             )
 
@@ -178,7 +186,7 @@ struct PlanProgramCalendarView: View {
             summaryMetric(
                 value: "\(streakStore.displayValidatedDays)",
                 suffix: nil,
-                label: "Jours validés",
+                label: AppCopy.t("Jours validés", en: "Days validated"),
                 tint: ProcessStreakPalette.flame
             )
 
@@ -187,7 +195,9 @@ struct PlanProgramCalendarView: View {
             summaryMetric(
                 value: "S\(progress.currentWeek)",
                 suffix: nil,
-                label: progress.weeksLabel.isEmpty ? "Semaine" : progress.weeksLabel,
+                label: progress.weeksLabel.isEmpty
+                    ? AppCopy.t("Semaine", en: "Week")
+                    : progress.weeksLabel,
                 tint: Color(red: 0.45, green: 0.72, blue: 0.95)
             )
         }
@@ -388,9 +398,9 @@ struct PlanProgramCalendarView: View {
 
     private var legendRow: some View {
         HStack(spacing: 14) {
-            legendItem(color: ProcessStreakPalette.flame, label: "Validé")
-            legendItem(color: Color(red: 1.0, green: 0.72, blue: 0.28), label: "Partiel")
-            legendItem(color: theme.onboardingAccent, label: "Aujourd'hui", isRing: true)
+            legendItem(color: ProcessStreakPalette.flame, label: AppCopy.t("Validé", en: "Validated"))
+            legendItem(color: Color(red: 1.0, green: 0.72, blue: 0.28), label: AppCopy.t("Partiel", en: "Partial"))
+            legendItem(color: theme.onboardingAccent, label: AppCopy.today, isRing: true)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 4)
@@ -565,33 +575,37 @@ struct PlanProgramCalendarView: View {
 
     // MARK: - Utilitaires
 
-    private static let frenchCalendar: Calendar = {
+    @MainActor
+    private static var appCalendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
-        cal.locale = Locale(identifier: "fr_FR")
-        cal.firstWeekday = 2
+        cal.locale = ProcessAppLanguage.shared.locale
+        cal.firstWeekday = ProcessAppLanguage.shared.isFrench ? 2 : 1
         return cal
-    }()
+    }
 
     private static let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
 
-    private static let weekdaySymbols: [String] = {
-        let cal = frenchCalendar
+    @MainActor
+    private static var weekdaySymbols: [String] {
+        let cal = appCalendar
         return (0..<7).map { offset in
             let index = (cal.firstWeekday - 1 + offset) % 7
             return cal.veryShortWeekdaySymbols[index].uppercased()
         }
-    }()
+    }
 
-    private static let monthTitleFormatter: DateFormatter = {
+    @MainActor
+    private static var monthTitleFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.dateFormat = "MMMM yyyy"
         return formatter
-    }()
+    }
 
+    @MainActor
     private static func startOfMonth(for date: Date) -> Date {
-        let components = frenchCalendar.dateComponents([.year, .month], from: date)
-        return frenchCalendar.date(from: components) ?? date
+        let components = appCalendar.dateComponents([.year, .month], from: date)
+        return appCalendar.date(from: components) ?? date
     }
 }
 
@@ -620,15 +634,20 @@ private struct PlanProgramCalendarDayModel {
     let status: PlanProgramCalendarDayStatus
     let record: DebloatDayRecord?
 
+    @MainActor
     var panelTitle: String {
         if let programDayNumber {
-            return "Jour \(programDayNumber) du programme"
+            return AppCopy.t(
+                "Jour \(programDayNumber) du programme",
+                en: "Day \(programDayNumber) of the program"
+            )
         }
-        return date.formatted(.dateTime.weekday(.wide).day().month(.wide))
+        return formattedWideDate
     }
 
+    @MainActor
     func panelSubtitle(plan: FaceOriginPlan) -> String {
-        var parts: [String] = [date.formatted(.dateTime.weekday(.wide).day().month(.wide))]
+        var parts: [String] = [formattedWideDate]
         if let programDay {
             if let week = plan.calendar.weeks.first(where: { $0.weekNumber == programDay.weekNumber }) {
                 parts.append(week.phaseTitle)
@@ -640,15 +659,24 @@ private struct PlanProgramCalendarDayModel {
         return parts.joined(separator: " · ")
     }
 
+    @MainActor
+    private var formattedWideDate: String {
+        let df = DateFormatter()
+        df.locale = ProcessAppLanguage.shared.locale
+        df.setLocalizedDateFormatFromTemplate("EEEE d MMMM")
+        return df.string(from: date)
+    }
+
+    @MainActor
     var statusLabel: String {
         switch status {
-        case .outsidePlan: return "Hors plan"
-        case .future: return "À venir"
-        case .today: return "Aujourd'hui"
-        case .inPlan: return "En cours"
+        case .outsidePlan: return AppCopy.t("Hors plan", en: "Outside plan")
+        case .future: return AppCopy.t("À venir", en: "Upcoming")
+        case .today: return AppCopy.today
+        case .inPlan: return AppCopy.t("En cours", en: "In progress")
         case .validated(let verdict): return verdict.shortLabel
-        case .partial: return "Partiel"
-        case .missed: return "Manqué"
+        case .partial: return AppCopy.t("Partiel", en: "Partial")
+        case .missed: return AppCopy.t("Manqué", en: "Missed")
         }
     }
 
@@ -664,10 +692,13 @@ private struct PlanProgramCalendarDayModel {
         }
     }
 
+    @MainActor
     var accessibilityLabel: String {
         var parts = [panelTitle, statusLabel]
-        if isToday { parts.append("aujourd'hui") }
-        if isDebloatTarget { parts.append("objectif debloat") }
+        if isToday { parts.append(AppCopy.today.lowercased()) }
+        if isDebloatTarget {
+            parts.append(AppCopy.t("objectif debloat", en: "debloat goal"))
+        }
         return parts.joined(separator: ", ")
     }
 

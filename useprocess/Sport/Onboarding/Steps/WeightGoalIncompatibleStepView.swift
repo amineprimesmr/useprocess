@@ -35,7 +35,7 @@ struct WeightGoalIncompatibleStepView: View {
            profileFirstName != "Utilisateur" {
             return profileFirstName
         }
-        return "toi"
+        return OnboardingCopy.t("toi", en: "you")
     }
 
     // ✅ Calculer l'IMC actuel
@@ -47,11 +47,20 @@ struct WeightGoalIncompatibleStepView: View {
     // ✅ Déterminer le message selon l'incompatibilité
     private var message: String {
         if currentBMI >= 25.0 && selectedGoal == .gain {
-            return "\(userFirstName), pour ton profil actuel on privilégie un plan debloat visage (rétention, ovale, cernes) plutôt qu’une prise de volume. On recentre sur le gonflement facial."
+            return OnboardingCopy.t(
+                "\(userFirstName), pour ton profil actuel on privilégie un plan debloat visage (rétention, ovale, cernes) plutôt qu’une prise de volume. On recentre sur le gonflement facial.",
+                en: "\(userFirstName), for your current profile we focus on a facial debloat plan (retention, jawline, under-eyes) rather than adding volume. We're centering on facial puffiness."
+            )
         } else if currentBMI < 18.5 && selectedGoal == .lose {
-            return "\(userFirstName), on évite toute logique de restriction. Process se concentre sur le debloat visage : sommeil, sel, inflammation et drainage — pas sur la perte de poids."
+            return OnboardingCopy.t(
+                "\(userFirstName), on évite toute logique de restriction. Process se concentre sur le debloat visage : sommeil, sel, inflammation et drainage — pas sur la perte de poids.",
+                en: "\(userFirstName), we skip any restriction mindset. Process focuses on facial debloat: sleep, salt, inflammation, and drainage — not weight loss."
+            )
         }
-        return "\(userFirstName), on recentre ton plan uniquement sur le debloat visage."
+        return OnboardingCopy.t(
+            "\(userFirstName), on recentre ton plan uniquement sur le debloat visage.",
+            en: "\(userFirstName), we're refocusing your plan entirely on facial debloat."
+        )
     }
 
     private var fullText: String {

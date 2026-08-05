@@ -28,7 +28,7 @@ struct EstimationStepLayout<Graph: View, Bottom: View>: View {
 
             VStack(spacing: 20) {
                 VStack(spacing: 18) {
-                    Text("D'après nos estimations")
+                    Text(OnboardingCopy.t("D'après nos estimations", en: "Based on our estimates"))
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(OnboardingTheme.bodyText)
                         .frame(maxWidth: .infinity)

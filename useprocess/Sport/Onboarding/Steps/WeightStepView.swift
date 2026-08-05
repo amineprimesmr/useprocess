@@ -106,7 +106,7 @@ struct WeightStepView: View {
                 Spacer()
             }
 
-            OnboardingTitleView("Quel est ton poids ?")
+            OnboardingTitleView(OnboardingCopy.t("Quel est ton poids ?", en: "What's your weight?"))
                 .onboardingTitleOverlay()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

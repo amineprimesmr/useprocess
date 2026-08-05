@@ -20,35 +20,35 @@ enum CoachRemoteError: LocalizedError {
     case incompleteStream
     case overloaded
 
-    var errorDescription: String? {
+    nonisolated var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "Connecte-toi pour utiliser le coach cloud."
+            return AppCopy.tSync("Connecte-toi pour utiliser le coach cloud.", en: "Sign in to use the cloud coach.")
         case .missingBaseURL:
-            return "URL Cloud Functions introuvable."
+            return AppCopy.tSync("URL Cloud Functions introuvable.", en: "Cloud Functions URL not found.")
         case .httpError(let code, let body):
             return CoachRemoteError.userMessage(forHTTP: code, body: body)
         case .invalidResponse:
-            return "Réponse coach cloud invalide."
+            return AppCopy.tSync("Réponse coach cloud invalide.", en: "Invalid cloud coach response.")
         case .incompleteStream:
-            return "La réponse du coach a été coupée. Réessaie."
+            return AppCopy.tSync("La réponse du coach a été coupée. Réessaie.", en: "The coach response was interrupted. Try again.")
         case .overloaded:
-            return "Le coach est surchargé — réessaie dans quelques secondes."
+            return AppCopy.tSync("Le coach est surchargé — réessaie dans quelques secondes.", en: "The coach is overloaded — try again in a few seconds.")
         }
     }
 
-    static func userMessage(forHTTP code: Int, body: String) -> String {
+    nonisolated static func userMessage(forHTTP code: Int, body: String) -> String {
         let lower = body.lowercased()
         if lower.contains("overloaded") || code == 529 {
             return CoachRemoteError.overloaded.errorDescription!
         }
         if code >= 500 {
-            return "Le coach est indisponible pour le moment. Réessaie."
+            return AppCopy.tSync("Le coach est indisponible pour le moment. Réessaie.", en: "The coach is currently unavailable. Try again.")
         }
         if code == 401 {
-            return "Session expirée — reconnecte-toi."
+            return AppCopy.tSync("Session expirée — reconnecte-toi.", en: "Your session expired — sign in again.")
         }
-        return "Erreur coach (\(code)). Réessaie."
+        return AppCopy.tSync("Erreur coach (\(code)). Réessaie.", en: "Coach error (\(code)). Try again.")
     }
 
     static func isRetryable(_ error: Error) -> Bool {

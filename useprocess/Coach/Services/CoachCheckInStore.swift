@@ -41,23 +41,23 @@ enum CoachCheckInTemplate: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .morningOutlook: return "Brief matin"
-        case .journalReminder: return "Rappel journal"
-        case .scanReminder: return "Rappel scan visage"
-        case .streakGuard: return "Jours validés en jeu"
+        case .morningOutlook: return AppCopy.t("Brief matin", en: "Morning brief")
+        case .journalReminder: return AppCopy.t("Rappel journal", en: "Journal reminder")
+        case .scanReminder: return AppCopy.t("Rappel scan visage", en: "Face scan reminder")
+        case .streakGuard: return AppCopy.t("Jours validés en jeu", en: "Completed days at risk")
         }
     }
 
     var defaultPrompt: String {
         switch self {
         case .morningOutlook:
-            return "Crée un check-in matin avec mon sommeil, mon jour du plan personnalisé et 1 action prioritaire."
+            return AppCopy.t("Crée un check-in matin avec mon sommeil, mon jour du plan personnalisé et 1 action prioritaire.", en: "Create a morning check-in with my sleep, my personalized plan day, and one priority action.")
         case .journalReminder:
-            return "Rappelle-moi de compléter mon journal du jour si des tâches restent ouvertes."
+            return AppCopy.t("Rappelle-moi de compléter mon journal du jour si des tâches restent ouvertes.", en: "Remind me to complete today's journal if tasks are still open.")
         case .scanReminder:
-            return "Rappelle-moi de faire mon scan visage si je ne l'ai pas fait aujourd'hui."
+            return AppCopy.t("Rappelle-moi de faire mon scan visage si je ne l'ai pas fait aujourd'hui.", en: "Remind me to do my face scan if I haven't done it today.")
         case .streakGuard:
-            return "Préviens-moi en fin de journée si mes jours validés sont en danger."
+            return AppCopy.t("Préviens-moi en fin de journée si mes jours validés sont en danger.", en: "Notify me at the end of the day if my completed days are at risk.")
         }
     }
 }

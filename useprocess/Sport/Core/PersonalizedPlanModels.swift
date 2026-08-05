@@ -112,6 +112,32 @@ enum MainGoal: String, Codable, CaseIterable {
     case gestionStress = "Gestion du Stress"
     case sommeil = "Améliorer Sommeil"
 
+    /// Libellé UI — rawValue FR conservé pour la persistence.
+    nonisolated var title: String {
+        switch self {
+        case .performanceSportive:
+            return AppCopy.tSync("Performance sportive", en: "Athletic performance")
+        case .preparationCompetition:
+            return AppCopy.tSync("Préparation compétition", en: "Competition prep")
+        case .pertePoids:
+            return AppCopy.tSync("Perte de poids", en: "Weight loss")
+        case .priseMasse:
+            return AppCopy.tSync("Prise de masse", en: "Muscle gain")
+        case .endurance:
+            return AppCopy.tSync("Améliorer l'endurance", en: "Improve endurance")
+        case .force:
+            return AppCopy.tSync("Améliorer la force", en: "Improve strength")
+        case .sante:
+            return AppCopy.tSync("Santé générale", en: "General health")
+        case .energie:
+            return AppCopy.tSync("Augmenter l'énergie", en: "Increase energy")
+        case .gestionStress:
+            return AppCopy.tSync("Gestion du stress", en: "Stress management")
+        case .sommeil:
+            return AppCopy.tSync("Améliorer le sommeil", en: "Improve sleep")
+        }
+    }
+
     var icon: String {
         switch self {
         case .performanceSportive: return "figure.run"

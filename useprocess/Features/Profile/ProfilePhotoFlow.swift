@@ -193,11 +193,11 @@ private struct ProfilePhotoSourceMenu: View {
                     .onTapGesture { onDismiss() }
 
                 VStack(alignment: .leading, spacing: 0) {
-                    menuRow(title: "Photothèque", icon: "photo.on.rectangle", action: onLibrary)
-                    menuRow(title: "Appareil photo", icon: "camera.fill", action: onCamera)
+                    menuRow(title: AppCopy.t("Photothèque", en: "Photo Library"), icon: "photo.on.rectangle", action: onLibrary)
+                    menuRow(title: AppCopy.t("Appareil photo", en: "Camera"), icon: "camera.fill", action: onCamera)
                     if hasExistingPhoto {
                         menuRow(
-                            title: "Supprimer la photo",
+                            title: AppCopy.t("Supprimer la photo", en: "Delete Photo"),
                             icon: "trash",
                             isDestructive: true,
                             action: onDelete
@@ -278,13 +278,13 @@ struct ProfileImageCropView: View {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Text("Recadrer")
+                Text(AppCopy.t("Recadrer", en: "Crop"))
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.top, 18)
                     .padding(.bottom, 8)
 
-                Text("Ajuste le cadrage — l’aperçu correspond à ta photo de profil ronde.")
+                Text(AppCopy.t("Ajuste le cadrage — l’aperçu correspond à ta photo de profil ronde.", en: "Adjust the crop—the preview matches your round profile photo."))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
                     .multilineTextAlignment(.center)
@@ -300,9 +300,9 @@ struct ProfileImageCropView: View {
                 }
 
                 HStack {
-                    Button("Annuler", action: onCancel)
+                    Button(AppCopy.cancel, action: onCancel)
                     Spacer()
-                    Button("Choisir") {
+                    Button(AppCopy.t("Choisir", en: "Choose")) {
                         if let cropped = renderCroppedImage() {
                             onChoose(cropped)
                         }

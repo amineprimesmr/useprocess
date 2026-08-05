@@ -80,12 +80,15 @@ struct ProcessNativeTabShell<Plan: View, Statistics: View, Coach: View, Profile:
                 profileTab()
             }
 
-            Tab("Repas", systemImage: "fork.knife", value: NativeTab.mealScan, role: .search) {
+            Tab(AppCopy.meals, systemImage: "fork.knife", value: NativeTab.mealScan, role: .search) {
                 Color.clear
                     .accessibilityHidden(true)
             }
-            .accessibilityLabel("Scanner un repas")
-            .accessibilityHint("Ouvre la caméra ou la pellicule pour analyser ton repas")
+            .accessibilityLabel(AppCopy.t("Scanner un repas", en: "Scan a meal"))
+            .accessibilityHint(AppCopy.t(
+                "Ouvre la caméra ou la pellicule pour analyser ton repas",
+                en: "Opens the camera or photo library to analyze your meal"
+            ))
         }
         .tabBarMinimizeBehavior(.never)
         .toolbar(hidesSystemTabBar ? .hidden : .visible, for: .tabBar)

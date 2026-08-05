@@ -6,9 +6,10 @@ struct ProfileSummaryItem: Identifiable, Hashable {
     let value: String?
     var isEditable: Bool = false
 
+    @MainActor
     var displayValue: String {
         guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Non renseigné"
+            return AppCopy.t("Non renseigné", en: "Not provided")
         }
         return value
     }
@@ -24,6 +25,7 @@ struct ProfileSummarySection: Identifiable, Hashable {
     let rows: [ProfileSummaryItem]
 }
 
+@MainActor
 enum UserProfileOnboardingSummary {
 
     static func sections(from profile: UnifiedUserProfile?) -> [ProfileSummarySection] {
@@ -44,131 +46,131 @@ enum UserProfileOnboardingSummary {
 
     private static func identitySection(_ profile: UnifiedUserProfile) -> ProfileSummarySection {
         var rows: [ProfileSummaryItem] = [
-            .init(id: "firstName", label: "Prénom", value: profile.firstName, isEditable: true),
-            .init(id: "age", label: "Âge", value: profile.age > 0 ? profile.ageFormatted : nil),
-            .init(id: "gender", label: "Genre", value: profile.gender.displayName)
+            .init(id: "firstName", label: AppCopy.t("Prénom", en: "First Name"), value: profile.firstName, isEditable: true),
+            .init(id: "age", label: AppCopy.t("Âge", en: "Age"), value: profile.age > 0 ? profile.ageFormatted : nil),
+            .init(id: "gender", label: AppCopy.t("Genre", en: "Gender"), value: profile.gender.displayName)
         ]
 
         if let email = profile.email, !email.isEmpty {
             rows.append(.init(id: "email", label: "E-mail", value: email))
         }
 
-        rows.append(.init(id: "memberSince", label: "Membre depuis", value: profile.downloadDateFormatted))
+        rows.append(.init(id: "memberSince", label: AppCopy.t("Membre depuis", en: "Member Since"), value: profile.downloadDateFormatted))
 
-        return .init(id: "identity", title: "Identité", rows: rows)
+        return .init(id: "identity", title: AppCopy.t("Identité", en: "Identity"), rows: rows)
     }
 
     private static func measurementsSection(_ profile: UnifiedUserProfile) -> ProfileSummarySection {
         var rows: [ProfileSummaryItem] = []
 
         if profile.height > 0 {
-            rows.append(.init(id: "height", label: "Taille", value: profile.heightFormatted))
+            rows.append(.init(id: "height", label: AppCopy.t("Taille", en: "Height"), value: profile.heightFormatted))
         }
         if profile.weight > 0 {
-            rows.append(.init(id: "weight", label: "Poids actuel", value: profile.weightFormatted))
+            rows.append(.init(id: "weight", label: AppCopy.t("Poids actuel", en: "Current Weight"), value: profile.weightFormatted))
         }
         if let ideal = profile.idealWeight, ideal > 0 {
-            rows.append(.init(id: "idealWeight", label: "Poids idéal", value: profile.idealWeightFormatted))
+            rows.append(.init(id: "idealWeight", label: AppCopy.t("Poids idéal", en: "Ideal Weight"), value: profile.idealWeightFormatted))
         }
         if profile.height > 0, profile.weight > 0 {
             rows.append(
                 .init(
                     id: "bmi",
-                    label: "IMC",
+                    label: AppCopy.t("IMC", en: "BMI"),
                     value: String(format: "%.1f — %@", profile.bmi, profile.bmiCategory.displayName)
                 )
             )
         }
 
-        return .init(id: "measurements", title: "Mensurations", rows: rows)
+        return .init(id: "measurements", title: AppCopy.t("Mensurations", en: "Measurements"), rows: rows)
     }
 
     private static func goalsSection(_ profile: UnifiedUserProfile) -> ProfileSummarySection {
         var rows: [ProfileSummaryItem] = []
 
         if let weightGoal = profile.weightGoal {
-            rows.append(.init(id: "weightGoal", label: "Focus debloat", value: weightGoal.title))
+            rows.append(.init(id: "weightGoal", label: AppCopy.t("Focus debloat", en: "Debloat Focus"), value: weightGoal.title))
         }
         if let goalPace = profile.goalPace {
-            rows.append(.init(id: "goalPace", label: "Rythme souhaité", value: goalPace.rawValue))
+            rows.append(.init(id: "goalPace", label: AppCopy.t("Rythme souhaité", en: "Desired Pace"), value: goalPace.title))
         }
         if let deadline = profile.goalDeadline, deadline.hasDeadline {
-            rows.append(.init(id: "deadline", label: "Échéance", value: deadline.displayText))
+            rows.append(.init(id: "deadline", label: AppCopy.t("Échéance", en: "Deadline"), value: deadline.displayText))
             if let days = deadline.daysRemaining {
-                rows.append(.init(id: "deadlineDays", label: "Jours restants", value: "\(max(0, days)) j"))
+                rows.append(.init(id: "deadlineDays", label: AppCopy.t("Jours restants", en: "Days Remaining"), value: "\(max(0, days)) \(AppCopy.t("j", en: "d"))"))
             }
         }
         if let mainGoal = profile.mainGoal {
-            rows.append(.init(id: "mainGoal", label: "Objectif principal", value: mainGoal.rawValue))
+            rows.append(.init(id: "mainGoal", label: AppCopy.t("Objectif principal", en: "Main Goal"), value: mainGoal.title))
         }
 
-        return .init(id: "goals", title: "Objectifs", rows: rows)
+        return .init(id: "goals", title: AppCopy.t("Objectifs", en: "Goals"), rows: rows)
     }
 
     private static func nutritionSection(_ profile: UnifiedUserProfile) -> ProfileSummarySection {
         guard let nutrition = profile.nutritionProfile else {
-            return .init(id: "nutrition", title: "Nutrition", rows: [])
+            return .init(id: "nutrition", title: AppCopy.t("Nutrition", en: "Nutrition"), rows: [])
         }
 
         var rows: [ProfileSummaryItem] = []
 
         if let quality = nutrition.nutritionQuality {
-            rows.append(.init(id: "nutritionQuality", label: "Alimentation actuelle", value: quality.rawValue))
+            rows.append(.init(id: "nutritionQuality", label: AppCopy.t("Alimentation actuelle", en: "Current Diet"), value: quality.title))
         }
         if let experience = nutrition.weightManagementExperience {
-            rows.append(.init(id: "weightExperience", label: "Expérience poids", value: experience.rawValue))
+            rows.append(.init(id: "weightExperience", label: AppCopy.t("Expérience poids", en: "Weight Management Experience"), value: experience.title))
         }
         if let hydration = nutrition.hydrationLevel {
-            rows.append(.init(id: "hydration", label: "Hydratation", value: hydration.rawValue))
+            rows.append(.init(id: "hydration", label: AppCopy.t("Hydratation", en: "Hydration"), value: hydration.title))
         }
         if let hardest = nutrition.hardestMeal {
-            rows.append(.init(id: "hardestMeal", label: "Repas le plus difficile", value: hardest.rawValue))
+            rows.append(.init(id: "hardestMeal", label: AppCopy.t("Repas le plus difficile", en: "Most Difficult Meal"), value: hardest.title))
         }
 
         let restrictions = nutrition.dietaryRestrictions
             .filter { $0 != .none }
-            .map(\.rawValue)
+            .map(\.title)
         if !restrictions.isEmpty {
-            rows.append(.init(id: "restrictions", label: "Restrictions", value: restrictions.joined(separator: ", ")))
+            rows.append(.init(id: "restrictions", label: AppCopy.t("Restrictions", en: "Restrictions"), value: restrictions.joined(separator: ", ")))
         }
 
-        if let obstacles = nonEmptyJoined(nutrition.nutritionObstacles.map(\.rawValue)) {
-            rows.append(.init(id: "obstacles", label: "Obstacles alimentaires", value: obstacles))
+        if let obstacles = nonEmptyJoined(nutrition.nutritionObstacles.map(\.title)) {
+            rows.append(.init(id: "obstacles", label: AppCopy.t("Obstacles alimentaires", en: "Food Obstacles"), value: obstacles))
         }
 
-        return .init(id: "nutrition", title: "Nutrition", rows: rows)
+        return .init(id: "nutrition", title: AppCopy.t("Nutrition", en: "Nutrition"), rows: rows)
     }
 
     private static func sleepSection(_ profile: UnifiedUserProfile) -> ProfileSummarySection {
         guard let sleep = profile.sleepProfile else {
-            return .init(id: "sleep", title: "Sommeil", rows: [])
+            return .init(id: "sleep", title: AppCopy.t("Sommeil", en: "Sleep"), rows: [])
         }
 
         var rows: [ProfileSummaryItem] = []
 
         if let quality = sleep.sleepQuality {
-            rows.append(.init(id: "sleepQuality", label: "Qualité du sommeil", value: quality.rawValue))
+            rows.append(.init(id: "sleepQuality", label: AppCopy.t("Qualité du sommeil", en: "Sleep Quality"), value: quality.title))
         }
         if let fatigue = sleep.fatigueFrequency {
-            rows.append(.init(id: "fatigue", label: "Fréquence de fatigue", value: fatigue.rawValue))
+            rows.append(.init(id: "fatigue", label: AppCopy.t("Fréquence de fatigue", en: "Fatigue Frequency"), value: fatigue.title))
         }
         if !sleep.fatiguePeaks.isEmpty {
-            let peaks = sleep.fatiguePeaks.map(\.rawValue).joined(separator: ", ")
-            rows.append(.init(id: "fatiguePeaks", label: "Pics de fatigue", value: peaks))
+            let peaks = sleep.fatiguePeaks.map(\.title).joined(separator: ", ")
+            rows.append(.init(id: "fatiguePeaks", label: AppCopy.t("Pics de fatigue", en: "Fatigue Peaks"), value: peaks))
         }
         if let hours = sleep.averageSleepHours, hours > 0 {
-            rows.append(.init(id: "sleepHours", label: "Sommeil moyen", value: String(format: "%.1f h / nuit", hours)))
+            rows.append(.init(id: "sleepHours", label: AppCopy.t("Sommeil moyen", en: "Average Sleep"), value: String(format: "%.1f h / %@", hours, AppCopy.t("nuit", en: "night"))))
         }
 
         rows.append(
             .init(
                 id: "chronotype",
-                label: "Chronotype",
+                label: AppCopy.t("Chronotype", en: "Chronotype"),
                 value: profile.preferences.chronotype.displayName
             )
         )
 
-        return .init(id: "sleep", title: "Sommeil & énergie", rows: rows)
+        return .init(id: "sleep", title: AppCopy.t("Sommeil & énergie", en: "Sleep & Energy"), rows: rows)
     }
 
     // MARK: - Helpers

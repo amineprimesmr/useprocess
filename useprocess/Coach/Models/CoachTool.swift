@@ -12,11 +12,11 @@ enum CoachTool: String, CaseIterable, Identifiable, Sendable {
 
     var label: String {
         switch self {
-        case .analyzeWeek: return "Ma semaine"
-        case .compareScans: return "Comparer scans"
-        case .nutritionAdvice: return "Nutrition"
-        case .lastScanSummary: return "Dernier scan"
-        case .programRecap: return "Mon plan"
+        case .analyzeWeek: return AppCopy.t("Ma semaine", en: "My week")
+        case .compareScans: return AppCopy.t("Comparer scans", en: "Compare scans")
+        case .nutritionAdvice: return AppCopy.t("Nutrition", en: "Nutrition")
+        case .lastScanSummary: return AppCopy.t("Dernier scan", en: "Latest scan")
+        case .programRecap: return AppCopy.t("Mon plan", en: "My plan")
         }
     }
 

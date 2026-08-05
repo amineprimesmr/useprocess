@@ -20,12 +20,12 @@ struct ProcessReferralProgramView: View {
                 redeemedAlertReward: $redeemedAlertReward
             )
             .processTransparentScrollSurface()
-            .navigationTitle("Parrainage")
+            .navigationTitle(AppCopy.t("Parrainage", en: "Referrals"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     ProcessReferralToolbarButton(systemName: "chevron.left", action: { dismiss() })
-                        .accessibilityLabel("Fermer")
+                        .accessibilityLabel(AppCopy.close)
                 }
             }
             .sheet(isPresented: $showShareSheet) {
@@ -35,7 +35,7 @@ struct ProcessReferralProgramView: View {
                 ProcessReferralSafariView(url: ProcessLegalURLs.termsOfUse)
             }
             .alert(
-                "Récompense demandée",
+                AppCopy.t("Récompense demandée", en: "Reward Requested"),
                 isPresented: Binding(
                     get: { redeemedAlertReward != nil },
                     set: { if !$0 { redeemedAlertReward = nil } }
@@ -79,7 +79,7 @@ struct ProcessReferralProgramDetailView: View {
             redeemedAlertReward: $redeemedAlertReward
         )
         .processTransparentScrollSurface()
-        .navigationTitle("Parrainage")
+        .navigationTitle(AppCopy.t("Parrainage", en: "Referrals"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showShareSheet) {
             ProfileShareSheet(items: [store.shareMessage, store.referralLink])
@@ -88,7 +88,7 @@ struct ProcessReferralProgramDetailView: View {
             ProcessReferralSafariView(url: ProcessLegalURLs.termsOfUse)
         }
         .alert(
-            "Récompense demandée",
+            AppCopy.t("Récompense demandée", en: "Reward Requested"),
             isPresented: Binding(
                 get: { redeemedAlertReward != nil },
                 set: { if !$0 { redeemedAlertReward = nil } }
@@ -148,13 +148,13 @@ private struct ProcessReferralProgramScrollContent: View {
 
     private var headlineBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Invitez et gagnez 15 €")
+            Text(AppCopy.t("Invitez et gagnez 15 €", en: "Invite Friends and Earn $15"))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(ProcessReferralTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(
-                "Offrez à vos amis 30 jours d'accès Process Pro et recevez 15 € pour chaque parrainage validé."
+                AppCopy.t("Offrez à vos amis 30 jours d'accès Process Pro et recevez 15 € pour chaque parrainage validé.", en: "Give your friends 30 days of Process Pro and receive $15 for every verified referral.")
             )
             .font(.system(size: 15))
             .foregroundStyle(ProcessReferralTheme.textSecondary)
@@ -165,7 +165,7 @@ private struct ProcessReferralProgramScrollContent: View {
     private var linkSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Text("Votre lien de parrainage")
+                Text(AppCopy.t("Votre lien de parrainage", en: "Your referral link"))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(ProcessReferralTheme.textPrimary)
 
@@ -177,7 +177,7 @@ private struct ProcessReferralProgramScrollContent: View {
                         .foregroundStyle(ProcessReferralTheme.textSecondary)
                 }
                 .buttonStyle(.processPlain)
-                .accessibilityLabel("Informations sur le parrainage")
+                .accessibilityLabel(AppCopy.t("Informations sur le parrainage", en: "Referral information"))
             }
 
             HStack(spacing: 12) {
@@ -198,7 +198,7 @@ private struct ProcessReferralProgramScrollContent: View {
                         .foregroundStyle(ProcessReferralTheme.textSecondary)
                 }
                 .buttonStyle(.processPlain)
-                .accessibilityLabel("Copier le lien")
+                .accessibilityLabel(AppCopy.t("Copier le lien", en: "Copy link"))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -220,7 +220,7 @@ private struct ProcessReferralProgramScrollContent: View {
             HStack(spacing: 10) {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 16, weight: .semibold))
-                Text("Partager votre lien de parrainage")
+                Text(AppCopy.t("Partager votre lien de parrainage", en: "Share Your Referral Link"))
                     .font(.system(size: 16, weight: .semibold))
             }
             .foregroundStyle(.white)
@@ -235,7 +235,7 @@ private struct ProcessReferralProgramScrollContent: View {
         Button {
             showTerms = true
         } label: {
-            Text("En utilisant notre programme de parrainage, vous acceptez nos conditions d'utilisation.")
+            Text(AppCopy.t("En utilisant notre programme de parrainage, vous acceptez nos conditions d'utilisation.", en: "By using our referral program, you agree to our Terms of Use."))
                 .font(.system(size: 12))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -246,12 +246,12 @@ private struct ProcessReferralProgramScrollContent: View {
 
     private var rewardsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Vos récompenses")
+            Text(AppCopy.t("Vos récompenses", en: "Your rewards"))
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(ProcessReferralTheme.textPrimary)
 
             Text(
-                "Partagez Process avec un ami. Il profite de 30 jours Pro et vous recevez 15 € ou des mois gratuits."
+                AppCopy.t("Partagez Process avec un ami. Il profite de 30 jours Pro et vous recevez 15 € ou des mois gratuits.", en: "Share Process with a friend. They get 30 days of Pro, and you receive $15 or free months.")
             )
             .font(.system(size: 14))
             .foregroundStyle(ProcessReferralTheme.textSecondary)
@@ -276,7 +276,7 @@ private struct ProcessReferralProgramScrollContent: View {
 
     private var legalFooter: some View {
         Text(
-            "Les parrainages sont vérifiés par notre équipe. Process se réserve le droit de révoquer les avantages en cas d'abus ou de fraude."
+            AppCopy.t("Les parrainages sont vérifiés par notre équipe. Process se réserve le droit de révoquer les avantages en cas d'abus ou de fraude.", en: "Referrals are verified by our team. Process reserves the right to revoke benefits in the event of abuse or fraud.")
         )
         .font(.system(size: 11))
         .foregroundStyle(ProcessReferralTheme.textTertiary)
@@ -292,12 +292,12 @@ struct ProcessReferralStatusSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Statut")
+            Text(AppCopy.t("Statut", en: "Status"))
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(ProcessReferralTheme.textPrimary)
 
             if entries.isEmpty {
-                Text("Aucun parrainage pour l'instant. Partage ton lien pour suivre tes invités ici.")
+                Text(AppCopy.t("Aucun parrainage pour l'instant. Partage ton lien pour suivre tes invités ici.", en: "No referrals yet. Share your link to track your invites here."))
                     .font(.system(size: 14))
                     .foregroundStyle(ProcessReferralTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -315,10 +315,10 @@ struct ProcessReferralStatusSection: View {
 private func redeemedConfirmation(for reward: ProcessReferralReward) -> String {
     switch reward.kind {
     case .cashEUR:
-        return "Ta demande de \(reward.cashAmount ?? 15) € a été enregistrée. Notre équipe valide sous 48 h."
+        return AppCopy.t("Ta demande de \(reward.cashAmount ?? 15) € a été enregistrée. Notre équipe valide sous 48 h.", en: "Your $\(reward.cashAmount ?? 15) request has been recorded. Our team will review it within 48 hours.")
     case .proMonths:
         let months = reward.proMonths ?? 1
-        return "Ta demande de \(months) mois Pro gratuit a été enregistrée. Notre équipe valide sous 48 h."
+        return AppCopy.t("Ta demande de \(months) mois Pro gratuit a été enregistrée. Notre équipe valide sous 48 h.", en: "Your request for \(months) free Pro month\(months > 1 ? "s" : "") has been recorded. Our team will review it within 48 hours.")
     }
 }
 
@@ -336,7 +336,7 @@ private struct ProcessReferralRewardCard: View {
             ProcessReferralRewardIcon(reward: reward)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("\(reward.requiredReferrals) parrainage\(reward.requiredReferrals > 1 ? "s" : "")")
+                Text(AppCopy.t("\(reward.requiredReferrals) parrainage\(reward.requiredReferrals > 1 ? "s" : "")", en: "\(reward.requiredReferrals) referral\(reward.requiredReferrals > 1 ? "s" : "")"))
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(ProcessReferralTheme.badgeBlue)
                     .padding(.horizontal, 10)
@@ -373,7 +373,7 @@ private struct ProcessReferralRewardCard: View {
     @ViewBuilder
     private var redeemButton: some View {
         if isRedeemed {
-            Text("Échangé")
+            Text(AppCopy.t("Échangé", en: "Redeemed"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
                 .padding(.horizontal, 14)
@@ -384,7 +384,7 @@ private struct ProcessReferralRewardCard: View {
                 HapticManager.shared.impact(.medium)
                 onRedeem()
             } label: {
-                Text("Échanger")
+                Text(AppCopy.t("Échanger", en: "Redeem"))
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)
@@ -396,7 +396,7 @@ private struct ProcessReferralRewardCard: View {
             HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 10, weight: .bold))
-                Text("Échanger")
+                Text(AppCopy.t("Échanger", en: "Redeem"))
                     .font(.system(size: 13, weight: .semibold))
             }
             .foregroundStyle(ProcessReferralTheme.textSecondary)

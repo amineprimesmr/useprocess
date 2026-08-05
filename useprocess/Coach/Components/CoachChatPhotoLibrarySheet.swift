@@ -23,7 +23,7 @@ struct CoachChatPhotoLibrarySheet: View {
             Button {
                 showCamera = true
             } label: {
-                Label("Caméra", systemImage: "camera")
+                Label(AppCopy.t("Caméra", en: "Camera"), systemImage: "camera")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 14)
@@ -47,13 +47,13 @@ struct CoachChatPhotoLibrarySheet: View {
 
     private var topBar: some View {
         HStack(spacing: 12) {
-            Button("Annuler", action: onCancel)
+            Button(AppCopy.cancel, action: onCancel)
                 .font(.system(size: 17))
                 .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
 
-            Text("Photos")
+            Text(AppCopy.t("Photos", en: "Photos"))
                 .font(.system(size: 17, weight: .semibold))
 
             Spacer(minLength: 0)
@@ -73,7 +73,7 @@ struct CoachChatPhotoLibrarySheet: View {
             }
 
             floatingCapsule(expanded: true) {
-                Text("Sélectionner des photos")
+                Text(AppCopy.t("Sélectionner des photos", en: "Select photos"))
                     .font(.system(size: 16, weight: .semibold))
             }
 

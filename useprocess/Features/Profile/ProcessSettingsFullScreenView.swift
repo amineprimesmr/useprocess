@@ -39,22 +39,22 @@ struct ProcessSettingsFullScreenView: View {
         .environmentObject(AuthenticationManager.shared)
         .environmentObject(healthManager)
         .alert(
-            "Se déconnecter ?",
+            AppCopy.t("Se déconnecter ?", en: "Log Out?"),
             isPresented: Binding(
                 get: { pendingAccountConfirmation == .logout },
                 set: { if !$0 { pendingAccountConfirmation = nil } }
             )
         ) {
-            Button("Se déconnecter", role: .destructive) {
+            Button(AppCopy.t("Se déconnecter", en: "Log Out"), role: .destructive) {
                 pendingAccountConfirmation = nil
                 AuthenticationManager.shared.signOut()
                 dismiss()
             }
-            Button("Annuler", role: .cancel) {
+            Button(AppCopy.cancel, role: .cancel) {
                 pendingAccountConfirmation = nil
             }
         } message: {
-            Text("Tu pourras te reconnecter à tout moment.")
+            Text(AppCopy.t("Tu pourras te reconnecter à tout moment.", en: "You can log back in at any time."))
         }
     }
 }
@@ -98,21 +98,21 @@ struct ProcessProfileSettingsTabView: View {
         .background(Color.clear)
         .processClearUIKitHostingBackground()
         .alert(
-            "Se déconnecter ?",
+            AppCopy.t("Se déconnecter ?", en: "Log Out?"),
             isPresented: Binding(
                 get: { pendingAccountConfirmation == .logout },
                 set: { if !$0 { pendingAccountConfirmation = nil } }
             )
         ) {
-            Button("Se déconnecter", role: .destructive) {
+            Button(AppCopy.t("Se déconnecter", en: "Log Out"), role: .destructive) {
                 pendingAccountConfirmation = nil
                 AuthenticationManager.shared.signOut()
             }
-            Button("Annuler", role: .cancel) {
+            Button(AppCopy.cancel, role: .cancel) {
                 pendingAccountConfirmation = nil
             }
         } message: {
-            Text("Tu pourras te reconnecter à tout moment.")
+            Text(AppCopy.t("Tu pourras te reconnecter à tout moment.", en: "You can log back in at any time."))
         }
     }
 }

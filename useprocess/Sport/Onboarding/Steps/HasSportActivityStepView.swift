@@ -16,7 +16,10 @@ struct HasSportActivityStepView: View {
     private let choiceShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
 
     var body: some View {
-        OnboardingStandardStepLayout("Pratiques-tu une", "activité sportive actuellement ?") {
+        OnboardingStandardStepLayout(
+            OnboardingCopy.t("Pratiques-tu une", en: "Do you currently"),
+            OnboardingCopy.t("activité sportive actuellement ?", en: "play any sports?")
+        ) {
             VStack(spacing: 20) {
                 Button(action: {
                     HapticManager.shared.selection()
@@ -30,7 +33,7 @@ struct HasSportActivityStepView: View {
                     }
                 }) {
                     HStack(spacing: 12) {
-                        Text(OnboardingCopy.binaryLabels(sportFirst: "Oui", sportSecond: "Non").0)
+                        Text(OnboardingCopy.binaryLabels(frFirst: "Oui", frSecond: "Non", enFirst: "Yes", enSecond: "No").0)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(OnboardingTheme.primaryText)
 
@@ -65,7 +68,7 @@ struct HasSportActivityStepView: View {
                     }
                 }) {
                     HStack(spacing: 12) {
-                        Text(OnboardingCopy.binaryLabels(sportFirst: "Oui", sportSecond: "Non").1)
+                        Text(OnboardingCopy.binaryLabels(frFirst: "Oui", frSecond: "Non", enFirst: "Yes", enSecond: "No").1)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(OnboardingTheme.primaryText)
 

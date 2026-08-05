@@ -22,15 +22,15 @@ struct EditProfileView: View {
     private var firstName: String {
         let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
             ?? profileStore.profile?.displayName
-            ?? "Réglages"
-        return name.isEmpty ? "Réglages" : name
+            ?? AppCopy.settings
+        return name.isEmpty ? AppCopy.settings : name
     }
 
     var body: some View {
         VStack(spacing: 0) {
             if showsDismissHeader {
                 AccountDetailsGlassHeader(
-                    title: "Réglages",
+                    title: AppCopy.settings,
                     onBack: { dismiss() },
                     showsSave: false
                 )
@@ -39,7 +39,7 @@ struct EditProfileView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if !showsDismissHeader {
-                        Text("Réglages")
+                        Text(AppCopy.settings)
                             .font(.system(size: 28, weight: .bold))
                             .foregroundStyle(theme.primaryText)
                             .padding(.top, 10)
@@ -51,7 +51,7 @@ struct EditProfileView: View {
 
                     ProfileSettingsHubLinksSection()
 
-                    AccountDetailsActionButton(title: "Se déconnecter") {
+                    AccountDetailsActionButton(title: AppCopy.t("Se déconnecter", en: "Log Out")) {
                         onLogout()
                     }
                     .padding(.top, 8)

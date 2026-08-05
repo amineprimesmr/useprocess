@@ -41,11 +41,11 @@ struct CoachConnectorsSheet: View {
                 }
                 .padding(.vertical, 8)
             }
-            .navigationTitle("Connecteurs")
+            .navigationTitle(AppCopy.t("Connecteurs", en: "Connectors"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer", action: onCancel)
+                    Button(AppCopy.close, action: onCancel)
                 }
             }
         }

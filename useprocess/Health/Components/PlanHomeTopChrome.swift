@@ -91,7 +91,10 @@ struct PlanHomeTopChrome: View {
                     }
                     .buttonStyle(ProcessGlassPressStyle())
                     .zIndex(1)
-                    .accessibilityLabel("Jours validés, \(streakStore.displayValidatedDays)")
+                    .accessibilityLabel(AppCopy.t(
+                        "Jours validés, \(streakStore.displayValidatedDays)",
+                        en: "Validated days, \(streakStore.displayValidatedDays)"
+                    ))
 
                     Button(action: openCalendar) {
                         calendarGlassTile
@@ -101,7 +104,10 @@ struct PlanHomeTopChrome: View {
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0.0)
                     .zIndex(0)
                     .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
-                    .accessibilityLabel("Calendrier, choisir une date")
+                    .accessibilityLabel(AppCopy.t(
+                        "Calendrier, choisir une date",
+                        en: "Calendar, choose a date"
+                    ))
                 }
             }
         } else {
@@ -112,7 +118,10 @@ struct PlanHomeTopChrome: View {
                 }
                 .buttonStyle(ProcessGlassPressStyle())
                 .zIndex(1)
-                .accessibilityLabel("Jours validés, \(streakStore.displayValidatedDays)")
+                .accessibilityLabel(AppCopy.t(
+                    "Jours validés, \(streakStore.displayValidatedDays)",
+                    en: "Validated days, \(streakStore.displayValidatedDays)"
+                ))
 
                 Button(action: openCalendar) {
                     legacyCalendarButton
@@ -121,7 +130,10 @@ struct PlanHomeTopChrome: View {
                 .buttonStyle(ProcessGlassPressStyle())
                 .zIndex(0)
                 .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
-                .accessibilityLabel("Calendrier, choisir une date")
+                .accessibilityLabel(AppCopy.t(
+                    "Calendrier, choisir une date",
+                    en: "Calendar, choose a date"
+                ))
             }
         }
     }
@@ -214,15 +226,19 @@ private struct PlanHomeProgramProgressBar: View {
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "\(remainingLabel), \(Int(fillProgress * 100)) pour cent du programme"
-        )
+        .accessibilityLabel(AppCopy.t(
+            "\(remainingLabel), \(Int(fillProgress * 100)) pour cent du programme",
+            en: "\(remainingLabel), \(Int(fillProgress * 100)) percent of the program"
+        ))
     }
 
     private var remainingLabel: String {
         let days = progress.remainingProgramDays
-        guard days > 0 else { return "Terminé" }
-        return "\(days) j restant\(days > 1 ? "s" : "")"
+        guard days > 0 else { return AppCopy.done }
+        return AppCopy.t(
+            "\(days) j restant\(days > 1 ? "s" : "")",
+            en: days == 1 ? "1 day left" : "\(days) days left"
+        )
     }
 
     private var progressTrack: some View {

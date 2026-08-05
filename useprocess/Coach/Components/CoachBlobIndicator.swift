@@ -320,7 +320,7 @@ struct CoachChatThinkingBlobRow: View {
                 .frame(height: 56)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityLabel("Réponse en cours")
+        .accessibilityLabel(AppCopy.t("Réponse en cours", en: "Response in progress"))
     }
 }
 

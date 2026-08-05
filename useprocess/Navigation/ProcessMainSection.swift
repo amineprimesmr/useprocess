@@ -24,12 +24,13 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         Self.tabOrder.contains(self)
     }
 
+    @MainActor
     var label: String {
         switch self {
-        case .coach: "Process IA"
-        case .plan: "Accueil"
+        case .coach: AppCopy.t("Process IA", en: "Process AI")
+        case .plan: AppCopy.home
         case .statistics: "Streak"
-        case .profile: "Réglages"
+        case .profile: AppCopy.settings
         }
     }
 

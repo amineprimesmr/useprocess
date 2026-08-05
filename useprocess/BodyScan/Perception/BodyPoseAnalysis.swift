@@ -14,7 +14,11 @@ struct BodyPoseAnalysis: Equatable {
         segmentationCoverage: 0,
         humanDetected: false,
         poseMatchScore: 0,
-        feedback: ScanQualityFeedback(isReady: false, message: "Initialisation…", score: 0)
+        feedback: ScanQualityFeedback(
+            isReady: false,
+            message: AppCopy.tSync("Initialisation…", en: "Initializing…"),
+            score: 0
+        )
     )
 }
 

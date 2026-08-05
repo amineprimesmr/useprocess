@@ -28,9 +28,10 @@ struct ProcessHydrationEveningPrefill: Equatable, Sendable {
     let answer: String
     let metTarget: Bool
 
+    @MainActor
     var litersLabel: String {
         let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 1
@@ -40,11 +41,18 @@ struct ProcessHydrationEveningPrefill: Equatable, Sendable {
         return "\(current) / \(target) L"
     }
 
+    @MainActor
     var statusLine: String {
         if metTarget {
-            return "Hydratation \(litersLabel) · objectif atteint"
+            return AppCopy.t(
+                "Hydratation \(litersLabel) · objectif atteint",
+                en: "Hydration \(litersLabel) · goal reached"
+            )
         }
-        return "Hydratation \(litersLabel) · objectif non atteint"
+        return AppCopy.t(
+            "Hydratation \(litersLabel) · objectif non atteint",
+            en: "Hydration \(litersLabel) · goal not reached"
+        )
     }
 }
 

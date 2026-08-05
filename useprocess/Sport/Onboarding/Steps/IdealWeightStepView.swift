@@ -134,7 +134,7 @@ struct IdealWeightStepView: View {
                 Spacer()
             }
 
-            OnboardingTitleView("Un poids de référence ?")
+            OnboardingTitleView(OnboardingCopy.t("Un poids de référence ?", en: "A reference weight?"))
                 .onboardingTitleOverlay()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

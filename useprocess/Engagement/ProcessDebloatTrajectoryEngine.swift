@@ -240,24 +240,51 @@ enum ProcessDebloatTrajectoryEngine {
         switch record.verdict {
         case .excellent:
             if let delta = puffinessDelta, delta <= -4 {
-                return "Protocole debloat complet — visage moins gonflé, électrolytes et cardio OK."
+                return AppCopy.tSync(
+                    "Protocole debloat complet — visage moins gonflé, électrolytes et cardio OK.",
+                    en: "Full debloat protocol — less puffy face, electrolytes and cardio OK."
+                )
             }
-            return "Protocole debloat complet — hydratation, repas Na/K/Mg et cardio validés (\(Int(compositeScore))%)."
+            return AppCopy.tSync(
+                "Protocole debloat complet — hydratation, repas Na/K/Mg et cardio validés (\(Int(compositeScore))%).",
+                en: "Full debloat protocol — hydration, Na/K/Mg meals and cardio validated (\(Int(compositeScore))%)."
+            )
         case .onTrack:
             if record.cardio == true {
-                return "Journée validée — eau, alimentation debloat et cardio OK."
+                return AppCopy.tSync(
+                    "Journée validée — eau, alimentation debloat et cardio OK.",
+                    en: "Day validated — water, debloat nutrition and cardio OK."
+                )
             }
-            return "Journée validée — eau et repas debloat OK. Pense au cardio (min. 3/sem)."
+            return AppCopy.tSync(
+                "Journée validée — eau et repas debloat OK. Pense au cardio (min. 3/sem).",
+                en: "Day validated — water and debloat meals OK. Don't forget cardio (min. 3/week)."
+            )
         case .partial:
-            return "Journée partielle — hydratation et repas debloat requis pour valider."
+            return AppCopy.tSync(
+                "Journée partielle — hydratation et repas debloat requis pour valider.",
+                en: "Partial day — hydration and debloat meals required to validate."
+            )
         case .regression:
-            return "Régression — protocole debloat incomplet (eau + repas + cardio)."
+            return AppCopy.tSync(
+                "Régression — protocole debloat incomplet (eau + repas + cardio).",
+                en: "Regression — incomplete debloat protocol (water + meals + cardio)."
+            )
         case .pending:
-            return "Check du jour en attente — valide-le pour compter la journée."
+            return AppCopy.tSync(
+                "Check du jour en attente — valide-le pour compter la journée.",
+                en: "Today's check-in pending — validate it to count the day."
+            )
         case .missed:
-            return "Check non validé — ta trajectoire est en pause ce jour-là."
+            return AppCopy.tSync(
+                "Check non validé — ta trajectoire est en pause ce jour-là.",
+                en: "Check-in not validated — your trajectory is paused for that day."
+            )
         case .paused:
-            return "Jour en pause — compteur gelé."
+            return AppCopy.tSync(
+                "Jour en pause — compteur gelé.",
+                en: "Day paused — streak frozen."
+            )
         }
     }
 

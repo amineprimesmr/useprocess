@@ -1,6 +1,7 @@
 import SwiftUI
 
 enum PlanPostureCircuitContent {
+    @MainActor
     static func mobilityBlocks(for plan: FaceOriginPlan) -> [String] {
         let blocks = plan.postureProtocol.mobilityBlocks
         let source = blocks.isEmpty ? PostureIntelligenceGuide.neutralHomeMobilityBlocks : blocks
@@ -28,16 +29,26 @@ enum PlanPostureCircuitContent {
         return false
     }
 
-    nonisolated private static func sanitizeLegacyHomeLine(_ line: String) -> String {
+    @MainActor
+    private static func sanitizeLegacyHomeLine(_ line: String) -> String {
         let lower = line.lowercased()
         if lower.contains("face pull") {
-            return "Rétraction scapulaire au mur — bras en Y, omoplates serrées, 2×12"
+            return AppCopy.t(
+                "Rétraction scapulaire au mur — bras en Y, omoplates serrées, 2×12",
+                en: "Wall scapular retraction — Y arms, squeeze shoulder blades, 2×12"
+            )
         }
         if lower.contains("câble") || lower.contains("plaque légère") || lower.contains("extension nuque") {
-            return "Extension nuque — mains au front, 3×10 sans charge"
+            return AppCopy.t(
+                "Extension nuque — mains au front, 3×10 sans charge",
+                en: "Neck extension — hands on forehead, 3×10 with no load"
+            )
         }
         if lower.contains("banc") && lower.contains("chin tuck") {
-            return "Chin tuck — dos au mur ou tête hors lit, 3×10, maintien 2–3 s"
+            return AppCopy.t(
+                "Chin tuck — dos au mur ou tête hors lit, 3×10, maintien 2–3 s",
+                en: "Chin tuck — back to wall or head off bed, 3×10, hold 2–3 s"
+            )
         }
         return line
     }
@@ -60,6 +71,7 @@ enum PlanPostureCircuitContent {
     }
 
     /// Circuit posture condensé pour l’accueil Plan (3–4 blocs max).
+    @MainActor
     static func compactLines(
         for plan: FaceOriginPlan,
         limit: Int = 4,
@@ -83,6 +95,7 @@ enum PlanPostureCircuitContent {
         return Array(lines.prefix(cap))
     }
 
+    @MainActor
     private static func restDayLines(
         for plan: FaceOriginPlan,
         limit: Int,
@@ -93,7 +106,7 @@ enum PlanPostureCircuitContent {
             if let walking = walkingTarget(for: plan) {
                 lines.append(compactWalkingLine(walking))
             } else {
-                lines.append("Marche légère + mobilité douce")
+                lines.append(AppCopy.t("Marche légère + mobilité douce", en: "Easy walk + gentle mobility"))
             }
         }
 
@@ -112,6 +125,7 @@ enum PlanPostureCircuitContent {
         return String(line.prefix(72)) + "…"
     }
 
+    @MainActor
     static func estimatedCircuitDurationMinutes(for plan: FaceOriginPlan) -> Int {
         let blocks = mobilityBlocks(for: plan)
         guard !blocks.isEmpty else { return 11 }
@@ -126,6 +140,7 @@ enum PlanPostureCircuitContent {
         return naturalCircuitDuration(rawMinutes: max(8, raw), blockCount: blocks.count)
     }
 
+    @MainActor
     static func estimatedCircuitDurationLabel(for plan: FaceOriginPlan) -> String {
         "\(estimatedCircuitDurationMinutes(for: plan)) min"
     }
@@ -228,7 +243,7 @@ struct PlanPostureDetailSheet: View {
                             .foregroundStyle(theme.secondaryText)
                     }
 
-                    blockTitle("Cardio et Circuit")
+                    blockTitle(PlanHomeSectionKind.training.title)
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(circuitLines, id: \.self) { line in
                             PlanTrainingBlockRow(line: line, fallbackSystemImage: postureIcon(for: line))
@@ -238,11 +253,11 @@ struct PlanPostureDetailSheet: View {
                 .padding()
             }
             .processTransparentScrollSurface()
-            .navigationTitle("Cardio et Circuit")
+            .navigationTitle(PlanHomeSectionKind.training.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fermer") { dismiss() }
+                    Button(AppCopy.close) { dismiss() }
                 }
             }
         }

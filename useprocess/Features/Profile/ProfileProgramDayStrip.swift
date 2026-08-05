@@ -139,12 +139,12 @@ struct ProfileProgramDayStrip: View {
     ) -> String {
         var parts: [String] = []
         if let programDay {
-            parts.append("Jour \(programDay) du programme")
+            parts.append(AppCopy.t("Jour \(programDay) du programme", en: "Day \(programDay) of the program"))
         }
         parts.append(date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-        if isToday { parts.append("aujourd'hui") }
-        if isDebloatDay { parts.append("objectif debloat") }
-        if isValidated { parts.append("validé") }
+        if isToday { parts.append(AppCopy.today) }
+        if isDebloatDay { parts.append(AppCopy.t("objectif debloat", en: "debloat goal")) }
+        if isValidated { parts.append(AppCopy.t("validé", en: "completed")) }
         return parts.joined(separator: ", ")
     }
 

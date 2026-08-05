@@ -10,20 +10,20 @@ struct HealthConnectedSourcesSettingsView: View {
                 GroupedSettingsCard {
                     GroupedSettingsInfoRow(
                         icon: "heart.text.square",
-                        title: "Apple Santé",
+                        title: AppCopy.t("Apple Santé", en: "Apple Health"),
                         value: healthStatusLabel
                     )
                     GroupedSettingsRowDivider()
 
                     if !healthManager.isHealthDataAvailable {
-                        Text("HealthKit n'est pas disponible sur cet appareil.")
+                        Text(AppCopy.t("HealthKit n'est pas disponible sur cet appareil.", en: "HealthKit isn't available on this device."))
                             .font(.subheadline)
                             .foregroundStyle(.orange)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16)
                             .padding(.vertical, GroupedSettingsMetrics.rowVerticalPadding)
                     } else if !healthManager.isAuthorized {
-                        Text("Autorise l'accès à tes données pour alimenter le plan personnalisé et le coach.")
+                        Text(AppCopy.t("Autorise l'accès à tes données pour alimenter le plan personnalisé et le coach.", en: "Allow access to your data to power your personalized plan and coach."))
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -33,7 +33,7 @@ struct HealthConnectedSourcesSettingsView: View {
                         Button {
                             Task { await healthManager.requestAuthorizationAsync() }
                         } label: {
-                            Text("Connecter Apple Santé")
+                            Text(AppCopy.t("Connecter Apple Santé", en: "Connect Apple Health"))
                                 .font(.subheadline.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
@@ -43,7 +43,7 @@ struct HealthConnectedSourcesSettingsView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, GroupedSettingsMetrics.rowVerticalPadding)
                     } else {
-                        Text("Données synchronisées depuis l'app Santé (iPhone, Apple Watch, apps tierces).")
+                        Text(AppCopy.t("Données synchronisées depuis l'app Santé (iPhone, Apple Watch, apps tierces).", en: "Data synced from the Health app (iPhone, Apple Watch, third-party apps)."))
                             .font(.subheadline)
                             .foregroundStyle(theme.secondaryText)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -52,14 +52,14 @@ struct HealthConnectedSourcesSettingsView: View {
 
                         if healthManager.hasAppleWatch {
                             GroupedSettingsRowDivider()
-                            GroupedSettingsInfoRow(icon: "applewatch", title: "Apple Watch", value: "Connectée")
+                            GroupedSettingsInfoRow(icon: "applewatch", title: "Apple Watch", value: AppCopy.t("Connectée", en: "Connected"))
                         }
 
                         if let last = healthManager.lastSyncDate {
                             GroupedSettingsRowDivider()
                             GroupedSettingsInfoRow(
                                 icon: "arrow.triangle.2.circlepath",
-                                title: "Dernière sync",
+                                title: AppCopy.t("Dernière sync", en: "Last Sync"),
                                 value: last.formatted(date: .abbreviated, time: .shortened)
                             )
                         }
@@ -103,7 +103,7 @@ struct HealthConnectedSourcesSettingsView: View {
                                 ProgressView()
                                     .controlSize(.small)
                             }
-                            Text("Synchroniser maintenant")
+                            Text(AppCopy.t("Synchroniser maintenant", en: "Sync Now"))
                                 .font(.subheadline.weight(.semibold))
                         }
                         .frame(maxWidth: .infinity)
@@ -119,7 +119,7 @@ struct HealthConnectedSourcesSettingsView: View {
         }
         .scrollIndicators(.hidden)
         .processTransparentScrollSurface()
-        .navigationTitle("Sources connectées")
+        .navigationTitle(AppCopy.t("Sources connectées", en: "Connected Sources"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             if healthManager.isAuthorized {
@@ -129,13 +129,13 @@ struct HealthConnectedSourcesSettingsView: View {
     }
 
     private var healthStatusLabel: String {
-        if !healthManager.isHealthDataAvailable { return "Indisponible" }
-        if healthManager.isAuthorized { return "Connecté" }
-        return "Non connecté"
+        if !healthManager.isHealthDataAvailable { return AppCopy.t("Indisponible", en: "Unavailable") }
+        if healthManager.isAuthorized { return AppCopy.t("Connecté", en: "Connected") }
+        return AppCopy.t("Non connecté", en: "Not Connected")
     }
 
     private var emptyMessage: String {
-        "Aucune source détectée pour aujourd'hui."
+        AppCopy.t("Aucune source détectée pour aujourd'hui.", en: "No sources detected for today.")
     }
 
     private func sourceIcon(for name: String) -> String {

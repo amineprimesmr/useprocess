@@ -108,14 +108,14 @@ final class ProcessStreakStore {
         calendar: Calendar = .current
     ) -> [ProcessStreakDaySnapshot] {
         var weekCalendar = calendar
-        weekCalendar.locale = Locale(identifier: "fr_FR")
+        weekCalendar.locale = ProcessAppLanguage.shared.locale
         weekCalendar.firstWeekday = 2
 
         let today = weekCalendar.startOfDay(for: now)
         guard let interval = weekCalendar.dateInterval(of: .weekOfYear, for: today) else { return [] }
 
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.setLocalizedDateFormatFromTemplate("EEEEE")
 
         return (0..<7).compactMap { offset in
@@ -144,14 +144,14 @@ final class ProcessStreakStore {
         calendar: Calendar = .current
     ) -> [ProcessStreakDaySnapshot] {
         var weekCalendar = calendar
-        weekCalendar.locale = Locale(identifier: "fr_FR")
+        weekCalendar.locale = ProcessAppLanguage.shared.locale
         weekCalendar.firstWeekday = 1
 
         let today = weekCalendar.startOfDay(for: now)
         guard let interval = weekCalendar.dateInterval(of: .weekOfYear, for: today) else { return [] }
 
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.setLocalizedDateFormatFromTemplate("EEE")
 
         return (0..<7).compactMap { offset in
@@ -242,7 +242,7 @@ final class ProcessStreakStore {
     ) -> [ProcessStreakDaySnapshot] {
         let today = calendar.startOfDay(for: now)
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.shared.locale
         formatter.setLocalizedDateFormatFromTemplate("EEEEE")
 
         return (0..<28).reversed().compactMap { offset in

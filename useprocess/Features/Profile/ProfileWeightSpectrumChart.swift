@@ -192,7 +192,10 @@ struct ProfileWeightSpectrumChart: View {
     }
 
     private func formattedTooltipValue(_ value: Double) -> String {
-        let text = String(format: "%.1f", value).replacingOccurrences(of: ".", with: ",")
+        let text = String(format: "%.1f", value).replacingOccurrences(
+            of: ".",
+            with: ProcessAppLanguage.shared.isEnglish ? "." : ","
+        )
         return "\(text) kg"
     }
 
@@ -240,7 +243,7 @@ struct ProfileWeightStatisticsSection: View {
 
     private var headerBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Poids")
+            Text(AppCopy.t("Poids", en: "Weight"))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(theme.secondaryText)
 

@@ -50,7 +50,7 @@ struct GenderSelectionStepView: View {
                                 )
                                 .opacity(selectedGender == .male ? 1.0 : 0.6)
 
-                            Text(OnboardingCopy.binaryLabels(sportFirst: "Homme", sportSecond: "Femme").0)
+                            Text(OnboardingCopy.binaryLabels(frFirst: "Homme", frSecond: "Femme", enFirst: "Male", enSecond: "Female").0)
                                 .font(.system(size: LayoutConstants.isIPad ? 20 : 16, weight: .medium, design: .rounded))
                                 .foregroundStyle(OnboardingTheme.primaryText)
                                 .opacity(selectedGender == .male ? 1.0 : 0.6)
@@ -81,7 +81,7 @@ struct GenderSelectionStepView: View {
                                 )
                                 .opacity(selectedGender == .female ? 1.0 : 0.6)
 
-                            Text(OnboardingCopy.binaryLabels(sportFirst: "Homme", sportSecond: "Femme").1)
+                            Text(OnboardingCopy.binaryLabels(frFirst: "Homme", frSecond: "Femme", enFirst: "Male", enSecond: "Female").1)
                                 .font(.system(size: LayoutConstants.isIPad ? 20 : 16, weight: .medium, design: .rounded))
                                 .foregroundStyle(OnboardingTheme.primaryText)
                                 .opacity(selectedGender == .female ? 1.0 : 0.6)
@@ -103,7 +103,7 @@ struct GenderSelectionStepView: View {
 
             // ✅ Titre en OVERLAY - Position ABSOLUE depuis le haut de l'écran
             VStack {
-                OnboardingTitleView("Choisis ton genre")
+                OnboardingTitleView(OnboardingCopy.t("Choisis ton genre", en: "Choose your gender"))
                     .padding(.top, OnboardingConstants.titleTopPadding)
                 Spacer()
             }

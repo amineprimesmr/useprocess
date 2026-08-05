@@ -63,20 +63,20 @@ struct BodyScanSessionView: View {
                 .font(.system(size: 64))
                 .foregroundStyle(.white)
 
-            Text("SCAN 360°")
+            Text(AppCopy.t("SCAN 360°", en: "360° SCAN"))
                 .font(.system(size: 40, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
 
             VStack(spacing: 16) {
-                instructionLine("RECULE — 3 MÈTRES")
-                instructionLine("TOURNE SUR TOI")
-                instructionLine("LENTEMENT")
+                instructionLine(AppCopy.t("RECULE — 3 MÈTRES", en: "STEP BACK — 10 FEET"))
+                instructionLine(AppCopy.t("TOURNE SUR TOI", en: "TURN IN PLACE"))
+                instructionLine(AppCopy.t("LENTEMENT", en: "SLOWLY"))
             }
             .padding(.horizontal, 24)
 
             Spacer()
 
-            Button("COMMENCER") { startScanFlow() }
+            Button(AppCopy.t("COMMENCER", en: "START")) { startScanFlow() }
                 .font(.system(size: 22, weight: .black, design: .rounded))
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity)
@@ -106,7 +106,7 @@ struct BodyScanSessionView: View {
 
             VStack {
                 HStack {
-                    Button("QUITTER") {
+                    Button(AppCopy.t("QUITTER", en: "EXIT")) {
                         camera.stop()
                         model.reset()
                     }
@@ -133,7 +133,10 @@ struct BodyScanSessionView: View {
                         .lineLimit(2)
 
                     if model.isCountdownActive {
-                        Text("\(model.capturedAnglesCount) angles")
+                        Text(AppCopy.t(
+                            "\(model.capturedAnglesCount) angles",
+                            en: "\(model.capturedAnglesCount) angles"
+                        ))
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(.green)
                     } else {
@@ -175,12 +178,17 @@ struct BodyScanSessionView: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "camera.fill").font(.system(size: 48)).foregroundStyle(.white)
-            Text("CAMÉRA").font(.system(size: 32, weight: .black)).foregroundStyle(.white)
+            Text(AppCopy.t("CAMÉRA", en: "CAMERA")).font(.system(size: 32, weight: .black)).foregroundStyle(.white)
             Spacer()
-            Button("AUTORISER") {
+            Button(AppCopy.t("AUTORISER", en: "ALLOW")) {
                 Task {
                     if await camera.requestAccess() { startScanFlow() }
-                    else { model.phase = .error("Autorise la caméra dans Réglages.") }
+                    else {
+                        model.phase = .error(AppCopy.t(
+                            "Autorise la caméra dans Réglages.",
+                            en: "Allow camera access in Settings."
+                        ))
+                    }
                 }
             }
             .font(.system(size: 22, weight: .black))
@@ -201,17 +209,20 @@ struct BodyScanSessionView: View {
         case .notDetermined:
             model.phase = .permissions
         default:
-            model.phase = .error("Autorise la caméra dans Réglages.")
+            model.phase = .error(AppCopy.t(
+                "Autorise la caméra dans Réglages.",
+                en: "Allow camera access in Settings."
+            ))
         }
     }
 
     private var analyzingView: some View {
         VStack(spacing: 20) {
             ProgressView().tint(.white).scaleEffect(1.4)
-            Text("ANALYSE IA…")
+            Text(AppCopy.t("ANALYSE IA…", en: "AI ANALYSIS…"))
                 .font(.system(size: 28, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
-            Text("Rapport personnalisé en cours")
+            Text(AppCopy.t("Rapport personnalisé en cours", en: "Building your personalized report"))
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.6))
         }
@@ -220,7 +231,7 @@ struct BodyScanSessionView: View {
     private func errorView(_ message: String) -> some View {
         VStack(spacing: 16) {
             Text(message).foregroundStyle(.white).multilineTextAlignment(.center)
-            Button("Réessayer") { model.reset() }.buttonStyle(.borderedProminent)
+            Button(AppCopy.retry) { model.reset() }.buttonStyle(.borderedProminent)
         }
         .padding()
     }

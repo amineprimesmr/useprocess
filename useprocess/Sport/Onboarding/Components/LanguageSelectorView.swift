@@ -2,56 +2,23 @@
 //  LanguageSelectorView.swift
 //  Process
 //
-//  Sélecteur de langue avec style Liquid Glass pour l'onboarding
+//  Sélecteur de langue — FR / EN (piloté par ProcessAppLanguage).
 //
 
 import SwiftUI
 
-// MARK: - Langues supportées
-enum SupportedLanguage: String, CaseIterable, Identifiable {
-    case french = "fr"
-    case english = "en"
-    case spanish = "es"
-    case german = "de"
-    case italian = "it"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .french: return "Français"
-        case .english: return "English"
-        case .spanish: return "Español"
-        case .german: return "Deutsch"
-        case .italian: return "Italiano"
-        }
-    }
-
-    var flag: String {
-        switch self {
-        case .french: return "🇫🇷"
-        case .english: return "🇬🇧"
-        case .spanish: return "🇪🇸"
-        case .german: return "🇩🇪"
-        case .italian: return "🇮🇹"
-        }
-    }
-}
-
 // MARK: - Vue de sélection de langue
 struct LanguageSelectorView: View {
     @EnvironmentObject var profileService: UnifiedProfileService
-    @State private var currentLanguage: String = "fr"
+    @Bindable private var appLanguage = ProcessAppLanguage.shared
 
     var body: some View {
-        // ✅ Menu natif iOS avec les mêmes fonctions
         Menu {
-            ForEach(SupportedLanguage.allCases) { language in
+            ForEach(ProcessAppLanguage.Code.allCases) { language in
                 Button(action: {
                     HapticManager.shared.selection()
-                    currentLanguage = language.rawValue
                     Task {
-                        await saveLanguage(language.rawValue)
+                        await applyLanguage(language)
                     }
                 }) {
                     Label {
@@ -62,8 +29,7 @@ struct LanguageSelectorView: View {
                 }
             }
         } label: {
-            // Bouton avec le drapeau de la langue actuelle
-            Text(currentLanguageFlag)
+            Text(appLanguage.code.flag)
                 .font(.system(size: 25))
                 .frame(
                     width: OnboardingConstants.backButtonSize,
@@ -72,38 +38,28 @@ struct LanguageSelectorView: View {
                 .contentShape(Circle())
         }
         .glassCircleStyle()
-
         .onAppear {
-            // Charger la langue actuelle depuis les préférences
-            if let profile = profileService.currentProfile {
-                currentLanguage = profile.preferences.language
-            }
-        }
-        .onChange(of: profileService.currentProfile?.preferences.language) { _, newValue in
-            if let newLanguage = newValue {
-                currentLanguage = newLanguage
+            if let profileLang = profileService.currentProfile?.preferences.language {
+                let normalized = ProcessAppLanguage.normalize(profileLang)
+                if normalized != appLanguage.code {
+                    appLanguage.setLanguage(normalized)
+                }
             }
         }
     }
 
-    private var currentLanguageFlag: String {
-        SupportedLanguage.allCases.first(where: { $0.rawValue == currentLanguage })?.flag ?? "🇫🇷"
-    }
+    private func applyLanguage(_ language: ProcessAppLanguage.Code) async {
+        appLanguage.setLanguage(language)
 
-    private func saveLanguage(_ languageCode: String) async {
-        guard let profile = profileService.currentProfile else {
-            // Si pas de profil, sauvegarder dans UserDefaults temporairement
-            UserDefaults.standard.set(languageCode, forKey: "selectedLanguage")
-            return
-        }
+        guard let profile = profileService.currentProfile else { return }
 
         var preferences = profile.preferences
-        preferences.language = languageCode
+        preferences.language = language.rawValue
 
         do {
             try await profileService.updatePreferences(preferences)
         } catch {
             DebugLogger.error("\(error.localizedDescription)")
         }
-}
+    }
 }

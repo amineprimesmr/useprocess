@@ -22,8 +22,8 @@ struct ProcessProfileHomeView: View {
     private var firstName: String {
         let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
             ?? profileStore.profile?.displayName
-            ?? "Réglages"
-        return name.isEmpty ? "Réglages" : name
+            ?? AppCopy.settings
+        return name.isEmpty ? AppCopy.settings : name
     }
 
     var body: some View {
@@ -32,7 +32,7 @@ struct ProcessProfileHomeView: View {
             pageSection: .profile
         ) {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Réglages")
+                Text(AppCopy.settings)
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(theme.primaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -43,7 +43,7 @@ struct ProcessProfileHomeView: View {
 
                 ProfileSettingsHubLinksSection()
 
-                AccountDetailsActionButton(title: "Se déconnecter") {
+                AccountDetailsActionButton(title: AppCopy.t("Se déconnecter", en: "Log Out")) {
                     onLogout()
                 }
                 .padding(.top, 8)

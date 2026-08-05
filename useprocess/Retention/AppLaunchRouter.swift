@@ -1,54 +1,51 @@
 import Foundation
 
-/// Route les lancements via Quick Action vers la rétention essai gratuit.
+/// Route les lancements via Quick Action vers l’offre lifetime winback.
 @MainActor
 @Observable
 final class AppLaunchRouter {
     static let shared = AppLaunchRouter()
 
-    private(set) var pendingTrialRetentionSource: ProcessHomeScreenQuickActionKind?
-    var showsTrialRetentionOffer = false
+    private(set) var pendingLifetimeOfferSource: ProcessHomeScreenQuickActionKind?
+    var showsLifetimeRetentionOffer = false
 
     private init() {}
 
     func handleShortcut(type: String) {
-        guard let kind = ProcessHomeScreenQuickActionKind(rawValue: type) else { return }
+        guard let kind = ProcessHomeScreenQuickActionKind.resolve(shortcutType: type) else { return }
 
-        pendingTrialRetentionSource = kind
+        pendingLifetimeOfferSource = kind
         ProcessAnalytics.trackQuickActionOpened(kind: kind.analyticsSource)
-        presentTrialRetentionIfEligible()
+        presentLifetimeOfferIfEligible()
     }
 
     func flushPendingPresentation() {
-        presentTrialRetentionIfEligible()
+        presentLifetimeOfferIfEligible()
     }
 
-    func clearTrialRetentionPresentation() {
-        showsTrialRetentionOffer = false
-        pendingTrialRetentionSource = nil
-        SubscriptionService.shared.setRetentionTrialOfferActive(false)
+    func clearLifetimeOfferPresentation() {
+        showsLifetimeRetentionOffer = false
+        pendingLifetimeOfferSource = nil
     }
 
-    var activeTrialRetentionSource: ProcessHomeScreenQuickActionKind {
-        pendingTrialRetentionSource ?? .trialOffer
+    var activeLifetimeOfferSource: ProcessHomeScreenQuickActionKind {
+        pendingLifetimeOfferSource ?? .lifetimeOffer
     }
 
-    private func presentTrialRetentionIfEligible() {
-        guard pendingTrialRetentionSource != nil else { return }
-        guard shouldPresentTrialRetention else { return }
-        guard !showsTrialRetentionOffer else { return }
+    private func presentLifetimeOfferIfEligible() {
+        guard pendingLifetimeOfferSource != nil else { return }
+        guard shouldPresentLifetimeOffer else { return }
+        guard !showsLifetimeRetentionOffer else { return }
 
-        // Laisse SwiftUI monter AppShellView avant de présenter le fullScreenCover.
         Task { @MainActor in
             await Task.yield()
-            guard pendingTrialRetentionSource != nil, shouldPresentTrialRetention else { return }
-            SubscriptionService.shared.setRetentionTrialOfferActive(true)
-            showsTrialRetentionOffer = true
+            guard pendingLifetimeOfferSource != nil, shouldPresentLifetimeOffer else { return }
+            showsLifetimeRetentionOffer = true
         }
     }
 
-    private var shouldPresentTrialRetention: Bool {
-        guard SubscriptionConfiguration.retentionQuickActionTrialDays > 0 else { return false }
+    private var shouldPresentLifetimeOffer: Bool {
+        guard SubscriptionConfiguration.retentionQuickActionLifetimeOfferEnabled else { return false }
         guard !SubscriptionService.shared.subscriptionStatus.isActive else { return false }
         return true
     }
