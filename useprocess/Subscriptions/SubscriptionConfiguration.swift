@@ -192,7 +192,8 @@ enum SubscriptionBillingPlan: String, CaseIterable, Identifiable {
         case .monthly:
             return "\(variant.fallbackShortPrice)\(perMonth)"
         case .annual:
-            return "\(variant.fallbackAnnualMonthlyEquivalent)\(perMonth)"
+            let perYear = OnboardingCopy.t("/an", en: "/yr")
+            return "\(variant.fallbackAnnualPrice)\(perYear)"
         }
     }
 
@@ -285,6 +286,11 @@ struct SubscriptionProductDisplay: Equatable {
         return Self.paywallPerMonthLabel(amount: amount)
     }
 
+    /// Prix annuel affiché sur le segment Annuel (ex. « 34,99€/an »), pas l’équivalent mensuel.
+    var paywallPrimaryAnnualPriceLabel: String {
+        "\(displayPrice)\(AppCopy.tSync("/an", en: "/yr"))"
+    }
+
     /// Label segment plan court (hebdo ou mensuel).
     func paywallShortPlanPriceLabel(for plan: SubscriptionBillingPlan) -> String {
         switch plan {
@@ -293,7 +299,7 @@ struct SubscriptionProductDisplay: Equatable {
         case .monthly:
             return paywallPrimaryMonthlyPriceLabel
         case .annual:
-            return paywallPrimaryMonthlyPriceLabel
+            return paywallPrimaryAnnualPriceLabel
         }
     }
 

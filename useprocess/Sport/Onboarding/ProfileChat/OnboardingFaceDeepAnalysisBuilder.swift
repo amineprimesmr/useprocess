@@ -12,6 +12,13 @@ enum OnboardingFaceDeepAnalysisBuilder {
         let retentionZone = FaceScanIndicators.displayZone(for: .retention, result: result)
         let cortisolZone = FaceScanIndicators.displayZone(for: .stressLoad, result: result)
 
+        let potential = potentialPercent(
+            retention: retention,
+            markers: markers,
+            seed: seed
+        )
+        let potentialZone = FaceScanIndicators.wellnessZone(forPercent: potential)
+
         let unlocked: [OnboardingFaceDeepAnalysis.UnlockedMetric] = [
             .init(
                 kind: .retention,
@@ -24,6 +31,16 @@ enum OnboardingFaceDeepAnalysisBuilder {
                 percent: cortisol,
                 zone: cortisolZone,
                 phrase: FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol)
+            ),
+            .init(
+                kind: .definition,
+                percent: potential,
+                zone: potentialZone,
+                phrase: potentialPhrase(for: potential),
+                customTitle: AppCopy.tSync("POTENTIEL", en: "POTENTIAL"),
+                customSystemImage: "chart.line.uptrend.xyaxis",
+                customID: "potential",
+                customHigherIsWorse: false
             )
         ]
 
@@ -57,6 +74,44 @@ enum OnboardingFaceDeepAnalysisBuilder {
             strengths: strengths,
             summary: summary
         )
+    }
+
+    /// Potentiel de transformation — plus haut = mieux (rétention réversible + base structurelle).
+    private static func potentialPercent(
+        retention: Int,
+        markers: FaceWellnessMarkers,
+        seed: UInt64
+    ) -> Int {
+        let definition = FaceScanIndicators.definitionScore(from: markers)
+        let symmetry = markers.facialSymmetryScore
+
+        var value = 64.0
+        value += Double(retention) * 0.16
+        value += Double(definition) * 0.10
+        value += Double(symmetry - 50) * 0.04
+        value += Double(Int(seed % 5)) - 2.0
+
+        return Int(min(96, max(70, value.rounded())))
+    }
+
+    private static func potentialPhrase(for percent: Int) -> String {
+        switch percent {
+        case 88...:
+            return AppCopy.tSync(
+                "Très fort potentiel avec ton plan",
+                en: "Very high potential with your plan"
+            )
+        case 78..<88:
+            return AppCopy.tSync(
+                "Belle marge de transformation",
+                en: "Strong room to transform"
+            )
+        default:
+            return AppCopy.tSync(
+                "Du potentiel clairement atteignable",
+                en: "Clear, achievable potential"
+            )
+        }
     }
 
     private static func facialVolumeComposition(
@@ -97,7 +152,7 @@ enum OnboardingFaceDeepAnalysisBuilder {
         let goodNewsPhrase: String = {
             if bloatedPercent >= 90 {
                 return AppCopy.tSync(
-                    "Bonne nouvelle : c’est surtout de la rétention — donc réversible avec ton plan, pas de la graisse.",
+                    "Bonne nouvelle : c’est surtout de la rétention — réversible avec ton plan, pas de la graisse.",
                     en: "Good news: it’s mostly retention — reversible with your plan, not fat."
                 )
             }

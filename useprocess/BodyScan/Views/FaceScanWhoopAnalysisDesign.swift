@@ -149,38 +149,46 @@ struct FaceScanWhoopAnalysisScreen: View {
                         onStudioFramingChange: { framing in
                             framingDraft = framing.clamped()
                             persistStudioEdits()
-                        }
+                        },
+                        showsGlobalScore: !(isCreatorUnlocked && creatorMode.scanResultsLayout == .onboardingDeep)
                     )
                         .padding(.bottom, 22)
 
-                    FaceScanWhoopMetricsCard(
-                        result: displayResult,
-                        previous: previousForDisplay,
-                        hidesComparisons: isCreatorUnlocked,
-                        emphasizesLabels: isCreatorUnlocked
-                    )
+                    if isCreatorUnlocked, creatorMode.scanResultsLayout == .onboardingDeep {
+                        OnboardingFaceDeepAnalysisView(
+                            result: displayResult,
+                            ringScale: 1,
+                            showsScoreRing: false,
+                            showsUnlockTeaser: false
+                        )
                         .padding(.horizontal, 16)
 
-                    if isCreatorUnlocked {
-                        FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
-                            creatorMode.resultQuality = value
-                            persistStudioEdits()
+                        studioControlsBlock
+                    } else {
+                        FaceScanWhoopMetricsCard(
+                            result: displayResult,
+                            previous: previousForDisplay,
+                            hidesComparisons: isCreatorUnlocked,
+                            emphasizesLabels: isCreatorUnlocked
+                        )
+                            .padding(.horizontal, 16)
+
+                        if isCreatorUnlocked {
+                            studioControlsBlock
                         }
+
+                        FaceScanWhoopEvolutionSummaryCard(
+                            result: studioBaseResult ?? displayResult,
+                            previous: previousForDisplay,
+                            history: evolutionHistory
+                        )
                         .padding(.horizontal, 16)
-                        .padding(.top, 16)
+                        .padding(.top, 14)
+
+                        FaceScanWhoopIndicatorTrendsSection(history: evolutionHistory)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 28)
                     }
-
-                    FaceScanWhoopEvolutionSummaryCard(
-                        result: studioBaseResult ?? displayResult,
-                        previous: previousForDisplay,
-                        history: evolutionHistory
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 14)
-
-                    FaceScanWhoopIndicatorTrendsSection(history: evolutionHistory)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 28)
 
                     Spacer(minLength: bottomContentInset)
                 }
@@ -200,6 +208,7 @@ struct FaceScanWhoopAnalysisScreen: View {
             studioBaseResult = storedResult
             qualityDraft = creatorMode.resultQuality
         }
+        .animation(.easeInOut(duration: 0.22), value: creatorMode.scanResultsLayout)
         .sheet(isPresented: $showsAnalysisInfo) {
             FaceScanWhoopAnalysisInfoSheet(
                 result: displayResult,
@@ -213,6 +222,20 @@ struct FaceScanWhoopAnalysisScreen: View {
         var updated = displayResult
         updated.studioFraming = framingDraft.isIdentity ? nil : framingDraft.clamped()
         FaceScanHistoryStore.shared.update(updated)
+    }
+
+    @ViewBuilder
+    private var studioControlsBlock: some View {
+        VStack(spacing: 14) {
+            FaceScanStudioResultsLayoutPicker(layout: $creatorMode.scanResultsLayout)
+
+            FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
+                creatorMode.resultQuality = value
+                persistStudioEdits()
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
     }
 
     private var headerBar: some View {
@@ -430,6 +453,8 @@ struct FaceScanWhoopScoreRing: View {
     var studioFraming: FaceScanStudioFraming = .identity
     var allowsStudioFraming: Bool = false
     var onStudioFramingChange: ((FaceScanStudioFraming) -> Void)? = nil
+    /// Temporaire : masquer le % / label « Score global » (garde photo + anneau coloré).
+    var showsGlobalScore: Bool = true
 
     @State private var animatedProgress: Double = 0
     @State private var displayedScore: Int = 0
@@ -469,26 +494,28 @@ struct FaceScanWhoopScoreRing: View {
                         .frame(width: innerDiameter, height: innerDiameter)
                         .clipShape(Circle())
 
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.72)],
-                        startPoint: .center,
-                        endPoint: .bottom
-                    )
-                    .clipShape(Circle())
+                    if showsGlobalScore {
+                        LinearGradient(
+                            colors: [.clear, .black.opacity(0.72)],
+                            startPoint: .center,
+                            endPoint: .bottom
+                        )
+                        .clipShape(Circle())
 
-                    VStack(spacing: 2) {
-                        Text("\(displayedScore)%")
-                            .font(.system(size: 46, weight: .bold))
-                            .foregroundStyle(.white)
-                            .monospacedDigit()
-                            .contentTransition(.numericText())
+                        VStack(spacing: 2) {
+                            Text("\(displayedScore)%")
+                                .font(.system(size: 46, weight: .bold))
+                                .foregroundStyle(.white)
+                                .monospacedDigit()
+                                .contentTransition(.numericText())
 
-                        Text(AppCopy.t("SCORE GLOBAL", en: "OVERALL SCORE"))
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.82))
-                            .tracking(1.2)
+                            Text(AppCopy.t("SCORE GLOBAL", en: "OVERALL SCORE"))
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.82))
+                                .tracking(1.2)
+                        }
+                        .padding(.bottom, 22)
                     }
-                    .padding(.bottom, 22)
                 }
                 .frame(width: innerDiameter, height: innerDiameter)
                 .clipShape(Circle())

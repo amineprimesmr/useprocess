@@ -7,7 +7,6 @@ final class MealPhotoScanViewModel {
     enum Phase: Equatable {
         case camera
         case analyzing
-        case optimizing
         case result
     }
 
@@ -31,6 +30,8 @@ final class MealPhotoScanViewModel {
     private(set) var selectedResultTab: ResultTab = .scanned
     private(set) var errorMessage: String?
     private(set) var analysisStatus = AppCopy.t("Analyse du repas…", en: "Analyzing meal…")
+    /// Optimisation debloat en arrière-plan (résultat scan déjà affiché).
+    private(set) var isOptimizingInBackground = false
 
     var selectedSlot: MealTimeSlot = .lunch
 
@@ -70,8 +71,10 @@ final class MealPhotoScanViewModel {
     func handleCapturedImage(_ image: UIImage, plan: FaceOriginPlan?, profile: UnifiedUserProfile?) {
         capturedImage = image
         errorMessage = nil
+        optimizedMeal = nil
+        isOptimizingInBackground = false
         phase = .analyzing
-        analysisStatus = AppCopy.t("Analyse du repas…", en: "Analyzing meal…")
+        analysisStatus = AppCopy.t("Identification des aliments…", en: "Identifying foods…")
 
         Task {
             await analyze(image: image, plan: plan, profile: profile)
@@ -83,6 +86,7 @@ final class MealPhotoScanViewModel {
         scannedMeal = nil
         optimizedMeal = nil
         errorMessage = nil
+        isOptimizingInBackground = false
         selectedResultTab = .scanned
         phase = .camera
     }
@@ -93,6 +97,91 @@ final class MealPhotoScanViewModel {
         store.saveDraftMeal(dayId: day.id, meal: meal, slot: selectedSlot)
         store.saveValidatedMeal(dayId: day.id, meal: meal, slot: selectedSlot)
         return meal
+    }
+
+    // MARK: - Édition locale (sans nouvel appel réseau)
+
+    /// Indices des aliments éditables dans `activeMeal.items` (hors boissons).
+    var editableFoodItemIndices: [Int] {
+        guard let meal = activeMeal else { return [] }
+        return meal.items.indices.filter { !meal.items[$0].isBeverageIngredient }
+    }
+
+    func updateFoodItem(atFoodIndex foodIndex: Int, name: String, quantity: String, role: String) {
+        let indices = editableFoodItemIndices
+        guard indices.indices.contains(foodIndex) else { return }
+        let itemIndex = indices[foodIndex]
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        mutateActiveMeal { meal in
+            meal.items[itemIndex] = MealSuggestionItem(
+                name: trimmedName,
+                quantity: Self.normalizedQuantity(quantity),
+                role: role
+            )
+        }
+    }
+
+    func removeFoodItem(atFoodIndex foodIndex: Int) {
+        let indices = editableFoodItemIndices
+        guard indices.indices.contains(foodIndex) else { return }
+        // Garde au moins 1 aliment.
+        guard indices.count > 1 else { return }
+        let itemIndex = indices[foodIndex]
+
+        mutateActiveMeal { meal in
+            meal.items.remove(at: itemIndex)
+        }
+    }
+
+    func addFoodItem(name: String, quantity: String, role: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        mutateActiveMeal { meal in
+            meal.items.append(
+                MealSuggestionItem(
+                    name: trimmedName,
+                    quantity: Self.normalizedQuantity(quantity),
+                    role: role
+                )
+            )
+        }
+    }
+
+    private static func normalizedQuantity(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "—" : trimmed
+    }
+
+    private func mutateActiveMeal(_ update: (inout MealSuggestionContent) -> Void) {
+        switch selectedResultTab {
+        case .scanned:
+            guard var meal = scannedMeal else { return }
+            update(&meal)
+            refreshScore(&meal)
+            scannedMeal = meal
+            // Le scan de base a changé → l’optimisé n’est plus fiable.
+            optimizedMeal = nil
+            isOptimizingInBackground = false
+        case .optimized:
+            guard var meal = optimizedMeal else { return }
+            update(&meal)
+            refreshScore(&meal)
+            optimizedMeal = meal
+        }
+        HapticManager.shared.selection()
+    }
+
+    private func refreshScore(_ meal: inout MealSuggestionContent) {
+        let assessment = MealNutritionCatalog.debloatAssessment(for: meal)
+        meal.protocolScore = assessment.score
+        meal.scoreSummary = assessment.summary
+        meal.showsScore = true
+        if !meal.tags.contains("corrigé") {
+            meal.tags.append("corrigé")
+        }
     }
 
     // MARK: - Private
@@ -108,8 +197,8 @@ final class MealPhotoScanViewModel {
 
         guard ClaudeConfiguration.isConfigured else {
             fail(AppCopy.t(
-                "Coach IA indisponible — configure l'API Claude.",
-                en: "AI coach unavailable — configure the Claude API."
+                "Analyse indisponible — configure le coach.",
+                en: "Analysis unavailable — configure the coach."
             ))
             return
         }
@@ -134,10 +223,6 @@ final class MealPhotoScanViewModel {
         }
 
         do {
-            analysisStatus = AppCopy.t(
-                "Identification des aliments visibles…",
-                en: "Identifying visible foods…"
-            )
             let meal = try await MealPhotoScanAnalysisService.analyzePhoto(
                 image: image,
                 slot: selectedSlot,
@@ -145,39 +230,21 @@ final class MealPhotoScanViewModel {
             )
             scannedMeal = meal
             selectedResultTab = .scanned
-
-            if needsOptimization(for: meal) {
-                phase = .optimizing
-                analysisStatus = AppCopy.t(
-                    "Optimisation debloat de ton repas…",
-                    en: "Debloat-optimizing your meal…"
-                )
-                let assessment = MealNutritionCatalog.debloatAssessment(for: meal)
-                do {
-                    let optimized = try await MealPhotoScanAnalysisService.optimizeScannedMeal(
-                        meal,
-                        assessment: assessment,
-                        slot: selectedSlot,
-                        profile: profile
-                    )
-                    optimizedMeal = optimized
-                    selectedResultTab = .optimized
-                } catch {
-                    optimizedMeal = nil
-                    selectedResultTab = .scanned
-                }
-            }
-
+            // Affiche le scan tout de suite — l’optimisation ne bloque plus l’écran.
             phase = .result
+            HapticManager.shared.notification(.success)
             ProcessAnalytics.trackMealScanCompleted(
                 slot: selectedSlot.rawValue,
-                optimized: optimizedMeal != nil
+                optimized: false
             )
-            HapticManager.shared.notification(.success)
+
+            if needsOptimization(for: meal) {
+                await runBackgroundOptimize(meal: meal, profile: profile)
+            }
         } catch let error as ProcessPrivacyConsentError {
             fail(error.localizedDescription ?? AppCopy.t(
-                "Autorise l'analyse IA dans les réglages.",
-                en: "Allow AI analysis in Settings."
+                "Autorise l'analyse dans les réglages.",
+                en: "Allow analysis in Settings."
             ))
         } catch let error as MealHubError {
             fail(message(for: error))
@@ -185,8 +252,8 @@ final class MealPhotoScanViewModel {
             fail(claudeMessage(for: error))
         } catch let error as CoachRemoteError {
             fail(error.localizedDescription ?? AppCopy.t(
-                "Coach indisponible. Réessaie.",
-                en: "Coach unavailable. Try again."
+                "Analyse indisponible. Réessaie.",
+                en: "Analysis unavailable. Try again."
             ))
         } catch {
             fail(AppCopy.t(
@@ -196,15 +263,40 @@ final class MealPhotoScanViewModel {
         }
     }
 
+    private func runBackgroundOptimize(meal: MealSuggestionContent, profile: UnifiedUserProfile?) async {
+        isOptimizingInBackground = true
+        defer { isOptimizingInBackground = false }
+
+        let assessment = MealNutritionCatalog.debloatAssessment(for: meal)
+        do {
+            let optimized = try await MealPhotoScanAnalysisService.optimizeScannedMeal(
+                meal,
+                assessment: assessment,
+                slot: selectedSlot,
+                profile: profile
+            )
+            guard phase == .result, scannedMeal?.name == meal.name else { return }
+            optimizedMeal = optimized
+            selectedResultTab = .optimized
+            ProcessAnalytics.trackMealScanCompleted(
+                slot: selectedSlot.rawValue,
+                optimized: true
+            )
+            HapticManager.shared.selection()
+        } catch {
+            optimizedMeal = nil
+        }
+    }
+
     private func claudeMessage(for error: ClaudeAPIError) -> String {
         switch error {
         case .missingAPIKey:
             return AppCopy.t(
-                "Coach IA indisponible — configure l'API Claude.",
-                en: "AI coach unavailable — configure the Claude API."
+                "Analyse indisponible — configure le coach.",
+                en: "Analysis unavailable — configure the coach."
             )
         case .invalidResponse:
-            return AppCopy.t("Réponse IA vide. Réessaie.", en: "Empty AI response. Try again.")
+            return AppCopy.t("Réponse vide. Réessaie.", en: "Empty response. Try again.")
         case .httpError(let status, _):
             if status == 429 {
                 return AppCopy.t(
@@ -242,6 +334,7 @@ final class MealPhotoScanViewModel {
     private func fail(_ message: String) {
         errorMessage = message
         phase = .camera
+        isOptimizingInBackground = false
         ProcessAnalytics.trackMealScanFailed(error: message)
         HapticManager.shared.notification(.warning)
     }

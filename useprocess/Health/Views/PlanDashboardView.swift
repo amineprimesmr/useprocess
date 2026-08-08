@@ -9,17 +9,10 @@ struct PlanDashboardView: View {
     @Environment(\.appTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
     @Bindable private var session = AppSession.shared
-    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
 
     @State private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
     @State private var showCalendar = false
-    @State private var showStreakToast = false
-    @State private var streakToast = DynamicIslandToastMessage.streak(
-        snapshot: ProcessStreakStore.shared.snapshot,
-        firstName: nil
-    )
-    @State private var streakToastDismissTask: Task<Void, Never>?
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
     @State private var planHealthMetrics = PlanHomeHealthMetrics()
 
@@ -47,7 +40,7 @@ struct PlanDashboardView: View {
                         selectedDate: $selectedPlanDate,
                         showCalendar: $showCalendar,
                         plan: livePlan,
-                        onOpenStreak: presentStreakToast
+                        onOpenStreak: presentDailyChecklist
                     )
 
                     planContent
@@ -63,7 +56,6 @@ struct PlanDashboardView: View {
                 planStore.reloadForCurrentUser(force: true)
                 refreshPlanHealthMetrics()
             }
-            .dynamicIslandToast(isPresented: $showStreakToast, value: streakToast, onTap: openProfileStatistics)
             .onAppear {
                 if let plan = livePlan {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
@@ -160,46 +152,12 @@ struct PlanDashboardView: View {
         planStore.reloadForCurrentUser(force: true)
     }
 
-    private func presentStreakToast() {
-        HapticManager.shared.impact(.light)
-
-        let streakStore = ProcessStreakStore.shared
-        streakStore.sync(from: planStore.plan)
-
-        let firstName = profileService.currentProfile?.firstName
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        streakToastDismissTask?.cancel()
-        streakToast = .streak(
-            snapshot: streakStore.snapshot,
-            firstName: firstName?.isEmpty == false ? firstName : nil
+    private func presentDailyChecklist() {
+        HapticManager.shared.impact(.medium)
+        ProcessStreakStore.shared.sync(from: planStore.plan)
+        ProcessEveningCheckInPresenter.shared.present(
+            targetDate: Date(),
+            isRequired: false
         )
-
-        if showStreakToast {
-            showStreakToast = false
-            DispatchQueue.main.async {
-                showStreakToast = true
-                scheduleStreakToastDismiss()
-            }
-        } else {
-            showStreakToast = true
-            scheduleStreakToastDismiss()
-        }
-    }
-
-    private func openProfileStatistics() {
-        streakToastDismissTask?.cancel()
-        showStreakToast = false
-        planBridge.openProfileStatistics()
-        withAnimation(ProcessGlass.spring) {
-            selectedSection = .statistics
-        }
-    }
-
-    private func scheduleStreakToastDismiss() {
-        streakToastDismissTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(3.8))
-            guard !Task.isCancelled else { return }
-            showStreakToast = false
-        }
     }
 }

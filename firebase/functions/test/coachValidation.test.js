@@ -18,6 +18,12 @@ test("unknown models are forced to the production default", () => {
   assert.equal(normalizeModel("attacker-controlled-model"), "claude-sonnet-4-6");
 });
 
+test("current production models are preserved", () => {
+  assert.equal(normalizeModel("claude-haiku-4-5-20251001"), "claude-haiku-4-5-20251001");
+  assert.equal(normalizeModel("claude-sonnet-4-6"), "claude-sonnet-4-6");
+  assert.equal(normalizeModel("claude-opus-4-8"), "claude-opus-4-8");
+});
+
 test("valid coach payload is accepted", () => {
   assert.equal(validateCoachBody(validBody), null);
 });

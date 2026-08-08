@@ -53,8 +53,8 @@ final class OriginMealSuggestionViewModel {
 
         guard ClaudeConfiguration.isConfigured else {
             errorMessage = AppCopy.t(
-                "Coach IA indisponible — configure l'API Claude.",
-                en: "AI coach unavailable — configure the Claude API."
+                "Analyse indisponible — configure le coach.",
+                en: "Analysis unavailable — configure the coach."
             )
             phase = .idle
             return

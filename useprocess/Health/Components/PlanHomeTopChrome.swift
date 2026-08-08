@@ -92,8 +92,8 @@ struct PlanHomeTopChrome: View {
                     .buttonStyle(ProcessGlassPressStyle())
                     .zIndex(1)
                     .accessibilityLabel(AppCopy.t(
-                        "Jours validés, \(streakStore.displayValidatedDays)",
-                        en: "Validated days, \(streakStore.displayValidatedDays)"
+                        "Check du jour, \(streakStore.displayValidatedDays) jours validés",
+                        en: "Daily check-in, \(streakStore.displayValidatedDays) validated days"
                     ))
 
                     Button(action: openCalendar) {
@@ -119,8 +119,8 @@ struct PlanHomeTopChrome: View {
                 .buttonStyle(ProcessGlassPressStyle())
                 .zIndex(1)
                 .accessibilityLabel(AppCopy.t(
-                    "Jours validés, \(streakStore.displayValidatedDays)",
-                    en: "Validated days, \(streakStore.displayValidatedDays)"
+                    "Check du jour, \(streakStore.displayValidatedDays) jours validés",
+                    en: "Daily check-in, \(streakStore.displayValidatedDays) validated days"
                 ))
 
                 Button(action: openCalendar) {

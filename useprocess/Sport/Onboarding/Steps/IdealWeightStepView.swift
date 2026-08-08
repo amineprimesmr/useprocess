@@ -20,7 +20,7 @@ struct IdealWeightStepView: View {
     var onContinue: (() -> Void)?
     var onPersistAnswers: (() -> Void)?
 
-    @State private var unit: WeightUnit = .kg
+    @State private var unit: WeightUnit = ProcessMeasurementPreference.prefersImperial ? .lbs : .kg
     @State private var weightString: String = ""
     @State private var didBootstrap = false
     @FocusState private var isTextFieldFocused: Bool
@@ -152,17 +152,16 @@ struct IdealWeightStepView: View {
             }
         }
         .onChange(of: weightString) { _, newValue in
-            let filtered = newValue.filter { $0.isNumber || $0 == "." }
-            if filtered != newValue {
-                weightString = filtered
+            let normalized = Self.normalizeWeightInput(newValue)
+            if normalized != newValue {
+                weightString = normalized
                 return
             }
 
-            let weightValue = Double(newValue) ?? 0
-            onValidationChanged?(isValidWeight)
             idealWeight = displayWeight
+            onValidationChanged?(isValidWeight)
 
-            if weightValue > 0 {
+            if OnboardingViewModel.isPlausibleWeight(displayWeight) {
                 onPersistAnswers?()
             }
         }
@@ -173,17 +172,32 @@ struct IdealWeightStepView: View {
 
     private func handleContinue() {
         let trimmed = weightString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, Double(trimmed) ?? 0 > 0, isValidWeight else { return }
+        guard !trimmed.isEmpty else { return }
+        idealWeight = displayWeight
+        guard isValidWeight else { return }
 
         HapticManager.shared.impact(.medium)
 
         resignKeyboard()
         onContinue?()
 
-        idealWeight = displayWeight
         Task.detached(priority: .background) {
             await saveIdealWeight()
         }
+    }
+
+    private static func normalizeWeightInput(_ raw: String) -> String {
+        var result = ""
+        var sawSeparator = false
+        for character in raw {
+            if character.isNumber {
+                result.append(character)
+            } else if (character == "." || character == ","), !sawSeparator {
+                result.append(".")
+                sawSeparator = true
+            }
+        }
+        return result
     }
 
     private func bootstrapIfNeeded() {

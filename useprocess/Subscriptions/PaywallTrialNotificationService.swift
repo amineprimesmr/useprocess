@@ -1,7 +1,7 @@
 import Foundation
 import UserNotifications
 
-/// Ancien service de rappel fin d’essai — no-op (essais gratuits désactivés).
+/// Compat essais gratuits (désactivés) — la conversion non-payeurs est dans `ProcessMarketingNotificationService`.
 @MainActor
 final class PaywallTrialNotificationService {
     static let shared = PaywallTrialNotificationService()
@@ -12,7 +12,6 @@ final class PaywallTrialNotificationService {
     private init() {}
 
     func scheduleTrialEndingReminder(trialEndDate: Date) async {
-        // Essais gratuits désactivés — ne jamais planifier de rappel d’essai.
         _ = trialEndDate
         clearTrialNotifications()
     }
@@ -20,6 +19,12 @@ final class PaywallTrialNotificationService {
     func scheduleTrialEndingReminder(days: Int) async {
         _ = days
         clearTrialNotifications()
+        // Permission notif accordée en onboarding — amorce la série marketing si déjà non-payer.
+        if !SubscriptionService.shared.subscriptionStatus.isActive {
+            await ProcessMarketingNotificationService.shared.scheduleConversionSeries(
+                reason: "notification_permission_granted"
+            )
+        }
     }
 
     func clearExitNotification() {

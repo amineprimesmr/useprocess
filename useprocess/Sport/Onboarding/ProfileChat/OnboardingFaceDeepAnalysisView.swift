@@ -25,7 +25,7 @@ struct OnboardingFaceDeepAnalysisView: View {
     var body: some View {
         VStack(spacing: 14) {
             if showsScoreRing {
-                FaceScanWhoopScoreRing(result: result)
+                FaceScanWhoopScoreRing(result: result, showsGlobalScore: false)
                     .scaleEffect(ringScale)
                     .padding(.bottom, 4)
             }
@@ -63,13 +63,12 @@ struct OnboardingFaceDeepAnalysisView: View {
 
     private var unlockedCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            cardHeader(
-                title: AppCopy.t("Signaux ouverts", en: "Unlocked signals"),
-                locked: false
-            )
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
+            Text(AppCopy.t("Signaux ouverts", en: "Open signals"))
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(FaceScanWhoopPalette.label)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 6)
 
             ForEach(Array(analysis.unlocked.enumerated()), id: \.element.id) { index, metric in
                 if index > 0 {
@@ -84,7 +83,7 @@ struct OnboardingFaceDeepAnalysisView: View {
 
             Divider()
                 .overlay(dividerColor)
-                .padding(.leading, 52)
+                .padding(.leading, 16)
 
             volumeCompositionRow(analysis.volumeComposition)
                 .padding(.horizontal, 16)
@@ -102,16 +101,30 @@ struct OnboardingFaceDeepAnalysisView: View {
         _ composition: OnboardingFaceDeepAnalysis.FacialVolumeComposition
     ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.78))
-                    .frame(width: 22)
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "circle.lefthalf.filled")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(FaceScanWhoopPalette.secondary)
 
-                Text(AppCopy.t("RAPPORT GRAISSE / RÉTENTION", en: "FAT / RETENTION RATIO"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.label)
-                    .tracking(0.3)
+                    Text(AppCopy.t("GRAISSE", en: "FAT"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FaceScanWhoopPalette.label)
+                        .tracking(0.3)
+                }
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 6) {
+                    Text(AppCopy.t("RÉTENTION", en: "RETENTION"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FaceScanWhoopPalette.label)
+                        .tracking(0.3)
+
+                    Image(systemName: "drop.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(retentionRatioAccent)
+                }
             }
 
             GeometryReader { geometry in
@@ -129,21 +142,17 @@ struct OnboardingFaceDeepAnalysisView: View {
             .frame(height: 8)
 
             HStack {
-                Text(AppCopy.t(
-                    "Graisse \(composition.fatPercent)%",
-                    en: "Fat \(composition.fatPercent)%"
-                ))
-                    .font(.system(size: 11, weight: .semibold))
+                Text("\(composition.fatPercent)%")
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .monospacedDigit()
 
                 Spacer(minLength: 8)
 
-                Text(AppCopy.t(
-                    "Rétention \(composition.bloatedPercent)%",
-                    en: "Retention \(composition.bloatedPercent)%"
-                ))
-                    .font(.system(size: 11, weight: .semibold))
+                Text("\(composition.bloatedPercent)%")
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(retentionRatioAccent)
+                    .monospacedDigit()
             }
 
             VolumeCompositionGoodNewsCallout(text: composition.goodNewsPhrase)
@@ -153,40 +162,39 @@ struct OnboardingFaceDeepAnalysisView: View {
 
     private func unlockedRow(_ metric: OnboardingFaceDeepAnalysis.UnlockedMetric) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: metric.kind.systemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.78))
+            Image(systemName: metric.systemImage)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.88))
                 .frame(width: 22)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(
-                    metric.kind == .stressLoad
-                        ? AppCopy.t("CORTISOL ESTIMÉ", en: "ESTIMATED CORTISOL")
-                        : metric.kind.whoopLabel
-                )
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.label)
-                    .tracking(0.3)
+                Text(metric.title)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.95))
+                    .tracking(0.25)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
 
                 Text(metric.phrase)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             FaceScanWhoopZoneBar(
                 activeZone: metric.zone,
-                higherIsWorse: metric.kind.higherIsWorse,
+                higherIsWorse: metric.higherIsWorse,
                 style: .immersive
             )
                 .frame(width: 92)
 
             Text("\(metric.percent)%")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(FaceScanWhoopPalette.ringColor(for: metric.zone))
                 .monospacedDigit()
-                .frame(width: 44, alignment: .trailing)
+                .frame(width: 52, alignment: .trailing)
         }
     }
 

@@ -16,7 +16,7 @@ struct WeightStepView: View {
     var onValidationChanged: ((Bool) -> Void)?
     var onContinue: (() -> Void)?
 
-    @State private var unit: WeightUnit = .kg
+    @State private var unit: WeightUnit = ProcessMeasurementPreference.prefersImperial ? .lbs : .kg
     @State private var weightString: String = ""
     @State private var didBootstrap = false
     @FocusState private var isTextFieldFocused: Bool
@@ -124,15 +124,16 @@ struct WeightStepView: View {
             }
         }
         .onChange(of: weightString) { _, newValue in
-            let filtered = newValue.filter { $0.isNumber || $0 == "." }
-            if filtered != newValue {
-                weightString = filtered
+            // US = "." ; FR et autres = "," — on normalise pour Double().
+            let normalized = Self.normalizeWeightInput(newValue)
+            if normalized != newValue {
+                weightString = normalized
                 return
             }
 
-            let weightValue = Double(newValue) ?? 0
-            onValidationChanged?(!newValue.isEmpty && weightValue > 0)
             selectedWeight = displayWeight
+            // Valider en kg (pas la valeur brute LBS) — sinon Continue US faux positifs/négatifs.
+            onValidationChanged?(OnboardingViewModel.isPlausibleWeight(displayWeight))
         }
         .onDisappear {
             isTextFieldFocused = false
@@ -152,7 +153,7 @@ struct WeightStepView: View {
         guard weightString.isEmpty else { return }
         if OnboardingViewModel.isPlausibleWeight(selectedWeight) {
             populateWeightString(from: selectedWeight)
-            onValidationChanged?(true)
+            onValidationChanged?(OnboardingViewModel.isPlausibleWeight(displayWeight))
         }
     }
 
@@ -168,17 +169,33 @@ struct WeightStepView: View {
 
     private func handleContinue() {
         let trimmed = weightString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, Double(trimmed) ?? 0 > 0 else { return }
+        guard !trimmed.isEmpty else { return }
+        selectedWeight = displayWeight
+        guard OnboardingViewModel.isPlausibleWeight(selectedWeight) else { return }
 
         HapticManager.shared.impact(.medium)
 
         resignKeyboard()
         onContinue?()
 
-        selectedWeight = displayWeight
         Task.detached(priority: .background) {
             await saveWeight()
         }
+    }
+
+    /// Accepte chiffres + un seul séparateur décimal (`.` ou `,` → `.`).
+    private static func normalizeWeightInput(_ raw: String) -> String {
+        var result = ""
+        var sawSeparator = false
+        for character in raw {
+            if character.isNumber {
+                result.append(character)
+            } else if (character == "." || character == ","), !sawSeparator {
+                result.append(".")
+                sawSeparator = true
+            }
+        }
+        return result
     }
 
     private func loadExistingWeight() {
@@ -193,8 +210,7 @@ struct WeightStepView: View {
             weightString = ""
         }
 
-        let isValid = !weightString.isEmpty && (Double(weightString) ?? 0) > 0
-        onValidationChanged?(isValid)
+        onValidationChanged?(OnboardingViewModel.isPlausibleWeight(displayWeight))
     }
 
     private func populateWeightString(from weightKg: Double) {

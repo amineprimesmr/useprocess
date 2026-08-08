@@ -461,6 +461,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             } else {
                 subscriptionStatus = .subscribed
             }
+            ProcessMarketingNotificationService.shared.cancelAll()
         } else if entitlement.expirationDate != nil {
             subscriptionStatus = .expired
             isInFreeTrial = false

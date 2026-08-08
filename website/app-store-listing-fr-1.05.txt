@@ -1,0 +1,21 @@
+================================================================================
+PROCESS DEBLOAT — FICHE APP STORE (FRANÇAIS) — Version 1.05
+Copier dans App Store Connect → Distribution → iOS App → 1.05 → Français
+================================================================================
+
+NOUVEAUTÉS (Nouveautés de cette version)
+================================================================================
+
+• Correction du bouton Continuer sous le clavier (poids / prénom) sur tous les iPhone
+• Unités lbs / ft par défaut sur les appareils américains
+• Notifications plus claires et plus directes
+• Scan repas amélioré (analyse + progression)
+• Nouvelles routines lymphatiques et options d’affichage des résultats scan visage
+• Fiabilité onboarding / paywall et stabilité générale
+
+================================================================================
+BUILD
+================================================================================
+
+Version: 1.05
+Build: 29

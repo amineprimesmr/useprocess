@@ -18,7 +18,7 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
         case .nutrition: AppCopy.t("Repas debloat du jour", en: "Today's debloat meals")
         case .training: AppCopy.t("Cardio et Circuit", en: "Cardio & Circuit")
         case .posture: AppCopy.t("Posture & circuit quotidien", en: "Daily posture & circuit")
-        case .faceRoutine: AppCopy.t("Routine matinale", en: "Morning routine")
+        case .faceRoutine: AppCopy.t("Circuit lymphatique", en: "Lymphatic circuit")
         case .resources: AppCopy.t("Aller plus loin", en: "Go further")
         }
     }
@@ -29,7 +29,7 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
         case .nutrition: "fork.knife"
         case .training: "figure.run"
         case .posture: "figure.mind.and.body"
-        case .faceRoutine: "sunrise.fill"
+        case .faceRoutine: "drop.fill"
         case .resources: "square.grid.2x2.fill"
         }
     }

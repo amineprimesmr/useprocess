@@ -1,6 +1,42 @@
 import Combine
 import Foundation
 
+/// Layout de la page résultats scan en mode studio.
+enum ProcessCreatorScanResultsLayout: String, CaseIterable, Identifiable {
+    /// Page analyse standard (métriques Whoop + tendances).
+    case standard
+    /// Première page onboarding (rétention / cortisol + graisse vs rétention).
+    case onboardingDeep
+
+    var id: String { rawValue }
+
+    @MainActor
+    var title: String {
+        switch self {
+        case .standard:
+            return AppCopy.t("Scan normal", en: "Normal scan")
+        case .onboardingDeep:
+            return AppCopy.t("Premier scan (graisse / rétention)", en: "First scan (fat / retention)")
+        }
+    }
+
+    @MainActor
+    var subtitle: String {
+        switch self {
+        case .standard:
+            return AppCopy.t(
+                "Écran résultats classique avec tous les indicateurs.",
+                en: "Classic results screen with all indicators."
+            )
+        case .onboardingDeep:
+            return AppCopy.t(
+                "Comme le 1er scan onboarding : signaux ouverts + taux graisse / rétention.",
+                en: "Like the 1st onboarding scan: unlocked signals + fat / retention split."
+            )
+        }
+    }
+}
+
 /// Mode studio secret — débloqué uniquement si le prénom enregistré est « Amineprcs ».
 /// Import photo + scans illimités + slider de rendu réaliste sur l’écran résultats.
 @MainActor
@@ -11,10 +47,16 @@ final class ProcessCreatorModeStore: ObservableObject {
 
     private static let unlockedKeyBase = "creator.mode.unlocked"
     private static let qualityKeyBase = "creator.mode.quality"
+    private static let resultsLayoutKeyBase = "creator.mode.resultsLayout"
 
     /// 0 = mauvais · 0.5 = réaliste (analyse) · 1 = excellent.
     @Published var resultQuality: Double {
         didSet { persistQuality() }
+    }
+
+    /// Layout résultats affiché après l’analyse (et à la réouverture du dernier scan).
+    @Published var scanResultsLayout: ProcessCreatorScanResultsLayout {
+        didSet { persistResultsLayout() }
     }
 
     @Published private(set) var isUnlocked: Bool
@@ -27,6 +69,13 @@ final class ProcessCreatorModeStore: ObservableObject {
         resultQuality = defaults.object(forKey: Self.storageKey(Self.qualityKeyBase)) == nil
             ? 0.5
             : min(1, max(0, stored))
+
+        if let raw = defaults.string(forKey: Self.storageKey(Self.resultsLayoutKeyBase)),
+           let layout = ProcessCreatorScanResultsLayout(rawValue: raw) {
+            scanResultsLayout = layout
+        } else {
+            scanResultsLayout = .standard
+        }
     }
 
     static func matchesUnlockName(_ name: String) -> Bool {
@@ -109,6 +158,13 @@ final class ProcessCreatorModeStore: ObservableObject {
             if abs(stored - resultQuality) > 0.0001 {
                 resultQuality = stored
             }
+        }
+
+        let layoutKey = Self.storageKey(Self.resultsLayoutKeyBase)
+        if let raw = defaults.string(forKey: layoutKey),
+           let layout = ProcessCreatorScanResultsLayout(rawValue: raw),
+           layout != scanResultsLayout {
+            scanResultsLayout = layout
         }
     }
 
@@ -248,6 +304,13 @@ final class ProcessCreatorModeStore: ObservableObject {
 
     private func persistQuality() {
         UserDefaults.standard.set(resultQuality, forKey: Self.storageKey(Self.qualityKeyBase))
+    }
+
+    private func persistResultsLayout() {
+        UserDefaults.standard.set(
+            scanResultsLayout.rawValue,
+            forKey: Self.storageKey(Self.resultsLayoutKeyBase)
+        )
     }
 
     private static func storageKey(_ base: String) -> String {

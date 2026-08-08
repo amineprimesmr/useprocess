@@ -523,7 +523,7 @@ struct MealItemAlternativesBar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(AppCopy.t("Alternatives IA", en: "AI alternatives"))
+            Text(AppCopy.t("Alternatives", en: "Alternatives"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
 

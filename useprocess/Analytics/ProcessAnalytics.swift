@@ -326,6 +326,39 @@ enum ProcessAnalytics {
         capture("trial_retention_dismissed", properties: ["source": source])
     }
 
+    // MARK: - Marketing notifications (non-payers)
+
+    static func trackMarketingNotificationsScheduled(
+        reason: String,
+        campaignIds: [String],
+        sawSpin: Bool
+    ) {
+        capture("marketing_notif_scheduled", properties: [
+            "reason": reason,
+            "campaign_ids": campaignIds.joined(separator: ","),
+            "count": campaignIds.count,
+            "saw_spin": sawSpin
+        ])
+    }
+
+    static func trackMarketingNotificationOpened(
+        campaignId: String,
+        opensLifetimeOffer: Bool,
+        opensSpinWheel: Bool = false
+    ) {
+        capture("marketing_notif_opened", properties: [
+            "campaign_id": campaignId,
+            "opens_lifetime_offer": opensLifetimeOffer,
+            "opens_spin_wheel": opensSpinWheel
+        ])
+    }
+
+    static func trackMarketingNotificationConverted(campaignId: String?, plan: String) {
+        var props: [String: Any] = ["plan": plan]
+        if let campaignId { props["campaign_id"] = campaignId }
+        capture("marketing_notif_converted", properties: props)
+    }
+
     // MARK: - Product
 
     static func trackFaceScanCompleted(source: String) {

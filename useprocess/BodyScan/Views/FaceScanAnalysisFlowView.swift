@@ -60,26 +60,7 @@ struct FaceScanAnalysisFlowView: View {
                             .padding(.bottom, baseResult == nil ? 0 : 18)
 
                         if let result = displayResult, let base = baseResult, showsResultScreen {
-                            FaceScanWhoopInlineResults(
-                                result: result,
-                                history: FaceScanHistoryStore.shared.history,
-                                prefersPassedResult: showsCreatorControls,
-                                evolutionAnchor: base,
-                                animateRevealOnce: true,
-                                allowsStudioFraming: showsCreatorControls,
-                                studioFraming: framingDraft,
-                                onStudioFramingChange: { framing in
-                                    framingDraft = framing.clamped()
-                                },
-                                bottomAccessory: {
-                                    if showsCreatorControls {
-                                        FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
-                                            creatorMode.resultQuality = value
-                                        }
-                                        .padding(.top, 16)
-                                    }
-                                }
-                            )
+                            studioResultsBody(result: result, base: base)
                             // Identité stable : ne JAMAIS remonter la page quand le slider bouge.
                             .id(base.id)
                             .transition(.opacity)
@@ -121,6 +102,7 @@ struct FaceScanAnalysisFlowView: View {
             }
         }
         .animation(.easeInOut(duration: 0.28), value: baseResult?.id)
+        .animation(.easeInOut(duration: 0.22), value: creatorMode.scanResultsLayout)
         .task(id: payload.scanId) {
             ProcessCreatorModeStore.shared.evaluate(firstName: profile?.firstName)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
@@ -203,6 +185,68 @@ struct FaceScanAnalysisFlowView: View {
                 Color.clear
                     .frame(width: 44, height: 44)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func studioResultsBody(result: FaceScanResult, base: FaceScanResult) -> some View {
+        let usesOnboardingDeep = showsCreatorControls
+            && creatorMode.scanResultsLayout == .onboardingDeep
+
+        if usesOnboardingDeep {
+            VStack(spacing: 0) {
+                FaceScanWhoopScoreRing(
+                    result: result,
+                    studioFraming: framingDraft,
+                    allowsStudioFraming: showsCreatorControls,
+                    onStudioFramingChange: { framing in
+                        framingDraft = framing.clamped()
+                    },
+                    showsGlobalScore: false
+                )
+                .padding(.bottom, 22)
+
+                OnboardingFaceDeepAnalysisView(
+                    result: result,
+                    ringScale: 1,
+                    showsScoreRing: false,
+                    showsUnlockTeaser: false
+                )
+                .padding(.horizontal, 16)
+
+                studioControlsAccessory
+            }
+        } else {
+            FaceScanWhoopInlineResults(
+                result: result,
+                history: FaceScanHistoryStore.shared.history,
+                prefersPassedResult: showsCreatorControls,
+                evolutionAnchor: base,
+                animateRevealOnce: true,
+                allowsStudioFraming: showsCreatorControls,
+                studioFraming: framingDraft,
+                onStudioFramingChange: { framing in
+                    framingDraft = framing.clamped()
+                },
+                bottomAccessory: {
+                    studioControlsAccessory
+                }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var studioControlsAccessory: some View {
+        if showsCreatorControls {
+            VStack(spacing: 14) {
+                FaceScanStudioResultsLayoutPicker(layout: $creatorMode.scanResultsLayout)
+
+                FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
+                    creatorMode.resultQuality = value
+                }
+            }
+            .padding(.top, 16)
+            .padding(.horizontal, 16)
         }
     }
 

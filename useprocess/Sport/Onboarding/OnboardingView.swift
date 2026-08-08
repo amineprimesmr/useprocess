@@ -35,6 +35,9 @@ struct SportOnboardingView: View {
     @State private var isOnboardingRestoreComplete = false
 
     @State var animatedContinueBottomOffset: CGFloat = 50
+    /// Hauteur live du clavier — le CTA global ignoreSafeArea, donc SwiftUI
+    /// n'évite pas le clavier tout seul (bug CONTINUER sous le pad sur certains iPhone).
+    @StateObject var keyboardHeight = KeyboardHeightObserver()
     @Bindable private var appLanguage = ProcessAppLanguage.shared
 
     var navigationEngine: OnboardingNavigationEngine {
@@ -281,9 +284,10 @@ struct SportOnboardingView: View {
             }
 
             Spacer()
-                .frame(height: animatedContinueBottomOffset)
+                .frame(height: effectiveContinueBottomOffset)
                 .allowsHitTesting(false)
         }
         .id("onboarding_global_continue")
+        .animation(.easeOut(duration: 0.25), value: keyboardHeight.height)
     }
 }

@@ -90,7 +90,7 @@ enum SkinHealthIntelligenceGuide {
         _ = lymphMinutes
         _ = dailySteps
         _ = hydrationLabel
-        // Routine matinale = FaceMorningRoutineCatalog uniquement (pas de pollution lymphAndFascia).
+        // Circuit lymphatique = FaceMorningRoutineCatalog uniquement (pas de pollution lymphAndFascia).
     }
 
     static func enrichNutritionForSkin(

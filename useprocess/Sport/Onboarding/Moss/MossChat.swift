@@ -249,7 +249,7 @@ struct MossChipPress: ButtonStyle {
 /// one beat apart — instead of arriving as a single block.
 struct MossSettleIn: ViewModifier {
     let index: Int
-    var stride: Double = 0.09
+    var stride: Double = 0.05
 
     @State private var shown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -257,17 +257,17 @@ struct MossSettleIn: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(shown ? 1 : 0)
-            .offset(y: shown ? 0 : 8)
+            .offset(y: shown ? 0 : 6)
             .onAppear {
                 if reduceMotion { shown = true; return }
-                withAnimation(.smooth(duration: 0.55)
+                withAnimation(.smooth(duration: 0.32)
                     .delay(Double(index) * stride)) { shown = true }
             }
     }
 }
 
 extension View {
-    func settleIn(_ index: Int, stride: Double = 0.09) -> some View {
+    func settleIn(_ index: Int, stride: Double = 0.05) -> some View {
         modifier(MossSettleIn(index: index, stride: stride))
     }
 }

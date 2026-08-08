@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Flux complet scan repas — caméra / pellicule → analyse IA → score debloat → version optimisée.
+/// Flux complet scan repas — caméra / pellicule → analyse → score debloat → version optimisée.
 struct MealPhotoScanFlowView: View {
     var onDismiss: () -> Void
     var onValidated: ((MealSuggestionContent, MealTimeSlot) -> Void)? = nil
@@ -15,24 +15,58 @@ struct MealPhotoScanFlowView: View {
     @State private var isClosingCamera = false
     @State private var hasRequestedDismiss = false
     @State private var dismissSessionToken = UUID()
+    @State private var compositionEdit: MealScanCompositionEditTarget?
+    /// Garde l’écran d’analyse jusqu’à la fin des barres, même si le résultat est déjà prêt.
+    @State private var hasRevealedAnalysisResult = false
     @Bindable private var planStore = WelcomePlanStore.shared
 
     private var livePlan: FaceOriginPlan? { planStore.plan }
 
+    private var showsAnalyzingUI: Bool {
+        switch viewModel.phase {
+        case .analyzing:
+            return true
+        case .result:
+            return !hasRevealedAnalysisResult
+        case .camera:
+            return false
+        }
+    }
+
     var body: some View {
         ZStack {
-            switch viewModel.phase {
-            case .camera:
-                cameraPhase
-            case .analyzing, .optimizing:
-                analyzingPhase
-            case .result:
-                resultPhase
+            if showsAnalyzingUI {
+                MealScanAnalyzingView(
+                    image: viewModel.capturedImage,
+                    isAnalysisComplete: viewModel.phase == .result,
+                    onRevealReady: {
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.9)) {
+                            hasRevealedAnalysisResult = true
+                        }
+                    }
+                )
+                .transition(.opacity)
+            } else {
+                switch viewModel.phase {
+                case .camera:
+                    cameraPhase
+                case .result:
+                    resultPhase
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                case .analyzing:
+                    EmptyView()
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.easeInOut(duration: 0.28), value: showsAnalyzingUI)
         .onAppear {
             viewModel.configureSlot(plan: livePlan)
+        }
+        .onChange(of: viewModel.phase) { _, phase in
+            if phase == .camera || phase == .analyzing {
+                hasRevealedAnalysisResult = false
+            }
         }
     }
 
@@ -152,52 +186,6 @@ struct MealPhotoScanFlowView: View {
         onDismiss()
     }
 
-    // MARK: - Analyse
-
-    private var analyzingPhase: some View {
-        ZStack {
-            ProcessScreenBackground()
-
-            VStack(spacing: 24) {
-                if let image = viewModel.capturedImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 220, height: 220)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .strokeBorder(theme.onboardingAccent.opacity(0.35), lineWidth: 2)
-                        }
-                        .shadow(color: .black.opacity(0.18), radius: 16, y: 8)
-                }
-
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(theme.onboardingAccent)
-
-                VStack(spacing: 8) {
-                    Text(
-                        viewModel.phase == .optimizing
-                            ? AppCopy.t("Optimisation debloat", en: "Debloat optimization")
-                            : AppCopy.t("Analyse IA", en: "AI analysis")
-                    )
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(theme.primaryText)
-
-                    Text(viewModel.analysisStatus)
-                        .font(.subheadline)
-                        .foregroundStyle(theme.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ProcessScreenBackground())
-        .ignoresSafeArea()
-    }
-
     // MARK: - Résultat
 
     private var resultPhase: some View {
@@ -208,8 +196,12 @@ struct MealPhotoScanFlowView: View {
                         scannedPhotoHeader(image: image)
                     }
 
-                    if viewModel.optimizedMeal != nil {
+                    if viewModel.optimizedMeal != nil || viewModel.isOptimizingInBackground {
                         resultTabPicker
+                    }
+
+                    if viewModel.isOptimizingInBackground, viewModel.optimizedMeal == nil {
+                        optimizingBanner
                     }
 
                     if let meal = viewModel.activeMeal,
@@ -236,9 +228,60 @@ struct MealPhotoScanFlowView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 stickySaveButton
             }
+            .sheet(item: $compositionEdit) { target in
+                compositionEditSheet(for: target)
+            }
         }
         .background(ProcessScreenBackground())
         .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private func compositionEditSheet(for target: MealScanCompositionEditTarget) -> some View {
+        switch target {
+        case .add:
+            MealScanCompositionEditSheet(
+                mode: .add,
+                initialName: "",
+                initialQuantity: "",
+                initialRole: "Autre",
+                onSave: { name, quantity, role in
+                    viewModel.addFoodItem(name: name, quantity: quantity, role: role)
+                    compositionEdit = nil
+                },
+                onDelete: nil,
+                onDismiss: { compositionEdit = nil }
+            )
+        case .edit(let foodIndex):
+            compositionEditSheetForItem(foodIndex: foodIndex)
+        }
+    }
+
+    private func compositionEditSheetForItem(foodIndex: Int) -> some View {
+        let items = viewModel.activeMeal?.foodItems ?? []
+        let item = items.indices.contains(foodIndex) ? items[foodIndex] : nil
+        return MealScanCompositionEditSheet(
+            mode: .edit(foodIndex: foodIndex),
+            initialName: item?.name ?? "",
+            initialQuantity: item?.quantity ?? "",
+            initialRole: item?.role ?? "Autre",
+            onSave: { name, quantity, role in
+                viewModel.updateFoodItem(
+                    atFoodIndex: foodIndex,
+                    name: name,
+                    quantity: quantity,
+                    role: role
+                )
+                compositionEdit = nil
+            },
+            onDelete: viewModel.editableFoodItemIndices.count > 1
+                ? {
+                    viewModel.removeFoodItem(atFoodIndex: foodIndex)
+                    compositionEdit = nil
+                }
+                : nil,
+            onDismiss: { compositionEdit = nil }
+        )
     }
 
     private var stickySaveButton: some View {
@@ -291,6 +334,25 @@ struct MealPhotoScanFlowView: View {
             }
     }
 
+    private var optimizingBanner: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .controlSize(.small)
+            Text(AppCopy.t(
+                "Optimisation debloat en cours…",
+                en: "Debloat optimization in progress…"
+            ))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(theme.secondaryText)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(theme.onboardingAccent.opacity(0.10))
+        )
+    }
+
     private var resultTabPicker: some View {
         HStack(spacing: 8) {
             ForEach(MealPhotoScanViewModel.ResultTab.allCases, id: \.self) { tab in
@@ -305,10 +367,16 @@ struct MealPhotoScanFlowView: View {
                                 .font(.caption2.weight(.semibold))
                                 .monospacedDigit()
                         }
-                        if tab == .optimized, let score = viewModel.optimizedAssessment?.score {
-                            Text("\(score)/100")
-                                .font(.caption2.weight(.semibold))
-                                .monospacedDigit()
+                        if tab == .optimized {
+                            if let score = viewModel.optimizedAssessment?.score {
+                                Text("\(score)/100")
+                                    .font(.caption2.weight(.semibold))
+                                    .monospacedDigit()
+                            } else if viewModel.isOptimizingInBackground {
+                                Text(AppCopy.t("…", en: "…"))
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(theme.secondaryText)
+                            }
                         }
                     }
                     .foregroundStyle(
@@ -384,23 +452,62 @@ struct MealPhotoScanFlowView: View {
     }
 
     private func mealDetailsCard(meal: MealSuggestionContent, assessment: MealDebloatAssessment) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(AppCopy.t("Composition visible", en: "Visible composition"))
-                .font(.headline.weight(.bold))
-                .foregroundStyle(theme.primaryText)
+        let foodItems = meal.foodItems
 
-            ForEach(meal.foodItems) { item in
-                HStack(spacing: 10) {
-                    Image(systemName: item.roleIcon)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(theme.onboardingAccent)
-                        .frame(width: 22)
-                    Text(item.ingredientDisplayLine)
-                        .font(.subheadline)
-                        .foregroundStyle(theme.primaryText)
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(AppCopy.t("Composition", en: "Composition"))
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(theme.primaryText)
+                Spacer(minLength: 8)
+                Text(AppCopy.t("Touche pour corriger", en: "Tap to correct"))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(theme.secondaryText)
+            }
+
+            ForEach(Array(foodItems.enumerated()), id: \.offset) { index, item in
+                Button {
+                    HapticManager.shared.selection()
+                    compositionEdit = .edit(foodIndex: index)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: item.roleIcon)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(theme.onboardingAccent)
+                            .frame(width: 22)
+                        Text(item.ingredientDisplayLine)
+                            .font(.subheadline)
+                            .foregroundStyle(theme.primaryText)
+                            .multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
+                        Image(systemName: "pencil")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(theme.secondaryText.opacity(0.7))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(AppCopy.t(
+                    "Modifier \(item.ingredientDisplayLine)",
+                    en: "Edit \(item.ingredientDisplayLine)"
+                ))
+            }
+
+            Button {
+                HapticManager.shared.selection()
+                compositionEdit = .add
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text(AppCopy.t("Ajouter un aliment", en: "Add a food"))
+                        .font(.subheadline.weight(.semibold))
                     Spacer(minLength: 0)
                 }
+                .foregroundStyle(theme.onboardingAccent)
+                .padding(.top, 2)
             }
+            .buttonStyle(.plain)
 
             if !meal.localizedCoachTip.isEmpty {
                 Divider().opacity(0.35)
@@ -440,6 +547,20 @@ struct MealPhotoScanFlowView: View {
         HapticManager.shared.notification(.success)
         onValidated?(meal, viewModel.selectedSlot)
         requestDismiss()
+    }
+}
+
+// MARK: - Cible d’édition composition
+
+private enum MealScanCompositionEditTarget: Identifiable, Equatable {
+    case edit(foodIndex: Int)
+    case add
+
+    var id: String {
+        switch self {
+        case .edit(let index): return "edit-\(index)"
+        case .add: return "add"
+        }
     }
 }
 

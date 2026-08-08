@@ -48,6 +48,33 @@ struct ProcessCreatorStudioView: View {
                         .processGlassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
 
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(AppCopy.t("Page scan analyse", en: "Scan analysis page"))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(theme.primaryText)
+
+                    Picker(
+                        AppCopy.t("Page scan analyse", en: "Scan analysis page"),
+                        selection: $creator.scanResultsLayout
+                    ) {
+                        ForEach(ProcessCreatorScanResultsLayout.allCases) { layout in
+                            Text(layout.title).tag(layout)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text(creator.scanResultsLayout.subtitle)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(16)
+                .background {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(.clear)
+                        .processGlassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+
                 Text(AppCopy.t("Astuce : tu peux encore ajuster le slider pendant l’écran résultats, avant de taper Continuer.", en: "Tip: you can still adjust the slider on the results screen before tapping Continue."))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(theme.secondaryText.opacity(0.9))
@@ -84,9 +111,13 @@ struct ProcessCreatorStudioHubLink: View {
                         Text(AppCopy.t("Studio contenu", en: "Content Studio"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(theme.primaryText)
-                        Text(AppCopy.t("Rendu : \(creator.qualityLabel)", en: "Result: \(creator.qualityLabel)"))
+                        Text(AppCopy.t(
+                            "Rendu : \(creator.qualityLabel) · \(creator.scanResultsLayout.title)",
+                            en: "Result: \(creator.qualityLabel) · \(creator.scanResultsLayout.title)"
+                        ))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(theme.secondaryText)
+                            .lineLimit(2)
                     }
 
                     Spacer(minLength: 0)

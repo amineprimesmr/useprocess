@@ -14,7 +14,7 @@ struct HeightStepView: View {
     @Binding var selectedHeight: Double  // en cm
     var onValidationChanged: ((Bool) -> Void)?
 
-    @State private var unit: HeightUnit = .cm
+    @State private var unit: HeightUnit = ProcessMeasurementPreference.prefersImperial ? .ft : .cm
     /// Index 0 = 140 cm, index `tickIndexMax` = 220 cm (pas de 1 cm). Défaut 170 → index 30.
     @State private var tickSelection: Int = 30
     @State private var sliderValue: Double = 0.375
@@ -30,6 +30,7 @@ struct HeightStepView: View {
     init(selectedHeight: Binding<Double>, onValidationChanged: ((Bool) -> Void)? = nil) {
         _selectedHeight = selectedHeight
         self.onValidationChanged = onValidationChanged
+        _unit = State(initialValue: ProcessMeasurementPreference.prefersImperial ? .ft : .cm)
 
         var cm = selectedHeight.wrappedValue
         if cm <= 0 {

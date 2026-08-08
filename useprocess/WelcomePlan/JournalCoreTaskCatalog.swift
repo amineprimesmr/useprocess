@@ -67,7 +67,7 @@ enum JournalCoreTaskCatalog {
     private static func morningRoutineTask(dayId: String) -> OriginPlanTask {
         journalTask(
             id: "\(dayId).core.morning",
-            title: "Routine matin visage",
+            title: "Circuit lymphatique",
             detail: FaceMorningRoutineCatalog.journalSummary,
             pillar: "Visage",
             minutes: FaceMorningRoutineCatalog.estimatedMinutes(targets: .default)

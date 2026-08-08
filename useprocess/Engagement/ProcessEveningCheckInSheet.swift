@@ -23,7 +23,7 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .morningRoutine:
-            return AppCopy.t("Routine", en: "Routine")
+            return AppCopy.t("Circuit lymphatique", en: "Lymphatic circuit")
         case .water:
             return AppCopy.t("\(ProcessDailyTargets.hydrationLabel) d'eau", en: "\(ProcessDailyTargets.hydrationLabel) of water")
         case .debloatMeal:
@@ -35,7 +35,7 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .morningRoutine: return "sun.max.fill"
+        case .morningRoutine: return "drop.fill"
         case .water: return "drop.fill"
         case .debloatMeal: return "fork.knife"
         case .cardio: return "figure.run"

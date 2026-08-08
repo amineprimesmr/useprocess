@@ -16,6 +16,8 @@ struct TransformationCaseStudy: Identifiable, Equatable {
     let afterVideoName: String?
     let durationWeeks: Int
     let memberSince: String
+    /// Affiché aux utilisateurs de ce genre (`.other` / preferNotToSay → catalogue homme).
+    let gender: Gender
 
     init(
         id: String,
@@ -25,7 +27,8 @@ struct TransformationCaseStudy: Identifiable, Equatable {
         beforeVideoName: String? = nil,
         afterVideoName: String? = nil,
         durationWeeks: Int,
-        memberSince: String
+        memberSince: String,
+        gender: Gender = .male
     ) {
         self.id = id
         self.name = name
@@ -35,6 +38,7 @@ struct TransformationCaseStudy: Identifiable, Equatable {
         self.afterVideoName = afterVideoName
         self.durationWeeks = durationWeeks
         self.memberSince = memberSince
+        self.gender = gender
     }
 
     var usesVideo: Bool {
@@ -49,6 +53,7 @@ struct TransformationCaseStudy: Identifiable, Equatable {
         case "avr. 2026": monthEN = "Apr 2026"
         case "juil. 2026": monthEN = "Jul 2026"
         case "mai 2026": monthEN = "May 2026"
+        case "mars 2026": monthEN = "Mar 2026"
         default: monthEN = memberSince
         }
         return OnboardingCopy.t("📅 Membre depuis \(memberSince)", en: "📅 Member since \(monthEN)")
@@ -58,13 +63,15 @@ struct TransformationCaseStudy: Identifiable, Equatable {
 enum TransformationCaseStudyCatalog {
     /// Ajoute une paire `avant` / `après` dans Assets + ProcessAssetCatalog pour l'afficher.
     static let all: [TransformationCaseStudy] = [
+        // Hommes
         .init(
             id: "leo",
             name: "Enzo",
             beforeImageName: "leo",
             afterImageName: "leoprime",
             durationWeeks: 3,
-            memberSince: "juin 2026"
+            memberSince: "juin 2026",
+            gender: .male
         ),
         .init(
             id: "daniel",
@@ -72,7 +79,8 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "daniel",
             afterImageName: "danielprime",
             durationWeeks: 4,
-            memberSince: "juin 2026"
+            memberSince: "juin 2026",
+            gender: .male
         ),
         .init(
             id: "esteban",
@@ -80,7 +88,8 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "esteban",
             afterImageName: "estebanprime",
             durationWeeks: 8,
-            memberSince: "avr. 2026"
+            memberSince: "avr. 2026",
+            gender: .male
         ),
         .init(
             id: "lucas",
@@ -88,7 +97,8 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "lucas",
             afterImageName: "lucasprime",
             durationWeeks: 6,
-            memberSince: "juil. 2026"
+            memberSince: "juil. 2026",
+            gender: .male
         ),
         .init(
             id: "imran",
@@ -96,14 +106,58 @@ enum TransformationCaseStudyCatalog {
             beforeImageName: "imran",
             afterImageName: "imranprime",
             durationWeeks: 5,
-            memberSince: "mai 2026"
+            memberSince: "mai 2026",
+            gender: .male
+        ),
+        // Femmes
+        .init(
+            id: "ines",
+            name: "Inès",
+            beforeImageName: "ines",
+            afterImageName: "inesprime",
+            durationWeeks: 4,
+            memberSince: "juin 2026",
+            gender: .female
+        ),
+        .init(
+            id: "maya",
+            name: "Maya",
+            beforeImageName: "maya",
+            afterImageName: "mayaprime",
+            durationWeeks: 5,
+            memberSince: "mai 2026",
+            gender: .female
+        ),
+        .init(
+            id: "emma",
+            name: "Emma",
+            beforeImageName: "emma",
+            afterImageName: "emmaprime",
+            durationWeeks: 6,
+            memberSince: "avr. 2026",
+            gender: .female
+        ),
+        .init(
+            id: "ava",
+            name: "Ava",
+            beforeImageName: "ava",
+            afterImageName: "avaprime",
+            durationWeeks: 7,
+            memberSince: "mars 2026",
+            gender: .female
         ),
     ]
 
     static let transformedPeopleCount = 8500
 
-    static func availableStudies() -> [TransformationCaseStudy] {
-        all.filter { study in
+    static func catalogGender(for gender: Gender?) -> Gender {
+        gender == .female ? .female : .male
+    }
+
+    static func availableStudies(for gender: Gender? = nil) -> [TransformationCaseStudy] {
+        let target = catalogGender(for: gender)
+        return all.filter { study in
+            guard study.gender == target else { return false }
             if study.usesVideo {
                 return TransformationBundledVideo.url(for: study.beforeVideoName) != nil
                     && TransformationBundledVideo.url(for: study.afterVideoName) != nil
@@ -119,11 +173,15 @@ enum TransformationCaseStudyCatalog {
 
 struct TransformationPreviewStepView: View {
     @Environment(\.colorScheme) private var colorScheme
+    let gender: Gender?
     let onComplete: () -> Void
 
-    private let availableCaseStudies = TransformationCaseStudyCatalog.availableStudies()
+    private var availableCaseStudies: [TransformationCaseStudy] {
+        TransformationCaseStudyCatalog.availableStudies(for: gender)
+    }
 
-    init(onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil) {
+    init(gender: Gender? = nil, onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil) {
+        self.gender = gender
         self.onComplete = onComplete
     }
 
@@ -186,8 +244,10 @@ struct TransformationPreviewStepView: View {
     }
 
     private var communityAvatarNames: [String] {
-        ["fille1", "gars1", "leo", "estebanprime", "lucasprime", "imranprime"]
-            .filter { ProcessAssetCatalog.contains($0) }
+        let female = ["fille1", "ines", "inesprime", "maya", "mayaprime", "emma", "emmaprime", "ava", "avaprime", "femme"]
+        let male = ["gars1", "leo", "estebanprime", "lucasprime", "imranprime", "homme"]
+        let preferred = TransformationCaseStudyCatalog.catalogGender(for: gender) == .female ? female : male
+        return preferred.filter { ProcessAssetCatalog.contains($0) }
     }
 
     private func communityAvatar(_ imageName: String) -> some View {

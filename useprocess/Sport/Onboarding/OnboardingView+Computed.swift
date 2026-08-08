@@ -42,19 +42,39 @@ var continueButtonHitTestingEnabled: Bool {
     return true
 }
 
-var continueButtonBottomOffset: CGFloat {
-    let step = OnboardingStep(rawValue: viewModel.currentStep)
+/// Marge au-dessus du haut du clavier (EN QuickType / pad US inclus).
+var continueButtonKeyboardGap: CGFloat { 16 }
 
-    switch step {
-    case .firstNameInput:
-        // Position plus haute pour la page prénom (clavier texte)
-        return ScreenMetrics.height * 0.38
-    case .weight, .idealWeight:
-        return ScreenMetrics.height * 0.35
+/// Steps où le clavier est ouvert par défaut — le CTA doit suivre la hauteur réelle.
+var isKeyboardAnchoredContinueStep: Bool {
+    switch OnboardingStep(rawValue: viewModel.currentStep) {
+    case .firstNameInput, .weight, .idealWeight:
+        return true
     default:
-        // Position standard en bas (comme avant)
+        return false
+    }
+}
+
+/// Offset bas du bouton CONTINUER (espace sous le bouton jusqu'au bord écran).
+/// Avant : `height * 0.35` — OK sur grand iPhone, sous le decimal pad sur d'autres
+/// (SE / mini / hauteurs clavier variables) → bouton visible mais non cliquable.
+var continueButtonBottomOffset: CGFloat {
+    if isKeyboardAnchoredContinueStep {
+        // Sans clavier : bas d'écran standard. Avec clavier : ancrage exact.
+        if keyboardHeight.height > 0 {
+            return keyboardHeight.height + continueButtonKeyboardGap
+        }
         return 50
     }
+    return 50
+}
+
+/// Offset effectif rendu (inclut le clavier live même entre deux changements de step).
+var effectiveContinueBottomOffset: CGFloat {
+    if isKeyboardAnchoredContinueStep, keyboardHeight.height > 0 {
+        return keyboardHeight.height + continueButtonKeyboardGap
+    }
+    return animatedContinueBottomOffset
 }
 
 var canContinue: Bool {

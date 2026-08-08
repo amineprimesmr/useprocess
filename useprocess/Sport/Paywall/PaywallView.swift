@@ -165,10 +165,21 @@ struct PaywallView: View {
         .onAppear {
             homeSwipeGate.retentionSurface = .paywall
             lastHandledSwipeToken = homeSwipeGate.swipeToken
+            Task {
+                await ProcessMarketingNotificationService.shared.prepareNotificationPermissionIfNeeded()
+            }
         }
         .onDisappear {
             if homeSwipeGate.retentionSurface == .paywall {
                 homeSwipeGate.retentionSurface = .none
+            }
+            if !subscriptionService.subscriptionStatus.isActive {
+                Task {
+                    await ProcessMarketingNotificationService.shared.startAfterPaywallDropoff(
+                        sawSpin: didPresentSpinWinback,
+                        reason: "paywall_disappear"
+                    )
+                }
             }
         }
         .onChange(of: showsSpinWinback) { _, isPresented in
@@ -200,6 +211,14 @@ struct PaywallView: View {
     func completePaywallFlow() {
         guard !didCompletePaywallFlow else { return }
         didCompletePaywallFlow = true
+        if !subscriptionService.subscriptionStatus.isActive {
+            Task {
+                await ProcessMarketingNotificationService.shared.startAfterPaywallDropoff(
+                    sawSpin: didPresentSpinWinback,
+                    reason: "paywall_completed_unpaid"
+                )
+            }
+        }
         if let onComplete {
             onComplete()
         } else {
@@ -311,21 +330,7 @@ struct PaywallView: View {
             }
 
             VStack(spacing: 10) {
-                (
-                    Text(OnboardingCopy.t(
-                        "Débloque ton plan personnalisé avec ",
-                        en: "Unlock your personalized plan with "
-                    ))
-                        .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
-                    + Text("Pro")
-                        .foregroundStyle(PaywallBevelTheme.paywallProTitleGradient(for: colorScheme))
-                )
-                    .font(PaywallBevelTheme.paywallHeroTitleFont(size: 31))
-                    .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(1)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
+                paywallHeroProTitle
 
                 Text(paywallCommunitySubtitle)
                     .font(PaywallBevelTheme.paywallHeroSubtitleFont())
@@ -336,6 +341,35 @@ struct PaywallView: View {
                     .padding(.horizontal, 4)
             }
         }
+    }
+
+    private var paywallHeroProTitle: some View {
+        let prefix = OnboardingCopy.t(
+            "Débloque ton plan personnalisé avec ",
+            en: "Unlock your personalized plan with "
+        )
+
+        // « Pro » en Text séparé pour le double-tap DEBUG (débloque l’app).
+        return (
+            Text(prefix)
+                .foregroundStyle(PaywallBevelTheme.paywallTitleColor(for: colorScheme))
+            + Text("Pro")
+                .foregroundStyle(PaywallBevelTheme.paywallProTitleGradient(for: colorScheme))
+        )
+        .font(PaywallBevelTheme.paywallHeroTitleFont(size: 31))
+        .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
+        .multilineTextAlignment(.center)
+        .lineSpacing(1)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity)
+        #if DEBUG
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            activateDeveloperPremiumAccess()
+        }
+        .accessibilityLabel("Developer premium unlock")
+        .accessibilityAddTraits(.isButton)
+        #endif
     }
 
     private var paywallCommunitySubtitle: String {
@@ -394,7 +428,7 @@ struct PaywallView: View {
     // MARK: - Prix
 
     private var annualPrimaryPrice: String {
-        subscriptionService.displayProduct(for: .annual).paywallPrimaryMonthlyPriceLabel
+        subscriptionService.displayProduct(for: .annual).paywallPrimaryAnnualPriceLabel
     }
 
     private var shortPlanPrimaryPrice: String {
@@ -507,11 +541,18 @@ struct PaywallView: View {
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
                 ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: "standard", source: "paywall")
+                ProcessMarketingNotificationService.shared.handlePurchaseSuccess(plan: plan)
                 completePaywallFlow()
             }
         } catch SubscriptionError.userCancelled {
             ProcessAnalytics.trackPurchaseCancelled(plan: plan, offer: "standard", source: "paywall")
             presentSpinWinbackIfNeeded()
+            Task {
+                await ProcessMarketingNotificationService.shared.startAfterPaywallDropoff(
+                    sawSpin: true,
+                    reason: "purchase_cancelled"
+                )
+            }
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             ProcessAnalytics.trackPurchaseFailed(
@@ -530,6 +571,7 @@ struct PaywallView: View {
             return
         }
         if didPresentSpinWinback, force {
+            ProcessMarketingNotificationService.shared.markSawSpinWheel()
             ProcessAnalytics.capture("spin_wheel_presented", properties: [
                 "source": "stay_popup_or_retry",
                 "force": true
@@ -538,6 +580,7 @@ struct PaywallView: View {
             return
         }
         didPresentSpinWinback = true
+        ProcessMarketingNotificationService.shared.markSawSpinWheel()
         ProcessAnalytics.capture("spin_wheel_presented", properties: [
             "source": "purchase_cancelled",
             "force": false
@@ -595,6 +638,7 @@ struct PaywallView: View {
         #if DEBUG
         HapticManager.shared.notification(.success)
         subscriptionService.activateDeveloperPremiumAccess()
+        ProcessMarketingNotificationService.shared.cancelAll()
         completePaywallFlow()
         #endif
     }

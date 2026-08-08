@@ -1,9 +1,13 @@
 import Foundation
 
-/// Visuels carousel « Routine matinale ».
+/// Visuels carousel « Circuit lymphatique ».
 enum RoutineAssetCatalog {
     static let eauTiede = "routineeautiede"
     static let sauts = "routinesauts"
+    static let pointes = "routinepointes"
+    static let brasCiel = "routinebrasciel"
+    static let brasCroix = "routinebrascroix"
+    static let thorax = "routinethorax"
     static let genoux = "routinegenoux"
     static let bras = "routinebras"
     static let glacons = "routineglacons"
@@ -17,11 +21,11 @@ enum RoutineAssetCatalog {
     static let corde = "cardio_corde"
 
     static let morningRoutineAssetNames: [String] = [
-        eauTiede, sauts, genoux, bras, glacons
+        sauts, pointes, brasCiel, brasCroix, thorax, genoux, bras
     ]
 
     static let allAssetNames: [String] = morningRoutineAssetNames + [
-        soleil, eau, mewing, posture, dormir, corde
+        soleil, eau, mewing, posture, dormir, corde, glacons, eauTiede
     ]
 
     static func asset(forHabitTitle title: String) -> String? {
@@ -44,6 +48,18 @@ enum RoutineAssetCatalog {
         }
         if key.contains("saut sur place") || key.contains("sauts sur place") {
             return sauts
+        }
+        if key.contains("rebond") && key.contains("pointe") {
+            return pointes
+        }
+        if key.contains("bras au ciel") || key.contains("arms to sky") {
+            return brasCiel
+        }
+        if key.contains("bras en croix") || key.contains("arms out wide") {
+            return brasCroix
+        }
+        if key.contains("ouverture thorax") || key.contains("chest opening") {
+            return thorax
         }
         if key.contains("montee de genoux") || key.contains("montées de genoux") || key.contains("genou") {
             return genoux

@@ -32,7 +32,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                         .padding(.top, 8)
                         .padding(.bottom, 18)
 
-                    FaceScanWhoopScoreRing(result: result)
+                    FaceScanWhoopScoreRing(result: result, showsGlobalScore: false)
                         .padding(.bottom, 22)
 
                     OnboardingFaceDeepAnalysisView(

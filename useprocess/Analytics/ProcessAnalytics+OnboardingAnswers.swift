@@ -18,7 +18,10 @@ extension ProcessAnalytics {
         capture("onboarding_answer", properties: props, userProperties: person.isEmpty ? nil : person)
 
         switch step {
-        case .genderSelection, .ageSelection, .height, .weight, .heightWeight, .firstNameInput:
+        case .firstNameInput:
+            trackFirstNameSet(viewModel.firstName, source: "onboarding_first_name")
+            trackOnboardingProfileSnapshot(viewModel: viewModel, trigger: step.analyticsName)
+        case .genderSelection, .ageSelection, .height, .weight, .heightWeight:
             trackOnboardingProfileSnapshot(viewModel: viewModel, trigger: step.analyticsName)
         case .faceAnalysis:
             trackFaceScanProfile(viewModel: viewModel)

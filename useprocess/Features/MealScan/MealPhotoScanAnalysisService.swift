@@ -46,16 +46,28 @@ enum MealPhotoScanAnalysisService {
     Même format labelé (MEAL_NAME, SCORE, SCORE_WHY, ITEM_1…, PREP, TIP). Pas de JSON. Pas de markdown.
     """
 
+    /// Haiku = vision repas rapide (Sonnet trop lent pour ce flux).
+    private static let mealScanModel = ClaudeModel.haiku45
+    private static let visionMaxTokens = 320
+    private static let optimizeMaxTokens = 280
+    private static let imageMaxPixel: CGFloat = 960
+    private static let jpegQuality: CGFloat = 0.62
+
     // MARK: - Public
 
-    @MainActor
     static func analyzePhoto(
         image: UIImage,
         slot: MealTimeSlot,
         profile: UnifiedUserProfile?
     ) async throws -> MealSuggestionContent {
-        guard let jpeg = prepareImageData(image) else {
-            throw MealHubError.photoRequired
+        let jpeg: Data = try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                if let data = Self.prepareImageData(image) {
+                    continuation.resume(returning: data)
+                } else {
+                    continuation.resume(throwing: MealHubError.photoRequired)
+                }
+            }
         }
 
         let imageBase64 = jpeg.base64EncodedString()
@@ -68,7 +80,7 @@ enum MealPhotoScanAnalysisService {
             system: visionSystemPrompt,
             userText: prompt,
             imageBase64: imageBase64,
-            maxTokens: 480
+            maxTokens: visionMaxTokens
         )
 
         var meal = try parsePhotoScanResponse(text)
@@ -78,35 +90,17 @@ enum MealPhotoScanAnalysisService {
         }
 
         meal = sanitize(meal, slot: slot)
+        // Cap local — évite un 2ᵉ round-trip vision (gros gain latence).
+        if meal.items.count > 4 {
+            meal.items = Array(meal.items.prefix(4))
+        }
         guard !meal.items.isEmpty else {
             throw MealHubError.noFoodVisible
-        }
-
-        if looksLikeCatalogLeak(meal) {
-            do {
-                let retryText = try await completeVision(
-                    system: visionSystemPrompt + """
-
-                    ERREUR : réponse trop générique ou catalogue inventé.
-                    Regarde la photo à nouveau. Maximum 4 ITEM_. Uniquement VISIBLE.
-                    """,
-                    userText: prompt,
-                    imageBase64: imageBase64,
-                    maxTokens: 480
-                )
-                let retried = sanitize(try parsePhotoScanResponse(retryText), slot: slot)
-                if !retried.isNoFoodDetected, !retried.items.isEmpty {
-                    meal = retried
-                }
-            } catch {
-                // Garde la première analyse si le retry échoue.
-            }
         }
 
         return meal
     }
 
-    @MainActor
     static func optimizeScannedMeal(
         _ scanned: MealSuggestionContent,
         assessment: MealDebloatAssessment,
@@ -134,8 +128,8 @@ enum MealPhotoScanAnalysisService {
             task: .chat,
             system: optimizeSystemPrompt,
             userText: prompt,
-            model: ClaudeModel.preferred(for: .chat),
-            maxTokens: 480
+            model: mealScanModel,
+            maxTokens: optimizeMaxTokens
         )
 
         var optimized = try parsePhotoScanResponse(text)
@@ -146,7 +140,6 @@ enum MealPhotoScanAnalysisService {
 
     // MARK: - API
 
-    @MainActor
     private static func completeVision(
         system: String,
         userText: String,
@@ -157,7 +150,7 @@ enum MealPhotoScanAnalysisService {
             task: .chat,
             system: system,
             userText: userText,
-            model: ClaudeModel.preferred(for: .chat),
+            model: mealScanModel,
             imageBase64: imageBase64,
             maxTokens: maxTokens
         )
@@ -170,9 +163,9 @@ enum MealPhotoScanAnalysisService {
 
     // MARK: - Image
 
-    private static func prepareImageData(_ image: UIImage, maxPixel: CGFloat = 1400) -> Data? {
-        let normalized = image.mealScanNormalized(maxPixel: maxPixel)
-        return normalized.jpegData(compressionQuality: 0.78)
+    private static func prepareImageData(_ image: UIImage) -> Data? {
+        let normalized = image.mealScanNormalized(maxPixel: imageMaxPixel)
+        return normalized.jpegData(compressionQuality: jpegQuality)
     }
 
     // MARK: - Parsing
@@ -405,14 +398,6 @@ enum MealPhotoScanAnalysisService {
         fallback.imageAssetName = nil
         fallback.tags = ["scan photo", "optimisé"]
         return fallback
-    }
-
-    private static func looksLikeCatalogLeak(_ meal: MealSuggestionContent) -> Bool {
-        let name = meal.name.lowercased()
-        for catalog in ProcessDebloatMealLibrary.allCatalogMeals {
-            if name == catalog.name.lowercased() { return true }
-        }
-        return meal.items.count >= 5
     }
 
     private static func ingredientTokens(from meal: MealSuggestionContent) -> [String] {

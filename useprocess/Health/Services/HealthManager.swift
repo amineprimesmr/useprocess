@@ -121,6 +121,9 @@ final class HealthManager: ObservableObject {
             try? await HealthFirestoreRepository.shared.saveBaselines(refreshedBaselines, userId: uid)
             try? await HealthFirestoreRepository.shared.saveDailySnapshot(refreshedSnapshot, userId: uid)
         }
+
+        // Non-payeurs : notif locale « Process travaille » basée sur HealthKit.
+        await ProcessMarketingHealthPulseService.shared.evaluateAfterHealthSync(reason: "full_sync")
     }
 
     func syncHealthDataForDate(_ date: Date) async {

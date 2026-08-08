@@ -528,16 +528,8 @@ enum WelcomePlanGenerator {
                 en: "Wake at the same time (\(ProcessDailyTargets.sleepScheduleMarginMinutes) min max margin, weekends included)"
             ),
             AppCopy.tSync(
-                "\(ProcessDailyTargets.warmWaterOnWakeML) ml d'eau tiède au réveil",
-                en: "\(ProcessDailyTargets.warmWaterOnWakeML) ml warm water on waking"
-            ),
-            AppCopy.tSync(
-                "Circuit lymphatique — sauts, genoux, bras alternés (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
-                en: "Lymph circuit — jumps, knees, alternating arms (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))"
-            ),
-            AppCopy.tSync(
-                "Glaçons sur le visage \(ProcessDailyTargets.coldFaceRinseSeconds) s",
-                en: "Ice on the face \(ProcessDailyTargets.coldFaceRinseSeconds) s"
+                "Circuit lymphatique — 6 mouvements (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
+                en: "Lymph circuit — 6 moves (\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))"
             ),
             AppCopy.tSync(
                 "Hydratation + sel / citron — pas de téléphone au lit",

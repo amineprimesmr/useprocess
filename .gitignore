@@ -17,6 +17,11 @@ SourcePackages/
 *.xcuserstate
 xcuserdata/
 
+# Lymph circuit demo videos (~400MB) — keep local for Xcode archive, not in git
+useprocess/Resources/LymphCircuit/**/*.mp4
+useprocess/Resources/LymphCircuit/**/*.mov
+!useprocess/Resources/LymphCircuit/.gitkeep
+
 # TikTok content assets (keep folder structure, ignore media)
 content/tiktok/raw/**/*.{jpg,jpeg,png,webp,heic,mov,mp4}
 content/tiktok/branded/**/*.{jpg,jpeg,png,webp,heic,mov,mp4}

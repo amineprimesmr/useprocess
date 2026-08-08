@@ -63,10 +63,6 @@ struct ProfileStreakAchievementsSection: View {
                     .offset(y: heroAppeared ? 0 : 12)
             }
 
-            bilanNowButton
-                .opacity(statsAppeared ? 1 : 0)
-                .offset(y: statsAppeared ? 0 : 10)
-
             statsGrid
                 .opacity(statsAppeared ? 1 : 0)
                 .offset(y: statsAppeared ? 0 : 14)
@@ -362,58 +358,6 @@ struct ProfileStreakAchievementsSection: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.spring(response: 0.38, dampingFraction: 0.78), value: day.isComplete)
-    }
-
-    // MARK: - Check du jour
-
-    private var bilanNowButton: some View {
-        Button {
-            HapticManager.shared.impact(.medium)
-            ProcessEveningCheckInPresenter.shared.present(
-                targetDate: Date(),
-                isRequired: false
-            )
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: hasSubmittedToday ? "pencil.line" : "checkmark.seal.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                Text(hasSubmittedToday
-                    ? AppCopy.t("Modifier mon check", en: "Edit my check-in")
-                    : AppCopy.t("Faire mon check", en: "Do my check-in"))
-                    .font(.system(size: 15, weight: .bold))
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .opacity(0.7)
-            }
-            .foregroundStyle(hasSubmittedToday ? theme.primaryText : Color.white)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 15)
-            .frame(maxWidth: .infinity)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(
-                        hasSubmittedToday
-                            ? (theme.isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.06))
-                            : ProfileStreakDesign.accent
-                    )
-            }
-            .overlay {
-                if hasSubmittedToday {
-                    Capsule(style: .continuous)
-                        .strokeBorder(
-                            theme.isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08),
-                            lineWidth: 1
-                        )
-                }
-            }
-        }
-        .buttonStyle(.processPlain)
-        .accessibilityLabel(
-            hasSubmittedToday
-                ? AppCopy.t("Modifier mon check", en: "Edit my check-in")
-                : AppCopy.t("Faire mon check", en: "Do my check-in")
-        )
     }
 
     // MARK: - Stats

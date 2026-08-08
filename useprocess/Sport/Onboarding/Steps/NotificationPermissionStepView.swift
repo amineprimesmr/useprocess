@@ -33,7 +33,7 @@ struct NotificationPermissionStepView: View {
 
                 (Text(OnboardingCopy.t("Tu recevras un rappel ", en: "You'll get an "))
                     + Text(OnboardingCopy.t("important", en: "important")).foregroundColor(OnboardingTheme.accentHighlight)
-                    + Text(OnboardingCopy.t(" de Process", en: " reminder from Process")))
+                    + Text(OnboardingCopy.t(" de ton plan", en: " reminder from your plan")))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
                     .multilineTextAlignment(.center)

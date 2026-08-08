@@ -124,7 +124,11 @@ extension SportOnboardingView {
                 biometricAuthCompleted = false
             }
         case .transformationPreview:
-            TransformationPreviewStepView(onComplete: nextStep, onBack: previousStep)
+            TransformationPreviewStepView(
+                gender: viewModel.selectedGender,
+                onComplete: nextStep,
+                onBack: previousStep
+            )
         case .programCreation:
             OnboardingProgramCreationStepView(
                 viewModel: viewModel,

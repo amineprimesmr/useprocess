@@ -106,7 +106,6 @@ enum CoachDailyRhythmService {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.subtitle = "Process"
         content.threadIdentifier = CoachIntelligenceNotificationService.threadID
         content.sound = .default
         content.userInfo = ["kind": kind]
@@ -151,7 +150,7 @@ enum CoachDailyRhythmService {
         }
 
         if parts.isEmpty {
-            return AppCopy.t("Ouvre Process pour ton plan du jour.", en: "Open Process for today's plan.")
+            return AppCopy.t("Ouvre l’app pour ton plan du jour.", en: "Open the app for today's plan.")
         }
         return parts.joined(separator: " · ")
     }
@@ -159,7 +158,7 @@ enum CoachDailyRhythmService {
     private static func eveningReviewBody() -> String {
         let validatedDays = ProcessStreakStore.shared.snapshot.totalCompletedDays
         if validatedDays > 0 {
-            return AppCopy.t("\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Ouvre Process et fais ton check.", en: "\(validatedDays) day\(validatedDays == 1 ? "" : "s") completed. Open Process and check in.")
+            return AppCopy.t("\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Ouvre l’app et fais ton check.", en: "\(validatedDays) day\(validatedDays == 1 ? "" : "s") completed. Open the app and check in.")
         }
         return AppCopy.t("Deux minutes sur l'accueil pour valider ta journée.", en: "Take two minutes on Home to complete your day.")
     }

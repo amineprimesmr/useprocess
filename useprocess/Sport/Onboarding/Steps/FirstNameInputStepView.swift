@@ -52,6 +52,7 @@ struct FirstNameInputStepView: View {
                     guard !trimmed.isEmpty else { return }
 
                     HapticManager.shared.impact(.medium)
+                    ProcessAnalytics.trackFirstNameSet(trimmed, source: "onboarding_first_name_submit")
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     onComplete?()
 

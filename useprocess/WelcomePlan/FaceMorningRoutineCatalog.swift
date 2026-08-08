@@ -1,98 +1,190 @@
 import Foundation
 
-/// Routine matinale — eau tiède, circuit lymphatique, glaçons (carousel Plan).
+/// Circuit lymphatique — 6 mouvements (carousel Plan + session live).
 enum FaceMorningRoutineCatalog {
 
-    static let warmWaterML = ProcessDailyTargets.warmWaterOnWakeML
-    static let lymphJumpSeconds = ProcessDailyTargets.lymphJumpSeconds
-    static let lymphKneeRaiseSeconds = ProcessDailyTargets.lymphKneeRaiseSeconds
-    static let lymphArmRaiseSeconds = ProcessDailyTargets.lymphArmRaiseSeconds
-
-    /// Durée totale estimée du circuit lymphatique (sauts + genoux + bras).
-    static var lymphCircuitSeconds: Int {
-        lymphJumpSeconds + lymphKneeRaiseSeconds + lymphArmRaiseSeconds
+    /// Durée totale session.
+    static var fullSessionSeconds: Int {
+        Step.allCases.reduce(0) { $0 + $1.durationSeconds }
     }
 
+    static var lymphCircuitSeconds: Int { fullSessionSeconds }
+
     static var lymphCircuitMinutesLabel: String {
-        let minutes = max(1, lymphCircuitSeconds / 60)
+        let minutes = max(1, Int(ceil(Double(fullSessionSeconds) / 60.0)))
         return "\(minutes) min"
     }
 
-    enum Step: Int, CaseIterable {
-        case eauTiede
+    enum Step: Int, CaseIterable, Identifiable, Hashable {
         case sautsSurPlace
+        case rebondsPointes
+        case brasAuCiel
+        case brasEnCroix
+        case ouvertureThorax
         case monteesGenoux
-        case brasAlternes
-        case glaconsVisage
+
+        var id: String { carouselId }
+
+        /// Caméra + squelette Vision pendant l’exercice.
+        var usesLiveCamera: Bool { true }
+
+        var durationSeconds: Int {
+            switch self {
+            case .sautsSurPlace: return 60
+            case .rebondsPointes: return 60
+            case .brasAuCiel: return 55
+            case .brasEnCroix: return 30
+            case .ouvertureThorax: return 30
+            case .monteesGenoux: return 45
+            }
+        }
+
+        @MainActor
+        var shortTitle: String {
+            switch self {
+            case .sautsSurPlace:
+                return AppCopy.t("Sauts sur place", en: "Jumping in place")
+            case .rebondsPointes:
+                return AppCopy.t("Rebonds sur pointes", en: "Toe bounces")
+            case .brasAuCiel:
+                return AppCopy.t("Bras au ciel", en: "Arms to sky")
+            case .brasEnCroix:
+                return AppCopy.t("Bras en croix", en: "Arms out wide")
+            case .ouvertureThorax:
+                return AppCopy.t("Ouverture thorax", en: "Chest opening")
+            case .monteesGenoux:
+                return AppCopy.t("Montées de genoux", en: "High knees")
+            }
+        }
+
+        @MainActor
+        var coachingCue: String {
+            switch self {
+            case .sautsSurPlace:
+                return AppCopy.t(
+                    "Rebonds légers, rythme régulier — pompe la lymphe.",
+                    en: "Light bounces, steady rhythm — pump the lymph."
+                )
+            case .rebondsPointes:
+                return AppCopy.t(
+                    "Sur la pointe des pieds, petits rebonds, bras écartés.",
+                    en: "On your toes, light bounces, arms out."
+                )
+            case .brasAuCiel:
+                return AppCopy.t(
+                    "Lève les bras au ciel, monte sur la pointe des pieds.",
+                    en: "Reach arms to the sky, rise onto your toes."
+                )
+            case .brasEnCroix:
+                return AppCopy.t(
+                    "Bras horizontaux, poitrine ouverte — respire large.",
+                    en: "Arms horizontal, open chest — breathe wide."
+                )
+            case .ouvertureThorax:
+                return AppCopy.t(
+                    "Mains sur le thorax, ouvre et stimule la zone.",
+                    en: "Hands on the chest, open and stimulate the area."
+                )
+            case .monteesGenoux:
+                return AppCopy.t(
+                    "Monte un genou puis l’autre, reste stable.",
+                    en: "Raise one knee then the other, stay balanced."
+                )
+            }
+        }
 
         @MainActor
         func canonicalLine(targets: OriginPersonalizedDailyTargets) -> String {
             _ = targets
             switch self {
-            case .eauTiede:
-                return AppCopy.t(
-                    "Eau tiède au réveil — \(FaceMorningRoutineCatalog.warmWaterML) ml pour relancer digestion et hydratation",
-                    en: "Warm water on waking — \(FaceMorningRoutineCatalog.warmWaterML) ml to restart digestion and hydration"
-                )
             case .sautsSurPlace:
                 return AppCopy.t(
-                    "Sauts sur place — 1 min, bras levés, rebonds légers pour pomper la lymphe",
-                    en: "Jumping in place — 1 min, arms up, light bounces to pump lymph"
+                    "Sauts sur place — rebonds légers pour pomper la lymphe",
+                    en: "Jumping in place — light bounces to pump lymph"
+                )
+            case .rebondsPointes:
+                return AppCopy.t(
+                    "Rebonds sur pointes — pompe mollets et lymphe, bras écartés",
+                    en: "Toe bounces — pump calves and lymph, arms out"
+                )
+            case .brasAuCiel:
+                return AppCopy.t(
+                    "Bras au ciel — lève les bras et monte sur la pointe des pieds",
+                    en: "Arms to sky — raise arms and rise onto your toes"
+                )
+            case .brasEnCroix:
+                return AppCopy.t(
+                    "Bras en croix — ouvre la poitrine, bras à l’horizontale",
+                    en: "Arms out wide — open the chest, arms horizontal"
+                )
+            case .ouvertureThorax:
+                return AppCopy.t(
+                    "Ouverture thorax — stimule la zone terminale lymphatique",
+                    en: "Chest opening — stimulate the lymphatic terminus"
                 )
             case .monteesGenoux:
                 return AppCopy.t(
-                    "Montées de genoux — tapote chaque genou avec les mains, 1 min en rythme",
-                    en: "High knees — tap each knee with your hands, 1 min in rhythm"
-                )
-            case .brasAlternes:
-                return AppCopy.t(
-                    "Bras alternés — lève bras gauche puis droit au-dessus de la tête, 1 min",
-                    en: "Alternating arms — raise left then right above your head, 1 min"
-                )
-            case .glaconsVisage:
-                return AppCopy.t(
-                    "Glaçons sur le visage — \(ProcessDailyTargets.coldFaceRinseSeconds) s pour vasoconstriction et dégonflement",
-                    en: "Ice on the face — \(ProcessDailyTargets.coldFaceRinseSeconds) s for vasoconstriction and debloat"
+                    "Montées de genoux — alterne les genoux en rythme",
+                    en: "High knees — alternate knees in rhythm"
                 )
             }
         }
 
         var carouselId: String {
             switch self {
-            case .eauTiede: return "daily-routine-eau-tiede"
             case .sautsSurPlace: return "daily-routine-sauts"
+            case .rebondsPointes: return "daily-routine-pointes"
+            case .brasAuCiel: return "daily-routine-bras"
+            case .brasEnCroix: return "daily-routine-brascroix"
+            case .ouvertureThorax: return "daily-routine-thorax"
             case .monteesGenoux: return "daily-routine-genoux"
-            case .brasAlternes: return "daily-routine-bras"
-            case .glaconsVisage: return "daily-routine-glacons"
             }
         }
 
         var fallbackIcon: String {
             switch self {
-            case .eauTiede: return "mug.fill"
             case .sautsSurPlace: return "figure.jumprope"
+            case .rebondsPointes: return "figure.mind.and.body"
+            case .brasAuCiel: return "figure.arms.open"
+            case .brasEnCroix: return "arrow.left.and.right"
+            case .ouvertureThorax: return "heart.fill"
             case .monteesGenoux: return "figure.run"
-            case .brasAlternes: return "figure.arms.open"
-            case .glaconsVisage: return "snowflake"
             }
         }
 
         var assetName: String? {
             switch self {
-            case .eauTiede: return RoutineAssetCatalog.eauTiede
             case .sautsSurPlace: return RoutineAssetCatalog.sauts
+            case .rebondsPointes: return RoutineAssetCatalog.pointes
+            case .brasAuCiel: return RoutineAssetCatalog.brasCiel
+            case .brasEnCroix: return RoutineAssetCatalog.brasCroix
+            case .ouvertureThorax: return RoutineAssetCatalog.thorax
             case .monteesGenoux: return RoutineAssetCatalog.genoux
-            case .brasAlternes: return RoutineAssetCatalog.bras
-            case .glaconsVisage: return RoutineAssetCatalog.glacons
+            }
+        }
+
+        /// Nom de ressource vidéo (sans extension) — `Resources/LymphCircuit/lymph_XX.mp4`.
+        var demoVideoResourceName: String {
+            switch self {
+            case .sautsSurPlace: return "lymph_01"
+            case .rebondsPointes: return "lymph_02"
+            case .brasAuCiel: return "lymph_03"
+            case .brasEnCroix: return "lymph_05"
+            case .ouvertureThorax: return "lymph_06"
+            case .monteesGenoux: return "lymph_07"
             }
         }
 
         var repBadge: String? {
-            switch self {
-            case .eauTiede: return "\(warmWaterML) ml"
-            case .sautsSurPlace, .monteesGenoux, .brasAlternes: return "1 min"
-            case .glaconsVisage: return "\(ProcessDailyTargets.coldFaceRinseSeconds) s"
-            }
+            let minutes = durationSeconds / 60
+            let seconds = durationSeconds % 60
+            if minutes > 0, seconds == 0 { return "\(minutes) min" }
+            if minutes > 0 { return "\(minutes):\(String(format: "%02d", seconds))" }
+            return "\(seconds) s"
+        }
+
+        static func from(carouselId: String) -> Step? {
+            allCases.first { $0.carouselId == carouselId }
         }
     }
 
@@ -112,10 +204,7 @@ enum FaceMorningRoutineCatalog {
 
     static func estimatedMinutes(targets: OriginPersonalizedDailyTargets) -> Int {
         _ = targets
-        let drinkMinutes = 2
-        let circuitMinutes = max(1, lymphCircuitSeconds / 60)
-        let iceMinutes = 1
-        return drinkMinutes + circuitMinutes + iceMinutes
+        return max(1, Int(ceil(Double(fullSessionSeconds) / 60.0)))
     }
 
     @MainActor
@@ -142,8 +231,8 @@ enum FaceMorningRoutineCatalog {
     @MainActor
     static var journalSummary: String {
         AppCopy.t(
-            "\(warmWaterML) ml eau tiède · circuit lymphatique \(lymphCircuitMinutesLabel) · glaçons",
-            en: "\(warmWaterML) ml warm water · lymph circuit \(lymphCircuitMinutesLabel) · ice"
+            "Circuit lymphatique — 6 mouvements · \(lymphCircuitMinutesLabel)",
+            en: "Lymph circuit — 6 moves · \(lymphCircuitMinutesLabel)"
         )
     }
 }

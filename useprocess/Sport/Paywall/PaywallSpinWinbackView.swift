@@ -234,11 +234,18 @@ struct PaywallSpinWinbackView: View {
                 onClaimed()
             }
         }
+        .onAppear {
+            if analyticsSource == "marketing_notif_spin" {
+                ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .spinWinback
+            }
+        }
         .onDisappear {
             spinTask?.cancel()
             revealTask?.cancel()
             if ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface == .spinWinback {
-                ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface = .paywall
+                // Paywall parent remet `.paywall` via onChange ; deep-link notif → `.none`.
+                ProcessPreAccessHomeSwipeCoordinator.shared.retentionSurface =
+                    analyticsSource == "marketing_notif_spin" ? .none : .paywall
             }
         }
         // Cover plein écran : garde un deferral local (le root AppShell est en dessous).
@@ -1068,6 +1075,7 @@ struct PaywallSpinWinbackView: View {
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
                 ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: offer, source: source)
+                ProcessMarketingNotificationService.shared.handlePurchaseSuccess(plan: plan)
                 onClaimed()
             }
         } catch SubscriptionError.userCancelled {

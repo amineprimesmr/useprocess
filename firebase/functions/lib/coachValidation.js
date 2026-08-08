@@ -5,6 +5,12 @@ exports.validateCoachBody = validateCoachBody;
 exports.maxTokensForTask = maxTokensForTask;
 exports.httpStatusForError = httpStatusForError;
 function normalizeModel(model) {
+    // IDs déjà courants — ne pas les écraser (sinon Haiku → Sonnet).
+    if (model === "claude-sonnet-4-6" ||
+        model === "claude-opus-4-8" ||
+        model === "claude-haiku-4-5-20251001") {
+        return model;
+    }
     switch (model) {
         case "claude-sonnet-4-20250514":
         case "claude-3-7-sonnet-20250219":

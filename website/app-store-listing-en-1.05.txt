@@ -1,0 +1,21 @@
+================================================================================
+PROCESS DEBLOAT — APP STORE LISTING (ENGLISH U.S.) — Version 1.05
+Copy into App Store Connect → Distribution → iOS App → 1.05 → English (U.S.)
+================================================================================
+
+WHAT'S NEW (What's New in This Version)
+================================================================================
+
+• Fixed Continue button when the keyboard is open on weight and name screens (all iPhone sizes)
+• US devices now default to lbs / ft for a smoother onboarding
+• Clearer push notifications — shorter, more direct copy
+• Meal scan analysis polish and smoother progress UI
+• New lymph circuit routines and face-scan results layout options
+• Stability and onboarding/paywall reliability improvements
+
+================================================================================
+BUILD
+================================================================================
+
+Version: 1.05
+Build: 29

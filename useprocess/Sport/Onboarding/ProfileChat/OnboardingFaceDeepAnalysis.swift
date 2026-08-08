@@ -19,10 +19,31 @@ struct OnboardingFaceDeepAnalysis: Equatable {
 
     struct UnlockedMetric: Identifiable, Equatable {
         let kind: FaceScanIndicators.Kind
-        var id: String { kind.id }
         let percent: Int
         let zone: FaceScanIndicators.WellnessZone
         let phrase: String
+        /// Titre custom (ex. Potentiel) — sinon `kind.whoopLabel`.
+        var customTitle: String? = nil
+        var customSystemImage: String? = nil
+        var customID: String? = nil
+        var customHigherIsWorse: Bool? = nil
+
+        var id: String { customID ?? kind.id }
+
+        var higherIsWorse: Bool {
+            customHigherIsWorse ?? kind.higherIsWorse
+        }
+
+        @MainActor
+        var title: String {
+            customTitle ?? (kind == .stressLoad
+                ? AppCopy.t("CORTISOL ESTIMÉ", en: "ESTIMATED CORTISOL")
+                : kind.whoopLabel)
+        }
+
+        var systemImage: String {
+            customSystemImage ?? kind.systemImage
+        }
     }
 
     struct LockedMetric: Identifiable, Equatable {

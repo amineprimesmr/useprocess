@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Routine quotidienne — carousel matin (circuit lymphatique).
+/// Circuit lymphatique — carousel + session live (caméra / tracking / démo).
 struct PlanFaceDaySection: View {
     let plan: FaceOriginPlan
     let day: OriginProgramDay
@@ -9,6 +9,8 @@ struct PlanFaceDaySection: View {
     @Environment(\.appTheme) private var theme
     @Namespace private var protocolZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
+    @State private var sessionLaunch: LymphCircuitSessionLaunch?
+    @State private var pendingSessionLaunch: LymphCircuitSessionLaunch?
 
     private var livePlan: FaceOriginPlan {
         planStore.plan ?? plan
@@ -30,10 +32,7 @@ struct PlanFaceDaySection: View {
         let items = carouselItems
 
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
-            PlanProtocolSectionHeader(
-                title: PlanHomeSectionKind.faceRoutine.title,
-                trailing: FaceMorningRoutineCatalog.lymphCircuitMinutesLabel
-            )
+            headerRow
 
             if items.isEmpty {
                 Text(AppCopy.t(
@@ -64,9 +63,69 @@ struct PlanFaceDaySection: View {
                 )
             }
         }
-        .fullScreenCover(item: $selectedProtocolItem) { item in
-            PlanProtocolItemDetailSheet(item: item)
-                .processZoomTransition(id: .protocolItem(item.id), namespace: protocolZoomNamespace)
+        .fullScreenCover(item: $selectedProtocolItem, onDismiss: {
+            if let pending = pendingSessionLaunch {
+                pendingSessionLaunch = nil
+                sessionLaunch = pending
+            }
+        }) { item in
+            PlanProtocolItemDetailSheet(
+                item: item,
+                sessionActionTitle: isEditableToday
+                    ? AppCopy.t("Lancer cet exercice", en: "Start this exercise")
+                    : nil,
+                onOpenSession: isEditableToday
+                    ? {
+                        let step = FaceMorningRoutineCatalog.Step.from(carouselId: item.id)
+                        pendingSessionLaunch = LymphCircuitSessionLaunch(startAt: step)
+                        selectedProtocolItem = nil
+                    }
+                    : nil
+            )
+            .processZoomTransition(id: .protocolItem(item.id), namespace: protocolZoomNamespace)
+        }
+        .fullScreenCover(item: $sessionLaunch) { launch in
+            LymphCircuitSessionView(dayId: day.id, startAt: launch.startAt)
         }
     }
+
+    private var headerRow: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text(PlanHomeSectionKind.faceRoutine.title)
+                .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
+                .foregroundStyle(theme.primaryText)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            if isEditableToday {
+                playButton
+            }
+        }
+    }
+
+    private var playButton: some View {
+        Button {
+            sessionLaunch = LymphCircuitSessionLaunch(startAt: nil)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 15, weight: .bold))
+                Text(AppCopy.t("Lancer", en: "Start"))
+                    .font(.system(size: 16, weight: .bold))
+            }
+            .foregroundStyle(theme.primaryText)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(HealthHubDesign.softCard(theme: theme))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(AppCopy.t("Lancer le circuit lymphatique", en: "Start lymphatic circuit"))
+    }
+}
+
+/// Identifiant de présentation pour la session live.
+private struct LymphCircuitSessionLaunch: Identifiable {
+    let id = UUID()
+    let startAt: FaceMorningRoutineCatalog.Step?
 }

@@ -227,8 +227,9 @@ final class OnboardingProfileChatViewModel {
     }
 
     private func appendAssistantMessagesInstant(for question: OnboardingProfileChatQuestion) {
+        let progress = OnboardingMossChatHelpers.answerProgress(for: question, in: questions)
         conversationEngine.speak(
-            OnboardingMossChatHelpers.mossLines(for: question),
+            OnboardingMossChatHelpers.mossLines(for: question, progress: progress),
             instant: true
         )
     }
@@ -238,9 +239,11 @@ final class OnboardingProfileChatViewModel {
 
         isQuestionReadyForAnswers = false
 
+        let progress = OnboardingMossChatHelpers.answerProgress(for: question, in: questions)
         let lines = OnboardingMossChatHelpers.mossLines(
             for: question,
-            emotionalFirstBlock: question.id == "intro_swollen_face"
+            emotionalFirstBlock: question.id == "intro_swollen_face",
+            progress: progress
         )
         guard !lines.isEmpty else {
             await finalizeQuestionPresentation()
@@ -248,7 +251,7 @@ final class OnboardingProfileChatViewModel {
         }
 
         if initialDelay {
-            try? await Task.sleep(nanoseconds: 320_000_000)
+            try? await Task.sleep(nanoseconds: 160_000_000)
         }
 
         await speakMossLines(lines)
@@ -904,7 +907,7 @@ final class OnboardingProfileChatViewModel {
             analysisProgressPanelVisible = false
         }
 
-        try? await Task.sleep(nanoseconds: 320_000_000)
+        try? await Task.sleep(nanoseconds: 160_000_000)
         guard currentQuestion?.kind == .answersAnalysis else { return }
 
         await speakMossLines([

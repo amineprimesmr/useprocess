@@ -38,13 +38,24 @@ struct AppShellView: View {
         )
         .onChange(of: scenePhase) { _, phase in
             CoachPresentationTracker.shared.applicationIsActive = (phase == .active)
-            guard phase == .active else { return }
-            ProcessAudioSession.configureForMixingWithOthersIfIdle()
-            ProcessHomeScreenQuickActions.syncForCurrentUser()
-            if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
-                delegate.consumePendingLaunchShortcut()
+            switch phase {
+            case .background:
+                ProcessMarketingNotificationService.shared.handleAppLeftForeground()
+            case .active:
+                ProcessMarketingNotificationService.shared.handleAppBecameActive()
+                ProcessAudioSession.configureForMixingWithOthersIfIdle()
+                ProcessHomeScreenQuickActions.syncForCurrentUser()
+                if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
+                    delegate.consumePendingLaunchShortcut()
+                }
+                launchRouter.flushPendingPresentation()
+                Task {
+                    await ProcessMarketingNotificationService.shared.refreshIfNeededOnAppOpen()
+                    await ProcessMarketingHealthPulseService.shared.evaluateAfterHealthSync(reason: "app_open")
+                }
+            default:
+                break
             }
-            launchRouter.flushPendingPresentation()
         }
         .environment(\.appTheme, theme)
         .processThirdPartyAIConsentSheet()
@@ -62,6 +73,7 @@ struct AppShellView: View {
             if let uid = AuthUser.current?.uid {
                 ProcessAnalytics.identify(userId: uid)
             }
+            ProcessAnalytics.syncFirstNameFromProfile()
             // Laisse le 1er frame se peindre avant d’armer le double-swipe Home.
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }
@@ -149,6 +161,16 @@ struct AppShellView: View {
                     ProcessHomeScreenQuickActions.syncForCurrentUser()
                 }
             )
+            .interactiveDismissDisabled()
+        }
+        .fullScreenCover(isPresented: $launchRouter.showsSpinWinbackFromMarketing) {
+            PaywallSpinWinbackView(
+                presentation: .spinWheel,
+                analyticsSource: "marketing_notif_spin"
+            ) {
+                launchRouter.clearSpinPresentation()
+                ProcessHomeScreenQuickActions.syncForCurrentUser()
+            }
             .interactiveDismissDisabled()
         }
     }

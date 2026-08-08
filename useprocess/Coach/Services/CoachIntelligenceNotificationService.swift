@@ -48,7 +48,6 @@ enum CoachIntelligenceNotificationService {
         let content = UNMutableNotificationContent()
         content.title = formatted.title
         content.body = formatted.body
-        content.subtitle = "Process Intelligence"
         content.sound = .default
         content.threadIdentifier = threadID
         content.categoryIdentifier = categoryID
@@ -78,7 +77,6 @@ enum CoachIntelligenceNotificationService {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.subtitle = "Process Intelligence"
         content.sound = .default
         content.threadIdentifier = threadID
         content.categoryIdentifier = categoryID
@@ -147,7 +145,7 @@ enum CoachIntelligenceNotificationService {
         case .directCoach:
             return AppCopy.t("Réponse du coach", en: "Coach response")
         case .warmGuide:
-            return AppCopy.t("Process t'a répondu", en: "Process replied")
+            return AppCopy.t("Ton coach t'a répondu", en: "Your coach replied")
         }
     }
 
@@ -244,8 +242,39 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
             case "daily_review":
                 CoachPlanNavigationBridge.shared.openEveningCheckIn()
             default:
-                break
+                if kind.hasPrefix("marketing_") {
+                    handleMarketingNotificationTap(kind: kind, userInfo: userInfo)
+                }
             }
+        }
+    }
+
+    @MainActor
+    private func handleMarketingNotificationTap(kind: String, userInfo: [AnyHashable: Any]) {
+        let campaignId = (userInfo["campaign_id"] as? String)
+            ?? kind.replacingOccurrences(of: "marketing_", with: "")
+
+        let resolvedKind = ProcessMarketingNotificationKind(rawValue: campaignId)
+        let opensSpin = (userInfo["opens_spin_wheel"] as? Bool)
+            ?? (userInfo["opens_spin_wheel"] as? NSNumber)?.boolValue
+            ?? resolvedKind?.opensSpinWheel
+            ?? false
+        let opensLifetime = (userInfo["opens_lifetime_offer"] as? Bool)
+            ?? (userInfo["opens_lifetime_offer"] as? NSNumber)?.boolValue
+            ?? resolvedKind?.opensLifetimeOffer
+            ?? (!opensSpin)
+
+        ProcessMarketingNotificationService.shared.markOpened(campaignId: campaignId)
+        ProcessAnalytics.trackMarketingNotificationOpened(
+            campaignId: campaignId,
+            opensLifetimeOffer: opensLifetime && !opensSpin,
+            opensSpinWheel: opensSpin
+        )
+
+        if opensSpin {
+            AppLaunchRouter.shared.presentSpinWheelFromMarketing(campaignId: campaignId)
+        } else if opensLifetime {
+            AppLaunchRouter.shared.presentLifetimeOfferFromMarketing(campaignId: campaignId)
         }
     }
 }

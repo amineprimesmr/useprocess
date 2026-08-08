@@ -124,7 +124,8 @@ struct OnboardingProfileChatView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         mossConversationStack
-                            .padding(.top, Theme.Space.s)
+                            // Départ un peu plus bas — sinon la 1ʳᵉ bulle colle trop au header.
+                            .padding(.top, 56)
                             .padding(.bottom, Theme.Space.xl)
                             .frame(
                                 maxWidth: .infinity,
@@ -198,8 +199,8 @@ struct OnboardingProfileChatView: View {
             .id("inlineAnswer")
         }
         .padding(.horizontal, Theme.margin)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.5), value: messages.count)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.45), value: engine.controlsVisible)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.32), value: messages.count)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: engine.controlsVisible)
     }
 
     private func scrollToLatestMessage(proxy: ScrollViewProxy) {
@@ -207,7 +208,7 @@ struct OnboardingProfileChatView: View {
         if reduceMotion {
             proxy.scrollTo(last.id, anchor: .top)
         } else {
-            withAnimation(.smooth(duration: 0.5)) {
+            withAnimation(.smooth(duration: 0.32)) {
                 proxy.scrollTo(last.id, anchor: .top)
             }
         }
@@ -217,7 +218,7 @@ struct OnboardingProfileChatView: View {
         if reduceMotion {
             proxy.scrollTo("inlineAnswer", anchor: .center)
         } else {
-            withAnimation(.smooth(duration: 0.45)) {
+            withAnimation(.smooth(duration: 0.28)) {
                 proxy.scrollTo("inlineAnswer", anchor: .center)
             }
         }
