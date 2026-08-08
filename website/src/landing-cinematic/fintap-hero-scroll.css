@@ -59,21 +59,6 @@
   width: 100%;
 }
 
-/* Runway sous le mockup : laisse assez de scroll pour finir le tilt/zoom (~400–600px). */
-.fintap-hero-iphone__scroll-runway {
-  width: 100%;
-  height: max(72vh, 34rem);
-  flex-shrink: 0;
-  pointer-events: none;
-  visibility: hidden;
-}
-
-@media (min-width: 1024px) {
-  .fintap-hero-iphone__scroll-runway {
-    height: max(85vh, 42rem);
-  }
-}
-
 /* Ancrage nav / deep link : marge sous la barre Liquid Glass */
 #fintap-commerce-onboarding {
   scroll-margin-top: max(5.5rem, calc(env(safe-area-inset-top, 0px) + 4.25rem));
@@ -576,19 +561,16 @@
   #fintap-commerce-onboarding .fintap-hero-iphone__actions-title {
     display: none;
   }
-  /* Le champ est au-dessus du mockup : garder le panneau compact, le runway gère le scroll anim. */
+  /* Le champ est au-dessus du mockup : compacter le panneau bleu (badge en flux sous l’iPhone) */
   .fintap-hero-iphone.fintap-hero-iphone--scroll {
-    --fintap-hero-bottom-bleed: clamp(1.25rem, 4vw, 2.5rem);
-    padding-bottom: 0;
+    --fintap-hero-bottom-bleed: clamp(0.75rem, 2.5vw, 1.35rem);
+    padding-bottom: clamp(0.35rem, 1.2vw, 0.65rem);
   }
   .fintap-hero-iphone__scene {
     margin-top: clamp(5rem, 15vw, 6.75rem);
     min-height: 0;
     padding-top: 0.65rem;
     padding-bottom: clamp(0.35rem, 1.5vw, 0.75rem);
-  }
-  .fintap-hero-iphone__scroll-runway {
-    height: max(78vh, 36rem);
   }
   .fintap-hero-iphone__btn--primary { display: none; }
 }
