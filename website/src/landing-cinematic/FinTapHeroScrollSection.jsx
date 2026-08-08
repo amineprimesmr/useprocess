@@ -20,8 +20,6 @@ import "./fintap-hero-scroll.css";
 import "./fintap-hero-blue-surface.css";
 import { FinTapHeroDeskCtas } from "./FinTapHeroDeskCtas.jsx";
 import { FinTapHeroMobileLogo } from "./FinTapHeroMobileLogo.jsx";
-import { FinTapHeroMediaBadge } from "./FinTapHeroMediaBadge.jsx";
-import { StoreDownloadButtons } from "./StoreDownloadButtons.jsx";
 
 const HERO_IPHONE_IMG = "/assets/iphone-custom-clean.png?v=20260808";
 const HERO_IPHONE_IMG_MOBILE = "/assets/iphone-custom-clean-mobile.png?v=20260808";
@@ -576,22 +574,7 @@ export function FinTapHeroScrollSection() {
             />
           </div>
         </div>
-        <div
-          id="fintap-commerce-onboarding"
-          className={`fintap-hero-iphone__actions${ctaVisible ? " is-visible" : ""}`}
-          aria-hidden={ctaVisible ? "false" : "true"}
-        >
-          <p className="fintap-hero-iphone__actions-title">
-            Prêt à dégonfler
-            <br />
-            ton visage ?
-          </p>
-          <div className="fintap-hero-iphone__download-wrap">
-            <StoreDownloadButtons />
-          </div>
-        </div>
       </div>
-      <FinTapHeroMediaBadge placement="bottom" />
     </section>
   );
 }

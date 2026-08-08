@@ -1,13 +1,11 @@
 import "./fintap-landing.css";
 import { FinTapHeroScrollSection } from "./FinTapHeroScrollSection.jsx";
-import { ProcessFinalCtaSection } from "./ProcessFinalCtaSection.jsx";
 
-/** Landing Process : hero + CTA. */
+/** Landing Process : hero seul. */
 export function FinTapPage() {
   return (
     <main className="fintap-landing" id="fintap-main" role="main">
       <FinTapHeroScrollSection />
-      <ProcessFinalCtaSection />
     </main>
   );
 }
