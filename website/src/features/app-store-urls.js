@@ -1,4 +1,4 @@
-/** URLs App Store — Process AI (iOS). */
+/** URLs App Store — Process (iOS). */
 export function getIosAppStoreUrl() {
   const direct =
     typeof import.meta !== "undefined"
@@ -10,7 +10,7 @@ export function getIosAppStoreUrl() {
       ? String(import.meta.env?.VITE_IOS_APP_STORE_ID || "").trim()
       : "";
   if (id) return `https://apps.apple.com/fr/app/id${id}`;
-  return "https://apps.apple.com/fr/search?term=Process%20AI";
+  return "https://apps.apple.com/fr/app/process-debloat-ton-visage/id6753808143";
 }
 
 export function getAndroidAppStoreUrl() {

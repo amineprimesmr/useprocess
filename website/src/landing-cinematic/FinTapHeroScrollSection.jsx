@@ -21,8 +21,8 @@ import "./fintap-hero-blue-surface.css";
 import { FinTapHeroDeskCtas } from "./FinTapHeroDeskCtas.jsx";
 import { FinTapHeroMobileLogo } from "./FinTapHeroMobileLogo.jsx";
 
-const HERO_IPHONE_IMG = "/assets/iphone-custom-clean.png?v=20260808";
-const HERO_IPHONE_IMG_MOBILE = "/assets/iphone-custom-clean-mobile.png?v=20260808";
+const HERO_IPHONE_IMG = "/assets/iphone-custom-clean.png?v=20260808b";
+const HERO_IPHONE_IMG_MOBILE = "/assets/iphone-custom-clean-mobile.png?v=20260808b";
 const TRIGGER_PX = 400;
 const IOS_MOBILE_TRIGGER_PX = 560;
 const DESKTOP_SCROLL_BRAKE_START_RATIO = 0.62;
@@ -575,6 +575,8 @@ export function FinTapHeroScrollSection() {
           </div>
         </div>
       </div>
+      {/* Espace de scroll pour terminer l’anim 3D du mockup (sans contenu visible). */}
+      <div className="fintap-hero-iphone__scroll-runway" aria-hidden="true" />
     </section>
   );
 }
