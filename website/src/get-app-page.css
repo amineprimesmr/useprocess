@@ -22,8 +22,6 @@ body.page-get-app #landing {
   background: #0a1015;
 }
 
-body.page-get-app #landing-liquid-nav-host,
-body.page-get-app .landing-liquid-nav-host,
 body.page-get-app #site-footer-myfidpass,
 body.page-get-app #lancez-vous-rapidement,
 body.page-get-app .landing-legal-inner > .landing-btn {
@@ -141,12 +139,73 @@ body.page-get-app .get-app-store-btn {
   cursor: pointer;
 }
 
-body.page-get-app .two-buttons {
+body.page-get-app .two-buttons,
+body.page-get-app .get-app-store-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 0.65rem;
+}
+
+body.page-get-app .get-app-store-badge {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3.1rem;
+  min-width: 10.5rem;
+  padding: 0.45rem 1rem 0.45rem 0.85rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0a0a0a;
+  color: #f8fafc;
+  text-align: left;
+}
+
+body.page-get-app .get-app-store-btn--badge:hover .get-app-store-badge--apple {
+  background: #111;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.page-get-app .get-app-store-badge--soon {
+  opacity: 0.72;
+  cursor: default;
+  user-select: none;
+}
+
+body.page-get-app .get-app-store-badge__logo {
+  flex-shrink: 0;
+  display: block;
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+body.page-get-app .get-app-store-badge__logo--play {
+  width: 1.45rem;
+  height: 1.45rem;
+}
+
+body.page-get-app .get-app-store-badge__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  line-height: 1.15;
+}
+
+body.page-get-app .get-app-store-badge__eyebrow {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(248, 250, 252, 0.72);
+}
+
+body.page-get-app .get-app-store-badge__name {
+  font-size: 0.98rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
 }
 
 body.page-get-app .hidden {

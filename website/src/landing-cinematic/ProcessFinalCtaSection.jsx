@@ -1,7 +1,8 @@
 import { ScrollReveal } from "./ScrollReveal.jsx";
+import { StoreDownloadButtons } from "./StoreDownloadButtons.jsx";
 import "./process-final-cta.css";
 
-/** CTA final — remplace le simulateur ROI commerce. */
+/** CTA final — boutons App Store + Play Store. */
 export function ProcessFinalCtaSection() {
   return (
     <section className="process-final-cta" id="telecharger" aria-labelledby="process-final-cta-heading">
@@ -15,9 +16,7 @@ export function ProcessFinalCtaSection() {
           </p>
         </ScrollReveal>
         <ScrollReveal delay={0.08}>
-          <a href="/get" className="process-final-cta__btn">
-            Télécharger Process
-          </a>
+          <StoreDownloadButtons />
         </ScrollReveal>
       </div>
     </section>

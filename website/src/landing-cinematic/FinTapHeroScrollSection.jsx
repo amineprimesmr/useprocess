@@ -21,6 +21,7 @@ import "./fintap-hero-blue-surface.css";
 import { FinTapHeroDeskCtas } from "./FinTapHeroDeskCtas.jsx";
 import { FinTapHeroMobileLogo } from "./FinTapHeroMobileLogo.jsx";
 import { FinTapHeroMediaBadge } from "./FinTapHeroMediaBadge.jsx";
+import { StoreDownloadButtons } from "./StoreDownloadButtons.jsx";
 
 const HERO_IPHONE_IMG = "/assets/iphone-custom-clean.png";
 const HERO_IPHONE_IMG_MOBILE = "/assets/iphone-custom-clean-mobile.png";
@@ -591,21 +592,7 @@ export function FinTapHeroScrollSection() {
             ton visage ?
           </p>
           <div className="fintap-hero-iphone__download-wrap">
-            <a href="/get" className="fintap-hero-iphone__download-app">
-              <span className="fintap-hero-iphone__download-app-label">Télécharger Process</span>
-              <span className="fintap-hero-iphone__download-app-arrow" aria-hidden="true">
-                <svg viewBox="0 0 20 20" focusable="false">
-                  <path
-                    d="M4.5 10h9m0 0-3.5-3.5M13.5 10l-3.5 3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </a>
+            <StoreDownloadButtons />
             <p className="fintap-hero-iphone__download-caption">Essai gratuit 3 jours · iOS</p>
           </div>
         </div>

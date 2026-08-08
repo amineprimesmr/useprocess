@@ -27,25 +27,3 @@
   line-height: 1.55;
   color: #94a3b8;
 }
-
-.process-final-cta__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.85rem;
-  padding: 0.65rem 1.75rem;
-  border-radius: 999px;
-  font-size: 0.95rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  color: #09090b !important;
-  text-decoration: none;
-  background: #f1f5f9;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  transition: transform 0.16s ease, background 0.2s ease;
-}
-
-.process-final-cta__btn:hover {
-  transform: translateY(-1px);
-  background: #fff;
-}

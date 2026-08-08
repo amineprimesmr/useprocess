@@ -4,7 +4,7 @@
   --fintap-rev-blue: #0a98ff;
   --fintap-rev-blue-deep: #0670d4;
   --fintap-rev-blue-card: linear-gradient(165deg, #0a98ff 0%, #0670d4 52%, #0559b0 100%);
-  --fintap-steps-nav-clear: max(6.5rem, calc(env(safe-area-inset-top, 0px) + 5.35rem));
+  --fintap-steps-nav-clear: max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem));
   position: relative;
   overflow: visible;
   padding: clamp(3rem, 8vw, 5rem) 0 clamp(3.5rem, 9vw, 6rem);

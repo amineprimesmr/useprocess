@@ -16,7 +16,6 @@ body {
 #landing,
 .fintap-landing,
 #landing .landing-main-cinematic,
-.fintap-features-grid,
 .fintap-steps-scroll,
 .fintap-var-cards,
 .process-final-cta,
@@ -41,11 +40,6 @@ body {
   -webkit-background-clip: text !important;
   background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
-}
-
-#landing-liquid-glass .switcher {
-  background-color: color-mix(in srgb, #16161f 85%, transparent) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .landing-footer.landing-footer--sf {
