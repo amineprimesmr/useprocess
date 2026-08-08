@@ -67,9 +67,10 @@
   }
 
   .fintap-hero-iphone__brand-icon {
-    width: 2.35rem;
-    height: 2.35rem;
+    width: 2.55rem;
+    height: 2.55rem;
     object-fit: contain;
     flex-shrink: 0;
+    border-radius: 0.72rem;
   }
 }

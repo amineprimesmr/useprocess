@@ -65,7 +65,7 @@ async function renderQR() {
     type: "svg",
     data: getIosAppStoreUrl(),
     qrOptions: { typeNumber: 0, errorCorrectionLevel: "H" },
-    image: "/assets/icone.png?v=20260804",
+    image: "/assets/icone.png?v=20260808",
     dotsOptions: { color: "#F6F4EC", type: "dots" },
     cornersSquareOptions: { color: "#fafafa", type: "extra-rounded" },
     cornersDotOptions: { color: "#F6F4EC", type: "square" },

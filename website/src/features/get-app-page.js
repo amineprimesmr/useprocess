@@ -1,7 +1,7 @@
 export function getGetAppPageHtml() {
   return `
 <div class="container get-app-container">
-  <img height="200" src="/assets/icone.png?v=20260804" alt="Process" class="get-app-logo" decoding="async" />
+  <img height="200" src="/assets/icone.png?v=20260808" alt="Process" class="get-app-logo" decoding="async" />
   <div class="color-foreground">
     <div class="content">
       <h2 id="get-app-title" class="title">Dégonfle ton visage.</h2>

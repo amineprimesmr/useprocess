@@ -16,16 +16,8 @@ body {
 #landing,
 .fintap-landing,
 #landing .landing-main-cinematic,
-.fintap-steps-scroll,
-.fintap-var-cards,
-.process-final-cta,
-.landing-launch-sf {
+.process-final-cta {
   background-color: #09090b;
-}
-
-.fintap-steps-card__grey-panel {
-  background: #16161f !important;
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .fintap-hero-iphone.fintap-hero-iphone--scroll::before {

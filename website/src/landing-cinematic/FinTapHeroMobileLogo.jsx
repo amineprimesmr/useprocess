@@ -1,4 +1,4 @@
-const BRAND_ICON = "/assets/icone.png?v=20260416";
+const BRAND_ICON = "/assets/icone.png?v=20260808";
 
 /** Logo Process — affiché en haut du hero cinéma sur mobile (icône seule). */
 export function FinTapHeroMobileLogo() {

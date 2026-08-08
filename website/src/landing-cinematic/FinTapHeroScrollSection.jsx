@@ -23,8 +23,8 @@ import { FinTapHeroMobileLogo } from "./FinTapHeroMobileLogo.jsx";
 import { FinTapHeroMediaBadge } from "./FinTapHeroMediaBadge.jsx";
 import { StoreDownloadButtons } from "./StoreDownloadButtons.jsx";
 
-const HERO_IPHONE_IMG = "/assets/iphone-custom-clean.png";
-const HERO_IPHONE_IMG_MOBILE = "/assets/iphone-custom-clean-mobile.png";
+const HERO_IPHONE_IMG = "/assets/iphone-custom-clean.png?v=20260808";
+const HERO_IPHONE_IMG_MOBILE = "/assets/iphone-custom-clean-mobile.png?v=20260808";
 const TRIGGER_PX = 400;
 const IOS_MOBILE_TRIGGER_PX = 560;
 const DESKTOP_SCROLL_BRAKE_START_RATIO = 0.62;
@@ -547,15 +547,10 @@ export function FinTapHeroScrollSection() {
       <FinTapHeroDeskCtas />
       <div className="hero__text fintap-hero-iphone__text">
         <h1 className="fintap-hero-iphone__h1">
-          LA NOUVELLE EXPÉRIENCE
+          Découvre pourquoi
           <br />
-          DEBLOAT
+          ton visage est gonflé
         </h1>
-        <p className="fintap-hero-iphone__lead">
-          {isMobile
-            ? "Scanne ton visage. Suis ton protocole. Dégonfle jour après jour."
-            : "Coach IA, scan visage et nutrition drainante — ton visage moins gonflé, dans ta poche."}
-        </p>
       </div>
       <div className="fintap-hero-iphone__experience">
         <div
@@ -573,8 +568,8 @@ export function FinTapHeroScrollSection() {
               srcSet={`${HERO_IPHONE_IMG_MOBILE} 434w, ${HERO_IPHONE_IMG} 838w`}
               sizes="(max-width: 767px) 280px, 320px"
               width={838}
-              height={1736}
-              alt=""
+              height={1822}
+              alt="Aperçu de l'app Process sur iPhone"
               loading="eager"
               decoding="async"
               draggable={false}
@@ -593,7 +588,6 @@ export function FinTapHeroScrollSection() {
           </p>
           <div className="fintap-hero-iphone__download-wrap">
             <StoreDownloadButtons />
-            <p className="fintap-hero-iphone__download-caption">Essai gratuit 3 jours · iOS</p>
           </div>
         </div>
       </div>

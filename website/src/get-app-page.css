@@ -23,7 +23,7 @@ body.page-get-app #landing {
 }
 
 body.page-get-app #site-footer-myfidpass,
-body.page-get-app #lancez-vous-rapidement,
+body.page-get-app #site-footer-process,
 body.page-get-app .landing-legal-inner > .landing-btn {
   display: none !important;
 }
@@ -81,7 +81,7 @@ body.page-get-app .get-app-logo {
   margin: 0 auto;
   height: clamp(140px, 28vw, 200px);
   width: auto;
-  border-radius: 2rem;
+  border-radius: 2.35rem;
 }
 
 body.page-get-app div.content {
@@ -156,16 +156,22 @@ body.page-get-app .get-app-store-badge {
   min-height: 3.1rem;
   min-width: 10.5rem;
   padding: 0.45rem 1rem 0.45rem 0.85rem;
-  border-radius: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: #0a0a0a;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, #1a1a1f 0%, #0a0a0c 100%);
   color: #f8fafc;
   text-align: left;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 body.page-get-app .get-app-store-btn--badge:hover .get-app-store-badge--apple {
-  background: #111;
-  border-color: rgba(255, 255, 255, 0.28);
+  background: linear-gradient(180deg, #222228 0%, #101014 100%);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 12px 28px rgba(0, 0, 0, 0.5);
 }
 
 body.page-get-app .get-app-store-badge--soon {

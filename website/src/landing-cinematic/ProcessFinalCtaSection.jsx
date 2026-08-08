@@ -12,7 +12,7 @@ export function ProcessFinalCtaSection() {
             Prêt à dégonfler ton visage ?
           </h2>
           <p className="process-final-cta__lead">
-            Scan visage, protocole debloat et coach IA — essai gratuit 3 jours sur iOS.
+            Scan visage, protocole debloat et coach IA — disponible sur iOS.
           </p>
         </ScrollReveal>
         <ScrollReveal delay={0.08}>
