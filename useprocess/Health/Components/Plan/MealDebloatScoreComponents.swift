@@ -29,7 +29,7 @@ struct MealDebloatScorePill: View {
                 .font(.caption.weight(.heavy))
                 .monospacedDigit()
 
-            Text("Debloat")
+            Text(AppCopy.t("Debloat", en: "Debloat"))
                 .font(.caption2.weight(.semibold))
                 .opacity(0.78)
         }
@@ -67,7 +67,7 @@ struct MealDebloatScoreGlassPill: View {
                 .font(.caption.weight(.heavy))
                 .monospacedDigit()
 
-            Text("Debloat")
+            Text(AppCopy.t("Debloat", en: "Debloat"))
                 .font(.caption2.weight(.semibold))
                 .opacity(0.72)
         }

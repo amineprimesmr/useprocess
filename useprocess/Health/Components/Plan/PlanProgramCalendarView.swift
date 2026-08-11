@@ -12,11 +12,16 @@ struct PlanProgramCalendarView: View {
     @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
     @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
     @Bindable private var streakStore = ProcessStreakStore.shared
+    @Bindable private var scanStore = FaceScanHistoryStore.shared
 
     @State private var displayedMonth: Date
 
     private var calendar: Calendar { Self.appCalendar }
     private var progress: PlanProgressSnapshot { planProgressStore.snapshot }
+
+    private var calendarAccent: Color {
+        Color(red: 0.22, green: 0.48, blue: 0.96)
+    }
 
     init(selectedDate: Binding<Date>, plan: FaceOriginPlan?) {
         _selectedDate = selectedDate
@@ -39,12 +44,18 @@ struct PlanProgramCalendarView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             topBar
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if plan != nil {
+                bottomStatsBar
+            }
+        }
         .toolbar(.hidden, for: .navigationBar)
         .processClearUIKitHostingBackground()
         .processAppPageBackground()
         .onAppear {
             planProgressStore.reload(plan: plan)
             trajectoryStore.sync(from: plan)
+            scanStore.reloadForUser(userId: UserScopedStorage.currentUserId())
         }
         .onChange(of: selectedDate) { _, newDate in
             let month = Self.startOfMonth(for: newDate)
@@ -59,14 +70,14 @@ struct PlanProgramCalendarView: View {
     @ViewBuilder
     private func calendarContent(plan: FaceOriginPlan) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                progressSummaryCard()
-                monthSection(plan: plan)
+            VStack(alignment: .leading, spacing: 20) {
+                heroHeader(plan: plan)
+                calendarCard(plan: plan)
                 selectedDayPanel(plan: plan)
             }
             .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 36)
+            .padding(.top, 4)
+            .padding(.bottom, 24)
         }
         .scrollIndicators(.hidden)
     }
@@ -90,6 +101,294 @@ struct PlanProgramCalendarView: View {
                 .padding(.horizontal, 32)
             Spacer()
         }
+    }
+
+    // MARK: - En-tête hero
+
+    private func heroHeader(plan: FaceOriginPlan) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(Self.monthHeroFormatter.string(from: displayedMonth))
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(theme.primaryText)
+                .textCase(nil)
+
+            Text(AppCopy.t(
+                "Appuie sur un jour pour voir ce scan.",
+                en: "Tap any day to see that scan."
+            ))
+                .font(.subheadline)
+                .foregroundStyle(theme.secondaryText)
+
+            HStack(alignment: .firstTextBaseline) {
+                Text(AppCopy.t("PROGRESSION", en: "PROGRESS"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(theme.secondaryText.opacity(0.72))
+                    .tracking(0.6)
+
+                Spacer(minLength: 8)
+
+                Text(scansThisMonthLabel)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(calendarAccent)
+                    .tracking(0.5)
+                    .multilineTextAlignment(.trailing)
+            }
+        }
+        .contentShape(Rectangle())
+        .gesture(monthSwipeGesture(plan: plan))
+    }
+
+    private var scansThisMonthLabel: String {
+        let count = scansInDisplayedMonth
+        if count == 0 {
+            return AppCopy.t("0 SCAN CE MOIS", en: "0 SCANS THIS MONTH")
+        }
+        return AppCopy.t(
+            "\(count) SCAN\(count > 1 ? "S" : "") CE MOIS",
+            en: count == 1 ? "1 SCAN THIS MONTH" : "\(count) SCANS THIS MONTH"
+        )
+    }
+
+    private var scansInDisplayedMonth: Int {
+        scanStore.history.filter {
+            calendar.isDate($0.createdAt, equalTo: displayedMonth, toGranularity: .month)
+        }.count
+    }
+
+    // MARK: - Carte calendrier
+
+    private func calendarCard(plan: FaceOriginPlan) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            calendarCardHeader(plan: plan)
+            weekdayHeaderRow
+            calendarGrid(plan: plan)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 20)
+        .background(calendarCardBackground)
+        .gesture(monthSwipeGesture(plan: plan))
+    }
+
+    private func calendarCardHeader(plan: FaceOriginPlan) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "square.grid.2x2")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(theme.secondaryText.opacity(0.75))
+
+            Text(cardTitle)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(theme.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Spacer(minLength: 4)
+
+            Button {
+                shiftMonth(by: 1, plan: plan)
+            } label: {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(theme.secondaryText.opacity(0.55))
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.processPlain)
+            .accessibilityLabel(AppCopy.t("Mois suivant", en: "Next month"))
+        }
+    }
+
+    private var cardTitle: String {
+        let month = Self.monthCardFormatter.string(from: displayedMonth)
+        return AppCopy.t(
+            "Scans & Journal — \(month)",
+            en: "Scans & Diary — \(month)"
+        )
+    }
+
+    private var weekdayHeaderRow: some View {
+        LazyVGrid(columns: Self.gridColumns, spacing: 10) {
+            ForEach(Self.weekdaySymbols, id: \.self) { symbol in
+                Text(symbol)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(theme.secondaryText.opacity(0.62))
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private func calendarGrid(plan: FaceOriginPlan) -> some View {
+        LazyVGrid(columns: Self.gridColumns, spacing: 10) {
+            ForEach(gridCells(for: displayedMonth), id: \.timeIntervalSinceReferenceDate) { date in
+                dayCell(date: date, plan: plan)
+            }
+        }
+    }
+
+    private func dayCell(date: Date, plan: FaceOriginPlan) -> some View {
+        let model = dayModel(for: date, plan: plan)
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        let isCurrentMonth = calendar.isDate(date, equalTo: displayedMonth, toGranularity: .month)
+
+        return Button {
+            HapticManager.shared.impact(.light)
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                selectedDate = date
+                if !isCurrentMonth {
+                    displayedMonth = Self.startOfMonth(for: date)
+                }
+            }
+        } label: {
+            Text("\(calendar.component(.day, from: date))")
+                .font(.system(size: 15, weight: isSelected ? .bold : .medium, design: .rounded))
+                .foregroundStyle(dayNumberColor(isCurrentMonth: isCurrentMonth, isSelected: isSelected))
+                .monospacedDigit()
+                .frame(maxWidth: .infinity)
+                .frame(height: PlanProgramCalendarDesign.cellDiameter)
+                .background {
+                    Circle()
+                        .fill(circleFill(isCurrentMonth: isCurrentMonth, isSelected: isSelected))
+                }
+                .overlay {
+                    if isSelected {
+                        Circle()
+                            .strokeBorder(calendarAccent, lineWidth: 2)
+                    }
+                }
+        }
+        .buttonStyle(PlanProgramCalendarDayButtonStyle())
+        .accessibilityLabel(model.accessibilityLabel)
+    }
+
+    private func dayNumberColor(isCurrentMonth: Bool, isSelected: Bool) -> Color {
+        if !isCurrentMonth {
+            return theme.secondaryText.opacity(0.28)
+        }
+        return isSelected ? theme.primaryText : theme.primaryText.opacity(0.82)
+    }
+
+    private func circleFill(isCurrentMonth: Bool, isSelected: Bool) -> Color {
+        if isSelected {
+            return theme.isDark ? Color.white.opacity(0.10) : Color.white
+        }
+        if !isCurrentMonth {
+            return theme.isDark ? Color.white.opacity(0.03) : Color.black.opacity(0.025)
+        }
+        return theme.isDark ? Color.white.opacity(0.07) : Color.black.opacity(0.045)
+    }
+
+    private var calendarCardBackground: some View {
+        RoundedRectangle(cornerRadius: 26, style: .continuous)
+            .fill(theme.isDark ? Color.white.opacity(0.09) : Color.white)
+            .shadow(
+                color: Color.black.opacity(theme.isDark ? 0.22 : 0.06),
+                radius: 18,
+                x: 0,
+                y: 8
+            )
+    }
+
+    // MARK: - Barre stats bas
+
+    private var bottomStatsBar: some View {
+        HStack(spacing: 10) {
+            bottomStatCard(
+                label: AppCopy.t("SÉRIE", en: "STREAK"),
+                value: streakValue,
+                valueColor: theme.primaryText,
+                labelColor: theme.secondaryText.opacity(0.72),
+                fill: statCardFill
+            )
+            bottomStatCard(
+                label: AppCopy.t("MEILLEUR JOUR", en: "BEST DAY"),
+                value: bestDayLabel,
+                valueColor: calendarAccent,
+                labelColor: theme.secondaryText.opacity(0.72),
+                fill: statCardFill
+            )
+            bottomStatCard(
+                label: AppCopy.t("MANQUÉS", en: "SKIPPED"),
+                value: "\(skippedDaysCount)",
+                valueColor: .white,
+                labelColor: .white.opacity(0.82),
+                fill: calendarAccent
+            )
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+        .background {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(theme.cardStroke.opacity(theme.isDark ? 0.28 : 0.35))
+                        .frame(height: 0.5)
+                }
+                .ignoresSafeArea(edges: .bottom)
+        }
+    }
+
+    private func bottomStatCard(
+        label: String,
+        value: String,
+        valueColor: Color,
+        labelColor: Color,
+        fill: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(labelColor)
+                .tracking(0.5)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(value)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(valueColor)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(fill)
+        }
+    }
+
+    private var statCardFill: Color {
+        theme.isDark ? Color.white.opacity(0.10) : Color.white
+    }
+
+    private var streakValue: String {
+        let days = streakStore.displayStreak
+        return ProcessAppLanguage.shared.isFrench ? "\(days)j" : "\(days)d"
+    }
+
+    private var bestDayLabel: String {
+        guard let record = bestDayRecord,
+              let date = ProcessDebloatTrajectoryEngine.date(from: record.dayKey, calendar: calendar) else {
+            return "—"
+        }
+        return Self.shortDayFormatter.string(from: date)
+    }
+
+    private var bestDayRecord: DebloatDayRecord? {
+        trajectoryStore.allRecordsByDay.values
+            .filter { record in
+                let cardioBefore = ProcessDebloatValidation.consecutiveCardioMisses(
+                    before: record.dayKey,
+                    in: trajectoryStore.allRecordsByDay
+                )
+                return record.countsAsValidatedDay(consecutiveCardioMissesBefore: cardioBefore)
+            }
+            .max(by: { $0.compositeScore < $1.compositeScore })
+    }
+
+    private var skippedDaysCount: Int {
+        trajectoryStore.allRecordsByDay.values.filter { $0.verdict == .missed }.count
     }
 
     // MARK: - Barre supérieure
@@ -116,25 +415,6 @@ struct PlanProgramCalendarView: View {
 
             Spacer(minLength: 8)
 
-            VStack(spacing: 2) {
-                Text(AppCopy.t("Calendrier", en: "Calendar"))
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(theme.primaryText)
-                if progress.hasPlan {
-                    Text(AppCopy.t(
-                        "Programme debloat · \(progress.totalProgramDays) jours",
-                        en: progress.totalProgramDays == 1
-                            ? "Debloat program · 1 day"
-                            : "Debloat program · \(progress.totalProgramDays) days"
-                    ))
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(theme.secondaryText)
-                        .monospacedDigit()
-                }
-            }
-
-            Spacer(minLength: 8)
-
             if !Calendar.current.isDateInToday(selectedDate) {
                 Button {
                     HapticManager.shared.impact(.light)
@@ -142,285 +422,20 @@ struct PlanProgramCalendarView: View {
                 } label: {
                     Text(AppCopy.today)
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(theme.onboardingAccent)
+                        .foregroundStyle(calendarAccent)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(theme.onboardingAccent.opacity(0.14))
+                                .fill(calendarAccent.opacity(0.14))
                         )
                 }
                 .buttonStyle(.processPlain)
-            } else {
-                Color.clear.frame(width: 36, height: 36)
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        .padding(.bottom, 10)
-        .background {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(theme.cardStroke.opacity(theme.isDark ? 0.35 : 0.5))
-                        .frame(height: 0.5)
-                }
-                .ignoresSafeArea(edges: .top)
-        }
-    }
-
-    // MARK: - Résumé progression
-
-    private func progressSummaryCard() -> some View {
-        HStack(spacing: 0) {
-            summaryMetric(
-                value: "\(progress.elapsedProgramDays)",
-                suffix: "/\(progress.totalProgramDays)",
-                label: AppCopy.t("Jours écoulés", en: "Days elapsed"),
-                tint: theme.onboardingAccent
-            )
-
-            summaryDivider
-
-            summaryMetric(
-                value: "\(streakStore.displayValidatedDays)",
-                suffix: nil,
-                label: AppCopy.t("Jours validés", en: "Days validated"),
-                tint: ProcessStreakPalette.flame
-            )
-
-            summaryDivider
-
-            summaryMetric(
-                value: "S\(progress.currentWeek)",
-                suffix: nil,
-                label: progress.weeksLabel.isEmpty
-                    ? AppCopy.t("Semaine", en: "Week")
-                    : progress.weeksLabel,
-                tint: Color(red: 0.45, green: 0.72, blue: 0.95)
-            )
-        }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 12)
-        .background(summaryCardBackground)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func summaryMetric(value: String, suffix: String?, label: String, tint: Color) -> some View {
-        VStack(spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(value)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(tint)
-                    .monospacedDigit()
-                if let suffix {
-                    Text(suffix)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(theme.secondaryText.opacity(0.85))
-                        .monospacedDigit()
-                }
-            }
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(theme.secondaryText)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var summaryDivider: some View {
-        Rectangle()
-            .fill(theme.cardStroke.opacity(theme.isDark ? 0.35 : 0.45))
-            .frame(width: 0.5, height: 44)
-    }
-
-    private var summaryCardBackground: some View {
-        RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .fill(theme.isDark ? Color.white.opacity(0.08) : Color.white.opacity(0.92))
-            .overlay {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(theme.cardStroke.opacity(theme.isDark ? 0.28 : 0.4), lineWidth: 0.5)
-            }
-    }
-
-    // MARK: - Mois
-
-    private func monthSection(plan: FaceOriginPlan) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            monthNavigator(plan: plan)
-            weekdayHeaderRow
-            calendarGrid(plan: plan)
-            legendRow
-        }
-    }
-
-    private func monthNavigator(plan: FaceOriginPlan) -> some View {
-        HStack {
-            Button {
-                shiftMonth(by: -1, plan: plan)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(canGoToPreviousMonth(plan: plan) ? theme.primaryText : theme.secondaryText.opacity(0.35))
-                    .frame(width: 40, height: 40)
-            }
-            .buttonStyle(.processPlain)
-            .disabled(!canGoToPreviousMonth(plan: plan))
-
-            Spacer()
-
-            Text(Self.monthTitleFormatter.string(from: displayedMonth))
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(theme.primaryText)
-                .textCase(nil)
-
-            Spacer()
-
-            Button {
-                shiftMonth(by: 1, plan: plan)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(canGoToNextMonth(plan: plan) ? theme.primaryText : theme.secondaryText.opacity(0.35))
-                    .frame(width: 40, height: 40)
-            }
-            .buttonStyle(.processPlain)
-            .disabled(!canGoToNextMonth(plan: plan))
-        }
-    }
-
-    private var weekdayHeaderRow: some View {
-        LazyVGrid(columns: Self.gridColumns, spacing: 8) {
-            ForEach(Self.weekdaySymbols, id: \.self) { symbol in
-                Text(symbol)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(theme.secondaryText.opacity(0.75))
-                    .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    private func calendarGrid(plan: FaceOriginPlan) -> some View {
-        LazyVGrid(columns: Self.gridColumns, spacing: 8) {
-            ForEach(Array(gridCells(for: displayedMonth).enumerated()), id: \.offset) { _, cell in
-                if let date = cell {
-                    dayCell(date: date, plan: plan)
-                } else {
-                    Color.clear
-                        .frame(height: PlanProgramCalendarDesign.cellHeight)
-                }
-            }
-        }
-    }
-
-    private func dayCell(date: Date, plan: FaceOriginPlan) -> some View {
-        let model = dayModel(for: date, plan: plan)
-        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-
-        return Button {
-            HapticManager.shared.impact(.light)
-            withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
-                selectedDate = date
-            }
-        } label: {
-            VStack(spacing: 5) {
-                Text("\(calendar.component(.day, from: date))")
-                    .font(.system(size: 15, weight: isSelected ? .bold : .semibold, design: .rounded))
-                    .foregroundStyle(model.dayNumberColor(isSelected: isSelected, theme: theme))
-                    .monospacedDigit()
-
-                if model.programDayNumber != nil {
-                    dayStatusBadge(model: model, isSelected: isSelected)
-                        .overlay(alignment: .topTrailing) {
-                            if model.isDebloatTarget {
-                                Image(systemName: "drop.fill")
-                                    .font(.system(size: 7, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.45, green: 0.72, blue: 0.95))
-                                    .offset(x: 6, y: -4)
-                            }
-                        }
-                } else {
-                    Spacer(minLength: 0)
-                        .frame(height: 16)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: PlanProgramCalendarDesign.cellHeight)
-            .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(model.cellFill(isSelected: isSelected, theme: theme))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(model.borderColor(isSelected: isSelected, theme: theme), lineWidth: isSelected ? 1.5 : 0.5)
-                    }
-            }
-            .scaleEffect(isSelected ? 1.04 : 1, anchor: .center)
-        }
-        .buttonStyle(PlanProgramCalendarDayButtonStyle())
-        .accessibilityLabel(model.accessibilityLabel)
-    }
-
-    @ViewBuilder
-    private func dayStatusBadge(model: PlanProgramCalendarDayModel, isSelected: Bool) -> some View {
-        switch model.status {
-        case .validated(let verdict):
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(verdict.chartColor)
-        case .missed:
-            Circle()
-                .fill(Color(red: 0.92, green: 0.38, blue: 0.38).opacity(0.75))
-                .frame(width: 7, height: 7)
-        case .partial:
-            Circle()
-                .fill(Color(red: 1.0, green: 0.72, blue: 0.28))
-                .frame(width: 7, height: 7)
-        case .today:
-            Circle()
-                .fill(theme.onboardingAccent)
-                .frame(width: 8, height: 8)
-        case .future:
-            Circle()
-                .strokeBorder(theme.secondaryText.opacity(0.32), lineWidth: 1.5)
-                .frame(width: 14, height: 14)
-        case .inPlan:
-            Text("\(model.programDayNumber ?? 0)")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundStyle(theme.secondaryText.opacity(0.7))
-                .monospacedDigit()
-        case .outsidePlan:
-            EmptyView()
-        }
-    }
-
-    private var legendRow: some View {
-        HStack(spacing: 14) {
-            legendItem(color: ProcessStreakPalette.flame, label: AppCopy.t("Validé", en: "Validated"))
-            legendItem(color: Color(red: 1.0, green: 0.72, blue: 0.28), label: AppCopy.t("Partiel", en: "Partial"))
-            legendItem(color: theme.onboardingAccent, label: AppCopy.today, isRing: true)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 4)
-    }
-
-    private func legendItem(color: Color, label: String, isRing: Bool = false) -> some View {
-        HStack(spacing: 5) {
-            if isRing {
-                Circle()
-                    .strokeBorder(color, lineWidth: 1.5)
-                    .frame(width: 10, height: 10)
-            } else {
-                Circle()
-                    .fill(color)
-                    .frame(width: 8, height: 8)
-            }
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(theme.secondaryText)
-        }
+        .padding(.bottom, 6)
     }
 
     // MARK: - Panneau jour sélectionné
@@ -429,15 +444,15 @@ struct PlanProgramCalendarView: View {
     private func selectedDayPanel(plan: FaceOriginPlan) -> some View {
         let model = dayModel(for: selectedDate, plan: plan)
 
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 5) {
                     Text(model.panelTitle)
-                        .font(.headline.weight(.bold))
+                        .font(.subheadline.weight(.bold))
                         .foregroundStyle(theme.primaryText)
 
                     Text(model.panelSubtitle(plan: plan))
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -447,14 +462,17 @@ struct PlanProgramCalendarView: View {
                 statusPill(model: model)
             }
         }
-        .padding(18)
-        .background(summaryCardBackground)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(theme.isDark ? Color.white.opacity(0.08) : Color.white.opacity(0.88))
+        )
         .animation(.spring(response: 0.38, dampingFraction: 0.86), value: selectedDate)
     }
 
     private func statusPill(model: PlanProgramCalendarDayModel) -> some View {
         Text(model.statusLabel)
-            .font(.caption.weight(.bold))
+            .font(.caption2.weight(.bold))
             .foregroundStyle(model.statusTint)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -511,6 +529,17 @@ struct PlanProgramCalendarView: View {
 
     // MARK: - Navigation mois
 
+    private func monthSwipeGesture(plan: FaceOriginPlan) -> some Gesture {
+        DragGesture(minimumDistance: 36)
+            .onEnded { value in
+                if value.translation.width < -40, canGoToNextMonth(plan: plan) {
+                    shiftMonth(by: 1, plan: plan)
+                } else if value.translation.width > 40, canGoToPreviousMonth(plan: plan) {
+                    shiftMonth(by: -1, plan: plan)
+                }
+            }
+    }
+
     private func shiftMonth(by value: Int, plan: FaceOriginPlan) {
         guard let next = calendar.date(byAdding: .month, value: value, to: displayedMonth) else { return }
         HapticManager.shared.selection()
@@ -554,23 +583,25 @@ struct PlanProgramCalendarView: View {
         }
     }
 
-    private func gridCells(for month: Date) -> [Date?] {
+    private func gridCells(for month: Date) -> [Date] {
         let monthStart = Self.startOfMonth(for: month)
         guard let dayRange = calendar.range(of: .day, in: .month, for: monthStart) else { return [] }
 
         let weekday = calendar.component(.weekday, from: monthStart)
-        let leadingBlanks = (weekday - calendar.firstWeekday + 7) % 7
+        let leadingDays = (weekday - calendar.firstWeekday + 7) % 7
 
-        var cells: [Date?] = Array(repeating: nil, count: leadingBlanks)
-        for day in dayRange {
-            if let date = calendar.date(byAdding: .day, value: day - 1, to: monthStart) {
-                cells.append(date)
-            }
+        guard let gridStart = calendar.date(byAdding: .day, value: -leadingDays, to: monthStart) else {
+            return []
         }
-        while cells.count % 7 != 0 {
-            cells.append(nil)
+
+        let lastDayOfMonth = calendar.date(byAdding: .day, value: dayRange.count - 1, to: monthStart) ?? monthStart
+        let trailingWeekday = calendar.component(.weekday, from: lastDayOfMonth)
+        let trailingDays = (7 - ((trailingWeekday - calendar.firstWeekday + 7) % 7 + 1)) % 7
+        let totalCells = leadingDays + dayRange.count + trailingDays
+
+        return (0..<totalCells).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: gridStart)
         }
-        return cells
     }
 
     // MARK: - Utilitaires
@@ -583,7 +614,7 @@ struct PlanProgramCalendarView: View {
         return cal
     }
 
-    private static let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
+    private static let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 7)
 
     @MainActor
     private static var weekdaySymbols: [String] {
@@ -595,10 +626,26 @@ struct PlanProgramCalendarView: View {
     }
 
     @MainActor
-    private static var monthTitleFormatter: DateFormatter {
+    private static var monthHeroFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.dateFormat = "MMMM."
+        return formatter
+    }
+
+    @MainActor
+    private static var monthCardFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = ProcessAppLanguage.shared.locale
+        formatter.dateFormat = "MMMM"
+        return formatter
+    }
+
+    @MainActor
+    private static var shortDayFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = ProcessAppLanguage.shared.locale
+        formatter.setLocalizedDateFormatFromTemplate("MMM d")
         return formatter
     }
 
@@ -612,7 +659,7 @@ struct PlanProgramCalendarView: View {
 // MARK: - Modèle & design
 
 private enum PlanProgramCalendarDesign {
-    static let cellHeight: CGFloat = 52
+    static let cellDiameter: CGFloat = 40
 }
 
 private enum PlanProgramCalendarDayStatus {
@@ -701,48 +748,12 @@ private struct PlanProgramCalendarDayModel {
         }
         return parts.joined(separator: ", ")
     }
-
-    func dayNumberColor(isSelected: Bool, theme: AppTheme) -> Color {
-        switch status {
-        case .outsidePlan:
-            return theme.secondaryText.opacity(0.35)
-        default:
-            return isSelected ? theme.primaryText : theme.primaryText.opacity(0.88)
-        }
-    }
-
-    func cellFill(isSelected: Bool, theme: AppTheme) -> Color {
-        if isSelected {
-            return theme.isDark ? Color.white.opacity(0.14) : Color.white.opacity(0.95)
-        }
-        switch status {
-        case .outsidePlan:
-            return .clear
-        case .validated:
-            return theme.isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.03)
-        default:
-            return theme.isDark ? Color.white.opacity(0.04) : Color.black.opacity(0.025)
-        }
-    }
-
-    func borderColor(isSelected: Bool, theme: AppTheme) -> Color {
-        if isDebloatTarget {
-            return Color(red: 0.45, green: 0.72, blue: 0.95).opacity(isSelected ? 0.85 : 0.45)
-        }
-        if isSelected {
-            return theme.onboardingAccent.opacity(0.5)
-        }
-        if isToday {
-            return theme.onboardingAccent.opacity(0.35)
-        }
-        return theme.cardStroke.opacity(theme.isDark ? 0.2 : 0.25)
-    }
 }
 
 private struct PlanProgramCalendarDayButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
             .animation(.spring(response: 0.24, dampingFraction: 0.78), value: configuration.isPressed)
     }
 }

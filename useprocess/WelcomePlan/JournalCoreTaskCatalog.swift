@@ -8,9 +8,12 @@ enum JournalCoreTaskCatalog {
     private static func cardioTask(dayId: String) -> OriginPlanTask {
         journalTask(
             id: "\(dayId).core.cardio",
-            title: "Cardio debloat",
-            detail: "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min",
-            pillar: "Cardio",
+            title: AppCopy.tSync("Cardio debloat", en: "Debloat cardio"),
+            detail: AppCopy.tSync(
+                "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min",
+                en: "Incline walk \(DebloatCardioDayCatalog.durationMinutes) min"
+            ),
+            pillar: AppCopy.tSync("Cardio", en: "Cardio"),
             minutes: DebloatCardioDayCatalog.durationMinutes
         )
     }
@@ -50,26 +53,32 @@ enum JournalCoreTaskCatalog {
         journalTask(
             id: "\(dayId).core.hydrate",
             title: ProcessHydrationGuide.dailyTaskTitle,
-            detail: "Objectif \(ProcessDailyTargets.hydrationLabel) répartis dans la journée.",
-            pillar: "Nutrition"
+            detail: AppCopy.tSync(
+                "Objectif \(ProcessDailyTargets.hydrationLabel) répartis dans la journée.",
+                en: "Goal \(ProcessDailyTargets.hydrationLabel) spread across the day."
+            ),
+            pillar: AppCopy.tSync("Nutrition", en: "Nutrition")
         )
     }
 
     private static func nutritionTask(dayId: String) -> OriginPlanTask {
         journalTask(
             id: nutritionTaskId(for: dayId),
-            title: "Repas debloat",
-            detail: "Valide au moins un repas debloat (section Repas debloat).",
-            pillar: "Nutrition"
+            title: AppCopy.tSync("Repas debloat", en: "Debloat meal"),
+            detail: AppCopy.tSync(
+                "Valide au moins un repas debloat (section Repas debloat).",
+                en: "Validate at least one debloat meal (Today's debloat meals section)."
+            ),
+            pillar: AppCopy.tSync("Nutrition", en: "Nutrition")
         )
     }
 
     private static func morningRoutineTask(dayId: String) -> OriginPlanTask {
         journalTask(
             id: "\(dayId).core.morning",
-            title: "Circuit lymphatique",
+            title: AppCopy.tSync("Circuit lymphatique", en: "Lymphatic circuit"),
             detail: FaceMorningRoutineCatalog.journalSummary,
-            pillar: "Visage",
+            pillar: AppCopy.tSync("Visage", en: "Face"),
             minutes: FaceMorningRoutineCatalog.estimatedMinutes(targets: .default)
         )
     }
@@ -77,9 +86,12 @@ enum JournalCoreTaskCatalog {
     private static func sleepDebloatTask(dayId: String) -> OriginPlanTask {
         journalTask(
             id: "\(dayId).core.sleep",
-            title: "Sommeil debloat",
-            detail: "Pas de repas tardif · couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min · dormir sur le côté",
-            pillar: "Sommeil"
+            title: AppCopy.tSync("Sommeil debloat", en: "Debloat sleep"),
+            detail: AppCopy.tSync(
+                "Pas de repas tardif · couvre-feu écrans \(ProcessDailyTargets.screenCurfewMinutes) min · dormir sur le côté",
+                en: "No late meal · screen curfew \(ProcessDailyTargets.screenCurfewMinutes) min · sleep on your side"
+            ),
+            pillar: AppCopy.tSync("Sommeil", en: "Sleep")
         )
     }
 

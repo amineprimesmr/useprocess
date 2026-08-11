@@ -177,6 +177,7 @@ final class AppSession {
         CoachChatAttachmentImageStore.deleteAllStoredMedia()
         OnboardingFaceMarkersStore.clear()
         ProcessHydrationLogStore.shared.clearAllData()
+        ProcessHydrationTimerStore.shared.clearAllData()
         ProcessCreatorModeStore.shared.syncFromCurrentProfile()
 
         for uid in userIds {
@@ -272,9 +273,9 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .system: return "Automatique"
-        case .dark: return "Sombre"
-        case .light: return "Clair"
+        case .system: return AppCopy.tSync("Automatique", en: "Automatic")
+        case .dark: return AppCopy.tSync("Sombre", en: "Dark")
+        case .light: return AppCopy.tSync("Clair", en: "Light")
         }
     }
 

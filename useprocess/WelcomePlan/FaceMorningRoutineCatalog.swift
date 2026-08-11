@@ -183,6 +183,104 @@ enum FaceMorningRoutineCatalog {
             return "\(seconds) s"
         }
 
+        var stepNumber: Int {
+            (Self.allCases.firstIndex(of: self) ?? 0) + 1
+        }
+
+        static var totalStepCount: Int { allCases.count }
+
+        /// Étapes du geste — fiche exercice.
+        @MainActor
+        var howToSteps: [String] {
+            switch self {
+            case .sautsSurPlace:
+                return [
+                    AppCopy.t("Pieds largeur hanches, genoux souples.", en: "Feet hip-width apart, soft knees."),
+                    AppCopy.t("Rebonds légers sans quitter le sol de plus de quelques cm.", en: "Light bounces, barely leaving the floor."),
+                    AppCopy.t("Garde un rythme régulier et respire par le nez.", en: "Keep a steady rhythm and breathe through your nose.")
+                ]
+            case .rebondsPointes:
+                return [
+                    AppCopy.t("Monte sur la pointe des pieds, bras écartés.", en: "Rise onto your toes, arms out wide."),
+                    AppCopy.t("Enchaîne de petits rebonds contrôlés.", en: "Chain small, controlled bounces."),
+                    AppCopy.t("Sens les mollets pomper sans verrouiller les chevilles.", en: "Feel your calves pump without locking your ankles.")
+                ]
+            case .brasAuCiel:
+                return [
+                    AppCopy.t("Lève les bras au-dessus de la tête, paumes face à face.", en: "Reach arms overhead, palms facing each other."),
+                    AppCopy.t("Monte sur la pointe des pieds en même temps.", en: "Rise onto your toes at the same time."),
+                    AppCopy.t("Étire la ligne latérale, relâche les épaules.", en: "Lengthen your side body, relax your shoulders.")
+                ]
+            case .brasEnCroix:
+                return [
+                    AppCopy.t("Bras à l’horizontale, paumes vers le sol.", en: "Arms horizontal, palms facing down."),
+                    AppCopy.t("Ouvre la poitrine sans cambrer le bas du dos.", en: "Open your chest without arching your lower back."),
+                    AppCopy.t("Respire large — inspire en ouvrant, expire en stabilisant.", en: "Breathe wide — inhale as you open, exhale as you stabilize.")
+                ]
+            case .ouvertureThorax:
+                return [
+                    AppCopy.t("Mains sur le sternum ou le thorax.", en: "Hands on your sternum or chest."),
+                    AppCopy.t("Ouvre la cage en inspirant, paumes qui s’écartent légèrement.", en: "Open the rib cage as you inhale, palms drifting apart slightly."),
+                    AppCopy.t("Mouvement lent et contrôlé, sans forcer.", en: "Slow, controlled movement — no forcing.")
+                ]
+            case .monteesGenoux:
+                return [
+                    AppCopy.t("Debout, core engagé, regard devant.", en: "Stand tall, core engaged, eyes forward."),
+                    AppCopy.t("Alterne genou droit et genou gauche en rythme.", en: "Alternate right and left knee in rhythm."),
+                    AppCopy.t("Monte le genou sans te pencher en arrière.", en: "Lift each knee without leaning back.")
+                ]
+            }
+        }
+
+        /// Bénéfices debloat / lymphe — fiche exercice.
+        @MainActor
+        var benefits: [String] {
+            switch self {
+            case .sautsSurPlace:
+                return [
+                    AppCopy.t("Active la pompe lymphatique du bas du corps.", en: "Activates lower-body lymph pumping."),
+                    AppCopy.t("Stimule la circulation veineuse.", en: "Stimulates venous circulation."),
+                    AppCopy.t("Réveille le métabolisme sans impact violent.", en: "Wakes up metabolism without harsh impact."),
+                    AppCopy.t("Favorise la réduction du gonflement matinal.", en: "Helps reduce morning puffiness.")
+                ]
+            case .rebondsPointes:
+                return [
+                    AppCopy.t("Travaille la pompe musculaire des mollets.", en: "Works the calf muscle pump."),
+                    AppCopy.t("Améliore le retour veineux vers le cœur.", en: "Improves venous return to the heart."),
+                    AppCopy.t("Ouvre le thorax grâce aux bras écartés.", en: "Opens the chest with arms out wide."),
+                    AppCopy.t("Tonifie chevilles et stabilité.", en: "Tones ankles and stability.")
+                ]
+            case .brasAuCiel:
+                return [
+                    AppCopy.t("Ouvre les terminaisons lymphatiques axillaires.", en: "Opens axillary lymph terminations."),
+                    AppCopy.t("Étire la ligne latérale et relâche le cou.", en: "Lengthens side body and releases the neck."),
+                    AppCopy.t("Améliore la posture verticale.", en: "Improves upright posture."),
+                    AppCopy.t("Favorise une meilleure respiration.", en: "Supports better breathing.")
+                ]
+            case .brasEnCroix:
+                return [
+                    AppCopy.t("Débloque épaules et poitrine.", en: "Unlocks shoulders and chest."),
+                    AppCopy.t("Stimule le drainage thoracique.", en: "Stimulates thoracic drainage."),
+                    AppCopy.t("Réduit la tension posturale du haut du corps.", en: "Reduces upper-body postural tension."),
+                    AppCopy.t("Prépare la zone terminale lymphatique.", en: "Primes the lymphatic terminus zone.")
+                ]
+            case .ouvertureThorax:
+                return [
+                    AppCopy.t("Stimule directement la zone terminale lymphatique.", en: "Directly stimulates the lymphatic terminus."),
+                    AppCopy.t("Ouvre le sternum et le plexus thoracique.", en: "Opens the sternum and thoracic plexus."),
+                    AppCopy.t("Favorise la respiration diaphragmatique.", en: "Encourages diaphragmatic breathing."),
+                    AppCopy.t("Allège la sensation de poitrine serrée.", en: "Eases chest tightness.")
+                ]
+            case .monteesGenoux:
+                return [
+                    AppCopy.t("Augmente le rythme cardiaque en douceur.", en: "Gently raises heart rate."),
+                    AppCopy.t("Active le centre du corps et l’équilibre.", en: "Activates core and balance."),
+                    AppCopy.t("Booste la circulation globale.", en: "Boosts overall circulation."),
+                    AppCopy.t("Enchaîne naturellement le circuit.", en: "Flows naturally into the circuit finish.")
+                ]
+            }
+        }
+
         static func from(carouselId: String) -> Step? {
             allCases.first { $0.carouselId == carouselId }
         }
@@ -228,11 +326,10 @@ enum FaceMorningRoutineCatalog {
     }
 
     /// Texte court pour journal / checklist.
-    @MainActor
     static var journalSummary: String {
-        AppCopy.t(
+        AppCopy.tSync(
             "Circuit lymphatique — 6 mouvements · \(lymphCircuitMinutesLabel)",
-            en: "Lymph circuit — 6 moves · \(lymphCircuitMinutesLabel)"
+            en: "Lymphatic circuit — 6 moves · \(lymphCircuitMinutesLabel)"
         )
     }
 }

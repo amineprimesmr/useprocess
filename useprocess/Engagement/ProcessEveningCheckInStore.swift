@@ -186,12 +186,12 @@ enum ProcessEveningCheckInSchedule {
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
         if hours > 0, minutes > 0 {
-            return "dans \(hours) h \(minutes) min"
+            return AppCopy.tSync("dans \(hours) h \(minutes) min", en: "in \(hours) h \(minutes) min")
         }
         if hours > 0 {
-            return "dans \(hours) h"
+            return AppCopy.tSync("dans \(hours) h", en: "in \(hours) h")
         }
-        return "dans \(max(1, minutes)) min"
+        return AppCopy.tSync("dans \(max(1, minutes)) min", en: "in \(max(1, minutes)) min")
     }
 
     @MainActor
@@ -201,14 +201,18 @@ enum ProcessEveningCheckInSchedule {
 
         if isAvailable(at: now, calendar: calendar) {
             return isFirstCheck
-                ? "Valide ton premier check pour lancer la série"
-                : "Valide ton check pour lancer la série"
+                ? AppCopy.t("Valide ton premier check pour lancer la série", en: "Complete your first check-in to start your streak")
+                : AppCopy.t("Valide ton check pour lancer la série", en: "Complete your check-in to start your streak")
         }
 
         let countdown = opensInLabel(from: now, calendar: calendar)
         if isFirstCheck {
-            return countdown.isEmpty ? "Premier check ce soir" : "Premier check \(countdown)"
+            return countdown.isEmpty
+                ? AppCopy.t("Premier check ce soir", en: "First check-in tonight")
+                : AppCopy.t("Premier check \(countdown)", en: "First check-in \(countdown)")
         }
-        return countdown.isEmpty ? "Prochain check ce soir" : "Prochain check \(countdown)"
+        return countdown.isEmpty
+            ? AppCopy.t("Prochain check ce soir", en: "Next check-in tonight")
+            : AppCopy.t("Prochain check \(countdown)", en: "Next check-in \(countdown)")
     }
 }

@@ -9,6 +9,7 @@ struct PlanTrainingDaySection: View {
     var isEditable: Bool = true
 
     @Environment(\.appTheme) private var theme
+    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
 
     @Namespace private var trainingZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
@@ -27,13 +28,7 @@ struct PlanTrainingDaySection: View {
                 trailing: nil
             )
 
-            PlanDayProtocolCarousel(
-                items: carouselItems,
-                zoomNamespace: trainingZoomNamespace,
-                zoomIDForItem: { zoomID(for: $0) },
-                onTap: { selectedProtocolItem = $0 }
-            )
-            .processZoomSource(id: .postureCircuit, namespace: trainingZoomNamespace)
+            trainingCarouselBody
         }
         .sheet(item: $selectedProtocolItem) { item in
             PlanProtocolItemDetailSheet(item: item)
@@ -48,5 +43,36 @@ struct PlanTrainingDaySection: View {
             return .postureCircuit
         }
         return .protocolItem(item.id)
+    }
+
+    @ViewBuilder
+    private var trainingCarouselBody: some View {
+        if tutorialStore.isFocused(.training) {
+            VStack(alignment: .leading, spacing: 22) {
+                trainingCarousel(highlightsItemStrip: true)
+
+                PlanHomeTutorialCaption(step: tutorialStore.currentStep)
+                PlanHomeTutorialInlineFooter(
+                    onAdvance: { tutorialStore.advance() },
+                    stepIndex: tutorialStore.currentStepIndex,
+                    stepCount: tutorialStore.steps.count
+                )
+            }
+            .id(PlanHomeTutorialFocus.training.scrollAnchorID)
+        } else {
+            trainingCarousel(highlightsItemStrip: false)
+                .opacity(tutorialStore.isRevealed(.training) ? 0.88 : 1)
+        }
+    }
+
+    private func trainingCarousel(highlightsItemStrip: Bool) -> some View {
+        PlanDayProtocolCarousel(
+            items: carouselItems,
+            zoomNamespace: trainingZoomNamespace,
+            zoomIDForItem: { zoomID(for: $0) },
+            onTap: { selectedProtocolItem = $0 },
+            highlightsItemStrip: highlightsItemStrip
+        )
+        .processZoomSource(id: .postureCircuit, namespace: trainingZoomNamespace)
     }
 }

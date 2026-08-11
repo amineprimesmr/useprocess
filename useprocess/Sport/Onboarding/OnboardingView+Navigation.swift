@@ -435,6 +435,8 @@ func checkPermissions() {
         viewModel.isCompleting = true
 
         do {
+            ProcessReferralAttribution.captureOnAppLaunchIfNeeded()
+            ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
             await OnboardingProgressService.shared.savePendingDataIfNeeded(to: profileService)
             let coordinator = OnboardingCoordinator(viewModel: viewModel, profileService: profileService)
             try await coordinator.saveAllOnboardingData()

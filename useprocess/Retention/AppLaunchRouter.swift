@@ -13,7 +13,47 @@ final class AppLaunchRouter {
     var showsSpinWinbackFromMarketing = false
     private(set) var pendingSpinCampaignId: String?
 
+    /// Deep-link Live Activity hydratation (bouton +500 / ouverture).
+    var pendingHydrationAction: ProcessHydrationDeepLinkAction?
+
     private init() {}
+
+    func handleHydrationURL(_ url: URL) {
+        guard let action = ProcessHydrationDeepLink.parse(url) else { return }
+        pendingHydrationAction = action
+        Task { @MainActor in
+            // Laisse l'accueil monter avant scroll + animation eau.
+            try? await Task.sleep(for: .milliseconds(280))
+            await flushHydrationActionIfNeeded()
+        }
+    }
+
+    @MainActor
+    func flushHydrationActionIfNeeded() async {
+        guard let action = pendingHydrationAction else { return }
+        pendingHydrationAction = nil
+
+        switch action {
+        case .open:
+            await ProcessHydrationTimerStore.shared.syncLiveActivityHydration()
+        case .sip(let milliliters):
+            if ProcessHydrationTimerStore.shared.isRunning {
+                _ = await ProcessHydrationTimerStore.shared.logSip(
+                    milliliters: milliliters,
+                    celebrateOnHome: true
+                )
+            } else {
+                let before = ProcessHydrationLogStore.shared.milliliters()
+                _ = ProcessHydrationLogStore.shared.addWater(
+                    milliliters: milliliters,
+                    dayId: nil,
+                    targetMilliliters: ProcessDailyTargets.hydrationTargetMilliliters
+                )
+                ProcessHydrationSipCelebrationCoordinator.shared.requestHomeCelebration(fromMilliliters: before)
+            }
+            ProcessHydrationTimerPresenter.shared.clear()
+        }
+    }
 
     func handleShortcut(type: String) {
         guard let kind = ProcessHomeScreenQuickActionKind.resolve(shortcutType: type) else { return }
@@ -47,6 +87,9 @@ final class AppLaunchRouter {
             presentSpinIfEligible()
         } else {
             presentLifetimeOfferIfEligible()
+        }
+        Task { @MainActor in
+            await flushHydrationActionIfNeeded()
         }
     }
 

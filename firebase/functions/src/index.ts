@@ -154,8 +154,36 @@ async function enforceCoachRateLimit(uid: string): Promise<void> {
   });
 }
 
+async function deleteReferralArtifactsForUser(uid: string): Promise<void> {
+  const db = admin.firestore();
+  const program = await db
+    .collection("users")
+    .doc(uid)
+    .collection("referralMeta")
+    .doc("program")
+    .get();
+
+  const rawCode = program.data()?.referralCode;
+  if (typeof rawCode === "string" && rawCode.trim()) {
+    const cleaned = rawCode.trim().toUpperCase().replace(/\s+/g, "");
+    const normalized = cleaned.includes("-")
+      ? cleaned.replace(/[^A-Z0-9-]/g, "")
+      : (() => {
+          const alnum = cleaned.replace(/[^A-Z0-9]/g, "");
+          return alnum.length <= 4 ? alnum : `${alnum.slice(0, 4)}-${alnum.slice(4)}`;
+        })();
+    if (!normalized) return;
+    const codeRef = db.collection("referralCodes").doc(normalized);
+    const codeSnap = await codeRef.get();
+    if (codeSnap.exists && codeSnap.data()?.userId === uid) {
+      await codeRef.delete();
+    }
+  }
+}
+
 async function deleteAllUserFirestoreData(uid: string): Promise<void> {
   const db = admin.firestore();
+  await deleteReferralArtifactsForUser(uid);
   const userRef = db.collection("users").doc(uid);
 
   // Supprime le document et toutes ses sous-collections, y compris celles
@@ -412,3 +440,9 @@ export const coachStream = onRequest(
     }
   }
 );
+
+export { referralSyncProgram, referralRegister } from "./referral";
+export {
+  referralConfirmSubscription,
+  referralRevenueCatWebhook,
+} from "./referralRewards";

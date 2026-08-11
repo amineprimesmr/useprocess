@@ -6,6 +6,10 @@ export function getGetAppPageHtml() {
     <div class="content">
       <h2 id="get-app-title" class="title">Dégonfle ton visage.</h2>
       <p id="get-app-subtitle" class="color-foreground-secondary subtitle">Process — coach IA &amp; protocole debloat. Télécharge sur iPhone.</p>
+      <p id="get-app-referral-banner" class="get-app-referral-banner hidden" hidden>
+        <span class="get-app-referral-eyebrow">Invitation parrainage</span>
+        <span id="get-app-referral-code" class="referral-code"></span>
+      </p>
     </div>
     <div id="get-app-qr-container" class="qr-container hidden">
       <div id="get-app-qr" class="qr-code"></div>

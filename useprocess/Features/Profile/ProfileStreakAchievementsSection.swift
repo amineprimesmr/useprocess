@@ -102,19 +102,10 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var sectionHeader: some View {
-        VStack(spacing: 6) {
-            Text("Streak")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(theme.primaryText)
-                .frame(maxWidth: .infinity)
-
-            if progress.hasPlan {
-                Text(AppCopy.t("Programme debloat · Jour \(progress.elapsedProgramDays)/\(progress.totalProgramDays)", en: "Debloat Program · Day \(progress.elapsedProgramDays)/\(progress.totalProgramDays)"))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(theme.secondaryText)
-                    .monospacedDigit()
-            }
-        }
+        Text(AppCopy.t("Série", en: "Streak"))
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(theme.primaryText)
+            .frame(maxWidth: .infinity)
     }
 
     // MARK: - Hero flamme
@@ -132,7 +123,7 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var streakHero: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 6) {
             ZStack {
                 TimelineView(
                     .animation(
@@ -172,14 +163,13 @@ struct ProfileStreakAchievementsSection: View {
             .accessibilityLabel("\(snapshot.currentStreak) \(streakDayLabel)")
 
             consistencyBadge
+                .offset(y: -4)
         }
         .frame(maxWidth: .infinity)
     }
 
     private var streakDayLabel: String {
-        snapshot.currentStreak <= 1
-            ? AppCopy.t("jour de suite", en: "day in a row")
-            : AppCopy.t("jours de suite", en: "days in a row")
+        AppCopy.t("Day Streak", en: "Day Streak")
     }
 
     private var showsCountdownBadge: Bool {
@@ -195,18 +185,18 @@ struct ProfileStreakAchievementsSection: View {
             let message = consistencyMessage(at: context.date)
             let isCountdown = showsCountdownBadge
 
-            HStack(spacing: isCountdown ? 8 : 6) {
+            HStack(spacing: isCountdown ? 6 : 6) {
                 Text(consistencyEmoji)
-                    .font(.system(size: isCountdown ? 16 : 14))
+                    .font(.system(size: isCountdown ? 13 : 14))
                 Text(message)
-                    .font(.system(size: isCountdown ? 15 : 13, weight: .semibold))
+                    .font(.system(size: isCountdown ? 12 : 13, weight: isCountdown ? .medium : .semibold))
                     .foregroundStyle(theme.primaryText)
                     .minimumScaleFactor(0.85)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
             }
-            .padding(.horizontal, isCountdown ? 18 : 14)
-            .padding(.vertical, isCountdown ? 11 : 8)
+            .padding(.horizontal, isCountdown ? 14 : 14)
+            .padding(.vertical, isCountdown ? 7 : 8)
             .processGlassEffect(in: capsule, interactive: false)
             .animation(.easeInOut(duration: 0.25), value: message)
         }

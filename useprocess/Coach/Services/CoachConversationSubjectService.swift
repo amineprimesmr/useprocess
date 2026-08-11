@@ -5,7 +5,7 @@ enum CoachConversationSubjectService {
     /// Mots-clés courts (heuristique locale, immédiat).
     static func keywords(from text: String) -> String {
         let cleaned = normalize(text)
-        guard !cleaned.isEmpty else { return "Conversation" }
+        guard !cleaned.isEmpty else { return AppCopy.tSync("Conversation", en: "Conversation") }
 
         if let topic = extractTopicAfterPossessive(cleaned) {
             return formatKeywords([topic])
@@ -163,7 +163,7 @@ enum CoachConversationSubjectService {
             }
             .filter { !$0.isEmpty }
 
-        if formatted.isEmpty { return "Conversation" }
+        if formatted.isEmpty { return AppCopy.tSync("Conversation", en: "Conversation") }
         return formatted.joined(separator: " · ")
     }
 

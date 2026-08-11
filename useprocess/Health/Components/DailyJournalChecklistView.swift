@@ -44,6 +44,7 @@ struct DailyJournalChecklistView: View {
     @State private var isChecklistExpanded = true
     @State private var showFaceScan = false
     @Bindable private var layoutStore = PlanHomeLayoutStore.shared
+    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @Environment(\.appTheme) private var theme
 
     private var livePlan: FaceOriginPlan { WelcomePlanStore.shared.plan ?? plan }
@@ -61,68 +62,74 @@ struct DailyJournalChecklistView: View {
         }
     }
 
+    private func focusHydrationCarouselIfNeeded() {
+        guard tutorialStore.isActive, tutorialStore.currentStep.focusesHydrationCarousel else { return }
+        CoachPlanNavigationBridge.shared.focusHydrationOnHome()
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if showHeader {
-                journalHeader
-                    .padding(.bottom, 18)
-            }
-            if showWeekStrip {
-                JournalWeekDayStrip(
-                    selectedDate: $selectedDate,
-                    plan: livePlan
-                )
-                .padding(.top, -4)
-                .padding(.leading, -6)
-                .padding(.bottom, 8)
-            }
-
-            if homeLayoutEditMode {
-                ForEach(Array(layoutStore.orderedSections.enumerated()), id: \.element.id) { index, section in
-                    homeLayoutEditableSection(section, index: index)
-                        .padding(.top, sectionTopSpacing(for: section, index: index))
+                if showHeader, !tutorialStore.isActive {
+                    journalHeader
+                        .padding(.bottom, 18)
                 }
-                .animation(.spring(response: 0.42, dampingFraction: 0.86), value: layoutStore.orderedSections.map(\.rawValue))
-            } else {
-                ForEach(Array(layoutStore.visibleSections.enumerated()), id: \.element.id) { index, section in
-                    homeSectionView(section)
-                        .padding(.top, sectionTopSpacing(for: section, index: index))
+                if showWeekStrip, !tutorialStore.isActive {
+                    JournalWeekDayStrip(
+                        selectedDate: $selectedDate,
+                        plan: livePlan
+                    )
+                    .padding(.top, -4)
+                    .padding(.leading, -6)
+                    .padding(.bottom, 8)
                 }
-            }
 
-            if case .future = dayAvailability, !showChecklist {
-                journalUnavailableCard(
-                    title: AppCopy.t("Jour à venir", en: "Upcoming day"),
-                    message: AppCopy.t(
-                        "Le contenu de cette journée sera disponible le jour J.",
-                        en: "This day's content will be available on the day itself."
-                    ),
-                    systemImage: "calendar.badge.clock"
-                )
-                .padding(.top, 20)
-            }
+                if homeLayoutEditMode {
+                    ForEach(Array(layoutStore.orderedSections.enumerated()), id: \.element.id) { index, section in
+                        homeLayoutEditableSection(section, index: index)
+                            .padding(.top, sectionTopSpacing(for: section, index: index))
+                    }
+                    .animation(.spring(response: 0.42, dampingFraction: 0.86), value: layoutStore.orderedSections.map(\.rawValue))
+                } else {
+                    ForEach(Array(displayedSections.enumerated()), id: \.element.id) { index, section in
+                        homeSectionView(section)
+                            .padding(.top, sectionTopSpacing(for: section, index: index))
+                    }
+                }
 
-            if case .outsidePlan = dayAvailability {
-                journalUnavailableCard(
-                    title: AppCopy.t("Hors plan", en: "Outside plan"),
-                    message: AppCopy.t(
-                        "Cette date n'est pas couverte par ton calendrier du plan personnalisé.",
-                        en: "This date isn't covered by your personalized plan calendar."
-                    ),
-                    systemImage: "calendar.badge.exclamationmark"
-                )
-                .padding(.top, 20)
-            }
-        }
-        .onChange(of: selectedDate) { _, _ in
-            if case .editable(let day, _) = dayAvailability {
-                syncChecklistExpansion(for: day)
-            }
+                if case .future = dayAvailability, !showChecklist {
+                    journalUnavailableCard(
+                        title: AppCopy.t("Jour à venir", en: "Upcoming day"),
+                        message: AppCopy.t(
+                            "Le contenu de cette journée sera disponible le jour J.",
+                            en: "This day's content will be available on the day itself."
+                        ),
+                        systemImage: "calendar.badge.clock"
+                    )
+                    .padding(.top, 20)
+                }
+
+                if case .outsidePlan = dayAvailability {
+                    journalUnavailableCard(
+                        title: AppCopy.t("Hors plan", en: "Outside plan"),
+                        message: AppCopy.t(
+                            "Cette date n'est pas couverte par ton calendrier du plan personnalisé.",
+                            en: "This date isn't covered by your personalized plan calendar."
+                        ),
+                        systemImage: "calendar.badge.exclamationmark"
+                    )
+                    .padding(.top, 20)
+                }
         }
         .onAppear {
             faceHistoryStore = FaceScanHistoryStore.shared
             layoutStore.reload()
             clampSelectedDateToPlanIfNeeded()
+            focusHydrationCarouselIfNeeded()
+        }
+        .onChange(of: selectedDate) { _, _ in
+            if case .editable(let day, _) = dayAvailability {
+                syncChecklistExpansion(for: day)
+            }
         }
         .onChange(of: livePlan.calendar.startedAt) { _, _ in
             clampSelectedDateToPlanIfNeeded()
@@ -169,45 +176,25 @@ struct DailyJournalChecklistView: View {
         ))
     }
 
-    private func sectionTopSpacing(for section: PlanHomeSectionKind, index: Int) -> CGFloat {
-        if homeLayoutEditMode {
-            if index == 0 {
-                return PlanHomeSectionDesign.firstSectionTopSpacing
-            }
-            return 18
-        }
-        if index == 0 {
-            var spacing = showWeekStrip ? 0 : PlanHomeSectionDesign.firstSectionTopSpacing
-            if section == .faceScan {
-                spacing += PlanHomeSectionDesign.faceScanTopSpacing
-            }
-            return spacing
-        }
-        return PlanHomeSectionDesign.sectionSpacing
-    }
-
     @ViewBuilder
     private func homeSectionView(_ section: PlanHomeSectionKind) -> some View {
-        homeSectionContent(section)
-    }
-
-    @ViewBuilder
-    private func homeSectionContent(_ section: PlanHomeSectionKind) -> some View {
         switch section {
         case .faceScan:
-            PlanLastFaceScanSection(
-                latest: faceHistoryStore.latestResult,
-                isScanDue: faceHistoryStore.isScanDue,
-                isScanFlowActive: $showFaceScan,
-                isPlanActive: isPlanActive,
-                healthMetrics: healthMetrics,
-                zoomNamespace: faceScanHistoryZoomNamespace,
-                onScan: {},
-                onScanComplete: { _ in
-                    faceHistoryStore = FaceScanHistoryStore.shared
-                }
-            )
-            .environmentObject(UnifiedProfileService.shared)
+            PlanHomeTutorialFocusChrome(focus: .faceScan) {
+                PlanLastFaceScanSection(
+                    latest: faceHistoryStore.latestResult,
+                    isScanDue: faceHistoryStore.isScanDue,
+                    isScanFlowActive: $showFaceScan,
+                    isPlanActive: isPlanActive,
+                    healthMetrics: healthMetrics,
+                    zoomNamespace: faceScanHistoryZoomNamespace,
+                    onScan: {},
+                    onScanComplete: { _ in
+                        faceHistoryStore = FaceScanHistoryStore.shared
+                    }
+                )
+                .environmentObject(UnifiedProfileService.shared)
+            }
 
         case .nutrition:
             switch dayAvailability {
@@ -279,6 +266,30 @@ struct DailyJournalChecklistView: View {
         case .resources:
             EmptyView()
         }
+    }
+
+    private func sectionTopSpacing(for section: PlanHomeSectionKind, index: Int) -> CGFloat {
+        if homeLayoutEditMode {
+            if index == 0 {
+                return PlanHomeSectionDesign.firstSectionTopSpacing
+            }
+            return 18
+        }
+        if index == 0 {
+            var spacing = showWeekStrip ? 0 : PlanHomeSectionDesign.firstSectionTopSpacing
+            if section == .faceScan {
+                spacing += PlanHomeSectionDesign.faceScanTopSpacing
+            }
+            return spacing
+        }
+        return PlanHomeSectionDesign.sectionSpacing
+    }
+
+    private var displayedSections: [PlanHomeSectionKind] {
+        if tutorialStore.isActive {
+            return layoutStore.visibleSections.filter { tutorialStore.shouldDisplay(section: $0) }
+        }
+        return layoutStore.visibleSections
     }
 
     private var journalHeader: some View {

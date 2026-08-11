@@ -203,13 +203,23 @@ func profileSettingsDetail(for category: ProfileSettingsCategory) -> some View {
     switch category {
     case .referral:
         ProcessReferralProgramDetailView()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background {
+                ProcessReferralTheme.pageBackground.ignoresSafeArea()
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationBarBackButtonHidden(true)
     case .account:
         ProfileSettingsAccountDetailView()
+            .processSettingsDetailPage()
     case .health:
         ProfileSettingsHealthDetailView()
+            .processSettingsDetailPage()
     case .app:
         ProfileSettingsAppDetailView()
+            .processSettingsDetailPage()
     case .legal:
         ProfileSettingsLegalDetailView()
+            .processSettingsDetailPage()
     }
 }

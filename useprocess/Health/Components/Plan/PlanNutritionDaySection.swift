@@ -124,7 +124,9 @@ struct PlanNutritionDaySection: View {
 
     @State private var selectedEntry: PlanDayMealEntry?
     @State private var showMealIdeasCatalog = false
-    @State private var scrollPosition: MealTimeSlot?
+    @State private var scrollPosition: PlanMealCarouselScrollTarget?
+    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
+    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @State private var mealEntries: [PlanDayMealEntry] = []
 
     private var store: WelcomePlanStore { WelcomePlanStore.shared }
@@ -150,13 +152,15 @@ struct PlanNutritionDaySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            headerRow
-            mealCarousel
+            if tutorialStore.showsNutritionSectionTitle {
+                headerRow
+            }
+            nutritionCarouselBody
         }
         .task(id: day.id) {
             PlanDayMealsProvider.ensureDefaultDrafts(plan: livePlan, day: day, store: store)
             reloadMealEntries()
-            let target = focusedMealSlot
+            let target = PlanMealCarouselScrollTarget.meal(focusedMealSlot)
             if scrollPosition != target {
                 scrollPosition = target
             }
@@ -165,9 +169,20 @@ struct PlanNutritionDaySection: View {
             reloadMealEntries()
         }
         .onChange(of: entriesValidationToken) { _, _ in
-            let target = focusedMealSlot
+            let target = PlanMealCarouselScrollTarget.meal(focusedMealSlot)
             guard scrollPosition != target else { return }
             scrollPosition = target
+        }
+        .onChange(of: planBridge.focusHydrationCarouselNonce) { _, _ in
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) {
+                scrollPosition = .hydration
+            }
+        }
+        .onChange(of: tutorialStore.currentStepIndex) { _, _ in
+            guard tutorialStore.isActive, tutorialStore.currentStep == .nutrition else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) {
+                scrollPosition = .hydration
+            }
         }
         .onChange(of: store.plan?.progress.draftMealsBySlot[day.id]) { _, _ in
             refreshSelectedEntryIfNeeded()
@@ -208,8 +223,49 @@ struct PlanNutritionDaySection: View {
             .foregroundStyle(theme.primaryText)
     }
 
-    private var mealCarousel: some View {
-        PlanMealCoverFlowCarousel(
+    @ViewBuilder
+    private var nutritionCarouselBody: some View {
+        if tutorialStore.isFocused(.hydration) {
+            PlanHomeTutorialFocusChrome(focus: .hydration) {
+                hydrationCard
+            }
+            .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
+        } else if tutorialStore.isFocused(.meals) {
+            VStack(alignment: .leading, spacing: 22) {
+                mealCarousel(displayMode: .tutorialMealsFocus)
+
+                PlanHomeTutorialCaption(step: tutorialStore.currentStep)
+                PlanHomeTutorialInlineFooter(
+                    onAdvance: { tutorialStore.advance() },
+                    stepIndex: tutorialStore.currentStepIndex,
+                    stepCount: tutorialStore.steps.count
+                )
+            }
+            .id(PlanHomeTutorialFocus.meals.scrollAnchorID)
+        } else {
+            mealCarousel(displayMode: .standard)
+                .opacity(tutorialStore.isRevealed(.hydration) || tutorialStore.isRevealed(.meals) ? 0.88 : 1)
+        }
+    }
+
+    private var hydrationCard: some View {
+        PlanHydrationCarouselCard(
+            targetMilliliters: ProcessDailyTargets.hydrationTargetMilliliters,
+            selectedDate: selectedDate,
+            dayId: day.id,
+            healthKitWaterLiters: healthKitWaterLiters
+        )
+    }
+
+    private func mealCarousel(displayMode: PlanMealCarouselDisplayMode = .standard) -> some View {
+        let showsMeals: Bool = switch displayMode {
+        case .standard:
+            !tutorialStore.isActive || tutorialStore.showsMealCardsInCarousel
+        case .tutorialMealsFocus:
+            true
+        }
+
+        return PlanMealCoverFlowCarousel(
             entries: entries,
             previewImageAssets: ProcessDebloatMealLibrary.homeCatalogPreviewImageAssets,
             hydrationTargetMilliliters: ProcessDailyTargets.hydrationTargetMilliliters,
@@ -218,6 +274,9 @@ struct PlanNutritionDaySection: View {
             healthKitWaterLiters: healthKitWaterLiters,
             scrollPosition: $scrollPosition,
             mealZoomNamespace: mealZoomNamespace,
+            showsHydration: true,
+            showsMealCards: showsMeals,
+            highlightsMealStrip: displayMode == .tutorialMealsFocus,
             onSelect: {
                 ProcessPerformanceTrace.beginMealOpen()
                 selectedEntry = $0
@@ -243,6 +302,16 @@ struct PlanNutritionDaySection: View {
 
 // MARK: - Carousel repas
 
+private enum PlanMealCarouselDisplayMode {
+    case standard
+    case tutorialMealsFocus
+}
+
+private enum PlanMealCarouselScrollTarget: Hashable {
+    case hydration
+    case meal(MealTimeSlot)
+}
+
 private struct PlanMealCoverFlowCarousel: View {
     let entries: [PlanDayMealEntry]
     let previewImageAssets: [String]
@@ -250,8 +319,11 @@ private struct PlanMealCoverFlowCarousel: View {
     let selectedDate: Date
     let dayId: String
     let healthKitWaterLiters: Double
-    @Binding var scrollPosition: MealTimeSlot?
+    @Binding var scrollPosition: PlanMealCarouselScrollTarget?
     let mealZoomNamespace: Namespace.ID
+    var showsHydration: Bool = true
+    var showsMealCards: Bool = true
+    var highlightsMealStrip: Bool = false
     var onSelect: (PlanDayMealEntry) -> Void
     var onBrowseCatalog: () -> Void
 
@@ -268,46 +340,76 @@ private struct PlanMealCoverFlowCarousel: View {
 
     private var carouselContent: some View {
         LazyHStack(spacing: cardSpacing) {
-            PlanHydrationCarouselCard(
-                targetMilliliters: hydrationTargetMilliliters,
-                selectedDate: selectedDate,
-                dayId: dayId,
-                healthKitWaterLiters: healthKitWaterLiters
-            )
-            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                content
-                    .scaleEffect(phase.isIdentity ? 1 : 0.9)
-                    .opacity(phase.isIdentity ? 1 : 0.78)
-            }
-
-            ForEach(entries) { entry in
-                PlanMealCarouselCard(
-                    entry: entry,
-                    zoomNamespace: mealZoomNamespace,
-                    onTap: { onSelect(entry) }
+            if showsHydration {
+                mealCardScrollTransition(
+                    PlanHydrationCarouselCard(
+                        targetMilliliters: hydrationTargetMilliliters,
+                        selectedDate: selectedDate,
+                        dayId: dayId,
+                        healthKitWaterLiters: healthKitWaterLiters
+                    )
                 )
-                .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                    content
-                        .scaleEffect(phase.isIdentity ? 1 : 0.9)
-                        .opacity(phase.isIdentity ? 1 : 0.78)
-                }
-                .id(entry.slot)
+                .id(PlanMealCarouselScrollTarget.hydration)
             }
 
-            PlanMealCatalogBrowseCard(
-                previewImageAssets: previewImageAssets,
-                zoomNamespace: mealZoomNamespace,
-                onTap: onBrowseCatalog
-            )
-            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                content
-                    .scaleEffect(phase.isIdentity ? 1 : 0.9)
-                    .opacity(phase.isIdentity ? 1 : 0.78)
+            if showsMealCards {
+                if highlightsMealStrip {
+                    mealCardsStrip
+                } else {
+                    mealCardsRow
+                }
             }
         }
         .scrollTargetLayout()
         .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
         .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func mealCardScrollTransition<Content: View>(_ content: Content) -> some View {
+        if highlightsMealStrip {
+            content
+        } else {
+            content.scrollTransition(.interactive, axis: .horizontal) { view, phase in
+                view
+                    .scaleEffect(phase.isIdentity ? 1 : 0.9)
+                    .opacity(phase.isIdentity ? 1 : 0.78)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var mealCardsRow: some View {
+        ForEach(entries) { entry in
+            mealCardScrollTransition(
+                PlanMealCarouselCard(
+                    entry: entry,
+                    zoomNamespace: mealZoomNamespace,
+                    onTap: { onSelect(entry) }
+                )
+            )
+            .id(PlanMealCarouselScrollTarget.meal(entry.slot))
+        }
+
+        mealCardScrollTransition(
+            PlanMealCatalogBrowseCard(
+                previewImageAssets: previewImageAssets,
+                zoomNamespace: mealZoomNamespace,
+                onTap: onBrowseCatalog
+            )
+        )
+    }
+
+    private var mealCardsStrip: some View {
+        HStack(spacing: cardSpacing) {
+            mealCardsRow
+        }
+        .padding(2)
+        .overlay {
+            if highlightsMealStrip {
+                PlanHomeTutorialRotatingBorder(cornerRadius: PlanMealCarouselLayout.cornerRadius)
+            }
+        }
     }
 }
 
@@ -321,7 +423,11 @@ private struct PlanHydrationCarouselCard: View {
 
     @Environment(\.appTheme) private var theme
     @Bindable private var hydrationStore = ProcessHydrationLogStore.shared
+    @Bindable private var timerStore = ProcessHydrationTimerStore.shared
+    @Bindable private var sipCelebration = ProcessHydrationSipCelebrationCoordinator.shared
     @State private var animatedFill: CGFloat = 0.08
+    @State private var showHydrationTimer = false
+    @State private var celebrationTask: Task<Void, Never>?
 
     private var healthKitMilliliters: Int {
         Int((healthKitWaterLiters * 1000).rounded())
@@ -356,14 +462,28 @@ private struct PlanHydrationCarouselCard: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             cardBackground
+                .onTapGesture(perform: openTimer)
 
             amountLabelLayer
+                .allowsHitTesting(false)
 
             waterLayer
+                .allowsHitTesting(false)
 
-            addButton
-                .padding(.top, 14)
-                .padding(.trailing, 14)
+            VStack {
+                HStack {
+                    if timerStore.isRunning {
+                        timerRunningBadge
+                            .padding(.top, 14)
+                            .padding(.leading, 14)
+                    }
+                    Spacer()
+                    addButton
+                        .padding(.top, 14)
+                        .padding(.trailing, 14)
+                }
+                Spacer()
+            }
         }
         .frame(
             width: PlanMealCarouselLayout.cardWidth,
@@ -376,19 +496,88 @@ private struct PlanHydrationCarouselCard: View {
         .contentShape(cardShape)
         .contextMenu {
             hydrationAdjustMenu
+            Button {
+                openTimer()
+            } label: {
+                Label(AppCopy.t("Ouvrir le timer", en: "Open timer"), systemImage: "timer")
+            }
         }
-        .onAppear { animatedFill = targetFill }
+        .fullScreenCover(isPresented: $showHydrationTimer) {
+            ProcessHydrationTimerView(
+                dayId: dayId,
+                targetMilliliters: targetMilliliters,
+                onDismiss: { showHydrationTimer = false }
+            )
+        }
+        .onAppear {
+            if sipCelebration.peekFromMilliliters() != nil {
+                scheduleHomeCelebration()
+            } else {
+                animatedFill = targetFill
+            }
+        }
         .onChange(of: effectiveMilliliters) { _, _ in
+            guard sipCelebration.peekFromMilliliters() == nil else { return }
             withAnimation(.easeOut(duration: 0.95)) {
                 animatedFill = targetFill
             }
+            Task { await timerStore.syncLiveActivityHydration() }
+        }
+        .onChange(of: sipCelebration.requestID) { _, requestID in
+            guard requestID != nil else { return }
+            scheduleHomeCelebration()
+        }
+        .onDisappear {
+            celebrationTask?.cancel()
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(AppCopy.t("Hydratation \(litersLabel)", en: "Hydration \(litersLabel)"))
         .accessibilityHint(AppCopy.t(
-            "Appui long pour ajuster le niveau d'eau",
-            en: "Long press to adjust water level"
+            "Toucher pour ouvrir le timer. Appui long pour ajuster le niveau d'eau",
+            en: "Tap to open the timer. Long press to adjust water level"
         ))
+    }
+
+    private func openTimer() {
+        HapticManager.shared.impact(.light)
+        showHydrationTimer = true
+    }
+
+    private func scheduleHomeCelebration() {
+        celebrationTask?.cancel()
+        celebrationTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(380))
+            guard !Task.isCancelled else { return }
+            guard let fromMilliliters = sipCelebration.consumeFromMilliliters() else { return }
+            runHomeCelebration(fromMilliliters: fromMilliliters)
+        }
+    }
+
+    private func runHomeCelebration(fromMilliliters: Int) {
+        animatedFill = fillLevel(for: fromMilliliters)
+        HapticManager.shared.impact(.medium)
+        ProcessSoundPlayer.playPouringWater()
+        withAnimation(.easeOut(duration: 0.95)) {
+            animatedFill = targetFill
+        }
+    }
+
+    private func fillLevel(for milliliters: Int) -> CGFloat {
+        guard targetMilliliters > 0 else { return 0.08 }
+        return max(0.08, min(1, CGFloat(milliliters) / CGFloat(targetMilliliters)))
+    }
+
+    private var timerRunningBadge: some View {
+        Image(systemName: "drop.fill")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(8)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(Color.black.opacity(0.28))
+            }
+            .allowsHitTesting(false)
+            .accessibilityLabel(AppCopy.t("Timer hydratation actif", en: "Hydration timer active"))
     }
 
     @ViewBuilder

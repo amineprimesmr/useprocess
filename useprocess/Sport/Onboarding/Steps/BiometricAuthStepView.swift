@@ -89,7 +89,7 @@ struct BiometricAuthStepView: View {
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
         }
         .alert(OnboardingCopy.t("Erreur", en: "Error"), isPresented: $showError) {
-            Button("OK") {
+            Button(AppCopy.t("OK", en: "OK")) {
                 isAuthenticating = false
                 progress = 0.0
             }

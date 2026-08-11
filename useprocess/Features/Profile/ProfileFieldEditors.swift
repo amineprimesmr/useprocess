@@ -9,24 +9,27 @@ enum ProfileEditDestination: Hashable {
 
 @ViewBuilder
 func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
-    switch destination {
-    case .firstName:
-        ProfileNameEditorView(
-            initialValue: UnifiedProfileService.shared.currentProfile?.firstName
-                ?? SocialProfileStore.shared.profile?.displayName
-                ?? ""
-        )
-    case .gender:
-        ProfileGenderEditorView(
-            initialValue: UnifiedProfileService.shared.currentProfile?.gender ?? .male
-        )
-    case .birthDate:
-        ProfileBirthDateEditorView(
-            initialValue: UnifiedProfileService.shared.currentProfile?.birthDate
-                ?? Calendar.current.date(byAdding: .year, value: -25, to: Date())
-                ?? Date()
-        )
+    Group {
+        switch destination {
+        case .firstName:
+            ProfileNameEditorView(
+                initialValue: UnifiedProfileService.shared.currentProfile?.firstName
+                    ?? SocialProfileStore.shared.profile?.displayName
+                    ?? ""
+            )
+        case .gender:
+            ProfileGenderEditorView(
+                initialValue: UnifiedProfileService.shared.currentProfile?.gender ?? .male
+            )
+        case .birthDate:
+            ProfileBirthDateEditorView(
+                initialValue: UnifiedProfileService.shared.currentProfile?.birthDate
+                    ?? Calendar.current.date(byAdding: .year, value: -25, to: Date())
+                    ?? Date()
+            )
+        }
     }
+    .processSettingsDetailPage()
 }
 
 @MainActor

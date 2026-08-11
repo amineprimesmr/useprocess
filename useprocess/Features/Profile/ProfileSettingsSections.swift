@@ -9,6 +9,8 @@ struct ProfileSettingsAccountDetailView: View {
     @Environment(\.profileAccountDeletionHandler) private var onDeleteConfirmed
     @Bindable private var session = AppSession.shared
 
+    @State private var showsLogoutConfirmation = false
+
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
     }
@@ -109,9 +111,15 @@ struct ProfileSettingsAccountDetailView: View {
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
 
+                AccountDetailsActionButton(title: AppCopy.t("Se déconnecter", en: "Log Out")) {
+                    showsLogoutConfirmation = true
+                }
+                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                .padding(.top, 28)
+
                 AccountDeleteAnimatedButton(onConfirm: handleAccountDeletion)
                     .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                    .padding(.top, 28)
+                    .padding(.top, 12)
             }
             .padding(.bottom, 32)
         }
@@ -119,6 +127,17 @@ struct ProfileSettingsAccountDetailView: View {
         .processTransparentScrollSurface()
         .navigationTitle(AppCopy.t("Compte", en: "Account"))
         .navigationBarTitleDisplayMode(.inline)
+        .alert(
+            AppCopy.t("Se déconnecter ?", en: "Log Out?"),
+            isPresented: $showsLogoutConfirmation
+        ) {
+            Button(AppCopy.t("Se déconnecter", en: "Log Out"), role: .destructive) {
+                AuthenticationManager.shared.signOut()
+            }
+            Button(AppCopy.cancel, role: .cancel) {}
+        } message: {
+            Text(AppCopy.t("Tu pourras te reconnecter à tout moment.", en: "You can log back in at any time."))
+        }
     }
 
     private var birthDateDisplay: String? {
@@ -158,6 +177,7 @@ struct ProfileSettingsHealthDetailView: View {
                 AccountDetailsCard {
                     NavigationLink {
                         BodyScanHistoryTabContent()
+                            .processSettingsDetailPage()
                             .reportsProfileSubrouteActive(true)
                     } label: {
                         AccountDetailsGlassRow {
@@ -196,6 +216,7 @@ struct ProfileSettingsHealthDetailView: View {
                     NavigationLink {
                         HealthConnectedSourcesSettingsView()
                             .environmentObject(healthManager)
+                            .processSettingsDetailPage()
                             .reportsProfileSubrouteActive(true)
                     } label: {
                         AccountDetailsGlassRow {
@@ -296,6 +317,7 @@ struct ProfileSettingsLegalDetailView: View {
                         .processTransparentScrollSurface()
                         .navigationTitle(AppCopy.t("Scores et recommandations", en: "Scores and Recommendations"))
                         .navigationBarTitleDisplayMode(.inline)
+                        .processSettingsDetailPage()
                         .reportsProfileSubrouteActive(true)
                     } label: {
                         AccountDetailsGlassRow {

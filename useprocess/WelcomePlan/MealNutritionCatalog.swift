@@ -68,7 +68,7 @@ enum MealNutritionCatalog {
                 return enrichMagnesiumIfNeeded(known, meal: meal)
             }
         }
-        return estimate(from: meal)
+        return MealNutritionEstimator.profile(for: meal)
     }
 
     private static func enrichMagnesiumIfNeeded(
@@ -111,8 +111,8 @@ enum MealNutritionCatalog {
         let digestive = tolerance.score * 0.38 + fiber * 0.24 + fats * 0.23 + portion * 0.15
 
         let quality = foodQualityScore(for: meal, profile: nutrition)
-        let overall = Int((electrolyte * 0.50 + digestive * 0.30 + quality * 0.20).rounded())
-        let clamped = min(100, max(0, overall))
+        let nutritionOverall = Int((electrolyte * 0.50 + digestive * 0.30 + quality * 0.20).rounded())
+        let clamped = blendedDebloatScore(nutrition: nutritionOverall, meal: meal)
         let label = scoreLabel(clamped)
         let balance = MealElectrolyteBalance.from(profile: nutrition)
         let summary = summary(
@@ -486,22 +486,25 @@ enum MealNutritionCatalog {
             if !triggers.contains(label) { triggers.append(label) }
         }
 
-        flag(["oignon", "echalote"], penalty: 20, labelFR: "oignon", labelEN: "onion")
-        if text.contains("ail"),
+        flag(["oignon", "onion", "echalote", "shallot"], penalty: 20, labelFR: "oignon", labelEN: "onion")
+        if text.contains("ail") || text.contains("garlic"),
            !text.contains("huile infusee a l'ail"),
-           !text.contains("huile infusee a l ail") {
+           !text.contains("huile infusee a l ail"),
+           !text.contains("garlic oil") {
             penalty += 12
             let label = AppCopy.t("ail", en: "garlic")
             if !triggers.contains(label) { triggers.append(label) }
         }
-        flag(["haricot sec", "lentille", "pois chiche"], penalty: 18, labelFR: "légumineuses", labelEN: "legumes")
-        flag(["yaourt", "lait", "creme"], penalty: 12, labelFR: "lactose possible", labelEN: "possible lactose")
-        flag(["brocoli", "chou fleur"], penalty: 8, labelFR: "crucifères", labelEN: "crucifers")
-        flag(["avocat"], penalty: 6, labelFR: "avocat", labelEN: "avocado")
-        flag(["banane bien mure"], penalty: 7, labelFR: "banane très mûre", labelEN: "very ripe banana")
-        flag(["sorbitol", "xylitol", "erythritol", "maltitol"], penalty: 25, labelFR: "polyols", labelEN: "polyols")
+        flag(["haricot", "bean", "lentille", "lentil", "pois chiche", "chickpea"], penalty: 18, labelFR: "légumineuses", labelEN: "legumes")
+        flag(["yaourt", "yogurt", "yoghurt", "lait", "milk", "creme", "cream", "fromage", "cheese"], penalty: 12, labelFR: "lactose possible", labelEN: "possible lactose")
+        flag(["brocoli", "broccoli", "chou fleur", "cauliflower", "chou", "cabbage"], penalty: 8, labelFR: "crucifères", labelEN: "crucifers")
+        flag(["avocat", "avocado"], penalty: 6, labelFR: "avocat", labelEN: "avocado")
+        flag(["banane bien mure", "ripe banana", "very ripe banana"], penalty: 7, labelFR: "banane très mûre", labelEN: "very ripe banana")
+        flag(["sorbitol", "xylitol", "erythritol", "maltitol", "polyol"], penalty: 25, labelFR: "polyols", labelEN: "polyols")
 
-        let score = max(35, 100 - penalty)
+        penalty += MealNutritionEstimator.totalDigestivePenalty(for: meal) * 0.45
+
+        let score = max(5, 100 - penalty)
         let joined = triggers.prefix(3).joined(separator: ", ")
         let caution: String? = triggers.isEmpty
             ? nil
@@ -519,17 +522,58 @@ enum MealNutritionCatalog {
         let text = normalizeMealSearchText(
             ([meal.name] + meal.items.map(\.name)).joined(separator: " ")
         )
-        var score = 96.0
+        var score = 100.0
 
-        if text.contains("jambon") || text.contains("charcuterie") { score -= 28 }
-        if text.contains("sauce industrielle") || text.contains("frit") { score -= 22 }
-        if text.contains("nectar") || text.contains("sirop") { score -= 18 }
-        if profile.proteinG < 15, meal.timeSlot != .snack { score -= 8 }
-        if profile.sugarG > 25 { score -= 6 }
-        if meal.items.contains(where: { normalizeMealSearchText($0.role).contains("legume") }) {
-            score += 4
+        score -= MealNutritionEstimator.totalQualityPenalty(for: meal)
+
+        let ultraProcessed: [(String, Double)] = [
+            ("pizza", 18), ("burger", 18), ("hamburger", 18), ("frites", 16), ("fries", 16),
+            ("nuggets", 16), ("kebab", 14), ("tacos", 14), ("fast food", 20), ("fast-food", 20),
+            ("charcuterie", 22), ("bacon", 20), ("pepperoni", 20), ("soda", 18), ("coca", 18)
+        ]
+        for (token, value) in ultraProcessed where text.contains(token) {
+            score -= value
         }
-        return min(100, max(30, score))
+
+        if profile.proteinG < 12, meal.timeSlot != .snack { score -= 10 }
+        if profile.sugarG > 18 { score -= min(22, (profile.sugarG - 18) * 1.2) }
+        if profile.sodiumMg > 700 { score -= min(24, (profile.sodiumMg - 700) / 35) }
+        if profile.fatsG > 28 { score -= min(16, (profile.fatsG - 28) * 0.8) }
+
+        if meal.items.contains(where: {
+            let role = normalizeMealSearchText($0.role)
+            return role.contains("legume") || role.contains("leg")
+        }) {
+            score += 5
+        }
+
+        return min(100, max(5, score))
+    }
+
+    private static func blendedDebloatScore(nutrition: Int, meal: MealSuggestionContent) -> Int {
+        let base = min(100, max(0, nutrition))
+        guard meal.isPhotoScanned else { return base }
+
+        let vision = meal.visionScore ?? meal.protocolScore
+        guard vision > 0 else { return base }
+
+        if abs(base - vision) >= 12 {
+            return min(
+                base,
+                max(vision, Int((Double(base) * 0.35 + Double(vision) * 0.65).rounded()))
+            )
+        }
+        return min(100, max(0, Int((Double(base) * 0.55 + Double(vision) * 0.45).rounded())))
+    }
+
+    @MainActor
+    static func syncedScore(for meal: MealSuggestionContent) -> MealSuggestionContent {
+        var copy = meal
+        let assessment = debloatAssessment(for: copy)
+        copy.protocolScore = assessment.score
+        copy.scoreSummary = assessment.summary
+        copy.showsScore = true
+        return copy
     }
 
     @MainActor
@@ -579,53 +623,6 @@ enum MealNutritionCatalog {
             )
     }
 
-    private static func estimate(from meal: MealSuggestionContent) -> MealNutritionProfile {
-        var protein = 0.0
-        var carbs = 0.0
-        var fats = 0.0
-        var potassium = 0.0
-        var sodium = 200.0
-        var magnesium = 0.0
-
-        for item in meal.foodItems {
-            let role = item.role.lowercased()
-
-            switch role {
-            case let r where r.contains("prot"):
-                protein += 18
-            case let r where r.contains("gluc"):
-                carbs += 28
-            case let r where r.contains("gras"):
-                fats += 10
-            case let r where r.contains("lég") || r.contains("leg"):
-                carbs += 6
-                protein += 2
-                potassium += 180
-            default:
-                carbs += 8
-            }
-
-            if let food = DebloatFoodCatalog.item(matchingName: item.name) {
-                potassium += (food.potassiumMgPer100g ?? 0) * 0.85
-                sodium += (food.sodiumMgPer100g ?? 0) * 0.35
-                magnesium += (food.magnesiumMgPer100g ?? 0) * 0.55
-            }
-        }
-
-        let calories = Int(protein * 4 + carbs * 4 + fats * 9)
-        return MealNutritionProfile(
-            calories: max(calories, 420),
-            proteinG: max(protein, 30),
-            carbsG: max(carbs, 30),
-            fatsG: max(fats, 10),
-            fiberG: 6.5,
-            sugarG: 5.0,
-            sodiumMg: min(900, max(120, sodium)),
-            potassiumMg: max(potassium, 650),
-            magnesiumMg: max(magnesium, 45)
-        )
-    }
-
     // MARK: - Balance K/Na (cartes repas)
 
     static func electrolyteBalance(for meal: MealSuggestionContent) -> MealElectrolyteBalance {
@@ -673,13 +670,13 @@ enum MealElectrolytePalette {
 enum PlanMealSlotLabel {
     static func carouselTitle(for slot: MealTimeSlot, planType: NutritionPlanType = .threeMeals) -> String {
         if planType == .omad, slot == .lunch {
-            return "Repas debloat"
+            return AppCopy.tSync("Repas debloat", en: "Debloat meal")
         }
         switch slot {
-        case .breakfast: return "Ce matin"
-        case .lunch: return "Ce midi"
-        case .dinner: return "Ce soir"
-        case .snack: return "Collation"
+        case .breakfast: return AppCopy.tSync("Ce matin", en: "This morning")
+        case .lunch: return AppCopy.tSync("Ce midi", en: "This afternoon")
+        case .dinner: return AppCopy.tSync("Ce soir", en: "Tonight")
+        case .snack: return AppCopy.tSync("Collation", en: "Snack")
         }
     }
 

@@ -96,7 +96,7 @@ struct PlanHomeLayoutEditorSheet: View {
                 HapticManager.shared.impact(.light)
                 dismiss()
             } label: {
-                Text("OK")
+                Text(AppCopy.t("OK", en: "OK"))
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(theme.onboardingAccent)
                     .padding(.horizontal, 14)

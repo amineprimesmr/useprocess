@@ -12,5 +12,10 @@
 	<true/>
 	<key>com.apple.developer.healthkit.background-delivery</key>
 	<true/>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:useprocess.xyz</string>
+		<string>applinks:join.useprocess.xyz</string>
+	</array>
 </dict>
 </plist>

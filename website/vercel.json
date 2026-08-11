@@ -1,11 +1,34 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/join/:code",
+      "destination": "/?ref=:code",
+      "permanent": false
+    },
+    {
+      "source": "/get",
+      "destination": "/?get=1",
+      "permanent": false
+    },
+    {
+      "source": "/telecharger",
+      "destination": "/?get=1",
+      "permanent": false
+    }
+  ],
   "rewrites": [
-    { "source": "/get", "destination": "/index.html" },
-    { "source": "/telecharger", "destination": "/index.html" }
+    { "source": "/join/(.*)", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "host", "value": "join.useprocess.xyz" }] }
   ],
   "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

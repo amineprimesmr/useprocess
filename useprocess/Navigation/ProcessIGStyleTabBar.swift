@@ -238,6 +238,7 @@ struct ProcessIGTabShell<Content: View>: View {
     var hidesTabChrome: Bool = false
     @ViewBuilder let content: () -> Content
 
+    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @State private var progress: CGFloat = 0
     /// Sous-pages Réglages (prénom, compte, etc.) — masque le tab bar pour ne pas bloquer Enregistrer / clavier.
     @State private var profileSubrouteActive = false
@@ -247,7 +248,7 @@ struct ProcessIGTabShell<Content: View>: View {
     }
 
     private var showsTabChrome: Bool {
-        selectedSection != .coach && !profileSubrouteActive && !hidesTabChrome
+        selectedSection != .coach && !profileSubrouteActive && !hidesTabChrome && !tutorialStore.isActive
     }
 
     var body: some View {
@@ -256,17 +257,24 @@ struct ProcessIGTabShell<Content: View>: View {
                 .environment(\.processIGTabBarProgress, $progress)
                 .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
                     guard selectedSection == .profile else {
-                        profileSubrouteActive = false
+                        if profileSubrouteActive {
+                            withAnimation(ProcessGlass.spring) {
+                                profileSubrouteActive = false
+                            }
+                        }
                         return
                     }
-                    profileSubrouteActive = active
+                    guard profileSubrouteActive != active else { return }
+                    withAnimation(ProcessGlass.spring) {
+                        profileSubrouteActive = active
+                    }
                 }
 
             if showsTabChrome {
                 tabBarChrome
                     .padding(.horizontal, ProcessIGTabMetrics.horizontalInset)
                     .padding(.bottom, ProcessIGTabMetrics.tabBarBottomInset)
-                    .zIndex(100)
+                    .zIndex(tutorialStore.isActive && tutorialStore.currentStep.isTabStep ? 860 : 100)
                     .transition(
                         .asymmetric(
                             insertion: .move(edge: .bottom).combined(with: .opacity),
@@ -275,9 +283,9 @@ struct ProcessIGTabShell<Content: View>: View {
                     )
             }
         }
+        // Ne pas animer tout le ZStack sur profileSubrouteActive :
+        // ça entre en conflit avec le push NavigationStack (pages superposées).
         .animation(ProcessGlass.spring, value: selectedSection == .coach)
-        .animation(ProcessGlass.spring, value: profileSubrouteActive)
-        .animation(ProcessGlass.spring, value: showsTabChrome)
         .onChange(of: selectedSection) { _, section in
             if section != .profile {
                 profileSubrouteActive = false
@@ -292,7 +300,10 @@ struct ProcessIGTabShell<Content: View>: View {
             mainTabCluster
 
             if let onMealScan {
-                ProcessIGMealScanButton(action: onMealScan)
+                ProcessIGMealScanButton(
+                    action: onMealScan,
+                    isInteractionEnabled: !tutorialStore.isActive
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
@@ -312,8 +323,16 @@ struct ProcessIGTabShell<Content: View>: View {
         .frame(maxWidth: .infinity)
         .padding(ProcessIGTabMetrics.chromePadding)
         .frame(height: ProcessIGTabMetrics.chromeOuterSize)
+        .overlay {
+            if tutorialStore.isActive,
+               tutorialStore.currentStep.isTabStep,
+               let tab = tutorialStore.currentStep.mainTab {
+                PlanHomeTutorialTabSegmentOutline(highlightedTab: tab)
+            }
+        }
         .contentShape(Capsule(style: .continuous))
         .modifier(ProcessIGTabBarGlassChrome(style: .capsule))
+        .allowsHitTesting(!tutorialStore.isActive)
     }
 
     private func expandIfNeeded() {
@@ -329,6 +348,7 @@ struct ProcessIGTabShell<Content: View>: View {
 /// Zone tactile pleine — le glass seul laissait passer les taps vers le scroll derrière.
 private struct ProcessIGMealScanButton: View {
     let action: () -> Void
+    var isInteractionEnabled: Bool = true
 
     private var hitSize: CGFloat { ProcessIGTabMetrics.chromeOuterSize + 4 }
 
@@ -354,6 +374,7 @@ private struct ProcessIGMealScanButton: View {
         .contentShape(Circle())
         .modifier(ProcessIGTabBarGlassChrome(style: .circle))
         .clipShape(Circle())
+        .allowsHitTesting(isInteractionEnabled)
         .accessibilityLabel(AppCopy.t("Scanner un repas", en: "Scan a meal"))
         .accessibilityHint(AppCopy.t(
             "Ouvre la caméra ou la pellicule pour analyser ton repas",

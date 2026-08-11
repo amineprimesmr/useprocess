@@ -7,6 +7,7 @@ struct SportOnboardingRootView: View {
         SportOnboardingView()
             .onAppear {
                 syncAuthWithSessionIfNeeded()
+                ProcessReferralAttribution.captureFromClipboardIfNeeded()
             }
     }
 

@@ -29,7 +29,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .coach: AppCopy.t("Process IA", en: "Process AI")
         case .plan: AppCopy.home
-        case .statistics: "Streak"
+        case .statistics: AppCopy.t("Série", en: "Streak")
         case .profile: AppCopy.settings
         }
     }

@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// Onglet Réglages — premier scan en haut, puis les réglages.
+/// Onglet Réglages — scans + hub paramètres.
 struct ProcessProfileHomeView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
-    var onLogout: () -> Void = {}
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
@@ -32,24 +31,14 @@ struct ProcessProfileHomeView: View {
             pageSection: .profile
         ) {
             VStack(alignment: .leading, spacing: 20) {
-                Text(AppCopy.settings)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(theme.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
                 identityBlock
 
                 ProcessCreatorStudioHubLink()
 
                 ProfileSettingsHubLinksSection()
-
-                AccountDetailsActionButton(title: AppCopy.t("Se déconnecter", en: "Log Out")) {
-                    onLogout()
-                }
-                .padding(.top, 8)
             }
             .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-            .padding(.top, 10)
+            .padding(.top, 16)
             .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -75,15 +64,10 @@ struct ProcessProfileHomeView: View {
 
     private var identityBlock: some View {
         VStack(spacing: 12) {
-            ProfileFirstScanAvatar(
+            ProfileScanHistoryCarousel(
                 size: 132,
                 isPlaybackActive: isTabActive,
                 initials: initials
-            )
-            .shadow(
-                color: Color.black.opacity(theme.isDark ? 0.28 : 0.08),
-                radius: 14,
-                y: 8
             )
 
             Text(firstName)

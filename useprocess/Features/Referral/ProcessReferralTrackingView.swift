@@ -8,35 +8,34 @@ struct ProcessReferralTrackingView: View {
     @State private var store = ProcessReferralStore.shared
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            ProcessReferralTheme.pageBackground.ignoresSafeArea()
+
             Group {
                 if store.snapshot.entries.isEmpty {
                     emptyState
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: 10) {
                             ForEach(store.snapshot.entries) { entry in
                                 ProcessReferralTrackingRow(entry: entry)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 22)
                         .padding(.top, 8)
                         .padding(.bottom, 32)
                     }
                 }
             }
-            .processTransparentScrollSurface()
-            .navigationTitle(AppCopy.t("Suivre les parrainages", en: "Track Referrals"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    ProcessReferralToolbarButton(systemName: "xmark", action: { dismiss() })
-                        .accessibilityLabel(AppCopy.close)
-                }
-            }
         }
-        .processAppPageBackground()
-        .processAppPresentationBackground()
+        .preferredColorScheme(.dark)
+        .toolbar(.hidden, for: .navigationBar)
+        .overlay(alignment: .topLeading) {
+            ProcessReferralCircleIconButton(systemName: "xmark") { dismiss() }
+                .padding(.leading, 22)
+                .padding(.top, 12)
+                .accessibilityLabel(AppCopy.close)
+        }
         .onAppear {
             store.reload(
                 username: profileService.currentProfile?.username,
@@ -55,11 +54,14 @@ struct ProcessReferralTrackingView: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(ProcessReferralTheme.textPrimary)
 
-            Text(AppCopy.t("Partage ton lien — tes invités apparaîtront ici avec leur statut.", en: "Share your link — your invites will appear here with their status."))
-                .font(.system(size: 14))
-                .foregroundStyle(ProcessReferralTheme.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            Text(AppCopy.t(
+                "Partage ton code — tes invités apparaîtront ici avec leur statut.",
+                en: "Share your code — your invites will appear here with their status."
+            ))
+            .font(.system(size: 14))
+            .foregroundStyle(ProcessReferralTheme.textSecondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -69,11 +71,11 @@ struct ProcessReferralTrackingRow: View {
     let entry: ProcessReferralEntry
 
     private static var dateFormatter: DateFormatter {
-        let f = DateFormatter()
-        f.locale = ProcessAppLanguage.shared.locale
-        f.dateStyle = .long
-        f.timeStyle = .none
-        return f
+        let formatter = DateFormatter()
+        formatter.locale = ProcessAppLanguage.shared.locale
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter
     }
 
     var body: some View {
@@ -83,9 +85,12 @@ struct ProcessReferralTrackingRow: View {
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(ProcessReferralTheme.textPrimary)
 
-                Text(AppCopy.t("Invité(e) le \(Self.dateFormatter.string(from: entry.invitedAt))", en: "Invited on \(Self.dateFormatter.string(from: entry.invitedAt))"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(ProcessReferralTheme.textSecondary)
+                Text(AppCopy.t(
+                    "Invité(e) le \(Self.dateFormatter.string(from: entry.invitedAt))",
+                    en: "Invited on \(Self.dateFormatter.string(from: entry.invitedAt))"
+                ))
+                .font(.system(size: 13))
+                .foregroundStyle(ProcessReferralTheme.textSecondary)
             }
 
             Spacer(minLength: 8)
@@ -96,41 +101,7 @@ struct ProcessReferralTrackingRow: View {
         .padding(.vertical, 16)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(ProcessReferralTheme.cardBackground)
-                .shadow(color: .black.opacity(0.04), radius: 12, y: 4)
+                .fill(ProcessReferralTheme.surface)
         }
-    }
-}
-
-struct ProcessReferralStatusBadge: View {
-    let status: ProcessReferralEntryStatus
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(dotColor)
-                .frame(width: 7, height: 7)
-
-            Text(status.label)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(textColor)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(backgroundColor, in: Capsule())
-    }
-
-    private var dotColor: Color {
-        status == .accepted ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color.orange
-    }
-
-    private var textColor: Color {
-        status == .accepted ? Color(red: 0.15, green: 0.55, blue: 0.28) : Color.orange
-    }
-
-    private var backgroundColor: Color {
-        status == .accepted
-            ? Color(red: 0.2, green: 0.78, blue: 0.35).opacity(0.14)
-            : Color.orange.opacity(0.12)
     }
 }

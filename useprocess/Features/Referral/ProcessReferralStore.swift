@@ -9,6 +9,7 @@ final class ProcessReferralStore {
     private(set) var snapshot: ProcessReferralSnapshot = .empty
 
     private let storageKeyBase = "referral.program"
+    private var observingUserId: String?
 
     private init() {
         reload()
@@ -25,7 +26,9 @@ final class ProcessReferralStore {
             snapshot = ProcessReferralSnapshot(
                 referralCode: makeReferralCode(username: username, userId: uid),
                 entries: [],
-                redeemedRewardIDs: []
+                redeemedRewardIDs: [],
+                pendingCount: 0,
+                acceptedCount: 0
             )
             persist(userId: uid)
         }
@@ -35,39 +38,70 @@ final class ProcessReferralStore {
             snapshot.referralCode = code
             persist(userId: uid)
         }
+
+        startObservingIfNeeded(userId: uid, displayName: username)
+    }
+
+    func syncRemote(displayName: String?) async {
+        let code = snapshot.referralCode
+        guard !code.isEmpty else { return }
+        await ReferralService.shared.syncReferrerProgram(
+            referralCode: code,
+            displayName: displayName
+        )
+    }
+
+    var referralLinkURL: URL {
+        ProcessReferralLink.brandedShortURL(code: snapshot.referralCode)
     }
 
     var referralLink: String {
-        "join.useprocess.xyz/\(snapshot.referralCode)"
+        referralLinkURL.absoluteString
+    }
+
+    var displayReferralCode: String {
+        ProcessReferralLink.displayCode(from: snapshot.referralCode)
     }
 
     var shareMessage: String {
         """
-        \(AppCopy.t("Rejoins Process avec mon lien — ton 1er mois à prix réduit, et je gagne 15 € si tu t'inscris :", en: "Join Process with my link — your first month is discounted, and I earn $15 when you sign up:"))
+        \(AppCopy.t("Télécharge Process avec mon lien :", en: "Download Process with my link:"))
         \(referralLink)
+
+        \(AppCopy.t("Mon code parrainage : \(displayReferralCode)", en: "My referral code: \(displayReferralCode)"))
+        \(ProcessReferralProgramTerms.inviteeRewardSummary)
         """
     }
 
-    func redeem(reward: ProcessReferralReward) {
-        guard canRedeem(reward) else { return }
-        if !snapshot.redeemedRewardIDs.contains(reward.id) {
-            snapshot.redeemedRewardIDs.append(reward.id)
+    var copyPayload: String {
+        shareMessage
+    }
+
+    func copyToPasteboard() {
+        UIPasteboard.general.string = copyPayload
+    }
+
+    func stopObserving() {
+        ProcessReferralFirestoreRepository.shared.stopObserving()
+        observingUserId = nil
+    }
+
+    private func startObservingIfNeeded(userId: String, displayName: String?) {
+        guard userId != "local-user", FirebaseBootstrap.isConfigured else { return }
+        guard observingUserId != userId else { return }
+
+        observingUserId = userId
+        ProcessReferralFirestoreRepository.shared.observeInvites(userId: userId) { [weak self] entries in
+            guard let self else { return }
+            snapshot.entries = entries
+            snapshot.pendingCount = entries.filter { $0.status == .pending }.count
+            snapshot.acceptedCount = entries.filter { $0.status == .accepted }.count
+            persist(userId: userId)
         }
-        persist()
-        HapticManager.shared.notification(.success)
-    }
 
-    func canRedeem(_ reward: ProcessReferralReward) -> Bool {
-        snapshot.acceptedCount >= reward.requiredReferrals
-            && !snapshot.redeemedRewardIDSet.contains(reward.id)
-    }
-
-    func isRedeemed(_ reward: ProcessReferralReward) -> Bool {
-        snapshot.redeemedRewardIDSet.contains(reward.id)
-    }
-
-    func progress(for reward: ProcessReferralReward) -> (current: Int, total: Int) {
-        (min(snapshot.acceptedCount, reward.requiredReferrals), reward.requiredReferrals)
+        Task {
+            await syncRemote(displayName: displayName)
+        }
     }
 
     private func persist(userId: String? = nil) {
@@ -80,12 +114,22 @@ final class ProcessReferralStore {
 
     private func makeReferralCode(username: String?, userId: String) -> String {
         let tag = ProcessUsernameTag.normalize(username ?? "")
+        let prefix: String
         if tag.count >= 4 {
-            return String(tag.prefix(8)).uppercased()
+            prefix = String(tag.prefix(4)).uppercased()
+        } else if tag.count >= 2 {
+            prefix = String(tag.prefix(2)).uppercased() + "PR"
+        } else {
+            prefix = "PROC"
         }
+
         let sanitized = userId
             .replacingOccurrences(of: "-", with: "")
             .uppercased()
-        return String(sanitized.prefix(6))
+            .filter { $0.isLetter || $0.isNumber }
+
+        let suffixSource = sanitized.isEmpty ? "7K2Q9" : sanitized
+        let suffix = String(suffixSource.suffix(5))
+        return "\(prefix)-\(suffix)"
     }
 }

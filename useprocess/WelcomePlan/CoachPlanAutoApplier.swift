@@ -247,7 +247,7 @@ enum CoachPlanAutoApplier {
             OriginPlanTask(
                 id: UUID().uuidString,
                 title: text,
-                detail: "Ajusté par le coach",
+                detail: AppCopy.tSync("Ajusté par le coach", en: "Adjusted by coach"),
                 pillar: section.capitalized,
                 durationMinutes: nil,
                 isOptional: false

@@ -100,8 +100,11 @@ struct PlanProgressSnapshot: Equatable {
         estimatedEndDate: nil,
         timeProgress: 0,
         validationProgress: 0,
-        headline: "Aucun plan actif",
-        subtitle: "Complète la configuration pour obtenir ton calendrier personnalisé.",
+        headline: AppCopy.tSync("Aucun plan actif", en: "No active plan"),
+        subtitle: AppCopy.tSync(
+            "Complète la configuration pour obtenir ton calendrier personnalisé.",
+            en: "Complete setup to get your personalized calendar."
+        ),
         weeksLabel: "",
         latestEvolutionNote: nil,
         trajectoryMode: nil,

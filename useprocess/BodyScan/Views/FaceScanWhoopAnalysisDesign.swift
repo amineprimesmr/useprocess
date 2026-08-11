@@ -162,8 +162,6 @@ struct FaceScanWhoopAnalysisScreen: View {
                             showsUnlockTeaser: false
                         )
                         .padding(.horizontal, 16)
-
-                        studioControlsBlock
                     } else {
                         FaceScanWhoopMetricsCard(
                             result: displayResult,
@@ -172,10 +170,6 @@ struct FaceScanWhoopAnalysisScreen: View {
                             emphasizesLabels: isCreatorUnlocked
                         )
                             .padding(.horizontal, 16)
-
-                        if isCreatorUnlocked {
-                            studioControlsBlock
-                        }
 
                         FaceScanWhoopEvolutionSummaryCard(
                             result: studioBaseResult ?? displayResult,
@@ -188,6 +182,10 @@ struct FaceScanWhoopAnalysisScreen: View {
                         FaceScanWhoopIndicatorTrendsSection(history: evolutionHistory)
                             .padding(.horizontal, 16)
                             .padding(.top, 28)
+                    }
+
+                    if isCreatorUnlocked {
+                        studioControlsBlock
                     }
 
                     Spacer(minLength: bottomContentInset)
@@ -227,12 +225,12 @@ struct FaceScanWhoopAnalysisScreen: View {
     @ViewBuilder
     private var studioControlsBlock: some View {
         VStack(spacing: 14) {
-            FaceScanStudioResultsLayoutPicker(layout: $creatorMode.scanResultsLayout)
-
             FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
                 creatorMode.resultQuality = value
                 persistStudioEdits()
             }
+
+            FaceScanStudioResultsLayoutPicker(layout: $creatorMode.scanResultsLayout)
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
@@ -420,8 +418,6 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
             )
                 .padding(.horizontal, metricsHorizontalPadding)
 
-            bottomAccessory()
-
             if style == .immersive {
                 FaceScanWhoopEvolutionSummaryCard(
                     result: evolutionSource,
@@ -437,6 +433,9 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 28)
             }
+
+            // Studio : Normal / 1er scan + slider — collés en bas du scroll.
+            bottomAccessory()
 
             Spacer(minLength: showsTrends ? 40 : (style == .chatThread ? 0 : 12))
         }
@@ -1800,7 +1799,7 @@ private struct FaceScanDetailHistoryRow: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
 
-                Text("Score \(scan.displayWellnessScore)%")
+                Text(AppCopy.t("Score \(scan.displayWellnessScore) %", en: "Score \(scan.displayWellnessScore)%"))
                     .font(.system(size: 13))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
             }

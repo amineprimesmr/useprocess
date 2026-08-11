@@ -15,6 +15,7 @@ final class CoachPlanNavigationBridge {
     var eveningChecklistRefreshNonce = 0
     var shouldOpenCoach = false
     var shouldOpenPlan = false
+    var focusHydrationCarouselNonce = 0
     var shouldOpenFaceScan = false
     var shouldOpenTracking = false
     var shouldOpenIntegration = false
@@ -29,6 +30,11 @@ final class CoachPlanNavigationBridge {
     }
 
     func openPlan() {
+        shouldOpenPlan = true
+    }
+
+    func focusHydrationOnHome() {
+        focusHydrationCarouselNonce += 1
         shouldOpenPlan = true
     }
 

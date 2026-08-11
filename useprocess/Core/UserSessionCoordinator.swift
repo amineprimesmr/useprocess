@@ -45,6 +45,19 @@ final class UserSessionCoordinator {
                 await SubscriptionService.shared.syncAppUserID(userId)
                 await UnifiedProfileService.shared.loadProfile()
                 SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
+                await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+                if let profile = UnifiedProfileService.shared.currentProfile {
+                    ProcessReferralStore.shared.reload(
+                        username: profile.username,
+                        userId: profile.userId
+                    )
+                    await ProcessReferralStore.shared.syncRemote(
+                        displayName: profile.firstName.isEmpty ? profile.username : profile.firstName
+                    )
+                    await ReferralService.shared.retryPendingRemoteRegistration(
+                        displayName: profile.firstName.isEmpty ? profile.username : profile.firstName
+                    )
+                }
                 if AppSession.shared.hasCompletedOnboarding,
                    !AuthenticationManager.shared.isInOnboarding {
                     await FaceScanHistoryStore.shared.syncFromRemote()

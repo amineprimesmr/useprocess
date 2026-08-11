@@ -7,7 +7,7 @@ enum ProcessReferralEntryStatus: String, Codable, Equatable {
     @MainActor var label: String {
         switch self {
         case .pending: AppCopy.t("En attente", en: "Pending")
-        case .accepted: AppCopy.t("Accepté", en: "Accepted")
+        case .accepted: AppCopy.t("Validé", en: "Verified")
         }
     }
 }
@@ -17,6 +17,7 @@ struct ProcessReferralEntry: Identifiable, Codable, Equatable {
     var displayName: String
     var invitedAt: Date
     var status: ProcessReferralEntryStatus
+    var rewardLabel: String?
 
     var maskedName: String {
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -27,69 +28,69 @@ struct ProcessReferralEntry: Identifiable, Codable, Equatable {
     }
 }
 
-enum ProcessReferralRewardKind: String, Codable, Equatable {
-    case cashEUR
-    case proMonths
-}
-
-struct ProcessReferralReward: Identifiable, Equatable {
-    let id: String
-    let requiredReferrals: Int
-    let title: String
-    let kind: ProcessReferralRewardKind
-    let cashAmount: Int?
-    let proMonths: Int?
-    let iconSystemName: String
-    let accentGradient: [String]
-
-    @MainActor static var catalog: [ProcessReferralReward] {
-        [
-            ProcessReferralReward(
-            id: "cash_15",
-            requiredReferrals: 1,
-            title: AppCopy.t("15 € sur ton abonnement", en: "$15 off your subscription"),
-            kind: .cashEUR,
-            cashAmount: 15,
-            proMonths: nil,
-            iconSystemName: "eurosign.circle.fill",
-            accentGradient: ["#34C759", "#30D158"]
-            ),
-            ProcessReferralReward(
-            id: "pro_1m",
-            requiredReferrals: 3,
-            title: AppCopy.t("1 mois Process Pro gratuit", en: "1 free month of Process Pro"),
-            kind: .proMonths,
-            cashAmount: nil,
-            proMonths: 1,
-            iconSystemName: "gift.fill",
-            accentGradient: ["#5AC8FA", "#007AFF"]
-            ),
-            ProcessReferralReward(
-            id: "pro_3m",
-            requiredReferrals: 5,
-            title: AppCopy.t("3 mois Process Pro gratuit", en: "3 free months of Process Pro"),
-            kind: .proMonths,
-            cashAmount: nil,
-            proMonths: 3,
-            iconSystemName: "crown.fill",
-            accentGradient: ["#AF52DE", "#5856D6"]
-            )
-        ]
-    }
-}
-
 struct ProcessReferralSnapshot: Codable, Equatable {
     var referralCode: String
     var entries: [ProcessReferralEntry]
     var redeemedRewardIDs: [String]
-
-    var acceptedCount: Int {
-        entries.filter { $0.status == .accepted }.count
-    }
+    var pendingCount: Int
+    var acceptedCount: Int
 
     var redeemedRewardIDSet: Set<String> {
         Set(redeemedRewardIDs)
     }
 
-    static let empty = ProcessReferralSnapshot(referralCode: "", entries: [], redeemedRewardIDs: [])
+    static let empty = ProcessReferralSnapshot(
+        referralCode: "",
+        entries: [],
+        redeemedRewardIDs: [],
+        pendingCount: 0,
+        acceptedCount: 0
+    )
+}
+
+enum ProcessReferralProgramTerms {
+    /// Extension Apple accordée au filleul après son 1er abonnement.
+    static let inviteeRewardDays = 7
+
+    /// Extension Apple pour parrain hebdo / mensuel.
+    static let referrerShortRewardDays = 14
+
+    /// Extension Apple pour parrain annuel.
+    static let referrerAnnualRewardDays = 30
+
+    @MainActor
+    static var rewardHeadline: String {
+        AppCopy.t("Temps offert sur Apple", en: "Free Apple subscription time")
+    }
+
+    @MainActor
+    static var referrerRewardSummary: String {
+        AppCopy.t(
+            "2 semaines offertes par parrainage (1 mois si tu es en abonnement annuel).",
+            en: "2 free weeks per referral (1 free month on an annual plan)."
+        )
+    }
+
+    @MainActor
+    static var inviteeRewardSummary: String {
+        AppCopy.t(
+            "Ton ami gagne 7 jours offerts sur son abonnement Apple après son inscription.",
+            en: "Your friend gets 7 free days on their Apple subscription after signing up."
+        )
+    }
+
+    @MainActor
+    static func rewardLabel(for duration: String?, status: ProcessReferralEntryStatus) -> String? {
+        guard status == .accepted else { return nil }
+        switch duration {
+        case "monthly":
+            return AppCopy.t("1 mois offert", en: "1 free month")
+        case "two_week":
+            return AppCopy.t("2 semaines offertes", en: "2 free weeks")
+        case "weekly":
+            return AppCopy.t("7 jours offerts", en: "7 free days")
+        default:
+            return AppCopy.t("Temps offert", en: "Free time added")
+        }
+    }
 }

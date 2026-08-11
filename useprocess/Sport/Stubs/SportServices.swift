@@ -505,12 +505,6 @@ final class OnboardingService: ObservableObject {
     }
 }
 
-@MainActor
-final class ReferralService {
-    static let shared = ReferralService()
-    func registerReferral(referralCode: String, referredUserId: String) async throws {}
-}
-
 // MARK: - Watch (visuel)
 
 @MainActor

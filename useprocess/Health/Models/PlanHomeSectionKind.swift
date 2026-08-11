@@ -37,7 +37,7 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
     static let defaultOrder: [PlanHomeSectionKind] = [
         .faceScan,
         .nutrition,
-        .training,
-        .faceRoutine
+        .faceRoutine,
+        .training
     ]
 }

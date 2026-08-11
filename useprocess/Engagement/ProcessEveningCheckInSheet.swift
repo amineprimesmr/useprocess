@@ -918,7 +918,7 @@ struct ProcessEveningCheckInEntryButton: View {
                 Spacer(minLength: 0)
 
                 if isDayValidated {
-                    Text("OK")
+                    Text(AppCopy.t("OK", en: "OK"))
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color(red: 0.35, green: 0.78, blue: 0.45))
                         .padding(.horizontal, 10)

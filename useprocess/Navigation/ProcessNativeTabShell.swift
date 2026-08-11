@@ -92,13 +92,19 @@ struct ProcessNativeTabShell<Plan: View, Statistics: View, Coach: View, Profile:
         }
         .tabBarMinimizeBehavior(.never)
         .toolbar(hidesSystemTabBar ? .hidden : .visible, for: .tabBar)
-        .animation(ProcessGlass.spring, value: hidesSystemTabBar)
         .onPreferenceChange(ProfileSubrouteActiveKey.self) { active in
             guard selectedSection == .profile else {
-                profileSubrouteActive = false
+                if profileSubrouteActive {
+                    withAnimation(ProcessGlass.spring) {
+                        profileSubrouteActive = false
+                    }
+                }
                 return
             }
-            profileSubrouteActive = active
+            guard profileSubrouteActive != active else { return }
+            withAnimation(ProcessGlass.spring) {
+                profileSubrouteActive = active
+            }
         }
         .onChange(of: nativeSelection) { previous, next in
             handleNativeSelectionChange(from: previous, to: next)

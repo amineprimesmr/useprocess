@@ -30,7 +30,20 @@
 	<key>NSMotionUsageDescription</key>
 	<string>Process uses motion sensors to estimate your daily activity and complement Health data. For example: counting steps when you walk without an Apple Watch.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Notifications remind you about your sessions and recovery.</string>
+	<string>Notifications remind you about hydration, sessions, and recovery.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.useprocess.hydration</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>process</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>The microphone lets you record voice messages that are converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

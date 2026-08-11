@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.coachStream = exports.coachComplete = exports.deleteUserAccount = void 0;
+exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -159,8 +159,35 @@ async function enforceCoachRateLimit(uid) {
         }, { merge: true });
     });
 }
+async function deleteReferralArtifactsForUser(uid) {
+    const db = admin.firestore();
+    const program = await db
+        .collection("users")
+        .doc(uid)
+        .collection("referralMeta")
+        .doc("program")
+        .get();
+    const rawCode = program.data()?.referralCode;
+    if (typeof rawCode === "string" && rawCode.trim()) {
+        const cleaned = rawCode.trim().toUpperCase().replace(/\s+/g, "");
+        const normalized = cleaned.includes("-")
+            ? cleaned.replace(/[^A-Z0-9-]/g, "")
+            : (() => {
+                const alnum = cleaned.replace(/[^A-Z0-9]/g, "");
+                return alnum.length <= 4 ? alnum : `${alnum.slice(0, 4)}-${alnum.slice(4)}`;
+            })();
+        if (!normalized)
+            return;
+        const codeRef = db.collection("referralCodes").doc(normalized);
+        const codeSnap = await codeRef.get();
+        if (codeSnap.exists && codeSnap.data()?.userId === uid) {
+            await codeRef.delete();
+        }
+    }
+}
 async function deleteAllUserFirestoreData(uid) {
     const db = admin.firestore();
+    await deleteReferralArtifactsForUser(uid);
     const userRef = db.collection("users").doc(uid);
     // Supprime le document et toutes ses sous-collections, y compris celles
     // qui seront ajoutées plus tard au modèle de données.
@@ -375,4 +402,10 @@ exports.coachStream = (0, https_1.onRequest)({
         }
     }
 });
+var referral_1 = require("./referral");
+Object.defineProperty(exports, "referralSyncProgram", { enumerable: true, get: function () { return referral_1.referralSyncProgram; } });
+Object.defineProperty(exports, "referralRegister", { enumerable: true, get: function () { return referral_1.referralRegister; } });
+var referralRewards_1 = require("./referralRewards");
+Object.defineProperty(exports, "referralConfirmSubscription", { enumerable: true, get: function () { return referralRewards_1.referralConfirmSubscription; } });
+Object.defineProperty(exports, "referralRevenueCatWebhook", { enumerable: true, get: function () { return referralRewards_1.referralRevenueCatWebhook; } });
 //# sourceMappingURL=index.js.map

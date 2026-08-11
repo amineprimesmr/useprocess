@@ -86,6 +86,7 @@ struct ProcessCreatorStudioView: View {
         }
         .navigationTitle(AppCopy.t("Studio", en: "Studio"))
         .navigationBarTitleDisplayMode(.inline)
+        .processSettingsDetailPage()
         .reportsProfileSubrouteActive(true)
     }
 }

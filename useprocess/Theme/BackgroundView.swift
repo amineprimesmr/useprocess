@@ -324,6 +324,17 @@ extension View {
         .processClearUIKitHostingBackground()
     }
 
+    /// Sous-pages Réglages — fond opaque pour un push NavigationStack propre
+    /// (évite hub + détail visibles en même temps pendant l’animation).
+    func processSettingsDetailPage() -> some View {
+        frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background {
+                ProcessScreenBackground()
+            }
+            .toolbar(.visible, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
+    }
+
     /// Fond semi-transparent — la page sous-jacente reste visible (paramètres depuis l'accueil).
     func processTranslucentOverlayBackground() -> some View {
         ZStack {

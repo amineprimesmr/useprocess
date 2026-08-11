@@ -1,0 +1,94 @@
+import SwiftUI
+
+extension View {
+    /// Tutoriel accueil — onglet Série uniquement (sections = inline sur Plan).
+    func planHomeTutorial(
+        store: PlanHomeTutorialStore = .shared,
+        selectedSection: Binding<ProcessMainSection>
+    ) -> some View {
+        modifier(PlanHomeTutorialModifier(store: store, selectedSection: selectedSection))
+    }
+}
+
+private struct PlanHomeTutorialModifier: ViewModifier {
+    @Bindable var store: PlanHomeTutorialStore
+    @Binding var selectedSection: ProcessMainSection
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .bottom) {
+                if store.isActive, store.currentStep.isTabStep {
+                    PlanHomeTutorialTabStepFooter(store: store)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .zIndex(900)
+                }
+            }
+            .onChange(of: store.requestedMainSection) { _, section in
+                guard store.isActive else { return }
+                if selectedSection != section {
+                    withAnimation(ProcessGlass.spring) {
+                        selectedSection = section
+                    }
+                }
+            }
+            .onChange(of: store.isActive) { _, active in
+                if !active, selectedSection != .plan {
+                    withAnimation(ProcessGlass.spring) {
+                        selectedSection = .plan
+                    }
+                }
+            }
+    }
+}
+
+/// Footer flottant — uniquement étapes onglet (hors scroll Plan).
+private struct PlanHomeTutorialTabStepFooter: View {
+    @Bindable var store: PlanHomeTutorialStore
+
+    var body: some View {
+        VStack(spacing: 0) {
+            PlanHomeTutorialCaption(step: store.currentStep)
+                .padding(.horizontal, 22)
+                .padding(.bottom, 18)
+
+            PlanHomeTutorialTabStepControls(store: store)
+                .padding(.horizontal, 22)
+                .padding(.bottom, UIApplication.safeAreaBottom + 16)
+        }
+        .background {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0),
+                    Color.black.opacity(0.55),
+                    Color.black.opacity(0.72)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct PlanHomeTutorialTabStepControls: View {
+    @Bindable var store: PlanHomeTutorialStore
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Button {
+                store.advance()
+            } label: {
+                Text(store.currentStepIndex + 1 >= store.steps.count
+                     ? AppCopy.t("C'est parti", en: "Let's go")
+                     : AppCopy.t("Continuer", en: "Continue"))
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color.black.opacity(0.88))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(Capsule(style: .continuous).fill(Color.white))
+            }
+            .buttonStyle(.processPlain)
+        }
+    }
+}

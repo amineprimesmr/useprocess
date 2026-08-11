@@ -41,6 +41,7 @@ struct AppShellView: View {
             switch phase {
             case .background:
                 ProcessMarketingNotificationService.shared.handleAppLeftForeground()
+                ProcessHydrationTimerMonitor.shared.handleSceneWillBackground()
             case .active:
                 ProcessMarketingNotificationService.shared.handleAppBecameActive()
                 ProcessAudioSession.configureForMixingWithOthersIfIdle()
@@ -65,7 +66,16 @@ struct AppShellView: View {
         .environmentObject(HealthManager.shared)
         .environmentObject(PermissionsManager.shared)
         .environmentObject(DailyDataManager.shared)
+        .onOpenURL { url in
+            if ProcessReferralLink.parseCode(from: url) != nil {
+                ProcessReferralAttribution.capture(from: url)
+                NotificationCenter.default.post(name: .processReferralCodeCaptured, object: nil)
+            } else {
+                AppLaunchRouter.shared.handleHydrationURL(url)
+            }
+        }
         .task {
+            ProcessHydrationTimerMonitor.shared.bootstrapAtLaunch()
             // Garantit Firebase prêt avant tout usage Auth tardif.
             FirebaseBootstrap.configure()
             ProcessAnalytics.configure()
@@ -74,6 +84,7 @@ struct AppShellView: View {
                 ProcessAnalytics.identify(userId: uid)
             }
             ProcessAnalytics.syncFirstNameFromProfile()
+            ProcessReferralAttribution.captureOnAppLaunchIfNeeded()
             // Laisse le 1er frame se peindre avant d’armer le double-swipe Home.
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }
@@ -144,7 +155,7 @@ struct AppShellView: View {
                 set: { if !$0 { session.accountDeletionErrorMessage = nil } }
             )
         ) {
-            Button("OK", role: .cancel) {
+            Button(AppCopy.t("OK", en: "OK"), role: .cancel) {
                 session.accountDeletionErrorMessage = nil
             }
         } message: {

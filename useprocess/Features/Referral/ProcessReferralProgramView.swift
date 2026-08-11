@@ -1,57 +1,24 @@
 import SafariServices
 import SwiftUI
 
-/// Hub parrainage — style Bevel, récompenses Process (15 €, Pro).
+/// Hub parrainage — récompenses Apple (temps offert), layout Push-style.
 struct ProcessReferralProgramView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
 
     @State private var store = ProcessReferralStore.shared
     @State private var showShareSheet = false
-    @State private var showTerms = false
-    @State private var redeemedAlertReward: ProcessReferralReward?
+    @State private var showRewardsInfo = false
 
     var body: some View {
-        NavigationStack {
-            ProcessReferralProgramScrollContent(
-                store: store,
-                showShareSheet: $showShareSheet,
-                showTerms: $showTerms,
-                redeemedAlertReward: $redeemedAlertReward
-            )
-            .processTransparentScrollSurface()
-            .navigationTitle(AppCopy.t("Parrainage", en: "Referrals"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    ProcessReferralToolbarButton(systemName: "chevron.left", action: { dismiss() })
-                        .accessibilityLabel(AppCopy.close)
-                }
-            }
-            .sheet(isPresented: $showShareSheet) {
-                ProfileShareSheet(items: [store.shareMessage, store.referralLink])
-            }
-            .sheet(isPresented: $showTerms) {
-                ProcessReferralSafariView(url: ProcessLegalURLs.termsOfUse)
-            }
-            .alert(
-                AppCopy.t("Récompense demandée", en: "Reward Requested"),
-                isPresented: Binding(
-                    get: { redeemedAlertReward != nil },
-                    set: { if !$0 { redeemedAlertReward = nil } }
-                ),
-                presenting: redeemedAlertReward
-            ) { reward in
-                Button("OK", role: .cancel) {}
-            } message: { reward in
-                Text(redeemedConfirmation(for: reward))
-            }
-        }
-        .processAppPageBackground()
-        .processAppPresentationBackground()
-        .onAppear {
-            reloadStore()
-        }
+        ProcessReferralProgramScreen(
+            store: store,
+            showsBackButton: true,
+            onBack: { dismiss() },
+            showShareSheet: $showShareSheet,
+            showRewardsInfo: $showRewardsInfo
+        )
+        .onAppear { reloadStore() }
     }
 
     private func reloadStore() {
@@ -64,41 +31,21 @@ struct ProcessReferralProgramView: View {
 
 /// Page parrainage depuis Paramètres (navigation push).
 struct ProcessReferralProgramDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
 
     @State private var store = ProcessReferralStore.shared
     @State private var showShareSheet = false
-    @State private var showTerms = false
-    @State private var redeemedAlertReward: ProcessReferralReward?
+    @State private var showRewardsInfo = false
 
     var body: some View {
-        ProcessReferralProgramScrollContent(
+        ProcessReferralProgramScreen(
             store: store,
+            showsBackButton: true,
+            onBack: { dismiss() },
             showShareSheet: $showShareSheet,
-            showTerms: $showTerms,
-            redeemedAlertReward: $redeemedAlertReward
+            showRewardsInfo: $showRewardsInfo
         )
-        .processTransparentScrollSurface()
-        .navigationTitle(AppCopy.t("Parrainage", en: "Referrals"))
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showShareSheet) {
-            ProfileShareSheet(items: [store.shareMessage, store.referralLink])
-        }
-        .sheet(isPresented: $showTerms) {
-            ProcessReferralSafariView(url: ProcessLegalURLs.termsOfUse)
-        }
-        .alert(
-            AppCopy.t("Récompense demandée", en: "Reward Requested"),
-            isPresented: Binding(
-                get: { redeemedAlertReward != nil },
-                set: { if !$0 { redeemedAlertReward = nil } }
-            ),
-            presenting: redeemedAlertReward
-        ) { reward in
-            Button("OK", role: .cancel) {}
-        } message: { reward in
-            Text(redeemedConfirmation(for: reward))
-        }
         .onAppear {
             store.reload(
                 username: profileService.currentProfile?.username,
@@ -108,301 +55,388 @@ struct ProcessReferralProgramDetailView: View {
     }
 }
 
-private struct ProcessReferralProgramScrollContent: View {
+// MARK: - Screen
+
+private struct ProcessReferralProgramScreen: View {
     @Bindable var store: ProcessReferralStore
+    let showsBackButton: Bool
+    let onBack: () -> Void
     @Binding var showShareSheet: Bool
-    @Binding var showTerms: Bool
-    @Binding var redeemedAlertReward: ProcessReferralReward?
+    @Binding var showRewardsInfo: Bool
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-                ProfileReferralInteractiveCard()
-                    .padding(.top, 8)
+        ZStack(alignment: .bottom) {
+            ProcessReferralTheme.pageBackground
+                .ignoresSafeArea()
 
-                ProcessReferralStatusSection(entries: store.snapshot.entries)
-                    .padding(.top, 20)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    headerRow
+                        .padding(.top, 8)
 
-                headlineBlock
-                    .padding(.top, 28)
+                    titleBlock
+                        .padding(.top, 28)
 
-                linkSection
-                    .padding(.top, 24)
-
-                shareButton
-                    .padding(.top, 16)
-
-                termsLine
-                    .padding(.top, 12)
-
-                rewardsSection
-                    .padding(.top, 32)
-
-                legalFooter
-                    .padding(.top, 20)
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 40)
-        }
-    }
-
-    private var headlineBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(AppCopy.t("Invitez et gagnez 15 €", en: "Invite Friends and Earn $15"))
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(ProcessReferralTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(
-                AppCopy.t("Offrez à vos amis 30 jours d'accès Process Pro et recevez 15 € pour chaque parrainage validé.", en: "Give your friends 30 days of Process Pro and receive $15 for every verified referral.")
-            )
-            .font(.system(size: 15))
-            .foregroundStyle(ProcessReferralTheme.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var linkSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Text(AppCopy.t("Votre lien de parrainage", en: "Your referral link"))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(ProcessReferralTheme.textPrimary)
-
-                Button {
-                    // Info — même contenu que le footer
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(ProcessReferralTheme.textSecondary)
-                }
-                .buttonStyle(.processPlain)
-                .accessibilityLabel(AppCopy.t("Informations sur le parrainage", en: "Referral information"))
-            }
-
-            HStack(spacing: 12) {
-                Text(store.referralLink)
-                    .font(.system(size: 16, weight: .medium, design: .monospaced))
-                    .foregroundStyle(ProcessReferralTheme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-
-                Spacer(minLength: 4)
-
-                Button {
-                    UIPasteboard.general.string = store.referralLink
-                    HapticManager.shared.notification(.success)
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(ProcessReferralTheme.textSecondary)
-                }
-                .buttonStyle(.processPlain)
-                .accessibilityLabel(AppCopy.t("Copier le lien", en: "Copy link"))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(
-                        ProcessReferralTheme.dashedBorder,
-                        style: StrokeStyle(lineWidth: 1.5, dash: [6, 5])
+                    ProcessReferralMetalCard(
+                        referralCode: store.displayReferralCode,
+                        copyText: store.copyPayload,
+                        onCopy: {}
                     )
+                        .padding(.top, 28)
+
+                    howItWorksCard
+                        .padding(.top, 28)
+                        .padding(.horizontal, -8)
+
+                    referralsSection
+                        .padding(.top, 32)
+
+                    Color.clear.frame(height: 100)
+                }
+                .padding(.horizontal, 22)
             }
+
+            inviteFriendsButton
+        }
+        .preferredColorScheme(.dark)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
+        .sheet(isPresented: $showShareSheet) {
+            ProfileShareSheet(items: [store.shareMessage])
+        }
+        .sheet(isPresented: $showRewardsInfo) {
+            ProcessReferralRewardsInfoSheet(acceptedCount: store.snapshot.acceptedCount)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
         }
     }
 
-    private var shareButton: some View {
-        Button {
-            HapticManager.shared.impact(.medium)
-            showShareSheet = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .semibold))
-                Text(AppCopy.t("Partager votre lien de parrainage", en: "Share Your Referral Link"))
-                    .font(.system(size: 16, weight: .semibold))
+    private var headerRow: some View {
+        HStack {
+            if showsBackButton {
+                ProcessReferralCircleIconButton(systemName: "chevron.left", action: onBack)
+                    .accessibilityLabel(AppCopy.back)
             }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(Color.black, in: Capsule())
-        }
-        .buttonStyle(.processPlain)
-    }
 
-    private var termsLine: some View {
-        Button {
-            showTerms = true
-        } label: {
-            Text(AppCopy.t("En utilisant notre programme de parrainage, vous acceptez nos conditions d'utilisation.", en: "By using our referral program, you agree to our Terms of Use."))
-                .font(.system(size: 12))
+            Spacer()
+
+            Text(AppCopy.t("Récompenses", en: "Rewards"))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Capsule(style: .continuous).fill(ProcessReferralTheme.chipBackground))
         }
-        .buttonStyle(.processPlain)
     }
 
-    private var rewardsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(AppCopy.t("Vos récompenses", en: "Your rewards"))
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(ProcessReferralTheme.textPrimary)
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(AppCopy.t("Invite des amis.", en: "Invite friends."))
+            Text(AppCopy.t("Sois récompensé.", en: "Get rewarded."))
+        }
+        .font(.system(size: 34, weight: .bold))
+        .foregroundStyle(ProcessReferralTheme.textPrimary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
 
-            Text(
-                AppCopy.t("Partagez Process avec un ami. Il profite de 30 jours Pro et vous recevez 15 € ou des mois gratuits.", en: "Share Process with a friend. They get 30 days of Pro, and you receive $15 or free months.")
+    private var howItWorksCard: some View {
+        VStack(alignment: .center, spacing: 0) {
+            ProcessReferralHowItWorksStep(
+                icon: "link",
+                title: AppCopy.t("Partage ton invite", en: "Share your invite"),
+                subtitle: AppCopy.t(
+                    "Envoie ton lien personnel à un ami.",
+                    en: "Send your personal invite link to a friend."
+                ),
+                showsConnector: true
             )
-            .font(.system(size: 14))
-            .foregroundStyle(ProcessReferralTheme.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
 
-            VStack(spacing: 14) {
-                ForEach(ProcessReferralReward.catalog) { reward in
-                    ProcessReferralRewardCard(
-                        reward: reward,
-                        progress: store.progress(for: reward),
-                        canRedeem: store.canRedeem(reward),
-                        isRedeemed: store.isRedeemed(reward),
-                        onRedeem: {
-                            store.redeem(reward: reward)
-                            redeemedAlertReward = reward
-                        }
-                    )
-                }
+            ProcessReferralHowItWorksStep(
+                icon: "figure.strengthtraining.traditional",
+                title: AppCopy.t("Ton ami rejoint", en: "Friend joins"),
+                subtitle: AppCopy.t(
+                    "Il s'inscrit, prend un abonnement Apple, et vous recevez tous les deux du temps offert.",
+                    en: "They sign up, start an Apple subscription, and you both receive free time."
+                ),
+                showsConnector: true
+            )
+
+            ProcessReferralHowItWorksStep(
+                icon: "gift.fill",
+                title: AppCopy.t("Vous gagnez tous les deux", en: "You both win"),
+                subtitle: ProcessReferralProgramTerms.referrerRewardSummary,
+                showsConnector: false
+            )
+
+            Button {
+                showRewardsInfo = true
+            } label: {
+                Text(AppCopy.t("Voir les récompenses", en: "View Rewards"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(ProcessReferralTheme.textPrimary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Capsule(style: .continuous).fill(Color(white: 0.16)))
             }
+            .buttonStyle(.processPlain)
+            .padding(.top, 18)
+            .padding(.bottom, 24)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 26)
+        .padding(.horizontal, 8)
+        .background {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(ProcessReferralTheme.surface)
         }
     }
 
-    private var legalFooter: some View {
-        Text(
-            AppCopy.t("Les parrainages sont vérifiés par notre équipe. Process se réserve le droit de révoquer les avantages en cas d'abus ou de fraude.", en: "Referrals are verified by our team. Process reserves the right to revoke benefits in the event of abuse or fraud.")
-        )
-        .font(.system(size: 11))
-        .foregroundStyle(ProcessReferralTheme.textTertiary)
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - Statut des parrainages
-
-struct ProcessReferralStatusSection: View {
-    let entries: [ProcessReferralEntry]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(AppCopy.t("Statut", en: "Status"))
-                .font(.system(size: 22, weight: .bold))
+    private var referralsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(AppCopy.t("Tes parrainages", en: "Your referrals"))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(ProcessReferralTheme.textPrimary)
 
-            if entries.isEmpty {
-                Text(AppCopy.t("Aucun parrainage pour l'instant. Partage ton lien pour suivre tes invités ici.", en: "No referrals yet. Share your link to track your invites here."))
-                    .font(.system(size: 14))
-                    .foregroundStyle(ProcessReferralTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            if store.snapshot.entries.isEmpty {
+                Text(AppCopy.t(
+                    "Aucun parrainage pour l'instant. Partage ton code pour voir tes invités ici.",
+                    en: "No referrals yet. Share your code to see your invites here."
+                ))
+                .font(.system(size: 14))
+                .foregroundStyle(ProcessReferralTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             } else {
-                VStack(spacing: 12) {
-                    ForEach(entries) { entry in
-                        ProcessReferralTrackingRow(entry: entry)
+                VStack(spacing: 10) {
+                    ForEach(store.snapshot.entries) { entry in
+                        ProcessReferralDarkTrackingRow(entry: entry)
                     }
                 }
             }
         }
     }
-}
 
-private func redeemedConfirmation(for reward: ProcessReferralReward) -> String {
-    switch reward.kind {
-    case .cashEUR:
-        return AppCopy.t("Ta demande de \(reward.cashAmount ?? 15) € a été enregistrée. Notre équipe valide sous 48 h.", en: "Your $\(reward.cashAmount ?? 15) request has been recorded. Our team will review it within 48 hours.")
-    case .proMonths:
-        let months = reward.proMonths ?? 1
-        return AppCopy.t("Ta demande de \(months) mois Pro gratuit a été enregistrée. Notre équipe valide sous 48 h.", en: "Your request for \(months) free Pro month\(months > 1 ? "s" : "") has been recorded. Our team will review it within 48 hours.")
+    private var inviteFriendsButton: some View {
+        Button {
+            HapticManager.shared.impact(.medium)
+            showShareSheet = true
+        } label: {
+            Text(AppCopy.t("Inviter des amis", en: "Invite Friends"))
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(Color.black.opacity(0.9))
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(Capsule(style: .continuous).fill(Color.white))
+        }
+        .buttonStyle(.processPlain)
+        .padding(.horizontal, 22)
+        .padding(.bottom, 12)
+        .background {
+            LinearGradient(
+                colors: [Color.black.opacity(0), Color.black.opacity(0.92)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+            .allowsHitTesting(false)
+        }
     }
 }
 
-// MARK: - Reward card
+// MARK: - How it works step
 
-private struct ProcessReferralRewardCard: View {
-    let reward: ProcessReferralReward
-    let progress: (current: Int, total: Int)
-    let canRedeem: Bool
-    let isRedeemed: Bool
-    var onRedeem: () -> Void
+private struct ProcessReferralHowItWorksStep: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let showsConnector: Bool
+
+    private let iconButtonSize: CGFloat = 42
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            ProcessReferralRewardIcon(reward: reward)
+        HStack(alignment: .top, spacing: 14) {
+            VStack(spacing: 0) {
+                ProcessReferralGlassIconButton(systemName: icon, size: iconButtonSize)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(AppCopy.t("\(reward.requiredReferrals) parrainage\(reward.requiredReferrals > 1 ? "s" : "")", en: "\(reward.requiredReferrals) referral\(reward.requiredReferrals > 1 ? "s" : "")"))
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(ProcessReferralTheme.badgeBlue)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(ProcessReferralTheme.badgeBlue.opacity(0.12), in: Capsule())
-
-                Text(reward.title)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(ProcessReferralTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 5) {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text("\(progress.current)/\(progress.total)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .monospacedDigit()
+                if showsConnector {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.14))
+                        .frame(width: 1, height: 34)
+                        .padding(.top, 8)
                 }
-                .foregroundStyle(ProcessReferralTheme.textSecondary)
             }
 
-            Spacer(minLength: 4)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(ProcessReferralTheme.textPrimary)
+                    .multilineTextAlignment(.leading)
 
-            redeemButton
+                Text(subtitle)
+                    .font(.system(size: 14))
+                    .foregroundStyle(ProcessReferralTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(.top, 6)
+            .padding(.bottom, showsConnector ? 8 : 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(16)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(ProcessReferralTheme.cardBackground)
-                .shadow(color: .black.opacity(0.05), radius: 16, y: 6)
+        .frame(maxWidth: 340)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 18)
+    }
+}
+
+private struct ProcessReferralGlassIconButton: View {
+    let systemName: String
+    let size: CGFloat
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.94))
+            .frame(width: size, height: size)
+            .background {
+                Circle()
+                    .fill(.clear)
+                    .processGlassEffect(in: Circle(), interactive: false)
+            }
+            .overlay {
+                Circle()
+                    .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Rewards info sheet
+
+private struct ProcessReferralRewardsInfoSheet: View {
+    let acceptedCount: Int
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                Text(ProcessReferralProgramTerms.rewardHeadline)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(ProcessReferralTheme.textPrimary)
+
+                Text(AppCopy.t(
+                    "Quand ton ami s'inscrit avec ton code et prend un abonnement Apple, vous recevez tous les deux du temps offert sur Process — crédité automatiquement via l'App Store.",
+                    en: "When your friend signs up with your code and starts an Apple subscription, you both receive free Process time — credited automatically through the App Store."
+                ))
+                .font(.system(size: 15))
+                .foregroundStyle(ProcessReferralTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+                rewardRow(
+                    title: AppCopy.t("Pour toi (parrain)", en: "For you (referrer)"),
+                    detail: ProcessReferralProgramTerms.referrerRewardSummary
+                )
+
+                rewardRow(
+                    title: AppCopy.t("Pour ton ami (invité)", en: "For your friend (invitee)"),
+                    detail: AppCopy.t(
+                        "7 jours offerts sur son abonnement Apple après son 1er paiement.",
+                        en: "7 free days on their Apple subscription after their first payment."
+                    )
+                )
+
+                HStack {
+                    Text(AppCopy.t("Parrainages validés", en: "Verified referrals"))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(ProcessReferralTheme.textPrimary)
+                    Spacer()
+                    Text("\(acceptedCount)")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(ProcessReferralTheme.textPrimary)
+                        .monospacedDigit()
+                }
+                .padding(16)
+                .background {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(ProcessReferralTheme.surface)
+                }
+
+                Spacer()
+            }
+            .padding(22)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(ProcessReferralTheme.pageBackground.ignoresSafeArea())
+            .preferredColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(AppCopy.close) { dismiss() }
+                        .foregroundStyle(ProcessReferralTheme.textPrimary)
+                }
+            }
         }
     }
 
     @ViewBuilder
-    private var redeemButton: some View {
-        if isRedeemed {
-            Text(AppCopy.t("Échangé", en: "Redeemed"))
-                .font(.system(size: 13, weight: .semibold))
+    private func rewardRow(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(ProcessReferralTheme.textPrimary)
+            Text(detail)
+                .font(.system(size: 14))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(ProcessReferralTheme.chipBackground, in: Capsule())
-        } else if canRedeem {
-            Button {
-                HapticManager.shared.impact(.medium)
-                onRedeem()
-            } label: {
-                Text(AppCopy.t("Échanger", en: "Redeem"))
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.black, in: Capsule())
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(ProcessReferralTheme.surface)
+        }
+    }
+}
+
+// MARK: - Tracking row (dark)
+
+private struct ProcessReferralDarkTrackingRow: View {
+    let entry: ProcessReferralEntry
+
+    private static var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = ProcessAppLanguage.shared.locale
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(entry.maskedName)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(ProcessReferralTheme.textPrimary)
+
+                Text(AppCopy.t(
+                    "Invité le \(Self.dateFormatter.string(from: entry.invitedAt))",
+                    en: "Invited \(Self.dateFormatter.string(from: entry.invitedAt))"
+                ))
+                .font(.system(size: 12))
+                .foregroundStyle(ProcessReferralTheme.textSecondary)
+
+                if let rewardLabel = entry.rewardLabel {
+                    Text(rewardLabel)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color(red: 0.55, green: 0.95, blue: 0.65))
+                }
             }
-            .buttonStyle(.processPlain)
-        } else {
-            HStack(spacing: 4) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 10, weight: .bold))
-                Text(AppCopy.t("Échanger", en: "Redeem"))
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(ProcessReferralTheme.textSecondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(ProcessReferralTheme.chipBackground, in: Capsule())
+
+            Spacer(minLength: 8)
+
+            ProcessReferralStatusBadge(status: entry.status)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(ProcessReferralTheme.surface)
         }
     }
 }
@@ -410,17 +444,16 @@ private struct ProcessReferralRewardCard: View {
 // MARK: - Shared chrome
 
 enum ProcessReferralTheme {
-    static var pageBackground: Color { Color(UIColor.systemGroupedBackground) }
-    static var cardBackground: Color { Color(UIColor.secondarySystemGroupedBackground) }
-    static var chipBackground: Color { Color(UIColor.tertiarySystemGroupedBackground) }
-    static var textPrimary: Color { Color(UIColor.label) }
-    static var textSecondary: Color { Color(UIColor.secondaryLabel) }
-    static var textTertiary: Color { Color(UIColor.tertiaryLabel) }
-    static var badgeBlue: Color { Color(red: 0.0, green: 0.48, blue: 1.0) }
-    static var dashedBorder: Color { Color(UIColor.separator) }
+    static let pageBackground = Color.black
+    static let surface = Color(red: 0.11, green: 0.11, blue: 0.12)
+    static let cardBackground = Color(red: 0.11, green: 0.11, blue: 0.12)
+    static let chipBackground = Color(white: 0.14)
+    static let textPrimary = Color.white
+    static let textSecondary = Color(white: 0.62)
+    static let textTertiary = Color(white: 0.45)
 }
 
-struct ProcessReferralToolbarButton: View {
+struct ProcessReferralCircleIconButton: View {
     let systemName: String
     let action: () -> Void
 
@@ -429,65 +462,61 @@ struct ProcessReferralToolbarButton: View {
             Image(systemName: systemName)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(ProcessReferralTheme.textPrimary)
-                .frame(width: 36, height: 36)
-                .background(
-                    Circle()
-                        .fill(Color(UIColor.secondarySystemGroupedBackground))
-                )
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(ProcessReferralTheme.chipBackground))
         }
         .buttonStyle(.processPlain)
     }
 }
 
-struct ProcessReferralRewardIcon: View {
-    let reward: ProcessReferralReward
+struct ProcessReferralToolbarButton: View {
+    let systemName: String
+    let action: () -> Void
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: gradientColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 64, height: 64)
+        ProcessReferralCircleIconButton(systemName: systemName, action: action)
+    }
+}
 
-            Image(systemName: reward.iconSystemName)
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.95))
+struct ProcessReferralStatusBadge: View {
+    let status: ProcessReferralEntryStatus
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(dotColor)
+                .frame(width: 7, height: 7)
+
+            Text(status.label)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(textColor)
         }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
+        .background(backgroundColor, in: Capsule())
     }
 
-    private var gradientColors: [Color] {
-        reward.accentGradient.map { Color(hex: $0) }
+    private var dotColor: Color {
+        status == .accepted ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color.orange
+    }
+
+    private var textColor: Color {
+        status == .accepted ? Color(red: 0.55, green: 0.95, blue: 0.65) : Color.orange.opacity(0.95)
+    }
+
+    private var backgroundColor: Color {
+        status == .accepted
+            ? Color(red: 0.2, green: 0.78, blue: 0.35).opacity(0.16)
+            : Color.orange.opacity(0.14)
     }
 }
 
-private struct ProcessReferralSafariView: UIViewControllerRepresentable {
-    let url: URL
+// MARK: - Legacy status section (tracking view)
 
-    func makeUIViewController(context: Context) -> SFSafariViewControllerWrapper {
-        SFSafariViewControllerWrapper(url: url)
-    }
+struct ProcessReferralStatusSection: View {
+    let entries: [ProcessReferralEntry]
 
-    func updateUIViewController(_ uiViewController: SFSafariViewControllerWrapper, context: Context) {}
-}
-
-private final class SFSafariViewControllerWrapper: UIViewController {
-    init(url: URL) {
-        super.init(nibName: nil, bundle: nil)
-        let safari = SFSafariViewController(url: url)
-        addChild(safari)
-        view.addSubview(safari.view)
-        safari.view.frame = view.bounds
-        safari.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        safari.didMove(toParent: self)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    var body: some View {
+        EmptyView()
     }
 }

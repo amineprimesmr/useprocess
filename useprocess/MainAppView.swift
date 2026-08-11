@@ -50,6 +50,7 @@ struct MainAppView: View {
         .eveningCheckInIsland { submitted in
             handleEveningCheckInDismiss(submitted: submitted)
         }
+        .planHomeTutorial(selectedSection: $selectedSection)
         .onChange(of: requiredEveningCheckIn) { _, target in
             guard let target else { return }
             lastPresentedEveningCheckInDayKey = target.id
@@ -66,6 +67,7 @@ struct MainAppView: View {
             syncCoachPresentationState()
             evaluateRequiredEveningCheckIn()
             redirectFromDisabledCoachTabIfNeeded()
+            ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
         .onChange(of: selectedSection) { oldValue, newValue in
             if ProcessMainSection.isCoachTabEnabled, newValue == .coach, oldValue != .coach {
@@ -87,6 +89,7 @@ struct MainAppView: View {
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             evaluateRequiredEveningCheckIn()
+            ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
         .onChange(of: planBridge.shouldOpenCoach) { _, should in
             guard should, ProcessMainSection.isCoachTabEnabled else {

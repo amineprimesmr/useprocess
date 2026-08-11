@@ -53,7 +53,7 @@ struct OnboardingPostPaymentThankYouView: View {
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) { errorMessage = nil }
+            Button(AppCopy.t("OK", en: "OK"), role: .cancel) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
         }

@@ -160,6 +160,9 @@ struct SportOnboardingView: View {
                 updateContinueButtonLayout(animated: false)
                 isOnboardingRestoreComplete = true
 
+                ProcessReferralAttribution.captureFromClipboardIfNeeded()
+                ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
+
                 let step = OnboardingStep(rawValue: viewModel.currentStep)
                 ProcessAnalytics.trackOnboardingStarted(step: step)
                 ProcessAnalytics.trackOnboardingStep(step: step)
@@ -206,6 +209,8 @@ struct SportOnboardingView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
+                ProcessReferralAttribution.captureFromClipboardIfNeeded()
+                ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
                 reconcileVisitedStepsForRestore(
                     viewModel: viewModel,
                     navigationEngine: navigationEngine
@@ -217,6 +222,9 @@ struct SportOnboardingView: View {
             viewModel.saveProgress()
             OnboardingProgressService.shared.flush()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .processReferralCodeCaptured)) { _ in
+            ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
+        }
         .alert(
             OnboardingCopy.t("Finalisation impossible", en: "Couldn't finish setup"),
             isPresented: Binding(
@@ -224,7 +232,7 @@ struct SportOnboardingView: View {
                 set: { if !$0 { viewModel.errorMessage = nil } }
             )
         ) {
-            Button("OK", role: .cancel) {
+            Button(AppCopy.t("OK", en: "OK"), role: .cancel) {
                 viewModel.errorMessage = nil
             }
         } message: {

@@ -85,8 +85,11 @@ enum PlanRecalibrationService {
             guard criterion.metricKey == "baselineScan" else { return criterion }
             return OriginSuccessCriterion(
                 id: criterion.id,
-                label: "Gonflement visage",
-                detail: "Réduire puffiness vs baseline (\(markers.puffinessScore))",
+                label: AppCopy.tSync("Gonflement visage", en: "Facial puffiness"),
+                detail: AppCopy.tSync(
+                    "Réduire puffiness vs baseline (\(markers.puffinessScore))",
+                    en: "Reduce puffiness vs baseline (\(markers.puffinessScore))"
+                ),
                 metricKey: "puffinessScore",
                 targetValue: max(20, markers.puffinessScore - 15),
                 baselineValue: markers.puffinessScore
@@ -96,8 +99,11 @@ enum PlanRecalibrationService {
         if !plan.successCriteria.contains(where: { $0.metricKey == "skinClarityScore" }) {
             plan.successCriteria.append(
                 OriginSuccessCriterion(
-                    label: "Teint / peau",
-                    detail: "Améliorer skinClarity vs baseline",
+                    label: AppCopy.tSync("Teint / peau", en: "Complexion / skin"),
+                    detail: AppCopy.tSync(
+                        "Améliorer skinClarity vs baseline",
+                        en: "Improve skinClarity vs baseline"
+                    ),
                     metricKey: "skinClarityScore",
                     targetValue: max(15, markers.skinClarityScore - 12),
                     baselineValue: markers.skinClarityScore

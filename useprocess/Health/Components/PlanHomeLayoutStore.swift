@@ -9,6 +9,7 @@ final class PlanHomeLayoutStore {
     private(set) var hiddenSectionIDs: Set<String> = []
 
     private let storageKeyBase = "plan.home.layout"
+    private let swappedTrainingFaceRoutineMigrationKey = "plan.home.layout.swappedTrainingFaceRoutine.v1"
 
     private init() {
         reload()
@@ -41,6 +42,22 @@ final class PlanHomeLayoutStore {
         if hiddenSectionIDs.remove(PlanHomeSectionKind.nutrition.rawValue) != nil {
             persist()
         }
+        migrateSwapTrainingAndFaceRoutineIfNeeded()
+    }
+
+    /// Circuit lymphatique avant Cardio et Circuit (nouvel ordre accueil).
+    private func migrateSwapTrainingAndFaceRoutineIfNeeded() {
+        let migrationKey = UserScopedStorage.key(swappedTrainingFaceRoutineMigrationKey)
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+
+        if let trainingIndex = orderedSections.firstIndex(of: .training),
+           let faceRoutineIndex = orderedSections.firstIndex(of: .faceRoutine),
+           trainingIndex < faceRoutineIndex {
+            orderedSections.swapAt(trainingIndex, faceRoutineIndex)
+            persist()
+        }
+
+        UserDefaults.standard.set(true, forKey: migrationKey)
     }
 
     func moveSection(_ section: PlanHomeSectionKind, before target: PlanHomeSectionKind) {

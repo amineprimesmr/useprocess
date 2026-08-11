@@ -12,4 +12,30 @@ final class ProcessSceneDelegate: NSObject, UIWindowSceneDelegate {
             completionHandler(true)
         }
     }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        Task { @MainActor in
+            for context in URLContexts {
+                handleIncomingURL(context.url)
+            }
+        }
+    }
+
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+              let url = userActivity.webpageURL else { return }
+        Task { @MainActor in
+            handleIncomingURL(url)
+        }
+    }
+
+    @MainActor
+    private func handleIncomingURL(_ url: URL) {
+        if ProcessReferralLink.parseCode(from: url) != nil {
+            ProcessReferralAttribution.capture(from: url)
+            NotificationCenter.default.post(name: .processReferralCodeCaptured, object: nil)
+        } else {
+            AppLaunchRouter.shared.handleHydrationURL(url)
+        }
+    }
 }

@@ -422,7 +422,10 @@ enum CoachEngine {
         guard let confidence = result.scanConfidence,
               let baselineCount = result.baselineSampleCount,
               let signals = result.relativeSignals else {
-            return "Lecture relative : indisponible, utiliser les scores bruts avec prudence."
+            return AppCopy.tSync(
+                "Lecture relative : indisponible, utiliser les scores bruts avec prudence.",
+                en: "Relative reading unavailable — use raw scores with caution."
+            )
         }
 
         return """

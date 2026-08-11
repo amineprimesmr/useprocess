@@ -20,13 +20,15 @@ enum CoachIntelligenceNotificationService {
             title: AppCopy.t("Ouvrir", en: "Open"),
             options: [.foreground]
         )
-        let category = UNNotificationCategory(
+        let coachCategory = UNNotificationCategory(
             identifier: categoryID,
             actions: [open],
             intentIdentifiers: [],
             options: []
         )
-        UNUserNotificationCenter.current().setNotificationCategories([category])
+        let hydrationCategory = ProcessHydrationTimerNotificationService.makeCategory()
+        UNUserNotificationCenter.current().setNotificationCategories([coachCategory, hydrationCategory])
+        ProcessHydrationTimerNotificationService.markCategoryConfigured()
     }
 
     static func notifyReplyReady(
@@ -207,6 +209,15 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
             return
         }
 
+        if kind == "hydration_sip" {
+            Task { @MainActor in
+                await ProcessHydrationTimerNotificationService.cancelAll()
+                await ProcessHydrationTimerStore.shared.syncLiveActivityHydration()
+            }
+            completionHandler([])
+            return
+        }
+
         if kind == "coach_checkin" || kind == "daily_outlook" || kind == "daily_review" {
             if CoachPresentationTracker.shared.isCoachPresented {
                 completionHandler([])
@@ -241,6 +252,10 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
                 )
             case "daily_review":
                 CoachPlanNavigationBridge.shared.openEveningCheckIn()
+            case "hydration_sip":
+                await ProcessHydrationTimerNotificationService.handleAction(
+                    identifier: response.actionIdentifier
+                )
             default:
                 if kind.hasPrefix("marketing_") {
                     handleMarketingNotificationTap(kind: kind, userInfo: userInfo)

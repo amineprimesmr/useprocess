@@ -9,6 +9,7 @@ struct PlanDashboardView: View {
     @Environment(\.appTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
     @Bindable private var session = AppSession.shared
+    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
 
     @State private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
@@ -28,25 +29,56 @@ struct PlanDashboardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private var showsPlanTopChrome: Bool {
+        true
+    }
+
+    private var tutorialBottomPadding: CGFloat {
+        if tutorialStore.isActive {
+            return UIApplication.safeAreaBottom + 28
+        }
+        return ProcessIGTabMetrics.tabBarOverlayClearance + 12
+    }
+
     private var planDashboard: some View {
         NavigationStack {
-            processMainScrollableChrome(
-                selectedSection: $selectedSection,
-                pageSection: .plan
-            ) {
-                VStack(alignment: .leading, spacing: 24) {
-                    PlanHomeTopChrome(
-                        selectedSection: $selectedSection,
-                        selectedDate: $selectedPlanDate,
-                        showCalendar: $showCalendar,
-                        plan: livePlan,
-                        onOpenStreak: presentDailyChecklist
-                    )
+            ScrollViewReader { scrollProxy in
+                processMainScrollableChrome(
+                    selectedSection: $selectedSection,
+                    pageSection: .plan
+                ) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if showsPlanTopChrome {
+                            PlanHomeTopChrome(
+                                selectedSection: $selectedSection,
+                                selectedDate: $selectedPlanDate,
+                                showCalendar: $showCalendar,
+                                plan: livePlan,
+                                onOpenStreak: presentDailyChecklist
+                            )
+                        }
 
-                    planContent
+                        planContent
+
+                        #if DEBUG
+                        planHomeTutorialDebugButton
+                        #endif
+                    }
+                    .padding()
+                    .padding(.bottom, tutorialBottomPadding)
                 }
-                .padding()
-                .padding(.bottom, ProcessIGTabMetrics.tabBarOverlayClearance + 12)
+                .onChange(of: tutorialStore.isActive) { _, active in
+                    guard active else { return }
+                    scrollTutorialFocus(with: scrollProxy, animated: false)
+                    focusTutorialCarouselIfNeeded()
+                }
+                .onChange(of: tutorialStore.currentStepIndex) { _, _ in
+                    guard tutorialStore.isActive else { return }
+                    if tutorialStore.shouldScrollVerticallyToFocus {
+                        scrollTutorialFocus(with: scrollProxy)
+                    }
+                    focusTutorialCarouselIfNeeded()
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
@@ -61,6 +93,14 @@ struct PlanDashboardView: View {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
                 }
                 refreshPlanHealthMetrics()
+                tutorialStore.reload()
+                tutorialStore.schedulePresentationIfNeeded(planAvailable: livePlan != nil)
+            }
+            .onDisappear {
+                tutorialStore.cancelScheduledPresentation()
+            }
+            .onChange(of: livePlan?.id) { _, _ in
+                tutorialStore.schedulePresentationIfNeeded(planAvailable: livePlan != nil)
             }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active, isTabActive else { return }
@@ -71,6 +111,27 @@ struct PlanDashboardView: View {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
                 }
             }
+        }
+    }
+
+    @MainActor
+    private func focusTutorialCarouselIfNeeded() {
+        guard tutorialStore.currentStep.focusesHydrationCarousel || tutorialStore.currentStep == .nutrition else {
+            return
+        }
+        CoachPlanNavigationBridge.shared.focusHydrationOnHome()
+    }
+
+    @MainActor
+    private func scrollTutorialFocus(with proxy: ScrollViewProxy, animated: Bool = true) {
+        guard tutorialStore.shouldScrollVerticallyToFocus,
+              let anchor = tutorialStore.currentStep.scrollAnchorID else { return }
+        if animated {
+            withAnimation(.spring(response: 0.52, dampingFraction: 0.88)) {
+                proxy.scrollTo(anchor, anchor: .center)
+            }
+        } else {
+            proxy.scrollTo(anchor, anchor: .center)
         }
     }
 
@@ -160,4 +221,20 @@ struct PlanDashboardView: View {
             isRequired: false
         )
     }
+
+    #if DEBUG
+    private var planHomeTutorialDebugButton: some View {
+        Button {
+            tutorialStore.debugRestart()
+        } label: {
+            Text(AppCopy.t("Relancer le tutoriel accueil", en: "Restart home tutorial"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(theme.secondaryText.opacity(0.85))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 28)
+    }
+    #endif
 }

@@ -340,9 +340,12 @@ enum OriginPlanPresenter {
         [
             OriginPlanTask(
                 id: "\(dayId).hier-soir.repas-tardif",
-                title: "Pas de repas tardif",
-                detail: "Rien de lourd dans les 2–3 h avant le coucher.",
-                pillar: "Nutrition",
+                title: AppCopy.tSync("Pas de repas tardif", en: "No late meal"),
+                detail: AppCopy.tSync(
+                    "Rien de lourd dans les 2–3 h avant le coucher.",
+                    en: "Nothing heavy within 2–3 h of bedtime."
+                ),
+                pillar: AppCopy.tSync("Nutrition", en: "Nutrition"),
                 durationMinutes: nil,
                 isOptional: false
             )

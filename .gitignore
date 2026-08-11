@@ -5,6 +5,7 @@
 **/RevenueCatSecrets.plist
 **/PostHogSecrets.plist
 .secrets/
+firebase/.referral-webhook-secret.local
 firebase/functions/node_modules/
 .DS_Store
 **/.DS_Store

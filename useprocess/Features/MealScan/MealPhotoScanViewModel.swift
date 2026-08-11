@@ -175,10 +175,10 @@ final class MealPhotoScanViewModel {
     }
 
     private func refreshScore(_ meal: inout MealSuggestionContent) {
-        let assessment = MealNutritionCatalog.debloatAssessment(for: meal)
-        meal.protocolScore = assessment.score
-        meal.scoreSummary = assessment.summary
-        meal.showsScore = true
+        let synced = MealNutritionCatalog.syncedScore(for: meal)
+        meal.protocolScore = synced.protocolScore
+        meal.scoreSummary = synced.scoreSummary
+        meal.showsScore = synced.showsScore
         if !meal.tags.contains("corrigé") {
             meal.tags.append("corrigé")
         }
@@ -223,11 +223,12 @@ final class MealPhotoScanViewModel {
         }
 
         do {
-            let meal = try await MealPhotoScanAnalysisService.analyzePhoto(
+            var meal = try await MealPhotoScanAnalysisService.analyzePhoto(
                 image: image,
                 slot: selectedSlot,
                 profile: profile
             )
+            meal = MealNutritionCatalog.syncedScore(for: meal)
             scannedMeal = meal
             selectedResultTab = .scanned
             // Affiche le scan tout de suite — l’optimisation ne bloque plus l’écran.
@@ -276,7 +277,7 @@ final class MealPhotoScanViewModel {
                 profile: profile
             )
             guard phase == .result, scannedMeal?.name == meal.name else { return }
-            optimizedMeal = optimized
+            optimizedMeal = MealNutritionCatalog.syncedScore(for: optimized)
             selectedResultTab = .optimized
             ProcessAnalytics.trackMealScanCompleted(
                 slot: selectedSlot.rawValue,

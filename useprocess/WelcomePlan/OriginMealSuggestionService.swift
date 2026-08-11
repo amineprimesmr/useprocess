@@ -298,7 +298,10 @@ enum OriginMealSuggestionService {
 
     private static func excludeBlock(_ names: [String]) -> String {
         guard !names.isEmpty else { return "" }
-        return "Noms déjà utilisés : " + names.joined(separator: ", ")
+        return AppCopy.tSync(
+            "Noms déjà utilisés : \(names.joined(separator: ", "))",
+            en: "Names already used: \(names.joined(separator: ", "))"
+        )
     }
 
     private static func parseAlternatives(_ raw: String) -> [String] {

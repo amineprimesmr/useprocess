@@ -30,6 +30,11 @@ enum MealPhotoScanAnalysisService {
     OBLIGATOIRE :
     - 1 à 4 lignes ITEM_ (aliments visibles seulement)
     - SCORE honnête selon debloat (sel, sodium, lactose, ultra-transformés)
+    - Calibrage SCORE réaliste (0–100) :
+      · Pizza, burger, frites, nuggets, kebab, plat fast-food : 20–45
+      · Charcuterie, bacon, sauce industrielle, plat très salé/frit : 25–50
+      · Repas maison équilibré (protéine maigre + légumes) : 70–88
+      · Repas debloat idéal (peu de sel, K élevé, peu de lactose/ultra-transformé) : 85–95
     - Si aucun aliment visible : MEAL_NAME: Aucun repas détecté, SCORE: 0, ITEM_1: Photo sans aliment | — | Autre
 
     Réponds UNIQUEMENT avec ces labels (une ligne par label) :
@@ -203,7 +208,7 @@ enum MealPhotoScanAnalysisService {
         var text = raw
         text = text.replacingOccurrences(
             of: #":\s*0-100"#,
-            with: ": 75",
+            with: ": 50",
             options: .regularExpression
         )
         text = text.replacingOccurrences(
@@ -217,7 +222,7 @@ enum MealPhotoScanAnalysisService {
     /// Extrait des lignes ITEM / tirets si le modèle n'a pas suivi le format exact.
     private static func parseFromItemLines(in raw: String) -> MealSuggestionContent? {
         var name = ""
-        var score = 70
+        var score = 50
         var scoreSummary = ""
         var items: [MealSuggestionItem] = []
 
@@ -253,6 +258,7 @@ enum MealPhotoScanAnalysisService {
             name: name,
             mealType: "Repas",
             protocolScore: min(100, max(0, score)),
+            visionScore: min(100, max(0, score)),
             scoreSummary: scoreSummary,
             items: items,
             prepMinutes: 0,
@@ -316,10 +322,12 @@ enum MealPhotoScanAnalysisService {
         guard !items.isEmpty else { return nil }
 
         let protocolScore = intValue(object["protocolScore"]) ?? 50
+        let clamped = min(100, max(0, protocolScore))
         return MealSuggestionContent(
             name: name,
             mealType: stringValue(object["mealType"]) ?? "Repas",
-            protocolScore: min(100, max(0, protocolScore)),
+            protocolScore: clamped,
+            visionScore: clamped,
             scoreSummary: stringValue(object["scoreSummary"]) ?? "",
             items: items,
             prepMinutes: intValue(object["prepMinutes"]) ?? 0,
@@ -394,10 +402,11 @@ enum MealPhotoScanAnalysisService {
             )
             : optimized.scoreSummary
         fallback.protocolScore = min(100, scanned.protocolScore + 8)
+        fallback.visionScore = scanned.visionScore
         fallback.showsScore = true
         fallback.imageAssetName = nil
         fallback.tags = ["scan photo", "optimisé"]
-        return fallback
+        return MealNutritionCatalog.syncedScore(for: fallback)
     }
 
     private static func ingredientTokens(from meal: MealSuggestionContent) -> [String] {

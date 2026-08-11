@@ -66,8 +66,10 @@ class OnboardingCoordinator {
                 do {
                     try await ReferralService.shared.registerReferral(
                         referralCode: referralCode,
-                        referredUserId: userId
+                        referredUserId: userId,
+                        displayName: newProfile.firstName.isEmpty ? newProfile.username : newProfile.firstName
                     )
+                    ProcessReferralAttribution.clearPending()
                 } catch {
                     // Ne pas bloquer l'onboarding en cas d'erreur
                 }
@@ -161,6 +163,20 @@ class OnboardingCoordinator {
             // ✅ CRITIQUE: Logger AVANT sauvegarde
 
             try await profileService.saveProfile(currentProfile)
+
+            if let referralCode = viewModel.referralCode, !referralCode.isEmpty,
+               let userId = AuthUser.current?.uid {
+                do {
+                    try await ReferralService.shared.registerReferral(
+                        referralCode: referralCode,
+                        referredUserId: userId,
+                        displayName: currentProfile.firstName.isEmpty ? currentProfile.username : currentProfile.firstName
+                    )
+                    ProcessReferralAttribution.clearPending()
+                } catch {
+                    // Ne pas bloquer l'onboarding en cas d'erreur
+                }
+            }
 
             // ✅ CRITIQUE: Recharger le profil immédiatement après sauvegarde pour vérifier
             await profileService.loadProfile()

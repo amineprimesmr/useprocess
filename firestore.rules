@@ -1,11 +1,29 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /referralCodes/{code} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /referralInvites/{inviteId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      match /referralMeta/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      match /{path=**} {
+        allow read, write: if request.auth != null
+          && request.auth.uid == userId
+          && !(path.size() >= 1
+            && (path[0] == 'referralInvites' || path[0] == 'referralMeta'));
       }
     }
 

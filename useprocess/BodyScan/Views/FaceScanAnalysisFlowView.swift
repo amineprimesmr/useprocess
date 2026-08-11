@@ -239,11 +239,11 @@ struct FaceScanAnalysisFlowView: View {
     private var studioControlsAccessory: some View {
         if showsCreatorControls {
             VStack(spacing: 14) {
-                FaceScanStudioResultsLayoutPicker(layout: $creatorMode.scanResultsLayout)
-
                 FaceScanStudioQualitySlider(quality: $qualityDraft) { value in
                     creatorMode.resultQuality = value
                 }
+
+                FaceScanStudioResultsLayoutPicker(layout: $creatorMode.scanResultsLayout)
             }
             .padding(.top, 16)
             .padding(.horizontal, 16)

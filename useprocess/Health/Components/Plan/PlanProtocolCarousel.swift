@@ -183,6 +183,8 @@ struct PlanDayProtocolCarousel: View {
     var routineDayId: String? = nil
     var isRoutineItemCompleted: ((PlanProtocolCarouselItem) -> Bool)? = nil
     var onRoutineValidate: ((PlanProtocolCarouselItem) -> Void)? = nil
+    /// Contour tutoriel autour de toute la rangée de cartes (pas le viewport du scroll).
+    var highlightsItemStrip: Bool = false
 
     private var routineValidationEnabled: Bool {
         routineDayId != nil && onRoutineValidate != nil
@@ -233,29 +235,11 @@ struct PlanDayProtocolCarousel: View {
                 .frame(height: pairedRowEstimatedHeight)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: PlanProtocolCarouselLayout.spacing) {
-                        ForEach(items) { item in
-                            PlanProtocolCarouselCard(
-                                item: item,
-                                cardWidth: defaultCardSize.width,
-                                cardHeight: defaultCardSize.height,
-                                layoutStyle: .carousel,
-                                zoomNamespace: zoomNamespace,
-                                zoomTransitionID: zoomIDForItem?(item),
-                                onTap: onTap.map { handler in { handler(item) } },
-                                routineValidationEnabled: routineValidationEnabled,
-                                isRoutineCompleted: isRoutineItemCompleted?(item) ?? false,
-                                onRoutineValidate: onRoutineValidate.map { handler in { handler(item) } }
-                            )
-                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                                content
-                                    .scaleEffect(phase.isIdentity ? 1 : 0.92)
-                                    .opacity(phase.isIdentity ? 1 : 0.76)
-                            }
-                        }
+                    if highlightsItemStrip {
+                        protocolItemStrip
+                    } else {
+                        protocolCarouselRow
                     }
-                    .scrollTargetLayout()
-                    .padding(.vertical, 4)
                 }
                 .scrollTargetBehavior(.viewAligned)
                 .scrollClipDisabled()
@@ -263,6 +247,56 @@ struct PlanDayProtocolCarousel: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private var protocolCarouselRow: some View {
+        LazyHStack(spacing: PlanProtocolCarouselLayout.spacing) {
+            ForEach(items) { item in
+                protocolCard(for: item)
+            }
+        }
+        .scrollTargetLayout()
+        .padding(.vertical, 4)
+    }
+
+    private var protocolItemStrip: some View {
+        HStack(spacing: PlanProtocolCarouselLayout.spacing) {
+            ForEach(items) { item in
+                protocolCard(for: item)
+            }
+        }
+        .padding(2)
+        .overlay {
+            PlanHomeTutorialRotatingBorder(cornerRadius: PlanProtocolCarouselLayout.cornerRadius)
+        }
+        .scrollTargetLayout()
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func protocolCard(for item: PlanProtocolCarouselItem) -> some View {
+        let card = PlanProtocolCarouselCard(
+            item: item,
+            cardWidth: defaultCardSize.width,
+            cardHeight: defaultCardSize.height,
+            layoutStyle: .carousel,
+            zoomNamespace: zoomNamespace,
+            zoomTransitionID: zoomIDForItem?(item),
+            onTap: onTap.map { handler in { handler(item) } },
+            routineValidationEnabled: routineValidationEnabled,
+            isRoutineCompleted: isRoutineItemCompleted?(item) ?? false,
+            onRoutineValidate: onRoutineValidate.map { handler in { handler(item) } }
+        )
+
+        if highlightsItemStrip {
+            card
+        } else {
+            card.scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                content
+                    .scaleEffect(phase.isIdentity ? 1 : 0.92)
+                    .opacity(phase.isIdentity ? 1 : 0.76)
+            }
+        }
     }
 }
 

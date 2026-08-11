@@ -6,6 +6,7 @@ struct PlanFaceDaySection: View {
     let day: OriginProgramDay
 
     @Bindable private var planStore = WelcomePlanStore.shared
+    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @Environment(\.appTheme) private var theme
     @Namespace private var protocolZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
@@ -42,25 +43,7 @@ struct PlanFaceDaySection: View {
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
             } else {
-                PlanDayProtocolCarousel(
-                    items: items,
-                    zoomNamespace: protocolZoomNamespace,
-                    zoomIDForItem: { .protocolItem($0.id) },
-                    onTap: { selectedProtocolItem = $0 },
-                    routineDayId: isEditableToday ? day.id : nil,
-                    isRoutineItemCompleted: { item in
-                        planStore.isDailyRoutineItemCompleted(
-                            carouselItemId: item.id,
-                            dayId: day.id
-                        )
-                    },
-                    onRoutineValidate: { item in
-                        planStore.completeDailyRoutineItem(
-                            carouselItemId: item.id,
-                            dayId: day.id
-                        )
-                    }
-                )
+                protocolCarouselBody(items: items)
             }
         }
         .fullScreenCover(item: $selectedProtocolItem, onDismiss: {
@@ -69,20 +52,35 @@ struct PlanFaceDaySection: View {
                 sessionLaunch = pending
             }
         }) { item in
-            PlanProtocolItemDetailSheet(
-                item: item,
-                sessionActionTitle: isEditableToday
-                    ? AppCopy.t("Lancer cet exercice", en: "Start this exercise")
-                    : nil,
-                onOpenSession: isEditableToday
-                    ? {
-                        let step = FaceMorningRoutineCatalog.Step.from(carouselId: item.id)
-                        pendingSessionLaunch = LymphCircuitSessionLaunch(startAt: step)
-                        selectedProtocolItem = nil
-                    }
-                    : nil
-            )
-            .processZoomTransition(id: .protocolItem(item.id), namespace: protocolZoomNamespace)
+            if let step = FaceMorningRoutineCatalog.Step.from(carouselId: item.id) {
+                LymphCircuitExerciseDetailView(
+                    step: step,
+                    sessionActionTitle: isEditableToday
+                        ? AppCopy.t("Lancer cet exercice", en: "Start this exercise")
+                        : nil,
+                    onOpenSession: isEditableToday
+                        ? {
+                            pendingSessionLaunch = LymphCircuitSessionLaunch(startAt: step)
+                            selectedProtocolItem = nil
+                        }
+                        : nil
+                )
+            } else {
+                PlanProtocolItemDetailSheet(
+                    item: item,
+                    sessionActionTitle: isEditableToday
+                        ? AppCopy.t("Lancer cet exercice", en: "Start this exercise")
+                        : nil,
+                    onOpenSession: isEditableToday
+                        ? {
+                            let mapped = FaceMorningRoutineCatalog.Step.from(carouselId: item.id)
+                            pendingSessionLaunch = LymphCircuitSessionLaunch(startAt: mapped)
+                            selectedProtocolItem = nil
+                        }
+                        : nil
+                )
+                .processZoomTransition(id: .protocolItem(item.id), namespace: protocolZoomNamespace)
+            }
         }
         .fullScreenCover(item: $sessionLaunch) { launch in
             LymphCircuitSessionView(dayId: day.id, startAt: launch.startAt)
@@ -121,6 +119,52 @@ struct PlanFaceDaySection: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(AppCopy.t("Lancer le circuit lymphatique", en: "Start lymphatic circuit"))
+    }
+
+    @ViewBuilder
+    private func protocolCarouselBody(items: [PlanProtocolCarouselItem]) -> some View {
+        if tutorialStore.isFocused(.faceRoutine) {
+            VStack(alignment: .leading, spacing: 22) {
+                faceRoutineCarousel(items: items, highlightsItemStrip: true)
+
+                PlanHomeTutorialCaption(step: tutorialStore.currentStep)
+                PlanHomeTutorialInlineFooter(
+                    onAdvance: { tutorialStore.advance() },
+                    stepIndex: tutorialStore.currentStepIndex,
+                    stepCount: tutorialStore.steps.count
+                )
+            }
+            .id(PlanHomeTutorialFocus.faceRoutine.scrollAnchorID)
+        } else {
+            faceRoutineCarousel(items: items, highlightsItemStrip: false)
+                .opacity(tutorialStore.isRevealed(.faceRoutine) ? 0.88 : 1)
+        }
+    }
+
+    private func faceRoutineCarousel(
+        items: [PlanProtocolCarouselItem],
+        highlightsItemStrip: Bool
+    ) -> some View {
+        PlanDayProtocolCarousel(
+            items: items,
+            zoomNamespace: protocolZoomNamespace,
+            zoomIDForItem: { .protocolItem($0.id) },
+            onTap: { selectedProtocolItem = $0 },
+            routineDayId: isEditableToday ? day.id : nil,
+            isRoutineItemCompleted: { item in
+                planStore.isDailyRoutineItemCompleted(
+                    carouselItemId: item.id,
+                    dayId: day.id
+                )
+            },
+            onRoutineValidate: { item in
+                planStore.completeDailyRoutineItem(
+                    carouselItemId: item.id,
+                    dayId: day.id
+                )
+            },
+            highlightsItemStrip: highlightsItemStrip
+        )
     }
 }
 

@@ -16,7 +16,7 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .weight: return AppCopy.t("Poids", en: "Weight")
-        case .cortisol: return "Cortisol"
+        case .cortisol: return AppCopy.tSync("Cortisol", en: "Cortisol")
         case .recovery: return AppCopy.t("Cernes et fatigue", en: "Dark Circles & Fatigue")
         case .retention: return AppCopy.t("Rétention", en: "Water Retention")
         case .definition: return AppCopy.t("Mâchoire & pommettes", en: "Jawline & Cheekbones")

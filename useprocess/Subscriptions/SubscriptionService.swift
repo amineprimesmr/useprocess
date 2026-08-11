@@ -326,6 +326,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             if userCancelled { throw SubscriptionError.userCancelled }
             applyCustomerInfo(customerInfo)
             await scheduleTrialReminderIfNeeded(from: customerInfo)
+            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
         } catch let error as ErrorCode where error == .purchaseCancelledError {
             throw SubscriptionError.userCancelled
         } catch let error as SubscriptionError {
@@ -424,6 +425,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         let info = try await Purchases.shared.restorePurchases()
         applyCustomerInfo(info)
         guard subscriptionStatus.isActive else { throw SubscriptionError.noActiveSubscription }
+        await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
     }
 
     func checkSubscriptionStatus() async {
@@ -807,6 +809,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             let transaction = try verified(verification)
             await transaction.finish()
             await checkStoreKitSubscriptionStatus()
+            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
         case .userCancelled:
             throw SubscriptionError.userCancelled
         case .pending:

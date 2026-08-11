@@ -2,7 +2,18 @@ import { runLiquidGlassMenuCleanupLanding } from "../features/kube-liquid-glass/
 
 export function getRoute() {
   const path = window.location.pathname.replace(/\/$/, "");
-  if (path === "/get" || path === "/telecharger") return { type: "get-app" };
+  const host = window.location.hostname.toLowerCase();
+  const params = new URLSearchParams(window.location.search || "");
+
+  const hasReferral = Boolean(params.get("ref") || params.get("code"));
+  const wantsGetApp = params.get("get") === "1" || hasReferral;
+
+  if (host === "join.useprocess.xyz") {
+    return { type: "get-app" };
+  }
+  if (path === "/get" || path === "/telecharger" || /^\/join\/[^/]+$/i.test(path) || wantsGetApp) {
+    return { type: "get-app" };
+  }
   if (path === "") return { type: "landing" };
   return { type: "404" };
 }

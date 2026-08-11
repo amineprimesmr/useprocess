@@ -56,6 +56,8 @@ struct FaceScanCaptureScreen: View {
     @State private var showGalleryPicker = false
     @State private var isImportingMedia = false
     @State private var importErrorMessage: String?
+    /// Aperçu immédiat pendant l’import — même language visuel que l’écran analyse.
+    @State private var importingPreviewImage: UIImage?
     @State private var hasSubmittedCapture = false
     @State private var captureSessionPaused = false
 
@@ -240,15 +242,7 @@ struct FaceScanCaptureScreen: View {
         }
         .overlay {
             if isImportingMedia {
-                Color.black.opacity(0.55).ignoresSafeArea()
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .tint(.white)
-                        .controlSize(.large)
-                    Text(AppCopy.t("Analyse du média…", en: "Analyzing media…"))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                }
+                mediaImportAnalysisOverlay
             }
         }
     }
@@ -824,6 +818,56 @@ struct FaceScanCaptureScreen: View {
         }
     }
 
+    /// Overlay import — même hero circulaire + balayage que l’écran d’analyse.
+    private var mediaImportAnalysisOverlay: some View {
+        ZStack {
+            FaceScanWhoopPalette.canvas.ignoresSafeArea()
+
+            VStack(spacing: 28) {
+                Text(AppCopy.t("ANALYSE DU SCAN", en: "SCAN ANALYSIS"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(FaceScanWhoopPalette.label)
+                    .tracking(0.6)
+
+                ZStack {
+                    Circle()
+                        .fill(Color.black.opacity(0.35))
+                        .frame(width: 240, height: 240)
+                        .overlay {
+                            Group {
+                                if let importingPreviewImage {
+                                    Image(uiImage: importingPreviewImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                } else {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .controlSize(.large)
+                                }
+                            }
+                            .frame(width: 240, height: 240)
+                            .clipShape(Circle())
+                        }
+                        .overlay {
+                            FaceScanAnalysisSweepOverlay(diameter: 240)
+                                .frame(width: 240, height: 240)
+                                .clipShape(Circle())
+                        }
+                        .overlay {
+                            Circle()
+                                .strokeBorder(Color.white.opacity(0.16), lineWidth: 1.5)
+                        }
+                }
+
+                Text(AppCopy.t("Analyse du média…", en: "Analyzing media…"))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+            }
+            .padding(.horizontal, 24)
+        }
+        .transition(.opacity)
+    }
+
     /// Capture live (mesh 3D) ou import galerie (photo/vidéo + markers, sans mesh).
     private var hasReadyCapture: Bool {
         guard let payload = capturedPayload else { return false }
@@ -941,29 +985,44 @@ struct FaceScanCaptureScreen: View {
     }
 
     private func importImage(_ image: UIImage) {
-        isImportingMedia = true
+        importingPreviewImage = image
+        withAnimation(.easeInOut(duration: 0.22)) {
+            isImportingMedia = true
+        }
         Task { @MainActor in
-            defer { isImportingMedia = false }
             do {
                 let result = try await FaceScanMediaImport.process(image: image)
+                // Garde l’overlay analyse jusqu’à l’écran suivant (évite un flash caméra).
                 submitImportedMedia(result.0, markers: result.1)
             } catch {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    isImportingMedia = false
+                }
+                importingPreviewImage = nil
                 importErrorMessage = error.localizedDescription
             }
         }
     }
 
     private func importVideo(from url: URL) {
-        isImportingMedia = true
+        importingPreviewImage = nil
+        withAnimation(.easeInOut(duration: 0.22)) {
+            isImportingMedia = true
+        }
         Task { @MainActor in
             defer {
-                isImportingMedia = false
                 try? FileManager.default.removeItem(at: url)
             }
             do {
                 let result = try await FaceScanMediaImport.process(videoSourceURL: url)
+                importingPreviewImage = result.0.snapshot
+                try? await Task.sleep(for: .milliseconds(420))
                 submitImportedMedia(result.0, markers: result.1)
             } catch {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    isImportingMedia = false
+                }
+                importingPreviewImage = nil
                 importErrorMessage = error.localizedDescription
             }
         }
@@ -1005,6 +1064,8 @@ struct FaceScanCaptureScreen: View {
     private func resetCaptureState(instruction: String) {
         hasSubmittedCapture = false
         captureSessionPaused = false
+        isImportingMedia = false
+        importingPreviewImage = nil
         scanProgress = 0
         ringProgress = 0
         activeTickSectors = []

@@ -184,11 +184,11 @@ struct PaywallSpinWinbackView: View {
         }
         .animation(.spring(response: 0.48, dampingFraction: 0.86), value: showSpinAgainSheet)
         .animation(.spring(response: 0.52, dampingFraction: 0.86), value: showOfferCard)
-        .alert("Achat", isPresented: Binding(
+        .alert(AppCopy.t("Achat", en: "Purchase"), isPresented: Binding(
             get: { purchaseError != nil },
             set: { if !$0 { purchaseError = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(AppCopy.t("OK", en: "OK"), role: .cancel) {}
         } message: {
             if let purchaseError { Text(purchaseError) }
         }

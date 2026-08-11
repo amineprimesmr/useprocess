@@ -37,9 +37,12 @@ enum OriginPlanDailyTaskCatalog {
     let tasks: [OriginPlanTask] = [
       journalTask(
         id: "\(dayId).posture.circuit",
-        title: "Cardio et Circuit",
-        detail: "\(duration) min — \(blocks.prefix(2).joined(separator: " · "))",
-        pillar: "Circuit",
+        title: AppCopy.tSync("Cardio et Circuit", en: "Cardio & Circuit"),
+        detail: AppCopy.tSync(
+          "\(duration) min — \(blocks.prefix(2).joined(separator: " · "))",
+          en: "\(duration) min — \(blocks.prefix(2).joined(separator: " · "))"
+        ),
+        pillar: AppCopy.tSync("Circuit", en: "Circuit"),
         minutes: duration
       )
     ]
@@ -60,9 +63,12 @@ enum OriginPlanDailyTaskCatalog {
       tasks.append(
         journalTask(
           id: "\(dayId).evening.screen",
-          title: "Couvre-feu écrans",
-          detail: "\(ProcessDailyTargets.screenCurfewMinutes) min avant coucher — mode avion",
-          pillar: "Sommeil"
+          title: AppCopy.tSync("Couvre-feu écrans", en: "Screen curfew"),
+          detail: AppCopy.tSync(
+            "\(ProcessDailyTargets.screenCurfewMinutes) min avant coucher — mode avion",
+            en: "\(ProcessDailyTargets.screenCurfewMinutes) min before bed — airplane mode"
+          ),
+          pillar: AppCopy.tSync("Sommeil", en: "Sleep")
         )
       )
     }
@@ -72,9 +78,12 @@ enum OriginPlanDailyTaskCatalog {
       tasks.append(
         journalTask(
           id: "\(dayId).evening.alcohol",
-          title: "Alcool",
-          detail: "Soir sans alcool — debloat visage garanti",
-          pillar: "Nutrition"
+          title: AppCopy.tSync("Alcool", en: "Alcohol"),
+          detail: AppCopy.tSync(
+            "Soir sans alcool — debloat visage garanti",
+            en: "Alcohol-free evening — guaranteed face debloat"
+          ),
+          pillar: AppCopy.tSync("Nutrition", en: "Nutrition")
         )
       )
     }

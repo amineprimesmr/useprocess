@@ -149,6 +149,8 @@ struct MealSuggestionContent: Codable, Equatable {
     var name: String
     var mealType: String
     var protocolScore: Int
+    /// Score brut renvoyé par la vision IA au scan — conservé pour calibrer le score nutritionnel.
+    var visionScore: Int? = nil
     var scoreSummary: String
     var items: [MealSuggestionItem]
     var prepMinutes: Int

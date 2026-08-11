@@ -12,18 +12,67 @@
 		67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C72FD90001006422D /* FirebaseFirestore */; };
 		67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = RC1A2B3C52FD90001006422D /* RevenueCat */; };
 		67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C82FD90001006422D /* FirebaseAppCheck */; };
+		HY1A2B3C12FD90001006422D /* ProcessWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = HY1A2B3C02FD90001006422D /* ProcessWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LT1A2B3C62FD90001006422D /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = LT1A2B3C52FD90001006422D /* Lottie */; };
 		PH1A2B3C62FD90001006422D /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = PH1A2B3C52FD90001006422D /* PostHog */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		HY1A2B3C22FD90001006422D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 67E2AE292FDD89E60016422D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = HY1A2B3C32FD90001006422D;
+			remoteInfo = ProcessWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		HY1A2B3C42FD90001006422D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				HY1A2B3C12FD90001006422D /* ProcessWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		67E2AE312FDD89E60016422D /* useprocess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = useprocess.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		HY1A2B3C02FD90001006422D /* ProcessWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ProcessWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		HY1A2B3C52FD90001006422D /* Exceptions for "ProcessWidgets" folder in "ProcessWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = HY1A2B3C32FD90001006422D /* ProcessWidgets */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		67E2AE332FDD89E60016422D /* useprocess */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = useprocess;
+			sourceTree = "<group>";
+		};
+		HY1A2B3C62FD90001006422D /* ProcessWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				HY1A2B3C52FD90001006422D /* Exceptions for "ProcessWidgets" folder in "ProcessWidgets" target */,
+			);
+			path = ProcessWidgets;
+			sourceTree = "<group>";
+		};
+		HY1A2B3C72FD90001006422D /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -43,6 +92,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		HY1A2B3C82FD90001006422D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -50,6 +106,8 @@
 			isa = PBXGroup;
 			children = (
 				67E2AE332FDD89E60016422D /* useprocess */,
+				HY1A2B3C72FD90001006422D /* Shared */,
+				HY1A2B3C62FD90001006422D /* ProcessWidgets */,
 				67E2AE322FDD89E60016422D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -58,6 +116,7 @@
 			isa = PBXGroup;
 			children = (
 				67E2AE312FDD89E60016422D /* useprocess.app */,
+				HY1A2B3C02FD90001006422D /* ProcessWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -72,13 +131,16 @@
 				67E2AE2D2FDD89E60016422D /* Sources */,
 				67E2AE2E2FDD89E60016422D /* Frameworks */,
 				67E2AE2F2FDD89E60016422D /* Resources */,
+				HY1A2B3C42FD90001006422D /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				HY1A2B3C92FD90001006422D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				67E2AE332FDD89E60016422D /* useprocess */,
+				HY1A2B3C72FD90001006422D /* Shared */,
 			);
 			name = useprocess;
 			packageProductDependencies = (
@@ -94,6 +156,29 @@
 			productReference = 67E2AE312FDD89E60016422D /* useprocess.app */;
 			productType = "com.apple.product-type.application";
 		};
+		HY1A2B3C32FD90001006422D /* ProcessWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = HY1A2B3CA2FD90001006422D /* Build configuration list for PBXNativeTarget "ProcessWidgets" */;
+			buildPhases = (
+				HY1A2B3CB2FD90001006422D /* Sources */,
+				HY1A2B3C82FD90001006422D /* Frameworks */,
+				HY1A2B3CC2FD90001006422D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				HY1A2B3C62FD90001006422D /* ProcessWidgets */,
+				HY1A2B3C72FD90001006422D /* Shared */,
+			);
+			name = ProcessWidgets;
+			packageProductDependencies = (
+			);
+			productName = ProcessWidgets;
+			productReference = HY1A2B3C02FD90001006422D /* ProcessWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -105,6 +190,9 @@
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					67E2AE302FDD89E60016422D = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+					HY1A2B3C32FD90001006422D = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
 				};
@@ -131,12 +219,20 @@
 			projectRoot = "";
 			targets = (
 				67E2AE302FDD89E60016422D /* useprocess */,
+				HY1A2B3C32FD90001006422D /* ProcessWidgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		67E2AE2F2FDD89E60016422D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		HY1A2B3CC2FD90001006422D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -153,7 +249,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		HY1A2B3CB2FD90001006422D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		HY1A2B3C92FD90001006422D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = HY1A2B3C32FD90001006422D /* ProcessWidgets */;
+			targetProxy = HY1A2B3C22FD90001006422D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		67E2AE3F2FDD89E70016422D /* Debug */ = {
@@ -301,6 +412,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Physical activity data helps adapt your program.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -355,6 +467,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you record voice messages converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Physical activity data helps adapt your program.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Dictation turns your voice into on-device text to chat with the coach. The text may then be sent to Anthropic (Claude) if you allow it.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -384,6 +497,76 @@
 			};
 			name = Release;
 		};
+		HY1A2B3CD2FD90001006422D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ProcessWidgets/ProcessWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 29;
+				DEVELOPMENT_TEAM = F2CJGJ69XU;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ProcessWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Process;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.05;
+				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess.ProcessWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		HY1A2B3CE2FD90001006422D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ProcessWidgets/ProcessWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 29;
+				DEVELOPMENT_TEAM = F2CJGJ69XU;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ProcessWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Process;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.05;
+				PRODUCT_BUNDLE_IDENTIFIER = com.useprocess.ProcessWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -401,6 +584,15 @@
 			buildConfigurations = (
 				67E2AE422FDD89E70016422D /* Debug */,
 				67E2AE432FDD89E70016422D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		HY1A2B3CA2FD90001006422D /* Build configuration list for PBXNativeTarget "ProcessWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				HY1A2B3CD2FD90001006422D /* Debug */,
+				HY1A2B3CE2FD90001006422D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

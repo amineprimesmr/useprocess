@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["F2CJGJ69XU.com.useprocess"],
+        "paths": ["/join/*", "/get", "/get/*", "/telecharger", "/telecharger/*", "/*"]
+      }
+    ]
+  }
+}

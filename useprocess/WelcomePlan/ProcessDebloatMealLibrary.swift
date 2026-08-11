@@ -175,11 +175,11 @@ enum ProcessDebloatMealLibrary {
     /// Catalogue complet — toutes les sections, indépendamment du plan (OMAD, 2MAD, etc.).
     static func fullCatalogSections() -> [CatalogSection] {
         [
-            CatalogSection(sectionKey: "breakfast", slot: .breakfast, title: "Petit-déjeuner", meals: breakfastMeals),
-            CatalogSection(sectionKey: "lunch", slot: .lunch, title: "Déjeuner", meals: lunchMeals),
-            CatalogSection(sectionKey: "dinner", slot: .dinner, title: "Dîner", meals: dinnerMeals),
-            CatalogSection(sectionKey: "omad", slot: .lunch, title: "Repas OMAD", meals: omadMeals),
-            CatalogSection(sectionKey: "snack", slot: .snack, title: "Collation", meals: snackMeals)
+            CatalogSection(sectionKey: "breakfast", slot: .breakfast, title: AppCopy.tSync("Petit-déjeuner", en: "Breakfast"), meals: breakfastMeals),
+            CatalogSection(sectionKey: "lunch", slot: .lunch, title: AppCopy.tSync("Déjeuner", en: "Lunch"), meals: lunchMeals),
+            CatalogSection(sectionKey: "dinner", slot: .dinner, title: AppCopy.tSync("Dîner", en: "Dinner"), meals: dinnerMeals),
+            CatalogSection(sectionKey: "omad", slot: .lunch, title: AppCopy.tSync("Repas OMAD", en: "OMAD meal"), meals: omadMeals),
+            CatalogSection(sectionKey: "snack", slot: .snack, title: AppCopy.tSync("Collation", en: "Snack"), meals: snackMeals)
         ]
         .filter { !$0.meals.isEmpty }
     }
@@ -249,9 +249,14 @@ enum ProcessDebloatMealLibrary {
 
     private static func catalogSectionTitle(for slot: MealTimeSlot, planType: NutritionPlanType) -> String {
         if planType == .omad, slot == .lunch {
-            return "Repas OMAD"
+            return AppCopy.tSync("Repas OMAD", en: "OMAD meal")
         }
-        return slot.rawValue
+        switch slot {
+        case .breakfast: return AppCopy.tSync("Petit-déjeuner", en: "Breakfast")
+        case .lunch: return AppCopy.tSync("Déjeuner", en: "Lunch")
+        case .dinner: return AppCopy.tSync("Dîner", en: "Dinner")
+        case .snack: return AppCopy.tSync("Collation", en: "Snack")
+        }
     }
 
     /// Sections catalogue debloat — petit-déj, midi, dîner, OMAD, collation.

@@ -3,7 +3,6 @@ import SwiftUI
 /// Hub réglages modal (depuis Accueil) — même contenu que l’onglet, avec en-tête fermer.
 struct EditProfileView: View {
     var showsDismissHeader: Bool = true
-    var onLogout: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appTheme) private var theme
@@ -30,7 +29,7 @@ struct EditProfileView: View {
         VStack(spacing: 0) {
             if showsDismissHeader {
                 AccountDetailsGlassHeader(
-                    title: AppCopy.settings,
+                    title: nil,
                     onBack: { dismiss() },
                     showsSave: false
                 )
@@ -38,25 +37,14 @@ struct EditProfileView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    if !showsDismissHeader {
-                        Text(AppCopy.settings)
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(theme.primaryText)
-                            .padding(.top, 10)
-                    }
-
                     identityBlock
 
                     ProcessCreatorStudioHubLink()
 
                     ProfileSettingsHubLinksSection()
-
-                    AccountDetailsActionButton(title: AppCopy.t("Se déconnecter", en: "Log Out")) {
-                        onLogout()
-                    }
-                    .padding(.top, 8)
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                .padding(.top, showsDismissHeader ? 0 : 16)
                 .padding(.bottom, 32)
             }
             .scrollIndicators(.hidden)
@@ -86,15 +74,10 @@ struct EditProfileView: View {
 
     private var identityBlock: some View {
         VStack(spacing: 12) {
-            ProfileFirstScanAvatar(
+            ProfileScanHistoryCarousel(
                 size: 132,
                 isPlaybackActive: true,
                 initials: initials
-            )
-            .shadow(
-                color: Color.black.opacity(theme.isDark ? 0.28 : 0.08),
-                radius: 14,
-                y: 8
             )
 
             Text(firstName)

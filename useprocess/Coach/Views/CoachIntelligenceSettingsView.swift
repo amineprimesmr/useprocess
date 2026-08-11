@@ -41,7 +41,7 @@ struct CoachIntelligenceSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Process Intelligence")
+                    Text(AppCopy.t("Intelligence Process", en: "Process Intelligence"))
                         .font(.headline.weight(.semibold))
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -106,7 +106,7 @@ struct CoachIntelligenceSettingsView: View {
                 .padding(.top, 8)
 
             VStack(spacing: 8) {
-                Text("Process Intelligence")
+                Text(AppCopy.t("Intelligence Process", en: "Process Intelligence"))
                     .font(.title3.weight(.bold))
                     .foregroundStyle(theme.primaryText)
 
@@ -119,7 +119,7 @@ struct CoachIntelligenceSettingsView: View {
 
             VStack(spacing: 0) {
                 settingsToggleRow(
-                    title: "Process Intelligence",
+                    title: AppCopy.t("Intelligence Process", en: "Process Intelligence"),
                     subtitle: nil,
                     isOn: $store.isEnabled
                 )
