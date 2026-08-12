@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TikTok OAuth — Process</title>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+      background: #0a0a0b; color: #f5f5f5; padding: 24px;
+    }
+    .card {
+      max-width: 420px; width: 100%;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 16px; padding: 28px 24px;
+      background: rgba(255,255,255,.04);
+    }
+    h1 { font-size: 1.15rem; margin: 0 0 8px; font-weight: 650; }
+    p { margin: 0 0 14px; line-height: 1.45; color: rgba(255,255,255,.72); font-size: .95rem; }
+    code, .code {
+      display: block; word-break: break-all; font-size: .78rem;
+      background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px; padding: 12px; color: #fff; margin: 10px 0 14px;
+    }
+    button {
+      appearance: none; border: 0; border-radius: 999px; padding: 12px 18px;
+      font-weight: 600; cursor: pointer; background: #fe2c55; color: #fff; width: 100%;
+    }
+    .ok { color: #7dffa4; }
+    .err { color: #ff8b8b; }
+    .muted { font-size: .82rem; color: rgba(255,255,255,.5); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1 id="title">Connexion TikTok…</h1>
+    <p id="msg">Redirection vers l’outil Process sur ton Mac.</p>
+    <div id="extra" hidden>
+      <p class="muted">Si rien ne se passe, lance <code style="display:inline;padding:2px 6px;border-radius:6px;">python3 scripts/tiktok/oauth.py --login</code> puis colle le code :</p>
+      <div class="code" id="codeBox"></div>
+      <button type="button" id="copyBtn">Copier le code</button>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get("code");
+      var err = params.get("error") || params.get("error_description");
+      var title = document.getElementById("title");
+      var msg = document.getElementById("msg");
+      var extra = document.getElementById("extra");
+      var codeBox = document.getElementById("codeBox");
+      var copyBtn = document.getElementById("copyBtn");
+
+      if (err) {
+        title.textContent = "Échec OAuth TikTok";
+        title.className = "err";
+        msg.textContent = err;
+        return;
+      }
+
+      if (!code) {
+        title.textContent = "Callback TikTok Process";
+        msg.textContent = "Cette page reçoit le retour OAuth TikTok (useprocess.xyz). Lance oauth.py --login depuis process-tiktok.";
+        return;
+      }
+
+      var bridge = "http://127.0.0.1:8787/callback" + window.location.search;
+
+      // Hand off to the local Process poster (keeps client_secret on the Mac).
+      window.location.replace(bridge);
+
+      // Fallback UI if local bridge is not running.
+      setTimeout(function () {
+        title.textContent = "Presque — bridge local";
+        title.className = "";
+        msg.innerHTML = "TikTok a bien redirigé sur <strong>useprocess.xyz</strong>. Lance le login local pour finir :";
+        extra.hidden = false;
+        codeBox.textContent = code;
+      }, 1200);
+
+      copyBtn.addEventListener("click", function () {
+        navigator.clipboard.writeText(code).then(function () {
+          copyBtn.textContent = "Copié";
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

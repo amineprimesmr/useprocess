@@ -21,7 +21,7 @@ function spaFallback() {
         if (path.startsWith("/src/") || path.startsWith("/@") || path.startsWith("/node_modules") || path.startsWith("/assets/")) {
           return next();
         }
-        if (["/cgu", "/confidentialite", "/mentions-legales", "/support", "/sources-sante"].some((p) => path === p || path.startsWith(p + "/"))) {
+        if (["/cgu", "/confidentialite", "/mentions-legales", "/support", "/sources-sante", "/tiktok"].some((p) => path === p || path.startsWith(p + "/"))) {
           return next();
         }
         try {
