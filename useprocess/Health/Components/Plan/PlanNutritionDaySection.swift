@@ -154,9 +154,11 @@ struct PlanNutritionDaySection: View {
         VStack(alignment: .leading, spacing: 6) {
             if tutorialStore.showsNutritionSectionTitle {
                 headerRow
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
             nutritionCarouselBody
         }
+        .animation(.spring(response: 0.52, dampingFraction: 0.88), value: tutorialStore.currentStepIndex)
         .task(id: day.id) {
             PlanDayMealsProvider.ensureDefaultDrafts(plan: livePlan, day: day, store: store)
             reloadMealEntries()
@@ -179,9 +181,16 @@ struct PlanNutritionDaySection: View {
             }
         }
         .onChange(of: tutorialStore.currentStepIndex) { _, _ in
-            guard tutorialStore.isActive, tutorialStore.currentStep == .nutrition else { return }
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) {
-                scrollPosition = .hydration
+            guard tutorialStore.isActive else { return }
+            withAnimation(.spring(response: 0.52, dampingFraction: 0.88)) {
+                switch tutorialStore.currentStep {
+                case .hydration:
+                    scrollPosition = .hydration
+                case .nutrition:
+                    scrollPosition = .meal(focusedMealSlot)
+                default:
+                    break
+                }
             }
         }
         .onChange(of: store.plan?.progress.draftMealsBySlot[day.id]) { _, _ in
@@ -230,18 +239,15 @@ struct PlanNutritionDaySection: View {
                 hydrationCard
             }
             .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
+            .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
         } else if tutorialStore.isFocused(.meals) {
-            VStack(alignment: .leading, spacing: 22) {
+            PlanHomeTutorialFocusChrome(
+                focus: .meals,
+                cornerRadius: PlanMealCarouselLayout.cornerRadius
+            ) {
                 mealCarousel(displayMode: .tutorialMealsFocus)
-
-                PlanHomeTutorialCaption(step: tutorialStore.currentStep)
-                PlanHomeTutorialInlineFooter(
-                    onAdvance: { tutorialStore.advance() },
-                    stepIndex: tutorialStore.currentStepIndex,
-                    stepCount: tutorialStore.steps.count
-                )
             }
-            .id(PlanHomeTutorialFocus.meals.scrollAnchorID)
+            .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
         } else {
             mealCarousel(displayMode: .standard)
                 .opacity(tutorialStore.isRevealed(.hydration) || tutorialStore.isRevealed(.meals) ? 0.88 : 1)
@@ -335,7 +341,7 @@ private struct PlanMealCoverFlowCarousel: View {
         }
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $scrollPosition, anchor: .center)
-        .frame(height: PlanMealCarouselLayout.cardHeight + 8)
+        .frame(height: PlanMealCarouselLayout.cardHeight + 16)
     }
 
     private var carouselContent: some View {
@@ -353,13 +359,17 @@ private struct PlanMealCoverFlowCarousel: View {
             }
 
             if showsMealCards {
-                if highlightsMealStrip {
-                    mealCardsStrip
-                } else {
-                    mealCardsRow
+                Group {
+                    if highlightsMealStrip {
+                        mealCardsStrip
+                    } else {
+                        mealCardsRow
+                    }
                 }
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
             }
         }
+        .animation(.spring(response: 0.52, dampingFraction: 0.88), value: showsMealCards)
         .scrollTargetLayout()
         .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
         .padding(.vertical, 4)
@@ -405,11 +415,6 @@ private struct PlanMealCoverFlowCarousel: View {
             mealCardsRow
         }
         .padding(2)
-        .overlay {
-            if highlightsMealStrip {
-                PlanHomeTutorialRotatingBorder(cornerRadius: PlanMealCarouselLayout.cornerRadius)
-            }
-        }
     }
 }
 
@@ -426,8 +431,13 @@ private struct PlanHydrationCarouselCard: View {
     @Bindable private var timerStore = ProcessHydrationTimerStore.shared
     @Bindable private var sipCelebration = ProcessHydrationSipCelebrationCoordinator.shared
     @State private var animatedFill: CGFloat = 0.08
+    @State private var bottleCelebrationScale: CGFloat = 1
+    @State private var plusButtonScale: CGFloat = 1
+    @State private var pourFlashOpacity: Double = 0
+    @State private var pendingPourFromMilliliters: Int?
     @State private var showHydrationTimer = false
     @State private var celebrationTask: Task<Void, Never>?
+    @State private var goalReachedHapticTask: Task<Void, Never>?
 
     private var healthKitMilliliters: Int {
         Int((healthKitWaterLiters * 1000).rounded())
@@ -449,59 +459,47 @@ private struct PlanHydrationCarouselCard: View {
         return max(0.08, min(1, CGFloat(effectiveMilliliters) / CGFloat(targetMilliliters)))
     }
 
-    private var litersLabel: String {
-        "\(formatLiters(effectiveMilliliters)) / \(formatLiters(targetMilliliters)) L"
+    private var goalWatermarkLabel: String {
+        if targetMilliliters >= 1000, targetMilliliters.isMultiple(of: 1000) {
+            return "\(targetMilliliters / 1000)L"
+        }
+        return "\(formatLiters(targetMilliliters))L"
+    }
+
+    private var accessibilityHydrationLabel: String {
+        AppCopy.t(
+            "Hydratation \(formatLiters(effectiveMilliliters)) sur \(formatLiters(targetMilliliters)) litres",
+            en: "Hydration \(formatLiters(effectiveMilliliters)) of \(formatLiters(targetMilliliters)) liters"
+        )
     }
 
     private var canRemoveWater: Bool { effectiveMilliliters > 0 }
 
-    private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
+    private var bottleSquareSide: CGFloat { 272 }
+    private var bottleCanvasHeight: CGFloat { bottleSquareSide }
+    private var bottleTrimmedWidth: CGFloat {
+        bottleSquareSide * ProcessHydrationBottleMetrics.contentWidthFraction
     }
+    private var bottleLeadingPadding: CGFloat { 26 }
+    private var bottleTrailingPadding: CGFloat { 4 }
+    private var goalWatermarkFontSize: CGFloat { 52 }
+    private var addButtonSize: CGFloat { 36 }
+    private var addButtonIconSize: CGFloat { 14 }
+    private var addButtonTopOffset: CGFloat {
+        bottleCanvasHeight * ProcessHydrationBottleMetrics.bodyMinY - 4
+    }
+    private var addButtonSpacing: CGFloat { 8 }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            cardBackground
-                .onTapGesture(perform: openTimer)
+        HStack(alignment: .top, spacing: addButtonSpacing) {
+            bottleStack
 
-            amountLabelLayer
-                .allowsHitTesting(false)
-
-            waterLayer
-                .allowsHitTesting(false)
-
-            VStack {
-                HStack {
-                    if timerStore.isRunning {
-                        timerRunningBadge
-                            .padding(.top, 14)
-                            .padding(.leading, 14)
-                    }
-                    Spacer()
-                    addButton
-                        .padding(.top, 14)
-                        .padding(.trailing, 14)
-                }
-                Spacer()
-            }
+            addButton
+                .padding(.top, addButtonTopOffset)
         }
-        .frame(
-            width: PlanMealCarouselLayout.cardWidth,
-            height: PlanMealCarouselLayout.cardHeight
-        )
-        // Glass non interactif : un appui ne doit ni compresser ni animer la surface d’eau.
-        .processGlassEffect(in: cardShape, interactive: false)
-        .clipShape(cardShape)
-        .processHomeGlassCardShadow(isDark: theme.isDark)
-        .contentShape(cardShape)
-        .contextMenu {
-            hydrationAdjustMenu
-            Button {
-                openTimer()
-            } label: {
-                Label(AppCopy.t("Ouvrir le timer", en: "Open timer"), systemImage: "timer")
-            }
-        }
+        .padding(.leading, bottleLeadingPadding)
+        .padding(.trailing, bottleTrailingPadding)
+        .frame(height: bottleCanvasHeight)
         .fullScreenCover(isPresented: $showHydrationTimer) {
             ProcessHydrationTimerView(
                 dayId: dayId,
@@ -516,11 +514,22 @@ private struct PlanHydrationCarouselCard: View {
                 animatedFill = targetFill
             }
         }
-        .onChange(of: effectiveMilliliters) { _, _ in
+        .onChange(of: effectiveMilliliters) { oldValue, newValue in
             guard sipCelebration.peekFromMilliliters() == nil else { return }
-            withAnimation(.easeOut(duration: 0.95)) {
-                animatedFill = targetFill
+
+            if let pourFrom = pendingPourFromMilliliters {
+                pendingPourFromMilliliters = nil
+                runHydrationPourCelebration(fromMilliliters: pourFrom, toMilliliters: newValue)
+            } else if newValue > oldValue {
+                runHydrationPourCelebration(
+                    fromMilliliters: oldValue,
+                    toMilliliters: newValue,
+                    playFeedback: false
+                )
+            } else {
+                animateFill(to: targetFill, celebrate: false)
             }
+
             Task { await timerStore.syncLiveActivityHydration() }
         }
         .onChange(of: sipCelebration.requestID) { _, requestID in
@@ -529,13 +538,90 @@ private struct PlanHydrationCarouselCard: View {
         }
         .onDisappear {
             celebrationTask?.cancel()
+            goalReachedHapticTask?.cancel()
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(AppCopy.t("Hydratation \(litersLabel)", en: "Hydration \(litersLabel)"))
+        .accessibilityLabel(accessibilityHydrationLabel)
         .accessibilityHint(AppCopy.t(
             "Toucher pour ouvrir le timer. Appui long pour ajuster le niveau d'eau",
             en: "Tap to open the timer. Long press to adjust water level"
         ))
+    }
+
+    private var pourFlashBodyWidth: CGFloat {
+        bottleSquareSide * (ProcessHydrationBottleMetrics.bodyMaxX - ProcessHydrationBottleMetrics.bodyMinX)
+    }
+
+    private var pourFlashBodyHeight: CGFloat {
+        bottleSquareSide * (ProcessHydrationBottleMetrics.bodyMaxY - ProcessHydrationBottleMetrics.bodyMinY)
+    }
+
+    private var bottleStack: some View {
+        ZStack {
+            bottleVisualLayer
+
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture(perform: openTimer)
+                .contextMenu {
+                    hydrationAdjustMenu
+                    Button {
+                        openTimer()
+                    } label: {
+                        Label(AppCopy.t("Ouvrir le timer", en: "Open timer"), systemImage: "timer")
+                    }
+                } preview: {
+                    hydrationBottleContextMenuPreview
+                }
+        }
+        .frame(width: bottleTrimmedWidth, height: bottleCanvasHeight)
+        .scaleEffect(bottleCelebrationScale)
+    }
+
+    private var bottleVisualLayer: some View {
+        ZStack {
+            ProcessHydrationBottleView(
+                fillLevel: animatedFill,
+                goalWatermarkLabel: goalWatermarkLabel,
+                goalWatermarkFontSize: goalWatermarkFontSize
+            )
+            .frame(width: bottleSquareSide, height: bottleSquareSide)
+
+            RoundedRectangle(cornerRadius: pourFlashBodyWidth * 0.22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.72, green: 0.90, blue: 0.92, opacity: pourFlashOpacity),
+                            Color(red: 0.58, green: 0.80, blue: 0.84, opacity: pourFlashOpacity * 0.55)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: pourFlashBodyWidth * 0.92, height: pourFlashBodyHeight * 0.55)
+                .offset(y: bottleSquareSide * ProcessHydrationBottleMetrics.bodyMinY + pourFlashBodyHeight * 0.06)
+                .blur(radius: 10)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .frame(width: bottleSquareSide, height: bottleSquareSide)
+        .frame(width: bottleTrimmedWidth, height: bottleCanvasHeight, alignment: .center)
+        .clipped()
+        .compositingGroup()
+        .allowsHitTesting(false)
+    }
+
+    private var hydrationBottleContextMenuPreview: some View {
+        ProcessHydrationBottleView(
+            fillLevel: animatedFill,
+            goalWatermarkLabel: goalWatermarkLabel,
+            goalWatermarkFontSize: goalWatermarkFontSize,
+            showsGlassWater: false
+        )
+        .frame(width: bottleSquareSide, height: bottleSquareSide)
+        .frame(width: bottleTrimmedWidth, height: bottleCanvasHeight, alignment: .center)
+        .clipped()
+        .padding(8)
     }
 
     private func openTimer() {
@@ -554,30 +640,75 @@ private struct PlanHydrationCarouselCard: View {
     }
 
     private func runHomeCelebration(fromMilliliters: Int) {
+        runHydrationPourCelebration(fromMilliliters: fromMilliliters, toMilliliters: effectiveMilliliters)
+    }
+
+    private func runHydrationPourCelebration(
+        fromMilliliters: Int,
+        toMilliliters: Int,
+        playFeedback: Bool = true
+    ) {
+        guard toMilliliters > fromMilliliters else {
+            animateFill(to: targetFill, celebrate: false)
+            return
+        }
+
+        if playFeedback {
+            HapticManager.shared.impact(.medium)
+            ProcessSoundPlayer.playPouringWater()
+        }
+
         animatedFill = fillLevel(for: fromMilliliters)
-        HapticManager.shared.impact(.medium)
-        ProcessSoundPlayer.playPouringWater()
-        withAnimation(.easeOut(duration: 0.95)) {
-            animatedFill = targetFill
+        triggerPourFlash()
+        animateFill(to: fillLevel(for: toMilliliters), celebrate: true)
+        scheduleGoalReachedHaptic(from: fromMilliliters, to: toMilliliters)
+    }
+
+    private func triggerPourFlash() {
+        pourFlashOpacity = 0.42
+        withAnimation(.easeOut(duration: 0.78)) {
+            pourFlashOpacity = 0
+        }
+    }
+
+    private func scheduleGoalReachedHaptic(from fromMilliliters: Int, to toMilliliters: Int) {
+        guard fromMilliliters < targetMilliliters, toMilliliters >= targetMilliliters else { return }
+        goalReachedHapticTask?.cancel()
+        goalReachedHapticTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(900))
+            guard !Task.isCancelled else { return }
+            HapticManager.shared.notification(.success)
+            ProcessToastCenter.shared.show(
+                "Objectif hydratation",
+                en: "Hydration goal",
+                description: "Tu as atteint ton objectif du jour.",
+                en: "You hit today's goal.",
+                symbol: "drop.fill",
+                tintColor: Color(red: 0.36, green: 0.72, blue: 0.98)
+            )
+        }
+    }
+
+    private func animateFill(to newFill: CGFloat, celebrate: Bool) {
+        if celebrate {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.48)) {
+                bottleCelebrationScale = 1.07
+                plusButtonScale = 1.18
+            }
+            withAnimation(.spring(response: 0.64, dampingFraction: 0.74).delay(0.14)) {
+                bottleCelebrationScale = 1
+                plusButtonScale = 1
+            }
+        }
+
+        withAnimation(.spring(response: 0.92, dampingFraction: 0.74)) {
+            animatedFill = newFill
         }
     }
 
     private func fillLevel(for milliliters: Int) -> CGFloat {
         guard targetMilliliters > 0 else { return 0.08 }
         return max(0.08, min(1, CGFloat(milliliters) / CGFloat(targetMilliliters)))
-    }
-
-    private var timerRunningBadge: some View {
-        Image(systemName: "drop.fill")
-            .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(.white)
-            .padding(8)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(Color.black.opacity(0.28))
-            }
-            .allowsHitTesting(false)
-            .accessibilityLabel(AppCopy.t("Timer hydratation actif", en: "Hydration timer active"))
     }
 
     @ViewBuilder
@@ -603,109 +734,23 @@ private struct PlanHydrationCarouselCard: View {
         }
     }
 
-    private var cardBackground: some View {
-        LinearGradient(
-            colors: theme.isDark
-                ? [
-                    Color(red: 0.02, green: 0.16, blue: 0.32),
-                    Color(red: 0.00, green: 0.34, blue: 0.58)
-                ]
-                : [
-                    Color(red: 0.86, green: 0.97, blue: 1.0),
-                    Color(red: 0.38, green: 0.78, blue: 0.98)
-                ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
-    private var amountLabelLayer: some View {
-        GeometryReader { proxy in
-            Text(litersLabel)
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
-                .foregroundStyle(amountTextColor)
-                .shadow(color: amountShadowColor, radius: 10, y: 4)
-                .contentTransition(.numericText())
-                .padding(.horizontal, 12)
-                .position(
-                    x: proxy.size.width * 0.5,
-                    y: amountLabelY(in: proxy.size)
-                )
-        }
-        .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.45), value: effectiveMilliliters)
-    }
-
-    @ViewBuilder
-    private var waterLayer: some View {
-        GeometryReader { proxy in
-            // Surface figée (pas de gyro / tap / vague) — seul le niveau de remplissage change.
-            let shape = PlanHydrationCardWaterShape(
-                fillLevel: animatedFill,
-                roll: 0,
-                pitch: 0,
-                wavePhase: 0
-            )
-
-            if #available(iOS 26.0, *) {
-                GlassEffectContainer {
-                    shape
-                        .fill(.clear)
-                        .glassEffect(ProcessGlass.waterSurface, in: shape)
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                }
-            } else {
-                shape
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.44, green: 0.88, blue: 0.98, opacity: 0.34),
-                                Color(red: 0.12, green: 0.64, blue: 0.82, opacity: 0.48)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-            }
-        }
-        .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.95), value: animatedFill)
-    }
-
-    private var amountTextColor: Color {
-        theme.isDark
-            ? Color.white.opacity(0.96)
-            : Color(red: 0.02, green: 0.24, blue: 0.32)
-    }
-
-    private var amountShadowColor: Color {
-        theme.isDark
-            ? Color.black.opacity(0.42)
-            : Color.white.opacity(0.72)
-    }
-
     private var addButton: some View {
         Button {
             addWater()
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: addButtonIconSize, weight: .bold))
                 .foregroundStyle(theme.primaryText)
-                .frame(width: 36, height: 36)
+                .frame(width: addButtonSize, height: addButtonSize)
+                .scaleEffect(plusButtonScale)
         }
         .processGlassIconButtonStyle()
         .accessibilityLabel(AppCopy.t("Ajouter 500 millilitres d'eau", en: "Add 500 milliliters of water"))
     }
 
     private func addWater() {
-        HapticManager.shared.impact(.medium)
-        ProcessSoundPlayer.playPouringWater()
-        // Premier geste : part du niveau affiché (app ou HealthKit), puis +500 ml.
-        let baseline = effectiveMilliliters
+        let before = effectiveMilliliters
+        pendingPourFromMilliliters = before
         if hydrationStore.hasLocalAdjustments(for: selectedDate) {
             hydrationStore.addWater(
                 milliliters: 500,
@@ -715,7 +760,7 @@ private struct PlanHydrationCarouselCard: View {
             )
         } else {
             hydrationStore.setMilliliters(
-                baseline + 500,
+                before + 500,
                 for: selectedDate,
                 dayId: dayId,
                 targetMilliliters: targetMilliliters
@@ -748,67 +793,6 @@ private struct PlanHydrationCarouselCard: View {
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 1
         return formatter.string(from: NSNumber(value: liters)) ?? String(format: "%.1f", liters)
-    }
-
-    private func amountLabelY(in size: CGSize) -> CGFloat {
-        guard size.width > 0, size.height > 0 else { return PlanMealCarouselLayout.cardHeight * 0.5 }
-
-        let depth = animatedFill * size.height
-        let restY = size.height - depth
-        let surfaceY = min(size.height - 1, max(1, restY))
-        return min(size.height - 28, max(42, surfaceY + 30))
-    }
-}
-
-private struct PlanHydrationCardWaterShape: Shape {
-    var fillLevel: CGFloat
-    var roll: CGFloat
-    var pitch: CGFloat
-    var wavePhase: CGFloat
-
-    /// Only the fill level interpolates — wave/tilt stay live and snappy.
-    var animatableData: CGFloat {
-        get { fillLevel }
-        set { fillLevel = newValue }
-    }
-
-    func path(in rect: CGRect) -> Path {
-        guard rect.width > 0, rect.height > 0 else { return Path() }
-
-        let clampedFill = min(1, max(0, fillLevel))
-        let depth = clampedFill * rect.height
-        let restY = rect.height - depth
-        let clampedRoll = max(-1, min(1, roll))
-        let clampedPitch = max(-1, min(1, pitch))
-        let segmentCount = 24
-
-        var points: [CGPoint] = []
-        points.reserveCapacity(segmentCount + 1)
-
-        for index in 0...segmentCount {
-            let x = CGFloat(index) / CGFloat(segmentCount) * rect.width
-            let normalizedX = (x / rect.width - 0.5) * 2
-            let midY = restY - clampedPitch * depth * 0.16
-            let slope = -clampedRoll * normalizedX * depth * 0.52
-            let wave = CGFloat(sin(Double(wavePhase) + Double(x) * 0.035)) * 1.2
-            let y = min(rect.height - 1, max(1, midY + slope + wave))
-            points.append(CGPoint(x: x, y: y))
-        }
-
-        var path = Path()
-        path.move(to: points[0])
-
-        for index in 1..<points.count {
-            let previous = points[index - 1]
-            let current = points[index]
-            let mid = CGPoint(x: (previous.x + current.x) * 0.5, y: (previous.y + current.y) * 0.5)
-            path.addQuadCurve(to: current, control: mid)
-        }
-
-        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
-        path.addLine(to: CGPoint(x: 0, y: rect.height))
-        path.closeSubpath()
-        return path
     }
 }
 

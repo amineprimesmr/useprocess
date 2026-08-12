@@ -6,7 +6,6 @@ enum PlanHomeTutorialFocus: String, Equatable {
     case hydration
     case meals
     case faceRoutine
-    case training
 
     var scrollAnchorID: String {
         "plan.home.tutorial.\(rawValue)"

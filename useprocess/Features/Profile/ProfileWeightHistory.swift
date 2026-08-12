@@ -35,6 +35,23 @@ enum ProfileChartMetric: String, CaseIterable, Identifiable {
         // .effort // Temporairement masqué
     ]
 
+    var stickySectionIcon: String {
+        switch self {
+        case .weight: return "scalemass.fill"
+        case .cortisol: return "waveform.path.ecg"
+        case .recovery: return "moon.zzz.fill"
+        case .retention: return "drop.fill"
+        case .definition: return "face.smiling"
+        case .skin: return "sparkles"
+        case .effort: return "figure.run"
+        }
+    }
+
+    @MainActor
+    var stickyMinimisedTitle: String {
+        title.uppercased(with: ProcessAppLanguage.shared.locale)
+    }
+
     var faceScanKind: FaceScanIndicators.Kind? {
         switch self {
         case .retention: return .retention

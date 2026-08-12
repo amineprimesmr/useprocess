@@ -23,22 +23,34 @@ struct ProfileScanHistoryCarousel: View {
                     isPlaybackActive: isPlaybackActive,
                     initials: initials
                 )
+            } else if chronologicalScans.count == 1, let scan = chronologicalScans.first {
+                ProfileScanHistorySlide(
+                    scan: scan,
+                    size: size,
+                    isPlaybackActive: isPlaybackActive
+                )
+
+                Text(scanDateLabel(scan.createdAt))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(theme.secondaryText)
+                    .monospacedDigit()
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 18) {
+                    LazyHStack(spacing: 0) {
                         ForEach(chronologicalScans) { scan in
                             ProfileScanHistorySlide(
                                 scan: scan,
                                 size: size,
                                 isPlaybackActive: isPlaybackActive && focusedScanID == scan.id
                             )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .containerRelativeFrame(.horizontal)
                             .id(scan.id)
                         }
                     }
                     .scrollTargetLayout()
-                    .padding(.horizontal, 28)
                 }
-                .scrollTargetBehavior(.viewAligned)
+                .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
                 .scrollPosition(id: $focusedScanID)
                 .frame(height: size)
 
@@ -48,11 +60,7 @@ struct ProfileScanHistoryCarousel: View {
                         .foregroundStyle(theme.secondaryText)
                         .monospacedDigit()
 
-                    if chronologicalScans.count > 1 {
-                        Text(scanPositionLabel(for: focused))
-                            .font(.caption)
-                            .foregroundStyle(theme.secondaryText.opacity(0.82))
-                    }
+                    scanPageIndicator(focused: focused)
                 }
             }
         }
@@ -63,6 +71,30 @@ struct ProfileScanHistoryCarousel: View {
         .onChange(of: isPlaybackActive) { _, active in
             guard active else { return }
             syncFocusedScan()
+        }
+    }
+
+    @ViewBuilder
+    private func scanPageIndicator(focused: FaceScanResult) -> some View {
+        let total = chronologicalScans.count
+        if total > 1, let index = chronologicalScans.firstIndex(where: { $0.id == focused.id }) {
+            HStack(spacing: 6) {
+                ForEach(Array(chronologicalScans.enumerated()), id: \.element.id) { itemIndex, _ in
+                    Capsule(style: .continuous)
+                        .fill(
+                            itemIndex == index
+                                ? theme.primaryText.opacity(theme.isDark ? 0.88 : 0.72)
+                                : theme.secondaryText.opacity(0.28)
+                        )
+                        .frame(width: itemIndex == index ? 16 : 6, height: 6)
+                        .animation(.easeInOut(duration: 0.22), value: index)
+                }
+            }
+            .padding(.top, 2)
+
+            Text(scanPositionLabel(for: focused))
+                .font(.caption)
+                .foregroundStyle(theme.secondaryText.opacity(0.82))
         }
     }
 

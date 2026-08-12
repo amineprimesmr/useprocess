@@ -40,12 +40,13 @@ struct PlanFaceDaySection: View {
                     "Aucune action quotidienne planifiée.",
                     en: "No daily actions planned."
                 ))
-                    .font(.subheadline)
-                    .foregroundStyle(theme.secondaryText)
+                .font(.subheadline)
+                .foregroundStyle(theme.secondaryText)
             } else {
                 protocolCarouselBody(items: items)
             }
         }
+        .animation(.spring(response: 0.52, dampingFraction: 0.88), value: tutorialStore.currentStepIndex)
         .fullScreenCover(item: $selectedProtocolItem, onDismiss: {
             if let pending = pendingSessionLaunch {
                 pendingSessionLaunch = nil
@@ -124,17 +125,13 @@ struct PlanFaceDaySection: View {
     @ViewBuilder
     private func protocolCarouselBody(items: [PlanProtocolCarouselItem]) -> some View {
         if tutorialStore.isFocused(.faceRoutine) {
-            VStack(alignment: .leading, spacing: 22) {
-                faceRoutineCarousel(items: items, highlightsItemStrip: true)
-
-                PlanHomeTutorialCaption(step: tutorialStore.currentStep)
-                PlanHomeTutorialInlineFooter(
-                    onAdvance: { tutorialStore.advance() },
-                    stepIndex: tutorialStore.currentStepIndex,
-                    stepCount: tutorialStore.steps.count
-                )
+            PlanHomeTutorialFocusChrome(
+                focus: .faceRoutine,
+                cornerRadius: PlanProtocolCarouselLayout.cornerRadius
+            ) {
+                faceRoutineCarousel(items: items, highlightsItemStrip: false)
             }
-            .id(PlanHomeTutorialFocus.faceRoutine.scrollAnchorID)
+            .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
         } else {
             faceRoutineCarousel(items: items, highlightsItemStrip: false)
                 .opacity(tutorialStore.isRevealed(.faceRoutine) ? 0.88 : 1)

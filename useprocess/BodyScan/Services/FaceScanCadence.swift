@@ -18,6 +18,10 @@ enum FaceScanCadence {
         return elapsed >= intervalDays
     }
 
+    static func hasScanToday(in history: [FaceScanResult], now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        history.contains { calendar.isDate($0.createdAt, inSameDayAs: now) }
+    }
+
     static func nextScanDate(after lastScan: Date, calendar: Calendar = .current) -> Date {
         calendar.date(byAdding: .day, value: intervalDays, to: calendar.startOfDay(for: lastScan))
             ?? lastScan.addingTimeInterval(Double(intervalDays) * 86_400)
@@ -53,7 +57,21 @@ enum FaceScanCadence {
         guard let interval = timeUntilNextScan(since: lastScan, now: now, calendar: calendar) else {
             return AppCopy.t("Premier scan à faire", en: "First scan to do")
         }
-        return formatCountdown(interval)
+        return formatCountdownCompact(interval)
+    }
+
+    /// Countdown sans secondes — carte « Dernier scan ».
+    static func formatCountdownCompact(_ interval: TimeInterval) -> String {
+        let total = max(0, Int(interval.rounded(.down)))
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        if hours > 0 {
+            return String(format: "%dh %02dm", hours, minutes)
+        }
+        if minutes > 0 {
+            return AppCopy.tSync("\(minutes) min", en: "\(minutes) min")
+        }
+        return AppCopy.tSync("< 1 min", en: "< 1 min")
     }
 
     static func formatCountdown(_ interval: TimeInterval) -> String {

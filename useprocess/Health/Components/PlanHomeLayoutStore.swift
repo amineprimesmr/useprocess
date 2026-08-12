@@ -10,13 +10,15 @@ final class PlanHomeLayoutStore {
 
     private let storageKeyBase = "plan.home.layout"
     private let swappedTrainingFaceRoutineMigrationKey = "plan.home.layout.swappedTrainingFaceRoutine.v1"
+    private let hideTrainingOnHomeMigrationKey = "plan.home.layout.hideTrainingOnHome.v1"
 
     private init() {
         reload()
     }
 
     var visibleSections: [PlanHomeSectionKind] {
-        orderedSections.filter { !hiddenSectionIDs.contains($0.rawValue) && $0 != .resources }
+        orderedSections
+            .filter { !hiddenSectionIDs.contains($0.rawValue) && $0 != .resources && $0 != .training }
     }
 
     var visibleSectionIDs: [String] {
@@ -43,9 +45,22 @@ final class PlanHomeLayoutStore {
             persist()
         }
         migrateSwapTrainingAndFaceRoutineIfNeeded()
+        migrateHideTrainingOnHomeIfNeeded()
     }
 
-    /// Circuit lymphatique avant Cardio et Circuit (nouvel ordre accueil).
+    /// Cardio et Circuit — uniquement dans Réglages, plus sur l'accueil.
+    private func migrateHideTrainingOnHomeIfNeeded() {
+        let migrationKey = UserScopedStorage.key(hideTrainingOnHomeMigrationKey)
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+
+        hiddenSectionIDs.insert(PlanHomeSectionKind.training.rawValue)
+        orderedSections.removeAll { $0 == .training }
+        persist()
+
+        UserDefaults.standard.set(true, forKey: migrationKey)
+    }
+
+    /// Circuit lymphatique avant Cardio et Circuit (legacy).
     private func migrateSwapTrainingAndFaceRoutineIfNeeded() {
         let migrationKey = UserScopedStorage.key(swappedTrainingFaceRoutineMigrationKey)
         guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }

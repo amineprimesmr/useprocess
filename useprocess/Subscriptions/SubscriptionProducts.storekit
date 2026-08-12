@@ -180,6 +180,35 @@
       ]
     }
   ],
+  "subscriptionOfferings" : [
+    {
+      "displayName" : "Premium",
+      "identifier" : "Premium",
+      "referenceName" : "Premium Legacy",
+      "subscriptionProducts" : [
+        { "productID" : "com.useprocess.monthly" },
+        { "productID" : "com.useprocess.annual" }
+      ]
+    },
+    {
+      "displayName" : "Premium A",
+      "identifier" : "Premium_A",
+      "referenceName" : "Premium A",
+      "subscriptionProducts" : [
+        { "productID" : "com.useprocess.weekly899" },
+        { "productID" : "com.useprocess.annual3499" }
+      ]
+    },
+    {
+      "displayName" : "Premium B",
+      "identifier" : "Premium_B",
+      "referenceName" : "Premium B",
+      "subscriptionProducts" : [
+        { "productID" : "com.useprocess.monthly999" },
+        { "productID" : "com.useprocess.annual4999" }
+      ]
+    }
+  ],
   "version" : {
     "major" : 4,
     "minor" : 0

@@ -78,6 +78,7 @@ nonisolated enum AppCopy {
     nonisolated static var send: String { tSync("Envoyer", en: "Send") }
     nonisolated static var search: String { tSync("Rechercher", en: "Search") }
     nonisolated static var settings: String { tSync("Réglages", en: "Settings") }
+    nonisolated static var profile: String { tSync("Profil", en: "Profile") }
     nonisolated static var home: String { tSync("Accueil", en: "Home") }
     nonisolated static var meals: String { tSync("Repas", en: "Meals") }
 }

@@ -30,6 +30,13 @@ final class ReferralService {
                 displayName: displayName
             )
             clearRemoteRegistrationPending(userId: referredUserId)
+        } catch let error as ReferralRemoteError {
+            if case .httpError(404, _) = error {
+                clearRemoteRegistrationPending(userId: referredUserId)
+            } else {
+                markRemoteRegistrationPending(userId: referredUserId, code: normalized)
+            }
+            throw error
         } catch {
             markRemoteRegistrationPending(userId: referredUserId, code: normalized)
             throw error
@@ -97,6 +104,13 @@ final class ReferralService {
                 displayName: displayName
             )
             clearRemoteRegistrationPending(userId: userId)
+        } catch let error as ReferralRemoteError {
+            if case .httpError(404, _) = error {
+                clearRemoteRegistrationPending(userId: userId)
+            }
+            #if DEBUG
+            print("[ReferralService] retry register failed: \(error.localizedDescription)")
+            #endif
         } catch {
             #if DEBUG
             print("[ReferralService] retry register failed: \(error.localizedDescription)")

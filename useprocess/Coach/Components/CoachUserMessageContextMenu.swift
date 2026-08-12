@@ -216,6 +216,14 @@ struct CoachUserMessageContextOverlay: View {
             menuRow(icon: "square.on.square", title: AppCopy.t("Copier", en: "Copy")) {
                 UIPasteboard.general.string = message.text
                 HapticManager.shared.notification(.success)
+                ProcessToastCenter.shared.show(
+                    "Copié",
+                    en: "Copied",
+                    description: "Message copié dans le presse-papiers.",
+                    en: "Message copied to clipboard.",
+                    symbol: "doc.on.doc.fill",
+                    tintColor: .blue
+                )
                 dismiss()
             }
 

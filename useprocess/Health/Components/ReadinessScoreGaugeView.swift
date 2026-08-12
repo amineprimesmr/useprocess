@@ -962,38 +962,69 @@ private struct ReadinessGaugePalette {
 // MARK: - Mini badge (plan scan card, profil compact)
 
 struct ReadinessScoreMiniBadge: View {
+    enum Style {
+        case compact
+    }
+
     let score: Int
+    var style: Style = .compact
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
 
     private var isDark: Bool { colorScheme == .dark }
 
+    private var layout: LayoutMetrics {
+        switch style {
+        case .compact:
+            return LayoutMetrics(
+                canvasSize: CGSize(width: 84, height: 50),
+                frameSize: CGSize(width: 88, height: 50),
+                trackWidth: 9,
+                particleScale: 0.42,
+                scoreFontSize: 14,
+                scoreOffsetY: 2,
+                topPadding: 6
+            )
+        }
+    }
+
     var body: some View {
+        let layout = layout
         ZStack {
             ReadinessGaugeCanvas(
                 score: score,
                 isDark: isDark,
-                trackWidth: 9,
+                trackWidth: layout.trackWidth,
                 arcSweepFraction: 0.52,
-                particleScale: 0.42
+                particleScale: layout.particleScale
             )
-            .frame(width: 84, height: 50)
+            .frame(width: layout.canvasSize.width, height: layout.canvasSize.height)
             .allowsHitTesting(false)
 
             Text(displayScore)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: layout.scoreFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(theme.primaryText)
                 .monospacedDigit()
-                .offset(y: 2)
+                .offset(y: layout.scoreOffsetY)
         }
-        .frame(width: 88, height: 50)
-        .padding(.top, 6)
-        .accessibilityLabel("Score du scan \(displayScore)")
+        .frame(width: layout.frameSize.width, height: layout.frameSize.height)
+        .padding(.top, layout.topPadding)
+        .accessibilityLabel(AppCopy.t("Score du scan \(displayScore)", en: "Scan score \(displayScore)"))
     }
 
     private var displayScore: String {
         score > 0 ? "\(score)" : "—"
+    }
+
+    private struct LayoutMetrics {
+        let canvasSize: CGSize
+        let frameSize: CGSize
+        let trackWidth: CGFloat
+        let particleScale: CGFloat
+        let scoreFontSize: CGFloat
+        let scoreOffsetY: CGFloat
+        let topPadding: CGFloat
     }
 }
 

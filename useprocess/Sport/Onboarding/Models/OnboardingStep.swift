@@ -85,7 +85,7 @@ enum OnboardingStep: Int, CaseIterable {
     case carryOverCalories = 56                // ✨ Reportez-vous aux calories supplémentaires au lendemain ?
     case programCreation = 57               // ✨ Création du programme (analyse habitudes, plan 13 semaines)
     case biometricAuth = 58                    // ✨ Authentification biométrique (empreinte digitale)
-    case notificationPermission = 59           // Conservé compat sauvegarde — notifs retirées, saut auto
+    case notificationPermission = 59           // ✨ Notifications push — après création du plan
     case transformationPreview = 64            // ✨ Aperçu avant / après (slider) avant le paywall
     case payment = 60
     case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
@@ -134,6 +134,7 @@ enum OnboardingStep: Int, CaseIterable {
         .weightGoalIncompatible,
         .weightMotivation,
         .programCreation,
+        .notificationPermission,
         .goalPace,
         .weightEstimation,
         .hasSportActivity,
@@ -179,7 +180,6 @@ enum OnboardingStep: Int, CaseIterable {
         .caloriesGoal,
         .carryOverCalories,
         .biometricAuth,
-        .notificationPermission,
         .transformationPreview,
         .payment,
         .appleSignIn,
@@ -213,8 +213,7 @@ enum OnboardingStep: Int, CaseIterable {
              .personalizedWelcome, .processResultsDurability,
              .sleepDataRecovery, .primaryGoal, .goalProjection,
              .healthKitPermissions,
-             .idealWeight, .weightGoalIncompatible,
-             .notificationPermission:
+             .idealWeight, .weightGoalIncompatible:
             return true
         default:
             return false

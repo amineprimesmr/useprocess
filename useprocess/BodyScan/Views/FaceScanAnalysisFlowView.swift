@@ -224,6 +224,7 @@ struct FaceScanAnalysisFlowView: View {
                 evolutionAnchor: base,
                 animateRevealOnce: true,
                 allowsStudioFraming: showsCreatorControls,
+                studioQuality: showsCreatorControls ? qualityDraft : nil,
                 studioFraming: framingDraft,
                 onStudioFramingChange: { framing in
                     framingDraft = framing.clamped()

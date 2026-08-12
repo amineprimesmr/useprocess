@@ -12,7 +12,10 @@ extension View {
 
 private struct PlanHomeTutorialModifier: ViewModifier {
     @Bindable var store: PlanHomeTutorialStore
+    @Bindable private var planStore = WelcomePlanStore.shared
+    @Bindable private var eveningPresenter = ProcessEveningCheckInPresenter.shared
     @Binding var selectedSection: ProcessMainSection
+    @Environment(\.scenePhase) private var scenePhase
 
     func body(content: Content) -> some View {
         content
@@ -21,6 +24,27 @@ private struct PlanHomeTutorialModifier: ViewModifier {
                     PlanHomeTutorialTabStepFooter(store: store)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .zIndex(900)
+                }
+            }
+            .onAppear {
+                bootstrapTutorial()
+            }
+            .onChange(of: planStore.plan?.id) { _, _ in
+                requestTutorial(preferImmediate: true)
+            }
+            .onChange(of: eveningPresenter.presentation) { _, presentation in
+                guard presentation == nil else { return }
+                requestTutorial(preferImmediate: true)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                switch phase {
+                case .active:
+                    store.reload()
+                    requestTutorial(preferImmediate: true)
+                case .background:
+                    store.cancelScheduledPresentation()
+                default:
+                    break
                 }
             }
             .onChange(of: store.requestedMainSection) { _, section in
@@ -32,12 +56,28 @@ private struct PlanHomeTutorialModifier: ViewModifier {
                 }
             }
             .onChange(of: store.isActive) { _, active in
-                if !active, selectedSection != .plan {
+                if active, selectedSection != .plan {
+                    withAnimation(ProcessGlass.spring) {
+                        selectedSection = .plan
+                    }
+                } else if !active, selectedSection != .plan {
                     withAnimation(ProcessGlass.spring) {
                         selectedSection = .plan
                     }
                 }
             }
+    }
+
+    private func bootstrapTutorial() {
+        store.reload()
+        requestTutorial(preferImmediate: true)
+    }
+
+    private func requestTutorial(preferImmediate: Bool) {
+        store.schedulePresentationIfNeeded(
+            planAvailable: planStore.plan != nil,
+            preferImmediate: preferImmediate
+        )
     }
 }
 

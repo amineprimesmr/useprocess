@@ -68,13 +68,12 @@ final class AppSession {
 
     private init() {
         let uid = UserScopedStorage.currentUserId()
-        let onboardingKey = UserScopedStorage.key("onboarding.completed", userId: uid)
-        let completedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
+        let completedOnboarding = Self.resolveOnboardingCompleted(userId: uid)
         hasCompletedOnboarding = completedOnboarding
 
         hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
             completedOnboarding: completedOnboarding,
-            userId: uid
+            userId: uid ?? Self.cachedProfileUserId()
         )
 
         let rawAppearance = UserDefaults.standard.string(forKey: Keys.appearance) ?? AppAppearance.system.rawValue
@@ -198,13 +197,20 @@ final class AppSession {
     func reloadForCurrentUser() {
         guard !isAccountWipeInProgress else { return }
 
-        guard AuthUser.current != nil else {
-            hasCompletedOnboarding = false
-            hasCompletedWelcomePlanChat = false
-            return
+        guard AuthUser.current != nil else { return }
+
+        let resolved = Self.resolveOnboardingCompleted(
+            userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId
+        )
+        if resolved {
+            hasCompletedOnboarding = true
+            UserDefaults.standard.set(true, forKey: onboardingStorageKey)
+        } else {
+            hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
         }
 
-        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingStorageKey)
+        reconcileOnboardingFromProfileIfNeeded()
+
         WelcomePlanStore.shared.reloadForCurrentUser(force: true)
         if hasCompletedOnboarding {
             WelcomePlanStore.shared.autoCompleteWelcomePlanIfNeeded(
@@ -215,6 +221,14 @@ final class AppSession {
             completedOnboarding: hasCompletedOnboarding,
             userId: UserScopedStorage.currentUserId() ?? UnifiedProfileService.shared.currentProfile?.userId
         )
+    }
+
+    /// Firestore / cache profil — filet de sécurité si UserDefaults a raté le cold start.
+    func reconcileOnboardingFromProfileIfNeeded() {
+        guard !hasCompletedOnboarding else { return }
+        guard let profile = UnifiedProfileService.shared.currentProfile,
+              profile.hasCompletedOnboarding else { return }
+        completeOnboarding()
     }
 
     /// Flag welcome plan : si onboarding fait, le plan auto suffit (plus de questionnaire).
@@ -238,6 +252,64 @@ final class AppSession {
         }
 
         return UserDefaults.standard.bool(forKey: welcomeKey)
+    }
+
+    /// Cold start : Auth peut être nil → lit les clés user connues + cache profil avant de conclure « pas onboardé ».
+    private static func resolveOnboardingCompleted(userId: String?) -> Bool {
+        let defaults = UserDefaults.standard
+        let primary = userId ?? cachedProfileUserId()
+        let candidates = onboardingCandidateUserIds(primary: primary)
+
+        for candidate in candidates {
+            let key = UserScopedStorage.key("onboarding.completed", userId: candidate)
+            if defaults.bool(forKey: key) {
+                migrateOnboardingCompletedFlag(from: candidate, to: userId)
+                return true
+            }
+
+            if let profile = loadCachedProfile(userId: candidate), profile.hasCompletedOnboarding {
+                defaults.set(true, forKey: key)
+                migrateOnboardingCompletedFlag(from: candidate, to: userId)
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private static func onboardingCandidateUserIds(primary: String?) -> [String] {
+        var ids = Set(UserScopedStorage.likelyUserIds(primary: primary ?? "local-user"))
+        if let primary { ids.insert(primary) }
+        if let cached = cachedProfileUserId() { ids.insert(cached) }
+        if let current = UserScopedStorage.currentUserId() { ids.insert(current) }
+        return Array(ids)
+    }
+
+    private static func cachedProfileUserId() -> String? {
+        for uid in UserScopedStorage.likelyUserIds(primary: "local-user") {
+            if loadCachedProfile(userId: uid) != nil {
+                return uid
+            }
+        }
+        return nil
+    }
+
+    private static func loadCachedProfile(userId: String) -> UnifiedUserProfile? {
+        let key = UserScopedStorage.key("unified.profile", userId: userId)
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(UnifiedUserProfile.self, from: data)
+    }
+
+    private static func migrateOnboardingCompletedFlag(from sourceUID: String, to targetUID: String?) {
+        guard let targetUID, targetUID != sourceUID else { return }
+        guard UserDefaults.standard.bool(
+            forKey: UserScopedStorage.key("onboarding.completed", userId: sourceUID)
+        ) else { return }
+
+        let targetKey = UserScopedStorage.key("onboarding.completed", userId: targetUID)
+        if !UserDefaults.standard.bool(forKey: targetKey) {
+            UserDefaults.standard.set(true, forKey: targetKey)
+        }
     }
 
     func setAppearance(_ mode: AppAppearance) {

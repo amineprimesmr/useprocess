@@ -118,14 +118,11 @@ final class AuthenticationManager: NSObject, ObservableObject {
         super.init()
         FirebaseBootstrap.configure()
 
-        let uid = firebaseAuthReady ? currentFirebaseUser?.uid : nil
-        hasCompletedOnboarding = UserDefaults.standard.bool(
-            forKey: UserScopedStorage.key("onboarding.completed", userId: uid)
-        )
+        hasCompletedOnboarding = AppSession.shared.hasCompletedOnboarding
         // Ne pas publier / enregistrer le listener Auth pendant l'init :
         // le callback synchrone d'Auth invalidait SwiftUI au milieu du montage
         // de SportOnboardingView (@StateObject) → EXC_BAD_ACCESS.
-        isAuthenticated = uid != nil
+        isAuthenticated = firebaseAuthReady && currentFirebaseUser != nil
 
         guard firebaseAuthReady else { return }
 
@@ -144,6 +141,12 @@ final class AuthenticationManager: NSObject, ObservableObject {
                 self.isAuthenticated = user != nil
                 if user != nil {
                     await UnifiedProfileService.shared.loadProfile()
+                    AppSession.shared.reloadForCurrentUser()
+                    AppSession.shared.reconcileOnboardingFromProfileIfNeeded()
+                    self.hasCompletedOnboarding = AppSession.shared.hasCompletedOnboarding
+                    if AppSession.shared.hasCompletedOnboarding {
+                        self.isInOnboarding = false
+                    }
                 } else {
                     UnifiedProfileService.shared.clearLocalProfile()
                 }

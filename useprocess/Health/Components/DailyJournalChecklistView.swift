@@ -93,7 +93,12 @@ struct DailyJournalChecklistView: View {
                     ForEach(Array(displayedSections.enumerated()), id: \.element.id) { index, section in
                         homeSectionView(section)
                             .padding(.top, sectionTopSpacing(for: section, index: index))
+                            .transition(tutorialSectionTransition)
                     }
+                    .animation(
+                        .spring(response: 0.52, dampingFraction: 0.88),
+                        value: displayedSections.map(\.rawValue)
+                    )
                 }
 
                 if case .future = dayAvailability, !showChecklist {
@@ -213,10 +218,7 @@ struct DailyJournalChecklistView: View {
                     mealZoomNamespace: mealZoomNamespace
                 )
                 .environmentObject(UnifiedProfileService.shared)
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)),
-                    removal: .opacity.combined(with: .scale(scale: 0.98))
-                ))
+                .transition(tutorialSectionTransition)
             case .future where showChecklist:
                 journalUnavailableCard(
                     title: AppCopy.t("Jour à venir", en: "Upcoming day"),
@@ -239,28 +241,19 @@ struct DailyJournalChecklistView: View {
                     selectedDate: selectedDate,
                     isEditable: true
                 )
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)),
-                    removal: .opacity.combined(with: .scale(scale: 0.98))
-                ))
+                .transition(tutorialSectionTransition)
             }
 
         case .posture:
             if case .editable = dayAvailability {
                 PlanPostureDaySection(plan: livePlan)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .top)),
-                        removal: .opacity.combined(with: .scale(scale: 0.98))
-                    ))
+                    .transition(tutorialSectionTransition)
             }
 
         case .faceRoutine:
             if case .editable(let day, _) = dayAvailability {
                 PlanFaceDaySection(plan: livePlan, day: day)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .top)),
-                        removal: .opacity.combined(with: .scale(scale: 0.98))
-                    ))
+                    .transition(tutorialSectionTransition)
             }
 
         case .resources:
@@ -290,6 +283,16 @@ struct DailyJournalChecklistView: View {
             return layoutStore.visibleSections.filter { tutorialStore.shouldDisplay(section: $0) }
         }
         return layoutStore.visibleSections
+    }
+
+    private var tutorialSectionTransition: AnyTransition {
+        if tutorialStore.isActive {
+            return .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
+        }
+        return .asymmetric(
+            insertion: .opacity.combined(with: .move(edge: .top)),
+            removal: .opacity.combined(with: .scale(scale: 0.98))
+        )
     }
 
     private var journalHeader: some View {

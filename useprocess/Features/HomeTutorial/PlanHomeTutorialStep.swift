@@ -1,12 +1,11 @@
 import Foundation
 
-/// Étapes du tutoriel accueil — ordre : scan → eau → repas → circuit → training → série.
+/// Étapes du tutoriel accueil — ordre : scan → eau → repas → circuit → série.
 enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
     case faceScan
     case hydration
     case nutrition
     case faceRoutine
-    case training
     case streakTab
 
     var id: String { rawValue }
@@ -14,8 +13,7 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
     static let homeRevealOrder: [PlanHomeSectionKind] = [
         .faceScan,
         .nutrition,
-        .faceRoutine,
-        .training
+        .faceRoutine
     ]
 
     var focus: PlanHomeTutorialFocus? {
@@ -24,7 +22,6 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
         case .hydration: .hydration
         case .nutrition: .meals
         case .faceRoutine: .faceRoutine
-        case .training: .training
         case .streakTab: nil
         }
     }
@@ -34,7 +31,6 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
         case .faceScan: .faceScan
         case .hydration, .nutrition: .nutrition
         case .faceRoutine: .faceRoutine
-        case .training: .training
         case .streakTab: nil
         }
     }
@@ -44,7 +40,6 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
         case .faceScan: .faceScan
         case .hydration, .nutrition: .nutrition
         case .faceRoutine: .faceRoutine
-        case .training: .training
         case .streakTab: nil
         }
     }
@@ -71,8 +66,6 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
             AppCopy.t("Repas debloat du jour", en: "Today's debloat meals")
         case .faceRoutine:
             AppCopy.t("Circuit lymphatique", en: "Lymphatic circuit")
-        case .training:
-            AppCopy.t("Cardio et Circuit", en: "Cardio & Circuit")
         case .streakTab:
             AppCopy.t("Série", en: "Streak")
         }
@@ -100,11 +93,6 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
             AppCopy.t(
                 "Drainage lymphatique guidé pour réduire le gonflement du visage. Quelques minutes par jour suffisent.",
                 en: "Guided lymphatic drainage to reduce facial puffiness. Just a few minutes a day."
-            )
-        case .training:
-            AppCopy.t(
-                "Cardio et circuits adaptés à ton programme debloat. Lance une séance quand tu es prêt.",
-                en: "Cardio and circuits tailored to your debloat program. Start a session when you're ready."
             )
         case .streakTab:
             AppCopy.t(

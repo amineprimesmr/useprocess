@@ -56,6 +56,15 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
         wavePhase += 0.4
     }
 
+    func celebratePour() {
+        wavePhase += 1.35
+        pitch = min(1, pitch + 0.22)
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(280))
+            pitch = max(-1, pitch - 0.14)
+        }
+    }
+
     func beginInteraction(at location: CGPoint, in size: CGSize) {
         isUserInteracting = true
         applyInteraction(at: location, in: size, addsWave: true)
@@ -89,12 +98,14 @@ final class ProcessFluidWaterMotionEngine: ObservableObject {
         sensorPitch = sensorPitch + (nextPitch - sensorPitch) * smoothing
 
         guard !isUserInteracting else { return }
+        wavePhase += 0.06
         publishMotion(roll: sensorRoll, pitch: sensorPitch)
     }
 
     private func publishMotion(roll newRoll: CGFloat, pitch newPitch: CGFloat) {
-        guard abs(newRoll - lastPublishedRoll) > publishEpsilon
-            || abs(newPitch - lastPublishedPitch) > publishEpsilon else { return }
+        let rollChanged = abs(newRoll - lastPublishedRoll) > publishEpsilon
+        let pitchChanged = abs(newPitch - lastPublishedPitch) > publishEpsilon
+        guard rollChanged || pitchChanged else { return }
         roll = newRoll
         pitch = newPitch
         lastPublishedRoll = newRoll

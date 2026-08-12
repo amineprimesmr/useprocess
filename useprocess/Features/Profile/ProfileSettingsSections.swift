@@ -245,7 +245,9 @@ struct ProfileSettingsHealthDetailView: View {
 // MARK: - Application
 
 struct ProfileSettingsAppDetailView: View {
+    @EnvironmentObject private var profileService: UnifiedProfileService
     @Bindable private var session = AppSession.shared
+    @Bindable private var appLanguage = ProcessAppLanguage.shared
 
     var body: some View {
         ScrollView {
@@ -276,6 +278,36 @@ struct ProfileSettingsAppDetailView: View {
                     }
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+
+                ProfileSummarySectionHeader(title: AppCopy.t("Langue", en: "Language"))
+
+                AccountDetailsCard {
+                    ForEach(Array(ProcessAppLanguage.Code.allCases.enumerated()), id: \.element.id) { index, language in
+                        Group {
+                            if index > 0 {
+                                Color.clear.frame(height: AccountDetailsTheme.rowSpacing)
+                            }
+                            AccountDetailsGlassRow {
+                                Button {
+                                    HapticManager.shared.selection()
+                                    Task {
+                                        await applyLanguage(language)
+                                    }
+                                } label: {
+                                    ProfileEditListRow(
+                                        label: "\(language.flag) \(language.displayName)",
+                                        value: appLanguage.code == language ? AppCopy.t("Actif", en: "Active") : nil,
+                                        placeholder: "",
+                                        showsChevron: false,
+                                        valueIsMuted: appLanguage.code != language
+                                    )
+                                }
+                                .buttonStyle(.processPlain)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
             }
             .padding(.bottom, 32)
         }
@@ -283,6 +315,32 @@ struct ProfileSettingsAppDetailView: View {
         .processTransparentScrollSurface()
         .navigationTitle(AppCopy.t("Application", en: "App"))
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            syncLanguageFromProfileIfNeeded()
+        }
+    }
+
+    private func syncLanguageFromProfileIfNeeded() {
+        guard let profileLang = profileService.currentProfile?.preferences.language else { return }
+        let normalized = ProcessAppLanguage.normalize(profileLang)
+        if normalized != appLanguage.code {
+            appLanguage.setLanguage(normalized)
+        }
+    }
+
+    private func applyLanguage(_ language: ProcessAppLanguage.Code) async {
+        appLanguage.setLanguage(language)
+
+        guard let profile = profileService.currentProfile else { return }
+
+        var preferences = profile.preferences
+        preferences.language = language.rawValue
+
+        do {
+            try await profileService.updatePreferences(preferences)
+        } catch {
+            DebugLogger.error("\(error.localizedDescription)")
+        }
     }
 }
 

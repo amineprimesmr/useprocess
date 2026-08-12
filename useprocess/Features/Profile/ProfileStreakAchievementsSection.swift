@@ -3,12 +3,27 @@ import SwiftUI
 // MARK: - Design tokens (réf. Streak & Achievements)
 
 private enum ProfileStreakDesign {
-    static var accent: Color { ProcessStreakPalette.flame }
-    static var accentDeep: Color { ProcessStreakPalette.flameDeep }
-    static var accentGlow: Color { ProcessStreakPalette.flameGlow }
     static let missedFill = Color(red: 0.17, green: 0.17, blue: 0.18)
     static let pillHeight: CGFloat = 52
     static let statCardRadius: CGFloat = 18
+
+    static func accent(colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? ProcessStreakPalette.flame
+            : Color(red: 0.06, green: 0.36, blue: 0.78)
+    }
+
+    static func accentDeep(colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? ProcessStreakPalette.flameDeep
+            : Color(red: 0.03, green: 0.24, blue: 0.66)
+    }
+
+    static func accentGlow(colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? ProcessStreakPalette.flameGlow
+            : Color(red: 0.14, green: 0.48, blue: 0.86)
+    }
 }
 
 // MARK: - Section principale
@@ -114,7 +129,7 @@ struct ProfileStreakAchievementsSection: View {
         streakHero
         .frame(maxWidth: .infinity)
         .background(alignment: .top) {
-            ProfileStreakHeroGlow(pulse: glowPulse)
+            ProfileStreakHeroGlow(pulse: glowPulse, colorScheme: colorScheme)
                 .frame(maxWidth: .infinity)
                 .frame(height: 340)
                 .offset(y: 8)
@@ -133,12 +148,13 @@ struct ProfileStreakAchievementsSection: View {
                 ) { timeline in
                     ProfileAnimatedFlameView(
                         time: timeline.date.timeIntervalSinceReferenceDate,
-                        isActive: flameShouldAnimate
+                        isActive: flameShouldAnimate,
+                        colorScheme: colorScheme
                     )
                 }
 
                 VStack(spacing: 2) {
-                    ProfileStreakReliefNumber(value: snapshot.currentStreak)
+                    ProfileStreakReliefNumber(value: snapshot.currentStreak, colorScheme: colorScheme)
                         .contentTransition(.numericText())
                         .animation(.spring(response: 0.4, dampingFraction: 0.82), value: snapshot.currentStreak)
 
@@ -280,7 +296,7 @@ struct ProfileStreakAchievementsSection: View {
                 ZStack(alignment: .leading) {
                     if let range = streakRange {
                         Capsule(style: .continuous)
-                            .fill(ProfileStreakDesign.accent)
+                            .fill(ProfileStreakDesign.accent(colorScheme: colorScheme))
                             .frame(
                                 width: columnWidth * CGFloat(range.count) + 4,
                                 height: ProfileStreakDesign.pillHeight
@@ -308,7 +324,7 @@ struct ProfileStreakAchievementsSection: View {
     private func dayLabelColor(_ day: ProfileProgramStreakDay) -> Color {
         if day.isToday { return theme.primaryText }
         if Calendar.current.isDate(day.date, inSameDayAs: selectedDate) {
-            return ProfileStreakDesign.accent
+            return ProfileStreakDesign.accent(colorScheme: colorScheme)
         }
         return theme.secondaryText.opacity(0.75)
     }
@@ -327,10 +343,10 @@ struct ProfileStreakAchievementsSection: View {
                         .frame(width: 28, height: 28)
                     Image(systemName: "checkmark")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(inActivePill ? Color.black.opacity(0.85) : ProfileStreakDesign.accent)
+                        .foregroundStyle(inActivePill ? Color.black.opacity(0.85) : ProfileStreakDesign.accent(colorScheme: colorScheme))
                 }
             } else if day.isToday {
-                ProfileStreakTodaySpinner(onPill: inActivePill)
+                ProfileStreakTodaySpinner(onPill: inActivePill, colorScheme: colorScheme)
             } else if day.isMissed {
                 ZStack {
                     Circle()
@@ -354,7 +370,7 @@ struct ProfileStreakAchievementsSection: View {
 
     private var statsGrid: some View {
         HStack(spacing: 10) {
-            statCard(icon: "flame.fill", value: snapshot.currentStreak, label: AppCopy.t("Série actuelle", en: "Current Streak"), accent: ProfileStreakDesign.accent)
+            statCard(icon: "flame.fill", value: snapshot.currentStreak, label: AppCopy.t("Série actuelle", en: "Current Streak"), accent: ProfileStreakDesign.accent(colorScheme: colorScheme))
             statCard(icon: "rosette", value: snapshot.longestStreak, label: AppCopy.t("Meilleure série", en: "Best Streak"))
             statCard(icon: "checkmark.circle.fill", value: snapshot.totalCompletedDays, label: AppCopy.t("Jours validés", en: "Completed Days"))
         }
@@ -401,11 +417,12 @@ struct ProfileStreakAchievementsSection: View {
 
 private struct ProfileStreakTodaySpinner: View {
     var onPill: Bool = true
+    var colorScheme: ColorScheme
     @State private var rotation: Double = 0
 
     var body: some View {
         let track = onPill ? Color.black.opacity(0.12) : Color.primary.opacity(0.14)
-        let arc = onPill ? Color.black.opacity(0.55) : ProfileStreakDesign.accent
+        let arc = onPill ? Color.black.opacity(0.55) : ProfileStreakDesign.accent(colorScheme: colorScheme)
 
         ZStack {
             Circle()
@@ -428,29 +445,31 @@ private struct ProfileStreakTodaySpinner: View {
 
 private struct ProfileStreakReliefNumber: View {
     let value: Int
+    var colorScheme: ColorScheme
 
     private var text: String { "\(value)" }
 
     var body: some View {
+        let deep = ProfileStreakDesign.accentDeep(colorScheme: colorScheme)
         ZStack {
             Text(text)
-                .foregroundStyle(Color.black.opacity(0.50))
+                .foregroundStyle(Color.black.opacity(colorScheme == .dark ? 0.50 : 0.28))
                 .offset(x: 0, y: 4)
 
             Text(text)
-                .foregroundStyle(ProcessStreakPalette.flameDeep.opacity(0.38))
+                .foregroundStyle(deep.opacity(colorScheme == .dark ? 0.38 : 0.52))
                 .offset(x: 1.5, y: 2.5)
 
             Text(text)
-                .foregroundStyle(Color.white.opacity(0.18))
+                .foregroundStyle(Color.white.opacity(colorScheme == .dark ? 0.18 : 0.10))
                 .offset(x: -1.2, y: -1.4)
 
             Text(text)
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.62),
-                            Color.white.opacity(0.38)
+                            Color.white.opacity(colorScheme == .dark ? 0.62 : 0.48),
+                            Color.white.opacity(colorScheme == .dark ? 0.38 : 0.24)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -459,20 +478,26 @@ private struct ProfileStreakReliefNumber: View {
         }
         .font(.system(size: 72, weight: .bold, design: .rounded))
         .monospacedDigit()
-        .shadow(color: Color.black.opacity(0.22), radius: 8, y: 4)
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.22 : 0.14), radius: 8, y: 4)
     }
 }
 
 private struct ProfileStreakHeroGlow: View {
     let pulse: Bool
+    var colorScheme: ColorScheme
 
     var body: some View {
+        let glow = ProfileStreakDesign.accentGlow(colorScheme: colorScheme)
+        let accent = ProfileStreakDesign.accent(colorScheme: colorScheme)
+        let deep = ProfileStreakDesign.accentDeep(colorScheme: colorScheme)
+        let isLight = colorScheme == .light
+
         ZStack {
             EllipticalGradient(
                 stops: [
-                    .init(color: ProcessStreakPalette.flameGlow.opacity(0.13), location: 0.0),
-                    .init(color: ProcessStreakPalette.flame.opacity(0.05), location: 0.34),
-                    .init(color: ProcessStreakPalette.flameDeep.opacity(0.015), location: 0.58),
+                    .init(color: glow.opacity(isLight ? 0.22 : 0.13), location: 0.0),
+                    .init(color: accent.opacity(isLight ? 0.10 : 0.05), location: 0.34),
+                    .init(color: deep.opacity(isLight ? 0.05 : 0.015), location: 0.58),
                     .init(color: Color.clear, location: 1.0),
                 ],
                 center: .center,
@@ -482,8 +507,8 @@ private struct ProfileStreakHeroGlow: View {
 
             EllipticalGradient(
                 stops: [
-                    .init(color: Color.white.opacity(0.07), location: 0.0),
-                    .init(color: ProcessStreakPalette.flameGlow.opacity(0.04), location: 0.42),
+                    .init(color: Color.white.opacity(isLight ? 0.03 : 0.07), location: 0.0),
+                    .init(color: glow.opacity(isLight ? 0.08 : 0.04), location: 0.42),
                     .init(color: Color.clear, location: 1.0),
                 ],
                 center: UnitPoint(x: 0.5, y: 0.40),
@@ -504,14 +529,21 @@ private struct ProfileStreakHeroGlow: View {
 private struct ProfileAnimatedFlameView: View {
     let time: TimeInterval
     var isActive: Bool = true
+    var colorScheme: ColorScheme
 
     private let canvasWidth: CGFloat = 210
     private let canvasHeight: CGFloat = 252
 
+    private var accent: Color { ProfileStreakDesign.accent(colorScheme: colorScheme) }
+    private var accentDeep: Color { ProfileStreakDesign.accentDeep(colorScheme: colorScheme) }
+    private var accentGlow: Color { ProfileStreakDesign.accentGlow(colorScheme: colorScheme) }
+    private var isLight: Bool { colorScheme == .light }
+    private var outerBlendMode: BlendMode { isLight ? .normal : .plusLighter }
+
     var body: some View {
         ZStack {
             ambientGlowLayer
-                .blendMode(.plusLighter)
+                .blendMode(outerBlendMode)
                 .allowsHitTesting(false)
 
             flameLayer(
@@ -519,36 +551,36 @@ private struct ProfileAnimatedFlameView: View {
                 widthScale: 1.18,
                 heightScale: 1.12,
                 blur: 36,
-                opacity: 0.32,
+                opacity: isLight ? 0.42 : 0.32,
                 colors: [
-                    ProfileStreakDesign.accentGlow.opacity(0.45),
-                    ProfileStreakDesign.accentDeep.opacity(0.03)
+                    accentGlow.opacity(isLight ? 0.62 : 0.45),
+                    accentDeep.opacity(isLight ? 0.12 : 0.03)
                 ]
             )
-            .blendMode(.plusLighter)
+            .blendMode(outerBlendMode)
 
             flameLayer(
                 phase: 1.35,
                 widthScale: 1.08,
                 heightScale: 1.06,
                 blur: 24,
-                opacity: 0.46,
+                opacity: isLight ? 0.58 : 0.46,
                 colors: [
-                    ProfileStreakDesign.accentGlow.opacity(0.58),
-                    ProfileStreakDesign.accentDeep.opacity(0.10)
+                    accentGlow.opacity(isLight ? 0.78 : 0.58),
+                    accentDeep.opacity(isLight ? 0.22 : 0.10)
                 ]
             )
-            .blendMode(.plusLighter)
+            .blendMode(outerBlendMode)
 
             flameLayer(
                 phase: 2.7,
                 widthScale: 0.96,
                 heightScale: 1.0,
                 blur: 14,
-                opacity: 0.72,
+                opacity: isLight ? 0.88 : 0.72,
                 colors: [
-                    ProfileStreakDesign.accent.opacity(0.88),
-                    ProfileStreakDesign.accentDeep.opacity(0.38)
+                    accent.opacity(isLight ? 0.96 : 0.88),
+                    accentDeep.opacity(isLight ? 0.58 : 0.38)
                 ]
             )
 
@@ -557,10 +589,10 @@ private struct ProfileAnimatedFlameView: View {
                 widthScale: 0.68,
                 heightScale: 0.82,
                 blur: 8,
-                opacity: 0.88,
+                opacity: isLight ? 0.92 : 0.88,
                 colors: [
-                    Color.white.opacity(0.90),
-                    ProfileStreakDesign.accent.opacity(0.82)
+                    Color.white.opacity(isLight ? 0.42 : 0.90),
+                    accent.opacity(isLight ? 0.92 : 0.82)
                 ]
             )
 
@@ -582,8 +614,8 @@ private struct ProfileAnimatedFlameView: View {
                 path,
                 with: .radialGradient(
                     Gradient(colors: [
-                        ProfileStreakDesign.accentGlow.opacity(0.38),
-                        ProfileStreakDesign.accentDeep.opacity(0.04),
+                        accentGlow.opacity(isLight ? 0.48 : 0.38),
+                        accentDeep.opacity(isLight ? 0.10 : 0.04),
                         Color.clear
                     ]),
                     center: CGPoint(x: rect.midX, y: rect.midY + rect.height * 0.08),
@@ -593,7 +625,7 @@ private struct ProfileAnimatedFlameView: View {
             )
         }
         .blur(radius: 52)
-        .opacity(0.42)
+        .opacity(isLight ? 0.52 : 0.42)
         .scaleEffect(x: 0.92, y: 1.08)
     }
 
@@ -652,8 +684,8 @@ private struct ProfileAnimatedFlameView: View {
                 path,
                 with: .linearGradient(
                     Gradient(colors: [
-                        Color.white.opacity(0.82),
-                        ProfileStreakDesign.accent.opacity(0.28)
+                        Color.white.opacity(isLight ? 0.48 : 0.82),
+                        accent.opacity(isLight ? 0.42 : 0.28)
                     ]),
                     startPoint: CGPoint(x: rect.midX, y: rect.maxY),
                     endPoint: CGPoint(x: rect.midX, y: rect.minY)
@@ -662,7 +694,7 @@ private struct ProfileAnimatedFlameView: View {
         }
         .blur(radius: 6)
         .opacity(0.5 + sin(time * 6.2 + phase) * 0.2)
-        .blendMode(.plusLighter)
+        .blendMode(isLight ? .normal : .plusLighter)
     }
 }
 

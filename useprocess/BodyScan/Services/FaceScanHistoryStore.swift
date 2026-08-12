@@ -1,3 +1,4 @@
+import FirebaseAuth
 import Foundation
 
 @MainActor
@@ -34,6 +35,7 @@ final class FaceScanHistoryStore {
         didImportOnboarding = false
         FaceScanImageStore.migrateExistingMediaProtectionIfNeeded()
         loadFromDisk()
+        clearLegacyPendingScanLock()
         importOnboardingSnapshotIfNeeded()
 
         remoteSyncTask?.cancel()
@@ -72,14 +74,23 @@ final class FaceScanHistoryStore {
     func syncFromRemote() async {
         guard !AppSession.shared.isAccountWipeInProgress else { return }
         guard ProcessPrivacyConsentStore.shared.canCaptureFaceScan else { return }
-        guard AppConfiguration.firebaseConfigured,
-              let uid = userId ?? AuthUser.current?.uid else { return }
+        guard AppConfiguration.firebaseConfigured else { return }
+        guard let authUid = AuthUser.current?.uid else { return }
 
-        guard let remote = try? await FaceScanFirestoreRepository.shared.fetchHistory(userId: uid, limit: 90) else {
-            return
+        let uid = userId ?? authUid
+        guard uid == authUid else { return }
+
+        _ = try? await Auth.auth().currentUser?.getIDToken(forcingRefresh: false)
+
+        do {
+            let remote = try await FaceScanFirestoreRepository.shared.fetchHistory(userId: uid, limit: 90)
+            guard !Task.isCancelled else { return }
+            mergeRemote(remote)
+        } catch {
+            #if DEBUG
+            print("[FaceScanHistoryStore] remote sync skipped: \(error.localizedDescription)")
+            #endif
         }
-        guard !Task.isCancelled else { return }
-        mergeRemote(remote)
     }
 
     private func mergeRemote(_ remote: [FaceScanResult]) {
@@ -395,12 +406,19 @@ final class FaceScanHistoryStore {
         history = []
     }
 
+    /// Ancien verrou « pending » — retiré car il bloquait le scan du jour.
+    private func clearLegacyPendingScanLock() {
+        guard let userId else { return }
+        UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.pendingDay", userId: userId))
+    }
+
     func clearForUser(userId: String?) {
         if let userId {
             let latestStorageKey = UserScopedStorage.key("facescan.latest", userId: userId)
             let historyStorageKey = UserScopedStorage.key("facescan.history", userId: userId)
             UserDefaults.standard.removeObject(forKey: latestStorageKey)
             UserDefaults.standard.removeObject(forKey: historyStorageKey)
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("facescan.pendingDay", userId: userId))
             persistenceGeneration &+= 1
             let generation = persistenceGeneration
             Task.detached(priority: .utility) {

@@ -29,27 +29,21 @@ struct PlanLastFaceScanSection: View {
     private let cardRadius: CGFloat = 30
 
     private enum Layout {
-        static let cardPadding: CGFloat = 16
-        static let topMinHeight: CGFloat = 118
-        static let postScanTopMinHeight: CGFloat = 92
-        static let scanAvailableHeight: CGFloat = 118
-        static let footerVerticalPadding: CGFloat = 14
-        static let postScanFooterVerticalPadding: CGFloat = 10
+        static let cardPadding: CGFloat = 12
+        static let mediaSidePadding: CGFloat = 12
+        static let mediaSideSpacing: CGFloat = 5
         static let blockSpacing: CGFloat = 8
         static let videoTrailingRadius: CGFloat = 18
         static let inlineControlsHeight: CGFloat = 196
         static let scanRingOverflow: CGFloat = FaceScanViewportMetrics.tickRingOverflow
-        static let postScanFooterContentHeight: CGFloat = 58
+        static let scanAvailableHeight: CGFloat = 112
+        static let postScanCardHeight: CGFloat = 164
+        static let postScanFooterHeight: CGFloat = 54
     }
 
-    /// Cadence réelle uniquement — après Continuer, on affiche « Dernier scan » + photo + Prochain scan.
-    /// Le studio peut toujours relancer via le menu « Refaire le scan » (`isScanFlowActive`).
+    /// Cadence réelle uniquement — après Continuer, on affiche le commentaire visage + photo + Prochain scan.
     private var effectiveScanDue: Bool {
         isScanDue
-    }
-
-    private var isPostScanComplete: Bool {
-        latest != nil && !effectiveScanDue
     }
 
     private func inlineViewportDiameter(for cardWidth: CGFloat) -> CGFloat {
@@ -260,18 +254,18 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var compactScanDueTrailingColumnContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(scanAvailableTitle)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.primaryText)
+                .lineLimit(3)
+                .minimumScaleFactor(0.92)
                 .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
 
             scanAvailableButton
         }
-        .padding(Layout.cardPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(Layout.mediaSidePadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     @MainActor
@@ -293,7 +287,7 @@ struct PlanLastFaceScanSection: View {
         onScan?()
     }
 
-    private let videoWidthRatio: CGFloat = 0.38
+    private let videoWidthRatio: CGFloat = 0.36
 
     private var scanAvailableTitle: String {
         if isFirstScanPending {
@@ -306,10 +300,10 @@ struct PlanLastFaceScanSection: View {
     private var scanAvailableButton: some View {
         Button(action: beginInlineScan) {
             Label(AppCopy.t("Faire mon scan", en: "Start my scan"), systemImage: "camera.fill")
-                .font(.subheadline.weight(.bold))
+                .font(.footnote.weight(.bold))
                 .foregroundStyle(theme.primaryText)
                 .frame(maxWidth: .infinity)
-                .frame(height: 48)
+                .frame(height: 44)
         }
         .processGlassButton(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityLabel(AppCopy.t("Faire mon scan", en: "Start my scan"))
@@ -317,99 +311,96 @@ struct PlanLastFaceScanSection: View {
 
     @ViewBuilder
     private var postScanCardContent: some View {
-        GeometryReader { geo in
-            let videoWidth = showsMediaColumn
-                ? min(max(118, geo.size.width * videoWidthRatio), geo.size.width * 0.44)
-                : 0
-
-            HStack(alignment: .top, spacing: 0) {
-                if showsMediaColumn {
-                    videoSidePanel(spansFullCardHeight: true)
-                        .frame(width: videoWidth)
-                        .frame(maxHeight: .infinity, alignment: .top)
-                }
-
-                VStack(alignment: .leading, spacing: 0) {
-                    postScanTextColumn
-                    nextScanFooterBand
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        HStack(alignment: .top, spacing: 0) {
+            if showsMediaColumn {
+                videoSidePanel(spansFullCardHeight: true)
+                    .frame(width: postScanVideoWidth)
             }
+
+            VStack(alignment: .leading, spacing: 0) {
+                postScanInfoColumn
+                nextScanFooterBand
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(minHeight: postScanCardMinHeight)
+        .frame(height: Layout.postScanCardHeight)
         .contentShape(cardShape)
         .contextMenu {
             faceScanDisplayMenu
         }
     }
 
-    private var postScanCardMinHeight: CGFloat {
-        let top = isPostScanComplete ? Layout.postScanTopMinHeight : Layout.topMinHeight
-        let footerPad = isPostScanComplete ? Layout.postScanFooterVerticalPadding : Layout.footerVerticalPadding
-        let footerBody = isPostScanComplete ? Layout.postScanFooterContentHeight : 52
-        return top + footerPad * 2 + footerBody
+    private var postScanVideoWidth: CGFloat {
+        let cardWidth = UIScreen.main.bounds.width - (PlanHomeSectionDesign.homeScrollPadding * 2)
+        return min(max(112, cardWidth * videoWidthRatio), cardWidth * 0.42)
     }
 
-    private var postScanTextColumn: some View {
-        VStack(alignment: .leading, spacing: isPostScanComplete ? 0 : Layout.blockSpacing) {
-            if !showsMediaColumn {
-                HStack(spacing: 10) {
-                    compactLeadingIcon
-                    scanCardHeader
-                }
+    @ViewBuilder
+    private var postScanInfoColumn: some View {
+        Group {
+            if showsMediaColumn {
+                postScanMediaSideInfo
             } else {
-                scanCardHeader
+                postScanCompactInfo
             }
+        }
+        .padding(.horizontal, Layout.mediaSidePadding)
+        .padding(.top, Layout.mediaSidePadding)
+        .padding(.bottom, 6)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
 
-            if !isPostScanComplete {
-                Text(preScanActionMessage)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(theme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+    @ViewBuilder
+    private var postScanMediaSideInfo: some View {
+        if let latest {
+            let appreciation = FaceWellnessScore.appreciation(for: latest)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(appreciation.headline)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(theme.primaryText)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.88)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                lastScanScoreLabel(score: latest.displayWellnessScore)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private var postScanCompactInfo: some View {
+        if let latest {
+            let appreciation = FaceWellnessScore.appreciation(for: latest)
+            HStack(alignment: .top, spacing: 10) {
+                compactLeadingIcon
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(appreciation.headline)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(theme.primaryText)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.88)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    lastScanScoreLabel(score: latest.displayWellnessScore)
+                }
 
                 Spacer(minLength: 0)
             }
         }
-        .padding(isPostScanComplete ? 12 : Layout.cardPadding)
-        .frame(
-            maxWidth: .infinity,
-            minHeight: isPostScanComplete ? Layout.postScanTopMinHeight : Layout.topMinHeight,
-            alignment: .leading
-        )
     }
 
-    private var scanCardHeader: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text(PlanHomeSectionKind.faceScan.title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(theme.primaryText)
-
-            Spacer(minLength: 8)
-
-            if let latest {
-                ReadinessScoreMiniBadge(score: latest.displayWellnessScore)
-                    .offset(y: -8)
-                    .padding(.trailing, -6)
-            }
-        }
-    }
-
-    private var preScanActionMessage: String {
-        if isFirstScanPending {
-            return AppCopy.t("Fais ton premier scan — 30 secondes.", en: "Do your first scan — 30 seconds.")
-        }
-        if isScanDue {
-            return AppCopy.t("Ton scan du jour est disponible.", en: "Your scan for today is available.")
-        }
-        let targets = WelcomePlanStore.shared.plan?.personalizedTargets ?? .default
-        return PlanFaceScanPreScanAction.message(
-            for: latest,
-            stepsToday: healthMetrics.stepsToday,
-            stepTarget: targets.dailySteps,
-            waterLitersToday: healthMetrics.waterLitersToday,
-            waterTargetLiters: targets.hydrationLitersPerDay
-        )
+    private func lastScanScoreLabel(score: Int) -> some View {
+        Text(score > 0 ? "\(score)%" : "—")
+            .font(.system(size: 20, weight: .bold, design: .rounded))
+            .foregroundStyle(theme.secondaryText)
+            .monospacedDigit()
+            .accessibilityLabel(
+                score > 0
+                    ? AppCopy.t("Score du scan \(score) pour cent", en: "Scan score \(score) percent")
+                    : AppCopy.t("Score du scan indisponible", en: "Scan score unavailable")
+            )
     }
 
     private var nextScanFooterBand: some View {
@@ -419,11 +410,12 @@ struct PlanLastFaceScanSection: View {
                 isScanDue: isScanDue,
                 now: now,
                 theme: theme,
-                isCompact: isPostScanComplete
+                isCompact: true
             )
         }
-        .padding(.horizontal, isPostScanComplete ? 12 : Layout.cardPadding)
-        .padding(.vertical, isPostScanComplete ? Layout.postScanFooterVerticalPadding : Layout.footerVerticalPadding)
+        .padding(.horizontal, Layout.mediaSidePadding)
+        .padding(.bottom, Layout.mediaSidePadding)
+        .frame(height: Layout.postScanFooterHeight, alignment: .bottomLeading)
     }
 
     private func videoPanelShape(spansFullCardHeight: Bool) -> UnevenRoundedRectangle {
@@ -504,71 +496,7 @@ struct PlanLastFaceScanSection: View {
     }
 }
 
-// MARK: - Messages courts (hydratation / marche — pas de routine)
-
-enum PlanFaceScanPreScanAction {
-    @MainActor
-    static func message(
-        for result: FaceScanResult?,
-        stepsToday: Int,
-        stepTarget: Int,
-        waterLitersToday: Double,
-        waterTargetLiters: Int
-    ) -> String {
-        guard result != nil else {
-            return AppCopy.t("Fais ton premier scan — 30 secondes.", en: "Do your first scan — 30 seconds.")
-        }
-
-        let waterTarget = max(1, waterTargetLiters)
-        let waterGap = max(0, Double(waterTarget) - waterLitersToday)
-        let stepsGap = max(0, stepTarget - stepsToday)
-        let hydrationTracked = waterLitersToday > 0.05
-        let hydrationLow = hydrationTracked && waterLitersToday < Double(waterTarget) * 0.6
-        let stepsLow = stepTarget > 0 && stepsToday < Int(Double(stepTarget) * 0.65)
-
-        if hydrationLow {
-            if waterGap >= 1 {
-                let amount = String(format: "%.1f", waterGap)
-                return AppCopy.t(
-                    "Encore \(amount) L d'eau aujourd'hui.",
-                    en: "\(amount) L of water left today."
-                )
-            }
-            return AppCopy.t("Hydrate plus — il reste de l'eau à boire.", en: "Hydrate more — you still have water left to drink.")
-        }
-
-        if stepsLow {
-            if stepsGap >= 2500 {
-                return AppCopy.t("Peu de pas aujourd'hui — bouge un peu plus.", en: "Low steps today — move a bit more.")
-            }
-            return AppCopy.t("Encore \(formattedSteps(stepsGap)) pas aujourd'hui.", en: "\(formattedSteps(stepsGap)) steps left today.")
-        }
-
-        if !hydrationTracked {
-            return AppCopy.t("N'oublie pas ton eau — cible \(waterTarget) L.", en: "Don't forget your water — aim for \(waterTarget) L.")
-        }
-
-        if let result, result.markers.puffinessScore >= 62 {
-            return AppCopy.t("Gonflement visible — l'eau aide à dégonfler.", en: "Puffiness visible — water helps debloat.")
-        }
-
-        return AppCopy.t("Bien hydraté et assez actif aujourd'hui.", en: "Well hydrated and active enough today.")
-    }
-
-    @MainActor
-    private static func formattedSteps(_ value: Int) -> String {
-        let nf = NumberFormatter()
-        nf.locale = ProcessAppLanguage.shared.locale
-        nf.numberStyle = .decimal
-        return nf.string(from: NSNumber(value: value)) ?? "\(value)"
-    }
-}
-
 // MARK: - Bande basse prochain scan
-
-enum PlanFaceScanChrome {
-    static let luminousBlue = Color(red: 0.26, green: 0.48, blue: 0.84)
-}
 
 private struct PlanFaceScanNextScanFooter: View {
     let latest: FaceScanResult?
@@ -576,9 +504,6 @@ private struct PlanFaceScanNextScanFooter: View {
     let now: Date
     let theme: AppTheme
     var isCompact: Bool = false
-
-    private var rowSpacing: CGFloat { isCompact ? 7 : 10 }
-    private var progressBarHeight: CGFloat { isCompact ? 9 : 11 }
 
     private var progress: Double {
         guard let latest else { return 0 }
@@ -597,54 +522,37 @@ private struct PlanFaceScanNextScanFooter: View {
         return FaceScanCadence.countdownLabel(since: latest?.createdAt, now: now)
     }
 
-    private var statusIcon: String {
-        if latest == nil { return "camera.fill" }
-        if isScanDue { return "bell.badge.fill" }
-        return "clock.fill"
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: rowSpacing) {
-            HStack(alignment: .center, spacing: 8) {
-                Image(systemName: statusIcon)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(statusColor)
-                    .frame(width: isCompact ? 20 : 22, height: isCompact ? 20 : 22)
-                    .background(statusColor.opacity(0.14), in: Circle())
-
+        VStack(alignment: .leading, spacing: isCompact ? 6 : 8) {
+            HStack(alignment: .lastTextBaseline, spacing: 8) {
                 Text(headline)
-                    .font(isCompact ? .footnote.weight(.semibold) : .subheadline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(theme.secondaryText)
+                    .lineLimit(1)
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 4)
+
+                Text(trailingLabel)
+                    .font(.system(size: isCompact ? 18 : 20, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(countdownColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-
-            Text(trailingLabel)
-                .font(isCompact ? .caption.weight(.bold) : .footnote.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(countdownColor)
-                .padding(.leading, isCompact ? 28 : 30)
 
             PlanFaceScanProgressBar(
                 progress: progress,
                 isComplete: latest != nil && isScanDue,
                 isPending: latest == nil,
-                accent: PlanFaceScanChrome.luminousBlue,
-                track: Color.primary.opacity(theme.isDark ? 0.22 : 0.10),
-                barHeight: progressBarHeight
+                theme: theme,
+                barHeight: isCompact ? 10 : 11
             )
         }
     }
 
-    private var statusColor: Color {
-        if latest == nil { return PlanFaceScanChrome.luminousBlue }
-        if isScanDue { return theme.onboardingAccent }
-        return PlanFaceScanChrome.luminousBlue.opacity(0.88)
-    }
-
     private var countdownColor: Color {
         if isScanDue { return theme.onboardingAccent }
-        return PlanFaceScanChrome.luminousBlue
+        return theme.primaryText
     }
 }
 
@@ -652,9 +560,8 @@ private struct PlanFaceScanProgressBar: View {
     let progress: Double
     let isComplete: Bool
     let isPending: Bool
-    let accent: Color
-    let track: Color
-    var barHeight: CGFloat = 11
+    let theme: AppTheme
+    var barHeight: CGFloat = 10
 
     private var fillProgress: Double {
         if isPending { return 0 }
@@ -662,46 +569,42 @@ private struct PlanFaceScanProgressBar: View {
         return min(1, max(0, progress))
     }
 
-    private var fillGradient: LinearGradient {
-        if isComplete {
-            return LinearGradient(
-                colors: [accent, accent.opacity(0.75)],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        }
-        return LinearGradient(
-            colors: [accent.opacity(0.95), accent.opacity(0.55)],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
+    private var fillColor: Color {
+        if isComplete { return theme.onboardingAccent }
+        return theme.primaryText.opacity(theme.isDark ? 0.88 : 0.82)
     }
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let fillWidth = max(10, width * fillProgress)
+            let fillWidth = max(fillProgress > 0 ? 6 : 0, width * fillProgress)
 
             ZStack(alignment: .leading) {
                 Capsule(style: .continuous)
-                    .fill(track)
+                    .fill(Color.primary.opacity(theme.isDark ? 0.18 : 0.08))
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .strokeBorder(Color.primary.opacity(theme.isDark ? 0.12 : 0.06), lineWidth: 0.5)
+                    }
 
                 Capsule(style: .continuous)
-                    .fill(fillGradient)
+                    .fill(fillColor)
                     .frame(width: fillWidth)
+                    .shadow(color: fillColor.opacity(isComplete ? 0.35 : 0.12), radius: isComplete ? 4 : 2, y: 1)
 
                 if isComplete {
                     HStack {
                         Spacer()
                         Image(systemName: "checkmark")
-                            .font(.system(size: 9, weight: .black))
+                            .font(.system(size: 8, weight: .black))
                             .foregroundStyle(.white)
-                            .padding(.trailing, 6)
+                            .padding(.trailing, 5)
                     }
                 }
             }
         }
         .frame(height: barHeight)
+        .animation(.easeInOut(duration: 0.35), value: fillProgress)
     }
 }
 

@@ -16,6 +16,7 @@ struct PlanDashboardView: View {
     @State private var showCalendar = false
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
     @State private var planHealthMetrics = PlanHomeHealthMetrics()
+    @Namespace private var planCalendarZoomNamespace
 
     private var isPlanRuntimeActive: Bool {
         isTabActive && scenePhase == .active
@@ -27,10 +28,6 @@ struct PlanDashboardView: View {
         planDashboard
             .animation(.spring(response: 0.44, dampingFraction: 0.88), value: session.hasCompletedWelcomePlanChat)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var showsPlanTopChrome: Bool {
-        true
     }
 
     private var tutorialBottomPadding: CGFloat {
@@ -48,41 +45,33 @@ struct PlanDashboardView: View {
                     pageSection: .plan
                 ) {
                     VStack(alignment: .leading, spacing: 24) {
-                        if showsPlanTopChrome {
-                            PlanHomeTopChrome(
-                                selectedSection: $selectedSection,
-                                selectedDate: $selectedPlanDate,
-                                showCalendar: $showCalendar,
-                                plan: livePlan,
-                                onOpenStreak: presentDailyChecklist
-                            )
-                        }
+                        PlanHomeTopChrome(
+                            selectedSection: $selectedSection,
+                            selectedDate: $selectedPlanDate,
+                            showCalendar: $showCalendar,
+                            plan: livePlan,
+                            calendarZoomNamespace: planCalendarZoomNamespace,
+                            onOpenStreak: presentDailyChecklist
+                        )
 
                         planContent
-
-                        #if DEBUG
-                        planHomeTutorialDebugButton
-                        #endif
                     }
                     .padding()
                     .padding(.bottom, tutorialBottomPadding)
                 }
                 .onChange(of: tutorialStore.isActive) { _, active in
                     guard active else { return }
-                    scrollTutorialFocus(with: scrollProxy, animated: false)
+                    scheduleTutorialScroll(with: scrollProxy, animated: false)
                     focusTutorialCarouselIfNeeded()
                 }
                 .onChange(of: tutorialStore.currentStepIndex) { _, _ in
                     guard tutorialStore.isActive else { return }
-                    if tutorialStore.shouldScrollVerticallyToFocus {
-                        scrollTutorialFocus(with: scrollProxy)
-                    }
+                    scheduleTutorialScroll(with: scrollProxy)
                     focusTutorialCarouselIfNeeded()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
-            .toolbarBackground(.hidden, for: .navigationBar)
             .processClearUIKitHostingBackground()
             .processMorphingRefreshable {
                 planStore.reloadForCurrentUser(force: true)
@@ -94,13 +83,16 @@ struct PlanDashboardView: View {
                 }
                 refreshPlanHealthMetrics()
                 tutorialStore.reload()
-                tutorialStore.schedulePresentationIfNeeded(planAvailable: livePlan != nil)
-            }
-            .onDisappear {
-                tutorialStore.cancelScheduledPresentation()
+                tutorialStore.schedulePresentationIfNeeded(
+                    planAvailable: livePlan != nil,
+                    preferImmediate: true
+                )
             }
             .onChange(of: livePlan?.id) { _, _ in
-                tutorialStore.schedulePresentationIfNeeded(planAvailable: livePlan != nil)
+                tutorialStore.schedulePresentationIfNeeded(
+                    planAvailable: livePlan != nil,
+                    preferImmediate: true
+                )
             }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active, isTabActive else { return }
@@ -123,15 +115,29 @@ struct PlanDashboardView: View {
     }
 
     @MainActor
+    private func scheduleTutorialScroll(with proxy: ScrollViewProxy, animated: Bool = true) {
+        guard tutorialStore.shouldScrollVerticallyToFocus,
+              tutorialStore.currentStep.scrollAnchorID != nil else { return }
+
+        Task { @MainActor in
+            // Laisse la section apparaître avant le scroll — évite le saut sur circuit / cardio.
+            try? await Task.sleep(for: .milliseconds(animated ? 180 : 60))
+            guard tutorialStore.isActive, tutorialStore.shouldScrollVerticallyToFocus else { return }
+            scrollTutorialFocus(with: proxy, animated: animated)
+        }
+    }
+
+    @MainActor
     private func scrollTutorialFocus(with proxy: ScrollViewProxy, animated: Bool = true) {
         guard tutorialStore.shouldScrollVerticallyToFocus,
               let anchor = tutorialStore.currentStep.scrollAnchorID else { return }
+        let scrollAnchor: UnitPoint = .init(x: 0.5, y: 0.24)
         if animated {
-            withAnimation(.spring(response: 0.52, dampingFraction: 0.88)) {
-                proxy.scrollTo(anchor, anchor: .center)
+            withAnimation(.spring(response: 0.56, dampingFraction: 0.9)) {
+                proxy.scrollTo(anchor, anchor: scrollAnchor)
             }
         } else {
-            proxy.scrollTo(anchor, anchor: .center)
+            proxy.scrollTo(anchor, anchor: scrollAnchor)
         }
     }
 
@@ -221,20 +227,4 @@ struct PlanDashboardView: View {
             isRequired: false
         )
     }
-
-    #if DEBUG
-    private var planHomeTutorialDebugButton: some View {
-        Button {
-            tutorialStore.debugRestart()
-        } label: {
-            Text(AppCopy.t("Relancer le tutoriel accueil", en: "Restart home tutorial"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(theme.secondaryText.opacity(0.85))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 28)
-    }
-    #endif
 }

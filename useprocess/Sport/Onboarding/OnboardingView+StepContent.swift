@@ -50,7 +50,6 @@ extension SportOnboardingView {
                 onContinue: nextStep // ✅ NOUVEAU: Passer à l'étape suivante depuis le clavier
             )
         case .heightWeight, .bodyScan, .primaryGoal, .weightGoal, .idealWeight, .weightGoalIncompatible,
-             .notificationPermission,
              .sportClub, .experienceLevel, .hardestMeal,
              .yearsOfExperience, .deadlineSelection, .eventDetails,
              .potentialPace, .trainingFrequency, .nutritionScanFeature,
@@ -134,6 +133,11 @@ extension SportOnboardingView {
                 viewModel: viewModel,
                 onComplete: nextStep,
                 onBack: handleBackFromProgramCreation
+            )
+        case .notificationPermission:
+            NotificationPermissionStepView(
+                onComplete: nextStep,
+                onBack: previousStep
             )
         case .payment:
             PaywallView(

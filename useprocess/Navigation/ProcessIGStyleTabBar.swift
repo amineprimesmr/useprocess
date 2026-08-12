@@ -343,7 +343,7 @@ struct ProcessIGTabShell<Content: View>: View {
     }
 }
 
-// MARK: - Bouton scan repas (+)
+// MARK: - Bouton scan repas (viewfinder)
 
 /// Zone tactile pleine — le glass seul laissait passer les taps vers le scroll derrière.
 private struct ProcessIGMealScanButton: View {
@@ -360,8 +360,9 @@ private struct ProcessIGMealScanButton: View {
             Color.clear
                 .frame(width: hitSize, height: hitSize)
                 .overlay {
-                    Image(systemName: "plus")
+                    Image(systemName: "viewfinder")
                         .font(.system(size: ProcessIGTabMetrics.iconSize, weight: .semibold))
+                        .symbolRenderingMode(.monochrome)
                         .foregroundStyle(Color.primary)
                         .frame(
                             width: ProcessIGTabMetrics.tabBarHeight,

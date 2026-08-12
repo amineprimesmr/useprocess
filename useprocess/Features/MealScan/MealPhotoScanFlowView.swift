@@ -101,10 +101,13 @@ struct MealPhotoScanFlowView: View {
     }
 
     private var cameraScrim: some View {
-        Rectangle()
-            .fill(Color.black.opacity(0.14))
-            .ignoresSafeArea()
-            .contentShape(Rectangle())
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+            Color.black.opacity(isCameraPanelRevealed ? 0.28 : 0)
+        }
+        .ignoresSafeArea()
+        .contentShape(Rectangle())
     }
 
     private func cameraPanel(panelHeight: CGFloat) -> some View {
@@ -567,8 +570,8 @@ private enum MealScanCompositionEditTarget: Identifiable, Equatable {
 // MARK: - Présentation caméra scan repas
 
 enum MealPhotoScanCameraPresentation {
-    /// Panneau caméra — plus compact qu’avant (68 %).
-    static let panelHeightRatio: CGFloat = 0.58
+    /// Panneau caméra — hauteur confortable pour cadrer le repas.
+    static let panelHeightRatio: CGFloat = 0.74
     static let spring = Animation.spring(response: 0.30, dampingFraction: 0.90)
     static let dismissDragThreshold: CGFloat = 64
 }

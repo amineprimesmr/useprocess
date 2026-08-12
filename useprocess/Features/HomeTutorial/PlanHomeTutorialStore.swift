@@ -42,10 +42,9 @@ final class PlanHomeTutorialStore {
         }
     }
 
-    /// Titre « Repas debloat » — masqué tant qu'on est sur l'étape eau seule.
+    /// Titre « Repas debloat » — visible dès l'étape hydratation avec la carte eau.
     var showsNutritionSectionTitle: Bool {
-        guard isActive else { return true }
-        return currentStep != .hydration
+        true
     }
 
     /// Scroll vertical Accueil — inutile quand les repas apparaissent à droite de l'eau.
@@ -62,31 +61,40 @@ final class PlanHomeTutorialStore {
         }
     }
 
-    func schedulePresentationIfNeeded(planAvailable: Bool) {
+    /// Lance le tutoriel dès que le plan est prêt (après check-in du soir s'il bloque).
+    func schedulePresentationIfNeeded(planAvailable: Bool, preferImmediate: Bool = false) {
         presentationTask?.cancel()
         guard planAvailable, !hasCompleted, !isActive else { return }
         guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
 
+        let delayMs: UInt64 = preferImmediate ? 140 : 420
         presentationTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(850))
-            guard !Task.isCancelled, !hasCompleted else { return }
-            guard WelcomePlanStore.shared.plan != nil else { return }
-            guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
-            withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
-                currentStepIndex = 0
-                isActive = true
-                applyTab(for: currentStep)
-            }
-            HapticManager.shared.impact(.light)
-            if currentStep.focusesHydrationCarousel {
-                CoachPlanNavigationBridge.shared.focusHydrationOnHome()
-            }
+            try? await Task.sleep(for: .milliseconds(delayMs))
+            guard !Task.isCancelled, !hasCompleted, !isActive else { return }
+            beginPresentationIfPossible()
         }
     }
 
     func cancelScheduledPresentation() {
         presentationTask?.cancel()
         presentationTask = nil
+    }
+
+    private func beginPresentationIfPossible() {
+        guard !hasCompleted, !isActive else { return }
+        guard WelcomePlanStore.shared.plan != nil else { return }
+        guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
+
+        presentationTask = nil
+        withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
+            currentStepIndex = 0
+            isActive = true
+            applyTab(for: currentStep)
+        }
+        HapticManager.shared.impact(.light)
+        if currentStep.focusesHydrationCarousel {
+            CoachPlanNavigationBridge.shared.focusHydrationOnHome()
+        }
     }
 
     func shouldDisplay(section: PlanHomeSectionKind) -> Bool {
@@ -118,7 +126,6 @@ final class PlanHomeTutorialStore {
         case .hydration: 1
         case .meals: 2
         case .faceRoutine: 3
-        case .training: 4
         }
     }
 
@@ -166,28 +173,4 @@ final class PlanHomeTutorialStore {
         let key = UserScopedStorage.key(storageKeyBase)
         UserDefaults.standard.set(true, forKey: key)
     }
-
-#if DEBUG
-    func debugReset() {
-        hasCompleted = false
-        isActive = false
-        currentStepIndex = 0
-        let key = UserScopedStorage.key(storageKeyBase)
-        UserDefaults.standard.removeObject(forKey: key)
-    }
-
-    func debugRestart() {
-        debugReset()
-        guard WelcomePlanStore.shared.plan != nil else { return }
-        withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
-            currentStepIndex = 0
-            isActive = true
-            requestedMainSection = .plan
-        }
-        HapticManager.shared.impact(.medium)
-        if currentStep.focusesHydrationCarousel {
-            CoachPlanNavigationBridge.shared.focusHydrationOnHome()
-        }
-    }
-#endif
 }

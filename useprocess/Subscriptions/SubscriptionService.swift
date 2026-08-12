@@ -25,6 +25,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     var monthlyProduct: Product? { monthlyStoreProduct }
 
     private var isConfigured = false
+    private var syncedRevenueCatUserID: String?
     private var weeklyPackage: Package?
     private var monthlyPackage: Package?
     private var annualPackage: Package?
@@ -122,14 +123,14 @@ final class SubscriptionService: NSObject, ObservableObject {
         Purchases.shared.delegate = self
         isConfigured = true
 
-        if let uid = AuthUser.current?.uid {
-            Task { await syncAppUserID(uid) }
-        }
-
         Task {
             PaywallPricingExperiment.shared.resolve()
-            await loadSubscriptions()
-            await checkSubscriptionStatus()
+            if let uid = AuthUser.current?.uid {
+                await syncAppUserID(uid)
+            } else {
+                await loadSubscriptions()
+                await checkSubscriptionStatus()
+            }
         }
     }
 
@@ -137,14 +138,23 @@ final class SubscriptionService: NSObject, ObservableObject {
         guard isConfigured else { return }
 
         guard let userID, !userID.isEmpty else {
+            syncedRevenueCatUserID = nil
             await logOutAfterAccountDeletion()
             return
         }
 
         ProcessAnalytics.identify(userId: userID)
+
+        if syncedRevenueCatUserID == userID {
+            await checkSubscriptionStatus()
+            return
+        }
+
         do {
             _ = try await Purchases.shared.logIn(userID)
+            syncedRevenueCatUserID = userID
             await checkSubscriptionStatus()
+            await loadSubscriptions()
         } catch {
             return
         }
@@ -169,6 +179,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         subscriptionStatus = .notSubscribed
         isInFreeTrial = false
         trialExpirationDate = nil
+        syncedRevenueCatUserID = nil
     }
 
     func displayProduct(for plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
@@ -275,8 +286,24 @@ final class SubscriptionService: NSObject, ObservableObject {
             )
             applyPackageDisplay(annualPackage, plan: .annual)
             await refreshIntroOfferEligibility()
+
+            if !hasLiveShortPlanProduct || !hasLiveAnnualProduct {
+                let storeKitProducts = await fetchDirectStoreKitProducts(ids: ids)
+                if !storeKitProducts.isEmpty {
+                    applyDirectStoreKitProducts(storeKitProducts)
+                    await refreshIntroOfferEligibility()
+                } else if !hasLiveShortPlanProduct && !hasLiveAnnualProduct {
+                    applyFallbackProducts()
+                }
+            }
         } catch {
-            applyFallbackProducts()
+            let storeKitProducts = await fetchDirectStoreKitProducts(ids: ids)
+            if storeKitProducts.isEmpty {
+                applyFallbackProducts()
+            } else {
+                applyDirectStoreKitProducts(storeKitProducts)
+                await refreshIntroOfferEligibility()
+            }
         }
     }
 

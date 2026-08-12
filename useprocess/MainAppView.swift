@@ -51,6 +51,7 @@ struct MainAppView: View {
             handleEveningCheckInDismiss(submitted: submitted)
         }
         .planHomeTutorial(selectedSection: $selectedSection)
+        .processStackedToasts()
         .onChange(of: requiredEveningCheckIn) { _, target in
             guard let target else { return }
             lastPresentedEveningCheckInDayKey = target.id
@@ -279,6 +280,11 @@ struct MainAppView: View {
         lastPresentedEveningCheckInDayKey = nil
         requiredEveningCheckIn = nil
 
+        PlanHomeTutorialStore.shared.schedulePresentationIfNeeded(
+            planAvailable: WelcomePlanStore.shared.plan != nil,
+            preferImmediate: true
+        )
+
         // Bilan volontaire (aujourd'hui) — pas de re-prompt.
         guard let dayKey else { return }
         guard !submitted,
@@ -361,28 +367,31 @@ private struct MealPhotoScanCoverModifier: ViewModifier {
     var planBridge: CoachPlanNavigationBridge
 
     func body(content: Content) -> some View {
-        content.overlay {
-            if isPresented {
-                MealPhotoScanFlowView(
-                    onDismiss: { isPresented = false },
-                    onValidated: { _, _ in
-                        selectedSection = .plan
-                        planBridge.shouldOpenPlan = true
-                    }
-                )
-                .environmentObject(UnifiedProfileService.shared)
-                .transition(.opacity)
-                .zIndex(200)
-                .onDisappear {
-                    // Filet de sécurité — le tab bar ne doit jamais rester masqué.
-                    DispatchQueue.main.async {
-                        if isPresented {
-                            isPresented = false
+        content
+            .blur(radius: isPresented ? 5 : 0)
+            .opacity(isPresented ? 0.82 : 1)
+            .overlay {
+                if isPresented {
+                    MealPhotoScanFlowView(
+                        onDismiss: { isPresented = false },
+                        onValidated: { _, _ in
+                            selectedSection = .plan
+                            planBridge.shouldOpenPlan = true
+                        }
+                    )
+                    .environmentObject(UnifiedProfileService.shared)
+                    .transition(.opacity)
+                    .zIndex(200)
+                    .onDisappear {
+                        // Filet de sécurité — le tab bar ne doit jamais rester masqué.
+                        DispatchQueue.main.async {
+                            if isPresented {
+                                isPresented = false
+                            }
                         }
                     }
                 }
             }
-        }
-        .animation(MealPhotoScanCameraPresentation.spring, value: isPresented)
+            .animation(MealPhotoScanCameraPresentation.spring, value: isPresented)
     }
 }

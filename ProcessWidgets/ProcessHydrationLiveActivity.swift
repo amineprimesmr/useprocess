@@ -6,16 +6,10 @@ struct ProcessHydrationLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ProcessHydrationActivityAttributes.self) { context in
             // Fallback lock screen : même UI compacte que la DI (pas de bandeau noir vide).
-            ProcessHydrationPhaseView(state: context.state) { phase in
+            ProcessHydrationPhaseView(state: context.state) { _ in
                 HStack(spacing: 8) {
                     ProcessHydrationDropIcon.compactImage(side: 16)
-                    if phase == .drinkNow {
-                        Text(ProcessHydrationCopy.goLabel)
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                    } else {
-                        ProcessHydrationCompactTimer(nextSipAt: context.state.nextSipAt)
-                    }
+                    ProcessHydrationCompactTimer(nextSipAt: context.state.nextSipAt)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -38,25 +32,16 @@ struct ProcessHydrationLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                ProcessHydrationPhaseView(state: context.state) { phase in
-                    ProcessHydrationDropIcon.compactImage(side: phase == .drinkNow ? 15 : 17)
-                }
+                ProcessHydrationDropIcon.compactImage(side: 17)
             } compactTrailing: {
-                ProcessHydrationPhaseView(state: context.state) { phase in
-                    if phase == .drinkNow {
-                        ProcessHydrationLogDropButton(side: 22)
-                    } else {
-                        ProcessHydrationCompactTimer(nextSipAt: context.state.nextSipAt)
-                    }
-                }
+                ProcessHydrationCompactTimer(
+                    nextSipAt: context.state.nextSipAt
+                )
             } minimal: {
-                ProcessHydrationPhaseView(state: context.state) { phase in
-                    if phase == .drinkNow {
-                        ProcessHydrationDropIcon.compactImage(side: 14)
-                    } else {
-                        ProcessHydrationDropIcon.compactImage(side: 15)
-                    }
-                }
+                ProcessHydrationCompactTimer(
+                    nextSipAt: context.state.nextSipAt,
+                    minimal: true
+                )
             }
             .widgetURL(
                 context.state.effectivePhase() == .drinkNow
@@ -250,21 +235,26 @@ private struct ProcessHydrationLogDropButton: View {
 
 private struct ProcessHydrationCompactTimer: View {
     let nextSipAt: Date
-
-    private var range: ClosedRange<Date> {
-        Date.now...max(nextSipAt, Date.now.addingTimeInterval(1))
-    }
+    var minimal: Bool = false
 
     var body: some View {
-        Text(timerInterval: range, countsDown: true)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .foregroundStyle(.white)
-            .monospacedDigit()
-            .multilineTextAlignment(.trailing)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .frame(width: 40, height: 16, alignment: .trailing)
-            .clipped()
+        TimelineView(.periodic(from: .now, by: 1)) { timeline in
+            let remaining = max(0, nextSipAt.timeIntervalSince(timeline.date))
+            let isDue = remaining <= 0
+
+            Text(ProcessHydrationCountdownFormatting.compactLabel(for: remaining))
+                .font(.system(size: minimal ? 11 : 13, weight: .bold, design: .rounded))
+                .foregroundStyle(
+                    isDue
+                        ? ProcessHydrationLiveActivityPalette.accent
+                        : .white
+                )
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .frame(minWidth: minimal ? 28 : 44, alignment: .trailing)
+        }
     }
 }
 

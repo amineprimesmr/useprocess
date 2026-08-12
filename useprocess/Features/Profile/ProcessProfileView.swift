@@ -117,20 +117,44 @@ struct ProcessProfileView: View {
     }
 
     private var profileChartsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(AppCopy.t("Indicateurs", en: "Metrics"))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(theme.secondaryText)
-
-            LazyVStack(spacing: 16) {
-                ForEach(metricPresentations) { presentation in
+        LazyVStack(spacing: 12) {
+            ForEach(metricPresentations) { presentation in
+                ProcessStickySection(
+                    config: .init(
+                        sectionPadding: 14,
+                        cornerRadius: 24,
+                        isGlassBackground: true
+                    )
+                ) {
                     ProfileMetricChartSection(
                         metric: presentation.metric,
                         points: presentation.points,
                         latestValue: presentation.latestValue,
-                        deltaVsPrevious: presentation.deltaVsPrevious
+                        deltaVsPrevious: presentation.deltaVsPrevious,
+                        presentation: .stickySection
                     )
-                    .equatable()
+                } header: {
+                    HStack {
+                        Text(presentation.metric.title)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(theme.primaryText)
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: presentation.metric.stickySectionIcon)
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                } minimisedHeader: {
+                    HStack(spacing: 6) {
+                        Image(systemName: presentation.metric.stickySectionIcon)
+
+                        Text(presentation.metric.stickyMinimisedTitle)
+
+                        Spacer(minLength: 0)
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(theme.secondaryText)
                 }
             }
         }

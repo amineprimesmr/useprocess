@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Contour lumineux rotatif — 1 couche, 30 fps, sans blur (GPU-friendly).
+/// Contour lumineux rotatif — trait net, brillance courte, sans halo externe.
 struct PlanHomeTutorialRotatingBorder: View, Equatable {
     var cornerRadius: CGFloat = PlanHomeTutorialMetrics.sectionCornerRadius
-    var lineWidth: CGFloat = 2.25
-    var rotationPeriod: Double = 5.8
+    var lineWidth: CGFloat = 2.75
+    var rotationPeriod: Double = 4.8
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.cornerRadius == rhs.cornerRadius
@@ -29,6 +29,8 @@ private struct PlanHomeTutorialRotatingBorderPulse: View, Equatable {
     let lineWidth: CGFloat
     let rotationPeriod: Double
 
+    private static let hotCyan = Color(red: 0.78, green: 0.98, blue: 1.0)
+
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.cornerRadius == rhs.cornerRadius
             && abs(lhs.lineWidth - rhs.lineWidth) < 0.01
@@ -43,20 +45,25 @@ private struct PlanHomeTutorialRotatingBorderPulse: View, Equatable {
 
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(beamGradient(angle: angle), lineWidth: lineWidth)
-                .shadow(color: .white.opacity(0.35), radius: 6, x: 0, y: 0)
         }
+        .compositingGroup()
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .drawingGroup(opaque: false)
     }
 
+    /// Arc lumineux court (~12 % du périmètre) — le reste est transparent.
     private func beamGradient(angle: Angle) -> AngularGradient {
         AngularGradient(
             gradient: Gradient(stops: [
                 .init(color: .clear, location: 0.0),
-                .init(color: .white.opacity(0.08), location: 0.24),
-                .init(color: .white.opacity(0.55), location: 0.42),
+                .init(color: .clear, location: 0.42),
+                .init(color: Self.hotCyan.opacity(0.35), location: 0.46),
+                .init(color: .white.opacity(0.92), location: 0.49),
                 .init(color: .white, location: 0.50),
-                .init(color: .white.opacity(0.55), location: 0.58),
-                .init(color: .white.opacity(0.08), location: 0.76),
+                .init(color: Self.hotCyan, location: 0.505),
+                .init(color: .white.opacity(0.92), location: 0.51),
+                .init(color: Self.hotCyan.opacity(0.35), location: 0.54),
+                .init(color: .clear, location: 0.58),
                 .init(color: .clear, location: 1.0)
             ]),
             center: .center,
@@ -91,7 +98,7 @@ struct PlanHomeTutorialFocusChrome<Content: View>: View {
                         PlanHomeTutorialRotatingBorder(
                             cornerRadius: cornerRadius ?? focus.cornerRadius
                         )
-                        .transition(.opacity)
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     }
                 }
                 .opacity(isRevealed ? 0.88 : 1)
@@ -106,10 +113,11 @@ struct PlanHomeTutorialFocusChrome<Content: View>: View {
                         stepIndex: stepIndex,
                         stepCount: stepCount
                     )
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
             }
         }
+        .animation(.spring(response: 0.52, dampingFraction: 0.88), value: isFocused)
         .id(focus.scrollAnchorID)
     }
 }
@@ -155,8 +163,8 @@ struct PlanHomeTutorialTabSegmentOutline: View, Equatable {
 
                 PlanHomeTutorialRotatingBorder(
                     cornerRadius: PlanHomeTutorialMetrics.tabCornerRadius,
-                    lineWidth: 2.25,
-                    rotationPeriod: 5.8
+                    lineWidth: 2.75,
+                    rotationPeriod: 4.8
                 )
                 .frame(width: max(segmentWidth - 4, 44), height: geo.size.height)
                 .position(x: centerX, y: geo.size.height / 2)

@@ -387,14 +387,6 @@ struct CoachChatView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 4)
             }
-
-            if let feedback = viewModel.lastActionFeedback {
-                Text(feedback)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.coachAccent)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 4)
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .coordinateSpace(name: "coachChatRoot")

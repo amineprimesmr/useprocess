@@ -63,6 +63,7 @@ struct PlanHomeLayoutEditorSheet: View {
         .onAppear {
             layoutStore.reload()
         }
+        .processStackedToasts(bottomInset: 28)
     }
 
     private var editorTopBar: some View {
@@ -72,6 +73,14 @@ struct PlanHomeLayoutEditorSheet: View {
                     layoutStore.resetToDefault()
                 }
                 HapticManager.shared.notification(.success)
+                ProcessToastCenter.shared.show(
+                    "Accueil réinitialisé",
+                    en: "Home reset",
+                    description: "Sections remises par défaut.",
+                    en: "Sections restored to default.",
+                    symbol: "arrow.counterclockwise.circle.fill",
+                    tintColor: .blue
+                )
             } label: {
                 Text(AppCopy.t("Réinitialiser", en: "Reset"))
                     .font(.subheadline.weight(.semibold))

@@ -6,7 +6,7 @@
 import StoreKit
 import SwiftUI
 
-/// Page dédiée du premier scan : anneau + indicateurs ouverts/verrouillés, sans « Ce qui change ».
+/// Page dédiée du premier scan : anneau + indicateurs ouverts/verrouillés, sans revue comportementale.
 struct OnboardingDedicatedFaceScanResultsView: View {
     @Environment(\.requestReview) private var requestReview
 

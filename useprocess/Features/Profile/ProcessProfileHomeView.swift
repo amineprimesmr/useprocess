@@ -33,7 +33,7 @@ struct ProcessProfileHomeView: View {
             VStack(alignment: .leading, spacing: 20) {
                 identityBlock
 
-                ProcessCreatorStudioHubLink()
+                ProcessSettingsPlanProgramSections()
 
                 ProfileSettingsHubLinksSection()
             }
@@ -52,6 +52,7 @@ struct ProcessProfileHomeView: View {
             }
             profileStore.bind(unified: profileService.currentProfile)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
+            WelcomePlanStore.shared.reloadForCurrentUser()
             FaceScanHistoryStore.shared.reloadForUser(
                 userId: UserScopedStorage.currentUserId()
             )

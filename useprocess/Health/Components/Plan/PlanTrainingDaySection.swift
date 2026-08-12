@@ -1,15 +1,12 @@
 import SwiftUI
 
-// MARK: - Section Cardio et Circuit (page Plan)
+// MARK: - Section Cardio et Circuit (Réglages)
 
 struct PlanTrainingDaySection: View {
     let plan: FaceOriginPlan
     let day: OriginProgramDay
     var selectedDate: Date = Date()
     var isEditable: Bool = true
-
-    @Environment(\.appTheme) private var theme
-    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
 
     @Namespace private var trainingZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
@@ -28,7 +25,7 @@ struct PlanTrainingDaySection: View {
                 trailing: nil
             )
 
-            trainingCarouselBody
+            trainingCarousel(highlightsItemStrip: false)
         }
         .sheet(item: $selectedProtocolItem) { item in
             PlanProtocolItemDetailSheet(item: item)
@@ -43,26 +40,6 @@ struct PlanTrainingDaySection: View {
             return .postureCircuit
         }
         return .protocolItem(item.id)
-    }
-
-    @ViewBuilder
-    private var trainingCarouselBody: some View {
-        if tutorialStore.isFocused(.training) {
-            VStack(alignment: .leading, spacing: 22) {
-                trainingCarousel(highlightsItemStrip: true)
-
-                PlanHomeTutorialCaption(step: tutorialStore.currentStep)
-                PlanHomeTutorialInlineFooter(
-                    onAdvance: { tutorialStore.advance() },
-                    stepIndex: tutorialStore.currentStepIndex,
-                    stepCount: tutorialStore.steps.count
-                )
-            }
-            .id(PlanHomeTutorialFocus.training.scrollAnchorID)
-        } else {
-            trainingCarousel(highlightsItemStrip: false)
-                .opacity(tutorialStore.isRevealed(.training) ? 0.88 : 1)
-        }
     }
 
     private func trainingCarousel(highlightsItemStrip: Bool) -> some View {

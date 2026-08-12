@@ -30,7 +30,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         case .coach: AppCopy.t("Process IA", en: "Process AI")
         case .plan: AppCopy.home
         case .statistics: AppCopy.t("Série", en: "Streak")
-        case .profile: AppCopy.settings
+        case .profile: AppCopy.profile
         }
     }
 
@@ -39,7 +39,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         case .coach: "sparkles"
         case .plan: "house.fill"
         case .statistics: "flame.fill"
-        case .profile: "gearshape.fill"
+        case .profile: "person.fill"
         }
     }
 
@@ -48,7 +48,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .plan: "tab_icon_home"
         case .statistics: "tab_icon_streak"
-        case .profile: "tab_icon_settings"
+        case .profile: nil
         case .coach: nil
         }
     }

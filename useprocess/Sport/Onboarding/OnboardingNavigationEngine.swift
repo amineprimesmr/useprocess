@@ -222,6 +222,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.programCreation.rawValue
 
         case .programCreation:
+            return OnboardingStep.notificationPermission.rawValue
+
+        case .notificationPermission:
             return OnboardingStep.weightEstimation.rawValue
             
         case .weightEstimation:
@@ -311,7 +314,7 @@ class OnboardingNavigationEngine {
         case .carryOverCalories:
             return OnboardingStep.biometricAuth.rawValue
             
-        case .biometricAuth, .notificationPermission:
+        case .biometricAuth:
             return OnboardingStep.transformationPreview.rawValue
 
         case .transformationPreview:
@@ -347,6 +350,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightMotivation.rawValue
             
         case .weightEstimation:
+            return OnboardingStep.notificationPermission.rawValue
+            
+        case .notificationPermission:
             return OnboardingStep.programCreation.rawValue
             
         case .programCreation:
@@ -424,7 +430,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightEstimation.rawValue
             
         case .notificationPermission:
-            return OnboardingStep.biometricAuth.rawValue
+            return OnboardingStep.programCreation.rawValue
 
         case .transformationPreview:
             return OnboardingStep.biometricAuth.rawValue

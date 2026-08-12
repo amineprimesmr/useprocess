@@ -172,9 +172,10 @@ struct FaceScanWhoopAnalysisScreen: View {
                             .padding(.horizontal, 16)
 
                         FaceScanWhoopEvolutionSummaryCard(
-                            result: studioBaseResult ?? displayResult,
+                            result: displayResult,
                             previous: previousForDisplay,
-                            history: evolutionHistory
+                            history: evolutionHistory,
+                            studioQuality: isCreatorUnlocked ? qualityDraft : nil
                         )
                         .padding(.horizontal, 16)
                         .padding(.top, 14)
@@ -306,6 +307,8 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
     var evolutionAnchor: FaceScanResult? = nil
     /// Première apparition uniquement — pas de re-reveal à chaque update live.
     var animateRevealOnce: Bool = true
+    /// Mode studio : curseur qualité → revue comportementale simulée.
+    var studioQuality: Double? = nil
     /// Mode studio : tap sur le visage pour recadrer.
     var allowsStudioFraming: Bool = false
     var studioFraming: FaceScanStudioFraming = .identity
@@ -325,6 +328,7 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
         evolutionAnchor: FaceScanResult? = nil,
         animateRevealOnce: Bool = true,
         allowsStudioFraming: Bool = false,
+        studioQuality: Double? = nil,
         studioFraming: FaceScanStudioFraming = .identity,
         onStudioFramingChange: ((FaceScanStudioFraming) -> Void)? = nil,
         @ViewBuilder bottomAccessory: @escaping () -> BelowMetrics = { EmptyView() }
@@ -338,6 +342,7 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
         self.evolutionAnchor = evolutionAnchor
         self.animateRevealOnce = animateRevealOnce
         self.allowsStudioFraming = allowsStudioFraming
+        self.studioQuality = studioQuality
         self.studioFraming = studioFraming
         self.onStudioFramingChange = onStudioFramingChange
         self.bottomAccessory = bottomAccessory
@@ -422,7 +427,8 @@ struct FaceScanWhoopInlineResults<BelowMetrics: View>: View {
                 FaceScanWhoopEvolutionSummaryCard(
                     result: evolutionSource,
                     previous: previousForDisplay,
-                    history: evolutionHistory
+                    history: evolutionHistory,
+                    studioQuality: studioQuality
                 )
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -885,35 +891,22 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
     var previous: FaceScanResult?
     var history: [FaceScanResult] = []
 
-    private var context: FaceScanInsightContext {
-        FaceScanInsightContext.fromTodayHealth()
-    }
+    /// Mode studio : données simulées pilotées par le curseur qualité.
+    var studioQuality: Double? = nil
 
-    /// Toutes les métriques — visibles dès le 1er scan pour préparer le suivi.
-    private var items: [FaceScanMetricDisplay.Item] {
-        FaceScanMetricDisplay.items(for: result, previous: previous)
-    }
-
-    private var baselineBadge: String {
-        if previous == nil || result.relativeSignals?.baselineLabel == "Premier scan de référence" {
-            return AppCopy.t("Point de départ", en: "Starting point")
+    private var review: FaceScanBehaviorReview {
+        if let studioQuality {
+            return FaceScanBehaviorReviewBuilder.buildStudio(
+                for: result,
+                quality: studioQuality,
+                previous: previous
+            )
         }
-        if let label = result.relativeSignals?.baselineLabel {
-            if label == "Référence en cours" {
-                return AppCopy.t("Référence en cours", en: "Building baseline")
-            }
-            if label == "Premier scan de référence" {
-                return AppCopy.t("Point de départ", en: "Starting point")
-            }
-            if label == "Comparé à ta moyenne récente" {
-                return AppCopy.t("Comparé à ta moyenne récente", en: "Compared to your recent average")
-            }
-            if label == "Comparé à tes premiers scans" {
-                return AppCopy.t("Comparé à tes premiers scans", en: "Compared to your first scans")
-            }
-            return label
-        }
-        return AppCopy.t("Référence en cours", en: "Building baseline")
+        return FaceScanBehaviorReviewBuilder.build(
+            for: result,
+            previous: previous,
+            history: history
+        )
     }
 
     private var cardShape: RoundedRectangle {
@@ -921,53 +914,49 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(AppCopy.t("Ce qui change", en: "What’s changing"))
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(AppCopy.t("Qu'est-ce que je fais mal ?", en: "What am I doing wrong?"))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(FaceScanWhoopPalette.label)
 
-                Spacer()
-
-                Text(baselineBadge)
-                    .font(.system(size: 11, weight: .semibold))
+                Text(review.summary)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(FaceScanWhoopPalette.secondary)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text(FaceScanMetricDisplay.evolutionSentence(
-                for: result,
-                previous: previous,
-                history: history,
-                context: context
-            ))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(FaceScanWhoopPalette.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 8),
-                    GridItem(.flexible(), spacing: 8),
-                    GridItem(.flexible(), spacing: 8)
-                ],
-                spacing: 8
-            ) {
-                ForEach(items) { item in
-                    FaceScanWhoopEvolutionPill(item: item)
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(review.events.enumerated()), id: \.element.id) { index, event in
+                    FaceScanWhoopBehaviorTimelineRow(
+                        event: event,
+                        isLast: index == review.events.count - 1
+                    )
                 }
             }
 
-            Text(FaceScanMetricDisplay.actionSentence(
-                for: result,
-                previous: previous,
-                history: history,
-                waterLiters: context.waterLiters,
-                hydrationTargetLiters: context.hydrationTargetLiters
-            ))
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.82))
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 6) {
+                Label {
+                    Text(AppCopy.t("Comment améliorer", en: "How to improve"))
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.88))
+                } icon: {
+                    Image(systemName: "arrow.up.right.circle.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(FaceScanWhoopPalette.optimal)
+                }
+
+                Text(review.primaryFix)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(FaceScanWhoopPalette.label)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(FaceScanWhoopPalette.optimal.opacity(0.10))
+            }
         }
         .padding(16)
         .background {
@@ -980,40 +969,69 @@ private struct FaceScanWhoopEvolutionSummaryCard: View {
     }
 }
 
-private struct FaceScanWhoopEvolutionPill: View {
-    let item: FaceScanMetricDisplay.Item
+private struct FaceScanWhoopBehaviorTimelineRow: View {
+    let event: FaceScanBehaviorReviewEvent
+    let isLast: Bool
 
     private var tint: Color {
-        switch item.comparisonKind {
-        case .better: return FaceScanWhoopPalette.optimal
-        case .worse: return FaceScanWhoopPalette.insufficient
-        case .stable, .reference: return FaceScanWhoopPalette.secondary
-        }
+        event.isPositive ? FaceScanWhoopPalette.optimal : FaceScanWhoopPalette.insufficient
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 4) {
-                Image(systemName: item.arrowSystemName)
-                    .font(.system(size: 10, weight: .bold))
-                Text(item.deltaLabel)
-                    .font(.system(size: 12, weight: .bold))
-                    .monospacedDigit()
-            }
-            .foregroundStyle(tint)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(spacing: 0) {
+                ZStack {
+                    Circle()
+                        .fill(tint.opacity(0.16))
+                        .frame(width: 30, height: 30)
 
-            Text(item.title)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.82))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
-        .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(tint.opacity(0.13))
+                    Image(systemName: event.systemImage)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(tint)
+                }
+
+                if !isLast {
+                    Rectangle()
+                        .fill(FaceScanWhoopPalette.secondary.opacity(0.22))
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
+                        .padding(.vertical, 4)
+                }
+            }
+            .frame(width: 30)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(event.timeLabel)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .textCase(.uppercase)
+
+                Text(event.title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(FaceScanWhoopPalette.label)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(event.detail)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let fix = event.fix {
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(FaceScanWhoopPalette.optimal)
+                            .padding(.top, 2)
+
+                        Text(fix)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.86))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.top, 2)
+                }
+            }
+            .padding(.bottom, isLast ? 0 : 16)
         }
     }
 }

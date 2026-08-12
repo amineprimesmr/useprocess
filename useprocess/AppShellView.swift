@@ -78,6 +78,10 @@ struct AppShellView: View {
             ProcessHydrationTimerMonitor.shared.bootstrapAtLaunch()
             // Garantit Firebase prêt avant tout usage Auth tardif.
             FirebaseBootstrap.configure()
+            if AppConfiguration.firebaseConfigured {
+                _ = UserSessionCoordinator.shared
+            }
+            AppSession.shared.reloadForCurrentUser()
             ProcessAnalytics.configure()
             ProcessAnalytics.trackAppOpened(hasCompletedOnboarding: session.hasCompletedOnboarding)
             if let uid = AuthUser.current?.uid {

@@ -29,12 +29,14 @@ struct ProfileMetricChartSection: View, Equatable {
     let points: [ProfileAnalyticsPoint]
     let latestValue: Double?
     let deltaVsPrevious: Double?
+    var presentation: ProfileMetricChartPresentation = .standalone
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.metric == rhs.metric
             && lhs.points == rhs.points
             && lhs.latestValue == rhs.latestValue
             && lhs.deltaVsPrevious == rhs.deltaVsPrevious
+            && lhs.presentation == rhs.presentation
     }
 
     var body: some View {
@@ -42,9 +44,15 @@ struct ProfileMetricChartSection: View, Equatable {
             metric: metric,
             points: points,
             latestValue: latestValue,
-            deltaVsPrevious: deltaVsPrevious
+            deltaVsPrevious: deltaVsPrevious,
+            presentation: presentation
         )
     }
+}
+
+enum ProfileMetricChartPresentation: Equatable {
+    case standalone
+    case stickySection
 }
 
 private struct ProfileMetricChartSectionContent: View {
@@ -54,12 +62,25 @@ private struct ProfileMetricChartSectionContent: View {
     let points: [ProfileAnalyticsPoint]
     let latestValue: Double?
     let deltaVsPrevious: Double?
+    var presentation: ProfileMetricChartPresentation = .standalone
 
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: ProfileMetricChartLayout.cardRadius, style: .continuous)
     }
 
     var body: some View {
+        Group {
+            switch presentation {
+            case .standalone:
+                standaloneBody
+            case .stickySection:
+                chartWell
+                    .padding(.vertical, 2)
+            }
+        }
+    }
+
+    private var standaloneBody: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(metric.title)
                 .font(.system(size: 14, weight: .medium))

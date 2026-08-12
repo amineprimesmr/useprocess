@@ -1,28 +1,14 @@
 import Foundation
 
-/// Journal simplifié — 4 leviers debloat quotidiens (sans doublons).
+/// Journal simplifié — leviers debloat quotidiens (sans doublons).
 enum JournalCoreTaskCatalog {
 
     static let nutritionTaskIdSuffix = "core.nutrition"
-
-    private static func cardioTask(dayId: String) -> OriginPlanTask {
-        journalTask(
-            id: "\(dayId).core.cardio",
-            title: AppCopy.tSync("Cardio debloat", en: "Debloat cardio"),
-            detail: AppCopy.tSync(
-                "Marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min",
-                en: "Incline walk \(DebloatCardioDayCatalog.durationMinutes) min"
-            ),
-            pillar: AppCopy.tSync("Cardio", en: "Cardio"),
-            minutes: DebloatCardioDayCatalog.durationMinutes
-        )
-    }
 
     static func coreTasks(for dayId: String) -> [OriginPlanTask] {
         [
             hydrationTask(dayId: dayId),
             nutritionTask(dayId: dayId),
-            cardioTask(dayId: dayId),
             morningRoutineTask(dayId: dayId),
             sleepDebloatTask(dayId: dayId)
         ]

@@ -23,7 +23,6 @@ struct DebloatFoodHubView: View {
     @State private var groceryRequest = DebloatGroceryRequest()
     @State private var groceryPlan: DebloatGroceryPlan?
     @State private var recipeSeed = 0
-    @State private var toastMessage: String?
 
     private var livePlan: FaceOriginPlan { store.plan ?? plan }
     private var recipeSections: [ProcessDebloatMealLibrary.CatalogSection] {
@@ -104,22 +103,11 @@ struct DebloatFoodHubView: View {
             .sheet(isPresented: $showGeneratedRecipes) {
                 recipesSheet
             }
-            .overlay(alignment: .bottom) {
-                if let toastMessage {
-                    Text(toastMessage)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .padding(.bottom, 96)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
             .animation(.spring(response: 0.35, dampingFraction: 0.86), value: mode)
         }
         .processAppPageBackground()
         .processAppPresentationBackground()
+        .processStackedToasts(bottomInset: 28)
         .onAppear { prefs.reload() }
     }
 
@@ -417,7 +405,7 @@ struct DebloatFoodHubView: View {
 
                         Button(AppCopy.t("Ajouter à ma liste de courses", en: "Add to my grocery list")) {
                             store.mergeShoppingItems(DebloatGroceryGenerator.shoppingItems(from: groceryPlan))
-                            showToast(AppCopy.t("Liste ajoutée", en: "List added"))
+                            showToast("Liste ajoutée", en: "List added")
                             showGrocery = false
                         }
                         .buttonStyle(.borderedProminent)
@@ -486,13 +474,13 @@ struct DebloatFoodHubView: View {
 
                     Button(AppCopy.t("Injecter dans mes repas du jour", en: "Add to today’s meals")) {
                         guard isEditable else {
-                            showToast(AppCopy.t("Jour non modifiable", en: "Day can’t be edited"))
+                            showToast("Jour non modifiable", en: "Day can't be edited")
                             return
                         }
                         for (slot, meal) in meals {
                             store.saveDraftMeal(dayId: day.id, meal: meal, slot: slot)
                         }
-                        showToast(AppCopy.t("Repas du jour mis à jour", en: "Today’s meals updated"))
+                        showToast("Repas du jour mis à jour", en: "Today's meals updated")
                         showGeneratedRecipes = false
                     }
                     .buttonStyle(.borderedProminent)
@@ -531,16 +519,8 @@ struct DebloatFoodHubView: View {
         return Array(likes[offset...]) + Array(likes[..<offset])
     }
 
-    private func showToast(_ message: String) {
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
-            toastMessage = message
-        }
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(1.8))
-            withAnimation(.easeOut(duration: 0.25)) {
-                toastMessage = nil
-            }
-        }
+    private func showToast(_ messageFR: String, en messageEN: String) {
+        ProcessToastCenter.shared.show(messageFR, en: messageEN, symbol: "checkmark.circle.fill")
     }
 }
 

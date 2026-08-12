@@ -444,39 +444,17 @@ extension EnvironmentValues {
 struct AccountDeleteAnimatedButton: View {
     let onConfirm: () -> Void
 
+    @State private var showsConfirmation = false
+    @State private var sliderResetToggle = false
+
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: AccountDetailsTheme.actionCornerRadius, style: .continuous)
     }
 
     var body: some View {
-        AnimatedDeleteButton(
-            cornerRadius: .init(
-                source: AccountDetailsTheme.actionCornerRadius,
-                destination: 28
-            ),
-            customAction: CustomDeleteAction(
-                confirmTitle: AppCopy.t("Supprimer le compte", en: "Delete Account"),
-                cancelTitle: AppCopy.cancel,
-                background: .red,
-                foreground: .white
-            )
-        ) {
-            VStack(alignment: .leading, spacing: 15) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.largeTitle)
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Text(AppCopy.t("Supprimer le compte ?", en: "Delete Account?"))
-                    .font(.title2.bold())
-                    .foregroundStyle(Color.primary)
-
-                Text(AppCopy.t("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.", en: "This action is permanent. All your data will be erased and you'll return to the beginning of Process."))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.bottom, 10)
+        Button {
+            HapticManager.shared.impact(.light)
+            showsConfirmation = true
         } label: {
             Text(AppCopy.t("Supprimer le compte", en: "Delete Account"))
                 .font(.system(size: 17, weight: .semibold))
@@ -492,10 +470,89 @@ struct AccountDeleteAnimatedButton: View {
                         }
                 }
                 .contentShape(shape)
-        } action: { confirmed in
-            if confirmed {
-                onConfirm()
+        }
+        .buttonStyle(.processPlain)
+        .sheet(isPresented: $showsConfirmation) {
+            AccountDeleteConfirmationSheet(
+                onConfirm: {
+                    showsConfirmation = false
+                    onConfirm()
+                },
+                sliderResetToggle: $sliderResetToggle
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+private struct AccountDeleteConfirmationSheet: View {
+    let onConfirm: () -> Void
+    @Binding var sliderResetToggle: Bool
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.appTheme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.largeTitle)
+                .foregroundStyle(.red)
+
+            Text(AppCopy.t("Supprimer le compte ?", en: "Delete Account?"))
+                .font(.title2.bold())
+                .foregroundStyle(theme.primaryText)
+
+            Text(AppCopy.t(
+                "Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.",
+                en: "This action is permanent. All your data will be erased and you'll return to the beginning of Process."
+            ))
+            .font(.subheadline)
+            .foregroundStyle(theme.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+
+            ProcessLiquidGlassConfirmSlider(
+                text: AppCopy.t("Glisser pour supprimer", en: "Slide to delete"),
+                symbol: "trash.fill",
+                config: .init(
+                    tint: .red,
+                    height: 64,
+                    textFont: .subheadline.weight(.semibold),
+                    symbolFont: .title3.weight(.semibold),
+                    isSymbolPulsing: true,
+                    resetToggle: sliderResetToggle
+                ),
+                onProgressChange: { _ in },
+                onFinish: { isCompleted in
+                    guard isCompleted else {
+                        sliderResetToggle.toggle()
+                        return
+                    }
+                    HapticManager.shared.notification(.warning)
+                    dismiss()
+                    onConfirm()
+                }
+            )
+            .padding(.top, 4)
+
+            Button {
+                sliderResetToggle.toggle()
+                dismiss()
+            } label: {
+                Text(AppCopy.cancel)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
             }
+            .buttonStyle(.processPlain)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onDisappear {
+            sliderResetToggle.toggle()
         }
     }
 }

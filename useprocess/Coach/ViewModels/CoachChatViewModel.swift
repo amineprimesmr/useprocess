@@ -20,7 +20,6 @@ final class CoachChatViewModel {
     var voiceAudioLevel: CGFloat = 0
     var voiceAudioLevels: [CGFloat] = Array(repeating: 0.06, count: 32)
     var shouldOpenInlineCamera = false
-    var lastActionFeedback: String?
 
     private var pendingPlanPatches: [UUID: PendingCoachPlanPatch] = [:]
     private let libraryStore = CoachConversationLibraryStore.shared
@@ -314,8 +313,6 @@ final class CoachChatViewModel {
     }
 
     func executeContextualAction(_ action: CoachContextualAction, for message: CoachMessage) async {
-        lastActionFeedback = nil
-
         switch action.kind {
         case .validateMeal:
             guard let meal = CoachMealMessageDetector.mealContent(from: message.text),
@@ -330,7 +327,14 @@ final class CoachChatViewModel {
             }
             WelcomePlanStore.shared.saveValidatedMeal(dayId: day.id, meal: meal, slot: meal.timeSlot)
             WelcomePlanStore.shared.clearDraftMeal(dayId: day.id, slot: meal.timeSlot)
-            lastActionFeedback = AppCopy.t("✅ Repas ajouté à ton plan.", en: "✅ Meal added to your plan.")
+            ProcessToastCenter.shared.show(
+                "Repas ajouté",
+                en: "Meal added",
+                description: "Ajouté à ton plan du jour.",
+                en: "Added to today's plan.",
+                symbol: "fork.knife.circle.fill",
+                tintColor: Color(red: 0.22, green: 0.78, blue: 0.48)
+            )
 
         case .saveMealDraft:
             guard let meal = CoachMealMessageDetector.mealContent(from: message.text),
@@ -338,7 +342,14 @@ final class CoachChatViewModel {
                   let plan = WelcomePlanStore.shared.plan,
                   let day = OriginPlanPresenter.todayDay(in: plan) else { return }
             WelcomePlanStore.shared.saveDraftMeal(dayId: day.id, meal: meal, slot: meal.timeSlot)
-            lastActionFeedback = AppCopy.t("Suggestion enregistrée.", en: "Suggestion saved.")
+            ProcessToastCenter.shared.show(
+                "Suggestion enregistrée",
+                en: "Suggestion saved",
+                description: "Brouillon repas sauvegardé.",
+                en: "Meal draft saved.",
+                symbol: "tray.and.arrow.down.fill",
+                tintColor: .blue
+            )
 
         case .modifyMeal:
             let prompt = action.payload.map {
@@ -359,7 +370,14 @@ final class CoachChatViewModel {
                   let plan = WelcomePlanStore.shared.plan,
                   let day = OriginPlanPresenter.todayDay(in: plan) else { return }
             WelcomePlanStore.shared.addMealToShoppingList(meal, dayId: day.id)
-            lastActionFeedback = AppCopy.t("Ajouté à la liste de courses.", en: "Added to grocery list.")
+            ProcessToastCenter.shared.show(
+                "Liste de courses",
+                en: "Grocery list",
+                description: "Ingrédients ajoutés.",
+                en: "Ingredients added.",
+                symbol: "cart.fill",
+                tintColor: Color(red: 0.98, green: 0.72, blue: 0.18)
+            )
 
         case .applyPlanChanges:
             guard let patch = pendingPlanPatches[message.id],
@@ -372,9 +390,18 @@ final class CoachChatViewModel {
             )
             WelcomePlanStore.shared.savePlan(plan, structureChanged: true)
             pendingPlanPatches.removeValue(forKey: message.id)
-            lastActionFeedback = changes.isEmpty
+            let confirmation = changes.isEmpty
                 ? AppCopy.t("Programme mis à jour.", en: "Program updated.")
                 : CoachPlanModificationService.confirmationPrefix(changes: changes).trimmingCharacters(in: .whitespacesAndNewlines)
+            ProcessToastCenter.shared.show(
+                ProcessToast(
+                    symbol: "calendar.badge.checkmark",
+                    title: AppCopy.t("Programme mis à jour", en: "Program updated"),
+                    description: confirmation,
+                    tintColor: Color(red: 0.34, green: 0.62, blue: 0.98),
+                    autoDismissInterval: 4
+                )
+            )
 
         case .swapWorkout:
             await sendFollowUp(action.payload ?? AppCopy.t(
@@ -1032,6 +1059,15 @@ final class CoachChatViewModel {
 
     func copyMessage(_ message: CoachMessage) {
         UIPasteboard.general.string = message.text
+        HapticManager.shared.notification(.success)
+        ProcessToastCenter.shared.show(
+            "Copié",
+            en: "Copied",
+            description: "Message copié dans le presse-papiers.",
+            en: "Message copied to clipboard.",
+            symbol: "doc.on.doc.fill",
+            tintColor: .blue
+        )
     }
 
     func beginEditingMessage(_ message: CoachMessage) async {
