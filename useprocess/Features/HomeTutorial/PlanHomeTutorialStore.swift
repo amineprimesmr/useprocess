@@ -14,6 +14,8 @@ final class PlanHomeTutorialStore {
 
     private let storageKeyBase = "plan.home.tutorial.completed"
     private var presentationTask: Task<Void, Never>?
+    /// Bloque le tutoriel pendant l’aperçu onboarding (plan éphémère).
+    private var isPreviewSuppressed = false
 
     private init() {
         reload()
@@ -33,7 +35,7 @@ final class PlanHomeTutorialStore {
         }
     }
 
-    /// Carousel nutrition : repas visibles à partir de l'étape repas.
+    /// Strip nutrition : carte repas visible à partir de l'étape repas.
     var showsMealCardsInCarousel: Bool {
         guard isActive else { return true }
         switch currentStep {
@@ -42,7 +44,7 @@ final class PlanHomeTutorialStore {
         }
     }
 
-    /// Titre « Repas debloat » — visible dès l'étape hydratation avec la carte eau.
+    /// Titre « Alimentation debloat » — visible dès l'étape hydratation avec la carte eau.
     var showsNutritionSectionTitle: Bool {
         true
     }
@@ -61,16 +63,23 @@ final class PlanHomeTutorialStore {
         }
     }
 
+    func suppressPresentationForPreview(_ suppressed: Bool) {
+        isPreviewSuppressed = suppressed
+        if suppressed {
+            cancelScheduledPresentation()
+        }
+    }
+
     /// Lance le tutoriel dès que le plan est prêt (après check-in du soir s'il bloque).
     func schedulePresentationIfNeeded(planAvailable: Bool, preferImmediate: Bool = false) {
         presentationTask?.cancel()
-        guard planAvailable, !hasCompleted, !isActive else { return }
+        guard !isPreviewSuppressed, planAvailable, !hasCompleted, !isActive else { return }
         guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
 
         let delayMs: UInt64 = preferImmediate ? 140 : 420
         presentationTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(delayMs))
-            guard !Task.isCancelled, !hasCompleted, !isActive else { return }
+            guard !Task.isCancelled, !isPreviewSuppressed, !hasCompleted, !isActive else { return }
             beginPresentationIfPossible()
         }
     }
@@ -81,7 +90,7 @@ final class PlanHomeTutorialStore {
     }
 
     private func beginPresentationIfPossible() {
-        guard !hasCompleted, !isActive else { return }
+        guard !isPreviewSuppressed, !hasCompleted, !isActive else { return }
         guard WelcomePlanStore.shared.plan != nil else { return }
         guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
 

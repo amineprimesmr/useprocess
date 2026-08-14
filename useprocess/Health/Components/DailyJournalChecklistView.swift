@@ -40,7 +40,6 @@ struct DailyJournalChecklistView: View {
 
     @Namespace private var faceScanHistoryZoomNamespace
     @Namespace private var mealZoomNamespace
-    @State private var faceHistoryStore = FaceScanHistoryStore.shared
     @State private var isChecklistExpanded = true
     @State private var showFaceScan = false
     @Bindable private var layoutStore = PlanHomeLayoutStore.shared
@@ -126,7 +125,6 @@ struct DailyJournalChecklistView: View {
                 }
         }
         .onAppear {
-            faceHistoryStore = FaceScanHistoryStore.shared
             layoutStore.reload()
             clampSelectedDateToPlanIfNeeded()
             focusHydrationCarouselIfNeeded()
@@ -187,16 +185,12 @@ struct DailyJournalChecklistView: View {
         case .faceScan:
             PlanHomeTutorialFocusChrome(focus: .faceScan) {
                 PlanLastFaceScanSection(
-                    latest: faceHistoryStore.latestResult,
-                    isScanDue: faceHistoryStore.isScanDue,
                     isScanFlowActive: $showFaceScan,
                     isPlanActive: isPlanActive,
                     healthMetrics: healthMetrics,
                     zoomNamespace: faceScanHistoryZoomNamespace,
                     onScan: {},
-                    onScanComplete: { _ in
-                        faceHistoryStore = FaceScanHistoryStore.shared
-                    }
+                    onScanComplete: { _ in }
                 )
                 .environmentObject(UnifiedProfileService.shared)
             }

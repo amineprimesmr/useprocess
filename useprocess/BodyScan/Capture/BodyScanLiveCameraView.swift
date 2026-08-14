@@ -12,6 +12,7 @@ final class BodyScanLiveCameraView: UIView {
         super.init(frame: frame)
         previewLayer.videoGravity = .resizeAspectFill
         layer.addSublayer(previewLayer)
+        clipsToBounds = true
 
         skeletonLayer.fillColor = UIColor.clear.cgColor
         skeletonLayer.lineCap = .round
@@ -28,7 +29,11 @@ final class BodyScanLiveCameraView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        previewLayer.frame = bounds
+        ProcessScanCamera.layoutPreviewLayer(
+            previewLayer,
+            in: bounds,
+            zoom: ProcessScanCamera.frontPreviewLayoutZoom
+        )
         skeletonLayer.frame = previewLayer.bounds
         configurePreviewConnection()
     }

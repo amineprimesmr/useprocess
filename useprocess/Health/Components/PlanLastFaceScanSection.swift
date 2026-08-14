@@ -3,8 +3,6 @@ import SwiftUI
 
 /// Résumé scan visage — page Plan (liquid glass, aligné cartes repas).
 struct PlanLastFaceScanSection: View {
-    let latest: FaceScanResult?
-    let isScanDue: Bool
     @Binding var isScanFlowActive: Bool
     var isPlanActive: Bool = true
     var healthMetrics: PlanHomeHealthMetrics = PlanHomeHealthMetrics()
@@ -15,6 +13,7 @@ struct PlanLastFaceScanSection: View {
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
     @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
+    @Bindable private var historyStore = FaceScanHistoryStore.shared
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
 
     @State private var analysisSession: InlineFaceScanAnalysisSession?
@@ -37,11 +36,16 @@ struct PlanLastFaceScanSection: View {
         static let inlineControlsHeight: CGFloat = 196
         static let scanRingOverflow: CGFloat = FaceScanViewportMetrics.tickRingOverflow
         static let scanAvailableHeight: CGFloat = 112
-        static let postScanCardHeight: CGFloat = 164
-        static let postScanFooterHeight: CGFloat = 54
+        /// Un cran plus large, média toujours carré = cadrage stable.
+        static let postScanCardHeight: CGFloat = 152
     }
 
+    /// Toujours le store live — évite une carte figée après import photo studio.
+    private var latest: FaceScanResult? { historyStore.latestResult }
+
     /// Cadence réelle uniquement — après Continuer, on affiche le commentaire visage + photo + Prochain scan.
+    private var isScanDue: Bool { historyStore.isScanDue }
+
     private var effectiveScanDue: Bool {
         isScanDue
     }
@@ -133,11 +137,19 @@ struct PlanLastFaceScanSection: View {
                     analysisSession = nil
                 },
                 onComplete: { result in
-                    FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
+                    // L’upsert est déjà fait dans le flow — ferme le scan inline et notifie.
+                    withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
+                        isScanFlowActive = false
+                    }
                     onScanComplete?(result)
+                },
+                onRetryScan: {
+                    analysisSession = nil
                 }
             )
         }
+        .animation(.easeInOut(duration: 0.28), value: historyStore.latestResult?.id)
+        .animation(.easeInOut(duration: 0.28), value: historyStore.isScanDue)
         .fullScreenCover(item: $latestAnalysisScan) { scan in
             latestAnalysisCover(for: scan)
         }
@@ -311,96 +323,71 @@ struct PlanLastFaceScanSection: View {
 
     @ViewBuilder
     private var postScanCardContent: some View {
-        HStack(alignment: .top, spacing: 0) {
+        HStack(alignment: .center, spacing: 0) {
             if showsMediaColumn {
                 videoSidePanel(spansFullCardHeight: true)
                     .frame(width: postScanVideoWidth)
+                    .frame(maxHeight: .infinity)
             }
 
-            VStack(alignment: .leading, spacing: 0) {
-                postScanInfoColumn
+            VStack(alignment: .leading, spacing: 8) {
+                postScanScoreHeader
+                Spacer(minLength: 0)
                 nextScanFooterBand
             }
+            .padding(.horizontal, Layout.mediaSidePadding)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(height: Layout.postScanCardHeight)
+        .frame(height: Layout.postScanCardHeight, alignment: .center)
         .contentShape(cardShape)
+        .id("last-scan-\(latest?.id ?? "none")-\(latest?.displayWellnessScore ?? -1)")
         .contextMenu {
             faceScanDisplayMenu
         }
     }
 
     private var postScanVideoWidth: CGFloat {
-        let cardWidth = UIScreen.main.bounds.width - (PlanHomeSectionDesign.homeScrollPadding * 2)
-        return min(max(112, cardWidth * videoWidthRatio), cardWidth * 0.42)
+        // Toujours carré (= hauteur carte) pour un crop visage prévisible.
+        Layout.postScanCardHeight
     }
 
+    /// Score seul — grosse typo paywall (SF Pro Display Bold) + dégradé blanc → gris clair.
     @ViewBuilder
-    private var postScanInfoColumn: some View {
-        Group {
-            if showsMediaColumn {
-                postScanMediaSideInfo
-            } else {
-                postScanCompactInfo
-            }
-        }
-        .padding(.horizontal, Layout.mediaSidePadding)
-        .padding(.top, Layout.mediaSidePadding)
-        .padding(.bottom, 6)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    @ViewBuilder
-    private var postScanMediaSideInfo: some View {
+    private var postScanScoreHeader: some View {
         if let latest {
-            let appreciation = FaceWellnessScore.appreciation(for: latest)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(appreciation.headline)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.88)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                lastScanScoreLabel(score: latest.displayWellnessScore)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            let score = latest.displayWellnessScore
+            Text(score > 0 ? "\(score)%" : "—")
+                .font(PaywallBevelTheme.paywallHeroTitleFont(size: 48))
+                .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
+                .foregroundStyle(scoreGradient)
+                .monospacedDigit()
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel(
+                    AppCopy.t(
+                        "Score du scan \(score) pour cent",
+                        en: "Scan score \(score) percent"
+                    )
+                )
         }
     }
 
-    @ViewBuilder
-    private var postScanCompactInfo: some View {
-        if let latest {
-            let appreciation = FaceWellnessScore.appreciation(for: latest)
-            HStack(alignment: .top, spacing: 10) {
-                compactLeadingIcon
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(appreciation.headline)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(theme.primaryText)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.88)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    lastScanScoreLabel(score: latest.displayWellnessScore)
-                }
-
-                Spacer(minLength: 0)
-            }
-        }
-    }
-
-    private func lastScanScoreLabel(score: Int) -> some View {
-        Text(score > 0 ? "\(score)%" : "—")
-            .font(.system(size: 20, weight: .bold, design: .rounded))
-            .foregroundStyle(theme.secondaryText)
-            .monospacedDigit()
-            .accessibilityLabel(
-                score > 0
-                    ? AppCopy.t("Score du scan \(score) pour cent", en: "Scan score \(score) percent")
-                    : AppCopy.t("Score du scan indisponible", en: "Scan score unavailable")
-            )
+    private var scoreGradient: LinearGradient {
+        LinearGradient(
+            colors: theme.isDark
+                ? [
+                    Color.white,
+                    Color(white: 0.72)
+                ]
+                : [
+                    Color.black.opacity(0.92),
+                    Color.black.opacity(0.42)
+                ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 
     private var nextScanFooterBand: some View {
@@ -413,9 +400,7 @@ struct PlanLastFaceScanSection: View {
                 isCompact: true
             )
         }
-        .padding(.horizontal, Layout.mediaSidePadding)
-        .padding(.bottom, Layout.mediaSidePadding)
-        .frame(height: Layout.postScanFooterHeight, alignment: .bottomLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func videoPanelShape(spansFullCardHeight: Bool) -> UnevenRoundedRectangle {
@@ -445,23 +430,6 @@ struct PlanLastFaceScanSection: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .clipShape(videoPanelShape(spansFullCardHeight: spansFullCardHeight))
-    }
-
-    private var compactLeadingIcon: some View {
-        ZStack {
-            Circle()
-                .fill(compactIconFill.opacity(0.14))
-                .frame(width: 36, height: 36)
-
-            Image(systemName: latest == nil ? "camera.fill" : "face.smiling")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(compactIconFill)
-        }
-        .accessibilityHidden(true)
-    }
-
-    private var compactIconFill: Color {
-        return theme.onboardingAccent
     }
 
     @ViewBuilder
@@ -524,18 +492,18 @@ private struct PlanFaceScanNextScanFooter: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: isCompact ? 6 : 8) {
-            HStack(alignment: .lastTextBaseline, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(headline)
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.secondaryText)
                     .lineLimit(1)
 
                 Spacer(minLength: 4)
 
                 Text(trailingLabel)
-                    .font(.system(size: isCompact ? 18 : 20, weight: .bold, design: .rounded))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(theme.secondaryText)
                     .monospacedDigit()
-                    .foregroundStyle(countdownColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
@@ -548,11 +516,6 @@ private struct PlanFaceScanNextScanFooter: View {
                 barHeight: isCompact ? 10 : 11
             )
         }
-    }
-
-    private var countdownColor: Color {
-        if isScanDue { return theme.onboardingAccent }
-        return theme.primaryText
     }
 }
 

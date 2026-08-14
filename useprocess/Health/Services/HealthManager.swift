@@ -57,12 +57,18 @@ final class HealthManager: ObservableObject {
 
     // MARK: - Authorization
 
-    func requestAuthorizationAsync(syncAfterwards: Bool = true) async {
+    func requestAuthorizationAsync(
+        syncAfterwards: Bool = true,
+        analyticsSource: String = "unknown"
+    ) async {
         guard isHealthDataAvailable else {
             objectWillChange.send()
             isAuthorized = false
+            ProcessAnalytics.trackHealthKitDenied(source: analyticsSource, reason: "unavailable")
             return
         }
+
+        let needsSystemPrompt = Self.needsSystemAuthorizationPrompt(store: healthStore)
 
         do {
             try await healthStore.requestAuthorization(toShare: HealthKitTypes.writeTypes, read: HealthKitTypes.readTypes)
@@ -70,13 +76,31 @@ final class HealthManager: ObservableObject {
             await refreshConnectedSources(publish: false)
             objectWillChange.send()
             enableBackgroundObservers()
+            ProcessAnalytics.trackHealthKitAuthorized(
+                source: analyticsSource,
+                systemPromptShown: needsSystemPrompt
+            )
             if syncAfterwards {
                 await performFullSync()
             }
         } catch {
             isAuthorized = false
             objectWillChange.send()
+            ProcessAnalytics.trackHealthKitDenied(
+                source: analyticsSource,
+                reason: error.localizedDescription
+            )
         }
+    }
+
+    /// Write-type status is the only reliable pre-flight signal Apple exposes.
+    private static func needsSystemAuthorizationPrompt(store: HKHealthStore) -> Bool {
+        for type in HealthKitTypes.writeTypes {
+            if store.authorizationStatus(for: type) == .notDetermined {
+                return true
+            }
+        }
+        return false
     }
 
     func refreshAuthorizationStatus() {
@@ -317,7 +341,7 @@ final class HealthManager: ObservableObject {
         guard isHealthDataAvailable else { return [] }
 
         if !isAuthorized {
-            await requestAuthorizationAsync()
+            await requestAuthorizationAsync(analyticsSource: "body_mass_history")
         }
 
         let samples = await queryService.dailyLatestBodyMass(days: days)
@@ -334,7 +358,7 @@ final class HealthManager: ObservableObject {
         guard isHealthDataAvailable else { return [] }
 
         if !isAuthorized {
-            await requestAuthorizationAsync()
+            await requestAuthorizationAsync(analyticsSource: "sleep_history")
         }
 
         let calendar = Calendar.current
@@ -369,7 +393,7 @@ final class HealthManager: ObservableObject {
         guard isHealthDataAvailable else { return [] }
 
         if !isAuthorized {
-            await requestAuthorizationAsync()
+            await requestAuthorizationAsync(analyticsSource: "effort_history")
         }
 
         let calendar = Calendar.current

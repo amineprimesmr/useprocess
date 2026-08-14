@@ -218,6 +218,7 @@ private struct ProcessReferralProgramScreen: View {
     private var inviteFriendsButton: some View {
         Button {
             HapticManager.shared.impact(.medium)
+            ProcessAnalytics.trackReferralShareOpened(source: "referral_program")
             showShareSheet = true
         } label: {
             Text(AppCopy.t("Inviter des amis", en: "Invite Friends"))

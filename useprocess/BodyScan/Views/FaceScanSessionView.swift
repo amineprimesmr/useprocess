@@ -33,6 +33,9 @@ struct FaceScanSessionView: View {
                         if skipResultSheet {
                             onDismiss()
                         }
+                    },
+                    onRetryScan: {
+                        captureInput = nil
                     }
                 )
                 .transition(.opacity)

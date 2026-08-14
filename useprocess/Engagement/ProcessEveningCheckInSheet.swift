@@ -6,14 +6,12 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
     case morningRoutine
     case water
     case debloatMeal
-    case cardio
 
     var id: String {
         switch self {
         case .morningRoutine: return EveningCheckInQuestionID.morningRoutine
         case .water: return EveningCheckInQuestionID.water
         case .debloatMeal: return EveningCheckInQuestionID.debloatMeal
-        case .cardio: return EveningCheckInQuestionID.cardio
         }
     }
 
@@ -28,8 +26,6 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
             return AppCopy.t("\(ProcessDailyTargets.hydrationLabel) d'eau", en: "\(ProcessDailyTargets.hydrationLabel) of water")
         case .debloatMeal:
             return AppCopy.t("Repas debloat", en: "Debloat Meal")
-        case .cardio:
-            return "Cardio"
         }
     }
 
@@ -38,7 +34,6 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
         case .morningRoutine: return "drop.fill"
         case .water: return "drop.fill"
         case .debloatMeal: return "fork.knife"
-        case .cardio: return "figure.run"
         }
     }
 }

@@ -1,7 +1,6 @@
 import Foundation
 
-/// Règles debloat — hydratation + alimentation (Na/K/Mg) + cardio.
-/// Cardio : minimum 3 séances / semaine · 3 jours d'affilée sans cardio = blocage + pénalité.
+/// Règles debloat — hydratation + alimentation (Na/K/Mg).
 enum ProcessDebloatValidation {
 
     static let weeklyCardioMinimum = 3
@@ -21,26 +20,16 @@ enum ProcessDebloatValidation {
         record: DebloatDayRecord,
         consecutiveCardioMissesBefore: Int
     ) -> Bool {
+        _ = consecutiveCardioMissesBefore
         guard record.checkInSubmitted else { return false }
-        guard record.water == true, record.debloatMeal == true else { return false }
-
-        if record.cardio == true { return true }
-
-        let projectedMisses = consecutiveCardioMissesBefore + 1
-        return projectedMisses < consecutiveCardioMissLimit
+        return record.water == true && record.debloatMeal == true
     }
 
     static func failure(for record: DebloatDayRecord, consecutiveCardioMissesBefore: Int) -> Failure? {
+        _ = consecutiveCardioMissesBefore
         guard record.checkInSubmitted else { return .notSubmitted }
         if record.water != true { return .missingHydration }
         if record.debloatMeal != true { return .missingNutrition }
-
-        if record.cardio != true {
-            let projected = consecutiveCardioMissesBefore + 1
-            if projected >= consecutiveCardioMissLimit {
-                return .cardioSlump(consecutiveDays: projected)
-            }
-        }
         return nil
     }
 

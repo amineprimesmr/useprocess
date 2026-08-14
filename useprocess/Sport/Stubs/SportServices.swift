@@ -441,25 +441,44 @@ final class PermissionsManager: ObservableObject {
 
     private init() {}
 
-    func requestNotificationPermission() async -> Bool {
+    func requestNotificationPermission(analyticsSource: String = "unknown") async -> Bool {
         let center = UNUserNotificationCenter.current()
+        let prior = await center.notificationSettings().authorizationStatus
+
+        if prior == .notDetermined {
+            ProcessAnalytics.trackNotificationsPromptShown(source: analyticsSource)
+        }
+
         do {
             let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
-            notificationsGranted = granted
-            return granted
+            let status = await center.notificationSettings().authorizationStatus
+            let statusName = Self.notificationStatusName(status)
+            notificationsGranted = granted || status == .authorized || status == .provisional
+            if notificationsGranted {
+                ProcessAnalytics.trackNotificationsAuthorized(source: analyticsSource, status: statusName)
+            } else {
+                ProcessAnalytics.trackNotificationsDenied(source: analyticsSource, status: statusName)
+            }
+            return notificationsGranted
         } catch {
+            notificationsGranted = false
+            ProcessAnalytics.trackNotificationsDenied(source: analyticsSource, status: "error")
             return false
         }
     }
 
     func refreshNotificationAuthorizationStatus() async {
         let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
-        notificationsGranted = status == .authorized
+        notificationsGranted = status == .authorized || status == .provisional
+        ProcessAnalytics.syncNotificationsStatus(
+            Self.notificationStatusName(status),
+            authorized: notificationsGranted
+        )
     }
 
     func canScheduleNotifications() async -> Bool {
         let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
-        return status == .authorized
+        return status == .authorized || status == .provisional
     }
 
     /// Remet la pastille à zéro sans effacer les notifications planifiées (check-ins, brief matin, scan…).
@@ -472,6 +491,17 @@ final class PermissionsManager: ObservableObject {
     func requestMotionPermission() async -> Bool {
         // CoreMotion n'affiche pas de popup — Info.plist NSMotionUsageDescription suffit.
         true
+    }
+
+    private static func notificationStatusName(_ status: UNAuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined: return "not_determined"
+        case .denied: return "denied"
+        case .authorized: return "authorized"
+        case .provisional: return "provisional"
+        case .ephemeral: return "ephemeral"
+        @unknown default: return "unknown"
+        }
     }
 }
 

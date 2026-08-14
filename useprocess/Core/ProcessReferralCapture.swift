@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 /// Liens et messages de parrainage partagés entre l'app et le site.
 enum ProcessReferralLink {
@@ -107,7 +106,7 @@ enum ProcessReferralLink {
     }
 }
 
-/// Capture et applique un code parrainage entrant (lien, presse-papiers).
+/// Capture et applique un code parrainage entrant (lien profond / universal link).
 @MainActor
 enum ProcessReferralAttribution {
     private static let pendingKey = "referral.pendingCode"
@@ -123,30 +122,15 @@ enum ProcessReferralAttribution {
         storePending(code)
     }
 
-    static func captureFromClipboardIfNeeded() {
-        guard pendingCode == nil else { return }
-        guard UIPasteboard.general.hasStrings else { return }
-        guard let string = UIPasteboard.general.string else { return }
-        guard string.localizedCaseInsensitiveContains("useprocess")
-            || string.localizedCaseInsensitiveContains("process://referral")
-            || string.range(
-                of: "[A-Z0-9]{2,6}-[A-Z0-9]{3,8}",
-                options: [.regularExpression, .caseInsensitive]
-            ) != nil else { return }
-        guard let code = ProcessReferralLink.parseCode(from: string) else { return }
-        storePending(code)
-    }
-
-    static func captureOnAppLaunchIfNeeded() {
-        captureFromClipboardIfNeeded()
-    }
-
     static func applyPendingIfNeeded(to viewModel: OnboardingViewModel) {
         guard let code = pendingCode else { return }
         let current = viewModel.referralCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if current.isEmpty {
             viewModel.referralCode = code
             viewModel.saveProgress()
+            Task { @MainActor in
+                ProcessAnalytics.trackReferralCodeApplied(source: "onboarding")
+            }
         }
     }
 
@@ -158,6 +142,9 @@ enum ProcessReferralAttribution {
         let normalized = ProcessReferralLink.normalizeCode(code)
         guard !normalized.isEmpty else { return }
         UserDefaults.standard.set(normalized, forKey: pendingKey)
+        Task { @MainActor in
+            ProcessAnalytics.trackReferralCodeCaptured(source: "deep_link")
+        }
     }
 }
 

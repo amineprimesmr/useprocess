@@ -125,6 +125,7 @@ enum ProcessPlanProgressEngine {
         now: Date = Date()
     ) -> ProcessPlanProgressState {
         guard let plan else { return state }
+        _ = consecutiveCardioMisses
 
         let hasSubmittedCheckIn = records.contains(where: \.checkInSubmitted)
         let programStarted = plan.calendar.startedAt != nil
@@ -201,39 +202,8 @@ enum ProcessPlanProgressEngine {
             reconcileLegacyRegressionExtension(adjustment: &adjustment, tokens: &tokens, baseDays: baseDays)
         }
 
-        if consecutiveCardioMisses >= ProcessDebloatValidation.consecutiveCardioMissLimit {
-            apply(
-                delta: 2,
-                token: "cardio_consecutive_misses",
-                reason: .cardioConsecutiveMisses,
-                message: evolutionMessage(for: .cardioConsecutiveMisses, deltaDays: 2)
-            )
-        } else {
-            tokens.remove("cardio_consecutive_misses")
-        }
-
-        if let latestKey = records.map(\.dayKey).max(),
-           ProcessDebloatValidation.isWeeklyCardioDeficit(
-            endingAt: latestKey,
-            in: Dictionary(uniqueKeysWithValues: records.map { ($0.dayKey, $0) })
-           ) {
-            let sessions = ProcessDebloatValidation.cardioSessionsInRollingWindow(
-                endingAt: latestKey,
-                in: Dictionary(uniqueKeysWithValues: records.map { ($0.dayKey, $0) })
-            )
-            apply(
-                delta: 2,
-                token: "cardio_weekly_deficit",
-                reason: .cardioWeeklyDeficit,
-                message: evolutionMessage(
-                    for: .cardioWeeklyDeficit,
-                    deltaDays: 2,
-                    cardioSessions: sessions
-                )
-            )
-        } else {
-            tokens.remove("cardio_weekly_deficit")
-        }
+        tokens.remove("cardio_consecutive_misses")
+        tokens.remove("cardio_weekly_deficit")
 
         updated.adjustmentDays = adjustment
         updated.appliedTokens = tokens

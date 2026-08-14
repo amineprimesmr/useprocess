@@ -88,7 +88,6 @@ struct AppShellView: View {
                 ProcessAnalytics.identify(userId: uid)
             }
             ProcessAnalytics.syncFirstNameFromProfile()
-            ProcessReferralAttribution.captureOnAppLaunchIfNeeded()
             // Laisse le 1er frame se peindre avant d’armer le double-swipe Home.
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }

@@ -119,8 +119,16 @@ enum ProcessAnalytics {
 
     static func trackAppOpened(hasCompletedOnboarding: Bool) {
         capture("app_opened", properties: [
+            "has_completed_onboarding": hasCompletedOnboarding,
+            "app_language": ProcessAppLanguage.shared.isEnglish ? "en" : "fr"
+        ])
+        setPersonProperties([
+            "app_language": ProcessAppLanguage.shared.isEnglish ? "en" : "fr",
             "has_completed_onboarding": hasCompletedOnboarding
         ])
+        Task {
+            await PermissionsManager.shared.refreshNotificationAuthorizationStatus()
+        }
     }
 
     // MARK: - Onboarding funnel
@@ -264,6 +272,174 @@ enum ProcessAnalytics {
         ])
     }
 
+    // MARK: - HealthKit / Apple Health
+
+    /// In-app prompt (popup onboarding, écran permission, settings…).
+    static func trackHealthKitPromptShown(source: String) {
+        capture("healthkit_prompt_shown", properties: ["source": source])
+    }
+
+    /// User completed the system sheet successfully (app treats Health as connected).
+    static func trackHealthKitAuthorized(source: String, systemPromptShown: Bool? = nil) {
+        var props: [String: Any] = ["source": source, "result": "authorized"]
+        if let systemPromptShown {
+            props["system_prompt_shown"] = systemPromptShown
+        }
+        capture("healthkit_authorized", properties: props)
+        setPersonProperties(["healthkit_authorized": true])
+    }
+
+    /// Request failed, unavailable, or user denied (when detectable).
+    static func trackHealthKitDenied(source: String, reason: String = "denied_or_failed") {
+        capture("healthkit_denied", properties: [
+            "source": source,
+            "result": "denied",
+            "reason": reason
+        ])
+        setPersonProperties(["healthkit_authorized": false])
+    }
+
+    /// User tapped “Plus tard” / skipped without opening the system sheet.
+    static func trackHealthKitSkipped(source: String) {
+        capture("healthkit_skipped", properties: [
+            "source": source,
+            "result": "skipped"
+        ])
+    }
+
+    // MARK: - Notifications
+
+    static func trackNotificationsPromptShown(source: String) {
+        capture("notifications_prompt_shown", properties: ["source": source])
+    }
+
+    static func trackNotificationsAuthorized(source: String, status: String = "authorized") {
+        capture("notifications_authorized", properties: [
+            "source": source,
+            "result": "authorized",
+            "status": status
+        ])
+        setPersonProperties([
+            "notifications_authorized": true,
+            "notifications_status": status
+        ])
+    }
+
+    static func trackNotificationsDenied(source: String, status: String = "denied") {
+        capture("notifications_denied", properties: [
+            "source": source,
+            "result": "denied",
+            "status": status
+        ])
+        setPersonProperties([
+            "notifications_authorized": false,
+            "notifications_status": status
+        ])
+    }
+
+    static func trackNotificationsSkipped(source: String) {
+        capture("notifications_skipped", properties: [
+            "source": source,
+            "result": "skipped"
+        ])
+    }
+
+    /// Sync person props when we refresh status without a new prompt.
+    static func syncNotificationsStatus(_ status: String, authorized: Bool) {
+        setPersonProperties([
+            "notifications_authorized": authorized,
+            "notifications_status": status
+        ])
+    }
+
+    // MARK: - App Store review
+
+    /// Apple does not tell us if the user actually left a rating — only that we prompted.
+    static func trackAppStoreReviewPrompted(source: String) {
+        capture("app_store_review_prompted", properties: ["source": source])
+        setPersonProperties(["app_store_review_prompted": true])
+    }
+
+    // MARK: - Camera
+
+    static func trackCameraAuthorized(source: String) {
+        capture("camera_authorized", properties: [
+            "source": source,
+            "result": "authorized"
+        ])
+        setPersonProperties(["camera_authorized": true])
+    }
+
+    static func trackCameraDenied(source: String) {
+        capture("camera_denied", properties: [
+            "source": source,
+            "result": "denied"
+        ])
+        setPersonProperties(["camera_authorized": false])
+    }
+
+    // MARK: - Commitment (biometric hold step)
+
+    static func trackCommitmentShown(source: String = "onboarding") {
+        capture("commitment_shown", properties: ["source": source])
+    }
+
+    static func trackCommitmentCompleted(source: String = "onboarding") {
+        capture("commitment_completed", properties: ["source": source])
+        setPersonProperties(["commitment_completed": true])
+    }
+
+    static func trackCommitmentAbandoned(progress: Double, source: String = "onboarding") {
+        capture("commitment_abandoned", properties: [
+            "source": source,
+            "progress": min(1, max(0, progress))
+        ])
+    }
+
+    // MARK: - Apple Sign In
+
+    static func trackAppleSignInStarted(source: String = "onboarding_post_payment") {
+        capture("apple_sign_in_started", properties: ["source": source])
+    }
+
+    static func trackAppleSignInCompleted(source: String = "onboarding_post_payment") {
+        capture("apple_sign_in_completed", properties: [
+            "source": source,
+            "result": "success"
+        ])
+        setPersonProperties(["apple_sign_in": true])
+    }
+
+    static func trackAppleSignInFailed(source: String = "onboarding_post_payment", error: String) {
+        capture("apple_sign_in_failed", properties: [
+            "source": source,
+            "result": "failed",
+            "error": String(error.prefix(180))
+        ])
+    }
+
+    static func trackAppleSignInSkipped(source: String = "onboarding_post_payment") {
+        capture("apple_sign_in_skipped", properties: [
+            "source": source,
+            "result": "skipped"
+        ])
+    }
+
+    // MARK: - Referral / share
+
+    static func trackReferralShareOpened(source: String = "referral_program") {
+        capture("referral_share_opened", properties: ["source": source])
+    }
+
+    static func trackReferralCodeCaptured(source: String = "deep_link") {
+        capture("referral_code_captured", properties: ["source": source])
+        setPersonProperties(["has_referral_code": true])
+    }
+
+    static func trackReferralCodeApplied(source: String = "onboarding") {
+        capture("referral_code_applied", properties: ["source": source])
+    }
+
     // MARK: - Purchases
 
     static func trackPurchaseStarted(
@@ -314,8 +490,19 @@ enum ProcessAnalytics {
         capture("purchase_failed", properties: withPricingVariant(props))
     }
 
+    static func trackRestoreStarted(source: String = "paywall") {
+        capture("restore_started", properties: ["source": source])
+    }
+
     static func trackRestoreCompleted(isActive: Bool) {
         capture("restore_completed", properties: ["is_active": isActive])
+    }
+
+    static func trackRestoreFailed(error: String, source: String = "paywall") {
+        capture("restore_failed", properties: [
+            "source": source,
+            "error": String(error.prefix(180))
+        ])
     }
 
     static func trackQuickActionOpened(kind: String) {

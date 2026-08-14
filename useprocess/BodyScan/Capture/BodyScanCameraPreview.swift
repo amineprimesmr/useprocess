@@ -36,15 +36,25 @@ struct BodyScanCameraPreview: UIViewRepresentable {
     }
 
     final class PreviewView: UIView {
-        override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+        let previewLayer = AVCaptureVideoPreviewLayer()
 
-        var previewLayer: AVCaptureVideoPreviewLayer {
-            layer as! AVCaptureVideoPreviewLayer
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            clipsToBounds = true
+            backgroundColor = .black
+            previewLayer.videoGravity = .resizeAspectFill
+            layer.addSublayer(previewLayer)
         }
+
+        required init?(coder: NSCoder) { nil }
 
         override func layoutSubviews() {
             super.layoutSubviews()
-            previewLayer.frame = bounds
+            ProcessScanCamera.layoutPreviewLayer(
+                previewLayer,
+                in: bounds,
+                zoom: ProcessScanCamera.frontPreviewLayoutZoom
+            )
         }
 
         func configureConnection(mirror: Bool) {

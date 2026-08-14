@@ -85,7 +85,7 @@ func reconcilePostPaymentStepIfNeeded() {
 
     let shouldSkipToThankYou: Bool
     switch step {
-    case .biometricAuth, .transformationPreview, .payment:
+    case .biometricAuth, .transformationPreview, .dashboardPreview, .payment:
         shouldSkipToThankYou = true
     default:
         shouldSkipToThankYou = false
@@ -305,7 +305,7 @@ func handleBackFromProgramCreation() {
 
     if let result = viewModel.restoredFaceScanResultForNavigation() {
         viewModel.isFaceAnalysisCompleted = true
-        viewModel.presentedFaceScanResult = result
+        viewModel.presentOnboardingFaceScan(initialResult: result, usesChatCallbacks: false)
         return
     }
 
@@ -317,7 +317,7 @@ func handleBackFromProgramCreation() {
 
 @MainActor
 func completeProgramCreationBackFaceScan() async {
-    viewModel.presentedFaceScanResult = nil
+    viewModel.dismissOnboardingFaceScan()
 }
 
 /// Ajoute une étape visible à la pile (tronque une éventuelle branche future).
@@ -414,7 +414,8 @@ func requestHealthKitAndContinue() async {
     HapticManager.shared.impact(.heavy)
     viewModel.isRequestingHealthKit = true
 
-    await healthManager.requestAuthorizationAsync()
+    ProcessAnalytics.trackHealthKitPromptShown(source: "onboarding_legacy")
+    await healthManager.requestAuthorizationAsync(analyticsSource: "onboarding_legacy")
 
     viewModel.healthKitGranted = healthManager.isAuthorized
     viewModel.isRequestingHealthKit = false
@@ -435,7 +436,6 @@ func checkPermissions() {
         viewModel.isCompleting = true
 
         do {
-            ProcessReferralAttribution.captureOnAppLaunchIfNeeded()
             ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
             await OnboardingProgressService.shared.savePendingDataIfNeeded(to: profileService)
             let coordinator = OnboardingCoordinator(viewModel: viewModel, profileService: profileService)

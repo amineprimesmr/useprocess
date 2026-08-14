@@ -221,10 +221,7 @@ class OnboardingNavigationEngine {
         case .weightMotivation:
             return OnboardingStep.programCreation.rawValue
 
-        case .programCreation:
-            return OnboardingStep.notificationPermission.rawValue
-
-        case .notificationPermission:
+        case .programCreation, .notificationPermission:
             return OnboardingStep.weightEstimation.rawValue
             
         case .weightEstimation:
@@ -318,6 +315,12 @@ class OnboardingNavigationEngine {
             return OnboardingStep.transformationPreview.rawValue
 
         case .transformationPreview:
+            return OnboardingStep.dashboardPreview.rawValue
+
+        case .dashboardPreview:
+            return OnboardingStep.payment.rawValue
+
+        case .dreamFaceCommit:
             return OnboardingStep.payment.rawValue
 
         case .payment:
@@ -349,10 +352,7 @@ class OnboardingNavigationEngine {
              .weightManagementExperience, .weightFailureReasons, .nutritionQuality:
             return OnboardingStep.weightMotivation.rawValue
             
-        case .weightEstimation:
-            return OnboardingStep.notificationPermission.rawValue
-            
-        case .notificationPermission:
+        case .weightEstimation, .notificationPermission:
             return OnboardingStep.programCreation.rawValue
             
         case .programCreation:
@@ -428,15 +428,18 @@ class OnboardingNavigationEngine {
 
         case .biometricAuth:
             return OnboardingStep.weightEstimation.rawValue
-            
-        case .notificationPermission:
-            return OnboardingStep.programCreation.rawValue
 
         case .transformationPreview:
             return OnboardingStep.biometricAuth.rawValue
 
-        case .payment:
+        case .dashboardPreview:
             return OnboardingStep.transformationPreview.rawValue
+
+        case .dreamFaceCommit:
+            return OnboardingStep.dashboardPreview.rawValue
+
+        case .payment:
+            return OnboardingStep.dashboardPreview.rawValue
 
         case .appleSignIn:
             return OnboardingStep.payment.rawValue

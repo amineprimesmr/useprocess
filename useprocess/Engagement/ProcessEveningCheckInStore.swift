@@ -3,12 +3,13 @@ import Foundation
 enum EveningCheckInQuestionID {
     static let water = "water"
     static let debloatMeal = "debloatMeal"
+    /// Legacy — plus affiché dans la checklist, conservé pour l’historique trajectoire.
     static let cardio = "cardio"
     static let morningRoutine = "morningRoutine"
     static let legacyPostureCircuit = "postureCircuit"
 
     /// Leviers debloat — score, streak et validation jour.
-    static let debloatLevers: [String] = [water, debloatMeal, cardio]
+    static let debloatLevers: [String] = [water, debloatMeal]
     /// Toutes les questions affichées dans la checklist.
     static let all: [String] = [morningRoutine] + debloatLevers
 }
@@ -69,14 +70,9 @@ final class ProcessEveningCheckInStore {
     }
 
     private func sanitizedAnswers(_ answers: [String: String]) -> [String: String] {
-        var normalized = Dictionary(
+        Dictionary(
             uniqueKeysWithValues: answers.filter { EveningCheckInQuestionID.all.contains($0.key) }
         )
-        if normalized[EveningCheckInQuestionID.cardio] == nil,
-           let legacy = answers[EveningCheckInQuestionID.legacyPostureCircuit] {
-            normalized[EveningCheckInQuestionID.cardio] = legacy
-        }
-        return normalized
     }
 
     private func applyAnswersToPlan(_ answers: [String: String], for date: Date) {
@@ -107,14 +103,6 @@ final class ProcessEveningCheckInStore {
             planStore.setJournalTaskStatus(
                 meal == "yes" ? .completed : .failed,
                 taskId: JournalCoreTaskCatalog.nutritionTaskId(for: dayId),
-                dayId: dayId
-            )
-        }
-
-        if let cardio = answers[EveningCheckInQuestionID.cardio] {
-            planStore.setJournalTaskStatus(
-                cardio == "yes" ? .completed : .failed,
-                taskId: "\(dayId).core.cardio",
                 dayId: dayId
             )
         }

@@ -1,110 +1,26 @@
 import SwiftUI
 import UIKit
 
-/// Tokens du fond app — dégradé bleu / violet en clair, fond uni en sombre.
+/// Tokens du fond app — uni en clair et en sombre.
 enum ProcessBackgroundPalette {
-    static let lightBase = Color(red: 0.968, green: 0.972, blue: 0.988)
-    static let lightBlueGlow = Color(red: 0.62, green: 0.80, blue: 1.0)
-    static let lightVioletGlow = Color(red: 0.78, green: 0.70, blue: 0.98)
-
+    /// Gris très clair (pas blanc pur).
+    static let lightBase = Color(red: 0.925, green: 0.927, blue: 0.933)
     static let darkBase = Color(red: 0.07, green: 0.08, blue: 0.11)
 }
 
-/// Fond principal de l’app — dégradé subtil bleu / violet en clair, plat en sombre.
+/// Fond principal de l’app — plat (plus de dégradé rosé / violet en clair).
 struct ProcessScreenBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    private var usesLightGradient: Bool {
-        colorScheme != .dark
-    }
-
     var body: some View {
         Group {
-            if usesLightGradient {
-                lightGradientBackground
-            } else {
+            if colorScheme == .dark {
                 ProcessBackgroundPalette.darkBase
+            } else {
+                ProcessBackgroundPalette.lightBase
             }
         }
         .ignoresSafeArea()
-    }
-
-    private var lightGradientBackground: some View {
-        ZStack {
-            ProcessBackgroundPalette.lightBase
-
-            // Accents supérieurs discrets (coins — pas le focus principal).
-            RadialGradient(
-                colors: [
-                    ProcessBackgroundPalette.lightBlueGlow.opacity(0.26),
-                    ProcessBackgroundPalette.lightBlueGlow.opacity(0.07),
-                    .clear
-                ],
-                center: UnitPoint(x: 0.10, y: 0.10),
-                startRadius: 0,
-                endRadius: 300
-            )
-
-            RadialGradient(
-                colors: [
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.24),
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.06),
-                    .clear
-                ],
-                center: UnitPoint(x: 0.90, y: 0.09),
-                startRadius: 0,
-                endRadius: 280
-            )
-
-            // Cœur — centre de l'écran (zone repas / contenu principal).
-            RadialGradient(
-                colors: [
-                    ProcessBackgroundPalette.lightBlueGlow.opacity(0.40),
-                    ProcessBackgroundPalette.lightBlueGlow.opacity(0.14),
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.06),
-                    .clear
-                ],
-                center: UnitPoint(x: 0.46, y: 0.54),
-                startRadius: 16,
-                endRadius: 520
-            )
-
-            RadialGradient(
-                colors: [
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.36),
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.12),
-                    .clear
-                ],
-                center: UnitPoint(x: 0.58, y: 0.50),
-                startRadius: 8,
-                endRadius: 460
-            )
-
-            // Bas de page — bloom harmonisé sous le carousel / tab bar.
-            RadialGradient(
-                colors: [
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.34),
-                    ProcessBackgroundPalette.lightBlueGlow.opacity(0.20),
-                    ProcessBackgroundPalette.lightBlueGlow.opacity(0.06),
-                    .clear
-                ],
-                center: UnitPoint(x: 0.50, y: 0.92),
-                startRadius: 0,
-                endRadius: 440
-            )
-
-            // Liaison verticale — teinte progressive vers le milieu et le bas.
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.42),
-                    ProcessBackgroundPalette.lightBlueGlow.opacity(0.10),
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.24),
-                    ProcessBackgroundPalette.lightVioletGlow.opacity(0.12)
-                ],
-                startPoint: UnitPoint(x: 0.5, y: 0.0),
-                endPoint: UnitPoint(x: 0.5, y: 1.0)
-            )
-        }
     }
 }
 

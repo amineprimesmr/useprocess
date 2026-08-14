@@ -122,10 +122,7 @@ struct PlanNutritionDaySection: View {
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
 
-    @State private var selectedEntry: PlanDayMealEntry?
     @State private var showMealIdeasCatalog = false
-    @State private var scrollPosition: PlanMealCarouselScrollTarget?
-    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @State private var mealEntries: [PlanDayMealEntry] = []
 
@@ -142,12 +139,8 @@ struct PlanNutritionDaySection: View {
         return "\(day.id)|\(livePlan.nutritionPlanType.rawValue)|\(validatedKey)|\(draftsKey)"
     }
 
-    private var focusedMealSlot: MealTimeSlot {
-        PlanMealSlotLabel.preferredSlot(
-            in: livePlan.configuredMealSlots,
-            planType: livePlan.nutritionPlanType,
-            validated: Set(entries.filter(\.isValidated).map(\.slot))
-        )
+    private var showsMealCard: Bool {
+        !tutorialStore.isActive || tutorialStore.showsMealCardsInCarousel
     }
 
     var body: some View {
@@ -156,59 +149,15 @@ struct PlanNutritionDaySection: View {
                 headerRow
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            nutritionCarouselBody
+            nutritionStripBody
         }
         .animation(.spring(response: 0.52, dampingFraction: 0.88), value: tutorialStore.currentStepIndex)
         .task(id: day.id) {
             PlanDayMealsProvider.ensureDefaultDrafts(plan: livePlan, day: day, store: store)
             reloadMealEntries()
-            let target = PlanMealCarouselScrollTarget.meal(focusedMealSlot)
-            if scrollPosition != target {
-                scrollPosition = target
-            }
         }
         .onChange(of: mealEntriesRefreshToken) { _, _ in
             reloadMealEntries()
-        }
-        .onChange(of: entriesValidationToken) { _, _ in
-            let target = PlanMealCarouselScrollTarget.meal(focusedMealSlot)
-            guard scrollPosition != target else { return }
-            scrollPosition = target
-        }
-        .onChange(of: planBridge.focusHydrationCarouselNonce) { _, _ in
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) {
-                scrollPosition = .hydration
-            }
-        }
-        .onChange(of: tutorialStore.currentStepIndex) { _, _ in
-            guard tutorialStore.isActive else { return }
-            withAnimation(.spring(response: 0.52, dampingFraction: 0.88)) {
-                switch tutorialStore.currentStep {
-                case .hydration:
-                    scrollPosition = .hydration
-                case .nutrition:
-                    scrollPosition = .meal(focusedMealSlot)
-                default:
-                    break
-                }
-            }
-        }
-        .onChange(of: store.plan?.progress.draftMealsBySlot[day.id]) { _, _ in
-            refreshSelectedEntryIfNeeded()
-        }
-        .onChange(of: store.plan?.progress.validatedMealsBySlot[day.id]) { _, _ in
-            refreshSelectedEntryIfNeeded()
-        }
-        .fullScreenCover(item: $selectedEntry) { entry in
-            PlanMealDetailView(
-                entry: refreshedEntry(entry),
-                plan: livePlan,
-                day: day,
-                isEditable: isEditable,
-                onDismiss: { selectedEntry = nil }
-            )
-            .environmentObject(profileService)
-            .processZoomTransition(id: .mealDetail(entry.slot), namespace: mealZoomNamespace)
         }
         .fullScreenCover(isPresented: $showMealIdeasCatalog) {
             PlanMealIdeasCatalogSheet(
@@ -222,36 +171,46 @@ struct PlanNutritionDaySection: View {
         }
     }
 
-    private var entriesValidationToken: String {
-        entries.map { "\($0.slot.rawValue):\($0.isValidated)" }.joined(separator: "|")
-    }
-
     private var headerRow: some View {
-        Text(PlanHomeSectionKind.nutrition.title)
+        Text(AppCopy.t("Alimentation debloat", en: "Debloat nutrition"))
             .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
             .foregroundStyle(theme.primaryText)
     }
 
     @ViewBuilder
-    private var nutritionCarouselBody: some View {
+    private var nutritionStripBody: some View {
         if tutorialStore.isFocused(.hydration) {
             PlanHomeTutorialFocusChrome(focus: .hydration) {
                 hydrationCard
             }
-            .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
             .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
         } else if tutorialStore.isFocused(.meals) {
             PlanHomeTutorialFocusChrome(
                 focus: .meals,
-                cornerRadius: PlanMealCarouselLayout.cornerRadius
+                cornerRadius: PlanNutritionStripLayout.cornerRadius
             ) {
-                mealCarousel(displayMode: .tutorialMealsFocus)
+                dayMealsCard
+                    .frame(maxWidth: .infinity)
             }
             .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
         } else {
-            mealCarousel(displayMode: .standard)
+            nutritionStrip
                 .opacity(tutorialStore.isRevealed(.hydration) || tutorialStore.isRevealed(.meals) ? 0.88 : 1)
         }
+    }
+
+    private var nutritionStrip: some View {
+        HStack(alignment: .center, spacing: 12) {
+            hydrationCard
+
+            if showsMealCard {
+                dayMealsCard
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
+        }
+        .frame(height: PlanNutritionStripLayout.rowHeight)
+        .animation(.spring(response: 0.52, dampingFraction: 0.88), value: showsMealCard)
     }
 
     private var hydrationCard: some View {
@@ -263,42 +222,15 @@ struct PlanNutritionDaySection: View {
         )
     }
 
-    private func mealCarousel(displayMode: PlanMealCarouselDisplayMode = .standard) -> some View {
-        let showsMeals: Bool = switch displayMode {
-        case .standard:
-            !tutorialStore.isActive || tutorialStore.showsMealCardsInCarousel
-        case .tutorialMealsFocus:
-            true
-        }
-
-        return PlanMealCoverFlowCarousel(
+    private var dayMealsCard: some View {
+        PlanDayMealsMarketCard(
             entries: entries,
-            previewImageAssets: ProcessDebloatMealLibrary.homeCatalogPreviewImageAssets,
-            hydrationTargetMilliliters: ProcessDailyTargets.hydrationTargetMilliliters,
-            selectedDate: selectedDate,
-            dayId: day.id,
-            healthKitWaterLiters: healthKitWaterLiters,
-            scrollPosition: $scrollPosition,
-            mealZoomNamespace: mealZoomNamespace,
-            showsHydration: true,
-            showsMealCards: showsMeals,
-            highlightsMealStrip: displayMode == .tutorialMealsFocus,
-            onSelect: {
-                ProcessPerformanceTrace.beginMealOpen()
-                selectedEntry = $0
-            },
-            onBrowseCatalog: { showMealIdeasCatalog = true }
+            zoomNamespace: mealZoomNamespace,
+            onTap: {
+                HapticManager.shared.impact(.light)
+                showMealIdeasCatalog = true
+            }
         )
-        .padding(.horizontal, -PlanHomeSectionDesign.homeScrollPadding)
-    }
-
-    private func refreshedEntry(_ entry: PlanDayMealEntry) -> PlanDayMealEntry {
-        entries.first(where: { $0.slot == entry.slot }) ?? entry
-    }
-
-    private func refreshSelectedEntryIfNeeded() {
-        guard let current = selectedEntry else { return }
-        selectedEntry = refreshedEntry(current)
     }
 
     private func reloadMealEntries() {
@@ -306,119 +238,7 @@ struct PlanNutritionDaySection: View {
     }
 }
 
-// MARK: - Carousel repas
-
-private enum PlanMealCarouselDisplayMode {
-    case standard
-    case tutorialMealsFocus
-}
-
-private enum PlanMealCarouselScrollTarget: Hashable {
-    case hydration
-    case meal(MealTimeSlot)
-}
-
-private struct PlanMealCoverFlowCarousel: View {
-    let entries: [PlanDayMealEntry]
-    let previewImageAssets: [String]
-    let hydrationTargetMilliliters: Int
-    let selectedDate: Date
-    let dayId: String
-    let healthKitWaterLiters: Double
-    @Binding var scrollPosition: PlanMealCarouselScrollTarget?
-    let mealZoomNamespace: Namespace.ID
-    var showsHydration: Bool = true
-    var showsMealCards: Bool = true
-    var highlightsMealStrip: Bool = false
-    var onSelect: (PlanDayMealEntry) -> Void
-    var onBrowseCatalog: () -> Void
-
-    private let cardSpacing: CGFloat = 10
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            carouselContent
-        }
-        .scrollTargetBehavior(.viewAligned)
-        .scrollPosition(id: $scrollPosition, anchor: .center)
-        .frame(height: PlanMealCarouselLayout.cardHeight + 16)
-    }
-
-    private var carouselContent: some View {
-        LazyHStack(spacing: cardSpacing) {
-            if showsHydration {
-                mealCardScrollTransition(
-                    PlanHydrationCarouselCard(
-                        targetMilliliters: hydrationTargetMilliliters,
-                        selectedDate: selectedDate,
-                        dayId: dayId,
-                        healthKitWaterLiters: healthKitWaterLiters
-                    )
-                )
-                .id(PlanMealCarouselScrollTarget.hydration)
-            }
-
-            if showsMealCards {
-                Group {
-                    if highlightsMealStrip {
-                        mealCardsStrip
-                    } else {
-                        mealCardsRow
-                    }
-                }
-                .transition(.opacity.combined(with: .move(edge: .trailing)))
-            }
-        }
-        .animation(.spring(response: 0.52, dampingFraction: 0.88), value: showsMealCards)
-        .scrollTargetLayout()
-        .padding(.horizontal, PlanHomeSectionDesign.homeScrollPadding)
-        .padding(.vertical, 4)
-    }
-
-    @ViewBuilder
-    private func mealCardScrollTransition<Content: View>(_ content: Content) -> some View {
-        if highlightsMealStrip {
-            content
-        } else {
-            content.scrollTransition(.interactive, axis: .horizontal) { view, phase in
-                view
-                    .scaleEffect(phase.isIdentity ? 1 : 0.9)
-                    .opacity(phase.isIdentity ? 1 : 0.78)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var mealCardsRow: some View {
-        ForEach(entries) { entry in
-            mealCardScrollTransition(
-                PlanMealCarouselCard(
-                    entry: entry,
-                    zoomNamespace: mealZoomNamespace,
-                    onTap: { onSelect(entry) }
-                )
-            )
-            .id(PlanMealCarouselScrollTarget.meal(entry.slot))
-        }
-
-        mealCardScrollTransition(
-            PlanMealCatalogBrowseCard(
-                previewImageAssets: previewImageAssets,
-                zoomNamespace: mealZoomNamespace,
-                onTap: onBrowseCatalog
-            )
-        )
-    }
-
-    private var mealCardsStrip: some View {
-        HStack(spacing: cardSpacing) {
-            mealCardsRow
-        }
-        .padding(2)
-    }
-}
-
-// MARK: - Carte hydratation (début de carousel)
+// MARK: - Carte hydratation
 
 private struct PlanHydrationCarouselCard: View {
     let targetMilliliters: Int
@@ -738,9 +558,7 @@ private struct PlanHydrationCarouselCard: View {
         Button {
             addWater()
         } label: {
-            Image(systemName: "plus")
-                .font(.system(size: addButtonIconSize, weight: .bold))
-                .foregroundStyle(theme.primaryText)
+            ProcessHydrationDropIcon.image(side: addButtonIconSize + 8)
                 .frame(width: addButtonSize, height: addButtonSize)
                 .scaleEffect(plusButtonScale)
         }
@@ -796,54 +614,81 @@ private struct PlanHydrationCarouselCard: View {
     }
 }
 
-// MARK: - Carte catalogue (fin de carousel)
+// MARK: - Strip alimentation (liquid glass)
 
-private struct PlanMealCatalogBrowseCard: View {
-    let previewImageAssets: [String]
-    var zoomNamespace: Namespace.ID? = nil
+private enum PlanNutritionStripLayout {
+    static let rowHeight: CGFloat = 272
+    static let marketImageSide: CGFloat = 108
+    static let cornerRadius: CGFloat = 30
+}
+
+/// Une carte « marché » : les 3 plats du jour en collage, ouvre le catalogue.
+private struct PlanDayMealsMarketCard: View {
+    let entries: [PlanDayMealEntry]
+    let zoomNamespace: Namespace.ID
     var onTap: () -> Void
 
     @Environment(\.appTheme) private var theme
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
+        RoundedRectangle(cornerRadius: PlanNutritionStripLayout.cornerRadius, style: .continuous)
+    }
+
+    private var marketEntries: [PlanDayMealEntry] {
+        Array(entries.prefix(3))
+    }
+
+    private var globalDayAssessment: MealDebloatAssessment? {
+        let assessments = marketEntries.map(\.assessment)
+        guard !assessments.isEmpty else { return nil }
+        let count = Double(assessments.count)
+        let average: (KeyPath<MealDebloatAssessment, Int>) -> Int = { keyPath in
+            Int((assessments.map { Double($0[keyPath: keyPath]) }.reduce(0, +) / count).rounded())
+        }
+        return MealDebloatAssessment(
+            score: average(\.score),
+            electrolyteScore: average(\.electrolyteScore),
+            digestiveScore: average(\.digestiveScore),
+            foodQualityScore: average(\.foodQualityScore),
+            balance: assessments[0].balance,
+            label: AppCopy.tSync("Score moyen du jour", en: "Day average score"),
+            summary: AppCopy.tSync(
+                "Moyenne Debloat des repas du jour.",
+                en: "Average Debloat score for today's meals."
+            ),
+            caution: nil,
+            isEstimated: assessments.contains(where: \.isEstimated)
+        )
     }
 
     var body: some View {
-        Button {
-            HapticManager.shared.impact(.light)
-            onTap()
-        } label: {
-            VStack(spacing: 12) {
-                Text(AppCopy.t("Recettes Debloat", en: "Debloat recipes"))
+        Button(action: onTap) {
+            VStack(spacing: 10) {
+                Text(AppCopy.t("Repas de la journée", en: "Today's meals"))
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.86)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 18)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 16)
 
-                ZStack {
-                    previewCollage
+                mealMarketCollage
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 148)
 
-                    catalogCountPill
-                        .padding(.bottom, 2)
+                if let globalDayAssessment {
+                    MealDebloatScorePill(assessment: globalDayAssessment)
+                        .padding(.bottom, 14)
+                } else {
+                    Spacer(minLength: 0)
                 }
-                .frame(height: PlanMealCarouselLayout.imageDiameter + 10)
-
-                Spacer(minLength: 0)
             }
-            .frame(
-                width: PlanMealCarouselLayout.cardWidth,
-                height: PlanMealCarouselLayout.cardHeight
-            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .buttonStyle(.processPlain)
-        .frame(
-            width: PlanMealCarouselLayout.cardWidth,
-            height: PlanMealCarouselLayout.cardHeight
-        )
+        .frame(maxWidth: .infinity)
+        .frame(height: PlanNutritionStripLayout.rowHeight)
         .background {
             cardShape
                 .fill(.clear)
@@ -852,171 +697,69 @@ private struct PlanMealCatalogBrowseCard: View {
         .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .mealCatalog, namespace: zoomNamespace)
-        .accessibilityLabel(AppCopy.t(
-            "Ouvrir le catalogue d’aliments pour un visage dégonflé",
-            en: "Open the food catalog for a less puffy face"
+        .accessibilityLabel(accessibilityTitle)
+        .accessibilityHint(AppCopy.t(
+            "Ouvre le catalogue des repas",
+            en: "Opens the meals catalog"
         ))
     }
 
-    @ViewBuilder
-    private var previewCollage: some View {
-        let assets = Array(previewImageAssets.prefix(3))
-        if assets.isEmpty {
-            Circle()
-                .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.55 : 0.35))
-                .frame(
-                    width: PlanMealCarouselLayout.imageDiameter,
-                    height: PlanMealCarouselLayout.imageDiameter
-                )
-                .overlay {
-                    Image(systemName: "fork.knife")
-                        .font(.system(size: 34, weight: .semibold))
-                        .foregroundStyle(theme.onboardingAccent.opacity(0.8))
-                }
-        } else if assets.count == 1 {
-            singlePreviewImage(assets[0])
-        } else {
-            ZStack {
-                if assets.count >= 2 {
-                    singlePreviewImage(assets[1])
-                        .frame(width: 88, height: 88)
-                        .offset(x: -36, y: 12)
-                        .opacity(0.82)
-                }
-                if assets.count >= 3 {
-                    singlePreviewImage(assets[2])
-                        .frame(width: 88, height: 88)
-                        .offset(x: 36, y: 12)
-                        .opacity(0.82)
-                }
-                singlePreviewImage(assets[0])
-            }
-            .frame(
-                width: PlanMealCarouselLayout.imageDiameter,
-                height: PlanMealCarouselLayout.imageDiameter
+    private var accessibilityTitle: String {
+        if let score = globalDayAssessment?.score {
+            return AppCopy.t(
+                "Repas de la journée, score Debloat \(score)",
+                en: "Today's meals, Debloat score \(score)"
             )
         }
+        return AppCopy.t("Repas de la journée", en: "Today's meals")
     }
 
-    private func singlePreviewImage(_ asset: String) -> some View {
-        Group {
-            if ProcessAssetCatalog.contains(asset) {
-                Image(asset)
-                    .resizable()
-                    .scaledToFit()
-            } else {
-                Image(systemName: "fork.knife")
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(theme.onboardingAccent.opacity(0.8))
+    private var mealMarketCollage: some View {
+        ZStack {
+            ForEach(Array(marketEntries.enumerated()), id: \.element.id) { index, entry in
+                marketDishImage(entry)
+                    .scaleEffect(index == 1 ? 1.06 : 0.92)
+                    .offset(x: collageXOffset(for: index), y: collageYOffset(for: index))
+                    .zIndex(index == 1 ? 2 : 1)
             }
         }
-        .frame(width: PlanMealCarouselLayout.imageDiameter, height: PlanMealCarouselLayout.imageDiameter)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var catalogCountPill: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "sparkles")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(theme.onboardingAccent)
-
-            Text(AppCopy.t("Voir tout", en: "See all"))
-                .font(.caption.weight(.bold))
-                .foregroundStyle(theme.primaryText)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background {
-            Capsule(style: .continuous)
-                .processGlassEffect(in: Capsule(style: .continuous), interactive: false)
+    private func collageXOffset(for index: Int) -> CGFloat {
+        switch index {
+        case 0: -48
+        case 1: 0
+        default: 48
         }
     }
-}
 
-// MARK: - Carte carousel (liquid glass)
-
-private enum PlanMealCarouselLayout {
-    static let cardWidth: CGFloat = 212
-    static let cardHeight: CGFloat = 268
-    static let imageDiameter: CGFloat = 152
-    static let cornerRadius: CGFloat = 30
-}
-
-private struct PlanMealCarouselCard: View {
-    let entry: PlanDayMealEntry
-    let zoomNamespace: Namespace.ID
-    var onTap: () -> Void
-
-    @Environment(\.appTheme) private var theme
-
-    private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: PlanMealCarouselLayout.cornerRadius, style: .continuous)
-    }
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 12) {
-                Text(entry.meal.localizedDisplayName)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.86)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 18)
-
-                ZStack(alignment: .bottom) {
-                    mealImage
-
-                    debloatScorePill
-                        .padding(.bottom, 2)
-                }
-                .frame(height: PlanMealCarouselLayout.imageDiameter + 10)
-
-                Spacer(minLength: 0)
-            }
-            .frame(
-                width: PlanMealCarouselLayout.cardWidth,
-                height: PlanMealCarouselLayout.cardHeight
-            )
+    private func collageYOffset(for index: Int) -> CGFloat {
+        switch index {
+        case 0: 10
+        case 1: -6
+        default: 14
         }
-        .buttonStyle(.processPlain)
-        .frame(
-            width: PlanMealCarouselLayout.cardWidth,
-            height: PlanMealCarouselLayout.cardHeight
-        )
-        .background {
-            cardShape
-                .fill(.clear)
-                .processGlassEffect(in: cardShape)
-        }
-        .clipShape(cardShape)
-        .processHomeGlassCardShadow(isDark: theme.isDark)
-        .processZoomSource(id: .mealDetail(entry.slot), namespace: zoomNamespace)
     }
 
     @ViewBuilder
-    private var mealImage: some View {
+    private func marketDishImage(_ entry: PlanDayMealEntry) -> some View {
         if ProcessAssetCatalog.contains(entry.imageAssetName) {
-            // PNG tels quels — pas de clip circulaire (évite le « rond noir » autour).
             Image(entry.imageAssetName)
                 .resizable()
                 .scaledToFit()
                 .frame(
-                    width: PlanMealCarouselLayout.imageDiameter,
-                    height: PlanMealCarouselLayout.imageDiameter
+                    width: PlanNutritionStripLayout.marketImageSide,
+                    height: PlanNutritionStripLayout.marketImageSide
                 )
         } else {
             Image(systemName: entry.slot.icon)
-                .font(.system(size: 34, weight: .semibold))
+                .font(.system(size: 28, weight: .semibold))
                 .foregroundStyle(theme.onboardingAccent.opacity(0.8))
                 .frame(
-                    width: PlanMealCarouselLayout.imageDiameter,
-                    height: PlanMealCarouselLayout.imageDiameter
+                    width: PlanNutritionStripLayout.marketImageSide,
+                    height: PlanNutritionStripLayout.marketImageSide
                 )
         }
-    }
-
-    private var debloatScorePill: some View {
-        MealDebloatScorePill(assessment: entry.assessment)
     }
 }

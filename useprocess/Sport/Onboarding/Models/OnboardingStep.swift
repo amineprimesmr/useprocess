@@ -85,8 +85,10 @@ enum OnboardingStep: Int, CaseIterable {
     case carryOverCalories = 56                // ✨ Reportez-vous aux calories supplémentaires au lendemain ?
     case programCreation = 57               // ✨ Création du programme (analyse habitudes, plan 13 semaines)
     case biometricAuth = 58                    // ✨ Authentification biométrique (empreinte digitale)
-    case notificationPermission = 59           // ✨ Notifications push — après création du plan
+    case notificationPermission = 59           // Conservé compat sauvegarde — page notifs supprimée, pop-up au paywall
     case transformationPreview = 64            // ✨ Aperçu avant / après (slider) avant le paywall
+    case dashboardPreview = 69                 // ✨ Dashboard 3D juste avant le paywall
+    case dreamFaceCommit = 70                  // Conservé compat sauvegarde — page engagement retirée, saut auto
     case payment = 60
     case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
     case referralReward = 62                   // ✨ Page de parrainage avec slider de gains
@@ -97,8 +99,8 @@ enum OnboardingStep: Int, CaseIterable {
     var usesInternalContinueAction: Bool {
         switch self {
         case .videoIntroduction, .faceAnalysis, .weightMotivation, .sportSelection,
-             .healthKitPermissions, .biometricAuth, .notificationPermission,
-             .transformationPreview, .programCreation,
+             .healthKitPermissions, .biometricAuth,
+             .transformationPreview, .dashboardPreview, .programCreation,
              .payment, .processWelcome, .referralReward, .featuresUnlock,
              .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
              .personalizedWelcome, .processResultsDurability,
@@ -181,6 +183,8 @@ enum OnboardingStep: Int, CaseIterable {
         .carryOverCalories,
         .biometricAuth,
         .transformationPreview,
+        .dashboardPreview,
+        .dreamFaceCommit,
         .payment,
         .appleSignIn,
         .processWelcome,
@@ -212,8 +216,9 @@ enum OnboardingStep: Int, CaseIterable {
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
              .personalizedWelcome, .processResultsDurability,
              .sleepDataRecovery, .primaryGoal, .goalProjection,
-             .healthKitPermissions,
-             .idealWeight, .weightGoalIncompatible:
+             .healthKitPermissions, .notificationPermission,
+             .idealWeight, .weightGoalIncompatible,
+             .dreamFaceCommit:
             return true
         default:
             return false

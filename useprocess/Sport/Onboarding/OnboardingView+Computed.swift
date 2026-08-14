@@ -86,14 +86,7 @@ var shouldShowNoWeightGoalLink: Bool {
 }
 
 var shouldHideButtonUntilValidated: Bool {
-    let step = OnboardingStep(rawValue: viewModel.currentStep)
-    switch step {
-    case .weightEstimation:
-        // Animation intégrée — le bouton reste caché jusqu'à la fin
-        return true
-    default:
-        return false
-    }
+    false
 }
 
 func skipWeightGoalFromIdealWeight() {
@@ -199,6 +192,7 @@ var shouldAddTopPadding: Bool {
         || step == .sportSelection || step == .weightMotivation || step == .weightGoalIncompatible
         || step == .programCreation
         || step == .biometricAuth || step == .notificationPermission || step == .transformationPreview
+        || step == .dashboardPreview
         || step == .healthKitPermissions {
         return false
     }

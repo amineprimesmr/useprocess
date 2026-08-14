@@ -425,32 +425,10 @@ private struct PlanHomeGreetingLabel: View {
 
     @Environment(\.appTheme) private var theme
 
-    private var greetingGradient: LinearGradient {
-        if theme.isDark {
-            LinearGradient(
-                colors: [
-                    Color.white,
-                    Color.white.opacity(0.58)
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        } else {
-            LinearGradient(
-                colors: [
-                    Color.black.opacity(0.92),
-                    Color.black.opacity(0.42)
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        }
-    }
-
     var body: some View {
         Text(greeting.line)
             .font(.system(size: style == .stickyTopBar ? 26 : 28, weight: .bold))
-            .foregroundStyle(greetingGradient)
+            .foregroundStyle(theme.primaryText)
             .multilineTextAlignment(.leading)
             .lineLimit(style == .stickyTopBar ? 1 : nil)
             .minimumScaleFactor(style == .stickyTopBar ? 0.82 : 1)

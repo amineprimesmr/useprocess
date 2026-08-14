@@ -4,9 +4,8 @@ import Foundation
 enum ProcessDebloatTrajectoryEngine {
 
     static let behaviorWeights: [String: Double] = [
-        EveningCheckInQuestionID.water: 0.35,
-        EveningCheckInQuestionID.debloatMeal: 0.40,
-        EveningCheckInQuestionID.cardio: 0.25
+        EveningCheckInQuestionID.water: 0.45,
+        EveningCheckInQuestionID.debloatMeal: 0.55
     ]
 
     // MARK: - Scores
@@ -85,14 +84,10 @@ enum ProcessDebloatTrajectoryEngine {
             if record.water != true || record.debloatMeal != true {
                 return .regression
             }
-            if record.cardio != true,
-               consecutiveCardioMissesBefore + 1 >= ProcessDebloatValidation.consecutiveCardioMissLimit {
-                return .regression
-            }
             return .partial
         }
 
-        if record.water == true, record.debloatMeal == true, record.cardio == true,
+        if record.water == true, record.debloatMeal == true,
            behaviorScore(from: record) >= 0.9, effectiveScan >= 0.55 {
             return .excellent
         }
@@ -112,7 +107,6 @@ enum ProcessDebloatTrajectoryEngine {
         var answers: [String: String] = [:]
         if let water = record.water { answers[EveningCheckInQuestionID.water] = water ? "yes" : "no" }
         if let meal = record.debloatMeal { answers[EveningCheckInQuestionID.debloatMeal] = meal ? "yes" : "no" }
-        if let cardio = record.cardio { answers[EveningCheckInQuestionID.cardio] = cardio ? "yes" : "no" }
         return behaviorScore(from: answers)
     }
 

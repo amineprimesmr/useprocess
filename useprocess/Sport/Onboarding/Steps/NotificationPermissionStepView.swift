@@ -52,6 +52,7 @@ struct NotificationPermissionStepView: View {
             }
         }
         .task {
+            ProcessAnalytics.trackNotificationsPromptShown(source: "onboarding_notifications_ui")
             await permissionsManager.refreshNotificationAuthorizationStatus()
         }
     }
@@ -132,6 +133,7 @@ struct NotificationPermissionStepView: View {
             .disabled(isRequesting)
 
             Button {
+                ProcessAnalytics.trackNotificationsSkipped(source: "onboarding_notifications")
                 finishStep()
             } label: {
                 Text(OnboardingCopy.t("Ignorer pour le moment", en: "Skip for now"))
@@ -152,7 +154,7 @@ struct NotificationPermissionStepView: View {
         HapticManager.shared.impact(.medium)
         isRequesting = true
 
-        let granted = await permissionsManager.requestNotificationPermission()
+        let granted = await permissionsManager.requestNotificationPermission(analyticsSource: "onboarding_notifications")
 
         if granted {
             if SubscriptionService.shared.isRetentionTrialOfferActive,

@@ -10,48 +10,56 @@ struct OnboardingFaceDeepAnalysisView: View {
     var showsScoreRing: Bool = true
     var showsUnlockTeaser: Bool = true
 
+    @State private var selectedPage: SignalCarouselPage = .openSignals
+
     private var analysis: OnboardingFaceDeepAnalysis {
         OnboardingFaceDeepAnalysisBuilder.build(from: result)
     }
 
-    private var lockedCategories: [LockedCategory] {
-        LockedCategory.allCases.compactMap { category in
-            let metrics = analysis.lockedMetrics.filter { category.kinds.contains($0.kind) }
-            guard !metrics.isEmpty else { return nil }
-            return category
+    private var resolvedFirstName: String {
+        let profileName = UnifiedProfileService.shared.currentProfile?.firstName
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if OnboardingViewModel.isRealUserFirstName(profileName) {
+            return profileName
         }
+
+        let snapshotName = OnboardingProgressService.shared.loadAnswers()?.firstName?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if OnboardingViewModel.isRealUserFirstName(snapshotName) {
+            return snapshotName
+        }
+
+        return ""
+    }
+
+    private var openSignalsTitle: String {
+        let name = resolvedFirstName
+        if name.isEmpty {
+            return AppCopy.t("Ton analyse :", en: "Your analysis:")
+        }
+        return AppCopy.t("Ton analyse \(name) :", en: "Your analysis \(name):")
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             if showsScoreRing {
                 FaceScanWhoopScoreRing(result: result, showsGlobalScore: false)
                     .scaleEffect(ringScale)
                     .padding(.bottom, 4)
             }
 
-            unlockedCard
-
-            ForEach(lockedCategories) { category in
-                lockedCategoryCard(
-                    category,
-                    metrics: analysis.lockedMetrics.filter { category.kinds.contains($0.kind) }
-                )
+            TabView(selection: $selectedPage) {
+                ForEach(SignalCarouselPage.allCases) { page in
+                    signalPage(page)
+                        .tag(page)
+                        .padding(.horizontal, 2)
+                }
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(minHeight: 388)
+            .frame(maxHeight: .infinity)
 
-            lockedTextCard(
-                title: AppCopy.t("Défauts principaux", en: "Main flaws"),
-                subtitle: AppCopy.t("Ce qui alourdit ton visage", en: "What weighs down your face"),
-                lines: analysis.primaryFlaws,
-                linePrefix: "❌"
-            )
-            lockedTextCard(
-                title: AppCopy.t("Atouts", en: "Strengths"),
-                subtitle: AppCopy.t("Tes points forts structurels", en: "Your structural strengths"),
-                lines: analysis.strengths,
-                linePrefix: "✅"
-            )
-            lockedSummaryCard
+            signalPageDots
 
             if showsUnlockTeaser {
                 unlockTeaser
@@ -59,11 +67,76 @@ struct OnboardingFaceDeepAnalysisView: View {
         }
     }
 
+    private var signalPageDots: some View {
+        HStack(spacing: 7) {
+            ForEach(SignalCarouselPage.allCases) { page in
+                let isSelected = selectedPage == page
+                Circle()
+                    .fill(isSelected ? FaceScanWhoopPalette.label : Color.clear)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(
+                                FaceScanWhoopPalette.label.opacity(isSelected ? 0 : 0.38),
+                                lineWidth: 1.2
+                            )
+                    }
+                    .frame(width: 7, height: 7)
+                    .onTapGesture {
+                        HapticManager.shared.impact(.light)
+                        withAnimation(.easeInOut(duration: 0.28)) {
+                            selectedPage = page
+                        }
+                    }
+                    .accessibilityLabel(page.accessibilityTitle)
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+        .padding(.top, 2)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(AppCopy.t("Pages de signaux", en: "Signal pages"))
+    }
+
+    @ViewBuilder
+    private func signalPage(_ page: SignalCarouselPage) -> some View {
+        switch page {
+        case .openSignals:
+            unlockedCard
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        case .gaze, .structure, .skin, .harmony:
+            if let category = page.lockedCategory {
+                lockedCategoryCard(
+                    category,
+                    metrics: analysis.lockedMetrics.filter { category.kinds.contains($0.kind) }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+        case .flaws:
+            lockedTextCard(
+                title: AppCopy.t("Défauts principaux", en: "Main flaws"),
+                subtitle: AppCopy.t("Ce qui alourdit ton visage", en: "What weighs down your face"),
+                lines: analysis.primaryFlaws,
+                linePrefix: "❌"
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        case .strengths:
+            lockedTextCard(
+                title: AppCopy.t("Atouts", en: "Strengths"),
+                subtitle: AppCopy.t("Tes points forts structurels", en: "Your structural strengths"),
+                lines: analysis.strengths,
+                linePrefix: "✅"
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        case .summary:
+            lockedSummaryCard
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+    }
+
     // MARK: - Unlocked (rétention + cortisol)
 
     private var unlockedCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(AppCopy.t("Signaux ouverts", en: "Open signals"))
+            Text(openSignalsTitle)
                 .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(FaceScanWhoopPalette.label)
                 .padding(.horizontal, 16)
@@ -88,7 +161,10 @@ struct OnboardingFaceDeepAnalysisView: View {
             volumeCompositionRow(analysis.volumeComposition)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -233,7 +309,10 @@ struct OnboardingFaceDeepAnalysisView: View {
                 lockedOverlay(title: category.lockLabel)
                     .padding(.vertical, 18)
             }
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -297,7 +376,10 @@ struct OnboardingFaceDeepAnalysisView: View {
                 lockedOverlay(title: AppCopy.t("Contenu verrouillé", en: "Content locked"))
                     .padding(.vertical, 18)
             }
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -325,7 +407,10 @@ struct OnboardingFaceDeepAnalysisView: View {
                 lockedOverlay(title: AppCopy.t("Résumé verrouillé", en: "Summary locked"))
                     .padding(.vertical, 18)
             }
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -418,6 +503,43 @@ struct OnboardingFaceDeepAnalysisView: View {
 }
 
 // MARK: - Categories
+
+private enum SignalCarouselPage: String, CaseIterable, Identifiable, Hashable {
+    case openSignals
+    case gaze
+    case structure
+    case skin
+    case harmony
+    case flaws
+    case strengths
+    case summary
+
+    var id: String { rawValue }
+
+    @MainActor
+    var accessibilityTitle: String {
+        switch self {
+        case .openSignals: return AppCopy.t("Signaux", en: "Signals")
+        case .gaze: return AppCopy.t("Regard", en: "Gaze")
+        case .structure: return AppCopy.t("Structure", en: "Structure")
+        case .skin: return AppCopy.t("Peau", en: "Skin")
+        case .harmony: return AppCopy.t("Harmonie", en: "Harmony")
+        case .flaws: return AppCopy.t("Défauts", en: "Flaws")
+        case .strengths: return AppCopy.t("Atouts", en: "Strengths")
+        case .summary: return AppCopy.t("Résumé", en: "Summary")
+        }
+    }
+
+    var lockedCategory: LockedCategory? {
+        switch self {
+        case .gaze: return .gaze
+        case .structure: return .structure
+        case .skin: return .skin
+        case .harmony: return .harmony
+        default: return nil
+        }
+    }
+}
 
 private enum LockedCategory: String, CaseIterable, Identifiable {
     case gaze

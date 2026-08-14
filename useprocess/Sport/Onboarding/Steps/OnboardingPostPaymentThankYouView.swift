@@ -137,6 +137,9 @@ struct OnboardingPostPaymentThankYouView: View {
                 } else {
                     FaceIDContinueButton {
                         HapticManager.shared.impact(.medium)
+                        if needsAppleSignIn {
+                            ProcessAnalytics.trackAppleSignInSkipped(source: "onboarding_post_payment")
+                        }
                         onComplete()
                     }
                 }
@@ -162,6 +165,7 @@ struct OnboardingPostPaymentThankYouView: View {
         isSigningIn = true
         errorMessage = nil
         HapticManager.shared.impact(.medium)
+        ProcessAnalytics.trackAppleSignInStarted(source: "onboarding_post_payment")
 
         do {
             try await OnboardingAppleAuth.authenticateAndMigrate(
@@ -169,10 +173,15 @@ struct OnboardingPostPaymentThankYouView: View {
                 profileService: profileService,
                 viewModel: viewModel
             )
+            ProcessAnalytics.trackAppleSignInCompleted(source: "onboarding_post_payment")
             HapticManager.shared.notification(.success)
             isSigningIn = false
             onComplete()
         } catch {
+            ProcessAnalytics.trackAppleSignInFailed(
+                source: "onboarding_post_payment",
+                error: error.localizedDescription
+            )
             HapticManager.shared.notification(.error)
             errorMessage = error.localizedDescription
             isSigningIn = false

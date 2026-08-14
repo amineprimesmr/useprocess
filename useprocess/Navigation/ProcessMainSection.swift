@@ -39,7 +39,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         case .coach: "sparkles"
         case .plan: "house.fill"
         case .statistics: "flame.fill"
-        case .profile: "person.fill"
+        case .profile: "chart.xyaxis.line"
         }
     }
 
@@ -47,8 +47,8 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     var tabIconAsset: String? {
         switch self {
         case .plan: "tab_icon_home"
-        case .statistics: "tab_icon_streak"
-        case .profile: nil
+        case .statistics: nil
+        case .profile: "tab_icon_streak"
         case .coach: nil
         }
     }

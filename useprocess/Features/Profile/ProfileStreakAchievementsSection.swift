@@ -32,6 +32,7 @@ struct ProfileStreakAchievementsSection: View {
     @Binding var selectedDate: Date
     /// Pause l’anim hors onglet / app inactive — la flamme bouge même si streak = 0.
     var isPlaybackActive: Bool = true
+    var onOpenSettings: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
@@ -117,10 +118,32 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var sectionHeader: some View {
-        Text(AppCopy.t("Série", en: "Streak"))
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(theme.primaryText)
-            .frame(maxWidth: .infinity)
+        HStack(spacing: 12) {
+            Color.clear
+                .frame(width: 40, height: 40)
+
+            Text(AppCopy.t("Série", en: "Streak"))
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(theme.primaryText)
+                .frame(maxWidth: .infinity)
+
+            if let onOpenSettings {
+                Button {
+                    HapticManager.shared.impact(.light)
+                    onOpenSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(theme.primaryText)
+                        .frame(width: 40, height: 40)
+                }
+                .processGlassIconButtonStyle()
+                .accessibilityLabel(AppCopy.settings)
+            } else {
+                Color.clear
+                    .frame(width: 40, height: 40)
+            }
+        }
     }
 
     // MARK: - Hero flamme

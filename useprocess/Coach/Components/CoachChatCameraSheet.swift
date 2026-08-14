@@ -522,8 +522,15 @@ private final class CoachSharedCameraSession: NSObject, @unchecked Sendable {
         case .authorized:
             return true
         case .notDetermined:
-            return await AVCaptureDevice.requestAccess(for: .video)
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            if granted {
+                ProcessAnalytics.trackCameraAuthorized(source: "coach_camera")
+            } else {
+                ProcessAnalytics.trackCameraDenied(source: "coach_camera")
+            }
+            return granted
         default:
+            ProcessAnalytics.trackCameraDenied(source: "coach_camera")
             return false
         }
     }
@@ -564,7 +571,7 @@ private final class CoachSharedCameraSession: NSObject, @unchecked Sendable {
         guard let currentInput = session.inputs.first as? AVCaptureDeviceInput else { return }
         let nextPosition: AVCaptureDevice.Position = currentInput.device.position == .back ? .front : .back
         guard
-            let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: nextPosition),
+            let device = ProcessScanCamera.device(position: nextPosition),
             let input = try? AVCaptureDeviceInput(device: device)
         else { return }
 
@@ -572,6 +579,8 @@ private final class CoachSharedCameraSession: NSObject, @unchecked Sendable {
         session.removeInput(currentInput)
         if session.canAddInput(input) {
             session.addInput(input)
+            ProcessScanCamera.prepareForFrontPortraitScan()
+            ProcessScanCamera.lockFrontCameraOutOfUltraWide(device)
         } else {
             session.addInput(currentInput)
         }
@@ -642,15 +651,30 @@ private struct CoachCameraPreview: UIViewRepresentable {
 
     func updateUIView(_ uiView: CoachCameraPreviewView, context: Context) {
         uiView.previewLayer.session = session
+        uiView.setNeedsLayout()
     }
 }
 
 private final class CoachCameraPreviewView: UIView {
-    override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
-    var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
+    let previewLayer = AVCaptureVideoPreviewLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        clipsToBounds = true
+        backgroundColor = .black
+        previewLayer.videoGravity = .resizeAspectFill
+        layer.addSublayer(previewLayer)
+    }
+
+    required init?(coder: NSCoder) { nil }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        previewLayer.frame = bounds
+        let isFront = (previewLayer.session?.inputs.first as? AVCaptureDeviceInput)?.device.position == .front
+        ProcessScanCamera.layoutPreviewLayer(
+            previewLayer,
+            in: bounds,
+            zoom: isFront ? ProcessScanCamera.frontPreviewLayoutZoom : 1
+        )
     }
 }

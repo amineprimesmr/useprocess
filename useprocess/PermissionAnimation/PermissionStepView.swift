@@ -76,6 +76,7 @@ struct PermissionStepView: View {
                         .disabled(isRequesting)
 
                         Button {
+                            ProcessAnalytics.trackHealthKitSkipped(source: "permission_step")
                             onSkip?() ?? onComplete()
                         } label: {
                             Text(OnboardingCopy.t("Plus tard", en: "Later"))
@@ -92,6 +93,9 @@ struct PermissionStepView: View {
 
                 Spacer()
             }
+        }
+        .onAppear {
+            ProcessAnalytics.trackHealthKitPromptShown(source: "permission_step")
         }
     }
 
@@ -133,10 +137,10 @@ struct PermissionStepView: View {
         HapticManager.shared.impact(.medium)
 
         if notifications {
-            _ = await permissionsManager.requestNotificationPermission()
+            _ = await permissionsManager.requestNotificationPermission(analyticsSource: "permission_step")
         }
         if healthKit {
-            await healthManager.requestAuthorizationAsync()
+            await healthManager.requestAuthorizationAsync(analyticsSource: "permission_step")
             _ = await permissionsManager.requestMotionPermission()
         }
 

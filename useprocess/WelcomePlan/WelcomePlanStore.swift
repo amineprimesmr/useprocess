@@ -14,6 +14,8 @@ final class WelcomePlanStore {
     private var loadedUserId: String?
     private var persistenceGeneration: UInt64 = 0
     private let remoteSyncMinInterval: TimeInterval = 60
+    /// Plan généré uniquement pour l’aperçu onboarding — jamais persisté.
+    private var hasEphemeralPreviewPlan = false
 
     private init() {
         reload(force: true)
@@ -25,10 +27,12 @@ final class WelcomePlanStore {
         guard force || userChanged else { return }
         loadedUserId = uid
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
-        plan = loadPlan(userId: uid)
-        repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
-        if plan != nil {
-            migratePlanIfNeeded(answers: questionnaire.answers, profile: UnifiedProfileService.shared.currentProfile)
+        if !hasEphemeralPreviewPlan {
+            plan = loadPlan(userId: uid)
+            repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
+            if plan != nil {
+                migratePlanIfNeeded(answers: questionnaire.answers, profile: UnifiedProfileService.shared.currentProfile)
+            }
         }
         CoachMemoryStore.shared.reloadForCurrentUser()
         if userChanged {
@@ -43,10 +47,38 @@ final class WelcomePlanStore {
 
     private func reloadLocalOnly(uid: String) {
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
-        plan = loadPlan(userId: uid)
-        repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
+        if !hasEphemeralPreviewPlan {
+            plan = loadPlan(userId: uid)
+            repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
+        }
         CoachMemoryStore.shared.reloadForCurrentUser()
         ProcessDebloatTrajectoryStore.shared.sync(from: plan)
+    }
+
+    /// Installe un plan en mémoire pour l’aperçu dashboard, sans écriture disque.
+    func installEphemeralPreviewPlanIfNeeded(profile: UnifiedUserProfile?) {
+        guard !hasEphemeralPreviewPlan else { return }
+        if plan == nil {
+            reload(force: true)
+        }
+        guard plan == nil else { return }
+        let generated = WelcomePlanGenerator.generate(
+            answers: questionnaire.answers,
+            profile: profile
+        )
+        hasEphemeralPreviewPlan = true
+        plan = generated
+        ProcessDebloatTrajectoryStore.shared.sync(from: plan)
+        ProcessPlanProgressStore.shared.reload(plan: plan)
+    }
+
+    func clearEphemeralPreviewPlan() {
+        guard hasEphemeralPreviewPlan else { return }
+        hasEphemeralPreviewPlan = false
+        let uid = UserScopedStorage.currentUserId() ?? "local-user"
+        plan = loadPlan(userId: uid)
+        ProcessDebloatTrajectoryStore.shared.sync(from: plan)
+        ProcessPlanProgressStore.shared.reload(plan: plan)
     }
 
     func reloadForCurrentUser(force: Bool = false) {
@@ -514,6 +546,7 @@ final class WelcomePlanStore {
             )
         }
         questionnaire = WelcomePlanQuestionnaireState()
+        hasEphemeralPreviewPlan = false
         plan = nil
     }
 

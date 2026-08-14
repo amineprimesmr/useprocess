@@ -52,7 +52,28 @@ struct FaceScanRecordingMediaView: View {
     private var mediaContent: some View {
         let framing = result.resolvedStudioFraming
         if framing.isIdentity {
-            rawMediaLayer
+            // Panneau accueil = carré → crop centré visage ; sinon haut pour bandes portrait.
+            GeometryReader { geo in
+                let isNearSquare = abs(geo.size.width - geo.size.height) < 8
+                rawMediaLayer
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: isNearSquare ? .center : faceCropAlignment)
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+            }
+        } else if displayMode == .sidePanel {
+            // Accueil : cadrage studio sur le côté court (panneau carré / étroit).
+            GeometryReader { geo in
+                let side = max(min(geo.size.width, geo.size.height), 1)
+                rawMediaLayer
+                    .frame(width: side, height: side)
+                    .scaleEffect(framing.scale)
+                    .offset(
+                        x: CGFloat(framing.offsetX) * side,
+                        y: CGFloat(framing.offsetY) * side
+                    )
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
+                    .clipped()
+            }
         } else {
             GeometryReader { geo in
                 let side = max(geo.size.width, geo.size.height, 1)
@@ -68,6 +89,11 @@ struct FaceScanRecordingMediaView: View {
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
             }
         }
+    }
+
+    /// Selfies sur bande étroite : privilégie le haut du cadre.
+    private var faceCropAlignment: Alignment {
+        displayMode == .sidePanel ? .top : .center
     }
 
     @ViewBuilder

@@ -173,7 +173,7 @@ final class OnboardingProfileChatViewModel {
     private func resumeFromSavedProgress() async {
         guard let viewModel = onboardingViewModel else { return }
 
-        if viewModel.shouldReopenFaceScanResultsAfterBack || viewModel.presentedFaceScanResult != nil {
+        if viewModel.shouldReopenFaceScanResultsAfterBack || viewModel.presentedOnboardingFaceScan != nil {
             return
         }
 

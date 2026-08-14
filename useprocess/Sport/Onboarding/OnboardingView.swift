@@ -160,7 +160,6 @@ struct SportOnboardingView: View {
                 updateContinueButtonLayout(animated: false)
                 isOnboardingRestoreComplete = true
 
-                ProcessReferralAttribution.captureFromClipboardIfNeeded()
                 ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
 
                 let step = OnboardingStep(rawValue: viewModel.currentStep)
@@ -209,7 +208,6 @@ struct SportOnboardingView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                ProcessReferralAttribution.captureFromClipboardIfNeeded()
                 ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
                 reconcileVisitedStepsForRestore(
                     viewModel: viewModel,
@@ -238,15 +236,25 @@ struct SportOnboardingView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
-        .fullScreenCover(item: $viewModel.presentedFaceScanResult) { result in
+        .fullScreenCover(item: $viewModel.presentedOnboardingFaceScan) { presentation in
             OnboardingFaceScanSessionView(
-                initialResult: result,
+                initialResult: presentation.initialResult,
                 onCancel: {
-                    viewModel.presentedFaceScanResult = nil
+                    viewModel.dismissOnboardingFaceScan()
+                    if presentation.usesChatCallbacks {
+                        viewModel.onOnboardingFaceScanCancel?()
+                    }
                 },
-                onResultReady: { _ in },
+                onResultReady: { result in
+                    if presentation.usesChatCallbacks {
+                        viewModel.onOnboardingFaceScanResult?(result)
+                    }
+                },
                 onContinueAfterResults: {
-                    viewModel.presentedFaceScanResult = nil
+                    viewModel.dismissOnboardingFaceScan()
+                    if presentation.usesChatCallbacks {
+                        viewModel.onOnboardingFaceScanContinue?()
+                    }
                 }
             )
             .environmentObject(profileService)

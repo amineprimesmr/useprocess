@@ -29,7 +29,7 @@ struct EditProfileView: View {
         VStack(spacing: 0) {
             if showsDismissHeader {
                 AccountDetailsGlassHeader(
-                    title: nil,
+                    title: AppCopy.settings,
                     onBack: { dismiss() },
                     showsSave: false
                 )

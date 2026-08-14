@@ -63,7 +63,7 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
         case .hydration:
             AppCopy.t("Hydratation", en: "Hydration")
         case .nutrition:
-            AppCopy.t("Repas debloat du jour", en: "Today's debloat meals")
+            AppCopy.t("Alimentation debloat", en: "Debloat nutrition")
         case .faceRoutine:
             AppCopy.t("Circuit lymphatique", en: "Lymphatic circuit")
         case .streakTab:
@@ -86,8 +86,8 @@ enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
             )
         case .nutrition:
             AppCopy.t(
-                "Tes repas anti-inflammatoires personnalisés. Swipe pour parcourir chaque repas et voir ce qui t'aide à dégonfler.",
-                en: "Your personalized anti-inflammatory meals. Swipe through each meal to see what helps you debloat."
+                "Tes 3 plats du jour anti-inflammatoires. Touche la carte pour ouvrir le catalogue et changer un repas.",
+                en: "Your 3 anti-inflammatory dishes of the day. Tap the card to open the catalog and swap a meal."
             )
         case .faceRoutine:
             AppCopy.t(

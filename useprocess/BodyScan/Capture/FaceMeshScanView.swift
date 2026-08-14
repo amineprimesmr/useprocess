@@ -3,20 +3,49 @@ import SceneKit
 import SwiftUI
 import UIKit
 
-private final class FaceMeshSceneView: ARSCNView {
-    var onViewportSizeChange: ((CGSize) -> Void)?
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        onViewportSizeChange?(bounds.size)
-    }
-}
-
 /// Scan visage — mesh 3D invisible, flash piloté par l'écran parent.
 struct FaceMeshScanView: UIViewRepresentable {
+    /// Crop portrait UIKit : ARSCNView remplit tout son bounds avec le FOV natif (grand-angle).
+    /// SwiftUI `scaleEffect` ne scale pas le layer Metal — on agrandit la vue et on clippe.
+    final class PreviewContainer: UIView {
+        let arView = ARSCNView(frame: .zero)
+        var onViewportSizeChange: ((CGSize) -> Void)?
+        var previewZoom: CGFloat = ProcessScanCamera.frontPreviewLayoutZoom {
+            didSet {
+                if abs(oldValue - previewZoom) > 0.01 {
+                    setNeedsLayout()
+                }
+            }
+        }
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            clipsToBounds = true
+            backgroundColor = .black
+            addSubview(arView)
+        }
+
+        required init?(coder: NSCoder) { nil }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            let zoom = max(1, previewZoom)
+            let width = bounds.width * zoom
+            let height = bounds.height * zoom
+            arView.frame = CGRect(
+                x: (bounds.width - width) / 2,
+                y: (bounds.height - height) / 2,
+                width: width,
+                height: height
+            )
+            onViewportSizeChange?(bounds.size)
+        }
+    }
+
     @Binding var progress: Double
     @Binding var ringProgress: Double
     @Binding var activeTickSectors: Set<Int>
+    @Binding var currentTickSector: Int
     @Binding var overlayMode: FaceScanCaptureOverlayMode
     @Binding var tiltHoldProgress: Double
     @Binding var tiltDirection: FaceScanTiltDirection
@@ -29,6 +58,8 @@ struct FaceMeshScanView: UIViewRepresentable {
     var isPreviewOnly: Bool = false
     var isSessionRunning: Bool = true
     var allowsScreenFlash: Bool = true
+    /// Premier scan onboarding : pas de phase « penche la tête » (trop d’abandons).
+    var skipsHeadTiltPhase: Bool = false
     var cameraZoom: CGFloat = 1
     var onComplete: (FaceScanCapturePayload) -> Void
 
@@ -37,6 +68,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             progress: $progress,
             ringProgress: $ringProgress,
             activeTickSectors: $activeTickSectors,
+            currentTickSector: $currentTickSector,
             overlayMode: $overlayMode,
             tiltHoldProgress: $tiltHoldProgress,
             tiltDirection: $tiltDirection,
@@ -47,13 +79,16 @@ struct FaceMeshScanView: UIViewRepresentable {
             isDeviceSupported: $isDeviceSupported,
             isLowLight: $isLowLight,
             allowsScreenFlash: allowsScreenFlash,
+            skipsHeadTiltPhase: skipsHeadTiltPhase,
             cameraZoom: cameraZoom,
             onComplete: onComplete
         )
     }
 
-    func makeUIView(context: Context) -> ARSCNView {
-        let view = FaceMeshSceneView(frame: .zero)
+    func makeUIView(context: Context) -> PreviewContainer {
+        let container = PreviewContainer()
+        container.previewZoom = max(ProcessScanCamera.frontPreviewLayoutZoom, cameraZoom)
+        let view = container.arView
         view.delegate = context.coordinator
         view.session.delegate = context.coordinator
         view.automaticallyUpdatesLighting = true
@@ -62,7 +97,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         view.rendersCameraGrain = false
         view.preferredFramesPerSecond = 30
         context.coordinator.arView = view
-        view.onViewportSizeChange = { [weak coordinator = context.coordinator] size in
+        container.onViewportSizeChange = { [weak coordinator = context.coordinator] size in
             coordinator?.updateViewportSize(size)
         }
 
@@ -80,7 +115,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                 tiltDirection = .none
                 tiltIsEngaged = false
             }
-            return view
+            return container
         }
 
         DispatchQueue.main.async {
@@ -93,14 +128,17 @@ struct FaceMeshScanView: UIViewRepresentable {
         } else {
             context.coordinator.isSessionPaused = true
         }
-        return view
+        return container
     }
 
-    func updateUIView(_ uiView: ARSCNView, context: Context) {
+    func updateUIView(_ uiView: PreviewContainer, context: Context) {
         let wasPreview = context.coordinator.isPreviewOnly
         context.coordinator.isPreviewOnly = isPreviewOnly
         context.coordinator.allowsScreenFlash = allowsScreenFlash
-        context.coordinator.cameraZoom = cameraZoom
+        context.coordinator.skipsHeadTiltPhase = skipsHeadTiltPhase
+        let zoom = max(ProcessScanCamera.frontPreviewLayoutZoom, cameraZoom)
+        uiView.previewZoom = zoom
+        context.coordinator.cameraZoom = zoom
         context.coordinator.onComplete = onComplete
         context.coordinator.updateViewportSize(uiView.bounds.size)
 
@@ -120,10 +158,10 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
     }
 
-    static func dismantleUIView(_ uiView: ARSCNView, coordinator: Coordinator) {
+    static func dismantleUIView(_ uiView: PreviewContainer, coordinator: Coordinator) {
         coordinator.tearDown()
-        uiView.session.pause()
-        (uiView as? FaceMeshSceneView)?.onViewportSizeChange = nil
+        uiView.arView.session.pause()
+        uiView.onViewportSizeChange = nil
         coordinator.arView = nil
         coordinator.faceNode = nil
     }
@@ -132,6 +170,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         @Binding var progress: Double
         @Binding var ringProgress: Double
         @Binding var activeTickSectors: Set<Int>
+        @Binding var currentTickSector: Int
         @Binding var overlayMode: FaceScanCaptureOverlayMode
         @Binding var tiltHoldProgress: Double
         @Binding var tiltDirection: FaceScanTiltDirection
@@ -142,21 +181,24 @@ struct FaceMeshScanView: UIViewRepresentable {
         @Binding var isDeviceSupported: Bool
         @Binding var isLowLight: Bool
         var allowsScreenFlash: Bool
+        var skipsHeadTiltPhase: Bool
         var cameraZoom: CGFloat
         var onComplete: (FaceScanCapturePayload) -> Void
 
         weak var arView: ARSCNView?
         weak var faceNode: SCNNode?
 
-        let scanDuration: TimeInterval = 5.5
+        let scanDuration: TimeInterval = 6.0
         let tickCount = 72
-        let minSectorsToComplete = 48
-        let minTickProgress = 0.65
+        let minSectorsToComplete = 66
+        let minTickProgress = 0.92
         let maxHeadRotation: Float = 0.55
         let minTrackedFramesBeforeScan = 6
         let minDistanceOkFramesBeforeScan = 8
-        let minActivationAngle: Float = 0.06
-        let maxSectorBridgeSteps = 1
+        let minActivationAngle: Float = 0.05
+        /// Arc max peint d’un coup (~20°). Au-delà = saut, on n’allume que le tiret visé.
+        let maxWavePathSteps = 4
+        let orbitCompleteHold: TimeInterval = 0.38
         let lostFrameThresholdPositioning = 30
         let lostFrameThresholdScanning = 55
         /// Penché latéral (oreille → épaule) pour faire migrer le liquide sous gravité.
@@ -208,16 +250,22 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         private var referenceTransform: simd_float4x4?
         private var lastRegisteredSector: Int?
-        private var lastPublishedSectorSignature = 0
+        private var lastPublishedWaveSector = -2
+        private var lastPublishedFillCount = -1
+        private var lastTickHapticAt: CFTimeInterval = 0
+        private var lastTickUIPublish: CFTimeInterval = 0
+        private let tickStateLock = NSLock()
         private var lastUIUpdate: CFTimeInterval = 0
         private var lastLightUIUpdate: CFTimeInterval = 0
         private var lastProcessTime: CFTimeInterval = 0
         private var lastMediaSampleTime: CFTimeInterval = 0
         private var lastQualityFailureAt: Date?
+        private var orbitReadySince: Date?
         private let uiUpdateMinInterval: CFTimeInterval = 1.0 / 20.0
         private let lightUIUpdateMinInterval: CFTimeInterval = 1.0 / 15.0
         private let processMinInterval: CFTimeInterval = 1.0 / 24.0
         private var didConfigurePortraitCamera = false
+        private var frontZoomLockAttempts = 0
         private var faceRemovalWorkItem: DispatchWorkItem?
         private let viewportLock = NSLock()
         private var viewportSize: CGSize = .zero
@@ -226,6 +274,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             progress: Binding<Double>,
             ringProgress: Binding<Double>,
             activeTickSectors: Binding<Set<Int>>,
+            currentTickSector: Binding<Int>,
             overlayMode: Binding<FaceScanCaptureOverlayMode>,
             tiltHoldProgress: Binding<Double>,
             tiltDirection: Binding<FaceScanTiltDirection>,
@@ -236,12 +285,14 @@ struct FaceMeshScanView: UIViewRepresentable {
             isDeviceSupported: Binding<Bool>,
             isLowLight: Binding<Bool>,
             allowsScreenFlash: Bool,
+            skipsHeadTiltPhase: Bool,
             cameraZoom: CGFloat,
             onComplete: @escaping (FaceScanCapturePayload) -> Void
         ) {
             _progress = progress
             _ringProgress = ringProgress
             _activeTickSectors = activeTickSectors
+            _currentTickSector = currentTickSector
             _overlayMode = overlayMode
             _tiltHoldProgress = tiltHoldProgress
             _tiltDirection = tiltDirection
@@ -252,6 +303,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             _isDeviceSupported = isDeviceSupported
             _isLowLight = isLowLight
             self.allowsScreenFlash = allowsScreenFlash
+            self.skipsHeadTiltPhase = skipsHeadTiltPhase
             self.cameraZoom = cameraZoom
             self.onComplete = onComplete
         }
@@ -317,11 +369,17 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         func startSession(on view: ARSCNView) {
             ProcessAudioSession.configureForMixingWithOthers()
+            didConfigurePortraitCamera = false
+            frontZoomLockAttempts = 0
+            ProcessScanCamera.prepareForFrontPortraitScan()
             let config = ARFaceTrackingConfiguration()
             config.isLightEstimationEnabled = true
             config.maximumNumberOfTrackedFaces = 1
             view.session.run(config, options: [.resetTracking, .removeExistingAnchors])
             isSessionPaused = false
+            DispatchQueue.main.async {
+                ProcessScanCamera.lockActiveFrontCamerasIfPossible()
+            }
         }
 
         func pauseSession() {
@@ -345,6 +403,10 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         func session(_ session: ARSession, didUpdate frame: ARFrame) {
             guard !completed, !isTornDown else { return }
+            if frontZoomLockAttempts < 8 {
+                frontZoomLockAttempts += 1
+                ProcessScanCamera.lockActiveFrontCamerasIfPossible()
+            }
             let intensity = frame.lightEstimate?.ambientIntensity ?? 1000
             currentAmbientIntensity = intensity
             let low = FaceScanQualityValidator.isLowLight(ambientIntensity: intensity)
@@ -425,6 +487,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             configurePortraitCameraIfNeeded()
 
             let now = CACurrentMediaTime()
+            if scanStartTime != nil, livePhase == .orbit {
+                registerHeadPose(from: faceAnchor.transform)
+                publishTickTrailIfNeeded()
+            }
             guard now - lastProcessTime >= processMinInterval else { return }
             lastProcessTime = now
             process(faceAnchor: faceAnchor, renderer: renderer)
@@ -444,8 +510,9 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         private func configurePortraitCameraIfNeeded() {
             guard !didConfigurePortraitCamera, let view = arView else { return }
+            ProcessScanCamera.lockActiveFrontCamerasIfPossible()
             guard let camera = view.pointOfView?.camera else { return }
-            camera.fieldOfView = 38
+            camera.fieldOfView = 32
             camera.zNear = 0.01
             camera.zFar = 2
             didConfigurePortraitCamera = true
@@ -539,14 +606,23 @@ struct FaceMeshScanView: UIViewRepresentable {
             lostFrameStreak = 0
             scanStartTime = nil
             referenceTransform = nil
+            lastPublishedWaveSector = -2
+            lastPublishedFillCount = -1
+            lastTickHapticAt = 0
+            lastTickUIPublish = 0
+            orbitReadySince = nil
+
+            tickStateLock.lock()
             lastRegisteredSector = nil
-            lastPublishedSectorSignature = 0
+            if !soft {
+                filledTickSectors.removeAll()
+                angleSamples.removeAll()
+            }
+            tickStateLock.unlock()
 
             if !soft {
                 completed = false
                 didDeliverCapture = false
-                filledTickSectors.removeAll()
-                angleSamples.removeAll()
                 sampledMeshes.removeAll()
                 blendShapeAccumulators.removeAll()
                 bestSnapshot = nil
@@ -575,8 +651,10 @@ struct FaceMeshScanView: UIViewRepresentable {
             videoRecorder.start(at: videoRecorder.prepareOutputURL(scanId: activeScanId))
             scanStartTime = Date()
             referenceTransform = faceAnchor.transform
+            tickStateLock.lock()
             filledTickSectors.removeAll()
             lastRegisteredSector = nil
+            tickStateLock.unlock()
             livePhase = .orbit
             tiltPhaseStartedAt = nil
             tiltHoldFrames = 0
@@ -585,7 +663,8 @@ struct FaceMeshScanView: UIViewRepresentable {
             peakLeftRoll = 0
             peakRightRoll = 0
             firstTiltSign = 0
-            angleSamples.append(relativeYawPitch(from: faceAnchor.transform))
+            orbitReadySince = nil
+            registerHeadPose(from: faceAnchor.transform)
 
             publishUI(ring: 0, progress: 0.02, force: true) {
                 HapticManager.shared.impact(.soft)
@@ -602,6 +681,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         private func process(faceAnchor: ARFaceAnchor, renderer: SCNSceneRenderer) {
+            guard !completed, !isTornDown else { return }
             guard faceAnchor.isTracked else {
                 markFaceLost(force: false)
                 return
@@ -635,7 +715,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             let distanceFeedback = FaceScanQualityValidator.distanceFeedback(
                 distanceMeters: distanceMeters,
                 screenFillRatio: fillRatio,
-                cameraZoom: cameraZoom
+                cameraZoom: 1
             )
 
             if distanceFeedback != .ok, scanStartTime == nil {
@@ -684,13 +764,14 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         private func processOrbitPhase(faceAnchor: ARFaceAnchor) {
-            registerHeadPose(from: faceAnchor.transform)
             accumulateBlendShapes(faceAnchor.blendShapes)
 
             guard let scanStart = scanStartTime else { return }
             let elapsed = Date().timeIntervalSince(scanStart)
-            let tickProgress = Double(filledTickSectors.count) / Double(tickCount)
-            let combinedProgress = progressValue(elapsed: elapsed, tickProgress: tickProgress) * 0.78
+            let tickSnapshot = snapshotTickState()
+            let tickProgress = Double(tickSnapshot.filled.count) / Double(tickCount)
+            let orbitShare = skipsHeadTiltPhase ? 1.0 : 0.78
+            let combinedProgress = progressValue(elapsed: elapsed, tickProgress: tickProgress) * orbitShare
 
             sampleMediaIfNeeded(elapsed: elapsed, faceAnchor: faceAnchor)
 
@@ -707,6 +788,8 @@ struct FaceMeshScanView: UIViewRepresentable {
                 )
             } else if !orbitQualityReady(elapsed: elapsed, tickProgress: tickProgress) {
                 instructionText = qualityHint(elapsed: elapsed, tickProgress: tickProgress)
+            } else if skipsHeadTiltPhase {
+                instructionText = AppCopy.tSync("Parfait. Finalisation du scan…", en: "Perfect. Finishing the scan…")
             } else {
                 instructionText = AppCopy.tSync(
                     "Parfait. Passe au test de rétention.",
@@ -714,12 +797,10 @@ struct FaceMeshScanView: UIViewRepresentable {
                 )
             }
 
-            let sectorSignature = filledTickSectors.reduce(0) { $0 ^ ($1 &* 31) }
-            let sectorsChanged = sectorSignature != lastPublishedSectorSignature
             publishUI(
-                ring: min(1, Double(filledTickSectors.count) / Double(tickCount)),
+                ring: min(1, Double(tickSnapshot.filled.count) / Double(tickCount)),
                 progress: combinedProgress,
-                force: sectorsChanged || Int(elapsed * 10) % 3 == 0
+                force: false
             ) {
                 self.isFaceDetected = true
                 self.frameHint = nil
@@ -727,22 +808,29 @@ struct FaceMeshScanView: UIViewRepresentable {
                 self.tiltHoldProgress = 0
                 self.tiltDirection = .none
                 self.tiltIsEngaged = false
-                self.activeTickSectors = self.filledTickSectors
                 self.instruction = instructionText
-                if sectorsChanged {
-                    HapticManager.shared.selection()
-                    self.lastPublishedSectorSignature = sectorSignature
-                }
             }
 
             guard !scanExhausted else { return }
 
             let bestMesh = resolveBestMesh()
-            if orbitQualityReady(elapsed: elapsed, tickProgress: tickProgress),
-               FaceScanQualityValidator.meshIsSolid(bestMesh) {
-                enterFluidTiltPhase()
-            } else if elapsed >= scanDuration * 1.25 {
-                handleQualityFailure()
+            let orbitReady = orbitQualityReady(elapsed: elapsed, tickProgress: tickProgress)
+                && FaceScanQualityValidator.meshIsSolid(bestMesh)
+            if orbitReady {
+                if orbitReadySince == nil { orbitReadySince = Date() }
+                let held = Date().timeIntervalSince(orbitReadySince ?? Date())
+                if held >= orbitCompleteHold {
+                    if skipsHeadTiltPhase {
+                        finishScan()
+                    } else {
+                        enterFluidTiltPhase()
+                    }
+                }
+            } else {
+                orbitReadySince = nil
+                if elapsed >= scanDuration * 2.4 {
+                    handleQualityFailure()
+                }
             }
         }
 
@@ -800,13 +888,13 @@ struct FaceMeshScanView: UIViewRepresentable {
                         peakLeftRoll = roll
                         leftTiltMesh = mesh
                         if sampledMeshes.count < 28 { sampledMeshes.append(mesh) }
-                        if let snap = arView?.snapshot() { bestSnapshot = snap }
+                        if let snap = captureVisibleSnapshot() { bestSnapshot = snap }
                     }
                 } else if rollMagnitude > abs(peakRightRoll) {
                     peakRightRoll = roll
                     rightTiltMesh = mesh
                     if sampledMeshes.count < 28 { sampledMeshes.append(mesh) }
-                    if let snap = arView?.snapshot() { bestSnapshot = snap }
+                    if let snap = captureVisibleSnapshot() { bestSnapshot = snap }
                 }
             } else if lookingAtCamera && wrongSide {
                 tiltHoldFrames = max(0, tiltHoldFrames - 2)
@@ -923,7 +1011,7 @@ struct FaceMeshScanView: UIViewRepresentable {
                sampledMeshes.count < 24 {
                 lastMediaSampleTime = mediaSampleTime
                 sampledMeshes.append(extractMesh(from: faceAnchor.geometry))
-                if let snap = arView?.snapshot() {
+                if let snap = captureVisibleSnapshot() {
                     if bestSnapshot.map({
                         FaceScanQualityValidator.averageLuminance(of: snap)
                             > FaceScanQualityValidator.averageLuminance(of: $0)
@@ -941,60 +1029,35 @@ struct FaceMeshScanView: UIViewRepresentable {
         }
 
         private func orbitQualityReady(elapsed: TimeInterval, tickProgress: Double) -> Bool {
-            guard elapsed >= scanDuration * 0.90 else { return false }
             guard tickProgress >= minTickProgress else { return false }
-            guard filledTickSectors.count >= minSectorsToComplete else { return false }
-            guard FaceScanQualityValidator.headSpreadIsSufficient(angleSamples, minimum: 0.24) else { return false }
-
-            let flashActive = FaceScanScreenFlash.shared.isActive
-            let minLuma: CGFloat = flashActive ? 0.06 : (isLowLight ? 0.09 : 0.07)
-            return FaceScanQualityValidator.snapshotIsUsable(
-                bestSnapshot,
-                minimumLuminance: minLuma,
-                screenFlashActive: flashActive
-            )
+            tickStateLock.lock()
+            let filledCount = filledTickSectors.count
+            let samples = angleSamples
+            tickStateLock.unlock()
+            guard filledCount >= minSectorsToComplete else { return false }
+            guard FaceScanQualityValidator.headSpreadIsSufficient(samples, minimum: 0.24) else { return false }
+            // Juste le temps d’avoir un mesh / une photo — pas d’attente artificielle une fois l’anneau plein.
+            guard elapsed >= 0.55 else { return false }
+            return bestSnapshot != nil || sampledMeshes.contains(where: { FaceScanQualityValidator.meshIsSolid($0) })
         }
 
-        private func qualityHint(elapsed: TimeInterval, tickProgress: Double) -> String {
+        private func qualityHint(elapsed _: TimeInterval, tickProgress: Double) -> String {
             if tickProgress < minTickProgress {
                 return AppCopy.tSync(
                     "Tourne plus la tête pour remplir le cercle.",
                     en: "Turn your head more to fill the circle."
                 )
             }
-            if !FaceScanQualityValidator.headSpreadIsSufficient(angleSamples) {
+            tickStateLock.lock()
+            let samples = angleSamples
+            tickStateLock.unlock()
+            if !FaceScanQualityValidator.headSpreadIsSufficient(samples) {
                 return AppCopy.tSync(
                     "Fais de plus grands mouvements de tête.",
                     en: "Make bigger head movements."
                 )
             }
-            let flashActive = FaceScanScreenFlash.shared.isActive
-            if !FaceScanQualityValidator.snapshotIsUsable(
-                bestSnapshot,
-                minimumLuminance: flashActive ? 0.06 : (isLowLight ? 0.09 : 0.07),
-                screenFlashActive: flashActive
-            ) {
-                return flashActive
-                    ? AppCopy.tSync(
-                        "Garde le visage centré face à l'écran.",
-                        en: "Keep your face centered toward the screen."
-                    )
-                    : (isLowLight
-                        ? (allowsScreenFlash
-                            ? AppCopy.tSync(
-                                "Active le flash ou rapproche-toi.",
-                                en: "Turn on the flash or move closer."
-                            )
-                            : AppCopy.tSync(
-                                "Pas assez de lumière. Rapproche-toi d'une source lumineuse.",
-                                en: "Not enough light. Move closer to a light source."
-                            ))
-                        : AppCopy.tSync("Cherche plus de lumière.", en: "Find more light."))
-            }
-            if elapsed < scanDuration * 0.90 {
-                return AppCopy.tSync("Encore quelques secondes…", en: "A few more seconds…")
-            }
-            return AppCopy.tSync("Finalisation…", en: "Finishing…")
+            return AppCopy.tSync("Parfait. Finalisation du scan…", en: "Perfect. Finishing the scan…")
         }
 
         private func tiltDirectionForPhase(isFirstSide: Bool) -> FaceScanTiltDirection {
@@ -1068,48 +1131,46 @@ struct FaceMeshScanView: UIViewRepresentable {
 
             completed = true
             didDeliverCapture = true
-            pauseSession()
 
             let shapes = blendShapeAccumulators.mapValues { $0.sum / Float($0.count) }
             let scanId = activeScanId
             let snapshot = bestSnapshot
             let fluidShift = computeFluidShiftScore()
-            let yawCoverage = Double(filledTickSectors.count) / Double(tickCount)
-            let tickSectors = filledTickSectors
+            let tickSnapshot = snapshotTickState()
+            let yawCoverage = Double(tickSnapshot.filled.count) / Double(tickCount)
+            let tickSectors = tickSnapshot.filled
+            let waveSector = tickSnapshot.wave
+            let payload = FaceScanCapturePayload(
+                scanId: scanId,
+                mesh: mesh,
+                snapshot: snapshot,
+                videoFilename: FaceScanImageStore.videoFilename(for: scanId),
+                averageBlendShapes: shapes,
+                yawCoverage: yawCoverage,
+                fluidShiftScore: fluidShift
+            )
+
+            // Jamais `session.pause()` / snapshot / SwiftUI depuis le thread de rendu AR :
+            // ça deadlock la frame en cours (freeze total).
+            DispatchQueue.main.async { [weak self] in
+                guard let self, !self.isTornDown else { return }
+                self.progress = 1
+                self.ringProgress = 1
+                self.activeTickSectors = tickSectors
+                self.currentTickSector = waveSector
+                self.overlayMode = .orbitTicks
+                self.tiltHoldProgress = 0
+                self.tiltDirection = .none
+                self.tiltIsEngaged = false
+                self.instruction = AppCopy.tSync("Scan terminé.", en: "Scan complete.")
+                self.frameHint = nil
+                HapticManager.shared.notification(.success)
+                self.onComplete(payload)
+                self.pauseSession()
+            }
 
             Task { [weak self] in
-                let videoURL = await self?.videoRecorder.finish()
-                let videoFilename: String?
-                if let videoURL, FileManager.default.fileExists(atPath: videoURL.path) {
-                    videoFilename = FaceScanImageStore.videoFilename(for: scanId)
-                } else {
-                    videoFilename = nil
-                }
-
-                let payload = FaceScanCapturePayload(
-                    scanId: scanId,
-                    mesh: mesh,
-                    snapshot: snapshot,
-                    videoFilename: videoFilename,
-                    averageBlendShapes: shapes,
-                    yawCoverage: yawCoverage,
-                    fluidShiftScore: fluidShift
-                )
-
-                await MainActor.run {
-                    guard let self, !self.isTornDown else { return }
-                    self.progress = 1
-                    self.ringProgress = 1
-                    self.activeTickSectors = tickSectors
-                    self.overlayMode = .orbitTicks
-                    self.tiltHoldProgress = 0
-                    self.tiltDirection = .none
-                    self.tiltIsEngaged = false
-                    self.instruction = AppCopy.tSync("Scan terminé.", en: "Scan complete.")
-                    self.frameHint = nil
-                    HapticManager.shared.notification(.success)
-                    self.onComplete(payload)
-                }
+                _ = await self?.videoRecorder.finish()
             }
         }
 
@@ -1203,56 +1264,79 @@ struct FaceMeshScanView: UIViewRepresentable {
 
             let rawSector = Int(compass / (2 * Float.pi) * Float(tickCount)) % tickCount
             let primary = (rawSector + tickRingTopSectorOffset) % tickCount
-
-            // Plus l'inclinaison est marquée, plus on élargit l'arc vert autour de la direction.
-            let spread = min(2, max(0, Int(magnitude / minActivationAngle) - 1))
-            var sectors = [primary]
-            if spread > 0 {
-                for offset in 1...spread {
-                    sectors.append((primary + offset) % tickCount)
-                    sectors.append((primary - offset + tickCount) % tickCount)
-                }
-            }
-            return sectors
+            return [primary]
         }
 
         /// Enregistre les secteurs visités selon l'inclinaison réelle de la tête.
         private func registerHeadPose(from transform: simd_float4x4) {
             let angles = relativeYawPitch(from: transform)
+            let sectors = visitedSectors(for: transform)
+
+            tickStateLock.lock()
+            defer { tickStateLock.unlock() }
+
             angleSamples.append(angles)
             if angleSamples.count > 200 {
                 angleSamples.removeFirst(angleSamples.count - 200)
             }
 
-            let sectors = visitedSectors(for: transform)
             guard let sector = sectors.first else { return }
 
-            for visited in sectors {
-                filledTickSectors.insert(visited)
+            if let previous = lastRegisteredSector, previous != sector {
+                fillWavePath(from: previous, to: sector)
             }
+            filledTickSectors.insert(sector)
+            lastRegisteredSector = sector
+        }
 
-            if let last = lastRegisteredSector, last != sector {
-                let forward = (sector - last + tickCount) % tickCount
-                let backward = (last - sector + tickCount) % tickCount
-                let gap = min(forward, backward)
+        private func snapshotTickState() -> (filled: Set<Int>, wave: Int) {
+            tickStateLock.lock()
+            defer { tickStateLock.unlock() }
+            return (filledTickSectors, lastRegisteredSector ?? -1)
+        }
 
-                // Combler uniquement les tout petits écarts (mouvement fluide), jamais un demi-cercle.
-                if gap <= maxSectorBridgeSteps + 1 {
-                    let steps = min(gap - 1, maxSectorBridgeSteps)
-                    if steps > 0 {
-                        if forward <= backward {
-                            for step in 1...steps {
-                                filledTickSectors.insert((last + step) % tickCount)
-                            }
-                        } else {
-                            for step in 1...steps {
-                                filledTickSectors.insert((last - step + tickCount) % tickCount)
-                            }
-                        }
+        /// Pousse la vague + le remplissage, coalescé (~20 Hz) pour ne pas geler SwiftUI.
+        private func publishTickTrailIfNeeded() {
+            let snapshot = snapshotTickState()
+            let fillChanged = snapshot.filled.count != lastPublishedFillCount
+            let waveChanged = snapshot.wave != lastPublishedWaveSector
+            guard fillChanged || waveChanged else { return }
+
+            let now = CACurrentMediaTime()
+            if !fillChanged, now - lastTickUIPublish < uiUpdateMinInterval { return }
+            lastTickUIPublish = now
+            lastPublishedFillCount = snapshot.filled.count
+            lastPublishedWaveSector = snapshot.wave
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self, !self.isTornDown else { return }
+                self.activeTickSectors = snapshot.filled
+                self.currentTickSector = snapshot.wave
+                if fillChanged {
+                    if now - self.lastTickHapticAt >= 0.09 {
+                        self.lastTickHapticAt = now
+                        HapticManager.shared.selection()
                     }
                 }
             }
-            lastRegisteredSector = sector
+        }
+
+        /// Peint l’arc court que la vague vient de parcourir — les tirets restent allumés derrière elle.
+        private func fillWavePath(from: Int, to: Int) {
+            let forward = (to - from + tickCount) % tickCount
+            let backward = (from - to + tickCount) % tickCount
+            let gap = min(forward, backward)
+            guard gap > 0, gap <= maxWavePathSteps else { return }
+
+            if forward <= backward {
+                for step in 1...gap {
+                    filledTickSectors.insert((from + step) % tickCount)
+                }
+            } else {
+                for step in 1...gap {
+                    filledTickSectors.insert((from - step + tickCount) % tickCount)
+                }
+            }
         }
 
         private func publishUI(
@@ -1294,6 +1378,28 @@ struct FaceMeshScanView: UIViewRepresentable {
             }
         }
 
+        private func captureVisibleSnapshot() -> UIImage? {
+            guard let arView else { return nil }
+            let full = arView.snapshot()
+            guard let container = arView.superview, container.bounds.width > 1, let cgImage = full.cgImage else {
+                return full
+            }
+            let zoom = max(1, arView.bounds.width / max(container.bounds.width, 1))
+            guard zoom > 1.02 else { return full }
+            let width = CGFloat(cgImage.width)
+            let height = CGFloat(cgImage.height)
+            let cropW = width / zoom
+            let cropH = height / zoom
+            let rect = CGRect(
+                x: (width - cropW) / 2,
+                y: (height - cropH) / 2,
+                width: cropW,
+                height: cropH
+            ).integral
+            guard let cropped = cgImage.cropping(to: rect) else { return full }
+            return UIImage(cgImage: cropped, scale: full.scale, orientation: full.imageOrientation)
+        }
+
         private func projectedFaceFillRatio(
             faceAnchor: ARFaceAnchor,
             renderer: SCNSceneRenderer
@@ -1314,7 +1420,11 @@ struct FaceMeshScanView: UIViewRepresentable {
                 let projected = renderer.projectPoint(SCNVector3(local.x, local.y, local.z))
                 guard projected.z > 0, projected.z < 1 else { continue }
 
-                let point = CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
+                var point = CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
+                if let arView {
+                    point.x += arView.frame.minX
+                    point.y += arView.frame.minY
+                }
                 minX = min(minX, point.x)
                 maxX = max(maxX, point.x)
                 minY = min(minY, point.y)

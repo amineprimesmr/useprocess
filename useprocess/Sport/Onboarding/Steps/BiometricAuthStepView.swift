@@ -96,6 +96,9 @@ struct BiometricAuthStepView: View {
         } message: {
             Text(errorMessage)
         }
+        .onAppear {
+            ProcessAnalytics.trackCommitmentShown(source: "onboarding")
+        }
     }
 
     // MARK: - Commitment rows
@@ -266,6 +269,9 @@ struct BiometricAuthStepView: View {
 
         if !isAuthenticated {
             isAuthenticating = false
+            if progress > 0.12 {
+                ProcessAnalytics.trackCommitmentAbandoned(progress: progress, source: "onboarding")
+            }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
                 progress = 0.0
                 commitmentFillProgress = Array(repeating: 0, count: commitments.count)
@@ -281,6 +287,7 @@ struct BiometricAuthStepView: View {
         progress = 1.0
         stopPressTask()
         HapticManager.shared.endEngagementHoldCrescendo()
+        ProcessAnalytics.trackCommitmentCompleted(source: "onboarding")
 
         withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
             commitmentFillProgress = Array(repeating: 1, count: commitments.count)

@@ -128,6 +128,11 @@ extension SportOnboardingView {
                 onComplete: nextStep,
                 onBack: previousStep
             )
+        case .dashboardPreview:
+            DashboardPreviewStepView(onComplete: nextStep)
+        case .dreamFaceCommit:
+            EmptyView()
+                .onAppear { skipTransientStep() }
         case .programCreation:
             OnboardingProgramCreationStepView(
                 viewModel: viewModel,
@@ -135,10 +140,8 @@ extension SportOnboardingView {
                 onBack: handleBackFromProgramCreation
             )
         case .notificationPermission:
-            NotificationPermissionStepView(
-                onComplete: nextStep,
-                onBack: previousStep
-            )
+            EmptyView()
+                .onAppear { skipTransientStep() }
         case .payment:
             PaywallView(
                 onComplete: {

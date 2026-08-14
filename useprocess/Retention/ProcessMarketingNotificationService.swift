@@ -112,7 +112,7 @@ final class ProcessMarketingNotificationService {
         let center = UNUserNotificationCenter.current()
         let status = await center.notificationSettings().authorizationStatus
         guard status == .notDetermined else { return }
-        _ = await PermissionsManager.shared.requestNotificationPermission()
+        _ = await PermissionsManager.shared.requestNotificationPermission(analyticsSource: "paywall_dropoff")
         CoachIntelligenceNotificationService.configure()
     }
 

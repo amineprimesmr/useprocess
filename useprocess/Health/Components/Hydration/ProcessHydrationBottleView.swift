@@ -20,7 +20,7 @@ struct ProcessHydrationBottleView: View {
 
             ZStack {
                 bottleOverlay(size: size)
-                liquidGlassSection(size: size, bodyRect: bodyRect, bodyMask: bodyMask)
+                bottleInteriorLayer(size: size, bodyRect: bodyRect, bodyMask: bodyMask)
             }
             .frame(width: size.width, height: size.height)
         }
@@ -40,20 +40,6 @@ struct ProcessHydrationBottleView: View {
     }
 
     @ViewBuilder
-    private func liquidGlassSection(
-        size: CGSize,
-        bodyRect: CGRect,
-        bodyMask: ProcessHydrationBottleBodyMaskShape
-    ) -> some View {
-        ZStack {
-            bottleInteriorLayer(size: size, bodyRect: bodyRect, bodyMask: bodyMask)
-            bodyGlassOverlay(bodyMask: bodyMask)
-        }
-        .opacity(0.76)
-        .allowsHitTesting(false)
-    }
-
-    @ViewBuilder
     private func bottleInteriorLayer(
         size: CGSize,
         bodyRect: CGRect,
@@ -70,7 +56,7 @@ struct ProcessHydrationBottleView: View {
                     .accessibilityHidden(true)
             }
 
-            waterLayer(in: size, bodyRect: bodyRect, bodyMask: bodyMask)
+            growingWaterGlassLayer(in: size, bodyRect: bodyRect)
         }
         .frame(width: size.width, height: size.height)
         .mask(bodyMask)
@@ -78,32 +64,13 @@ struct ProcessHydrationBottleView: View {
     }
 
     private var watermarkColor: Color {
-        theme.primaryText.opacity(theme.isDark ? 0.36 : 0.30)
+        theme.isDark
+            ? Color.white.opacity(0.48)
+            : Color.white.opacity(0.78)
     }
 
     @ViewBuilder
-    private func bodyGlassOverlay(bodyMask: ProcessHydrationBottleBodyMaskShape) -> some View {
-        if #available(iOS 26.0, *), showsGlassWater {
-            GlassEffectContainer {
-                bodyMask
-                    .fill(.clear)
-                    .glassEffect(ProcessGlass.waterSurface, in: bodyMask)
-            }
-            .allowsHitTesting(false)
-        } else {
-            bodyMask
-                .fill(.clear)
-                .background(.ultraThinMaterial.opacity(0.35), in: bodyMask)
-                .allowsHitTesting(false)
-        }
-    }
-
-    @ViewBuilder
-    private func waterLayer(
-        in size: CGSize,
-        bodyRect: CGRect,
-        bodyMask: ProcessHydrationBottleBodyMaskShape
-    ) -> some View {
+    private func growingWaterGlassLayer(in size: CGSize, bodyRect: CGRect) -> some View {
         let shape = ProcessHydrationBottleWaterFillShape(
             fillLevel: fillLevel,
             bodyRect: bodyRect,
@@ -112,22 +79,39 @@ struct ProcessHydrationBottleView: View {
             wavePhase: waterEngine.wavePhase
         )
 
-        shape
-            .fill(waterGradient)
-            .frame(width: size.width, height: size.height)
-            .allowsHitTesting(false)
-            .animation(.spring(response: 0.82, dampingFraction: 0.78), value: fillLevel)
-            .animation(nil, value: waterEngine.roll)
-            .animation(nil, value: waterEngine.pitch)
-            .animation(nil, value: waterEngine.wavePhase)
+        Group {
+            if #available(iOS 26.0, *), showsGlassWater {
+                ZStack {
+                    GlassEffectContainer {
+                        shape
+                            .fill(.clear)
+                            .glassEffect(ProcessGlass.waterSurface, in: shape)
+                    }
+
+                    // Teinte dégradée translucide au-dessus du liquid glass.
+                    shape.fill(Self.waterLiquidGradient)
+                }
+            } else {
+                shape.fill(Self.waterLiquidGradient)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .allowsHitTesting(false)
+        .animation(.spring(response: 0.82, dampingFraction: 0.78), value: fillLevel)
+        .animation(nil, value: waterEngine.roll)
+        .animation(nil, value: waterEngine.pitch)
+        .animation(nil, value: waterEngine.wavePhase)
     }
 
-    private var waterGradient: LinearGradient {
+    /// Dégradé goutte — cyan très clair / translucide → cobalt profond.
+    private static var waterLiquidGradient: LinearGradient {
         LinearGradient(
-            colors: [
-                Color(red: 0.62, green: 0.86, blue: 1.0, opacity: 0.68),
-                Color(red: 0.48, green: 0.72, blue: 0.98, opacity: 0.78),
-                Color(red: 0.36, green: 0.56, blue: 0.94, opacity: 0.84)
+            stops: [
+                .init(color: Color(red: 0.55, green: 0.97, blue: 1.00, opacity: 0.28), location: 0),
+                .init(color: Color(red: 0.05, green: 0.82, blue: 1.00, opacity: 0.38), location: 0.22),
+                .init(color: Color(red: 0.00, green: 0.48, blue: 1.00, opacity: 0.52), location: 0.55),
+                .init(color: Color(red: 0.00, green: 0.22, blue: 0.88, opacity: 0.62), location: 0.82),
+                .init(color: Color(red: 0.00, green: 0.10, blue: 0.62, opacity: 0.72), location: 1)
             ],
             startPoint: .top,
             endPoint: .bottom

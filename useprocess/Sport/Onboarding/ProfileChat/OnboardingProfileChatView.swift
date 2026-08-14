@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct OnboardingProfileChatView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -23,8 +24,6 @@ struct OnboardingProfileChatView: View {
     @State private var chatViewModel = OnboardingProfileChatViewModel()
     @State private var multiSelection: Set<String> = []
     @State private var isSportSearchActive = false
-    @State private var showsOnboardingFaceScanSession = false
-    @State private var restoredFaceScanResult: FaceScanResult?
 
     var body: some View {
         ZStack {
@@ -43,32 +42,6 @@ struct OnboardingProfileChatView: View {
             multiSelection = []
             isSportSearchActive = false
         }
-        .fullScreenCover(isPresented: $showsOnboardingFaceScanSession) {
-            OnboardingFaceScanSessionView(
-                initialResult: restoredFaceScanResult,
-                onCancel: {
-                    showsOnboardingFaceScanSession = false
-                    restoredFaceScanResult = nil
-                    chatViewModel.isSubmittingAnswer = false
-                    if chatViewModel.currentQuestion?.id == "face_scan_offer" {
-                        chatViewModel.restoreFaceScanOfferAnswers()
-                    }
-                },
-                onSkip: {
-                    showsOnboardingFaceScanSession = false
-                    restoredFaceScanResult = nil
-                    chatViewModel.faceScanDidSkip()
-                },
-                onResultReady: { result in
-                    chatViewModel.adoptDedicatedFaceScanResult(result)
-                },
-                onContinueAfterResults: {
-                    Task { await completeFaceScanOnboarding() }
-                }
-            )
-            .environmentObject(profileService)
-            .interactiveDismissDisabled(true)
-        }
         .task(id: onboardingViewModel.currentStep) {
             mossEngine.reduceMotion = reduceMotion
             mossEngine.assistiveVoice = voiceOverOn
@@ -82,21 +55,33 @@ struct OnboardingProfileChatView: View {
             onboardingViewModel.profileChatBackHandler = { [chatViewModel] in
                 chatViewModel.goBackInDiscussion()
             }
+            onboardingViewModel.onOnboardingFaceScanCancel = { [chatViewModel] in
+                chatViewModel.isSubmittingAnswer = false
+                if chatViewModel.currentQuestion?.id == "face_scan_offer" {
+                    chatViewModel.restoreFaceScanOfferAnswers()
+                }
+            }
+            onboardingViewModel.onOnboardingFaceScanResult = { [chatViewModel] result in
+                chatViewModel.adoptDedicatedFaceScanResult(result)
+            }
+            onboardingViewModel.onOnboardingFaceScanContinue = {
+                Task { await completeFaceScanOnboarding() }
+            }
             onboardingViewModel.syncInferredWeightGoal()
             await chatViewModel.startIfNeeded()
 
-            if onboardingViewModel.shouldReopenFaceScanResultsAfterBack,
-               let restored = chatViewModel.restoredFaceScanResultIfAvailable() {
-                onboardingViewModel.shouldReopenFaceScanResultsAfterBack = false
-                chatViewModel.prepareForFaceScanResultsReopen()
-                restoredFaceScanResult = restored
-                showsOnboardingFaceScanSession = true
-            } else if let restored = chatViewModel.consumePendingDedicatedResultsReopen() {
-                restoredFaceScanResult = restored
-                showsOnboardingFaceScanSession = true
-            } else if chatViewModel.shouldAutoFinishAfterResume,
-                      !onboardingViewModel.suppressProfileChatAutoFinish {
-                chatViewModel.finish(onComplete: onComplete)
+            if onboardingViewModel.presentedOnboardingFaceScan == nil {
+                if onboardingViewModel.shouldReopenFaceScanResultsAfterBack,
+                   let restored = chatViewModel.restoredFaceScanResultIfAvailable() {
+                    onboardingViewModel.shouldReopenFaceScanResultsAfterBack = false
+                    chatViewModel.prepareForFaceScanResultsReopen()
+                    onboardingViewModel.presentOnboardingFaceScan(initialResult: restored)
+                } else if let restored = chatViewModel.consumePendingDedicatedResultsReopen() {
+                    onboardingViewModel.presentOnboardingFaceScan(initialResult: restored)
+                } else if chatViewModel.shouldAutoFinishAfterResume,
+                          !onboardingViewModel.suppressProfileChatAutoFinish {
+                    chatViewModel.finish(onComplete: onComplete)
+                }
             }
 
             if onboardingViewModel.suppressProfileChatAutoFinish {
@@ -306,10 +291,7 @@ struct OnboardingProfileChatView: View {
                     isSubmitting: chatViewModel.isSubmittingAnswer,
                     isScanRevealed: mossEngine.controlsVisible,
                     onLaunchScan: {
-                        Task {
-                            await chatViewModel.submitFaceScanNow()
-                            showsOnboardingFaceScanSession = true
-                        }
+                        Task { await launchOnboardingFaceScan() }
                     }
                 )
                 .settleIn(0)
@@ -343,10 +325,23 @@ struct OnboardingProfileChatView: View {
     }
 
     @MainActor
+    private func launchOnboardingFaceScan() async {
+        guard onboardingViewModel.presentedOnboardingFaceScan == nil else { return }
+        let granted = await AVCaptureDevice.requestAccess(for: .video)
+        if granted {
+            ProcessAnalytics.trackCameraAuthorized(source: "onboarding_face_scan")
+        } else {
+            ProcessAnalytics.trackCameraDenied(source: "onboarding_face_scan")
+        }
+        onboardingViewModel.presentOnboardingFaceScan()
+        await Task.yield()
+        await chatViewModel.submitFaceScanNow()
+    }
+
+    @MainActor
     private func completeFaceScanOnboarding() async {
         chatViewModel.finishAfterDedicatedFaceAnalysis()
-        showsOnboardingFaceScanSession = false
-        restoredFaceScanResult = nil
+        onboardingViewModel.dismissOnboardingFaceScan()
         chatViewModel.finish(onComplete: onComplete)
     }
 }

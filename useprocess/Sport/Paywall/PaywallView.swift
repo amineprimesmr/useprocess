@@ -166,6 +166,7 @@ struct PaywallView: View {
             homeSwipeGate.retentionSurface = .paywall
             lastHandledSwipeToken = homeSwipeGate.swipeToken
             Task {
+                try? await Task.sleep(for: .milliseconds(400))
                 await ProcessMarketingNotificationService.shared.prepareNotificationPermissionIfNeeded()
             }
         }
@@ -596,6 +597,7 @@ struct PaywallView: View {
         purchaseError = nil
         defer { isRestoring = false }
 
+        ProcessAnalytics.trackRestoreStarted(source: "paywall")
         do {
             try await subscriptionService.restorePurchases()
             let active = subscriptionService.subscriptionStatus.isActive
@@ -609,7 +611,9 @@ struct PaywallView: View {
                 )
             }
         } catch {
-            purchaseError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            ProcessAnalytics.trackRestoreFailed(error: message, source: "paywall")
+            purchaseError = message
         }
     }
 

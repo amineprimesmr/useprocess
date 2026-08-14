@@ -15,7 +15,7 @@ enum PlanHomeSectionKind: String, CaseIterable, Identifiable, Codable, Hashable 
     var title: String {
         switch self {
         case .faceScan: AppCopy.t("Dernier scan", en: "Latest scan")
-        case .nutrition: AppCopy.t("Repas debloat du jour", en: "Today's debloat meals")
+        case .nutrition: AppCopy.t("Alimentation debloat", en: "Debloat nutrition")
         case .training: AppCopy.t("Cardio et Circuit", en: "Cardio & Circuit")
         case .posture: AppCopy.t("Posture & circuit quotidien", en: "Daily posture & circuit")
         case .faceRoutine: AppCopy.t("Circuit lymphatique", en: "Lymphatic circuit")

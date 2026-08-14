@@ -35,14 +35,24 @@ enum FaceScanViewportMetrics {
     static let roundedCornerRadius: CGFloat = 30
     /// Débordement de l’anneau de ticks autour du cercle caméra (gap + trait actif, par côté × 2).
     static let tickRingOverflow: CGFloat = 42
+    /// Scan onboarding — masque visage (plus haut que large).
+    static let onboardingOvalAspect: CGFloat = 1.30
+    static let onboardingTickOverflow: CGFloat = 108
+}
+
+enum FaceScanViewportStyle: Equatable {
+    case morphingRoundedSquare
+    case onboardingFaceOval
 }
 
 struct FaceMorphClipShape: InsettableShape {
     var morph: CGFloat
+    var style: FaceScanViewportStyle = .morphingRoundedSquare
     private var insetAmount: CGFloat = 0
 
-    init(morph: CGFloat) {
+    init(morph: CGFloat, style: FaceScanViewportStyle = .morphingRoundedSquare) {
         self.morph = morph
+        self.style = style
     }
 
     var animatableData: CGFloat {
@@ -66,11 +76,109 @@ struct FaceMorphClipShape: InsettableShape {
         }
         let adjusted = rect.insetBy(dx: inset, dy: inset)
         guard adjusted.width > 0, adjusted.height > 0 else { return Path() }
-        let maxRadius = min(adjusted.width, adjusted.height) / 2
-        let safeMorph = morph.isFinite ? min(1, max(0, morph)) : 0
-        let cornerRadius = FaceScanViewportMetrics.roundedCornerRadius
-            + (maxRadius - FaceScanViewportMetrics.roundedCornerRadius) * safeMorph
-        return RoundedRectangle(cornerRadius: max(0, cornerRadius), style: .continuous).path(in: adjusted)
+
+        switch style {
+        case .onboardingFaceOval:
+            return FaceScanOnboardingOvalShape().path(in: adjusted)
+        case .morphingRoundedSquare:
+            let maxRadius = min(adjusted.width, adjusted.height) / 2
+            let safeMorph = morph.isFinite ? min(1, max(0, morph)) : 0
+            let cornerRadius = FaceScanViewportMetrics.roundedCornerRadius
+                + (maxRadius - FaceScanViewportMetrics.roundedCornerRadius) * safeMorph
+            return RoundedRectangle(cornerRadius: max(0, cornerRadius), style: .continuous).path(in: adjusted)
+        }
+    }
+}
+
+/// Masque visage onboarding — front large, menton plus étroit (pas une ellipse).
+struct FaceScanOnboardingOvalShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let steps = 96
+        for i in 0..<steps {
+            let angle = Double(i) / Double(steps) * 2 * .pi
+            let point = Self.contourPoint(in: rect, parametricAngle: angle)
+            if i == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        path.closeSubpath()
+        return path
+    }
+
+    /// Point du contour pour un angle visuel (0 = droite, π/2 = bas, π = gauche, −π/2 = haut).
+    /// Rayon depuis le centre — même repère que `FaceIDTickProgressRing`.
+    static func rimPoint(in rect: CGRect, angle: Double) -> CGPoint {
+        let path = FaceScanOnboardingOvalShape().path(in: rect)
+        let dx = CGFloat(cos(angle))
+        let dy = CGFloat(sin(angle))
+        var lo: CGFloat = 0
+        var hi = max(rect.width, rect.height)
+        for _ in 0..<18 {
+            let mid = (lo + hi) / 2
+            let sample = CGPoint(x: rect.midX + dx * mid, y: rect.midY + dy * mid)
+            if path.contains(sample) {
+                lo = mid
+            } else {
+                hi = mid
+            }
+        }
+        let radius = (lo + hi) / 2
+        return CGPoint(x: rect.midX + dx * radius, y: rect.midY + dy * radius)
+    }
+
+    static func outwardNormal(in rect: CGRect, at angle: Double) -> CGVector {
+        CGVector(dx: CGFloat(cos(angle)), dy: CGFloat(sin(angle)))
+    }
+
+    /// Superellipse douce : front un peu plus large, menton plus étroit — silhouette tête, pas une ellipse.
+    private static func contourPoint(in rect: CGRect, parametricAngle: Double) -> CGPoint {
+        let rx = rect.width / 2
+        let ry = rect.height / 2
+        let cosine = cos(parametricAngle)
+        let sine = sin(parametricAngle)
+        let exponent = 2.0 / 2.18
+        let ax = CGFloat(copysign(pow(abs(cosine), exponent), cosine))
+        let ay = CGFloat(copysign(pow(abs(sine), exponent), sine))
+        let bottom = CGFloat(max(0, sine))
+        let top = CGFloat(max(0, -sine))
+        let foreheadWiden: CGFloat = 0.05
+        let chinTaper: CGFloat = 0.24
+        let widthScale = 1
+            + foreheadWiden * pow(top, 1.15)
+            - chinTaper * pow(bottom, 1.55)
+        return CGPoint(
+            x: rect.midX + rx * ax * widthScale,
+            y: rect.midY + ry * ay
+        )
+    }
+}
+
+/// Liseré bleu dégradé sur le bord intérieur du masque caméra.
+struct FaceScanOnboardingInnerEdgeGlow: View {
+    var intensity: CGFloat = 1
+
+    private let glow = Color(red: 0.46, green: 0.74, blue: 1.0)
+
+    var body: some View {
+        let strength = max(0, intensity)
+        ZStack {
+            FaceScanOnboardingOvalShape()
+                .stroke(glow.opacity(0.14 * strength), lineWidth: 28)
+                .blur(radius: 12)
+
+            FaceScanOnboardingOvalShape()
+                .stroke(glow.opacity(0.16 * strength), lineWidth: 10)
+                .blur(radius: 5)
+
+            FaceScanOnboardingOvalShape()
+                .stroke(Color(red: 0.62, green: 0.84, blue: 1.0).opacity(0.12 * strength), lineWidth: 3)
+                .blur(radius: 1.6)
+        }
+        .clipShape(FaceScanOnboardingOvalShape())
+        .allowsHitTesting(false)
     }
 }
 
@@ -197,6 +305,7 @@ struct FaceDynamicIslandScanner<Camera: View, Overlay: View>: View {
 struct FaceScannerViewport<Camera: View, Overlay: View>: View {
     let size: CGSize
     var morphToCircle: CGFloat
+    var style: FaceScanViewportStyle = .morphingRoundedSquare
     @ViewBuilder let camera: () -> Camera
     @ViewBuilder let overlay: () -> Overlay
 
@@ -207,7 +316,7 @@ struct FaceScannerViewport<Camera: View, Overlay: View>: View {
 
         ZStack {
             camera()
-                .clipShape(FaceMorphClipShape(morph: safeMorph))
+                .clipShape(FaceMorphClipShape(morph: safeMorph, style: style))
 
             overlay()
         }
@@ -274,6 +383,197 @@ struct FaceIDTickProgressRing: View {
             .offset(y: -radialOffset)
             .rotationEffect(.degrees(Double(index) / Double(tickCount) * 360 - 90))
             .animation(.smooth(duration: 0.22), value: isActive)
+    }
+}
+
+// MARK: - Anneau onboarding — une rangée, vague cyan selon la tête
+
+struct FaceIDOnboardingTickProgressRing: View {
+    let activeSectors: Set<Int>
+    var waveSector: Int = -1
+    let ovalSize: CGSize
+    var engineTickCount: Int = 72
+    var visualTickCount: Int = 72
+    var isComplete: Bool = false
+    var isLightBackdrop: Bool = false
+
+    private let gapFromMask: CGFloat = 10
+    private let tickLength: CGFloat = 9.6
+    private let filledRestExtra: CGFloat = 3.2
+    private let peakExtraLength: CGFloat = 8.2
+    private let tickWidth: CGFloat = 4.28
+    private let filledRestWidth: CGFloat = 0.35
+    private let peakExtraWidth: CGFloat = 0.55
+
+    private var ringSize: CGSize {
+        let extra = (gapFromMask + tickLength + peakExtraLength) * 2 + 24
+        return CGSize(width: ovalSize.width + extra, height: ovalSize.height + extra)
+    }
+
+    private var inactiveTick: Color {
+        isLightBackdrop ? Color.black.opacity(0.09) : Color.white.opacity(0.18)
+    }
+
+    private var filledSignature: Int {
+        activeSectors.reduce(0) { $0 ^ ($1 &* 31) }
+    }
+
+    var body: some View {
+        let ovalFrame = CGRect(
+            x: (ringSize.width - ovalSize.width) / 2,
+            y: (ringSize.height - ovalSize.height) / 2,
+            width: ovalSize.width,
+            height: ovalSize.height
+        )
+        let waveVisual = resolvedWaveVisualIndex()
+
+        ZStack {
+            ForEach(0..<visualTickCount, id: \.self) { index in
+                let rotationDegrees = Double(index) / Double(visualTickCount) * 360 - 90
+                let rotationRadians = rotationDegrees * .pi / 180
+                let visualAngle = atan2(-cos(rotationRadians), sin(rotationRadians))
+                let rim = FaceScanOnboardingOvalShape.rimPoint(in: ovalFrame, angle: visualAngle)
+                let normal = FaceScanOnboardingOvalShape.outwardNormal(in: ovalFrame, at: visualAngle)
+                let filled = activeSectors.contains(engineSector(for: index))
+                let amount = waveAmount(for: index, waveVisual: waveVisual)
+                let length = tickLength + (filled ? filledRestExtra : 0) + peakExtraLength * amount
+                let width = tickWidth + (filled ? filledRestWidth : 0) + peakExtraWidth * amount
+                let radialCenter = CGPoint(
+                    x: rim.x + normal.dx * (gapFromMask + length / 2),
+                    y: rim.y + normal.dy * (gapFromMask + length / 2)
+                )
+                let color = tickColor(amount: amount, filled: filled)
+
+                Capsule(style: .continuous)
+                    .fill(color)
+                    .frame(width: width, height: length)
+                    .rotationEffect(.degrees(rotationDegrees))
+                    .position(radialCenter)
+                    .shadow(
+                        color: amount > 0.12 ? FaceIDScanColors.scanWave.opacity(0.10 + 0.42 * amount) : .clear,
+                        radius: amount > 0.12 ? (1.4 + 5.5 * amount) : 0
+                    )
+            }
+
+            if let blob = peakBlob(waveVisual: waveVisual, ovalFrame: ovalFrame) {
+                Circle()
+                    .fill(FaceIDScanColors.scanWave.opacity(0.16 * blob.amount))
+                    .frame(width: 12, height: 12)
+                    .blur(radius: 6)
+                    .position(blob.point)
+                    .allowsHitTesting(false)
+            }
+        }
+        .frame(width: ringSize.width, height: ringSize.height)
+        .animation(.easeOut(duration: 0.12), value: filledSignature)
+        .animation(nil, value: waveSector)
+        .animation(.smooth(duration: 0.26), value: isComplete)
+        .allowsHitTesting(false)
+    }
+
+    private func engineSector(for visualIndex: Int) -> Int {
+        if visualTickCount == engineTickCount {
+            return visualIndex % engineTickCount
+        }
+        return Int((Double(visualIndex) + 0.5) / Double(visualTickCount) * Double(engineTickCount)) % engineTickCount
+    }
+
+    private func resolvedWaveVisualIndex() -> Int {
+        if isComplete { return 0 }
+        let center: Int
+        if waveSector >= 0 {
+            center = waveSector
+        } else if let mean = circularMeanSector() {
+            center = mean
+        } else {
+            return -1
+        }
+        if visualTickCount == engineTickCount {
+            return ((center % visualTickCount) + visualTickCount) % visualTickCount
+        }
+        return Int((Double(center) + 0.5) / Double(engineTickCount) * Double(visualTickCount)) % visualTickCount
+    }
+
+    private func circularMeanSector() -> Int? {
+        guard !activeSectors.isEmpty else { return nil }
+        var x = 0.0
+        var y = 0.0
+        for sector in activeSectors {
+            let angle = Double(sector) / Double(engineTickCount) * 2 * .pi
+            x += cos(angle)
+            y += sin(angle)
+        }
+        let angle = atan2(y, x)
+        let normalized = angle < 0 ? angle + 2 * .pi : angle
+        return Int(normalized / (2 * .pi) * Double(engineTickCount)) % engineTickCount
+    }
+
+    private func waveAmount(for visualIndex: Int, waveVisual: Int) -> CGFloat {
+        if isComplete { return 0.55 }
+        guard waveVisual >= 0 else { return 0 }
+
+        let distance = circularDistance(visualIndex, waveVisual, visualTickCount)
+        let lobe = 9
+        guard distance < lobe else { return 0 }
+
+        let t = Double(distance) / Double(lobe)
+        return CGFloat(0.5 * (1 + cos(t * .pi)))
+    }
+
+    private func circularDistance(_ a: Int, _ b: Int, _ count: Int) -> Int {
+        let delta = abs(a - b)
+        return min(delta, count - delta)
+    }
+
+    private func tickColor(amount: CGFloat, filled: Bool) -> Color {
+        if amount <= 0.001 {
+            return filled
+                ? Color(red: 0.08, green: 0.42, blue: 0.78)
+                : inactiveTick
+        }
+        let t = Double(amount)
+        let stops: [(Double, (Double, Double, Double))] = [
+            (0.00, (0.16, 0.42, 0.62)),
+            (0.28, (0.18, 0.55, 0.82)),
+            (0.55, (0.32, 0.72, 0.96)),
+            (0.78, (0.52, 0.86, 1.00)),
+            (1.00, (0.78, 0.95, 1.00))
+        ]
+        let (from, to) = adjacentStops(t, in: stops)
+        let span = max(to.0 - from.0, 0.0001)
+        let local = (t - from.0) / span
+        return Color(
+            red: from.1.0 + (to.1.0 - from.1.0) * local,
+            green: from.1.1 + (to.1.1 - from.1.1) * local,
+            blue: from.1.2 + (to.1.2 - from.1.2) * local
+        )
+    }
+
+    private func adjacentStops(
+        _ t: Double,
+        in stops: [(Double, (Double, Double, Double))]
+    ) -> ((Double, (Double, Double, Double)), (Double, (Double, Double, Double))) {
+        for index in 0..<(stops.count - 1) where t <= stops[index + 1].0 {
+            return (stops[index], stops[index + 1])
+        }
+        return (stops[stops.count - 2], stops[stops.count - 1])
+    }
+
+    private func peakBlob(waveVisual: Int, ovalFrame: CGRect) -> (point: CGPoint, amount: CGFloat)? {
+        guard !isComplete, waveVisual >= 0, !activeSectors.isEmpty else { return nil }
+        let amount = waveAmount(for: waveVisual, waveVisual: waveVisual)
+        guard amount > 0.35 else { return nil }
+        let rotationDegrees = Double(waveVisual) / Double(visualTickCount) * 360 - 90
+        let rotationRadians = rotationDegrees * .pi / 180
+        let visualAngle = atan2(-cos(rotationRadians), sin(rotationRadians))
+        let rim = FaceScanOnboardingOvalShape.rimPoint(in: ovalFrame, angle: visualAngle)
+        let normal = FaceScanOnboardingOvalShape.outwardNormal(in: ovalFrame, at: visualAngle)
+        let length = tickLength + peakExtraLength * amount
+        let point = CGPoint(
+            x: rim.x + normal.dx * (gapFromMask + length / 2),
+            y: rim.y + normal.dy * (gapFromMask + length / 2)
+        )
+        return (point, amount)
     }
 }
 
@@ -520,11 +820,12 @@ struct FaceIDFrameHint: View {
 // MARK: - Continuer
 
 struct FaceIDContinueButton: View {
+    var title: String = OnboardingCopy.continueCTA
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(OnboardingCopy.continueCTA)
+            Text(title)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity)

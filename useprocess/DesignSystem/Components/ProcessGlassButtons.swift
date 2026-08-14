@@ -87,14 +87,29 @@ enum ProcessGlass {
     @available(iOS 26.0, *)
     static var dark: Glass { .regular.tint(Color.black.opacity(0.38)).interactive() }
 
+    /// Tab bar + bouton scan — sombre en dark, clair en light.
+    @available(iOS 26.0, *)
+    static func tabBarChrome(for colorScheme: ColorScheme) -> Glass {
+        if colorScheme == .dark {
+            .regular.tint(Color.black.opacity(0.58)).interactive()
+        } else {
+            .regular.tint(Color.white.opacity(0.78)).interactive()
+        }
+    }
+
+    @available(iOS 26.0, *)
+    static var tabBarChrome: Glass {
+        tabBarChrome(for: .dark)
+    }
+
     @available(iOS 26.0, *)
     static func tinted(_ color: Color, opacity: CGFloat = 0.38) -> Glass {
         .regular.tint(color.opacity(opacity)).interactive()
     }
 
-    /// Eau — liquid glass `.clear` : réfraction native, teinte très légère.
+    /// Eau — liquid glass léger pour laisser passer le dégradé cyan → cobalt.
     @available(iOS 26.0, *)
     static var waterSurface: Glass {
-        .clear.tint(Color(red: 0.72, green: 0.88, blue: 0.90, opacity: 0.06))
+        .clear.tint(Color(red: 0.35, green: 0.88, blue: 1.00, opacity: 0.10))
     }
 }

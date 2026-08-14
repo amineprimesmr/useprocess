@@ -69,69 +69,34 @@ enum OnboardingAnalysisProgressConfig {
     nonisolated static var faceScanAnalysisSteps: [ProgressStep] {
         [
             .init(
-                id: "mesh",
-                phaseLabel: AppCopy.tSync("Scan vidéo", en: "Video scan"),
-                query: AppCopy.tSync("Analyse de ta capture vidéo…", en: "Analyzing your video capture…"),
-                resultCount: nil,
-                sources: [
-                    .init(id: "faceScan", systemImage: "faceid", label: AppCopy.tSync("Scan visage", en: "Face scan")),
-                    .init(id: "video", systemImage: "video.fill", label: AppCopy.tSync("Vidéo", en: "Video"))
-                ]
-            ),
-            .init(
-                id: "markers",
-                phaseLabel: AppCopy.tSync("Biomarqueurs", en: "Biomarkers"),
+                id: "face",
+                phaseLabel: AppCopy.tSync("Rétention d'eau", en: "Water retention"),
                 query: AppCopy.tSync(
-                    "Rétention, cortisol et signaux faciaux…",
-                    en: "Retention, cortisol, and facial signals…"
+                    "Lecture de ta vidéo et du relief 3D",
+                    en: "Reading your video and 3D mesh"
                 ),
-                resultCount: 2,
-                sources: [
-                    .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
-                    .init(id: "retention", systemImage: "drop.fill", label: AppCopy.tSync("Rétention", en: "Retention")),
-                    .init(id: "cortisol", systemImage: "waveform.path.ecg", label: "Cortisol")
-                ]
+                resultCount: nil,
+                sources: []
             ),
             .init(
                 id: "structure",
-                phaseLabel: AppCopy.tSync("Structure faciale", en: "Facial structure"),
+                phaseLabel: AppCopy.tSync("Visage gonflé", en: "Puffy face"),
                 query: AppCopy.tSync(
-                    "Yeux, jawline, pommettes, maxillaire, harmonie…",
-                    en: "Eyes, jawline, cheekbones, maxilla, harmony…"
-                ),
-                resultCount: 15,
-                sources: [
-                    .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
-                    .init(id: "symmetry", systemImage: "arrow.left.and.right", label: AppCopy.tSync("Symétrie", en: "Symmetry")),
-                    .init(id: "bone", systemImage: "cube.fill", label: AppCopy.tSync("Osseux", en: "Bone"))
-                ]
-            ),
-            .init(
-                id: "healthkit",
-                phaseLabel: AppCopy.tSync("Données Santé", en: "Health data"),
-                query: AppCopy.tSync(
-                    "Lecture de tes données dans l’app Santé…",
-                    en: "Reading your Health app data…"
-                ),
-                resultCount: 4,
-                sources: [
-                    .init(id: "health", imageName: "healthapple", label: AppCopy.tSync("Santé", en: "Health")),
-                    .init(id: "sleep", systemImage: "bed.double.fill", label: AppCopy.tSync("Sommeil", en: "Sleep")),
-                    .init(id: "heart", systemImage: "heart.fill", label: AppCopy.tSync("Fréquence", en: "Heart rate")),
-                    .init(id: "activity", systemImage: "figure.run", label: AppCopy.tSync("Activité", en: "Activity"))
-                ]
-            ),
-            .init(
-                id: "claude",
-                phaseLabel: AppCopy.tSync("Synthèse Claude", en: "Claude summary"),
-                query: AppCopy.tSync(
-                    "Claude rédige ton résumé personnalisé…",
-                    en: "Claude is writing your personal summary…"
+                    "Symétrie, mâchoire, pommettes, rétention",
+                    en: "Symmetry, jaw, cheekbones, retention"
                 ),
                 resultCount: nil,
-                sources: [
-                    .init(id: "claude", imageName: "claudeLogo", label: "Claude")
-                ]
+                sources: []
+            ),
+            .init(
+                id: "summary",
+                phaseLabel: AppCopy.tSync("Bilan debloat", en: "Debloat readout"),
+                query: AppCopy.tSync(
+                    "Synthèse personnalisée de tes résultats",
+                    en: "A personal summary of your results"
+                ),
+                resultCount: nil,
+                sources: []
             )
         ]
     }

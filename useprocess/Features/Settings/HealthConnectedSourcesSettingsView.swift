@@ -31,7 +31,7 @@ struct HealthConnectedSourcesSettingsView: View {
                             .padding(.vertical, GroupedSettingsMetrics.rowVerticalPadding)
 
                         Button {
-                            Task { await healthManager.requestAuthorizationAsync() }
+                            Task { await healthManager.requestAuthorizationAsync(analyticsSource: "health_sources_settings") }
                         } label: {
                             Text(AppCopy.t("Connecter Apple Santé", en: "Connect Apple Health"))
                                 .font(.subheadline.weight(.semibold))

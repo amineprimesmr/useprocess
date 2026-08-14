@@ -703,8 +703,23 @@ class OnboardingViewModel: ObservableObject {
     /// Retour depuis « Création du programme » : rouvrir la page résultats du premier scan.
     var shouldReopenFaceScanResultsAfterBack = false
 
-    /// Résultats scan en plein écran — retour depuis création programme (sans repasser par le chat).
-    @Published var presentedFaceScanResult: FaceScanResult?
+    /// Scan onboarding plein écran — un seul cover (deux `.fullScreenCover` se ferment tout seuls).
+    @Published var presentedOnboardingFaceScan: OnboardingFaceScanPresentation?
+
+    var onOnboardingFaceScanCancel: (() -> Void)?
+    var onOnboardingFaceScanResult: ((FaceScanResult) -> Void)?
+    var onOnboardingFaceScanContinue: (() -> Void)?
+
+    func presentOnboardingFaceScan(initialResult: FaceScanResult? = nil, usesChatCallbacks: Bool = true) {
+        presentedOnboardingFaceScan = OnboardingFaceScanPresentation(
+            initialResult: initialResult,
+            usesChatCallbacks: usesChatCallbacks
+        )
+    }
+
+    func dismissOnboardingFaceScan() {
+        presentedOnboardingFaceScan = nil
+    }
 
     /// Données du premier scan disponibles pour réafficher l'analyse.
     func restoredFaceScanResultForNavigation() -> FaceScanResult? {
@@ -803,5 +818,22 @@ class OnboardingViewModel: ObservableObject {
         }
 
         return true
+    }
+}
+
+/// Cover scan onboarding (capture live ou résultats déjà calculés).
+struct OnboardingFaceScanPresentation: Identifiable, Equatable {
+    let id: String
+    let initialResult: FaceScanResult?
+    let usesChatCallbacks: Bool
+
+    init(initialResult: FaceScanResult? = nil, usesChatCallbacks: Bool = true) {
+        self.initialResult = initialResult
+        self.usesChatCallbacks = usesChatCallbacks
+        if let initialResult {
+            id = "results-\(initialResult.id)"
+        } else {
+            id = "live-capture"
+        }
     }
 }

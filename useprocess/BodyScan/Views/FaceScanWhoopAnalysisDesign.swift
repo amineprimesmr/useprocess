@@ -460,6 +460,7 @@ struct FaceScanWhoopScoreRing: View {
     var onStudioFramingChange: ((FaceScanStudioFraming) -> Void)? = nil
     /// Temporaire : masquer le % / label « Score global » (garde photo + anneau coloré).
     var showsGlobalScore: Bool = true
+    var ringSize: CGFloat = 300
 
     @State private var animatedProgress: Double = 0
     @State private var displayedScore: Int = 0
@@ -468,7 +469,6 @@ struct FaceScanWhoopScoreRing: View {
     @State private var scoreCountTask: Task<Void, Never>?
     @State private var showsFramingEditor = false
 
-    private let ringSize: CGFloat = 300
     private let strokeWidth: CGFloat = 11
 
     private var innerDiameter: CGFloat {

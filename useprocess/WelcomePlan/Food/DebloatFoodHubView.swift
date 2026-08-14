@@ -75,7 +75,7 @@ struct DebloatFoodHubView: View {
             .navigationTitle(
                 Self.showsFoodsSectionTemporarily && mode == .foods
                     ? AppCopy.t("Aliments Debloat", en: "Debloat Foods")
-                    : AppCopy.t("Recettes Debloat", en: "Debloat Recipes")
+                    : AppCopy.t("Catalogue de recettes", en: "Recipe catalog")
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -190,6 +190,8 @@ struct DebloatFoodHubView: View {
 
     private var recipesCatalogContent: some View {
         VStack(alignment: .leading, spacing: 22) {
+            todayMealsCatalogSection
+
             ForEach(recipeSections) { section in
                 VStack(alignment: .leading, spacing: 10) {
                     Text(localizedCatalogSectionTitle(section))
@@ -215,6 +217,46 @@ struct DebloatFoodHubView: View {
                     .padding(.horizontal, -20)
                     .padding(.leading, 4)
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var todayMealsCatalogSection: some View {
+        let todayEntries = PlanDayMealsProvider.entries(plan: livePlan, day: day, store: store)
+        if !todayEntries.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(AppCopy.t("Repas du jour", en: "Today's meals"))
+                    .font(.system(size: PlanHomeSectionDesign.titleSize, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: PlanMealCatalogLayout.spacing) {
+                        ForEach(todayEntries) { entry in
+                            PlanMealCatalogCard(
+                                meal: entry.meal,
+                                slot: entry.slot,
+                                plan: livePlan,
+                                day: day,
+                                onTap: {
+                                    selectedCatalogMeal = CatalogMealSelection(entry: entry)
+                                }
+                            )
+                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                                content
+                                    .scaleEffect(phase.isIdentity ? 1 : 0.9)
+                                    .opacity(phase.isIdentity ? 1 : 0.78)
+                            }
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .padding(.vertical, 4)
+                    .padding(.trailing, 20)
+                }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollClipDisabled()
+                .padding(.horizontal, -20)
+                .padding(.leading, 4)
             }
         }
     }

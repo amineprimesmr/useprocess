@@ -12,6 +12,8 @@ struct FaceScanAnalysisFlowView: View {
     var showsResultScreen: Bool = true
     var onDismiss: () -> Void
     var onComplete: (FaceScanResult) -> Void
+    /// Mode dev / studio — revient à la capture visage sans enregistrer l’analyse.
+    var onRetryScan: (() -> Void)? = nil
 
     @State private var baseResult: FaceScanResult?
     @State private var qualityDraft: Double = 0.5
@@ -66,21 +68,41 @@ struct FaceScanAnalysisFlowView: View {
                             .transition(.opacity)
                             .padding(.bottom, 120)
                         } else {
-                            FaceScanAnalysisHeroView(payload: payload)
-                                .padding(.horizontal, 24)
+                            VStack(spacing: 0) {
+                                FaceScanAnalysisHeroView(payload: payload)
+                                    .padding(.horizontal, 24)
 
-                            OnboardingProfileChatAnalysisPanel(
-                                phaseLabel: analysisPhaseLabel,
-                                phaseIndex: analysisPhaseIndex,
-                                displayedPercentage: analysisDisplayedPercentage,
-                                progress: analysisProgress,
-                                elapsedSeconds: analysisElapsedSeconds,
-                                isVisible: true,
-                                steps: steps,
-                                stepIconAccentColor: FaceScanWhoopPalette.accentBlue
-                            )
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 36)
+                                Text(AppCopy.t("Analyse du scan en cours...", en: "Scan analysis in progress..."))
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(FaceScanWhoopPalette.label)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 16)
+                                    .padding(.horizontal, 28)
+
+                                FaceScanAnalysisProgressBars(
+                                    steps: steps,
+                                    progress: analysisProgress
+                                )
+                                .padding(.horizontal, 28)
+                                .padding(.top, 32)
+                            }
+
+                            if showsDevRescanButton {
+                                Button(action: retryScan) {
+                                    Text(AppCopy.t("DEV · Revenir au scan", en: "DEV · Back to scan"))
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(FaceScanWhoopPalette.secondary)
+                                        .padding(.vertical, 10)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.processPlain)
+                                .accessibilityLabel(AppCopy.t("Revenir au scan du visage", en: "Back to face scan"))
+                                .padding(.horizontal, 20)
+                            }
+
+                            Spacer()
+                                .frame(height: 36)
                         }
                     }
                 }
@@ -120,15 +142,27 @@ struct FaceScanAnalysisFlowView: View {
     }
 
     @MainActor
+    private func retryScan() {
+        HapticManager.shared.impact(.light)
+        analysisTask?.cancel()
+        elapsedTask?.cancel()
+        onRetryScan?()
+    }
+
+    @MainActor
     private func complete(with result: FaceScanResult) {
         guard !didCompleteAnalysis else { return }
         didCompleteAnalysis = true
 
-        var final = result
-        // Persiste le rendu final (slider + cadrage + photo) — même carte accueil qu’un vrai scan.
+        // Ancre = analyse réelle ; le slider studio ne doit être appliqué qu’une seule fois.
+        let base = baseResult ?? result
+        var final: FaceScanResult
         if showsCreatorControls {
             creatorMode.resultQuality = qualityDraft
+            final = creatorMode.rebuildResult(base, quality: qualityDraft)
             final.studioFraming = framingDraft.isIdentity ? nil : framingDraft.clamped()
+        } else {
+            final = result
         }
         // Upsert systématique : import photo / studio doivent bien remplacer le latest.
         FaceScanHistoryStore.shared.upsert(final)
@@ -156,17 +190,44 @@ struct FaceScanAnalysisFlowView: View {
         FaceScanWhoopPalette.label
     }
 
+    private var showsDevRescanButton: Bool {
+        guard onRetryScan != nil else { return false }
+        #if DEBUG
+        return true
+        #else
+        return isCreatorUnlocked
+        #endif
+    }
+
     private var headerBar: some View {
         HStack {
-            Color.clear
-                .frame(width: 44, height: 44)
+            if showsDevRescanButton, displayResult == nil {
+                Button(action: retryScan) {
+                    Text(AppCopy.t("DEV", en: "DEV"))
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(0.4)
+                        .foregroundStyle(headerForeground.opacity(0.72))
+                        .padding(.horizontal, 10)
+                        .frame(height: 28)
+                        .background {
+                            Capsule()
+                                .strokeBorder(headerForeground.opacity(0.22), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.processPlain)
+                .accessibilityLabel(AppCopy.t("Revenir au scan du visage", en: "Back to face scan"))
+                .frame(minWidth: 44, alignment: .leading)
+            } else {
+                Color.clear
+                    .frame(width: 44, height: 44)
+            }
 
             Spacer(minLength: 0)
 
-            Text(displayResult == nil ? AppCopy.t("ANALYSE DU SCAN", en: "SCAN ANALYSIS") : formattedHeaderDate)
-                .font(.system(size: displayResult == nil ? 13 : 15, weight: .semibold))
+            Text(displayResult == nil ? AppCopy.t("Analyse", en: "Analysis") : formattedHeaderDate)
+                .font(.system(size: displayResult == nil ? 17 : 15, weight: .semibold))
                 .foregroundStyle(headerForeground)
-                .tracking(displayResult == nil ? 0.6 : 0)
+                .tracking(0)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
 
@@ -262,8 +323,6 @@ struct FaceScanAnalysisFlowView: View {
         startElapsedTimer()
         startProgressAnimation()
 
-        try? await Task.sleep(for: .milliseconds(250))
-
         let analysisStartedAt = Date()
 
         let result = await FaceScanService.recordScan(
@@ -274,7 +333,7 @@ struct FaceScanAnalysisFlowView: View {
 
         FaceScanHistoryStore.shared.reloadForUser(userId: profile?.userId)
 
-        let minimumAnalysisDuration: TimeInterval = 7.5
+        let minimumAnalysisDuration: TimeInterval = 6.0
         let elapsed = Date().timeIntervalSince(analysisStartedAt)
         if elapsed < minimumAnalysisDuration {
             try? await Task.sleep(nanoseconds: UInt64((minimumAnalysisDuration - elapsed) * 1_000_000_000))
@@ -284,8 +343,6 @@ struct FaceScanAnalysisFlowView: View {
         await finishProgressAnimation()
         elapsedTask?.cancel()
         HapticManager.shared.notification(.success)
-
-        try? await Task.sleep(for: .milliseconds(420))
 
         if showsResultScreen {
             framingDraft = result.resolvedStudioFraming
@@ -318,19 +375,19 @@ struct FaceScanAnalysisFlowView: View {
         analysisTask?.cancel()
 
         let tickInterval = OnboardingAnalysisProgressConfig.tickIntervalNs
-        let leadDuration: TimeInterval = 7.5
+        let leadDuration: TimeInterval = 6.0
 
         analysisTask = Task {
-            try? await Task.sleep(nanoseconds: OnboardingAnalysisProgressConfig.startDelayNs)
+            try? await Task.sleep(nanoseconds: 40_000_000)
             guard !Task.isCancelled else { return }
 
             let startTime = Date()
 
             while !Task.isCancelled {
                 let elapsed = Date().timeIntervalSince(startTime)
-                let normalized = min(0.92, elapsed / leadDuration)
-                let eased = 1.0 - pow(1.0 - normalized, 2.1)
-                let stepIndex = min(steps.count - 1, Int(eased * Double(steps.count)))
+                let normalized = min(1, elapsed / leadDuration)
+                let eased = Self.slowStartProgress(normalized)
+                let stepIndex = min(steps.count - 1, Int(eased * Double(max(steps.count, 1))))
 
                 await MainActor.run {
                     analysisProgress = eased
@@ -339,7 +396,7 @@ struct FaceScanAnalysisFlowView: View {
                     analysisPhaseLabel = steps[stepIndex].phaseLabel
                 }
 
-                if normalized >= 0.92 { break }
+                if normalized >= 1 { break }
                 try? await Task.sleep(nanoseconds: tickInterval)
             }
         }
@@ -351,18 +408,97 @@ struct FaceScanAnalysisFlowView: View {
         elapsedTask?.cancel()
 
         let start = analysisProgress
-        let stepsCount = 12
+        if start >= 0.995 {
+            analysisProgress = 1
+            analysisDisplayedPercentage = 100
+            return
+        }
+        let stepsCount = 6
         for i in 1...stepsCount {
             let t = Double(i) / Double(stepsCount)
-            let eased = 1.0 - pow(1.0 - t, 1.6)
-            analysisProgress = start + (1.0 - start) * eased
+            analysisProgress = start + (1.0 - start) * t
             analysisDisplayedPercentage = Int((analysisProgress * 100).rounded())
             analysisPhaseIndex = steps.count - 1
             analysisPhaseLabel = steps[steps.count - 1].phaseLabel
-            try? await Task.sleep(for: .milliseconds(28))
+            try? await Task.sleep(for: .milliseconds(20))
         }
         analysisProgress = 1
         analysisDisplayedPercentage = 100
+    }
+
+    /// Lent au départ, puis ça avance sans freiner à la fin.
+    private static func slowStartProgress(_ t: Double) -> Double {
+        let x = min(1, max(0, t))
+        return x * x * (1.35 - 0.35 * x)
+    }
+}
+
+// MARK: - 3 barres d’analyse
+
+private struct FaceScanAnalysisProgressBars: View {
+    let steps: [OnboardingAnalysisProgressConfig.ProgressStep]
+    let progress: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                let value = barProgress(for: index)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(step.phaseLabel)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(FaceScanWhoopPalette.label)
+
+                        Spacer(minLength: 8)
+
+                        Text("\(Int((value * 100).rounded()))%")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(FaceScanWhoopPalette.secondary)
+                            .monospacedDigit()
+                    }
+
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(FaceScanWhoopPalette.ringTrack)
+
+                            Capsule()
+                                .fill(FaceScanWhoopPalette.accentBlue)
+                                .frame(width: max(0, geo.size.width * value))
+                        }
+                    }
+                    .frame(height: 7)
+                }
+            }
+        }
+        .animation(.linear(duration: 0.08), value: progress)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(AppCopy.t("Analyse en cours", en: "Analysis in progress"))
+        .accessibilityValue("\(Int((min(1, max(0, progress)) * 100).rounded()))%")
+    }
+
+    /// Les 3 barres partent ensemble, avec des courbes différentes pour un remplissage irrégulier.
+    private func barProgress(for index: Int) -> Double {
+        let t = min(1, max(0, progress))
+        guard t > 0 else { return 0 }
+        if t >= 0.995 { return 1 }
+
+        switch index {
+        case 0:
+            return clamp01(pow(t, 1.12) + wobble(t, amplitude: 0.018, waves: 1.5, phase: 0.2))
+        case 1:
+            return clamp01(pow(t, 1.32) + wobble(t, amplitude: 0.02, waves: 1.7, phase: 0.85))
+        default:
+            return clamp01(pow(t, 1.22) + wobble(t, amplitude: 0.016, waves: 1.55, phase: 1.6))
+        }
+    }
+
+    private func wobble(_ t: Double, amplitude: Double, waves: Double, phase: Double) -> Double {
+        sin((t * waves + phase) * .pi) * amplitude * (1 - t)
+    }
+
+    private func clamp01(_ value: Double) -> Double {
+        min(1, max(0, value))
     }
 }
 
@@ -374,7 +510,7 @@ struct FaceScanAnalysisHeroView: View {
 
     @State private var resolvedVideoURL: URL?
 
-    private let heroDiameter: CGFloat = 240
+    private let heroDiameter: CGFloat = 200
 
     var body: some View {
         ZStack {

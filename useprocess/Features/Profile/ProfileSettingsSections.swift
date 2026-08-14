@@ -196,7 +196,7 @@ struct ProfileSettingsHealthDetailView: View {
                                 if healthManager.isAuthorized {
                                     await healthManager.performFullSync()
                                 } else {
-                                    await healthManager.requestAuthorizationAsync()
+                                    await healthManager.requestAuthorizationAsync(analyticsSource: "profile_settings")
                                 }
                             }
                         } label: {

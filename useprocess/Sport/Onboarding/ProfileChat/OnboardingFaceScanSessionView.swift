@@ -19,6 +19,7 @@ struct OnboardingFaceScanSessionView: View {
 
     @State private var captureInput: CaptureInput?
     @State private var completedResult: FaceScanResult?
+    @State private var captureResetToken = 0
 
     private struct CaptureInput {
         let payload: FaceScanCapturePayload
@@ -35,35 +36,53 @@ struct OnboardingFaceScanSessionView: View {
                     showsResultScreen: false,
                     onDismiss: {},
                     onComplete: { result in
-                        completedResult = result
+                        withAnimation(Self.pagePushAnimation) {
+                            completedResult = result
+                        }
                         onResultReady(result)
+                    },
+                    onRetryScan: {
+                        captureResetToken += 1
+                        withAnimation(Self.pagePushAnimation) {
+                            captureInput = nil
+                        }
                     }
                 )
-                .transition(.opacity)
+                .transition(Self.analysisPushTransition)
                 .zIndex(1)
             } else if let result = completedResult {
                 OnboardingDedicatedFaceScanResultsView(
                     result: result,
-                    onContinue: onContinueAfterResults
+                    onContinue: onContinueAfterResults,
+                    onRetryScan: {
+                        captureResetToken += 1
+                        withAnimation(Self.pagePushAnimation) {
+                            completedResult = nil
+                            captureInput = nil
+                        }
+                    }
                 )
-                .transition(.opacity)
+                .transition(Self.analysisPushTransition)
                 .zIndex(2)
             } else {
                 FaceScanCaptureScreen(
                     presentation: .fullScreen,
                     onBack: onCancel,
-                    onSkip: onSkip,
+                    onSkip: nil,
                     showsMediaImport: false,
-                    skipButtonTitle: AppCopy.t("Passer pour le moment", en: "Skip for now"),
                     allowsScreenFlash: true,
+                    skipsHeadTiltPhase: true,
+                    usesOnboardingFaceOval: true,
                     onContinue: advanceToAnalysis
                 )
-                .transition(.opacity)
+                .id(captureResetToken)
+                .transition(Self.capturePopTransition)
                 .zIndex(0)
             }
         }
-        .animation(.easeInOut(duration: 0.24), value: captureInput?.payload.scanId)
-        .animation(.easeInOut(duration: 0.24), value: completedResult?.id)
+        .clipped()
+        .animation(Self.pagePushAnimation, value: captureInput?.payload.scanId)
+        .animation(Self.pagePushAnimation, value: completedResult?.id)
         .onAppear {
             if completedResult == nil, let initialResult {
                 completedResult = initialResult
@@ -74,6 +93,24 @@ struct OnboardingFaceScanSessionView: View {
 
     @MainActor
     private func advanceToAnalysis(_ payload: FaceScanCapturePayload, _ markers: FaceWellnessMarkers) {
-        captureInput = CaptureInput(payload: payload, markers: markers)
+        withAnimation(Self.pagePushAnimation) {
+            captureInput = CaptureInput(payload: payload, markers: markers)
+        }
+    }
+
+    private static let pagePushAnimation = Animation.easeInOut(duration: 0.36)
+
+    private static var analysisPushTransition: AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        )
+    }
+
+    private static var capturePopTransition: AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: .leading).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        )
     }
 }

@@ -234,6 +234,10 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         popupPhaseIndex = phaseIndex
         isPaused = true
 
+        if popup.kind == .healthKit {
+            ProcessAnalytics.trackHealthKitPromptShown(source: "onboarding_program_creation")
+        }
+
         withAnimation(.spring(response: 0.62, dampingFraction: 0.78)) {
             activePopup = OnboardingProgramCreationPopupModel(
                 question: popup.question,
@@ -282,12 +286,17 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         if answer {
             // Wait for the system sheets only — sync runs after progress resumes
             // so bar 2 isn't blocked behind a long HealthKit import.
-            await healthManager.requestAuthorizationAsync(syncAfterwards: false)
+            await healthManager.requestAuthorizationAsync(
+                syncAfterwards: false,
+                analyticsSource: "onboarding_program_creation"
+            )
             if let permissionsManager {
                 _ = await permissionsManager.requestMotionPermission()
             }
             HapticManager.shared.notification(.success)
             Task { await healthManager.performFullSync() }
+        } else {
+            ProcessAnalytics.trackHealthKitSkipped(source: "onboarding_program_creation")
         }
 
         onboardingViewModel.healthKitGranted = healthManager.isAuthorized

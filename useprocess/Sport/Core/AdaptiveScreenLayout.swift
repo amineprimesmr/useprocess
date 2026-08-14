@@ -28,7 +28,9 @@ enum AdaptiveScreenLayout {
     }
 
     static func faceScanCameraZoom(horizontalSizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        isRegularWidth(horizontalSizeClass) ? 1.30 : 1.38
+        isRegularWidth(horizontalSizeClass)
+            ? ProcessScanCamera.frontPreviewLayoutZoom - 0.12
+            : ProcessScanCamera.frontPreviewLayoutZoom
     }
 
     static func biometricZoneSize(containerWidth: CGFloat) -> CGFloat {

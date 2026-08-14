@@ -19,7 +19,7 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
         return false
 
     case .notificationPermission:
-        return true
+        return false
 
     case .personalizedWelcome:
         return !viewModel.firstName.isEmpty
@@ -79,7 +79,7 @@ func buildOnboardingProgressFlowPath(
 func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     switch step {
     case .faceAnalysis, .programCreation, .healthKitPermissions, .sleepDataRecovery,
-         .biometricAuth, .notificationPermission, .transformationPreview, .payment, .appleSignIn, .processWelcome,
+         .biometricAuth, .notificationPermission, .transformationPreview, .dashboardPreview, .payment, .appleSignIn, .processWelcome,
          .complete, .referralReward, .featuresUnlock:
         return true
     default:
@@ -90,7 +90,7 @@ func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
 /// Étapes finales qui gardent le header « retour seul » (sans barre ni drapeau).
 func showsBackOnlyOnboardingHeader(_ step: OnboardingStep) -> Bool {
     switch step {
-    case .biometricAuth, .notificationPermission, .transformationPreview, .programCreation:
+    case .biometricAuth, .transformationPreview, .dashboardPreview, .programCreation:
         return true
     default:
         return false

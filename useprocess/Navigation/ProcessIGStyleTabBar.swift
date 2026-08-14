@@ -392,19 +392,39 @@ private struct ProcessIGTabBarGlassChrome: ViewModifier {
 
     var style: Style = .capsule
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var legacyTint: Color {
+        colorScheme == .dark
+            ? Color.black.opacity(0.34)
+            : Color.white.opacity(0.55)
+    }
+
     func body(content: Content) -> some View {
         switch style {
         case .capsule:
             if #available(iOS 26.0, *) {
-                content.glassEffect(ProcessGlass.regular, in: Capsule())
+                content.glassEffect(ProcessGlass.tabBarChrome(for: colorScheme), in: Capsule())
             } else {
-                content.processGlassEffect(in: Capsule(style: .continuous), interactive: true)
+                content
+                    .processGlassEffect(in: Capsule(style: .continuous), interactive: true)
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .fill(legacyTint)
+                            .allowsHitTesting(false)
+                    }
             }
         case .circle:
             if #available(iOS 26.0, *) {
-                content.glassEffect(ProcessGlass.regular, in: Circle())
+                content.glassEffect(ProcessGlass.tabBarChrome(for: colorScheme), in: Circle())
             } else {
-                content.processGlassEffect(in: Circle(), interactive: true)
+                content
+                    .processGlassEffect(in: Circle(), interactive: true)
+                    .overlay {
+                        Circle()
+                            .fill(legacyTint)
+                            .allowsHitTesting(false)
+                    }
             }
         }
     }

@@ -19,6 +19,7 @@ enum FaceScanCapturePresentation: Equatable {
 struct FaceScanCaptureScreen: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.appTheme) private var appTheme
+    @Environment(\.colorScheme) private var colorScheme
 
     var presentation: FaceScanCapturePresentation = .fullScreen
     var showsInlineHeader: Bool = true
@@ -31,11 +32,16 @@ struct FaceScanCaptureScreen: View {
     var skipButtonTitle: String = AppCopy.t("Passer pour le moment", en: "Skip for now")
     var allowsScreenFlash: Bool = true
     var isCameraSessionActive: Bool = true
+    /// Premier scan onboarding : pas de phase « penche la tête ».
+    var skipsHeadTiltPhase: Bool = false
+    /// Cadre ovale visage dès l’ouverture (onboarding).
+    var usesOnboardingFaceOval: Bool = false
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
     @State private var scanProgress: Double = 0
     @State private var ringProgress: Double = 0
     @State private var activeTickSectors: Set<Int> = []
+    @State private var currentTickSector: Int = -1
     @State private var overlayMode: FaceScanCaptureOverlayMode = .orbitTicks
     @State private var tiltHoldProgress: Double = 0
     @State private var tiltDirection: FaceScanTiltDirection = .none
@@ -80,21 +86,31 @@ struct FaceScanCaptureScreen: View {
 
     /// Une fois le scan lancé, on garde le cercle — les rotations faussent parfois le cadrage.
     private var usesCircularViewport: Bool {
+        if usesOnboardingFaceOval { return true }
         if isInlinePreview { return false }
         return phase == .scanning || phase == .completed || isPositioningWellFramed
     }
 
-    /// 0 = carré arrondi, 1 = cercle.
+    /// 0 = carré arrondi, 1 = cercle / ovale onboarding.
     private var viewportMorph: CGFloat {
-        usesCircularViewport ? 1 : 0
+        if usesOnboardingFaceOval { return 1 }
+        return usesCircularViewport ? 1 : 0
     }
 
     private var showsFrameCorners: Bool {
-        !isInlinePreview && phase == .positioning && !isPositioningWellFramed && !scanBlockedByLighting
+        if usesOnboardingFaceOval { return false }
+        return !isInlinePreview && phase == .positioning && !isPositioningWellFramed && !scanBlockedByLighting
+    }
+
+    private var viewportStyle: FaceScanViewportStyle {
+        usesOnboardingFaceOval ? .onboardingFaceOval : .morphingRoundedSquare
     }
 
     private var showsScanRing: Bool {
-        !isInlinePreview && (scanProgress > 0.005 || phase == .completed)
+        if usesOnboardingFaceOval {
+            return !isInlinePreview && !scanBlockedByLighting
+        }
+        return !isInlinePreview && (scanProgress > 0.005 || phase == .completed)
     }
 
     private var isEmbedded: Bool {
@@ -152,7 +168,7 @@ struct FaceScanCaptureScreen: View {
             if !supported { canSkipScan = true }
         }
         .onChange(of: isLowLight) { _, low in
-            guard allowsScreenFlash, !isInlinePreview else { return }
+            guard allowsScreenFlash, !isInlinePreview, !usesOnboardingFaceOval else { return }
             guard !userFlashOverride else { return }
             guard low, !isFlashEnabled else { return }
             isFlashEnabled = true
@@ -252,68 +268,208 @@ struct FaceScanCaptureScreen: View {
     private var fullScreenLayout: some View {
         GeometryReader { geometry in
             let safeArea = geometry.safeAreaInsets
-            let viewportSize = AdaptiveScreenLayout.faceScanViewportDiameter(
+            let squareDiameter = AdaptiveScreenLayout.faceScanViewportDiameter(
                 width: geometry.size.width,
                 height: geometry.size.height,
                 horizontalSizeClass: horizontalSizeClass
             )
+            let ovalWidth: CGFloat = {
+                guard usesOnboardingFaceOval else { return squareDiameter }
+                if AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) {
+                    return min(280, geometry.size.width - 160)
+                }
+                return min(geometry.size.width - 128, 248)
+            }()
+            let viewportSize = usesOnboardingFaceOval
+                ? CGSize(width: ovalWidth, height: ovalWidth * FaceScanViewportMetrics.onboardingOvalAspect)
+                : CGSize(width: squareDiameter, height: squareDiameter)
 
             ZStack {
-                (isFlashEnabled ? Color.white : Color.black)
-                    .ignoresSafeArea()
-
-                VStack(spacing: 0) {
-                    Spacer()
-                        .frame(height: OnboardingConstants.backOnlyContentTopInset)
-
-                    cameraSection(viewportSize: viewportSize)
-                        .padding(.top, AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) ? 12 : 8)
-                        .allowsHitTesting(phase != .completed)
-
-                    instructionBlock
-                        .padding(.top, 22)
-
-                    if let hint = frameHint, phase != .completed {
-                        FaceIDFrameHint(text: hint, isLightBackdrop: isFlashEnabled)
-                            .padding(.top, 12)
-                    }
-
-                    flashStatusLabel
-                        .padding(.top, 10)
-
-                    Spacer(minLength: 12)
-
-                    if phase != .completed {
-                        retryScanButton
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 4)
-
-                        // Skip visible dès que la caméra tourne (sous Recommencer).
-                        if onSkip != nil {
-                            skipScanButton
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 8)
-                        }
-
-                        if showsMediaImport {
-                            importMediaButton
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 8)
-                        }
-                    }
-
-                    bottomAction
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, max(safeArea.bottom + 16, 28))
-                        .zIndex(20)
+                if usesOnboardingFaceOval {
+                    (isFlashEnabled
+                        ? Color.white
+                        : (colorScheme == .dark ? Color.black : ProcessBackgroundPalette.lightBase))
+                        .ignoresSafeArea()
+                } else {
+                    (isFlashEnabled ? Color.white : Color.black)
+                        .ignoresSafeArea()
                 }
-                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
+
+                if usesOnboardingFaceOval {
+                    onboardingReferenceLayout(viewportSize: viewportSize, safeArea: safeArea)
+                } else {
+                    VStack(spacing: 0) {
+                        Spacer()
+                            .frame(height: OnboardingConstants.backOnlyContentTopInset)
+
+                        cameraSection(viewportSize: viewportSize)
+                            .padding(.top, AdaptiveScreenLayout.isRegularWidth(horizontalSizeClass) ? 12 : 8)
+                            .padding(.horizontal, 0)
+                            .allowsHitTesting(phase != .completed)
+
+                        instructionBlock
+                            .padding(.top, 22)
+
+                        if let hint = frameHint, phase != .completed {
+                            FaceIDFrameHint(text: hint, isLightBackdrop: isFlashEnabled)
+                                .padding(.top, 12)
+                        }
+
+                        flashStatusLabel
+                            .padding(.top, 10)
+
+                        Spacer(minLength: 12)
+
+                        if phase != .completed {
+                            retryScanButton
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 4)
+
+                            if onSkip != nil {
+                                skipScanButton
+                                    .padding(.horizontal, 24)
+                                    .padding(.bottom, 8)
+                            }
+
+                            if showsMediaImport {
+                                importMediaButton
+                                    .padding(.horizontal, 24)
+                                    .padding(.bottom, 8)
+                            }
+                        }
+
+                        bottomAction
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, max(safeArea.bottom + 16, 28))
+                            .zIndex(20)
+                    }
+                    .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
+                }
             }
             .overlay(alignment: .top) {
-                scanHeader
+                if !usesOnboardingFaceOval {
+                    scanHeader
+                }
             }
         }
         .ignoresSafeArea(.container, edges: .top)
+    }
+
+    private func onboardingReferenceLayout(viewportSize: CGSize, safeArea: EdgeInsets) -> some View {
+        VStack(spacing: 0) {
+            Spacer()
+                .frame(height: OnboardingConstants.headerBackButtonTopPadding)
+
+            HStack {
+                onboardingChromeButton(
+                    systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash",
+                    iconSize: 16,
+                    tint: isFlashEnabled
+                        ? Color(red: 0.95, green: 0.78, blue: 0.12)
+                        : nil
+                ) {
+                    userFlashOverride = true
+                    isFlashEnabled.toggle()
+                }
+                .accessibilityLabel(
+                    isFlashEnabled
+                        ? AppCopy.t("Désactiver le flash", en: "Turn flash off")
+                        : AppCopy.t("Activer le flash", en: "Turn flash on")
+                )
+                .disabled(!isDeviceSupported || phase == .completed)
+
+                Spacer(minLength: 0)
+
+                onboardingChromeButton(systemName: "arrow.clockwise", iconSize: 16) {
+                    restartScan()
+                }
+                .accessibilityLabel(AppCopy.t("Recommencer le scan", en: "Restart scan"))
+            }
+            .padding(.horizontal, 20)
+
+            VStack(spacing: 7) {
+                Text(AppCopy.t("Scan en cours", en: "Scan in progress"))
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.92) : Color.white.opacity(0.94))
+                    .multilineTextAlignment(.center)
+
+                Text(AppCopy.t(
+                    "Tourne lentement la tête tout autour",
+                    en: "Slowly turn your head all the way around"
+                ))
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.38) : Color.white.opacity(0.42))
+                .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 8)
+            .padding(.horizontal, 28)
+
+            Spacer()
+                .frame(minHeight: 6, maxHeight: 12)
+
+            cameraSection(viewportSize: viewportSize)
+                .allowsHitTesting(phase != .completed)
+
+            Spacer(minLength: 48)
+
+            Text(onboardingScanFooterCopy)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.38) : Color.white.opacity(0.42))
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .padding(.horizontal, 40)
+
+            Spacer()
+                .frame(height: max(safeArea.bottom + 24, 40))
+        }
+        .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
+    }
+
+    private var onboardingScanFooterCopy: String {
+        AppCopy.t(
+            "Place ton visage dans le cadre, puis bouge lentement la tête en cercle pour capturer tous les angles.",
+            en: "Position your face in the frame, then slowly move your head in a circle to capture every angle."
+        )
+    }
+
+    private func onboardingChromeButton(
+        systemName: String,
+        iconSize: CGFloat,
+        tint: Color? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            HapticManager.shared.impact(.light)
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: iconSize, weight: .semibold))
+                .foregroundStyle(
+                    tint ?? (onboardingUsesLightChrome
+                        ? Color.black.opacity(0.42)
+                        : Color.white.opacity(0.55))
+                )
+                .frame(width: 40, height: 40)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.processPlain)
+        .background {
+            Circle()
+                .fill(onboardingUsesLightChrome ? Color.white : Color.white.opacity(0.08))
+                .shadow(color: Color.black.opacity(onboardingUsesLightChrome ? 0.10 : 0.35), radius: 10, y: 3)
+        }
+        .overlay {
+            Circle()
+                .strokeBorder(
+                    onboardingUsesLightChrome ? Color.black.opacity(0.06) : Color.white.opacity(0.10),
+                    lineWidth: 0.5
+                )
+        }
+    }
+
+    private var onboardingUsesLightChrome: Bool {
+        isFlashEnabled || colorScheme != .dark
     }
 
     private func embeddedCardLayout(viewportDiameter: CGFloat) -> some View {
@@ -329,7 +485,7 @@ struct FaceScanCaptureScreen: View {
                         .frame(width: viewportDiameter + 20, height: viewportDiameter + 20)
                         .shadow(color: .black.opacity(appTheme.isDark ? 0.45 : 0.14), radius: 20, y: 10)
 
-                    cameraSection(viewportSize: viewportDiameter)
+                    cameraSection(viewportSize: CGSize(width: viewportDiameter, height: viewportDiameter))
                 }
 
                 if isDeviceSupported, phase != .completed, allowsScreenFlash {
@@ -360,7 +516,7 @@ struct FaceScanCaptureScreen: View {
             }
 
             ZStack(alignment: .center) {
-                cameraSection(viewportSize: viewportDiameter)
+                cameraSection(viewportSize: CGSize(width: viewportDiameter, height: viewportDiameter))
 
                 if !isPreview {
                     HStack(alignment: .top) {
@@ -444,7 +600,8 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var scanBlockedByLighting: Bool {
-        !isInlinePreview && !allowsScreenFlash && isLowLight && phase != .completed
+        if usesOnboardingFaceOval { return false }
+        return !isInlinePreview && !allowsScreenFlash && isLowLight && phase != .completed
     }
 
     private var embeddedControlsBlock: some View {
@@ -631,17 +788,19 @@ struct FaceScanCaptureScreen: View {
 
     // MARK: - Camera
 
-    private func cameraSection(viewportSize: CGFloat) -> some View {
+    private func cameraSection(viewportSize: CGSize) -> some View {
         let core = ZStack {
             if isDeviceSupported {
                 FaceScannerViewport(
-                    size: CGSize(width: viewportSize, height: viewportSize),
+                    size: viewportSize,
                     morphToCircle: scanBlockedByLighting ? 1 : viewportMorph,
+                    style: viewportStyle,
                     camera: {
                         FaceMeshScanView(
                             progress: $scanProgress,
                             ringProgress: $ringProgress,
                             activeTickSectors: $activeTickSectors,
+                            currentTickSector: $currentTickSector,
                             overlayMode: $overlayMode,
                             tiltHoldProgress: $tiltHoldProgress,
                             tiltDirection: $tiltDirection,
@@ -654,52 +813,78 @@ struct FaceScanCaptureScreen: View {
                             isPreviewOnly: isInlinePreview,
                             isSessionRunning: isARSessionActive,
                             allowsScreenFlash: allowsScreenFlash,
+                            skipsHeadTiltPhase: skipsHeadTiltPhase,
                             cameraZoom: cameraZoom,
                             onComplete: handleCapture
                         )
                         .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
-                        .scaleEffect(cameraZoom)
                         .blur(radius: scanBlockedByLighting ? 7 : 0)
                     },
                     overlay: { EmptyView() }
                 )
                 .overlay {
-                    if scanBlockedByLighting {
-                        FaceMorphClipShape(morph: 1)
+                    if usesOnboardingFaceOval {
+                        FaceScanOnboardingInnerEdgeGlow(intensity: colorScheme == .dark ? 0.78 : 0.72)
+                    } else if scanBlockedByLighting {
+                        FaceMorphClipShape(morph: 1, style: viewportStyle)
                             .fill(Color.black.opacity(0.14))
                             .allowsHitTesting(false)
                     }
                 }
                 .overlay {
-                    FaceMorphClipShape(morph: scanBlockedByLighting ? 1 : viewportMorph)
-                        .strokeBorder(
-                            isFlashEnabled ? Color.black.opacity(0.08) : Color.white.opacity(0.18),
-                            lineWidth: 1.5
-                        )
+                    if usesOnboardingFaceOval {
+                        FaceScanOnboardingOvalShape()
+                            .stroke(
+                                colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.08),
+                                lineWidth: 0.6
+                            )
+                            .allowsHitTesting(false)
+                    } else {
+                        FaceMorphClipShape(morph: scanBlockedByLighting ? 1 : viewportMorph, style: viewportStyle)
+                            .strokeBorder(
+                                isFlashEnabled ? Color.black.opacity(0.08) : Color.white.opacity(0.18),
+                                lineWidth: 1.5
+                            )
+                    }
                 }
                 .animation(.easeInOut(duration: 0.28), value: scanBlockedByLighting)
                 .shadow(
-                    color: .black.opacity(isFlashEnabled ? (isInlineHome ? 0 : 0.12) : 0.35),
-                    radius: isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 14,
-                    y: isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 4
+                    color: usesOnboardingFaceOval
+                        ? Color.black.opacity(colorScheme == .dark ? 0.45 : 0.12)
+                        : .black.opacity(isFlashEnabled ? (isInlineHome ? 0 : 0.12) : 0.35),
+                    radius: usesOnboardingFaceOval
+                        ? (colorScheme == .dark ? 10 : 18)
+                        : (isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 14),
+                    y: usesOnboardingFaceOval
+                        ? (colorScheme == .dark ? 2 : 6)
+                        : (isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 4)
                 )
 
                 if showsFrameCorners {
-                    FaceScanFrameCornerBrackets(size: viewportSize)
+                    FaceScanFrameCornerBrackets(size: viewportSize.width)
                         .transition(.opacity)
                 }
 
                 if showsScanRing, !scanBlockedByLighting {
-                    scannerOverlay(cameraDiameter: viewportSize)
+                    scannerOverlay(viewportSize: viewportSize)
                         .transition(.opacity)
                 }
             } else {
                 unsupportedSection
-                    .frame(width: viewportSize)
+                    .frame(width: viewportSize.width, height: viewportSize.height)
             }
         }
+        .frame(width: viewportSize.width, height: viewportSize.height)
+        .frame(
+            width: usesOnboardingFaceOval
+                ? viewportSize.width + FaceScanViewportMetrics.onboardingTickOverflow
+                : viewportSize.width,
+            height: usesOnboardingFaceOval
+                ? viewportSize.height + FaceScanViewportMetrics.onboardingTickOverflow
+                : viewportSize.height
+        )
         .frame(maxWidth: .infinity, alignment: isInlinePreview ? .leading : .center)
-        .animation(phase == .completed ? nil : .interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
+        .animation(phase == .completed || usesOnboardingFaceOval ? nil : .interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
         .animation(phase == .completed ? nil : .easeInOut(duration: 0.25), value: phase)
         .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsFrameCorners)
         .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsScanRing)
@@ -716,15 +901,24 @@ struct FaceScanCaptureScreen: View {
     }
 
     @ViewBuilder
-    private func scannerOverlay(cameraDiameter: CGFloat) -> some View {
+    private func scannerOverlay(viewportSize: CGSize) -> some View {
         ZStack {
-            if phase == .completed {
-                FaceIDSuccessRing(diameter: cameraDiameter)
+            if usesOnboardingFaceOval {
+                FaceIDOnboardingTickProgressRing(
+                    activeSectors: activeTickSectors,
+                    waveSector: currentTickSector,
+                    ovalSize: viewportSize,
+                    isComplete: phase == .completed,
+                    isLightBackdrop: onboardingUsesLightChrome
+                )
+                .transition(.opacity)
+            } else if phase == .completed {
+                FaceIDSuccessRing(diameter: min(viewportSize.width, viewportSize.height))
                     .transition(.scale.combined(with: .opacity))
             } else if overlayMode == .tiltHold {
                 FaceIDTiltHoldRing(
                     progress: tiltHoldProgress,
-                    cameraDiameter: cameraDiameter,
+                    cameraDiameter: viewportSize.width,
                     isEngaged: tiltIsEngaged,
                     isLightBackdrop: isFlashEnabled
                 )
@@ -732,7 +926,7 @@ struct FaceScanCaptureScreen: View {
 
                 FaceScanTiltArrowHint(
                     direction: tiltDirection,
-                    cameraDiameter: cameraDiameter,
+                    cameraDiameter: viewportSize.width,
                     isEngaged: tiltIsEngaged,
                     isLightBackdrop: isFlashEnabled
                 )
@@ -740,7 +934,7 @@ struct FaceScanCaptureScreen: View {
             } else {
                 FaceIDTickProgressRing(
                     activeSectors: activeTickSectors,
-                    cameraDiameter: cameraDiameter,
+                    cameraDiameter: viewportSize.width,
                     isLightBackdrop: isFlashEnabled
                 )
                 .transition(.opacity)
@@ -978,10 +1172,15 @@ struct FaceScanCaptureScreen: View {
         capturedPayload = payload
         capturedMarkers = FaceWellnessAnalyzer.analyze(from: payload)
 
-        FaceScanScreenFlash.shared.deactivate(animated: true)
+        FaceScanScreenFlash.shared.deactivate(animated: false)
         isFlashEnabled = false
-        HapticManager.shared.notification(.success)
         phase = .completed
+
+        if usesOnboardingFaceOval {
+            submitCapturedScan()
+        } else {
+            HapticManager.shared.notification(.success)
+        }
     }
 
     private func importImage(_ image: UIImage) {
@@ -1069,6 +1268,7 @@ struct FaceScanCaptureScreen: View {
         scanProgress = 0
         ringProgress = 0
         activeTickSectors = []
+        currentTickSector = -1
         overlayMode = .orbitTicks
         tiltHoldProgress = 0
         tiltDirection = .none

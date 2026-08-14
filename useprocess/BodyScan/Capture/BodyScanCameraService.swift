@@ -22,9 +22,14 @@ final class BodyScanCameraService: NSObject, ObservableObject {
     }
 
     @MainActor
-    func requestAccess() async -> Bool {
+    func requestAccess(analyticsSource: String = "face_scan") async -> Bool {
         let granted = await AVCaptureDevice.requestAccess(for: .video)
         refreshAuthorizationStatus()
+        if granted {
+            ProcessAnalytics.trackCameraAuthorized(source: analyticsSource)
+        } else {
+            ProcessAnalytics.trackCameraDenied(source: analyticsSource)
+        }
         return granted
     }
 
@@ -76,7 +81,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
             session.removeOutput(videoOutput)
         }
 
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+        guard let device = ProcessScanCamera.device(position: position),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else {
             session.commitConfiguration()
@@ -85,6 +90,8 @@ final class BodyScanCameraService: NSObject, ObservableObject {
 
         session.addInput(input)
         currentInput = input
+        ProcessScanCamera.prepareForFrontPortraitScan()
+        ProcessScanCamera.lockFrontCameraOutOfUltraWide(device)
 
         if deliversFrames {
             videoOutput.videoSettings = [

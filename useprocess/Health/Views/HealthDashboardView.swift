@@ -34,7 +34,7 @@ struct ProfileHealthSection: View {
         let dataManager = DailyDataManager.shared
 
         if healthManager.isHealthDataAvailable && !healthManager.isAuthorized {
-            await healthManager.requestAuthorizationAsync()
+            await healthManager.requestAuthorizationAsync(analyticsSource: "health_dashboard")
         } else if healthManager.isAuthorized {
             await healthManager.performFullSync()
             await dataManager.updateCurrentDayData(with: healthManager)
