@@ -1,5 +1,10 @@
 import { getIosAppStoreUrl } from "./app-store-urls.js";
-import { appCopy } from "./app-copy.js";
+import { subscribeSiteLanguage } from "./app-copy.js";
+import {
+  applyGetAppDocumentLanguage,
+  getAppPageCopy,
+  mountLanguageSwitch,
+} from "./site-chrome.js";
 import {
   buildAppStoreUrlWithReferral,
   buildReferralDeepLink,
@@ -82,53 +87,34 @@ function showReferralBanner(referralCode) {
   const title = document.getElementById("get-app-title");
   if (!banner || !codeEl || !referralCode) return;
 
+  const copy = getAppPageCopy();
   codeEl.textContent = referralCode;
   banner.classList.remove("hidden");
   banner.hidden = false;
 
-  if (title) {
-    title.textContent = appCopy(
-      "Tu es invité sur Process.",
-      "You're invited to Process."
-    );
-  }
-  if (subtitle) {
-    subtitle.textContent = appCopy(
-      "Code actif — 7 jours offerts sur ton abonnement Apple après ton 1er paiement.",
-      "Code active — 7 free days on your Apple subscription after your first payment."
-    );
-  }
+  if (title) title.textContent = copy.invitedTitle;
+  if (subtitle) subtitle.textContent = copy.invitedSubtitle;
 
   const referralEyebrow = banner.querySelector(".get-app-referral-eyebrow");
-  if (referralEyebrow) {
-    referralEyebrow.textContent = appCopy("Invitation parrainage", "Referral invite");
-  }
+  if (referralEyebrow) referralEyebrow.textContent = copy.referralEyebrow;
 }
 
 function applyGetAppPageCopy() {
+  const copy = getAppPageCopy();
   const title = document.getElementById("get-app-title");
   const subtitle = document.getElementById("get-app-subtitle");
   const iosBtn = document.getElementById("get-app-store-ios");
   const iosEyebrow = iosBtn?.querySelector(".get-app-store-badge__eyebrow");
+  const playBadge = document.querySelector(".get-app-store-badge--play");
+  const playEyebrow = playBadge?.querySelector(".get-app-store-badge__eyebrow");
 
-  if (title) {
-    title.textContent = appCopy("Dégonfle ton visage.", "De-bloat your face.");
-  }
-  if (subtitle) {
-    subtitle.textContent = appCopy(
-      "Process — coach IA & protocole debloat. Télécharge sur iPhone.",
-      "Process — AI coach & debloat protocol. Download on iPhone."
-    );
-  }
-  if (iosEyebrow) {
-    iosEyebrow.textContent = appCopy("Télécharger l'app", "Download the app");
-  }
-  if (iosBtn) {
-    iosBtn.setAttribute(
-      "aria-label",
-      appCopy("Télécharger l'app sur l'App Store", "Download the app on the App Store")
-    );
-  }
+  if (title) title.textContent = copy.title;
+  if (subtitle) subtitle.textContent = copy.subtitle;
+  if (iosEyebrow) iosEyebrow.textContent = copy.iosEyebrow;
+  if (iosBtn) iosBtn.setAttribute("aria-label", copy.iosAria);
+  if (playEyebrow) playEyebrow.textContent = copy.playEyebrow;
+  if (playBadge) playBadge.setAttribute("aria-label", copy.playAria);
+  applyGetAppDocumentLanguage();
 }
 
 function shouldStayOnPage() {
@@ -171,6 +157,15 @@ function wireStoreButtons(referralCode = "") {
 
 export async function mountGetAppPage() {
   const referralCode = parseReferralCodeFromLocation();
+  const langHost = document.getElementById("get-app-lang-host");
+  mountLanguageSwitch(langHost, { compact: true });
+
+  const resync = () => {
+    if (referralCode) showReferralBanner(referralCode);
+    else applyGetAppPageCopy();
+  };
+  subscribeSiteLanguage(resync);
+
   if (referralCode) {
     rememberReferralCode(referralCode);
     showReferralBanner(referralCode);

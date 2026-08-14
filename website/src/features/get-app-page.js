@@ -1,6 +1,7 @@
 export function getGetAppPageHtml() {
   return `
 <div class="container get-app-container">
+  <div id="get-app-lang-host" class="get-app-lang-host"></div>
   <img height="200" src="/assets/icone.png?v=20260808" alt="Process" class="get-app-logo" decoding="async" />
   <div class="color-foreground">
     <div class="content">
@@ -26,7 +27,7 @@ export function getGetAppPageHtml() {
           </span>
         </span>
       </button>
-      <span class="get-app-store-badge get-app-store-badge--play get-app-store-badge--soon" role="status" aria-label="Google Play — Coming soon">
+      <span class="get-app-store-badge get-app-store-badge--play get-app-store-badge--soon" role="status">
         <svg class="get-app-store-badge__logo get-app-store-badge__logo--play" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path fill="#EA4335" d="M3.6 2.2 13.4 12 3.6 21.8c-.4-.2-.6-.6-.6-1V3.2c0-.4.2-.8.6-1z"/>
           <path fill="#FBBC04" d="m13.4 12 2.7-2.7 4.4 2.5c.6.3.6 1.1 0 1.4l-4.4 2.5L13.4 12z"/>
@@ -34,7 +35,7 @@ export function getGetAppPageHtml() {
           <path fill="#34A853" d="M13.4 12 16.1 14.7 4.5 21.8c-.3.2-.6.1-.9 0L13.4 12z"/>
         </svg>
         <span class="get-app-store-badge__copy">
-          <span class="get-app-store-badge__eyebrow">Coming soon</span>
+          <span class="get-app-store-badge__eyebrow">Bientôt disponible</span>
           <span class="get-app-store-badge__name">Google Play</span>
         </span>
       </span>

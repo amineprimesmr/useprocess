@@ -70,15 +70,16 @@
 
     <footer class="site">
       <nav>
-        <a href="/">Accueil</a>
-        <a href="/confidentialite">Confidentialité</a>
-        <a href="/cgu">CGU</a>
-        <a href="/support">Support</a>
-        <a href="/sources-sante">Sources santé</a>
+        <a href="/" data-i18n="home">Accueil</a>
+        <a href="/confidentialite" data-i18n="privacy">Confidentialité</a>
+        <a href="/cgu" data-i18n="terms">CGU</a>
+        <a href="/support" data-i18n="support">Support</a>
+        <a href="/sources-sante" data-i18n="health">Sources santé</a>
       </nav>
-      <p>© <span id="year"></span> Process. Tous droits réservés.</p>
+      <p>© <span id="year"></span> Process. <span data-i18n="rights">Tous droits réservés.</span></p>
     </footer>
   </main>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="/js/site-language.js"></script>
 </body>
 </html>

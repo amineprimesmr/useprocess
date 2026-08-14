@@ -3,12 +3,16 @@
  */
 
 #landing {
-  background: #09090b;
-  color: #f1f5f9;
+  background: #f2f2f2;
+  color: #0c0b11;
+}
+
+#landing:has(.fk-page) #site-footer-process {
+  display: none;
 }
 
 #landing .landing-main-cinematic {
-  background: #09090b;
+  background: transparent;
 }
 
 #landing .landing-faq-list {

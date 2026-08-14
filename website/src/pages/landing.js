@@ -1,9 +1,9 @@
-import { initLandingAnimations } from "../features/landing.js";
+import { initSiteLanguage } from "../features/app-copy.js";
 import { mountLandingCinematic } from "../landing-cinematic/mount.jsx";
 
 export default {
   init() {
-    initLandingAnimations();
+    initSiteLanguage();
     mountLandingCinematic();
   },
 };

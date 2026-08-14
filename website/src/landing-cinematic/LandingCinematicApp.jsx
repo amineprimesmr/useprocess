@@ -1,5 +1,5 @@
-import { FinTapPage } from "./FinTapPage.jsx";
+import { ProcessLandingPage } from "../process-landing/ProcessLandingPage.jsx";
 
 export function LandingCinematicApp() {
-  return <FinTapPage />;
+  return <ProcessLandingPage />;
 }

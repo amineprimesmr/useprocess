@@ -20,6 +20,8 @@
   ],
   "rewrites": [
     { "source": "/join/(.*)", "destination": "/index.html" },
+    { "source": "/studio", "destination": "/studio.html" },
+    { "source": "/studio/", "destination": "/studio.html" },
     { "source": "/tiktok/callback", "destination": "/tiktok/callback/index.html" },
     { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "host", "value": "join.useprocess.xyz" }] }
   ],
