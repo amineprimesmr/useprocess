@@ -1,0 +1,22 @@
+---
+description: Website FR/US copy — use appCopy for all user-facing strings
+globs: website/**/*.{js,html,css}
+alwaysApply: false
+---
+
+# Website bilingual FR / US
+
+## Helper
+
+```javascript
+import { appCopy, prefersEnglish } from "./app-copy.js";
+
+element.textContent = appCopy("Texte FR", "English text");
+```
+
+## Rules
+
+- Never ship French-only strings in JS that users see (landing, get-app, referral).
+- `get-app-page.js` HTML may default to FR; **must** be overridden in `get-app-mount.js` via `appCopy` on mount.
+- Referral clipboard text: always bilingual branches in `referral-link.js`.
+- Legal/static pages (`cgu`, `confidentialite`) are FR-only for now — do not mix EN product copy there without a dedicated i18n pass.

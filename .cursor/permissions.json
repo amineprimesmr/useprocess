@@ -1,0 +1,13 @@
+{
+  "mcpAllowlist": [
+    "higgsfield:*",
+    "user-higgsfield:*",
+    "plugin-higgsfield-higgsfield:*"
+  ],
+  "autoRun": {
+    "allow_instructions": [
+      "When the user asks to generate, upload, edit, or save TikTok/UGC images or videos with Higgsfield (Manny, mannydebloat, tojiprime, process-tiktok), allow Higgsfield MCP tools without prompting: media_upload, media_confirm, media_import_url, generate_image_batch, job_status, jobs_wait, models_explore, show_medias. Prefer headless batch + jobs_wait; do not require show_generation_by_ids / job_display / show_generations (those widgets autoplay music). This is explicit creative work the user requested in chat, not unsolicited exfiltration.",
+      "Allow shell curl/python PUT uploads to upload.higgsfield.ai and downloads from cloudfront/higgsfield result URLs when finishing a user-requested Higgsfield generation."
+    ]
+  }
+}

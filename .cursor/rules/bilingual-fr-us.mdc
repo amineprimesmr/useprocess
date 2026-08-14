@@ -1,0 +1,71 @@
+---
+description: Bilingual FR/US — every user-facing string must work in French and US English
+alwaysApply: true
+---
+
+# Bilingual FR / US English (Process)
+
+Every user-facing change in Process must work in **French (FR)** and **US English (EN)**.
+
+## App (Swift / iOS)
+
+### API
+
+- **UI copy**: `AppCopy.t("…", en: "…")` — French first, English second.
+- **Nonisolated** (catalogs, notifications, default args, Shared): `AppCopy.tSync("…", en: "…")`.
+- **CTAs**: reuse `AppCopy.continueCTA`, `AppCopy.close`, `AppCopy.settings`, etc. when they fit.
+- **Branding**: `AppBranding.replacingProcess` runs inside `AppCopy` — do not bypass it with raw `"Process"` hacks.
+
+### Language source
+
+- Product language = `ProcessAppLanguage` (`process.app.language` in UserDefaults).
+- **Never** use `Locale.current` or `NSLocalizedString` for product copy.
+- **Shared / widgets / Live Activity**: use `ProcessSharedLanguage.t(_:en:)` (reads the same UserDefaults key + device fallback).
+
+### Checklist before finishing a Swift change
+
+1. No bare `Text("…")` / `Button("…")` / `navigationTitle("…")` with words (numbers, `%`, `ml`, emojis OK).
+2. No French-only strings in models, catalogs, notifications, accessibility labels.
+3. No English string passed as the **French** argument to `AppCopy.t`.
+4. Dynamic strings: interpolate inside both FR and EN versions.
+5. New Shared copy → extend `ProcessHydrationCopy` or `ProcessSharedLanguage`, not duplicate logic.
+
+### Examples
+
+```swift
+// ❌ BAD
+Text("Continuer")
+Text("Streak")
+title: "Repas debloat"
+
+// ✅ GOOD
+Text(AppCopy.t("Continuer", en: "Continue"))
+Text(AppCopy.t("Série", en: "Streak"))
+title: AppCopy.tSync("Repas debloat", en: "Debloat meal")
+```
+
+```swift
+// ❌ BAD — English in FR slot
+AppCopy.t("Time to drink", en: "Time to drink")
+
+// ✅ GOOD
+ProcessSharedLanguage.t("C'est l'heure de boire", en: "Time to drink")
+```
+
+## Website (`website/`)
+
+- User-facing JS copy: `appCopy("…", "…")` from `website/src/features/app-copy.js`.
+- Detect language via `prefersEnglish()` (browser `navigator.languages`, same FR/en logic as the app).
+- Static HTML fallback (FR) is OK if `get-app-mount.js` or the page mount overwrites copy on load.
+- Referral/share payloads must include both locales in `buildReferralShareText`.
+
+## When adding a feature
+
+Ship **both locales in the same PR** — not a follow-up. If copy is provisional, still add EN placeholders; never leave FR-only user text.
+
+## Review triggers (grep before merge)
+
+- `Text("` with letters after the quote in Swift
+- `title: "` / `detail: "` with French prose in catalogs
+- `Locale.current` for copy (not formatting)
+- Website strings assigned without `appCopy`

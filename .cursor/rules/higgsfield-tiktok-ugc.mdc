@@ -1,0 +1,78 @@
+---
+description: Higgsfield TikTok UGC image generation — format, cost, realism, autonomy
+alwaysApply: true
+---
+
+# Higgsfield / TikTok UGC generation (Process)
+
+When generating images with Higgsfield in this workspace (Manny, mannydebloat, process-tiktok UGC):
+
+## Format (locked)
+
+- Always `aspect_ratio: "9:16"` (TikTok vertical). Never 3:4, 4:5, 1:1, etc. unless the user explicitly overrides.
+- Save Manny / mannydebloat / mannyprime outputs under `/Users/amine/Desktop/process-tiktok/UGC/manny/` with clear filenames. Same folder as the rest of the Manny UGC — never `ugc-faces/`. Toji outputs stay in their own persona folder.
+- Open the file when done. Do not ask the user which variant they prefer.
+
+## Cost / credits (locked)
+
+- Default **`count: 1`** only. Never generate 2–4 variants unless the user explicitly asks for several.
+- Model default: **`nano_banana_pro`** (server may map to nano_banana_2).
+- Resolution default: **`1k`** (cheaper). Use `2k`/`4k` only if the user asks for higher quality.
+- Do not call `get_cost` every time. Do not spam retries. Max **1 retry** if NSFW/fail, then stop and report.
+- Prefer reuse of already-uploaded `media_id`s for mannydebloat refs; re-upload only when IDs are missing/expired.
+
+## Realism / spontaneity (locked)
+
+Prompts must push **real unedited iPhone photo**, not AI polish:
+
+- Front-camera selfie OR candid phone photo; say explicitly if mirror vs front camera.
+- Imperfections: slight motion blur, phone noise/grain, uneven indoor light, mild wide-angle face distortion, natural skin pores, not beauty-filtered, not studio, not cinematic color grade.
+- Identity lock from mannydebloat refs: short buzz lineup, thin mustache + small chin goatee (not full beard), thick brows, lean jaw.
+- Avoid shirtless / sexualized locker-room phrasing that triggers NSFW; keep SFW and clothed unless user asks otherwise.
+
+## Colorimetry / forbidden looks (locked)
+
+- Always **iPhone Photographic Style Natural** / neutral daylight or ordinary indoor light. Muted, flat phone JPEG. Smart HDR only as a phone cue — never as a grade.
+- **Never** neon night cinematic color, teal-orange, heavy magenta/purple cast, crushed blacks with neon rim light, Portra/film stock looks, Rembrandt portrait light, or oversaturated night-out vibes.
+- Prefer ordinary life lighting: bus daylight, locker fluorescent, kitchen window, overcast street, cafe ambient — not club/bar neon.
+- Expression default for everyday UGC: normal / lightly happy / soft smile — not sad, exhausted, or dead-eyed unless the user asks.
+- Everyday scenes must be **coherent and discreet**: believable why someone would take that photo. No hero high-angle bus selfies, no staged “content breakfast” props that make no sense. Prefer phone-at-chest/eye-level checking-messages framing, quiet commute, couch scroll, locker mirror, etc.
+
+## Auth (locked)
+
+Higgsfield hosted MCP (`https://mcp.higgsfield.ai/mcp`) uses a short session. Cursor’s native HTTP MCP transport does **not** refresh it — the connector can show “connected” / `mcp_auth` OK while every tool still returns “session expired”. Cursor staff confirmed the Higgsfield sign-in cannot renew itself (forum, 13 Aug 2026). Higgsfield CLI has the same short tokens (~1 day). There is no official long-lived MCP API key.
+
+This workspace must use **mcp-remote** (stdio) in `.cursor/mcp.json` and `~/.cursor/mcp.json`, not `"type": "http"`. mcp-remote stores OAuth tokens in `~/.mcp-auth` and refreshes them. If a tool still says session expired: do **not** loop reconnect / mcp_auth. Tell the user to click Connect once on the Higgsfield MCP (browser login), then retry the generation.
+
+## Autonomy (locked)
+
+- Execute end-to-end without asking the user to choose, confirm, or “run” mid-flow.
+- Do not ask “which variant?” — produce one image and deliver the path.
+- If Cursor Auto-review still blocks Higgsfield MCP, retry once with approval request; remind once that `user-higgsfield:*` must stay on the MCP allowlist / Auto-review allow instructions (see `.cursor/permissions.json`).
+- Never narrate long status updates; deliver the file.
+
+## Scene-reference workflow (locked)
+
+When the user provides example photos for tojibloat (or tojiprime) regenerations:
+
+- Example images are **pose / framing / context / mise-en-scène / lighting situation ONLY**.
+- Recreate the scene as closely as possible (angle, crop, body pose, environment, props, activity).
+- **Never** copy, keep, blend, or show the face/identity of anyone in the example photos.
+- Subject face/identity must always be **tojibloat** (or tojiprime if asked) from the locked character refs — swap the person, keep the scene.
+- If an example shows another person clearly, treat them as a pose mannequin only; output must be toji only.
+
+The Higgsfield gallery/generation widgets autoplay music inside Cursor — never open them for UGC work.
+
+- Prefer **`generate_image_batch`** + **`jobs_wait`** (headless). Never call `show_generation_by_ids`, `show_generations`, `job_display`, or `reveal_generation`.
+- Avoid single `generate_image` when possible (it opens the noisy generation widget). If you must use it, do not also call gallery tools afterward.
+- Deliver by downloading `result_url` to the right UGC folder and `open` the local file only.
+
+## Phone-clean metadata (locked)
+
+After every download (Higgsfield `result_url`, ChatGPT export, Gemini, etc.) run:
+
+```
+python3 /Users/amine/Desktop/process-tiktok/_outils/scripts/phone_clean.py "$FILE"
+```
+
+Never deliver / `open` a file that still has C2PA, `hf-job-id`, IPTC `digitalSourceType`, or ChatGPT provenance chunks. This replaces the Discord + screenshot workaround. Do not skip it. Do not use online “watermark remover” sites (they alter the face).
