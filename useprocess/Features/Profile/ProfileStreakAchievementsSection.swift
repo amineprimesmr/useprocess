@@ -41,6 +41,7 @@ struct ProfileStreakAchievementsSection: View {
     @Bindable private var planProgressStore = ProcessPlanProgressStore.shared
     @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
     @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
+    @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
 
     @State private var heroAppeared = false
     @State private var statsAppeared = false
@@ -60,7 +61,9 @@ struct ProfileStreakAchievementsSection: View {
         ProcessStreakStore.buildProgramStreakWindow(
             plan: planStore.plan,
             progress: progress,
-            recordsByDay: trajectoryStore.allRecordsByDay
+            recordsByDay: trajectoryStore.allRecordsByDay,
+            completedKeys: eveningStore.submittedDayKeys,
+            now: creatorMode.effectiveNow
         )
     }
 
@@ -135,8 +138,9 @@ struct ProfileStreakAchievementsSection: View {
     private func openDailyCheckIn() {
         HapticManager.shared.impact(.medium)
         streakStore.sync(from: planStore.plan)
+        guard !ProcessEveningCheckInSchedule.isTodayStreakSettledForNavigation() else { return }
         ProcessEveningCheckInPresenter.shared.present(
-            targetDate: Date(),
+            targetDate: ProcessEveningCheckInSchedule.preferredManualCheckInDate(),
             isRequired: false
         )
     }
@@ -203,13 +207,15 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var streakDayLabel: String {
-        AppCopy.t("Day Streak", en: "Day Streak")
+        AppCopy.t("jours de série", en: "Day Streak")
     }
 
     private var showsCountdownBadge: Bool {
-        if snapshot.isTodayComplete && snapshot.currentStreak == 0 { return false }
-        if !snapshot.isTodayComplete, !hasSubmittedToday { return true }
-        return snapshot.currentStreak == 0
+        if snapshot.isTodayComplete && streakStore.displayStreak == 0 { return false }
+        if !snapshot.isTodayComplete, !hasSubmittedToday {
+            return ProcessEveningCheckInSchedule.isBilanWindowOpen()
+        }
+        return streakStore.displayStreak == 0
     }
 
     private var consistencyBadge: some View {
@@ -237,9 +243,11 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private var consistencyEmoji: String {
-        if snapshot.isTodayComplete && snapshot.currentStreak == 0 { return "✅" }
-        if showsCountdownBadge { return "⏳" }
-        switch snapshot.currentStreak {
+        if snapshot.isTodayComplete && streakStore.displayStreak == 0 { return "✅" }
+        if !snapshot.isTodayComplete, !hasSubmittedToday {
+            return streakStore.displayStreak > 0 ? "🔥" : "💪"
+        }
+        switch streakStore.displayStreak {
         case 0: return "💪"
         case 1...2: return "🔥"
         case 3...6: return "✨"
@@ -249,16 +257,13 @@ struct ProfileStreakAchievementsSection: View {
     }
 
     private func consistencyMessage(at date: Date = Date()) -> String {
-        if snapshot.isTodayComplete && snapshot.currentStreak == 0 {
+        if snapshot.isTodayComplete && streakStore.displayStreak == 0 {
             return AppCopy.t("Premier jour validé !", en: "First day completed!")
         }
-        // Compte à rebours tant que le check du jour n'est pas validé.
         if !snapshot.isTodayComplete, !hasSubmittedToday {
             return ProcessEveningCheckInSchedule.streakLaunchMessage(from: date)
         }
-        switch snapshot.currentStreak {
-        case 0:
-            return ProcessEveningCheckInSchedule.streakLaunchMessage(from: date)
+        switch streakStore.displayStreak {
         case 1...2:
             return AppCopy.t("Belle régularité !", en: "Great consistency!")
         case 3...6:

@@ -1,69 +1,59 @@
 import SwiftUI
 
 struct CoachEveningChecklistCard: View {
-    @Bindable private var planStore = WelcomePlanStore.shared
+    @Bindable private var streakStore = ProcessStreakStore.shared
+    @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
     @Environment(\.appTheme) private var theme
 
-    private var plan: FaceOriginPlan? { planStore.plan }
-    private var day: OriginProgramDay? {
-        plan.flatMap { OriginPlanPresenter.todayDay(in: $0) }
-    }
-
     var body: some View {
-        if let plan, let day {
-            VStack(alignment: .leading, spacing: 12) {
-                header(plan: plan, day: day)
-
-                PlanDayChronologicalTimeline(
-                    day: day,
-                    plan: plan,
-                    selectedDate: Date(),
-                    isEditable: true,
-                    onTaskStatusChange: { taskId, dayId, status in
-                        WelcomePlanStore.shared.setJournalTaskStatus(status, taskId: taskId, dayId: dayId)
-                    },
-                    onCompleteAll: {
-                        WelcomePlanStore.shared.completeAllJournalTasks(dayId: day.id)
-                    }
-                )
-                .onAppear {
-                    WelcomePlanStore.shared.syncCoreJournalTasks(dayId: day.id)
-                }
-            }
-            .padding(14)
-            .background(cardBackground)
-        }
-    }
-
-    private func header(plan: FaceOriginPlan, day: OriginProgramDay) -> some View {
-        let summary = OriginPlanPresenter.journalCompletionSummary(
-            plan: plan,
-            day: day,
-            date: Date()
-        )
-        let isComplete = OriginPlanPresenter.isDayJournalFilled(plan: plan, day: day)
-
-        return VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "checklist")
+                Image(systemName: "checkmark.seal.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.onboardingAccent)
-                Text(AppCopy.t("Checklist du soir", en: "Evening checklist"))
+                Text(AppCopy.t("Bilan du soir", en: "Evening check-in"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.primaryText)
                 Spacer(minLength: 0)
-                if isComplete {
-                    Label(AppCopy.t("Complet", en: "Complete"), systemImage: "checkmark.circle.fill")
+                if eveningStore.hasSubmittedToday {
+                    Label(AppCopy.t("Fait", en: "Done"), systemImage: "checkmark.circle.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color(red: 0.35, green: 0.78, blue: 0.45))
                 }
             }
 
-            Text(summary.analysis)
+            Text(statusLine)
                 .font(.caption)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                HapticManager.shared.impact(.medium)
+                CoachPlanNavigationBridge.shared.openEveningCheckIn()
+            } label: {
+                Text(
+                    eveningStore.hasSubmittedToday
+                        ? AppCopy.t("Voir mon bilan", en: "View my check-in")
+                        : AppCopy.t("Ouvrir le bilan du soir", en: "Open evening check-in")
+                )
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+            }
+            .processGlassButton(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
+        .padding(14)
+        .background(cardBackground)
+    }
+
+    private var statusLine: String {
+        if eveningStore.hasSubmittedToday {
+            return AppCopy.t(
+                "Série \(streakStore.displayStreak) jour\(streakStore.displayStreak > 1 ? "s" : "") — tu peux modifier tes réponses sur l’accueil.",
+                en: "\(streakStore.displayStreak)-day streak — you can update your answers on Home."
+            )
+        }
+        return ProcessEveningCheckInSchedule.streakLaunchMessage()
     }
 
     private var cardBackground: some View {

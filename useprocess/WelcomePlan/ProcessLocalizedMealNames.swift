@@ -35,15 +35,15 @@ enum ProcessLocalizedMealContent {
     @MainActor
     static func role(_ fr: String) -> String {
         switch fr.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-        case "protéine", "proteine":
+        case "protéine", "proteine", "protein":
             return AppCopy.t("Protéine", en: "Protein")
-        case "glucide":
+        case "glucide", "carb", "carbs":
             return AppCopy.t("Glucide", en: "Carb")
-        case "légume", "legume":
+        case "légume", "legume", "vegetable", "veg":
             return AppCopy.t("Légume", en: "Vegetable")
-        case "gras":
+        case "gras", "fat":
             return AppCopy.t("Gras", en: "Fat")
-        case "autre":
+        case "autre", "other":
             return AppCopy.t("Autre", en: "Other")
         default:
             return fr

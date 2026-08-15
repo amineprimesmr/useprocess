@@ -266,18 +266,18 @@ final class ProcessDebloatTrajectoryStore {
             graceAvailable: grace
         )
 
-        record.streakAfterDay = transition.streak
+        record.streakAfterDay = submissionStreak(on: dayKey)
         record.graceUsed = transition.graceUsed
         if transition.graceUsed {
             state.graceUsedDayKeys.insert(dayKey)
         }
         state.consecutiveMisses = transition.consecutiveMisses
-        state.longestStreak = max(state.longestStreak, transition.streak)
+        state.longestStreak = max(state.longestStreak, record.streakAfterDay)
 
         record.compositeScore = ProcessDebloatTrajectoryEngine.compositeScore(
             behaviorScore: record.behaviorScore,
             scanScore: record.scanScore,
-            momentumStreak: transition.streak
+            momentumStreak: record.streakAfterDay
         )
 
         let points = chartPoints(dayCount: 14)
@@ -296,6 +296,23 @@ final class ProcessDebloatTrajectoryStore {
         if recomputeStreak {
             rebuildAllStreaks()
         }
+    }
+
+    private func submissionStreakKeys() -> Set<String> {
+        ProcessEveningCheckInStore.shared.submittedDayKeys
+    }
+
+    private func isPausedDayKey(_ key: String) -> Bool {
+        guard let date = ProcessDebloatTrajectoryEngine.date(from: key) else { return false }
+        return ProcessActivityStatusStore.shared.status(for: date) != .active
+    }
+
+    private func submissionStreak(on dayKey: String) -> Int {
+        ProcessStreakMath.streakEnding(
+            on: dayKey,
+            submittedKeys: submissionStreakKeys(),
+            isPaused: { key in isPausedDayKey(key) }
+        )
     }
 
     private func rebuildAllStreaks(now: Date = Date()) {
@@ -322,9 +339,7 @@ final class ProcessDebloatTrajectoryStore {
                     now: now
                 )
             } else {
-                let isPaused = ProcessActivityStatusStore.shared.status(
-                    for: ProcessDebloatTrajectoryEngine.date(from: key) ?? now
-                ) != .active
+                let isPaused = isPausedDayKey(key)
                 record.verdict = isPaused
                     ? .paused
                     : ProcessDebloatTrajectoryEngine.unsubmittedVerdict(for: key, now: now)
@@ -337,18 +352,19 @@ final class ProcessDebloatTrajectoryStore {
                 graceAvailable: grace
             )
 
-            record.streakAfterDay = transition.streak
+            let submissionStreak = submissionStreak(on: key)
+            record.streakAfterDay = submissionStreak
             record.graceUsed = transition.graceUsed
             if transition.graceUsed {
                 graceKeys.insert(key)
             }
             consecutiveMisses = transition.consecutiveMisses
-            longest = max(longest, transition.streak)
+            longest = max(longest, submissionStreak)
 
             record.compositeScore = ProcessDebloatTrajectoryEngine.compositeScore(
                 behaviorScore: record.behaviorScore,
                 scanScore: record.scanScore,
-                momentumStreak: transition.streak
+                momentumStreak: submissionStreak
             )
             record.aiSummary = ProcessDebloatTrajectoryEngine.aiSummary(
                 record: record,
@@ -369,14 +385,6 @@ final class ProcessDebloatTrajectoryStore {
         state.consecutiveMisses = consecutiveMisses
         state.consecutiveCardioMisses = consecutiveCardioMisses
         state.longestStreak = max(state.longestStreak, longest)
-    }
-
-    private func isValidatedDay(_ record: DebloatDayRecord) -> Bool {
-        let cardioBefore = ProcessDebloatValidation.consecutiveCardioMisses(
-            before: record.dayKey,
-            in: state.recordsByDay
-        )
-        return record.countsAsValidatedDay(consecutiveCardioMissesBefore: cardioBefore)
     }
 
     private func previousStreak(before dayKey: String) -> Int {
@@ -426,20 +434,19 @@ final class ProcessDebloatTrajectoryStore {
         let todayRecord = state.recordsByDay[todayKey]
 
         let chartPoints = chartPoints(dayCount: 30)
-        let current = ProcessDebloatTrajectoryEngine.currentStreak(
-            from: Array(state.recordsByDay.values),
-            today: today,
+        let submittedKeys = ProcessEveningCheckInStore.shared.submittedDayKeys
+        let current = ProcessStreakMath.currentStreak(
+            submittedKeys: submittedKeys,
+            isPaused: { key in
+                guard let date = ProcessDebloatTrajectoryEngine.date(from: key) else { return false }
+                return ProcessActivityStatusStore.shared.status(for: date) != .active
+            },
+            now: now,
             calendar: calendar
         )
 
-        let streakEligibleKeys = Set(
-            state.recordsByDay.values
-                .filter { isValidatedDay($0) }
-                .map(\.dayKey)
-        )
-
         let calendarWeek = ProcessStreakStore.buildCalendarWeekSnapshots(
-            completedKeys: streakEligibleKeys,
+            completedKeys: submittedKeys,
             recordsByDay: state.recordsByDay,
             now: now,
             calendar: calendar
@@ -454,14 +461,7 @@ final class ProcessDebloatTrajectoryStore {
 
         let nextMilestone = ProcessStreakMilestone.catalog.first(where: { $0.days > current })
         let daysUntil = nextMilestone.map { $0.days - current }
-
-        let todayCardioBefore = ProcessDebloatValidation.consecutiveCardioMisses(
-            before: todayKey,
-            in: state.recordsByDay
-        )
-        let isTodayValidated = todayRecord?.countsAsValidatedDay(
-            consecutiveCardioMissesBefore: todayCardioBefore
-        ) == true
+        let isTodayComplete = submittedKeys.contains(todayKey)
 
         let updated = DebloatTrajectorySnapshot(
             currentStreak: current,
@@ -469,14 +469,14 @@ final class ProcessDebloatTrajectoryStore {
             todayCompositeScore: todayRecord?.compositeScore ?? 0,
             todayVerdict: todayRecord?.verdict,
             todayProgress: todayProgress,
-            isTodayComplete: isTodayValidated,
+            isTodayComplete: isTodayComplete,
             trajectoryTrend: ProcessDebloatTrajectoryEngine.trajectoryTrend(for: chartPoints),
             velocitySlope: ProcessDebloatTrajectoryEngine.velocitySlope(for: chartPoints),
             chartPoints: chartPoints,
             calendarWeek: calendarWeek,
             nextMilestone: nextMilestone,
             daysUntilNextMilestone: daysUntil,
-            totalValidatedDays: state.recordsByDay.values.filter { isValidatedDay($0) }.count
+            totalValidatedDays: submittedKeys.count
         )
 
         if snapshot != updated {
@@ -485,7 +485,7 @@ final class ProcessDebloatTrajectoryStore {
 
         ProcessStreakStore.shared.applyTrajectorySnapshot(
             updated,
-            eligibleKeys: streakEligibleKeys,
+            eligibleKeys: submittedKeys,
             recordsByDay: state.recordsByDay
         )
     }

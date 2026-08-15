@@ -129,10 +129,9 @@ extension SportOnboardingView {
                 onBack: previousStep
             )
         case .dashboardPreview:
-            DashboardPreviewStepView(onComplete: nextStep)
+            DashboardPreviewStepView(onComplete: { advanceFromDashboardPreview() })
         case .dreamFaceCommit:
-            EmptyView()
-                .onAppear { skipTransientStep() }
+            DreamFaceCommitStepView(onComplete: nextStep)
         case .programCreation:
             OnboardingProgramCreationStepView(
                 viewModel: viewModel,

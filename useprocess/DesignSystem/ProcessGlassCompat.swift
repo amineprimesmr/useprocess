@@ -164,9 +164,7 @@ private struct ProcessNativeOrManualPressScale: ViewModifier {
         if #available(iOS 26.0, *), usesNativeInteractiveGlass {
             content
         } else {
-            content
-                .scaleEffect(isPressed ? 0.97 : 1)
-                .animation(.spring(response: 0.22, dampingFraction: 0.9), value: isPressed)
+            content.processButtonPressScale(isPressed: isPressed)
         }
     }
 }

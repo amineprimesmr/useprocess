@@ -90,7 +90,7 @@ struct OnboardingStepContainer<Content: View>: View {
             }
 
             // Contenu apparaît ensuite avec un léger délai pour effet cascade
-            withAnimation(.onboardingEntrance.delay(0.12)) {
+            withAnimation(.onboardingEntrance.delay(0.06)) {
                 contentOpacity = 1.0
                 contentOffset = 0
             }

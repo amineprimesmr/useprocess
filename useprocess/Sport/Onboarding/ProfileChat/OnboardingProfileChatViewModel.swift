@@ -415,9 +415,16 @@ final class OnboardingProfileChatViewModel {
     func submitSingleChoice(_ choiceId: String) async {
         guard !isSubmittingAnswer, let question = currentQuestion else { return }
         isSubmittingAnswer = true
-        let label = question.choices.first(where: { $0.id == choiceId })?.label ?? choiceId
+        let rawLabel = question.choices.first(where: { $0.id == choiceId })?.label ?? choiceId
+        let label = question.id == "sport_pick"
+            ? OnboardingSportCatalog.localizedName(rawLabel)
+            : rawLabel
 
         switch question.id {
+        case "sport_pick":
+            OnboardingDataModel.shared.selectedSports = [choiceId]
+            OnboardingDataModel.shared.persistSelectedSports()
+            onboardingViewModel?.isSportsSelected = true
         case "debloat_driver":
             if let driver = OnboardingDebloatDriver(rawValue: choiceId) {
                 onboardingViewModel?.onboardingDebloatDrivers = [driver]
@@ -480,7 +487,7 @@ final class OnboardingProfileChatViewModel {
         guard !isSubmittingAnswer,
               currentQuestion?.id == "sport_pick" else { return }
         isSubmittingAnswer = true
-        let display = OnboardingSportCatalog.nameWithoutEmoji(sport)
+        let display = OnboardingSportCatalog.localizedName(sport)
         OnboardingDataModel.shared.selectedSports = [sport]
         OnboardingDataModel.shared.persistSelectedSports()
         onboardingViewModel?.isSportsSelected = true

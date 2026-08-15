@@ -4,6 +4,7 @@ import SwiftUI
 struct ProcessProfileHomeView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
+    var isOnboardingPreview: Bool = false
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
@@ -41,6 +42,7 @@ struct ProcessProfileHomeView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .processClearUIKitHostingBackground()
         .task {
+            guard !isOnboardingPreview else { return }
             if profileService.currentProfile == nil {
                 await profileService.loadProfile()
             }
@@ -52,6 +54,7 @@ struct ProcessProfileHomeView: View {
             )
         }
         .onAppear {
+            guard !isOnboardingPreview else { return }
             profileStore.bind(unified: profileService.currentProfile)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
         }

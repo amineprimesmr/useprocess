@@ -1,11 +1,52 @@
 import SwiftUI
 
+/// Feedback tactile visuel standard — scale down au appui (pattern iOS natif).
+enum ProcessButtonPressFeedback {
+    static let pressedScale: CGFloat = 0.96
+    static let animation: Animation = .spring(response: 0.25, dampingFraction: 0.7)
+    /// Tap rapide : `isPressed` repasse à false avant la fin du spring — on garde le shrink visible.
+    static let minimumPressDuration: TimeInterval = 0.12
+}
+
+/// Scale down au press, y compris sur tap court (pas seulement appui long).
+struct ProcessButtonPressScaleEffect: ViewModifier {
+    let isPressed: Bool
+
+    @State private var showsPress = false
+    @State private var releaseGeneration = 0
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(showsPress ? ProcessButtonPressFeedback.pressedScale : 1)
+            .animation(ProcessButtonPressFeedback.animation, value: showsPress)
+            .onChange(of: isPressed) { _, pressed in
+                if pressed {
+                    releaseGeneration &+= 1
+                    showsPress = true
+                } else {
+                    let generation = releaseGeneration
+                    DispatchQueue.main.asyncAfter(
+                        deadline: .now() + ProcessButtonPressFeedback.minimumPressDuration
+                    ) {
+                        guard generation == releaseGeneration else { return }
+                        showsPress = false
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    func processButtonPressScale(isPressed: Bool) -> some View {
+        modifier(ProcessButtonPressScaleEffect(isPressed: isPressed))
+    }
+}
+
 struct ProcessPlainButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(Rectangle())
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
+            .processButtonPressScale(isPressed: configuration.isPressed)
     }
 }
 
@@ -25,6 +66,7 @@ private struct GlassFallbackStyle: ButtonStyle {
                     .stroke(theme.cardStroke, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .processButtonPressScale(isPressed: configuration.isPressed)
     }
 }
 
@@ -34,8 +76,7 @@ private struct GlassCircleFallbackStyle: ButtonStyle {
             .contentShape(Circle())
             .background(.ultraThinMaterial, in: Circle())
             .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
+            .processButtonPressScale(isPressed: configuration.isPressed)
     }
 }
 
@@ -45,8 +86,7 @@ private struct GlassCapsuleFallbackStyle: ButtonStyle {
             .contentShape(Capsule())
             .background(.ultraThinMaterial, in: Capsule())
             .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
+            .processButtonPressScale(isPressed: configuration.isPressed)
     }
 }
 
@@ -54,20 +94,16 @@ private struct OnboardingPrimaryActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
 
     func makeBody(configuration: Configuration) -> some View {
-        Group {
-            if colorScheme == .light {
-                configuration.label
-                    .contentShape(Capsule())
-                    .background(Color.black, in: Capsule())
-            } else {
-                configuration.label
-                    .contentShape(Capsule())
-                    .processGlassEffect(in: Capsule())
-            }
-        }
-        .scaleEffect(configuration.isPressed ? 0.97 : 1)
-        .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
-        .opacity(configuration.isPressed ? 0.92 : 1)
+        configuration.label
+            .contentShape(Capsule())
+            .background(OnboardingTheme.filledButtonBackground(for: colorScheme), in: Capsule())
+            .shadow(
+                color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.18),
+                radius: configuration.isPressed ? 8 : 12,
+                y: configuration.isPressed ? 2 : 4
+            )
+            .opacity(configuration.isPressed ? 0.92 : 1)
+            .processButtonPressScale(isPressed: configuration.isPressed)
     }
 }
 

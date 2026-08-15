@@ -29,7 +29,8 @@ struct CoachConversation: Identifiable, Codable, Equatable, Sendable {
         if let user = messages.last(where: { $0.role == .user })?.text, !user.isEmpty {
             return user
         }
-        return messages.last(where: { $0.role == .assistant })?.text ?? "Conversation vide"
+        return messages.last(where: { $0.role == .assistant })?.text
+            ?? AppCopy.tSync("Conversation vide", en: "Empty conversation")
     }
 
     /// Sujet court pour l’historique (menu latéral).
@@ -37,17 +38,17 @@ struct CoachConversation: Identifiable, Codable, Equatable, Sendable {
         if let firstUser = messages.first(where: { $0.role == .user })?.text {
             let keywords = CoachConversationSubjectService.keywords(from: firstUser)
             if let subjectLabel, !subjectLabel.isEmpty, !Self.looksLikeFullQuestion(subjectLabel) {
-                return subjectLabel
+                return Self.localizedStoredTitle(subjectLabel)
             }
             return keywords
         }
         if !Self.isPlaceholderTitle(title), !Self.looksLikeFullQuestion(title) {
-            return title
+            return Self.localizedStoredTitle(title)
         }
         if !Self.isPlaceholderTitle(title) {
             return CoachConversationSubjectService.keywords(from: title)
         }
-        return "Conversation"
+        return AppCopy.tSync("Conversation", en: "Conversation")
     }
 
     var messageCount: Int { messages.count }
@@ -68,7 +69,7 @@ struct CoachConversation: Identifiable, Codable, Equatable, Sendable {
     mutating func applyAutoTitle(from userText: String) {
         let trimmed = userText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        guard title == "Nouvelle conversation" || title.isEmpty else { return }
+        guard Self.isUntitled(title) else { return }
 
         let subject = CoachConversationSubjectService.keywords(from: trimmed)
         subjectLabel = subject
@@ -82,10 +83,38 @@ struct CoachConversation: Identifiable, Codable, Equatable, Sendable {
         title = cleaned
     }
 
-    private static let placeholderTitles: Set<String> = ["Nouvelle conversation", "Conversation", "Conversation vide"]
+    private static let placeholderTitles: Set<String> = [
+        "Nouvelle conversation",
+        "New conversation",
+        "Conversation",
+        "Conversation vide",
+        "Empty conversation",
+    ]
 
     private static func isPlaceholderTitle(_ title: String) -> Bool {
         placeholderTitles.contains(title.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    static func isUntitled(_ title: String) -> Bool {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty
+            || trimmed == "Nouvelle conversation"
+            || trimmed == "New conversation"
+    }
+
+    static func localizedStoredTitle(_ title: String) -> String {
+        switch title.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "Nouvelle conversation", "New conversation":
+            return AppCopy.tSync("Nouvelle conversation", en: "New conversation")
+        case "Conversation":
+            return AppCopy.tSync("Conversation", en: "Conversation")
+        case "Conversation vide", "Empty conversation":
+            return AppCopy.tSync("Conversation vide", en: "Empty conversation")
+        case "Trajectoire debloat", "Debloat trajectory":
+            return AppCopy.tSync("Trajectoire debloat", en: "Debloat trajectory")
+        default:
+            return title
+        }
     }
 
     private static func looksLikeFullQuestion(_ text: String) -> Bool {

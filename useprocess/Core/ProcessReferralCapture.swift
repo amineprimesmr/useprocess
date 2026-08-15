@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 /// Liens et messages de parrainage partagés entre l'app et le site.
 enum ProcessReferralLink {
@@ -123,14 +122,8 @@ enum ProcessReferralAttribution {
         storePending(code)
     }
 
-    /// Site / App Store : le lien est copié dans le presse-papiers avant l’install.
-    static func captureFromPasteboardIfNeeded() {
-        guard pendingCode == nil else { return }
-        guard UIPasteboard.general.hasStrings, let text = UIPasteboard.general.string else { return }
-        guard let code = ProcessReferralLink.parseCode(from: text) else { return }
-        storePending(code)
-        NotificationCenter.default.post(name: .processReferralCodeCaptured, object: nil)
-    }
+    /// Ne jamais lire `UIPasteboard` au launch — iOS affiche « coller depuis le Mac ».
+    /// Le code arrive uniquement via universal link / `process://referral`.
 
     static func applyPendingIfNeeded(to viewModel: OnboardingViewModel) {
         guard let code = pendingCode else { return }

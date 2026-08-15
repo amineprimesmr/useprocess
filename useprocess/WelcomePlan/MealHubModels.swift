@@ -81,6 +81,17 @@ struct MealShoppingItem: Codable, Identifiable, Equatable {
         self.dayId = dayId
         self.addedAt = addedAt
     }
+
+    @MainActor
+    var localizedName: String {
+        DebloatFoodCatalog.item(matchingName: name)?.localizedName
+            ?? ProcessDebloatMealLibrary.localizedItemName(for: name)
+    }
+
+    @MainActor
+    var localizedQuantity: String {
+        ProcessDebloatMealLibrary.localizedQuantity(for: quantity)
+    }
 }
 
 // MARK: - Historique

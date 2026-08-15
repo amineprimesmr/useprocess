@@ -546,6 +546,8 @@ struct MossTypedText: View {
 struct MossConversationBubble: View {
     let message: MossConversationEngine.Message
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             if message.sender == .user { Spacer(minLength: 56) }
@@ -563,12 +565,7 @@ struct MossConversationBubble: View {
     private var content: some View {
         switch message.sender {
         case .moss:
-            MossTypedText(message: message)
-                .font(MossChatStyle.mossFont)
-                .foregroundStyle(Theme.ink)
-                .shadow(color: .black.opacity(0.8), radius: 10, y: 1)
-                .shadow(color: .black.opacity(0.5), radius: 24, y: 2)
-                .fixedSize(horizontal: false, vertical: true)
+            mossMessageText
 
         case .user:
             VStack(alignment: .trailing, spacing: 7) {
@@ -584,6 +581,22 @@ struct MossConversationBubble: View {
             .frame(minHeight: MossIMessage.minHeight)
             .background(MossIMessage.balloon, in: MossBalloonShape())
             .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private var mossMessageText: some View {
+        let text = MossTypedText(message: message)
+            .font(MossChatStyle.mossFont)
+            .foregroundStyle(Theme.ink)
+            .fixedSize(horizontal: false, vertical: true)
+
+        if colorScheme == .dark {
+            text
+                .shadow(color: .black.opacity(0.8), radius: 10, y: 1)
+                .shadow(color: .black.opacity(0.5), radius: 24, y: 2)
+        } else {
+            text
         }
     }
 }

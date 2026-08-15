@@ -5,51 +5,106 @@ import UIKit
 /// Ne doit lister QUE ce qui est visible sur la photo.
 enum MealPhotoScanAnalysisService {
 
-    /// Format labelé — même pattern que le scan visage (plus fiable que JSON pur).
-    private static let labeledFormatExample = """
-    MEAL_NAME: Patate douce et crème
-    MEAL_TYPE: Repas
-    SCORE: 58
-    SCORE_WHY: Glucides OK mais crème lactée = risque rétention.
-    ITEM_1: Patate douce | 200 g | Glucide
-    ITEM_2: Crème fraîche | 2 c. à soupe | Gras
-    PREP: Assiette maison, cuisson douce
-    TIP: Remplace la crème par yaourt grec nature pour limiter le lactose.
-    """
+    private static var labeledFormatExample: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            MEAL_NAME: Sweet potato and cream
+            MEAL_TYPE: Meal
+            SCORE: 58
+            SCORE_WHY: Carbs OK but dairy cream = retention risk.
+            ITEM_1: Sweet potato | 200 g | Carb
+            ITEM_2: Heavy cream | 2 tbsp | Fat
+            PREP: Homemade plate, gentle cooking
+            TIP: Swap the cream for plain Greek yogurt to cut lactose.
+            """
+        }
+        return """
+        MEAL_NAME: Patate douce et crème
+        MEAL_TYPE: Repas
+        SCORE: 58
+        SCORE_WHY: Glucides OK mais crème lactée = risque rétention.
+        ITEM_1: Patate douce | 200 g | Glucide
+        ITEM_2: Crème fraîche | 2 c. à soupe | Gras
+        PREP: Assiette maison, cuisson douce
+        TIP: Remplace la crème par yaourt grec nature pour limiter le lactose.
+        """
+    }
 
-    private static let visionSystemPrompt = """
-    Tu es un analyseur VISUEL de repas pour Process (debloat visage).
-    Tu regardes la photo et tu décris UNIQUEMENT ce qui est réellement visible.
+    private static var visionSystemPrompt: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            You are a VISUAL meal analyzer for Process (facial debloat).
+            You look at the photo and describe ONLY what is actually visible.
 
-    INTERDIT :
-    - Inventer des aliments absents de la photo
-    - Reprendre une recette catalogue Process
-    - Compléter le repas pour le rendre « équilibré »
-    - Markdown, JSON, texte libre
+            FORBIDDEN:
+            - Inventing foods not in the photo
+            - Reusing a Process catalog recipe
+            - Completing the meal to make it “balanced”
+            - Markdown, JSON, free text
 
-    OBLIGATOIRE :
-    - 1 à 4 lignes ITEM_ (aliments visibles seulement)
-    - SCORE honnête selon debloat (sel, sodium, lactose, ultra-transformés)
-    - Calibrage SCORE réaliste (0–100) :
-      · Pizza, burger, frites, nuggets, kebab, plat fast-food : 20–45
-      · Charcuterie, bacon, sauce industrielle, plat très salé/frit : 25–50
-      · Repas maison équilibré (protéine maigre + légumes) : 70–88
-      · Repas debloat idéal (peu de sel, K élevé, peu de lactose/ultra-transformé) : 85–95
-    - Si aucun aliment visible : MEAL_NAME: Aucun repas détecté, SCORE: 0, ITEM_1: Photo sans aliment | — | Autre
+            REQUIRED:
+            - 1 to 4 ITEM_ lines (visible foods only)
+            - Honest SCORE for debloat (salt, sodium, lactose, ultra-processed)
+            - Realistic SCORE calibration (0–100):
+              · Pizza, burger, fries, nuggets, kebab, fast food: 20–45
+              · Deli meat, bacon, industrial sauce, very salty/fried plate: 25–50
+              · Balanced homemade meal (lean protein + vegetables): 70–88
+              · Ideal debloat meal (low salt, high K, little lactose/ultra-processed): 85–95
+            - If no food is visible: MEAL_NAME: No meal detected, SCORE: 0, ITEM_1: Photo with no food | — | Other
 
-    Réponds UNIQUEMENT avec ces labels (une ligne par label) :
-    \(labeledFormatExample)
-    """
+            Reply ONLY with these labels (one line per label):
+            \(labeledFormatExample)
+            American English only for names, tips, and summaries.
+            """
+        }
+        return """
+        Tu es un analyseur VISUEL de repas pour Process (debloat visage).
+        Tu regardes la photo et tu décris UNIQUEMENT ce qui est réellement visible.
 
-    private static let optimizeSystemPrompt = """
-    Tu optimises un repas DÉJÀ SCANNÉ pour le debloat visage Process.
-    Tu partes des ingrédients du scan — tu ne remplaces pas le repas par une recette catalogue.
+        INTERDIT :
+        - Inventer des aliments absents de la photo
+        - Reprendre une recette catalogue Process
+        - Compléter le repas pour le rendre « équilibré »
+        - Markdown, JSON, texte libre
 
-    AUTORISÉ : retirer/substituer un ingrédient pénalisant, ajouter max 1 élément debloat simple.
-    INTERDIT : repas catalogue complet, ingrédients absents du scan original.
+        OBLIGATOIRE :
+        - 1 à 4 lignes ITEM_ (aliments visibles seulement)
+        - SCORE honnête selon debloat (sel, sodium, lactose, ultra-transformés)
+        - Calibrage SCORE réaliste (0–100) :
+          · Pizza, burger, frites, nuggets, kebab, plat fast-food : 20–45
+          · Charcuterie, bacon, sauce industrielle, plat très salé/frit : 25–50
+          · Repas maison équilibré (protéine maigre + légumes) : 70–88
+          · Repas debloat idéal (peu de sel, K élevé, peu de lactose/ultra-transformé) : 85–95
+        - Si aucun aliment visible : MEAL_NAME: Aucun repas détecté, SCORE: 0, ITEM_1: Photo sans aliment | — | Autre
 
-    Même format labelé (MEAL_NAME, SCORE, SCORE_WHY, ITEM_1…, PREP, TIP). Pas de JSON. Pas de markdown.
-    """
+        Réponds UNIQUEMENT avec ces labels (une ligne par label) :
+        \(labeledFormatExample)
+        """
+    }
+
+    private static var optimizeSystemPrompt: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            You optimize an ALREADY SCANNED meal for Process facial debloat.
+            Start from the scanned ingredients — do not replace the meal with a catalog recipe.
+
+            ALLOWED: remove/swap a penalizing ingredient, add at most 1 simple debloat item.
+            FORBIDDEN: full catalog meal, ingredients absent from the original scan.
+
+            Same labeled format (MEAL_NAME, SCORE, SCORE_WHY, ITEM_1…, PREP, TIP). No JSON. No markdown.
+            American English only.
+            """
+        }
+        return """
+        Tu optimises un repas DÉJÀ SCANNÉ pour le debloat visage Process.
+        Tu partes des ingrédients du scan — tu ne remplaces pas le repas par une recette catalogue.
+
+        AUTORISÉ : retirer/substituer un ingrédient pénalisant, ajouter max 1 élément debloat simple.
+        INTERDIT : repas catalogue complet, ingrédients absents du scan original.
+
+        Même format labelé (MEAL_NAME, SCORE, SCORE_WHY, ITEM_1…, PREP, TIP). Pas de JSON. Pas de markdown.
+        """
+    }
 
     /// Haiku = vision repas rapide (Sonnet trop lent pour ce flux).
     private static let mealScanModel = ClaudeModel.haiku45
@@ -76,10 +131,16 @@ enum MealPhotoScanAnalysisService {
         }
 
         let imageBase64 = jpeg.base64EncodedString()
-        let prompt = """
-        Analyse VISUELLE de cette photo de repas.
-        Liste uniquement les aliments visibles avec portions estimées.
-        """
+        let prompt = AppCopy.tSync(
+            """
+            Analyse VISUELLE de cette photo de repas.
+            Liste uniquement les aliments visibles avec portions estimées.
+            """,
+            en: """
+            VISUAL analysis of this meal photo.
+            List only the visible foods with estimated portions.
+            """
+        )
 
         let text = try await completeVision(
             system: visionSystemPrompt,
@@ -117,17 +178,30 @@ enum MealPhotoScanAnalysisService {
             .joined(separator: "\n")
 
         let caution = assessment.caution ?? assessment.summary
-        let prompt = """
-        REPAS SCANNÉ (à optimiser, pas remplacer) :
-        Nom : \(scanned.name)
-        Ingrédients visibles :
-        \(itemsList)
+        let prompt = AppCopy.tSync(
+            """
+            REPAS SCANNÉ (à optimiser, pas remplacer) :
+            Nom : \(scanned.name)
+            Ingrédients visibles :
+            \(itemsList)
 
-        Score debloat actuel : \(assessment.score)/100 — \(assessment.label)
-        Diagnostic : \(caution)
+            Score debloat actuel : \(assessment.score)/100 — \(assessment.label)
+            Diagnostic : \(caution)
 
-        Propose la version OPTIMISÉE du MÊME repas visible.
-        """
+            Propose la version OPTIMISÉE du MÊME repas visible.
+            """,
+            en: """
+            SCANNED MEAL (optimize, do not replace):
+            Name: \(scanned.name)
+            Visible ingredients:
+            \(itemsList)
+
+            Current debloat score: \(assessment.score)/100 — \(assessment.label)
+            Diagnosis: \(caution)
+
+            Propose the OPTIMIZED version of the SAME visible meal.
+            """
+        )
 
         let text = try await CoachAPITransport.complete(
             task: .chat,
@@ -428,10 +502,12 @@ enum MealPhotoScanAnalysisService {
 private extension MealSuggestionContent {
     var isNoFoodDetected: Bool {
         let lowered = name.lowercased()
-        if lowered.contains("aucun repas") || lowered.contains("pas de repas") { return true }
+        if lowered.contains("aucun repas") || lowered.contains("pas de repas")
+            || lowered.contains("no meal") || lowered.contains("no food") { return true }
         if items.count == 1 {
             let item = items[0].name.lowercased()
-            if item.contains("sans aliment") || item.contains("non identifiable") { return true }
+            if item.contains("sans aliment") || item.contains("non identifiable")
+                || item.contains("no food") || item.contains("not identifiable") { return true }
         }
         return false
     }

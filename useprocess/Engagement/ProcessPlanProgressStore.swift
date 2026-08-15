@@ -90,7 +90,8 @@ final class ProcessPlanProgressStore {
             trajectory: trajectory,
             adjustmentDays: state.adjustmentDays,
             latestEvent: latestEvent,
-            profile: UnifiedProfileService.shared.currentProfile
+            profile: UnifiedProfileService.shared.currentProfile,
+            now: ProcessCreatorModeStore.shared.effectiveNow
         )
 
         if snapshot != updated {

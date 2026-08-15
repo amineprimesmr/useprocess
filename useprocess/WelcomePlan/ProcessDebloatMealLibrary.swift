@@ -23,16 +23,39 @@ enum ProcessDebloatMealLibrary {
         "kéfir nature selon tolérance"
     ]
 
-    static let rules = [
-        "Sodium modéré, surtout le soir.",
-        "Base potassium naturelle : patate douce, pomme de terre, banane, avocat, épinards ou eau de coco.",
-        "Protéines simples à chaque repas : œufs, poulet, dinde, poisson, steak maigre, yaourt sans lactose ou kéfir selon tolérance.",
-        "Interdit absolu : porc et alcool — jamais dans le catalogue ni les suggestions.",
-        "Salades debloat : roquette, mâche, concombre, tomate, fenouil — vinaigrette citron/huile d'olive, pas sauce salade industrielle.",
-        "Légumes variés cuits ou rôtis : brocoli, carottes, poivrons, haricots verts, épinards.",
-        "Cuisson savoureuse (poêle, four, grill) : huile d'olive extra vierge, herbes, citron et huile infusée à l'ail — pas friture ni sauces industrielles salées.",
-        "Évite ultra-transformé, charcuterie salée et gros repas tardif."
-    ]
+    static var rules: [String] {
+        [
+            AppCopy.tSync("Sodium modéré, surtout le soir.", en: "Moderate sodium, especially in the evening."),
+            AppCopy.tSync(
+                "Base potassium naturelle : patate douce, pomme de terre, banane, avocat, épinards ou eau de coco.",
+                en: "Natural potassium base: sweet potato, potato, banana, avocado, spinach, or coconut water."
+            ),
+            AppCopy.tSync(
+                "Protéines simples à chaque repas : œufs, poulet, dinde, poisson, steak maigre, yaourt sans lactose ou kéfir selon tolérance.",
+                en: "Simple proteins at every meal: eggs, chicken, turkey, fish, lean steak, lactose-free yogurt or kefir as tolerated."
+            ),
+            AppCopy.tSync(
+                "Interdit absolu : porc et alcool — jamais dans le catalogue ni les suggestions.",
+                en: "Absolute ban: pork and alcohol — never in the catalog or suggestions."
+            ),
+            AppCopy.tSync(
+                "Salades debloat : roquette, mâche, concombre, tomate, fenouil — vinaigrette citron/huile d'olive, pas sauce salade industrielle.",
+                en: "Debloat salads: arugula, lamb’s lettuce, cucumber, tomato, fennel — lemon/olive oil dressing, no industrial salad dressing."
+            ),
+            AppCopy.tSync(
+                "Légumes variés cuits ou rôtis : brocoli, carottes, poivrons, haricots verts, épinards.",
+                en: "Varied cooked or roasted vegetables: broccoli, carrots, peppers, green beans, spinach."
+            ),
+            AppCopy.tSync(
+                "Cuisson savoureuse (poêle, four, grill) : huile d'olive extra vierge, herbes, citron et huile infusée à l'ail — pas friture ni sauces industrielles salées.",
+                en: "Flavorful cooking (skillet, oven, grill): extra-virgin olive oil, herbs, lemon, and garlic-infused oil — no frying or salty industrial sauces."
+            ),
+            AppCopy.tSync(
+                "Évite ultra-transformé, charcuterie salée et gros repas tardif.",
+                en: "Avoid ultra-processed food, salty deli meats, and heavy late meals."
+            )
+        ]
+    }
 
     static let featuredImageAsset = "meal_debloat_chicken_sweet_potato"
 
@@ -268,16 +291,48 @@ enum ProcessDebloatMealLibrary {
         let slots = slot.map { [$0] } ?? planType.slots
         let referenceMeals = slots.flatMap { mealPool(for: $0, planType: planType).prefix(3) }
         let mealLines = referenceMeals.map { meal in
-            "- \(meal.mealType): \(meal.name) — \(meal.foodItems.map { "\($0.name) \($0.quantity)" }.joined(separator: ", "))"
+            let displayName: String
+            if let en = ProcessLocalizedMealContent.mealNamesFRToEN[meal.name] {
+                displayName = AppCopy.tSync(meal.name, en: en)
+            } else {
+                displayName = meal.name
+            }
+            let items = meal.foodItems.map { item in
+                let itemName: String
+                if let en = ProcessLocalizedMealContent.itemNamesFRToEN[item.name] {
+                    itemName = AppCopy.tSync(item.name, en: en)
+                } else {
+                    itemName = item.name
+                }
+                return "\(itemName) \(item.quantity)"
+            }.joined(separator: ", ")
+            let slotLabel: String
+            switch MealTimeSlot.from(mealType: meal.mealType) {
+            case .breakfast: slotLabel = AppCopy.tSync("Petit-déjeuner", en: "Breakfast")
+            case .lunch: slotLabel = AppCopy.tSync("Déjeuner", en: "Lunch")
+            case .dinner: slotLabel = AppCopy.tSync("Dîner", en: "Dinner")
+            case .snack: slotLabel = AppCopy.tSync("Collation", en: "Snack")
+            }
+            return "- \(slotLabel): \(displayName) — \(items)"
         }
-        return """
-        Base repas Process à privilégier/adaptater :
-        \(mealLines.joined(separator: "\n"))
+        return AppCopy.tSync(
+            """
+            Base repas Process à privilégier/adaptater :
+            \(mealLines.joined(separator: "\n"))
 
-        Aliments debloat/potassium prioritaires : \(potassiumFoods.joined(separator: ", ")).
-        Aides digestives possibles : \(debloatFoods.joined(separator: ", ")).
-        Règles : \(rules.joined(separator: " "))
-        """
+            Aliments debloat/potassium prioritaires : \(potassiumFoods.joined(separator: ", ")).
+            Aides digestives possibles : \(debloatFoods.joined(separator: ", ")).
+            Règles : \(rules.joined(separator: " "))
+            """,
+            en: """
+            Process meal base to prefer/adapt:
+            \(mealLines.joined(separator: "\n"))
+
+            Priority debloat/potassium foods: \(potassiumFoods.joined(separator: ", ")).
+            Possible digestive helpers: \(debloatFoods.joined(separator: ", ")).
+            Rules: \(rules.joined(separator: " "))
+            """
+        )
     }
 
     private static func mealPool(for slot: MealTimeSlot, planType: NutritionPlanType) -> [MealSuggestionContent] {

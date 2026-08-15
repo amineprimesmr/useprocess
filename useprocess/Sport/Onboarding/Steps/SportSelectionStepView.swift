@@ -690,11 +690,7 @@ struct SportRowButton: View {
     }
 
     private var sportName: String {
-        // Extrait le nom du sport (après le premier espace)
-        if let spaceIndex = sport.firstIndex(of: " ") {
-            return String(sport[sport.index(after: spaceIndex)...]).trimmingCharacters(in: .whitespaces)
-        }
-        return sport
+        OnboardingSportCatalog.localizedName(sport)
     }
 
     var body: some View {
@@ -739,7 +735,7 @@ struct SportCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            Text(sport)
+            Text("\(OnboardingSportCatalog.emoji(from: sport).map { "\($0) " } ?? "")\(OnboardingSportCatalog.localizedName(sport))")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(OnboardingTheme.primaryText)
                 .multilineTextAlignment(.center)

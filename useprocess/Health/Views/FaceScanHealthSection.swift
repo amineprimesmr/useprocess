@@ -47,7 +47,7 @@ struct FaceScanHealthSection: View {
                 }
 
                 if streakDays > 0 {
-                    Text("\(streakDays)×3j 🔥")
+                    Text(AppCopy.t("\(streakDays) j · scans", en: "\(streakDays) d · scans"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(theme.secondaryText)
                 }
@@ -131,13 +131,14 @@ struct FaceScanHealthSection: View {
 
             HStack(spacing: 10) {
                 Button(action: onScan) {
-                    Label(isScanDue ? AppCopy.t("Nouveau scan", en: "New scan") : AppCopy.t("Scanner quand même", en: "Scan anyway"), systemImage: "camera.fill")
+                    Label(isScanDue ? AppCopy.t("Nouveau scan", en: "New scan") : AppCopy.t("Scan déjà fait", en: "Scan already done"), systemImage: "camera.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(theme.primaryText)
+                .disabled(!isScanDue)
 
                 Button(action: onHistory) {
                     Image(systemName: "clock.arrow.circlepath")

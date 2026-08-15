@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Header (retour, progression, langue)
 
 struct OnboardingHeaderChrome: View {
-    @ObservedObject var viewModel: OnboardingViewModel
+    let currentStep: Int
     var shouldShowBackButton: Bool
     var flowProgress: Double
     var onPreviousStep: () -> Void
@@ -22,10 +22,10 @@ struct OnboardingHeaderChrome: View {
     @ViewBuilder
     private var headerContent: some View {
         let showsProgressAndLanguage = OnboardingHeaderLayout.showsProgressAndLanguage(
-            currentStep: viewModel.currentStep
+            currentStep: currentStep
         )
         let showsBack = OnboardingHeaderLayout.showsBackOnly(
-            currentStep: viewModel.currentStep,
+            currentStep: currentStep,
             shouldShowBackButton: shouldShowBackButton
         )
 

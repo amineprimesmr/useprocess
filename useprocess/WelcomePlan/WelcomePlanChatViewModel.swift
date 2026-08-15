@@ -475,15 +475,25 @@ final class WelcomePlanChatViewModel {
 
     private func enhanceSummaryWithClaude(plan: FaceOriginPlan) async -> String? {
         let block = """
-        Objectif : \(plan.primaryFaceGoal)
-        Piliers : \(plan.pillarScores.map { "\($0.pillar) \($0.score)/100" }.joined(separator: ", "))
-        Résumé actuel : \(plan.executiveSummary)
+        \(AppCopy.tSync("Objectif : \(plan.primaryFaceGoal)", en: "Goal: \(plan.primaryFaceGoal)"))
+        \(AppCopy.tSync(
+            "Piliers : \(plan.pillarScores.map { "\($0.pillar) \($0.score)/100" }.joined(separator: ", "))",
+            en: "Pillars: \(plan.pillarScores.map { "\($0.pillar) \($0.score)/100" }.joined(separator: ", "))"
+        ))
+        \(AppCopy.tSync("Résumé actuel : \(plan.executiveSummary)", en: "Current summary: \(plan.executiveSummary)"))
         """
-        let prompt = """
-        Reformule ce résumé de ton plan personnalisé en 6-8 phrases (ton Enzo, tutoiement).
-        100 % naturel, zéro pilule, zéro complément.
-        \(block)
-        """
+        let prompt = AppCopy.tSync(
+            """
+            Reformule ce résumé de ton plan personnalisé en 6-8 phrases (ton Enzo, tutoiement).
+            100 % naturel, zéro pilule, zéro complément.
+            \(block)
+            """,
+            en: """
+            Rewrite this personalized-plan summary in 6–8 sentences (Enzo tone, singular you).
+            100% natural, zero pills, zero supplements. American English only.
+            \(block)
+            """
+        )
 
         do {
             return try await CoachAPITransport.complete(

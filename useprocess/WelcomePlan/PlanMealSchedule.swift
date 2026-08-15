@@ -25,6 +25,12 @@ enum PlanMealSchedule {
         }
 
         private static func format(hour: Int, minute: Int) -> String {
+            if ProcessAppLanguage.prefersEnglish {
+                let hour12 = hour % 12 == 0 ? 12 : hour % 12
+                let suffix = hour < 12 ? "AM" : "PM"
+                if minute == 0 { return "\(hour12) \(suffix)" }
+                return String(format: "%d:%02d %@", hour12, minute, suffix)
+            }
             guard minute > 0 else { return "\(hour)h" }
             return String(format: "%dh%02d", hour, minute)
         }
@@ -39,28 +45,40 @@ enum PlanMealSchedule {
                     targetHour: 8, targetMinute: 30,
                     windowStartHour: 7, windowStartMinute: 30,
                     windowEndHour: 8, windowEndMinute: 30,
-                    debloatNote: "Protéines tôt — lance la journée sans pic glycémique ni rétention."
+                    debloatNote: AppCopy.tSync(
+                        "Protéines tôt — lance la journée sans pic glycémique ni rétention.",
+                        en: "Protein early — starts the day without a glucose spike or retention."
+                    )
                 )
             case .lunch:
                 return Timing(
                     targetHour: 13, targetMinute: 0,
                     windowStartHour: 12, windowStartMinute: 30,
                     windowEndHour: 13, windowEndMinute: 30,
-                    debloatNote: "Repas le plus dense — digestion optimale en milieu de journée."
+                    debloatNote: AppCopy.tSync(
+                        "Repas le plus dense — digestion optimale en milieu de journée.",
+                        en: "Densest meal — best digestion in the middle of the day."
+                    )
                 )
             case .dinner:
                 return Timing(
                     targetHour: 19, targetMinute: 0,
                     windowStartHour: 18, windowStartMinute: 30,
                     windowEndHour: 19, windowEndMinute: 30,
-                    debloatNote: "Sel modéré — finir avant 20 h limite le gonflement du lendemain."
+                    debloatNote: AppCopy.tSync(
+                        "Sel modéré — finir avant 20 h limite le gonflement du lendemain.",
+                        en: "Moderate salt — finishing before 8 PM limits next-day puffiness."
+                    )
                 )
             case .snack:
                 return Timing(
                     targetHour: 16, targetMinute: 0,
                     windowStartHour: 16, windowStartMinute: 0,
                     windowEndHour: 16, windowEndMinute: 30,
-                    debloatNote: "Seulement si faim réelle — fruit ou fromage, pas de grignotage sucré."
+                    debloatNote: AppCopy.tSync(
+                        "Seulement si faim réelle — fruit ou fromage, pas de grignotage sucré.",
+                        en: "Only if truly hungry — fruit or cheese, no sweet snacking."
+                    )
                 )
             }
 
@@ -71,14 +89,20 @@ enum PlanMealSchedule {
                     targetHour: 13, targetMinute: 0,
                     windowStartHour: 12, windowStartMinute: 30,
                     windowEndHour: 13, windowEndMinute: 30,
-                    debloatNote: "Premier repas dense — casse le jeûne sans surcharge digestive."
+                    debloatNote: AppCopy.tSync(
+                        "Premier repas dense — casse le jeûne sans surcharge digestive.",
+                        en: "First dense meal — breaks the fast without overloading digestion."
+                    )
                 )
             case .dinner:
                 return Timing(
                     targetHour: 19, targetMinute: 0,
                     windowStartHour: 18, windowStartMinute: 30,
                     windowEndHour: 19, windowEndMinute: 30,
-                    debloatNote: "Second repas plus léger en sel — 5 h minimum après le déjeuner."
+                    debloatNote: AppCopy.tSync(
+                        "Second repas plus léger en sel — 5 h minimum après le déjeuner.",
+                        en: "Second meal lighter in salt — at least 5 hours after lunch."
+                    )
                 )
             default:
                 return nil
@@ -90,7 +114,10 @@ enum PlanMealSchedule {
                 targetHour: 18, targetMinute: 30,
                 windowStartHour: 17, windowStartMinute: 30,
                 windowEndHour: 20, windowEndMinute: 0,
-                debloatNote: "Repas unique très dense — fenêtre fermée à 20 h pour debloat et sommeil."
+                debloatNote: AppCopy.tSync(
+                    "Repas unique très dense — fenêtre fermée à 20 h pour debloat et sommeil.",
+                    en: "Single dense meal — window closes at 8 PM for debloat and sleep."
+                )
             )
         }
     }

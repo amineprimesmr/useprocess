@@ -1,12 +1,22 @@
 import Foundation
 
 struct FaceScanCorrelationInsight: Identifiable, Hashable {
-    let id: String
+    enum Kind: String, Hashable {
+        case sleepUnderEye
+        case sleepPuffiness
+        case hrvFatigue
+        case weeklyTrendUp
+        case weeklyTrendDown
+    }
+
+    let kind: Kind
     let message: String
     let icon: String
 
-    init(message: String, icon: String = "lightbulb.fill") {
-        self.id = message
+    var id: String { "\(kind.rawValue)-\(message)" }
+
+    init(kind: Kind, message: String, icon: String = "lightbulb.fill") {
+        self.kind = kind
         self.message = message
         self.icon = icon
     }
@@ -47,8 +57,13 @@ enum FaceScanCorrelationEngine {
         let goodAvg = average(good.map { Double(underEyeSignal($0)) })
         guard shortAvg - goodAvg >= 8 else { return nil }
 
+        let delta = Int(shortAvg - goodAvg)
         return FaceScanCorrelationInsight(
-            message: "Tes cernes montent les nuits < 6 h (+\(Int(shortAvg - goodAvg)) pts en moyenne).",
+            kind: .sleepUnderEye,
+            message: AppCopy.tSync(
+                "Tes cernes montent les nuits < 6 h (+\(delta) pts en moyenne).",
+                en: "Under-eyes worsen on nights under 6 h (+\(delta) pts on average)."
+            ),
             icon: "moon.zzz.fill"
         )
     }
@@ -66,7 +81,11 @@ enum FaceScanCorrelationEngine {
         guard shortAvg - goodAvg >= 8 else { return nil }
 
         return FaceScanCorrelationInsight(
-            message: "Gonflement plus marqué quand tu dors moins de 6 h.",
+            kind: .sleepPuffiness,
+            message: AppCopy.tSync(
+                "Gonflement plus marqué quand tu dors moins de 6 h.",
+                en: "Puffiness is more marked when you sleep under 6 h."
+            ),
             icon: "drop.fill"
         )
     }
@@ -85,7 +104,11 @@ enum FaceScanCorrelationEngine {
         guard lowAvg - highAvg >= 7 else { return nil }
 
         return FaceScanCorrelationInsight(
-            message: "HRV basse = cernes plus visibles sur tes scans récents.",
+            kind: .hrvFatigue,
+            message: AppCopy.tSync(
+                "HRV basse = cernes plus visibles sur tes scans récents.",
+                en: "Low HRV = more visible under-eyes on your recent scans."
+            ),
             icon: "waveform.path.ecg"
         )
     }
@@ -100,13 +123,21 @@ enum FaceScanCorrelationEngine {
         let delta = underEyeSignal(oldestInWeek) - underEyeSignal(before)
         if delta >= 10 {
             return FaceScanCorrelationInsight(
-                message: "Cernes en hausse sur 7 jours (+\(delta) pts) — priorise le sommeil.",
+                kind: .weeklyTrendUp,
+                message: AppCopy.tSync(
+                    "Cernes en hausse sur 7 jours (+\(delta) pts) — priorise le sommeil.",
+                    en: "Under-eyes up over 7 days (+\(delta) pts) — prioritize sleep."
+                ),
                 icon: "chart.line.uptrend.xyaxis"
             )
         }
         if delta <= -10 {
             return FaceScanCorrelationInsight(
-                message: "Cernes en baisse sur 7 jours (\(delta) pts) — bonne trajectoire.",
+                kind: .weeklyTrendDown,
+                message: AppCopy.tSync(
+                    "Cernes en baisse sur 7 jours (\(delta) pts) — bonne trajectoire.",
+                    en: "Under-eyes down over 7 days (\(delta) pts) — good trajectory."
+                ),
                 icon: "chart.line.downtrend.xyaxis"
             )
         }

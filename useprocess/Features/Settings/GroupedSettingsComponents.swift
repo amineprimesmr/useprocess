@@ -406,7 +406,7 @@ struct GroupedSettingsSectionLabel: View {
 
 /// Titre centré au-dessus de la première section (Compte, Paramètres…).
 struct GroupedSettingsPageTitle: View {
-    var title: String = "Compte"
+    var title: String = AppCopy.tSync("Compte", en: "Account")
     /// Dans l’en-tête Commerce : police plus légère pour rester propre dans le panneau.
     var compact: Bool = false
 

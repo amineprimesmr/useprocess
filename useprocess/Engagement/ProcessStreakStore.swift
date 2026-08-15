@@ -26,7 +26,11 @@ final class ProcessStreakStore {
         eligibleKeys: Set<String>,
         recordsByDay: [String: DebloatDayRecord]
     ) {
-        let longest = max(state.longestStreak, trajectory.longestStreak)
+        let displayCounts = ProcessStreakLaunchPolicy.resolvedDisplayCounts(
+            currentStreak: trajectory.currentStreak,
+            totalValidatedDays: trajectory.totalValidatedDays
+        )
+        let longest = max(state.longestStreak, trajectory.longestStreak, displayCounts.current)
         if state.completedDayKeys != eligibleKeys || state.longestStreak != longest {
             state.completedDayKeys = eligibleKeys
             state.longestStreak = longest
@@ -34,9 +38,9 @@ final class ProcessStreakStore {
         }
 
         let updated = ProcessStreakSnapshot(
-            currentStreak: trajectory.currentStreak,
+            currentStreak: displayCounts.current,
             longestStreak: longest,
-            totalCompletedDays: trajectory.totalValidatedDays,
+            totalCompletedDays: displayCounts.total,
             isTodayComplete: trajectory.isTodayComplete,
             todayProgress: trajectory.todayProgress,
             calendarWeek: trajectory.calendarWeek,
@@ -58,18 +62,9 @@ final class ProcessStreakStore {
         }
     }
 
-    var displayStreak: Int {
-        isFreshInstallStreak ? 1 : snapshot.currentStreak
-    }
+    var displayStreak: Int { snapshot.currentStreak }
 
-    var displayValidatedDays: Int {
-        isFreshInstallStreak ? 1 : snapshot.totalCompletedDays
-    }
-
-    /// Premier lancement — la série démarre à 1, pas à 0.
-    private var isFreshInstallStreak: Bool {
-        snapshot.currentStreak == 0 && snapshot.totalCompletedDays == 0
-    }
+    var displayValidatedDays: Int { snapshot.totalCompletedDays }
 
     // MARK: - Persistence
 
@@ -141,7 +136,7 @@ final class ProcessStreakStore {
         }
     }
 
-    /// Semaine affichée sur le profil — dimanche → samedi (design streak).
+    /// Semaine affichée sur le profil — lundi → dimanche.
     static func buildProfileWeekSnapshots(
         completedKeys: Set<String>,
         recordsByDay: [String: DebloatDayRecord],
@@ -150,7 +145,7 @@ final class ProcessStreakStore {
     ) -> [ProcessStreakDaySnapshot] {
         var weekCalendar = calendar
         weekCalendar.locale = ProcessAppLanguage.shared.locale
-        weekCalendar.firstWeekday = 1
+        weekCalendar.firstWeekday = 2
 
         let today = weekCalendar.startOfDay(for: now)
         guard let interval = weekCalendar.dateInterval(of: .weekOfYear, for: today) else { return [] }
@@ -180,57 +175,50 @@ final class ProcessStreakStore {
         }
     }
 
-    /// Fenêtre de 7 jours du programme debloat — alignée sur `elapsedProgramDays`.
+    /// Semaine calendaire du streak profil — lundi → dimanche (semaine ISO / FR).
     static func buildProgramStreakWindow(
         plan: FaceOriginPlan?,
         progress: PlanProgressSnapshot,
         recordsByDay: [String: DebloatDayRecord],
+        completedKeys: Set<String>,
         now: Date = Date(),
         calendar: Calendar = .current
     ) -> [ProfileProgramStreakDay] {
-        guard let plan, progress.hasPlan, progress.totalProgramDays > 0 else { return [] }
+        var weekCalendar = calendar
+        weekCalendar.locale = ProcessAppLanguage.shared.locale
+        weekCalendar.firstWeekday = 2
 
-        let today = calendar.startOfDay(for: now)
-        let total = progress.totalProgramDays
-        let currentDay = plan.calendar.startedAt != nil
-            ? max(1, progress.elapsedProgramDays)
-            : 1
+        let today = weekCalendar.startOfDay(for: now)
+        guard let interval = weekCalendar.dateInterval(of: .weekOfYear, for: today) else { return [] }
 
-        let endDay = min(total, max(7, currentDay + 3))
-        let startDay = max(1, endDay - 6)
-        let finalEnd = min(total, startDay + 6)
+        let planStart = plan?.calendar.startedAt.map { weekCalendar.startOfDay(for: $0) }
 
-        return (startDay...finalEnd).compactMap { programDayNumber in
-            let globalIndex = programDayNumber - 1
-            guard let programDay = plan.calendar.day(globalIndex: globalIndex) else { return nil }
-
-            let date: Date
-            if let mapped = OriginPlanPresenter.calendarDate(for: programDay, in: plan) {
-                date = calendar.startOfDay(for: mapped)
-            } else if let startedAt = plan.calendar.startedAt {
-                date = calendar.date(byAdding: .day, value: globalIndex, to: calendar.startOfDay(for: startedAt)) ?? today
-            } else {
-                date = today
-            }
-
-            let key = dayKey(for: date, calendar: calendar)
+        return (0..<7).compactMap { offset in
+            guard let date = weekCalendar.date(byAdding: .day, value: offset, to: interval.start) else { return nil }
+            let dayStart = weekCalendar.startOfDay(for: date)
+            let key = dayKey(for: dayStart, calendar: weekCalendar)
             let record = recordsByDay[key]
-            let isComplete = record.map {
-                $0.countsAsValidatedDay(
-                    consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
-                        before: $0.dayKey,
-                        in: recordsByDay
-                    )
-                )
-            } == true
-            let isToday = calendar.isDate(date, inSameDayAs: today)
-            let isFuture = programDayNumber > currentDay
-            let isMissed = !isFuture && !isToday && !isComplete && programDayNumber <= currentDay
+            let isComplete = completedKeys.contains(key)
+                || record?.checkInSubmitted == true
+            let isToday = weekCalendar.isDateInToday(dayStart)
+            let isFuture = dayStart > today
+            let isMissed: Bool = {
+                guard !isFuture, !isToday, !isComplete else { return false }
+                if let planStart, dayStart < planStart { return false }
+                return true
+            }()
+
+            let programDayNumber: Int = {
+                if let plan, let programDay = OriginPlanPresenter.programDay(in: plan, for: dayStart) {
+                    return programDay.globalDayIndex + 1
+                }
+                return offset + 1
+            }()
 
             return ProfileProgramStreakDay(
-                id: programDayNumber,
+                id: offset + 1,
                 programDayNumber: programDayNumber,
-                date: date,
+                date: dayStart,
                 isComplete: isComplete,
                 isToday: isToday,
                 isFuture: isFuture,

@@ -194,7 +194,10 @@ final class BodyScanSessionModel {
 
         let totalCaptures = captures.filter { $0.poseKind == .turntable }.count
         if totalCaptures < 3 {
-            phase = .error("Pas assez d'angles capturés (\(totalCaptures)). Recule à 3 m et réessaie.")
+            phase = .error(AppCopy.t(
+                "Pas assez d'angles capturés (\(totalCaptures)). Recule à 3 m et réessaie.",
+                en: "Not enough angles captured (\(totalCaptures)). Step back to 3 m and try again."
+            ))
             return
         }
 

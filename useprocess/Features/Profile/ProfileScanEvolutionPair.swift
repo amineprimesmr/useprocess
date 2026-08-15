@@ -12,11 +12,13 @@ struct ProfileScanEvolutionPair: View {
     private let spacing: CGFloat = 12
 
     private var firstScan: FaceScanResult? {
-        scanStore.oldestResultForProfileIdentity()
+        scanStore.result(id: ProcessCreatorStudioScanSlot.start.scanId)
+            ?? scanStore.oldestResultForProfileIdentity()
     }
 
     private var lastScan: FaceScanResult? {
-        scanStore.latestResult
+        scanStore.result(id: ProcessCreatorStudioScanSlot.now.scanId)
+            ?? scanStore.latestResult
     }
 
     /// Un seul scan : « Maintenant » rejouerait la même vidéo que « Début ».

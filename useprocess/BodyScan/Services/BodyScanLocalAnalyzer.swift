@@ -61,23 +61,33 @@ enum BodyScanLocalAnalyzer {
     static func buildBodyZones(metrics: PostureMetrics, priorities: [MusclePriority]) -> [BodyZoneStatus] {
         let weakNames = Set(priorities.prefix(3).map(\.name))
 
-        func zone(_ name: String, score: Int, weakHint: String) -> BodyZoneStatus {
-            let status: ZoneHealthStatus = score >= 75 ? .strong : (score < 58 || weakNames.contains(where: { weakHint.localizedCaseInsensitiveContains($0.prefix(8)) }) ? .weak : .neutral)
-            let detail = switch status {
-            case .strong: "Zone solide — bon alignement"
-            case .neutral: "Zone correcte — à maintenir"
-            case .weak: "Zone à renforcer en priorité"
+        func zone(_ nameFR: String, nameEN: String, score: Int, hints: [String]) -> BodyZoneStatus {
+            let name = AppCopy.tSync(nameFR, en: nameEN)
+            let hintedWeak = weakNames.contains { priority in
+                hints.contains { hint in
+                    priority.localizedCaseInsensitiveContains(hint)
+                }
+            }
+            let status: ZoneHealthStatus = score >= 75 ? .strong : (score < 58 || hintedWeak ? .weak : .neutral)
+            let detail: String
+            switch status {
+            case .strong:
+                detail = AppCopy.tSync("Zone solide — bon alignement", en: "Solid zone — good alignment")
+            case .neutral:
+                detail = AppCopy.tSync("Zone correcte — à maintenir", en: "Fair zone — keep it up")
+            case .weak:
+                detail = AppCopy.tSync("Zone à renforcer en priorité", en: "Priority zone to strengthen")
             }
             return BodyZoneStatus(zoneName: name, status: status, detail: detail)
         }
 
         return [
-            zone("Épaules", score: metrics.shoulderAlignmentScore, weakHint: "épaule"),
-            zone("Dos / colonne", score: metrics.spineAlignmentScore, weakHint: "dos"),
-            zone("Bassin", score: metrics.hipAlignmentScore, weakHint: "bassin"),
-            zone("Genoux", score: metrics.kneeAlignmentScore, weakHint: "genou"),
-            zone("Symétrie", score: metrics.leftRightSymmetryScore, weakHint: "symétrie"),
-            zone("Cou / nuque", score: metrics.spineAlignmentScore, weakHint: "cervical")
+            zone("Épaules", nameEN: "Shoulders", score: metrics.shoulderAlignmentScore, hints: ["épaule", "shoulder", "deltoid", "trap"]),
+            zone("Dos / colonne", nameEN: "Back / spine", score: metrics.spineAlignmentScore, hints: ["dos", "back", "spine", "rhomboid", "cervical"]),
+            zone("Bassin", nameEN: "Hips", score: metrics.hipAlignmentScore, hints: ["bassin", "hip", "glute", "fess"]),
+            zone("Genoux", nameEN: "Knees", score: metrics.kneeAlignmentScore, hints: ["genou", "knee"]),
+            zone("Symétrie", nameEN: "Symmetry", score: metrics.leftRightSymmetryScore, hints: ["symétr", "symmetr", "chaîne", "posterior"]),
+            zone("Cou / nuque", nameEN: "Neck", score: metrics.spineAlignmentScore, hints: ["cervical", "neck", "nuque", "mâchoire", "jaw"])
         ]
     }
 

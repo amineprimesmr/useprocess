@@ -62,17 +62,27 @@ final class WelcomePlanStore {
     }
 
     /// Installe un plan en mémoire pour l’aperçu dashboard, sans écriture disque.
+    /// Toujours régénéré depuis le profil onboarding — jamais bloqué par un reload distant.
     func installEphemeralPreviewPlanIfNeeded(profile: UnifiedUserProfile?) {
-        guard !hasEphemeralPreviewPlan else { return }
-        if plan == nil {
-            reload(force: true)
-        }
-        guard plan == nil else { return }
+        if hasEphemeralPreviewPlan, plan != nil { return }
+        installFreshEphemeralPreviewPlan(profile: profile)
+    }
+
+    /// Force un plan preview complet (utilisé si l’aperçu a monté avant que le plan soit prêt).
+    func refreshEphemeralPreviewPlan(profile: UnifiedUserProfile?) {
+        installFreshEphemeralPreviewPlan(profile: profile)
+    }
+
+    private func installFreshEphemeralPreviewPlan(profile: UnifiedUserProfile?) {
+        // Poser le flag avant toute génération : bloque reloadLocalOnly / sync Firebase
+        // d’écraser le plan pendant l’aperçu onboarding.
+        hasEphemeralPreviewPlan = true
+
+        let answers = WelcomePlanQuestionBank.prefillAnswersFromOnboarding(profile: profile)
         let generated = WelcomePlanGenerator.generate(
-            answers: questionnaire.answers,
+            answers: answers,
             profile: profile
         )
-        hasEphemeralPreviewPlan = true
         plan = generated
         ProcessDebloatTrajectoryStore.shared.sync(from: plan)
         ProcessPlanProgressStore.shared.reload(plan: plan)
@@ -197,6 +207,19 @@ final class WelcomePlanStore {
             }
             await CoachDailyRhythmService.rescheduleAll()
         }
+    }
+
+    /// Studio : décale le jour 1 du programme (page Progrès + calendrier).
+    func updateCalendarStartedAt(_ date: Date) {
+        guard var current = plan else { return }
+        let start = Calendar.current.startOfDay(for: date)
+        if let existing = current.calendar.startedAt,
+           Calendar.current.isDate(existing, inSameDayAs: start) {
+            return
+        }
+        current.calendar.startedAt = start
+        savePlan(current, structureChanged: true)
+        ProcessPlanProgressStore.shared.reload(plan: current)
     }
 
     func ensureCalendarIfMissing(answers: [String: WelcomePlanAnswer], profile: UnifiedUserProfile?) {
@@ -753,8 +776,12 @@ enum WelcomePlanProfileSync {
         }
 
         var issues: [String] = []
-        if answers["screen_before_bed"]?.choiceIds.first == "yes" { issues.append("Écrans avant coucher") }
-        if answers["caffeine_afternoon"]?.choiceIds.first == "yes" { issues.append("Caféine après-midi") }
+        if answers["screen_before_bed"]?.choiceIds.first == "yes" {
+            issues.append(AppCopy.tSync("Écrans avant coucher", en: "Screens before bed"))
+        }
+        if answers["caffeine_afternoon"]?.choiceIds.first == "yes" {
+            issues.append(AppCopy.tSync("Caféine après-midi", en: "Afternoon caffeine"))
+        }
         sleep.sleepIssues = issues
 
         return sleep

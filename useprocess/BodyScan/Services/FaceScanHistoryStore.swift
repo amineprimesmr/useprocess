@@ -58,7 +58,7 @@ final class FaceScanHistoryStore {
         } else {
             history.insert(reconciled, at: 0)
         }
-        if history.count > 90 { history = Array(history.prefix(90)) }
+        trimHistoryPreservingStudioPins()
 
         if latestResult == nil
             || latestResult?.id == reconciled.id
@@ -69,6 +69,13 @@ final class FaceScanHistoryStore {
         persist()
         uploadToCloud(reconciled)
         FaceScanDataLifecycle.enforceRetention(for: self)
+    }
+
+    private func trimHistoryPreservingStudioPins() {
+        guard history.count > 90 else { return }
+        let pinned = history.filter { ProcessCreatorStudioScanSlot.pinnedScanIDs.contains($0.id) }
+        let rest = history.filter { !ProcessCreatorStudioScanSlot.pinnedScanIDs.contains($0.id) }
+        history = pinned + Array(rest.prefix(max(0, 90 - pinned.count)))
     }
 
     func syncFromRemote() async {
@@ -125,7 +132,7 @@ final class FaceScanHistoryStore {
         }
 
         history = byId.values.sorted { $0.createdAt > $1.createdAt }
-        if history.count > 90 { history = Array(history.prefix(90)) }
+        trimHistoryPreservingStudioPins()
         history = FaceWellnessScore.reconcileStoredScores(history)
         latestResult = history.first
         persist()
@@ -166,6 +173,10 @@ final class FaceScanHistoryStore {
         ProcessCreatorModeStore.shared.allowsUnlimitedScans
     }
 
+    var canStartTodayScan: Bool {
+        canStartScanAnytime || isScanDue
+    }
+
     /// Nombre de jours consécutifs avec scan (rythme quotidien).
     var streakDays: Int {
         guard !history.isEmpty else { return 0 }
@@ -197,6 +208,38 @@ final class FaceScanHistoryStore {
             let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: result)
             return FaceScanImageStore.resolvedVideoURL(for: reconciled) != nil
         }
+    }
+
+    func result(id: String) -> FaceScanResult? {
+        if latestResult?.id == id { return latestResult }
+        return history.first { $0.id == id }
+    }
+
+    func installStudioIdentityScan(
+        slot: ProcessCreatorStudioScanSlot,
+        payload: FaceScanCapturePayload,
+        markers: FaceWellnessMarkers,
+        createdAt: Date
+    ) {
+        let uid = userId ?? UserScopedStorage.currentUserId() ?? "local-user"
+        let snapshotFilename = payload.snapshot.flatMap {
+            FaceScanImageStore.save(image: $0, scanId: slot.scanId)
+        }
+        let result = FaceScanResult(
+            id: slot.scanId,
+            userId: uid,
+            createdAt: createdAt,
+            markers: markers,
+            snapshotFilename: snapshotFilename,
+            videoFilename: payload.videoFilename,
+            source: slot == .start ? .onboarding : .daily
+        )
+        upsert(result)
+    }
+
+    func retargetStudioScanDate(slot: ProcessCreatorStudioScanSlot, date: Date) {
+        guard let existing = result(id: slot.scanId) else { return }
+        upsert(existing.replacingCreatedAt(date))
     }
 
     /// Plus ancien scan avec vidéo, sinon snapshot, sinon le plus ancien enregistrement.

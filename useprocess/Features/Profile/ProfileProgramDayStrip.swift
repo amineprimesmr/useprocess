@@ -66,14 +66,8 @@ struct ProfileProgramDayStrip: View {
         let programDayNumber = programDay.map { $0.globalDayIndex + 1 }
         let dayKey = ProcessStreakStore.dayKey(for: date, calendar: calendar)
         let record = recordsByDay[dayKey]
-        let isValidated = record.map {
-            $0.countsAsValidatedDay(
-                consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
-                    before: $0.dayKey,
-                    in: recordsByDay
-                )
-            )
-        } == true
+        let isValidated = record?.checkInSubmitted == true
+            || ProcessEveningCheckInStore.shared.hasSubmitted(on: date)
         let isDebloatDay = programDayNumber.map { $0 == progress.totalProgramDays } ?? false
         let isBeyondProgram = programDayNumber.map { $0 > progress.totalProgramDays } ?? false
 

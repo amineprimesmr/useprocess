@@ -4,6 +4,8 @@ import SwiftUI
 struct PlanDashboardView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
+    /// Aperçu onboarding — pas de tutoriel coach sur l’accueil.
+    var isOnboardingPreview: Bool = false
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.appTheme) private var theme
@@ -11,7 +13,7 @@ struct PlanDashboardView: View {
     @Bindable private var session = AppSession.shared
     @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
 
-    @State private var planStore = WelcomePlanStore.shared
+    @Bindable private var planStore = WelcomePlanStore.shared
     @State private var isRestoringPlan = false
     @State private var showCalendar = false
     @State private var selectedPlanDate = Calendar.current.startOfDay(for: Date())
@@ -74,7 +76,7 @@ struct PlanDashboardView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
-            .processClearUIKitHostingBackground()
+            .modifier(PlanDashboardClearHostingBackground(isEnabled: true))
             .processMorphingRefreshable {
                 planStore.reloadForCurrentUser(force: true)
                 refreshPlanHealthMetrics()
@@ -84,6 +86,7 @@ struct PlanDashboardView: View {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
                 }
                 refreshPlanHealthMetrics()
+                guard !isOnboardingPreview else { return }
                 tutorialStore.reload()
                 tutorialStore.schedulePresentationIfNeeded(
                     planAvailable: livePlan != nil,
@@ -91,6 +94,7 @@ struct PlanDashboardView: View {
                 )
             }
             .onChange(of: livePlan?.id) { _, _ in
+                guard !isOnboardingPreview else { return }
                 tutorialStore.schedulePresentationIfNeeded(
                     planAvailable: livePlan != nil,
                     preferImmediate: true
@@ -224,9 +228,29 @@ struct PlanDashboardView: View {
     private func presentDailyChecklist() {
         HapticManager.shared.impact(.medium)
         ProcessStreakStore.shared.sync(from: planStore.plan)
+
+        if ProcessEveningCheckInSchedule.isTodayStreakSettledForNavigation() {
+            withAnimation(ProcessGlass.spring) {
+                selectedSection = .statistics
+            }
+            return
+        }
+
         ProcessEveningCheckInPresenter.shared.present(
-            targetDate: Date(),
+            targetDate: ProcessEveningCheckInSchedule.preferredManualCheckInDate(),
             isRequired: false
         )
+    }
+}
+
+private struct PlanDashboardClearHostingBackground: ViewModifier {
+    let isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.processClearUIKitHostingBackground()
+        } else {
+            content
+        }
     }
 }

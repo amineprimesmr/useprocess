@@ -52,7 +52,7 @@ enum UserProfileOnboardingSummary {
         ]
 
         if let email = profile.email, !email.isEmpty {
-            rows.append(.init(id: "email", label: "E-mail", value: email))
+            rows.append(.init(id: "email", label: AppCopy.t("E-mail", en: "Email"), value: email))
         }
 
         rows.append(.init(id: "memberSince", label: AppCopy.t("Membre depuis", en: "Member Since"), value: profile.downloadDateFormatted))

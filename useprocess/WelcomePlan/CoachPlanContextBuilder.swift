@@ -20,71 +20,126 @@ enum CoachPlanContextBuilder {
         let completed = plan.progress.completedTaskIds.count
 
         var lines: [String] = [
-            "PLAN PERSONNALISÉ (base de TOUTES tes réponses) :",
-            "• Objectif : \(plan.primaryFaceGoal)",
-            "• Programme debloat : jour \(progress.elapsedProgramDays)/\(progress.totalProgramDays)",
-            "• Durée debloat : \(progress.weeksLabel)\(progress.durationAdjustmentDays != 0 ? ", ajustement \(abs(progress.durationAdjustmentDays)) j" : "")",
-            "• Jours validés : \(progress.validatedDays)",
+            AppCopy.tSync(
+                "PLAN PERSONNALISÉ (base de TOUTES tes réponses) :",
+                en: "PERSONALIZED PLAN (base of ALL your answers):"
+            ),
+            AppCopy.tSync("• Objectif : \(plan.primaryFaceGoal)", en: "• Goal: \(plan.primaryFaceGoal)"),
+            AppCopy.tSync(
+                "• Programme debloat : jour \(progress.elapsedProgramDays)/\(progress.totalProgramDays)",
+                en: "• Debloat program: day \(progress.elapsedProgramDays)/\(progress.totalProgramDays)"
+            ),
+            AppCopy.tSync(
+                "• Durée debloat : \(progress.weeksLabel)\(progress.durationAdjustmentDays != 0 ? ", ajustement \(abs(progress.durationAdjustmentDays)) j" : "")",
+                en: "• Debloat duration: \(progress.weeksLabel)\(progress.durationAdjustmentDays != 0 ? ", adjustment \(abs(progress.durationAdjustmentDays)) d" : "")"
+            ),
+            AppCopy.tSync("• Jours validés : \(progress.validatedDays)", en: "• Validated days: \(progress.validatedDays)"),
         ]
         if progress.remainingProgramDays > 0, let end = progress.estimatedEndDate {
-            lines.append("• Debloat visé dans \(progress.remainingProgramDays) j · \(Self.formatShortDate(end))")
+            lines.append(AppCopy.tSync(
+                "• Debloat visé dans \(progress.remainingProgramDays) j · \(Self.formatShortDate(end))",
+                en: "• Debloat target in \(progress.remainingProgramDays) d · \(Self.formatShortDate(end))"
+            ))
         }
         lines.append(contentsOf: [
-            "• Cardio cible : \(max(plan.trainingProtocol.sessionsPerWeek, ProcessDebloatValidation.weeklyCardioMinimum))×/sem (idéal chaque jour) · Sommeil \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
-            "• Nutrition : \(plan.nutritionPlanType.label) · Créneaux : \(plan.configuredMealSlots.map(\.rawValue).joined(separator: ", "))",
-            "• Zéro pilule — 100 % naturel",
-            "• Tâches cochées : \(completed)"
+            AppCopy.tSync(
+                "• Cardio cible : \(max(plan.trainingProtocol.sessionsPerWeek, ProcessDebloatValidation.weeklyCardioMinimum))×/sem (idéal chaque jour) · Sommeil \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h",
+                en: "• Cardio target: \(max(plan.trainingProtocol.sessionsPerWeek, ProcessDebloatValidation.weeklyCardioMinimum))×/wk (ideally every day) · Sleep \(String(format: "%.1f", plan.sleepProtocol.targetHours)) h"
+            ),
+            AppCopy.tSync(
+                "• Nutrition : \(plan.nutritionPlanType.label) · Créneaux : \(plan.configuredMealSlots.map(\.displayTitle).joined(separator: ", "))",
+                en: "• Nutrition: \(plan.nutritionPlanType.label) · Slots: \(plan.configuredMealSlots.map(\.displayTitle).joined(separator: ", "))"
+            ),
+            AppCopy.tSync("• Zéro pilule — 100 % naturel", en: "• Zero pills — 100% natural"),
+            AppCopy.tSync("• Tâches cochées : \(completed)", en: "• Tasks checked: \(completed)")
         ])
 
         let face = plan.faceProtocol
         if !face.focusAreas.isEmpty {
-            lines.append("• Visage : \(face.focusAreas.prefix(3).joined(separator: " · "))")
+            lines.append(AppCopy.tSync(
+                "• Visage : \(face.focusAreas.prefix(3).joined(separator: " · "))",
+                en: "• Face: \(face.focusAreas.prefix(3).joined(separator: " · "))"
+            ))
         }
         if ProcessContinuousHabits.all.first != nil {
-            lines.append("  → Habitudes 24/7 : \(ProcessContinuousHabits.all.map(\.title).joined(separator: ", "))")
+            lines.append(AppCopy.tSync(
+                "  → Habitudes 24/7 : \(ProcessContinuousHabits.all.map(\.title).joined(separator: ", "))",
+                en: "  → 24/7 habits: \(ProcessContinuousHabits.all.map(\.title).joined(separator: ", "))"
+            ))
         }
         if !plan.postureProtocol.mobilityBlocks.isEmpty {
-            lines.append("• Posture : \(plan.postureProtocol.mobilityBlocks.count) blocs mobilité quotidiens")
+            lines.append(AppCopy.tSync(
+                "• Posture : \(plan.postureProtocol.mobilityBlocks.count) blocs mobilité quotidiens",
+                en: "• Posture: \(plan.postureProtocol.mobilityBlocks.count) daily mobility blocks"
+            ))
         }
         if let sleepStep = plan.sleepProtocol.eveningRoutine.first(where: { line in
             let lower = line.lowercased()
             return lower.contains("côté") || lower.contains("spot t") || lower.contains("langue")
+                || lower.contains("side") || lower.contains("tongue") || lower.contains("palate")
         }) {
-            lines.append("• Sommeil : \(sleepStep)")
+            lines.append(AppCopy.tSync("• Sommeil : \(sleepStep)", en: "• Sleep: \(sleepStep)"))
         }
 
         if let today {
-            lines.append("• Aujourd'hui (\(today.weekdayLabel)) : \(today.title)")
+            lines.append(AppCopy.tSync(
+                "• Aujourd'hui (\(today.weekdayLabel)) : \(today.title)",
+                en: "• Today (\(today.weekdayLabel)): \(today.title)"
+            ))
             let cardio = DebloatCardioDayCatalog.session()
-            lines.append("  → Cardio obligatoire : \(cardio.title) — \(cardio.prescriptionLine)")
-            lines.append("  → \(DebloatCardioDayCatalog.frequencyCaption) · aucun autre cardio")
-            lines.append("  → Circuit / postures disponible dans Cardio et Circuit")
+            lines.append(AppCopy.tSync(
+                "  → Cardio obligatoire : \(cardio.title) — \(cardio.prescriptionLine)",
+                en: "  → Required cardio: \(cardio.title) — \(cardio.prescriptionLine)"
+            ))
+            lines.append(AppCopy.tSync(
+                "  → \(DebloatCardioDayCatalog.frequencyCaption) · aucun autre cardio",
+                en: "  → \(DebloatCardioDayCatalog.frequencyCaption) · no other cardio"
+            ))
+            lines.append(AppCopy.tSync(
+                "  → Circuit / postures disponible dans Cardio et Circuit",
+                en: "  → Circuit / postures available in Cardio & Circuit"
+            ))
         }
 
         if !memory.planAdjustments.isEmpty {
-            lines.append("• Derniers ajustements : \(memory.planAdjustments.prefix(3).joined(separator: " | "))")
+            lines.append(AppCopy.tSync(
+                "• Derniers ajustements : \(memory.planAdjustments.prefix(3).joined(separator: " | "))",
+                en: "• Latest adjustments: \(memory.planAdjustments.prefix(3).joined(separator: " | "))"
+            ))
         }
 
         let recentFeedbacks = plan.progress.mealFeedbacks.prefix(2)
         if !recentFeedbacks.isEmpty {
-            let fb = recentFeedbacks.map { "\($0.feeling.rawValue) (\($0.rating)/5)" }.joined(separator: ", ")
-            lines.append("• Feedback repas récent : \(fb)")
+            let fb = recentFeedbacks.map { "\($0.feeling.displayTitle) (\($0.rating)/5)" }.joined(separator: ", ")
+            lines.append(AppCopy.tSync(
+                "• Feedback repas récent : \(fb)",
+                en: "• Recent meal feedback: \(fb)"
+            ))
         }
 
         if !memory.keyFacts.isEmpty {
-            lines.append("• Mémoire utilisateur : \(memory.keyFacts.prefix(4).joined(separator: " · "))")
+            lines.append(AppCopy.tSync(
+                "• Mémoire utilisateur : \(memory.keyFacts.prefix(4).joined(separator: " · "))",
+                en: "• User memory: \(memory.keyFacts.prefix(4).joined(separator: " · "))"
+            ))
         }
 
         if !memory.conversationDigests.isEmpty {
             let convs = memory.conversationDigests.prefix(4).map { "«\($0.title)»" }.joined(separator: ", ")
-            lines.append("• Conversations passées : \(convs)")
+            lines.append(AppCopy.tSync(
+                "• Conversations passées : \(convs)",
+                en: "• Past conversations: \(convs)"
+            ))
         }
 
         if let summary = memory.aiSummary, !summary.isEmpty {
-            lines.append("• Mémoire IA globale :\n\(summary)")
+            lines.append(AppCopy.tSync("• Mémoire IA globale :\n\(summary)", en: "• Global AI memory:\n\(summary)"))
         }
 
-        lines.append("Règle : ancre chaque réponse au plan ET aux repas debloat ci-dessous. Ne propose jamais un repas qui contredit les brouillons/validations déjà faits sans le dire.")
+        lines.append(AppCopy.tSync(
+            "Règle : ancre chaque réponse au plan ET aux repas debloat ci-dessous. Ne propose jamais un repas qui contredit les brouillons/validations déjà faits sans le dire.",
+            en: "Rule: anchor every answer to the plan AND the debloat meals below. Never propose a meal that contradicts existing drafts/validations without saying so."
+        ))
 
         return lines.joined(separator: "\n")
     }
@@ -101,37 +156,52 @@ enum CoachPlanContextBuilder {
         guard !entries.isEmpty else { return "" }
 
         var lines: [String] = [
-            "REPAS AUJOURD'HUI (\(day.weekdayLabel), jour \(dayIdx + 1)) — état réel dans l'app :"
+            AppCopy.tSync(
+                "REPAS AUJOURD'HUI (\(day.weekdayLabel), jour \(dayIdx + 1)) — état réel dans l'app :",
+                en: "TODAY'S MEALS (\(day.weekdayLabel), day \(dayIdx + 1)) — real state in the app:"
+            )
         ]
 
         for entry in entries {
             let hasDraft = store.draftMealContent(for: day.id, slot: entry.slot) != nil
             let status: String
             if entry.isValidated {
-                status = "validé"
+                status = AppCopy.tSync("validé", en: "validated")
             } else if hasDraft {
-                status = "brouillon IA (personnalisé, pas encore validé)"
+                status = AppCopy.tSync(
+                    "brouillon IA (personnalisé, pas encore validé)",
+                    en: "AI draft (personalized, not validated yet)"
+                )
             } else {
-                status = "proposition Process (non validé)"
+                status = AppCopy.tSync(
+                    "proposition Process (non validé)",
+                    en: "Process suggestion (not validated)"
+                )
             }
 
             let ingredients = entry.meal.foodItems
                 .map { "\($0.name) (\($0.quantity))" }
                 .joined(separator: ", ")
 
-            lines.append("• \(entry.slot.rawValue) [\(status)] : \(entry.meal.name)")
+            lines.append("• \(entry.slot.displayTitle) [\(status)] : \(entry.meal.name)")
             if !ingredients.isEmpty {
-                lines.append("  Ingrédients : \(ingredients)")
+                lines.append(AppCopy.tSync("  Ingrédients : \(ingredients)", en: "  Ingredients: \(ingredients)"))
             }
             if !entry.meal.prepSummary.isEmpty {
-                lines.append("  Préparation : \(entry.meal.prepSummary)")
+                lines.append(AppCopy.tSync("  Préparation : \(entry.meal.prepSummary)", en: "  Prep: \(entry.meal.prepSummary)"))
             }
             if entry.meal.showsScore, entry.meal.protocolScore > 0 {
-                lines.append("  Score protocole : \(entry.meal.protocolScore)/100")
+                lines.append(AppCopy.tSync(
+                    "  Score protocole : \(entry.meal.protocolScore)/100",
+                    en: "  Protocol score: \(entry.meal.protocolScore)/100"
+                ))
             }
         }
 
-        lines.append("Si l'utilisateur parle d'un ingrédient manquant ou d'une substitution, pars de ces repas — ne repars pas de zéro.")
+        lines.append(AppCopy.tSync(
+            "Si l'utilisateur parle d'un ingrédient manquant ou d'une substitution, pars de ces repas — ne repars pas de zéro.",
+            en: "If the user mentions a missing ingredient or a substitution, start from these meals — don't start from scratch."
+        ))
 
         return lines.joined(separator: "\n")
     }
@@ -142,22 +212,22 @@ enum CoachPlanContextBuilder {
         guard !answers.isEmpty else { return "" }
 
         let keys: [(id: String, label: String)] = [
-            ("face_concerns", "Priorités visage"),
-            ("body_fat_feel", "Ressenti corporel"),
-            ("nutrition_quality", "Qualité nutrition actuelle"),
-            ("processed_food", "Ultra-transformés"),
-            ("animal_protein", "Protéines animales"),
-            ("hydration_level", "Hydratation"),
-            ("current_meals_count", "Repas/jour actuellement"),
-            ("target_meals_count", "Structure repas protocole"),
-            ("alcohol_frequency", "Alcool"),
-            ("caffeine_afternoon", "Caféine après 14h"),
-            ("sleep_quality", "Sommeil"),
-            ("bedtime", "Coucher"),
-            ("wake_time", "Réveil"),
-            ("sessions_per_week", "Cardio/sem"),
-            ("training_location", "Lieu cardio"),
-            ("training_experience", "Niveau activité")
+            ("face_concerns", AppCopy.tSync("Priorités visage", en: "Face priorities")),
+            ("body_fat_feel", AppCopy.tSync("Ressenti corporel", en: "Body feel")),
+            ("nutrition_quality", AppCopy.tSync("Qualité nutrition actuelle", en: "Current nutrition quality")),
+            ("processed_food", AppCopy.tSync("Ultra-transformés", en: "Ultra-processed foods")),
+            ("animal_protein", AppCopy.tSync("Protéines animales", en: "Animal protein")),
+            ("hydration_level", AppCopy.tSync("Hydratation", en: "Hydration")),
+            ("current_meals_count", AppCopy.tSync("Repas/jour actuellement", en: "Meals/day currently")),
+            ("target_meals_count", AppCopy.tSync("Structure repas protocole", en: "Protocol meal structure")),
+            ("alcohol_frequency", AppCopy.tSync("Alcool", en: "Alcohol")),
+            ("caffeine_afternoon", AppCopy.tSync("Caféine après 14h", en: "Caffeine after 2pm")),
+            ("sleep_quality", AppCopy.tSync("Sommeil", en: "Sleep")),
+            ("bedtime", AppCopy.tSync("Coucher", en: "Bedtime")),
+            ("wake_time", AppCopy.tSync("Réveil", en: "Wake-up")),
+            ("sessions_per_week", AppCopy.tSync("Cardio/sem", en: "Cardio/wk")),
+            ("training_location", AppCopy.tSync("Lieu cardio", en: "Cardio location")),
+            ("training_experience", AppCopy.tSync("Niveau activité", en: "Activity level"))
         ]
 
         var lines: [String] = []
@@ -169,11 +239,15 @@ enum CoachPlanContextBuilder {
         }
 
         guard !lines.isEmpty else { return "" }
-        return "QUESTIONNAIRE ORIGINE (contraintes personnelles — respecte-les) :\n" + lines.joined(separator: "\n")
+        return AppCopy.tSync(
+            "QUESTIONNAIRE ORIGINE (contraintes personnelles — respecte-les) :\n",
+            en: "ORIGIN QUESTIONNAIRE (personal constraints — respect them):\n"
+        ) + lines.joined(separator: "\n")
     }
 
     // MARK: - Modifications récentes dans l'app
 
+    @MainActor
     static func recentChangesBlock(plan: FaceOriginPlan?) -> String {
         guard let plan else { return "" }
 
@@ -182,51 +256,92 @@ enum CoachPlanContextBuilder {
         for mod in plan.progress.modifications.prefix(4) {
             let req = mod.userRequest.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !req.isEmpty else { continue }
-            lines.append("• Plan [\(mod.sectionPath)] : «\(String(req.prefix(100)))»")
+            lines.append(AppCopy.tSync(
+                "• Plan [\(mod.sectionPath)] : «\(String(req.prefix(100)))»",
+                en: "• Plan [\(mod.sectionPath)]: “\(String(req.prefix(100)))”"
+            ))
         }
 
         for entry in plan.progress.mealHistory.prefix(4) {
             guard let content = entry.content else { continue }
-            lines.append("• Repas validé récemment (\(entry.mealSlot.rawValue)) : \(content.name)")
+            lines.append(AppCopy.tSync(
+                "• Repas validé récemment (\(entry.mealSlot.displayTitle)) : \(content.name)",
+                en: "• Recently logged meal (\(entry.mealSlot.displayTitle)): \(content.name)"
+            ))
         }
 
         let notes = plan.progress.userNotes
         if !notes.isEmpty {
             let sample = notes.prefix(2).map { "jour \($0.key) : \($0.value.prefix(60))" }.joined(separator: " · ")
-            lines.append("• Notes journal : \(sample)")
+            lines.append(AppCopy.tSync("• Notes journal : \(sample)", en: "• Journal notes: \(sample)"))
         }
 
         guard !lines.isEmpty else { return "" }
-        return "HISTORIQUE MODIFICATIONS APP :\n" + lines.joined(separator: "\n")
+        return AppCopy.tSync(
+            "HISTORIQUE MODIFICATIONS APP :\n",
+            en: "APP CHANGE HISTORY:\n"
+        ) + lines.joined(separator: "\n")
     }
 
     // MARK: - Détail journée (emploi du temps)
 
+    @MainActor
     static func todayDetailBlock(plan: FaceOriginPlan) -> String {
         let idx = plan.calendar.currentProgramDayIndex()
         guard let day = plan.calendar.day(globalIndex: idx) else { return "" }
 
-        var parts: [String] = ["EMPLOI DU TEMPS JOUR \(idx + 1) — \(day.title)"]
+        var parts: [String] = [
+            AppCopy.tSync(
+                "EMPLOI DU TEMPS JOUR \(idx + 1) — \(day.title)",
+                en: "DAY \(idx + 1) SCHEDULE — \(day.title)"
+            )
+        ]
 
-        parts.append("MATIN : " + day.morning.map { $0.title }.joined(separator: ", "))
+        parts.append(AppCopy.tSync(
+            "MATIN : " + day.morning.map { $0.title }.joined(separator: ", "),
+            en: "MORNING: " + day.morning.map { $0.title }.joined(separator: ", ")
+        ))
 
         if day.nutrition.isOMAD || day.nutrition.mealPlanStyle == .omad {
             let meal = day.nutrition.omadMeal ?? day.nutrition.lunch
-            parts.append("MODÈLE NUTRITION OMAD (calendrier) : \(meal)")
+            parts.append(AppCopy.tSync(
+                "MODÈLE NUTRITION OMAD (calendrier) : \(meal)",
+                en: "OMAD NUTRITION MODEL (calendar): \(meal)"
+            ))
         } else {
-            parts.append("MODÈLE NUTRITION (calendrier) : PDJ \(day.nutrition.breakfast) · Déj \(day.nutrition.lunch) · Dîner \(day.nutrition.dinner)")
-            if let s = day.nutrition.snack { parts.append("Collation : \(s)") }
+            parts.append(AppCopy.tSync(
+                "MODÈLE NUTRITION (calendrier) : PDJ \(day.nutrition.breakfast) · Déj \(day.nutrition.lunch) · Dîner \(day.nutrition.dinner)",
+                en: "NUTRITION MODEL (calendar): Breakfast \(day.nutrition.breakfast) · Lunch \(day.nutrition.lunch) · Dinner \(day.nutrition.dinner)"
+            ))
+            if let s = day.nutrition.snack {
+                parts.append(AppCopy.tSync("Collation : \(s)", en: "Snack: \(s)"))
+            }
         }
 
-        parts.append("Principes du jour : \(day.nutrition.principles.joined(separator: " · "))")
-        parts.append("Aliments à privilégier : \(day.nutrition.foodsToday.joined(separator: ", "))")
+        parts.append(AppCopy.tSync(
+            "Principes du jour : \(day.nutrition.principles.joined(separator: " · "))",
+            en: "Today’s principles: \(day.nutrition.principles.joined(separator: " · "))"
+        ))
+        parts.append(AppCopy.tSync(
+            "Aliments à privilégier : \(day.nutrition.foodsToday.joined(separator: ", "))",
+            en: "Foods to prioritize: \(day.nutrition.foodsToday.joined(separator: ", "))"
+        ))
 
         let cardio = DebloatCardioDayCatalog.session()
-        parts.append("CARDIO OBLIGATOIRE : \(cardio.title) — \(cardio.prescriptionLine) — \(DebloatCardioDayCatalog.frequencyCaption)")
-        parts.append("POSTURE / CIRCUIT : " + day.posture.map(\.title).joined(separator: ", "))
+        parts.append(AppCopy.tSync(
+            "CARDIO OBLIGATOIRE : \(cardio.title) — \(cardio.prescriptionLine) — \(DebloatCardioDayCatalog.frequencyCaption)",
+            en: "REQUIRED CARDIO: \(cardio.title) — \(cardio.prescriptionLine) — \(DebloatCardioDayCatalog.frequencyCaption)"
+        ))
+        parts.append(AppCopy.tSync(
+            "POSTURE / CIRCUIT : " + day.posture.map(\.title).joined(separator: ", "),
+            en: "POSTURE / CIRCUIT: " + day.posture.map(\.title).joined(separator: ", ")
+        ))
         let continuous = ProcessContinuousHabits.all.map(\.title).joined(separator: ", ")
-        parts.append("24/7 : \(continuous)")
-        parts.append("SOIR : " + day.evening.map(\.title).joined(separator: ", "))
+        parts.append(AppCopy.tSync("24/7 : \(continuous)", en: "24/7: \(continuous)"))
+        parts.append(AppCopy.tSync(
+            "SOIR : " + day.evening.map(\.title).joined(separator: ", "),
+            en: "EVENING: " + day.evening.map(\.title).joined(separator: ", ")
+        ))
 
         return parts.joined(separator: "\n")
     }

@@ -40,6 +40,7 @@ struct ProcessSettingsFullScreenView: View {
 struct ProcessProfileSettingsTabView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
+    var isOnboardingPreview: Bool = false
 
     @EnvironmentObject private var profileService: UnifiedProfileService
     @EnvironmentObject private var healthManager: HealthManager
@@ -49,7 +50,8 @@ struct ProcessProfileSettingsTabView: View {
         NavigationStack {
             ProcessProfileHomeView(
                 selectedSection: $selectedSection,
-                isTabActive: isTabActive
+                isTabActive: isTabActive,
+                isOnboardingPreview: isOnboardingPreview
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbarBackground(.hidden, for: .navigationBar)

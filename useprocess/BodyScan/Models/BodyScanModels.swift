@@ -220,8 +220,12 @@ struct BodyScanResult: Codable, Identifiable, Hashable {
     let aiEnhanced: Bool
     let disclaimer: String
 
-    static let wellnessDisclaimer =
-        "Estimation bien-être uniquement — ne remplace pas un avis médical, kinésithérapeutique ou dermatologique. Voir les sources dans l'onglet Santé."
+    static var wellnessDisclaimer: String {
+        AppCopy.tSync(
+            "Estimation bien-être uniquement — ne remplace pas un avis médical, kinésithérapeutique ou dermatologique. Voir les sources dans l'onglet Santé.",
+            en: "Wellness estimate only — not a substitute for medical, physical-therapy, or dermatology advice. See sources in the Health tab."
+        )
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, userId, createdAt, postureScore, confidence, captures, metrics

@@ -2,8 +2,7 @@
 //  AnimatedOnboardingGlow.swift
 //  Process
 //
-//  Lueur animée qui se déplace progressivement entre les pages d'onboarding
-//  Style identique à PaywallView avec animation ultra fluide
+//  Lueur bleutée ancrée en bas des premières pages d'onboarding
 //
 
 import SwiftUI
@@ -15,80 +14,27 @@ struct AnimatedOnboardingGlow: View {
     let visitedStepsCount: Int // Nombre d'étapes réellement visitées
     let totalStepsForFlow: Int // Total d'étapes pour le flux actuel
 
-    // ✅ État pour la position animée - commence en bas
-    @State private var animatedPosition: UnitPoint = UnitPoint(x: 0.5, y: 1.35)
-    @State private var animatedRadius: CGFloat = 500
+    /// Ancrage bas — la lueur remonte depuis le bord inférieur, pas le centre écran.
+    private static let bottomGlowCenter = UnitPoint(x: 0.5, y: 1.16)
+    private static let bottomGlowRadius: CGFloat = 560
 
-    // Calculer la position cible de la lueur en fonction de l'étape
-    // ✅ Trajectoire qui évite le bas et le haut de l'écran
-    // Commence en bas à droite, va à gauche, puis monte, puis redescend à droite
-    private func calculateTargetPosition(for progressCount: Int) -> UnitPoint {
-        // ✅ CORRECTION: Utiliser le total d'étapes dynamique du flux actuel au lieu d'un nombre fixe
-        let totalSteps = max(1.0, Double(totalStepsForFlow))
-
-        // ✅ Utiliser le paramètre progressCount (nombre d'étapes visitées) pour calculer la progression réelle
-        let currentProgress = max(1, progressCount)
-        let normalizedStep = min(1.0, Double(currentProgress) / totalSteps)
-
-        // ✅ Trajectoire personnalisée qui évite le bas et le haut
-        // 0.0-0.25 : Bas droite → Bas gauche (horizontal, y fixe en bas)
-        // 0.25-0.5 : Bas gauche → Haut gauche (vertical, x fixe à gauche)
-        // 0.5-0.75 : Haut gauche → Haut droite (horizontal, y fixe en haut)
-        // 0.75-1.0 : Haut droite → Bas droite (vertical, x fixe à droite)
-
-        let x: Double
-        let y: Double
-
-        if normalizedStep < 0.25 {
-            // Bas droite → Bas gauche (horizontal, y fixe en bas)
-            let segmentProgress = normalizedStep / 0.25
-            x = 1.0 - (segmentProgress * 0.8) // De 1.0 (droite) à 0.2 (gauche)
-            y = 0.9 // Bas de l'écran (mais pas tout en bas)
-        } else if normalizedStep < 0.5 {
-            // Bas gauche → Haut gauche (vertical, x fixe à gauche)
-            let segmentProgress = (normalizedStep - 0.25) / 0.25
-            x = 0.2 // Gauche
-            y = 0.9 - (segmentProgress * 0.7) // De 0.9 (bas) à 0.2 (haut)
-        } else if normalizedStep < 0.75 {
-            // Haut gauche → Haut droite (horizontal, y fixe en haut)
-            let segmentProgress = (normalizedStep - 0.5) / 0.25
-            x = 0.2 + (segmentProgress * 0.8) // De 0.2 (gauche) à 1.0 (droite)
-            y = 0.2 // Haut de l'écran (mais pas tout en haut)
-        } else {
-            // Haut droite → Bas droite (vertical, x fixe à droite)
-            let segmentProgress = (normalizedStep - 0.75) / 0.25
-            x = 1.0 // Droite
-            y = 0.2 + (segmentProgress * 0.7) // De 0.2 (haut) à 0.9 (bas)
-        }
-
-        return UnitPoint(x: x, y: y)
-    }
+    @State private var animatedRadius: CGFloat = bottomGlowRadius
 
     // ✅ Calculer le rayon cible
     private func calculateTargetRadius(for step: Int) -> CGFloat {
-        let baseRadius: CGFloat = 500
+        let baseRadius: CGFloat = Self.bottomGlowRadius
         // Variation subtile pour un effet organique
         let variation = sin(Double(step) * 0.2) * 20
         return baseRadius + CGFloat(variation)
-    }
-
-    // ✅ Fonction d'easing cubic pour mouvement ultra fluide
-    private func easeInOutCubic(_ t: Double) -> Double {
-        if t < 0.5 {
-            return 4 * t * t * t
-        } else {
-            let f = 2 * t - 2
-            return 1 + f * f * f / 2
-        }
     }
 
     var body: some View {
         if iOS26Stability.isEnabled {
             RadialGradient(
                 colors: lightModeGlowColors,
-                center: .center,
+                center: Self.bottomGlowCenter,
                 startRadius: 0,
-                endRadius: 420
+                endRadius: Self.bottomGlowRadius
             )
             .allowsHitTesting(false)
         } else {
@@ -137,11 +83,7 @@ struct AnimatedOnboardingGlow: View {
             }
         }()
 
-        // ✅ Détecter si la lueur est en bas ou en haut (moins visible dans ces zones)
-        let isAtTopOrBottom = animatedPosition.y < 0.2 || animatedPosition.y > 0.8
-
-        // ✅ Augmenter l'opacité si première page OU si en haut/bas
-        let shouldIncreaseOpacity = isEarlyStep || isAtTopOrBottom
+        let shouldIncreaseOpacity = isEarlyStep
 
         // ✅ Opacités BEAUCOUP réduites pour rendre la lueur moins visible
         let centerOpacity = (shouldIncreaseOpacity ? 0.15 : 0.10) * glowOpacityScale
@@ -186,30 +128,22 @@ struct AnimatedOnboardingGlow: View {
                 // Bords extérieurs - presque transparent
                 Color.clear
             ],
-            center: animatedPosition,
+            center: Self.bottomGlowCenter,
             startRadius: 0,
             endRadius: animatedRadius
         )
         .onChange(of: visitedStepsCount) { _, newValue in
-            updateGlowPosition(for: newValue)
-        }
-        .onChange(of: totalStepsForFlow) { _, _ in
-            updateGlowPosition(for: visitedStepsCount)
-        }
-        .onChange(of: currentStep) { _, _ in
-            updateGlowPosition(for: visitedStepsCount)
+            updateGlowRadius(for: newValue)
         }
         .onAppear {
-            updateGlowPosition(for: visitedStepsCount)
+            updateGlowRadius(for: visitedStepsCount)
         }
     }
 
-    private func updateGlowPosition(for progressCount: Int) {
-        let targetPosition = calculateTargetPosition(for: progressCount)
+    private func updateGlowRadius(for progressCount: Int) {
         let targetRadius = calculateTargetRadius(for: progressCount)
 
-        withAnimation(.spring(response: 1.0, dampingFraction: 0.85, blendDuration: 0.5)) {
-            animatedPosition = targetPosition
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
             animatedRadius = targetRadius
         }
     }

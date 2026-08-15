@@ -59,7 +59,6 @@ struct GenderSelectionStepView: View {
                     }
                     .buttonStyle(.processPlain)
                     .scaleEffect(selectedGender == .male ? 1.1 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedGender)
 
                     Spacer()
 
@@ -90,12 +89,12 @@ struct GenderSelectionStepView: View {
                     }
                     .buttonStyle(.processPlain)
                     .scaleEffect(selectedGender == .female ? 1.1 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedGender)
 
                     Spacer()
                 }
                 .adaptiveHorizontalPadding() // ✅ Padding adaptatif pour iPad
                 .frame(height: LayoutConstants.isIPad ? 320 : 250) // ✅ Plus de hauteur sur iPad
+                .animation(.spring(response: 0.3, dampingFraction: 0.78), value: selectedGender)
 
                 Spacer()
                     .frame(height: 100) // Espacement en bas

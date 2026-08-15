@@ -318,7 +318,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.dashboardPreview.rawValue
 
         case .dashboardPreview:
-            return OnboardingStep.payment.rawValue
+            return OnboardingStep.dreamFaceCommit.rawValue
 
         case .dreamFaceCommit:
             return OnboardingStep.payment.rawValue
@@ -439,7 +439,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.dashboardPreview.rawValue
 
         case .payment:
-            return OnboardingStep.dashboardPreview.rawValue
+            return OnboardingStep.dreamFaceCommit.rawValue
 
         case .appleSignIn:
             return OnboardingStep.payment.rawValue

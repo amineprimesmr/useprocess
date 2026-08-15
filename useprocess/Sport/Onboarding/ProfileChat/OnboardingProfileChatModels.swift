@@ -112,19 +112,19 @@ enum OnboardingProfileChatQuestionBank {
                 prompt: OnboardingCopy.t("""
                 Dans 94% des cas, il s’agit de :
 
-                - rétention d’eau
-                - inflammation
-                - cortisol
-                - lymphe qui circule mal…
+                💧 rétention d’eau
+                🔥 inflammation
+                😰 cortisol
+                🌀 lymphe qui circule mal…
 
                 Tu n’as pas besoin de tout comprendre. Process est là pour ça.
                 """, en: """
                 In 94% of cases, it’s:
 
-                - water retention
-                - inflammation
-                - cortisol
-                - poor lymph circulation…
+                💧 water retention
+                🔥 inflammation
+                😰 cortisol
+                🌀 poor lymph circulation…
 
                 You don’t need to understand it all. Process is here for that.
                 """),
@@ -289,7 +289,7 @@ enum OnboardingProfileChatQuestionBank {
 
         case "sport_pick":
             guard let sport = OnboardingDataModel.shared.selectedSports.first else { return nil }
-            return OnboardingSportCatalog.nameWithoutEmoji(sport)
+            return OnboardingSportCatalog.localizedName(sport)
 
         default:
             return nil

@@ -30,7 +30,7 @@ struct LanguageSelectorView: View {
             }
         } label: {
             Text(appLanguage.code.flag)
-                .font(.system(size: 25))
+                .font(.system(size: 18))
                 .frame(
                     width: OnboardingConstants.backButtonSize,
                     height: OnboardingConstants.backButtonSize

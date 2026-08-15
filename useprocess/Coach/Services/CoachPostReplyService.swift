@@ -22,7 +22,7 @@ enum CoachPostReplyService {
            let body = parsed.artifactBody,
            !body.isEmpty {
             CoachProcessFilesStore.shared.upsert(
-                title: "Graphique · \(title)",
+                title: AppCopy.t("Graphique · \(title)", en: "Chart · \(title)"),
                 content: body
             )
         }
@@ -42,7 +42,7 @@ enum CoachFoodLogService {
         if let meal = CoachMealMessageDetector.mealContent(from: assistantText), meal.isValid {
             WelcomePlanStore.shared.saveDraftMeal(dayId: day.id, meal: meal, slot: meal.timeSlot)
             CoachProcessFilesStore.shared.upsert(
-                title: "Repas brouillon · \(meal.timeSlot.rawValue)",
+                title: AppCopy.t("Repas brouillon · \(meal.timeSlot.displayTitle)", en: "Draft meal · \(meal.timeSlot.displayTitle)"),
                 content: meal.compactSummary
             )
             return true
@@ -51,17 +51,23 @@ enum CoachFoodLogService {
         let combined = "\(userText)\n\(assistantText)"
         let lower = combined.lowercased()
         guard lower.contains("repas") || lower.contains("mang") || lower.contains("déjeuner")
-            || lower.contains("dejeuner") || lower.contains("dîner") || lower.contains("diner") else {
+            || lower.contains("dejeuner") || lower.contains("dîner") || lower.contains("diner")
+            || lower.contains("meal") || lower.contains("lunch") || lower.contains("dinner")
+            || lower.contains("breakfast") || lower.contains(" ate") || lower.contains("eat ") else {
             return false
         }
 
         let fallback = MealSuggestionContent.asProcessDefault(
-            name: "Repas noté par le coach",
+            name: AppCopy.tSync("Repas noté par le coach", en: "Meal logged by the coach"),
             mealType: inferredMealType(from: combined),
-            items: [MealSuggestionItem(name: "Repas", quantity: "1 portion", role: "Autre")],
+            items: [MealSuggestionItem(
+                name: AppCopy.tSync("Repas", en: "Meal"),
+                quantity: AppCopy.tSync("1 portion", en: "1 serving"),
+                role: AppCopy.tSync("Autre", en: "Other")
+            )],
             prepMinutes: 10,
             prepSummary: String(combined.prefix(180)),
-            coachTip: "Validé depuis le coach.",
+            coachTip: AppCopy.tSync("Validé depuis le coach.", en: "Logged from the coach."),
             tags: ["Coach"],
             imageAssetName: nil
         )
@@ -95,12 +101,21 @@ enum CoachTrainingTemplateStore {
         guard plan != nil else { return "" }
         let cardio = DebloatCardioDayCatalog.session()
         let lines: [String] = [
-            "CARDIO OBLIGATOIRE : \(cardio.title) — \(cardio.prescriptionLine)",
+            AppCopy.tSync(
+                "CARDIO OBLIGATOIRE : \(cardio.title) — \(cardio.prescriptionLine)",
+                en: "REQUIRED CARDIO: \(cardio.title) — \(cardio.prescriptionLine)"
+            ),
             cardio.detail,
             DebloatCardioDayCatalog.frequencyCaption,
-            "Aucun autre cardio (pas de vélo, HIIT, course, rameur, randonnée). Uniquement marche inclinée + circuit posture."
+            AppCopy.tSync(
+                "Aucun autre cardio (pas de vélo, HIIT, course, rameur, randonnée). Uniquement marche inclinée + circuit posture.",
+                en: "No other cardio (no bike, HIIT, running, rower, hiking). Incline walk + posture circuit only."
+            )
         ]
-        return "\nTEMPLATE CARDIO & CIRCUIT :\n" + lines.joined(separator: "\n")
+        return AppCopy.tSync(
+            "\nTEMPLATE CARDIO & CIRCUIT :\n",
+            en: "\nCARDIO & CIRCUIT TEMPLATE:\n"
+        ) + lines.joined(separator: "\n")
     }
 }
 
@@ -109,16 +124,19 @@ enum CoachMyMemoryExtractor {
 
     static func heuristicExtract(userText: String) {
         let lower = userText.lowercased()
-        if lower.contains("objectif") || lower.contains("but ") {
+        if lower.contains("objectif") || lower.contains("but ") || lower.contains("goal") {
             CoachMyMemoryStore.shared.add(category: .goals, text: String(userText.prefix(220)))
         }
-        if lower.contains("bless") || lower.contains("douleur") || lower.contains("genou") {
+        if lower.contains("bless") || lower.contains("douleur") || lower.contains("genou")
+            || lower.contains("injur") || lower.contains("pain") || lower.contains("knee") {
             CoachMyMemoryStore.shared.add(category: .healthHistory, text: String(userText.prefix(220)))
         }
-        if lower.contains("voyage") || lower.contains("week-end") || lower.contains("weekend") {
+        if lower.contains("voyage") || lower.contains("week-end") || lower.contains("weekend")
+            || lower.contains("travel") || lower.contains("trip") {
             CoachMyMemoryStore.shared.add(category: .events, text: String(userText.prefix(220)))
         }
-        if lower.contains("stress") || lower.contains("fatigu") || lower.contains("motiv") {
+        if lower.contains("stress") || lower.contains("fatigu") || lower.contains("motiv")
+            || lower.contains("tired") || lower.contains("exhaust") {
             CoachMyMemoryStore.shared.add(category: .mood, text: String(userText.prefix(220)))
         }
     }

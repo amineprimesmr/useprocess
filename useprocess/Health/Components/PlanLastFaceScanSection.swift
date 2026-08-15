@@ -217,6 +217,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private func beginInlineScan() {
+        guard historyStore.canStartTodayScan else { return }
         if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
             ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
@@ -384,10 +385,12 @@ struct PlanLastFaceScanSection: View {
                 }
             }
 
-            Button {
-                beginInlineScan()
-            } label: {
-                Label(AppCopy.t("Refaire le scan", en: "Rescan"), systemImage: "camera.fill")
+            if historyStore.canStartScanAnytime {
+                Button {
+                    beginInlineScan()
+                } label: {
+                    Label(AppCopy.t("Refaire le scan", en: "Rescan"), systemImage: "camera.fill")
+                }
             }
         }
     }

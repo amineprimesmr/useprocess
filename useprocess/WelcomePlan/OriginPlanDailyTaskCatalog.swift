@@ -20,7 +20,7 @@ enum OriginPlanDailyTaskCatalog {
         id: "\(dayId).face.morning.\(index)",
         title: parts.title,
         detail: parts.detail.isEmpty ? line : parts.detail,
-        pillar: "Visage",
+        pillar: AppCopy.tSync("Visage", en: "Face"),
         minutes: repMinutes(from: line, targets: targets)
       )
     }
@@ -97,7 +97,7 @@ enum OriginPlanDailyTaskCatalog {
           id: "\(dayId).evening.sleep.\(index)",
           title: checklistTitle(for: line, index: index),
           detail: line,
-          pillar: "Sommeil"
+          pillar: AppCopy.tSync("Sommeil", en: "Sleep")
         )
       )
     }
@@ -138,27 +138,28 @@ enum OriginPlanDailyTaskCatalog {
 
   private static func repMinutes(from line: String, targets: OriginPersonalizedDailyTargets) -> Int? {
     let lower = line.lowercased()
-    if lower.contains("eau tiède") || lower.contains("eau tiede") { return 2 }
-    if lower.contains("sauts sur place") || lower.contains("saut sur place") {
+    if lower.contains("eau tiède") || lower.contains("eau tiede") || lower.contains("warm water") { return 2 }
+    if lower.contains("sauts sur place") || lower.contains("saut sur place") || lower.contains("jumping in place") {
       return max(1, ProcessDailyTargets.lymphJumpSeconds / 60)
     }
-    if lower.contains("montées de genoux") || lower.contains("montee de genoux") {
+    if lower.contains("montées de genoux") || lower.contains("montee de genoux") || lower.contains("high knees") {
       return max(1, ProcessDailyTargets.lymphKneeRaiseSeconds / 60)
     }
-    if lower.contains("bras alternés") || lower.contains("bras alternes") {
+    if lower.contains("bras alternés") || lower.contains("bras alternes") || lower.contains("arms to sky") {
       return max(1, ProcessDailyTargets.lymphArmRaiseSeconds / 60)
     }
     if lower.contains("massage") { return targets.lymphFaceMassageMinutes }
-    if lower.contains("glacon") || lower.contains("glaçon") || lower.contains("eau froide") { return 1 }
+    if lower.contains("glacon") || lower.contains("glaçon") || lower.contains("eau froide")
+      || lower.contains("ice") || lower.contains("cold water") { return 1 }
     return nil
   }
 
   private static func checklistTitle(for line: String, index: Int) -> String {
     let lower = line.lowercased()
-    if lower.contains("côté") || lower.contains("dos") {
+    if lower.contains("côté") || lower.contains("dos") || lower.contains("side sleep") || lower.contains("on your side") {
       return AppCopy.tSync("Sommeil sur le côté", en: "Side sleep")
     }
-    if lower.contains("spot t") || lower.contains("déglut") {
+    if lower.contains("spot t") || lower.contains("déglut") || lower.contains("tongue") || lower.contains("palate") {
       return AppCopy.tSync("Langue sur palais (nuit)", en: "Tongue on palate (night)")
     }
     if lower.contains("tape") {

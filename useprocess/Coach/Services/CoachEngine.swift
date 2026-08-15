@@ -217,7 +217,10 @@ enum CoachEngine {
         profile: UnifiedUserProfile?
     ) async throws -> CoachMessage {
         let context = UserContextBuilder.build(profile: profile)
-        let prompt = tool.buildPrompt(context: context) + "\n\nRéponds en MAX 3 phrases.\n\n" + UserContextBuilder.compactPromptBlock(from: context)
+        let prompt = tool.buildPrompt(context: context) + AppCopy.tSync(
+            "\n\nRéponds en MAX 3 phrases.\n\n",
+            en: "\n\nReply in MAX 3 sentences.\n\n"
+        ) + UserContextBuilder.compactPromptBlock(from: context)
         let model = ClaudeModel.preferred(for: .quickHint)
 
         let text = try await CoachAPITransport.complete(
@@ -233,13 +236,25 @@ enum CoachEngine {
 
     // MARK: - Brief quotidien
 
-    private static let dailyBriefSystemPrompt = """
-    Tu es le coach Process. Tu t'adresses à UNE seule personne (tu / ton / ta).
-    Jamais « les gars », jamais pluriel de groupe, jamais tutoiement collectif.
+    private static var dailyBriefSystemPrompt: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            You are the Process coach. Address ONE person (you / your).
+            Never “guys”, never group plural.
 
-    Brief Santé : court, clair, actionnable. Pas de diagnostic médical.
-    Pas de cours de biologie. Pas de markdown. Pas de listes longues.
-    """
+            Health brief: short, clear, actionable. No medical diagnosis.
+            No biology lecture. No markdown. No long lists.
+            American English only.
+            """
+        }
+        return """
+        Tu es le coach Process. Tu t'adresses à UNE seule personne (tu / ton / ta).
+        Jamais « les gars », jamais pluriel de groupe, jamais tutoiement collectif.
+
+        Brief Santé : court, clair, actionnable. Pas de diagnostic médical.
+        Pas de cours de biologie. Pas de markdown. Pas de listes longues.
+        """
+    }
 
     static func generateDailyBrief(
         profile: UnifiedUserProfile?,
@@ -253,7 +268,10 @@ enum CoachEngine {
 
         let context = UserContextBuilder.build(profile: profile)
         let firstName = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let nameHint = (firstName?.isEmpty == false) ? "Prénom : \(firstName!)." : ""
+        let nameHint: String = {
+            guard firstName?.isEmpty == false, let firstName else { return "" }
+            return AppCopy.tSync("Prénom : \(firstName).", en: "First name: \(firstName).")
+        }()
 
         let validatedMealHint: String = {
             guard let plan = WelcomePlanStore.shared.plan else { return "" }
@@ -264,14 +282,28 @@ enum CoachEngine {
         \(nameHint)
         \(UserContextBuilder.compactPromptBlock(from: context))\(validatedMealHint)
 
-        Génère le brief du jour. Réponds UNIQUEMENT avec ces 4 lignes (labels exacts) :
+        \(AppCopy.tSync(
+            """
+            Génère le brief du jour. Réponds UNIQUEMENT avec ces 4 lignes (labels exacts) :
 
-        VERDICT: [1 phrase, max 12 mots — état du jour basé sur sommeil / plan]
-        POURQUOI: [1 phrase, max 18 mots — cause principale]
-        ACTION_1: [action concrète pour aujourd'hui]
-        ACTION_2: [action concrète pour demain]
+            VERDICT: [1 phrase, max 12 mots — état du jour basé sur sommeil / plan]
+            POURQUOI: [1 phrase, max 18 mots — cause principale]
+            ACTION_1: [action concrète pour aujourd'hui]
+            ACTION_2: [action concrète pour demain]
 
-        Règles : tutoiement singulier, 2 actions max, pas de pavé, pas de chiffres inventés, jamais le mot readiness.
+            Règles : tutoiement singulier, 2 actions max, pas de pavé, pas de chiffres inventés, jamais le mot readiness.
+            """,
+            en: """
+            Generate today’s brief. Reply ONLY with these 4 lines (exact labels):
+
+            VERDICT: [1 sentence, max 12 words — today’s state based on sleep / plan]
+            POURQUOI: [1 sentence, max 18 words — main cause]
+            ACTION_1: [concrete action for today]
+            ACTION_2: [concrete action for tomorrow]
+
+            Rules: singular you, 2 actions max, no walls of text, no invented numbers, never the word readiness. American English only.
+            """
+        ))
         """
 
         do {
@@ -293,10 +325,19 @@ enum CoachEngine {
 
     // MARK: - Scan visage
 
-    private static let faceScanSystemPrompt = """
-    Tu es le coach Process — analyse visage (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
-    Tu t'adresses à UNE personne (tu). Jamais « les gars ». Pas de diagnostic médical.
-    """
+    private static var faceScanSystemPrompt: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            You are the Process coach — face analysis (water retention, fatigue, cortisol, jaw/cervical tension).
+            Address ONE person (you). Never “guys”. No medical diagnosis.
+            American English only for every user-visible sentence.
+            """
+        }
+        return """
+        Tu es le coach Process — analyse visage (rétention d'eau, fatigue, cortisol, tension mâchoire/cervicales).
+        Tu t'adresses à UNE personne (tu). Jamais « les gars ». Pas de diagnostic médical.
+        """
+    }
 
     @MainActor
     static func analyzeFaceScan(
@@ -317,19 +358,37 @@ enum CoachEngine {
             context: insightContext
         )
 
+        let definitionScore = FaceScanIndicators.definitionScore(from: markers)
+        let stressLoad = FaceScanIndicators.stressLoad(for: result)
         let prompt = """
         \(UserContextBuilder.compactPromptBlock(from: context))
 
-        Règle critique : ne juge jamais la forme naturelle du visage. Un visage large, fin, asymétrique ou avec traits marqués n'est jamais un défaut.
-        Interprète uniquement les variations d'état du jour : rétention d'eau, fatigue visible, tension, qualité de scan, tendance vs baseline personnelle.
-        Base ton analyse sur les FAITS ci-dessous — ne les recopie pas mot pour mot, mais respecte leur direction (hausse/baisse/persistance).
+        \(AppCopy.tSync(
+            """
+            Règle critique : ne juge jamais la forme naturelle du visage. Un visage large, fin, asymétrique ou avec traits marqués n'est jamais un défaut.
+            Interprète uniquement les variations d'état du jour : rétention d'eau, fatigue visible, tension, qualité de scan, tendance vs baseline personnelle.
+            Base ton analyse sur les FAITS ci-dessous — ne les recopie pas mot pour mot, mais respecte leur direction (hausse/baisse/persistance).
 
-        Scores locaux (0-100). Plus haut = signal plus marqué pour rétention, récupération, charge stress ; plus haut = mieux pour peau et définition :
-        - Rétention d'eau : \(markers.puffinessScore)
-        - Récupération (cernes / fatigue) : \(markers.underEyeFatigueScore)
-        - Peau : \(markers.skinClarityScore)
-        - Définition (mâchoire / pommettes) : \(FaceScanIndicators.definitionScore(from: markers))
-        - Charge stress (cortisol estimé) : \(FaceScanIndicators.stressLoad(for: result))
+            Scores locaux (0-100). Plus haut = signal plus marqué pour rétention, récupération, charge stress ; plus haut = mieux pour peau et définition :
+            - Rétention d'eau : \(markers.puffinessScore)
+            - Récupération (cernes / fatigue) : \(markers.underEyeFatigueScore)
+            - Peau : \(markers.skinClarityScore)
+            - Définition (mâchoire / pommettes) : \(definitionScore)
+            - Charge stress (cortisol estimé) : \(stressLoad)
+            """,
+            en: """
+            Critical rule: never judge the natural shape of the face. A wide, slim, asymmetric, or strongly featured face is never a flaw.
+            Interpret only today’s state changes: water retention, visible fatigue, tension, scan quality, trend vs personal baseline.
+            Base your analysis on the FACTS below — do not copy them word for word, but respect their direction (up/down/persisting).
+
+            Local scores (0-100). Higher = stronger signal for retention, recovery, stress load; higher = better for skin and definition:
+            - Water retention: \(markers.puffinessScore)
+            - Recovery (under-eyes / fatigue): \(markers.underEyeFatigueScore)
+            - Skin: \(markers.skinClarityScore)
+            - Definition (jaw / cheekbones): \(definitionScore)
+            - Stress load (estimated cortisol): \(stressLoad)
+            """
+        ))
 
         \(relativeBlock)
 
@@ -337,20 +396,40 @@ enum CoachEngine {
 
         \(factsBlock)
 
-        Règles obligatoires :
-        - Si la rétention est encore haute ou en hausse, dis explicitement "tu as encore de la rétention d'eau" ou "rétention en hausse".
-        - Si la rétention baisse, dis explicitement "la rétention descend" et ne dramatise pas.
-        - Si rétention persistante sur plusieurs scans, mentionne la persistance et propose une action DIFFÉRENTE des actions récentes listées.
-        - Pour rétention : actions possibles = eau régulière, sodium/produits salés modérés, potassium alimentaire (banane, pomme de terre, épinards, avocat), marche douce.
-        - Si données nutrition hier disponibles, relie-les à la rétention (sodium/potassium).
-        - Ne parle jamais de diagnostic, pathologie, traitement, diurétique ou supplément potassium.
+        \(AppCopy.tSync(
+            """
+            Règles obligatoires :
+            - Si la rétention est encore haute ou en hausse, dis explicitement "tu as encore de la rétention d'eau" ou "rétention en hausse".
+            - Si la rétention baisse, dis explicitement "la rétention descend" et ne dramatise pas.
+            - Si rétention persistante sur plusieurs scans, mentionne la persistance et propose une action DIFFÉRENTE des actions récentes listées.
+            - Pour rétention : actions possibles = eau régulière, sodium/produits salés modérés, potassium alimentaire (banane, pomme de terre, épinards, avocat), marche douce.
+            - Si données nutrition hier disponibles, relie-les à la rétention (sodium/potassium).
+            - Ne parle jamais de diagnostic, pathologie, traitement, diurétique ou supplément potassium.
 
-        Analyse cette photo + faits évolutifs. Format EXACT :
+            Analyse cette photo + faits évolutifs. Format EXACT (labels inchangés, contenu en français) :
 
-        RESUME: [1 phrase — état global du visage aujourd'hui, max 18 mots, factuel]
-        SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — observation factuelle]
-        EVOLUTION: [1 phrase vs historique récent — compare aux scans précédents, mentionne persistance ou amélioration]
-        ACTIONS: [action 1 concrète aujourd'hui] | [action 2 concrète aujourd'hui]
+            RESUME: [1 phrase — état global du visage aujourd'hui, max 18 mots, factuel]
+            SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — observation factuelle]
+            EVOLUTION: [1 phrase vs historique récent — compare aux scans précédents, mentionne persistance ou amélioration]
+            ACTIONS: [action 1 concrète aujourd'hui] | [action 2 concrète aujourd'hui]
+            """,
+            en: """
+            Mandatory rules:
+            - If retention is still high or rising, say explicitly "you still have water retention" or "retention is rising".
+            - If retention is falling, say explicitly "retention is coming down" and do not dramatize.
+            - If retention has persisted across several scans, mention the persistence and propose an action DIFFERENT from the recent actions listed.
+            - For retention: possible actions = steady water, moderate sodium/salty foods, food potassium (banana, potato, spinach, avocado), easy walk.
+            - If yesterday’s nutrition data is available, link it to retention (sodium/potassium).
+            - Never mention diagnosis, pathology, treatment, diuretics, or potassium supplements.
+
+            Analyze this photo + evolution facts. EXACT format (keep these labels, write VALUES in American English only):
+
+            RESUME: [1 sentence — overall face state today, max 18 words, factual]
+            SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — factual observation]
+            EVOLUTION: [1 sentence vs recent history — compare to previous scans, mention persistence or improvement]
+            ACTIONS: [concrete action for today] | [concrete action for today]
+            """
+        ))
         """
 
         do {
@@ -428,17 +507,30 @@ enum CoachEngine {
             )
         }
 
-        return """
-        Lecture relative anti-morphologie :
-        - Score relatif visage du jour : \(result.resolvedFaceDayScore)/100
-        - Confiance scan : \(confidence)/100 (\(FaceWellnessScore.confidenceLabel(for: confidence)))
-        - Baseline : \(signals.baselineLabel), \(baselineCount) scan(s)
-        - Delta rétention vs baseline : \(signed(signals.puffinessDelta))
-        - Delta récupération vs baseline : \(signed(signals.underEyeFatigueDelta))
-        - Delta peau vs baseline : \(signed(signals.skinClarityDelta))
-        - Delta définition vs baseline : \(signed(signals.faceDefinitionDelta ?? 0))
-        - Delta charge stress vs baseline : \(signed(signals.stressLoadDelta ?? 0))
-        """
+        return AppCopy.tSync(
+            """
+            Lecture relative anti-morphologie :
+            - Score relatif visage du jour : \(result.resolvedFaceDayScore)/100
+            - Confiance scan : \(confidence)/100 (\(FaceWellnessScore.confidenceLabel(for: confidence)))
+            - Baseline : \(signals.localizedBaselineLabel), \(baselineCount) scan(s)
+            - Delta rétention vs baseline : \(signed(signals.puffinessDelta))
+            - Delta récupération vs baseline : \(signed(signals.underEyeFatigueDelta))
+            - Delta peau vs baseline : \(signed(signals.skinClarityDelta))
+            - Delta définition vs baseline : \(signed(signals.faceDefinitionDelta ?? 0))
+            - Delta charge stress vs baseline : \(signed(signals.stressLoadDelta ?? 0))
+            """,
+            en: """
+            Relative anti-morphology reading:
+            - Today’s relative face score: \(result.resolvedFaceDayScore)/100
+            - Scan confidence: \(confidence)/100 (\(FaceWellnessScore.confidenceLabel(for: confidence)))
+            - Baseline: \(signals.localizedBaselineLabel), \(baselineCount) scan(s)
+            - Retention delta vs baseline: \(signed(signals.puffinessDelta))
+            - Recovery delta vs baseline: \(signed(signals.underEyeFatigueDelta))
+            - Skin delta vs baseline: \(signed(signals.skinClarityDelta))
+            - Definition delta vs baseline: \(signed(signals.faceDefinitionDelta ?? 0))
+            - Stress-load delta vs baseline: \(signed(signals.stressLoadDelta ?? 0))
+            """
+        )
     }
 
     private static func signed(_ value: Int) -> String {
@@ -454,7 +546,10 @@ enum CoachEngine {
         var didEnhance = false
 
         if let visionNote = await bodyScanVisionSummary(result: result) {
-            narrative += "\n\n## Ce que je vois sur ton scan\n\(visionNote)"
+            narrative += AppCopy.tSync(
+                "\n\n## Ce que je vois sur ton scan\n\(visionNote)",
+                en: "\n\n## What I see on your scan\n\(visionNote)"
+            )
             didEnhance = true
         }
 
@@ -495,13 +590,25 @@ enum CoachEngine {
             || !(context.recentFaceScans?.isEmpty ?? true)
             || !(context.recentScans?.isEmpty ?? true)
         let scanInstruction = hasScans
-            ? "Tu peux t'appuyer sur les données de scan si elles sont présentes dans le contexte."
-            : "IMPORTANT : aucun scan visage ni corporel n'a été effectué. Ne dis JAMAIS « ton scan révèle » ni ne fais référence à un scan — base-toi uniquement sur le profil et les données HealthKit."
+            ? AppCopy.tSync(
+                "Tu peux t'appuyer sur les données de scan si elles sont présentes dans le contexte.",
+                en: "You can use scan data if it is present in the context."
+            )
+            : AppCopy.tSync(
+                "IMPORTANT : aucun scan visage ni corporel n'a été effectué. Ne dis JAMAIS « ton scan révèle » ni ne fais référence à un scan — base-toi uniquement sur le profil et les données HealthKit.",
+                en: "IMPORTANT: no face or body scan has been done. NEVER say “your scan shows” or refer to a scan — use only the profile and HealthKit data."
+            )
         let prompt = """
         \(scanInstruction)
-        Génère un résumé du plan personnalisé de l'utilisateur (8-12 phrases, durée exacte dans le contexte).
+        \(AppCopy.tSync(
+            "Génère un résumé du plan personnalisé de l'utilisateur (8-12 phrases, durée exacte dans le contexte).",
+            en: "Generate a summary of the user’s personalized plan (8–12 sentences, exact duration from context)."
+        ))
         \(UserContextBuilder.promptBlock(from: context))
-        Objectif, 3 piliers du plan personnalisé, rythme hebdo, 3 habitudes quotidiennes.
+        \(AppCopy.tSync(
+            "Objectif, 3 piliers du plan personnalisé, rythme hebdo, 3 habitudes quotidiennes.",
+            en: "Goal, 3 pillars of the personalized plan, weekly rhythm, 3 daily habits."
+        ))
         """
 
         do {
@@ -528,12 +635,20 @@ enum CoachEngine {
             return nil
         }
 
-        let prompt = """
-        Analyse cette photo de scan corporel en 4-6 phrases.
-        Score posture: \(result.postureScore)/100.
-        \(scanMetricsBlock(result))
-        Pas de diagnostic médical. Ton direct Enzo.
-        """
+        let prompt = AppCopy.tSync(
+            """
+            Analyse cette photo de scan corporel en 4-6 phrases.
+            Score posture: \(result.postureScore)/100.
+            \(scanMetricsBlock(result))
+            Pas de diagnostic médical. Ton direct Enzo.
+            """,
+            en: """
+            Analyze this body-scan photo in 4–6 sentences.
+            Posture score: \(result.postureScore)/100.
+            \(scanMetricsBlock(result))
+            No medical diagnosis. Direct Enzo tone. American English only.
+            """
+        )
 
         do {
             return try await CoachAPITransport.complete(
@@ -551,12 +666,21 @@ enum CoachEngine {
 
     private static func bodyScanFullReport(result: BodyScanResult, base: String) async -> String? {
         let pillarHints = EnzoCoachingVoiceGuide.pillarHints(for: result)
-        let prompt = """
-        Reformate ce rapport scan useprocess (plan personnalisé, max 750 mots).
-        \(scanMetricsBlock(result))
-        Piliers : \(pillarHints)
-        Rapport brut : \(base)
-        """
+        let prompt = AppCopy.tSync(
+            """
+            Reformate ce rapport scan useprocess (plan personnalisé, max 750 mots).
+            \(scanMetricsBlock(result))
+            Piliers : \(pillarHints)
+            Rapport brut : \(base)
+            """,
+            en: """
+            Reformat this useprocess scan report (personalized plan, max 750 words).
+            \(scanMetricsBlock(result))
+            Pillars: \(pillarHints)
+            Raw report: \(base)
+            American English only.
+            """
+        )
 
         do {
             return try await CoachAPITransport.complete(
@@ -574,11 +698,18 @@ enum CoachEngine {
     private static func scanMetricsBlock(_ result: BodyScanResult) -> String {
         let zones = result.bodyZones.map { "• \($0.zoneName): \($0.status)" }.joined(separator: "\n")
         let priorities = result.musclePriorities.prefix(3).map { "• \($0.name): \($0.reason)" }.joined(separator: "\n")
-        return """
-        Score: \(result.postureScore)/100 | Épaules: \(result.metrics.shoulderAlignmentScore) | Colonne: \(result.metrics.spineAlignmentScore)
-        Zones: \(zones)
-        Priorités: \(priorities)
-        """
+        return AppCopy.tSync(
+            """
+            Score: \(result.postureScore)/100 | Épaules: \(result.metrics.shoulderAlignmentScore) | Colonne: \(result.metrics.spineAlignmentScore)
+            Zones: \(zones)
+            Priorités: \(priorities)
+            """,
+            en: """
+            Score: \(result.postureScore)/100 | Shoulders: \(result.metrics.shoulderAlignmentScore) | Spine: \(result.metrics.spineAlignmentScore)
+            Zones: \(zones)
+            Priorities: \(priorities)
+            """
+        )
     }
 
     private static func bestCaptureForVision(from captures: [BodyScanCaptureRecord]) -> BodyScanCaptureRecord? {

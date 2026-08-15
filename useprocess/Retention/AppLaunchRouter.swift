@@ -6,6 +6,9 @@ import Foundation
 final class AppLaunchRouter {
     static let shared = AppLaunchRouter()
 
+    private static let pendingSpinKey = "process.launch.pendingSpinCampaign"
+    private static let pendingLifetimeKey = "process.launch.pendingLifetimeCampaign"
+
     private(set) var pendingLifetimeOfferSource: ProcessHomeScreenQuickActionKind?
     var showsLifetimeRetentionOffer = false
 
@@ -16,7 +19,13 @@ final class AppLaunchRouter {
     /// Deep-link Live Activity hydratation (bouton +500 / ouverture).
     var pendingHydrationAction: ProcessHydrationDeepLinkAction?
 
-    private init() {}
+    private init() {
+        if let spin = UserDefaults.standard.string(forKey: Self.pendingSpinKey), !spin.isEmpty {
+            pendingSpinCampaignId = spin
+        } else if UserDefaults.standard.bool(forKey: Self.pendingLifetimeKey) {
+            pendingLifetimeOfferSource = .lifetimeOffer
+        }
+    }
 
     func handleHydrationURL(_ url: URL) {
         guard let action = ProcessHydrationDeepLink.parse(url) else { return }
@@ -68,7 +77,9 @@ final class AppLaunchRouter {
         ProcessMarketingNotificationService.shared.markOpened(campaignId: campaignId)
         showsSpinWinbackFromMarketing = false
         pendingSpinCampaignId = nil
+        UserDefaults.standard.removeObject(forKey: Self.pendingSpinKey)
         pendingLifetimeOfferSource = .lifetimeOffer
+        UserDefaults.standard.set(true, forKey: Self.pendingLifetimeKey)
         presentLifetimeOfferIfEligible()
     }
 
@@ -78,7 +89,9 @@ final class AppLaunchRouter {
         ProcessMarketingNotificationService.shared.markSawSpinWheel()
         showsLifetimeRetentionOffer = false
         pendingLifetimeOfferSource = nil
+        UserDefaults.standard.removeObject(forKey: Self.pendingLifetimeKey)
         pendingSpinCampaignId = campaignId
+        UserDefaults.standard.set(campaignId, forKey: Self.pendingSpinKey)
         presentSpinIfEligible()
     }
 
@@ -96,11 +109,13 @@ final class AppLaunchRouter {
     func clearLifetimeOfferPresentation() {
         showsLifetimeRetentionOffer = false
         pendingLifetimeOfferSource = nil
+        UserDefaults.standard.removeObject(forKey: Self.pendingLifetimeKey)
     }
 
     func clearSpinPresentation() {
         showsSpinWinbackFromMarketing = false
         pendingSpinCampaignId = nil
+        UserDefaults.standard.removeObject(forKey: Self.pendingSpinKey)
     }
 
     var activeLifetimeOfferSource: ProcessHomeScreenQuickActionKind {
@@ -123,21 +138,15 @@ final class AppLaunchRouter {
 
     private func presentSpinIfEligible() {
         guard pendingSpinCampaignId != nil else { return }
-        guard shouldPresentRetention else {
-            clearSpinPresentation()
-            return
-        }
+        guard shouldPresentRetention else { return }
         guard !showsSpinWinbackFromMarketing else { return }
 
-        Task { @MainActor in
-            await Task.yield()
-            guard pendingSpinCampaignId != nil, shouldPresentRetention else { return }
-            showsLifetimeRetentionOffer = false
-            showsSpinWinbackFromMarketing = true
-        }
+        showsLifetimeRetentionOffer = false
+        showsSpinWinbackFromMarketing = true
     }
 
     private var shouldPresentRetention: Bool {
+        guard AppSession.shared.hasCompletedOnboarding else { return false }
         guard SubscriptionConfiguration.retentionQuickActionLifetimeOfferEnabled else { return false }
         guard !SubscriptionService.shared.subscriptionStatus.isActive else { return false }
         return true

@@ -33,6 +33,7 @@ struct SportOnboardingView: View {
     @State var flowTotalSteps: Int = 1
     @State var flowGlowProgressCount: Int = 1
     @State private var isOnboardingRestoreComplete = false
+    @State var flowProgressRefreshTask: Task<Void, Never>?
 
     @State var animatedContinueBottomOffset: CGFloat = 50
     /// Hauteur live du clavier — le CTA global ignoreSafeArea, donc SwiftUI
@@ -59,11 +60,11 @@ struct SportOnboardingView: View {
                         onboardingStepContent(for: step)
                     }
                 }
-                .id(appLanguage.code)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
                 .transition(onboardingPageTransition)
-                .id("onboarding_content_\(viewModel.currentStep)")
+                .ios26SafeAnimation(onboardingPageChangeAnimation, value: viewModel.currentStep)
+                .id(onboardingContentIdentity)
             } else {
             VStack(spacing: 0) {
                 // Contenu principal — à partir du scan : même push que capture → analyse → résultats.
@@ -83,14 +84,13 @@ struct SportOnboardingView: View {
                             }
                     }
                 }
-                .id(appLanguage.code)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, shouldAddTopPadding ? OnboardingConstants.titleTopPaddingFromScreenTop : 0)
                 .ignoresSafeArea(.all)
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
                 .transition(onboardingPageTransition)
                 .ios26SafeAnimation(onboardingPageChangeAnimation, value: viewModel.currentStep)
-                .id("onboarding_content_\(viewModel.currentStep)")
+                .id(onboardingContentIdentity)
 
             }
             }
@@ -98,6 +98,7 @@ struct SportOnboardingView: View {
             continueButtonOverlay
                 .opacity(shouldShowGlobalContinueButton ? continueButtonOpacity : 0)
                 .accessibilityHidden(!shouldShowGlobalContinueButton)
+                .allowsHitTesting(shouldShowGlobalContinueButton)
                 .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
 
             if !isImmersiveOnboardingStep,
@@ -122,7 +123,7 @@ struct SportOnboardingView: View {
                    shouldShowBackButton: shouldShowBackButton
                ) {
                 OnboardingHeaderChrome(
-                    viewModel: viewModel,
+                    currentStep: viewModel.currentStep,
                     shouldShowBackButton: shouldShowBackButton,
                     flowProgress: flowProgress,
                     onPreviousStep: handleOnboardingBack
@@ -132,83 +133,84 @@ struct SportOnboardingView: View {
         }
         .ignoresSafeArea(.all)
         .onAppear {
-            Task { @MainActor in
-                if !authManager.isInOnboarding {
-                    authManager.startOnboarding()
-                }
-                checkPermissions()
+            if !authManager.isInOnboarding {
+                authManager.startOnboarding()
+            }
+            checkPermissions()
 
+            if let cached = OnboardingProgressService.shared.loadAnswers() {
+                viewModel.applyCachedAnswers(cached)
+            }
+
+            if let profile = profileService.currentProfile {
+                viewModel.syncWithExistingProfile(profile)
+            }
+
+            restoreOnboardingProgressFromSavedState()
+            reconcileVisitedStepsForRestore(
+                viewModel: viewModel,
+                navigationEngine: navigationEngine
+            )
+            refreshOnboardingFlowProgress()
+            updateContinueButtonLayout(animated: false)
+            isOnboardingRestoreComplete = true
+
+            ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
+
+            let step = OnboardingStep(rawValue: viewModel.currentStep)
+            ProcessAnalytics.trackOnboardingStarted(step: step)
+            ProcessAnalytics.trackOnboardingStep(step: step)
+
+            Task { @MainActor in
                 if FirebaseBootstrap.isConfigured,
                    AuthUser.current != nil,
                    profileService.currentProfile == nil {
                     await profileService.loadProfile()
+                    if let profile = profileService.currentProfile {
+                        viewModel.syncWithExistingProfile(profile)
+                        reconcileVisitedStepsForRestore(
+                            viewModel: viewModel,
+                            navigationEngine: navigationEngine
+                        )
+                        scheduleRefreshOnboardingFlowProgress()
+                    }
                 }
 
-                if let cached = OnboardingProgressService.shared.loadAnswers() {
-                    viewModel.applyCachedAnswers(cached)
-                }
-
-                if let profile = profileService.currentProfile {
-                    viewModel.syncWithExistingProfile(profile)
-                }
-
-                restoreOnboardingProgressFromSavedState()
-                reconcileVisitedStepsForRestore(
-                    viewModel: viewModel,
-                    navigationEngine: navigationEngine
-                )
                 await SubscriptionService.shared.checkSubscriptionStatus()
                 reconcileUnpaidOnboardingResumeIfNeeded()
                 reconcilePostPaymentStepIfNeeded()
-                refreshOnboardingFlowProgress()
-                updateContinueButtonLayout(animated: false)
-                isOnboardingRestoreComplete = true
-
-                ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
-
-                let step = OnboardingStep(rawValue: viewModel.currentStep)
-                ProcessAnalytics.trackOnboardingStarted(step: step)
-                ProcessAnalytics.trackOnboardingStep(step: step)
+                scheduleRefreshOnboardingFlowProgress()
             }
         }
         .onChange(of: profileService.currentProfile) { _, newValue in
             guard let profile = newValue else { return }
-            Task { @MainActor in
-                viewModel.syncWithExistingProfile(profile)
-                reconcileVisitedStepsForRestore(
-                    viewModel: viewModel,
-                    navigationEngine: navigationEngine
-                )
-                refreshOnboardingFlowProgress()
-            }
+            viewModel.syncWithExistingProfile(profile)
+            reconcileVisitedStepsForRestore(
+                viewModel: viewModel,
+                navigationEngine: navigationEngine
+            )
+            scheduleRefreshOnboardingFlowProgress()
         }
         .onChange(of: viewModel.currentStep) { _, newStep in
             viewModel.saveProgress()
             updateContinueButtonLayout(animated: true)
             ProcessAnalytics.trackOnboardingStep(step: OnboardingStep(rawValue: newStep))
-
-            Task { @MainActor in
-                refreshOnboardingFlowProgress()
-            }
+            scheduleRefreshOnboardingFlowProgress()
         }
         .onChange(of: viewModel.visitedSteps) { _, _ in
-            refreshOnboardingFlowProgress()
+            scheduleRefreshOnboardingFlowProgress()
         }
         .onChange(of: viewModel.hasWeightGoal) { _, _ in
             viewModel.saveProgress()
-            refreshOnboardingFlowProgress()
+            scheduleRefreshOnboardingFlowProgress()
         }
         .onChange(of: viewModel.hasSportActivity) { _, _ in
             viewModel.saveProgress()
-            refreshOnboardingFlowProgress()
+            scheduleRefreshOnboardingFlowProgress()
         }
         .onChange(of: viewModel.nutritionProfile.weightManagementExperience) { _, _ in
             viewModel.saveProgress()
-            refreshOnboardingFlowProgress()
-        }
-        .onChange(of: viewModel.makeAnswersSnapshot()) { _, _ in
-            viewModel.saveProgress()
-            refreshOnboardingFlowProgress()
+            scheduleRefreshOnboardingFlowProgress()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -217,9 +219,10 @@ struct SportOnboardingView: View {
                     viewModel: viewModel,
                     navigationEngine: navigationEngine
                 )
-                refreshOnboardingFlowProgress()
+                scheduleRefreshOnboardingFlowProgress()
             }
             guard phase == .inactive || phase == .background else { return }
+            cancelScheduledFlowProgressRefresh()
             viewModel.commitPendingStepAnswers()
             viewModel.saveProgress()
             OnboardingProgressService.shared.flush()
@@ -309,6 +312,10 @@ struct SportOnboardingView: View {
                 .allowsHitTesting(false)
         }
         .id("onboarding_global_continue")
-        .animation(.easeOut(duration: 0.25), value: keyboardHeight.height)
+        .ios26SafeAnimation(.spring(response: 0.34, dampingFraction: 0.88), value: keyboardHeight.height)
+    }
+
+    private var onboardingContentIdentity: String {
+        "\(appLanguage.code)_\(viewModel.currentStep)"
     }
 }

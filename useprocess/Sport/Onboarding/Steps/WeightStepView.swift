@@ -144,7 +144,7 @@ struct WeightStepView: View {
         guard !didBootstrap else { return }
         didBootstrap = true
         loadExistingWeight()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingTransitionTiming.keyboardFocusDelay) {
             isTextFieldFocused = true
         }
     }

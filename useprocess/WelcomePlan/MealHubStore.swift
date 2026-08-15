@@ -208,7 +208,10 @@ extension WelcomePlanStore {
         savePlan(current)
 
         CoachMemoryStore.shared.recordPlanAdjustment(
-            "Feedback repas (\(feeling.rawValue), \(rating)/5) — \(note.isEmpty ? "sans note" : note)"
+            AppCopy.tSync(
+                "Feedback repas (\(feeling.displayTitle), \(rating)/5) — \(note.isEmpty ? AppCopy.tSync("sans note", en: "no note") : note)",
+                en: "Meal feedback (\(feeling.displayTitle), \(rating)/5) — \(note.isEmpty ? AppCopy.tSync("sans note", en: "no note") : note)"
+            )
         )
     }
 
@@ -273,7 +276,10 @@ extension WelcomePlanStore {
         on plan: inout FaceOriginPlan
     ) {
         plan.progress.lastCoachSyncAt = Date()
-        let summary = "Repas validé : \(meal.name) (\(meal.mealType), score \(meal.protocolScore)/100) — \(meal.compactSummary.prefix(120))"
+        let summary = AppCopy.tSync(
+            "Repas validé : \(meal.name) (\(meal.timeSlot.displayTitle), score \(meal.protocolScore)/100) — \(meal.compactSummary.prefix(120))",
+            en: "Meal logged: \(meal.name) (\(meal.timeSlot.displayTitle), score \(meal.protocolScore)/100) — \(meal.compactSummary.prefix(120))"
+        )
         CoachMemoryStore.shared.recordPlanAdjustment(summary)
         CoachConversationStore.invalidateDailyBriefCache()
     }

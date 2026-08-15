@@ -69,12 +69,9 @@ var continueButtonBottomOffset: CGFloat {
     return 50
 }
 
-/// Offset effectif rendu (inclut le clavier live même entre deux changements de step).
+/// Offset effectif rendu — une seule source (clavier live ou marge basse).
 var effectiveContinueBottomOffset: CGFloat {
-    if isKeyboardAnchoredContinueStep, keyboardHeight.height > 0 {
-        return keyboardHeight.height + continueButtonKeyboardGap
-    }
-    return animatedContinueBottomOffset
+    continueButtonBottomOffset
 }
 
 var canContinue: Bool {
@@ -110,12 +107,12 @@ func skipWeightGoalFromIdealWeight() {
 
     commitVisibleStepToHistory(OnboardingStep.firstNameInput.rawValue)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingTransitionTiming.navigationUnlockDelay) {
         isTransitioning = false
     }
 
     viewModel.saveProgress()
-    refreshOnboardingFlowProgress()
+    scheduleRefreshOnboardingFlowProgress()
 }
 
 func handleContinueButtonTap() {
@@ -150,7 +147,15 @@ func handleContinueButtonTap() {
 
 /// À partir du chat / scan : même slide que capture → analyse → résultats.
 var shouldUseScanPagePush: Bool {
-    Self.usesScanStylePagePush(from: previousStepIndex ?? viewModel.currentStep, to: viewModel.currentStep)
+    let from = OnboardingStep(rawValue: previousStepIndex ?? viewModel.currentStep)
+    let to = OnboardingStep(rawValue: viewModel.currentStep)
+    if from == .dashboardPreview || to == .dashboardPreview {
+        return false
+    }
+    return Self.usesScanStylePagePush(
+        from: previousStepIndex ?? viewModel.currentStep,
+        to: viewModel.currentStep
+    )
 }
 
 var onboardingPageChangeAnimation: Animation {
@@ -158,9 +163,10 @@ var onboardingPageChangeAnimation: Animation {
 }
 
 var onboardingPageTransition: AnyTransition {
-    shouldUseScanPagePush
-        ? .onboardingScanPagePush(direction: transitionDirection)
-        : .opacity
+    if shouldUseScanPagePush {
+        return .onboardingScanPagePush(direction: transitionDirection)
+    }
+    return .onboardingQuestionnaireSlide(direction: transitionDirection)
 }
 
 static func usesScanStylePagePush(from: Int, to: Int) -> Bool {
@@ -183,7 +189,7 @@ var isImmersiveOnboardingStep: Bool {
     guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
     // Paywall en immersif : évite le remount `.id(onboarding_content_…)` qui cassait
     // le double-swipe Home (« Attends ! ») juste après la fin de l’onboarding.
-    return step == .videoIntroduction || step == .faceAnalysis || step == .payment || step == .appleSignIn
+    return step == .videoIntroduction || step == .faceAnalysis || step == .dashboardPreview || step == .dreamFaceCommit || step == .payment || step == .appleSignIn
 }
 
 var shouldShowBackButton: Bool {
@@ -197,7 +203,7 @@ var shouldShowBackButton: Bool {
 
     let blockedSteps: Set<OnboardingStep> = [
         .videoIntroduction, .payment, .appleSignIn, .processWelcome, .featuresUnlock, .complete, .faceAnalysis,
-        .dashboardPreview
+        .dashboardPreview, .dreamFaceCommit
     ]
     if blockedSteps.contains(currentStep) {
         return false
@@ -222,7 +228,7 @@ var shouldAddTopPadding: Bool {
         || step == .sportSelection || step == .weightMotivation || step == .weightGoalIncompatible
         || step == .programCreation
         || step == .biometricAuth || step == .notificationPermission || step == .transformationPreview
-        || step == .dashboardPreview
+        || step == .dashboardPreview || step == .dreamFaceCommit
         || step == .healthKitPermissions {
         return false
     }
@@ -237,7 +243,7 @@ var shouldAddTopPadding: Bool {
 func updateContinueButtonLayout(animated: Bool) {
     let target = continueButtonBottomOffset
     if animated {
-        withAnimation(.onboardingTransition) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
             animatedContinueBottomOffset = target
         }
     } else {

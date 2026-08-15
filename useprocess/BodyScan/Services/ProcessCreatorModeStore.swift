@@ -37,6 +37,26 @@ enum ProcessCreatorScanResultsLayout: String, CaseIterable, Identifiable {
     }
 }
 
+/// Slots médias de la paire Début / Maintenant (IDs stables dans l’historique).
+enum ProcessCreatorStudioScanSlot: String, CaseIterable, Identifiable {
+    case start
+    case now
+
+    var id: String { rawValue }
+
+    var scanId: String { "studio-identity-\(rawValue)" }
+
+    static let pinnedScanIDs: Set<String> = Set(allCases.map(\.scanId))
+
+    @MainActor
+    var title: String {
+        switch self {
+        case .start: return AppCopy.t("Début", en: "Start")
+        case .now: return AppCopy.t("Maintenant", en: "Now")
+        }
+    }
+}
+
 /// Mode studio secret — débloqué uniquement si le prénom enregistré est « Amineprcs ».
 /// Import photo + scans illimités + slider de rendu réaliste sur l’écran résultats.
 @MainActor
@@ -48,6 +68,7 @@ final class ProcessCreatorModeStore: ObservableObject {
     private static let unlockedKeyBase = "creator.mode.unlocked"
     private static let qualityKeyBase = "creator.mode.quality"
     private static let resultsLayoutKeyBase = "creator.mode.resultsLayout"
+    private static let studioNowKeyBase = "creator.mode.studioNow"
 
     /// 0 = mauvais · 0.5 = réaliste (analyse) · 1 = excellent.
     @Published var resultQuality: Double {
@@ -60,6 +81,11 @@ final class ProcessCreatorModeStore: ObservableObject {
     }
 
     @Published private(set) var isUnlocked: Bool
+
+    /// « Maintenant » simulé pour la page Progrès (nil = date réelle).
+    @Published var studioNowDate: Date? {
+        didSet { persistStudioNow() }
+    }
 
     private init() {
         let defaults = UserDefaults.standard
@@ -76,6 +102,12 @@ final class ProcessCreatorModeStore: ObservableObject {
         } else {
             scanResultsLayout = .standard
         }
+
+        if let interval = defaults.object(forKey: Self.storageKey(Self.studioNowKeyBase)) as? TimeInterval {
+            studioNowDate = Date(timeIntervalSince1970: interval)
+        } else {
+            studioNowDate = nil
+        }
     }
 
     static func matchesUnlockName(_ name: String) -> Bool {
@@ -90,42 +122,50 @@ final class ProcessCreatorModeStore: ObservableObject {
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "-", with: "")
             .replacingOccurrences(of: "_", with: "")
-        return compact == unlockFirstName.lowercased()
+            .replacingOccurrences(of: "@", with: "")
+        let unlock = unlockFirstName.lowercased()
+        return compact == unlock || compact.contains(unlock)
     }
 
     /// Unlock live sans dépendre uniquement du flag UserDefaults.
     func isUnlocked(forFirstName firstName: String?) -> Bool {
         if isUnlocked { return true }
-        if Self.matchesUnlockName(firstName ?? "") { return true }
-        if Self.matchesUnlockName(UnifiedProfileService.shared.currentProfile?.firstName ?? "") {
-            return true
-        }
-        return false
+        return unlockNameCandidates(including: firstName).contains { Self.matchesUnlockName($0) }
     }
 
     func evaluate(firstName: String?) {
-        // Ne jamais verrouiller tant que le prénom n’est pas connu (profil pas encore hydraté).
-        let trimmed = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !trimmed.isEmpty else { return }
-
-        let unlocked = Self.matchesUnlockName(trimmed)
-        guard unlocked != isUnlocked else { return }
-        isUnlocked = unlocked
-        UserDefaults.standard.set(unlocked, forKey: Self.storageKey(Self.unlockedKeyBase))
+        // Une fois débloqué, on ne re-verrouille jamais (un prénom « Amine » ne doit pas cacher le Studio).
+        guard !isUnlocked else { return }
+        guard unlockNameCandidates(including: firstName).contains(where: Self.matchesUnlockName) else { return }
+        isUnlocked = true
+        UserDefaults.standard.set(true, forKey: Self.storageKey(Self.unlockedKeyBase))
         objectWillChange.send()
     }
 
     func syncFromCurrentProfile() {
-        let firstName = UnifiedProfileService.shared.currentProfile?.firstName
         // Recharge aussi depuis le storage user courant (clé anonymous → uid Firebase).
         reloadFromStorage()
-        evaluate(firstName: firstName)
-        // Si le prénom match mais le flag storage est faux (wipe), force le déblocage.
-        if !isUnlocked, Self.matchesUnlockName(firstName ?? "") {
+        evaluate(firstName: UnifiedProfileService.shared.currentProfile?.firstName)
+        if !isUnlocked, unlockNameCandidates(including: nil).contains(where: Self.matchesUnlockName) {
             isUnlocked = true
             UserDefaults.standard.set(true, forKey: Self.storageKey(Self.unlockedKeyBase))
             objectWillChange.send()
         }
+    }
+
+    private func unlockNameCandidates(including extra: String?) -> [String] {
+        let profile = UnifiedProfileService.shared.currentProfile
+        let social = SocialProfileStore.shared.profile
+        return [
+            extra,
+            profile?.firstName,
+            profile?.lastName,
+            profile?.username,
+            social?.displayName,
+            social?.username,
+        ]
+        .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty }
     }
 
     /// Relit le flag unlock / qualité pour la clé UserDefaults actuelle.
@@ -168,8 +208,68 @@ final class ProcessCreatorModeStore: ObservableObject {
         }
     }
 
-    var allowsUnlimitedScans: Bool { isUnlocked }
-    var allowsPhotoImport: Bool { isUnlocked }
+    var allowsUnlimitedScans: Bool {
+        isUnlocked(forFirstName: UnifiedProfileService.shared.currentProfile?.firstName)
+    }
+    var allowsPhotoImport: Bool {
+        isUnlocked(forFirstName: UnifiedProfileService.shared.currentProfile?.firstName)
+    }
+
+    var showsStudioEntry: Bool {
+        isUnlocked(forFirstName: UnifiedProfileService.shared.currentProfile?.firstName)
+    }
+
+    /// Horloge studio — page Progrès / série. Sinon `Date()`.
+    var effectiveNow: Date {
+        guard isUnlocked(forFirstName: UnifiedProfileService.shared.currentProfile?.firstName),
+              let studioNowDate else {
+            return Date()
+        }
+        return Calendar.current.startOfDay(for: studioNowDate)
+    }
+
+    var studioPlanStartDate: Date {
+        let calendar = Calendar.current
+        if let started = WelcomePlanStore.shared.plan?.calendar.startedAt {
+            return calendar.startOfDay(for: started)
+        }
+        return calendar.startOfDay(for: effectiveNow)
+    }
+
+    func setStudioPlanStartDate(_ date: Date) {
+        let start = Calendar.current.startOfDay(for: date)
+        WelcomePlanStore.shared.updateCalendarStartedAt(start)
+        if let now = studioNowDate, now < start {
+            studioNowDate = start
+        }
+        FaceScanHistoryStore.shared.retargetStudioScanDate(slot: .start, date: start)
+        objectWillChange.send()
+    }
+
+    func setStudioNowDate(_ date: Date) {
+        let calendar = Calendar.current
+        let start = studioPlanStartDate
+        let clamped = max(calendar.startOfDay(for: date), start)
+        studioNowDate = clamped
+        FaceScanHistoryStore.shared.retargetStudioScanDate(slot: .now, date: clamped)
+        ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
+        objectWillChange.send()
+    }
+
+    func clearStudioNowDate() {
+        studioNowDate = nil
+        ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
+        objectWillChange.send()
+    }
+
+    private func persistStudioNow() {
+        let key = Self.storageKey(Self.studioNowKeyBase)
+        if let studioNowDate {
+            UserDefaults.standard.set(studioNowDate.timeIntervalSince1970, forKey: key)
+        } else {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
 
     var qualityLabel: String {
         switch resultQuality {

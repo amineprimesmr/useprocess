@@ -130,10 +130,6 @@ final class CoachChatViewModel {
                 await selectConversation(conversationId)
             }
         }
-        if CoachPlanNavigationBridge.shared.consumePendingEveningChecklist() {
-            CoachPlanNavigationBridge.shared.openEveningCheckIn()
-            return
-        }
         if let checkInPrompt = CoachPlanNavigationBridge.shared.consumePendingCheckInPrompt() {
             await sendPrompt(checkInPrompt, persistUserMessage: true)
             return
@@ -175,9 +171,9 @@ final class CoachChatViewModel {
         libraryStore.updateConversation(conversationId) { conversation in
             conversation.append(userMessage)
             conversation.append(reply)
-            if conversation.title == "Nouvelle conversation" || conversation.title.isEmpty {
-                conversation.title = "Trajectoire debloat"
-                conversation.subjectLabel = "Trajectoire debloat"
+            if CoachConversation.isUntitled(conversation.title) {
+                conversation.title = AppCopy.tSync("Trajectoire debloat", en: "Debloat trajectory")
+                conversation.subjectLabel = AppCopy.tSync("Trajectoire debloat", en: "Debloat trajectory")
             }
         }
 
@@ -232,7 +228,7 @@ final class CoachChatViewModel {
             rawAssistantText: reply.text
         )
         CoachMemoryStore.shared.recordExchange(
-            userText: "Scan visage du jour",
+            userText: AppCopy.tSync("Scan visage du jour", en: "Today's face scan"),
             assistantText: reply.text,
             conversationTitle: title
         )
@@ -980,14 +976,22 @@ final class CoachChatViewModel {
                 return userDisplayText.trimmingCharacters(in: .whitespacesAndNewlines)
             }
             if !trimmedCaption.isEmpty { return trimmedCaption }
-            return images.count == 1 ? "📷 Photo" : "📷 \(images.count) photos"
+            return images.count == 1
+                ? AppCopy.tSync("📷 Photo", en: "📷 Photo")
+                : AppCopy.tSync("📷 \(images.count) photos", en: "📷 \(images.count) photos")
         }()
         let analysisPrompt: String = {
             if !trimmedCaption.isEmpty { return trimmedCaption }
             if images.count == 1 {
-                return "Analyse cette image en 2-3 phrases max. Contexte coach useprocess."
+                return AppCopy.tSync(
+                    "Analyse cette image en 2-3 phrases max. Contexte coach useprocess.",
+                    en: "Analyze this image in 2–3 sentences max. useprocess coach context."
+                )
             }
-            return "Analyse ces \(images.count) images en 2-4 phrases max. Contexte coach useprocess."
+            return AppCopy.tSync(
+                "Analyse ces \(images.count) images en 2-4 phrases max. Contexte coach useprocess.",
+                en: "Analyze these \(images.count) images in 2–4 sentences max. useprocess coach context."
+            )
         }()
 
         pendingAttachmentImages = []
@@ -1054,7 +1058,10 @@ final class CoachChatViewModel {
     }
 
     func sendFileAttachment(name: String) async {
-        await sendPrompt("📎 Fichier : \(name)", persistUserMessage: true)
+        await sendPrompt(
+            AppCopy.t("📎 Fichier : \(name)", en: "📎 File: \(name)"),
+            persistUserMessage: true
+        )
     }
 
     func copyMessage(_ message: CoachMessage) {

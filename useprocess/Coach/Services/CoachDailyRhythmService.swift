@@ -58,15 +58,54 @@ enum CoachDailyRhythmService {
         }
 
         if eveningReviewEnabled {
-            await schedule(
-                id: reviewID,
-                title: AppCopy.t("Check du jour", en: "Daily check-in"),
-                body: eveningReviewBody(),
-                hour: 21,
-                minute: 0,
-                kind: "daily_review"
-            )
+            await refreshEveningNotification()
         }
+    }
+
+    /// Replanifie la notif du soir — skip si le bilan du jour est déjà validé.
+    static func refreshEveningNotification() async {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [reviewID])
+
+        guard CoachIntelligenceSettingsStore.shared.isEnabled else { return }
+        guard eveningReviewEnabled else { return }
+        guard !ProcessEveningCheckInStore.shared.hasSubmittedToday else { return }
+
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized else { return }
+
+        let calendar = Calendar.current
+        let now = Date()
+        var components = DateComponents()
+        components.hour = ProcessEveningCheckInSchedule.reminderHour
+        components.minute = 0
+
+        guard var fireDate = calendar.nextDate(
+            after: now,
+            matching: components,
+            matchingPolicy: .nextTime
+        ) else { return }
+
+        if calendar.isDateInToday(fireDate),
+           calendar.component(.hour, from: now) >= ProcessEveningCheckInSchedule.reminderHour {
+            fireDate = calendar.date(byAdding: .day, value: 1, to: fireDate) ?? fireDate
+        }
+
+        let triggerComponents = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute],
+            from: fireDate
+        )
+
+        let content = UNMutableNotificationContent()
+        content.title = AppCopy.t("Check du jour", en: "Daily check-in")
+        content.body = eveningReviewBody()
+        content.threadIdentifier = CoachIntelligenceNotificationService.threadID
+        content.sound = .default
+        content.userInfo = ["kind": "daily_review"]
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
+        let request = UNNotificationRequest(identifier: reviewID, content: content, trigger: trigger)
+        try? await center.add(request)
     }
 
     // MARK: - Purge
@@ -156,9 +195,12 @@ enum CoachDailyRhythmService {
     }
 
     private static func eveningReviewBody() -> String {
-        let validatedDays = ProcessStreakStore.shared.snapshot.totalCompletedDays
-        if validatedDays > 0 {
-            return AppCopy.t("\(validatedDays) jour\(validatedDays > 1 ? "s" : "") validé\(validatedDays > 1 ? "s" : ""). Ouvre l’app et fais ton check.", en: "\(validatedDays) day\(validatedDays == 1 ? "" : "s") completed. Open the app and check in.")
+        let streak = ProcessStreakStore.shared.displayStreak
+        if streak > 0 {
+            return AppCopy.t(
+                "Série \(streak) jour\(streak > 1 ? "s" : "") — deux minutes pour valider ta journée.",
+                en: "\(streak)-day streak — take two minutes to complete your day."
+            )
         }
         return AppCopy.t("Deux minutes sur l'accueil pour valider ta journée.", en: "Take two minutes on Home to complete your day.")
     }

@@ -2,6 +2,7 @@ import AppIntents
 import Foundation
 
 /// Shortcuts / Siri — logue une gorgée (+500 ml par défaut).
+/// App Intents exige des littéraux compile-time (pas `AppCopy` / langue runtime).
 struct ProcessHydrationLogSipIntent: AppIntent {
     static var title: LocalizedStringResource = "Drink water"
     static var description = IntentDescription("Log a hydration sip")

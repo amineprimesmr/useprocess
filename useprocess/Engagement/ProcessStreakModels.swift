@@ -6,6 +6,89 @@ struct ProcessStreakState: nonisolated Codable, Equatable, Sendable {
     var longestStreak: Int = 0
 }
 
+/// Téléchargement + premier scan onboarding — la série **affichée** démarre à 1.
+enum ProcessStreakLaunchPolicy {
+    static func resolvedDisplayCounts(
+        currentStreak: Int,
+        totalValidatedDays: Int
+    ) -> (current: Int, total: Int) {
+        guard currentStreak == 0, totalValidatedDays == 0 else {
+            return (currentStreak, totalValidatedDays)
+        }
+        return (1, 1)
+    }
+}
+
+/// Série calendaire simple — comme Duolingo / Snapchat : 1 check = 1 jour.
+enum ProcessStreakMath {
+    static func currentStreak(
+        submittedKeys: Set<String>,
+        isPaused: (String) -> Bool = { _ in false },
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Int {
+        var day = calendar.startOfDay(for: now)
+        var key = ProcessStreakStore.dayKey(for: day, calendar: calendar)
+
+        if !submittedKeys.contains(key) {
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: day) else { return 0 }
+            day = previous
+            key = ProcessStreakStore.dayKey(for: day, calendar: calendar)
+            while isPaused(key) {
+                guard let skipped = calendar.date(byAdding: .day, value: -1, to: day) else { return 0 }
+                day = skipped
+                key = ProcessStreakStore.dayKey(for: day, calendar: calendar)
+            }
+            if !submittedKeys.contains(key) { return 0 }
+        }
+
+        var count = 0
+        var safety = 0
+        while safety < 400 {
+            safety += 1
+            if isPaused(key) {
+                guard let previous = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+                day = previous
+                key = ProcessStreakStore.dayKey(for: day, calendar: calendar)
+                continue
+            }
+            if !submittedKeys.contains(key) { break }
+            count += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+            day = previous
+            key = ProcessStreakStore.dayKey(for: day, calendar: calendar)
+        }
+        return count
+    }
+
+    /// Série consécutive se terminant à `dayKey` (inclus), jours pause ignorés.
+    static func streakEnding(
+        on dayKey: String,
+        submittedKeys: Set<String>,
+        isPaused: (String) -> Bool = { _ in false },
+        calendar: Calendar = .current
+    ) -> Int {
+        guard let day = ProcessDebloatTrajectoryEngine.date(from: dayKey) else { return 0 }
+        var current = calendar.startOfDay(for: day)
+        var count = 0
+        var safety = 0
+        while safety < 400 {
+            safety += 1
+            let key = ProcessStreakStore.dayKey(for: current, calendar: calendar)
+            if isPaused(key) {
+                guard let previous = calendar.date(byAdding: .day, value: -1, to: current) else { break }
+                current = previous
+                continue
+            }
+            if !submittedKeys.contains(key) { break }
+            count += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: current) else { break }
+            current = previous
+        }
+        return count
+    }
+}
+
 struct ProcessStreakDaySnapshot: Identifiable, Equatable {
     let id: String
     let date: Date

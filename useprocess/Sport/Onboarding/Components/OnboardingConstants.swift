@@ -11,7 +11,7 @@ import UIKit
 struct OnboardingConstants {
     // MARK: - Header (retour, progression, langue)
 
-    static let backButtonSize: CGFloat = 46
+    static let backButtonSize: CGFloat = 34
     static let headerHorizontalPadding: CGFloat = 24
     /// Espace entre la safe area et le haut du bouton retour.
     static let backButtonOffsetBelowSafeArea: CGFloat = 6
@@ -93,7 +93,7 @@ enum OnboardingHeaderLayout {
         switch step {
         case .videoIntroduction, .faceAnalysis, .payment, .appleSignIn,
              .processWelcome, .featuresUnlock, .complete,
-             .healthKitPermissions, .sleepDataRecovery:
+             .healthKitPermissions, .sleepDataRecovery, .dashboardPreview, .dreamFaceCommit:
             return true
         default:
             return false

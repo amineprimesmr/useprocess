@@ -84,6 +84,24 @@ struct FaceScanCaptureScreen: View {
         frameHint == nil && isFaceDetected
     }
 
+    /// Visage détecté + distance OK (cadrage validé ou « ne bouge plus » avant le démarrage).
+    private var isOnboardingFaceCalibrated: Bool {
+        guard isFaceDetected else { return false }
+        if frameHint == nil { return true }
+        let hint = frameHint?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return hint == AppCopy.tSync(
+            "Ne bouge plus. Le scan va démarrer.",
+            en: "Hold still. The scan is about to start."
+        )
+    }
+
+    /// Masque bleu + anneau de tirets onboarding — uniquement quand le cadrage est bon ou le scan actif.
+    private var showsOnboardingScanCalibrationChrome: Bool {
+        guard usesOnboardingFaceOval, !isInlinePreview, !scanBlockedByLighting else { return false }
+        if phase == .scanning || phase == .completed || scanProgress > 0.005 { return true }
+        return isOnboardingFaceCalibrated
+    }
+
     /// Une fois le scan lancé, on garde le cercle — les rotations faussent parfois le cadrage.
     private var usesCircularViewport: Bool {
         if usesOnboardingFaceOval { return true }
@@ -108,7 +126,7 @@ struct FaceScanCaptureScreen: View {
 
     private var showsScanRing: Bool {
         if usesOnboardingFaceOval {
-            return !isInlinePreview && !scanBlockedByLighting
+            return showsOnboardingScanCalibrationChrome
         }
         return !isInlinePreview && (scanProgress > 0.005 || phase == .completed)
     }
@@ -367,53 +385,56 @@ struct FaceScanCaptureScreen: View {
                 .frame(height: OnboardingConstants.headerBackButtonTopPadding)
 
             HStack {
-                onboardingChromeButton(systemName: "xmark", iconSize: 14) {
-                    FaceScanScreenFlash.shared.deactivate()
-                    onBack()
+                onboardingChromeButton(
+                    systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash",
+                    iconSize: 16,
+                    tint: isFlashEnabled
+                        ? Color(red: 0.95, green: 0.78, blue: 0.12)
+                        : nil
+                ) {
+                    userFlashOverride = true
+                    isFlashEnabled.toggle()
                 }
-                .accessibilityLabel(AppCopy.close)
+                .accessibilityLabel(
+                    isFlashEnabled
+                        ? AppCopy.t("Désactiver le flash", en: "Turn flash off")
+                        : AppCopy.t("Activer le flash", en: "Turn flash on")
+                )
+                .disabled(!isDeviceSupported || phase == .completed)
 
                 Spacer(minLength: 0)
 
                 HStack(spacing: 10) {
-                    onboardingChromeButton(
-                        systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash",
-                        iconSize: 16,
-                        tint: isFlashEnabled
-                            ? Color(red: 0.95, green: 0.78, blue: 0.12)
-                            : nil
-                    ) {
-                        userFlashOverride = true
-                        isFlashEnabled.toggle()
-                    }
-                    .accessibilityLabel(
-                        isFlashEnabled
-                            ? AppCopy.t("Désactiver le flash", en: "Turn flash off")
-                            : AppCopy.t("Activer le flash", en: "Turn flash on")
-                    )
-                    .disabled(!isDeviceSupported || phase == .completed)
-
                     onboardingChromeButton(systemName: "arrow.clockwise", iconSize: 16) {
                         restartScan()
                     }
                     .accessibilityLabel(AppCopy.t("Recommencer le scan", en: "Restart scan"))
+
+                    if showsMediaImport, phase != .completed {
+                        onboardingChromeButton(systemName: "photo.on.rectangle.angled", iconSize: 15) {
+                            showGalleryPicker = true
+                        }
+                        .accessibilityLabel(AppCopy.t("Importer photo ou vidéo", en: "Import photo or video"))
+                        .disabled(isImportingMedia)
+                    }
                 }
             }
             .padding(.horizontal, 20)
 
             VStack(spacing: 7) {
-                Text(AppCopy.t("Scan en cours", en: "Scan in progress"))
+                Text(onboardingScanTitle)
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.92) : Color.white.opacity(0.94))
                     .multilineTextAlignment(.center)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.22), value: onboardingScanCopyToken)
 
-                Text(AppCopy.t(
-                    "Tourne lentement la tête tout autour",
-                    en: "Slowly turn your head all the way around"
-                ))
+                Text(onboardingScanSubtitle)
                 .font(.system(size: 16, weight: .regular))
                 .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.38) : Color.white.opacity(0.42))
                 .multilineTextAlignment(.center)
+                .contentTransition(.opacity)
+                .animation(.easeInOut(duration: 0.22), value: onboardingScanCopyToken)
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 8)
@@ -425,7 +446,13 @@ struct FaceScanCaptureScreen: View {
             cameraSection(viewportSize: viewportSize)
                 .allowsHitTesting(phase != .completed)
 
-            Spacer(minLength: 48)
+            if showsMediaImport, phase != .completed {
+                importMediaButton
+                    .padding(.horizontal, 28)
+                    .padding(.top, 18)
+            }
+
+            Spacer(minLength: showsMediaImport ? 20 : 48)
 
             Text(onboardingScanFooterCopy)
                 .font(.system(size: 13, weight: .regular))
@@ -441,10 +468,78 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var onboardingScanFooterCopy: String {
-        AppCopy.t(
+        if phase == .scanning || scanProgress > 0.005 {
+            return AppCopy.t(
+                "Tourne la tête en cercle pour capturer tous les angles.",
+                en: "Turn your head in a circle to capture every angle."
+            )
+        }
+        if isOnboardingFaceCalibrated {
+            return AppCopy.t(
+                "Parfait — reste immobile une seconde.",
+                en: "Perfect — hold still for a second."
+            )
+        }
+        return AppCopy.t(
             "Place ton visage dans le cadre, puis bouge lentement la tête en cercle pour capturer tous les angles.",
             en: "Position your face in the frame, then slowly move your head in a circle to capture every angle."
         )
+    }
+
+    /// État copy onboarding — cadrage → calibré → scan actif.
+    private var onboardingScanCopyToken: String {
+        if phase == .completed { return "completed" }
+        if phase == .scanning || scanProgress > 0.005 { return "scanning" }
+        if isOnboardingFaceCalibrated { return "ready" }
+        return "positioning"
+    }
+
+    private var onboardingScanTitle: String {
+        switch onboardingScanCopyToken {
+        case "scanning":
+            return AppCopy.t("Tourne ta tête", en: "Turn your head")
+        case "ready":
+            return AppCopy.t("C’est bon", en: "You're set")
+        case "completed":
+            return AppCopy.t("Scan terminé", en: "Scan complete")
+        default:
+            return AppCopy.t("Cadre ton visage", en: "Frame your face")
+        }
+    }
+
+    private var onboardingScanSubtitle: String {
+        switch onboardingScanCopyToken {
+        case "scanning":
+            return AppCopy.t(
+                "Tourne lentement la tête tout autour",
+                en: "Slowly turn your head all the way around"
+            )
+        case "ready":
+            return AppCopy.t(
+                "Ne bouge plus — le scan démarre",
+                en: "Hold still — scan starting"
+            )
+        case "completed":
+            return AppCopy.done
+        default:
+            if let hint = frameHint?.trimmingCharacters(in: .whitespacesAndNewlines), !hint.isEmpty {
+                return hint
+            }
+            let trimmedInstruction = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedInstruction.isEmpty {
+                return trimmedInstruction
+            }
+            if !isFaceDetected {
+                return AppCopy.t(
+                    "Place ton visage dans le cadre",
+                    en: "Place your face in the frame"
+                )
+            }
+            return AppCopy.t(
+                "Ajuste ta tête dans le cadre",
+                en: "Adjust your head in the frame"
+            )
+        }
     }
 
     private func onboardingChromeButton(
@@ -839,6 +934,13 @@ struct FaceScanCaptureScreen: View {
                 .overlay {
                     if usesOnboardingFaceOval {
                         FaceScanOnboardingInnerEdgeGlow(intensity: colorScheme == .dark ? 0.78 : 0.72)
+                            .opacity(showsOnboardingScanCalibrationChrome ? 1 : 0)
+                            .scaleEffect(showsOnboardingScanCalibrationChrome ? 1 : 0.988)
+                            .animation(
+                                .spring(response: 0.44, dampingFraction: 0.84),
+                                value: showsOnboardingScanCalibrationChrome
+                            )
+                            .allowsHitTesting(false)
                     } else if scanBlockedByLighting {
                         FaceMorphClipShape(morph: 1, style: viewportStyle)
                             .fill(Color.black.opacity(0.14))
@@ -881,7 +983,11 @@ struct FaceScanCaptureScreen: View {
 
                 if showsScanRing, !scanBlockedByLighting {
                     scannerOverlay(viewportSize: viewportSize)
-                        .transition(.opacity)
+                        .transition(
+                            usesOnboardingFaceOval
+                                ? .opacity.combined(with: .scale(scale: 0.972))
+                                : .opacity
+                        )
                 }
             } else {
                 unsupportedSection
@@ -901,7 +1007,18 @@ struct FaceScanCaptureScreen: View {
         .animation(phase == .completed || usesOnboardingFaceOval ? nil : .interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
         .animation(phase == .completed ? nil : .easeInOut(duration: 0.25), value: phase)
         .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsFrameCorners)
-        .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsScanRing)
+        .animation(
+            phase == .completed
+                ? nil
+                : (usesOnboardingFaceOval
+                    ? .spring(response: 0.44, dampingFraction: 0.84)
+                    : .easeInOut(duration: 0.2)),
+            value: showsScanRing
+        )
+        .animation(
+            phase == .completed ? nil : .spring(response: 0.44, dampingFraction: 0.84),
+            value: showsOnboardingScanCalibrationChrome
+        )
 
         return Group {
             if isInlinePreview {

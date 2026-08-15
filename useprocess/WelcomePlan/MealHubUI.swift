@@ -210,11 +210,11 @@ struct MealShoppingListSection: View {
                             .buttonStyle(.processPlain)
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(item.name)
+                                Text(item.localizedName)
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(item.isChecked ? theme.secondaryText : theme.primaryText)
                                     .strikethrough(item.isChecked)
-                                Text(item.quantity)
+                                Text(item.localizedQuantity)
                                     .font(.caption2)
                                     .foregroundStyle(theme.secondaryText)
                             }

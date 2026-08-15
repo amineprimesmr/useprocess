@@ -24,7 +24,7 @@ struct OnboardingProgressBar: View {
         }
         .frame(height: height)
         .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: clampedProgress)
+        .ios26SafeAnimation(.spring(response: 0.34, dampingFraction: 0.88), value: clampedProgress)
     }
 
     private var clampedProgress: CGFloat {

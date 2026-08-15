@@ -359,14 +359,11 @@ struct OnboardingProgramCreationSuccessFooter: View {
             Button(action: onContinue) {
                 Text(OnboardingCopy.t("Commencer", en: "Get started"))
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(OnboardingTheme.filledButtonText(for: colorScheme))
+                    .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                     .frame(maxWidth: .infinity)
                     .frame(height: 58)
-                    .background(OnboardingTheme.filledButtonBackground(for: colorScheme))
-                    .clipShape(Capsule())
-                    .contentShape(Capsule())
             }
-            .buttonStyle(.processPlain)
+            .onboardingPrimaryActionStyle()
             .opacity(isRevealed ? 1 : 0)
             .offset(y: isRevealed ? 0 : 28)
             .animation(.spring(response: 0.55, dampingFraction: 0.86).delay(0.14), value: isRevealed)

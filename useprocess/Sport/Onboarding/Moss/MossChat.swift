@@ -166,16 +166,14 @@ struct MossChip: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         Button(action: action) {
             surface
         }
-        // Native press response only (MossChipPress). Selection is a plain
-        // white-fill fade — no scale overshoot, no custom land animation.
         .buttonStyle(MossChipPress())
         .animation(.smooth(duration: 0.2), value: isSelected)
-        // One selection haptic per commitment, never on the sibling
-        // deselecting.
         .sensoryFeedback(.selection, trigger: isSelected) { _, selected in
             selected
         }
@@ -183,33 +181,21 @@ struct MossChip: View {
     }
 
     private var surface: some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                // The glass NEVER changes: one constant interactive surface in
-                // both states, so press/release is purely the native fluid
-                // effect — nothing re-resolves on selection (glass tint does
-                // not interpolate; changing it snaps). Selection is a plain
-                // white layer inside the capsule whose opacity fades — normal
-                // SwiftUI, guaranteed smooth, riding the glass's own
-                // spring-back instead of fighting it.
-                label
-                    .background {
-                        Capsule(style: .continuous)
-                            .fill(.white)
-                            .opacity(isSelected ? 0.92 : 0)
-                    }
-                    .glassEffect(.regular.interactive(),
-                                 in: Capsule(style: .continuous))
-            } else {
-                label
-                    .background {
-                        Capsule(style: .continuous)
-                            .fill(isSelected ? Color.white.opacity(0.9)
-                                             : Color.white.opacity(0.12))
+        label
+            .background {
+                Capsule(style: .continuous)
+                    .fill(OnboardingTheme.filledButtonBackground(for: colorScheme))
+                    .overlay {
+                        if isSelected {
+                            Capsule(style: .continuous)
+                                .strokeBorder(
+                                    OnboardingTheme.onboardingPrimaryActionText(for: colorScheme).opacity(0.35),
+                                    lineWidth: 2
+                                )
+                        }
                     }
             }
-        }
-        .contentShape(Capsule(style: .continuous))
+            .contentShape(Capsule(style: .continuous))
     }
 
     private var label: some View {
@@ -218,8 +204,6 @@ struct MossChip: View {
                 AsyncImage(url: iconURL) { image in
                     image.resizable().scaledToFit()
                 } placeholder: {
-                    // Reserve the footprint so the chip doesn't reflow when
-                    // the icon lands.
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(Color.white.opacity(0.10))
                 }
@@ -228,7 +212,7 @@ struct MossChip: View {
             }
             Text(title)
                 .font(Theme.Fonts.sans(15, weight: .medium))
-                .foregroundStyle(isSelected ? .black : Theme.ink)
+                .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 46)
@@ -313,8 +297,7 @@ extension View {
 
 // MARK: - Footer buttons
 
-/// The pinned primary: full-width white-tinted Liquid Glass, native press.
-/// Dimmed while disabled.
+/// CTA pleine largeur dans le fil de discussion onboarding.
 struct MossChatPrimaryButton: View {
     let title: String
     /// The brand never renders as text: the CTA closes with the wordmark.
@@ -322,20 +305,20 @@ struct MossChatPrimaryButton: View {
     var enabled: Bool = true
     let action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                Button(action: action) { label }
-                    .buttonStyle(.glassProminent)
-                    .buttonBorderShape(.capsule)
-                    .tint(.white)
-            } else {
-                Button(action: action) { label.padding(.vertical, 17) }
-                    .buttonStyle(.plain)
-                    .background(Capsule(style: .continuous).fill(.white))
-            }
+        Button(action: action) {
+            label
+                .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
+                .padding(.vertical, 17)
+                .frame(maxWidth: .infinity)
+                .background(
+                    OnboardingTheme.filledButtonBackground(for: colorScheme),
+                    in: Capsule(style: .continuous)
+                )
         }
-        .controlSize(.large)
+        .buttonStyle(MossChipPress())
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.35)
     }
@@ -345,10 +328,12 @@ struct MossChatPrimaryButton: View {
             Text(title)
                 .font(Theme.Fonts.sans(16, weight: .semibold))
             if wordmarkSuffix {
-                MossWordmark(height: 14, color: .black)
+                MossWordmark(
+                    height: 14,
+                    color: OnboardingTheme.onboardingPrimaryActionText(for: colorScheme)
+                )
             }
         }
-        .foregroundStyle(.black)
         .frame(maxWidth: .infinity)
     }
 }

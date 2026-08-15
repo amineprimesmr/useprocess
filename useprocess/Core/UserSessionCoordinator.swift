@@ -35,6 +35,11 @@ final class UserSessionCoordinator {
         if let userId {
             FaceScanHistoryStore.shared.reloadForUser(userId: userId)
             PostOnboardingActivationService.migrateOnboardingFaceScanData()
+            PostOnboardingActivationService.migrateOnboardingEngagementData(to: userId)
+            ProcessEveningCheckInStore.shared.reload()
+            ProcessHydrationLogStore.shared.reload()
+            ProcessDebloatTrajectoryStore.shared.reload()
+            ProcessStreakStore.shared.reload()
             AppSession.shared.reloadForCurrentUser()
             ProcessPrivacyConsentStore.shared.reloadForUser(userId: userId)
             BodyScanHistoryStore.shared.reloadForUser(userId: userId)

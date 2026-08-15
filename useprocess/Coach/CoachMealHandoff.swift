@@ -94,17 +94,27 @@ enum CoachMealHandoffBuilder {
         ]
     }
 
+    @MainActor
     static func augmentedPrompt(_ base: String, handoff: CoachMealHandoff) -> String {
         let ingredients = handoff.meal.items
             .map { "\($0.name) \($0.quantity)" }
             .joined(separator: ", ")
-        return """
-        Repas ciblé : \(handoff.meal.name) (\(handoff.slot.rawValue), jour \(handoff.dayTitle)).
-        Ingrédients : \(ingredients).
-        Préparation : \(handoff.meal.prepSummary).
+        return AppCopy.t(
+            """
+            Repas ciblé : \(handoff.meal.name) (\(handoff.slot.displayTitle), jour \(handoff.dayTitle)).
+            Ingrédients : \(ingredients).
+            Préparation : \(handoff.meal.prepSummary).
 
-        \(base)
-        """
+            \(base)
+            """,
+            en: """
+            Target meal: \(handoff.meal.name) (\(handoff.slot.displayTitle), day \(handoff.dayTitle)).
+            Ingredients: \(ingredients).
+            Prep: \(handoff.meal.prepSummary).
+
+            \(base)
+            """
+        )
     }
 
     private static func mealHint(for handoff: CoachMealHandoff) -> String {

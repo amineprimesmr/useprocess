@@ -105,7 +105,9 @@ enum FaceScanCoachInsightService {
         let lower = raw.lowercased()
         let minimizing = [
             "légèrement gonfl", "legerement gonfl", "un peu gonfl",
-            "léger gonflement", "legere retention", "légère rétention"
+            "léger gonflement", "legere retention", "légère rétention",
+            "slightly puffy", "a bit puffy", "slight puffiness", "mild retention",
+            "a little puffy", "slightly swollen"
         ]
         guard minimizing.contains(where: { lower.contains($0) }) else { return false }
 

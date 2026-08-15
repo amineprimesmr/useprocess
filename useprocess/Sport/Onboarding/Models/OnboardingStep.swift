@@ -88,7 +88,7 @@ enum OnboardingStep: Int, CaseIterable {
     case notificationPermission = 59           // Conservé compat sauvegarde — page notifs supprimée, pop-up au paywall
     case transformationPreview = 64            // ✨ Témoignages avant / après (slider) avant le dashboard
     case dashboardPreview = 69                 // ✨ Dashboard 3D après les témoignages, avant le paywall
-    case dreamFaceCommit = 70                  // Conservé compat sauvegarde — page engagement retirée, saut auto
+    case dreamFaceCommit = 70                  // ✨ Slider d'engagement + pop notifications avant le paywall
     case payment = 60
     case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
     case referralReward = 62                   // ✨ Page de parrainage avec slider de gains
@@ -100,7 +100,7 @@ enum OnboardingStep: Int, CaseIterable {
         switch self {
         case .videoIntroduction, .faceAnalysis, .weightMotivation, .sportSelection,
              .healthKitPermissions, .biometricAuth,
-             .transformationPreview, .dashboardPreview, .programCreation,
+             .transformationPreview, .dashboardPreview, .dreamFaceCommit, .programCreation,
              .payment, .processWelcome, .referralReward, .featuresUnlock,
              .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
              .personalizedWelcome, .processResultsDurability,
@@ -217,8 +217,7 @@ enum OnboardingStep: Int, CaseIterable {
              .personalizedWelcome, .processResultsDurability,
              .sleepDataRecovery, .primaryGoal, .goalProjection,
              .healthKitPermissions, .notificationPermission,
-             .idealWeight, .weightGoalIncompatible,
-             .dreamFaceCommit:
+             .idealWeight, .weightGoalIncompatible:
             return true
         default:
             return false
@@ -229,9 +228,8 @@ enum OnboardingStep: Int, CaseIterable {
     var unpaidResumeStep: OnboardingStep {
         switch self {
         case .payment, .appleSignIn, .dreamFaceCommit,
-             .processWelcome, .referralReward, .featuresUnlock, .complete,
-             .dashboardPreview:
-            return .transformationPreview
+             .processWelcome, .referralReward, .featuresUnlock, .complete:
+            return .dashboardPreview
         default:
             return self
         }

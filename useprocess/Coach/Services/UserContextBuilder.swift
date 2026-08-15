@@ -147,19 +147,19 @@ enum UserContextBuilder {
             ctx.profile = .init(
                 firstName: profile.firstName.isEmpty ? nil : profile.firstName,
                 age: profile.age > 0 ? profile.age : nil,
-                gender: profile.gender.rawValue,
+                gender: profile.gender.displayName,
                 heightCm: profile.height > 0 ? profile.height : nil,
                 weightKg: profile.weight > 0 ? profile.weight : nil,
                 idealWeightKg: profile.idealWeight,
-                weightGoal: profile.weightGoal?.rawValue,
-                goalPace: profile.goalPace?.rawValue,
-                sports: profile.sports.map(\.name),
-                activityLevel: profile.activityLevel.rawValue,
-                experienceLevel: profile.experienceLevel?.rawValue,
+                weightGoal: profile.weightGoal?.title,
+                goalPace: profile.goalPace?.title,
+                sports: profile.sports.map { OnboardingSportCatalog.localizedName($0.name) },
+                activityLevel: profile.activityLevel.displayName,
+                experienceLevel: profile.experienceLevel?.title,
                 sessionsPerWeek: profile.sessionsPerWeek,
-                nutritionQuality: profile.nutritionProfile?.nutritionQuality?.rawValue,
-                weightManagementExperience: profile.nutritionProfile?.weightManagementExperience?.rawValue,
-                sleepQuality: profile.sleepProfile?.sleepQuality?.rawValue,
+                nutritionQuality: profile.nutritionProfile?.nutritionQuality?.title,
+                weightManagementExperience: profile.nutritionProfile?.weightManagementExperience?.title,
+                sleepQuality: profile.sleepProfile?.sleepQuality?.title,
                 hasCompletedOnboarding: profile.hasCompletedOnboarding
             )
         }
@@ -279,16 +279,16 @@ enum UserContextBuilder {
         let trajectorySnapshot = trajectory.snapshot
         let recent = trajectory.recentRecords(limit: 14)
         ctx.debloatTrajectory = .init(
-            currentStreak: trajectorySnapshot.currentStreak,
+            currentStreak: ProcessStreakStore.shared.displayStreak,
             todayScore: trajectorySnapshot.todayCompositeScore,
-            todayVerdict: trajectorySnapshot.todayVerdict?.rawValue,
-            trend: trajectorySnapshot.trajectoryTrend.rawValue,
+            todayVerdict: trajectorySnapshot.todayVerdict?.shortLabel,
+            trend: trajectorySnapshot.trajectoryTrend.label,
             velocityLabel: trajectorySnapshot.velocityLabel,
             recentDays: recent.map {
                 .init(
                     dayKey: $0.dayKey,
                     score: $0.compositeScore,
-                    verdict: $0.verdict.rawValue,
+                    verdict: $0.verdict.shortLabel,
                     yesCount: $0.yesCount,
                     puffinessDelta: $0.puffinessDelta,
                     hasScan: $0.hasScan
@@ -304,18 +304,27 @@ enum UserContextBuilder {
         var lines: [String] = []
 
         if let p = context.profile {
-            let name = p.firstName ?? "Utilisateur"
+            let name = p.firstName ?? AppCopy.tSync("Utilisateur", en: "User")
             let goal = p.weightGoal ?? "—"
             let sports = p.sports.prefix(2).joined(separator: ", ")
-            lines.append("• \(name), \(p.age.map { "\($0) ans" } ?? "âge —"), objectif \(goal)\(sports.isEmpty ? "" : ", \(sports)")")
+            let age = p.age.map { AppCopy.tSync("\($0) ans", en: "\($0) yrs") } ?? AppCopy.tSync("âge —", en: "age —")
+            lines.append(AppCopy.tSync(
+                "• \(name), \(age), objectif \(goal)\(sports.isEmpty ? "" : ", \(sports)")",
+                en: "• \(name), \(age), goal \(goal)\(sports.isEmpty ? "" : ", \(sports)")"
+            ))
         }
 
         if let h = context.health {
             var parts: [String] = []
             if let sleep = h.sleepHours, sleep > 0 {
-                parts.append("sommeil \(String(format: "%.1f", sleep))h")
+                parts.append(AppCopy.tSync(
+                    "sommeil \(String(format: "%.1f", sleep))h",
+                    en: "sleep \(String(format: "%.1f", sleep))h"
+                ))
             }
-            if let steps = h.steps { parts.append("\(steps) pas") }
+            if let steps = h.steps {
+                parts.append(AppCopy.tSync("\(steps) pas", en: "\(steps) steps"))
+            }
             if let hrv = h.hrv, hrv > 0 {
                 parts.append("HRV \(Int(hrv.rounded()))")
             }
@@ -326,33 +335,54 @@ enum UserContextBuilder {
 
         if let status = context.activityStatus, status != ProcessActivityStatus.active.title {
             let guidance = context.activityStatusGuidance ?? ""
-            lines.append("• Statut du jour : \(status)\(guidance.isEmpty ? "" : " — \(guidance)")")
+            lines.append(AppCopy.tSync(
+                "• Statut du jour : \(status)\(guidance.isEmpty ? "" : " — \(guidance)")",
+                en: "• Today's status: \(status)\(guidance.isEmpty ? "" : " — \(guidance)")"
+            ))
         }
 
         if let scan = context.lastBodyScan, let score = scan.postureScore {
-            lines.append("• Dernier scan posture \(score)/100")
+            lines.append(AppCopy.tSync(
+                "• Dernier scan posture \(score)/100",
+                en: "• Latest posture scan \(score)/100"
+            ))
         }
 
         if let face = context.latestFaceScan {
             if let relativeScore = face.relativeScore {
                 let puffinessDelta = face.puffinessDelta.map { signed($0) } ?? "n/a"
                 let fatigueDelta = face.underEyeFatigueDelta.map { signed($0) } ?? "n/a"
-                lines.append("• Visage relatif \(relativeScore)/100 : gonflement \(puffinessDelta), cernes \(fatigueDelta)")
+                lines.append(AppCopy.tSync(
+                    "• Visage relatif \(relativeScore)/100 : gonflement \(puffinessDelta), cernes \(fatigueDelta)",
+                    en: "• Relative face \(relativeScore)/100: puffiness \(puffinessDelta), under-eyes \(fatigueDelta)"
+                ))
             } else {
-                lines.append("• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)")
+                lines.append(AppCopy.tSync(
+                    "• Visage : gonflement \(face.puffiness ?? 0), cernes \(face.underEyeFatigue ?? 0)",
+                    en: "• Face: puffiness \(face.puffiness ?? 0), under-eyes \(face.underEyeFatigue ?? 0)"
+                ))
             }
         }
 
         if let progress = context.planTotalDays.map({ _ in ProcessPlanProgressStore.shared.snapshot }),
            progress.hasPlan,
            let mode = progress.trajectoryMode {
-            lines.append("• Plan : \(mode.label), jalon actif \(progress.activeMilestoneLabel ?? "—")")
+            lines.append(AppCopy.tSync(
+                "• Plan : \(mode.label), jalon actif \(progress.activeMilestoneLabel ?? "—")",
+                en: "• Plan: \(mode.label), active milestone \(progress.activeMilestoneLabel ?? "—")"
+            ))
         }
 
         if let trajectory = context.debloatTrajectory {
-            lines.append("• Trajectoire debloat : streak \(trajectory.currentStreak), aujourd'hui \(Int(trajectory.todayScore))/100 (\(trajectory.todayVerdict ?? "—")), tendance \(trajectory.velocityLabel)")
+            lines.append(AppCopy.tSync(
+                "• Trajectoire debloat : streak \(trajectory.currentStreak), aujourd'hui \(Int(trajectory.todayScore))/100 (\(trajectory.todayVerdict ?? "—")), tendance \(trajectory.velocityLabel)",
+                en: "• Debloat trajectory: streak \(trajectory.currentStreak), today \(Int(trajectory.todayScore))/100 (\(trajectory.todayVerdict ?? "—")), trend \(trajectory.velocityLabel)"
+            ))
             if let last = trajectory.recentDays.first {
-                lines.append("• Dernier bilan : \(last.dayKey) — \(last.verdict), \(last.yesCount)/3 leviers, score \(Int(last.score))")
+                lines.append(AppCopy.tSync(
+                    "• Dernier bilan : \(last.dayKey) — \(last.verdict), \(last.yesCount)/3 leviers, score \(Int(last.score))",
+                    en: "• Latest check-in: \(last.dayKey) — \(last.verdict), \(last.yesCount)/3 levers, score \(Int(last.score))"
+                ))
             }
         }
 
@@ -380,12 +410,20 @@ enum UserContextBuilder {
               let json = String(data: data, encoding: .utf8) else {
             return "{}"
         }
-        return """
-        CONTEXTE UTILISATEUR useprocess (JSON — données réelles de l'app, ne pas inventer) :
-        ```json
-        \(json)
-        ```
-        """
+        return AppCopy.tSync(
+            """
+            CONTEXTE UTILISATEUR useprocess (JSON — données réelles de l'app, ne pas inventer) :
+            ```json
+            \(json)
+            ```
+            """,
+            en: """
+            useprocess USER CONTEXT (JSON — real app data, do not invent):
+            ```json
+            \(json)
+            ```
+            """
+        )
     }
 
     private static func signed(_ value: Int) -> String {

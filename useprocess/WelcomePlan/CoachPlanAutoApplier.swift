@@ -248,7 +248,7 @@ enum CoachPlanAutoApplier {
                 id: UUID().uuidString,
                 title: text,
                 detail: AppCopy.tSync("Ajusté par le coach", en: "Adjusted by coach"),
-                pillar: section.capitalized,
+                pillar: localizedPillar(for: section),
                 durationMinutes: nil,
                 isOptional: false
             )
@@ -262,6 +262,19 @@ enum CoachPlanAutoApplier {
         default: break
         }
         return true
+    }
+
+    private static func localizedPillar(for section: String) -> String {
+        switch section {
+        case "morning", "face":
+            return AppCopy.tSync("Visage", en: "Face")
+        case "posture":
+            return AppCopy.tSync("Posture", en: "Posture")
+        case "evening":
+            return AppCopy.tSync("Sommeil", en: "Sleep")
+        default:
+            return section.capitalized
+        }
     }
 
     private static func applyExtras(_ response: String, title: String, plan: inout FaceOriginPlan) -> Bool {

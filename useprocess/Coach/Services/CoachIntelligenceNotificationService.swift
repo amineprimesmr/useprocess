@@ -235,31 +235,38 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
     ) {
         defer { completionHandler() }
 
+        Task { @MainActor in
+            handleNotificationResponse(response)
+        }
+    }
+
+    @MainActor
+    func handleNotificationResponse(_ response: UNNotificationResponse) {
         let userInfo = response.notification.request.content.userInfo
         let kind = userInfo["kind"] as? String ?? ""
 
-        Task { @MainActor in
-            switch kind {
-            case "coach_reply":
-                let conversationId = (userInfo["conversationId"] as? String).flatMap(UUID.init(uuidString:))
-                CoachPlanNavigationBridge.shared.openCoach(conversationId: conversationId)
-            case "coach_checkin":
-                let prompt = userInfo["prompt"] as? String ?? AppCopy.t("Fais mon check-in du jour.", en: "Run my daily check-in.")
-                CoachPlanNavigationBridge.shared.openCoachWithCheckIn(prompt: prompt)
-            case "daily_outlook":
-                CoachPlanNavigationBridge.shared.openCoachWithCheckIn(
-                    prompt: AppCopy.t("Donne-moi mon brief matin : sommeil, jour du plan personnalisé et 1 action prioritaire.", en: "Give me my morning brief: sleep, personalized plan day, and one priority action.")
-                )
-            case "daily_review":
-                CoachPlanNavigationBridge.shared.openEveningCheckIn()
-            case "hydration_sip":
+        switch kind {
+        case "coach_reply":
+            let conversationId = (userInfo["conversationId"] as? String).flatMap(UUID.init(uuidString:))
+            CoachPlanNavigationBridge.shared.openCoach(conversationId: conversationId)
+        case "coach_checkin":
+            let prompt = userInfo["prompt"] as? String ?? AppCopy.t("Fais mon check-in du jour.", en: "Run my daily check-in.")
+            CoachPlanNavigationBridge.shared.openCoachWithCheckIn(prompt: prompt)
+        case "daily_outlook":
+            CoachPlanNavigationBridge.shared.openCoachWithCheckIn(
+                prompt: AppCopy.t("Donne-moi mon brief matin : sommeil, jour du plan personnalisé et 1 action prioritaire.", en: "Give me my morning brief: sleep, personalized plan day, and one priority action.")
+            )
+        case "daily_review":
+            CoachPlanNavigationBridge.shared.openEveningCheckIn()
+        case "hydration_sip":
+            Task { @MainActor in
                 await ProcessHydrationTimerNotificationService.handleAction(
                     identifier: response.actionIdentifier
                 )
-            default:
-                if kind.hasPrefix("marketing_") {
-                    handleMarketingNotificationTap(kind: kind, userInfo: userInfo)
-                }
+            }
+        default:
+            if kind.hasPrefix("marketing_") {
+                handleMarketingNotificationTap(kind: kind, userInfo: userInfo)
             }
         }
     }

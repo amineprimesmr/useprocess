@@ -88,6 +88,7 @@ private struct PlanHomeTutorialTabStepFooter: View {
     var body: some View {
         VStack(spacing: 0) {
             PlanHomeTutorialCaption(step: store.currentStep)
+                .environment(\.colorScheme, .dark)
                 .padding(.horizontal, 22)
                 .padding(.bottom, 18)
 
@@ -112,6 +113,7 @@ private struct PlanHomeTutorialTabStepFooter: View {
 }
 
 private struct PlanHomeTutorialTabStepControls: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var store: PlanHomeTutorialStore
 
     var body: some View {
@@ -123,10 +125,15 @@ private struct PlanHomeTutorialTabStepControls: View {
                      ? AppCopy.t("C'est parti", en: "Let's go")
                      : AppCopy.t("Continuer", en: "Continue"))
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.black.opacity(0.88))
+                    .foregroundStyle(
+                        PlanHomeTutorialChromeStyle.continueButtonForeground(for: colorScheme)
+                    )
                     .frame(maxWidth: .infinity)
                     .frame(height: 54)
-                    .background(Capsule(style: .continuous).fill(Color.white))
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(PlanHomeTutorialChromeStyle.continueButtonBackground(for: colorScheme))
+                    )
             }
             .buttonStyle(.processPlain)
         }

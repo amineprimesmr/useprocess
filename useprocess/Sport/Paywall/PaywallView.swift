@@ -846,7 +846,7 @@ struct PaywallFaceScanHero: View {
         .task(id: result.id) {
             await resolveVideoWithRetry()
         }
-        .accessibilityLabel("Score visage \(displayScore) pour cent")
+        .accessibilityLabel(AppCopy.t("Score visage \(displayScore) pour cent", en: "Face score \(displayScore) percent"))
     }
 
     @ViewBuilder

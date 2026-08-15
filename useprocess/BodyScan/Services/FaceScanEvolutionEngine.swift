@@ -230,45 +230,68 @@ enum FaceScanEvolutionEngine {
         let resolvedContext = context ?? FaceScanInsightContext.fromTodayHealth()
         let facts = build(for: result, history: history, context: resolvedContext)
 
-        var lines: [String] = ["FAITS ÉVOLUTION (données réelles — base ton analyse dessus) :"]
+        var lines: [String] = [
+            AppCopy.tSync(
+                "FAITS ÉVOLUTION (données réelles — base ton analyse dessus) :",
+                en: "EVOLUTION FACTS (real data — base your analysis on this):"
+            )
+        ]
 
         if let rel = result.relativeSignals, rel.baselineLabel != "Premier scan de référence" {
-            lines.append("- vs baseline : rétention \(signed(rel.puffinessDelta)), cernes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0)), peau \(signed(rel.skinClarityDelta)).")
+            lines.append(AppCopy.tSync(
+                "- vs baseline : rétention \(signed(rel.puffinessDelta)), cernes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0)), peau \(signed(rel.skinClarityDelta)).",
+                en: "- vs baseline: retention \(signed(rel.puffinessDelta)), under-eyes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0)), skin \(signed(rel.skinClarityDelta))."
+            ))
         }
 
         if facts.retentionPersistingScans >= 2 {
-            lines.append("- Rétention élevée depuis \(facts.retentionPersistingScans) scans consécutifs.")
+            lines.append(AppCopy.tSync(
+                "- Rétention élevée depuis \(facts.retentionPersistingScans) scans consécutifs.",
+                en: "- High retention for \(facts.retentionPersistingScans) consecutive scans."
+            ))
         }
 
         if let trend = facts.retentionTrend {
-            lines.append("- Tendance rétention : \(trend.label).")
+            lines.append(AppCopy.tSync("- Tendance rétention : \(trend.label).", en: "- Retention trend: \(trend.label)."))
         }
         if let trend = facts.recoveryTrend {
-            lines.append("- Tendance récup : \(trend.label).")
+            lines.append(AppCopy.tSync("- Tendance récup : \(trend.label).", en: "- Recovery trend: \(trend.label)."))
         }
 
         if let month = facts.monthWellnessDelta {
-            lines.append("- vs moyenne 30 jours : \(signed(month)) pts score global.")
+            lines.append(AppCopy.tSync(
+                "- vs moyenne 30 jours : \(signed(month)) pts score global.",
+                en: "- vs 30-day average: \(signed(month)) overall score pts."
+            ))
         }
 
         if let nutrition = nutritionContextLine(facts: facts, context: resolvedContext) {
-            lines.append("- Nutrition : \(nutrition)")
+            lines.append(AppCopy.tSync("- Nutrition : \(nutrition)", en: "- Nutrition: \(nutrition)"))
         }
 
         for correlation in facts.correlations {
-            lines.append("- Corrélation : \(correlation.message)")
+            lines.append(AppCopy.tSync("- Corrélation : \(correlation.message)", en: "- Correlation: \(correlation.message)"))
         }
 
         if let streak = facts.trajectoryStreak, let trend = facts.trajectoryTrendLabel {
-            lines.append("- Trajectoire debloat : streak \(streak), tendance \(trend).")
+            lines.append(AppCopy.tSync(
+                "- Trajectoire debloat : streak \(streak), tendance \(trend).",
+                en: "- Debloat trajectory: streak \(streak), trend \(trend)."
+            ))
         }
 
         if !facts.recentSuggestedActions.isEmpty {
-            lines.append("- Actions déjà proposées récemment (proposer autre chose si problème persiste) : \(facts.recentSuggestedActions.joined(separator: " | ")).")
+            lines.append(AppCopy.tSync(
+                "- Actions déjà proposées récemment (proposer autre chose si problème persiste) : \(facts.recentSuggestedActions.joined(separator: " | ")).",
+                en: "- Actions already suggested recently (suggest something else if the issue persists): \(facts.recentSuggestedActions.joined(separator: " | "))."
+            ))
         }
 
         if let water = resolvedContext.waterLiters, let target = resolvedContext.hydrationTargetLiters, target > 0 {
-            lines.append("- Hydratation aujourd'hui : \(String(format: "%.1f", water)) L / \(String(format: "%.1f", target)) L objectif.")
+            lines.append(AppCopy.tSync(
+                "- Hydratation aujourd'hui : \(String(format: "%.1f", water)) L / \(String(format: "%.1f", target)) L objectif.",
+                en: "- Hydration today: \(String(format: "%.1f", water)) L / \(String(format: "%.1f", target)) L goal."
+            ))
         }
 
         return lines.joined(separator: "\n")
@@ -307,7 +330,7 @@ enum FaceScanEvolutionEngine {
             let assessment = entry.assessment
             electrolyteScores.append(assessment.electrolyteScore)
             if assessment.electrolyteScore < 68 {
-                summaries.append("\(entry.slot.rawValue) : \(assessment.summary)")
+                summaries.append("\(entry.slot.displayTitle) : \(assessment.summary)")
             }
         }
 
@@ -330,7 +353,10 @@ enum FaceScanEvolutionEngine {
         if facts.isHighSodium || facts.isPoorElectrolyteBalance {
             let sodiumG = String(format: "%.1f", sodiumTotal / 1_000)
             let potassiumG = String(format: "%.1f", potassiumTotal / 1_000)
-            facts.summaryLine = "Hier ~\(sodiumG) g Na / \(potassiumG) g K (ratio \(String(format: "%.1f", ratio)))"
+            facts.summaryLine = AppCopy.tSync(
+                "Hier ~\(sodiumG) g Na / \(potassiumG) g K (ratio \(String(format: "%.1f", ratio)))",
+                en: "Yesterday ~\(sodiumG) g Na / \(potassiumG) g K (ratio \(String(format: "%.1f", ratio)))"
+            )
             if let first = summaries.first {
                 facts.summaryLine = (facts.summaryLine ?? "") + " — \(first)"
             }
@@ -355,7 +381,10 @@ enum FaceScanEvolutionEngine {
            let target = context.hydrationTargetLiters,
            target > 0,
            water < target * 0.55 {
-            parts.append("Hydratation basse ce matin (\(String(format: "%.1f", water)) L).")
+            parts.append(AppCopy.tSync(
+                "Hydratation basse ce matin (\(String(format: "%.1f", water)) L).",
+                en: "Hydration low this morning (\(String(format: "%.1f", water)) L)."
+            ))
         }
 
         return parts.isEmpty ? nil : parts.joined(separator: " ")

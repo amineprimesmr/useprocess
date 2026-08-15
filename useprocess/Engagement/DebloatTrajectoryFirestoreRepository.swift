@@ -22,7 +22,7 @@ final class DebloatTrajectoryFirestoreRepository {
                 "lastDebloatTrajectoryDay": record.dayKey,
                 "lastDebloatCompositeScore": record.compositeScore,
                 "lastDebloatVerdict": record.verdict.rawValue,
-                "currentDebloatStreak": record.streakAfterDay
+                "currentDebloatStreak": ProcessStreakStore.shared.displayStreak
             ], merge: true)
         } catch {
             #if DEBUG

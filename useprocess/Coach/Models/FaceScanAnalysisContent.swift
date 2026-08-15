@@ -42,9 +42,9 @@ enum FaceScanAnalysisParser {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
 
-            if let value = labeledValue(in: trimmed, labels: ["RESUME", "RÉSUMÉ"]) {
+            if let value = labeledValue(in: trimmed, labels: ["RESUME", "RÉSUMÉ", "SUMMARY"]) {
                 summary = value
-            } else if let value = labeledValue(in: trimmed, labels: ["SIGNAUX"]) {
+            } else if let value = labeledValue(in: trimmed, labels: ["SIGNAUX", "SIGNALS"]) {
                 signals = value
                     .components(separatedBy: "|")
                     .map { $0.trimmingCharacters(in: .whitespaces) }

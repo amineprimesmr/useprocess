@@ -43,12 +43,10 @@ struct AppShellView: View {
                 ProcessMarketingNotificationService.shared.handleAppLeftForeground()
                 ProcessHydrationTimerMonitor.shared.handleSceneWillBackground()
             case .active:
-                if !session.hasCompletedOnboarding {
-                    ProcessReferralAttribution.captureFromPasteboardIfNeeded()
-                }
                 ProcessMarketingNotificationService.shared.handleAppBecameActive()
                 ProcessAudioSession.configureForMixingWithOthersIfIdle()
                 ProcessHomeScreenQuickActions.syncForCurrentUser()
+                Task { await CoachDailyRhythmService.refreshEveningNotification() }
                 if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
                     delegate.consumePendingLaunchShortcut()
                 }
@@ -63,6 +61,7 @@ struct AppShellView: View {
         }
         .environment(\.appTheme, theme)
         .processThirdPartyAIConsentSheet()
+        .processAppUpdatePrompt()
         .preferredColorScheme(session.appearance.preferredColorScheme)
         .environmentObject(AuthenticationManager.shared)
         .environmentObject(UnifiedProfileService.shared)
@@ -78,9 +77,6 @@ struct AppShellView: View {
             }
         }
         .task {
-            if !session.hasCompletedOnboarding {
-                ProcessReferralAttribution.captureFromPasteboardIfNeeded()
-            }
             ProcessHydrationTimerMonitor.shared.bootstrapAtLaunch()
             // Garantit Firebase prêt avant tout usage Auth tardif.
             FirebaseBootstrap.configure()

@@ -1,42 +1,67 @@
 import Foundation
 
 enum FaceScanCadence {
-    /// Délai minimum entre deux scans (1 = quotidien).
+    /// 1 scan par jour civil.
     static let intervalDays = 1
+    /// Déverrouillage du scan du jour (matin, même lumière) — pas à minuit.
+    static let dailyUnlockHour = 6
+    static let dailyUnlockMinute = 0
 
-    static func daysUntilNextScan(since lastScan: Date, now: Date = Date()) -> Int {
-        let calendar = Calendar.current
-        let elapsed = calendar.dateComponents([.day], from: calendar.startOfDay(for: lastScan), to: calendar.startOfDay(for: now)).day ?? 0
+    static func daysUntilNextScan(since lastScan: Date, now: Date = Date(), calendar: Calendar = .current) -> Int {
+        let elapsed = calendar.dateComponents(
+            [.day],
+            from: calendar.startOfDay(for: lastScan),
+            to: calendar.startOfDay(for: now)
+        ).day ?? 0
         return max(0, intervalDays - elapsed)
     }
 
-    static func isScanDue(since lastScan: Date?, now: Date = Date()) -> Bool {
+    static func isScanDue(since lastScan: Date?, now: Date = Date(), calendar: Calendar = .current) -> Bool {
         guard let lastScan else { return true }
-        let calendar = Calendar.current
-        if calendar.isDateInToday(lastScan) { return false }
-        let elapsed = calendar.dateComponents([.day], from: calendar.startOfDay(for: lastScan), to: calendar.startOfDay(for: now)).day ?? 0
-        return elapsed >= intervalDays
+        if calendar.isDate(lastScan, inSameDayAs: now) { return false }
+        guard let unlock = todayUnlockDate(now: now, calendar: calendar) else { return true }
+        return now >= unlock
     }
 
     static func hasScanToday(in history: [FaceScanResult], now: Date = Date(), calendar: Calendar = .current) -> Bool {
-        history.contains { calendar.isDate($0.createdAt, inSameDayAs: now) }
+        hasScan(on: now, in: history, calendar: calendar)
+    }
+
+    static func hasScan(on date: Date, in history: [FaceScanResult], calendar: Calendar = .current) -> Bool {
+        history.contains { calendar.isDate($0.createdAt, inSameDayAs: date) }
+    }
+
+    static func todayUnlockDate(now: Date = Date(), calendar: Calendar = .current) -> Date? {
+        calendar.date(
+            bySettingHour: dailyUnlockHour,
+            minute: dailyUnlockMinute,
+            second: 0,
+            of: now
+        )
     }
 
     static func nextScanDate(after lastScan: Date, calendar: Calendar = .current) -> Date {
-        calendar.date(byAdding: .day, value: intervalDays, to: calendar.startOfDay(for: lastScan))
-            ?? lastScan.addingTimeInterval(Double(intervalDays) * 86_400)
+        let lastDay = calendar.startOfDay(for: lastScan)
+        let nextDay = calendar.date(byAdding: .day, value: intervalDays, to: lastDay) ?? lastScan
+        return calendar.date(
+            bySettingHour: dailyUnlockHour,
+            minute: dailyUnlockMinute,
+            second: 0,
+            of: nextDay
+        ) ?? nextDay
     }
 
     /// Libellé court pour l’état du prochain scan.
     @MainActor
-    static func statusLabel(since lastScan: Date?, now: Date = Date()) -> String {
+    static func statusLabel(since lastScan: Date?, now: Date = Date(), calendar: Calendar = .current) -> String {
         guard let lastScan else { return AppCopy.t("Premier scan à faire", en: "First scan to do") }
-        let calendar = Calendar.current
-        if calendar.isDateInToday(lastScan) { return AppCopy.t("Scan enregistré aujourd'hui", en: "Scan saved today") }
-        if isScanDue(since: lastScan, now: now) { return AppCopy.t("Scan du jour à faire", en: "Today's scan to do") }
-        let remaining = daysUntilNextScan(since: lastScan, now: now)
-        if remaining == 1 { return AppCopy.t("Prochain scan demain", en: "Next scan tomorrow") }
-        return AppCopy.t("Prochain scan dans \(remaining) j", en: "Next scan in \(remaining) d")
+        if calendar.isDate(lastScan, inSameDayAs: now) {
+            return AppCopy.t("Scan enregistré aujourd'hui", en: "Scan saved today")
+        }
+        if isScanDue(since: lastScan, now: now, calendar: calendar) {
+            return AppCopy.t("Scan du jour à faire", en: "Today's scan to do")
+        }
+        return AppCopy.t("Prochain scan demain matin", en: "Next scan tomorrow morning")
     }
 
     static func nextScanTarget(after lastScan: Date?, calendar: Calendar = .current) -> Date? {
@@ -46,6 +71,7 @@ enum FaceScanCadence {
 
     static func timeUntilNextScan(since lastScan: Date?, now: Date = Date(), calendar: Calendar = .current) -> TimeInterval? {
         guard let lastScan else { return nil }
+        if isScanDue(since: lastScan, now: now, calendar: calendar) { return 0 }
         let target = nextScanDate(after: lastScan, calendar: calendar)
         return max(0, target.timeIntervalSince(now))
     }
@@ -53,7 +79,9 @@ enum FaceScanCadence {
     @MainActor
     static func countdownLabel(since lastScan: Date?, now: Date = Date(), calendar: Calendar = .current) -> String {
         guard let lastScan else { return AppCopy.t("Premier scan à faire", en: "First scan to do") }
-        if isScanDue(since: lastScan, now: now) { return AppCopy.t("Scan disponible", en: "Scan available") }
+        if isScanDue(since: lastScan, now: now, calendar: calendar) {
+            return AppCopy.t("Scan disponible", en: "Scan available")
+        }
         guard let interval = timeUntilNextScan(since: lastScan, now: now, calendar: calendar) else {
             return AppCopy.t("Premier scan à faire", en: "First scan to do")
         }
@@ -100,7 +128,7 @@ enum FaceScanCadence {
         calendar: Calendar = .current
     ) -> CountdownComponents? {
         guard let lastScan,
-              !isScanDue(since: lastScan, now: now),
+              !isScanDue(since: lastScan, now: now, calendar: calendar),
               let interval = timeUntilNextScan(since: lastScan, now: now, calendar: calendar)
         else { return nil }
 
@@ -117,11 +145,10 @@ enum FaceScanCadence {
         now: Date = Date(),
         calendar: Calendar = .current
     ) -> Double {
-        let start = calendar.startOfDay(for: lastScan)
-        guard let end = calendar.date(byAdding: .day, value: intervalDays, to: start) else { return 1 }
-        let total = end.timeIntervalSince(start)
+        let end = nextScanDate(after: lastScan, calendar: calendar)
+        let total = end.timeIntervalSince(lastScan)
         guard total > 0 else { return 1 }
-        return min(1, max(0, now.timeIntervalSince(start) / total))
+        return min(1, max(0, now.timeIntervalSince(lastScan) / total))
     }
 
     @MainActor
@@ -131,12 +158,18 @@ enum FaceScanCadence {
         calendar: Calendar = .current
     ) -> String {
         guard let lastScan else { return AppCopy.t("Premier scan à faire", en: "First scan to do") }
-        if isScanDue(since: lastScan, now: now) { return AppCopy.t("Scan disponible", en: "Scan available") }
+        if isScanDue(since: lastScan, now: now, calendar: calendar) {
+            return AppCopy.t("Scan disponible", en: "Scan available")
+        }
         guard let target = nextScanTarget(after: lastScan, calendar: calendar) else {
             return AppCopy.t("Premier scan à faire", en: "First scan to do")
         }
-        if calendar.isDateInTomorrow(target) { return AppCopy.t("Demain", en: "Tomorrow") }
-        if calendar.isDateInToday(target) { return AppCopy.t("Plus tard aujourd'hui", en: "Later today") }
+        if calendar.isDateInTomorrow(target) {
+            return AppCopy.t("Demain matin", en: "Tomorrow morning")
+        }
+        if calendar.isDate(target, inSameDayAs: now) {
+            return AppCopy.t("Ce matin", en: "This morning")
+        }
         let df = DateFormatter()
         df.locale = ProcessAppLanguage.shared.locale
         df.setLocalizedDateFormatFromTemplate("EEEE d MMM")

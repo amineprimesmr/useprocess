@@ -79,7 +79,7 @@ func buildOnboardingProgressFlowPath(
 func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     switch step {
     case .faceAnalysis, .programCreation, .healthKitPermissions, .sleepDataRecovery,
-         .biometricAuth, .notificationPermission, .transformationPreview, .dashboardPreview, .payment, .appleSignIn, .processWelcome,
+         .biometricAuth, .notificationPermission, .transformationPreview, .dashboardPreview, .dreamFaceCommit, .payment, .appleSignIn, .processWelcome,
          .complete, .referralReward, .featuresUnlock:
         return true
     default:

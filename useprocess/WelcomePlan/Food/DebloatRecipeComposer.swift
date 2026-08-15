@@ -124,15 +124,31 @@ enum DebloatRecipeComposer {
             items.append(.init(name: mg.name, quantity: mg.portionHint ?? "20 g", role: "Gras"))
         }
 
-        // Libellés FR persistés — affichage EN via `ProcessLocalizedDebloatFoodContent.recipe*`.
-        let name = recipeNameFR(slot: slot, protein: protein, veg: veg, carb: carb)
-        let prep = """
-        1. Prépare \(protein.name) sans sel (herbes + citron).
-        2. Ajoute \(veg.name) et \(carb.name) cuits vapeur ou four.
-        3. Finis avec \(boost.name)\(mg.map { " et \($0.name)" } ?? "").
-        4. Zéro sauce industrielle — l’objectif est le visage dégonflé.
-        """
-        let tip = "Priorité potassium : \(veg.name) + \(carb.name). Évite le sel ce repas."
+        let proteinName = protein.localizedName
+        let vegName = veg.localizedName
+        let carbName = carb.localizedName
+        let boostName = boost.localizedName
+        let mgName = mg?.localizedName
+
+        let name = recipeName(slot: slot, protein: proteinName, veg: vegName, carb: carbName)
+        let prep = AppCopy.tSync(
+            """
+            1. Prépare \(proteinName) sans sel (herbes + citron).
+            2. Ajoute \(vegName) et \(carbName) cuits vapeur ou four.
+            3. Finis avec \(boostName)\(mgName.map { " et \($0)" } ?? "").
+            4. Zéro sauce industrielle — l’objectif est le visage dégonflé.
+            """,
+            en: """
+            1. Prepare \(proteinName) without salt (herbs + lemon).
+            2. Add \(vegName) and \(carbName), steamed or roasted.
+            3. Finish with \(boostName)\(mgName.map { " and \($0)" } ?? "").
+            4. No industrial sauce — the goal is a debloated face.
+            """
+        )
+        let tip = AppCopy.tSync(
+            "Priorité potassium : \(vegName) + \(carbName). Évite le sel ce repas.",
+            en: "Potassium priority: \(vegName) + \(carbName). Skip salt this meal."
+        )
 
         return MealSuggestionContent.asProcessDefault(
             name: name,
@@ -146,17 +162,21 @@ enum DebloatRecipeComposer {
         )
     }
 
-    private static func recipeNameFR(
+    private static func recipeName(
         slot: MealTimeSlot,
-        protein: DebloatFoodItem,
-        veg: DebloatFoodItem,
-        carb: DebloatFoodItem
+        protein: String,
+        veg: String,
+        carb: String
     ) -> String {
         switch slot {
-        case .breakfast: return "Matin dégonflé · \(protein.name) & \(carb.name)"
-        case .lunch: return "Bowl K · \(protein.name), \(veg.name)"
-        case .dinner: return "Dîner anti-rétention · \(protein.name)"
-        case .snack: return "Collation drainante · \(veg.name)"
+        case .breakfast:
+            return AppCopy.tSync("Matin dégonflé · \(protein) & \(carb)", en: "Debloat morning · \(protein) & \(carb)")
+        case .lunch:
+            return AppCopy.tSync("Bowl K · \(protein), \(veg)", en: "K bowl · \(protein), \(veg)")
+        case .dinner:
+            return AppCopy.tSync("Dîner anti-rétention · \(protein)", en: "Anti-retention dinner · \(protein)")
+        case .snack:
+            return AppCopy.tSync("Collation drainante · \(veg)", en: "Draining snack · \(veg)")
         }
     }
 }

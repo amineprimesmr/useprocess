@@ -15,12 +15,14 @@ private enum EveningCheckInIslandContentMetrics {
 // MARK: - Modèle
 
 private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
+    case faceScan
     case morningRoutine
     case water
     case debloatMeal
 
     var id: String {
         switch self {
+        case .faceScan: return EveningCheckInQuestionID.faceScan
         case .morningRoutine: return EveningCheckInQuestionID.morningRoutine
         case .water: return EveningCheckInQuestionID.water
         case .debloatMeal: return EveningCheckInQuestionID.debloatMeal
@@ -32,6 +34,8 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .faceScan:
+            return AppCopy.t("Scan du jour", en: "Today's scan")
         case .morningRoutine:
             return AppCopy.t("Circuit lymphatique", en: "Lymphatic circuit")
         case .water:
@@ -43,6 +47,7 @@ private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
+        case .faceScan: return "faceid"
         case .morningRoutine: return "drop.fill"
         case .water: return "drop.fill"
         case .debloatMeal: return "fork.knife"
@@ -62,6 +67,7 @@ struct ProcessEveningCheckInIslandContent: View {
 
     @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
     @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
+    @Bindable private var faceScanStore = FaceScanHistoryStore.shared
 
     @State private var phase: Phase = .form
     @State private var answers: [String: String] = [:]
@@ -78,13 +84,7 @@ struct ProcessEveningCheckInIslandContent: View {
     }
 
     private var visibleQuestions: [EveningCheckInQuestion] {
-        EveningCheckInQuestion.allCases.filter { question in
-            if question == .water {
-                // Eau suivie in-app → ligne dédiée (prefill), pas le toggle manuel.
-                if hydrationPrefill != nil { return false }
-            }
-            return true
-        }
+        EveningCheckInQuestion.allCases.filter { $0 != .water && $0 != .faceScan }
     }
 
     private var hasSubmittedTargetDate: Bool {
@@ -133,6 +133,16 @@ struct ProcessEveningCheckInIslandContent: View {
             headerRow
 
             VStack(spacing: 14) {
+                EveningCheckInHabitRow(
+                    title: EveningCheckInQuestion.faceScan.title,
+                    systemImage: EveningCheckInQuestion.faceScan.systemImage,
+                    isChecked: isFaceScanChecked,
+                    isLocked: isFaceScanLocked,
+                    subtitle: faceScanSubtitle
+                ) {
+                    handleFaceScanTap()
+                }
+
                 if let hydrationPrefill {
                     EveningCheckInHabitRow(
                         title: AppCopy.t("\(ProcessDailyTargets.hydrationLabel) d'eau", en: "\(ProcessDailyTargets.hydrationLabel) of water"),
@@ -140,7 +150,9 @@ struct ProcessEveningCheckInIslandContent: View {
                         isChecked: hydrationPrefill.metTarget,
                         isLocked: hydrationPrefill.metTarget,
                         subtitle: hydrationPrefill.litersLabel
-                    )
+                    ) {
+                        completeHydrationFromChecklist()
+                    }
                 }
 
                 ForEach(visibleQuestions) { question in
@@ -175,11 +187,12 @@ struct ProcessEveningCheckInIslandContent: View {
     }
 
     private var checklistTotalCount: Int {
-        visibleQuestions.count + (hydrationPrefill != nil ? 1 : 0)
+        visibleQuestions.count + 2
     }
 
     private var checklistDoneCount: Int {
         var count = 0
+        if isFaceScanChecked { count += 1 }
         if let hydrationPrefill, hydrationPrefill.metTarget {
             count += 1
         }
@@ -187,6 +200,38 @@ struct ProcessEveningCheckInIslandContent: View {
             count += 1
         }
         return count
+    }
+
+    private var hasFaceScanOnTargetDate: Bool {
+        FaceScanCadence.hasScan(on: targetDate, in: faceScanStore.history)
+    }
+
+    private var isFaceScanLocked: Bool {
+        if hasFaceScanOnTargetDate { return true }
+        if Calendar.current.isDateInToday(targetDate), !faceScanStore.canStartTodayScan {
+            return true
+        }
+        return false
+    }
+
+    private var isFaceScanChecked: Bool {
+        hasFaceScanOnTargetDate
+            || answers[EveningCheckInQuestionID.faceScan] == EveningCheckInQuestion.faceScan.yesValue
+    }
+
+    private var faceScanSubtitle: String {
+        if hasFaceScanOnTargetDate {
+            return Calendar.current.isDateInToday(targetDate)
+                ? AppCopy.t("Fait aujourd'hui", en: "Done today")
+                : AppCopy.t("Scan enregistré", en: "Scan saved")
+        }
+        if Calendar.current.isDateInToday(targetDate), !faceScanStore.canStartTodayScan {
+            return AppCopy.t("Disponible à partir de 6h", en: "Available from 6 AM")
+        }
+        if Calendar.current.isDateInToday(targetDate) {
+            return AppCopy.t("1 scan · matin, même lumière", en: "1 scan · morning, same light")
+        }
+        return AppCopy.t("Pas encore scanné", en: "Not scanned yet")
     }
 
     private var headerRow: some View {
@@ -237,15 +282,37 @@ struct ProcessEveningCheckInIslandContent: View {
 
     private func applyInitialAnswers() {
         var next = eveningStore.answers(for: targetDate)
-        let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate)
+        let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(
+            for: targetDate,
+            healthKitLiters: hydrationHealthKitLiters(for: targetDate)
+        )
         hydrationPrefill = prefill
-        if let prefill {
-            next[EveningCheckInQuestionID.water] = prefill.metTarget ? prefill.answer : EveningCheckInQuestion.water.noValue
+        if prefill.metTarget {
+            next[EveningCheckInQuestionID.water] = EveningCheckInQuestion.water.yesValue
+        } else if next[EveningCheckInQuestionID.water] == EveningCheckInQuestion.water.yesValue {
+            ProcessHydrationLogStore.shared.applyEveningCheckInWaterAnswer(
+                EveningCheckInQuestion.water.yesValue,
+                for: targetDate,
+                dayId: programDayId(for: targetDate)
+            )
+            let filled = ProcessHydrationLogStore.shared.eveningCheckInPrefill(
+                for: targetDate,
+                healthKitLiters: hydrationHealthKitLiters(for: targetDate)
+            )
+            hydrationPrefill = filled
+            next[EveningCheckInQuestionID.water] = filled.metTarget
+                ? EveningCheckInQuestion.water.yesValue
+                : EveningCheckInQuestion.water.noValue
+        } else {
+            next[EveningCheckInQuestionID.water] = EveningCheckInQuestion.water.noValue
         }
         if next[EveningCheckInQuestionID.morningRoutine] == nil,
            morningRoutinePrefillAnswer(for: targetDate) == EveningCheckInQuestion.morningRoutine.yesValue {
             next[EveningCheckInQuestionID.morningRoutine] = EveningCheckInQuestion.morningRoutine.yesValue
         }
+        next[EveningCheckInQuestionID.faceScan] = hasFaceScanOnTargetDate
+            ? EveningCheckInQuestion.faceScan.yesValue
+            : EveningCheckInQuestion.faceScan.noValue
         // Non répondu = non validé (pas de croix).
         for question in EveningCheckInQuestion.allCases where next[question.id] == nil {
             next[question.id] = question.noValue
@@ -270,7 +337,12 @@ struct ProcessEveningCheckInIslandContent: View {
             answers[question.id] = isYes ? question.noValue : question.yesValue
         }
         if question == .water, !isYes {
-            syncWaterFromChecklistToHome()
+            completeHydrationFromChecklist()
+            return
+        }
+        if question == .faceScan, !isYes {
+            handleFaceScanTap()
+            return
         }
         if isYes {
             HapticManager.shared.selection()
@@ -279,14 +351,50 @@ struct ProcessEveningCheckInIslandContent: View {
         }
     }
 
+    private func completeHydrationFromChecklist() {
+        guard hydrationPrefill?.metTarget != true else { return }
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
+            answers[EveningCheckInQuestionID.water] = EveningCheckInQuestion.water.yesValue
+        }
+        HapticManager.shared.impact(.medium)
+        syncWaterFromChecklistToHome()
+    }
+
+    private func handleFaceScanTap() {
+        if hasFaceScanOnTargetDate { return }
+        if Calendar.current.isDateInToday(targetDate) {
+            guard faceScanStore.canStartTodayScan else { return }
+            HapticManager.shared.impact(.medium)
+            onFinished?()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.38) {
+                CoachPlanNavigationBridge.shared.requestHomeFaceScan()
+            }
+            return
+        }
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
+            answers[EveningCheckInQuestionID.faceScan] = EveningCheckInQuestion.faceScan.yesValue
+        }
+        HapticManager.shared.impact(.medium)
+    }
+
     private func syncWaterFromChecklistToHome() {
-        guard let dayId = programDayId(for: targetDate) else { return }
         ProcessHydrationLogStore.shared.applyEveningCheckInWaterAnswer(
             EveningCheckInQuestion.water.yesValue,
             for: targetDate,
-            dayId: dayId
+            dayId: programDayId(for: targetDate)
         )
-        hydrationPrefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate)
+        hydrationPrefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(
+            for: targetDate,
+            healthKitLiters: hydrationHealthKitLiters(for: targetDate)
+        )
+        if Calendar.current.isDateInToday(targetDate) {
+            Task { await ProcessHydrationTimerStore.shared.syncLiveActivityHydration() }
+        }
+    }
+
+    private func hydrationHealthKitLiters(for date: Date) -> Double {
+        guard Calendar.current.isDateInToday(date) else { return 0 }
+        return HealthManager.shared.todaySnapshot.nutrition.waterLiters
     }
 
     private func programDayId(for date: Date) -> String? {
@@ -436,12 +544,22 @@ struct ProcessEveningCheckInIslandContent: View {
     // MARK: - Actions
 
     private func submitCheckIn() {
-        if let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(for: targetDate) {
-            hydrationPrefill = prefill
-            answers[EveningCheckInQuestionID.water] = prefill.metTarget
-                ? prefill.answer
-                : EveningCheckInQuestion.water.noValue
+        if answers[EveningCheckInQuestionID.water] == EveningCheckInQuestion.water.yesValue {
+            syncWaterFromChecklistToHome()
         }
+        let prefill = ProcessHydrationLogStore.shared.eveningCheckInPrefill(
+            for: targetDate,
+            healthKitLiters: hydrationHealthKitLiters(for: targetDate)
+        )
+        hydrationPrefill = prefill
+        answers[EveningCheckInQuestionID.water] = prefill.metTarget
+            ? EveningCheckInQuestion.water.yesValue
+            : EveningCheckInQuestion.water.noValue
+        answers[EveningCheckInQuestionID.faceScan] = hasFaceScanOnTargetDate
+            ? EveningCheckInQuestion.faceScan.yesValue
+            : (answers[EveningCheckInQuestionID.faceScan] == EveningCheckInQuestion.faceScan.yesValue
+               ? EveningCheckInQuestion.faceScan.yesValue
+               : EveningCheckInQuestion.faceScan.noValue)
         for question in EveningCheckInQuestion.allCases where answers[question.id] == nil {
             answers[question.id] = question.noValue
         }
@@ -909,22 +1027,6 @@ struct ProcessEveningCheckInEntryButton: View {
 
     @Environment(\.appTheme) private var theme
     @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
-    @Bindable private var streakStore = ProcessStreakStore.shared
-    @Bindable private var trajectoryStore = ProcessDebloatTrajectoryStore.shared
-
-    private var todayRecord: DebloatDayRecord? {
-        trajectoryStore.record(for: Date())
-    }
-
-    private var isDayValidated: Bool {
-        guard let record = todayRecord else { return false }
-        return record.countsAsValidatedDay(
-            consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
-                before: record.dayKey,
-                in: trajectoryStore.allRecordsByDay
-            )
-        )
-    }
 
     private var hasSubmittedToday: Bool {
         eveningStore.hasSubmittedToday
@@ -940,16 +1042,24 @@ struct ProcessEveningCheckInEntryButton: View {
                     Circle()
                         .fill(theme.onboardingAccent.opacity(theme.isDark ? 0.22 : 0.14))
                         .frame(width: 40, height: 40)
-                    Image(systemName: entrySymbol)
+                    Image(systemName: "checkmark.seal.fill")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(entrySymbolColor)
+                        .foregroundStyle(
+                            hasSubmittedToday
+                                ? Color(red: 0.35, green: 0.78, blue: 0.45)
+                                : theme.onboardingAccent
+                        )
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entryTitle)
+                    Text(hasSubmittedToday
+                         ? AppCopy.t("Jour validé", en: "Day Validated")
+                         : AppCopy.t("Check du jour", en: "Today's Check-In"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
-                    Text(subtitle)
+                    Text(hasSubmittedToday
+                         ? AppCopy.t("Tu peux modifier tes réponses si besoin.", en: "You can update your answers if needed.")
+                         : AppCopy.t("Eau \(ProcessDailyTargets.hydrationLabel) · scan · repas · routine.", en: "Water \(ProcessDailyTargets.hydrationLabel) · scan · meal · routine."))
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .lineLimit(2)
@@ -957,7 +1067,7 @@ struct ProcessEveningCheckInEntryButton: View {
 
                 Spacer(minLength: 0)
 
-                if isDayValidated {
+                if hasSubmittedToday {
                     Text(AppCopy.t("OK", en: "OK"))
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color(red: 0.35, green: 0.78, blue: 0.45))
@@ -974,38 +1084,6 @@ struct ProcessEveningCheckInEntryButton: View {
             .padding(.vertical, 12)
         }
         .processGlassButton(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .accessibilityLabel(isDayValidated ? AppCopy.t("Jour validé", en: "Day Validated") : AppCopy.t("Ouvrir le check du jour", en: "Open Today's Check-In"))
-    }
-
-    private var entrySymbol: String {
-        if isDayValidated { return "checkmark.seal.fill" }
-        if hasSubmittedToday { return "exclamationmark.circle.fill" }
-        return "checkmark.seal.fill"
-    }
-
-    private var entrySymbolColor: Color {
-        if isDayValidated {
-            return Color(red: 0.35, green: 0.78, blue: 0.45)
-        }
-        if hasSubmittedToday {
-            return Color(red: 0.92, green: 0.58, blue: 0.28)
-        }
-        return theme.onboardingAccent
-    }
-
-    private var entryTitle: String {
-        if isDayValidated { return AppCopy.t("Jour validé", en: "Day Validated") }
-        if hasSubmittedToday { return AppCopy.t("Check enregistré", en: "Check-In Saved") }
-        return AppCopy.t("Check du jour", en: "Today's Check-In")
-    }
-
-    private var subtitle: String {
-        if isDayValidated {
-            return AppCopy.t("Tu peux modifier tes réponses si besoin.", en: "You can update your answers if needed.")
-        }
-        if hasSubmittedToday {
-            return AppCopy.t("Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée.", en: "Water \(ProcessDailyTargets.hydrationLabel) · meal · incline walk.")
-        }
-        return AppCopy.t("Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min.", en: "Water \(ProcessDailyTargets.hydrationLabel) · meal · incline walk \(DebloatCardioDayCatalog.durationMinutes) min.")
+        .accessibilityLabel(hasSubmittedToday ? AppCopy.t("Jour validé", en: "Day Validated") : AppCopy.t("Ouvrir le check du jour", en: "Open Today's Check-In"))
     }
 }

@@ -5,59 +5,77 @@ final class OnboardingProgressService {
     static let shared = OnboardingProgressService()
 
     private let userDefaults = UserDefaults.standard
-    private let prefix = (Bundle.main.bundleIdentifier ?? "useprocess") + ".sport."
-    private var currentStepKey: String { prefix + "onboarding_current_step" }
-    private var lastCompletedStepKey: String { prefix + "onboarding_last_completed_step" }
-    private var visitedStepsKey: String { prefix + "onboarding_visited_steps" }
-    private var answersKey: String { prefix + "onboarding_answers_cache" }
-    private var flowProgressKey: String { prefix + "onboarding_flow_progress" }
+    private static let legacyPrefix = (Bundle.main.bundleIdentifier ?? "useprocess") + ".sport."
+
+    private var storageUserId: String {
+        UserScopedStorage.currentUserId() ?? "onboarding-local"
+    }
+
+    private func scopedKey(_ suffix: String) -> String {
+        UserScopedStorage.key("onboarding.progress.\(suffix)", userId: storageUserId)
+    }
 
     private init() {}
 
     func saveCurrentStep(_ step: Int) {
-        userDefaults.set(step, forKey: currentStepKey)
+        userDefaults.set(step, forKey: scopedKey("current_step"))
     }
 
     func loadCurrentStep() -> Int {
-        userDefaults.integer(forKey: currentStepKey)
+        if let value = userDefaults.object(forKey: scopedKey("current_step")) as? Int {
+            return value
+        }
+        return userDefaults.integer(forKey: Self.legacyPrefix + "onboarding_current_step")
     }
 
     func saveLastCompletedStep(_ step: Int) {
-        userDefaults.set(step, forKey: lastCompletedStepKey)
+        userDefaults.set(step, forKey: scopedKey("last_completed_step"))
     }
 
     func loadLastCompletedStep() -> Int {
-        userDefaults.integer(forKey: lastCompletedStepKey)
+        if let value = userDefaults.object(forKey: scopedKey("last_completed_step")) as? Int {
+            return value
+        }
+        return userDefaults.integer(forKey: Self.legacyPrefix + "onboarding_last_completed_step")
     }
 
     func saveVisitedSteps(_ steps: [Int]) {
-        userDefaults.set(steps, forKey: visitedStepsKey)
+        userDefaults.set(steps, forKey: scopedKey("visited_steps"))
     }
 
     func loadVisitedSteps() -> [Int] {
-        userDefaults.array(forKey: visitedStepsKey) as? [Int] ?? []
+        if let steps = userDefaults.array(forKey: scopedKey("visited_steps")) as? [Int] {
+            return steps
+        }
+        return userDefaults.array(forKey: Self.legacyPrefix + "onboarding_visited_steps") as? [Int] ?? []
     }
 
     func saveFlowProgress(_ progress: Double) {
-        userDefaults.set(min(max(progress, 0), 1), forKey: flowProgressKey)
+        userDefaults.set(min(max(progress, 0), 1), forKey: scopedKey("flow_progress"))
     }
 
     func loadFlowProgress() -> Double? {
-        guard userDefaults.object(forKey: flowProgressKey) != nil else { return nil }
-        return min(max(userDefaults.double(forKey: flowProgressKey), 0), 1)
+        if userDefaults.object(forKey: scopedKey("flow_progress")) != nil {
+            return min(max(userDefaults.double(forKey: scopedKey("flow_progress")), 0), 1)
+        }
+        guard userDefaults.object(forKey: Self.legacyPrefix + "onboarding_flow_progress") != nil else { return nil }
+        return min(max(userDefaults.double(forKey: Self.legacyPrefix + "onboarding_flow_progress"), 0), 1)
     }
 
     func resetProgress() {
-        userDefaults.removeObject(forKey: currentStepKey)
-        userDefaults.removeObject(forKey: lastCompletedStepKey)
-        userDefaults.removeObject(forKey: visitedStepsKey)
-        userDefaults.removeObject(forKey: answersKey)
-        userDefaults.removeObject(forKey: flowProgressKey)
+        for suffix in ["current_step", "last_completed_step", "visited_steps", "answers", "flow_progress"] {
+            userDefaults.removeObject(forKey: scopedKey(suffix))
+        }
+        userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_current_step")
+        userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_last_completed_step")
+        userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_visited_steps")
+        userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_answers_cache")
+        userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_flow_progress")
     }
 
     func saveAnswers(_ snapshot: OnboardingAnswersSnapshot) {
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        userDefaults.set(data, forKey: answersKey)
+        userDefaults.set(data, forKey: scopedKey("answers"))
     }
 
     func flush() {
@@ -65,7 +83,10 @@ final class OnboardingProgressService {
     }
 
     func loadAnswers() -> OnboardingAnswersSnapshot? {
-        guard let data = userDefaults.data(forKey: answersKey) else { return nil }
+        if let data = userDefaults.data(forKey: scopedKey("answers")) {
+            return try? JSONDecoder().decode(OnboardingAnswersSnapshot.self, from: data)
+        }
+        guard let data = userDefaults.data(forKey: Self.legacyPrefix + "onboarding_answers_cache") else { return nil }
         return try? JSONDecoder().decode(OnboardingAnswersSnapshot.self, from: data)
     }
 

@@ -69,7 +69,9 @@ final class CoachConversationLibraryStore {
                 title: title
             )
             conversation.subjectLabel = title
-            if conversation.title.isEmpty { conversation.title = "Conversation" }
+            if conversation.title.isEmpty {
+                conversation.title = AppCopy.tSync("Conversation", en: "Conversation")
+            }
             library.conversations = [conversation]
             library.activeConversationId = conversation.id
             saveLocal()

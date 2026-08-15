@@ -267,7 +267,7 @@ struct PlanHomeToolbarActions: View {
     }
 }
 
-/// Bouton check du jour — pastille rouge tant que le bilan n’est pas validé.
+/// Bouton check du jour — pastille rouge à partir de 21h tant que le bilan n’est pas validé.
 struct PlanHomeCheckInButton: View {
     var action: () -> Void
 
@@ -281,12 +281,8 @@ struct PlanHomeCheckInButton: View {
         static let badgeSize: CGFloat = 10
     }
 
-    private var needsCheck: Bool {
-        !eveningStore.hasSubmittedToday
-    }
-
     private var flameColor: Color {
-        streakStore.displayValidatedDays > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
+        streakStore.displayStreak > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
     }
 
     var body: some View {
@@ -296,7 +292,7 @@ struct PlanHomeCheckInButton: View {
                     .font(.system(size: Metrics.iconSize, weight: .semibold))
                     .foregroundStyle(flameColor)
 
-                Text("\(streakStore.displayValidatedDays)")
+                Text("\(streakStore.displayStreak)")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(theme.primaryText)
                     .monospacedDigit()
@@ -306,21 +302,30 @@ struct PlanHomeCheckInButton: View {
             .frame(width: Metrics.tileSize, height: Metrics.tileSize)
             .contentShape(Circle())
             .overlay(alignment: .topTrailing) {
-                if needsCheck {
-                    attentionBadge
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    if !eveningStore.hasSubmittedToday,
+                       ProcessEveningCheckInSchedule.isBilanWindowOpen(now: context.date) {
+                        attentionBadge
+                    }
                 }
             }
         }
         .processGlassButton(in: Circle())
         .accessibilityLabel(AppCopy.t(
-            "Check du jour, \(streakStore.displayValidatedDays) jours validés",
-            en: "Daily check-in, \(streakStore.displayValidatedDays) validated days"
+            "Check du jour, série \(streakStore.displayStreak) jours",
+            en: "Daily check-in, \(streakStore.displayStreak)-day streak"
         ))
-        .accessibilityValue(
-            needsCheck
-                ? AppCopy.t("Check à faire", en: "Check-in needed")
-                : AppCopy.t("Check fait", en: "Check-in done")
-        )
+        .accessibilityValue(checkInAccessibilityValue)
+    }
+
+    private var checkInAccessibilityValue: String {
+        if eveningStore.hasSubmittedToday {
+            return AppCopy.t("Check fait", en: "Check-in done")
+        }
+        if ProcessEveningCheckInSchedule.isBilanWindowOpen() {
+            return AppCopy.t("Bilan du soir à faire", en: "Evening check-in needed")
+        }
+        return AppCopy.t("Bilan du soir à partir de 21h", en: "Evening check-in opens at 9 PM")
     }
 
     private var attentionBadge: some View {

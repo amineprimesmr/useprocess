@@ -30,25 +30,44 @@ enum CoachMemorySummarizer {
                 .components(separatedBy: "\n")
                 .prefix(4)
                 .joined(separator: " ")
-            planBlock = """
-            Plan actif semaine \(plan.calendar.currentWeekNumber())/13 — \(plan.primaryFaceGoal).
-            \(meals)
-            Ajustements récents : \(CoachMemoryStore.shared.memory.planAdjustments.prefix(3).joined(separator: " | "))
-            """
+            planBlock = AppCopy.tSync(
+                """
+                Plan actif semaine \(plan.calendar.currentWeekNumber())/13 — \(plan.primaryFaceGoal).
+                \(meals)
+                Ajustements récents : \(CoachMemoryStore.shared.memory.planAdjustments.prefix(3).joined(separator: " | "))
+                """,
+                en: """
+                Active plan week \(plan.calendar.currentWeekNumber())/13 — \(plan.primaryFaceGoal).
+                \(meals)
+                Recent adjustments: \(CoachMemoryStore.shared.memory.planAdjustments.prefix(3).joined(separator: " | "))
+                """
+            )
         } else {
-            planBlock = "Pas de plan actif"
+            planBlock = AppCopy.tSync("Pas de plan actif", en: "No active plan")
         }
 
-        let prompt = """
-        Synthétise TOUTE la mémoire utilisateur useprocess en 12 bullet points max (français).
-        Inclus : objectifs, habitudes, douleurs, ajustements plan, sujets récurrents coach.
-        \(planBlock)
+        let prompt = AppCopy.tSync(
+            """
+            Synthétise TOUTE la mémoire utilisateur useprocess en 12 bullet points max (français).
+            Inclus : objectifs, habitudes, douleurs, ajustements plan, sujets récurrents coach.
+            \(planBlock)
 
-        CONVERSATIONS :
-        \(blocks.joined(separator: "\n"))
+            CONVERSATIONS :
+            \(blocks.joined(separator: "\n"))
 
-        Faits existants : \(memory.keyFacts.prefix(8).joined(separator: " · "))
-        """
+            Faits existants : \(memory.keyFacts.prefix(8).joined(separator: " · "))
+            """,
+            en: """
+            Summarize ALL useprocess user memory in 12 bullet points max (American English).
+            Include: goals, habits, pain points, plan adjustments, recurring coach topics.
+            \(planBlock)
+
+            CONVERSATIONS:
+            \(blocks.joined(separator: "\n"))
+
+            Existing facts: \(memory.keyFacts.prefix(8).joined(separator: " · "))
+            """
+        )
 
         do {
             let summary = try await CoachAPITransport.complete(

@@ -42,12 +42,6 @@ struct OnboardingFaceScanSessionView: View {
                             completedResult = result
                         }
                         onResultReady(result)
-                    },
-                    onRetryScan: {
-                        captureResetToken += 1
-                        withAnimation(Self.pagePushAnimation) {
-                            captureInput = nil
-                        }
                     }
                 )
                 .transition(Self.analysisPushTransition)
@@ -55,14 +49,7 @@ struct OnboardingFaceScanSessionView: View {
             } else if let result = completedResult {
                 OnboardingDedicatedFaceScanResultsView(
                     result: result,
-                    onContinue: onContinueAfterResults,
-                    onRetryScan: {
-                        captureResetToken += 1
-                        withAnimation(Self.pagePushAnimation) {
-                            completedResult = nil
-                            captureInput = nil
-                        }
-                    }
+                    onContinue: onContinueAfterResults
                 )
                 .transition(Self.analysisPushTransition)
                 .zIndex(2)
@@ -71,7 +58,7 @@ struct OnboardingFaceScanSessionView: View {
                     presentation: .fullScreen,
                     onBack: onCancel,
                     onSkip: nil,
-                    showsMediaImport: false,
+                    showsMediaImport: ProcessCreatorModeStore.shared.allowsPhotoImport,
                     allowsScreenFlash: true,
                     skipsHeadTiltPhase: true,
                     usesOnboardingFaceOval: true,

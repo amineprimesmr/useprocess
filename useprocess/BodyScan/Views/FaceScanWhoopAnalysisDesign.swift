@@ -1637,10 +1637,10 @@ private struct FaceScanWhoopAnalysisInfoSheet: View {
                                 )
                             )
 
-                            if let label = result.relativeSignals?.baselineLabel {
+                            if let signals = result.relativeSignals {
                                 FaceScanDetailInfoCard(
-                                    title: "Baseline",
-                                    value: label,
+                                    title: AppCopy.t("Baseline", en: "Baseline"),
+                                    value: signals.localizedBaselineLabel,
                                     detail: nil
                                 )
                             }

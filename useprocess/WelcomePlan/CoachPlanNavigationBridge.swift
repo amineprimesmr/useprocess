@@ -9,7 +9,6 @@ final class CoachPlanNavigationBridge {
     var pendingFocus: CoachPlanFocus?
     var pendingConversationId: UUID?
     var pendingCheckInPrompt: String?
-    var pendingEveningChecklist = false
     var shouldOpenEveningCheckIn = false
     var shouldFocusProfileStatistics = false
     var eveningChecklistRefreshNonce = 0
@@ -17,6 +16,8 @@ final class CoachPlanNavigationBridge {
     var shouldOpenPlan = false
     var focusHydrationCarouselNonce = 0
     var shouldOpenFaceScan = false
+    /// Ouvre le scan depuis l’accueil (checklist), sans basculer sur le coach.
+    var shouldOpenHomeFaceScan = false
     var shouldOpenTracking = false
     var shouldOpenIntegration = false
     var pendingFaceScanHandoff: FaceScanCoachHandoff?
@@ -36,6 +37,11 @@ final class CoachPlanNavigationBridge {
     func focusHydrationOnHome() {
         focusHydrationCarouselNonce += 1
         shouldOpenPlan = true
+    }
+
+    func requestHomeFaceScan() {
+        shouldOpenPlan = true
+        shouldOpenHomeFaceScan = true
     }
 
     func openCoach(conversationId: UUID? = nil) {
@@ -111,12 +117,6 @@ final class CoachPlanNavigationBridge {
         return handoff
     }
 
-    func consumePendingEveningChecklist() -> Bool {
-        let pending = pendingEveningChecklist
-        pendingEveningChecklist = false
-        return pending
-    }
-
     func bumpEveningChecklistRefresh() {
         eveningChecklistRefreshNonce += 1
     }
@@ -164,23 +164,44 @@ final class CoachPlanNavigationBridge {
     private func promptForFocus(_ focus: CoachPlanFocus) -> String {
         switch focus.mode {
         case .ask:
-            return "J'ai une question sur cette partie de mon plan :\n\n[\(focus.sectionTitle)]\n\(focus.sectionContent)\n\nExplique-moi et dis-moi si c'est pertinent pour moi."
+            return AppCopy.t(
+                "J'ai une question sur cette partie de mon plan :\n\n[\(focus.sectionTitle)]\n\(focus.sectionContent)\n\nExplique-moi et dis-moi si c'est pertinent pour moi.",
+                en: "I have a question about this part of my plan:\n\n[\(focus.sectionTitle)]\n\(focus.sectionContent)\n\nExplain it and tell me if it’s relevant for me."
+            )
         case .evaluate:
-            return """
-            Évalue cette partie de mon plan personnalisé (pertinence 0–100, garder/modifier/remplacer, pourquoi) :
+            return AppCopy.t(
+                """
+                Évalue cette partie de mon plan personnalisé (pertinence 0–100, garder/modifier/remplacer, pourquoi) :
 
-            [\(focus.sectionTitle)]
-            \(focus.sectionContent)
-            """
+                [\(focus.sectionTitle)]
+                \(focus.sectionContent)
+                """,
+                en: """
+                Evaluate this part of my personalized plan (relevance 0–100, keep/modify/replace, and why):
+
+                [\(focus.sectionTitle)]
+                \(focus.sectionContent)
+                """
+            )
         case .modify:
-            return """
-            Je veux modifier cette partie de mon plan. Applique les changements directement dans mon calendrier :
+            return AppCopy.t(
+                """
+                Je veux modifier cette partie de mon plan. Applique les changements directement dans mon calendrier :
 
-            [\(focus.sectionTitle)]
-            \(focus.sectionContent)
+                [\(focus.sectionTitle)]
+                \(focus.sectionContent)
 
-            Dis ce que tu changes concrètement (format Petit-déjeuner:/Déjeuner:/Dîner: si nutrition).
-            """
+                Dis ce que tu changes concrètement (format Petit-déjeuner:/Déjeuner:/Dîner: si nutrition).
+                """,
+                en: """
+                I want to change this part of my plan. Apply the changes directly in my calendar:
+
+                [\(focus.sectionTitle)]
+                \(focus.sectionContent)
+
+                Say what you change concretely (Breakfast:/Lunch:/Dinner: format if nutrition).
+                """
+            )
         }
     }
 }

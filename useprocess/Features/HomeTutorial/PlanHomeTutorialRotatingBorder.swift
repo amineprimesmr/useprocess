@@ -77,6 +77,32 @@ enum PlanHomeTutorialMetrics {
     static let tabCornerRadius: CGFloat = 22
 }
 
+enum PlanHomeTutorialChromeStyle {
+    static func titleColor(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? .white : .black
+    }
+
+    static func messageColor(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.white.opacity(0.62) : Color.black.opacity(0.58)
+    }
+
+    static func dotActiveColor(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? .white : .black
+    }
+
+    static func dotInactiveColor(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.white.opacity(0.22) : Color.black.opacity(0.18)
+    }
+
+    static func continueButtonBackground(for colorScheme: ColorScheme) -> Color {
+        OnboardingTheme.filledButtonBackground(for: colorScheme)
+    }
+
+    static func continueButtonForeground(for colorScheme: ColorScheme) -> Color {
+        OnboardingTheme.filledButtonText(for: colorScheme)
+    }
+}
+
 /// Wrapper tutoriel — contour + légende + CTA sur la carte ciblée uniquement.
 struct PlanHomeTutorialFocusChrome<Content: View>: View {
     let focus: PlanHomeTutorialFocus
@@ -175,18 +201,20 @@ struct PlanHomeTutorialTabSegmentOutline: View, Equatable {
 }
 
 struct PlanHomeTutorialCaption: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let step: PlanHomeTutorialStep
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(step.title)
                 .font(.system(size: 26, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(PlanHomeTutorialChromeStyle.titleColor(for: colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(step.message)
                 .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.62))
+                .foregroundStyle(PlanHomeTutorialChromeStyle.messageColor(for: colorScheme))
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(3)
         }
@@ -197,6 +225,8 @@ struct PlanHomeTutorialCaption: View {
 
 /// CTA tutoriel — intégré dans le scroll Accueil.
 struct PlanHomeTutorialInlineFooter: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let onAdvance: () -> Void
     let stepIndex: Int
     let stepCount: Int
@@ -210,14 +240,15 @@ struct PlanHomeTutorialInlineFooter: View {
                      ? AppCopy.t("C'est parti", en: "Let's go")
                      : AppCopy.t("Continuer", en: "Continue"))
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.black.opacity(0.88))
+                    .foregroundStyle(
+                        PlanHomeTutorialChromeStyle.continueButtonForeground(for: colorScheme)
+                    )
                     .frame(maxWidth: .infinity)
                     .frame(height: 54)
-                    .background(Capsule(style: .continuous).fill(Color.white))
-                    .overlay {
+                    .background(
                         Capsule(style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
-                    }
+                            .fill(PlanHomeTutorialChromeStyle.continueButtonBackground(for: colorScheme))
+                    )
             }
             .buttonStyle(.processPlain)
         }
@@ -229,7 +260,11 @@ struct PlanHomeTutorialInlineFooter: View {
         HStack(spacing: 6) {
             ForEach(homeStepIndices, id: \.self) { index in
                 Capsule(style: .continuous)
-                    .fill(index == stepIndex ? Color.white : Color.white.opacity(0.22))
+                    .fill(
+                        index == stepIndex
+                            ? PlanHomeTutorialChromeStyle.dotActiveColor(for: colorScheme)
+                            : PlanHomeTutorialChromeStyle.dotInactiveColor(for: colorScheme)
+                    )
                     .frame(width: index == stepIndex ? 18 : 6, height: 6)
             }
         }

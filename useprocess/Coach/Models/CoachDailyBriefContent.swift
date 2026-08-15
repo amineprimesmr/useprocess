@@ -44,7 +44,7 @@ enum CoachDailyBriefParser {
 
             if let value = labeledValue(in: trimmed, labels: ["VERDICT", "VERDICT:"]) {
                 verdict = value
-            } else if let value = labeledValue(in: trimmed, labels: ["POURQUOI", "POURQUOI:"]) {
+            } else if let value = labeledValue(in: trimmed, labels: ["POURQUOI", "POURQUOI:", "WHY", "WHY:"]) {
                 why = value
             } else if let value = labeledValue(in: trimmed, labels: ["ACTION_1", "ACTION 1", "ACTION1"]) {
                 actions.append(value)

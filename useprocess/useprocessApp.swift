@@ -5,6 +5,7 @@
 
 import SwiftUI
 import UIKit
+import UserNotifications
 
 final class ProcessAppDelegate: NSObject, UIApplicationDelegate {
     private var pendingLaunchShortcut: UIApplicationShortcutItem?
@@ -13,6 +14,10 @@ final class ProcessAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // Avant le 1er frame — sinon le tap notif cold-start est perdu
+        // et l’app reprend l’onboarding (dashboard preview).
+        UNUserNotificationCenter.current().delegate = CoachNotificationCenterDelegate.shared
+
         // Fallback sans UIScene (peu probable avec SwiftUI App).
         if let shortcut = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
             pendingLaunchShortcut = shortcut

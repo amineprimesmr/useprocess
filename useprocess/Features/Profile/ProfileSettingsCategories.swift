@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Catégories du hub Paramètres — chaque entrée ouvre une sous-page.
 enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
+    case studio
     case referral
     case account
     case health
@@ -13,6 +14,7 @@ enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
     @MainActor
     var title: String {
         switch self {
+        case .studio: return AppCopy.t("Studio contenu", en: "Content Studio")
         case .referral: return AppCopy.t("Parrainage", en: "Referral Program")
         case .account: return AppCopy.t("Compte", en: "Account")
         case .health: return AppCopy.t("Santé & données", en: "Health & Data")
@@ -182,9 +184,17 @@ struct ProfileSettingsActivityStatusPill: View {
 }
 
 struct ProfileSettingsHubLinksSection: View {
+    @ObservedObject private var creator = ProcessCreatorModeStore.shared
+
+    private var visibleCategories: [ProfileSettingsCategory] {
+        ProfileSettingsCategory.allCases.filter { category in
+            category != .studio || creator.showsStudioEntry
+        }
+    }
+
     var body: some View {
         ProfileSettingsGroupedSection {
-            ForEach(Array(ProfileSettingsCategory.allCases.enumerated()), id: \.element.id) { index, category in
+            ForEach(Array(visibleCategories.enumerated()), id: \.element.id) { index, category in
                 if index > 0 {
                     ProfileSettingsHubDivider()
                 }
@@ -195,12 +205,18 @@ struct ProfileSettingsHubLinksSection: View {
                 .buttonStyle(.processPlain)
             }
         }
+        .onAppear {
+            creator.syncFromCurrentProfile()
+        }
     }
 }
 
 @ViewBuilder
 func profileSettingsDetail(for category: ProfileSettingsCategory) -> some View {
     switch category {
+    case .studio:
+        ProcessCreatorStudioView()
+            .processSettingsDetailPage()
     case .referral:
         ProcessReferralProgramDetailView()
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

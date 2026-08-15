@@ -120,10 +120,7 @@ enum ProcessAssetCatalog {
         "routinesauts",
         "routinesoleil",
         "routinethorax",
-        "onboarding_preview_home",
-        "onboarding_preview_progress",
-        "onboarding_preview_plan",
-        "onboarding_preview_scan",
+        "process_coach_avatar",
         "session_cardio",
         "training_see_all",
         "vitacoco"

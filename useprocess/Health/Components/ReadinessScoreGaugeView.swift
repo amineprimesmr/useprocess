@@ -74,7 +74,7 @@ struct ReadinessScoreGaugeView: View {
                 .foregroundStyle(theme.primaryText)
                 .monospacedDigit()
                 .minimumScaleFactor(0.85)
-                .accessibilityLabel("Score \(displayScore)")
+                .accessibilityLabel(AppCopy.t("Score \(displayScore)", en: "Score \(displayScore)"))
 
             Text(displayLabel)
                 .font(.system(size: metrics.statusFontSize, weight: .semibold))

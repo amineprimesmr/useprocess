@@ -104,13 +104,17 @@ struct OnboardingProfileChatView: View {
     // MARK: - Moss conversation surface
 
     private var mossConversationSurface: some View {
-        ZStack {
+        let conversationTopInset =
+            OnboardingConstants.headerBackButtonTopPadding
+            + OnboardingProfileChatCoachHeader.blockHeight
+            + 10
+
+        return ZStack(alignment: .top) {
             GeometryReader { geometry in
                 ScrollViewReader { proxy in
                     ScrollView {
                         mossConversationStack
-                            // Départ un peu plus bas — sinon la 1ʳᵉ bulle colle trop au header.
-                            .padding(.top, 56)
+                            .padding(.top, 8)
                             .padding(.bottom, Theme.Space.xl)
                             .frame(
                                 maxWidth: .infinity,
@@ -128,8 +132,13 @@ struct OnboardingProfileChatView: View {
                     }
                 }
             }
-            .padding(.top, OnboardingConstants.backOnlyContentTopInset)
+            .padding(.top, conversationTopInset)
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+
+            OnboardingProfileChatCoachHeader(progress: coachHeaderProgress)
+                .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
+                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+                .allowsHitTesting(false)
 
             if mossEngine.isTyping {
                 Color.clear
@@ -141,6 +150,13 @@ struct OnboardingProfileChatView: View {
                     .accessibilityHidden(true)
             }
         }
+    }
+
+    private var coachHeaderProgress: Double {
+        OnboardingProfileChatCoachHeaderProgress.value(
+            questionID: chatViewModel.currentQuestion?.id,
+            engine: mossEngine
+        )
     }
 
     private var mossConversationStack: some View {

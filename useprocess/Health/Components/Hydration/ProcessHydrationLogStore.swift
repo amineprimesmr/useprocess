@@ -178,7 +178,7 @@ final class ProcessHydrationLogStore {
         !(logsByDay[dayKey(for: date)]?.entries.isEmpty ?? true)
     }
 
-    /// Quand la checklist valide 3 L d'eau, remplit le journal affiché sur l'accueil.
+    /// Checklist 3 L cochée → le journal (gourde) passe au moins à l'objectif.
     @discardableResult
     func applyEveningCheckInWaterAnswer(
         _ answer: String,
@@ -188,25 +188,25 @@ final class ProcessHydrationLogStore {
         guard answer == "yes" else { return milliliters(for: date) }
 
         let target = ProcessDailyTargets.hydrationTargetMilliliters
-        let current = milliliters(for: date)
-        guard current < target || !hasLocalAdjustments(for: date) else { return current }
-
         return setMilliliters(
-            max(current, target),
+            max(milliliters(for: date), target),
             for: date,
             dayId: dayId,
             targetMilliliters: target
         )
     }
 
-    /// Prefill checklist : reflète le journal in-app, objectif fixe 3 L.
+    /// Prefill checklist : journal in-app + Santé (max), objectif fixe 3 L.
     func eveningCheckInPrefill(
-        for date: Date = Date()
-    ) -> ProcessHydrationEveningPrefill? {
-        guard hasLocalAdjustments(for: date) else { return nil }
-
+        for date: Date = Date(),
+        healthKitLiters: Double = 0
+    ) -> ProcessHydrationEveningPrefill {
         let targetMilliliters = ProcessDailyTargets.hydrationTargetMilliliters
-        let milliliters = max(0, self.milliliters(for: date))
+        let logMilliliters = max(0, milliliters(for: date))
+        let healthKitMilliliters = Calendar.current.isDateInToday(date)
+            ? max(0, Int((healthKitLiters * 1000).rounded()))
+            : 0
+        let milliliters = max(logMilliliters, healthKitMilliliters)
         let metTarget = milliliters >= targetMilliliters
 
         return ProcessHydrationEveningPrefill(

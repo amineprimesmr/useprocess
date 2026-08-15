@@ -62,6 +62,19 @@ enum NutritionQuality: String, Codable, CaseIterable {
         }
     }
 
+    /// Libellé court — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .excellent: return AppCopy.t("Excellente", en: "Excellent")
+        case .veryGood: return AppCopy.t("Très bonne", en: "Very good")
+        case .good: return AppCopy.t("Bonne", en: "Good")
+        case .average: return AppCopy.t("Améliorable", en: "Needs work")
+        case .poor: return AppCopy.t("Non adaptée", en: "Not aligned")
+        case .veryPoor: return AppCopy.t("Très mauvaise", en: "Very poor")
+        }
+    }
+
     /// Libellé UI onboarding (bilingue).
     @MainActor
     var localizedDescription: String {
@@ -108,19 +121,6 @@ enum NutritionQuality: String, Codable, CaseIterable {
         case .average: return AppCopy.tSync("Améliorable", en: "Needs work")
         case .poor: return AppCopy.tSync("Non adaptée", en: "Off track")
         case .veryPoor: return AppCopy.tSync("Très mauvaise", en: "Very poor")
-        }
-    }
-
-    /// Titre UI onboarding (bilingue) — basé sur `comment`.
-    @MainActor
-    var title: String {
-        switch self {
-        case .excellent: return OnboardingCopy.t("Excellente", en: "Excellent")
-        case .veryGood: return OnboardingCopy.t("Très bonne", en: "Very good")
-        case .good: return OnboardingCopy.t("Bonne", en: "Good")
-        case .average: return OnboardingCopy.t("Améliorable", en: "Needs work")
-        case .poor: return OnboardingCopy.t("Non adaptée", en: "Off track")
-        case .veryPoor: return OnboardingCopy.t("Très mauvaise", en: "Very poor")
         }
     }
 

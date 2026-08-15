@@ -473,8 +473,14 @@ struct PaywallSpinWinbackView: View {
 
             Text(
                 isTrialRetentionOffer
-                    ? "Sans engagement, annulable à tout moment."
-                    : "Paiement unique — accès à vie, sans renouvellement."
+                    ? OnboardingCopy.t(
+                        "Sans engagement, annulable à tout moment.",
+                        en: "No commitment — cancel anytime."
+                    )
+                    : OnboardingCopy.t(
+                        "Paiement unique — accès à vie, sans renouvellement.",
+                        en: "One-time payment — lifetime access, no renewal."
+                    )
             )
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))

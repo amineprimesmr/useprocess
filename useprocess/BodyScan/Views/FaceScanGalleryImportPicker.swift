@@ -45,45 +45,64 @@ struct FaceScanGalleryImportPicker: UIViewControllerRepresentable {
             }
 
             let provider = result.itemProvider
+            let videoTypes = [UTType.movie, .video, .mpeg4Movie, .quickTimeMovie]
+                .map(\.identifier)
+                .filter { provider.hasItemConformingToTypeIdentifier($0) }
 
-            if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
-                provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, _ in
-                    guard let url else {
-                        DispatchQueue.main.async { self.onCancel() }
-                        return
-                    }
-                    let temp = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(UUID().uuidString)
-                        .appendingPathExtension(url.pathExtension.isEmpty ? "mp4" : url.pathExtension)
-                    do {
-                        if FileManager.default.fileExists(atPath: temp.path) {
-                            try FileManager.default.removeItem(at: temp)
-                        }
-                        try FileManager.default.copyItem(at: url, to: temp)
-                        DispatchQueue.main.async {
-                            self.onVideoURL(temp)
-                        }
-                    } catch {
-                        DispatchQueue.main.async { self.onCancel() }
-                    }
-                }
+            if let videoType = videoTypes.first {
+                loadVideo(provider: provider, typeIdentifier: videoType)
                 return
             }
 
             if provider.canLoadObject(ofClass: UIImage.self) {
                 provider.loadObject(ofClass: UIImage.self) { object, _ in
-                    guard let image = object as? UIImage else {
-                        DispatchQueue.main.async { self.onCancel() }
-                        return
-                    }
-                    DispatchQueue.main.async {
-                        self.onImage(image)
+                    if let image = object as? UIImage {
+                        DispatchQueue.main.async { self.onImage(image) }
+                    } else {
+                        self.loadImageData(provider: provider)
                     }
                 }
                 return
             }
 
+            if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                loadImageData(provider: provider)
+                return
+            }
+
             onCancel()
+        }
+
+        private func loadVideo(provider: NSItemProvider, typeIdentifier: String) {
+            provider.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, _ in
+                guard let url else {
+                    DispatchQueue.main.async { self.onCancel() }
+                    return
+                }
+                let ext = url.pathExtension.isEmpty ? "mp4" : url.pathExtension
+                let temp = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString)
+                    .appendingPathExtension(ext)
+                do {
+                    if FileManager.default.fileExists(atPath: temp.path) {
+                        try FileManager.default.removeItem(at: temp)
+                    }
+                    try FileManager.default.copyItem(at: url, to: temp)
+                    DispatchQueue.main.async { self.onVideoURL(temp) }
+                } catch {
+                    DispatchQueue.main.async { self.onCancel() }
+                }
+            }
+        }
+
+        private func loadImageData(provider: NSItemProvider) {
+            provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+                guard let data, let image = UIImage(data: data) else {
+                    DispatchQueue.main.async { self.onCancel() }
+                    return
+                }
+                DispatchQueue.main.async { self.onImage(image) }
+            }
         }
     }
 }

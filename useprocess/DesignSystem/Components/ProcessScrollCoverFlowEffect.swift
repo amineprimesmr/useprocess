@@ -49,10 +49,16 @@ extension View {
         }
     }
 
-    /// Scale only — centre à 1.0, voisines légèrement plus petites. Pas de 3D.
-    func processFocusScaleScrollTransition(scaleReduction: CGFloat = 0.10) -> some View {
+    /// Scale + légère baisse d’opacité — centre à 1.0, voisines plus petites. Pas de 3D.
+    func processFocusScaleScrollTransition(
+        scaleReduction: CGFloat = 0.10,
+        opacityReduction: Double = 0
+    ) -> some View {
         scrollTransition(.interactive, axis: .horizontal) { content, phase in
-            content.scaleEffect(1 - abs(phase.value) * scaleReduction, anchor: .center)
+            let absT = abs(phase.value)
+            return content
+                .scaleEffect(1 - absT * scaleReduction, anchor: .center)
+                .opacity(1 - absT * opacityReduction)
         }
     }
 }

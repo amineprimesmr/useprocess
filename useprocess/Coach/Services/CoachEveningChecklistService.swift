@@ -15,7 +15,8 @@ enum CoachEveningChecklistService {
 
         let calendar = Calendar.current
         let hour = calendar.component(.hour, from: Date())
-        guard force || hour >= 21 else { return false }
+        guard force || hour >= ProcessEveningCheckInSchedule.reminderHour else { return false }
+        guard !ProcessEveningCheckInStore.shared.hasSubmittedToday else { return false }
 
         guard let plan = WelcomePlanStore.shared.plan,
               OriginPlanPresenter.todayDay(in: plan) != nil else { return false }
@@ -31,7 +32,7 @@ enum CoachEveningChecklistService {
             return false
         }
 
-        let streak = ProcessStreakStore.shared.snapshot.currentStreak
+        let streak = ProcessStreakStore.shared.displayStreak
         let message = CoachMessage(
             role: .assistant,
             text: messageText(streak: streak),

@@ -391,13 +391,7 @@ struct PlanProgramCalendarView: View {
 
     private var bestDayRecord: DebloatDayRecord? {
         trajectoryStore.allRecordsByDay.values
-            .filter { record in
-                let cardioBefore = ProcessDebloatValidation.consecutiveCardioMisses(
-                    before: record.dayKey,
-                    in: trajectoryStore.allRecordsByDay
-                )
-                return record.countsAsValidatedDay(consecutiveCardioMissesBefore: cardioBefore)
-            }
+            .filter(\.checkInSubmitted)
             .max(by: { $0.compositeScore < $1.compositeScore })
     }
 
@@ -504,11 +498,8 @@ struct PlanProgramCalendarView: View {
         let programDay = OriginPlanPresenter.programDay(in: plan, for: dayStart)
         let dayKey = ProcessStreakStore.dayKey(for: dayStart, calendar: calendar)
         let record = trajectoryStore.allRecordsByDay[dayKey]
-        let cardioBefore = ProcessDebloatValidation.consecutiveCardioMisses(
-            before: dayKey,
-            in: trajectoryStore.allRecordsByDay
-        )
-        let isValidated = record?.countsAsValidatedDay(consecutiveCardioMissesBefore: cardioBefore) == true
+        let isValidated = record?.checkInSubmitted == true
+            || ProcessEveningCheckInStore.shared.hasSubmitted(on: dayStart)
         let isToday = calendar.isDateInToday(dayStart)
         let isDebloatTarget = programDay.map { $0.globalDayIndex + 1 == progress.totalProgramDays } ?? false
 
@@ -639,7 +630,7 @@ struct PlanProgramCalendarView: View {
     private static var appCalendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
         cal.locale = ProcessAppLanguage.shared.locale
-        cal.firstWeekday = ProcessAppLanguage.shared.isFrench ? 2 : 1
+        cal.firstWeekday = 2
         return cal
     }
 

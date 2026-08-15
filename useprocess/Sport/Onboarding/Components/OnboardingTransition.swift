@@ -115,13 +115,28 @@ extension AnyTransition {
                 .combined(with: .opacity)
         )
     }
+
+    /// Slide questionnaire (genre → prénom) — directionnel, sans blur.
+    static func onboardingQuestionnaireSlide(direction: TransitionDirection) -> AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: direction == .forward ? .trailing : .leading)
+                .combined(with: .opacity),
+            removal: .move(edge: direction == .forward ? .leading : .trailing)
+                .combined(with: .opacity)
+        )
+    }
+}
+
+enum OnboardingTransitionTiming {
+    static let navigationUnlockDelay: TimeInterval = 0.46
+    static let keyboardFocusDelay: TimeInterval = 0.62
 }
 
 // MARK: - Animation personnalisée ultra fluide
 extension Animation {
     // ✅ Animation principale ULTRA VISUELLE - plus longue et plus fluide
     static var onboardingTransition: Animation {
-        .spring(response: 0.55, dampingFraction: 0.82, blendDuration: 0.4)
+        .spring(response: 0.42, dampingFraction: 0.86, blendDuration: 0.18)
     }
 
     // Animation rapide pour interactions immédiates
@@ -141,7 +156,7 @@ extension Animation {
 
     // Animation pour éléments d'entrée avec bounce subtil
     static var onboardingEntrance: Animation {
-        .spring(response: 0.6, dampingFraction: 0.75, blendDuration: 0.3)
+        .spring(response: 0.48, dampingFraction: 0.82, blendDuration: 0.16)
     }
 }
 

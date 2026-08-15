@@ -164,6 +164,30 @@ struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked S
         self.studioFraming = studioFraming
     }
 
+    func replacingCreatedAt(_ date: Date) -> FaceScanResult {
+        FaceScanResult(
+            id: id,
+            userId: userId,
+            createdAt: date,
+            markers: markers,
+            snapshotFilename: snapshotFilename,
+            videoFilename: videoFilename,
+            claudeAnalysis: claudeAnalysis,
+            aiEnhanced: aiEnhanced,
+            coachInsightMessage: coachInsightMessage,
+            coachInsightModel: coachInsightModel,
+            source: source,
+            sleepHoursAtScan: sleepHoursAtScan,
+            hrvAtScan: hrvAtScan,
+            faceDayScore: faceDayScore,
+            relativeFaceDayScore: relativeFaceDayScore,
+            scanConfidence: scanConfidence,
+            baselineSampleCount: baselineSampleCount,
+            relativeSignals: relativeSignals,
+            studioFraming: studioFraming
+        )
+    }
+
     func delta(from previous: FaceScanResult) -> FaceScanTrend {
         FaceScanTrend(
             puffiness: markers.puffinessScore - previous.markers.puffinessScore,
@@ -183,6 +207,19 @@ struct FaceScanRelativeSignals: Codable, Hashable {
     var faceDefinitionDelta: Int? = nil
     var stressLoadDelta: Int? = nil
     var baselineLabel: String
+
+    var localizedBaselineLabel: String {
+        switch baselineLabel {
+        case "Premier scan de référence":
+            return AppCopy.tSync("Premier scan de référence", en: "First reference scan")
+        case "Comparé à ta moyenne récente":
+            return AppCopy.tSync("Comparé à ta moyenne récente", en: "Compared to your recent average")
+        case "Comparé à tes premiers scans":
+            return AppCopy.tSync("Comparé à tes premiers scans", en: "Compared to your first scans")
+        default:
+            return baselineLabel
+        }
+    }
 
     var hasMeaningfulChange: Bool {
         abs(puffinessDelta) >= 4

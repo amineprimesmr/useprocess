@@ -111,32 +111,14 @@ struct FaceScanAnalysisFlowView: View {
                 // Le fond ignore le safe area ; on gère le top manuellement via topInset.
                 .ignoresSafeArea(edges: .top)
 
-                if let result = displayResult, showsResultScreen {
-                    VStack {
-                        Spacer(minLength: 0)
-                        Group {
-                            if didSaveScan {
-                                scanSavedConfirmation
-                                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                            } else {
-                                OnboardingCreatePlanButton(
-                                    title: AppCopy.t("Enregistrer le scan", en: "Save the scan")
-                                ) {
-                                    HapticManager.shared.impact(.medium)
-                                    complete(with: result)
-                                }
-                                .transition(.opacity)
-                            }
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 4)
-                    }
-                    .animation(.spring(response: 0.42, dampingFraction: 0.86), value: didSaveScan)
-                    .transition(.opacity)
-                }
             }
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(edges: .top)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let result = displayResult, showsResultScreen {
+                saveScanBar(result: result)
+            }
+        }
         .processClearUIKitHostingBackground()
         .background(FaceScanWhoopPalette.canvas)
         .animation(.easeInOut(duration: 0.28), value: baseResult?.id)
@@ -202,6 +184,28 @@ struct FaceScanAnalysisFlowView: View {
             guard !Task.isCancelled else { return }
             onDismiss()
         }
+    }
+
+    private func saveScanBar(result: FaceScanResult) -> some View {
+        Group {
+            if didSaveScan {
+                scanSavedConfirmation
+            } else {
+                OnboardingCreatePlanButton(
+                    title: AppCopy.t("Enregistrer le scan", en: "Save the scan")
+                ) {
+                    HapticManager.shared.impact(.medium)
+                    complete(with: result)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 62)
+        .padding(.horizontal, 24)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
+        .background(FaceScanWhoopPalette.canvas)
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: didSaveScan)
     }
 
     private var scanSavedConfirmation: some View {

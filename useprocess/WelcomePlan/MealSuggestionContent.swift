@@ -12,9 +12,9 @@ struct MealSuggestionItem: Codable, Equatable, Identifiable, Hashable {
     var roleIcon: String {
         switch role.lowercased() {
         case let r where r.contains("prot"): return "bolt.fill"
-        case let r where r.contains("lég") || r.contains("leg"): return "leaf.fill"
-        case let r where r.contains("gluc"): return "flame.fill"
-        case let r where r.contains("gras"): return "drop.fill"
+        case let r where r.contains("lég") || r.contains("leg") || r.contains("veg"): return "leaf.fill"
+        case let r where r.contains("gluc") || r.contains("carb"): return "flame.fill"
+        case let r where r.contains("gras") || r.contains("fat"): return "drop.fill"
         default: return "circle.fill"
         }
     }

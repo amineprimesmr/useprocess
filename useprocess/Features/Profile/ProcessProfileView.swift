@@ -15,6 +15,7 @@ private struct ProfileMetricPresentation: Equatable, Identifiable {
 struct ProcessProfileView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
+    var isOnboardingPreview: Bool = false
 
     @Environment(\.appTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
@@ -30,6 +31,7 @@ struct ProcessProfileView: View {
     @State private var metricPresentations: [ProfileMetricPresentation] = []
     @State private var isReloadingCharts = false
     @State private var chartDataRevision = 0
+    @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
 
     private var isFlamePlaybackActive: Bool {
         isTabActive && scenePhase == .active
@@ -60,7 +62,7 @@ struct ProcessProfileView: View {
             .processTransparentScrollSurface()
             .simultaneousGesture(profileDaySwipeGesture)
             .onAppear {
-                selectedProfileDate = Calendar.current.startOfDay(for: Date())
+                selectedProfileDate = Calendar.current.startOfDay(for: creatorMode.effectiveNow)
                 focusProfileStatisticsIfNeeded(using: proxy)
             }
             .onChange(of: planBridge.shouldFocusProfileStatistics) { _, should in
@@ -80,6 +82,7 @@ struct ProcessProfileView: View {
             )
         }
         .task(id: profileService.currentProfile?.userId) {
+            guard !isOnboardingPreview else { return }
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled else { return }
             if profileService.currentProfile == nil {
@@ -89,6 +92,7 @@ struct ProcessProfileView: View {
             await refreshProfile(forceHealthRefresh: false)
         }
         .onAppear {
+            guard !isOnboardingPreview else { return }
             ProcessPerformanceTrace.endProfileOpen()
             ProcessDebloatTrajectoryStore.shared.reload()
             ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
@@ -345,7 +349,7 @@ struct ProcessProfileView: View {
 
     private func moveSelectedProfileDate(by dayDelta: Int) {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: creatorMode.effectiveNow)
         let current = calendar.startOfDay(for: selectedProfileDate)
         guard let candidate = calendar.date(byAdding: .day, value: dayDelta, to: current) else { return }
         let minDate = earliestSelectableProfileDate(calendar: calendar, today: today)

@@ -1,27 +1,13 @@
 import SwiftUI
 import UIKit
 
-private struct RequiredEveningCheckInTarget: Identifiable, Equatable {
-    let date: Date
-    let id: String
-
-    init(date: Date, calendar: Calendar = .current) {
-        self.date = calendar.startOfDay(for: date)
-        self.id = ProcessStreakStore.dayKey(for: date, calendar: calendar)
-    }
-}
-
 /// Shell principal — tab bar (Accueil · Routine · Série · Profil).
 struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var tabBeforeCoach: ProcessMainSection = .plan
-    @State private var requiredEveningCheckIn: RequiredEveningCheckInTarget?
-    @State private var lastPresentedEveningCheckInDayKey: String?
     @State private var coachViewModel = CoachChatViewModel()
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var coachTracker = CoachPresentationTracker.shared
-    @Bindable private var session = AppSession.shared
-    @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @State private var showMealPhotoScan = false
     @Bindable private var screenFlash = FaceScanScreenFlash.shared
     @Environment(\.scenePhase) private var scenePhase
@@ -53,14 +39,9 @@ struct MainAppView: View {
         }
         .planHomeTutorial(selectedSection: $selectedSection)
         .processStackedToasts()
-        .onChange(of: requiredEveningCheckIn) { _, target in
-            guard let target else { return }
-            presentRequiredEveningCheckIn(target)
-        }
         .onAppear {
             _ = UserSessionCoordinator.shared
             syncCoachPresentationState()
-            evaluateRequiredEveningCheckIn()
             redirectFromDisabledCoachTabIfNeeded()
             ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
@@ -74,20 +55,8 @@ struct MainAppView: View {
             }
             handleSectionChange(to: newValue)
         }
-        .onChange(of: session.hasCompletedWelcomePlanChat) { _, completed in
-            if completed {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    evaluateRequiredEveningCheckIn()
-                }
-            }
-        }
-        .onChange(of: tutorialStore.isActive) { wasActive, isActive in
-            guard wasActive, !isActive else { return }
-            evaluateRequiredEveningCheckIn()
-        }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
-            evaluateRequiredEveningCheckIn()
             ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
         .onChange(of: planBridge.shouldOpenCoach) { _, should in
@@ -120,7 +89,10 @@ struct MainAppView: View {
             withAnimation(ProcessGlass.spring) {
                 selectedSection = .plan
             }
-            evaluateRequiredEveningCheckIn()
+            ProcessEveningCheckInPresenter.shared.present(
+                targetDate: ProcessEveningCheckInSchedule.preferredManualCheckInDate(),
+                isRequired: false
+            )
         }
     }
 
@@ -221,7 +193,6 @@ struct MainAppView: View {
         }
         if newValue != .coach {
             HapticManager.shared.endTypewriterSession()
-            evaluateRequiredEveningCheckIn()
         }
     }
 
@@ -284,86 +255,11 @@ struct MainAppView: View {
     }
 
     private func handleEveningCheckInDismiss(submitted: Bool) {
-        lastPresentedEveningCheckInDayKey = nil
-        requiredEveningCheckIn = nil
-
+        _ = submitted
         PlanHomeTutorialStore.shared.schedulePresentationIfNeeded(
             planAvailable: WelcomePlanStore.shared.plan != nil,
             preferImmediate: true
         )
-
-        guard !submitted else { return }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-            evaluateRequiredEveningCheckIn()
-        }
-    }
-
-    private func evaluateRequiredEveningCheckIn() {
-        guard session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat else {
-            requiredEveningCheckIn = nil
-            return
-        }
-        if tutorialStore.shouldDeferEveningCheckIn {
-            if ProcessEveningCheckInPresenter.shared.presentation != nil {
-                ProcessEveningCheckInPresenter.shared.clear()
-                requiredEveningCheckIn = nil
-            }
-            tutorialStore.activateImmediatelyIfNeeded()
-            if tutorialStore.shouldDeferEveningCheckIn {
-                return
-            }
-        }
-        guard !isCoachTabActive else { return }
-        guard let target = firstRequiredEveningCheckInTarget() else {
-            requiredEveningCheckIn = nil
-            return
-        }
-        guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
-        if requiredEveningCheckIn?.id != target.id {
-            requiredEveningCheckIn = target
-        } else {
-            presentRequiredEveningCheckIn(target)
-        }
-    }
-
-    private func presentRequiredEveningCheckIn(_ target: RequiredEveningCheckInTarget) {
-        lastPresentedEveningCheckInDayKey = target.id
-        ProcessEveningCheckInPresenter.shared.present(
-            targetDate: target.date,
-            isRequired: true,
-            onCompleted: {
-                lastPresentedEveningCheckInDayKey = nil
-            }
-        )
-    }
-
-    private func firstRequiredEveningCheckInTarget(
-        now: Date = Date(),
-        calendar: Calendar = .current
-    ) -> RequiredEveningCheckInTarget? {
-        let eveningStore = ProcessEveningCheckInStore.shared
-
-        guard let plan = WelcomePlanStore.shared.plan else { return nil }
-        let today = calendar.startOfDay(for: now)
-        let hour = calendar.component(.hour, from: now)
-
-        func isDue(_ date: Date) -> Bool {
-            OriginPlanPresenter.programDay(in: plan, for: date) != nil
-                && ProcessActivityStatusStore.shared.status(for: date, calendar: calendar) == .active
-                && !eveningStore.hasSubmitted(on: date)
-        }
-
-        // Après 21h : checklist du jour, tant qu’elle n’est pas validée.
-        if hour >= ProcessEveningCheckInSchedule.openHour {
-            guard isDue(today) else { return nil }
-            return RequiredEveningCheckInTarget(date: today, calendar: calendar)
-        }
-
-        // Avant 21h : rattrapage d’hier seulement.
-        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return nil }
-        guard isDue(yesterday) else { return nil }
-        return RequiredEveningCheckInTarget(date: yesterday, calendar: calendar)
     }
 
     private func openMealPhotoScan() {

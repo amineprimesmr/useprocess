@@ -9,11 +9,11 @@ import SwiftUI
 /// Page dédiée du premier scan : anneau + indicateurs ouverts/verrouillés, sans revue comportementale.
 struct OnboardingDedicatedFaceScanResultsView: View {
     @Environment(\.requestReview) private var requestReview
-    @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
 
     let result: FaceScanResult
     var onContinue: () -> Void
-    var onRetryScan: (() -> Void)? = nil
+
+    @State private var showsCreatePlanButton = false
 
     private var fullDateTitle: String {
         let formatter = DateFormatter()
@@ -34,8 +34,8 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                         .padding(.top, 8)
                         .padding(.bottom, 18)
 
-                    FaceScanWhoopScoreRing(result: result, showsGlobalScore: false, ringSize: 196)
-                        .padding(.bottom, 22)
+                    FaceScanWhoopScoreRing(result: result, showsGlobalScore: false, ringSize: 232)
+                        .padding(.bottom, 28)
 
                     OnboardingFaceDeepAnalysisView(
                         result: result,
@@ -50,11 +50,21 @@ struct OnboardingDedicatedFaceScanResultsView: View {
             }
             .processTransparentScrollSurface()
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                bottomCTA
+                if showsCreatePlanButton {
+                    bottomCTA
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
         }
         .processClearUIKitHostingBackground()
         .background(FaceScanWhoopPalette.canvas)
+        .task {
+            try? await Task.sleep(for: .seconds(7))
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
+                showsCreatePlanButton = true
+            }
+        }
         .task {
             guard !OnboardingAppStoreRatingPrompt.hasBeenShown else { return }
             try? await Task.sleep(for: .milliseconds(900))
@@ -65,60 +75,19 @@ struct OnboardingDedicatedFaceScanResultsView: View {
         }
     }
 
-    private var showsDevRescanButton: Bool {
-        guard onRetryScan != nil else { return false }
-        #if DEBUG
-        return true
-        #else
-        return creatorMode.isUnlocked(forFirstName: UnifiedProfileService.shared.currentProfile?.firstName)
-        #endif
-    }
-
     private var header: some View {
-        ZStack {
-            VStack(spacing: 6) {
-                Text(OnboardingCopy.t("Premier scan", en: "First scan"))
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(FaceScanWhoopPalette.secondary)
-                    .textCase(.uppercase)
-                    .tracking(0.8)
+        VStack(spacing: 6) {
+            Text(OnboardingCopy.t("Premier scan", en: "First scan"))
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(FaceScanWhoopPalette.secondary)
+                .textCase(.uppercase)
+                .tracking(0.8)
 
-                Text(fullDateTitle)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(FaceScanWhoopPalette.label)
-            }
-            .frame(maxWidth: .infinity)
-
-            if showsDevRescanButton {
-                HStack {
-                    Button(action: retryScan) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(FaceScanWhoopPalette.label)
-                            .frame(width: 36, height: 36)
-                            .background {
-                                Circle()
-                                    .strokeBorder(FaceScanWhoopPalette.label.opacity(0.18), lineWidth: 1)
-                            }
-                    }
-                    .buttonStyle(.processPlain)
-                    .accessibilityLabel(AppCopy.t("Revenir au scan du visage", en: "Back to face scan"))
-
-                    Text(AppCopy.t("DEV", en: "DEV"))
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(0.4)
-                        .foregroundStyle(FaceScanWhoopPalette.secondary)
-                        .allowsHitTesting(false)
-
-                    Spacer(minLength: 0)
-                }
-            }
+            Text(fullDateTitle)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(FaceScanWhoopPalette.label)
         }
-    }
-
-    private func retryScan() {
-        HapticManager.shared.impact(.light)
-        onRetryScan?()
+        .frame(maxWidth: .infinity)
     }
 
     private var bottomCTA: some View {
@@ -135,37 +104,56 @@ struct OnboardingDedicatedFaceScanResultsView: View {
 }
 
 struct OnboardingCreatePlanButton: View {
+    var title: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            OnboardingCreatePlanButtonVisual(title: title)
+        }
+        .buttonStyle(OnboardingCreatePlanButtonStyle())
+        .accessibilityLabel(title)
+    }
+}
+
+private struct OnboardingCreatePlanButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Capsule())
+            .processButtonPressScale(isPressed: configuration.isPressed)
+    }
+}
+
+struct OnboardingCreatePlanButtonVisual: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var title: String
-    var action: () -> Void
 
     private var isLight: Bool { colorScheme == .light }
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image("ProcessAppIcon")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 32, height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        HStack(spacing: 10) {
+            Image("ProcessAppIcon")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 32, height: 32)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                Text(title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(isLight ? Color.white : Color.black)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 62)
-            .background(isLight ? Color.black : Color.white, in: Capsule())
-            .overlay {
-                OnboardingCreatePlanRotatingBorder()
-            }
+            Text(title)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(isLight ? Color.white : Color.black)
         }
-        .buttonStyle(.processPlain)
-        .contentShape(Capsule())
-        .shadow(color: Color(red: 0.08, green: 0.22, blue: 0.72).opacity(isLight ? 0.22 : 0.28), radius: 10, y: 2)
-        .accessibilityLabel(title)
+        .frame(maxWidth: .infinity)
+        .frame(height: 62)
+        .background(isLight ? Color.black : Color.white, in: Capsule())
+        .overlay {
+            OnboardingCreatePlanRotatingBorder()
+        }
+        .shadow(
+            color: Color(red: 0.08, green: 0.22, blue: 0.72).opacity(isLight ? 0.22 : 0.28),
+            radius: 10,
+            y: 2
+        )
     }
 }
 

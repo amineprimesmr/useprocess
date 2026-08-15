@@ -10,7 +10,7 @@ struct ProfileDebloatScoreSection: View {
     private var calendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
         cal.locale = ProcessAppLanguage.shared.locale
-        cal.firstWeekday = ProcessAppLanguage.shared.isFrench ? 2 : 1
+        cal.firstWeekday = 2
         return cal
     }
 

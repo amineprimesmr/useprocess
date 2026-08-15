@@ -233,7 +233,8 @@ struct MealSuggestionCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 if !item.role.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                   item.role.lowercased() != "autre" {
+                   item.role.lowercased() != "autre",
+                   item.role.lowercased() != "other" {
                     Text(item.localizedRole)
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)

@@ -170,26 +170,17 @@ enum ProcessDebloatTrajectoryEngine {
         calendar: Calendar = .current,
         now: Date = Date()
     ) -> Int {
-        let todayKey = ProcessStreakStore.dayKey(for: today, calendar: calendar)
-        let recordsByKey = Dictionary(uniqueKeysWithValues: records.map { ($0.dayKey, $0) })
-
-        if let todayRecord = recordsByKey[todayKey],
-           todayRecord.countsAsValidatedDay(
-            consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
-                before: todayKey,
-                in: recordsByKey
-            )
-           ) {
-            return todayRecord.streakAfterDay
-        }
-
-        // Most recent prior day only — never walk the calendar unbounded (empty /
-        // unvalidated-today histories used to spin forever on MainActor).
-        guard let latestPriorKey = recordsByKey.keys.filter({ $0 < todayKey }).max(),
-              let record = recordsByKey[latestPriorKey] else {
-            return 0
-        }
-        return record.streakAfterDay
+        _ = records
+        _ = today
+        return ProcessStreakMath.currentStreak(
+            submittedKeys: ProcessEveningCheckInStore.shared.submittedDayKeys,
+            isPaused: { key in
+                guard let date = date(from: key) else { return false }
+                return ProcessActivityStatusStore.shared.status(for: date) != .active
+            },
+            now: now,
+            calendar: calendar
+        )
     }
 
     // MARK: - Tendance

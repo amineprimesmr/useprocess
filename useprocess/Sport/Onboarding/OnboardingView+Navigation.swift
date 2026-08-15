@@ -12,14 +12,15 @@ extension SportOnboardingView {
 
 // MARK: - Navigation
 
-/// Avance automatiquement à travers une étape transitoire (sans validation).
+/// Avance automatiquement à travers les étapes transitoires (sans validation).
 func skipTransientStep() {
-    // Évite les re-entrées pendant le montage (plusieurs EmptyView.onAppear).
     guard !isTransitioning else { return }
+    guard let currentStep = OnboardingStep(rawValue: viewModel.currentStep),
+          currentStep.isTransientSkippedStep else { return }
 
-    guard let nextStepIndex = navigationEngine.resolveNextVisibleStep(from: viewModel.currentStep),
-          nextStepIndex < totalSteps,
-          nextStepIndex != viewModel.currentStep else {
+    guard let visibleStep = resolveFirstVisibleStep(from: viewModel.currentStep),
+          visibleStep != viewModel.currentStep,
+          visibleStep < totalSteps else {
         return
     }
 
@@ -29,17 +30,33 @@ func skipTransientStep() {
     transitionDirection = .forward
     isTransitioning = true
 
-    commitAnimatedStepChange(to: nextStepIndex)
+    commitAnimatedStepChange(to: visibleStep)
 
-    commitVisibleStepToHistory(nextStepIndex)
+    commitVisibleStepToHistory(visibleStep)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+    unlockNavigationAfterTransition()
+
+    OnboardingProgressService.shared.saveCurrentStep(visibleStep)
+    viewModel.saveProgress()
+    scheduleRefreshOnboardingFlowProgress()
+}
+
+/// Saute toutes les étapes transitoires d'un coup (évite les animations en chaîne).
+private func resolveFirstVisibleStep(from step: Int) -> Int? {
+    var cursor = step
+    for _ in 0..<40 {
+        guard let current = OnboardingStep(rawValue: cursor) else { return nil }
+        if !current.isTransientSkippedStep { return cursor }
+        guard let next = navigationEngine.nextStep(after: cursor) else { return nil }
+        cursor = next
+    }
+    return nil
+}
+
+private func unlockNavigationAfterTransition() {
+    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingTransitionTiming.navigationUnlockDelay) {
         isTransitioning = false
     }
-
-    OnboardingProgressService.shared.saveCurrentStep(nextStepIndex)
-    viewModel.saveProgress()
-    refreshOnboardingFlowProgress()
 }
 
 /// Après un paiement réussi : page merci + Apple Sign In (sans repasser par le moteur sleep/finalization).
@@ -65,16 +82,14 @@ func advanceFromPaymentToPostPaymentWelcome() {
 
     commitVisibleStepToHistory(targetStep)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-        isTransitioning = false
-    }
+    unlockNavigationAfterTransition()
 
     OnboardingProgressService.shared.saveCurrentStep(targetStep)
     viewModel.saveProgress()
-    refreshOnboardingFlowProgress()
+    scheduleRefreshOnboardingFlowProgress()
 }
 
-/// Relance sans paiement : témoignages (slider) puis dashboard, jamais le paywall.
+/// Relance sans paiement : « Ton dashboard t'attend », jamais le paywall ni les témoignages.
 func reconcileUnpaidOnboardingResumeIfNeeded() {
     guard !AppSession.shared.hasCompletedOnboarding else { return }
     if SubscriptionService.shared.subscriptionStatus.isActive { return }
@@ -86,8 +101,8 @@ func reconcileUnpaidOnboardingResumeIfNeeded() {
         OnboardingProgressService.shared.saveCurrentStep(resume.rawValue)
     }
 
-    guard resume == .transformationPreview else { return }
-    commitVisibleStepToHistory(OnboardingStep.transformationPreview.rawValue)
+    guard resume == .dashboardPreview else { return }
+    commitVisibleStepToHistory(OnboardingStep.dashboardPreview.rawValue)
 }
 
 func reconcilePostPaymentStepIfNeeded() {
@@ -97,7 +112,7 @@ func reconcilePostPaymentStepIfNeeded() {
 
     let shouldSkipToThankYou: Bool
     switch step {
-    case .biometricAuth, .transformationPreview, .dashboardPreview, .payment:
+    case .biometricAuth, .transformationPreview, .dashboardPreview, .dreamFaceCommit, .payment:
         shouldSkipToThankYou = true
     default:
         shouldSkipToThankYou = false
@@ -115,7 +130,7 @@ func reconcilePostPaymentStepIfNeeded() {
         viewModel: viewModel,
         navigationEngine: navigationEngine
     )
-    refreshOnboardingFlowProgress()
+    scheduleRefreshOnboardingFlowProgress()
 }
 
 func nextStep() {
@@ -152,13 +167,44 @@ func nextStep() {
 
     commitVisibleStepToHistory(nextStepIndex)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-        isTransitioning = false
-    }
+    unlockNavigationAfterTransition()
 
     OnboardingProgressService.shared.saveCurrentStep(nextStepIndex)
     viewModel.saveProgress()
-    refreshOnboardingFlowProgress()
+    scheduleRefreshOnboardingFlowProgress()
+}
+
+/// Dashboard preview → commit : hors `nextStep()` pour éviter un no-op silencieux
+/// si la validation / le moteur skip la page.
+func advanceFromDashboardPreview() {
+    guard OnboardingStep(rawValue: viewModel.currentStep) == .dashboardPreview else {
+        nextStep()
+        return
+    }
+
+    // Tap explicite sur « Je le veux » — ne jamais no-op sur isTransitioning.
+    isTransitioning = false
+    HapticManager.shared.impact(.medium)
+    WelcomePlanStore.shared.clearEphemeralPreviewPlan()
+    PlanHomeTutorialStore.shared.suppressPresentationForPreview(true)
+
+    let nextStepIndex = OnboardingStep.dreamFaceCommit.rawValue
+    ProcessAnalytics.trackOnboardingAnswer(step: .dashboardPreview, viewModel: viewModel)
+    OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
+    commitVisibleStepToHistory(viewModel.currentStep)
+
+    previousStepIndex = viewModel.currentStep
+    transitionDirection = .forward
+    isTransitioning = true
+
+    commitAnimatedStepChange(to: nextStepIndex)
+    commitVisibleStepToHistory(nextStepIndex)
+
+    unlockNavigationAfterTransition()
+
+    OnboardingProgressService.shared.saveCurrentStep(nextStepIndex)
+    viewModel.saveProgress()
+    scheduleRefreshOnboardingFlowProgress()
 }
 
 func continueFromNutritionQuality() {
@@ -185,13 +231,11 @@ func continueFromNutritionQuality() {
 
     commitVisibleStepToHistory(nextStepIndex)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-        isTransitioning = false
-    }
+    unlockNavigationAfterTransition()
 
     OnboardingProgressService.shared.saveCurrentStep(nextStepIndex)
     viewModel.saveProgress()
-    refreshOnboardingFlowProgress()
+    scheduleRefreshOnboardingFlowProgress()
 }
 
 // MARK: - Biometric Auth
@@ -280,11 +324,9 @@ func previousStep() {
 
     OnboardingProgressService.shared.saveCurrentStep(stepToGoBackTo)
     viewModel.saveProgress()
-    refreshOnboardingFlowProgress()
+    scheduleRefreshOnboardingFlowProgress()
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-        isTransitioning = false
-    }
+    unlockNavigationAfterTransition()
 }
 
 /// Retour header : dans la discussion, remonte le fil ; sinon étape précédente.
@@ -409,6 +451,21 @@ func refreshOnboardingFlowProgress() {
     flowTotalSteps = metrics.totalSteps
     flowGlowProgressCount = metrics.glowProgressCount
     viewModel.saveFlowProgress(metrics.progress)
+}
+
+/// Regroupe les appels rapprochés (onChange, visitedSteps, branches).
+func scheduleRefreshOnboardingFlowProgress() {
+    flowProgressRefreshTask?.cancel()
+    flowProgressRefreshTask = Task { @MainActor in
+        try? await Task.sleep(for: .milliseconds(48))
+        guard !Task.isCancelled else { return }
+        refreshOnboardingFlowProgress()
+    }
+}
+
+func cancelScheduledFlowProgressRefresh() {
+    flowProgressRefreshTask?.cancel()
+    flowProgressRefreshTask = nil
 }
 
 func buildPendingStepsQueue() {

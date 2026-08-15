@@ -4,6 +4,7 @@ import SwiftUI
 struct ProcessRoutineHomeView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
+    var isOnboardingPreview: Bool = false
 
     @Environment(\.appTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase

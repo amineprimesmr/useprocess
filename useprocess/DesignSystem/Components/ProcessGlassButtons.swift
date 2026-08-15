@@ -9,8 +9,7 @@ struct ProcessGlassPressStyle: ButtonStyle {
             configuration.label
         } else {
             configuration.label
-                .scaleEffect(configuration.isPressed ? 0.97 : 1)
-                .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
+                .processButtonPressScale(isPressed: configuration.isPressed)
         }
     }
 }

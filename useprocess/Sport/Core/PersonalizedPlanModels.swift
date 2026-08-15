@@ -301,6 +301,17 @@ enum ExperienceLevel: String, Codable, CaseIterable {
         case .professionnel: return "star.circle.fill"
         }
     }
+
+    /// Libellé UI — rawValue FR conservé pour la persistance.
+    @MainActor
+    var title: String {
+        switch self {
+        case .debutant: return AppCopy.t("Débutant", en: "Beginner")
+        case .intermediaire: return AppCopy.t("Intermédiaire", en: "Intermediate")
+        case .amateur: return AppCopy.t("Amateur", en: "Amateur")
+        case .professionnel: return AppCopy.t("Professionnel", en: "Professional")
+        }
+    }
 }
 
 // MARK: - Personal Record

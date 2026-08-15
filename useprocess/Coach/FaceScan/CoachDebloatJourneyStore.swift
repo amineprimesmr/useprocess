@@ -3,8 +3,20 @@ import Foundation
 /// Conversation coach unique — fil chronologique scan + bilans debloat.
 @MainActor
 enum CoachDebloatJourneyStore {
-    private static let title = "Trajectoire debloat"
-    private static let subject = "Trajectoire debloat"
+    private static var title: String {
+        AppCopy.tSync("Trajectoire debloat", en: "Debloat trajectory")
+    }
+    private static var subject: String { title }
+
+    private static func matchesJourney(_ conversation: CoachConversation) -> Bool {
+        let candidates: Set<String> = [
+            "Trajectoire debloat",
+            "Debloat trajectory",
+            title,
+            subject,
+        ]
+        return candidates.contains(conversation.title) || candidates.contains(conversation.subjectLabel ?? "")
+    }
 
     static func ensureConversation(in store: CoachConversationLibraryStore) -> UUID {
         if let existing = ProcessDebloatTrajectoryStore.shared.debloatJourneyConversationId,
@@ -18,9 +30,7 @@ enum CoachDebloatJourneyStore {
             return persisted
         }
 
-        if let existing = store.library.conversations.first(where: { conversation in
-            conversation.title == title || conversation.subjectLabel == subject
-        }) {
+        if let existing = store.library.conversations.first(where: matchesJourney) {
             ProcessDebloatTrajectoryStore.shared.setDebloatJourneyConversationId(existing.id)
             return existing.id
         }
@@ -47,19 +57,40 @@ enum CoachDebloatJourneyStore {
         store.selectConversation(conversationId)
 
         let summary = record.aiSummary ?? record.verdict.shortLabel
-        let text = """
-        [Check du jour — \(record.dayKey)]
-        Eau: \(answers[EveningCheckInQuestionID.water] == "yes" ? "oui" : "non") · Repas debloat: \(answers[EveningCheckInQuestionID.debloatMeal] == "yes" ? "oui" : "non") · Routine: \(answers[EveningCheckInQuestionID.morningRoutine] == "yes" ? "oui" : "non")
-        Score trajectoire: \(Int(record.compositeScore))/100 · Verdict: \(record.verdict.shortLabel) · Streak: \(record.streakAfterDay)
-        \(summary)
-        """
+        let water = answers[EveningCheckInQuestionID.water] == "yes"
+            ? AppCopy.tSync("oui", en: "yes")
+            : AppCopy.tSync("non", en: "no")
+        let meal = answers[EveningCheckInQuestionID.debloatMeal] == "yes"
+            ? AppCopy.tSync("oui", en: "yes")
+            : AppCopy.tSync("non", en: "no")
+        let routine = answers[EveningCheckInQuestionID.morningRoutine] == "yes"
+            ? AppCopy.tSync("oui", en: "yes")
+            : AppCopy.tSync("non", en: "no")
+        let streak = ProcessStreakStore.shared.displayStreak
+        let text = AppCopy.tSync(
+            """
+            [Check du jour — \(record.dayKey)]
+            Eau: \(water) · Repas debloat: \(meal) · Routine: \(routine)
+            Score trajectoire: \(Int(record.compositeScore))/100 · Verdict: \(record.verdict.shortLabel) · Série: \(streak)
+            \(summary)
+            """,
+            en: """
+            [Daily check — \(record.dayKey)]
+            Water: \(water) · Debloat meal: \(meal) · Routine: \(routine)
+            Trajectory score: \(Int(record.compositeScore))/100 · Verdict: \(record.verdict.shortLabel) · Streak: \(streak)
+            \(summary)
+            """
+        )
 
         let message = CoachMessage(role: .user, text: text)
         store.appendToActive(message)
     }
 
     static func faceScanUserMessage(scanId: String, scanNumber: Int) -> CoachMessage {
-        let display = "Scan visage #\(scanNumber) — analyse ma progression debloat vs mes scans précédents."
+        let display = AppCopy.tSync(
+            "Scan visage #\(scanNumber) — analyse ma progression debloat vs mes scans précédents.",
+            en: "Face scan #\(scanNumber) — analyze my debloat progress vs my previous scans."
+        )
         let text = CoachFaceScanMessageMarker.embed(scanId: scanId, displayText: display)
         return CoachMessage(role: .user, text: text)
     }

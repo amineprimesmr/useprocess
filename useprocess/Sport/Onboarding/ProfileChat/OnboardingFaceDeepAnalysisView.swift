@@ -697,13 +697,8 @@ private extension View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
         return self
             .background {
-                shape.fill(FaceScanWhoopPalette.card)
-            }
-            .overlay {
-                shape.strokeBorder(
-                    Color.primary.opacity(isDark ? 0.10 : 0.08),
-                    lineWidth: 0.5
-                )
+                shape.fill(.clear)
+                    .processGlassEffect(in: shape, interactive: false)
             }
             .clipShape(shape)
             .processHomeGlassCardShadow(isDark: isDark)

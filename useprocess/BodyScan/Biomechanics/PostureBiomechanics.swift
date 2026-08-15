@@ -53,21 +53,40 @@ enum PostureBiomechanics {
         var items: [String] = []
 
         if let tilt = metrics.shoulderTiltDegrees, abs(tilt) > 3 {
-            let side = tilt > 0 ? "droite" : "gauche"
-            items.append("Épaule \(side) légèrement plus haute (\(String(format: "%.1f", abs(tilt)))°)")
+            let side = tilt > 0
+                ? AppCopy.tSync("droite", en: "right")
+                : AppCopy.tSync("gauche", en: "left")
+            items.append(AppCopy.tSync(
+                "Épaule \(side) légèrement plus haute (\(String(format: "%.1f", abs(tilt)))°)",
+                en: "\(side.capitalized) shoulder slightly higher (\(String(format: "%.1f", abs(tilt)))°)"
+            ))
         }
         if let tilt = metrics.hipTiltDegrees, abs(tilt) > 4 {
-            let side = tilt > 0 ? "droite" : "gauche"
-            items.append("Bassin incliné vers la \(side)")
+            let side = tilt > 0
+                ? AppCopy.tSync("droite", en: "right")
+                : AppCopy.tSync("gauche", en: "left")
+            items.append(AppCopy.tSync(
+                "Bassin incliné vers la \(side)",
+                en: "Hips tilting toward the \(side)"
+            ))
         }
         if let head = metrics.forwardHeadDegrees, head > 14 {
-            items.append("Tête en avant — posture défensive fréquente (écrans, stress)")
+            items.append(AppCopy.tSync(
+                "Tête en avant — posture défensive fréquente (écrans, stress)",
+                en: "Forward head — common defensive posture (screens, stress)"
+            ))
         }
         if let knee = metrics.kneeValgusIndicator, knee > 0.07 {
-            items.append("Genoux légèrement vers l'intérieur en appui")
+            items.append(AppCopy.tSync(
+                "Genoux légèrement vers l'intérieur en appui",
+                en: "Knees slightly inward when standing"
+            ))
         }
         if metrics.leftRightSymmetryScore < 62 {
-            items.append("Asymétrie gauche/droite notable sur les profils")
+            items.append(AppCopy.tSync(
+                "Asymétrie gauche/droite notable sur les profils",
+                en: "Notable left/right asymmetry on the profiles"
+            ))
         }
 
         return items
@@ -82,61 +101,61 @@ enum PostureBiomechanics {
 
         if (metrics.forwardHeadDegrees ?? 0) > 12 {
             priorities.append(MusclePriority(
-                name: "Fléchisseurs cervicaux profonds",
-                reason: "Réduire la tête en avant et soulager la nuque",
+                name: AppCopy.tSync("Fléchisseurs cervicaux profonds", en: "Deep cervical flexors"),
+                reason: AppCopy.tSync("Réduire la tête en avant et soulager la nuque", en: "Reduce forward head and ease the neck"),
                 priority: 1
             ))
             priorities.append(MusclePriority(
-                name: "Trapèzes inférieurs / rhomboïdes",
-                reason: "Ouvrir la poitrine et stabiliser les omoplates",
+                name: AppCopy.tSync("Trapèzes inférieurs / rhomboïdes", en: "Lower traps / rhomboids"),
+                reason: AppCopy.tSync("Ouvrir la poitrine et stabiliser les omoplates", en: "Open the chest and stabilize the shoulder blades"),
                 priority: 2
             ))
         }
 
         if abs(metrics.shoulderTiltDegrees ?? 0) > 3 || metrics.shoulderAlignmentScore < 70 {
             priorities.append(MusclePriority(
-                name: "Deltoïde postérieur & milieu du dos",
-                reason: "Rééquilibrer les épaules",
+                name: AppCopy.tSync("Deltoïde postérieur & milieu du dos", en: "Rear deltoid & mid-back"),
+                reason: AppCopy.tSync("Rééquilibrer les épaules", en: "Rebalance the shoulders"),
                 priority: priorities.count + 1
             ))
         }
 
         if (metrics.hipTiltDegrees ?? 0).magnitude > 4 || metrics.hipAlignmentScore < 68 {
             priorities.append(MusclePriority(
-                name: "Fessiers & abdominaux profonds",
-                reason: "Stabiliser le bassin",
+                name: AppCopy.tSync("Fessiers & abdominaux profonds", en: "Glutes & deep core"),
+                reason: AppCopy.tSync("Stabiliser le bassin", en: "Stabilize the hips"),
                 priority: priorities.count + 1
             ))
         }
 
         if (metrics.kneeValgusIndicator ?? 0) > 0.06 {
             priorities.append(MusclePriority(
-                name: "Moyen fessier & rotateurs externes de hanche",
-                reason: "Aligner genoux et chevilles",
+                name: AppCopy.tSync("Moyen fessier & rotateurs externes de hanche", en: "Glute medius & hip external rotators"),
+                reason: AppCopy.tSync("Aligner genoux et chevilles", en: "Align knees and ankles"),
                 priority: priorities.count + 1
             ))
         }
 
         if metrics.leftRightSymmetryScore < 65 {
             priorities.append(MusclePriority(
-                name: "Chaîne postérieure (ischio-jambiers, lombaires)",
-                reason: "Harmoniser gauche/droite",
+                name: AppCopy.tSync("Chaîne postérieure (ischio-jambiers, lombaires)", en: "Posterior chain (hamstrings, lower back)"),
+                reason: AppCopy.tSync("Harmoniser gauche/droite", en: "Balance left and right"),
                 priority: priorities.count + 1
             ))
         }
 
         if let face, face.jawTensionScore > 60 {
             priorities.append(MusclePriority(
-                name: "Respiration diaphragmatique & relâchement mâchoire",
-                reason: "Réduire la tension liée au stress",
+                name: AppCopy.tSync("Respiration diaphragmatique & relâchement mâchoire", en: "Diaphragmatic breathing & jaw release"),
+                reason: AppCopy.tSync("Réduire la tension liée au stress", en: "Reduce stress-related tension"),
                 priority: priorities.count + 1
             ))
         }
 
         if priorities.isEmpty {
             priorities.append(MusclePriority(
-                name: "Maintien global & mobilité",
-                reason: "Posture déjà équilibrée — consolider et progresser",
+                name: AppCopy.tSync("Maintien global & mobilité", en: "Overall support & mobility"),
+                reason: AppCopy.tSync("Posture déjà équilibrée — consolider et progresser", en: "Posture already balanced — consolidate and progress"),
                 priority: 1
             ))
         }

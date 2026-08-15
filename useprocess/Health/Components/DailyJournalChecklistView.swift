@@ -44,6 +44,7 @@ struct DailyJournalChecklistView: View {
     @State private var showFaceScan = false
     @Bindable private var layoutStore = PlanHomeLayoutStore.shared
     @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
+    @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Environment(\.appTheme) private var theme
 
     private var livePlan: FaceOriginPlan { WelcomePlanStore.shared.plan ?? plan }
@@ -139,6 +140,12 @@ struct DailyJournalChecklistView: View {
         }
         .onChange(of: livePlan.calendar.totalDays) { _, _ in
             clampSelectedDateToPlanIfNeeded()
+        }
+        .onChange(of: planBridge.shouldOpenHomeFaceScan) { _, should in
+            guard should else { return }
+            planBridge.shouldOpenHomeFaceScan = false
+            guard FaceScanHistoryStore.shared.canStartTodayScan else { return }
+            showFaceScan = true
         }
     }
 

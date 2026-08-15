@@ -247,9 +247,10 @@ enum CoachHomeContext {
         profile: UnifiedUserProfile?,
         context: CoachUserContext
     ) -> [CoachHomeSuggestion] {
-        let goal = profile?.weightGoal?.rawValue ?? "forme"
+        let goal = profile?.weightGoal?.title ?? AppCopy.t("forme", en: "fitness")
         let sleepHours = context.health?.sleepHours.map { String(format: "%.1f h", $0) } ?? "—"
-        let sportsLine = profile?.sports.prefix(2).map(\.name).joined(separator: ", ") ?? "—"
+        let sportsLine = profile?.sports.prefix(2).map { OnboardingSportCatalog.localizedName($0.name) }.joined(separator: ", ")
+            ?? "—"
 
         return [
             suggestion(

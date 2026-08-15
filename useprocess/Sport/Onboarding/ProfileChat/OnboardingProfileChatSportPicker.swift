@@ -12,6 +12,7 @@ struct OnboardingProfileChatSportPicker: View {
     let onSelectFeatured: (String) -> Void
     let onSelectSearched: (String) -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
 
@@ -49,7 +50,7 @@ struct OnboardingProfileChatSportPicker: View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(OnboardingSportCatalog.featuredChoices) { choice in
                 sportButton(
-                    title: choice.label,
+                    title: OnboardingSportCatalog.localizedName(choice.label),
                     emoji: choice.emoji,
                     systemImage: nil
                 ) {
@@ -117,7 +118,7 @@ struct OnboardingProfileChatSportPicker: View {
             if !searchText.isEmpty {
                 ForEach(searchResults, id: \.self) { sport in
                     sportButton(
-                        title: OnboardingSportCatalog.nameWithoutEmoji(sport),
+                        title: OnboardingSportCatalog.localizedName(sport),
                         emoji: OnboardingSportCatalog.emoji(from: sport),
                         systemImage: nil
                     ) {
@@ -146,13 +147,13 @@ struct OnboardingProfileChatSportPicker: View {
                 } else if let systemImage {
                     Image(systemName: systemImage)
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(OnboardingTheme.mutedText)
+                        .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme).opacity(0.72))
                         .frame(width: 22)
                 }
 
                 Text(title)
                     .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize, weight: .semibold))
-                    .foregroundStyle(OnboardingTheme.primaryText)
+                    .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                     .multilineTextAlignment(.leading)
 
                 Spacer(minLength: 0)
@@ -160,9 +161,13 @@ struct OnboardingProfileChatSportPicker: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                OnboardingTheme.filledButtonBackground(for: colorScheme),
+                in: buttonShape
+            )
             .contentShape(buttonShape)
         }
-        .processGlassButton(in: buttonShape)
+        .buttonStyle(MossChipPress())
         .disabled(isSubmitting)
     }
 }

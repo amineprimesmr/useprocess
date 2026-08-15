@@ -20,6 +20,7 @@ struct EditProfileView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    ProcessCreatorStudioHubLink()
                     ProfileSettingsHubLinksSection()
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)

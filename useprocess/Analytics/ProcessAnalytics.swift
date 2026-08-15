@@ -131,6 +131,29 @@ enum ProcessAnalytics {
         }
     }
 
+    static func trackAppUpdatePromptShown(from current: String, to available: String, forced: Bool) {
+        capture("app_update_prompt_shown", properties: [
+            "current_version": current,
+            "available_version": available,
+            "forced": forced
+        ])
+    }
+
+    static func trackAppUpdateTapped(from current: String, to available: String, forced: Bool) {
+        capture("app_update_tapped", properties: [
+            "current_version": current,
+            "available_version": available,
+            "forced": forced
+        ])
+    }
+
+    static func trackAppUpdateDismissed(from current: String, to available: String) {
+        capture("app_update_dismissed", properties: [
+            "current_version": current,
+            "available_version": available
+        ])
+    }
+
     // MARK: - Onboarding funnel
 
     static func trackOnboardingStarted(step: OnboardingStep?) {

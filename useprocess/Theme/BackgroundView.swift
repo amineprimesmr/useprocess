@@ -6,6 +6,15 @@ enum ProcessBackgroundPalette {
     /// Gris très clair (pas blanc pur).
     static let lightBase = Color(red: 0.925, green: 0.927, blue: 0.933)
     static let darkBase = Color(red: 0.07, green: 0.08, blue: 0.11)
+
+    static func uiColor(for colorScheme: ColorScheme) -> UIColor {
+        switch colorScheme {
+        case .dark:
+            UIColor(red: 0.07, green: 0.08, blue: 0.11, alpha: 1)
+        default:
+            UIColor(red: 0.925, green: 0.927, blue: 0.933, alpha: 1)
+        }
+    }
 }
 
 /// Fond principal de l’app — plat (plus de dégradé rosé / violet en clair).
@@ -51,6 +60,65 @@ struct ProcessTranslucentOverlayBackground: View {
 }
 
 /// Force les UIScrollView / UINavigationController parents à rester transparents (TabView + NavigationStack).
+private struct ProcessUIKitOpaqueSurface: UIViewRepresentable {
+    var color: UIColor
+
+    func makeUIView(context: Context) -> ProcessUIKitOpaqueSurfaceView {
+        let view = ProcessUIKitOpaqueSurfaceView()
+        view.fillColor = color
+        return view
+    }
+
+    func updateUIView(_ uiView: ProcessUIKitOpaqueSurfaceView, context: Context) {
+        uiView.fillColor = color
+        uiView.restoreHostingSurfaces()
+    }
+}
+
+private final class ProcessUIKitOpaqueSurfaceView: UIView {
+    var fillColor: UIColor = .systemBackground
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        restoreHostingSurfaces()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        restoreHostingSurfaces()
+    }
+
+    func restoreHostingSurfaces() {
+        guard window != nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.applyOpaqueBackground()
+        }
+    }
+
+    private func applyOpaqueBackground() {
+        var cursor: UIView? = self
+        while let view = cursor {
+            let size = view.bounds.size
+            if size.width >= UIScreen.main.bounds.width * 0.9
+                && size.height >= UIScreen.main.bounds.height * 0.45 {
+                view.backgroundColor = fillColor
+                view.isOpaque = true
+            }
+            cursor = view.superview
+        }
+
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let controller = current as? UIViewController {
+                controller.view.backgroundColor = fillColor
+                controller.view.isOpaque = true
+                break
+            }
+            responder = current.next
+        }
+    }
+}
+
 private struct ProcessUIKitTransparentSurface: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         ProcessUIKitTransparentSurfaceView()
@@ -227,6 +295,15 @@ extension View {
     func processClearUIKitHostingBackground() -> some View {
         background {
             ProcessUIKitTransparentSurface()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// Remet un fond UIKit opaque — à appeler après un aperçu qui a clear le hosting parent.
+    func processRestoreOpaqueUIKitHostingBackground(_ color: UIColor = .systemBackground) -> some View {
+        background {
+            ProcessUIKitOpaqueSurface(color: color)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .allowsHitTesting(false)
         }

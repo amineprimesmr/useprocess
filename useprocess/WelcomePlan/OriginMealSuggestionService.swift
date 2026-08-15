@@ -13,31 +13,66 @@ enum OriginMealSuggestionService {
         case fromPhoto(slot: MealTimeSlot)
     }
 
-    private static let jsonSchema = """
-    {
-      "name": "Nom appétissant",
-      "mealType": "Petit-déjeuner|Déjeuner|Dîner|Collation",
-      "protocolScore": 0-100,
-      "scoreSummary": "1 phrase",
-      "subScores": {"protocolFit": 0-100, "satiety": 0-100, "antiBloat": 0-100},
-      "items": [{"name": "Aliment", "quantity": "150g", "role": "Protéine|Glucide|Légume|Gras|Autre"}],
-      "prepMinutes": 15,
-      "prepSummary": "1 phrase préparation",
-      "coachTip": "1 conseil",
-      "tags": ["tag1", "tag2"],
-      "imageAssetName": "optionnel, nom asset si repas repris de la base Process"
+    private static var jsonSchema: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            {
+              "name": "Appetizing name",
+              "mealType": "Breakfast|Lunch|Dinner|Snack",
+              "protocolScore": 0-100,
+              "scoreSummary": "1 sentence",
+              "subScores": {"protocolFit": 0-100, "satiety": 0-100, "antiBloat": 0-100},
+              "items": [{"name": "Food", "quantity": "150g", "role": "Protein|Carb|Vegetable|Fat|Other"}],
+              "prepMinutes": 15,
+              "prepSummary": "1 sentence of prep",
+              "coachTip": "1 tip",
+              "tags": ["tag1", "tag2"],
+              "imageAssetName": "optional, asset name if reused from the Process base"
+            }
+            """
+        }
+        return """
+        {
+          "name": "Nom appétissant",
+          "mealType": "Petit-déjeuner|Déjeuner|Dîner|Collation",
+          "protocolScore": 0-100,
+          "scoreSummary": "1 phrase",
+          "subScores": {"protocolFit": 0-100, "satiety": 0-100, "antiBloat": 0-100},
+          "items": [{"name": "Aliment", "quantity": "150g", "role": "Protéine|Glucide|Légume|Gras|Autre"}],
+          "prepMinutes": 15,
+          "prepSummary": "1 phrase préparation",
+          "coachTip": "1 conseil",
+          "tags": ["tag1", "tag2"],
+          "imageAssetName": "optionnel, nom asset si repas repris de la base Process"
+        }
+        """
     }
-    """
 
-    private static let systemPrompt = """
-    Tu es le coach nutrition Process (plan personnalisé debloat visage).
-    Style Enzo : direct, tutoiement, bienveillant.
-    Propose UN repas concret, dense, peu transformé, protéines + tubercules/légumes cuits.
-    Pas de diagnostic médical. Pas de markdown.
-    Réponds UNIQUEMENT avec un JSON valide (aucun texte avant/après) :
-    \(jsonSchema)
-    - 3 à 5 items. protocolScore réaliste (60-95). tags : 2 max.
-    """
+    private static var systemPrompt: String {
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            You are the Process nutrition coach (personalized facial debloat plan).
+            Enzo style: direct, singular you, supportive.
+            Propose ONE concrete meal, dense, minimally processed, protein + cooked tubers/veg.
+            No medical diagnosis. No markdown.
+            Reply ONLY with valid JSON (no text before/after):
+            \(jsonSchema)
+            - 3 to 5 items. Realistic protocolScore (60-95). tags: 2 max.
+            American English only for name, scoreSummary, prepSummary, coachTip, and item names.
+            mealType must be one of: Breakfast|Lunch|Dinner|Snack
+            item role must be one of: Protein|Carb|Vegetable|Fat|Other
+            """
+        }
+        return """
+        Tu es le coach nutrition Process (plan personnalisé debloat visage).
+        Style Enzo : direct, tutoiement, bienveillant.
+        Propose UN repas concret, dense, peu transformé, protéines + tubercules/légumes cuits.
+        Pas de diagnostic médical. Pas de markdown.
+        Réponds UNIQUEMENT avec un JSON valide (aucun texte avant/après) :
+        \(jsonSchema)
+        - 3 à 5 items. protocolScore réaliste (60-95). tags : 2 max.
+        """
+    }
 
     @MainActor
     static func suggest(
@@ -124,15 +159,26 @@ enum OriginMealSuggestionService {
         item: MealSuggestionItem
     ) async throws -> [String] {
         let context = UserContextBuilder.build(profile: profile)
-        let prompt = """
-        \(UserContextBuilder.compactPromptBlock(from: context))
+        let prompt = AppCopy.tSync(
+            """
+            \(UserContextBuilder.compactPromptBlock(from: context))
 
-        Repas : \(current.name)
-        Ingrédient à remplacer : \(item.name) (\(item.quantity), \(item.role))
+            Repas : \(current.name)
+            Ingrédient à remplacer : \(item.name) (\(item.quantity), \(item.role))
 
-        Propose EXACTEMENT 3 alternatives compatibles avec le plan personnalisé pour remplacer cet ingrédient.
-        Format : ALT_1: [nom] | ALT_2: [nom] | ALT_3: [nom]
-        """
+            Propose EXACTEMENT 3 alternatives compatibles avec le plan personnalisé pour remplacer cet ingrédient.
+            Format : ALT_1: [nom] | ALT_2: [nom] | ALT_3: [nom]
+            """,
+            en: """
+            \(UserContextBuilder.compactPromptBlock(from: context))
+
+            Meal: \(current.name)
+            Ingredient to replace: \(item.name) (\(item.quantity), \(item.role))
+
+            Propose EXACTLY 3 alternatives compatible with the personalized plan to replace this ingredient.
+            Format: ALT_1: [name] | ALT_2: [name] | ALT_3: [name]
+            """
+        )
 
         let text = try await CoachAPITransport.complete(
             task: .chat,
@@ -194,7 +240,7 @@ enum OriginMealSuggestionService {
         let context = UserContextBuilder.build(profile: profile)
         let principles = day.nutrition.principles.joined(separator: " · ")
         let foods = day.nutrition.foodsToday.joined(separator: ", ")
-        let slotLabel = slot?.rawValue ?? "Repas"
+        let slotLabel = slot?.displayTitle ?? AppCopy.tSync("Repas", en: "Meal")
         let planType = plan.nutritionPlanType
         let mealStructure = planType.label
         let slotHint = slot.map { planType.slotGuidance(for: $0) } ?? planType.aiStructureHint
@@ -203,84 +249,160 @@ enum OriginMealSuggestionService {
         let userPrompt: String
         switch mode {
         case .fresh:
-            userPrompt = """
-            \(UserContextBuilder.compactPromptBlock(from: context))
+            userPrompt = AppCopy.tSync(
+                """
+                \(UserContextBuilder.compactPromptBlock(from: context))
 
-            Jour protocole : \(day.title)
-            Créneau cible : \(slotLabel)
-            Structure repas : \(mealStructure)
-            Consigne créneau : \(slotHint)
-            Principes : \(principles)
-            Aliments à privilégier : \(foods)
-            Hydratation : \(day.nutrition.hydration)
+                Jour protocole : \(day.title)
+                Créneau cible : \(slotLabel)
+                Structure repas : \(mealStructure)
+                Consigne créneau : \(slotHint)
+                Principes : \(principles)
+                Aliments à privilégier : \(foods)
+                Hydratation : \(day.nutrition.hydration)
 
-            \(processMealBase)
+                \(processMealBase)
 
-            Propose une idée de repas pour \(slotLabel.lowercased()) aujourd'hui.
-            Priorité : reprends un repas de la base Process ou adapte-le légèrement au contexte utilisateur.
-            """
+                Propose une idée de repas pour \(slotLabel.lowercased()) aujourd'hui.
+                Priorité : reprends un repas de la base Process ou adapte-le légèrement au contexte utilisateur.
+                """,
+                en: """
+                \(UserContextBuilder.compactPromptBlock(from: context))
+
+                Protocol day: \(day.title)
+                Target slot: \(slotLabel)
+                Meal structure: \(mealStructure)
+                Slot guidance: \(slotHint)
+                Principles: \(principles)
+                Foods to prioritize: \(foods)
+                Hydration: \(day.nutrition.hydration)
+
+                \(processMealBase)
+
+                Propose a meal idea for \(slotLabel.lowercased()) today.
+                Priority: reuse a Process catalog meal or adapt it slightly to the user context.
+                """
+            )
         case .another(let previous):
-            userPrompt = """
-            \(UserContextBuilder.compactPromptBlock(from: context))
+            userPrompt = AppCopy.tSync(
+                """
+                \(UserContextBuilder.compactPromptBlock(from: context))
 
-            Repas déjà proposé (ne pas répéter) :
-            \(previous.encodedForStorage())
-            \(excludeBlock(extraExclude))
+                Repas déjà proposé (ne pas répéter) :
+                \(previous.encodedForStorage())
+                \(excludeBlock(extraExclude))
 
-            \(processMealBase)
+                \(processMealBase)
 
-            Propose un AUTRE repas différent, créneau \(slotLabel), en restant dans la logique debloat/potassium de la base Process.
-            """
+                Propose un AUTRE repas différent, créneau \(slotLabel), en restant dans la logique debloat/potassium de la base Process.
+                """,
+                en: """
+                \(UserContextBuilder.compactPromptBlock(from: context))
+
+                Meal already proposed (do not repeat):
+                \(previous.encodedForStorage())
+                \(excludeBlock(extraExclude))
+
+                \(processMealBase)
+
+                Propose a DIFFERENT meal, slot \(slotLabel), staying in the Process catalog debloat/potassium logic.
+                """
+            )
         case .modify(let current, let instruction):
             let trimmedInstruction = instruction?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if trimmedInstruction.isEmpty {
-                userPrompt = """
-                \(UserContextBuilder.compactPromptBlock(from: context))
+                userPrompt = AppCopy.tSync(
+                    """
+                    \(UserContextBuilder.compactPromptBlock(from: context))
 
-                Repas actuel :
-                \(current.encodedForStorage())
+                    Repas actuel :
+                    \(current.encodedForStorage())
 
-                \(processMealBase)
+                    \(processMealBase)
 
-                Propose une VARIANTE ajustée — même esprit, légèrement modifié, sodium modéré et potassium naturel.
-                """
+                    Propose une VARIANTE ajustée — même esprit, légèrement modifié, sodium modéré et potassium naturel.
+                    """,
+                    en: """
+                    \(UserContextBuilder.compactPromptBlock(from: context))
+
+                    Current meal:
+                    \(current.encodedForStorage())
+
+                    \(processMealBase)
+
+                    Propose an ADJUSTED VARIANT — same spirit, slightly modified, moderate sodium and natural potassium.
+                    """
+                )
             } else {
-                userPrompt = """
-                \(UserContextBuilder.compactPromptBlock(from: context))
+                userPrompt = AppCopy.tSync(
+                    """
+                    \(UserContextBuilder.compactPromptBlock(from: context))
 
-                Repas actuel :
-                \(current.encodedForStorage())
+                    Repas actuel :
+                    \(current.encodedForStorage())
 
-                Demande utilisateur :
-                \(trimmedInstruction)
+                    Demande utilisateur :
+                    \(trimmedInstruction)
 
-                \(processMealBase)
+                    \(processMealBase)
 
-                Regénère le repas complet en appliquant cette demande, sans sortir des règles debloat Process.
-                """
+                    Regénère le repas complet en appliquant cette demande, sans sortir des règles debloat Process.
+                    """,
+                    en: """
+                    \(UserContextBuilder.compactPromptBlock(from: context))
+
+                    Current meal:
+                    \(current.encodedForStorage())
+
+                    User request:
+                    \(trimmedInstruction)
+
+                    \(processMealBase)
+
+                    Regenerate the full meal applying this request, without leaving Process debloat rules.
+                    """
+                )
             }
         case .modifyItem(let current, let item, let instruction):
-            userPrompt = """
-            \(UserContextBuilder.compactPromptBlock(from: context))
+            userPrompt = AppCopy.tSync(
+                """
+                \(UserContextBuilder.compactPromptBlock(from: context))
 
-            Repas actuel :
-            \(current.encodedForStorage())
+                Repas actuel :
+                \(current.encodedForStorage())
 
-            Modification sur « \(item.name) (\(item.quantity)) » :
-            \(instruction)
+                Modification sur « \(item.name) (\(item.quantity)) » :
+                \(instruction)
 
-            \(processMealBase)
+                \(processMealBase)
 
-            Regénère le repas complet en appliquant cette modification, sans sortir des règles debloat Process.
-            """
+                Regénère le repas complet en appliquant cette modification, sans sortir des règles debloat Process.
+                """,
+                en: """
+                \(UserContextBuilder.compactPromptBlock(from: context))
+
+                Current meal:
+                \(current.encodedForStorage())
+
+                Change on “\(item.name) (\(item.quantity))”:
+                \(instruction)
+
+                \(processMealBase)
+
+                Regenerate the full meal applying this change, without leaving Process debloat rules.
+                """
+            )
         case .batch, .itemAlternatives, .fromPhoto(_):
             userPrompt = ""
         }
 
         return try await CoachAPITransport.complete(
             task: .chat,
-            system: systemPrompt + "\n\nObjectif plan : \(plan.primaryFaceGoal)",
+            system: systemPrompt + "\n\n" + AppCopy.tSync(
+                "Objectif plan : \(plan.primaryFaceGoal)",
+                en: "Plan goal: \(plan.primaryFaceGoal)"
+            ),
             userText: userPrompt,
             model: ClaudeModel.preferred(for: .chat),
             maxTokens: 520

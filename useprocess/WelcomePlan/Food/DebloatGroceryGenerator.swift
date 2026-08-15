@@ -130,7 +130,7 @@ enum DebloatGroceryGenerator {
         let saltNoteFR = food.exceedsSaltLabelThreshold ? " (> 1,5 g de sel / 100 g)" : ""
         let saltNoteEN = food.exceedsSaltLabelThreshold ? " (> 1.5 g salt / 100 g)" : ""
         let message = AppCopy.t(
-            "« \(food.name) » freine le visage dégonflé\(saltNoteFR).",
+            "« \(food.localizedName) » freine le visage dégonflé\(saltNoteFR).",
             en: "“\(food.localizedName)” slows a debloated face\(saltNoteEN)."
         )
         return (message, swapFood?.localizedName ?? swapFood?.name)

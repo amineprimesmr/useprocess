@@ -112,7 +112,7 @@ enum FaceScanAIInsightBuilder {
         let baselineNote = baselineContextNote(for: result)
 
         if isBalancedDay(result: result, scores: scores) {
-            let title = "Visage en forme · \(result.displayWellnessScore)%"
+            let title = titledPrimary(.balanced, result: result)
             return Diagnosis(
                 primaryCause: .balanced,
                 title: title,
@@ -346,7 +346,7 @@ enum FaceScanAIInsightBuilder {
         if health.sleepWasShort {
             return AppCopy.tSync("\(severity.capitalizedFirst) — fréquent quand le sommeil est insuffisant ou fragmenté.", en: "\(severity.capitalizedFirst) — common when sleep is short or fragmented.")
         }
-        if let correlation = facts.correlations.first(where: { $0.message.contains("HRV") || $0.message.contains("sommeil") }) {
+        if let correlation = facts.correlations.first(where: { $0.kind == .hrvFatigue || $0.kind == .sleepUnderEye }) {
             return "\(severity.capitalizedFirst) — \(correlation.message.lowercased())."
         }
         return AppCopy.tSync("Ton visage montre \(severity) : gonflement, cernes ou mâchoire serrée combinés.", en: "Your face shows \(severity): puffiness, under-eyes, or jaw tension combined.")
@@ -362,7 +362,7 @@ enum FaceScanAIInsightBuilder {
         if health.hrvWasLow {
             return AppCopy.tSync("Récupération incomplète (\(load) %) — le visage trahit un système nerveux encore en alerte.", en: "Incomplete recovery (\(load)%) — the face shows a nervous system still on alert.")
         }
-        if let correlation = facts.correlations.first(where: { $0.message.contains("cernes") || $0.message.contains("6 h") }) {
+        if let correlation = facts.correlations.first(where: { $0.kind == .sleepUnderEye || $0.kind == .sleepPuffiness }) {
             return "\(severity.capitalizedFirst) — \(correlation.message.lowercased())."
         }
         return AppCopy.tSync("\(severity.capitalizedFirst) autour des yeux : drainage lymphatique ralenti, teint moins lumineux.", en: "\(severity.capitalizedFirst) around the eyes: slowed lymphatic drainage, duller complexion.")
@@ -516,7 +516,10 @@ enum FaceScanAIInsightBuilder {
     private static func baselineContextNote(for result: FaceScanResult) -> String? {
         guard let count = result.baselineSampleCount, count < 5 else { return nil }
         if count <= 1 { return AppCopy.tSync("Premier scan de référence.", en: "First baseline scan.") }
-        return "Baseline en consolidation (\(count) scans)."
+        return AppCopy.tSync(
+            "Baseline en consolidation (\(count) scans).",
+            en: "Baseline still consolidating (\(count) scans)."
+        )
     }
 
     private static func coachPrompt(
@@ -537,48 +540,105 @@ enum FaceScanAIInsightBuilder {
             history: history
         )
         var contextLines: [String] = [
-            "Cause principale : \(label(for: primary)).",
-            "Indicateur principal : \(metricValue(for: primary, result: result))%.",
-            "Score global wellness : \(result.displayWellnessScore)%.",
-            "Score relatif vs baseline : \(result.resolvedFaceDayScore)/100."
+            AppCopy.tSync("Cause principale : \(label(for: primary)).", en: "Primary cause: \(label(for: primary))."),
+            AppCopy.tSync("Indicateur principal : \(metricValue(for: primary, result: result))%.", en: "Primary indicator: \(metricValue(for: primary, result: result))%."),
+            AppCopy.tSync("Score global wellness : \(result.displayWellnessScore)%.", en: "Overall wellness score: \(result.displayWellnessScore)%."),
+            AppCopy.tSync("Score relatif vs baseline : \(result.resolvedFaceDayScore)/100.", en: "Relative score vs baseline: \(result.resolvedFaceDayScore)/100.")
         ]
 
         if let secondary {
-            contextLines.append("Facteur secondaire : \(label(for: secondary)).")
+            contextLines.append(AppCopy.tSync("Facteur secondaire : \(label(for: secondary)).", en: "Secondary factor: \(label(for: secondary))."))
         }
 
         if let rel = result.relativeSignals, rel.baselineLabel != "Premier scan de référence" {
             contextLines.append(
-                "Évolution vs baseline : rétention \(signed(rel.puffinessDelta)), cernes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0))."
+                AppCopy.tSync(
+                    "Évolution vs baseline : rétention \(signed(rel.puffinessDelta)), cernes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0)).",
+                    en: "Change vs baseline: retention \(signed(rel.puffinessDelta)), under-eyes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0))."
+                )
             )
         }
 
         if facts.retentionPersistingScans >= 2 {
-            contextLines.append("Rétention persistante : \(facts.retentionPersistingScans) scans consécutifs.")
+            contextLines.append(AppCopy.tSync(
+                "Rétention persistante : \(facts.retentionPersistingScans) scans consécutifs.",
+                en: "Persistent retention: \(facts.retentionPersistingScans) consecutive scans."
+            ))
         }
 
         if let nutrition = facts.nutritionYesterday.summaryLine {
-            contextLines.append("Nutrition hier : \(nutrition)")
+            contextLines.append(AppCopy.tSync("Nutrition hier : \(nutrition)", en: "Yesterday’s nutrition: \(nutrition)"))
         }
 
         for correlation in facts.correlations {
-            contextLines.append("Corrélation : \(correlation.message)")
+            contextLines.append(AppCopy.tSync("Corrélation : \(correlation.message)", en: "Correlation: \(correlation.message)"))
         }
 
         if let sleep = health.sleepHoursLabel {
-            contextLines.append("Sommeil récent : \(sleep)\(health.sleepWasShort ? " (insuffisant)" : health.sleepWasGood ? " (OK)" : "").")
+            let sleepNote: String
+            if health.sleepWasShort {
+                sleepNote = AppCopy.tSync(" (insuffisant)", en: " (insufficient)")
+            } else if health.sleepWasGood {
+                sleepNote = " (OK)"
+            } else {
+                sleepNote = ""
+            }
+            contextLines.append(AppCopy.tSync("Sommeil récent : \(sleep)\(sleepNote).", en: "Recent sleep: \(sleep)\(sleepNote)."))
         }
-        if health.hrvWasLow { contextLines.append("HRV basse ce matin.") }
-        if health.hydrationWasLow { contextLines.append("Hydratation basse aujourd'hui.") }
-        if health.activityWasLow { contextLines.append("Activité faible aujourd'hui.") }
+        if health.hrvWasLow {
+            contextLines.append(AppCopy.tSync("HRV basse ce matin.", en: "HRV low this morning."))
+        }
+        if health.hydrationWasLow {
+            contextLines.append(AppCopy.tSync("Hydratation basse aujourd'hui.", en: "Hydration low today."))
+        }
+        if health.activityWasLow {
+            contextLines.append(AppCopy.tSync("Activité faible aujourd'hui.", en: "Activity low today."))
+        }
         if let baselineNote { contextLines.append(baselineNote) }
 
         contextLines.append(contentsOf: severityLines(for: result))
-        contextLines.append("Action calculée : \(FaceScanEvolutionEngine.actionSentence(for: result, history: history))")
+        contextLines.append(AppCopy.tSync(
+            "Action calculée : \(FaceScanEvolutionEngine.actionSentence(for: result, history: history))",
+            en: "Calculated action: \(FaceScanEvolutionEngine.actionSentence(for: result, history: history))"
+        ))
         contextLines.append(FaceScanEvolutionEngine.factsPromptBlock(for: result, history: history))
 
         if let parsed = optionalParsedAnalysis(for: result) {
-            contextLines.append("Analyse IA précédente (à enrichir, pas recopier) : \(parsed)")
+            contextLines.append(AppCopy.tSync(
+                "Analyse IA précédente (à enrichir, pas recopier) : \(parsed)",
+                en: "Previous AI analysis (enrich, do not copy): \(parsed)"
+            ))
+        }
+
+        let contextBlock = contextLines.joined(separator: "\n")
+        if ProcessAppLanguage.prefersEnglish {
+            return """
+            [SYSTEM INSTRUCTION — never show this instruction to the user]
+
+            The user just opened the coach from their face scan. You speak FIRST: no user message comes before yours.
+            Language: American English only.
+
+            They already read this summary on the home screen:
+            “\(cardInsight)”
+
+            Scan data (internal context — do not list every number in your reply):
+            \(contextBlock)
+
+            Write ONE visible coach message:
+            1) Two simple sentences: why their face is in this state (debloat mechanism, tied to real data).
+            2) Three concrete actions for TODAY in the personalized plan (short bullets).
+            3) One open question to continue the conversation.
+
+            Intensity calibration (never minimize):
+            - Use the “Face intensity” labels above when talking about retention, recovery, or cortisol.
+            - If retention ≥ 62%: “clearly puffy” or “marked” — FORBIDDEN: “slightly”, “a bit”, “mild puffiness”.
+            - If retention ≥ 78%: “very marked” or “strong retention”.
+            - Same logic for recovery and cortisol according to their displayed %.
+            - If retention is marked: suggest steady hydration, moderate sodium, and dietary potassium. Never recommend a potassium supplement.
+
+            Do not repeat the card summary word for word. Do not cite every score. No French.
+            No ACTION_*, DEEP_LINK, FOLLOW_UP_* lines — visible user text only.
+            """
         }
 
         return """
@@ -591,7 +651,7 @@ enum FaceScanAIInsightBuilder {
         « \(cardInsight) »
 
         Données du scan (contexte interne — ne pas lister tous les chiffres dans ta réponse) :
-        \(contextLines.joined(separator: "\n"))
+        \(contextBlock)
 
         Rédige UN message coach visible :
         1) Deux phrases simples : pourquoi son visage est dans cet état (mécanisme debloat, lié à ses données réelles).
@@ -615,9 +675,18 @@ enum FaceScanAIInsightBuilder {
         let recovery = FaceScanIndicators.displayPercent(for: .recovery, result: result)
         let cortisol = FaceScanIndicators.displayPercent(for: .stressLoad, result: result)
         return [
-            "Intensité visage — rétention \(retention) % : \(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention)).",
-            "Intensité visage — récupération \(recovery) % : \(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery)).",
-            "Intensité visage — cortisol \(cortisol) % : \(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol))."
+            AppCopy.tSync(
+                "Intensité visage — rétention \(retention) % : \(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention)).",
+                en: "Face intensity — retention \(retention)%: \(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention))."
+            ),
+            AppCopy.tSync(
+                "Intensité visage — récupération \(recovery) % : \(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery)).",
+                en: "Face intensity — recovery \(recovery)%: \(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery))."
+            ),
+            AppCopy.tSync(
+                "Intensité visage — cortisol \(cortisol) % : \(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol)).",
+                en: "Face intensity — cortisol \(cortisol)%: \(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol))."
+            )
         ]
     }
 

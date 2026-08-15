@@ -1078,7 +1078,7 @@ enum FaceScanBehaviorReviewBuilder {
     private static func planEventFix(for reason: PlanDurationEvolutionReason) -> String {
         switch reason {
         case .consecutiveMisses:
-            return AppCopy.tSync("Valide au minimum eau + repas ce soir.", en: "At minimum, check off water + meal tonight.")
+            return AppCopy.tSync("Valide ton bilan du soir pour garder ta série.", en: "Complete your evening check-in to keep your streak.")
         case .cardioConsecutiveMisses, .cardioWeeklyDeficit:
             return AppCopy.tSync("15 min de marche aujourd'hui, même fractionnées.", en: "15 min walking today, even split up.")
         case .regressionPattern:
