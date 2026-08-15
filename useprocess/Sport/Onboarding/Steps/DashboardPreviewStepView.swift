@@ -2,7 +2,7 @@
 //  DashboardPreviewStepView.swift
 //  Process
 //
-//  Aperçu 3D du dashboard — vraies pages Accueil / Série / Profil.
+//  Aperçu 3D du dashboard — vraies pages Accueil / Routine / Série / Profil.
 //
 
 import SwiftUI
@@ -12,10 +12,30 @@ struct DashboardPreviewStepView: View {
 
     let onComplete: () -> Void
 
-    @State private var selectedSlideID: String? = DashboardPreviewSlide.catalog.first?.id
+    @State private var selectedSlideID: String? = Self.initialSlideID
 
     private let slides = DashboardPreviewSlide.catalog
     private let accent = Color(red: 0.42, green: 0.70, blue: 1.0)
+    private static let loopCopies = 3
+
+    private static var initialSlideID: String {
+        "\(loopCopies / 2)-\(DashboardPreviewSlide.catalog[0].id)"
+    }
+
+    private var loopingItems: [DashboardPreviewLoopItem] {
+        (0..<Self.loopCopies).flatMap { copy in
+            slides.map { DashboardPreviewLoopItem(copy: copy, slide: $0) }
+        }
+    }
+
+    private var logicalSlideID: String {
+        Self.logicalID(from: selectedSlideID) ?? slides[0].id
+    }
+
+    private static func logicalID(from loopingID: String?) -> String? {
+        guard let loopingID, let dash = loopingID.firstIndex(of: "-") else { return loopingID }
+        return String(loopingID[loopingID.index(after: dash)...])
+    }
 
     init(onComplete: @escaping () -> Void) {
         self.onComplete = onComplete
@@ -29,7 +49,7 @@ struct DashboardPreviewStepView: View {
         VStack(spacing: 0) {
             titleBlock
                 .padding(.horizontal, 28)
-                .padding(.top, OnboardingConstants.backOnlyContentTopInset)
+                .padding(.top, OnboardingConstants.safeAreaTop + 18)
                 .padding(.bottom, 18)
 
             carousel
@@ -50,7 +70,7 @@ struct DashboardPreviewStepView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onAppear {
             if selectedSlideID == nil {
-                selectedSlideID = slides.first?.id
+                selectedSlideID = Self.initialSlideID
             }
             PlanHomeTutorialStore.shared.suppressPresentationForPreview(true)
             WelcomePlanStore.shared.installEphemeralPreviewPlanIfNeeded(
@@ -58,7 +78,6 @@ struct DashboardPreviewStepView: View {
             )
         }
         .onDisappear {
-            WelcomePlanStore.shared.clearEphemeralPreviewPlan()
             PlanHomeTutorialStore.shared.suppressPresentationForPreview(false)
         }
     }
@@ -88,27 +107,20 @@ struct DashboardPreviewStepView: View {
 
     private var carousel: some View {
         GeometryReader { geo in
-            let cardWidth = min(geo.size.width * 0.62, 278)
+            let cardWidth = min(geo.size.width * 0.70, 308)
             let cardHeight = min(geo.size.height, cardWidth * 1.72)
             let sideInset = max(0, (geo.size.width - cardWidth) / 2)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 16) {
-                    ForEach(slides) { slide in
+                LazyHStack(spacing: 14) {
+                    ForEach(loopingItems) { item in
                         DashboardPreviewCard(
-                            section: slide.section,
-                            isActive: selectedSlideID == slide.id
+                            section: item.slide.section,
+                            isActive: selectedSlideID == item.id
                         )
                         .frame(width: cardWidth, height: cardHeight)
-                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                            content
-                                .scaleEffect(1 - min(abs(phase.value), 1) * 0.14)
-                                .rotationEffect(.degrees(phase.value * -8))
-                                .offset(x: phase.value * -14)
-                                .blur(radius: min(abs(phase.value), 1) * 1.8)
-                                .opacity(1 - min(abs(phase.value), 1) * 0.12)
-                        }
-                        .id(slide.id)
+                        .processFocusScaleScrollTransition(scaleReduction: 0.10)
+                        .id(item.id)
                     }
                 }
                 .scrollTargetLayout()
@@ -117,31 +129,45 @@ struct DashboardPreviewStepView: View {
             .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
             .scrollPosition(id: $selectedSlideID)
             .scrollClipDisabled()
+            .onScrollPhaseChange { _, phase in
+                guard phase == .idle else { return }
+                recenterLoopIfNeeded()
+            }
+        }
+    }
+
+    private func recenterLoopIfNeeded() {
+        guard let selectedSlideID else { return }
+        guard let dash = selectedSlideID.firstIndex(of: "-"),
+              let copy = Int(selectedSlideID[..<dash]) else { return }
+        let slideID = String(selectedSlideID[selectedSlideID.index(after: dash)...])
+        let middle = Self.loopCopies / 2
+        guard copy == 0 || copy == Self.loopCopies - 1 else { return }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            self.selectedSlideID = "\(middle)-\(slideID)"
         }
     }
 
     private var pageDots: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             ForEach(slides) { slide in
-                let isSelected = selectedSlideID == slide.id
-                Circle()
-                    .fill(isSelected ? OnboardingTheme.primaryText : Color.clear)
-                    .overlay {
-                        Circle()
-                            .strokeBorder(
-                                OnboardingTheme.primaryText.opacity(isSelected ? 0 : 0.32),
-                                lineWidth: 1.2
-                            )
+                let isSelected = logicalSlideID == slide.id
+                ProcessCarouselPageMark(
+                    isSelected: isSelected,
+                    activeColor: OnboardingTheme.primaryText,
+                    inactiveColor: OnboardingTheme.primaryText.opacity(0.22)
+                )
+                .onTapGesture {
+                    HapticManager.shared.impact(.light)
+                    withAnimation(.easeInOut(duration: 0.32)) {
+                        selectedSlideID = "\(Self.loopCopies / 2)-\(slide.id)"
                     }
-                    .frame(width: 7, height: 7)
-                    .onTapGesture {
-                        HapticManager.shared.impact(.light)
-                        withAnimation(.easeInOut(duration: 0.32)) {
-                            selectedSlideID = slide.id
-                        }
-                    }
-                    .accessibilityLabel(slide.accessibilityLabel)
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
+                .accessibilityLabel(slide.accessibilityLabel)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
         .accessibilityElement(children: .contain)
@@ -243,6 +269,11 @@ private struct DashboardPreviewAppPage: View {
                 selectedSection: $selectedSection,
                 isTabActive: isActive
             )
+        case .routine:
+            ProcessRoutineHomeView(
+                selectedSection: $selectedSection,
+                isTabActive: isActive
+            )
         case .statistics:
             ProcessProfileView(
                 selectedSection: $selectedSection,
@@ -259,6 +290,13 @@ private struct DashboardPreviewAppPage: View {
     }
 }
 
+private struct DashboardPreviewLoopItem: Identifiable, Hashable {
+    let copy: Int
+    let slide: DashboardPreviewSlide
+
+    var id: String { "\(copy)-\(slide.id)" }
+}
+
 private struct DashboardPreviewSlide: Identifiable, Hashable {
     let id: String
     let section: ProcessMainSection
@@ -268,6 +306,8 @@ private struct DashboardPreviewSlide: Identifiable, Hashable {
         switch section {
         case .plan:
             return AppCopy.home
+        case .routine:
+            return AppCopy.t("Routine", en: "Routine")
         case .statistics:
             return AppCopy.t("Série", en: "Streak")
         case .profile:
@@ -280,6 +320,7 @@ private struct DashboardPreviewSlide: Identifiable, Hashable {
     static let catalog: [DashboardPreviewSlide] = [
         .init(id: "home", section: .plan),
         .init(id: "streak", section: .statistics),
+        .init(id: "routine", section: .routine),
         .init(id: "profile", section: .profile)
     ]
 }

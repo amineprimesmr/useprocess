@@ -62,9 +62,11 @@ struct SportOnboardingView: View {
                 .id(appLanguage.code)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
+                .transition(onboardingPageTransition)
+                .id("onboarding_content_\(viewModel.currentStep)")
             } else {
             VStack(spacing: 0) {
-                // Contenu principal avec transition ultra fluide
+                // Contenu principal — à partir du scan : même push que capture → analyse → résultats.
                 Group {
                     if let step = OnboardingStep(rawValue: viewModel.currentStep) {
                         onboardingStepContent(for: step)
@@ -86,8 +88,9 @@ struct SportOnboardingView: View {
                 .padding(.top, shouldAddTopPadding ? OnboardingConstants.titleTopPaddingFromScreenTop : 0)
                 .ignoresSafeArea(.all)
                 .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
-                .ios26SafeAnimation(.onboardingTransition, value: viewModel.currentStep)
-                .id("onboarding_content_\(viewModel.currentStep)") // Force le re-render pour animations fluides
+                .transition(onboardingPageTransition)
+                .ios26SafeAnimation(onboardingPageChangeAnimation, value: viewModel.currentStep)
+                .id("onboarding_content_\(viewModel.currentStep)")
 
             }
             }
@@ -155,6 +158,7 @@ struct SportOnboardingView: View {
                     navigationEngine: navigationEngine
                 )
                 await SubscriptionService.shared.checkSubscriptionStatus()
+                reconcileUnpaidOnboardingResumeIfNeeded()
                 reconcilePostPaymentStepIfNeeded()
                 refreshOnboardingFlowProgress()
                 updateContinueButtonLayout(animated: false)
@@ -259,6 +263,7 @@ struct SportOnboardingView: View {
             )
             .environmentObject(profileService)
             .interactiveDismissDisabled(true)
+            .presentationBackground(FaceScanWhoopPalette.canvas)
         }
     }
 

@@ -33,10 +33,9 @@ struct PaywallView: View {
     @State private var showsStayPopup = false
     @State private var lastHandledSwipeToken = 0
     @State private var didCompletePaywallFlow = false
-    /// Compteur croix — le pop rétention ne s’ouvre qu’au 3ᵉ tap.
-    @State private var closeXTapCount = 0
+    @State private var showsCloseXButton = false
+    @State private var didPresentStayPopupFromCloseX = false
     @State private var lastCloseXTapAt: Date?
-    private let closeXTapsBeforeRetention = 3
     @Bindable private var appLanguage = ProcessAppLanguage.shared
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
@@ -147,6 +146,13 @@ struct PaywallView: View {
         .onAppear {
             refreshMeasuredTopSafeInset()
             trackPaywallAppear()
+            Task {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.28)) {
+                    showsCloseXButton = true
+                }
+            }
         }
         .onChange(of: subscriptionService.subscriptionStatus) { oldValue, newValue in
             if newValue.isActive && !oldValue.isActive {
@@ -202,7 +208,7 @@ struct PaywallView: View {
     }
 
     private func handleDeferredHomeSwipe() {
-        // Swipe Home → pop rétention (indépendant du compteur croix).
+        // Swipe Home → pop rétention (indépendant de la croix).
         guard homeSwipeGate.shouldShowPaywallStayPopup else { return }
         guard !showsSpinWinback, !showsStayPopup else { return }
         ProcessAnalytics.trackPaywallCloseTapped(source: "home_swipe")
@@ -266,12 +272,15 @@ struct PaywallView: View {
                     .frame(width: 36, height: 36)
             }
             .processGlassIconButtonStyle()
+            .opacity(showsCloseXButton ? 1 : 0)
+            .allowsHitTesting(showsCloseXButton)
+            .accessibilityHidden(!showsCloseXButton)
             .accessibilityLabel(OnboardingCopy.t("Fermer", en: "Close"))
         }
         .padding(.horizontal, 18)
     }
 
-    /// Croix : 1ʳᵉ + 2ᵉ = shake CTA seulement. 3ᵉ = pop « Attends ! ».
+    /// Croix : 1er tap = pop « Attends ! ». Ensuite shake CTA seulement.
     /// Jamais la roue depuis la croix (uniquement via « Tente ta chance »).
     private func handlePaywallCloseAttempt(source: String) {
         ProcessAnalytics.trackPaywallCloseTapped(source: source)
@@ -290,11 +299,13 @@ struct PaywallView: View {
         }
         lastCloseXTapAt = now
 
-        closeXTapCount += 1
-        shakeContinueButton()
+        if !didPresentStayPopupFromCloseX {
+            didPresentStayPopupFromCloseX = true
+            presentStayRetentionPopup()
+            return
+        }
 
-        guard closeXTapCount >= closeXTapsBeforeRetention else { return }
-        presentStayRetentionPopup()
+        shakeContinueButton()
     }
 
     private func presentStayRetentionPopup() {
@@ -309,8 +320,6 @@ struct PaywallView: View {
         withAnimation(.spring(response: 0.36, dampingFraction: 0.88)) {
             showsStayPopup = false
         }
-        // Nouvelle séquence de 3 croix pour le prochain pop.
-        closeXTapCount = 0
     }
 
     private func shakeContinueButton() {

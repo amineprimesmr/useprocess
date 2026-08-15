@@ -21,8 +21,7 @@ struct ProfileTopChromeActionButton: View {
                 .frame(width: ProfileTopChromeMetrics.barHeight, height: ProfileTopChromeMetrics.barHeight)
                 .contentShape(barShape)
         }
-        .buttonStyle(ProcessGlassPressStyle())
-        .processGlassEffect(in: barShape, interactive: true)
+        .processGlassButton(in: barShape)
         .accessibilityLabel(accessibilityLabel)
     }
 }

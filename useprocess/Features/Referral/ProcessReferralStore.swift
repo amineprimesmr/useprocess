@@ -69,7 +69,6 @@ final class ProcessReferralStore {
         \(referralLink)
 
         \(AppCopy.t("Mon code parrainage : \(displayReferralCode)", en: "My referral code: \(displayReferralCode)"))
-        \(ProcessReferralProgramTerms.inviteeRewardSummary)
         """
     }
 

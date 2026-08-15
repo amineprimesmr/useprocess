@@ -103,18 +103,9 @@ struct PlanMealCatalogCard: View {
                 width: PlanMealCatalogLayout.cardWidth,
                 height: PlanMealCatalogLayout.cardHeight
             )
+            .contentShape(cardShape)
         }
-        .buttonStyle(.processPlain)
-        .frame(
-            width: PlanMealCatalogLayout.cardWidth,
-            height: PlanMealCatalogLayout.cardHeight
-        )
-        .background {
-            cardShape
-                .fill(.clear)
-                .processGlassEffect(in: cardShape)
-        }
-        .clipShape(cardShape)
+        .processGlassButton(in: cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .accessibilityLabel(AppCopy.t("\(meal.localizedDisplayName), score Debloat \(assessment.score)", en: "\(meal.localizedDisplayName), Debloat score \(assessment.score)"))
     }

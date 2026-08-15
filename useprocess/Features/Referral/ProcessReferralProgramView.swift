@@ -1,7 +1,7 @@
 import SafariServices
 import SwiftUI
 
-/// Hub parrainage — récompenses Apple (temps offert), layout Push-style.
+/// Hub parrainage — conditions cash, layout Push-style.
 struct ProcessReferralProgramView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
@@ -79,7 +79,7 @@ private struct ProcessReferralProgramScreen: View {
 
                     ProcessReferralMetalCard(
                         referralCode: store.displayReferralCode,
-                        copyText: store.copyPayload,
+                        copyText: store.referralLink,
                         onCopy: {}
                     )
                         .padding(.top, 28)
@@ -120,7 +120,7 @@ private struct ProcessReferralProgramScreen: View {
 
             Spacer()
 
-            Text(AppCopy.t("Récompenses", en: "Rewards"))
+            Text(AppCopy.t("Conditions", en: "Terms"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
                 .padding(.horizontal, 14)
@@ -132,7 +132,7 @@ private struct ProcessReferralProgramScreen: View {
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(AppCopy.t("Invite des amis.", en: "Invite friends."))
-            Text(AppCopy.t("Sois récompensé.", en: "Get rewarded."))
+            Text(ProcessReferralProgramTerms.perFriendHeadline)
         }
         .font(.system(size: 34, weight: .bold))
         .foregroundStyle(ProcessReferralTheme.textPrimary)
@@ -143,27 +143,30 @@ private struct ProcessReferralProgramScreen: View {
         VStack(alignment: .center, spacing: 0) {
             ProcessReferralHowItWorksStep(
                 icon: "link",
-                title: AppCopy.t("Partage ton invite", en: "Share your invite"),
+                title: AppCopy.t("Partage ton lien", en: "Share your link"),
                 subtitle: AppCopy.t(
-                    "Envoie ton lien personnel à un ami.",
-                    en: "Send your personal invite link to a friend."
+                    "Envoie ton lien personnel à tes amis.",
+                    en: "Send your personal invite link to your friends."
                 ),
                 showsConnector: true
             )
 
             ProcessReferralHowItWorksStep(
                 icon: "figure.strengthtraining.traditional",
-                title: AppCopy.t("Ton ami rejoint", en: "Friend joins"),
+                title: AppCopy.t("Ils s'abonnent", en: "They subscribe"),
                 subtitle: AppCopy.t(
-                    "Il s'inscrit, prend un abonnement Apple, et vous recevez tous les deux du temps offert.",
-                    en: "They sign up, start an Apple subscription, and you both receive free time."
+                    "Chaque ami qui prend un abonnement payant compte.",
+                    en: "Every friend who starts a paid subscription counts."
                 ),
                 showsConnector: true
             )
 
             ProcessReferralHowItWorksStep(
                 icon: "gift.fill",
-                title: AppCopy.t("Vous gagnez tous les deux", en: "You both win"),
+                title: AppCopy.t(
+                    "Tu gagnes \(ProcessReferralProgramTerms.cashAmount) par ami",
+                    en: "You earn \(ProcessReferralProgramTerms.cashAmount) per friend"
+                ),
                 subtitle: ProcessReferralProgramTerms.referrerRewardSummary,
                 showsConnector: false
             )
@@ -171,7 +174,7 @@ private struct ProcessReferralProgramScreen: View {
             Button {
                 showRewardsInfo = true
             } label: {
-                Text(AppCopy.t("Voir les récompenses", en: "View Rewards"))
+                Text(AppCopy.t("Voir les conditions", en: "See the terms"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(ProcessReferralTheme.textPrimary)
                     .padding(.horizontal, 16)
@@ -199,8 +202,8 @@ private struct ProcessReferralProgramScreen: View {
 
             if store.snapshot.entries.isEmpty {
                 Text(AppCopy.t(
-                    "Aucun parrainage pour l'instant. Partage ton code pour voir tes invités ici.",
-                    en: "No referrals yet. Share your code to see your invites here."
+                    "Aucun parrainage pour l'instant. Partage ton lien : chaque ami abonné te rapporte \(ProcessReferralProgramTerms.cashAmount).",
+                    en: "No referrals yet. Share your link: every subscribed friend earns you \(ProcessReferralProgramTerms.cashAmount)."
                 ))
                 .font(.system(size: 14))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
@@ -216,20 +219,15 @@ private struct ProcessReferralProgramScreen: View {
     }
 
     private var inviteFriendsButton: some View {
-        Button {
+        OnboardingCreatePlanButton(
+            title: AppCopy.t("Inviter des amis", en: "Invite Friends")
+        ) {
             HapticManager.shared.impact(.medium)
             ProcessAnalytics.trackReferralShareOpened(source: "referral_program")
             showShareSheet = true
-        } label: {
-            Text(AppCopy.t("Inviter des amis", en: "Invite Friends"))
-                .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(Color.black.opacity(0.9))
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(Capsule(style: .continuous).fill(Color.white))
         }
-        .buttonStyle(.processPlain)
         .padding(.horizontal, 22)
+        .padding(.top, 8)
         .padding(.bottom, 12)
         .background {
             LinearGradient(
@@ -323,24 +321,24 @@ private struct ProcessReferralRewardsInfoSheet: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(ProcessReferralTheme.textPrimary)
 
-                Text(AppCopy.t(
-                    "Quand ton ami s'inscrit avec ton code et prend un abonnement Apple, vous recevez tous les deux du temps offert sur Process — crédité automatiquement via l'App Store.",
-                    en: "When your friend signs up with your code and starts an Apple subscription, you both receive free Process time — credited automatically through the App Store."
-                ))
+                Text(ProcessReferralProgramTerms.referrerRewardSummary)
                 .font(.system(size: 15))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
                 rewardRow(
-                    title: AppCopy.t("Pour toi (parrain)", en: "For you (referrer)"),
-                    detail: ProcessReferralProgramTerms.referrerRewardSummary
+                    title: AppCopy.t("Pour toi", en: "For you"),
+                    detail: AppCopy.t(
+                        "Tu gagnes \(ProcessReferralProgramTerms.cashAmount) pour chaque ami qui prend un abonnement.",
+                        en: "You earn \(ProcessReferralProgramTerms.cashAmount) for every friend who starts a subscription."
+                    )
                 )
 
                 rewardRow(
-                    title: AppCopy.t("Pour ton ami (invité)", en: "For your friend (invitee)"),
+                    title: AppCopy.t("Pour tes amis", en: "For your friends"),
                     detail: AppCopy.t(
-                        "7 jours offerts sur son abonnement Apple après son 1er paiement.",
-                        en: "7 free days on their Apple subscription after their first payment."
+                        "Aucun avantage. Ils paient leur abonnement normalement.",
+                        en: "No bonus. They pay for their subscription as usual."
                     )
                 )
 

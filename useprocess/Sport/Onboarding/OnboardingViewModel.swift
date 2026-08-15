@@ -110,16 +110,17 @@ class OnboardingViewModel: ObservableObject {
             applyCachedAnswers(cached)
         }
         
-        if savedStep > 0, OnboardingStep(rawValue: savedStep) != nil {
-            currentStep = savedStep
+        if savedStep > 0, let saved = OnboardingStep(rawValue: savedStep) {
+            let resumeStep = saved.unpaidResumeStep.rawValue
+            currentStep = resumeStep
 
             if !savedVisitedSteps.isEmpty {
                 visitedSteps = normalizeOnboardingVisitedStack(
                     visitedSteps: savedVisitedSteps,
-                    currentStep: savedStep
+                    currentStep: resumeStep
                 )
             } else {
-                visitedSteps = [savedStep]
+                visitedSteps = [resumeStep]
             }
         } else {
             currentStep = OnboardingStep.genderSelection.rawValue
@@ -462,9 +463,19 @@ class OnboardingViewModel: ObservableObject {
     // MARK: - Progress Management
     
     func saveProgress() {
-        OnboardingProgressService.shared.saveCurrentStep(currentStep)
+        OnboardingProgressService.shared.saveCurrentStep(persistedResumeStep)
         OnboardingProgressService.shared.saveVisitedSteps(visitedSteps)
         OnboardingProgressService.shared.saveAnswers(makeAnswersSnapshot())
+    }
+
+    /// Tant que l’onboarding n’est pas payé, on mémorise le dashboard — pas le paywall.
+    private var persistedResumeStep: Int {
+        guard !AppSession.shared.hasCompletedOnboarding,
+              !SubscriptionService.shared.subscriptionStatus.isActive,
+              let step = OnboardingStep(rawValue: currentStep) else {
+            return currentStep
+        }
+        return step.unpaidResumeStep.rawValue
     }
 
     func saveFlowProgress(_ progress: Double) {

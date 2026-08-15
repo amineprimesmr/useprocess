@@ -3,11 +3,8 @@ import SwiftUI
 // MARK: - Tokens WHOOP
 
 enum FaceScanWhoopPalette {
-    static let canvas = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.04, green: 0.04, blue: 0.045, alpha: 1)
-            : UIColor(red: 0.968, green: 0.972, blue: 0.988, alpha: 1)
-    })
+    /// Même fond que l’onboarding — évite les bandes (scroll / TabView / capture).
+    static var canvas: Color { OnboardingTheme.screenBackground }
 
     static let card = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
@@ -192,7 +189,10 @@ struct FaceScanWhoopAnalysisScreen: View {
                     Spacer(minLength: bottomContentInset)
                 }
             }
+            .processTransparentScrollSurface()
         }
+        .processClearUIKitHostingBackground()
+        .background(FaceScanWhoopPalette.canvas)
         .onAppear {
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
             framingDraft = storedResult.resolvedStudioFraming

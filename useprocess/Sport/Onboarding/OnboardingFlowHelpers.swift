@@ -90,7 +90,7 @@ func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
 /// Étapes finales qui gardent le header « retour seul » (sans barre ni drapeau).
 func showsBackOnlyOnboardingHeader(_ step: OnboardingStep) -> Bool {
     switch step {
-    case .biometricAuth, .transformationPreview, .dashboardPreview, .programCreation:
+    case .biometricAuth, .transformationPreview, .programCreation:
         return true
     default:
         return false

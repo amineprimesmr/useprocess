@@ -106,9 +106,7 @@ func skipWeightGoalFromIdealWeight() {
     transitionDirection = .forward
     isTransitioning = true
 
-    withAnimation(.onboardingTransition) {
-        viewModel.currentStep = OnboardingStep.firstNameInput.rawValue
-    }
+    commitAnimatedStepChange(to: OnboardingStep.firstNameInput.rawValue)
 
     commitVisibleStepToHistory(OnboardingStep.firstNameInput.rawValue)
 
@@ -150,6 +148,37 @@ func handleContinueButtonTap() {
     }
 }
 
+/// À partir du chat / scan : même slide que capture → analyse → résultats.
+var shouldUseScanPagePush: Bool {
+    Self.usesScanStylePagePush(from: previousStepIndex ?? viewModel.currentStep, to: viewModel.currentStep)
+}
+
+var onboardingPageChangeAnimation: Animation {
+    shouldUseScanPagePush ? .onboardingScanPagePush : .onboardingTransition
+}
+
+var onboardingPageTransition: AnyTransition {
+    shouldUseScanPagePush
+        ? .onboardingScanPagePush(direction: transitionDirection)
+        : .opacity
+}
+
+static func usesScanStylePagePush(from: Int, to: Int) -> Bool {
+    let threshold = OnboardingStep.weightMotivation.semanticOrderIndex
+    let fromIndex = OnboardingStep(rawValue: from)?.semanticOrderIndex ?? 0
+    let toIndex = OnboardingStep(rawValue: to)?.semanticOrderIndex ?? 0
+    return fromIndex >= threshold || toIndex >= threshold
+}
+
+func commitAnimatedStepChange(to newStep: Int) {
+    let animation: Animation = Self.usesScanStylePagePush(from: viewModel.currentStep, to: newStep)
+        ? .onboardingScanPagePush
+        : .onboardingTransition
+    withAnimation(animation) {
+        viewModel.currentStep = newStep
+    }
+}
+
 var isImmersiveOnboardingStep: Bool {
     guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
     // Paywall en immersif : évite le remount `.id(onboarding_content_…)` qui cassait
@@ -167,7 +196,8 @@ var shouldShowBackButton: Bool {
     }
 
     let blockedSteps: Set<OnboardingStep> = [
-        .videoIntroduction, .payment, .appleSignIn, .processWelcome, .featuresUnlock, .complete, .faceAnalysis
+        .videoIntroduction, .payment, .appleSignIn, .processWelcome, .featuresUnlock, .complete, .faceAnalysis,
+        .dashboardPreview
     ]
     if blockedSteps.contains(currentStep) {
         return false

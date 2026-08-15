@@ -48,4 +48,11 @@ extension View {
             ProcessScrollCoverFlowEffect.apply(content, phase: phase, config: config)
         }
     }
+
+    /// Scale only — centre à 1.0, voisines légèrement plus petites. Pas de 3D.
+    func processFocusScaleScrollTransition(scaleReduction: CGFloat = 0.10) -> some View {
+        scrollTransition(.interactive, axis: .horizontal) { content, phase in
+            content.scaleEffect(1 - abs(phase.value) * scaleReduction, anchor: .center)
+        }
+    }
 }

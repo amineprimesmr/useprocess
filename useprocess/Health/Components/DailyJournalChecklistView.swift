@@ -68,11 +68,11 @@ struct DailyJournalChecklistView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-                if showHeader, !tutorialStore.isActive {
+                if showHeader, !tutorialStore.constrainsHomeLayout {
                     journalHeader
                         .padding(.bottom, 18)
                 }
-                if showWeekStrip, !tutorialStore.isActive {
+                if showWeekStrip, !tutorialStore.constrainsHomeLayout {
                     JournalWeekDayStrip(
                         selectedDate: $selectedDate,
                         plan: livePlan
@@ -183,16 +183,22 @@ struct DailyJournalChecklistView: View {
     private func homeSectionView(_ section: PlanHomeSectionKind) -> some View {
         switch section {
         case .faceScan:
-            PlanHomeTutorialFocusChrome(focus: .faceScan) {
-                PlanLastFaceScanSection(
-                    isScanFlowActive: $showFaceScan,
-                    isPlanActive: isPlanActive,
-                    healthMetrics: healthMetrics,
-                    zoomNamespace: faceScanHistoryZoomNamespace,
-                    onScan: {},
-                    onScanComplete: { _ in }
-                )
-                .environmentObject(UnifiedProfileService.shared)
+            VStack(alignment: .leading, spacing: 0) {
+                PlanHomeTutorialFocusChrome(focus: .faceScan) {
+                    PlanLastFaceScanSection(
+                        isScanFlowActive: $showFaceScan,
+                        isPlanActive: isPlanActive,
+                        healthMetrics: healthMetrics,
+                        zoomNamespace: faceScanHistoryZoomNamespace,
+                        onScan: {},
+                        onScanComplete: { _ in }
+                    )
+                    .environmentObject(UnifiedProfileService.shared)
+                }
+
+                if !homeLayoutEditMode {
+                    PlanHomeUpgradeProCard()
+                }
             }
 
         case .nutrition:
@@ -269,18 +275,21 @@ struct DailyJournalChecklistView: View {
             }
             return spacing
         }
+        if section == .faceRoutine {
+            return PlanHomeSectionDesign.sectionSpacing + PlanHomeSectionDesign.faceRoutineExtraTopSpacing
+        }
         return PlanHomeSectionDesign.sectionSpacing
     }
 
     private var displayedSections: [PlanHomeSectionKind] {
-        if tutorialStore.isActive {
+        if tutorialStore.constrainsHomeLayout {
             return layoutStore.visibleSections.filter { tutorialStore.shouldDisplay(section: $0) }
         }
         return layoutStore.visibleSections
     }
 
     private var tutorialSectionTransition: AnyTransition {
-        if tutorialStore.isActive {
+        if tutorialStore.constrainsHomeLayout {
             return .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
         }
         return .asymmetric(

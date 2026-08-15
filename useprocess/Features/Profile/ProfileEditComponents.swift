@@ -303,31 +303,26 @@ struct AccountDetailsGlassHeader: View {
             }
 
             HStack {
-                Button(action: onBack) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                }
-                .processGlassButton(in: Capsule())
-                .accessibilityLabel(AppCopy.close)
-
-                Spacer()
-
-                if showsSave, let onSave {
-                    Button(action: onSave) {
-                        Text(AppCopy.save)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 10)
+                if showsSave {
+                    Color.clear.frame(width: 40, height: 40)
+                    Spacer()
+                    if let onSave {
+                        Button(action: onSave) {
+                            Text(AppCopy.save)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(saveDisabled ? Color(.tertiaryLabel) : Color.primary)
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 10)
+                        }
+                        .processGlassButton(in: Capsule())
+                        .disabled(saveDisabled)
+                        .opacity(saveDisabled ? 0.72 : 1)
                     }
-                    .processGlassButton(in: Capsule())
-                    .disabled(saveDisabled)
-                    .opacity(saveDisabled ? 0.72 : 1)
                 } else {
                     Color.clear.frame(width: 40, height: 40)
+                    Spacer()
+                    ProcessGlassIconButton(systemName: "xmark", size: 40, iconSize: 13, action: onBack)
+                        .accessibilityLabel(AppCopy.close)
                 }
             }
         }

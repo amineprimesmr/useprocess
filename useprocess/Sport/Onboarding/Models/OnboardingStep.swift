@@ -86,8 +86,8 @@ enum OnboardingStep: Int, CaseIterable {
     case programCreation = 57               // ✨ Création du programme (analyse habitudes, plan 13 semaines)
     case biometricAuth = 58                    // ✨ Authentification biométrique (empreinte digitale)
     case notificationPermission = 59           // Conservé compat sauvegarde — page notifs supprimée, pop-up au paywall
-    case transformationPreview = 64            // ✨ Aperçu avant / après (slider) avant le paywall
-    case dashboardPreview = 69                 // ✨ Dashboard 3D juste avant le paywall
+    case transformationPreview = 64            // ✨ Témoignages avant / après (slider) avant le dashboard
+    case dashboardPreview = 69                 // ✨ Dashboard 3D après les témoignages, avant le paywall
     case dreamFaceCommit = 70                  // Conservé compat sauvegarde — page engagement retirée, saut auto
     case payment = 60
     case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
@@ -222,6 +222,18 @@ enum OnboardingStep: Int, CaseIterable {
             return true
         default:
             return false
+        }
+    }
+
+    /// Reprise sans abonnement : on ne relance pas le paywall, on revient au dashboard.
+    var unpaidResumeStep: OnboardingStep {
+        switch self {
+        case .payment, .appleSignIn, .dreamFaceCommit,
+             .processWelcome, .referralReward, .featuresUnlock, .complete,
+             .dashboardPreview:
+            return .transformationPreview
+        default:
+            return self
         }
     }
 }

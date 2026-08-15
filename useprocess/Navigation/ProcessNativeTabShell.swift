@@ -25,6 +25,7 @@ struct ProcessNativeTabShell<Plan: View, Statistics: View, Coach: View, Profile:
         init?(_ section: ProcessMainSection) {
             switch section {
             case .plan: self = .plan
+            case .routine: return nil
             case .statistics: self = .statistics
             case .coach: self = .coach
             case .profile: self = .profile

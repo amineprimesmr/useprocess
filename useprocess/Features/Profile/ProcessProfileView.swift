@@ -30,7 +30,6 @@ struct ProcessProfileView: View {
     @State private var metricPresentations: [ProfileMetricPresentation] = []
     @State private var isReloadingCharts = false
     @State private var chartDataRevision = 0
-    @State private var showSettings = false
 
     private var isFlamePlaybackActive: Bool {
         isTabActive && scenePhase == .active
@@ -43,10 +42,7 @@ struct ProcessProfileView: View {
                 VStack(spacing: 0) {
                     ProfileStreakAchievementsSection(
                         selectedDate: $selectedProfileDate,
-                        isPlaybackActive: isFlamePlaybackActive,
-                        onOpenSettings: {
-                            showSettings = true
-                        }
+                        isPlaybackActive: isFlamePlaybackActive
                     )
 
                     Color.clear
@@ -82,11 +78,6 @@ struct ProcessProfileView: View {
                 previous: previousScan(before: scan),
                 history: faceHistoryStore.history
             )
-        }
-        .fullScreenCover(isPresented: $showSettings) {
-            ProcessSettingsFullScreenView()
-                .environmentObject(profileService)
-                .environmentObject(HealthManager.shared)
         }
         .task(id: profileService.currentProfile?.userId) {
             try? await Task.sleep(for: .milliseconds(350))

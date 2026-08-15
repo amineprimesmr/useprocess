@@ -32,9 +32,9 @@ struct FaceScanCaptureScreen: View {
     var skipButtonTitle: String = AppCopy.t("Passer pour le moment", en: "Skip for now")
     var allowsScreenFlash: Bool = true
     var isCameraSessionActive: Bool = true
-    /// Premier scan onboarding : pas de phase « penche la tête ».
-    var skipsHeadTiltPhase: Bool = false
-    /// Cadre ovale visage dès l’ouverture (onboarding).
+    /// Pas de phase « penche la tête ».
+    var skipsHeadTiltPhase: Bool = true
+    /// Cadre ovale visage (même design que l’onboarding).
     var usesOnboardingFaceOval: Bool = false
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
@@ -288,7 +288,7 @@ struct FaceScanCaptureScreen: View {
                 if usesOnboardingFaceOval {
                     (isFlashEnabled
                         ? Color.white
-                        : (colorScheme == .dark ? Color.black : ProcessBackgroundPalette.lightBase))
+                        : FaceScanWhoopPalette.canvas)
                         .ignoresSafeArea()
                 } else {
                     (isFlashEnabled ? Color.white : Color.black)
@@ -352,7 +352,13 @@ struct FaceScanCaptureScreen: View {
                 }
             }
         }
-        .ignoresSafeArea(.container, edges: .top)
+        .ignoresSafeArea()
+        .processClearUIKitHostingBackground()
+        .background(
+            isFlashEnabled
+                ? Color.white
+                : (usesOnboardingFaceOval ? FaceScanWhoopPalette.canvas : Color.black)
+        )
     }
 
     private func onboardingReferenceLayout(viewportSize: CGSize, safeArea: EdgeInsets) -> some View {
@@ -361,29 +367,37 @@ struct FaceScanCaptureScreen: View {
                 .frame(height: OnboardingConstants.headerBackButtonTopPadding)
 
             HStack {
-                onboardingChromeButton(
-                    systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash",
-                    iconSize: 16,
-                    tint: isFlashEnabled
-                        ? Color(red: 0.95, green: 0.78, blue: 0.12)
-                        : nil
-                ) {
-                    userFlashOverride = true
-                    isFlashEnabled.toggle()
+                onboardingChromeButton(systemName: "xmark", iconSize: 14) {
+                    FaceScanScreenFlash.shared.deactivate()
+                    onBack()
                 }
-                .accessibilityLabel(
-                    isFlashEnabled
-                        ? AppCopy.t("Désactiver le flash", en: "Turn flash off")
-                        : AppCopy.t("Activer le flash", en: "Turn flash on")
-                )
-                .disabled(!isDeviceSupported || phase == .completed)
+                .accessibilityLabel(AppCopy.close)
 
                 Spacer(minLength: 0)
 
-                onboardingChromeButton(systemName: "arrow.clockwise", iconSize: 16) {
-                    restartScan()
+                HStack(spacing: 10) {
+                    onboardingChromeButton(
+                        systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash",
+                        iconSize: 16,
+                        tint: isFlashEnabled
+                            ? Color(red: 0.95, green: 0.78, blue: 0.12)
+                            : nil
+                    ) {
+                        userFlashOverride = true
+                        isFlashEnabled.toggle()
+                    }
+                    .accessibilityLabel(
+                        isFlashEnabled
+                            ? AppCopy.t("Désactiver le flash", en: "Turn flash off")
+                            : AppCopy.t("Activer le flash", en: "Turn flash on")
+                    )
+                    .disabled(!isDeviceSupported || phase == .completed)
+
+                    onboardingChromeButton(systemName: "arrow.clockwise", iconSize: 16) {
+                        restartScan()
+                    }
+                    .accessibilityLabel(AppCopy.t("Recommencer le scan", en: "Restart scan"))
                 }
-                .accessibilityLabel(AppCopy.t("Recommencer le scan", en: "Restart scan"))
             }
             .padding(.horizontal, 20)
 

@@ -29,11 +29,13 @@ extension View {
     }
 
     /// Bouton circulaire — iOS 26 : style système `.glass` (press natif). Pré-26 : glassEffect manuel.
+    /// `.buttonSizing(.fitted)` : le chrome épouse le frame du label (sans le padding `.glass` par défaut).
     @ViewBuilder
     func processNativeGlassCircleButtonStyle() -> some View {
         if #available(iOS 26.0, *) {
             buttonStyle(.glass)
                 .buttonBorderShape(.circle)
+                .buttonSizing(.fitted)
         } else {
             buttonStyle(.plain)
                 .processGlassEffect(in: Circle())
@@ -41,17 +43,23 @@ extension View {
         }
     }
 
-    /// Bouton liquid glass — capsules / formes custom (pre-26 + surfaces non-button).
-    ///
-    /// Le glass est appliqué en `.background` (comme les cartes Accueil), pas seulement via
-    /// `ButtonStyle` : un `.buttonStyle(.processPlain)` voisin ne peut plus le faire disparaître.
+    /// Surface tappable type carte Accueil.
+    /// Clip le contenu d’abord, puis pose le glass interactif — jamais l’inverse :
+    /// un `clipShape` après le glass coupe le press natif iOS 26.
+    func processInteractiveGlassSurface(
+        in shape: some InsettableShape,
+        interactive: Bool = true
+    ) -> some View {
+        clipShape(shape)
+            .contentShape(shape)
+            .processGlassEffect(in: shape, interactive: interactive)
+    }
+
+    /// Bouton liquid glass.
+    /// iOS 26 : `.buttonStyle(.glass)` — press natif qui **grossit** le bouton.
+    /// Avant : glassEffect + scale manuel.
     func processGlassButton(in shape: some InsettableShape, interactive: Bool = true) -> some View {
-        buttonStyle(ProcessGlassLabelButtonStyle(shape: shape))
-            .background {
-                shape
-                    .fill(.clear)
-                    .processGlassEffect(in: shape, interactive: interactive)
-            }
+        modifier(ProcessGlassButtonModifier(shape: shape, interactive: interactive))
     }
 
     /// Étend la zone cliquable au label entier (pas seulement le texte) pour `.buttonStyle(.plain)`.
@@ -94,23 +102,72 @@ extension View {
     /// Ligne tappable dans un popover.
     @ViewBuilder
     func processGlassMenuRowStyle() -> some View {
-        if #available(iOS 26.0, *) {
-            buttonStyle(.plain)
-                .processGlassEffect(in: RoundedRectangle(cornerRadius: 12, style: .continuous), interactive: true)
+        processGlassButton(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+private struct ProcessGlassButtonModifier<S: InsettableShape>: ViewModifier {
+    let shape: S
+    var interactive: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *), interactive {
+            content
+                .buttonStyle(.glass)
+                .buttonBorderShape(Self.borderShape(for: shape))
+                .buttonSizing(.fitted)
         } else {
-            buttonStyle(ProcessGlassPressStyle())
+            content.buttonStyle(ProcessGlassLabelButtonStyle(shape: shape, interactive: interactive))
         }
+    }
+
+    @available(iOS 26.0, *)
+    private static func borderShape(for shape: S) -> ButtonBorderShape {
+        if shape is Circle {
+            return .circle
+        }
+        if shape is Capsule {
+            return .capsule
+        }
+        if let rounded = shape as? RoundedRectangle {
+            let radius = min(rounded.cornerSize.width, rounded.cornerSize.height)
+            return .roundedRectangle(radius: radius)
+        }
+        return .automatic
     }
 }
 
 private struct ProcessGlassLabelButtonStyle<S: InsettableShape>: ButtonStyle {
     let shape: S
+    var interactive: Bool = true
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(shape)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
+            .processGlassEffect(in: shape, interactive: interactive)
+            .modifier(
+                ProcessNativeOrManualPressScale(
+                    isPressed: configuration.isPressed,
+                    usesNativeInteractiveGlass: interactive
+                )
+            )
+    }
+}
+
+/// iOS 26 + glass `.interactive()` : le système gère déjà le press.
+/// Sinon : scale manuel (pre-26, ou glass passif).
+private struct ProcessNativeOrManualPressScale: ViewModifier {
+    let isPressed: Bool
+    let usesNativeInteractiveGlass: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *), usesNativeInteractiveGlass {
+            content
+        } else {
+            content
+                .scaleEffect(isPressed ? 0.97 : 1)
+                .animation(.spring(response: 0.22, dampingFraction: 0.9), value: isPressed)
+        }
     }
 }
 

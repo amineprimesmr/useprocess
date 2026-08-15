@@ -42,44 +42,6 @@ struct CoachContextualActionButtons: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(buttonShape)
         }
-        .modifier(CoachContextualActionGlassStyle(isPrimary: action.kind.isPrimary, shape: buttonShape))
-    }
-}
-
-private struct CoachContextualActionGlassStyle: ViewModifier {
-    @Environment(\.appTheme) private var theme
-    let isPrimary: Bool
-    let shape: RoundedRectangle
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if isPrimary {
-            if #available(iOS 26.0, *) {
-                content
-                    .buttonStyle(.processPlain)
-                    .glassEffect(
-                        ProcessGlass.tinted(theme.coachAccent, opacity: theme.isDark ? 0.42 : 0.48),
-                        in: shape
-                    )
-                    .buttonStyle(ProcessGlassPressStyle())
-            } else {
-                content
-                    .background(
-                        shape.fill(theme.coachAccent.opacity(theme.isDark ? 0.28 : 0.16))
-                    )
-                    .overlay(shape.strokeBorder(theme.coachAccent.opacity(theme.isDark ? 0.35 : 0.45), lineWidth: 0.75))
-                    .buttonStyle(ProcessGlassPressStyle())
-            }
-        } else {
-            if theme.isDark {
-                content.processGlassButton(in: shape)
-            } else {
-                content
-                    .background(shape.fill(Color.white))
-                    .overlay(shape.strokeBorder(theme.coachSurfaceStroke.opacity(0.85), lineWidth: 0.75))
-                    .shadow(color: theme.coachSurfaceStroke.opacity(0.16), radius: 8, y: 3)
-                    .buttonStyle(ProcessGlassPressStyle())
-            }
-        }
+        .processGlassButton(in: buttonShape)
     }
 }

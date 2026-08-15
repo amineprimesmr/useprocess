@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Liens et messages de parrainage partagés entre l'app et le site.
 enum ProcessReferralLink {
@@ -120,6 +121,15 @@ enum ProcessReferralAttribution {
     static func capture(from url: URL) {
         guard let code = ProcessReferralLink.parseCode(from: url) else { return }
         storePending(code)
+    }
+
+    /// Site / App Store : le lien est copié dans le presse-papiers avant l’install.
+    static func captureFromPasteboardIfNeeded() {
+        guard pendingCode == nil else { return }
+        guard UIPasteboard.general.hasStrings, let text = UIPasteboard.general.string else { return }
+        guard let code = ProcessReferralLink.parseCode(from: text) else { return }
+        storePending(code)
+        NotificationCenter.default.post(name: .processReferralCodeCaptured, object: nil)
     }
 
     static func applyPendingIfNeeded(to viewModel: OnboardingViewModel) {

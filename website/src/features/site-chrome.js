@@ -16,8 +16,8 @@ export function getAppPageCopy() {
     ),
     invitedTitle: appCopy("Tu es invité sur Process.", "You're invited to Process."),
     invitedSubtitle: appCopy(
-      "Code actif — 7 jours offerts sur ton abonnement Apple après ton 1er paiement.",
-      "Code active — 7 free days on your Apple subscription after your first payment."
+      "Code actif — télécharge Process et commence ton protocole.",
+      "Code active — download Process and start your protocol."
     ),
     referralEyebrow: appCopy("Invitation parrainage", "Referral invite"),
     iosEyebrow: appCopy("Télécharger l'app", "Download the app"),

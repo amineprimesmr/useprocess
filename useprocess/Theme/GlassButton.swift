@@ -4,6 +4,8 @@ struct ProcessPlainButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(Rectangle())
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
     }
 }
 
@@ -63,7 +65,9 @@ private struct OnboardingPrimaryActionButtonStyle: ButtonStyle {
                     .processGlassEffect(in: Capsule())
             }
         }
-        .opacity(configuration.isPressed ? 0.85 : 1)
+        .scaleEffect(configuration.isPressed ? 0.97 : 1)
+        .animation(.spring(response: 0.22, dampingFraction: 0.9), value: configuration.isPressed)
+        .opacity(configuration.isPressed ? 0.92 : 1)
     }
 }
 
@@ -100,6 +104,7 @@ extension View {
         if #available(iOS 26.0, *) {
             buttonStyle(.glassProminent)
                 .buttonBorderShape(.capsule)
+                .buttonSizing(.fitted)
                 .tint(tint)
         } else {
             buttonStyle(.plain)

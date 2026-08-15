@@ -31,7 +31,7 @@ struct PlanDashboardView: View {
     }
 
     private var tutorialBottomPadding: CGFloat {
-        if tutorialStore.isActive {
+        if tutorialStore.constrainsHomeLayout {
             return UIApplication.safeAreaBottom + 28
         }
         return ProcessIGTabMetrics.tabBarOverlayClearance + 12
@@ -56,7 +56,9 @@ struct PlanDashboardView: View {
 
                         planContent
                     }
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+                    .padding(.bottom)
                     .padding(.bottom, tutorialBottomPadding)
                 }
                 .onChange(of: tutorialStore.isActive) { _, active in

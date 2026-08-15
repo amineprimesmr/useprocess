@@ -3,6 +3,8 @@ import SwiftUI
 /// Tokens visuels communs aux blocs de la page Accueil / Plan.
 enum PlanHomeSectionDesign {
     static let sectionSpacing: CGFloat = 36
+    /// Air supplémentaire au-dessus du circuit lymphatique (après l’alimentation).
+    static let faceRoutineExtraTopSpacing: CGFloat = 20
     static let firstSectionTopSpacing: CGFloat = 8
     /// Marge supplémentaire au-dessus du scan quand c’est la première section.
     static let faceScanTopSpacing: CGFloat = 12

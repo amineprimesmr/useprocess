@@ -16,28 +16,17 @@ struct PlanLastFaceScanSection: View {
     @Bindable private var historyStore = FaceScanHistoryStore.shared
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
 
-    @State private var analysisSession: InlineFaceScanAnalysisSession?
     @State private var latestAnalysisScan: FaceScanResult?
 
-    private struct InlineFaceScanAnalysisSession: Identifiable {
-        let id = UUID()
-        let payload: FaceScanCapturePayload
-        let markers: FaceWellnessMarkers
-    }
-
-    private let cardRadius: CGFloat = 30
+    private let cardRadius: CGFloat = 26
 
     private enum Layout {
-        static let cardPadding: CGFloat = 12
-        static let mediaSidePadding: CGFloat = 12
-        static let mediaSideSpacing: CGFloat = 5
-        static let blockSpacing: CGFloat = 8
+        static let mediaSidePadding: CGFloat = 14
         static let videoTrailingRadius: CGFloat = 18
-        static let inlineControlsHeight: CGFloat = 196
-        static let scanRingOverflow: CGFloat = FaceScanViewportMetrics.tickRingOverflow
-        static let scanAvailableHeight: CGFloat = 112
+        static let videoEdgeBleed: CGFloat = 2
+        static let scanAvailableHeight: CGFloat = 100
         /// Un cran plus large, média toujours carré = cadrage stable.
-        static let postScanCardHeight: CGFloat = 152
+        static let postScanCardHeight: CGFloat = 136
     }
 
     /// Toujours le store live — évite une carte figée après import photo studio.
@@ -48,17 +37,6 @@ struct PlanLastFaceScanSection: View {
 
     private var effectiveScanDue: Bool {
         isScanDue
-    }
-
-    private func inlineViewportDiameter(for cardWidth: CGFloat) -> CGFloat {
-        let contentWidth = cardWidth - (Layout.cardPadding * 2)
-        let maxDiameter = contentWidth - Layout.scanRingOverflow - 4
-        return min(max(maxDiameter, 220), 320)
-    }
-
-    private func expandedScanSectionHeight(viewportDiameter: CGFloat) -> CGFloat {
-        let cameraBlock = viewportDiameter + Layout.scanRingOverflow
-        return cameraBlock + Layout.inlineControlsHeight + (Layout.cardPadding * 2)
     }
 
     private var isFirstScanPending: Bool {
@@ -103,50 +81,51 @@ struct PlanLastFaceScanSection: View {
         Group {
             if showsUnifiedScanCard {
                 unifiedScanDueCard
+                    .background {
+                        cardShape
+                            .fill(.clear)
+                            .processGlassEffect(
+                                in: cardShape,
+                                interactive: false
+                            )
+                    }
+                    .clipShape(cardShape)
             } else if isInteractive {
                 Button(action: handlePrimaryTap) {
                     postScanCardContent
-                        .contentShape(cardShape)
                 }
-                .buttonStyle(.processPlain)
+                .buttonStyle(.plain)
+                .processInteractiveGlassSurface(in: cardShape)
             } else {
                 postScanCardContent
+                    .background {
+                        cardShape
+                            .fill(.clear)
+                            .processGlassEffect(
+                                in: cardShape,
+                                interactive: false
+                            )
+                    }
+                    .clipShape(cardShape)
             }
         }
-        .background {
-            cardShape
-                .fill(.clear)
-                .processGlassEffect(
-                    in: cardShape,
-                    interactive: isInteractive && !isScanFlowActive
-                )
-        }
-        .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
         .animation(.spring(response: 0.56, dampingFraction: 0.84), value: isScanFlowActive)
         .onAppear {
             displayPreferences.reload()
         }
-        .fullScreenCover(item: $analysisSession) { session in
-            FaceScanAnalysisFlowView(
-                payload: session.payload,
-                markers: session.markers,
-                profile: profileService.currentProfile,
+        .fullScreenCover(isPresented: $isScanFlowActive) {
+            FaceScanSessionView(
                 onDismiss: {
-                    analysisSession = nil
+                    isScanFlowActive = false
                 },
                 onComplete: { result in
-                    // L’upsert est déjà fait dans le flow — ferme le scan inline et notifie.
-                    withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
-                        isScanFlowActive = false
-                    }
                     onScanComplete?(result)
                 },
-                onRetryScan: {
-                    analysisSession = nil
-                }
+                showsMediaImport: creatorMode.allowsPhotoImport
             )
+            .environmentObject(profileService)
         }
         .animation(.easeInOut(duration: 0.28), value: historyStore.latestResult?.id)
         .animation(.easeInOut(duration: 0.28), value: historyStore.isScanDue)
@@ -186,28 +165,12 @@ struct PlanLastFaceScanSection: View {
     private var unifiedScanDueCard: some View {
         GeometryReader { geo in
             let compactVideoWidth = min(118, geo.size.width * videoWidthRatio)
-            let expanded = isScanFlowActive
-            let viewportDiameter = expanded
-                ? inlineViewportDiameter(for: geo.size.width)
-                : compactVideoWidth
-            let sectionHeight = expanded
-                ? expandedScanSectionHeight(viewportDiameter: viewportDiameter)
-                : Layout.scanAvailableHeight
-
             ZStack(alignment: .topLeading) {
-                inlineScanCaptureLayer(
-                    expanded: expanded,
-                    compactVideoWidth: compactVideoWidth,
-                    viewportDiameter: viewportDiameter,
-                    sectionHeight: sectionHeight
-                )
+                inlineScanPreviewLayer(compactVideoWidth: compactVideoWidth)
 
-                if !expanded {
-                    HStack(spacing: 0) {
-                        Spacer(minLength: compactVideoWidth)
-                        compactScanDueTrailingColumnContent
-                    }
-                    .transition(.opacity)
+                HStack(spacing: 0) {
+                    Spacer(minLength: compactVideoWidth)
+                    compactScanDueTrailingColumnContent
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -217,52 +180,25 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var unifiedScanCardHeight: CGFloat {
-        if isScanFlowActive {
-            let cardWidth = UIScreen.main.bounds.width - (PlanHomeSectionDesign.homeScrollPadding * 2)
-            let viewport = inlineViewportDiameter(for: cardWidth)
-            return expandedScanSectionHeight(viewportDiameter: viewport)
-        }
-        return Layout.scanAvailableHeight
+        Layout.scanAvailableHeight
     }
 
-    private func inlineScanCaptureLayer(
-        expanded: Bool,
-        compactVideoWidth: CGFloat,
-        viewportDiameter: CGFloat,
-        sectionHeight: CGFloat
-    ) -> some View {
+    private func inlineScanPreviewLayer(compactVideoWidth: CGFloat) -> some View {
         FaceScanCaptureScreen(
             presentation: .inlineHome(
-                viewportDiameter: expanded ? viewportDiameter : compactVideoWidth,
-                phase: expanded ? .active : .preview
+                viewportDiameter: compactVideoWidth,
+                phase: .preview
             ),
             showsInlineHeader: false,
-            onBack: closeInlineScan,
-            showsMediaImport: creatorMode.allowsPhotoImport,
-            allowsScreenFlash: expanded,
-            isCameraSessionActive: isPlanActive,
-            onContinue: { payload, markers in
-                withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
-                    isScanFlowActive = false
-                }
-                analysisSession = InlineFaceScanAnalysisSession(payload: payload, markers: markers)
-            }
+            onBack: {},
+            showsMediaImport: false,
+            allowsScreenFlash: false,
+            isCameraSessionActive: isPlanActive && !isScanFlowActive,
+            onContinue: { _, _ in }
         )
         .id("plan-inline-face-scan")
-        .frame(
-            width: expanded ? nil : compactVideoWidth,
-            height: expanded ? nil : Layout.scanAvailableHeight,
-            alignment: .topLeading
-        )
-        .frame(
-            maxWidth: expanded ? .infinity : compactVideoWidth,
-            maxHeight: expanded ? sectionHeight : Layout.scanAvailableHeight,
-            alignment: .topLeading
-        )
-        .clipShape(UnifiedScanCameraClipShape(expanded: expanded, cardRadius: cardRadius))
-        .padding(.horizontal, expanded ? Layout.cardPadding : 0)
-        .padding(.top, expanded ? Layout.cardPadding : 0)
-        .padding(.bottom, expanded ? Layout.cardPadding : 0)
+        .frame(width: compactVideoWidth, height: Layout.scanAvailableHeight, alignment: .topLeading)
+        .clipShape(UnifiedScanCameraClipShape(expanded: false, cardRadius: cardRadius))
     }
 
     private var compactScanDueTrailingColumnContent: some View {
@@ -278,14 +214,6 @@ struct PlanLastFaceScanSection: View {
         }
         .padding(Layout.mediaSidePadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    @MainActor
-    private func closeInlineScan() {
-        FaceScanScreenFlash.shared.deactivate()
-        withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
-            isScanFlowActive = false
-        }
     }
 
     private func beginInlineScan() {
@@ -326,8 +254,12 @@ struct PlanLastFaceScanSection: View {
         HStack(alignment: .center, spacing: 0) {
             if showsMediaColumn {
                 videoSidePanel(spansFullCardHeight: true)
-                    .frame(width: postScanVideoWidth)
-                    .frame(maxHeight: .infinity)
+                    .frame(
+                        width: postScanVideoWidth,
+                        height: Layout.postScanCardHeight + (Layout.videoEdgeBleed * 2)
+                    )
+                    .padding(.leading, -Layout.videoEdgeBleed)
+                    .padding(.vertical, -Layout.videoEdgeBleed)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -335,11 +267,13 @@ struct PlanLastFaceScanSection: View {
                 Spacer(minLength: 0)
                 nextScanFooterBand
             }
-            .padding(.horizontal, Layout.mediaSidePadding)
+            .padding(.leading, 10)
+            .padding(.trailing, Layout.mediaSidePadding)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(height: Layout.postScanCardHeight, alignment: .center)
+        .clipShape(cardShape)
         .contentShape(cardShape)
         .id("last-scan-\(latest?.id ?? "none")-\(latest?.displayWellnessScore ?? -1)")
         .contextMenu {
@@ -348,8 +282,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var postScanVideoWidth: CGFloat {
-        // Toujours carré (= hauteur carte) pour un crop visage prévisible.
-        Layout.postScanCardHeight
+        Layout.postScanCardHeight + Layout.videoEdgeBleed
     }
 
     /// Score seul — grosse typo paywall (SF Pro Display Bold) + dégradé blanc → gris clair.

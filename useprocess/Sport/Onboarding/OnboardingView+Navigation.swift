@@ -29,13 +29,11 @@ func skipTransientStep() {
     transitionDirection = .forward
     isTransitioning = true
 
-    withAnimation(.onboardingTransition) {
-        viewModel.currentStep = nextStepIndex
-    }
+    commitAnimatedStepChange(to: nextStepIndex)
 
     commitVisibleStepToHistory(nextStepIndex)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
         isTransitioning = false
     }
 
@@ -63,19 +61,33 @@ func advanceFromPaymentToPostPaymentWelcome() {
     transitionDirection = .forward
     isTransitioning = true
 
-    withAnimation(.onboardingTransition) {
-        viewModel.currentStep = targetStep
-    }
+    commitAnimatedStepChange(to: targetStep)
 
     commitVisibleStepToHistory(targetStep)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
         isTransitioning = false
     }
 
     OnboardingProgressService.shared.saveCurrentStep(targetStep)
     viewModel.saveProgress()
     refreshOnboardingFlowProgress()
+}
+
+/// Relance sans paiement : témoignages (slider) puis dashboard, jamais le paywall.
+func reconcileUnpaidOnboardingResumeIfNeeded() {
+    guard !AppSession.shared.hasCompletedOnboarding else { return }
+    if SubscriptionService.shared.subscriptionStatus.isActive { return }
+    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return }
+
+    let resume = step.unpaidResumeStep
+    if resume != step {
+        viewModel.currentStep = resume.rawValue
+        OnboardingProgressService.shared.saveCurrentStep(resume.rawValue)
+    }
+
+    guard resume == .transformationPreview else { return }
+    commitVisibleStepToHistory(OnboardingStep.transformationPreview.rawValue)
 }
 
 func reconcilePostPaymentStepIfNeeded() {
@@ -136,13 +148,11 @@ func nextStep() {
     transitionDirection = .forward
     isTransitioning = true
 
-    withAnimation(.onboardingTransition) {
-        viewModel.currentStep = nextStepIndex
-    }
+    commitAnimatedStepChange(to: nextStepIndex)
 
     commitVisibleStepToHistory(nextStepIndex)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
         isTransitioning = false
     }
 
@@ -171,13 +181,11 @@ func continueFromNutritionQuality() {
     transitionDirection = .forward
     isTransitioning = true
 
-    withAnimation(.onboardingTransition) {
-        viewModel.currentStep = nextStepIndex
-    }
+    commitAnimatedStepChange(to: nextStepIndex)
 
     commitVisibleStepToHistory(nextStepIndex)
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
         isTransitioning = false
     }
 
@@ -268,9 +276,7 @@ func previousStep() {
     transitionDirection = .backward
     isTransitioning = true
 
-    withAnimation(.onboardingTransition) {
-        viewModel.currentStep = stepToGoBackTo
-    }
+    commitAnimatedStepChange(to: stepToGoBackTo)
 
     OnboardingProgressService.shared.saveCurrentStep(stepToGoBackTo)
     viewModel.saveProgress()
@@ -389,6 +395,7 @@ func restoreOnboardingProgressFromSavedState() {
         viewModel: viewModel,
         navigationEngine: navigationEngine
     )
+    reconcileUnpaidOnboardingResumeIfNeeded()
     reconcilePostPaymentStepIfNeeded()
     viewModel.saveProgress()
 }

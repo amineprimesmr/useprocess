@@ -346,9 +346,8 @@ struct PlanHomeCustomizeFloatingButton: View {
             .padding(.trailing, 16)
             .frame(maxWidth: .infinity)
             .frame(height: 52)
-            .processGlassEffect(in: Capsule(), interactive: true)
         }
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: Capsule())
         .processZoomSource(id: .homeLayoutEditor, namespace: zoomNamespace)
         .accessibilityLabel(AppCopy.t(
             "Personnaliser la page d’accueil",

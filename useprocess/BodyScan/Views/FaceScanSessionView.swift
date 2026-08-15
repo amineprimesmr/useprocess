@@ -20,45 +20,56 @@ struct FaceScanSessionView: View {
     }
 
     var body: some View {
-        Group {
-            if let input = captureInput {
-                FaceScanAnalysisFlowView(
-                    payload: input.payload,
-                    markers: input.markers,
-                    profile: profileService.currentProfile,
-                    showsResultScreen: !skipResultSheet,
-                    onDismiss: onDismiss,
-                    onComplete: { result in
-                        onComplete(result)
-                        if skipResultSheet {
-                            onDismiss()
+        ZStack {
+            FaceScanWhoopPalette.canvas.ignoresSafeArea()
+
+            Group {
+                if let input = captureInput {
+                    FaceScanAnalysisFlowView(
+                        payload: input.payload,
+                        markers: input.markers,
+                        profile: profileService.currentProfile,
+                        showsResultScreen: !skipResultSheet,
+                        onDismiss: onDismiss,
+                        onComplete: { result in
+                            onComplete(result)
+                            if skipResultSheet {
+                                onDismiss()
+                            }
+                        },
+                        onRetryScan: {
+                            captureInput = nil
                         }
-                    },
-                    onRetryScan: {
-                        captureInput = nil
-                    }
-                )
-                .transition(.opacity)
-            } else {
-                FaceScanCaptureScreen(
-                    onBack: {
-                        if let onCancelCapture {
-                            onCancelCapture()
-                        } else {
-                            onDismiss()
+                    )
+                    .transition(.opacity)
+                } else {
+                    FaceScanCaptureScreen(
+                        presentation: .fullScreen,
+                        onBack: {
+                            if let onCancelCapture {
+                                onCancelCapture()
+                            } else {
+                                onDismiss()
+                            }
+                        },
+                        onSkip: onSkipCapture,
+                        showsMediaImport: showsMediaImport,
+                        compactSkipAction: compactSkipAction,
+                        skipsHeadTiltPhase: true,
+                        usesOnboardingFaceOval: true,
+                        onContinue: { payload, markers in
+                            captureInput = CaptureInput(payload: payload, markers: markers)
                         }
-                    },
-                    onSkip: onSkipCapture,
-                    showsMediaImport: showsMediaImport,
-                    compactSkipAction: compactSkipAction,
-                    onContinue: { payload, markers in
-                        captureInput = CaptureInput(payload: payload, markers: markers)
-                    }
-                )
-                .transition(.opacity)
+                    )
+                    .transition(.opacity)
+                }
             }
+            .id(captureInput?.payload.scanId ?? "capturing")
         }
-        .id(captureInput?.payload.scanId ?? "capturing")
+        .processClearUIKitHostingBackground()
+        .background(FaceScanWhoopPalette.canvas)
+        .presentationBackground(FaceScanWhoopPalette.canvas)
+        .interactiveDismissDisabled(captureInput != nil)
     }
 }
 

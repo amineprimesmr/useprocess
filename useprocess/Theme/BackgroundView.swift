@@ -82,6 +82,7 @@ private final class ProcessUIKitTransparentSurfaceView: UIView {
         clearFrom(view: self, visited: &visited)
 
         if let controller = nearestViewController() {
+            clearFrom(view: controller.view, visited: &visited)
             if let navigationController = controller.navigationController {
                 clearFrom(view: navigationController.view, visited: &visited)
             }
@@ -103,7 +104,7 @@ private final class ProcessUIKitTransparentSurfaceView: UIView {
             // Couche pleine écran typique du conteneur SwiftUI (blanc système).
             let size = view.bounds.size
             if size.width >= UIScreen.main.bounds.width * 0.9
-                && size.height >= UIScreen.main.bounds.height * 0.5
+                && size.height >= UIScreen.main.bounds.height * 0.35
                 && view.subviews.count > 0 {
                 view.backgroundColor = .clear
                 view.isOpaque = false

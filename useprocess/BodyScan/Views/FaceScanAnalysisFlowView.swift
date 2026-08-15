@@ -26,6 +26,7 @@ struct FaceScanAnalysisFlowView: View {
     @State private var analysisTask: Task<Void, Never>?
     @State private var elapsedTask: Task<Void, Never>?
     @State private var didCompleteAnalysis = false
+    @State private var didSaveScan = false
 
     private var steps: [OnboardingAnalysisProgressConfig.ProgressStep] {
         OnboardingAnalysisProgressConfig.faceScanAnalysisSteps
@@ -106,25 +107,41 @@ struct FaceScanAnalysisFlowView: View {
                         }
                     }
                 }
+                .processTransparentScrollSurface()
                 // Le fond ignore le safe area ; on gère le top manuellement via topInset.
                 .ignoresSafeArea(edges: .top)
 
                 if let result = displayResult, showsResultScreen {
                     VStack {
                         Spacer(minLength: 0)
-                        FaceIDContinueButton {
-                            HapticManager.shared.impact(.medium)
-                            complete(with: result)
+                        Group {
+                            if didSaveScan {
+                                scanSavedConfirmation
+                                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                            } else {
+                                OnboardingCreatePlanButton(
+                                    title: AppCopy.t("Enregistrer le scan", en: "Save the scan")
+                                ) {
+                                    HapticManager.shared.impact(.medium)
+                                    complete(with: result)
+                                }
+                                .transition(.opacity)
+                            }
                         }
                         .padding(.horizontal, 24)
-                        .padding(.bottom, max(geometry.safeAreaInsets.bottom, 12) + 12)
+                        .padding(.bottom, 4)
                     }
+                    .animation(.spring(response: 0.42, dampingFraction: 0.86), value: didSaveScan)
                     .transition(.opacity)
                 }
             }
         }
+        .ignoresSafeArea()
+        .processClearUIKitHostingBackground()
+        .background(FaceScanWhoopPalette.canvas)
         .animation(.easeInOut(duration: 0.28), value: baseResult?.id)
         .animation(.easeInOut(duration: 0.22), value: creatorMode.scanResultsLayout)
+        .interactiveDismissDisabled(showsResultScreen && !didSaveScan)
         .task(id: payload.scanId) {
             ProcessCreatorModeStore.shared.evaluate(firstName: profile?.firstName)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
@@ -169,7 +186,37 @@ struct FaceScanAnalysisFlowView: View {
         ProcessDebloatTrajectoryStore.shared.recordScan(final)
 
         onComplete(final)
-        onDismiss()
+
+        guard showsResultScreen else {
+            onDismiss()
+            return
+        }
+
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            didSaveScan = true
+        }
+        HapticManager.shared.notification(.success)
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1200))
+            guard !Task.isCancelled else { return }
+            onDismiss()
+        }
+    }
+
+    private var scanSavedConfirmation: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color(red: 0.30, green: 0.82, blue: 0.48))
+            Text(AppCopy.t("Scan enregistré", en: "Scan saved"))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(FaceScanWhoopPalette.label)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(AppCopy.t("Scan enregistré", en: "Scan saved"))
     }
 
     private var analysisBackground: Color {
@@ -233,19 +280,8 @@ struct FaceScanAnalysisFlowView: View {
 
             Spacer(minLength: 0)
 
-            if displayResult != nil, showsResultScreen {
-                Button(AppCopy.done) {
-                    if let result = displayResult {
-                        complete(with: result)
-                    }
-                }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(headerForeground)
-                .frame(minWidth: 44, alignment: .trailing)
-            } else {
-                Color.clear
-                    .frame(width: 44, height: 44)
-            }
+            Color.clear
+                .frame(width: 44, height: 44)
         }
     }
 
@@ -436,38 +472,73 @@ struct FaceScanAnalysisFlowView: View {
 // MARK: - 3 barres d’analyse
 
 private struct FaceScanAnalysisProgressBars: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let steps: [OnboardingAnalysisProgressConfig.ProgressStep]
     let progress: Double
+
+    private let barHeight: CGFloat = 16
+
+    private var fillGradient: LinearGradient {
+        PaywallBevelTheme.paywallProTitleGradient(for: colorScheme)
+    }
+
+    private var fillGlow: Color {
+        PaywallBevelTheme.accentBlueGlow(for: colorScheme)
+    }
+
+    private var completeAccent: Color {
+        colorScheme == .dark
+            ? Color(red: 0.52, green: 0.88, blue: 1.0)
+            : Color(red: 0.14, green: 0.50, blue: 0.96)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
                 let value = barProgress(for: index)
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .firstTextBaseline) {
+                let isComplete = value >= 0.999
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
                         Text(step.phaseLabel)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(FaceScanWhoopPalette.label)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(OnboardingProgramCreationPalette.subtitle)
+
+                        if isComplete {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(completeAccent)
+                                .transition(.scale.combined(with: .opacity))
+                        }
 
                         Spacer(minLength: 8)
 
                         Text("\(Int((value * 100).rounded()))%")
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(FaceScanWhoopPalette.secondary)
+                            .foregroundStyle(OnboardingProgramCreationPalette.hint)
                             .monospacedDigit()
                     }
 
                     GeometryReader { geo in
+                        let clamped = min(max(value, 0), 1)
+                        let fillWidth = max(barHeight, geo.size.width * clamped)
+
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(FaceScanWhoopPalette.ringTrack)
+                                .fill(OnboardingProgramCreationPalette.barTrack)
 
                             Capsule()
-                                .fill(FaceScanWhoopPalette.accentBlue)
-                                .frame(width: max(0, geo.size.width * value))
+                                .fill(fillGradient)
+                                .frame(width: fillWidth, height: barHeight)
+                                .shadow(
+                                    color: fillGlow.opacity(colorScheme == .dark ? 0.45 : 0.55),
+                                    radius: 8,
+                                    x: 0,
+                                    y: 0
+                                )
                         }
                     }
-                    .frame(height: 7)
+                    .frame(height: barHeight)
                 }
             }
         }
@@ -582,7 +653,7 @@ struct FaceScanAnalysisSweepOverlay: View {
     private let maskBandHeightRatio: CGFloat = 0.26
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { context in
             let elapsed = context.date.timeIntervalSinceReferenceDate
             let phase = elapsed.truncatingRemainder(dividingBy: cycleDuration) / cycleDuration
             let sweepProgress = smoothPingPong(phase)

@@ -1,0 +1,20 @@
+================================================================================
+PROCESS DEBLOAT — APP STORE LISTING (ENGLISH U.S.) — Version 1.06
+Copy into App Store Connect → Distribution → iOS App → 1.06 → English (U.S.)
+================================================================================
+
+WHAT'S NEW (What's New in This Version)
+================================================================================
+
+• Referral rewards: earn your plan price for each friend who subscribes
+• Live dashboard preview in onboarding, after real member before/after stories
+• Smoother face-scan analysis pages and clearer signal swipe
+• Home upgrade cards, routine tab, and a cleaner profile with scan evolution
+• Faster program-creation feedback and more reliable subscription sync
+
+================================================================================
+BUILD
+================================================================================
+
+Version: 1.06
+Build: 30

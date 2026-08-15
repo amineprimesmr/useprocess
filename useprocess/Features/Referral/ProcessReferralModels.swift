@@ -49,48 +49,42 @@ struct ProcessReferralSnapshot: Codable, Equatable {
 }
 
 enum ProcessReferralProgramTerms {
-    /// Extension Apple accordée au filleul après son 1er abonnement.
-    static let inviteeRewardDays = 7
+    /// L’invité n’a aucun avantage — seul le parrain est récompensé.
+    static let inviteeRewardDays = 0
 
-    /// Extension Apple pour parrain hebdo / mensuel.
-    static let referrerShortRewardDays = 14
+    /// Extension promo pour parrain hebdo / mensuel.
+    static let referrerShortRewardDays = 30
 
-    /// Extension Apple pour parrain annuel.
-    static let referrerAnnualRewardDays = 30
+    /// Extension promo pour parrain annuel.
+    static let referrerAnnualRewardDays = 365
+
+    @MainActor
+    static var cashAmount: String {
+        SubscriptionService.shared.referralRewardDisplayPrice
+    }
 
     @MainActor
     static var rewardHeadline: String {
-        AppCopy.t("Temps offert sur Apple", en: "Free Apple subscription time")
+        AppCopy.t("Les conditions", en: "The terms")
+    }
+
+    @MainActor
+    static var perFriendHeadline: String {
+        AppCopy.t("Gagne \(cashAmount) /ami.", en: "Earn \(cashAmount) /friend.")
     }
 
     @MainActor
     static var referrerRewardSummary: String {
-        AppCopy.t(
-            "2 semaines offertes par parrainage (1 mois si tu es en abonnement annuel).",
-            en: "2 free weeks per referral (1 free month on an annual plan)."
+        let price = cashAmount
+        return AppCopy.t(
+            "Chaque ami qui prend un abonnement te rapporte \(price). Plus tu en parraines, plus tu gagnes.",
+            en: "Every friend who starts a subscription earns you \(price). The more you refer, the more you earn."
         )
     }
 
     @MainActor
-    static var inviteeRewardSummary: String {
-        AppCopy.t(
-            "Ton ami gagne 7 jours offerts sur son abonnement Apple après son inscription.",
-            en: "Your friend gets 7 free days on their Apple subscription after signing up."
-        )
-    }
-
-    @MainActor
-    static func rewardLabel(for duration: String?, status: ProcessReferralEntryStatus) -> String? {
+    static func rewardLabel(for _: String?, status: ProcessReferralEntryStatus) -> String? {
         guard status == .accepted else { return nil }
-        switch duration {
-        case "monthly":
-            return AppCopy.t("1 mois offert", en: "1 free month")
-        case "two_week":
-            return AppCopy.t("2 semaines offertes", en: "2 free weeks")
-        case "weekly":
-            return AppCopy.t("7 jours offerts", en: "7 free days")
-        default:
-            return AppCopy.t("Temps offert", en: "Free time added")
-        }
+        return AppCopy.t("+\(cashAmount)", en: "+\(cashAmount)")
     }
 }

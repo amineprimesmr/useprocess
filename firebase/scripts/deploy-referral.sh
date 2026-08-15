@@ -49,4 +49,4 @@ echo "  https://us-central1-useprocess-d4385.cloudfunctions.net/referralRevenueC
 echo "Authorization header:"
 echo "  Bearer $REVENUECAT_WEBHOOK_SECRET"
 echo ""
-echo "Enable events: INITIAL_PURCHASE, NON_RENEWING_PURCHASE"
+echo "Enable events: INITIAL_PURCHASE, NON_RENEWING_PURCHASE, RENEWAL"

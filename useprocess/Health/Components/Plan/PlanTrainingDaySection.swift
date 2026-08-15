@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Section Cardio et Circuit (Réglages)
+// MARK: - Section Cardio et Circuit (page Routine)
 
 struct PlanTrainingDaySection: View {
     let plan: FaceOriginPlan

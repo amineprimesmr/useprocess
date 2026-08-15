@@ -1,0 +1,20 @@
+================================================================================
+PROCESS DEBLOAT — FICHE APP STORE (FRANÇAIS) — Version 1.06
+Copier dans App Store Connect → Distribution → iOS App → 1.06 → Français
+================================================================================
+
+NOUVEAUTÉS (Nouveautés de cette version)
+================================================================================
+
+• Parrainage : gagne le prix de ton abo pour chaque ami qui s’abonne
+• Aperçu live du dashboard dans l’onboarding, après les témoignages avant/après
+• Analyse du scan visage plus fluide, swipe des signaux plus clair
+• Cartes upgrade Accueil, onglet Routine, profil plus lisible avec évolution
+• Création de programme plus réactive et sync abonnement plus fiable
+
+================================================================================
+BUILD
+================================================================================
+
+Version: 1.06
+Build: 30

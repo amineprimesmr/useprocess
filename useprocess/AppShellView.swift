@@ -43,6 +43,9 @@ struct AppShellView: View {
                 ProcessMarketingNotificationService.shared.handleAppLeftForeground()
                 ProcessHydrationTimerMonitor.shared.handleSceneWillBackground()
             case .active:
+                if !session.hasCompletedOnboarding {
+                    ProcessReferralAttribution.captureFromPasteboardIfNeeded()
+                }
                 ProcessMarketingNotificationService.shared.handleAppBecameActive()
                 ProcessAudioSession.configureForMixingWithOthersIfIdle()
                 ProcessHomeScreenQuickActions.syncForCurrentUser()
@@ -75,6 +78,9 @@ struct AppShellView: View {
             }
         }
         .task {
+            if !session.hasCompletedOnboarding {
+                ProcessReferralAttribution.captureFromPasteboardIfNeeded()
+            }
             ProcessHydrationTimerMonitor.shared.bootstrapAtLaunch()
             // Garantit Firebase prêt avant tout usage Auth tardif.
             FirebaseBootstrap.configure()
@@ -109,13 +115,15 @@ struct AppShellView: View {
             }
             guard !didPrepareMainApp else { return }
             didPrepareMainApp = true
-            try? await Task.sleep(for: .milliseconds(650))
-            guard !Task.isCancelled, session.hasCompletedOnboarding else { return }
             WelcomePlanStore.shared.reloadForCurrentUser()
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
             PostOnboardingActivationService.prepareFirstAppEntry(
                 profile: UnifiedProfileService.shared.currentProfile
             )
+            PlanHomeTutorialStore.shared.suppressPresentationForPreview(false)
+            PlanHomeTutorialStore.shared.activateImmediatelyIfNeeded()
+            try? await Task.sleep(for: .milliseconds(650))
+            guard !Task.isCancelled, session.hasCompletedOnboarding else { return }
             if AppConfiguration.firebaseConfigured {
                 _ = UserSessionCoordinator.shared
             }

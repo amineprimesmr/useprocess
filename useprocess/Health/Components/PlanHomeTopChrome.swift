@@ -120,7 +120,7 @@ struct PlanHomeTopChrome: View {
 
             headerActionsCluster
         }
-        .padding(.top, 14)
+        .padding(.top, 6)
         .padding(.bottom, 4)
     }
 
@@ -202,28 +202,19 @@ struct PlanHomeToolbarActions: View {
     var onOpenStreak: () -> Void
 
     @Environment(\.appTheme) private var theme
-    @Bindable private var streakStore = ProcessStreakStore.shared
 
     var body: some View {
         if #available(iOS 26.0, *) {
             GlassEffectContainer(spacing: GlassClusterMetrics.spacing) {
                 HStack(spacing: GlassClusterMetrics.spacing) {
-                    Button(action: openStreak) {
-                        streakGlassTile
-                            .contentShape(GlassClusterMetrics.tileShape)
-                    }
-                    .buttonStyle(ProcessGlassPressStyle())
-                    .zIndex(1)
-                    .accessibilityLabel(AppCopy.t(
-                        "Check du jour, \(streakStore.displayValidatedDays) jours validés",
-                        en: "Daily check-in, \(streakStore.displayValidatedDays) validated days"
-                    ))
-
                     Button(action: openCalendar) {
-                        calendarGlassTile
+                        Image(systemName: "calendar")
+                            .font(.system(size: GlassClusterMetrics.iconSize, weight: .semibold))
+                            .foregroundStyle(theme.primaryText)
+                            .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
                             .contentShape(Circle())
                     }
-                    .buttonStyle(ProcessGlassPressStyle())
+                    .processGlassButton(in: Circle())
                     .offset(x: GlassClusterMetrics.mergeOffset, y: 0)
                     .zIndex(0)
                     .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
@@ -231,98 +222,37 @@ struct PlanHomeToolbarActions: View {
                         "Calendrier, choisir une date",
                         en: "Calendar, choose a date"
                     ))
+
+                    PlanHomeCheckInButton(action: openStreak)
+                        .zIndex(1)
                 }
             }
         } else {
-            HStack(spacing: 10) {
-                Button(action: openStreak) {
-                    legacyStreakButton
-                        .contentShape(Capsule(style: .continuous))
-                }
-                .buttonStyle(ProcessGlassPressStyle())
-                .accessibilityLabel(AppCopy.t(
-                    "Check du jour, \(streakStore.displayValidatedDays) jours validés",
-                    en: "Daily check-in, \(streakStore.displayValidatedDays) validated days"
-                ))
-
+            HStack(spacing: 6) {
                 Button(action: openCalendar) {
-                    legacyCalendarButton
+                    Image(systemName: "calendar")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(theme.primaryText)
+                        .frame(width: 40, height: 40)
                         .contentShape(Circle())
                 }
-                .buttonStyle(ProcessGlassPressStyle())
+                .processGlassButton(in: Circle())
                 .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
                 .accessibilityLabel(AppCopy.t(
                     "Calendrier, choisir une date",
                     en: "Calendar, choose a date"
                 ))
+
+                PlanHomeCheckInButton(action: openStreak)
             }
         }
     }
 
     private enum GlassClusterMetrics {
-        static let streakTileWidth: CGFloat = 54
-        static let tileSize: CGFloat = 50
-        static let tileCornerRadius: CGFloat = 25
-        static let spacing: CGFloat = 22
-        static let mergeOffset: CGFloat = -22
-        static let iconSize: CGFloat = 15
-
-        static var tileShape: RoundedRectangle {
-            RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
-        }
-    }
-
-    private var streakFlameColor: Color {
-        streakStore.displayValidatedDays > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
-    }
-
-    @available(iOS 26.0, *)
-    private var streakGlassTile: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: GlassClusterMetrics.iconSize, weight: .semibold))
-                .foregroundStyle(streakFlameColor)
-
-            Text("\(streakStore.displayValidatedDays)")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(theme.primaryText)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(width: GlassClusterMetrics.streakTileWidth, height: GlassClusterMetrics.tileSize)
-        .glassEffect(ProcessGlass.regular, in: GlassClusterMetrics.tileShape)
-    }
-
-    @available(iOS 26.0, *)
-    private var calendarGlassTile: some View {
-        Image(systemName: "calendar")
-            .font(.system(size: GlassClusterMetrics.iconSize, weight: .semibold))
-            .foregroundStyle(theme.primaryText)
-            .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
-            .glassEffect(ProcessGlass.regular, in: Circle())
-    }
-
-    private var legacyStreakButton: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(streakFlameColor)
-            Text("\(streakStore.displayValidatedDays)")
-                .font(.system(size: 15, weight: .bold))
-                .monospacedDigit()
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 44)
-        .processGlassCircle(interactive: true)
-    }
-
-    private var legacyCalendarButton: some View {
-        Image(systemName: "calendar")
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(theme.primaryText)
-            .frame(width: 44, height: 44)
-            .processGlassCircle(interactive: true)
+        static let tileSize: CGFloat = 44
+        static let spacing: CGFloat = 10
+        static let mergeOffset: CGFloat = 14
+        static let iconSize: CGFloat = 14
     }
 
     private func openCalendar() {
@@ -334,6 +264,71 @@ struct PlanHomeToolbarActions: View {
 
     private func openStreak() {
         onOpenStreak()
+    }
+}
+
+/// Bouton check du jour — pastille rouge tant que le bilan n’est pas validé.
+struct PlanHomeCheckInButton: View {
+    var action: () -> Void
+
+    @Environment(\.appTheme) private var theme
+    @Bindable private var streakStore = ProcessStreakStore.shared
+    @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
+
+    private enum Metrics {
+        static let tileSize: CGFloat = 44
+        static let iconSize: CGFloat = 12
+        static let badgeSize: CGFloat = 10
+    }
+
+    private var needsCheck: Bool {
+        !eveningStore.hasSubmittedToday
+    }
+
+    private var flameColor: Color {
+        streakStore.displayValidatedDays > 0 ? ProcessStreakPalette.flame : theme.secondaryText.opacity(0.65)
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 2) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: Metrics.iconSize, weight: .semibold))
+                    .foregroundStyle(flameColor)
+
+                Text("\(streakStore.displayValidatedDays)")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(theme.primaryText)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+            }
+            .frame(width: Metrics.tileSize, height: Metrics.tileSize)
+            .contentShape(Circle())
+            .overlay(alignment: .topTrailing) {
+                if needsCheck {
+                    attentionBadge
+                }
+            }
+        }
+        .processGlassButton(in: Circle())
+        .accessibilityLabel(AppCopy.t(
+            "Check du jour, \(streakStore.displayValidatedDays) jours validés",
+            en: "Daily check-in, \(streakStore.displayValidatedDays) validated days"
+        ))
+        .accessibilityValue(
+            needsCheck
+                ? AppCopy.t("Check à faire", en: "Check-in needed")
+                : AppCopy.t("Check fait", en: "Check-in done")
+        )
+    }
+
+    private var attentionBadge: some View {
+        Circle()
+            .fill(Color.red)
+            .frame(width: Metrics.badgeSize, height: Metrics.badgeSize)
+            .padding(7)
+            .accessibilityHidden(true)
     }
 }
 

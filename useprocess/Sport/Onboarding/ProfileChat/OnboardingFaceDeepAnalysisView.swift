@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Résultats premier scan onboarding : rétention + cortisol visibles, reste flouté / locked.
+/// Résultats premier scan onboarding : rétention visible, notes de zones verrouillées.
 /// Design liquid glass aligné sur l’écran d’analyse Whoop.
 struct OnboardingFaceDeepAnalysisView: View {
     @Environment(\.appTheme) private var theme
@@ -10,10 +10,24 @@ struct OnboardingFaceDeepAnalysisView: View {
     var showsScoreRing: Bool = true
     var showsUnlockTeaser: Bool = true
 
-    @State private var selectedPage: SignalCarouselPage = .openSignals
+    @State private var selectedPage: SignalCarouselPage? = .openSignals
+    @State private var analysis: OnboardingFaceDeepAnalysis
 
-    private var analysis: OnboardingFaceDeepAnalysis {
-        OnboardingFaceDeepAnalysisBuilder.build(from: result)
+    private var currentPage: SignalCarouselPage {
+        selectedPage ?? .openSignals
+    }
+
+    init(
+        result: FaceScanResult,
+        ringScale: CGFloat = 0.78,
+        showsScoreRing: Bool = true,
+        showsUnlockTeaser: Bool = true
+    ) {
+        self.result = result
+        self.ringScale = ringScale
+        self.showsScoreRing = showsScoreRing
+        self.showsUnlockTeaser = showsUnlockTeaser
+        _analysis = State(initialValue: OnboardingFaceDeepAnalysisBuilder.build(from: result))
     }
 
     private var resolvedFirstName: String {
@@ -35,9 +49,9 @@ struct OnboardingFaceDeepAnalysisView: View {
     private var openSignalsTitle: String {
         let name = resolvedFirstName
         if name.isEmpty {
-            return AppCopy.t("Ton analyse :", en: "Your analysis:")
+            return AppCopy.t("Ce qui gonfle :", en: "What's bloating:")
         }
-        return AppCopy.t("Ton analyse \(name) :", en: "Your analysis \(name):")
+        return AppCopy.t("Ce qui gonfle, \(name) :", en: "What's bloating, \(name):")
     }
 
     var body: some View {
@@ -48,15 +62,22 @@ struct OnboardingFaceDeepAnalysisView: View {
                     .padding(.bottom, 4)
             }
 
-            TabView(selection: $selectedPage) {
-                ForEach(SignalCarouselPage.allCases) { page in
-                    signalPage(page)
-                        .tag(page)
-                        .padding(.horizontal, 2)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(SignalCarouselPage.allCases, id: \.self) { page in
+                        signalPage(page)
+                            .padding(.horizontal, 2)
+                            .containerRelativeFrame(.horizontal)
+                            .frame(maxHeight: .infinity, alignment: .top)
+                            .id(page)
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(minHeight: 388)
+            .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
+            .scrollPosition(id: $selectedPage)
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .frame(minHeight: 360)
             .frame(maxHeight: .infinity)
 
             signalPageDots
@@ -65,30 +86,28 @@ struct OnboardingFaceDeepAnalysisView: View {
                 unlockTeaser
             }
         }
+        .onChange(of: result) { _, newResult in
+            analysis = OnboardingFaceDeepAnalysisBuilder.build(from: newResult)
+        }
     }
 
     private var signalPageDots: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 6) {
             ForEach(SignalCarouselPage.allCases) { page in
-                let isSelected = selectedPage == page
-                Circle()
-                    .fill(isSelected ? FaceScanWhoopPalette.label : Color.clear)
-                    .overlay {
-                        Circle()
-                            .strokeBorder(
-                                FaceScanWhoopPalette.label.opacity(isSelected ? 0 : 0.38),
-                                lineWidth: 1.2
-                            )
+                let isSelected = currentPage == page
+                ProcessCarouselPageMark(
+                    isSelected: isSelected,
+                    activeColor: FaceScanWhoopPalette.label,
+                    inactiveColor: FaceScanWhoopPalette.label.opacity(0.22)
+                )
+                .onTapGesture {
+                    HapticManager.shared.impact(.light)
+                    withAnimation(.easeInOut(duration: 0.28)) {
+                        selectedPage = page
                     }
-                    .frame(width: 7, height: 7)
-                    .onTapGesture {
-                        HapticManager.shared.impact(.light)
-                        withAnimation(.easeInOut(duration: 0.28)) {
-                            selectedPage = page
-                        }
-                    }
-                    .accessibilityLabel(page.accessibilityTitle)
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
+                .accessibilityLabel(page.accessibilityTitle)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
         .padding(.top, 2)
@@ -102,32 +121,14 @@ struct OnboardingFaceDeepAnalysisView: View {
         case .openSignals:
             unlockedCard
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        case .gaze, .structure, .skin, .harmony:
-            if let category = page.lockedCategory {
-                lockedCategoryCard(
-                    category,
-                    metrics: analysis.lockedMetrics.filter { category.kinds.contains($0.kind) }
-                )
+        case .bloatZones:
+            bloatZonesCard
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-        case .flaws:
-            lockedTextCard(
-                title: AppCopy.t("Défauts principaux", en: "Main flaws"),
-                subtitle: AppCopy.t("Ce qui alourdit ton visage", en: "What weighs down your face"),
-                lines: analysis.primaryFlaws,
-                linePrefix: "❌"
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        case .strengths:
-            lockedTextCard(
-                title: AppCopy.t("Atouts", en: "Strengths"),
-                subtitle: AppCopy.t("Tes points forts structurels", en: "Your structural strengths"),
-                lines: analysis.strengths,
-                linePrefix: "✅"
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        case .summary:
-            lockedSummaryCard
+        case .priorities:
+            prioritiesCard
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        case .triggers:
+            triggersCard
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
@@ -231,7 +232,10 @@ struct OnboardingFaceDeepAnalysisView: View {
                     .monospacedDigit()
             }
 
-            VolumeCompositionGoodNewsCallout(text: composition.goodNewsPhrase)
+            VolumeCompositionGoodNewsCallout(
+                text: composition.goodNewsPhrase,
+                isActive: currentPage == .openSignals
+            )
                 .padding(.top, 2)
         }
     }
@@ -274,40 +278,33 @@ struct OnboardingFaceDeepAnalysisView: View {
         }
     }
 
-    // MARK: - Locked categories
+    // MARK: - Zones de gonflement (noms lisibles, notes floutées)
 
-    private func lockedCategoryCard(
-        _ category: LockedCategory,
-        metrics: [OnboardingFaceDeepAnalysis.LockedMetric]
-    ) -> some View {
+    private var bloatZonesCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader(
-                title: category.title,
-                subtitle: category.subtitle,
+                title: AppCopy.t("Où tu gonfles", en: "Where you bloat"),
+                subtitle: AppCopy.t(
+                    "Joues, yeux, mâchoire visibles — le reste se débloque avec le plan",
+                    en: "Cheeks, eyes, jaw visible — the rest unlocks with the plan"
+                ),
                 locked: true
             )
             .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 10)
 
-            ZStack {
-                VStack(spacing: 0) {
-                    ForEach(Array(metrics.enumerated()), id: \.element.id) { index, metric in
-                        if index > 0 {
-                            Divider()
-                                .overlay(dividerColor)
-                                .padding(.leading, 52)
-                        }
-                        lockedMetricRow(metric)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 13)
+            VStack(spacing: 0) {
+                ForEach(Array(analysis.lockedMetrics.enumerated()), id: \.element.id) { index, metric in
+                    if index > 0 {
+                        Divider()
+                            .overlay(dividerColor)
+                            .padding(.leading, 52)
                     }
+                    lockedMetricRow(metric)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
                 }
-                .blur(radius: 7)
-                .opacity(0.72)
-
-                lockedOverlay(title: category.lockLabel)
-                    .padding(.vertical, 18)
             }
 
             Spacer(minLength: 0)
@@ -323,95 +320,206 @@ struct OnboardingFaceDeepAnalysisView: View {
                 .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.75))
                 .frame(width: 22)
 
-            Text(metric.kind.title.uppercased())
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.label)
-                .tracking(0.3)
+            lockedOrPlainTitle(metric.kind.title, hidden: metric.kind.hidesName)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            lockedScoreCluster(
+                percent: metric.percent,
+                zone: metric.zone,
+                higherIsWorse: metric.kind.higherIsWorse
+            )
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            metric.kind.hidesName
+                ? AppCopy.t("Zone verrouillée", en: "Locked zone")
+                : AppCopy.t(
+                    "\(metric.kind.title), note verrouillée",
+                    en: "\(metric.kind.title), score locked"
+                )
+        )
+    }
+
+    private func lockedScoreCluster(
+        percent: Int,
+        zone: FaceScanIndicators.WellnessZone,
+        higherIsWorse: Bool
+    ) -> some View {
+        HStack(spacing: 8) {
             FaceScanWhoopZoneBar(
-                activeZone: metric.zone,
-                higherIsWorse: metric.kind.higherIsWorse,
+                activeZone: zone,
+                higherIsWorse: higherIsWorse,
                 style: .immersive
             )
-                .frame(width: 84)
+            .frame(width: 84)
 
-            Text("\(metric.percent)%")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(FaceScanWhoopPalette.ringColor(for: metric.zone))
+            Text("\(percent)%")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(FaceScanWhoopPalette.ringColor(for: zone))
                 .monospacedDigit()
-                .frame(width: 40, alignment: .trailing)
+                .frame(width: 44, alignment: .trailing)
         }
-    }
-
-    // MARK: - Locked insight cards
-
-    private func lockedTextCard(title: String, subtitle: String, lines: [String], linePrefix: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            cardHeader(title: title, subtitle: subtitle, locked: true)
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 10)
-
-            ZStack {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(lines, id: \.self) { line in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text(linePrefix)
-                                .font(.system(size: 13))
-                                .padding(.top, 1)
-                            Text(line)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.88))
-                                .fixedSize(horizontal: false, vertical: true)
+        .blur(radius: 8)
+        .opacity(0.78)
+        .compositingGroup()
+        .overlay {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.78))
+                .padding(7)
+                .background {
+                    Circle()
+                        .fill(FaceScanWhoopPalette.card)
+                        .overlay {
+                            Circle()
+                                .strokeBorder(FaceScanWhoopPalette.label.opacity(0.08), lineWidth: 0.5)
                         }
-                    }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .blur(radius: 6.5)
-                .opacity(0.7)
-
-                lockedOverlay(title: AppCopy.t("Contenu verrouillé", en: "Content locked"))
-                    .padding(.vertical, 18)
-            }
-
-            Spacer(minLength: 0)
+                .allowsHitTesting(false)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .liquidGlassCard(isDark: theme.isDark)
+        .accessibilityHidden(true)
     }
 
-    private var lockedSummaryCard: some View {
+    // MARK: - Priorités (titres lisibles, diagnostics floutés)
+
+    private var prioritiesCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader(
-                title: AppCopy.t("Résumé", en: "Summary"),
-                subtitle: AppCopy.t("Lecture globale de ton visage", en: "Overall reading of your face"),
+                title: AppCopy.t("Priorités du plan", en: "Plan priorities"),
+                subtitle: AppCopy.t(
+                    "Ce que le protocole va viser en premier",
+                    en: "What the protocol will target first"
+                ),
                 locked: true
             )
             .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 10)
 
-            ZStack {
-                Text(analysis.summary)
-                    .font(.system(size: 13.5, weight: .medium))
-                    .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.88))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                    .blur(radius: 6.5)
-                    .opacity(0.7)
-
-                lockedOverlay(title: AppCopy.t("Résumé verrouillé", en: "Summary locked"))
-                    .padding(.vertical, 18)
+            VStack(spacing: 0) {
+                ForEach(Array(analysis.priorities.enumerated()), id: \.element.id) { index, item in
+                    if index > 0 {
+                        Divider()
+                            .overlay(dividerColor)
+                            .padding(.leading, 52)
+                    }
+                    priorityRow(item)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
+    }
+
+    private func priorityRow(_ item: OnboardingFaceDeepAnalysis.BloatPriority) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.75))
+                .frame(width: 22)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 5) {
+                lockedOrPlainTitle(item.title, hidden: item.hidesTitle)
+
+                Text(item.note)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .blur(radius: 6.5)
+                    .opacity(0.72)
+                    .compositingGroup()
+                    .overlay(alignment: .center) {
+                        miniLockBadge
+                    }
+                    .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            item.hidesTitle
+                ? AppCopy.t("Priorité verrouillée", en: "Locked priority")
+                : AppCopy.t(
+                    "\(item.title), détail verrouillé",
+                    en: "\(item.title), detail locked"
+                )
+        )
+    }
+
+    // MARK: - Déclencheurs
+
+    private var triggersCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            cardHeader(
+                title: AppCopy.t("Ce qui le déclenche", en: "What triggers it"),
+                subtitle: AppCopy.t(
+                    "Sel et sommeil visibles — les autres leviers restent verrouillés",
+                    en: "Salt and sleep visible — the other levers stay locked"
+                ),
+                locked: true
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 10)
+
+            VStack(spacing: 0) {
+                ForEach(Array(analysis.triggers.enumerated()), id: \.element.id) { index, item in
+                    if index > 0 {
+                        Divider()
+                            .overlay(dividerColor)
+                            .padding(.leading, 52)
+                    }
+                    triggerRow(item)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .liquidGlassCard(isDark: theme.isDark)
+    }
+
+    private func triggerRow(_ item: OnboardingFaceDeepAnalysis.BloatTrigger) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.75))
+                .frame(width: 22)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 5) {
+                lockedOrPlainTitle(item.title, hidden: item.hidesTitle)
+
+                Text(item.note)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(FaceScanWhoopPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .blur(radius: 6.5)
+                    .opacity(0.72)
+                    .compositingGroup()
+                    .overlay(alignment: .center) {
+                        miniLockBadge
+                    }
+                    .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            item.hidesTitle
+                ? AppCopy.t("Déclencheur verrouillé", en: "Locked trigger")
+                : AppCopy.t(
+                    "\(item.title), détail verrouillé",
+                    en: "\(item.title), detail locked"
+                )
+        )
     }
 
     // MARK: - Teaser
@@ -421,8 +529,8 @@ struct OnboardingFaceDeepAnalysisView: View {
             Image(systemName: "lock.fill")
                 .font(.system(size: 13, weight: .semibold))
             Text(AppCopy.t(
-                "Débloque l’analyse complète après l’onboarding",
-                en: "Unlock the full analysis after onboarding"
+                "Débloque les notes de chaque zone après l’onboarding",
+                en: "Unlock each zone’s scores after onboarding"
             ))
                 .font(.system(size: 12.5, weight: .semibold))
                 .lineLimit(2)
@@ -458,11 +566,36 @@ struct OnboardingFaceDeepAnalysisView: View {
         }
     }
 
+    private func lockedOrPlainTitle(_ title: String, hidden: Bool) -> some View {
+        Text(title)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(FaceScanWhoopPalette.label)
+            .blur(radius: hidden ? 7 : 0)
+            .opacity(hidden ? 0.7 : 1)
+            .compositingGroup()
+            .overlay {
+                if hidden { miniLockBadge }
+            }
+            .accessibilityHidden(hidden)
+    }
+
+    private var miniLockBadge: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.7))
+            .padding(6)
+            .background {
+                Circle()
+                    .fill(FaceScanWhoopPalette.card)
+            }
+            .allowsHitTesting(false)
+    }
+
     private var lockBadge: some View {
         HStack(spacing: 5) {
             Image(systemName: "lock.fill")
                 .font(.system(size: 10, weight: .bold))
-            Text(AppCopy.t("Locked", en: "Locked"))
+            Text(AppCopy.t("Verrouillé", en: "Locked"))
                 .font(.system(size: 10, weight: .bold))
                 .textCase(.uppercase)
                 .tracking(0.4)
@@ -476,27 +609,6 @@ struct OnboardingFaceDeepAnalysisView: View {
         )
     }
 
-    private func lockedOverlay(title: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "lock.fill")
-                .font(.system(size: 18, weight: .semibold))
-            Text(title)
-                .font(.system(size: 13, weight: .semibold))
-        }
-        .foregroundStyle(FaceScanWhoopPalette.label.opacity(0.88))
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            Capsule(style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    Capsule(style: .continuous)
-                        .strokeBorder(FaceScanWhoopPalette.label.opacity(0.08), lineWidth: 0.5)
-                )
-        )
-        .allowsHitTesting(false)
-    }
-
     private var dividerColor: Color {
         theme.isDark ? Color.white.opacity(0.08) : Color.primary.opacity(0.08)
     }
@@ -506,89 +618,19 @@ struct OnboardingFaceDeepAnalysisView: View {
 
 private enum SignalCarouselPage: String, CaseIterable, Identifiable, Hashable {
     case openSignals
-    case gaze
-    case structure
-    case skin
-    case harmony
-    case flaws
-    case strengths
-    case summary
+    case bloatZones
+    case priorities
+    case triggers
 
     var id: String { rawValue }
 
     @MainActor
     var accessibilityTitle: String {
         switch self {
-        case .openSignals: return AppCopy.t("Signaux", en: "Signals")
-        case .gaze: return AppCopy.t("Regard", en: "Gaze")
-        case .structure: return AppCopy.t("Structure", en: "Structure")
-        case .skin: return AppCopy.t("Peau", en: "Skin")
-        case .harmony: return AppCopy.t("Harmonie", en: "Harmony")
-        case .flaws: return AppCopy.t("Défauts", en: "Flaws")
-        case .strengths: return AppCopy.t("Atouts", en: "Strengths")
-        case .summary: return AppCopy.t("Résumé", en: "Summary")
-        }
-    }
-
-    var lockedCategory: LockedCategory? {
-        switch self {
-        case .gaze: return .gaze
-        case .structure: return .structure
-        case .skin: return .skin
-        case .harmony: return .harmony
-        default: return nil
-        }
-    }
-}
-
-private enum LockedCategory: String, CaseIterable, Identifiable {
-    case gaze
-    case structure
-    case skin
-    case harmony
-
-    var id: String { rawValue }
-
-    @MainActor
-    var title: String {
-        switch self {
-        case .gaze: return AppCopy.t("Regard", en: "Gaze")
-        case .structure: return AppCopy.t("Structure du visage", en: "Face structure")
-        case .skin: return AppCopy.t("Peau & texture", en: "Skin & texture")
-        case .harmony: return AppCopy.t("Harmonie globale", en: "Overall harmony")
-        }
-    }
-
-    @MainActor
-    var subtitle: String {
-        switch self {
-        case .gaze: return AppCopy.t("Yeux, cernes, zone sous les yeux", en: "Eyes, under-eyes, orbital area")
-        case .structure: return AppCopy.t("Jawline, pommettes, maxillaire, nez", en: "Jawline, cheekbones, maxilla, nose")
-        case .skin: return AppCopy.t("Clarté et reliefs de surface", en: "Clarity and surface relief")
-        case .harmony: return AppCopy.t("Proportions, symétrie, volume", en: "Proportions, symmetry, volume")
-        }
-    }
-
-    @MainActor
-    var lockLabel: String {
-        switch self {
-        case .gaze: return AppCopy.t("3 indicateurs verrouillés", en: "3 indicators locked")
-        case .structure: return AppCopy.t("6 indicateurs verrouillés", en: "6 indicators locked")
-        case .skin: return AppCopy.t("2 indicateurs verrouillés", en: "2 indicators locked")
-        case .harmony: return AppCopy.t("4 indicateurs verrouillés", en: "4 indicators locked")
-        }
-    }
-
-    var kinds: [OnboardingFaceDeepAnalysis.Kind] {
-        switch self {
-        case .gaze:
-            return [.eyes, .orbitalDepth, .underEyeHealth]
-        case .structure:
-            return [.midFace, .lowerThird, .upperThird, .cheekbones, .maxillary, .nose]
-        case .skin:
-            return [.skin, .nasolabialFold]
-        case .harmony:
-            return [.harmony, .symmetry, .neckWidth, .boneMass]
+        case .openSignals: return AppCopy.t("Ce qui gonfle", en: "What's bloating")
+        case .bloatZones: return AppCopy.t("Où tu gonfles", en: "Where you bloat")
+        case .priorities: return AppCopy.t("Priorités du plan", en: "Plan priorities")
+        case .triggers: return AppCopy.t("Ce qui le déclenche", en: "What triggers it")
         }
     }
 }
@@ -597,6 +639,7 @@ private enum LockedCategory: String, CaseIterable, Identifiable {
 
 private struct VolumeCompositionGoodNewsCallout: View {
     let text: String
+    var isActive: Bool = true
 
     @State private var arrowOffset: CGFloat = 0
     @State private var glow = false
@@ -622,10 +665,22 @@ private struct VolumeCompositionGoodNewsCallout: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(FaceScanWhoopPalette.optimal.opacity(0.1))
         }
-        .onAppear { startAnimations() }
+        .onAppear { syncAnimations() }
+        .onChange(of: isActive) { _, _ in
+            syncAnimations()
+        }
     }
 
-    private func startAnimations() {
+    private func syncAnimations() {
+        guard isActive else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                arrowOffset = 0
+                glow = false
+            }
+            return
+        }
         arrowOffset = 0
         glow = false
         withAnimation(.easeInOut(duration: 0.85).repeatForever(autoreverses: true)) {
@@ -642,9 +697,13 @@ private extension View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
         return self
             .background {
-                shape
-                    .fill(.clear)
-                    .processGlassEffect(in: shape, interactive: false)
+                shape.fill(FaceScanWhoopPalette.card)
+            }
+            .overlay {
+                shape.strokeBorder(
+                    Color.primary.opacity(isDark ? 0.10 : 0.08),
+                    lineWidth: 0.5
+                )
             }
             .clipShape(shape)
             .processHomeGlassCardShadow(isDark: isDark)

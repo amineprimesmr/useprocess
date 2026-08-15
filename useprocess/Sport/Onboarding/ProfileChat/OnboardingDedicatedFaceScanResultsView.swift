@@ -48,10 +48,13 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                     .frame(minHeight: 430)
                 }
             }
+            .processTransparentScrollSurface()
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomCTA
             }
         }
+        .processClearUIKitHostingBackground()
+        .background(FaceScanWhoopPalette.canvas)
         .task {
             guard !OnboardingAppStoreRatingPrompt.hasBeenShown else { return }
             try? await Task.sleep(for: .milliseconds(900))
@@ -119,7 +122,9 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     }
 
     private var bottomCTA: some View {
-        OnboardingCreatePlanButton {
+        OnboardingCreatePlanButton(
+            title: AppCopy.t("Créer mon plan", en: "Create my plan")
+        ) {
             HapticManager.shared.impact(.medium)
             onContinue()
         }
@@ -129,10 +134,11 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     }
 }
 
-private struct OnboardingCreatePlanButton: View {
+struct OnboardingCreatePlanButton: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    let action: () -> Void
+    var title: String
+    var action: () -> Void
 
     private var isLight: Bool { colorScheme == .light }
 
@@ -145,7 +151,7 @@ private struct OnboardingCreatePlanButton: View {
                     .frame(width: 32, height: 32)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                Text(AppCopy.t("Créer mon plan", en: "Create my plan"))
+                Text(title)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(isLight ? Color.white : Color.black)
             }
@@ -159,7 +165,7 @@ private struct OnboardingCreatePlanButton: View {
         .buttonStyle(.processPlain)
         .contentShape(Capsule())
         .shadow(color: Color(red: 0.08, green: 0.22, blue: 0.72).opacity(isLight ? 0.22 : 0.28), radius: 10, y: 2)
-        .accessibilityLabel(AppCopy.t("Créer mon plan", en: "Create my plan"))
+        .accessibilityLabel(title)
     }
 }
 

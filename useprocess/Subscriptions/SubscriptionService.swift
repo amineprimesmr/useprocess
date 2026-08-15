@@ -8,6 +8,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     static let shared = SubscriptionService()
 
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
+    @Published private(set) var activeProductIdentifier: String?
     @Published private(set) var isLoading = false
     @Published private(set) var weeklyDisplay: SubscriptionProductDisplay?
     @Published private(set) var monthlyDisplay: SubscriptionProductDisplay?
@@ -165,6 +166,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         ProcessAnalytics.reset()
         guard isConfigured else {
             subscriptionStatus = .notSubscribed
+            activeProductIdentifier = nil
             isInFreeTrial = false
             trialExpirationDate = nil
             return
@@ -177,9 +179,42 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
 
         subscriptionStatus = .notSubscribed
+        activeProductIdentifier = nil
         isInFreeTrial = false
         trialExpirationDate = nil
         syncedRevenueCatUserID = nil
+    }
+
+    /// Prix de l’abonnement actuel — sinon le plan court de la variante A/B.
+    var referralRewardDisplayPrice: String {
+        if subscriptionStatus.isActive, let id = activeProductIdentifier {
+            return displayPrice(forProductID: id)
+        }
+        return displayProduct(for: shortBillingPlan).displayPrice
+    }
+
+    func displayPrice(forProductID id: String) -> String {
+        if weeklyDisplay?.productID == id { return weeklyDisplay?.displayPrice ?? fallbackPrice(forProductID: id) }
+        if monthlyDisplay?.productID == id { return monthlyDisplay?.displayPrice ?? fallbackPrice(forProductID: id) }
+        if annualDisplay?.productID == id { return annualDisplay?.displayPrice ?? fallbackPrice(forProductID: id) }
+        return fallbackPrice(forProductID: id)
+    }
+
+    private func fallbackPrice(forProductID id: String) -> String {
+        switch id {
+        case SubscriptionConfiguration.weekly899ProductID:
+            return PaywallPricingExperiment.Variant.control.fallbackShortPrice
+        case SubscriptionConfiguration.monthly999ProductID, SubscriptionConfiguration.monthlyProductID:
+            return PaywallPricingExperiment.Variant.test.fallbackShortPrice
+        case SubscriptionConfiguration.annual3499ProductID:
+            return PaywallPricingExperiment.Variant.control.fallbackAnnualPrice
+        case SubscriptionConfiguration.annual4999ProductID, SubscriptionConfiguration.annualProductID:
+            return PaywallPricingExperiment.Variant.test.fallbackAnnualPrice
+        case SubscriptionConfiguration.lifetimeProductID:
+            return SubscriptionConfiguration.winbackLifetimePrice
+        default:
+            return displayProduct(for: shortBillingPlan).displayPrice
+        }
     }
 
     func displayProduct(for plan: SubscriptionBillingPlan) -> SubscriptionProductDisplay {
@@ -409,6 +444,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             let result = try await Purchases.shared.purchase(product: lifetime)
             if result.userCancelled { throw SubscriptionError.userCancelled }
             applyCustomerInfo(result.customerInfo)
+            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
         } catch let error as ErrorCode where error == .purchaseCancelledError {
             throw SubscriptionError.userCancelled
         }
@@ -428,6 +464,7 @@ final class SubscriptionService: NSObject, ObservableObject {
                 } else {
                     await checkStoreKitSubscriptionStatus()
                 }
+                await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
                 return
             case .userCancelled:
                 throw SubscriptionError.userCancelled
@@ -474,6 +511,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func applyCustomerInfo(_ info: CustomerInfo) {
         guard let entitlement = info.entitlements[SubscriptionConfiguration.entitlementID] else {
             subscriptionStatus = .notSubscribed
+            activeProductIdentifier = nil
             isInFreeTrial = false
             trialExpirationDate = nil
             ProcessHomeScreenQuickActions.syncForCurrentUser()
@@ -484,6 +522,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         if entitlement.isActive {
             isInFreeTrial = entitlement.periodType == .trial
             trialExpirationDate = entitlement.expirationDate
+            activeProductIdentifier = entitlement.productIdentifier
 
             if entitlement.billingIssueDetectedAt != nil {
                 subscriptionStatus = .inBillingRetryPeriod
@@ -493,10 +532,12 @@ final class SubscriptionService: NSObject, ObservableObject {
             ProcessMarketingNotificationService.shared.cancelAll()
         } else if entitlement.expirationDate != nil {
             subscriptionStatus = .expired
+            activeProductIdentifier = nil
             isInFreeTrial = false
             trialExpirationDate = nil
         } else {
             subscriptionStatus = .notSubscribed
+            activeProductIdentifier = nil
             isInFreeTrial = false
             trialExpirationDate = nil
         }
@@ -852,6 +893,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         var activeExpirationDate: Date?
         var hasActiveEntitlement = false
         var isTrial = false
+        var activeProductID: String?
 
         for await result in StoreKit.Transaction.currentEntitlements {
             guard let transaction = try? verified(result),
@@ -862,10 +904,12 @@ final class SubscriptionService: NSObject, ObservableObject {
             hasActiveEntitlement = true
             activeExpirationDate = transaction.expirationDate
             isTrial = transaction.offer?.type == .introductory
+            activeProductID = transaction.productID
         }
 
         isInFreeTrial = isTrial
         trialExpirationDate = isTrial ? activeExpirationDate : nil
+        activeProductIdentifier = hasActiveEntitlement ? activeProductID : nil
 
         if hasActiveEntitlement {
             subscriptionStatus = .subscribed

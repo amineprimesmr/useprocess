@@ -248,7 +248,10 @@ struct ProcessIGTabShell<Content: View>: View {
     }
 
     private var showsTabChrome: Bool {
-        selectedSection != .coach && !profileSubrouteActive && !hidesTabChrome && !tutorialStore.isActive
+        selectedSection != .coach
+            && !profileSubrouteActive
+            && !hidesTabChrome
+            && !tutorialStore.constrainsHomeLayout
     }
 
     var body: some View {

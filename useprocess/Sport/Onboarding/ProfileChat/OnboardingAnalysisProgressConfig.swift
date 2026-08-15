@@ -230,9 +230,9 @@ enum OnboardingAnalysisProgressConfig {
     static let segmentStep: Double = 0.012
     static let startDelayNs: UInt64 = 150_000_000
 
-    static let programCreationTickIntervalNs: UInt64 = 34_000_000
-    static let programCreationSegmentStep: Double = 0.0072
-    static let programCreationStartDelayNs: UInt64 = 280_000_000
+    static let programCreationTickIntervalNs: UInt64 = 26_000_000
+    static let programCreationSegmentStep: Double = 0.009
+    static let programCreationStartDelayNs: UInt64 = 180_000_000
 
     static func stepIndex(forPhaseLabel label: String) -> Int? {
         steps.firstIndex { $0.phaseLabel == label }

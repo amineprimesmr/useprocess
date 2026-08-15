@@ -59,11 +59,16 @@ final class ProcessStreakStore {
     }
 
     var displayStreak: Int {
-        snapshot.currentStreak
+        isFreshInstallStreak ? 1 : snapshot.currentStreak
     }
 
     var displayValidatedDays: Int {
-        snapshot.totalCompletedDays
+        isFreshInstallStreak ? 1 : snapshot.totalCompletedDays
+    }
+
+    /// Premier lancement — la série démarre à 1, pas à 0.
+    private var isFreshInstallStreak: Bool {
+        snapshot.currentStreak == 0 && snapshot.totalCompletedDays == 0
     }
 
     // MARK: - Persistence

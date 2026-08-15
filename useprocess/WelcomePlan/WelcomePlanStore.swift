@@ -28,10 +28,12 @@ final class WelcomePlanStore {
         loadedUserId = uid
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
         if !hasEphemeralPreviewPlan {
-            plan = loadPlan(userId: uid)
-            repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
-            if plan != nil {
+            if let loaded = loadPlan(userId: uid) {
+                plan = loaded
+                repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
                 migratePlanIfNeeded(answers: questionnaire.answers, profile: UnifiedProfileService.shared.currentProfile)
+            } else if plan == nil {
+                repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
             }
         }
         CoachMemoryStore.shared.reloadForCurrentUser()
@@ -48,8 +50,12 @@ final class WelcomePlanStore {
     private func reloadLocalOnly(uid: String) {
         questionnaire = loadQuestionnaire(userId: uid) ?? WelcomePlanQuestionnaireState()
         if !hasEphemeralPreviewPlan {
-            plan = loadPlan(userId: uid)
-            repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
+            if let loaded = loadPlan(userId: uid) {
+                plan = loaded
+                repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
+            } else if plan == nil {
+                repairAccessIfNeeded(profile: UnifiedProfileService.shared.currentProfile)
+            }
         }
         CoachMemoryStore.shared.reloadForCurrentUser()
         ProcessDebloatTrajectoryStore.shared.sync(from: plan)
@@ -659,6 +665,9 @@ final class WelcomePlanStore {
         if plan == nil {
             let generated = WelcomePlanGenerator.generate(answers: answers, profile: profile)
             savePlan(generated, structureChanged: true)
+        } else if hasEphemeralPreviewPlan, let existing = plan {
+            hasEphemeralPreviewPlan = false
+            savePlan(existing, structureChanged: true)
         }
 
         AppSession.shared.completeWelcomePlanChat()

@@ -30,6 +30,7 @@ final class ReferralService {
                 displayName: displayName
             )
             clearRemoteRegistrationPending(userId: referredUserId)
+            await confirmSubscriptionRewardsIfNeeded()
         } catch let error as ReferralRemoteError {
             if case .httpError(404, _) = error {
                 clearRemoteRegistrationPending(userId: referredUserId)
@@ -104,6 +105,7 @@ final class ReferralService {
                 displayName: displayName
             )
             clearRemoteRegistrationPending(userId: userId)
+            await confirmSubscriptionRewardsIfNeeded()
         } catch let error as ReferralRemoteError {
             if case .httpError(404, _) = error {
                 clearRemoteRegistrationPending(userId: userId)

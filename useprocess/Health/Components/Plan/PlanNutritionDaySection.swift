@@ -144,7 +144,7 @@ struct PlanNutritionDaySection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 18) {
             if tutorialStore.showsNutritionSectionTitle {
                 headerRow
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -295,7 +295,7 @@ private struct PlanHydrationCarouselCard: View {
 
     private var canRemoveWater: Bool { effectiveMilliliters > 0 }
 
-    private var bottleSquareSide: CGFloat { 272 }
+    private var bottleSquareSide: CGFloat { PlanNutritionStripLayout.rowHeight }
     private var bottleCanvasHeight: CGFloat { bottleSquareSide }
     private var bottleTrimmedWidth: CGFloat {
         bottleSquareSide * ProcessHydrationBottleMetrics.contentWidthFraction
@@ -617,9 +617,9 @@ private struct PlanHydrationCarouselCard: View {
 // MARK: - Strip alimentation (liquid glass)
 
 private enum PlanNutritionStripLayout {
-    static let rowHeight: CGFloat = 272
-    static let marketImageSide: CGFloat = 108
-    static let cornerRadius: CGFloat = 30
+    static let rowHeight: CGFloat = 248
+    static let marketImageSide: CGFloat = 96
+    static let cornerRadius: CGFloat = 26
 }
 
 /// Une carte « marché » : les 3 plats du jour en collage, ouvre le catalogue.
@@ -671,11 +671,11 @@ private struct PlanDayMealsMarketCard: View {
                     .lineLimit(2)
                     .minimumScaleFactor(0.86)
                     .padding(.horizontal, 12)
-                    .padding(.top, 16)
+                    .padding(.top, 12)
 
                 mealMarketCollage
                     .frame(maxWidth: .infinity)
-                    .frame(height: 148)
+                    .frame(height: 132)
 
                 if let globalDayAssessment {
                     MealDebloatScorePill(assessment: globalDayAssessment)
@@ -684,17 +684,12 @@ private struct PlanDayMealsMarketCard: View {
                     Spacer(minLength: 0)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
+            .frame(height: PlanNutritionStripLayout.rowHeight)
+            .contentShape(cardShape)
         }
-        .buttonStyle(.processPlain)
+        .processGlassButton(in: cardShape)
         .frame(maxWidth: .infinity)
-        .frame(height: PlanNutritionStripLayout.rowHeight)
-        .background {
-            cardShape
-                .fill(.clear)
-                .processGlassEffect(in: cardShape)
-        }
-        .clipShape(cardShape)
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .mealCatalog, namespace: zoomNamespace)
         .accessibilityLabel(accessibilityTitle)

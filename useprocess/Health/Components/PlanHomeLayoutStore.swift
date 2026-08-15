@@ -11,6 +11,8 @@ final class PlanHomeLayoutStore {
     private let storageKeyBase = "plan.home.layout"
     private let swappedTrainingFaceRoutineMigrationKey = "plan.home.layout.swappedTrainingFaceRoutine.v1"
     private let hideTrainingOnHomeMigrationKey = "plan.home.layout.hideTrainingOnHome.v1"
+    private let hideFaceRoutineOnHomeMigrationKey = "plan.home.layout.hideFaceRoutineOnHome.v1"
+    private let restoreFaceRoutineOnHomeMigrationKey = "plan.home.layout.restoreFaceRoutineOnHome.v1"
 
     private init() {
         reload()
@@ -18,7 +20,11 @@ final class PlanHomeLayoutStore {
 
     var visibleSections: [PlanHomeSectionKind] {
         orderedSections
-            .filter { !hiddenSectionIDs.contains($0.rawValue) && $0 != .resources && $0 != .training }
+            .filter {
+                !hiddenSectionIDs.contains($0.rawValue)
+                    && $0 != .resources
+                    && $0 != .training
+            }
     }
 
     var visibleSectionIDs: [String] {
@@ -46,15 +52,42 @@ final class PlanHomeLayoutStore {
         }
         migrateSwapTrainingAndFaceRoutineIfNeeded()
         migrateHideTrainingOnHomeIfNeeded()
+        migrateHideFaceRoutineOnHomeIfNeeded()
+        migrateRestoreFaceRoutineOnHomeIfNeeded()
     }
 
-    /// Cardio et Circuit — uniquement dans Réglages, plus sur l'accueil.
+    /// Cardio et Circuit — page Routine, plus sur l'accueil.
     private func migrateHideTrainingOnHomeIfNeeded() {
         let migrationKey = UserScopedStorage.key(hideTrainingOnHomeMigrationKey)
         guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
 
         hiddenSectionIDs.insert(PlanHomeSectionKind.training.rawValue)
         orderedSections.removeAll { $0 == .training }
+        persist()
+
+        UserDefaults.standard.set(true, forKey: migrationKey)
+    }
+
+    /// Ancienne migration : ne plus retirer le circuit lymphatique de l'accueil.
+    private func migrateHideFaceRoutineOnHomeIfNeeded() {
+        let migrationKey = UserScopedStorage.key(hideFaceRoutineOnHomeMigrationKey)
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+        UserDefaults.standard.set(true, forKey: migrationKey)
+    }
+
+    /// Circuit lymphatique — accueil + onglet Routine.
+    private func migrateRestoreFaceRoutineOnHomeIfNeeded() {
+        let migrationKey = UserScopedStorage.key(restoreFaceRoutineOnHomeMigrationKey)
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+
+        hiddenSectionIDs.remove(PlanHomeSectionKind.faceRoutine.rawValue)
+        if !orderedSections.contains(.faceRoutine) {
+            if let nutritionIndex = orderedSections.firstIndex(of: .nutrition) {
+                orderedSections.insert(.faceRoutine, at: nutritionIndex + 1)
+            } else {
+                orderedSections.append(.faceRoutine)
+            }
+        }
         persist()
 
         UserDefaults.standard.set(true, forKey: migrationKey)

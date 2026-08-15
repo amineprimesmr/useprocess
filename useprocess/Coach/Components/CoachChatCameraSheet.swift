@@ -313,28 +313,8 @@ private struct CoachCameraCaptureGlassButton: View {
             .frame(width: outerSize, height: outerSize)
             .contentShape(Circle())
         }
-        .buttonStyle(.processPlain)
-        .modifier(CoachCameraGlassCircleModifier(diameter: outerSize))
+        .processGlassButton(in: Circle())
         .accessibilityLabel(AppCopy.t("Prendre une photo", en: "Take a photo"))
-    }
-}
-
-private struct CoachCameraGlassCircleModifier: ViewModifier {
-    let diameter: CGFloat
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(ProcessGlass.tinted(.white, opacity: 0.24), in: Circle())
-        } else {
-            content
-                .background {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
-                }
-                .buttonStyle(ProcessGlassPressStyle())
-        }
     }
 }
 
@@ -355,8 +335,7 @@ private struct CoachCameraGlassButton: View {
                 .frame(width: size, height: size)
                 .contentShape(Circle())
         }
-        .buttonStyle(.processPlain)
-        .modifier(CoachCameraGlassCircleModifier(diameter: size))
+        .processGlassButton(in: Circle())
         .accessibilityLabel(systemName == "photo.on.rectangle"
                             ? AppCopy.t("Galerie", en: "Photo library")
                             : AppCopy.back)

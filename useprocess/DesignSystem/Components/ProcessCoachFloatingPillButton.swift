@@ -26,7 +26,7 @@ struct ProcessCoachFloatingPillButton: View {
                 coachBadge
             }
         }
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: Capsule(style: .continuous))
         .onAppear {
             withAnimation(.easeInOut(duration: 1.65).repeatForever(autoreverses: true)) {
                 coachPeekOffset = 3
@@ -80,7 +80,6 @@ struct ProcessCoachFloatingPillButton: View {
         .padding(.trailing, 16)
         .frame(maxWidth: .infinity)
         .frame(height: pillHeight)
-        .processGlassEffect(in: Capsule(), interactive: true)
         .shadow(color: Color.black.opacity(theme.isDark ? 0.42 : 0.14), radius: 18, y: 10)
     }
 }

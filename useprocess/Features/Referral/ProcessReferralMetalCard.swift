@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Carte parrainage effet métal brossé — code dot-matrix + bouton Copy.
+/// Carte parrainage effet métal brossé — code dot-matrix + bouton Copier le lien.
 struct ProcessReferralMetalCard: View {
     let referralCode: String
     let copyText: String
@@ -43,7 +43,7 @@ struct ProcessReferralMetalCard: View {
 
                 Spacer(minLength: 12)
 
-                Text(AppCopy.t("PARTAGE ET GAGNE", en: "SHARE & EARN REWARDS"))
+                Text(AppCopy.t("PARTAGE À 3 AMIS", en: "SHARE WITH 3 FRIENDS"))
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(1.4)
                     .foregroundStyle(Color(white: 0.42))
@@ -61,8 +61,8 @@ struct ProcessReferralMetalCard: View {
                 onCopy()
             } label: {
                 Text(copiedFlash
-                     ? AppCopy.t("Copié", en: "Copied")
-                     : AppCopy.t("Copier", en: "Copy"))
+                     ? AppCopy.t("Lien copié", en: "Link copied")
+                     : AppCopy.t("Copier le lien", en: "Copy link"))
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.black.opacity(0.88))
                     .padding(.horizontal, 22)
@@ -85,7 +85,7 @@ struct ProcessReferralMetalCard: View {
         .animation(.interactiveSpring(response: 0.34, dampingFraction: 0.8), value: isInteracting)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(AppCopy.t("Code parrainage \(referralCode)", en: "Referral code \(referralCode)"))
-        .accessibilityHint(AppCopy.t("Maintiens pour incliner, touche Copier pour copier ton invitation", en: "Hold to tilt, tap Copy to copy your invite"))
+        .accessibilityHint(AppCopy.t("Maintiens pour incliner, touche Copier le lien pour copier ton invitation", en: "Hold to tilt, tap Copy link to copy your invite"))
     }
 
     private var metalSurface: some View {

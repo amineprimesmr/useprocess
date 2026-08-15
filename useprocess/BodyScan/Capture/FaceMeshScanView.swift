@@ -21,7 +21,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         override init(frame: CGRect) {
             super.init(frame: frame)
             clipsToBounds = true
-            backgroundColor = .black
+            backgroundColor = .clear
+            isOpaque = false
             addSubview(arView)
         }
 
@@ -58,8 +59,8 @@ struct FaceMeshScanView: UIViewRepresentable {
     var isPreviewOnly: Bool = false
     var isSessionRunning: Bool = true
     var allowsScreenFlash: Bool = true
-    /// Premier scan onboarding : pas de phase « penche la tête » (trop d’abandons).
-    var skipsHeadTiltPhase: Bool = false
+    /// Pas de phase « penche la tête ».
+    var skipsHeadTiltPhase: Bool = true
     var cameraZoom: CGFloat = 1
     var onComplete: (FaceScanCapturePayload) -> Void
 
@@ -93,7 +94,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         view.session.delegate = context.coordinator
         view.automaticallyUpdatesLighting = true
         view.scene = SCNScene()
-        view.backgroundColor = .black
+        view.backgroundColor = .clear
+        view.isOpaque = false
         view.rendersCameraGrain = false
         view.preferredFramesPerSecond = 30
         context.coordinator.arView = view

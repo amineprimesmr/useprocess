@@ -1,6 +1,6 @@
 import Foundation
 
-/// Étapes du tutoriel accueil — ordre : scan → eau → repas → circuit → série.
+/// Étapes du tutoriel accueil — ordre : scan → eau → repas → routine → série.
 enum PlanHomeTutorialStep: String, CaseIterable, Identifiable {
     case faceScan
     case hydration

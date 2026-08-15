@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Page calendrier programme (plein écran)
 
@@ -237,22 +238,35 @@ struct PlanProgramCalendarView: View {
                 }
             }
         } label: {
-            Text("\(calendar.component(.day, from: date))")
-                .font(.system(size: 15, weight: isSelected ? .bold : .medium, design: .rounded))
-                .foregroundStyle(dayNumberColor(isCurrentMonth: isCurrentMonth, isSelected: isSelected))
-                .monospacedDigit()
-                .frame(maxWidth: .infinity)
-                .frame(height: PlanProgramCalendarDesign.cellDiameter)
-                .background {
+            let diameter = PlanProgramCalendarDesign.cellDiameter
+            ZStack {
+                if let scan = model.scan {
+                    PlanProgramCalendarScanThumb(scan: scan)
+                        .frame(width: diameter, height: diameter)
+                        .clipShape(Circle())
+                        .opacity(isCurrentMonth ? 1 : 0.42)
+                } else {
                     Circle()
                         .fill(circleFill(isCurrentMonth: isCurrentMonth, isSelected: isSelected))
+                    Text("\(calendar.component(.day, from: date))")
+                        .font(.system(size: 15, weight: isSelected ? .bold : .medium, design: .rounded))
+                        .foregroundStyle(dayNumberColor(isCurrentMonth: isCurrentMonth, isSelected: isSelected))
+                        .monospacedDigit()
                 }
-                .overlay {
-                    if isSelected {
-                        Circle()
-                            .strokeBorder(calendarAccent, lineWidth: 2)
-                    }
-                }
+
+                Circle()
+                    .strokeBorder(
+                        isSelected
+                            ? calendarAccent
+                            : (model.scan == nil
+                               ? Color.clear
+                               : Color.white.opacity(theme.isDark ? 0.22 : 0.42)),
+                        lineWidth: isSelected ? 2 : 0.6
+                    )
+            }
+            .frame(width: diameter, height: diameter)
+            .frame(maxWidth: .infinity)
+            .frame(height: diameter)
         }
         .buttonStyle(PlanProgramCalendarDayButtonStyle())
         .accessibilityLabel(model.accessibilityLabel)
@@ -523,8 +537,23 @@ struct PlanProgramCalendarView: View {
             isDebloatTarget: isDebloatTarget,
             isToday: isToday,
             status: status,
-            record: record
+            record: record,
+            scan: latestScan(on: dayStart)
         )
+    }
+
+    /// Dernier scan du jour avec une photo locale (historique newest-first).
+    private func latestScan(on dayStart: Date) -> FaceScanResult? {
+        guard let scan = scanStore.history.first(where: {
+            calendar.isDate($0.createdAt, inSameDayAs: dayStart)
+        }) else {
+            return nil
+        }
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: scan)
+        guard FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) != nil else {
+            return nil
+        }
+        return reconciled
     }
 
     // MARK: - Navigation mois
@@ -680,6 +709,7 @@ private struct PlanProgramCalendarDayModel {
     let isToday: Bool
     let status: PlanProgramCalendarDayStatus
     let record: DebloatDayRecord?
+    let scan: FaceScanResult?
 
     @MainActor
     var panelTitle: String {
@@ -746,7 +776,56 @@ private struct PlanProgramCalendarDayModel {
         if isDebloatTarget {
             parts.append(AppCopy.t("objectif debloat", en: "debloat goal"))
         }
+        if scan != nil {
+            parts.append(AppCopy.t("scan visage enregistré", en: "face scan saved"))
+        }
         return parts.joined(separator: ", ")
+    }
+}
+
+/// Miniature ronde — photo du scan du jour (pas de vidéo, trop lourd dans la grille).
+private struct PlanProgramCalendarScanThumb: View {
+    let scan: FaceScanResult
+
+    @State private var snapshot: UIImage?
+
+    var body: some View {
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height)
+            let framing = scan.resolvedStudioFraming
+
+            Group {
+                if let snapshot {
+                    Image(uiImage: snapshot)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Circle()
+                        .fill(Color.primary.opacity(0.08))
+                }
+            }
+            .frame(width: side, height: side)
+            .scaleEffect(framing.scale)
+            .offset(
+                x: CGFloat(framing.offsetX) * side,
+                y: CGFloat(framing.offsetY) * side
+            )
+            .frame(width: side, height: side)
+            .clipped()
+        }
+        .onAppear(perform: loadSnapshot)
+        .onChange(of: scan.id) { _, _ in
+            loadSnapshot()
+        }
+    }
+
+    private func loadSnapshot() {
+        let reconciled = FaceScanImageStore.reconcileMediaMetadata(for: scan)
+        if let filename = FaceScanImageStore.resolvedSnapshotFilename(for: reconciled) {
+            snapshot = FaceScanImageStore.load(filename: filename)
+        } else {
+            snapshot = nil
+        }
     }
 }
 

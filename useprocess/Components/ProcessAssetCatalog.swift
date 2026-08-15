@@ -37,6 +37,8 @@ enum ProcessAssetCatalog {
         "cardio_tapis_incline",
         "cardio_velo",
         "carte15",
+        "PlanHomeUpgradeNebula",
+        "PlanHomeUpgradeDollar",
         "carteparrainage",
         "check",
         "ava",

@@ -164,6 +164,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
 
     private func animatePhaseIrregularly(index: Int, phasesCount: Int) async {
         visibleBarCount = index + 1
+        HapticManager.shared.impact(.medium)
         let milestones = Self.irregularMilestones(forPhase: index)
 
         for (stepIndex, milestone) in milestones.enumerated() {
@@ -180,13 +181,12 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
                 )
             }
 
-            if stepIndex % 6 == 3, milestone.value > 0.15, milestone.value < 0.95 {
-                HapticManager.shared.selection()
-            }
+            fireProgressHaptic(stepIndex: stepIndex, value: milestone.value)
         }
     }
 
     private func revealSuccessScreen() async {
+        HapticManager.shared.impact(.heavy)
         HapticManager.shared.notification(.success)
         progress = 1
         displayedPercentage = 100
@@ -194,7 +194,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         visibleBarCount = phaseCount
         phase = .complete
 
-        try? await Task.sleep(nanoseconds: 280_000_000)
+        try? await Task.sleep(nanoseconds: 200_000_000)
         guard !Task.isCancelled else { return }
 
         withAnimation(.spring(response: 0.62, dampingFraction: 0.84)) {
@@ -202,7 +202,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
             displayMode = .success
         }
 
-        try? await Task.sleep(nanoseconds: 140_000_000)
+        try? await Task.sleep(nanoseconds: 100_000_000)
         guard !Task.isCancelled else { return }
 
         withAnimation(.spring(response: 0.58, dampingFraction: 0.82)) {
@@ -210,7 +210,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
             continueUnlocked = true
         }
 
-        HapticManager.shared.impact(.light)
+        HapticManager.shared.impact(.medium)
     }
 
     private func waitWhilePaused() async throws {
@@ -249,6 +249,18 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         }
 
         try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    private func fireProgressHaptic(stepIndex: Int, value: Double) {
+        if value >= 0.999 {
+            HapticManager.shared.impact(.heavy)
+            return
+        }
+        if stepIndex % 3 == 0 {
+            HapticManager.shared.impact(.medium)
+            return
+        }
+        HapticManager.shared.impact(.light)
     }
 
     private func applyProgress(phaseIndex: Int, segmentProgress: Double, phasesCount: Int) {
@@ -314,7 +326,7 @@ private extension OnboardingProgramCreationViewModel {
     }
 
     static func irregularMilestones(forPhase phase: Int) -> [ProgressMilestone] {
-        let stepCount = 16 + phase * 2
+        let stepCount = 13 + phase
         var milestones: [ProgressMilestone] = []
 
         for step in 1...stepCount {
@@ -323,10 +335,10 @@ private extension OnboardingProgramCreationViewModel {
             let previous = milestones.last?.value ?? 0
             let value = max(previous, min(1, eased))
 
-            let baseDelay = UInt64.random(in: 118_000_000...205_000_000)
-            let stallMultiplier: UInt64 = (step % 7 == 0) ? 3 : 1
+            let baseDelay = UInt64.random(in: 88_000_000...150_000_000)
+            let stallMultiplier: UInt64 = (step % 7 == 0) ? 2 : 1
             let delayNs = baseDelay * stallMultiplier
-            let animationDuration = Double.random(in: 0.48...0.72)
+            let animationDuration = Double.random(in: 0.34...0.54)
 
             milestones.append(
                 ProgressMilestone(
@@ -340,8 +352,8 @@ private extension OnboardingProgramCreationViewModel {
         milestones.append(
             ProgressMilestone(
                 value: 1,
-                delayNs: 320_000_000,
-                animationDuration: 0.52
+                delayNs: 200_000_000,
+                animationDuration: 0.40
             )
         )
 

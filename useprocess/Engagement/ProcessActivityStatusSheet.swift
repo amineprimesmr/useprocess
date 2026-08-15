@@ -74,9 +74,8 @@ struct ProcessActivityStatusSheet: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(theme.primaryText)
                         .frame(width: 34, height: 34)
-                        .processGlassCircle(interactive: true)
                 }
-                .buttonStyle(.processPlain)
+                .processGlassButton(in: Circle())
                 Spacer()
             }
 
@@ -153,9 +152,8 @@ struct ProcessActivityStatusSheet: View {
                         .font(.system(size: openedFromIntro ? 14 : 13, weight: .bold))
                         .foregroundStyle(theme.primaryText)
                         .frame(width: 34, height: 34)
-                        .processGlassCircle(interactive: true)
                 }
-                .buttonStyle(.processPlain)
+                .processGlassButton(in: Circle())
                 .accessibilityLabel(openedFromIntro ? AppCopy.back : AppCopy.close)
 
                 Spacer()

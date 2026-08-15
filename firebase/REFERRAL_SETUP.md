@@ -1,14 +1,16 @@
 # Referral program — deployment
 
-Rewards are **100% Apple / RevenueCat** (promotional subscription time). No cash payouts.
+Rewards are **RevenueCat promotional entitlements** for the **referrer only**. No cash payouts. The invitee gets nothing.
 
 ## Reward rules
 
 | Who | Trigger | Reward |
 |-----|---------|--------|
-| **Invitee** (friend) | First Apple subscription after signup with code | **+7 days** (`weekly` promotional entitlement) |
-| **Referrer** (weekly/monthly plan) | Friend's first subscription | **+2 weeks** (`two_week`) |
-| **Referrer** (annual plan) | Friend's first subscription | **+1 month** (`monthly`) |
+| **Invitee** (friend) | — | **None** |
+| **Referrer** (weekly / monthly) | Friend's **paid** Apple subscription | **+1 month** (`monthly`) |
+| **Referrer** (annual) | Friend's **paid** Apple subscription | **+1 year** (`yearly`) |
+
+A trial, promotional grant, or unpaid signup never credits the referrer.
 
 ## One-command deploy
 
@@ -18,14 +20,6 @@ export REVENUECAT_SECRET_API_KEY='sk_…'   # RevenueCat → Project → API key
 ```
 
 The script builds functions, deploys Firestore rules, sets Firebase secrets, and deploys all 4 referral Cloud Functions.
-
-**Already deployed (2026-08-11):**
-- Firestore rules (referral collections)
-- `referralSyncProgram` + `referralRegister`
-- `deleteUserAccount` (cleans up `referralCodes/{code}` on delete)
-- `REVENUECAT_WEBHOOK_SECRET` (stored locally in `firebase/.referral-webhook-secret.local`, gitignored)
-
-**Still required:** set `REVENUECAT_SECRET_API_KEY`, then re-run the deploy script to publish reward functions.
 
 ## Firebase secrets
 
@@ -39,19 +33,22 @@ firebase functions:secrets:set REVENUECAT_WEBHOOK_SECRET
 
 ## RevenueCat webhook
 
-1. RevenueCat dashboard → Project → **Integrations** → **Webhooks**
-2. URL: `https://us-central1-useprocess-d4385.cloudfunctions.net/referralRevenueCatWebhook`
-3. Authorization header: `Bearer <value from firebase/.referral-webhook-secret.local>`
-4. Events: enable **INITIAL_PURCHASE** and **NON_RENEWING_PURCHASE**
+Already live on project Process (`ab4f477a`): integration **Process Referral** (`whintgrb008218f37`).
+
+- URL: `https://us-central1-useprocess-d4385.cloudfunctions.net/referralRevenueCatWebhook`
+- Authorization header: `Bearer <REVENUECAT_WEBHOOK_SECRET>` (same value as Firebase secret / `firebase/.referral-webhook-secret.local`)
+- Environment: production + sandbox
+- Events: all (the function only grants on paid `INITIAL_PURCHASE`, `NON_RENEWING_PURCHASE`, or trial-conversion `RENEWAL`)
+- Verified: deliveries return HTTP 200 (auth OK). Non-referred buyers get `{"ok":true,"skipped":"NOT_REFERRED"}`.
 
 ## Cloud Functions
 
-| Function | URL | Status |
-|----------|-----|--------|
-| `referralSyncProgram` | `https://us-central1-useprocess-d4385.cloudfunctions.net/referralSyncProgram` | Live |
-| `referralRegister` | `https://us-central1-useprocess-d4385.cloudfunctions.net/referralRegister` | Live |
-| `referralConfirmSubscription` | same pattern | Needs `REVENUECAT_SECRET_API_KEY` deploy |
-| `referralRevenueCatWebhook` | same pattern | Needs `REVENUECAT_SECRET_API_KEY` deploy |
+| Function | Role |
+|----------|------|
+| `referralSyncProgram` | Referrer publishes their code |
+| `referralRegister` | Invitee is attributed (pending, no reward) |
+| `referralConfirmSubscription` | Client retry after a paid purchase |
+| `referralRevenueCatWebhook` | Server-side grant on paid purchase |
 
 ## Firestore
 
@@ -65,15 +62,7 @@ firebase functions:secrets:set REVENUECAT_WEBHOOK_SECRET
 1. Referrer opens **Parrainage** → `referralSyncProgram`
 2. Friend installs via `join.useprocess.xyz/CODE` or `useprocess.xyz/join/CODE`
 3. On onboarding complete → `referralRegister` (retries on next sign-in if offline)
-4. Friend purchases → `referralConfirmSubscription` + webhook
-5. RevenueCat grants promotional time to both Firebase UIDs
+4. Friend **pays** → webhook + `referralConfirmSubscription`
+5. RevenueCat grants promotional time to the **referrer Firebase UID only**
 
 Ensure `Purchases.shared.logIn(firebaseUID)` stays enabled (already in `SubscriptionService`).
-
-## Website
-
-- `/join/:code` → `/?ref=:code` (Vercel redirect)
-- `join.useprocess.xyz` → SPA with referral banner
-- Universal Links: `website/public/.well-known/apple-app-site-association`
-
-Deploy website: push to main or `vercel --prod` from `website/`.

@@ -254,10 +254,9 @@ struct PlanMealsOverviewSheet: View {
             .padding(.trailing, 16)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
-            .processGlassEffect(in: Capsule(), interactive: true)
-            .shadow(color: Color.black.opacity(theme.isDark ? 0.42 : 0.14), radius: 18, y: 10)
         }
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: Capsule())
+        .shadow(color: Color.black.opacity(theme.isDark ? 0.42 : 0.14), radius: 18, y: 10)
         .padding(.horizontal, 20)
         .padding(.bottom, 10)
         .padding(.top, 6)

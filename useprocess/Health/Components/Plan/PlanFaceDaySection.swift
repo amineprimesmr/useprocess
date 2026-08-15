@@ -35,6 +35,9 @@ struct PlanFaceDaySection: View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             headerRow
 
+            PlanLymphCircuitStepsBar()
+                .padding(.top, 8)
+
             if items.isEmpty {
                 Text(AppCopy.t(
                     "Aucune action quotidienne planifiée.",
@@ -107,18 +110,21 @@ struct PlanFaceDaySection: View {
         Button {
             sessionLaunch = LymphCircuitSessionLaunch(startAt: nil)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Image(systemName: "play.fill")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                 Text(AppCopy.t("Lancer", en: "Start"))
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
             }
-            .foregroundStyle(theme.primaryText)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 11)
-            .background(HealthHubDesign.softCard(theme: theme))
+            .foregroundStyle(theme.isDark ? Color.black : Color.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                (theme.isDark ? Color.white : Color.black),
+                in: Capsule(style: .continuous)
+            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.processPlain)
         .accessibilityLabel(AppCopy.t("Lancer le circuit lymphatique", en: "Start lymphatic circuit"))
     }
 

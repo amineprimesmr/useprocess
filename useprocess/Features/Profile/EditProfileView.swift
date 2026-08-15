@@ -1,29 +1,12 @@
 import SwiftUI
 
-/// Hub réglages modal (depuis Accueil) — même contenu que l’onglet, avec en-tête fermer.
+/// Hub réglages — uniquement les catégories de paramètres.
 struct EditProfileView: View {
     var showsDismissHeader: Bool = true
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
     @State private var profileStore = SocialProfileStore.shared
-
-    private var profile: UnifiedUserProfile? {
-        profileService.currentProfile
-    }
-
-    private var initials: String {
-        let first = profile?.firstName.first.map(String.init) ?? "?"
-        return first.uppercased()
-    }
-
-    private var firstName: String {
-        let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-            ?? profileStore.profile?.displayName
-            ?? AppCopy.settings
-        return name.isEmpty ? AppCopy.settings : name
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,14 +20,10 @@ struct EditProfileView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    identityBlock
-
-                    ProcessSettingsPlanProgramSections()
-
                     ProfileSettingsHubLinksSection()
                 }
                 .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                .padding(.top, showsDismissHeader ? 0 : 16)
+                .padding(.top, showsDismissHeader ? 8 : 16)
                 .padding(.bottom, 32)
             }
             .scrollIndicators(.hidden)
@@ -62,32 +41,10 @@ struct EditProfileView: View {
             }
             profileStore.bind(unified: profileService.currentProfile)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
-            WelcomePlanStore.shared.reloadForCurrentUser()
-            FaceScanHistoryStore.shared.reloadForUser(
-                userId: UserScopedStorage.currentUserId()
-            )
         }
         .onAppear {
             profileStore.bind(unified: profileService.currentProfile)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
         }
-    }
-
-    private var identityBlock: some View {
-        VStack(spacing: 12) {
-            ProfileScanHistoryCarousel(
-                size: 132,
-                isPlaybackActive: true,
-                initials: initials
-            )
-
-            Text(firstName)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primaryText)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, showsDismissHeader ? 4 : 2)
-        .padding(.bottom, 4)
     }
 }

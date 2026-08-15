@@ -85,7 +85,14 @@ final class AppSession {
         UserDefaults.standard.set(true, forKey: onboardingStorageKey)
         AuthenticationManager.shared.completeOnboarding()
         ProcessHomeScreenQuickActions.syncForCurrentUser()
-        // Plus de questionnaire post-onboarding : accès direct à l'app.
+
+        // Le plan auto exige `hasCompletedOnboarding` — le poser avant, sinon le
+        // tutoriel accueil ne démarre jamais (plan nil) et l’UI restait verrouillée.
+        PlanHomeTutorialStore.shared.suppressPresentationForPreview(false)
+        PostOnboardingActivationService.prepareFirstAppEntry(
+            profile: UnifiedProfileService.shared.currentProfile
+        )
+        PlanHomeTutorialStore.shared.activateImmediatelyIfNeeded()
     }
 
     func completeWelcomePlanChat() {

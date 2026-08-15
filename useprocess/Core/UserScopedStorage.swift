@@ -38,6 +38,8 @@ enum UserScopedStorage {
         "plan.home.layout",
         "plan.home.tutorial.completed",
         "plan.home.face_scan.shows_video",
+        "plan.home.upgrade_pro.dismissed",
+        "plan.home.upgrade_pro.front_dismissed",
         "referral.program",
         "creator.mode.unlocked",
         "creator.mode.quality",

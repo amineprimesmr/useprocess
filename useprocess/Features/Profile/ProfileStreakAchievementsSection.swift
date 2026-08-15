@@ -32,7 +32,6 @@ struct ProfileStreakAchievementsSection: View {
     @Binding var selectedDate: Date
     /// Pause l’anim hors onglet / app inactive — la flamme bouge même si streak = 0.
     var isPlaybackActive: Bool = true
-    var onOpenSettings: (() -> Void)? = nil
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
@@ -120,30 +119,26 @@ struct ProfileStreakAchievementsSection: View {
     private var sectionHeader: some View {
         HStack(spacing: 12) {
             Color.clear
-                .frame(width: 40, height: 40)
+                .frame(width: 44, height: 44)
 
             Text(AppCopy.t("Série", en: "Streak"))
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(theme.primaryText)
                 .frame(maxWidth: .infinity)
 
-            if let onOpenSettings {
-                Button {
-                    HapticManager.shared.impact(.light)
-                    onOpenSettings()
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(theme.primaryText)
-                        .frame(width: 40, height: 40)
-                }
-                .processGlassIconButtonStyle()
-                .accessibilityLabel(AppCopy.settings)
-            } else {
-                Color.clear
-                    .frame(width: 40, height: 40)
+            PlanHomeCheckInButton {
+                openDailyCheckIn()
             }
         }
+    }
+
+    private func openDailyCheckIn() {
+        HapticManager.shared.impact(.medium)
+        streakStore.sync(from: planStore.plan)
+        ProcessEveningCheckInPresenter.shared.present(
+            targetDate: Date(),
+            isRequired: false
+        )
     }
 
     // MARK: - Hero flamme
@@ -177,9 +172,9 @@ struct ProfileStreakAchievementsSection: View {
                 }
 
                 VStack(spacing: 2) {
-                    ProfileStreakReliefNumber(value: snapshot.currentStreak, colorScheme: colorScheme)
+                    ProfileStreakReliefNumber(value: streakStore.displayStreak, colorScheme: colorScheme)
                         .contentTransition(.numericText())
-                        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: snapshot.currentStreak)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: streakStore.displayStreak)
 
                     Text(streakDayLabel)
                         .font(.system(size: 15, weight: .medium))
@@ -199,7 +194,7 @@ struct ProfileStreakAchievementsSection: View {
             .frame(maxWidth: .infinity)
             .frame(height: 248)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(snapshot.currentStreak) \(streakDayLabel)")
+            .accessibilityLabel("\(streakStore.displayStreak) \(streakDayLabel)")
 
             consistencyBadge
                 .offset(y: -4)
@@ -393,9 +388,9 @@ struct ProfileStreakAchievementsSection: View {
 
     private var statsGrid: some View {
         HStack(spacing: 10) {
-            statCard(icon: "flame.fill", value: snapshot.currentStreak, label: AppCopy.t("Série actuelle", en: "Current Streak"), accent: ProfileStreakDesign.accent(colorScheme: colorScheme))
-            statCard(icon: "rosette", value: snapshot.longestStreak, label: AppCopy.t("Meilleure série", en: "Best Streak"))
-            statCard(icon: "checkmark.circle.fill", value: snapshot.totalCompletedDays, label: AppCopy.t("Jours validés", en: "Completed Days"))
+            statCard(icon: "flame.fill", value: streakStore.displayStreak, label: AppCopy.t("Série actuelle", en: "Current Streak"), accent: ProfileStreakDesign.accent(colorScheme: colorScheme))
+            statCard(icon: "rosette", value: max(snapshot.longestStreak, streakStore.displayStreak), label: AppCopy.t("Meilleure série", en: "Best Streak"))
+            statCard(icon: "checkmark.circle.fill", value: streakStore.displayValidatedDays, label: AppCopy.t("Jours validés", en: "Completed Days"))
         }
     }
 

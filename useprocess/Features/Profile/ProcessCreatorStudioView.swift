@@ -129,13 +129,8 @@ struct ProcessCreatorStudioHubLink: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(.clear)
-                        .processGlassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
             }
-            .buttonStyle(.processPlain)
+            .processGlassButton(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 }

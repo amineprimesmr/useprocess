@@ -28,6 +28,8 @@ struct OnboardingFaceScanSessionView: View {
 
     var body: some View {
         ZStack {
+            FaceScanWhoopPalette.canvas.ignoresSafeArea()
+
             if let input = captureInput, completedResult == nil {
                 FaceScanAnalysisFlowView(
                     payload: input.payload,
@@ -80,7 +82,10 @@ struct OnboardingFaceScanSessionView: View {
                 .zIndex(0)
             }
         }
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .processClearUIKitHostingBackground()
+        .background(FaceScanWhoopPalette.canvas)
+        .presentationBackground(FaceScanWhoopPalette.canvas)
         .animation(Self.pagePushAnimation, value: captureInput?.payload.scanId)
         .animation(Self.pagePushAnimation, value: completedResult?.id)
         .onAppear {
@@ -98,19 +103,13 @@ struct OnboardingFaceScanSessionView: View {
         }
     }
 
-    private static let pagePushAnimation = Animation.easeInOut(duration: 0.36)
+    private static let pagePushAnimation = Animation.onboardingScanPagePush
 
     private static var analysisPushTransition: AnyTransition {
-        .asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        )
+        .onboardingScanPagePush(direction: .forward)
     }
 
     private static var capturePopTransition: AnyTransition {
-        .asymmetric(
-            insertion: .move(edge: .leading).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        )
+        .onboardingScanPagePush(direction: .backward)
     }
 }

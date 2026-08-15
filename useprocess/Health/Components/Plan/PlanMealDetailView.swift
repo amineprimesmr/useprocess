@@ -153,10 +153,9 @@ struct PlanMealDetailView: View {
             .foregroundStyle(theme.primaryText.opacity(0.92))
             .frame(maxWidth: .infinity)
             .frame(height: 52)
-            .processGlassButton(in: Capsule())
-            .shadow(color: Color.black.opacity(theme.isDark ? 0.42 : 0.14), radius: 18, y: 10)
         }
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: Capsule())
+        .shadow(color: Color.black.opacity(theme.isDark ? 0.42 : 0.14), radius: 18, y: 10)
         .padding(.horizontal, 20)
         .padding(.bottom, 12)
         .accessibilityLabel(AppCopy.t("Changez de repas", en: "Change meal"))

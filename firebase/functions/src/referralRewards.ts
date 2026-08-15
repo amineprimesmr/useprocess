@@ -1,5 +1,6 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
+import { isPaidPurchaseEvent } from "./revenueCat";
 import {
   httpStatusForError,
   processReferralRewards,
@@ -42,7 +43,11 @@ export const referralConfirmSubscription = onRequest(
       res.status(200).json({ ok: true, rewards });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
-      if (message === "NOT_REFERRED" || message === "ALREADY_REWARDED") {
+      if (
+        message === "NOT_REFERRED" ||
+        message === "ALREADY_REWARDED" ||
+        message === "SUBSCRIPTION_REQUIRED"
+      ) {
         res.status(200).json({ ok: true, skipped: message });
         return;
       }
@@ -83,19 +88,14 @@ export const referralRevenueCatWebhook = onRequest(
         return;
       }
 
-      const purchaseEvents = new Set([
-        "INITIAL_PURCHASE",
-        "NON_RENEWING_PURCHASE",
-        "RENEWAL",
-      ]);
+      const isInitialPaid =
+        eventType === "INITIAL_PURCHASE" && isPaidPurchaseEvent(event);
+      const isLifetime = eventType === "NON_RENEWING_PURCHASE";
+      const isTrialConversion =
+        eventType === "RENEWAL" && event?.is_trial_conversion === true;
 
-      if (!eventType || !purchaseEvents.has(eventType)) {
+      if (!isInitialPaid && !isLifetime && !isTrialConversion) {
         res.status(200).json({ ok: true, skipped: eventType ?? "UNKNOWN_EVENT" });
-        return;
-      }
-
-      if (eventType !== "INITIAL_PURCHASE" && eventType !== "NON_RENEWING_PURCHASE") {
-        res.status(200).json({ ok: true, skipped: eventType });
         return;
       }
 

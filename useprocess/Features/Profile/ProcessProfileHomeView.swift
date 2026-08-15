@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Onglet Réglages — scans + hub paramètres.
+/// Onglet Profil — scans + évolution du score debloat.
 struct ProcessProfileHomeView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
@@ -8,6 +8,7 @@ struct ProcessProfileHomeView: View {
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
     @State private var profileStore = SocialProfileStore.shared
+    @State private var showSettings = false
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
@@ -18,24 +19,17 @@ struct ProcessProfileHomeView: View {
         return first.uppercased()
     }
 
-    private var firstName: String {
-        let name = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-            ?? profileStore.profile?.displayName
-            ?? AppCopy.settings
-        return name.isEmpty ? AppCopy.settings : name
-    }
-
     var body: some View {
         processMainScrollableChrome(
             selectedSection: $selectedSection,
             pageSection: .profile
         ) {
             VStack(alignment: .leading, spacing: 20) {
+                profileHeader
+
                 identityBlock
 
-                ProcessSettingsPlanProgramSections()
-
-                ProfileSettingsHubLinksSection()
+                ProfileDebloatScoreSection()
             }
             .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
             .padding(.top, 16)
@@ -61,21 +55,42 @@ struct ProcessProfileHomeView: View {
             profileStore.bind(unified: profileService.currentProfile)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
         }
+        .fullScreenCover(isPresented: $showSettings) {
+            ProcessSettingsFullScreenView()
+                .environmentObject(profileService)
+                .environmentObject(HealthManager.shared)
+        }
+    }
+
+    private var profileHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text(AppCopy.t("Tes progrès", en: "Your progress"))
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(theme.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            Spacer(minLength: 8)
+
+            Button {
+                HapticManager.shared.impact(.light)
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .frame(width: 40, height: 40)
+            }
+            .processGlassIconButtonStyle()
+            .accessibilityLabel(AppCopy.settings)
+        }
     }
 
     private var identityBlock: some View {
-        VStack(spacing: 12) {
-            ProfileScanHistoryCarousel(
-                size: 132,
-                isPlaybackActive: isTabActive,
-                initials: initials
-            )
-
-            Text(firstName)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primaryText)
-                .multilineTextAlignment(.center)
-        }
+        ProfileScanEvolutionPair(
+            isPlaybackActive: isTabActive,
+            initials: initials
+        )
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
         .padding(.bottom, 4)

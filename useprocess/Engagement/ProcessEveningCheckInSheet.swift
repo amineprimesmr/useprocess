@@ -1,5 +1,17 @@
 import SwiftUI
 
+enum EveningCheckInFormHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private enum EveningCheckInIslandContentMetrics {
+    static let topPadding: CGFloat = 24
+    static let bottomPadding: CGFloat = 22
+}
+
 // MARK: - Modèle
 
 private enum EveningCheckInQuestion: String, CaseIterable, Identifiable {
@@ -44,6 +56,7 @@ struct ProcessEveningCheckInIslandContent: View {
     var targetDate: Date = Date()
     var isRequired: Bool = false
     var isExpanded: Bool = true
+    var submitShakeNudge: Int = 0
     var onSubmitted: (() -> Void)? = nil
     var onFinished: (() -> Void)? = nil
 
@@ -56,6 +69,7 @@ struct ProcessEveningCheckInIslandContent: View {
     @State private var validationTask: Task<Void, Never>?
     @State private var submittedDayValidated = false
     @State private var hydrationPrefill: ProcessHydrationEveningPrefill?
+    @State private var submitShakeTicks: CGFloat = 0
 
     private enum Phase: Equatable {
         case form
@@ -86,6 +100,7 @@ struct ProcessEveningCheckInIslandContent: View {
             switch phase {
             case .form:
                 formContent
+                    .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             case .analyzing:
                 analyzingContent
@@ -96,19 +111,18 @@ struct ProcessEveningCheckInIslandContent: View {
             }
         }
         .animation(.spring(response: 0.46, dampingFraction: 0.86), value: phase)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.top, 28)
-        .padding(.bottom, 20)
+        .frame(maxWidth: .infinity, maxHeight: phase == .form ? nil : .infinity, alignment: .top)
+        .padding(.top, EveningCheckInIslandContentMetrics.topPadding)
+        .padding(.bottom, EveningCheckInIslandContentMetrics.bottomPadding)
         .onAppear {
             applyInitialAnswers()
         }
         .onChange(of: isExpanded) { _, expanded in
-            if expanded {
-                applyInitialAnswers()
-            }
+            guard expanded, phase == .form else { return }
+            applyInitialAnswers()
         }
-        .onDisappear {
-            validationTask?.cancel()
+        .onChange(of: submitShakeNudge) { _, _ in
+            shakeSubmitButton()
         }
     }
 
@@ -118,8 +132,7 @@ struct ProcessEveningCheckInIslandContent: View {
         VStack(spacing: 0) {
             headerRow
 
-            ScrollView {
-                VStack(spacing: 10) {
+            VStack(spacing: 14) {
                 if let hydrationPrefill {
                     EveningCheckInHabitRow(
                         title: AppCopy.t("\(ProcessDailyTargets.hydrationLabel) d'eau", en: "\(ProcessDailyTargets.hydrationLabel) of water"),
@@ -130,28 +143,34 @@ struct ProcessEveningCheckInIslandContent: View {
                     )
                 }
 
-                    ForEach(visibleQuestions) { question in
-                        EveningCheckInHabitRow(
-                            title: question.title,
-                            systemImage: question.systemImage,
-                            isChecked: answers[question.id] == question.yesValue,
-                            isLocked: false
-                        ) {
-                            toggleQuestion(question)
-                        }
+                ForEach(visibleQuestions) { question in
+                    EveningCheckInHabitRow(
+                        title: question.title,
+                        systemImage: question.systemImage,
+                        isChecked: answers[question.id] == question.yesValue,
+                        isLocked: false
+                    ) {
+                        toggleQuestion(question)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 20)
-                .padding(.bottom, 4)
             }
-            .scrollIndicators(.hidden)
-            .scrollBounceBehavior(.basedOnSize)
-            .padding(.top, 6)
+            .padding(.horizontal, 18)
+            .padding(.top, 18)
+            .padding(.bottom, 8)
 
             footerBlock
-                .padding(.top, 6)
+                .padding(.top, 14)
                 .padding(.bottom, 4)
+        }
+        .background {
+            GeometryReader { geo in
+                Color.clear.preference(
+                    key: EveningCheckInFormHeightKey.self,
+                    value: geo.size.height
+                        + EveningCheckInIslandContentMetrics.topPadding
+                        + EveningCheckInIslandContentMetrics.bottomPadding
+                )
+            }
         }
     }
 
@@ -171,30 +190,29 @@ struct ProcessEveningCheckInIslandContent: View {
     }
 
     private var headerRow: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             EveningCheckInProgressRing(
                 done: checklistDoneCount,
                 total: max(checklistTotalCount, 1)
             )
-            .padding(.top, 4)
-            .padding(.bottom, 6)
+            .padding(.bottom, 4)
 
             Text(titleText)
-                .font(.system(size: 19, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
             Text(subtitleText)
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(.white.opacity(0.78))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 10)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 22)
-        .padding(.top, 16)
-        .padding(.bottom, 10)
+        .padding(.top, 8)
+        .padding(.bottom, 8)
     }
 
     private var titleText: String {
@@ -233,9 +251,6 @@ struct ProcessEveningCheckInIslandContent: View {
             next[question.id] = question.noValue
         }
         answers = next
-        if phase != .analyzing {
-            phase = .form
-        }
     }
 
     private func morningRoutinePrefillAnswer(for date: Date) -> String? {
@@ -297,6 +312,7 @@ struct ProcessEveningCheckInIslandContent: View {
                 .contentShape(shape)
         }
         .buttonStyle(.processPlain)
+        .modifier(EveningCheckInSubmitShakeEffect(shakes: submitShakeTicks))
         .allowsHitTesting(phase == .form)
         .accessibilityLabel(AppCopy.t("Valider mon jour", en: "Validate My Day"))
         .padding(.horizontal, 16)
@@ -430,6 +446,19 @@ struct ProcessEveningCheckInIslandContent: View {
             answers[question.id] = question.noValue
         }
         HapticManager.shared.impact(.medium)
+
+        // Persister tout de suite — sinon un remount / cancel laisse le jour non validé.
+        eveningStore.markSubmitted(answers: answers, for: targetDate)
+        submittedDayValidated = ProcessDebloatTrajectoryStore.shared
+            .record(for: targetDate)?
+            .countsAsValidatedDay(
+                consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
+                    before: ProcessStreakStore.dayKey(for: targetDate),
+                    in: ProcessDebloatTrajectoryStore.shared.allRecordsByDay
+                )
+            ) == true
+        onSubmitted?()
+
         phase = .analyzing
         analyzingLabel = AppCopy.t("Enregistrement…", en: "Saving…")
 
@@ -442,17 +471,6 @@ struct ProcessEveningCheckInIslandContent: View {
             try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
-            eveningStore.markSubmitted(answers: answers, for: targetDate)
-            submittedDayValidated = ProcessDebloatTrajectoryStore.shared
-                .record(for: targetDate)?
-                .countsAsValidatedDay(
-                    consecutiveCardioMissesBefore: ProcessDebloatValidation.consecutiveCardioMisses(
-                        before: ProcessStreakStore.dayKey(for: targetDate),
-                        in: ProcessDebloatTrajectoryStore.shared.allRecordsByDay
-                    )
-                ) == true
-            onSubmitted?()
-
             withAnimation(.spring(response: 0.44, dampingFraction: 0.82)) {
                 phase = .validated
             }
@@ -464,7 +482,7 @@ struct ProcessEveningCheckInIslandContent: View {
                 HapticManager.shared.notification(.warning)
             }
 
-            try? await Task.sleep(for: .seconds(2.2))
+            try? await Task.sleep(for: .seconds(1.6))
             guard !Task.isCancelled else { return }
             finishAndDismiss()
         }
@@ -475,6 +493,13 @@ struct ProcessEveningCheckInIslandContent: View {
         onFinished?()
     }
 
+    private func shakeSubmitButton() {
+        HapticManager.shared.notification(.warning)
+        withAnimation(.default) {
+            submitShakeTicks += 1
+        }
+    }
+
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = ProcessAppLanguage.shared.locale
@@ -483,14 +508,34 @@ struct ProcessEveningCheckInIslandContent: View {
     }()
 }
 
+private struct EveningCheckInSubmitShakeEffect: GeometryEffect {
+    var shakes: CGFloat
+    var amount: CGFloat = 10
+    var shakesPerUnit: CGFloat = 3
+
+    var animatableData: CGFloat {
+        get { shakes }
+        set { shakes = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(
+            CGAffineTransform(
+                translationX: amount * sin(shakes * .pi * shakesPerUnit),
+                y: 0
+            )
+        )
+    }
+}
+
 // MARK: - Progress ring (header)
 
 private struct EveningCheckInProgressRing: View {
     let done: Int
     let total: Int
 
-    private let ringSize: CGFloat = 78
-    private let lineWidth: CGFloat = 4.5
+    private let ringSize: CGFloat = 88
+    private let lineWidth: CGFloat = 5
     private let arcBlue = Color(red: 0.58, green: 0.76, blue: 1.0)
 
     private var progress: CGFloat {
@@ -634,9 +679,9 @@ private struct EveningCheckInHabitRow: View {
                 checkControl
                     .offset(y: 2)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(minHeight: 58)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+            .frame(minHeight: 68)
             .background {
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(Color.white.opacity(isChecked ? 0.05 : 0.08))
@@ -927,9 +972,8 @@ struct ProcessEveningCheckInEntryButton: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(entryBackground)
         }
-        .buttonStyle(ProcessGlassPressStyle())
+        .processGlassButton(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityLabel(isDayValidated ? AppCopy.t("Jour validé", en: "Day Validated") : AppCopy.t("Ouvrir le check du jour", en: "Open Today's Check-In"))
     }
 
@@ -963,13 +1007,5 @@ struct ProcessEveningCheckInEntryButton: View {
             return AppCopy.t("Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée.", en: "Water \(ProcessDailyTargets.hydrationLabel) · meal · incline walk.")
         }
         return AppCopy.t("Eau \(ProcessDailyTargets.hydrationLabel) · repas · marche inclinée \(DebloatCardioDayCatalog.durationMinutes) min.", en: "Water \(ProcessDailyTargets.hydrationLabel) · meal · incline walk \(DebloatCardioDayCatalog.durationMinutes) min.")
-    }
-
-    @ViewBuilder
-    private var entryBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
-        shape
-            .fill(.clear)
-            .processGlassEffect(in: shape, interactive: true)
     }
 }

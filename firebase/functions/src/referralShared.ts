@@ -3,15 +3,14 @@ import {
   activePremiumProductId,
   fetchSubscriber,
   grantPromotionalEntitlement,
-  hasActivePremium,
+  hasPaidPremium,
   isAnnualProduct,
   type RevenueCatDuration,
 } from "./revenueCat";
 
 export const PREMIUM_ENTITLEMENT = "premium";
-export const INVITEE_REWARD: RevenueCatDuration = "weekly";
-export const REFERRER_REWARD_SHORT: RevenueCatDuration = "two_week";
-export const REFERRER_REWARD_ANNUAL: RevenueCatDuration = "monthly";
+export const REFERRER_REWARD_SHORT: RevenueCatDuration = "monthly";
+export const REFERRER_REWARD_ANNUAL: RevenueCatDuration = "yearly";
 
 export type ReferralStatus = "pending" | "accepted";
 
@@ -22,7 +21,7 @@ export interface ReferralInviteDoc {
   invitedAt: admin.firestore.Timestamp;
   status: ReferralStatus;
   acceptedAt?: admin.firestore.Timestamp;
-  inviteeRewardDuration?: RevenueCatDuration;
+  inviteeRewardDuration?: RevenueCatDuration | null;
   referrerRewardDuration?: RevenueCatDuration;
 }
 
@@ -203,104 +202,141 @@ async function referrerRewardDuration(
       ? REFERRER_REWARD_ANNUAL
       : REFERRER_REWARD_SHORT;
   } catch (error) {
-    console.warn("[referral] Could not resolve referrer plan, defaulting to two_week", error);
+    console.warn("[referral] Could not resolve referrer plan, defaulting to monthly", error);
     return REFERRER_REWARD_SHORT;
   }
+}
+
+async function claimReferralReward(referredUserId: string): Promise<{
+  referrerUserId: string;
+  referralCode: string;
+  referredMetaRef: admin.firestore.DocumentReference;
+}> {
+  const referredMetaRef = db()
+    .collection("users")
+    .doc(referredUserId)
+    .collection("referralMeta")
+    .doc("referredBy");
+
+  const claimed = await db().runTransaction(async (transaction) => {
+    const referredMeta = await transaction.get(referredMetaRef);
+    if (!referredMeta.exists) {
+      throw new Error("NOT_REFERRED");
+    }
+
+    const meta = referredMeta.data() ?? {};
+    if (meta.status === "accepted") {
+      throw new Error("ALREADY_REWARDED");
+    }
+    if (meta.status === "processing") {
+      const started = meta.processingAt?.toMillis?.() as number | undefined;
+      if (started && Date.now() - started < 120_000) {
+        throw new Error("ALREADY_REWARDED");
+      }
+    }
+
+    const referrerUserId = meta.referrerUserId as string | undefined;
+    const referralCode = meta.referralCode as string | undefined;
+    if (!referrerUserId || !referralCode) {
+      throw new Error("NOT_REFERRED");
+    }
+
+    transaction.set(
+      referredMetaRef,
+      {
+        status: "processing",
+        processingAt: admin.firestore.Timestamp.now(),
+      },
+      { merge: true }
+    );
+
+    return { referrerUserId, referralCode };
+  });
+
+  return { ...claimed, referredMetaRef };
+}
+
+async function revertReferralClaim(
+  referredMetaRef: admin.firestore.DocumentReference
+): Promise<void> {
+  await referredMetaRef.set(
+    {
+      status: "pending",
+      processingAt: admin.firestore.FieldValue.delete(),
+    },
+    { merge: true }
+  );
 }
 
 export async function processReferralRewards(params: {
   referredUserId: string;
   secretKey: string;
-}): Promise<{ inviteeReward: RevenueCatDuration; referrerReward: RevenueCatDuration }> {
-  const referredMetaRef = db()
-    .collection("users")
-    .doc(params.referredUserId)
-    .collection("referralMeta")
-    .doc("referredBy");
+}): Promise<{ referrerReward: RevenueCatDuration }> {
+  const claim = await claimReferralReward(params.referredUserId);
 
-  const referredMeta = await referredMetaRef.get();
-  if (!referredMeta.exists) {
-    throw new Error("NOT_REFERRED");
+  let referrerDuration: RevenueCatDuration;
+  try {
+    const subscriber = await fetchSubscriber(params.referredUserId, params.secretKey);
+    if (!hasPaidPremium(subscriber, PREMIUM_ENTITLEMENT)) {
+      throw new Error("SUBSCRIPTION_REQUIRED");
+    }
+    referrerDuration = await referrerRewardDuration(
+      claim.referrerUserId,
+      params.secretKey
+    );
+  } catch (error) {
+    await revertReferralClaim(claim.referredMetaRef);
+    throw error;
   }
 
-  const meta = referredMeta.data() ?? {};
-  if (meta.status === "accepted") {
-    throw new Error("ALREADY_REWARDED");
+  try {
+    await grantPromotionalEntitlement(
+      claim.referrerUserId,
+      PREMIUM_ENTITLEMENT,
+      referrerDuration,
+      params.secretKey
+    );
+  } catch (error) {
+    await revertReferralClaim(claim.referredMetaRef);
+    throw error;
   }
-
-  const referrerUserId = meta.referrerUserId as string | undefined;
-  const referralCode = meta.referralCode as string | undefined;
-  if (!referrerUserId || !referralCode) {
-    throw new Error("NOT_REFERRED");
-  }
-
-  const subscriber = await fetchSubscriber(params.referredUserId, params.secretKey);
-  if (!hasActivePremium(subscriber, PREMIUM_ENTITLEMENT)) {
-    throw new Error("SUBSCRIPTION_REQUIRED");
-  }
-
-  const referrerDuration = await referrerRewardDuration(referrerUserId, params.secretKey);
-  const inviteeDuration = INVITEE_REWARD;
-
-  await grantPromotionalEntitlement(
-    params.referredUserId,
-    PREMIUM_ENTITLEMENT,
-    inviteeDuration,
-    params.secretKey
-  );
-  await grantPromotionalEntitlement(
-    referrerUserId,
-    PREMIUM_ENTITLEMENT,
-    referrerDuration,
-    params.secretKey
-  );
 
   const now = admin.firestore.Timestamp.now();
   const inviteRef = db()
     .collection("users")
-    .doc(referrerUserId)
+    .doc(claim.referrerUserId)
     .collection("referralInvites")
     .doc(params.referredUserId);
+  const acceptedPayload = {
+    status: "accepted" as const,
+    acceptedAt: now,
+    inviteeRewardDuration: null,
+    referrerRewardDuration: referrerDuration,
+  };
 
-  await db().runTransaction(async (transaction) => {
-    transaction.set(
-      referredMetaRef,
-      {
-        status: "accepted",
-        acceptedAt: now,
-        inviteeRewardDuration: inviteeDuration,
-        referrerRewardDuration: referrerDuration,
-      },
-      { merge: true }
-    );
+  try {
+    await db().runTransaction(async (transaction) => {
+      transaction.set(claim.referredMetaRef, acceptedPayload, { merge: true });
+      transaction.set(inviteRef, acceptedPayload, { merge: true });
+      transaction.set(
+        db()
+          .collection("users")
+          .doc(claim.referrerUserId)
+          .collection("referralMeta")
+          .doc("program"),
+        {
+          acceptedCount: admin.firestore.FieldValue.increment(1),
+          pendingCount: admin.firestore.FieldValue.increment(-1),
+          lastRewardAt: now,
+        },
+        { merge: true }
+      );
+    });
+  } catch (error) {
+    console.error("[referral] granted referrer time but failed to persist", error);
+    await claim.referredMetaRef.set(acceptedPayload, { merge: true });
+    await inviteRef.set(acceptedPayload, { merge: true });
+  }
 
-    transaction.set(
-      inviteRef,
-      {
-        status: "accepted",
-        acceptedAt: now,
-        inviteeRewardDuration: inviteeDuration,
-        referrerRewardDuration: referrerDuration,
-      },
-      { merge: true }
-    );
-
-    const programRef = db()
-      .collection("users")
-      .doc(referrerUserId)
-      .collection("referralMeta")
-      .doc("program");
-
-    transaction.set(
-      programRef,
-      {
-        acceptedCount: admin.firestore.FieldValue.increment(1),
-        pendingCount: admin.firestore.FieldValue.increment(-1),
-        lastRewardAt: now,
-      },
-      { merge: true }
-    );
-  });
-
-  return { inviteeReward: inviteeDuration, referrerReward: referrerDuration };
+  return { referrerReward: referrerDuration };
 }

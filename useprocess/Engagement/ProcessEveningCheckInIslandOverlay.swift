@@ -22,6 +22,7 @@ private struct ProcessEveningCheckInIslandModifier: ViewModifier {
         @Bindable var presenter = presenter
         content
             .blur(radius: presenter.presentation != nil && isExpanded ? 7 : 0)
+            .allowsHitTesting(presenter.presentation == nil)
             .animation(.easeOut(duration: 0.32), value: isExpanded)
             .overlay {
                 if let presentation = presenter.presentation {
@@ -37,15 +38,16 @@ private struct ProcessEveningCheckInIslandModifier: ViewModifier {
                         }
                     )
                     .transition(.opacity)
-                    .zIndex(900)
+                    .zIndex(950)
                 }
             }
-            .onChange(of: presenter.presentation?.id) { _, newID in
+            .onChange(of: presenter.presentation?.id) { oldID, newID in
                 collapseTask?.cancel()
                 if newID != nil {
-                    didSubmitCurrentSession = false
+                    if oldID == nil {
+                        didSubmitCurrentSession = false
+                    }
                     isExpanded = false
-                    // Morph pill → grande section.
                     DispatchQueue.main.async {
                         withAnimation(.bouncy(duration: 0.42, extraBounce: 0.04)) {
                             isExpanded = true
@@ -59,15 +61,16 @@ private struct ProcessEveningCheckInIslandModifier: ViewModifier {
     }
 
     private func requestDismiss(allowWithoutSubmit: Bool) {
-        guard presenter.presentation != nil else { return }
-        if !allowWithoutSubmit, !didSubmitCurrentSession { return }
+        guard let presentation = presenter.presentation else { return }
+        let submitted = didSubmitCurrentSession
+            || ProcessEveningCheckInStore.shared.hasSubmitted(on: presentation.targetDate)
+        if !allowWithoutSubmit, !submitted { return }
 
         collapseTask?.cancel()
         withAnimation(.bouncy(duration: 0.32, extraBounce: 0)) {
             isExpanded = false
         }
 
-        let submitted = didSubmitCurrentSession
         collapseTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(320))
             guard !Task.isCancelled else { return }
@@ -92,8 +95,13 @@ private struct ProcessEveningCheckInIslandRoot: View {
         static let cornerExpanded: CGFloat = 34
         static let horizontalInset: CGFloat = 12
         static let bottomInset: CGFloat = 28
-        static let expandedHeightRatio: CGFloat = 0.84
+        /// Plafond — assez d’air pour le formulaire aéré.
+        static let expandedHeightRatio: CGFloat = 0.68
+        static let expandedFallbackHeight: CGFloat = 420
     }
+
+    @State private var measuredFormHeight: CGFloat = 0
+    @State private var submitShakeNudge = 0
 
     var body: some View {
         GeometryReader { proxy in
@@ -104,10 +112,13 @@ private struct ProcessEveningCheckInIslandRoot: View {
                 ? (9 + max(safeArea.top - 59, 0))
                 : safeArea.top + 8
             let expandedWidth = size.width - (Metrics.horizontalInset * 2)
-            // Plus de hauteur pour header + 5 lignes + CTA (petits écrans inclus).
-            let expandedHeight = min(
+            let maxExpanded = min(
                 size.height - topOffset - Metrics.bottomInset,
                 size.height * Metrics.expandedHeightRatio
+            )
+            let expandedHeight = min(
+                measuredFormHeight > 1 ? measuredFormHeight : Metrics.expandedFallbackHeight,
+                maxExpanded
             )
             let canDismissByBackdrop = !presentation.isRequired
 
@@ -117,12 +128,14 @@ private struct ProcessEveningCheckInIslandRoot: View {
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        guard canDismissByBackdrop else { return }
-                        HapticManager.shared.impact(.light)
-                        onRequestDismiss()
+                        if canDismissByBackdrop {
+                            HapticManager.shared.impact(.light)
+                            onRequestDismiss()
+                        } else {
+                            submitShakeNudge += 1
+                        }
                     }
-                    // Ne capte pas les taps sur la capsule (placée au-dessus).
-                    .allowsHitTesting(isExpanded && canDismissByBackdrop)
+                    .allowsHitTesting(isExpanded)
 
                 islandCapsule(
                     haveDynamicIsland: haveDynamicIsland,
@@ -159,15 +172,21 @@ private struct ProcessEveningCheckInIslandRoot: View {
                 targetDate: presentation.targetDate,
                 isRequired: presentation.isRequired,
                 isExpanded: isExpanded,
+                submitShakeNudge: submitShakeNudge,
                 onSubmitted: onSubmitted,
                 onFinished: onRequestDismiss
             )
-            .frame(width: expandedWidth, height: expandedHeight)
+            .frame(width: expandedWidth, height: expandedHeight, alignment: .top)
             .opacity(isExpanded ? 1 : 0)
             .blur(radius: isExpanded ? 0 : 8)
             .allowsHitTesting(isExpanded)
+            .onPreferenceChange(EveningCheckInFormHeightKey.self) { height in
+                guard height > 1, abs(height - measuredFormHeight) > 0.5 else { return }
+                measuredFormHeight = height
+            }
         }
         .frame(width: width, height: height)
+        .animation(.snappy(duration: 0.22), value: measuredFormHeight)
         .clipShape(shape)
         .contentShape(shape)
         .overlay {

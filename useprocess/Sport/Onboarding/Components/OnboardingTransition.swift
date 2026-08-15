@@ -96,6 +96,27 @@ extension View {
     }
 }
 
+// MARK: - Push pages scan (capture → analyse → résultats)
+
+extension Animation {
+    /// Même courbe que `OnboardingFaceScanSessionView`.
+    static var onboardingScanPagePush: Animation {
+        .easeInOut(duration: 0.36)
+    }
+}
+
+extension AnyTransition {
+    /// Insertion depuis le bord avant, sortie vers le bord arrière — comme le flux scan.
+    static func onboardingScanPagePush(direction: TransitionDirection) -> AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: direction == .forward ? .trailing : .leading)
+                .combined(with: .opacity),
+            removal: .move(edge: direction == .forward ? .leading : .trailing)
+                .combined(with: .opacity)
+        )
+    }
+}
+
 // MARK: - Animation personnalisée ultra fluide
 extension Animation {
     // ✅ Animation principale ULTRA VISUELLE - plus longue et plus fluide

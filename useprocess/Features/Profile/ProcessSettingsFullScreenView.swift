@@ -36,7 +36,7 @@ struct ProcessSettingsFullScreenView: View {
     }
 }
 
-/// Onglet Réglages — scans + hub paramètres.
+/// Onglet Profil — progrès, scans, insight temps.
 struct ProcessProfileSettingsTabView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true

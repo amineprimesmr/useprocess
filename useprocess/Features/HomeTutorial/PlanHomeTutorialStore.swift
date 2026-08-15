@@ -21,6 +21,19 @@ final class PlanHomeTutorialStore {
         reload()
     }
 
+    /// Layout accueil contraint uniquement pendant les étapes Plan du tutoriel.
+    /// Ne jamais verrouiller l’app si le tutoriel n’est pas réellement actif
+    /// (sinon tabs masqués + pas de CTA Continuer = deadlock).
+    var constrainsHomeLayout: Bool {
+        guard isActive, !isPreviewSuppressed else { return false }
+        return !currentStep.isTabStep
+    }
+
+    /// Le bilan du soir passe après le tutoriel première visite.
+    var shouldDeferEveningCheckIn: Bool {
+        isActive || (!hasCompleted && !isPreviewSuppressed)
+    }
+
     var steps: [PlanHomeTutorialStep] {
         PlanHomeTutorialStep.allCases
     }
@@ -37,7 +50,7 @@ final class PlanHomeTutorialStore {
 
     /// Strip nutrition : carte repas visible à partir de l'étape repas.
     var showsMealCardsInCarousel: Bool {
-        guard isActive else { return true }
+        guard isActive, constrainsHomeLayout else { return true }
         switch currentStep {
         case .hydration: return false
         default: return true
@@ -73,15 +86,31 @@ final class PlanHomeTutorialStore {
     /// Lance le tutoriel dès que le plan est prêt (après check-in du soir s'il bloque).
     func schedulePresentationIfNeeded(planAvailable: Bool, preferImmediate: Bool = false) {
         presentationTask?.cancel()
-        guard !isPreviewSuppressed, planAvailable, !hasCompleted, !isActive else { return }
+        guard !isPreviewSuppressed, !hasCompleted, !isActive else { return }
+        var planReady = planAvailable
+        if !planReady {
+            ensureWelcomePlanIfNeeded()
+            planReady = WelcomePlanStore.shared.plan != nil
+        }
+        guard planReady else { return }
         guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
 
-        let delayMs: UInt64 = preferImmediate ? 140 : 420
-        presentationTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(delayMs))
-            guard !Task.isCancelled, !isPreviewSuppressed, !hasCompleted, !isActive else { return }
-            beginPresentationIfPossible()
+        if preferImmediate {
+            beginPresentationIfPossible(animated: false)
+            return
         }
+
+        presentationTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            guard !Task.isCancelled, !self.isPreviewSuppressed, !self.hasCompleted, !self.isActive else { return }
+            self.beginPresentationIfPossible(animated: false)
+        }
+    }
+
+    /// Active le tutoriel tout de suite — à appeler avant le 1er frame de l’app.
+    func activateImmediatelyIfNeeded() {
+        ensureWelcomePlanIfNeeded()
+        schedulePresentationIfNeeded(planAvailable: WelcomePlanStore.shared.plan != nil, preferImmediate: true)
     }
 
     func cancelScheduledPresentation() {
@@ -89,26 +118,43 @@ final class PlanHomeTutorialStore {
         presentationTask = nil
     }
 
-    private func beginPresentationIfPossible() {
+    private func ensureWelcomePlanIfNeeded() {
+        guard WelcomePlanStore.shared.plan == nil else { return }
+        WelcomePlanStore.shared.autoCompleteWelcomePlanIfNeeded(
+            profile: UnifiedProfileService.shared.currentProfile
+        )
+    }
+
+    private func beginPresentationIfPossible(animated: Bool = true) {
         guard !isPreviewSuppressed, !hasCompleted, !isActive else { return }
+        ensureWelcomePlanIfNeeded()
         guard WelcomePlanStore.shared.plan != nil else { return }
         guard ProcessEveningCheckInPresenter.shared.presentation == nil else { return }
 
         presentationTask = nil
-        withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
-            currentStepIndex = 0
-            isActive = true
-            applyTab(for: currentStep)
+        let apply = {
+            self.currentStepIndex = 0
+            self.isActive = true
+            self.applyTab(for: self.currentStep)
         }
-        HapticManager.shared.impact(.light)
+        if animated {
+            withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
+                apply()
+            }
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                apply()
+            }
+        }
         if currentStep.focusesHydrationCarousel {
             CoachPlanNavigationBridge.shared.focusHydrationOnHome()
         }
     }
 
     func shouldDisplay(section: PlanHomeSectionKind) -> Bool {
-        guard isActive else { return true }
-        if currentStep.isTabStep { return true }
+        guard constrainsHomeLayout else { return true }
 
         guard let through = currentStep.revealThroughSection,
               let throughIndex = PlanHomeTutorialStep.homeRevealOrder.firstIndex(of: through),
@@ -148,8 +194,8 @@ final class PlanHomeTutorialStore {
         }
 
         withAnimation(.spring(response: 0.52, dampingFraction: 0.86)) {
-            currentStepIndex += 1
-            applyTab(for: currentStep)
+            self.currentStepIndex += 1
+            self.applyTab(for: self.currentStep)
         }
 
         if currentStep.focusesHydrationCarousel {

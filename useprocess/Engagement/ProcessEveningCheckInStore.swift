@@ -59,10 +59,14 @@ final class ProcessEveningCheckInStore {
     func markSubmitted(answers: [String: String] = [:], for date: Date = Date()) {
         let key = ProcessStreakStore.dayKey(for: date)
         let sanitized = sanitizedAnswers(answers)
-        submittedDayKeys.insert(key)
-        var record = recordsByDay[key] ?? ProcessEveningCheckInDayRecord()
+        var keys = submittedDayKeys
+        keys.insert(key)
+        submittedDayKeys = keys
+        var records = recordsByDay
+        var record = records[key] ?? ProcessEveningCheckInDayRecord()
         record.answers = sanitized
-        recordsByDay[key] = record
+        records[key] = record
+        recordsByDay = records
         persist()
         applyAnswersToPlan(sanitized, for: date)
         ProcessDebloatTrajectoryStore.shared.recordCheckIn(answers: sanitized, for: date)

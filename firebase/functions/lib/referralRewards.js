@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
+const revenueCat_1 = require("./revenueCat");
 const referralShared_1 = require("./referralShared");
 const revenueCatSecretKey = (0, params_1.defineSecret)("REVENUECAT_SECRET_API_KEY");
 const revenueCatWebhookSecret = (0, params_1.defineSecret)("REVENUECAT_WEBHOOK_SECRET");
@@ -33,7 +34,9 @@ exports.referralConfirmSubscription = (0, https_1.onRequest)({
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";
-        if (message === "NOT_REFERRED" || message === "ALREADY_REWARDED") {
+        if (message === "NOT_REFERRED" ||
+            message === "ALREADY_REWARDED" ||
+            message === "SUBSCRIPTION_REQUIRED") {
             res.status(200).json({ ok: true, skipped: message });
             return;
         }
@@ -66,17 +69,11 @@ exports.referralRevenueCatWebhook = (0, https_1.onRequest)({
             res.status(200).json({ ok: true, skipped: "NO_APP_USER_ID" });
             return;
         }
-        const purchaseEvents = new Set([
-            "INITIAL_PURCHASE",
-            "NON_RENEWING_PURCHASE",
-            "RENEWAL",
-        ]);
-        if (!eventType || !purchaseEvents.has(eventType)) {
+        const isInitialPaid = eventType === "INITIAL_PURCHASE" && (0, revenueCat_1.isPaidPurchaseEvent)(event);
+        const isLifetime = eventType === "NON_RENEWING_PURCHASE";
+        const isTrialConversion = eventType === "RENEWAL" && event?.is_trial_conversion === true;
+        if (!isInitialPaid && !isLifetime && !isTrialConversion) {
             res.status(200).json({ ok: true, skipped: eventType ?? "UNKNOWN_EVENT" });
-            return;
-        }
-        if (eventType !== "INITIAL_PURCHASE" && eventType !== "NON_RENEWING_PURCHASE") {
-            res.status(200).json({ ok: true, skipped: eventType });
             return;
         }
         const rewards = await (0, referralShared_1.processReferralRewards)({
