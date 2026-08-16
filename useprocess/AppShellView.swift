@@ -7,6 +7,7 @@ struct AppShellView: View {
     @Bindable private var session = AppSession.shared
     @Bindable private var launchRouter = AppLaunchRouter.shared
     @Bindable private var appLanguage = ProcessAppLanguage.shared
+    @ObservedObject private var subscriptionService = SubscriptionService.shared
     @State private var didPrepareMainApp = false
     @State private var didPrepareCoachRuntime = false
     /// Armé après le cold start — évite de monter le deferral Home pendant le 1er frame Review.
@@ -22,6 +23,7 @@ struct AppShellView: View {
 
             if session.hasCompletedOnboarding {
                 MainAppView()
+                    .processAppStoreReviewPrompts()
                     .transition(.opacity)
                     .id("main-app-\(appLanguage.code.rawValue)")
             } else {
@@ -50,7 +52,9 @@ struct AppShellView: View {
                 if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
                     delegate.consumePendingLaunchShortcut()
                 }
-                launchRouter.flushPendingPresentation()
+                Task {
+                    await launchRouter.flushPendingPresentationAfterSubscriptionReady()
+                }
                 Task {
                     await ProcessMarketingNotificationService.shared.refreshIfNeededOnAppOpen()
                     await ProcessMarketingHealthPulseService.shared.evaluateAfterHealthSync(reason: "app_open")
@@ -98,10 +102,15 @@ struct AppShellView: View {
             if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
                 delegate.consumePendingLaunchShortcut()
             }
-            launchRouter.flushPendingPresentation()
+            await launchRouter.flushPendingPresentationAfterSubscriptionReady()
         }
         .onChange(of: session.hasCompletedOnboarding) { _, completed in
             if completed { isHomeSwipeArmed = false }
+        }
+        .onChange(of: subscriptionService.subscriptionStatus) { _, status in
+            guard status.isActive else { return }
+            launchRouter.clearSpinPresentation()
+            launchRouter.clearLifetimeOfferPresentation()
         }
         .task(id: session.hasCompletedOnboarding) {
             guard session.hasCompletedOnboarding else {
@@ -182,14 +191,29 @@ struct AppShellView: View {
             .interactiveDismissDisabled()
         }
         .fullScreenCover(isPresented: $launchRouter.showsSpinWinbackFromMarketing) {
-            PaywallSpinWinbackView(
-                presentation: .spinWheel,
-                analyticsSource: "marketing_notif_spin"
-            ) {
-                launchRouter.clearSpinPresentation()
-                ProcessHomeScreenQuickActions.syncForCurrentUser()
+            ZStack(alignment: .topTrailing) {
+                PaywallSpinWinbackView(
+                    presentation: .spinWheel,
+                    analyticsSource: "marketing_notif_spin"
+                ) {
+                    launchRouter.clearSpinPresentation()
+                    ProcessHomeScreenQuickActions.syncForCurrentUser()
+                }
+                .interactiveDismissDisabled()
+
+                Button {
+                    launchRouter.clearSpinPresentation()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 36, height: 36)
+                }
+                .processGlassIconButtonStyle()
+                .padding(.top, 12)
+                .padding(.trailing, 18)
+                .accessibilityLabel(AppCopy.t("Fermer", en: "Close"))
             }
-            .interactiveDismissDisabled()
         }
     }
 }

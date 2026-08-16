@@ -122,6 +122,7 @@ final class ProcessMarketingNotificationService {
         clearExitChase()
         ProcessMarketingHealthPulseService.shared.cancelAll()
         UserDefaults.standard.removeObject(forKey: Self.campaignAnchorKey)
+        AppLaunchRouter.shared.clearSpinPresentation()
     }
 
     /// Mémorise la campagne ouverte (pour `marketing_notif_converted` au prochain achat).

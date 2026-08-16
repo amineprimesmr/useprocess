@@ -77,6 +77,9 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
     }
 
+    /// `false` tant que le 1er `checkSubscriptionStatus` / `applyCustomerInfo` n’a pas fini.
+    private(set) var hasResolvedInitialSubscriptionStatus = false
+
     var canPurchase: Bool {
         hasLiveShortPlanProduct || hasLiveAnnualProduct
     }
@@ -90,15 +93,33 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     #if DEBUG
+    private static let developerPremiumKey = "process.debug.developerPremium.active"
+
     func activateDeveloperPremiumAccess() {
+        UserDefaults.standard.set(true, forKey: Self.developerPremiumKey)
+        applyPersistedDeveloperPremiumAccessIfNeeded()
+    }
+
+    private func applyPersistedDeveloperPremiumAccessIfNeeded() {
+        guard UserDefaults.standard.bool(forKey: Self.developerPremiumKey) else { return }
         subscriptionStatus = .subscribed
         isInFreeTrial = false
         trialExpirationDate = nil
+        ProcessMarketingNotificationService.shared.cancelAll()
+        AppLaunchRouter.shared.clearSpinPresentation()
+        ProcessHomeScreenQuickActions.syncForCurrentUser()
+    }
+
+    private func clearPersistedDeveloperPremiumAccess() {
+        UserDefaults.standard.removeObject(forKey: Self.developerPremiumKey)
     }
     #endif
 
     private override init() {
         super.init()
+        #if DEBUG
+        applyPersistedDeveloperPremiumAccessIfNeeded()
+        #endif
     }
 
     // MARK: - Setup
@@ -183,6 +204,9 @@ final class SubscriptionService: NSObject, ObservableObject {
         isInFreeTrial = false
         trialExpirationDate = nil
         syncedRevenueCatUserID = nil
+        #if DEBUG
+        clearPersistedDeveloperPremiumAccess()
+        #endif
     }
 
     /// Prix de l’abonnement actuel — sinon le plan court de la variante A/B.
@@ -495,6 +519,10 @@ final class SubscriptionService: NSObject, ObservableObject {
     func checkSubscriptionStatus() async {
         guard isConfigured else {
             await checkStoreKitSubscriptionStatus()
+            #if DEBUG
+            applyPersistedDeveloperPremiumAccessIfNeeded()
+            #endif
+            markSubscriptionStatusResolvedAndFlushRetention()
             return
         }
 
@@ -502,8 +530,16 @@ final class SubscriptionService: NSObject, ObservableObject {
             let info = try await Purchases.shared.customerInfo()
             applyCustomerInfo(info)
         } catch {
-            return
+            #if DEBUG
+            applyPersistedDeveloperPremiumAccessIfNeeded()
+            #endif
+            markSubscriptionStatusResolvedAndFlushRetention()
         }
+    }
+
+    private func markSubscriptionStatusResolvedAndFlushRetention() {
+        hasResolvedInitialSubscriptionStatus = true
+        AppLaunchRouter.shared.flushPendingPresentationIfReady()
     }
 
     // MARK: - Private
@@ -515,7 +551,10 @@ final class SubscriptionService: NSObject, ObservableObject {
             isInFreeTrial = false
             trialExpirationDate = nil
             ProcessHomeScreenQuickActions.syncForCurrentUser()
-            AppLaunchRouter.shared.flushPendingPresentation()
+            #if DEBUG
+            applyPersistedDeveloperPremiumAccessIfNeeded()
+            #endif
+            markSubscriptionStatusResolvedAndFlushRetention()
             return
         }
 
@@ -529,7 +568,11 @@ final class SubscriptionService: NSObject, ObservableObject {
             } else {
                 subscriptionStatus = .subscribed
             }
+            #if DEBUG
+            clearPersistedDeveloperPremiumAccess()
+            #endif
             ProcessMarketingNotificationService.shared.cancelAll()
+            AppLaunchRouter.shared.clearSpinPresentation()
         } else if entitlement.expirationDate != nil {
             subscriptionStatus = .expired
             activeProductIdentifier = nil
@@ -542,8 +585,14 @@ final class SubscriptionService: NSObject, ObservableObject {
             trialExpirationDate = nil
         }
 
+        #if DEBUG
+        if !subscriptionStatus.isActive {
+            applyPersistedDeveloperPremiumAccessIfNeeded()
+        }
+        #endif
+
         ProcessHomeScreenQuickActions.syncForCurrentUser()
-        AppLaunchRouter.shared.flushPendingPresentation()
+        markSubscriptionStatusResolvedAndFlushRetention()
     }
 
     private func refreshIntroOfferEligibility() async {
@@ -913,13 +962,19 @@ final class SubscriptionService: NSObject, ObservableObject {
 
         if hasActiveEntitlement {
             subscriptionStatus = .subscribed
+            #if DEBUG
+            clearPersistedDeveloperPremiumAccess()
+            #endif
+            AppLaunchRouter.shared.clearSpinPresentation()
         } else {
             subscriptionStatus = .notSubscribed
             trialExpirationDate = nil
+            #if DEBUG
+            applyPersistedDeveloperPremiumAccessIfNeeded()
+            #endif
         }
 
         ProcessHomeScreenQuickActions.syncForCurrentUser()
-        AppLaunchRouter.shared.flushPendingPresentation()
     }
 
     private func verified<T>(_ result: StoreKit.VerificationResult<T>) throws -> T {

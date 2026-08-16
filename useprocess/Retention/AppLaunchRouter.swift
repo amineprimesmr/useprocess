@@ -6,13 +6,14 @@ import Foundation
 final class AppLaunchRouter {
     static let shared = AppLaunchRouter()
 
-    private static let pendingSpinKey = "process.launch.pendingSpinCampaign"
-    private static let pendingLifetimeKey = "process.launch.pendingLifetimeCampaign"
+    /// Legacy — nettoyés au lancement ; plus jamais relus (évite roue fantôme au cold start).
+    private static let legacyPendingSpinKey = "process.launch.pendingSpinCampaign"
+    private static let legacyPendingLifetimeKey = "process.launch.pendingLifetimeCampaign"
 
     private(set) var pendingLifetimeOfferSource: ProcessHomeScreenQuickActionKind?
     var showsLifetimeRetentionOffer = false
 
-    /// Deep-link notif → roue complète.
+    /// Deep-link notif → roue complète (session courante uniquement, pas de persistance disque).
     var showsSpinWinbackFromMarketing = false
     private(set) var pendingSpinCampaignId: String?
 
@@ -20,11 +21,13 @@ final class AppLaunchRouter {
     var pendingHydrationAction: ProcessHydrationDeepLinkAction?
 
     private init() {
-        if let spin = UserDefaults.standard.string(forKey: Self.pendingSpinKey), !spin.isEmpty {
-            pendingSpinCampaignId = spin
-        } else if UserDefaults.standard.bool(forKey: Self.pendingLifetimeKey) {
-            pendingLifetimeOfferSource = .lifetimeOffer
-        }
+        purgeLegacyPersistedRetentionDeepLinks()
+    }
+
+    /// Migration one-shot : anciennes deep-links marketing ne doivent jamais rouvrir la roue seules.
+    private func purgeLegacyPersistedRetentionDeepLinks() {
+        UserDefaults.standard.removeObject(forKey: Self.legacyPendingSpinKey)
+        UserDefaults.standard.removeObject(forKey: Self.legacyPendingLifetimeKey)
     }
 
     func handleHydrationURL(_ url: URL) {
@@ -75,24 +78,30 @@ final class AppLaunchRouter {
     /// Ouverture depuis une notif marketing (deep-link offre lifetime).
     func presentLifetimeOfferFromMarketing(campaignId: String) {
         ProcessMarketingNotificationService.shared.markOpened(campaignId: campaignId)
-        showsSpinWinbackFromMarketing = false
-        pendingSpinCampaignId = nil
-        UserDefaults.standard.removeObject(forKey: Self.pendingSpinKey)
+        clearSpinPresentation()
         pendingLifetimeOfferSource = .lifetimeOffer
-        UserDefaults.standard.set(true, forKey: Self.pendingLifetimeKey)
         presentLifetimeOfferIfEligible()
     }
 
-    /// Ouverture depuis notif chase / spin_again → roue directe.
+    /// Ouverture depuis notif chase / spin_again → roue directe (session courante).
     func presentSpinWheelFromMarketing(campaignId: String) {
         ProcessMarketingNotificationService.shared.markOpened(campaignId: campaignId)
         ProcessMarketingNotificationService.shared.markSawSpinWheel()
         showsLifetimeRetentionOffer = false
         pendingLifetimeOfferSource = nil
-        UserDefaults.standard.removeObject(forKey: Self.pendingLifetimeKey)
+
+        guard shouldPresentRetention else {
+            clearSpinPresentation()
+            return
+        }
+
         pendingSpinCampaignId = campaignId
-        UserDefaults.standard.set(campaignId, forKey: Self.pendingSpinKey)
         presentSpinIfEligible()
+    }
+
+    func flushPendingPresentationIfReady() {
+        guard SubscriptionService.shared.hasResolvedInitialSubscriptionStatus else { return }
+        flushPendingPresentation()
     }
 
     func flushPendingPresentation() {
@@ -106,16 +115,20 @@ final class AppLaunchRouter {
         }
     }
 
+    /// Attend la vérif abonnement avant d’afficher la rétention (évite la roue au cold start).
+    func flushPendingPresentationAfterSubscriptionReady() async {
+        await SubscriptionService.shared.checkSubscriptionStatus()
+    }
+
     func clearLifetimeOfferPresentation() {
         showsLifetimeRetentionOffer = false
         pendingLifetimeOfferSource = nil
-        UserDefaults.standard.removeObject(forKey: Self.pendingLifetimeKey)
     }
 
     func clearSpinPresentation() {
         showsSpinWinbackFromMarketing = false
         pendingSpinCampaignId = nil
-        UserDefaults.standard.removeObject(forKey: Self.pendingSpinKey)
+        UserDefaults.standard.removeObject(forKey: Self.legacyPendingSpinKey)
     }
 
     var activeLifetimeOfferSource: ProcessHomeScreenQuickActionKind {
@@ -124,13 +137,19 @@ final class AppLaunchRouter {
 
     private func presentLifetimeOfferIfEligible() {
         guard pendingLifetimeOfferSource != nil else { return }
-        guard shouldPresentRetention else { return }
+        guard shouldPresentRetention else {
+            clearLifetimeOfferPresentation()
+            return
+        }
         guard !showsLifetimeRetentionOffer else { return }
         guard !showsSpinWinbackFromMarketing else { return }
 
         Task { @MainActor in
             await Task.yield()
-            guard pendingLifetimeOfferSource != nil, shouldPresentRetention else { return }
+            guard pendingLifetimeOfferSource != nil, shouldPresentRetention else {
+                clearLifetimeOfferPresentation()
+                return
+            }
             guard !showsSpinWinbackFromMarketing else { return }
             showsLifetimeRetentionOffer = true
         }
@@ -138,7 +157,10 @@ final class AppLaunchRouter {
 
     private func presentSpinIfEligible() {
         guard pendingSpinCampaignId != nil else { return }
-        guard shouldPresentRetention else { return }
+        guard shouldPresentRetention else {
+            clearSpinPresentation()
+            return
+        }
         guard !showsSpinWinbackFromMarketing else { return }
 
         showsLifetimeRetentionOffer = false
@@ -148,6 +170,8 @@ final class AppLaunchRouter {
     private var shouldPresentRetention: Bool {
         guard AppSession.shared.hasCompletedOnboarding else { return false }
         guard SubscriptionConfiguration.retentionQuickActionLifetimeOfferEnabled else { return false }
+        guard SubscriptionService.shared.hasResolvedInitialSubscriptionStatus else { return false }
+        guard SubscriptionService.shared.subscriptionStatus != .unknown else { return false }
         guard !SubscriptionService.shared.subscriptionStatus.isActive else { return false }
         return true
     }

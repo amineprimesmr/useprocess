@@ -17,6 +17,8 @@ struct PaywallView: View {
     @ObservedObject private var homeSwipeGate = ProcessPreAccessHomeSwipeCoordinator.shared
 
     let onComplete: (() -> Void)?
+    /// Sortie sans achat (retour onboarding, ou dismiss si présenté en sheet).
+    let onLeaveWithoutPurchase: (() -> Void)?
 
     /// Plan choisi dans le paywall (source de vérité unique).
     @State private var selectedBillingPlan: SubscriptionBillingPlan = .annual
@@ -34,7 +36,7 @@ struct PaywallView: View {
     @State private var lastHandledSwipeToken = 0
     @State private var didCompletePaywallFlow = false
     @State private var showsCloseXButton = false
-    @State private var didPresentStayPopupFromCloseX = false
+    @State private var closeXAttemptCount = 0
     @State private var lastCloseXTapAt: Date?
     @Bindable private var appLanguage = ProcessAppLanguage.shared
     private let termsURL = ProcessLegalURLs.termsOfUse
@@ -42,7 +44,7 @@ struct PaywallView: View {
 
     init(onComplete: (() -> Void)? = nil, onBack: (() -> Void)? = nil) {
         self.onComplete = onComplete
-        _ = onBack
+        self.onLeaveWithoutPurchase = onBack
     }
 
     private var pricingVariant: PaywallPricingExperiment.Variant {
@@ -163,7 +165,9 @@ struct PaywallView: View {
         .fullScreenCover(isPresented: $showsSpinWinback) {
             PaywallSpinWinbackView {
                 showsSpinWinback = false
-                completePaywallFlow()
+                if subscriptionService.subscriptionStatus.isActive {
+                    completePaywallFlow()
+                }
             }
             .interactiveDismissDisabled()
         }
@@ -218,7 +222,9 @@ struct PaywallView: View {
     func completePaywallFlow() {
         guard !didCompletePaywallFlow else { return }
         didCompletePaywallFlow = true
-        if !subscriptionService.subscriptionStatus.isActive {
+        if subscriptionService.subscriptionStatus.isActive {
+            ProcessMarketingNotificationService.shared.cancelAll()
+        } else {
             Task {
                 await ProcessMarketingNotificationService.shared.startAfterPaywallDropoff(
                     sawSpin: didPresentSpinWinback,
@@ -280,15 +286,15 @@ struct PaywallView: View {
         .padding(.horizontal, 18)
     }
 
-    /// Croix : 1er tap = pop « Attends ! ». Ensuite shake CTA seulement.
-    /// Jamais la roue depuis la croix (uniquement via « Tente ta chance »).
+    /// Croix : 1er tap = shake CTA. 2e tap = pop « Attends ! ». 3e tap = sortie réelle.
+    /// Jamais la roue depuis la croix (via « Tente ta chance »).
     private func handlePaywallCloseAttempt(source: String) {
         ProcessAnalytics.trackPaywallCloseTapped(source: source)
         guard !showsSpinWinback else { return }
 
         if showsStayPopup {
             dismissStayPopup()
-            shakeContinueButton()
+            leavePaywallWithoutPurchase()
             return
         }
 
@@ -299,13 +305,25 @@ struct PaywallView: View {
         }
         lastCloseXTapAt = now
 
-        if !didPresentStayPopupFromCloseX {
-            didPresentStayPopupFromCloseX = true
+        closeXAttemptCount += 1
+        switch closeXAttemptCount {
+        case 1:
+            shakeContinueButton()
+        case 2:
             presentStayRetentionPopup()
-            return
+        default:
+            leavePaywallWithoutPurchase()
         }
+    }
 
-        shakeContinueButton()
+    /// Sortie sans achat — ne passe jamais par `onComplete` (page « Merci, Pro activé »).
+    private func leavePaywallWithoutPurchase() {
+        ProcessAnalytics.trackPaywallCloseTapped(source: "xmark_exit")
+        if let onLeaveWithoutPurchase {
+            onLeaveWithoutPurchase()
+        } else {
+            dismiss()
+        }
     }
 
     private func presentStayRetentionPopup() {

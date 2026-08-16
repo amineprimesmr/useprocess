@@ -168,6 +168,7 @@ struct OnboardingProfileChatView: View {
             ForEach(Array(messages.enumerated()).suffix(MossChatStyle.windowSize), id: \.element.id) { item in
                 let depth = lastIndex - item.offset
                 MossConversationBubble(message: item.element)
+                    .padding(.top, firstMessageTopInset(for: item.element))
                     .blur(radius: MossChatStyle.blur(forDepth: depth))
                     .opacity(MossChatStyle.opacity(forDepth: depth))
                     .scaleEffect(MossChatStyle.scale(forDepth: depth), anchor: .top)
@@ -202,6 +203,16 @@ struct OnboardingProfileChatView: View {
         .padding(.horizontal, Theme.margin)
         .animation(reduceMotion ? nil : .smooth(duration: 0.32), value: messages.count)
         .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: engine.controlsVisible)
+    }
+
+    /// Espace sous le header Process Coach — uniquement la toute première bulle Moss.
+    private func firstMessageTopInset(for message: MossConversationEngine.Message) -> CGFloat {
+        guard mossEngine.messages.count == 1,
+              message.sender == .moss,
+              message.id == mossEngine.messages.first?.id else {
+            return 0
+        }
+        return 22
     }
 
     private func scrollToLatestMessage(proxy: ScrollViewProxy) {

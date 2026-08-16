@@ -7,6 +7,13 @@ import SwiftUI
 
 enum OnboardingProfileChatCoachHeaderProgress {
     static let introQuestionIDs = ["intro_swollen_face", "intro_causes", "intro_next"]
+    static let numberedQuestionIDs = [
+        "debloat_driver",
+        "hydration_level",
+        "junk_food",
+        "sleep_hours",
+        "cardio_frequency"
+    ]
 
     static func value(questionID: String?, engine: MossConversationEngine) -> Double {
         guard let questionID else { return 0 }
@@ -18,10 +25,13 @@ enum OnboardingProfileChatCoachHeaderProgress {
             return min(1, (Double(index) + typing) / Double(introQuestionIDs.count))
         }
 
-        if engine.controlsVisible, !engine.isTyping {
-            return 1
+        if let index = numberedQuestionIDs.firstIndex(of: questionID) {
+            let total = Double(numberedQuestionIDs.count)
+            return min(1, (Double(index) + typing) / total)
         }
-        return typing
+
+        // Scan / analyse — les 5 questions sont passées.
+        return 1
     }
 
     private static func typingFraction(questionID: String, engine: MossConversationEngine) -> Double {

@@ -366,6 +366,17 @@ struct ProfileSettingsLegalDetailView: View {
                 ProfileSummarySectionHeader(title: AppCopy.t("Aide", en: "Help"))
 
                 AccountDetailsCard {
+                    AccountDetailsGlassRow {
+                        Button { openURL(ProcessAppStoreReviewPrompt.writeReviewURL) } label: {
+                            ProfileEditListRow(
+                                label: AppCopy.t("Noter Process", en: "Rate Process"),
+                                value: nil,
+                                placeholder: AppCopy.t("App Store", en: "App Store")
+                            )
+                        }
+                        .buttonStyle(.processPlain)
+                    }
+
                     NavigationLink {
                         ScrollView {
                             HealthMedicalSourcesView()

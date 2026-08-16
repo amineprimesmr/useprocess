@@ -196,17 +196,25 @@ private enum DashboardPreviewCarouselMotion {
 
 private enum DashboardPreviewLoopLayout {
     static let slides = DashboardPreviewSlide.catalog
-    static var blockSize: Int { slides.count + 1 }
-    static var totalItems: Int { blockSize }
-    static var initialIndex: Int { 0 }
-    static var tailIndex: Int { slides.count }
+    static var slideCount: Int { slides.count }
+    /// `[dernier, …slides, premier]` — voisin gauche du home + wrap avant.
+    static var totalItems: Int { slideCount + 2 }
+    static var headIndex: Int { 0 }
+    static var initialIndex: Int { 1 }
+    static var tailIndex: Int { slideCount + 1 }
 
     static func slide(at index: Int) -> DashboardPreviewSlide {
-        let position = positiveMod(index, blockSize)
-        if position == slides.count {
+        if index == headIndex {
+            return slides[slideCount - 1]
+        }
+        if index == tailIndex {
             return slides[0]
         }
-        return slides[position]
+        return slides[index - 1]
+    }
+
+    static func isHead(at index: Int) -> Bool {
+        index == headIndex
     }
 
     static func isTail(at index: Int) -> Bool {
@@ -214,17 +222,17 @@ private enum DashboardPreviewLoopLayout {
     }
 
     static func recenteredIndex(for index: Int) -> Int {
-        isTail(at: index) ? initialIndex : index
+        if isHead(at: index) {
+            return slideCount
+        }
+        if isTail(at: index) {
+            return initialIndex
+        }
+        return index
     }
 
     static func neighborDistance(from active: Int, to index: Int) -> Int {
         abs(index - active)
-    }
-
-    private static func positiveMod(_ value: Int, _ modulus: Int) -> Int {
-        guard modulus > 0 else { return 0 }
-        let remainder = value % modulus
-        return remainder >= 0 ? remainder : remainder + modulus
     }
 }
 

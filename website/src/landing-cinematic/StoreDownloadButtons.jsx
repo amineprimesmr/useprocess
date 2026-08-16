@@ -1,3 +1,4 @@
+import { appCopy } from "../features/app-copy.js";
 import { getIosAppStoreUrl } from "../features/app-store-urls.js";
 import "./store-download-buttons.css";
 
@@ -12,20 +13,11 @@ function AppleLogo({ className }) {
   );
 }
 
-function PlayLogo({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path fill="#EA4335" d="M3.6 2.2 13.4 12 3.6 21.8c-.4-.2-.6-.6-.6-1V3.2c0-.4.2-.8.6-1z" />
-      <path fill="#FBBC04" d="m13.4 12 2.7-2.7 4.4 2.5c.6.3.6 1.1 0 1.4l-4.4 2.5L13.4 12z" />
-      <path fill="#4285F4" d="M13.4 12 3.6 2.2c.3-.2.6-.2.9 0l11.6 6.6L13.4 12z" />
-      <path fill="#34A853" d="M13.4 12 16.1 14.7 4.5 21.8c-.3.2-.6.1-.9 0L13.4 12z" />
-    </svg>
-  );
-}
-
-/** Boutons App Store + Play Store (Coming soon). */
+/** Bouton App Store. */
 export function StoreDownloadButtons({ className = "" }) {
   const iosUrl = getIosAppStoreUrl();
+  const iosEyebrow = appCopy("Télécharger sur", "Download on");
+  const iosAria = appCopy("Télécharger sur App Store", "Download on App Store");
 
   return (
     <div className={`store-download-buttons${className ? ` ${className}` : ""}`}>
@@ -34,26 +26,14 @@ export function StoreDownloadButtons({ className = "" }) {
         href={iosUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Télécharger l'app sur l'App Store"
+        aria-label={iosAria}
       >
         <AppleLogo className="store-download-btn__logo store-download-btn__logo--apple" />
         <span className="store-download-btn__copy">
-          <span className="store-download-btn__eyebrow">Télécharger l&apos;app</span>
+          <span className="store-download-btn__eyebrow">{iosEyebrow}</span>
           <span className="store-download-btn__name">App Store</span>
         </span>
       </a>
-
-      <span
-        className="store-download-btn store-download-btn--play store-download-btn--soon"
-        role="status"
-        aria-label="Google Play — Coming soon"
-      >
-        <PlayLogo className="store-download-btn__logo store-download-btn__logo--play" />
-        <span className="store-download-btn__copy">
-          <span className="store-download-btn__eyebrow">Coming soon</span>
-          <span className="store-download-btn__name">Google Play</span>
-        </span>
-      </span>
     </div>
   );
 }

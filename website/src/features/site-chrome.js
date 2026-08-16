@@ -9,7 +9,7 @@ export function notFoundCopy() {
 
 export function getAppPageCopy() {
   return {
-    title: appCopy("Dégonfle ton visage.", "De-bloat your face."),
+    title: appCopy("Téléchargez Process et dégonflez votre visage.", "Download Process and de-bloat your face."),
     subtitle: appCopy(
       "Process — coach IA & protocole debloat. Télécharge sur iPhone.",
       "Process — AI coach & debloat protocol. Download on iPhone."
@@ -20,10 +20,8 @@ export function getAppPageCopy() {
       "Code active — download Process and start your protocol."
     ),
     referralEyebrow: appCopy("Invitation parrainage", "Referral invite"),
-    iosEyebrow: appCopy("Télécharger l'app", "Download the app"),
-    iosAria: appCopy("Télécharger l'app sur l'App Store", "Download the app on the App Store"),
-    playEyebrow: appCopy("Bientôt disponible", "Coming soon"),
-    playAria: appCopy("Google Play — Bientôt disponible", "Google Play — Coming soon"),
+    iosEyebrow: appCopy("Télécharger sur", "Download on"),
+    iosAria: appCopy("Télécharger sur App Store", "Download on App Store"),
     langAria: appCopy("Choisir la langue", "Choose language"),
   };
 }

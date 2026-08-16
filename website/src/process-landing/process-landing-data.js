@@ -4,7 +4,18 @@ import { getIosAppStoreUrl } from "../features/app-store-urls.js";
 export const APP_STORE_URL = getIosAppStoreUrl();
 export const PROCESS_APP_ICON = "/assets/icone.png?v=20260808";
 export const LANDING_MEDIA = "/assets/process-landing";
+export const LANDING_FEATURE_ICONS = {
+  training: `${LANDING_MEDIA}/icon-training.png`,
+  progress: `${LANDING_MEDIA}/icon-progress.png`,
+  face3d: `${LANDING_MEDIA}/icon-3d.png`,
+  coach: `${LANDING_MEDIA}/icon-coach.png`,
+  share: `${LANDING_MEDIA}/icon-share.png`,
+  battle: `${LANDING_MEDIA}/icon-battle.png`,
+  hub: `${LANDING_MEDIA}/icon-hub.png`,
+  routines: `${LANDING_MEDIA}/icon-routines.png`,
+};
 export const HERO_PHONE_IMAGE = `${LANDING_MEDIA}/phone-hero-app.png?v=20260812b`;
+export const BENEFITS_PHONE_IMAGE = `${LANDING_MEDIA}/phone-features-scan.png?v=20260816real`;
 export const ONBOARDING_COMMUNITY = "/assets/onboarding-community";
 
 /** Mêmes visages que `TransformationPreviewStepView` (social proof homme). */
@@ -32,7 +43,7 @@ export function chromeAriaCopy() {
     menu: appCopy("Menu", "Menu"),
     mainNav: appCopy("Navigation principale", "Main navigation"),
     footerNav: appCopy("Pied de page", "Footer"),
-    appStoreBadge: appCopy("Télécharger sur l'App Store", "Download on the App Store"),
+    appStoreBadge: appCopy("Télécharger sur App Store", "Download on App Store"),
     processIcon: appCopy("Process", "Process"),
   };
 }
@@ -50,8 +61,8 @@ export function heroCopy() {
   return {
     trustBadge: appCopy("Approuvé par +8500 utilisateurs", "Trusted by +8,500 users"),
     title: appCopy(
-      "Trackez et dégonflez votre visage avec l'application Process",
-      "Analyse, track and de-bloat your face with Process"
+      "Téléchargez Process et dégonflez votre visage",
+      "Download Process and de-bloat your face"
     ),
     subtitle: appCopy(
       "Scan visage, protocole debloat et coach IA — dégonfle ton visage avec nutrition, hydratation et Apple Santé.",
@@ -79,25 +90,27 @@ export function statsCopy() {
     ),
     items: [
       {
-        value: "50k+",
+        target: 50,
+        format: "compact-k",
         label: appCopy("Visages scannés et suivis", "Faces scanned and tracked"),
       },
       {
-        value: "1,050+",
+        target: 1050,
+        format: "grouped",
         label: appCopy("Points de données par scan", "Data points captured per scan"),
       },
       {
-        value: "850k+",
+        target: 850,
+        format: "compact-k",
         label: appCopy("Points de données analysés", "Data points analyzed"),
       },
     ],
-    badge: appCopy("Nos avantages", "Our Benefits"),
   };
 }
 
-function processFeatureCard(titleFr, titleEn, bodyFr, bodyEn) {
+function processFeatureCard(titleFr, titleEn, bodyFr, bodyEn, icon = PROCESS_APP_ICON) {
   return {
-    icon: PROCESS_APP_ICON,
+    icon,
     title: appCopy(titleFr, titleEn),
     body: appCopy(bodyFr, bodyEn),
   };
@@ -105,6 +118,7 @@ function processFeatureCard(titleFr, titleEn, bodyFr, bodyEn) {
 
 export function benefitsCopy() {
   return {
+    badge: appCopy("Nos avantages", "Our Benefits"),
     title: appCopy("Technologie Process avancée", "Advanced Process Technology"),
     subtitle: appCopy(
       "Entraîne, suis et améliore ton visage avec un feedback en temps réel et des routines guidées.",
@@ -115,58 +129,55 @@ export function benefitsCopy() {
         "Entraînement personnalisé",
         "Personalized Training",
         "Des routines sur mesure basées sur ton visage pour améliorer les zones clés.",
-        "Custom routines based on your face to improve key areas over time."
+        "Custom routines based on your face to improve key areas over time.",
+        LANDING_FEATURE_ICONS.training
       ),
       processFeatureCard(
         "Suivi des progrès",
         "Progress Tracking",
         "Suis l'évolution de la symétrie, de la structure et de ton visage dans le temps.",
-        "Track changes in symmetry, structure, and overall facial presence."
+        "Track changes in symmetry, structure, and overall facial presence.",
+        LANDING_FEATURE_ICONS.progress
       ),
       processFeatureCard(
         "Analyse faciale 3D",
         "3D Face Analysis",
         "Scans précis avec TrueDepth pour mesurer ta structure faciale en temps réel.",
-        "Accurate scans using TrueDepth to measure your facial structure in real time."
+        "Accurate scans using TrueDepth to measure your facial structure in real time.",
+        LANDING_FEATURE_ICONS.face3d
       ),
       processFeatureCard(
         "Coach IA visage",
         "AI Face Coach",
         "Feedback en direct et conseils actionnables adaptés à ton visage.",
-        "Get real-time feedback and actionable advice tailored to your face."
+        "Get real-time feedback and actionable advice tailored to your face.",
+        LANDING_FEATURE_ICONS.coach
       ),
     ],
   };
 }
 
 export function systemCopy() {
+  const systemMedia = `${LANDING_MEDIA}/system`;
   return {
+    badge: appCopy("Nos résultats", "Our Results"),
     title: appCopy("Un système conçu pour de vrais progrès", "A System Built for Real Improvement"),
-    cards: [
-      processFeatureCard(
-        "FaceCard partageable",
-        "Shareable FaceCard",
-        "Affiche tes stats, progrès et métriques faciales dans un format propre et partageable.",
-        "Show your stats, progress, and facial metrics in a clean, shareable format."
-      ),
-      processFeatureCard(
-        "Face Battles",
-        "Face Battles",
-        "Compare tes résultats, affronte d'autres utilisateurs et vois ton classement.",
-        "Compare results, compete with others, and see where you rank globally."
-      ),
-      processFeatureCard(
-        "Hub d'information",
-        "Information Hub",
-        "Apprends à améliorer peau, structure et posture faciale.",
-        "Learn how to improve key areas like skin, structure, and facial posture."
-      ),
-      processFeatureCard(
-        "Routines quotidiennes",
-        "Daily Routines",
-        "Suis des exercices guidés pour améliorer ton visage sur la durée.",
-        "Follow guided exercises designed to improve your facial presence over time."
-      ),
+    subtitle: appCopy(
+      "Des photos réelles, un suivi structuré — pas des promesses vagues.",
+      "Real photos, structured tracking — not vague promises."
+    ),
+    beforeLabel: appCopy("Avant", "Before"),
+    afterLabel: appCopy("Après", "After"),
+    seeMore: appCopy("Voir encore", "See more"),
+    pairs: [
+      {
+        before: `${systemMedia}/before-tongue.png`,
+        after: `${systemMedia}/after-hoodie.png`,
+      },
+      {
+        before: `${systemMedia}/before-profile.png`,
+        after: `${systemMedia}/after-led.png`,
+      },
     ],
   };
 }
@@ -191,8 +202,6 @@ export function potentialCopy() {
 export function testimonialsCopy() {
   const avatars = onboardingCommunityAvatars();
   return {
-    badge: appCopy("Témoignages", "Testimonials"),
-    badgeAvatars: avatars,
     title: appCopy("Nos témoignages", "Our Testimonials"),
     subtitle: appCopy(
       "Découvre comment Process aide les utilisateurs à dégonfler et suivre leur visage.",
@@ -309,15 +318,6 @@ export function faqCopy() {
   };
 }
 
-export function finalCtaCopy() {
-  return {
-    title: appCopy("Commence à t'améliorer dès aujourd'hui", "Start Improving Yourself Today"),
-    subtitle: appCopy(
-      "Télécharge Process et commence à suivre, t'entraîner et progresser avec un feedback en temps réel.",
-      "Download Process and begin tracking, training, and improving with real-time feedback."
-    ),
-  };
-}
 
 export function footerCopy() {
   return {

@@ -104,16 +104,12 @@ function applyGetAppPageCopy() {
   const title = document.getElementById("get-app-title");
   const subtitle = document.getElementById("get-app-subtitle");
   const iosBtn = document.getElementById("get-app-store-ios");
-  const iosEyebrow = iosBtn?.querySelector(".get-app-store-badge__eyebrow");
-  const playBadge = document.querySelector(".get-app-store-badge--play");
-  const playEyebrow = playBadge?.querySelector(".get-app-store-badge__eyebrow");
+  const iosEyebrow = iosBtn?.querySelector(".store-download-btn__eyebrow");
 
   if (title) title.textContent = copy.title;
   if (subtitle) subtitle.textContent = copy.subtitle;
   if (iosEyebrow) iosEyebrow.textContent = copy.iosEyebrow;
   if (iosBtn) iosBtn.setAttribute("aria-label", copy.iosAria);
-  if (playEyebrow) playEyebrow.textContent = copy.playEyebrow;
-  if (playBadge) playBadge.setAttribute("aria-label", copy.playAria);
   applyGetAppDocumentLanguage();
 }
 

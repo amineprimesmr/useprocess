@@ -22,6 +22,7 @@ import { FinTapHeroDeskCtas } from "./FinTapHeroDeskCtas.jsx";
 import { FinTapHeroMobileLogo } from "./FinTapHeroMobileLogo.jsx";
 import { FinTapHeroMediaBadge } from "./FinTapHeroMediaBadge.jsx";
 import { StoreDownloadButtons } from "./StoreDownloadButtons.jsx";
+import { useSiteLanguage } from "../process-landing/useSiteLanguage.js";
 
 const HERO_IPHONE_IMG = "/assets/iphone-custom-clean.png?v=20260808b";
 const HERO_IPHONE_IMG_MOBILE = "/assets/iphone-custom-clean-mobile.png?v=20260808b";
@@ -55,6 +56,7 @@ function setPhoneStaticFront(phone) {
  * Ratio = f(scrollY) : stable sur iOS (pas d’invalider sur resize hauteur / barre d’adresse).
  */
 export function FinTapHeroScrollSection() {
+  const { isEnglish } = useSiteLanguage();
   const sectionRef = useRef(null);
   const phoneRef = useRef(null);
   const loopRef = useRef(0);
@@ -547,9 +549,19 @@ export function FinTapHeroScrollSection() {
       <FinTapHeroDeskCtas />
       <div className="hero__text fintap-hero-iphone__text">
         <h1 className="fintap-hero-iphone__h1">
-          Découvre pourquoi
-          <br />
-          ton visage est gonflé
+          {isEnglish ? (
+            <>
+              Download Process and
+              <br />
+              de-bloat your face
+            </>
+          ) : (
+            <>
+              Téléchargez Process et
+              <br />
+              dégonflez votre visage
+            </>
+          )}
         </h1>
       </div>
       <div className="fintap-hero-iphone__experience">

@@ -38,9 +38,9 @@
 .fintap-landing a.fintap-pricing__cta,
 .fintap-landing a.fintap-hero-iphone__download-app,
 .fintap-landing .fintap-hero-iphone__download-app-label,
-.fintap-landing a.store-download-btn,
-.fintap-landing .store-download-btn {
-  color: #fff;
+.fintap-landing a.store-download-btn--apple,
+.fintap-landing .store-download-btn--apple {
+  color: #000;
 }
 
 .fintap-landing a.fintap-demo__whatsapp {

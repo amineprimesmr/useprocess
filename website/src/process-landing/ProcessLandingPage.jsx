@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import "./process-landing.css";
+import "./process-landing-motion.css";
 import "./process-lang-switch.css";
+import { ScrollReveal } from "../landing-cinematic/ScrollReveal.jsx";
 import { useSiteLanguage } from "./useSiteLanguage.js";
+import { useNavScrollState, useSmoothAnchorScroll } from "./useLandingMotion.js";
+import { appCopy } from "../features/app-copy.js";
+import { StoreDownloadButtons } from "../landing-cinematic/StoreDownloadButtons.jsx";
+import { BeforeAfterSlider } from "./BeforeAfterSlider.jsx";
+import { StatAnimatedValue } from "./StatAnimatedValue.jsx";
+import { StickyDownloadBar } from "./StickyDownloadBar.jsx";
 import {
   APP_STORE_URL,
   HERO_PHONE_IMAGE,
+  BENEFITS_PHONE_IMAGE,
   LANDING_MEDIA,
   PROCESS_APP_ICON,
   navLinks,
@@ -15,11 +25,12 @@ import {
   potentialCopy,
   testimonialsCopy,
   faqCopy,
-  finalCtaCopy,
   footerCopy,
   languageSwitchCopy,
   chromeAriaCopy,
 } from "./process-landing-data.js";
+
+const MOTION_EASE = [0.22, 1, 0.36, 1];
 
 function ProcessAppIcon({ size = 32, className = "" }) {
   const aria = chromeAriaCopy();
@@ -80,42 +91,26 @@ function LanguageSwitch({ className = "" }) {
 }
 
 function Nav() {
-  const [open, setOpen] = useState(false);
   const links = navLinks();
-  const hero = heroCopy();
   const aria = chromeAriaCopy();
 
   return (
     <header className="fk-nav">
       <div className="fk-nav-inner">
         <a href="/" className="fk-logo">
-          <ProcessAppIcon size={32} />
+          <ProcessAppIcon size={28} />
           Process
         </a>
-        <button
-          type="button"
-          className="fk-nav-toggle"
-          aria-label={aria.menu}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </button>
-        <nav className={`fk-nav-links${open ? " is-open" : ""}`} aria-label={aria.mainNav}>
+        <nav className="fk-nav-links" aria-label={aria.mainNav}>
           {links.map((link) => (
-            <a key={link.id} href={`#${link.id}`} onClick={() => setOpen(false)}>
+            <a key={link.id} href={`#${link.id}`}>
               {link.label}
             </a>
           ))}
-          <LanguageSwitch className="fk-lang-switch--mobile" />
         </nav>
         <div className="fk-nav-actions">
           <LanguageSwitch />
-          <a className="fk-btn fk-btn--nav" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-            {hero.cta}
-          </a>
+          <StoreDownloadButtons className="fk-nav-download" />
         </div>
       </div>
     </header>
@@ -124,35 +119,45 @@ function Nav() {
 
 function Hero() {
   const hero = heroCopy();
+  const reduce = useReducedMotion();
+  const motionProps = (delay = 0) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y: 28, filter: "blur(8px)" },
+          animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+          transition: { duration: 0.75, ease: MOTION_EASE, delay },
+        };
 
   return (
-    <section className="fk-hero">
+    <section className="fk-hero" id="fk-hero">
       <div className="fk-container fk-container--hero">
-        <div className="fk-trust-pill">
+        <motion.div className="fk-trust-pill" {...motionProps(0.05)}>
           <CommunityAvatars sources={hero.trustAvatars} size={28} />
           {hero.trustBadge}
-        </div>
-        <h1>{hero.title}</h1>
-        <p className="fk-hero-sub fk-hero-sub--desktop">{hero.subtitle}</p>
-        <p className="fk-hero-sub fk-hero-sub--mobile">{hero.subtitleMobile}</p>
-        <div className="fk-hero-cta-row">
-          <a className="fk-btn fk-btn--hero" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-            {hero.cta}
-          </a>
-        </div>
-        <div className="fk-app-store-line">
-          <ProcessAppIcon size={20} className="fk-icon-process" />
-          {hero.appAvailable}
-          <img
-            className="fk-icon-store"
-            src={`${LANDING_MEDIA}/icon-appstore.svg`}
-            alt="App Store"
-            width={28}
-            height={28}
-          />
-        </div>
+        </motion.div>
+        <motion.h1 {...motionProps(0.12)}>{hero.title}</motion.h1>
+        <motion.p className="fk-hero-sub fk-hero-sub--desktop" {...motionProps(0.2)}>
+          {hero.subtitle}
+        </motion.p>
+        <motion.p className="fk-hero-sub fk-hero-sub--mobile" {...motionProps(0.2)}>
+          {hero.subtitleMobile}
+        </motion.p>
+        <motion.div className="fk-hero-cta-row" {...motionProps(0.28)}>
+          <StoreDownloadButtons />
+        </motion.div>
       </div>
-      <div className="fk-hero-phones" aria-hidden="true">
+      <motion.div
+        className="fk-hero-phones"
+        aria-hidden="true"
+        {...(reduce
+          ? {}
+          : {
+              initial: { opacity: 0, y: 48, scale: 0.96 },
+              animate: { opacity: 1, y: 0, scale: 1 },
+              transition: { duration: 0.95, ease: MOTION_EASE, delay: 0.18 },
+            })}
+      >
         <img
           className="fk-hero-phone"
           src={HERO_PHONE_IMAGE}
@@ -160,13 +165,24 @@ function Hero() {
           width={320}
           height={650}
         />
-      </div>
-      <p className="fk-trust-line">{hero.trustLine}</p>
+      </motion.div>
+      <motion.p className="fk-trust-line" {...motionProps(0.34)}>
+        {hero.trustLine}
+      </motion.p>
     </section>
   );
 }
 
-function SectionBadge({ children }) {
+function SectionBadge({ children, variant = "default" }) {
+  if (variant === "3d") {
+    return (
+      <div className="fk-section-badge fk-section-badge--3d">
+        <span className="fk-section-badge__pulse" aria-hidden="true" />
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="fk-section-badge">
       <ProcessAppIcon size={16} className="fk-section-badge-icon" />
@@ -177,21 +193,49 @@ function SectionBadge({ children }) {
 
 function Stats() {
   const stats = statsCopy();
+  const sectionRef = useRef(null);
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setActive(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35, rootMargin: "0px 0px -8% 0px" }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section className="fk-stats" id="benefits">
+    <section className="fk-stats" ref={sectionRef}>
       <div className="fk-container">
-        <ProcessAppIcon size={108} className="fk-stats-logo" />
-        <h2>{stats.title}</h2>
+        <ScrollReveal variant="scale-up">
+          <ProcessAppIcon size={108} className="fk-stats-logo" />
+        </ScrollReveal>
+        <ScrollReveal delay={0.06}>
+          <h2>{stats.title}</h2>
+        </ScrollReveal>
         <div className="fk-stats-grid">
-          {stats.items.map((item) => (
-            <div className="fk-stat" key={item.value}>
-              <div className="fk-stat-value">{item.value}</div>
+          {stats.items.map((item, index) => (
+            <ScrollReveal key={item.target} delay={index * 0.08} className="fk-stat">
+              <StatAnimatedValue
+                target={item.target}
+                format={item.format}
+                active={active}
+                delay={index * 140}
+              />
               <div className="fk-stat-label">{item.label}</div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
-        <SectionBadge>{stats.badge}</SectionBadge>
       </div>
     </section>
   );
@@ -216,27 +260,75 @@ function Benefits() {
   const [left, right] = [benefits.cards.slice(0, 2), benefits.cards.slice(2, 4)];
 
   return (
-    <section className="fk-benefits">
+    <section className="fk-benefits" id="benefits">
       <div className="fk-container">
-        <h2>{benefits.title}</h2>
-        <p className="fk-benefits-sub">{benefits.subtitle}</p>
+        <ScrollReveal>
+          <div className="fk-benefits-intro">
+            <SectionBadge variant="3d">{benefits.badge}</SectionBadge>
+            <h2>{benefits.title}</h2>
+          </div>
+        </ScrollReveal>
+        <ScrollReveal delay={0.08}>
+          <p className="fk-benefits-sub">{benefits.subtitle}</p>
+        </ScrollReveal>
         <div className="fk-benefits-layout">
-          <div className="fk-benefits-col">
+          <ScrollReveal className="fk-benefits-col" variant="slide-left" delay={0.05}>
             {left.map((card) => (
               <FeatureCard key={card.title} {...card} />
             ))}
-          </div>
-          <div className="fk-benefits-phone">
-            <img src={`${LANDING_MEDIA}/phone-features.png`} alt="" width={320} height={640} />
-          </div>
-          <div className="fk-benefits-col">
+          </ScrollReveal>
+          <ScrollReveal variant="scale-up" delay={0.12}>
+            <div className="fk-benefits-phone" aria-hidden="true">
+              <img
+                className="fk-benefits-phone-img"
+                src={BENEFITS_PHONE_IMAGE}
+                alt=""
+                width={1260}
+                height={2736}
+              />
+            </div>
+          </ScrollReveal>
+          <ScrollReveal className="fk-benefits-col" variant="slide-right" delay={0.05}>
             {right.map((card) => (
               <FeatureCard key={card.title} {...card} />
             ))}
-          </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>
+  );
+}
+
+function SystemTestimonials() {
+  const testimonials = testimonialsCopy();
+
+  return (
+    <div className="fk-system-testimonials" id="testimonial">
+      <ScrollReveal>
+        <h2>{testimonials.title}</h2>
+      </ScrollReveal>
+      <ScrollReveal delay={0.06}>
+        <p className="fk-system-testimonials-sub">{testimonials.subtitle}</p>
+      </ScrollReveal>
+      <div className="fk-testimonials-track fk-testimonials-track--embedded">
+        {testimonials.items.map((item, index) => (
+          <ScrollReveal
+            key={item.name}
+            tag="article"
+            className="fk-testimonial"
+            delay={index * 0.08}
+            variant="fade-up"
+          >
+            <TestimonialStars />
+            <q>{item.quote}</q>
+            <div className="fk-testimonial-author">
+              <img src={item.avatar} alt="" width={40} height={40} />
+              <span>{item.name}</span>
+            </div>
+          </ScrollReveal>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -246,17 +338,28 @@ function System() {
   return (
     <section className="fk-system" id="features">
       <div className="fk-container fk-system-inner">
-        <div className="fk-system-phone">
-          <img src={`${LANDING_MEDIA}/phone-scan.png`} alt="" width={420} height={840} />
-        </div>
-        <div>
-          <h2>{system.title}</h2>
-          <div className="fk-system-grid">
-            {system.cards.map((card) => (
-              <FeatureCard key={card.title} {...card} darkIcon={false} />
-            ))}
+        <ScrollReveal>
+          <header className="fk-system-head">
+            <div className="fk-system-intro">
+              <SectionBadge variant="3d">{system.badge}</SectionBadge>
+              <h2>{system.title}</h2>
+            </div>
+            <p className="fk-system-sub">{system.subtitle}</p>
+          </header>
+        </ScrollReveal>
+
+        <ScrollReveal variant="scale-up" delay={0.1}>
+          <div className="fk-system-transform" aria-label={system.title}>
+            <BeforeAfterSlider
+              pairs={system.pairs}
+              beforeLabel={system.beforeLabel}
+              afterLabel={system.afterLabel}
+              seeMoreLabel={system.seeMore}
+            />
           </div>
-        </div>
+        </ScrollReveal>
+
+        <SystemTestimonials />
       </div>
     </section>
   );
@@ -264,63 +367,40 @@ function System() {
 
 function Potential() {
   const potential = potentialCopy();
-  const aria = chromeAriaCopy();
 
   return (
     <section className="fk-potential">
       <div className="fk-container fk-potential-inner">
-        <div>
+        <ScrollReveal className="fk-potential-copy" variant="slide-left">
           <h2>{potential.title}</h2>
           <p className="fk-potential-sub">{potential.subtitle}</p>
-          <ul className="fk-checklist">
+          <ul className="fk-checklist fk-checklist--potential">
             {potential.checklist.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
-          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-            <img
-              className="fk-app-store-badge"
-              src={`${LANDING_MEDIA}/app-store-badge.png`}
-              alt={aria.appStoreBadge}
-              height={48}
-            />
-          </a>
-        </div>
-        <div className="fk-potential-phone">
-          <img src={`${LANDING_MEDIA}/phone-progress.png`} alt="" width={420} height={840} />
-        </div>
+          <StoreDownloadButtons className="fk-potential-download" />
+        </ScrollReveal>
+        <ScrollReveal variant="slide-right" delay={0.08}>
+          <div className="fk-potential-phone" aria-hidden="true">
+            <img src={`${LANDING_MEDIA}/phone-progress.png`} alt="" width={420} height={840} />
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );
 }
 
-function Testimonials() {
-  const testimonials = testimonialsCopy();
+function TestimonialStars() {
+  const label = appCopy("5 étoiles sur 5", "5 out of 5 stars");
 
   return (
-    <section className="fk-testimonials" id="testimonial">
-      <div className="fk-container">
-        <div className="fk-section-badge fk-section-badge--community">
-          <CommunityAvatars sources={testimonials.badgeAvatars} size={24} />
-          {testimonials.badge}
-        </div>
-        <h2>{testimonials.title}</h2>
-        <p className="fk-testimonials-sub">{testimonials.subtitle}</p>
-      </div>
-      <div className="fk-testimonials-track">
-        {testimonials.items.map((item) => (
-          <article className="fk-testimonial" key={item.name}>
-            <q>{item.quote}</q>
-            <div className="fk-testimonial-author">
-              <img src={item.avatar} alt="" width={40} height={40} />
-              <span>{item.name}</span>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
+    <div className="fk-testimonial-stars" aria-label={label} role="img">
+      {"⭐".repeat(5)}
+    </div>
   );
 }
+
 
 function FAQ() {
   const faq = faqCopy();
@@ -329,26 +409,34 @@ function FAQ() {
   return (
     <section className="fk-faq" id="faq">
       <div className="fk-container">
-        <SectionBadge>{faq.badge}</SectionBadge>
-        <h2>{faq.title}</h2>
+        <ScrollReveal>
+          <div className="fk-faq-intro">
+            <SectionBadge variant="3d">{faq.badge}</SectionBadge>
+            <h2>{faq.title}</h2>
+          </div>
+        </ScrollReveal>
         <div className="fk-faq-list">
           {faq.items.map((item, index) => {
             const isOpen = openIndex === index;
             return (
-              <div className={`fk-faq-item${isOpen ? " is-open" : ""}`} key={item.q}>
-                <button
-                  type="button"
-                  className="fk-faq-q"
-                  aria-expanded={isOpen}
-                  onClick={() => setOpenIndex(isOpen ? null : index)}
-                >
-                  {item.q}
-                  <ChevronDown />
-                </button>
-                <div className="fk-faq-a">
-                  <p>{item.a}</p>
+              <ScrollReveal key={item.q} delay={index * 0.05} variant="fade-up">
+                <div className={`fk-faq-item${isOpen ? " is-open" : ""}`}>
+                  <button
+                    type="button"
+                    className="fk-faq-q"
+                    aria-expanded={isOpen}
+                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                  >
+                    {item.q}
+                    <ChevronDown />
+                  </button>
+                  <div className="fk-faq-a">
+                    <div className="fk-faq-a-inner">
+                      <p>{item.a}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </ScrollReveal>
             );
           })}
         </div>
@@ -357,27 +445,6 @@ function FAQ() {
   );
 }
 
-function FinalCta() {
-  const cta = finalCtaCopy();
-  const aria = chromeAriaCopy();
-
-  return (
-    <section className="fk-final-cta">
-      <div className="fk-container">
-        <h2>{cta.title}</h2>
-        <p>{cta.subtitle}</p>
-        <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-          <img
-            className="fk-app-store-badge"
-            src={`${LANDING_MEDIA}/app-store-badge.png`}
-            alt={aria.appStoreBadge}
-            height={48}
-          />
-        </a>
-      </div>
-    </section>
-  );
-}
 
 function Footer() {
   const footer = footerCopy();
@@ -386,8 +453,9 @@ function Footer() {
 
   return (
     <footer className="fk-footer">
-      <div className="fk-container">
-        <div className="fk-footer-top">
+      <ScrollReveal variant="fade-in">
+        <div className="fk-container">
+          <div className="fk-footer-top">
           <a href="/" className="fk-logo">
             <ProcessAppIcon size={32} />
             Process
@@ -412,12 +480,15 @@ function Footer() {
           </div>
         </div>
       </div>
+      </ScrollReveal>
     </footer>
   );
 }
 
 export function ProcessLandingPage() {
   useSiteLanguage();
+  useSmoothAnchorScroll();
+  useNavScrollState();
 
   return (
     <div className="fk-page">
@@ -427,12 +498,11 @@ export function ProcessLandingPage() {
         <Stats />
         <Benefits />
         <System />
-        <Potential />
-        <Testimonials />
         <FAQ />
-        <FinalCta />
+        <Potential />
       </main>
       <Footer />
+      <StickyDownloadBar />
     </div>
   );
 }

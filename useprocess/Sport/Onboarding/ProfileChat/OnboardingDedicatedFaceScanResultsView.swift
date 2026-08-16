@@ -3,13 +3,10 @@
 //  useprocess
 //
 
-import StoreKit
 import SwiftUI
 
 /// Page dédiée du premier scan : anneau + indicateurs ouverts/verrouillés, sans revue comportementale.
 struct OnboardingDedicatedFaceScanResultsView: View {
-    @Environment(\.requestReview) private var requestReview
-
     let result: FaceScanResult
     var onContinue: () -> Void
 
@@ -64,14 +61,6 @@ struct OnboardingDedicatedFaceScanResultsView: View {
             withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
                 showsCreatePlanButton = true
             }
-        }
-        .task {
-            guard !OnboardingAppStoreRatingPrompt.hasBeenShown else { return }
-            try? await Task.sleep(for: .milliseconds(900))
-            guard !Task.isCancelled else { return }
-            OnboardingAppStoreRatingPrompt.markShown()
-            ProcessAnalytics.trackAppStoreReviewPrompted(source: "onboarding_face_scan_results")
-            requestReview()
         }
     }
 

@@ -89,7 +89,7 @@ struct useprocessApp: App {
                     CoachIntelligenceNotificationService.configure()
                     SubscriptionService.shared.configure()
                     ProcessHomeScreenQuickActions.syncForCurrentUser()
-                    AppLaunchRouter.shared.flushPendingPresentation()
+                    await AppLaunchRouter.shared.flushPendingPresentationAfterSubscriptionReady()
                 }
                 .onAppear {
                     AppIntegrations.shared.refresh()

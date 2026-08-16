@@ -2,7 +2,7 @@ import { ScrollReveal } from "./ScrollReveal.jsx";
 import { StoreDownloadButtons } from "./StoreDownloadButtons.jsx";
 import "./process-final-cta.css";
 
-/** CTA final — boutons App Store + Play Store. */
+/** CTA final — bouton App Store. */
 export function ProcessFinalCtaSection() {
   return (
     <section className="process-final-cta" id="telecharger" aria-labelledby="process-final-cta-heading">
