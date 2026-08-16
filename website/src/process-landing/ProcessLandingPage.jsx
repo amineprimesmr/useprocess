@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import "./process-landing.css";
+import "./process-landing-dark.css";
 import "./process-landing-motion.css";
 import "./process-lang-switch.css";
 import { ScrollReveal } from "../landing-cinematic/ScrollReveal.jsx";
 import { useSiteLanguage } from "./useSiteLanguage.js";
+import { useSiteTheme } from "./useSiteTheme.js";
+import { ThemeToggle } from "./ThemeToggle.jsx";
 import { useNavScrollState, useSmoothAnchorScroll } from "./useLandingMotion.js";
 import { appCopy } from "../features/app-copy.js";
 import { StoreDownloadButtons } from "../landing-cinematic/StoreDownloadButtons.jsx";
@@ -110,6 +113,7 @@ function Nav() {
         </nav>
         <div className="fk-nav-actions">
           <LanguageSwitch />
+          <ThemeToggle />
           <StoreDownloadButtons className="fk-nav-download" />
         </div>
       </div>
@@ -487,6 +491,7 @@ function Footer() {
 
 export function ProcessLandingPage() {
   useSiteLanguage();
+  useSiteTheme();
   useSmoothAnchorScroll();
   useNavScrollState();
 

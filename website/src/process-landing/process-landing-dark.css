@@ -1,0 +1,146 @@
+html.fk-theme-dark .fk-page {
+  --fk-bg: #101018;
+  --fk-surface: #171722;
+  --fk-text: #f4f4f8;
+  --fk-muted: #a1a1ad;
+  --fk-subtext: rgba(244, 244, 248, 0.68);
+  --fk-border: rgba(255, 255, 255, 0.1);
+  --fk-border-strong: rgba(255, 255, 255, 0.16);
+  --fk-card: #171722;
+  --fk-btn-gray: #2a2a34;
+  --fk-page-gradient: linear-gradient(210deg, rgb(8, 56, 102) 0%, #0a0a10 9%);
+  --fk-nav-bg: rgba(10, 10, 16, 0.72);
+  --fk-nav-scrolled-bg: rgba(10, 10, 16, 0.94);
+  --fk-nav-scrolled-shadow: rgba(0, 0, 0, 0.35);
+  --fk-trust-pill-border: rgba(255, 255, 255, 0.28);
+  --fk-avatar-ring: #171722;
+  --fk-avatar-shadow: rgba(255, 255, 255, 0.12);
+  --fk-hero-title: #f4f4f8;
+  --fk-hero-sub: rgba(244, 244, 248, 0.78);
+  --fk-hero-phone-fade: linear-gradient(
+    to bottom,
+    rgba(10, 10, 16, 0) 0%,
+    rgba(10, 10, 16, 0.35) 35%,
+    rgba(10, 10, 16, 0.82) 72%,
+    #0a0a10 100%
+  );
+  --fk-card-body: rgba(244, 244, 248, 0.62);
+  --fk-testimonial-bg: rgba(23, 23, 34, 0.92);
+  --fk-footer-bg: rgba(12, 12, 18, 0.72);
+  --fk-lang-track: rgba(255, 255, 255, 0.08);
+  --fk-lang-track-border: rgba(255, 255, 255, 0.1);
+  --fk-lang-active: #232330;
+  --fk-lang-active-shadow: rgba(0, 0, 0, 0.28);
+  --fk-btn-bg: #232330;
+  --fk-theme-toggle-bg: rgba(255, 255, 255, 0.08);
+  --fk-theme-toggle-border: rgba(255, 255, 255, 0.12);
+  --fk-theme-toggle-icon: #f4f4f8;
+  --fk-slider-bg: #14141c;
+  --fk-slider-border: rgba(255, 255, 255, 0.12);
+  --fk-slider-shadow: rgba(0, 0, 0, 0.35);
+  --fk-check-stroke: %23f4f4f8;
+  --fk-drop-shadow: rgba(0, 0, 0, 0.45);
+  --fk-stat-divider: rgba(255, 255, 255, 0.1);
+  --fk-section-badge-border: rgba(255, 255, 255, 0.22);
+}
+
+html.fk-theme-dark .fk-section-badge--community .fk-community-avatars img {
+  border-color: #171722;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+html.fk-theme-dark .fk-section-badge--3d {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.5),
+    0 0.35rem 0.85rem rgba(0, 0, 0, 0.42);
+}
+
+html.fk-theme-dark .fk-stat {
+  border-right-color: var(--fk-stat-divider);
+}
+
+html.fk-theme-dark .fk-checklist li::before {
+  background: rgba(255, 255, 255, 0.08)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 10l3 3 7-7' stroke='%23f4f4f8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center/12px no-repeat;
+}
+
+html.fk-theme-dark .fk-checklist--potential li::before {
+  background: rgba(255, 255, 255, 0.08)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 10l3 3 7-7' stroke='%23a1a1ad' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center/12px no-repeat;
+}
+
+html.fk-theme-dark .fk-ba-slider__label--before {
+  color: rgba(244, 244, 248, 0.82);
+  background: rgba(23, 23, 34, 0.92);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html.fk-theme-dark .fk-ba-slider__handle {
+  background: #f4f4f8;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+html.fk-theme-dark .fk-ba-slider__knob {
+  background: #f4f4f8;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+html.fk-theme-dark .fk-ba-slider__knob::before {
+  border-right-color: rgba(12, 11, 17, 0.55);
+}
+
+html.fk-theme-dark .fk-ba-slider__knob::after {
+  border-left-color: rgba(12, 11, 17, 0.55);
+}
+
+html.fk-theme-dark .fk-ba-slider__frame::after {
+  background: linear-gradient(180deg, rgba(10, 10, 16, 0) 0%, rgba(10, 10, 16, 0.55) 100%);
+}
+
+html.fk-theme-dark .fk-hero-cta-row .store-download-btn--apple,
+html.fk-theme-dark .fk-potential-inner .store-download-btn--apple,
+html.fk-theme-dark .fk-sticky-dl__buttons .store-download-btn--apple {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #2a2a30 0%, #1a1a20 42%, #0c0b11 72%, #08070b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45),
+    0 0.35rem 0.75rem rgba(0, 0, 0, 0.32);
+}
+
+html.fk-theme-dark .fk-hero-cta-row .store-download-btn--apple::before,
+html.fk-theme-dark .fk-potential-inner .store-download-btn--apple::before,
+html.fk-theme-dark .fk-sticky-dl__buttons .store-download-btn--apple::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+html.fk-theme-dark .fk-hero-cta-row .store-download-btn__eyebrow,
+html.fk-theme-dark .fk-potential-inner .store-download-btn__eyebrow,
+html.fk-theme-dark .fk-sticky-dl__buttons .store-download-btn__eyebrow {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+html.fk-theme-dark .fk-hero-cta-row .store-download-btn__name,
+html.fk-theme-dark .fk-potential-inner .store-download-btn__name,
+html.fk-theme-dark .fk-sticky-dl__buttons .store-download-btn__name {
+  color: #fff !important;
+}
+
+html.fk-theme-dark .fk-blur-phone--center {
+  filter: drop-shadow(0 32px 64px rgba(0, 0, 0, 0.45));
+}
+
+html.fk-theme-dark .fk-card-icon--light {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.fk-theme-dark .fk-page {
+    transition: none;
+  }
+}

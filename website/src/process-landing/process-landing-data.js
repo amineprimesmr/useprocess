@@ -38,6 +38,13 @@ export function languageSwitchCopy() {
   };
 }
 
+export function themeSwitchCopy() {
+  return {
+    dark: appCopy("Activer le mode sombre", "Switch to dark mode"),
+    light: appCopy("Activer le mode clair", "Switch to light mode"),
+  };
+}
+
 export function chromeAriaCopy() {
   return {
     menu: appCopy("Menu", "Menu"),
@@ -65,12 +72,12 @@ export function heroCopy() {
       "Download Process and de-bloat your face"
     ),
     subtitle: appCopy(
-      "Scan visage, protocole debloat et coach IA — dégonfle ton visage avec nutrition, hydratation et Apple Santé.",
-      "Face scan, debloat protocol and AI coach — de-bloat your face with nutrition, hydration, and Apple Health."
+      "Scan 3D, protocole debloat sur mesure et coach IA — mesure ton visage, suis tes progrès et vois la différence.",
+      "3D scan, custom debloat protocol, and AI coach — measure your face, track progress, and see the difference."
     ),
     subtitleMobile: appCopy(
-      "Dégonfle ton visage avec nutrition, hydratation et Apple Santé.",
-      "De-bloat your face with nutrition, hydration, and Apple Health."
+      "Scan 3D et protocole debloat personnalisé — des mesures réelles, des progrès visibles.",
+      "3D scan and a personalized debloat protocol — real measurements, visible progress."
     ),
     cta: appCopy("Télécharger l'app", "Download App"),
     appAvailable: appCopy("Disponible sur", "App Available on"),

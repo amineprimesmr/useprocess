@@ -7,20 +7,57 @@ html:has(.fk-page) {
 
 .fk-page {
   --fk-bg: #f2f2f2;
+  --fk-surface: #ffffff;
   --fk-text: #0c0b11;
   --fk-muted: #94969d;
   --fk-subtext: rgba(12, 11, 17, 0.62);
   --fk-border: rgba(12, 11, 17, 0.08);
+  --fk-border-strong: rgba(12, 11, 17, 0.18);
   --fk-blue: #1293ff;
   --fk-card: #ffffff;
   --fk-max: 1200px;
   --fk-nav-h: 56px;
   --fk-btn-gray: #dedede;
+  --fk-page-gradient: linear-gradient(210deg, rgb(18, 147, 255) 0%, rgb(242, 242, 242) 2.9736768018018016%);
+  --fk-nav-bg: rgba(0, 0, 0, 0.05);
+  --fk-nav-scrolled-bg: rgba(242, 242, 242, 0.86);
+  --fk-nav-scrolled-shadow: rgba(12, 11, 17, 0.07);
+  --fk-trust-pill-border: #ffffff;
+  --fk-avatar-ring: #ffffff;
+  --fk-avatar-shadow: rgba(255, 255, 255, 0.35);
+  --fk-hero-title: #0c0b11;
+  --fk-hero-sub: rgba(12, 11, 17, 0.72);
+  --fk-hero-phone-fade: linear-gradient(
+    to bottom,
+    rgba(242, 242, 242, 0) 0%,
+    rgba(242, 242, 242, 0.25) 35%,
+    rgba(242, 242, 242, 0.75) 72%,
+    #f2f2f2 100%
+  );
+  --fk-card-body: rgba(12, 11, 17, 0.55);
+  --fk-testimonial-bg: rgba(255, 255, 255, 0.72);
+  --fk-footer-bg: rgba(255, 255, 255, 0.35);
+  --fk-lang-track: rgba(12, 11, 17, 0.06);
+  --fk-lang-track-border: rgba(12, 11, 17, 0.06);
+  --fk-lang-active: #ffffff;
+  --fk-lang-active-shadow: rgba(12, 11, 17, 0.08);
+  --fk-btn-bg: #ffffff;
+  --fk-theme-toggle-bg: rgba(12, 11, 17, 0.06);
+  --fk-theme-toggle-border: rgba(12, 11, 17, 0.08);
+  --fk-theme-toggle-icon: #0c0b11;
+  --fk-slider-bg: #ffffff;
+  --fk-slider-border: rgba(12, 11, 17, 0.1);
+  --fk-slider-shadow: rgba(12, 11, 17, 0.08);
+  --fk-check-stroke: %230c0b11;
+  --fk-drop-shadow: rgba(12, 11, 17, 0.1);
+  --fk-stat-divider: rgba(12, 11, 17, 0.08);
+  --fk-section-badge-border: #0c0b11;
   font-family: "Inter", system-ui, sans-serif;
   color: var(--fk-text);
-  background: linear-gradient(210deg, rgb(18, 147, 255) 0%, rgb(242, 242, 242) 2.9736768018018016%);
+  background: var(--fk-page-gradient);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  transition: background 0.35s ease, color 0.35s ease;
 }
 
 .fk-page *,
@@ -35,6 +72,34 @@ html:has(.fk-page) {
   font-family: "Inter Tight", "Inter Tight Placeholder", "Inter", system-ui, sans-serif;
   margin: 0;
   letter-spacing: -0.03em;
+}
+
+.fk-page .fk-card,
+.fk-page .fk-testimonial,
+.fk-page .fk-nav,
+.fk-page .fk-footer,
+.fk-page .fk-benefits .fk-card,
+.fk-page .fk-lang-switch,
+.fk-page .fk-theme-toggle {
+  transition:
+    background-color 0.32s ease,
+    background 0.32s ease,
+    border-color 0.32s ease,
+    color 0.24s ease,
+    box-shadow 0.32s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fk-page,
+  .fk-page .fk-card,
+  .fk-page .fk-testimonial,
+  .fk-page .fk-nav,
+  .fk-page .fk-footer,
+  .fk-page .fk-benefits .fk-card,
+  .fk-page .fk-lang-switch,
+  .fk-page .fk-theme-toggle {
+    transition: none;
+  }
 }
 
 .fk-container {
@@ -55,7 +120,7 @@ html:has(.fk-page) {
   min-height: var(--fk-nav-h);
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fk-nav-bg);
   border-bottom: none;
 }
 
@@ -122,14 +187,14 @@ html:has(.fk-page) {
   padding: 16px 20px;
   border-radius: 12px;
   border: none;
-  background: #fff;
+  background: var(--fk-btn-bg);
   color: var(--fk-text);
   font-family: "Instrument Sans", "Inter", sans-serif;
   font-size: 16px;
   font-weight: 600;
   text-decoration: none;
   box-shadow: none;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, background 0.25s ease, color 0.25s ease;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -147,7 +212,7 @@ html:has(.fk-page) {
 }
 
 .fk-btn--nav {
-  background: #fff;
+  background: var(--fk-btn-bg);
   padding: 10px 16px;
   font-size: 14px;
   border-radius: 10px;
@@ -203,10 +268,9 @@ html:has(.fk-page) {
   transform: translateY(0);
 }
 
-.fk-nav-actions .fk-nav-download .store-download-btn__logo--apple {
-  width: 1.18rem;
-  height: 1.18rem;
-  color: #fff;
+.fk-nav-actions .fk-nav-download .store-download-btn__logo--appstore {
+  width: 1.22rem;
+  height: 1.22rem;
 }
 
 .fk-nav-actions .fk-nav-download .store-download-btn__eyebrow {
@@ -228,7 +292,7 @@ html:has(.fk-page) {
 
 /* ── Hero ── */
 .fk-hero {
-  padding: 56px 0 0;
+  padding: 80px 0 0;
   text-align: center;
 }
 
@@ -239,12 +303,12 @@ html:has(.fk-page) {
   padding: 6px 14px 6px 6px;
   border-radius: 999px;
   background: transparent;
-  border: 1px solid #fff;
+  border: 1px solid var(--fk-trust-pill-border);
   font-family: "Instrument Sans", "Inter", sans-serif;
   font-size: 16px;
   font-weight: 500;
   line-height: 24px;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .fk-trust-avatars,
@@ -260,8 +324,8 @@ html:has(.fk-page) {
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+  border: 2px solid var(--fk-avatar-ring);
+  box-shadow: 0 0 0 1px var(--fk-avatar-shadow);
   margin-left: -10px;
 }
 
@@ -278,7 +342,7 @@ html:has(.fk-page) {
 .fk-section-badge--community .fk-community-avatars img {
   width: 24px;
   height: 24px;
-  border: 2px solid #fff;
+  border: 2px solid var(--fk-avatar-ring);
   box-shadow: 0 0 0 1px rgba(12, 11, 17, 0.08);
 }
 
@@ -288,19 +352,19 @@ html:has(.fk-page) {
   font-weight: 700;
   letter-spacing: -0.045em;
   max-width: 720px;
-  margin: 0 auto 24px;
-  color: rgb(12, 11, 17);
+  margin: 0 auto 28px;
+  color: var(--fk-hero-title);
 }
 
 .fk-hero-sub {
   font-family: "Instrument Sans", "Inter", sans-serif;
-  font-size: 18px;
-  line-height: 27px;
-  font-weight: 400;
-  letter-spacing: -0.015em;
-  color: var(--fk-subtext);
-  max-width: 540px;
-  margin: 0 auto 40px;
+  font-size: 19px;
+  line-height: 30px;
+  font-weight: 500;
+  letter-spacing: -0.018em;
+  color: var(--fk-hero-sub);
+  max-width: 500px;
+  margin: 0 auto 44px;
 }
 
 .fk-hero-sub--mobile {
@@ -311,7 +375,31 @@ html:has(.fk-page) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 32px;
+}
+
+.fk-hero-cta-row .store-download-btn,
+.fk-sticky-dl__buttons .store-download-btn {
+  min-height: 3.72rem;
+  min-width: 13.1rem;
+  padding: 0.72rem 1.55rem;
+  gap: 0.82rem;
+}
+
+.fk-hero-cta-row .store-download-btn__logo--appstore,
+.fk-sticky-dl__buttons .store-download-btn__logo--appstore {
+  width: 1.82rem;
+  height: 1.82rem;
+}
+
+.fk-hero-cta-row .store-download-btn__eyebrow,
+.fk-sticky-dl__buttons .store-download-btn__eyebrow {
+  font-size: 0.68rem;
+}
+
+.fk-hero-cta-row .store-download-btn__name,
+.fk-sticky-dl__buttons .store-download-btn__name {
+  font-size: 1.08rem;
 }
 
 .fk-potential-inner .store-download-buttons {
@@ -328,6 +416,19 @@ html:has(.fk-page) {
 @media (max-width: 767px) {
   .fk-hero-cta-row .store-download-buttons {
     justify-content: center;
+  }
+
+  .fk-hero-cta-row .store-download-btn,
+  .fk-sticky-dl__buttons .store-download-btn {
+    min-height: 3.45rem;
+    min-width: 12.4rem;
+    padding: 0.64rem 1.35rem;
+  }
+
+  .fk-hero-cta-row .store-download-btn__logo--appstore,
+  .fk-sticky-dl__buttons .store-download-btn__logo--appstore {
+    width: 1.62rem;
+    height: 1.62rem;
   }
 }
 
@@ -360,8 +461,8 @@ html:has(.fk-page) {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  min-height: 420px;
-  margin-top: 16px;
+  min-height: 340px;
+  margin-top: 24px;
   margin-bottom: -32px;
   padding-bottom: 0;
   overflow: hidden;
@@ -374,13 +475,7 @@ html:has(.fk-page) {
   right: 0;
   bottom: 0;
   height: 28%;
-  background: linear-gradient(
-    to bottom,
-    rgba(242, 242, 242, 0) 0%,
-    rgba(242, 242, 242, 0.25) 35%,
-    rgba(242, 242, 242, 0.75) 72%,
-    #f2f2f2 100%
-  );
+  background: var(--fk-hero-phone-fade);
   pointer-events: none;
   z-index: 2;
 }
@@ -396,8 +491,8 @@ html:has(.fk-page) {
 }
 
 .fk-hero-phone {
-  width: min(320px, 82vw);
-  filter: drop-shadow(0 20px 40px rgba(12, 11, 17, 0.1));
+  width: min(268px, 68vw);
+  filter: drop-shadow(0 20px 40px var(--fk-drop-shadow));
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, rgba(0, 0, 0, 0.4) 88%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 0%, #000 72%, rgba(0, 0, 0, 0.4) 88%, transparent 100%);
 }
@@ -448,7 +543,7 @@ html:has(.fk-page) {
 
 /* ── Stats ── */
 .fk-stats {
-  padding: 24px 0 96px;
+  padding: 56px 0 32px;
   text-align: center;
 }
 
@@ -478,7 +573,7 @@ html:has(.fk-page) {
 
 .fk-stat {
   padding: 0 24px;
-  border-right: 1px solid var(--fk-border);
+  border-right: 1px solid var(--fk-stat-divider);
 }
 
 .fk-stat:last-child {
@@ -544,8 +639,8 @@ html:has(.fk-page) {
 
 .fk-stat-label {
   font-family: "Instrument Sans", "Inter", sans-serif;
-  font-size: 14px;
-  line-height: 21px;
+  font-size: 16px;
+  line-height: 24px;
   color: var(--fk-subtext);
 }
 
@@ -555,7 +650,7 @@ html:has(.fk-page) {
   gap: 8px;
   padding: 8px 16px;
   border-radius: 999px;
-  border: 1px solid var(--fk-text);
+  border: 1px solid var(--fk-section-badge-border);
   font-family: "Instrument Sans", "Inter", sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -641,7 +736,7 @@ html:has(.fk-page) {
 
 /* ── Benefits ── */
 .fk-benefits {
-  padding: 48px 0 120px;
+  padding: 16px 0 120px;
   text-align: center;
 }
 
@@ -693,7 +788,7 @@ html:has(.fk-page) {
 
 .fk-benefits .fk-card {
   background: var(--fk-bg);
-  border: 1px solid rgba(12, 11, 17, 0.18);
+  border: 1px solid var(--fk-border-strong);
   border-radius: 28px;
   padding: 24px;
   box-shadow: none;
@@ -732,7 +827,7 @@ html:has(.fk-page) {
 .fk-benefits .fk-card p {
   font-size: 15px;
   line-height: 22px;
-  color: rgba(12, 11, 17, 0.55);
+  color: var(--fk-card-body);
 }
 
 .fk-benefits-phone {
@@ -811,7 +906,7 @@ html:has(.fk-page) {
 
 /* ── System ── */
 .fk-system {
-  padding: 56px 0 80px;
+  padding: 72px 0 80px;
 }
 
 .fk-system-inner {
@@ -1104,7 +1199,7 @@ html:has(.fk-page) {
   text-align: left;
   padding: 28px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--fk-testimonial-bg);
   border: 1px solid var(--fk-border);
 }
 
@@ -1212,7 +1307,7 @@ html:has(.fk-page) {
 .fk-footer {
   padding: 48px 60px 64px;
   border-top: 1px solid var(--fk-border);
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--fk-footer-bg);
 }
 
 .fk-footer-top {
@@ -1286,7 +1381,7 @@ html:has(.fk-page) {
   }
 
   .fk-hero {
-    padding-top: 32px;
+    padding-top: 48px;
   }
 
   .fk-hero h1 {
@@ -1294,13 +1389,15 @@ html:has(.fk-page) {
     line-height: 40.8px;
     letter-spacing: -0.04em;
     max-width: 358px;
+    margin-bottom: 20px;
   }
 
   .fk-hero-sub {
     font-size: 16px;
-    line-height: 24px;
-    max-width: 340px;
-    margin-bottom: 32px;
+    line-height: 25px;
+    font-weight: 500;
+    max-width: 320px;
+    margin-bottom: 36px;
   }
 
   .fk-hero-sub--desktop {
@@ -1313,16 +1410,16 @@ html:has(.fk-page) {
 
   .fk-trust-pill {
     font-size: 14px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   }
 
   .fk-hero-phone {
-    width: min(280px, 78vw);
+    width: min(232px, 62vw);
   }
 
   .fk-hero-phones {
-    min-height: 360px;
-    margin-top: 8px;
+    min-height: 300px;
+    margin-top: 16px;
   }
 
   .fk-trust-line {

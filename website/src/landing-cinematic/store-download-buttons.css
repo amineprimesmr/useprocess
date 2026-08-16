@@ -93,10 +93,9 @@
   display: block;
 }
 
-.store-download-btn__logo--apple {
-  width: 1.55rem;
-  height: 1.55rem;
-  color: #000;
+.store-download-btn__logo--appstore {
+  width: 1.65rem;
+  height: 1.65rem;
 }
 
 .store-download-btn__copy {
@@ -137,9 +136,9 @@
     padding: 0.52rem 1.05rem;
   }
 
-  .store-download-btn__logo--apple {
-    width: 1.4rem;
-    height: 1.4rem;
+  .store-download-btn__logo--appstore {
+    width: 1.48rem;
+    height: 1.48rem;
   }
 
   .store-download-btn__eyebrow {

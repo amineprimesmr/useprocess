@@ -10,9 +10,9 @@
   aspect-ratio: 9 / 16;
   border-radius: 24px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid rgba(12, 11, 17, 0.1);
-  box-shadow: 0 14px 36px rgba(12, 11, 17, 0.08);
+  background: var(--fk-slider-bg);
+  border: 1px solid var(--fk-slider-border);
+  box-shadow: 0 14px 36px var(--fk-slider-shadow);
   user-select: none;
   touch-action: pan-y;
 }

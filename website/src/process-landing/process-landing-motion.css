@@ -17,10 +17,10 @@ html:has(.fk-page) {
 }
 
 .fk-nav--scrolled {
-  background: rgba(242, 242, 242, 0.86);
+  background: var(--fk-nav-scrolled-bg);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 1px 0 rgba(12, 11, 17, 0.07);
+  box-shadow: 0 1px 0 var(--fk-nav-scrolled-shadow);
 }
 
 .fk-nav-links a {
