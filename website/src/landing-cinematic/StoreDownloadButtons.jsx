@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { appCopy } from "../features/app-copy.js";
 import { getIosAppStoreUrl } from "../features/app-store-urls.js";
+import { openInExternalBrowser, shouldEscapeBeforeStoreRedirect } from "../features/in-app-browser-escape.js";
 import "./store-download-buttons.css";
 
 function AppStoreLogo({ className }) {
@@ -36,6 +37,13 @@ export function StoreDownloadButtons({ className = "" }) {
   const iosEyebrow = appCopy("Télécharger sur", "Download on");
   const iosAria = appCopy("Télécharger sur App Store", "Download on App Store");
 
+  const onStoreClick = (event) => {
+    if (!shouldEscapeBeforeStoreRedirect()) return;
+
+    event.preventDefault();
+    openInExternalBrowser(iosUrl);
+  };
+
   return (
     <div className={`store-download-buttons${className ? ` ${className}` : ""}`}>
       <a
@@ -44,6 +52,7 @@ export function StoreDownloadButtons({ className = "" }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label={iosAria}
+        onClick={onStoreClick}
       >
         <AppStoreLogo className="store-download-btn__logo store-download-btn__logo--appstore" />
         <span className="store-download-btn__copy">

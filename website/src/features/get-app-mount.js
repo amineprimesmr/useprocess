@@ -1,4 +1,5 @@
 import { getIosAppStoreUrl } from "./app-store-urls.js";
+import { openInExternalBrowser, shouldEscapeBeforeStoreRedirect } from "./in-app-browser-escape.js";
 import { subscribeSiteLanguage } from "./app-copy.js";
 import {
   applyGetAppDocumentLanguage,
@@ -61,6 +62,12 @@ function openStorePage(referralCode = "") {
   const base = referralCode
     ? buildAppStoreUrlWithReferral(referralCode)
     : getIosAppStoreUrl();
+
+  if (shouldEscapeBeforeStoreRedirect()) {
+    openInExternalBrowser(base);
+    return;
+  }
+
   redirectWithUtmParams(base);
 }
 
