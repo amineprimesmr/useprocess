@@ -1,6 +1,10 @@
 import { getIosAppStoreUrl } from "./app-store-urls.js";
-import { openInExternalBrowser, shouldEscapeBeforeStoreRedirect } from "./in-app-browser-escape.js";
-import { subscribeSiteLanguage } from "./app-copy.js";
+import {
+  detectInAppBrowser,
+  getStoreButtonHref,
+  shouldUseSafariStoreFlow,
+} from "./in-app-browser-escape.js";
+import { subscribeSiteLanguage, appCopy } from "./app-copy.js";
 import {
   applyGetAppDocumentLanguage,
   getAppPageCopy,
@@ -63,8 +67,7 @@ function openStorePage(referralCode = "") {
     ? buildAppStoreUrlWithReferral(referralCode)
     : getIosAppStoreUrl();
 
-  if (shouldEscapeBeforeStoreRedirect()) {
-    openInExternalBrowser(base);
+  if (shouldUseSafariStoreFlow()) {
     return;
   }
 
@@ -76,7 +79,7 @@ async function openStoreWithReferral(referralCode) {
     await copyReferralInvite(referralCode);
     rememberReferralCode(referralCode);
 
-    if (detectDevicePlatform() === "ios") {
+    if (detectDevicePlatform() === "ios" && !shouldUseSafariStoreFlow()) {
       const deepLink = buildReferralDeepLink(referralCode);
       window.location.href = deepLink;
       window.setTimeout(() => openStorePage(referralCode), 700);
@@ -112,11 +115,32 @@ function applyGetAppPageCopy() {
   const subtitle = document.getElementById("get-app-subtitle");
   const iosBtn = document.getElementById("get-app-store-ios");
   const iosEyebrow = iosBtn?.querySelector(".store-download-btn__eyebrow");
+  const iosName = iosBtn?.querySelector(".store-download-btn__name");
+  const inAppFlow = shouldUseSafariStoreFlow();
 
   if (title) title.textContent = copy.title;
-  if (subtitle) subtitle.textContent = copy.subtitle;
-  if (iosEyebrow) iosEyebrow.textContent = copy.iosEyebrow;
-  if (iosBtn) iosBtn.setAttribute("aria-label", copy.iosAria);
+  if (subtitle) {
+    subtitle.textContent = inAppFlow
+      ? appCopy(
+          "TikTok bloque l’App Store. Ouvre Safari, puis retape Télécharger.",
+          "TikTok blocks the App Store. Open Safari, then tap Download again."
+        )
+      : copy.subtitle;
+  }
+  if (iosEyebrow) {
+    iosEyebrow.textContent = inAppFlow
+      ? appCopy("Étape 1", "Step 1")
+      : copy.iosEyebrow;
+  }
+  if (iosName) iosName.textContent = inAppFlow ? appCopy("Safari", "Safari") : "App Store";
+  if (iosBtn) {
+    iosBtn.setAttribute(
+      "aria-label",
+      inAppFlow
+        ? appCopy("Ouvrir dans Safari pour télécharger Process", "Open in Safari to download Process")
+        : copy.iosAria
+    );
+  }
   applyGetAppDocumentLanguage();
 }
 
@@ -153,7 +177,19 @@ async function renderQR(referralCode = "") {
 }
 
 function wireStoreButtons(referralCode = "") {
-  document.getElementById("get-app-store-ios")?.addEventListener("click", () => {
+  const btn = document.getElementById("get-app-store-ios");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    const storeUrl = referralCode
+      ? buildAppStoreUrlWithReferral(referralCode)
+      : getIosAppStoreUrl();
+
+    if (shouldUseSafariStoreFlow()) {
+      window.location.href = getStoreButtonHref(storeUrl);
+      return;
+    }
+
     openStoreWithReferral(referralCode);
   });
 }
@@ -181,7 +217,8 @@ export async function mountGetAppPage() {
     !referralCode &&
     isMobileDevice() &&
     !shouldStayOnPage() &&
-    detectDevicePlatform() === "ios"
+    detectDevicePlatform() === "ios" &&
+    !detectInAppBrowser()
   ) {
     openStorePage();
     return;

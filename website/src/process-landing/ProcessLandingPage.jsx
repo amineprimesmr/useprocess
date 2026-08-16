@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import "./process-landing.css";
 import "./process-landing-motion.css";
+import "./in-app-escape-hint.css";
 import { ScrollReveal } from "../landing-cinematic/ScrollReveal.jsx";
+import { InAppEscapeHint } from "./InAppEscapeHint.jsx";
 import { useSiteLanguage } from "./useSiteLanguage.js";
 import { useSmoothAnchorScroll } from "./useLandingMotion.js";
 import { appCopy } from "../features/app-copy.js";
@@ -436,6 +438,7 @@ export function ProcessLandingPage() {
 
   return (
     <div className="fk-page">
+      <InAppEscapeHint />
       <main>
         <Hero />
         <Stats />

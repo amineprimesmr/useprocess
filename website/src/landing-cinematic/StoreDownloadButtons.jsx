@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { appCopy } from "../features/app-copy.js";
 import { getIosAppStoreUrl } from "../features/app-store-urls.js";
-import { openInExternalBrowser, shouldEscapeBeforeStoreRedirect } from "../features/in-app-browser-escape.js";
+import { getStoreButtonHref, shouldUseSafariStoreFlow } from "../features/in-app-browser-escape.js";
 import "./store-download-buttons.css";
 
 function AppStoreLogo({ className }) {
@@ -34,32 +34,39 @@ function AppStoreLogo({ className }) {
 /** Bouton App Store. */
 export function StoreDownloadButtons({ className = "" }) {
   const iosUrl = getIosAppStoreUrl();
-  const iosEyebrow = appCopy("Télécharger sur", "Download on");
-  const iosAria = appCopy("Télécharger sur App Store", "Download on App Store");
-
-  const onStoreClick = (event) => {
-    if (!shouldEscapeBeforeStoreRedirect()) return;
-
-    event.preventDefault();
-    openInExternalBrowser(iosUrl);
-  };
+  const inAppFlow = shouldUseSafariStoreFlow();
+  const href = getStoreButtonHref(iosUrl);
+  const iosEyebrow = inAppFlow
+    ? appCopy("Étape 1", "Step 1")
+    : appCopy("Télécharger sur", "Download on");
+  const iosName = inAppFlow ? appCopy("Safari", "Safari") : "App Store";
+  const iosAria = inAppFlow
+    ? appCopy("Ouvrir dans Safari pour télécharger Process", "Open in Safari to download Process")
+    : appCopy("Télécharger sur App Store", "Download on App Store");
 
   return (
     <div className={`store-download-buttons${className ? ` ${className}` : ""}`}>
       <a
         className="store-download-btn store-download-btn--apple"
-        href={iosUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={href}
+        target={inAppFlow ? "_self" : "_blank"}
+        rel={inAppFlow ? undefined : "noopener noreferrer"}
         aria-label={iosAria}
-        onClick={onStoreClick}
       >
         <AppStoreLogo className="store-download-btn__logo store-download-btn__logo--appstore" />
         <span className="store-download-btn__copy">
           <span className="store-download-btn__eyebrow">{iosEyebrow}</span>
-          <span className="store-download-btn__name">App Store</span>
+          <span className="store-download-btn__name">{iosName}</span>
         </span>
       </a>
+      {inAppFlow ? (
+        <p className="store-download-btn__inapp-note">
+          {appCopy(
+            "TikTok bloque l’App Store. Ouvre Safari, puis retape Télécharger.",
+            "TikTok blocks the App Store. Open Safari, then tap Download again."
+          )}
+        </p>
+      ) : null}
     </div>
   );
 }
