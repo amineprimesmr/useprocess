@@ -1,6 +1,6 @@
 html:has(.fk-page) {
   scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--fk-nav-h) + 12px);
+  scroll-padding-top: 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -9,23 +9,6 @@ html:has(.fk-page) {
   }
 }
 
-.fk-nav {
-  transition:
-    background 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    backdrop-filter 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.fk-nav--scrolled {
-  background: var(--fk-nav-scrolled-bg);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 1px 0 var(--fk-nav-scrolled-shadow);
-}
-
-.fk-nav-links a {
-  transition: color 0.22s ease, opacity 0.22s ease;
-}
 
 .fk-faq-q svg {
   transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
@@ -55,7 +38,6 @@ html:has(.fk-page) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fk-nav,
   .fk-faq-q svg,
   .fk-faq-a {
     transition: none;

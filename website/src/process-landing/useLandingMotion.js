@@ -8,12 +8,7 @@ function scrollToAnchor(id) {
   const target = document.getElementById(id);
   if (!target) return;
 
-  const navHeight = Number.parseInt(
-    getComputedStyle(document.documentElement).getPropertyValue("--fk-nav-h") || "56",
-    10
-  );
-
-  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 10;
+  const top = target.getBoundingClientRect().top + window.scrollY - 16;
   window.scrollTo({
     top: Math.max(0, top),
     behavior: prefersReducedMotion() ? "auto" : "smooth",
@@ -50,28 +45,4 @@ export function useSmoothAnchorScroll(rootSelector = ".fk-page") {
 
     return () => root.removeEventListener("click", onClick);
   }, [rootSelector]);
-}
-
-export function useNavScrollState(navSelector = ".fk-nav") {
-  useEffect(() => {
-    const nav = document.querySelector(navSelector);
-    if (!nav) return undefined;
-
-    let ticking = false;
-
-    const update = () => {
-      nav.classList.toggle("fk-nav--scrolled", window.scrollY > 10);
-      ticking = false;
-    };
-
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(update);
-    };
-
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [navSelector]);
 }

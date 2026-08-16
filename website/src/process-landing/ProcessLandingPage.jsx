@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import "./process-landing.css";
-import "./process-landing-dark.css";
 import "./process-landing-motion.css";
-import "./process-lang-switch.css";
 import { ScrollReveal } from "../landing-cinematic/ScrollReveal.jsx";
 import { useSiteLanguage } from "./useSiteLanguage.js";
-import { useSiteTheme } from "./useSiteTheme.js";
-import { ThemeToggle } from "./ThemeToggle.jsx";
-import { useNavScrollState, useSmoothAnchorScroll } from "./useLandingMotion.js";
+import { useSmoothAnchorScroll } from "./useLandingMotion.js";
 import { appCopy } from "../features/app-copy.js";
 import { StoreDownloadButtons } from "../landing-cinematic/StoreDownloadButtons.jsx";
 import { BeforeAfterSlider } from "./BeforeAfterSlider.jsx";
@@ -29,7 +25,6 @@ import {
   testimonialsCopy,
   faqCopy,
   footerCopy,
-  languageSwitchCopy,
   chromeAriaCopy,
 } from "./process-landing-data.js";
 
@@ -64,60 +59,6 @@ function ChevronDown() {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-function LanguageSwitch({ className = "" }) {
-  const { lang, setLanguage } = useSiteLanguage();
-  const copy = languageSwitchCopy();
-
-  return (
-    <div className={`fk-lang-switch ${className}`.trim()} role="group" aria-label={copy.aria}>
-      <button
-        type="button"
-        className={lang === "fr" ? "is-active" : ""}
-        aria-pressed={lang === "fr"}
-        onClick={() => setLanguage("fr")}
-      >
-        {copy.fr}
-      </button>
-      <button
-        type="button"
-        className={lang === "en" ? "is-active" : ""}
-        aria-pressed={lang === "en"}
-        onClick={() => setLanguage("en")}
-      >
-        {copy.en}
-      </button>
-    </div>
-  );
-}
-
-function Nav() {
-  const links = navLinks();
-  const aria = chromeAriaCopy();
-
-  return (
-    <header className="fk-nav">
-      <div className="fk-nav-inner">
-        <a href="/" className="fk-logo">
-          <ProcessAppIcon size={28} />
-          Process
-        </a>
-        <nav className="fk-nav-links" aria-label={aria.mainNav}>
-          {links.map((link) => (
-            <a key={link.id} href={`#${link.id}`}>
-              {link.label}
-            </a>
-          ))}
-        </nav>
-        <div className="fk-nav-actions">
-          <LanguageSwitch />
-          <ThemeToggle />
-          <StoreDownloadButtons className="fk-nav-download" />
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -491,13 +432,10 @@ function Footer() {
 
 export function ProcessLandingPage() {
   useSiteLanguage();
-  useSiteTheme();
   useSmoothAnchorScroll();
-  useNavScrollState();
 
   return (
     <div className="fk-page">
-      <Nav />
       <main>
         <Hero />
         <Stats />

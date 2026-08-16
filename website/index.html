@@ -11,20 +11,6 @@
           document.documentElement.classList.add("page-studio");
         }
       })();
-      (function () {
-        try {
-          var theme = localStorage.getItem("process.site.theme");
-          if (theme !== "dark" && theme !== "light") {
-            theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-          }
-          if (theme === "dark") {
-            document.documentElement.classList.add("fk-theme-dark");
-            document.documentElement.style.colorScheme = "dark";
-            var themeColor = document.querySelector('meta[name="theme-color"]');
-            if (themeColor) themeColor.setAttribute("content", "#0a0a10");
-          }
-        } catch (e) {}
-      })();
     </script>
     <style>
       .hidden { display: none !important; }
