@@ -212,6 +212,16 @@ var shouldShowBackButton: Bool {
     return viewModel.visitedSteps.count > 1
 }
 
+var onboardingScreenBackground: Color {
+    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else {
+        return OnboardingTheme.screenBackground
+    }
+    if step == .faceLeverageIntro {
+        return OnboardingTheme.faceLeverageIntroBackground
+    }
+    return OnboardingTheme.screenBackground
+}
+
 var shouldAddTopPadding: Bool {
     guard let step = OnboardingStep(rawValue: viewModel.currentStep) else {
         return false
@@ -220,7 +230,7 @@ var shouldAddTopPadding: Bool {
     // Pages avec titre en overlay : pas de padding parent (évite le double décalage).
     if step == .videoIntroduction || step == .payment || step == .appleSignIn || step == .processWelcome || step == .faceAnalysis
         || step == .genderSelection || step == .ageSelection || step == .height || step == .weight
-        || step == .heightWeight || step == .firstNameInput
+        || step == .heightWeight || step == .firstNameInput || step == .faceLeverageIntro
         || step == .weightEstimation || step == .goalProjection
         || step == .primaryGoal || step == .idealWeight || step == .goalPace
         || step == .hasSportActivity || step == .nutritionQuality

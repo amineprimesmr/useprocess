@@ -29,6 +29,7 @@ private enum JournalDesign {
 struct DailyJournalChecklistView: View {
     let plan: FaceOriginPlan
     @Binding var selectedDate: Date
+    var onOpenScanHub: (() -> Void)? = nil
     var isPlanActive: Bool = true
     var healthMetrics: PlanHomeHealthMetrics = PlanHomeHealthMetrics()
     var showHeader: Bool = true
@@ -89,16 +90,14 @@ struct DailyJournalChecklistView: View {
                             .padding(.top, sectionTopSpacing(for: section, index: index))
                     }
                     .animation(.spring(response: 0.42, dampingFraction: 0.86), value: layoutStore.orderedSections.map(\.rawValue))
+                } else if tutorialStore.constrainsHomeLayout {
+                    homeSectionsStack
+                        .animation(
+                            .spring(response: 0.52, dampingFraction: 0.88),
+                            value: displayedSections.map(\.rawValue)
+                        )
                 } else {
-                    ForEach(Array(displayedSections.enumerated()), id: \.element.id) { index, section in
-                        homeSectionView(section)
-                            .padding(.top, sectionTopSpacing(for: section, index: index))
-                            .transition(tutorialSectionTransition)
-                    }
-                    .animation(
-                        .spring(response: 0.52, dampingFraction: 0.88),
-                        value: displayedSections.map(\.rawValue)
-                    )
+                    homeSectionsStack
                 }
 
                 if case .future = dayAvailability, !showChecklist {
@@ -144,8 +143,11 @@ struct DailyJournalChecklistView: View {
         .onChange(of: planBridge.shouldOpenHomeFaceScan) { _, should in
             guard should else { return }
             planBridge.shouldOpenHomeFaceScan = false
-            guard FaceScanHistoryStore.shared.canStartTodayScan else { return }
-            showFaceScan = true
+            if let onOpenScanHub {
+                onOpenScanHub()
+            } else if FaceScanHistoryStore.shared.canStartTodayScan {
+                showFaceScan = true
+            }
         }
     }
 
@@ -197,6 +199,7 @@ struct DailyJournalChecklistView: View {
                         isPlanActive: isPlanActive,
                         healthMetrics: healthMetrics,
                         zoomNamespace: faceScanHistoryZoomNamespace,
+                        onOpenScanHub: onOpenScanHub,
                         onScan: {},
                         onScanComplete: { _ in }
                     )
@@ -295,6 +298,15 @@ struct DailyJournalChecklistView: View {
         return layoutStore.visibleSections
     }
 
+    @ViewBuilder
+    private var homeSectionsStack: some View {
+        ForEach(Array(displayedSections.enumerated()), id: \.element.id) { index, section in
+            homeSectionView(section)
+                .padding(.top, sectionTopSpacing(for: section, index: index))
+                .transition(tutorialSectionTransition)
+        }
+    }
+
     private var tutorialSectionTransition: AnyTransition {
         if tutorialStore.constrainsHomeLayout {
             return .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
@@ -347,7 +359,11 @@ struct DailyJournalChecklistView: View {
             syncChecklistExpansion(for: day)
         }
         .onChange(of: journalFilledToken(for: day)) { _, _ in
-            if OriginPlanPresenter.isDayJournalFilled(plan: livePlan, day: day) {
+            syncChecklistExpansion(for: day)
+        }
+        .onChange(of: OriginPlanPresenter.isDayJournalFilled(plan: livePlan, day: day)) { wasFilled, isFilled in
+            guard wasFilled != isFilled else { return }
+            if isFilled {
                 HapticManager.shared.notification(.success)
                 withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
                     isChecklistExpanded = false

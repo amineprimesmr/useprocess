@@ -104,8 +104,10 @@ class OnboardingNavigationEngine {
         case .heightWeight:
             return OnboardingStep.firstNameInput.rawValue
         case .firstNameInput:
+            return OnboardingStep.faceLeverageIntro.rawValue
+        case .faceLeverageIntro, .personalizedWelcome:
             return OnboardingStep.weightMotivation.rawValue
-        case .personalizedWelcome, .processResultsDurability:
+        case .processResultsDurability:
             return OnboardingStep.weightMotivation.rawValue
         case .primaryGoal, .idealWeight, .weightGoalIncompatible:
             return OnboardingStep.firstNameInput.rawValue
@@ -168,7 +170,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weight.rawValue
         case .bodyScan:
             return OnboardingStep.weight.rawValue
-        case .personalizedWelcome, .processResultsDurability:
+        case .faceLeverageIntro:
+            return OnboardingStep.firstNameInput.rawValue
+        case .processResultsDurability:
             return OnboardingStep.firstNameInput.rawValue
         default:
             break
@@ -219,7 +223,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.firstNameInput.rawValue
             
         case .weightMotivation:
-            return OnboardingStep.programCreation.rawValue
+            return OnboardingStep.dashboardPreview.rawValue
 
         case .programCreation, .notificationPermission:
             return OnboardingStep.weightEstimation.rawValue
@@ -300,7 +304,7 @@ class OnboardingNavigationEngine {
     private func getNextStepInFinalizationFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .referralCode:
-            return OnboardingStep.biometricAuth.rawValue
+            return OnboardingStep.payment.rawValue
             
         case .appRating:
             return OnboardingStep.biometricAuth.rawValue
@@ -321,7 +325,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.dreamFaceCommit.rawValue
 
         case .dreamFaceCommit:
-            return OnboardingStep.payment.rawValue
+            return OnboardingStep.referralCode.rawValue
 
         case .payment:
             return OnboardingStep.appleSignIn.rawValue
@@ -346,7 +350,7 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weight.rawValue
             
         case .weightMotivation:
-            return OnboardingStep.firstNameInput.rawValue
+            return OnboardingStep.faceLeverageIntro.rawValue
             
         case .goalPace, .hasSportActivity, .sportSelection,
              .weightManagementExperience, .weightFailureReasons, .nutritionQuality:
@@ -356,6 +360,10 @@ class OnboardingNavigationEngine {
             return OnboardingStep.programCreation.rawValue
             
         case .programCreation:
+            if viewModel.dashboardPreviewPresentation == .firstScanPending
+                || viewModel.isFaceAnalysisCompleted {
+                return OnboardingStep.dashboardPreview.rawValue
+            }
             return OnboardingStep.weightMotivation.rawValue
             
         case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace, .eventDetails:
@@ -381,6 +389,10 @@ class OnboardingNavigationEngine {
             return OnboardingStep.weightEstimation.rawValue
 
         case .programCreation:
+            if viewModel.dashboardPreviewPresentation == .firstScanPending
+                || viewModel.isFaceAnalysisCompleted {
+                return OnboardingStep.dashboardPreview.rawValue
+            }
             return OnboardingStep.weightMotivation.rawValue
 
         case .biometricAuth:
@@ -418,7 +430,7 @@ class OnboardingNavigationEngine {
     private func getPreviousStepInFinalizationFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .referralCode:
-            return OnboardingStep.weightEstimation.rawValue
+            return OnboardingStep.dreamFaceCommit.rawValue
 
         case .sleepWindowReveal, .alarmConfiguration:
             return OnboardingStep.weightEstimation.rawValue
@@ -433,13 +445,16 @@ class OnboardingNavigationEngine {
             return OnboardingStep.biometricAuth.rawValue
 
         case .dashboardPreview:
+            if viewModel.dashboardPreviewPresentation == .firstScanPending {
+                return OnboardingStep.weightMotivation.rawValue
+            }
             return OnboardingStep.transformationPreview.rawValue
 
         case .dreamFaceCommit:
             return OnboardingStep.dashboardPreview.rawValue
 
         case .payment:
-            return OnboardingStep.dreamFaceCommit.rawValue
+            return OnboardingStep.referralCode.rawValue
 
         case .appleSignIn:
             return OnboardingStep.payment.rawValue

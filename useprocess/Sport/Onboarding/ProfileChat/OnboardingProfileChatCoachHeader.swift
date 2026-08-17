@@ -6,6 +6,12 @@
 import SwiftUI
 
 enum OnboardingProfileChatCoachHeaderProgress {
+    struct Snapshot: Equatable {
+        let segmentCount: Int
+        let completedSegments: Int
+        let activeProgress: Double
+    }
+
     static let introQuestionIDs = ["intro_swollen_face", "intro_causes", "intro_next"]
     static let numberedQuestionIDs = [
         "debloat_driver",
@@ -15,128 +21,76 @@ enum OnboardingProfileChatCoachHeaderProgress {
         "cardio_frequency"
     ]
 
-    static func value(questionID: String?, engine: MossConversationEngine) -> Double {
-        guard let questionID else { return 0 }
+    private static let introSegments: [(questionID: String, blockIndex: Int)] = [
+        ("intro_swollen_face", 0),
+        ("intro_swollen_face", 1),
+        ("intro_causes", 0),
+        ("intro_next", 0)
+    ]
 
-        let typing = typingFraction(questionID: questionID, engine: engine)
-
-        if introQuestionIDs.contains(questionID) {
-            guard let index = introQuestionIDs.firstIndex(of: questionID) else { return 0 }
-            return min(1, (Double(index) + typing) / Double(introQuestionIDs.count))
+    static func snapshot(questionID: String?, engine: MossConversationEngine) -> Snapshot? {
+        guard let questionID, introQuestionIDs.contains(questionID) else {
+            return nil
         }
 
-        if let index = numberedQuestionIDs.firstIndex(of: questionID) {
-            let total = Double(numberedQuestionIDs.count)
-            return min(1, (Double(index) + typing) / total)
-        }
-
-        // Scan / analyse — les 5 questions sont passées.
-        return 1
+        let segmentIndex = introSegmentIndex(questionID: questionID, engine: engine)
+        let lineID = OnboardingMossChatHelpers.lineID(
+            questionID: introSegments[segmentIndex].questionID,
+            blockIndex: introSegments[segmentIndex].blockIndex
+        )
+        return Snapshot(
+            segmentCount: 4,
+            completedSegments: segmentIndex,
+            activeProgress: typingFraction(lineID: lineID, engine: engine)
+        )
     }
 
-    private static func typingFraction(questionID: String, engine: MossConversationEngine) -> Double {
-        let prefix = "process.chat.\(questionID)."
-        let lines = engine.messages.filter { $0.sender == .moss && $0.id.hasPrefix(prefix) }
-        if lines.isEmpty {
+    private static func introSegmentIndex(questionID: String, engine: MossConversationEngine) -> Int {
+        switch questionID {
+        case "intro_swollen_face":
+            let block1 = OnboardingMossChatHelpers.lineID(questionID: "intro_swollen_face", blockIndex: 1)
+            return engine.messages.contains(where: { $0.id == block1 }) ? 1 : 0
+        case "intro_causes":
+            return 2
+        case "intro_next":
+            return 3
+        default:
+            return 0
+        }
+    }
+
+    private static func typingFraction(lineID: String, engine: MossConversationEngine) -> Double {
+        guard let line = engine.messages.first(where: { $0.id == lineID && $0.sender == .moss }) else {
             return engine.isTyping ? 0 : (engine.controlsVisible ? 1 : 0)
         }
-        let totalChars = lines.reduce(0) { $0 + $1.text.count }
-        let revealedChars = lines.reduce(0) { $0 + $1.revealed }
-        guard totalChars > 0 else { return 1 }
-        return min(1, Double(revealedChars) / Double(totalChars))
+        guard line.text.count > 0 else { return 1 }
+        return min(1, Double(line.revealed) / Double(line.text.count))
     }
 }
 
 struct OnboardingProfileChatCoachHeader: View {
-    let progress: Double
+    let progress: OnboardingProfileChatCoachHeaderProgress.Snapshot
 
-    @Environment(\.colorScheme) private var colorScheme
-
-    /// Hauteur utile pour caler le scroll sous le header (aligné bouton retour).
-    static let blockHeight: CGFloat = 84
-
-    private enum Metrics {
-        static let iconSize: CGFloat = 38
-        static let barWidth: CGFloat = 52
-        static let barHeight: CGFloat = 7
-    }
-
-    private var accentBlue: Color {
-        colorScheme == .dark
-            ? OnboardingTheme.accentHighlight
-            : Color(red: 0.06, green: 0.36, blue: 0.78)
-    }
-
-    private var progressFillGradient: LinearGradient {
-        PaywallBevelTheme.paywallProTitleGradient(for: colorScheme)
-    }
+    /// Hauteur utile sous le bouton retour — alignée sur la barre onboarding standard.
+    static let blockHeight: CGFloat = 5
 
     var body: some View {
-        VStack(spacing: 4) {
-            logoMark
-
-            Text(AppCopy.t("Process Coach", en: "Process Coach"))
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(OnboardingTheme.primaryText)
-
-            HStack(spacing: 5) {
-                Circle()
-                    .fill(Color(red: 0.20, green: 0.78, blue: 0.36))
-                    .frame(width: 6, height: 6)
-
-                Text(AppCopy.t("Ton coach personnel", en: "Your personal coach"))
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundStyle(OnboardingTheme.mutedText)
-            }
-
-            progressBar
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(AppCopy.t("Process Coach", en: "Process Coach"))
-        .accessibilityValue(AppCopy.t(
-            "Progression \(Int(clampedProgress * 100)) pour cent",
-            en: "Progress \(Int(clampedProgress * 100)) percent"
-        ))
+        OnboardingSegmentedProgressBar(
+            segmentCount: progress.segmentCount,
+            completedSegments: progress.completedSegments,
+            activeSegmentProgress: progress.activeProgress,
+            height: Self.blockHeight
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(AppCopy.t("Progression", en: "Progress"))
+        .accessibilityValue(accessibilityValue)
     }
 
-    private var logoMark: some View {
-        Image("process_coach_avatar")
-            .resizable()
-            .scaledToFill()
-            .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-            .clipShape(Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(
-                        accentBlue.opacity(colorScheme == .dark ? 0.22 : 0.14),
-                        lineWidth: 0.75
-                    )
-            }
-            .shadow(color: accentBlue.opacity(colorScheme == .dark ? 0.18 : 0.12), radius: 8, y: 0)
-            .accessibilityHidden(true)
-    }
-
-    private var progressBar: some View {
-        ZStack(alignment: .leading) {
-            Capsule(style: .continuous)
-                .fill(OnboardingTheme.progressTrack)
-                .frame(width: Metrics.barWidth, height: Metrics.barHeight)
-
-            Capsule(style: .continuous)
-                .fill(progressFillGradient)
-                .frame(width: max(Metrics.barHeight, Metrics.barWidth * clampedProgress), height: Metrics.barHeight)
-                .shadow(
-                    color: PaywallBevelTheme.accentBlueGlow(for: colorScheme).opacity(colorScheme == .dark ? 0.35 : 0.45),
-                    radius: 6,
-                    y: 0
-                )
-        }
-        .frame(width: Metrics.barWidth, height: Metrics.barHeight)
-        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: clampedProgress)
-    }
-
-    private var clampedProgress: CGFloat {
-        CGFloat(min(max(progress, 0), 1))
+    private var accessibilityValue: String {
+        let current = min(progress.completedSegments + 1, progress.segmentCount)
+        return AppCopy.t(
+            "Étape \(current) sur \(progress.segmentCount)",
+            en: "Step \(current) of \(progress.segmentCount)"
+        )
     }
 }

@@ -1,0 +1,122 @@
+.affiliate-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+  font-family: Inter, system-ui, sans-serif;
+  color: #f6f4ec;
+}
+
+.affiliate-center {
+  min-height: 50vh;
+  display: grid;
+  place-items: center;
+}
+
+.affiliate-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.affiliate-muted {
+  color: rgba(246, 244, 236, 0.72);
+}
+
+.affiliate-card,
+.affiliate-stats .affiliate-stat {
+  background: rgba(15, 25, 32, 0.82);
+  border: 1px solid rgba(246, 244, 236, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.affiliate-card {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.affiliate-card label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+.affiliate-card input {
+  border-radius: 12px;
+  border: 1px solid rgba(246, 244, 236, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  padding: 12px 14px;
+}
+
+.affiliate-card button,
+.affiliate-secondary {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f6f4ec;
+  color: #0f1920;
+}
+
+.affiliate-secondary {
+  background: transparent;
+  color: #f6f4ec;
+  border: 1px solid rgba(246, 244, 236, 0.18);
+}
+
+.affiliate-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.affiliate-stat {
+  display: grid;
+  gap: 8px;
+}
+
+.affiliate-stat strong {
+  font-size: 1.35rem;
+}
+
+.affiliate-code {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.affiliate-link {
+  color: #9fd3ff;
+  word-break: break-all;
+}
+
+.affiliate-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.affiliate-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.affiliate-error {
+  color: #ff8a8a;
+}
+
+@media (min-width: 768px) {
+  .affiliate-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

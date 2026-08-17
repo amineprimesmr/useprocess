@@ -141,6 +141,7 @@ final class AppSession {
         OnboardingProgressService.shared.resetProgress()
         WelcomePlanStore.shared.resetForCurrentUser()
         ProcessAnalytics.reset()
+        ProcessCrispSupport.resetSession()
 
         AuthenticationManager.shared.applyPostAccountDeletion()
         AuthenticationManager.shared.startOnboarding()

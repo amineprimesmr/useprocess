@@ -16,7 +16,7 @@ enum OnboardingStep: Int, CaseIterable {
     case heightWeight = 68                   // ✨ Ancienne page combinée (dépréciée, gardée pour compatibilité)
     case bodyScan = 63                      // Conservé compat sauvegarde — scan corps dans l'app, saut auto
     case firstNameInput = 4
-    case personalizedWelcome = 5             // ✨ Page de bienvenue personnalisée après prénom
+    case personalizedWelcome = 5             // Compat sauvegarde — page supprimée, saut auto
     case processResultsDurability = 6       // ✨ Process génère des résultats durables (graphique performance)
     case primaryGoal = 7                    // As-tu un objectif de poids ? (Oui/Non)
 
@@ -94,6 +94,7 @@ enum OnboardingStep: Int, CaseIterable {
     case referralReward = 62                   // ✨ Page de parrainage avec slider de gains
     case featuresUnlock = 65                   // ✨ Page de déblocage progressif des fonctionnalités
     case complete = 66
+    case faceLeverageIntro = 71                 // ✨ Valeur « ton visage est ton levier » après prénom
     // Note: bodyScan = 63 est placé après heightWeight mais avant firstNameInput pour logique de flow
 
     var usesInternalContinueAction: Bool {
@@ -103,7 +104,8 @@ enum OnboardingStep: Int, CaseIterable {
              .transformationPreview, .dashboardPreview, .dreamFaceCommit, .programCreation,
              .payment, .processWelcome, .referralReward, .featuresUnlock,
              .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
-             .personalizedWelcome, .processResultsDurability,
+             .processResultsDurability,
+             .faceLeverageIntro,
              .weightGoalIncompatible:
             return true
         default:
@@ -128,7 +130,7 @@ enum OnboardingStep: Int, CaseIterable {
         .heightWeight,
         .bodyScan,
         .firstNameInput,
-        .personalizedWelcome,
+        .faceLeverageIntro,
         .processResultsDurability,
         .primaryGoal,
         .weightGoal,
@@ -211,10 +213,10 @@ enum OnboardingStep: Int, CaseIterable {
              .sleepNeed, .planGeneration,
              .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
              .alarmConfiguration, .sleepWindowReveal,
-             .referralCode, .caloriesGoal, .carryOverCalories, .appRating,
+             .caloriesGoal, .carryOverCalories, .appRating,
              .processWelcome, .referralReward, .featuresUnlock, .complete,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
-             .personalizedWelcome, .processResultsDurability,
+             .processResultsDurability, .personalizedWelcome,
              .sleepDataRecovery, .primaryGoal, .goalProjection,
              .healthKitPermissions, .notificationPermission,
              .idealWeight, .weightGoalIncompatible:

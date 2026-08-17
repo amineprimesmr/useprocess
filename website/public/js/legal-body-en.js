@@ -291,6 +291,7 @@ window.LEGAL_BODY_EN = {
         <li><strong>Apple</strong>: App Store, Sign in with Apple, HealthKit, in-app purchases, Speech (on-device dictation).</li>
         <li><strong>Google Firebase</strong>: authentication, Firestore, Cloud Functions (AI proxy).</li>
         <li><strong>RevenueCat</strong>: subscription management.</li>
+        <li><strong>Crisp</strong>: support chat (messages you send via the website widget or in-app chat). Hosted in the EU (Crisp IM SAS).</li>
         <li><strong>Anthropic (Claude)</strong>: AI coach and vision analyses — <strong>only with explicit consent</strong> (section 4).</li>
       </ul>
 
@@ -400,7 +401,7 @@ window.LEGAL_BODY_EN = {
 
       <p>
         Have a question about the app, your subscription, your data, or a technical issue?
-        Email us — we typically respond within 2 business days.
+        Open the chat in the bottom-right corner, or email us — we typically respond within 2 business days.
       </p>
 
       <p>

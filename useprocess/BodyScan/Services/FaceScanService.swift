@@ -23,7 +23,7 @@ enum FaceScanService {
         let scanSource: FaceScanSource = AppSession.shared.hasCompletedOnboarding ? .daily : .onboarding
         // Studio créateur : on garde l’analyse réelle ici — le slider ajuste sur l’écran résultats.
         let resolvedMarkers: FaceWellnessMarkers
-        if scanSource == .onboarding, !ProcessCreatorModeStore.shared.isUnlocked {
+        if scanSource == .onboarding {
             resolvedMarkers = OnboardingFaceScanMarkerCalibration.calibrate(
                 markers,
                 sleepHours: sleepHours,

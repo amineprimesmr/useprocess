@@ -22,6 +22,9 @@ export function getRoute() {
   if (path === "/studio" || path === "/studio.html") {
     return { type: "studio" };
   }
+  if (path === "/affiliate" || path === "/affiliate.html") {
+    return { type: "affiliate" };
+  }
   if (
     path === "/get" ||
     path === "/telecharger" ||
@@ -42,6 +45,7 @@ function getContainers() {
     landingLegal: document.getElementById("landing-legal"),
     legalContent: document.getElementById("landing-legal-content"),
     pageStudio: document.getElementById("page-studio"),
+    pageAffiliate: document.getElementById("page-affiliate"),
     page404: document.getElementById("page-404"),
   };
 }
@@ -60,6 +64,8 @@ export async function initRouting() {
   document.documentElement.classList.toggle("page-get-app", route.type === "get-app");
   document.body.classList.toggle("page-studio", route.type === "studio");
   document.documentElement.classList.toggle("page-studio", route.type === "studio");
+  document.body.classList.toggle("page-affiliate", route.type === "affiliate");
+  document.documentElement.classList.toggle("page-affiliate", route.type === "affiliate");
 
   if (route.type !== "landing") {
     runLiquidGlassMenuCleanupLanding();
@@ -69,6 +75,10 @@ export async function initRouting() {
   if (c.pageStudio) {
     c.pageStudio.classList.add("hidden");
     c.pageStudio.setAttribute("aria-hidden", "true");
+  }
+  if (c.pageAffiliate) {
+    c.pageAffiliate.classList.add("hidden");
+    c.pageAffiliate.setAttribute("aria-hidden", "true");
   }
 
   if (route.type === "404") {
@@ -89,6 +99,17 @@ export async function initRouting() {
       c.pageStudio.setAttribute("aria-hidden", "false");
     }
     const page = await loadPage("studio");
+    await page.init(route);
+    return null;
+  }
+
+  if (route.type === "affiliate") {
+    if (c.landing) c.landing.classList.add("hidden");
+    if (c.pageAffiliate) {
+      c.pageAffiliate.classList.remove("hidden");
+      c.pageAffiliate.setAttribute("aria-hidden", "false");
+    }
+    const page = await loadPage("affiliate");
     await page.init(route);
     return null;
   }

@@ -28,7 +28,8 @@ struct ProcessRoutineHomeView: View {
     var body: some View {
         processMainScrollableChrome(
             selectedSection: $selectedSection,
-            pageSection: .routine
+            pageSection: .routine,
+            adoptsFloatingTabBar: !isOnboardingPreview
         ) {
             VStack(alignment: .leading, spacing: PlanHomeSectionDesign.sectionSpacing) {
                 header
@@ -47,7 +48,7 @@ struct ProcessRoutineHomeView: View {
                 }
             }
             .padding()
-            .padding(.bottom, ProcessIGTabMetrics.tabBarOverlayClearance + 12)
+            .padding(.bottom, isOnboardingPreview ? 12 : ProcessIGTabMetrics.tabBarOverlayClearance + 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)

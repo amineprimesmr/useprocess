@@ -30,9 +30,18 @@ struct OnboardingProfileChatView: View {
             OnboardingTheme.screenBackground
                 .ignoresSafeArea()
 
-            MossBreathingArc(intensity: colorScheme == .dark ? 0.55 : 0.28)
+            if !chatViewModel.isGlowUpResultsPresented {
+                MossBreathingArc(intensity: colorScheme == .dark ? 0.55 : 0.28)
+            }
 
-            mossConversationSurface
+            if chatViewModel.isGlowUpResultsPresented {
+                OnboardingGlowUpResultsStepView {
+                    Task { await chatViewModel.completeGlowUpResults() }
+                }
+                .transition(.opacity)
+            } else {
+                mossConversationSurface
+            }
         }
         .onChange(of: chatViewModel.shouldFinish) { _, should in
             guard should else { return }
@@ -57,7 +66,8 @@ struct OnboardingProfileChatView: View {
             }
             onboardingViewModel.onOnboardingFaceScanCancel = { [chatViewModel] in
                 chatViewModel.isSubmittingAnswer = false
-                if chatViewModel.currentQuestion?.id == "face_scan_offer" {
+                if chatViewModel.currentQuestion?.kind == .profileSummary
+                    || chatViewModel.currentQuestion?.id == "face_scan_offer" {
                     chatViewModel.restoreFaceScanOfferAnswers()
                 }
             }
@@ -95,26 +105,45 @@ struct OnboardingProfileChatView: View {
             mossEngine.assistiveVoice = value
         }
         .onDisappear {
+            onboardingViewModel.profileChatHeaderProgress = nil
             if onboardingViewModel.profileChatBackHandler != nil {
                 onboardingViewModel.profileChatBackHandler = nil
             }
         }
+        .onChange(of: chatHeaderProgressRefreshKey) { _, _ in
+            refreshChatHeaderProgress()
+        }
+        .onAppear {
+            refreshChatHeaderProgress()
+        }
+    }
+
+    private var chatHeaderProgressRefreshKey: String {
+        let questionID = chatViewModel.currentQuestion?.id ?? ""
+        let typingState = mossEngine.messages
+            .map { "\($0.id):\($0.revealed)" }
+            .joined(separator: "|")
+        return "\(questionID)|\(typingState)|\(mossEngine.isTyping)|\(mossEngine.controlsVisible)"
+    }
+
+    private func refreshChatHeaderProgress() {
+        onboardingViewModel.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
+            questionID: chatViewModel.currentQuestion?.id,
+            engine: mossEngine
+        )
     }
 
     // MARK: - Moss conversation surface
 
     private var mossConversationSurface: some View {
-        let conversationTopInset =
-            OnboardingConstants.headerBackButtonTopPadding
-            + OnboardingProfileChatCoachHeader.blockHeight
-            + 10
+        let conversationTopInset = OnboardingConstants.mossChatContentTopInset
 
         return ZStack(alignment: .top) {
             GeometryReader { geometry in
                 ScrollViewReader { proxy in
                     ScrollView {
                         mossConversationStack
-                            .padding(.top, 8)
+                            .padding(.top, 12)
                             .padding(.bottom, Theme.Space.xl)
                             .frame(
                                 maxWidth: .infinity,
@@ -135,11 +164,6 @@ struct OnboardingProfileChatView: View {
             .padding(.top, conversationTopInset)
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
 
-            OnboardingProfileChatCoachHeader(progress: coachHeaderProgress)
-                .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
-                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
-                .allowsHitTesting(false)
-
             if mossEngine.isTyping {
                 Color.clear
                     .contentShape(Rectangle())
@@ -150,13 +174,6 @@ struct OnboardingProfileChatView: View {
                     .accessibilityHidden(true)
             }
         }
-    }
-
-    private var coachHeaderProgress: Double {
-        OnboardingProfileChatCoachHeaderProgress.value(
-            questionID: chatViewModel.currentQuestion?.id,
-            engine: mossEngine
-        )
     }
 
     private var mossConversationStack: some View {
@@ -205,14 +222,13 @@ struct OnboardingProfileChatView: View {
         .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: engine.controlsVisible)
     }
 
-    /// Espace sous le header Process Coach — uniquement la toute première bulle Moss.
+    /// Espace sous la barre de progression — uniquement la toute première bulle Moss.
     private func firstMessageTopInset(for message: MossConversationEngine.Message) -> CGFloat {
-        guard mossEngine.messages.count == 1,
-              message.sender == .moss,
+        guard message.sender == .moss,
               message.id == mossEngine.messages.first?.id else {
             return 0
         }
-        return 22
+        return 16
     }
 
     private func scrollToLatestMessage(proxy: ScrollViewProxy) {
@@ -319,6 +335,17 @@ struct OnboardingProfileChatView: View {
                     isScanRevealed: mossEngine.controlsVisible,
                     onLaunchScan: {
                         Task { await launchOnboardingFaceScan() }
+                    }
+                )
+                .settleIn(0)
+
+            case .profileSummary:
+                OnboardingProfileChatProfileSummarySection(
+                    sections: OnboardingProfileSummaryBuilder.sections(for: onboardingViewModel),
+                    isSubmitting: chatViewModel.isSubmittingAnswer,
+                    isRevealed: mossEngine.controlsVisible,
+                    onContinue: {
+                        Task { await chatViewModel.submitProfileSummaryContinue() }
                     }
                 )
                 .settleIn(0)

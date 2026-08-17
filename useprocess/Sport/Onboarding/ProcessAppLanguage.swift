@@ -2,8 +2,8 @@ import Foundation
 import Observation
 
 private enum ProcessAppLanguageKeys {
-    static let storageKey = "process.app.language"
-    static let legacyUserDefaultsKey = "selectedLanguage"
+    nonisolated static let storageKey = "process.app.language"
+    nonisolated static let legacyUserDefaultsKey = "selectedLanguage"
 }
 
 /// Langue produit de l’app — pilotée par le device au premier lancement, puis par le sélecteur onboarding.

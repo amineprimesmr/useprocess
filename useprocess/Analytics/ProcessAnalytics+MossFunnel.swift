@@ -12,6 +12,7 @@ extension ProcessAnalytics {
         case junkFood = "junk_food"
         case sleepHours = "sleep_hours"
         case cardioFrequency = "cardio_frequency"
+        case profileSummary = "profile_summary"
         case faceScanOffer = "face_scan_offer"
         case faceScanCapture = "face_scan_capture"
         case faceScanAnalyzing = "face_scan_analyzing"
@@ -58,7 +59,10 @@ extension ProcessAnalytics {
         }
 
         static func chatQuestion(id: String) -> MossPage? {
-            MossPage(rawValue: id)
+            if id == "face_scan_offer" {
+                return .profileSummary
+            }
+            return MossPage(rawValue: id)
         }
 
         static func programCreationPhase(index: Int) -> MossPage? {

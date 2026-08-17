@@ -100,7 +100,7 @@ private struct ProcessIGTabBarScrollTracking: ViewModifier {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
             .simultaneousGesture(
-                DragGesture(minimumDistance: 8, coordinateSpace: .scrollView)
+                DragGesture(minimumDistance: 12, coordinateSpace: .scrollView)
                     .updating($isDragging) { _, out, _ in
                         out = true
                     }

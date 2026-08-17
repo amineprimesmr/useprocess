@@ -55,9 +55,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
         }
         .processClearUIKitHostingBackground()
         .background(FaceScanWhoopPalette.canvas)
-        .task {
-            try? await Task.sleep(for: .seconds(7))
-            guard !Task.isCancelled else { return }
+        .onAppear {
             withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
                 showsCreatePlanButton = true
             }

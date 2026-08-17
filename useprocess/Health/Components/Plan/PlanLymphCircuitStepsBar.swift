@@ -10,7 +10,7 @@ struct PlanLymphCircuitStepsBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "bolt.fill")
+            Image(systemName: "shoeprints.fill")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Layout.accent)
                 .frame(width: 20, height: 20)

@@ -20,6 +20,7 @@ final class OnboardingProfileChatViewModel {
     var isMessageAnimating: Bool { conversationEngine?.isTyping ?? false }
     var isSubmittingAnswer = false
     var shouldFinish = false
+    var isGlowUpResultsPresented = false
     var currentQuestion: OnboardingProfileChatQuestion?
     var analysisPhase: AnalysisPhase = .idle
     var analysisProgressPanelVisible = false
@@ -139,8 +140,11 @@ final class OnboardingProfileChatViewModel {
         self.permissionsManager = permissionsManager
         guard !hasStarted else { return }
         questions = OnboardingProfileChatQuestionBank.questions(for: viewModel)
+        let completed = OnboardingProfileChatQuestionBank.normalizedCompletedQuestionIDs(
+            Set(viewModel.completedProfileChatQuestionIDs)
+        )
         currentIndex = questions.firstIndex {
-            !viewModel.completedProfileChatQuestionIDs.contains($0.id)
+            !completed.contains($0.id)
         } ?? max(0, questions.count - 1)
         currentQuestion = nil
     }
@@ -177,8 +181,10 @@ final class OnboardingProfileChatViewModel {
             return
         }
 
-        let completed = viewModel.completedProfileChatQuestionIDs
         let allQuestionIDs = Set(questions.map(\.id))
+        let completed = OnboardingProfileChatQuestionBank.normalizedCompletedQuestionIDs(
+            Set(viewModel.completedProfileChatQuestionIDs)
+        )
 
         if allQuestionIDs.isSubset(of: completed) {
             analysisLetsGoUnlocked = false
@@ -192,6 +198,7 @@ final class OnboardingProfileChatViewModel {
             }
 
             // Scan sauté / déjà connecté / pas de Firebase → on enchaîne, pas de Sign in dans le chat.
+            viewModel.dashboardPreviewPresentation = .firstScanPending
             shouldAutoFinishAfterResume = true
             return
         }
@@ -221,6 +228,8 @@ final class OnboardingProfileChatViewModel {
                 await presentAnalysisDetailMessage()
             }
         case .faceScanOffer:
+            isQuestionReadyForAnswers = true
+        case .profileSummary:
             isQuestionReadyForAnswers = true
         default:
             isQuestionReadyForAnswers = true
@@ -283,6 +292,40 @@ final class OnboardingProfileChatViewModel {
         guard !isSubmittingAnswer,
               let question = currentQuestion,
               question.kind == .infoContinue else { return }
+
+        if question.id == "intro_next" {
+            isSubmittingAnswer = true
+            isGlowUpResultsPresented = true
+            onboardingViewModel?.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.Snapshot(
+                segmentCount: 4,
+                completedSegments: 4,
+                activeProgress: 1
+            )
+            isSubmittingAnswer = false
+            return
+        }
+
+        isSubmittingAnswer = true
+        await recordAnswer(
+            display: question.continueLabel ?? OnboardingCopy.continueCTA,
+            questionID: question.id
+        )
+    }
+
+    func dismissGlowUpResults() {
+        isGlowUpResultsPresented = false
+        onboardingViewModel?.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
+            questionID: currentQuestion?.id,
+            engine: conversationEngine
+        )
+    }
+
+    func completeGlowUpResults() async {
+        guard isGlowUpResultsPresented,
+              currentQuestion?.id == "intro_next",
+              let question = currentQuestion else { return }
+
+        isGlowUpResultsPresented = false
         isSubmittingAnswer = true
         await recordAnswer(
             display: question.continueLabel ?? OnboardingCopy.continueCTA,
@@ -294,6 +337,11 @@ final class OnboardingProfileChatViewModel {
     @discardableResult
     func goBackInDiscussion() -> Bool {
         guard let viewModel = onboardingViewModel else { return false }
+
+        if isGlowUpResultsPresented {
+            dismissGlowUpResults()
+            return true
+        }
 
         // Annule animations / jobs en cours pour pouvoir remonter proprement.
         conversationEngine.reset()
@@ -307,7 +355,7 @@ final class OnboardingProfileChatViewModel {
         // Scan inline : d’abord sortir du flux capture/analyse/résultats.
         if faceScanInlinePhase != .idle {
             resetInlineFaceScanState()
-            if let index = questions.firstIndex(where: { $0.id == "face_scan_offer" }) {
+            if let index = questions.firstIndex(where: { $0.id == "profile_summary" }) {
                 currentIndex = index
                 let question = OnboardingProfileChatQuestionBank.resolvedQuestion(
                     questions[index],
@@ -317,7 +365,7 @@ final class OnboardingProfileChatViewModel {
                 currentQuestion = question
                 isQuestionReadyForAnswers = true
                 trackCurrentChatQuestionViewed()
-                rebuildMessages(upToCompletedExclusiveOf: "face_scan_offer")
+                rebuildMessages(upToCompletedExclusiveOf: "profile_summary")
                 appendAssistantMessagesInstant(for: question)
             }
             analysisLetsGoUnlocked = false
@@ -397,7 +445,7 @@ final class OnboardingProfileChatViewModel {
         case "cardio_frequency":
             onboardingViewModel?.selectedTrainingFrequency = nil
             onboardingViewModel?.isTrainingFrequencySelected = false
-        case "face_scan_offer", "scan_explanation":
+        case "face_scan_offer", "profile_summary", "scan_explanation":
             onboardingViewModel?.onboardingFaceMarkers = nil
             onboardingViewModel?.isFaceAnalysisCompleted = false
             inlineFaceScanResult = nil
@@ -502,8 +550,35 @@ final class OnboardingProfileChatViewModel {
         await recordAnswer(display: display, questionID: "sport_pick", answerID: sport)
     }
 
+    func submitProfileSummaryContinue() async {
+        guard !isSubmittingAnswer,
+              let question = currentQuestion,
+              question.kind == .profileSummary else { return }
+        isSubmittingAnswer = true
+
+        let continueLabel = OnboardingCopy.t("Emmène-moi →", en: "Take me there →")
+        ProcessAnalytics.trackMossAction(
+            page: .profileSummary,
+            action: "continued_to_dashboard",
+            answerDisplay: continueLabel,
+            extra: [
+                "question_id": question.id,
+                "question_index": currentIndex,
+                "questions_total": questions.count
+            ]
+        )
+
+        await recordAnswer(
+            display: continueLabel,
+            questionID: question.id
+        )
+        onboardingViewModel?.dashboardPreviewPresentation = .firstScanPending
+        shouldFinish = true
+    }
+
     func submitFaceScanNow() async {
-        guard !isSubmittingAnswer, currentQuestion?.id == "face_scan_offer" else { return }
+        guard !isSubmittingAnswer,
+              currentQuestion?.kind == .faceScanOffer || currentQuestion?.id == "face_scan_offer" else { return }
         isSubmittingAnswer = true
 
         if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
@@ -536,6 +611,7 @@ final class OnboardingProfileChatViewModel {
         onboardingViewModel?.isFaceAnalysisCompleted = true
         onboardingViewModel?.onboardingFaceMesh = nil
         onboardingViewModel?.onboardingFaceMarkers = nil
+        markQuestionCompleted("profile_summary")
         markQuestionCompleted("face_scan_offer")
         ProcessAnalytics.trackMossAction(
             page: .faceScanOffer,
@@ -565,11 +641,14 @@ final class OnboardingProfileChatViewModel {
         onboardingViewModel?.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
         onboardingViewModel?.onboardingFaceMarkers = result.markers
         onboardingViewModel?.isFaceAnalysisCompleted = true
+        markQuestionCompleted("profile_summary")
         markQuestionCompleted("face_scan_offer")
     }
 
     func restoreFaceScanOfferAnswers() {
-        guard currentQuestion?.id == "face_scan_offer", !shouldFinish else { return }
+        guard currentQuestion?.kind == .profileSummary
+            || currentQuestion?.id == "face_scan_offer",
+              !shouldFinish else { return }
         isSubmittingAnswer = false
         isQuestionReadyForAnswers = true
         // Force re-view after cancel from capture (dedupe would skip if still on offer).
@@ -588,7 +667,8 @@ final class OnboardingProfileChatViewModel {
             onboardingViewModel?.onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
             onboardingViewModel?.onboardingFaceMarkers = result.markers
             onboardingViewModel?.isFaceAnalysisCompleted = true
-            markQuestionCompleted("face_scan_offer")
+            markQuestionCompleted("profile_summary")
+        markQuestionCompleted("face_scan_offer")
         }
         ProcessAnalytics.trackMossAction(page: .faceScanResults, action: "continued")
         currentQuestion = nil
@@ -861,6 +941,7 @@ final class OnboardingProfileChatViewModel {
         case .singleChoice: return "single_choice"
         case .multiChoice: return "multi_choice"
         case .faceScanOffer: return "face_scan_offer"
+        case .profileSummary: return "profile_summary"
         case .answersAnalysis: return "answers_analysis"
         case .analysisProgress: return "analysis_progress"
         case .autoPlanCreation: return "auto_plan_creation"

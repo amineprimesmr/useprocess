@@ -4,6 +4,7 @@ import UIKit
 enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     case coach
     case plan
+    case scan
     case routine
     case statistics
     case profile
@@ -13,7 +14,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     static let isCoachTabEnabled = false
 
     static var tabOrder: [ProcessMainSection] {
-        var tabs: [ProcessMainSection] = [.plan, .statistics, .routine]
+        var tabs: [ProcessMainSection] = [.plan, .scan, .routine, .statistics]
         if isCoachTabEnabled {
             tabs.append(.coach)
         }
@@ -30,6 +31,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .coach: AppCopy.t("Process IA", en: "Process AI")
         case .plan: AppCopy.home
+        case .scan: AppCopy.t("Scan", en: "Scan")
         case .routine: AppCopy.t("Routine", en: "Routine")
         case .statistics: AppCopy.t("Série", en: "Streak")
         case .profile: AppCopy.profile
@@ -40,6 +42,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .coach: "sparkles"
         case .plan: "house.fill"
+        case .scan: "viewfinder"
         case .routine: "checklist"
         case .statistics: "flame.fill"
         case .profile: "person.fill"
@@ -50,6 +53,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     var tabIconAsset: String? {
         switch self {
         case .plan: "tab_icon_home"
+        case .scan: nil
         case .routine: nil
         case .statistics: "tab_icon_streak"
         case .profile: nil

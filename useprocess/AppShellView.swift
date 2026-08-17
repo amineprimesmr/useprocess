@@ -92,11 +92,13 @@ struct AppShellView: View {
             }
             AppSession.shared.reloadForCurrentUser()
             ProcessAnalytics.configure()
+            ProcessCrispSupport.configure()
             ProcessAnalytics.trackAppOpened(hasCompletedOnboarding: session.hasCompletedOnboarding)
             if let uid = AuthUser.current?.uid {
                 ProcessAnalytics.identify(userId: uid)
             }
             ProcessAnalytics.syncFirstNameFromProfile()
+            ProcessCrispSupport.syncUser()
             // Laisse le 1er frame se peindre avant d’armer le double-swipe Home.
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }

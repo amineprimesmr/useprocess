@@ -68,6 +68,8 @@ enum ProcessAssetCatalog {
         "leoprime",
         "lucas",
         "lucasprime",
+        "mannybloat",
+        "mannyprime",
         "maya",
         "mayaprime",
         "meal_debloat_beef_rice_peppers",

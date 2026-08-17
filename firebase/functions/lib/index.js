@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.deleteUserAccount = void 0;
+exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -408,4 +408,21 @@ Object.defineProperty(exports, "referralRegister", { enumerable: true, get: func
 var referralRewards_1 = require("./referralRewards");
 Object.defineProperty(exports, "referralConfirmSubscription", { enumerable: true, get: function () { return referralRewards_1.referralConfirmSubscription; } });
 Object.defineProperty(exports, "referralRevenueCatWebhook", { enumerable: true, get: function () { return referralRewards_1.referralRevenueCatWebhook; } });
+var affiliate_1 = require("./affiliate");
+Object.defineProperty(exports, "affiliateResolveCode", { enumerable: true, get: function () { return affiliate_1.affiliateResolveCode; } });
+Object.defineProperty(exports, "affiliateRegister", { enumerable: true, get: function () { return affiliate_1.affiliateRegister; } });
+Object.defineProperty(exports, "affiliateApply", { enumerable: true, get: function () { return affiliate_1.affiliateApply; } });
+Object.defineProperty(exports, "affiliateSyncProfile", { enumerable: true, get: function () { return affiliate_1.affiliateSyncProfile; } });
+Object.defineProperty(exports, "affiliateDashboard", { enumerable: true, get: function () { return affiliate_1.affiliateDashboard; } });
+Object.defineProperty(exports, "affiliateAdminCreate", { enumerable: true, get: function () { return affiliate_1.affiliateAdminCreate; } });
+Object.defineProperty(exports, "affiliateAdminProvisionAuth", { enumerable: true, get: function () { return affiliate_1.affiliateAdminProvisionAuth; } });
+Object.defineProperty(exports, "affiliateAdminApprove", { enumerable: true, get: function () { return affiliate_1.affiliateAdminApprove; } });
+Object.defineProperty(exports, "affiliateAdminMarkPaid", { enumerable: true, get: function () { return affiliate_1.affiliateAdminMarkPaid; } });
+var affiliateCommissions_1 = require("./affiliateCommissions");
+Object.defineProperty(exports, "affiliateRevenueCatWebhook", { enumerable: true, get: function () { return affiliateCommissions_1.affiliateRevenueCatWebhook; } });
+Object.defineProperty(exports, "affiliateReleaseHeldCommissions", { enumerable: true, get: function () { return affiliateCommissions_1.affiliateReleaseHeldCommissions; } });
+var supportCrisp_1 = require("./supportCrisp");
+Object.defineProperty(exports, "supportSendMessage", { enumerable: true, get: function () { return supportCrisp_1.supportSendMessage; } });
+Object.defineProperty(exports, "supportCrispWebhook", { enumerable: true, get: function () { return supportCrisp_1.supportCrispWebhook; } });
+Object.defineProperty(exports, "supportCrispPoll", { enumerable: true, get: function () { return supportCrisp_1.supportCrispPoll; } });
 //# sourceMappingURL=index.js.map

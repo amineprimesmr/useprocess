@@ -63,16 +63,13 @@ class OnboardingCoordinator {
 
             // ✨ Vérifier si un code de parrainage a été utilisé
             if let referralCode = viewModel.referralCode, !referralCode.isEmpty {
-                do {
-                    try await ReferralService.shared.registerReferral(
-                        referralCode: referralCode,
-                        referredUserId: userId,
-                        displayName: newProfile.firstName.isEmpty ? newProfile.username : newProfile.firstName
-                    )
-                    ProcessReferralAttribution.clearPending()
-                } catch {
-                    // Ne pas bloquer l'onboarding en cas d'erreur
-                }
+                await AcquisitionCodeService.registerIfPresent(
+                    code: referralCode,
+                    referredUserId: userId,
+                    displayName: newProfile.firstName.isEmpty ? newProfile.username : newProfile.firstName
+                )
+                ProcessReferralAttribution.clearPending()
+                ProcessAffiliateAttribution.clearPending()
             }
         } else {
             // Mettre à jour le profil existant
@@ -166,16 +163,13 @@ class OnboardingCoordinator {
 
             if let referralCode = viewModel.referralCode, !referralCode.isEmpty,
                let userId = AuthUser.current?.uid {
-                do {
-                    try await ReferralService.shared.registerReferral(
-                        referralCode: referralCode,
-                        referredUserId: userId,
-                        displayName: currentProfile.firstName.isEmpty ? currentProfile.username : currentProfile.firstName
-                    )
-                    ProcessReferralAttribution.clearPending()
-                } catch {
-                    // Ne pas bloquer l'onboarding en cas d'erreur
-                }
+                await AcquisitionCodeService.registerIfPresent(
+                    code: referralCode,
+                    referredUserId: userId,
+                    displayName: currentProfile.firstName.isEmpty ? currentProfile.username : currentProfile.firstName
+                )
+                ProcessReferralAttribution.clearPending()
+                ProcessAffiliateAttribution.clearPending()
             }
 
             // ✅ CRITIQUE: Recharger le profil immédiatement après sauvegarde pour vérifier

@@ -496,6 +496,15 @@ enum ProcessAnalytics {
 
     // MARK: - Referral / share
 
+    static func trackSupportChatOpened(source: String) {
+        capture("support_chat_opened", properties: ["source": source])
+        setPersonProperties(["has_opened_support_chat": true])
+    }
+
+    static func trackSupportMessageSent() {
+        capture("support_message_sent")
+    }
+
     static func trackReferralShareOpened(source: String = "referral_program") {
         capture("referral_share_opened", properties: ["source": source])
     }

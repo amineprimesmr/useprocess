@@ -7,6 +7,10 @@ enum ProcessBackgroundPalette {
     static let lightBase = Color(red: 0.925, green: 0.927, blue: 0.933)
     static let darkBase = Color(red: 0.07, green: 0.08, blue: 0.11)
 
+    static func base(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? darkBase : lightBase
+    }
+
     static func uiColor(for colorScheme: ColorScheme) -> UIColor {
         switch colorScheme {
         case .dark:

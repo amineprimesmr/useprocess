@@ -198,6 +198,12 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
     ) {
         let kind = notification.request.content.userInfo["kind"] as? String ?? ""
 
+        if ProcessCrispSupport.isCrispPushNotification(notification) {
+            ProcessCrispSupport.handlePushNotification(notification)
+            completionHandler([.banner, .sound, .list])
+            return
+        }
+
         if kind == "coach_reply" {
             if let idString = notification.request.content.userInfo["conversationId"] as? String,
                let id = UUID(uuidString: idString),
@@ -244,6 +250,11 @@ final class CoachNotificationCenterDelegate: NSObject, UNUserNotificationCenterD
     func handleNotificationResponse(_ response: UNNotificationResponse) {
         let userInfo = response.notification.request.content.userInfo
         let kind = userInfo["kind"] as? String ?? ""
+
+        if ProcessCrispSupport.isCrispPushNotification(response.notification) {
+            ProcessCrispSupport.handlePushNotification(response.notification)
+            return
+        }
 
         switch kind {
         case "coach_reply":

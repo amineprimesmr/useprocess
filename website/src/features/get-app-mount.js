@@ -19,6 +19,7 @@ import {
   rememberReferralCode,
   resolveAcquisitionUtm,
 } from "./referral-link.js";
+import { resolveAcquisitionCode } from "./acquisition-link.js";
 
 const QR_SCRIPT = "/js/qr_code_styling.js";
 
@@ -85,7 +86,7 @@ async function openStoreWithReferral(referralCode, utm = {}) {
   openStorePage(referralCode, utm);
 }
 
-function showReferralBanner(referralCode) {
+function showReferralBanner(referralCode, resolved = null) {
   const banner = document.getElementById("get-app-referral-banner");
   const codeEl = document.getElementById("get-app-referral-code");
   const subtitle = document.getElementById("get-app-subtitle");
@@ -97,11 +98,16 @@ function showReferralBanner(referralCode) {
   banner.classList.remove("hidden");
   banner.hidden = false;
 
-  if (title) title.textContent = copy.invitedTitle;
-  if (subtitle) subtitle.textContent = copy.invitedSubtitle;
+  const isCreator = resolved?.type === "affiliate";
+  if (title) title.textContent = isCreator ? copy.creatorTitle : copy.invitedTitle;
+  if (subtitle) {
+    subtitle.textContent = isCreator ? copy.creatorSubtitle : copy.invitedSubtitle;
+  }
 
   const referralEyebrow = banner.querySelector(".get-app-referral-eyebrow");
-  if (referralEyebrow) referralEyebrow.textContent = copy.referralEyebrow;
+  if (referralEyebrow) {
+    referralEyebrow.textContent = isCreator ? copy.creatorEyebrow : copy.referralEyebrow;
+  }
 }
 
 function applyGetAppPageCopy() {
@@ -192,20 +198,21 @@ function wireStoreButtons(referralCode = "", utm = {}) {
 export async function mountGetAppPage() {
   const referralCode = parseReferralCodeFromLocation();
   const utm = resolveAcquisitionUtm();
+  const resolved = referralCode ? await resolveAcquisitionCode(referralCode) : null;
   const langHost = document.getElementById("get-app-lang-host");
   mountLanguageSwitch(langHost, { compact: true });
 
   const resync = () => {
     applyGetAppDocumentLanguage();
     applyGetAppChromeCopy();
-    if (referralCode) showReferralBanner(referralCode);
+    if (referralCode) showReferralBanner(referralCode, resolved);
     else applyGetAppPageCopy();
   };
   subscribeSiteLanguage(resync);
 
   if (referralCode) {
     rememberReferralCode(referralCode);
-    showReferralBanner(referralCode);
+    showReferralBanner(referralCode, resolved);
     applyGetAppDocumentLanguage();
   } else {
     applyGetAppPageCopy();

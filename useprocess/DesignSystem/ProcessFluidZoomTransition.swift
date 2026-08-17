@@ -4,6 +4,7 @@ import SwiftUI
 enum ProcessZoomTransitionID: Hashable {
     case coach
     case faceScanHistory
+    case faceScanCapture
     case faceScanDetail(String)
     case mealDetail(MealTimeSlot)
     case mealCatalog
@@ -25,6 +26,8 @@ enum ProcessZoomTransitionID: Hashable {
             return "PROCESS_COACH"
         case .faceScanHistory:
             return "PROCESS_FACE_SCAN_HISTORY"
+        case .faceScanCapture:
+            return "PROCESS_FACE_SCAN_CAPTURE"
         case .faceScanDetail(let scanID):
             return "PROCESS_FACE_SCAN_DETAIL_\(scanID)"
         case .mealDetail(let slot):

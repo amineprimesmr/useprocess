@@ -5,12 +5,18 @@ import UIKit
 enum OnboardingTheme {
     /// Dark = noir pur (onboarding). Clair = inchangé (même teinte Process).
     static var screenBackground: Color {
-        Color(UIColor { traits in
+        Color(hostingBackgroundUIColor)
+    }
+
+    /// Fond UIKit opaque — aligné sur `screenBackground` (safe area, hosting parent).
+    static var hostingBackgroundUIColor: UIColor {
+        UIColor { traits in
             traits.userInterfaceStyle == .dark
                 ? .black
                 : UIColor(red: 0.968, green: 0.972, blue: 0.988, alpha: 1)
-        })
+        }
     }
+
     static var primaryText: Color { Color.primary }
     static var secondaryText: Color { Color.secondary }
 
@@ -68,6 +74,19 @@ enum OnboardingTheme {
 
     static var cardBackground: Color { Color(.secondarySystemGroupedBackground) }
     static var cardBorder: Color { Color(.separator).opacity(0.35) }
+
+    /// Fond légèrement distinct pour la page « ton visage est ton levier ».
+    static var faceLeverageIntroBackground: Color {
+        Color(uiColor: faceLeverageIntroBackgroundUIColor)
+    }
+
+    static var faceLeverageIntroBackgroundUIColor: UIColor {
+        UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.07, green: 0.08, blue: 0.11, alpha: 1)
+                : UIColor(red: 0.945, green: 0.952, blue: 0.972, alpha: 1)
+        }
+    }
 
     /// Scan caméra, vidéo plein écran — reste sombre volontairement.
     static var immersiveBackground: Color { Color.black }

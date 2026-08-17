@@ -26,6 +26,8 @@ enum OnboardingProfileChatAnswerReveal {
             return question.choices.map(\.id) + ["validate"]
         case .faceScanOffer:
             return ["scan"]
+        case .profileSummary:
+            return ["profile_summary_continue"]
         case .answersAnalysis, .analysisProgress:
             return ["analysis_progress", "analysis_detail"]
         }

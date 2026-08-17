@@ -33,8 +33,10 @@ struct EditProfileView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(showsDismissHeader ? .hidden : .visible, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationTitle(showsDismissHeader ? "" : AppCopy.settings)
+        .navigationBarTitleDisplayMode(.large)
         .processClearUIKitHostingBackground()
         .task {
             if profileService.currentProfile == nil {

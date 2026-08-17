@@ -1,19 +1,31 @@
 import AVFoundation
 import UIKit
 
-/// Caméra des scans Process — la frontale ne passe jamais en ultra grand-angle.
+/// Caméra des scans Process — selfie standard (TrueDepth), pas l’ultra grand-angle front.
 enum ProcessScanCamera {
-    /// Crop visuel UIKit. ARKit ignore `videoZoomFactor` et SwiftUI `scaleEffect`.
-    static let frontPreviewLayoutZoom: CGFloat = 2.32
-    /// Zoom capteur quand on possède la session (pas ARKit).
-    static let frontPortraitZoom: CGFloat = 2.0
+    /// Crop visuel UIKit / conteneur ARKit preview.
+    nonisolated static let frontPreviewLayoutZoom: CGFloat = 1.18
+    /// Zoom capteur AVCapture — ≥ 1 force l’optique « standard » sur iPhone dual-front.
+    nonisolated static let frontPortraitZoom: CGFloat = 1.20
 
     static func device(position: AVCaptureDevice.Position) -> AVCaptureDevice? {
         if position == .front {
-            return AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front)
-                ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+            return preferredFrontPortraitDevice()
         }
         return AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+    }
+
+    /// Selfie Face ID / TrueDepth en priorité — évite l’ultra-wide front quand un 2e capteur existe.
+    static func preferredFrontPortraitDevice() -> AVCaptureDevice? {
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInTrueDepthCamera, .builtInWideAngleCamera],
+            mediaType: .video,
+            position: .front
+        )
+        if let trueDepth = discovery.devices.first(where: { $0.deviceType == .builtInTrueDepthCamera }) {
+            return trueDepth
+        }
+        return discovery.devices.first
     }
 
     /// À appeler **avant** `ARSession.run` / `startRunning`.
@@ -40,8 +52,9 @@ enum ProcessScanCamera {
             try device.lockForConfiguration()
             let maxZoom = device.maxAvailableVideoZoomFactor
             let minZoom = device.minAvailableVideoZoomFactor
-            let floor = max(1.0, minZoom)
-            let target = min(max(floor, frontPortraitZoom), maxZoom)
+            // minZoom < 1 ⇒ caméra virtuelle dual-front ; forcer ≥ 1 = optique standard.
+            let standardFloor = max(1.0, minZoom)
+            let target = min(max(standardFloor, frontPortraitZoom), maxZoom)
             if abs(device.videoZoomFactor - target) > 0.02 {
                 device.videoZoomFactor = target
             }

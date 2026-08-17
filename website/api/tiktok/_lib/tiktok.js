@@ -8,12 +8,12 @@ const USER_INFO = "https://open.tiktokapis.com/v2/user/info/";
 const VIDEO_LIST = "https://open.tiktokapis.com/v2/video/list/";
 
 /**
- * Scopes shown in Studio UI + demo video for TikTok audit.
- * Must match products enabled in developers.tiktok.com:
- * - Login Kit / Display: user.info.* + video.list
- * - Content Posting: video.upload + video.publish
+ * Scopes for Studio OAuth.
+ * Sandbox client keys (sbaw…) often only have Login Kit + Content Posting scopes
+ * that were enabled on the Sandbox product — requesting stats/video.list there
+ * returns TikTok error "scope". Full audit scopes apply once production key is used.
  */
-export const OAUTH_SCOPES = [
+export const OAUTH_SCOPES_PRODUCTION = [
   "user.info.basic",
   "user.info.profile",
   "user.info.stats",
@@ -21,6 +21,25 @@ export const OAUTH_SCOPES = [
   "video.upload",
   "video.publish",
 ].join(",");
+
+/** Safe default for Sandbox — must match scopes already enabled on the Sandbox client. */
+export const OAUTH_SCOPES_SANDBOX = [
+  "user.info.basic",
+  "video.upload",
+  "video.publish",
+].join(",");
+
+export function isSandboxClientKey(clientKey = process.env.TIKTOK_CLIENT_KEY || "") {
+  return process.env.TIKTOK_SANDBOX === "1" || String(clientKey).startsWith("sbaw");
+}
+
+export function oauthScopes() {
+  if (process.env.TIKTOK_OAUTH_SCOPES) return process.env.TIKTOK_OAUTH_SCOPES;
+  return isSandboxClientKey() ? OAUTH_SCOPES_SANDBOX : OAUTH_SCOPES_PRODUCTION;
+}
+
+/** @deprecated use oauthScopes() — kept for any imports expecting a string constant */
+export const OAUTH_SCOPES = OAUTH_SCOPES_PRODUCTION;
 
 export const USER_INFO_FIELDS = [
   "open_id",
@@ -68,7 +87,7 @@ export function buildAuthorizeUrl(state) {
   const u = new URL(AUTH_URL);
   u.searchParams.set("client_key", clientKey);
   u.searchParams.set("response_type", "code");
-  u.searchParams.set("scope", OAUTH_SCOPES);
+  u.searchParams.set("scope", oauthScopes());
   u.searchParams.set("redirect_uri", redirectUri);
   u.searchParams.set("state", state);
   return u.toString();
@@ -79,7 +98,7 @@ function normalizeTokenPayload(data) {
   const refresh_token = data.refresh_token || data.data?.refresh_token || "";
   const expires_in = data.expires_in || data.data?.expires_in || 86400;
   const open_id = data.open_id || data.data?.open_id || "";
-  const scope = data.scope || data.data?.scope || OAUTH_SCOPES;
+  const scope = data.scope || data.data?.scope || oauthScopes();
   if (!access_token) throw new Error(`Token exchange failed: ${JSON.stringify(data)}`);
   return {
     access_token,

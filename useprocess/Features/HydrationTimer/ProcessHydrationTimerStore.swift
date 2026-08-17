@@ -9,7 +9,7 @@ struct ProcessHydrationTimerState: Codable, Equatable, Sendable {
     var dayId: String?
     var targetMilliliters: Int
 
-    static let defaultHydrationTargetML = ProcessDailyTargets.hydrationLitersPerDay * 1000
+    nonisolated static let defaultHydrationTargetML = ProcessDailyTargets.hydrationTargetMilliliters
 
     static let `default` = ProcessHydrationTimerState(
         isRunning: false,

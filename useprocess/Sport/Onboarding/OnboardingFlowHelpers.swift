@@ -22,6 +22,9 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
         return false
 
     case .personalizedWelcome:
+        return false
+
+    case .faceLeverageIntro:
         return !viewModel.firstName.isEmpty
 
     case .sportSelection:

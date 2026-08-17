@@ -33,6 +33,9 @@ struct PlanDashboardView: View {
     }
 
     private var tutorialBottomPadding: CGFloat {
+        if isOnboardingPreview {
+            return 12
+        }
         if tutorialStore.constrainsHomeLayout {
             return UIApplication.safeAreaBottom + 28
         }
@@ -44,7 +47,8 @@ struct PlanDashboardView: View {
             ScrollViewReader { scrollProxy in
                 processMainScrollableChrome(
                     selectedSection: $selectedSection,
-                    pageSection: .plan
+                    pageSection: .plan,
+                    adoptsFloatingTabBar: !isOnboardingPreview
                 ) {
                     VStack(alignment: .leading, spacing: 24) {
                         PlanHomeTopChrome(
@@ -158,6 +162,11 @@ struct PlanDashboardView: View {
             DailyJournalChecklistView(
                 plan: plan,
                 selectedDate: $selectedPlanDate,
+                onOpenScanHub: {
+                    withAnimation(ProcessGlass.spring) {
+                        selectedSection = .scan
+                    }
+                },
                 isPlanActive: isPlanRuntimeActive,
                 healthMetrics: planHealthMetrics,
                 showHeader: false,

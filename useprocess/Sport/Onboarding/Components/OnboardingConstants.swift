@@ -55,6 +55,13 @@ struct OnboardingConstants {
     static var backOnlyContentTopInset: CGFloat {
         headerBackButtonTopPadding + backButtonSize + spacingBelowHeaderBar
     }
+
+    /// Repère haut du fil Moss — retour + barre segmentée, puis marge avant la 1ʳᵉ bulle.
+    static let mossChatSpacingBelowHeaderBar: CGFloat = 40
+
+    static var mossChatContentTopInset: CGFloat {
+        headerBackButtonTopPadding + backButtonSize + mossChatSpacingBelowHeaderBar
+    }
 }
 
 // MARK: - Visibilité du header

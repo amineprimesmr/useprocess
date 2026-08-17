@@ -62,12 +62,26 @@ extension SportOnboardingView {
              .sleepNeed, .planGeneration,
              .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
              .alarmConfiguration, .sleepWindowReveal,
-             .referralCode, .caloriesGoal, .carryOverCalories, .appRating,
+             .caloriesGoal, .carryOverCalories, .appRating,
              .processWelcome, .referralReward, .featuresUnlock,
              .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
-             .personalizedWelcome, .processResultsDurability:
+             .processResultsDurability, .personalizedWelcome:
             EmptyView()
                 .onAppear { skipTransientStep() }
+        case .faceLeverageIntro:
+            FaceLeverageIntroStepView(
+                viewModel: viewModel,
+                onContinue: nextStep,
+                onValidationChanged: { isValid in
+                    viewModel.isFaceLeverageIntroCompleted = isValid
+                }
+            )
+        case .referralCode:
+            OnboardingCreatorCodeStepView(
+                referralCode: $viewModel.referralCode,
+                onContinue: nextStep,
+                onSkip: nextStep
+            )
         case .faceAnalysis:
             FaceScanStepView(
                 viewModel: viewModel,
@@ -129,7 +143,17 @@ extension SportOnboardingView {
                 onBack: previousStep
             )
         case .dashboardPreview:
-            DashboardPreviewStepView(onComplete: { advanceFromDashboardPreview() })
+            DashboardPreviewStepView(
+                presentation: viewModel.dashboardPreviewPresentation,
+                onComplete: { advanceFromDashboardPreview() },
+                onFirstScanResult: { viewModel.recordDashboardFaceScanResult($0) },
+                onFirstScanContinue: { advanceFromEarlyDashboardFaceScan() }
+            )
+            .onAppear {
+                viewModel.onOnboardingFaceScanContinueFromDashboard = {
+                    advanceFromEarlyDashboardFaceScan()
+                }
+            }
         case .dreamFaceCommit:
             DreamFaceCommitStepView(onComplete: nextStep)
         case .programCreation:

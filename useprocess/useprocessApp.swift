@@ -17,13 +17,25 @@ final class ProcessAppDelegate: NSObject, UIApplicationDelegate {
         // Avant le 1er frame — sinon le tap notif cold-start est perdu
         // et l’app reprend l’onboarding (dashboard preview).
         UNUserNotificationCenter.current().delegate = CoachNotificationCenterDelegate.shared
+        ProcessCrispSupport.configure()
 
         // Fallback sans UIScene (peu probable avec SwiftUI App).
         if let shortcut = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
             pendingLaunchShortcut = shortcut
             return false
         }
+
+        ProcessCrispSupport.registerForRemoteNotificationsIfAllowed()
         return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Task { @MainActor in
+            ProcessCrispSupport.setDeviceToken(deviceToken)
+        }
     }
 
     func application(
@@ -73,6 +85,7 @@ struct useprocessApp: App {
         ProcessAudioSession.configureForMixingWithOthers()
         FirebaseBootstrap.configure()
         ProcessAnalytics.configure()
+        ProcessCrispSupport.configure()
     }
 
     var body: some Scene {
@@ -82,6 +95,7 @@ struct useprocessApp: App {
                     // Idempotent si déjà fait dans init ; MetricKit / notifs hors chemin critique.
                     FirebaseBootstrap.configure()
                     ProcessAnalytics.configure()
+                    ProcessCrispSupport.configure()
                     ProcessMetricKitMonitor.shared.start()
 
                     await PermissionsManager.shared.clearAppBadge()

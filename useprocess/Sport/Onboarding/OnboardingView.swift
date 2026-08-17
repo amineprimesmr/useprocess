@@ -50,7 +50,7 @@ struct SportOnboardingView: View {
     var body: some View {
         ZStack {
             // Fond adaptatif clair / sombre
-            OnboardingTheme.screenBackground
+            onboardingScreenBackground
                 .ignoresSafeArea(.all)
                 .allowsHitTesting(false)
 
@@ -126,8 +126,23 @@ struct SportOnboardingView: View {
                     currentStep: viewModel.currentStep,
                     shouldShowBackButton: shouldShowBackButton,
                     flowProgress: flowProgress,
+                    chatSegmentedProgress: OnboardingStep(rawValue: viewModel.currentStep) == .weightMotivation
+                        ? viewModel.profileChatHeaderProgress
+                        : nil,
                     onPreviousStep: handleOnboardingBack
                 )
+                .background(alignment: .top) {
+                    if OnboardingStep(rawValue: viewModel.currentStep) == .faceLeverageIntro {
+                        OnboardingTheme.faceLeverageIntroBackground
+                            .frame(
+                                maxWidth: .infinity,
+                                minHeight: OnboardingConstants.headerBackButtonTopPadding
+                                    + OnboardingConstants.backButtonSize
+                                    + 12
+                            )
+                            .ignoresSafeArea(edges: .top)
+                    }
+                }
                 .ignoresSafeArea(edges: .top)
             }
         }
@@ -255,12 +270,16 @@ struct SportOnboardingView: View {
                 onResultReady: { result in
                     if presentation.usesChatCallbacks {
                         viewModel.onOnboardingFaceScanResult?(result)
+                    } else {
+                        viewModel.recordDashboardFaceScanResult(result)
                     }
                 },
                 onContinueAfterResults: {
                     viewModel.dismissOnboardingFaceScan()
                     if presentation.usesChatCallbacks {
                         viewModel.onOnboardingFaceScanContinue?()
+                    } else {
+                        viewModel.onOnboardingFaceScanContinueFromDashboard?()
                     }
                 }
             )

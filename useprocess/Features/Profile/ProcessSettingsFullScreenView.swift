@@ -45,13 +45,17 @@ struct ProcessProfileSettingsTabView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @EnvironmentObject private var healthManager: HealthManager
     @Bindable private var session = AppSession.shared
+    @State private var showsSettings = false
 
     var body: some View {
         NavigationStack {
             ProcessProfileHomeView(
                 selectedSection: $selectedSection,
                 isTabActive: isTabActive,
-                isOnboardingPreview: isOnboardingPreview
+                isOnboardingPreview: isOnboardingPreview,
+                onOpenSettings: {
+                    showsSettings = true
+                }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbarBackground(.hidden, for: .navigationBar)
@@ -73,5 +77,10 @@ struct ProcessProfileSettingsTabView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
         .processClearUIKitHostingBackground()
+        .fullScreenCover(isPresented: $showsSettings) {
+            ProcessSettingsFullScreenView()
+                .environmentObject(profileService)
+                .environmentObject(healthManager)
+        }
     }
 }

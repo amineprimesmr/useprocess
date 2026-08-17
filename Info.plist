@@ -21,6 +21,8 @@
 	<string>The front and rear cameras power local face scans, posture analysis, and body scans. A photo is sent to Anthropic Claude only if you explicitly enable AI analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo Library lets you choose a profile photo or send an image to the coach.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Process can save photos you download from support chat to your library.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Process reads your Health data (steps, sleep, heart rate) to calculate your readiness score and personalize your program. These summaries may be shared with the AI coach if you allow it.</string>
 	<key>NSHealthUpdateUsageDescription</key>

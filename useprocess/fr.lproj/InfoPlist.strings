@@ -1,6 +1,7 @@
 /* Privacy — Français */
 "NSCameraUsageDescription" = "La caméra avant et la caméra arrière permettent le scan visage local, l'analyse de posture et le scan corps. Une photo n'est envoyée à Anthropic Claude que si tu actives explicitement l'analyse IA.";
 "NSPhotoLibraryUsageDescription" = "La photothèque permet de choisir une photo de profil ou d'envoyer une image au coach.";
+"NSPhotoLibraryAddUsageDescription" = "Process peut enregistrer dans ta photothèque les photos que tu télécharges depuis le chat support.";
 "NSHealthShareUsageDescription" = "Process lit tes données Santé (pas, sommeil, fréquence cardiaque) pour calculer ton score de readiness et personnaliser ton programme. Ces résumés peuvent être transmis au coach IA si tu l'autorises.";
 "NSHealthUpdateUsageDescription" = "Process peut enregistrer tes séances et données d'activité dans Santé pour centraliser ton suivi sportif.";
 "NSFaceIDUsageDescription" = "La caméra avant est utilisée pour le scan visage local (mesh facial et indicateurs). Process ne crée pas de modèle d'identification faciale.";

@@ -7,6 +7,7 @@ struct PlanLastFaceScanSection: View {
     var isPlanActive: Bool = true
     var healthMetrics: PlanHomeHealthMetrics = PlanHomeHealthMetrics()
     var zoomNamespace: Namespace.ID? = nil
+    var onOpenScanHub: (() -> Void)? = nil
     var onScan: (() -> Void)? = nil
     var onScanComplete: ((FaceScanResult) -> Void)? = nil
 
@@ -15,6 +16,8 @@ struct PlanLastFaceScanSection: View {
     @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
     @Bindable private var historyStore = FaceScanHistoryStore.shared
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
+
+    @Namespace private var embeddedCaptureZoomNamespace
 
     @State private var latestAnalysisScan: FaceScanResult?
 
@@ -129,12 +132,17 @@ struct PlanLastFaceScanSection: View {
                 showsMediaImport: creatorMode.allowsPhotoImport
             )
             .environmentObject(profileService)
+            .processZoomTransition(id: .faceScanCapture, namespace: captureZoomNamespace)
         }
         .animation(.easeInOut(duration: 0.28), value: historyStore.latestResult?.id)
         .animation(.easeInOut(duration: 0.28), value: historyStore.isScanDue)
         .fullScreenCover(item: $latestAnalysisScan) { scan in
             latestAnalysisCover(for: scan)
         }
+    }
+
+    private var captureZoomNamespace: Namespace.ID {
+        zoomNamespace ?? embeddedCaptureZoomNamespace
     }
 
     @MainActor
@@ -202,6 +210,7 @@ struct PlanLastFaceScanSection: View {
         .id("plan-inline-face-scan")
         .frame(width: compactVideoWidth, height: Layout.scanAvailableHeight, alignment: .topLeading)
         .clipShape(UnifiedScanCameraClipShape(expanded: false, cardRadius: cardRadius))
+        .processZoomSource(id: .faceScanCapture, namespace: captureZoomNamespace)
     }
 
     private var compactScanDueTrailingColumnContent: some View {
@@ -220,12 +229,15 @@ struct PlanLastFaceScanSection: View {
     }
 
     private func beginInlineScan() {
-        guard historyStore.canStartTodayScan else { return }
+        guard historyStore.canStartTodayScan else {
+            onOpenScanHub?()
+            return
+        }
         if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
             ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
         HapticManager.shared.impact(.medium)
-        withAnimation(.spring(response: 0.56, dampingFraction: 0.84)) {
+        withAnimation(ProcessZoomTransitionID.presentationSpring) {
             isScanFlowActive = true
         }
         onScan?()
@@ -561,7 +573,12 @@ private struct PlanFaceScanLiveCameraPanel: View {
     var isActive: Bool
 
     @Environment(\.appTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var camera = BodyScanCameraService()
+
+    private var cameraLifecycleKey: String {
+        "\(isActive)-\(scenePhase == .active)"
+    }
 
     var body: some View {
         Group {
@@ -579,8 +596,8 @@ private struct PlanFaceScanLiveCameraPanel: View {
                 liveCameraPlaceholder(systemImage: "camera.fill", message: nil)
             }
         }
-        .task(id: isActive) {
-            guard isActive else {
+        .task(id: cameraLifecycleKey) {
+            guard isActive, scenePhase == .active else {
                 camera.stop()
                 return
             }
@@ -619,7 +636,7 @@ private struct PlanFaceScanLiveCameraPanel: View {
             guard await camera.requestAccess() else { return }
         }
         guard camera.authorizationStatus == .authorized else { return }
-        camera.start(preferredPosition: .front, deliversFrames: false)
+        await camera.restartPreviewIfNeeded(preferredPosition: .front)
     }
 }
 

@@ -39,7 +39,10 @@ export default async function handler(req, res) {
       connected: true,
       open_id: active.open_id || user.open_id || null,
       scope: active.scope || null,
-      sandbox: process.env.TIKTOK_SANDBOX === "1",
+      // Sandbox client keys are prefixed sbaw… — force UI to show target-user hint.
+      sandbox:
+        process.env.TIKTOK_SANDBOX === "1" ||
+        String(process.env.TIKTOK_CLIENT_KEY || "").startsWith("sbaw"),
       creator,
       user,
       accounts: listAccountsPublic(session),

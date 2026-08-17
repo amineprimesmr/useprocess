@@ -5,11 +5,11 @@ struct ProcessProfileHomeView: View {
     @Binding var selectedSection: ProcessMainSection
     var isTabActive: Bool = true
     var isOnboardingPreview: Bool = false
+    var onOpenSettings: () -> Void = {}
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
     @State private var profileStore = SocialProfileStore.shared
-    @State private var showSettings = false
 
     private var profile: UnifiedUserProfile? {
         profileService.currentProfile
@@ -23,18 +23,23 @@ struct ProcessProfileHomeView: View {
     var body: some View {
         processMainScrollableChrome(
             selectedSection: $selectedSection,
-            pageSection: .profile
+            pageSection: .profile,
+            adoptsFloatingTabBar: !isOnboardingPreview
         ) {
             VStack(alignment: .leading, spacing: 20) {
-                profileHeader
-
                 identityBlock
 
                 ProfileDebloatScoreSection()
             }
             .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-            .padding(.top, 16)
             .padding(.bottom, 32)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            profileHeader
+                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                .padding(.top, 16)
+                .padding(.bottom, 4)
+                .background(Color.clear)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
@@ -57,11 +62,7 @@ struct ProcessProfileHomeView: View {
             guard !isOnboardingPreview else { return }
             profileStore.bind(unified: profileService.currentProfile)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
-        }
-        .fullScreenCover(isPresented: $showSettings) {
-            ProcessSettingsFullScreenView()
-                .environmentObject(profileService)
-                .environmentObject(HealthManager.shared)
+            clearTransientInteractionBlockers()
         }
     }
 
@@ -75,18 +76,26 @@ struct ProcessProfileHomeView: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                HapticManager.shared.impact(.light)
-                showSettings = true
-            } label: {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .frame(width: 40, height: 40)
-            }
-            .processGlassIconButtonStyle()
+            ProcessGlassIconButton(
+                systemName: "gearshape",
+                size: 44,
+                iconSize: 17,
+                action: openSettings
+            )
             .accessibilityLabel(AppCopy.settings)
         }
+    }
+
+    private func openSettings() {
+        clearTransientInteractionBlockers()
+        HapticManager.shared.impact(.light)
+        onOpenSettings()
+    }
+
+    private func clearTransientInteractionBlockers() {
+        FaceScanScreenFlash.shared.deactivate(animated: false)
+        ProcessEveningCheckInPresenter.shared.dismissImmediately()
+        PlanHomeTutorialStore.shared.cancelScheduledPresentation()
     }
 
     private var identityBlock: some View {

@@ -23,6 +23,7 @@ struct MainAppView: View {
                 if screenFlash.isActive {
                     Color.white
                         .ignoresSafeArea()
+                        .allowsHitTesting(false)
                         .transition(.opacity)
                 } else {
                     Color.clear
@@ -56,6 +57,9 @@ struct MainAppView: View {
             handleSectionChange(to: newValue)
         }
         .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                FaceScanScreenFlash.shared.deactivate(animated: false)
+            }
             guard phase == .active else { return }
             ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
@@ -110,23 +114,38 @@ struct MainAppView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        Group {
-            switch selectedSection {
-            case .plan:
-                planTabRoot
-            case .routine:
-                routineTabRoot
-            case .coach:
-                if ProcessMainSection.isCoachTabEnabled {
-                    coachTabRoot
-                } else {
-                    planTabRoot
-                }
-            case .statistics:
-                statisticsTabRoot
-            case .profile:
-                profileTabRoot
+        ZStack {
+            planTabRoot
+                .opacity(selectedSection == .plan ? 1 : 0)
+                .allowsHitTesting(selectedSection == .plan)
+                .accessibilityHidden(selectedSection != .plan)
+
+            scanTabRoot
+                .opacity(selectedSection == .scan ? 1 : 0)
+                .allowsHitTesting(selectedSection == .scan)
+                .accessibilityHidden(selectedSection != .scan)
+
+            routineTabRoot
+                .opacity(selectedSection == .routine ? 1 : 0)
+                .allowsHitTesting(selectedSection == .routine)
+                .accessibilityHidden(selectedSection != .routine)
+
+            if ProcessMainSection.isCoachTabEnabled {
+                coachTabRoot
+                    .opacity(selectedSection == .coach ? 1 : 0)
+                    .allowsHitTesting(selectedSection == .coach)
+                    .accessibilityHidden(selectedSection != .coach)
             }
+
+            statisticsTabRoot
+                .opacity(selectedSection == .statistics ? 1 : 0)
+                .allowsHitTesting(selectedSection == .statistics)
+                .accessibilityHidden(selectedSection != .statistics)
+
+            profileTabRoot
+                .opacity(selectedSection == .profile ? 1 : 0)
+                .allowsHitTesting(selectedSection == .profile)
+                .accessibilityHidden(selectedSection != .profile)
         }
         .background(Color.clear)
     }
@@ -138,6 +157,15 @@ struct MainAppView: View {
             selectedSection: $selectedSection,
             isTabActive: selectedSection == .plan
         )
+        .background(Color.clear)
+    }
+
+    private var scanTabRoot: some View {
+        ProcessFaceScanHomeView(
+            selectedSection: $selectedSection,
+            isTabActive: selectedSection == .scan
+        )
+        .environmentObject(UnifiedProfileService.shared)
         .background(Color.clear)
     }
 
@@ -185,6 +213,14 @@ struct MainAppView: View {
         resignFirstResponder()
         syncCoachPresentationState()
 
+        if newValue == .profile {
+            FaceScanScreenFlash.shared.deactivate(animated: false)
+            ProcessEveningCheckInPresenter.shared.dismissImmediately()
+            PlanHomeTutorialStore.shared.cancelScheduledPresentation()
+        }
+        if newValue == .scan {
+            FaceScanScreenFlash.shared.deactivate(animated: false)
+        }
         if newValue == .statistics {
             ProcessPerformanceTrace.beginProfileOpen()
         }

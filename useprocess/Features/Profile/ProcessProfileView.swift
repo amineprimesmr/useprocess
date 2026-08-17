@@ -58,7 +58,7 @@ struct ProcessProfileView: View {
             }
             .coordinateSpace(name: "processMainScroll")
             .scrollIndicators(.hidden)
-            .processAdoptForIGTabBar()
+            .modifier(ProcessProfileTabBarAdoption(enabled: !isOnboardingPreview))
             .processTransparentScrollSurface()
             .simultaneousGesture(profileDaySwipeGesture)
             .onAppear {
@@ -110,6 +110,18 @@ struct ProcessProfileView: View {
         }
         .onChange(of: faceHistoryStore.history.count) { _, _ in
             rebuildPresentations()
+        }
+    }
+
+    private struct ProcessProfileTabBarAdoption: ViewModifier {
+        let enabled: Bool
+
+        func body(content: Content) -> some View {
+            if enabled {
+                content.processAdoptForIGTabBar()
+            } else {
+                content
+            }
         }
     }
 

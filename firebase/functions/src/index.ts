@@ -446,3 +446,19 @@ export {
   referralConfirmSubscription,
   referralRevenueCatWebhook,
 } from "./referralRewards";
+export {
+  affiliateResolveCode,
+  affiliateRegister,
+  affiliateApply,
+  affiliateSyncProfile,
+  affiliateDashboard,
+  affiliateAdminCreate,
+  affiliateAdminProvisionAuth,
+  affiliateAdminApprove,
+  affiliateAdminMarkPaid,
+} from "./affiliate";
+export {
+  affiliateRevenueCatWebhook,
+  affiliateReleaseHeldCommissions,
+} from "./affiliateCommissions";
+export { supportSendMessage, supportCrispWebhook, supportCrispPoll } from "./supportCrisp";

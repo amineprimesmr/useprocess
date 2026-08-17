@@ -3,6 +3,7 @@ import SwiftUI
 /// Catégories du hub Paramètres — chaque entrée ouvre une sous-page.
 enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
     case studio
+    case affiliate
     case referral
     case account
     case health
@@ -15,6 +16,7 @@ enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
     var title: String {
         switch self {
         case .studio: return AppCopy.t("Studio contenu", en: "Content Studio")
+        case .affiliate: return AppCopy.t("Programme créateur", en: "Creator program")
         case .referral: return AppCopy.t("Parrainage", en: "Referral Program")
         case .account: return AppCopy.t("Compte", en: "Account")
         case .health: return AppCopy.t("Santé & données", en: "Health & Data")
@@ -216,6 +218,9 @@ func profileSettingsDetail(for category: ProfileSettingsCategory) -> some View {
     switch category {
     case .studio:
         ProcessCreatorStudioView()
+            .processSettingsDetailPage()
+    case .affiliate:
+        ProcessAffiliateProgramDetailView()
             .processSettingsDetailPage()
     case .referral:
         ProcessReferralProgramDetailView()

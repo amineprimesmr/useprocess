@@ -20,6 +20,7 @@ struct FaceScanCaptureScreen: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.appTheme) private var appTheme
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     var presentation: FaceScanCapturePresentation = .fullScreen
     var showsInlineHeader: Bool = true
@@ -36,6 +37,8 @@ struct FaceScanCaptureScreen: View {
     var skipsHeadTiltPhase: Bool = true
     /// Cadre ovale visage (même design que l’onboarding).
     var usesOnboardingFaceOval: Bool = false
+    /// Fond app (`ProcessBackgroundPalette`) au lieu du canvas scan onboarding.
+    var usesAppScreenBackground: Bool = false
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
     @State private var scanProgress: Double = 0
@@ -47,6 +50,14 @@ struct FaceScanCaptureScreen: View {
     @State private var tiltDirection: FaceScanTiltDirection = .none
     @State private var tiltIsEngaged: Bool = false
     @State private var instruction = AppCopy.t("Rapproche-toi pour que ton visage remplisse le cadre.", en: "Move closer so your face fills the frame.")
+
+    private var onboardingCanvasColor: Color {
+        if isFlashEnabled { return .white }
+        if usesAppScreenBackground {
+            return ProcessBackgroundPalette.base(for: colorScheme)
+        }
+        return FaceScanWhoopPalette.canvas
+    }
     @State private var frameHint: String?
     @State private var isFaceDetected = false
     @State private var isLowLight = false
@@ -78,7 +89,7 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var isARSessionActive: Bool {
-        isCameraSessionActive && !captureSessionPaused && phase != .completed
+        isCameraSessionActive && scenePhase == .active && !captureSessionPaused && phase != .completed
     }
     private var isPositioningWellFramed: Bool {
         frameHint == nil && isFaceDetected
@@ -304,9 +315,7 @@ struct FaceScanCaptureScreen: View {
 
             ZStack {
                 if usesOnboardingFaceOval {
-                    (isFlashEnabled
-                        ? Color.white
-                        : FaceScanWhoopPalette.canvas)
+                    onboardingCanvasColor
                         .ignoresSafeArea()
                 } else {
                     (isFlashEnabled ? Color.white : Color.black)
@@ -375,7 +384,7 @@ struct FaceScanCaptureScreen: View {
         .background(
             isFlashEnabled
                 ? Color.white
-                : (usesOnboardingFaceOval ? FaceScanWhoopPalette.canvas : Color.black)
+                : (usesOnboardingFaceOval ? onboardingCanvasColor : Color.black)
         )
     }
 
@@ -384,7 +393,15 @@ struct FaceScanCaptureScreen: View {
             Spacer()
                 .frame(height: OnboardingConstants.headerBackButtonTopPadding)
 
-            HStack {
+            HStack(spacing: 10) {
+                if showsTemporaryCaptureBackButton {
+                    onboardingChromeButton(systemName: "chevron.left", iconSize: 15) {
+                        FaceScanScreenFlash.shared.deactivate()
+                        onBack()
+                    }
+                    .accessibilityLabel(AppCopy.t("Retour", en: "Back"))
+                }
+
                 onboardingChromeButton(
                     systemName: isFlashEnabled ? "bolt.fill" : "bolt.slash",
                     iconSize: 16,
@@ -579,6 +596,11 @@ struct FaceScanCaptureScreen: View {
 
     private var onboardingUsesLightChrome: Bool {
         isFlashEnabled || colorScheme != .dark
+    }
+
+    /// TEMP — retour visible sur la capture plein écran (à côté du flash).
+    private var showsTemporaryCaptureBackButton: Bool {
+        usesOnboardingFaceOval && !isEmbedded && phase != .completed
     }
 
     private func embeddedCardLayout(viewportDiameter: CGFloat) -> some View {

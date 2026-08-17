@@ -456,6 +456,7 @@ final class PermissionsManager: ObservableObject {
             notificationsGranted = granted || status == .authorized || status == .provisional
             if notificationsGranted {
                 ProcessAnalytics.trackNotificationsAuthorized(source: analyticsSource, status: statusName)
+                ProcessCrispSupport.registerForRemoteNotificationsIfAllowed()
             } else {
                 ProcessAnalytics.trackNotificationsDenied(source: analyticsSource, status: statusName)
             }
@@ -474,6 +475,9 @@ final class PermissionsManager: ObservableObject {
             Self.notificationStatusName(status),
             authorized: notificationsGranted
         )
+        if notificationsGranted {
+            ProcessCrispSupport.registerForRemoteNotificationsIfAllowed()
+        }
     }
 
     func canScheduleNotifications() async -> Bool {

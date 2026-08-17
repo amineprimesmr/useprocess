@@ -474,7 +474,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func purchaseWinbackWithRevenueCat() async throws {
-        let products = (try? await Purchases.shared.products([SubscriptionConfiguration.lifetimeProductID])) ?? []
+        let products = await Purchases.shared.products([SubscriptionConfiguration.lifetimeProductID])
         guard let lifetime = products.first else {
             throw SubscriptionError.productNotFound
         }
@@ -960,7 +960,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         var activeProductID: String?
 
         for await result in StoreKit.Transaction.currentEntitlements {
-            guard let transaction = try? verified(result),
+            guard case .verified(let transaction) = result,
                   premiumProductIDs.contains(transaction.productID) else {
                 continue
             }

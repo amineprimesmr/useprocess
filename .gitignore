@@ -4,8 +4,10 @@
 **/CoachSecrets.plist
 **/RevenueCatSecrets.plist
 **/PostHogSecrets.plist
+**/CrispSecrets.plist
 .secrets/
 firebase/.referral-webhook-secret.local
+firebase/.affiliate-admin-secret.local
 firebase/functions/node_modules/
 .DS_Store
 **/.DS_Store
@@ -18,10 +20,18 @@ SourcePackages/
 *.xcuserstate
 xcuserdata/
 
-# Lymph circuit demo videos (~400MB) — keep local for Xcode archive, not in git
+# Lymph circuit demo videos — originals backed up under content/app-media/source/
+# After running scripts/compress-app-bundle-assets.sh, bundled MP4s are ~1–3 MB each (HEVC 720p).
 useprocess/Resources/LymphCircuit/**/*.mp4
 useprocess/Resources/LymphCircuit/**/*.mov
 !useprocess/Resources/LymphCircuit/.gitkeep
+
+# Original full-size media backups (never commit)
+content/app-media/source/**/*
+!content/app-media/source/**/.gitkeep
+
+# Onboarding transformation videos (recompress locally via scripts/compress-app-bundle-assets.sh)
+useprocess/Resources/Onboarding/**/*.mp4
 
 # TikTok content assets (keep folder structure, ignore media)
 content/tiktok/raw/**/*.{jpg,jpeg,png,webp,heic,mov,mp4}

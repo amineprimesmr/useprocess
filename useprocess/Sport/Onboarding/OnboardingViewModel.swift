@@ -81,6 +81,7 @@ class OnboardingViewModel: ObservableObject {
     @Published var isFatigueFrequencySelected: Bool = false
     @Published var isFatiguePeaksSelected: Bool = false
     @Published var isPersonalizedWelcomeCompleted: Bool = false
+    @Published var isFaceLeverageIntroCompleted: Bool = false
     @Published var isWeightMotivationCompleted: Bool = false
     @Published var isFaceAnalysisCompleted: Bool = false
     @Published var onboardingFaceMarkers: FaceWellnessMarkers?
@@ -223,8 +224,10 @@ class OnboardingViewModel: ObservableObject {
             return isHeightWeightSelected && selectedHeight > 0 && Self.isPlausibleWeight(selectedWeight)
         case .firstNameInput:
             return isFirstNameEntered && !firstName.trimmingCharacters(in: .whitespaces).isEmpty
+        case .faceLeverageIntro:
+            return isFaceLeverageIntroCompleted
         case .personalizedWelcome:
-            return isPersonalizedWelcomeCompleted
+            return true
         case .bodyScan:
             return true
         case .processResultsDurability, .weightGoalIncompatible:
@@ -708,6 +711,12 @@ class OnboardingViewModel: ObservableObject {
     /// Handler retour discussion — `true` si le back a été consommé dans le chat.
     var profileChatBackHandler: (() -> Bool)?
 
+    /// Barre segmentée header (discussion Moss) — alimentée par `OnboardingProfileChatView`.
+    @Published var profileChatHeaderProgress: OnboardingProfileChatCoachHeaderProgress.Snapshot?
+
+    /// Variante de l’aperçu dashboard (premier scan vs fin onboarding).
+    @Published var dashboardPreviewPresentation: OnboardingDashboardPreviewPresentation = .postTransformation
+
     /// Après un retour manuel vers le chat : ne pas enchaîner automatiquement vers la création du programme.
     var suppressProfileChatAutoFinish = false
 
@@ -720,6 +729,28 @@ class OnboardingViewModel: ObservableObject {
     var onOnboardingFaceScanCancel: (() -> Void)?
     var onOnboardingFaceScanResult: ((FaceScanResult) -> Void)?
     var onOnboardingFaceScanContinue: (() -> Void)?
+    var onOnboardingFaceScanContinueFromDashboard: (() -> Void)?
+
+    func configureDashboardPreviewPresentation(entering step: OnboardingStep, from previous: OnboardingStep?) {
+        guard step == .dashboardPreview else { return }
+        switch previous {
+        case .transformationPreview:
+            dashboardPreviewPresentation = .postTransformation
+        case .weightMotivation:
+            dashboardPreviewPresentation = .firstScanPending
+        default:
+            break
+        }
+    }
+
+    func recordDashboardFaceScanResult(_ result: FaceScanResult) {
+        onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
+        onboardingFaceMarkers = result.markers
+        isFaceAnalysisCompleted = true
+        markProfileChatQuestionCompleted("profile_summary")
+        markProfileChatQuestionCompleted("face_scan_offer")
+        saveProgress()
+    }
 
     func presentOnboardingFaceScan(initialResult: FaceScanResult? = nil, usesChatCallbacks: Bool = true) {
         presentedOnboardingFaceScan = OnboardingFaceScanPresentation(
@@ -766,6 +797,17 @@ class OnboardingViewModel: ObservableObject {
                current == .programCreation,
                isFaceAnalysisCompleted {
                 shouldReopenFaceScanResultsAfterBack = true
+                return
+            }
+
+            if let current = OnboardingStep(rawValue: currentStep),
+               current == .dashboardPreview,
+               dashboardPreviewPresentation == .firstScanPending {
+                let orderedIDs = OnboardingProfileChatQuestionBank.questions(for: self).map(\.id)
+                if completedProfileChatQuestionIDs.contains("profile_summary")
+                    || completedProfileChatQuestionIDs.contains("face_scan_offer") {
+                    rewindProfileChat(from: "profile_summary", orderedQuestionIDs: orderedIDs)
+                }
                 return
             }
 
@@ -830,6 +872,13 @@ class OnboardingViewModel: ObservableObject {
 
         return true
     }
+}
+
+enum OnboardingDashboardPreviewPresentation: Equatable {
+    /// Juste après la discussion Moss — CTA « Fais ton premier scan ».
+    case firstScanPending
+    /// Après les témoignages — CTA « Je veux ça ».
+    case postTransformation
 }
 
 /// Cover scan onboarding (capture live ou résultats déjà calculés).

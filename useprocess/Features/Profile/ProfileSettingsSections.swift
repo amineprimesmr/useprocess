@@ -349,6 +349,7 @@ struct ProfileSettingsAppDetailView: View {
 struct ProfileSettingsLegalDetailView: View {
     @Environment(\.openURL) private var openURL
     @State private var inAppSafariURL: URL?
+    @State private var showsSupportChat = false
 
     var body: some View {
         ScrollView {
@@ -411,11 +412,22 @@ struct ProfileSettingsLegalDetailView: View {
                     }
 
                     AccountDetailsGlassRow {
+                        Button { openSupportChat() } label: {
+                            ProfileEditListRow(
+                                label: AppCopy.t("Discuter avec l'équipe", en: "Chat with the team"),
+                                value: nil,
+                                placeholder: AppCopy.t("Bug, idée, question — réponse dans l'app", en: "Bug, idea, question — reply in the app")
+                            )
+                        }
+                        .buttonStyle(.processPlain)
+                    }
+
+                    AccountDetailsGlassRow {
                         Button { openURL(ProcessLegalURLs.supportMail) } label: {
                             ProfileEditListRow(
-                                label: AppCopy.t("Contacter le support", en: "Contact Support"),
+                                label: AppCopy.t("Écrire un e-mail", en: "Send an email"),
                                 value: nil,
-                                placeholder: AppCopy.t("E-mail à l'équipe", en: "Email the team")
+                                placeholder: AppCopy.t("support@useprocess.xyz", en: "support@useprocess.xyz")
                             )
                         }
                         .buttonStyle(.processPlain)
@@ -462,6 +474,18 @@ struct ProfileSettingsLegalDetailView: View {
                 ProfileSettingsSafariView(url: url)
                     .ignoresSafeArea()
             }
+        }
+        .fullScreenCover(isPresented: $showsSupportChat) {
+            ProcessSupportChatView()
+        }
+    }
+
+    private func openSupportChat() {
+        ProcessAnalytics.trackSupportChatOpened(source: "settings_help")
+        if ProcessCrispSupport.isReady {
+            showsSupportChat = true
+        } else {
+            openURL(ProcessLegalURLs.supportMail)
         }
     }
 

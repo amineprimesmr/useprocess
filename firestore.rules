@@ -6,6 +6,37 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /affiliateCodes/{code} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /affiliates/{affiliateId} {
+      allow read: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+      allow write: if false;
+
+      match /attributions/{inviteeUid} {
+        allow read: if request.auth != null
+          && get(/databases/$(database)/documents/affiliates/$(affiliateId)).data.uid == request.auth.uid;
+        allow write: if false;
+      }
+    }
+
+    match /affiliateCommissions/{commissionId} {
+      allow read: if request.auth != null
+        && resource.data.affiliateId != null
+        && get(/databases/$(database)/documents/affiliates/$(resource.data.affiliateId)).data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /affiliatePayouts/{payoutId} {
+      allow read: if request.auth != null
+        && resource.data.affiliateId != null
+        && get(/databases/$(database)/documents/affiliates/$(resource.data.affiliateId)).data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
 
@@ -19,6 +50,21 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      match /affiliateMeta/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      match /supportMessages/{messageId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      match /supportMeta/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
       match /faceScans/{scanId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
@@ -27,8 +73,15 @@ service cloud.firestore {
         allow read, write: if request.auth != null
           && request.auth.uid == userId
           && firstSegment != 'referralInvites'
-          && firstSegment != 'referralMeta';
+          && firstSegment != 'referralMeta'
+          && firstSegment != 'affiliateMeta'
+          && firstSegment != 'supportMessages'
+          && firstSegment != 'supportMeta';
       }
+    }
+
+    match /crispSessions/{sessionId} {
+      allow read, write: if false;
     }
 
     match /usernames/{tag} {

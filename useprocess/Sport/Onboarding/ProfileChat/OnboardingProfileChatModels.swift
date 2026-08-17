@@ -41,6 +41,7 @@ enum OnboardingProfileChatQuestionKind {
     case singleChoice
     case multiChoice
     case faceScanOffer
+    case profileSummary
     case answersAnalysis
     case analysisProgress
 }
@@ -186,16 +187,45 @@ enum OnboardingProfileChatQuestionBank {
                 kind: .singleChoice,
                 choices: cardioFrequencyChoices
             ),
-            faceScanQuestion(for: viewModel)
+            profileSummaryQuestion(for: viewModel)
         ]
     }
 
-    static func faceScanQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
-        .init(
-            id: "face_scan_offer",
-            prompt: faceScanPrompt(for: viewModel),
-            kind: .faceScanOffer
+    static func profileSummaryQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
+        let nameLine: String
+        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if OnboardingViewModel.isRealUserFirstName(trimmed) {
+            nameLine = OnboardingCopy.t(
+                "Merci de me faire confiance, \(trimmed).",
+                en: "Thanks for trusting me with this, \(trimmed)."
+            )
+        } else {
+            nameLine = OnboardingCopy.t(
+                "Merci de me faire confiance.",
+                en: "Thanks for trusting me with this."
+            )
+        }
+
+        return .init(
+            id: "profile_summary",
+            promptBlocks: [
+                OnboardingCopy.t(
+                    "85 % des utilisateurs se sentent plus confiants après seulement 4 semaines. Le reste suit.",
+                    en: "85% of users feel more confident after just 4 weeks. Everything else starts to follow."
+                ),
+                nameLine,
+                OnboardingCopy.t(
+                    "J’ai verrouillé tes réponses — ton dashboard est prêt 🙌",
+                    en: "I've locked your answers in — your dashboard is ready 🙌"
+                )
+            ],
+            kind: .profileSummary
         )
+    }
+
+    /// Conservé pour compat sauvegarde / analytics.
+    static func faceScanQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
+        profileSummaryQuestion(for: viewModel)
     }
 
     static func introSwollenFaceQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
@@ -237,8 +267,8 @@ enum OnboardingProfileChatQuestionBank {
         switch question.id {
         case "intro_swollen_face":
             return introSwollenFaceQuestion(for: viewModel)
-        case "face_scan_offer":
-            return faceScanQuestion(for: viewModel)
+        case "face_scan_offer", "profile_summary":
+            return profileSummaryQuestion(for: viewModel)
         default:
             return question
         }
@@ -283,9 +313,10 @@ enum OnboardingProfileChatQuestionBank {
                   let match = cardioFrequencyChoices.first(where: { $0.id == frequency }) else { return nil }
             return match.label
 
-        case "face_scan_offer":
-            guard viewModel.completedProfileChatQuestionIDs.contains(questionID) else { return nil }
-            return OnboardingCopy.t("Lancer le scan", en: "Start the scan")
+        case "face_scan_offer", "profile_summary":
+            guard viewModel.completedProfileChatQuestionIDs.contains(questionID)
+                || viewModel.completedProfileChatQuestionIDs.contains("face_scan_offer") else { return nil }
+            return OnboardingCopy.t("Emmène-moi →", en: "Take me there →")
 
         case "sport_pick":
             guard let sport = OnboardingDataModel.shared.selectedSports.first else { return nil }
@@ -363,17 +394,12 @@ enum OnboardingProfileChatQuestionBank {
         ]
     }
 
-    private static func faceScanPrompt(for viewModel: OnboardingViewModel) -> String {
-        let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if OnboardingViewModel.isRealUserFirstName(trimmed) {
-            return OnboardingCopy.t(
-                "\(trimmed), on a ce qu’il faut. Scannons maintenant ton visage pour mesurer le gonflement.",
-                en: "\(trimmed), we’ve got what we need. Let’s scan your face now to measure the puffiness."
-            )
+    /// Migre les anciennes sauvegardes `face_scan_offer` vers `profile_summary`.
+    static func normalizedCompletedQuestionIDs(_ ids: Set<String>) -> Set<String> {
+        var normalized = ids
+        if normalized.contains("face_scan_offer") {
+            normalized.insert("profile_summary")
         }
-        return OnboardingCopy.t(
-            "On a ce qu’il faut. Scannons maintenant ton visage pour mesurer le gonflement.",
-            en: "We’ve got what we need. Let’s scan your face now to measure the puffiness."
-        )
+        return normalized
     }
 }

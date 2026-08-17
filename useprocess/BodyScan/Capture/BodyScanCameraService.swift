@@ -15,6 +15,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
     private let sessionQueue = DispatchQueue(label: "com.useprocess.bodyscan.camera", qos: .userInteractive)
     private let videoOutput = AVCaptureVideoDataOutput()
     private var currentInput: AVCaptureDeviceInput?
+    private var deliversFrames = true
 
     @MainActor
     func refreshAuthorizationStatus() {
@@ -37,8 +38,22 @@ final class BodyScanCameraService: NSObject, ObservableObject {
     func start(preferredPosition: AVCaptureDevice.Position = .front, deliversFrames: Bool = true) {
         ProcessAudioSession.configureForMixingWithOthersIfIdle()
         sessionQueue.async { [weak self] in
-            self?.configureSession(position: preferredPosition, deliversFrames: deliversFrames)
             guard let self else { return }
+            let sameConfig = self.currentInput != nil
+                && self.activePosition == preferredPosition
+                && self.deliversFrames == deliversFrames
+
+            if self.session.isRunning, sameConfig {
+                DispatchQueue.main.async { self.isRunning = true }
+                return
+            }
+
+            if self.session.isRunning {
+                self.session.stopRunning()
+            }
+
+            self.deliversFrames = deliversFrames
+            self.configureSession(position: preferredPosition, deliversFrames: deliversFrames)
             if !self.session.isRunning {
                 self.session.startRunning()
             }
@@ -49,9 +64,40 @@ final class BodyScanCameraService: NSObject, ObservableObject {
     @MainActor
     func stop() {
         sessionQueue.async { [weak self] in
-            self?.session.stopRunning()
+            guard let self else { return }
+            if self.session.isRunning {
+                self.session.stopRunning()
+            }
             DispatchQueue.main.async {
-                self?.isRunning = false
+                self.isRunning = false
+            }
+        }
+    }
+
+    /// Stop propre puis redémarrage — évite les sessions figées après background / relance.
+    @MainActor
+    func restartPreviewIfNeeded(preferredPosition: AVCaptureDevice.Position = .front) async {
+        await withCheckedContinuation { continuation in
+            sessionQueue.async { [weak self] in
+                guard let self else {
+                    continuation.resume()
+                    return
+                }
+
+                if self.session.isRunning {
+                    self.session.stopRunning()
+                }
+
+                self.deliversFrames = false
+                self.configureSession(position: preferredPosition, deliversFrames: false)
+                if !self.session.isRunning {
+                    self.session.startRunning()
+                }
+
+                DispatchQueue.main.async {
+                    self.isRunning = true
+                    continuation.resume()
+                }
             }
         }
     }

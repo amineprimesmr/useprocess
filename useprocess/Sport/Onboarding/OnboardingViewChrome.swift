@@ -13,6 +13,7 @@ struct OnboardingHeaderChrome: View {
     let currentStep: Int
     var shouldShowBackButton: Bool
     var flowProgress: Double
+    var chatSegmentedProgress: OnboardingProfileChatCoachHeaderProgress.Snapshot? = nil
     var onPreviousStep: () -> Void
 
     var body: some View {
@@ -55,8 +56,20 @@ struct OnboardingHeaderChrome: View {
                     .frame(height: 5)
 
                 LanguageSelectorView()
+            } else if let chatSegmentedProgress {
+                OnboardingSegmentedProgressBar(
+                    segmentCount: chatSegmentedProgress.segmentCount,
+                    completedSegments: chatSegmentedProgress.completedSegments,
+                    activeSegmentProgress: chatSegmentedProgress.activeProgress,
+                    height: 5
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: 5)
             } else {
                 Spacer(minLength: 0)
+                if OnboardingStep(rawValue: currentStep) == .faceLeverageIntro {
+                    LanguageSelectorView()
+                }
             }
         }
         .padding(.horizontal, OnboardingConstants.headerHorizontalPadding)

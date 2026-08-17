@@ -116,6 +116,12 @@ function httpStatusForError(message) {
         return 409;
     if (message === "CODE_CONFLICT")
         return 409;
+    if (message === "INVALID_TEXT")
+        return 400;
+    if (message === "RATE_LIMITED")
+        return 429;
+    if (message === "CRISP_UNAVAILABLE")
+        return 503;
     return 500;
 }
 async function resolveReferrerUserId(code) {

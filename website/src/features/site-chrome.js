@@ -19,6 +19,12 @@ export function getAppPageCopy() {
       "Code actif — télécharge Process et commence ton protocole.",
       "Code active — download Process and start your protocol."
     ),
+    creatorTitle: appCopy("Un créateur t’a invité.", "A creator invited you."),
+    creatorSubtitle: appCopy(
+      "Code créateur actif — télécharge Process et commence ton protocole.",
+      "Creator code active — download Process and start your protocol."
+    ),
+    creatorEyebrow: appCopy("Invitation créateur", "Creator invite"),
     referralEyebrow: appCopy("Invitation parrainage", "Referral invite"),
     iosEyebrow: appCopy("Télécharger sur", "Download on"),
     iosAria: appCopy("Télécharger sur App Store", "Download on App Store"),

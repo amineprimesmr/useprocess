@@ -12,6 +12,7 @@
 		67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C72FD90001006422D /* FirebaseFirestore */; };
 		67E2B3222FDD8C240016422D /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = RC1A2B3C52FD90001006422D /* RevenueCat */; };
 		67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C82FD90001006422D /* FirebaseAppCheck */; };
+		67E314BD303349AA00A1EDD8 /* Crisp in Frameworks */ = {isa = PBXBuildFile; productRef = CR1A2B3C52FD90001006422D /* Crisp */; };
 		HY1A2B3C12FD90001006422D /* ProcessWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = HY1A2B3C02FD90001006422D /* ProcessWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LT1A2B3C62FD90001006422D /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = LT1A2B3C52FD90001006422D /* Lottie */; };
 		PH1A2B3C62FD90001006422D /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = PH1A2B3C52FD90001006422D /* PostHog */; };
@@ -82,6 +83,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				67E314BD303349AA00A1EDD8 /* Crisp in Frameworks */,
 				67E2B3212FDD8C240016422D /* FirebaseFirestore in Frameworks */,
 				67E2B3232FDD8C240016422D /* FirebaseAppCheck in Frameworks */,
 				67E2B3202FDD8C240016422D /* FirebaseAuth in Frameworks */,
@@ -151,6 +153,7 @@
 				RC1A2B3C52FD90001006422D /* RevenueCat */,
 				LT1A2B3C52FD90001006422D /* Lottie */,
 				PH1A2B3C52FD90001006422D /* PostHog */,
+				CR1A2B3C52FD90001006422D /* Crisp */,
 			);
 			productName = useprocess;
 			productReference = 67E2AE312FDD89E60016422D /* useprocess.app */;
@@ -212,6 +215,7 @@
 				RC1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				LT1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "lottie-ios" */,
 				PH1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				CR1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "crisp-sdk-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67E2AE322FDD89E60016422D /* Products */;
@@ -600,6 +604,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		CR1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "crisp-sdk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/crisp-im/crisp-sdk-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 		F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -635,6 +647,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		CR1A2B3C52FD90001006422D /* Crisp */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CR1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "crisp-sdk-ios" */;
+			productName = Crisp;
+		};
 		F1A2B3C52FD90001006422D /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F1A2B3C42FD90001006422D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

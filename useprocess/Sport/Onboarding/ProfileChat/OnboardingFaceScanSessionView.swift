@@ -7,10 +7,13 @@ import SwiftUI
 
 /// Scan onboarding hors discussion : capture plein écran → analyse → résultats.
 struct OnboardingFaceScanSessionView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var profileService: UnifiedProfileService
 
     /// Relance après kill app : ouvre directement les résultats.
     var initialResult: FaceScanResult? = nil
+    /// Fond identique aux pages app (aperçu dashboard) au lieu du canvas scan onboarding.
+    var usesAppScreenBackground: Bool = false
     var onCancel: () -> Void
     /// Skip pendant la capture (bouton sous « Recommencer le scan »).
     var onSkip: (() -> Void)? = nil
@@ -29,9 +32,15 @@ struct OnboardingFaceScanSessionView: View {
         let markers: FaceWellnessMarkers
     }
 
+    private var sessionBackground: Color {
+        usesAppScreenBackground
+            ? ProcessBackgroundPalette.base(for: colorScheme)
+            : FaceScanWhoopPalette.canvas
+    }
+
     var body: some View {
         ZStack {
-            FaceScanWhoopPalette.canvas.ignoresSafeArea()
+            sessionBackground.ignoresSafeArea()
 
             if let input = captureInput, completedResult == nil {
                 FaceScanAnalysisFlowView(
@@ -67,10 +76,11 @@ struct OnboardingFaceScanSessionView: View {
                         onCancel()
                     },
                     onSkip: nil,
-                    showsMediaImport: ProcessCreatorModeStore.shared.allowsPhotoImport,
+                    showsMediaImport: false,
                     allowsScreenFlash: true,
                     skipsHeadTiltPhase: true,
                     usesOnboardingFaceOval: true,
+                    usesAppScreenBackground: usesAppScreenBackground,
                     onContinue: advanceToAnalysis
                 )
                 .id(captureResetToken)
@@ -81,8 +91,8 @@ struct OnboardingFaceScanSessionView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .processClearUIKitHostingBackground()
-        .background(FaceScanWhoopPalette.canvas)
-        .presentationBackground(FaceScanWhoopPalette.canvas)
+        .background(sessionBackground)
+        .presentationBackground(sessionBackground)
         .animation(Self.pagePushAnimation, value: captureInput?.payload.scanId)
         .animation(Self.pagePushAnimation, value: completedResult?.id)
         .onAppear {

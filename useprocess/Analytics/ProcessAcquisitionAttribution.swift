@@ -22,6 +22,7 @@ enum ProcessAcquisitionAttribution {
         var firstContent: String?
         var firstTerm: String?
         var referralCode: String?
+        var affiliateCode: String?
         var asaAttributed: Bool?
         var asaCampaignId: String?
         var asaAdGroupId: String?
@@ -39,6 +40,7 @@ enum ProcessAcquisitionAttribution {
 
         /// Canal principal pour PostHog / RevenueCat (first-touch).
         var primarySource: String {
+            if let code = affiliateCode, !code.isEmpty { return "affiliate" }
             if let code = referralCode, !code.isEmpty { return "referral" }
             if asaAttributed == true { return "asa" }
             if let source = firstSource?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -51,6 +53,7 @@ enum ProcessAcquisitionAttribution {
         }
 
         var primaryMedium: String {
+            if affiliateCode != nil { return firstMedium ?? "affiliate" }
             if referralCode != nil { return firstMedium ?? "referral" }
             if asaAttributed == true { return firstMedium ?? "search" }
             return firstMedium ?? "organic"
@@ -64,13 +67,14 @@ enum ProcessAcquisitionAttribution {
         var content: String?
         var term: String?
         var referralCode: String?
+        var affiliateCode: String?
     }
 
     // MARK: - Bootstrap
 
     /// Appelé après `ProcessAnalytics.configure()` — ASA en arrière-plan + sync immédiat.
     static func bootstrap() {
-        if snapshot.firstSource == nil && snapshot.referralCode == nil && snapshot.asaAttributed != true {
+        if snapshot.firstSource == nil && snapshot.referralCode == nil && snapshot.affiliateCode == nil && snapshot.asaAttributed != true {
             applyTouch(
                 Touch(source: "organic", medium: "organic"),
                 reason: "bootstrap_organic",
@@ -99,6 +103,16 @@ enum ProcessAcquisitionAttribution {
         applyTouch(
             Touch(source: source, medium: medium, referralCode: code),
             reason: "referral_code",
+            allowDowngrade: false
+        )
+    }
+
+    static func captureAffiliateCode(_ raw: String, source: String = "affiliate", medium: String = "creator") {
+        let code = ProcessAffiliateLink.normalizeCode(raw)
+        guard !code.isEmpty else { return }
+        applyTouch(
+            Touch(source: source, medium: medium, affiliateCode: code),
+            reason: "affiliate_code",
             allowDowngrade: false
         )
     }
@@ -143,6 +157,12 @@ enum ProcessAcquisitionAttribution {
         } else {
             props["has_referral_code"] = false
         }
+        if let code = snapshot.affiliateCode, !code.isEmpty {
+            props["affiliate_code"] = code
+            props["has_affiliate_code"] = true
+        } else {
+            props["has_affiliate_code"] = false
+        }
         if let asa = snapshot.asaAttributed {
             props["asa_attributed"] = asa
         }
@@ -172,6 +192,9 @@ enum ProcessAcquisitionAttribution {
         }
         if let code = snapshot.referralCode, !code.isEmpty {
             attrs["referral_code"] = String(code.prefix(40))
+        }
+        if let code = snapshot.affiliateCode, !code.isEmpty {
+            attrs["affiliate_code"] = String(code.prefix(40))
         }
         if snapshot.asaAttributed == true {
             attrs["asa_attributed"] = "true"
@@ -345,7 +368,8 @@ enum ProcessAcquisitionAttribution {
 
     private static func hasSignal(_ touch: Touch) -> Bool {
         let values = [
-            touch.source, touch.medium, touch.campaign, touch.content, touch.term, touch.referralCode
+            touch.source, touch.medium, touch.campaign, touch.content, touch.term,
+            touch.referralCode, touch.affiliateCode
         ]
         return values.contains { ($0?.isEmpty == false) }
     }
@@ -371,6 +395,8 @@ enum ProcessAcquisitionAttribution {
                 next.firstMedium = medium
             } else if incomingSource == "referral" {
                 next.firstMedium = "referral"
+            } else if incomingSource == "affiliate" {
+                next.firstMedium = "creator"
             } else if incomingSource == "asa" {
                 next.firstMedium = "search"
             }
@@ -389,10 +415,19 @@ enum ProcessAcquisitionAttribution {
             if next.referralCode == nil || next.referralCode?.isEmpty == true {
                 next.referralCode = code
             }
-            // Referral always upgrades primary channel if still organic.
             if shouldUpgradeFirstTouch(current: next.firstSource, incoming: "referral") {
                 next.firstSource = touch.source ?? "referral"
                 next.firstMedium = touch.medium ?? "referral"
+            }
+        }
+
+        if let code = touch.affiliateCode, !code.isEmpty {
+            if next.affiliateCode == nil || next.affiliateCode?.isEmpty == true {
+                next.affiliateCode = code
+            }
+            if shouldUpgradeFirstTouch(current: next.firstSource, incoming: "affiliate") {
+                next.firstSource = touch.source ?? "affiliate"
+                next.firstMedium = touch.medium ?? "creator"
             }
         }
 
@@ -400,13 +435,14 @@ enum ProcessAcquisitionAttribution {
         snapshot = next
 
         #if DEBUG
-        print("[Acquisition] touch reason=\(reason) primary=\(next.primarySource) referral=\(next.referralCode ?? "-")")
+        print("[Acquisition] touch reason=\(reason) primary=\(next.primarySource) affiliate=\(next.affiliateCode ?? "-") referral=\(next.referralCode ?? "-")")
         #endif
 
-        syncToAnalytics(emitResolvedEvent: next.primarySource != "organic" || next.referralCode != nil)
+        syncToAnalytics(emitResolvedEvent: next.primarySource != "organic" || next.referralCode != nil || next.affiliateCode != nil)
     }
 
     private static func resolvedIncomingSource(_ touch: Touch) -> String {
+        if let code = touch.affiliateCode, !code.isEmpty { return "affiliate" }
         if let code = touch.referralCode, !code.isEmpty { return "referral" }
         if let source = touch.source?.lowercased(), !source.isEmpty { return source }
         if touch.campaign != nil { return "campaign" }
@@ -416,6 +452,7 @@ enum ProcessAcquisitionAttribution {
     private static func priority(for source: String?) -> Int {
         guard let source, !source.isEmpty else { return 0 }
         switch source.lowercased() {
+        case "affiliate": return 45
         case "referral": return 40
         case "asa": return 30
         case "organic", "unknown": return 0

@@ -4,9 +4,9 @@ import Foundation
 enum ProcessDailyTargets {
 
     // MARK: - Hydratation
-    static let hydrationLitersPerDay = 3
+    nonisolated static let hydrationLitersPerDay = 3
     static var hydrationLabel: String { "\(hydrationLitersPerDay) L" }
-    static var hydrationTargetMilliliters: Int { hydrationLitersPerDay * 1000 }
+    nonisolated static var hydrationTargetMilliliters: Int { hydrationLitersPerDay * 1000 }
 
     // MARK: - Matin
     static let warmWaterOnWakeML = 500

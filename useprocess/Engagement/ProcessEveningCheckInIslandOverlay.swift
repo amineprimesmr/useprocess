@@ -29,8 +29,8 @@ private struct ProcessEveningCheckInIslandModifier: ViewModifier {
         content
             .blur(radius: presenter.presentation != nil && isExpanded ? 7 : 0)
             .animation(.easeOut(duration: 0.32), value: isExpanded)
-            .overlay {
-                if let presentation = presenter.presentation {
+            .overlay(alignment: .top) {
+                if let presentation = presenter.presentation, isExpanded {
                     ProcessEveningCheckInIslandRoot(
                         presentation: presentation,
                         isExpanded: $isExpanded,
@@ -79,7 +79,12 @@ private struct ProcessEveningCheckInIslandModifier: ViewModifier {
 
         collapseTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(320))
-            guard !Task.isCancelled else { return }
+            if Task.isCancelled {
+                if !isExpanded, presenter.presentation != nil {
+                    presenter.clear()
+                }
+                return
+            }
             presenter.clear()
             onDismiss(submitted)
         }
@@ -111,51 +116,54 @@ private struct ProcessEveningCheckInIslandRoot: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let safeArea = proxy.safeAreaInsets
-            let size = proxy.size
-            let haveDynamicIsland = safeArea.top >= 59
-            let topOffset: CGFloat = haveDynamicIsland
-                ? (9 + max(safeArea.top - 59, 0))
-                : safeArea.top + 8
-            let expandedWidth = size.width - (Metrics.horizontalInset * 2)
-            let maxExpanded = min(
-                size.height - topOffset - Metrics.bottomInset,
-                size.height * Metrics.expandedHeightRatio
-            )
-            let expandedHeight = min(
-                measuredFormHeight > 1 ? measuredFormHeight : Metrics.expandedFallbackHeight,
-                maxExpanded
-            )
-            let canDismissByBackdrop = !presentation.isRequired
-
-            ZStack(alignment: .top) {
-                Color.black
-                    .opacity(isExpanded ? 0.38 : 0)
-                    .ignoresSafeArea()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if canDismissByBackdrop {
-                            HapticManager.shared.impact(.light)
-                            onRequestDismiss()
-                        } else {
-                            submitShakeNudge += 1
-                        }
-                    }
-                    .allowsHitTesting(isExpanded)
-
-                islandCapsule(
-                    haveDynamicIsland: haveDynamicIsland,
-                    expandedWidth: expandedWidth,
-                    expandedHeight: expandedHeight,
-                    topOffset: topOffset,
-                    safeArea: safeArea
-                )
-                .zIndex(1)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .ignoresSafeArea()
-            .allowsHitTesting(isExpanded)
+            islandContent(proxy: proxy)
         }
+    }
+
+    @ViewBuilder
+    private func islandContent(proxy: GeometryProxy) -> some View {
+        let safeArea = proxy.safeAreaInsets
+        let size = proxy.size
+        let haveDynamicIsland = safeArea.top >= 59
+        let topOffset: CGFloat = haveDynamicIsland
+            ? (9 + max(safeArea.top - 59, 0))
+            : safeArea.top + 8
+        let expandedWidth = size.width - (Metrics.horizontalInset * 2)
+        let maxExpanded = min(
+            size.height - topOffset - Metrics.bottomInset,
+            size.height * Metrics.expandedHeightRatio
+        )
+        let expandedHeight = min(
+            measuredFormHeight > 1 ? measuredFormHeight : Metrics.expandedFallbackHeight,
+            maxExpanded
+        )
+        let canDismissByBackdrop = !presentation.isRequired
+
+        ZStack(alignment: .top) {
+            Color.black
+                .opacity(0.38)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if canDismissByBackdrop {
+                        HapticManager.shared.impact(.light)
+                        onRequestDismiss()
+                    } else {
+                        submitShakeNudge += 1
+                    }
+                }
+
+            islandCapsule(
+                haveDynamicIsland: haveDynamicIsland,
+                expandedWidth: expandedWidth,
+                expandedHeight: expandedHeight,
+                topOffset: topOffset,
+                safeArea: safeArea
+            )
+            .zIndex(1)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea()
     }
 
     @ViewBuilder

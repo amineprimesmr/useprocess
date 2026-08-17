@@ -72,6 +72,7 @@ struct FaceScanSessionView: View {
         .interactiveDismissDisabled(captureInput != nil)
         .onDisappear {
             FaceScanScreenFlash.shared.deactivate(animated: false)
+            ProcessEveningCheckInPresenter.shared.dismissImmediately()
         }
     }
 }

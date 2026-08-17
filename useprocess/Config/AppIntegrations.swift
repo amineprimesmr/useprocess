@@ -16,6 +16,7 @@ final class AppIntegrations {
         authReady = firebaseReady && AuthUser.current != nil
         // Analytics avant abonnements — le flag A/B tarifs dépend de PostHog.
         ProcessAnalytics.configure()
+        ProcessCrispSupport.configure()
         analyticsReady = ProcessAnalytics.isReady
         PaywallPricingExperiment.shared.resolve()
         SubscriptionService.shared.configure()

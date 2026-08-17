@@ -85,6 +85,9 @@ export function httpStatusForError(message: string): number {
   if (message === "SUBSCRIPTION_REQUIRED") return 402;
   if (message === "ALREADY_REWARDED") return 409;
   if (message === "CODE_CONFLICT") return 409;
+  if (message === "INVALID_TEXT") return 400;
+  if (message === "RATE_LIMITED") return 429;
+  if (message === "CRISP_UNAVAILABLE") return 503;
   return 500;
 }
 
