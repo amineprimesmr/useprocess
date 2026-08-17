@@ -28,7 +28,6 @@ private struct ProcessEveningCheckInIslandModifier: ViewModifier {
         @Bindable var presenter = presenter
         content
             .blur(radius: presenter.presentation != nil && isExpanded ? 7 : 0)
-            .allowsHitTesting(presenter.presentation == nil)
             .animation(.easeOut(duration: 0.32), value: isExpanded)
             .overlay {
                 if let presentation = presenter.presentation {
@@ -49,6 +48,7 @@ private struct ProcessEveningCheckInIslandModifier: ViewModifier {
             }
             .onChange(of: presenter.presentation?.id) { oldID, newID in
                 collapseTask?.cancel()
+                collapseTask = nil
                 if newID != nil {
                     if oldID == nil {
                         didSubmitCurrentSession = false
@@ -154,6 +154,7 @@ private struct ProcessEveningCheckInIslandRoot: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .ignoresSafeArea()
+            .allowsHitTesting(isExpanded)
         }
     }
 

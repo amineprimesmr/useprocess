@@ -365,7 +365,11 @@ struct ProcessEveningCheckInIslandContent: View {
         if Calendar.current.isDateInToday(targetDate) {
             guard faceScanStore.canStartTodayScan else { return }
             HapticManager.shared.impact(.medium)
-            onFinished?()
+            ProcessEveningCheckInPresenter.shared.dismissImmediately()
+            PlanHomeTutorialStore.shared.schedulePresentationIfNeeded(
+                planAvailable: WelcomePlanStore.shared.plan != nil,
+                preferImmediate: true
+            )
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.38) {
                 CoachPlanNavigationBridge.shared.requestHomeFaceScan()
             }

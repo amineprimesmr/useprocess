@@ -119,6 +119,9 @@ struct PlanLastFaceScanSection: View {
             FaceScanSessionView(
                 onDismiss: {
                     isScanFlowActive = false
+                    if ProcessEveningCheckInPresenter.shared.presentation != nil {
+                        ProcessEveningCheckInPresenter.shared.dismissImmediately()
+                    }
                 },
                 onComplete: { result in
                     onScanComplete?(result)

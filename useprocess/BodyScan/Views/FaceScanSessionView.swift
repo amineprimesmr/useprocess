@@ -70,6 +70,9 @@ struct FaceScanSessionView: View {
         .background(FaceScanWhoopPalette.canvas)
         .presentationBackground(FaceScanWhoopPalette.canvas)
         .interactiveDismissDisabled(captureInput != nil)
+        .onDisappear {
+            FaceScanScreenFlash.shared.deactivate(animated: false)
+        }
     }
 }
 

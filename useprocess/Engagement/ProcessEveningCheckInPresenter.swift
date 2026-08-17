@@ -45,6 +45,11 @@ final class ProcessEveningCheckInPresenter {
         onCompleted = nil
     }
 
+    /// Ferme immédiatement — handoff scan, pas d’attente animation collapse.
+    func dismissImmediately() {
+        clear()
+    }
+
     func markCompleted() {
         onCompleted?()
         onCompleted = nil
