@@ -107,7 +107,10 @@ final class SubscriptionService: NSObject, ObservableObject {
         trialExpirationDate = nil
         ProcessMarketingNotificationService.shared.cancelAll()
         AppLaunchRouter.shared.clearSpinPresentation()
-        ProcessHomeScreenQuickActions.syncForCurrentUser()
+        // Defer — syncForCurrentUser reads SubscriptionService.shared (deadlock during init).
+        Task { @MainActor in
+            ProcessHomeScreenQuickActions.syncForCurrentUser()
+        }
     }
 
     private func clearPersistedDeveloperPremiumAccess() {
