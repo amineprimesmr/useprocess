@@ -1,10 +1,56 @@
 const AUTH_URL = "https://www.tiktok.com/v2/auth/authorize/";
 const TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/";
+const REVOKE_URL = "https://open.tiktokapis.com/v2/oauth/revoke/";
 const CREATOR_INFO = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/";
 const CONTENT_INIT = "https://open.tiktokapis.com/v2/post/publish/content/init/";
 const STATUS_FETCH = "https://open.tiktokapis.com/v2/post/publish/status/fetch/";
+const USER_INFO = "https://open.tiktokapis.com/v2/user/info/";
+const VIDEO_LIST = "https://open.tiktokapis.com/v2/video/list/";
 
-export const OAUTH_SCOPES = "user.info.basic,video.upload,video.publish";
+/**
+ * Scopes shown in Studio UI + demo video for TikTok audit.
+ * Must match products enabled in developers.tiktok.com:
+ * - Login Kit / Display: user.info.* + video.list
+ * - Content Posting: video.upload + video.publish
+ */
+export const OAUTH_SCOPES = [
+  "user.info.basic",
+  "user.info.profile",
+  "user.info.stats",
+  "video.list",
+  "video.upload",
+  "video.publish",
+].join(",");
+
+export const USER_INFO_FIELDS = [
+  "open_id",
+  "union_id",
+  "avatar_url",
+  "avatar_url_100",
+  "display_name",
+  "bio_description",
+  "profile_deep_link",
+  "is_verified",
+  "username",
+  "follower_count",
+  "following_count",
+  "likes_count",
+  "video_count",
+].join(",");
+
+export const VIDEO_LIST_FIELDS = [
+  "id",
+  "create_time",
+  "cover_image_url",
+  "share_url",
+  "video_description",
+  "duration",
+  "title",
+  "like_count",
+  "comment_count",
+  "share_count",
+  "view_count",
+].join(",");
 
 export function envConfig() {
   const clientKey = process.env.TIKTOK_CLIENT_KEY;
@@ -28,6 +74,22 @@ export function buildAuthorizeUrl(state) {
   return u.toString();
 }
 
+function normalizeTokenPayload(data) {
+  const access_token = data.access_token || data.data?.access_token;
+  const refresh_token = data.refresh_token || data.data?.refresh_token || "";
+  const expires_in = data.expires_in || data.data?.expires_in || 86400;
+  const open_id = data.open_id || data.data?.open_id || "";
+  const scope = data.scope || data.data?.scope || OAUTH_SCOPES;
+  if (!access_token) throw new Error(`Token exchange failed: ${JSON.stringify(data)}`);
+  return {
+    access_token,
+    refresh_token,
+    open_id,
+    scope,
+    expires_at: Date.now() + Number(expires_in) * 1000,
+  };
+}
+
 export async function exchangeCode(code) {
   const { clientKey, clientSecret, redirectUri } = envConfig();
   const body = new URLSearchParams({
@@ -46,20 +108,7 @@ export async function exchangeCode(code) {
   if (data.error || data.message === "error") {
     throw new Error(JSON.stringify(data));
   }
-  // TikTok returns flat or nested depending on version
-  const access_token = data.access_token || data.data?.access_token;
-  const refresh_token = data.refresh_token || data.data?.refresh_token;
-  const expires_in = data.expires_in || data.data?.expires_in || 86400;
-  const open_id = data.open_id || data.data?.open_id || "";
-  const scope = data.scope || data.data?.scope || OAUTH_SCOPES;
-  if (!access_token) throw new Error(`Token exchange failed: ${JSON.stringify(data)}`);
-  return {
-    access_token,
-    refresh_token: refresh_token || "",
-    open_id,
-    scope,
-    expires_at: Date.now() + Number(expires_in) * 1000,
-  };
+  return normalizeTokenPayload(data);
 }
 
 export async function refreshAccessToken(refreshToken) {
@@ -76,19 +125,25 @@ export async function refreshAccessToken(refreshToken) {
     body,
   });
   const data = await r.json();
-  const access_token = data.access_token || data.data?.access_token;
-  const refresh_token = data.refresh_token || data.data?.refresh_token || refreshToken;
-  const expires_in = data.expires_in || data.data?.expires_in || 86400;
-  const open_id = data.open_id || data.data?.open_id || "";
-  const scope = data.scope || data.data?.scope || OAUTH_SCOPES;
-  if (!access_token) throw new Error(`Refresh failed: ${JSON.stringify(data)}`);
-  return {
-    access_token,
-    refresh_token,
-    open_id,
-    scope,
-    expires_at: Date.now() + Number(expires_in) * 1000,
-  };
+  return normalizeTokenPayload(data);
+}
+
+export async function revokeAccessToken(accessToken) {
+  const { clientKey, clientSecret } = envConfig();
+  const body = new URLSearchParams({
+    client_key: clientKey,
+    client_secret: clientSecret,
+    token: accessToken,
+  });
+  try {
+    await fetch(REVOKE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+  } catch {
+    // best-effort revoke
+  }
 }
 
 async function tiktokPost(url, accessToken, jsonBody = {}) {
@@ -103,31 +158,48 @@ async function tiktokPost(url, accessToken, jsonBody = {}) {
   return r.json();
 }
 
-export async function creatorInfo(accessToken) {
-  const data = await tiktokPost(CREATOR_INFO, accessToken, {});
+function assertTikTokOk(data) {
   const err = data.error || {};
   if (err.code && err.code !== "ok") {
     throw new Error(err.message || JSON.stringify(data));
   }
   return data.data || {};
+}
+
+export async function creatorInfo(accessToken) {
+  return assertTikTokOk(await tiktokPost(CREATOR_INFO, accessToken, {}));
 }
 
 export async function initPhotoPost(accessToken, payload) {
-  const data = await tiktokPost(CONTENT_INIT, accessToken, payload);
-  const err = data.error || {};
-  if (err.code && err.code !== "ok") {
-    throw new Error(err.message || JSON.stringify(data));
-  }
-  return data.data || {};
+  return assertTikTokOk(await tiktokPost(CONTENT_INIT, accessToken, payload));
 }
 
 export async function fetchStatus(accessToken, publishId) {
-  const data = await tiktokPost(STATUS_FETCH, accessToken, { publish_id: publishId });
+  return assertTikTokOk(await tiktokPost(STATUS_FETCH, accessToken, { publish_id: publishId }));
+}
+
+export async function fetchUserInfo(accessToken, fields = USER_INFO_FIELDS) {
+  const u = new URL(USER_INFO);
+  u.searchParams.set("fields", fields);
+  const r = await fetch(u.toString(), {
+    method: "GET",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await r.json();
   const err = data.error || {};
   if (err.code && err.code !== "ok") {
     throw new Error(err.message || JSON.stringify(data));
   }
-  return data.data || {};
+  return data.data?.user || data.data || {};
+}
+
+export async function listVideos(accessToken, { cursor, max_count = 20 } = {}) {
+  const u = new URL(VIDEO_LIST);
+  u.searchParams.set("fields", VIDEO_LIST_FIELDS);
+  const body = { max_count: Math.min(20, Math.max(1, Number(max_count) || 20)) };
+  if (cursor != null && cursor !== "") body.cursor = Number(cursor);
+  const data = await tiktokPost(u.toString(), accessToken, body);
+  return assertTikTokOk(data);
 }
 
 export function json(res, status, body) {

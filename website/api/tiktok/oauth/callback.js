@@ -1,5 +1,12 @@
-import { exchangeCode, json, redirect } from "../_lib/tiktok.js";
-import { parseCookies, signPayload, COOKIE } from "../_lib/session.js";
+import { exchangeCode, fetchUserInfo, json, redirect } from "../_lib/tiktok.js";
+import {
+  COOKIE,
+  parseCookies,
+  readSession,
+  setSessionCookie,
+  signPayload,
+  upsertAccount,
+} from "../_lib/session.js";
 
 export default async function handler(req, res) {
   try {
@@ -26,16 +33,51 @@ export default async function handler(req, res) {
     }
 
     const tokens = await exchangeCode(code);
+    let profile = {};
+    try {
+      profile = await fetchUserInfo(tokens.access_token);
+    } catch {
+      profile = {};
+    }
+
+    const isAdd = String(state).includes("_add_");
+    const existing = isAdd ? readSession(req) : null;
+    const open_id = tokens.open_id || profile.open_id || `u_${Date.now()}`;
+    const nextSession = upsertAccount(existing, {
+      ...tokens,
+      open_id,
+      username: profile.username || "",
+      display_name: profile.display_name || "",
+      avatar_url: profile.avatar_url || profile.avatar_url_100 || "",
+    });
+
     const secure = process.env.VERCEL || process.env.NODE_ENV === "production";
-    const sessionToken = signPayload(tokens);
-    const sessionParts = [
-      `${COOKIE}=${encodeURIComponent(sessionToken)}`,
-      "Path=/",
-      "HttpOnly",
-      "SameSite=Lax",
-      `Max-Age=${60 * 60 * 24 * 30}`,
-    ];
-    if (secure) sessionParts.push("Secure");
+    try {
+      setSessionCookie(res, nextSession);
+    } catch (e) {
+      // Cookie too large — fall back to this account only
+      const solo = upsertAccount(null, {
+        ...tokens,
+        open_id,
+        username: profile.username || "",
+        display_name: profile.display_name || "",
+        avatar_url: profile.avatar_url || profile.avatar_url_100 || "",
+      });
+      const token = signPayload(solo);
+      const sessionParts = [
+        `${COOKIE}=${encodeURIComponent(token)}`,
+        "Path=/",
+        "HttpOnly",
+        "SameSite=Lax",
+        `Max-Age=${60 * 60 * 24 * 30}`,
+      ];
+      if (secure) sessionParts.push("Secure");
+      res.setHeader("Set-Cookie", [
+        sessionParts.join("; "),
+        `process_studio_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`,
+      ]);
+      return redirect(res, `/studio?connected=1&warn=${encodeURIComponent(String(e.message || e).slice(0, 120))}`);
+    }
 
     const clearState = [
       "process_studio_oauth_state=",
@@ -45,9 +87,17 @@ export default async function handler(req, res) {
       "Max-Age=0",
     ];
     if (secure) clearState.push("Secure");
+    // setSessionCookie already set Set-Cookie — append clear state
+    const existingCookie = res.getHeader("Set-Cookie");
+    const list = Array.isArray(existingCookie)
+      ? existingCookie
+      : existingCookie
+        ? [existingCookie]
+        : [];
+    list.push(clearState.join("; "));
+    res.setHeader("Set-Cookie", list);
 
-    res.setHeader("Set-Cookie", [sessionParts.join("; "), clearState.join("; ")]);
-    return redirect(res, "/studio?connected=1");
+    return redirect(res, `/studio?connected=1${isAdd ? "&added=1" : ""}`);
   } catch (e) {
     return redirect(res, `/studio?error=${encodeURIComponent(String(e.message || e).slice(0, 180))}`);
   }

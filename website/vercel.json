@@ -3,8 +3,33 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/terms",
+      "destination": "/cgu?lang=en",
+      "permanent": false
+    },
+    {
+      "source": "/privacy",
+      "destination": "/confidentialite?lang=en",
+      "permanent": false
+    },
+    {
+      "source": "/legal-notice",
+      "destination": "/mentions-legales?lang=en",
+      "permanent": false
+    },
+    {
+      "source": "/health-sources",
+      "destination": "/sources-sante?lang=en",
+      "permanent": false
+    },
+    {
       "source": "/join/:code",
       "destination": "/?ref=:code",
+      "permanent": false
+    },
+    {
+      "source": "/c/:slug",
+      "destination": "/?get=1&utm_source=:slug&utm_medium=campaign&utm_campaign=:slug",
       "permanent": false
     },
     {

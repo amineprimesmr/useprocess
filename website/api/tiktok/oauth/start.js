@@ -6,8 +6,9 @@ export default function handler(req, res) {
     if (req.method !== "GET") {
       return json(res, 405, { error: "method_not_allowed" });
     }
-    const state = `studio_${crypto.randomBytes(16).toString("hex")}`;
-    // Short-lived cookie so callback can validate state
+    const url = new URL(req.url, `https://${req.headers.host || "useprocess.xyz"}`);
+    const add = url.searchParams.get("add") === "1";
+    const state = `studio_${add ? "add_" : ""}${crypto.randomBytes(16).toString("hex")}`;
     const secure = process.env.VERCEL || process.env.NODE_ENV === "production";
     const parts = [
       `process_studio_oauth_state=${encodeURIComponent(state)}`,

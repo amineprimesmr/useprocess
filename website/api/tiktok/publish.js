@@ -1,5 +1,5 @@
-import { ensureSession } from "./_lib/auth.js";
-import { initPhotoPost, json } from "./_lib/tiktok.js";
+import { ensureSession, requireActiveAccount } from "./_lib/auth.js";
+import { creatorInfo, initPhotoPost, json } from "./_lib/tiktok.js";
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -23,7 +23,8 @@ export default async function handler(req, res) {
       return json(res, 405, { error: "method_not_allowed" });
     }
     const session = await ensureSession(req, res);
-    if (!session) {
+    const active = requireActiveAccount(session);
+    if (!active) {
       return json(res, 401, { error: "not_authenticated" });
     }
 
@@ -34,6 +35,8 @@ export default async function handler(req, res) {
       description,
       privacy_level,
       disable_comment = true,
+      disable_duet = true,
+      disable_stitch = true,
       brand_content_toggle = false,
       brand_organic_toggle = false,
       auto_add_music = true,
@@ -52,6 +55,18 @@ export default async function handler(req, res) {
       return json(res, 400, { error: "cannot_enable_both_brand_toggles" });
     }
 
+    // Re-query creator_info so we never send disallowed privacy / interaction flags.
+    const info = await creatorInfo(active.access_token);
+    const allowedPrivacy = info.privacy_level_options || [];
+    if (mode === "DIRECT_POST") {
+      if (!allowedPrivacy.includes(privacy_level)) {
+        return json(res, 400, {
+          error: "privacy_level_not_allowed_for_creator",
+          allowed: allowedPrivacy,
+        });
+      }
+    }
+
     const fullCaption = String(description || title || "");
     const shortTitle = String(title || fullCaption).slice(0, 90);
 
@@ -62,7 +77,9 @@ export default async function handler(req, res) {
 
     if (mode === "DIRECT_POST") {
       post_info.privacy_level = privacy_level;
-      post_info.disable_comment = Boolean(disable_comment);
+      post_info.disable_comment = info.comment_disabled ? true : Boolean(disable_comment);
+      post_info.disable_duet = info.duet_disabled ? true : Boolean(disable_duet);
+      post_info.disable_stitch = info.stitch_disabled ? true : Boolean(disable_stitch);
       post_info.auto_add_music = Boolean(auto_add_music);
       post_info.brand_content_toggle = Boolean(brand_content_toggle);
       post_info.brand_organic_toggle = Boolean(brand_organic_toggle);
@@ -79,7 +96,7 @@ export default async function handler(req, res) {
       media_type: "PHOTO",
     };
 
-    const data = await initPhotoPost(session.access_token, payload);
+    const data = await initPhotoPost(active.access_token, payload);
     return json(res, 200, {
       ok: true,
       publish_id: data.publish_id,

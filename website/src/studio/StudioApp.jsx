@@ -39,12 +39,19 @@ export function StudioApp() {
   const [, setLangTick] = useState(0);
   const [loading, setLoading] = useState(true);
   const [creator, setCreator] = useState(null);
+  const [user, setUser] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [videoTotals, setVideoTotals] = useState(null);
+  const [sandbox, setSandbox] = useState(false);
   const [carousels, setCarousels] = useState([]);
   const [baseUrl, setBaseUrl] = useState("https://useprocess.xyz/tiktok-media/carousels");
   const [selectedId, setSelectedId] = useState("");
   const [caption, setCaption] = useState("");
   const [privacy, setPrivacy] = useState("");
   const [commentsOff, setCommentsOff] = useState(true);
+  const [duetOff, setDuetOff] = useState(true);
+  const [stitchOff, setStitchOff] = useState(true);
   const [commercial, setCommercial] = useState(false);
   const [yourBrand, setYourBrand] = useState(false);
   const [brandedContent, setBrandedContent] = useState(false);
@@ -65,7 +72,23 @@ export function StudioApp() {
     }
     const err = params.get("error");
     if (err) {
-      setBanner(err);
+      const oauthErrors = {
+        state_mismatch: appCopy(
+          "Session OAuth expirée — réessaie de connecter TikTok.",
+          "OAuth session expired — try connecting TikTok again."
+        ),
+        invalid_state: appCopy(
+          "État OAuth invalide — réessaie de connecter TikTok.",
+          "Invalid OAuth state — try connecting TikTok again."
+        ),
+        missing_code: appCopy(
+          "Connexion TikTok incomplète — réessaie.",
+          "Incomplete TikTok connection — try again."
+        ),
+        access_denied: appCopy("Connexion TikTok annulée.", "TikTok connection canceled."),
+        token_failed: appCopy("Échec de connexion TikTok — réessaie.", "TikTok connection failed — try again."),
+      };
+      setBanner(oauthErrors[err] || err);
       setStatusKind("err");
     }
   }, []);
@@ -94,12 +117,35 @@ export function StudioApp() {
         const me = await api("/api/tiktok/me");
         if (cancelled) return;
         setCreator(me.creator || null);
+        setUser(me.user || null);
+        setAccounts(me.accounts || []);
+        setSandbox(Boolean(me.sandbox));
+        if (me.creator?.comment_disabled) setCommentsOff(true);
+        if (me.creator?.duet_disabled) setDuetOff(true);
+        if (me.creator?.stitch_disabled) setStitchOff(true);
+        try {
+          const vids = await api("/api/tiktok/videos?max_count=10");
+          if (!cancelled) {
+            setVideos(vids.videos || []);
+            setVideoTotals(vids.page_totals || null);
+          }
+        } catch {
+          if (!cancelled) {
+            setVideos([]);
+            setVideoTotals(null);
+          }
+        }
       } catch (e) {
         if (!cancelled && e.status !== 401) {
           setStatusText(String(e.message || e));
           setStatusKind("err");
         }
-        if (!cancelled) setCreator(null);
+        if (!cancelled) {
+          setCreator(null);
+          setUser(null);
+          setAccounts([]);
+          setVideos([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -139,8 +185,53 @@ export function StudioApp() {
   async function onLogout() {
     await api("/api/tiktok/logout", { method: "POST" });
     setCreator(null);
+    setUser(null);
+    setAccounts([]);
+    setVideos([]);
+    setVideoTotals(null);
     setPrivacy("");
     setBanner("");
+  }
+
+  async function onSwitchAccount(openId) {
+    setBusy(true);
+    try {
+      await api("/api/tiktok/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "switch", open_id: openId }),
+      });
+      window.location.href = "/studio?switched=1";
+    } catch (e) {
+      setStatusKind("err");
+      setStatusText(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRemoveAccount(openId) {
+    setBusy(true);
+    try {
+      const res = await api("/api/tiktok/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "remove", open_id: openId }),
+      });
+      if (!(res.accounts || []).length) {
+        setCreator(null);
+        setUser(null);
+        setAccounts([]);
+        setVideos([]);
+        return;
+      }
+      window.location.href = "/studio?removed=1";
+    } catch (e) {
+      setStatusKind("err");
+      setStatusText(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function pollStatus(publishId) {
@@ -172,6 +263,8 @@ export function StudioApp() {
         description: caption,
         privacy_level: privacy || undefined,
         disable_comment: commentsOff,
+        disable_duet: duetOff,
+        disable_stitch: stitchOff,
         brand_organic_toggle: commercial && yourBrand,
         brand_content_toggle: commercial && brandedContent,
         post_mode: postMode,
@@ -239,20 +332,81 @@ export function StudioApp() {
         ) : null}
 
         <section className="ps-panel">
-          <h3>{appCopy("1. Compte TikTok", "1. TikTok account")}</h3>
+          <h3>{appCopy("1. Compte(s) TikTok", "1. TikTok account(s)")}</h3>
           {loading ? (
             <p className="ps-muted">{appCopy("Chargement…", "Loading…")}</p>
-          ) : creator ? (
-            <div className="ps-row">
-              <span className="ps-user">
-                @{creator.creator_username || creator.username || "creator"}
-              </span>
-              {creator.creator_nickname ? (
-                <span className="ps-muted">{creator.creator_nickname}</span>
+          ) : creator || user ? (
+            <div>
+              <div className="ps-row">
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt=""
+                    width={36}
+                    height={36}
+                    style={{ borderRadius: 999, objectFit: "cover" }}
+                  />
+                ) : null}
+                <span className="ps-user">
+                  @{user?.username || creator?.creator_username || "creator"}
+                </span>
+                {user?.display_name || creator?.creator_nickname ? (
+                  <span className="ps-muted">{user?.display_name || creator?.creator_nickname}</span>
+                ) : null}
+                <a className="ps-btn ps-btn-ghost" href="/api/tiktok/oauth/start?add=1">
+                  {appCopy("Ajouter un compte", "Add account")}
+                </a>
+                <button type="button" className="ps-btn ps-btn-ghost" onClick={onLogout}>
+                  {appCopy("Tout déconnecter", "Disconnect all")}
+                </button>
+              </div>
+              {user && (user.follower_count != null || user.likes_count != null) ? (
+                <p className="ps-muted" style={{ marginTop: 10 }}>
+                  {appCopy("Stats", "Stats")}:{" "}
+                  {(user.follower_count ?? "—").toLocaleString?.() || user.follower_count}{" "}
+                  {appCopy("abonnés", "followers")} ·{" "}
+                  {(user.likes_count ?? "—").toLocaleString?.() || user.likes_count} likes ·{" "}
+                  {(user.video_count ?? "—").toLocaleString?.() || user.video_count}{" "}
+                  {appCopy("vidéos", "videos")}
+                </p>
               ) : null}
-              <button type="button" className="ps-btn ps-btn-ghost" onClick={onLogout}>
-                {appCopy("Déconnecter", "Disconnect")}
-              </button>
+              {accounts.length > 1 ? (
+                <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                  {accounts.map((a) => (
+                    <div key={a.open_id} className="ps-row">
+                      <span className={a.active ? "ps-user" : "ps-muted"}>
+                        @{a.username || a.open_id.slice(0, 8)}
+                        {a.active ? ` · ${appCopy("actif", "active")}` : ""}
+                      </span>
+                      {!a.active ? (
+                        <button
+                          type="button"
+                          className="ps-btn ps-btn-ghost"
+                          disabled={busy}
+                          onClick={() => onSwitchAccount(a.open_id)}
+                        >
+                          {appCopy("Activer", "Switch")}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="ps-btn ps-btn-ghost"
+                        disabled={busy}
+                        onClick={() => onRemoveAccount(a.open_id)}
+                      >
+                        {appCopy("Retirer", "Remove")}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <p className="ps-muted" style={{ marginTop: 12 }}>
+                <a href="/confidentialite#tiktok-studio">{appCopy("Confidentialité TikTok", "TikTok privacy")}</a>
+                {" · "}
+                <a href="/cgu">{appCopy("CGU", "Terms")}</a>
+                {" · "}
+                <a href="/support">Support</a>
+              </p>
             </div>
           ) : (
             <div>
@@ -262,14 +416,59 @@ export function StudioApp() {
                 </a>
               </div>
               <p className="ps-muted" style={{ marginTop: 12 }}>
-                {appCopy(
-                  "Tant que l’app TikTok est en Sandbox, connecte-toi avec @process.debloat.app (seul compte autorisé). Déconnecte les autres comptes TikTok du navigateur avant.",
-                  "While the TikTok app is in Sandbox, sign in as @process.debloat.app (only allowed account). Log out other TikTok accounts in the browser first."
-                )}
+                {sandbox
+                  ? appCopy(
+                      "Sandbox TikTok : utilise @process.debloat.app. Déconnecte les autres comptes TikTok du navigateur avant.",
+                      "TikTok Sandbox: use @process.debloat.app. Log out other TikTok accounts in the browser first."
+                    )
+                  : appCopy(
+                      "OAuth officiel TikTok sur useprocess.xyz — multi-comptes supporté après connexion.",
+                      "Official TikTok OAuth on useprocess.xyz — multi-account supported after connect."
+                    )}
               </p>
             </div>
           )}
         </section>
+
+        {creator || user ? (
+          <section className="ps-panel">
+            <h3>{appCopy("1b. Analytics (posts récents)", "1b. Analytics (recent posts)")}</h3>
+            {videos.length ? (
+              <>
+                {videoTotals ? (
+                  <p className="ps-muted">
+                    {appCopy("Page", "Page")}: {videoTotals.views} {appCopy("vues", "views")} ·{" "}
+                    {videoTotals.likes} likes · {videoTotals.comments}{" "}
+                    {appCopy("commentaires", "comments")} · {videoTotals.shares}{" "}
+                    {appCopy("partages", "shares")}
+                  </p>
+                ) : null}
+                <div className="ps-packs" style={{ marginTop: 10 }}>
+                  {videos.slice(0, 6).map((v) => (
+                    <div key={v.id} className="ps-pack" style={{ cursor: "default" }}>
+                      {v.cover_image_url ? (
+                        <img src={v.cover_image_url} alt="" loading="lazy" />
+                      ) : null}
+                      <span>
+                        <strong>{(v.title || v.video_description || v.id).slice(0, 48)}</strong>
+                        <span className="ps-muted">
+                          {v.view_count ?? 0} views · {v.like_count ?? 0} likes
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="ps-muted">
+                {appCopy(
+                  "Reconnecte avec les scopes video.list / stats pour voir les perfs (après review).",
+                  "Reconnect with video.list / stats scopes to see performance (after review)."
+                )}
+              </p>
+            )}
+          </section>
+        ) : null}
 
         <section className="ps-panel">
           <h3>{appCopy("2. Choisir un carousel", "2. Choose a carousel")}</h3>
@@ -376,8 +575,29 @@ export function StudioApp() {
               type="checkbox"
               checked={commentsOff}
               onChange={(e) => setCommentsOff(e.target.checked)}
+              disabled={Boolean(creator?.comment_disabled)}
             />
             <span>{appCopy("Désactiver les commentaires", "Turn off comments")}</span>
+          </label>
+
+          <label className="ps-toggle">
+            <input
+              type="checkbox"
+              checked={duetOff}
+              onChange={(e) => setDuetOff(e.target.checked)}
+              disabled={Boolean(creator?.duet_disabled)}
+            />
+            <span>{appCopy("Désactiver Duet", "Turn off Duet")}</span>
+          </label>
+
+          <label className="ps-toggle">
+            <input
+              type="checkbox"
+              checked={stitchOff}
+              onChange={(e) => setStitchOff(e.target.checked)}
+              disabled={Boolean(creator?.stitch_disabled)}
+            />
+            <span>{appCopy("Désactiver Stitch", "Turn off Stitch")}</span>
           </label>
 
           <label className="ps-toggle">
