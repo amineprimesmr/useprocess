@@ -2,8 +2,12 @@ import SwiftUI
 
 extension View {
     /// Tutoriel accueil — onglet Série uniquement (sections = inline sur Plan).
+    func planHomeTutorial(selectedSection: Binding<ProcessMainSection>) -> some View {
+        planHomeTutorial(store: PlanHomeTutorialStore.shared, selectedSection: selectedSection)
+    }
+
     func planHomeTutorial(
-        store: PlanHomeTutorialStore = .shared,
+        store: PlanHomeTutorialStore,
         selectedSection: Binding<ProcessMainSection>
     ) -> some View {
         modifier(PlanHomeTutorialModifier(store: store, selectedSection: selectedSection))

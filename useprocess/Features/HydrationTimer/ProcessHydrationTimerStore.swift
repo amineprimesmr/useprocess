@@ -9,13 +9,15 @@ struct ProcessHydrationTimerState: Codable, Equatable, Sendable {
     var dayId: String?
     var targetMilliliters: Int
 
+    static let defaultHydrationTargetML = ProcessDailyTargets.hydrationLitersPerDay * 1000
+
     static let `default` = ProcessHydrationTimerState(
         isRunning: false,
         intervalMinutes: 45,
         nextSipAt: nil,
         startedAt: nil,
         dayId: nil,
-        targetMilliliters: ProcessDailyTargets.hydrationTargetMilliliters
+        targetMilliliters: defaultHydrationTargetML
     )
 }
 
@@ -101,7 +103,7 @@ final class ProcessHydrationTimerStore {
     func start(
         interval: ProcessHydrationTimerInterval? = nil,
         dayId: String?,
-        targetMilliliters: Int = ProcessDailyTargets.hydrationTargetMilliliters
+        targetMilliliters: Int = ProcessHydrationTimerState.defaultHydrationTargetML
     ) async -> Bool {
         if let interval {
             state.intervalMinutes = interval.rawValue
@@ -146,7 +148,7 @@ final class ProcessHydrationTimerStore {
     func markDrinkDue(source: ProcessHydrationTimerDueSource) async {
         guard state.isRunning else { return }
 
-        if var next = state.nextSipAt, next > Date().addingTimeInterval(2) {
+        if let next = state.nextSipAt, next > Date().addingTimeInterval(2) {
             state.nextSipAt = Date()
             persist()
         } else if state.nextSipAt == nil {

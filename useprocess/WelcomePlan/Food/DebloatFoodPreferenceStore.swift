@@ -81,8 +81,8 @@ final class DebloatFoodPreferenceStore {
         let snapshot = state
         let uid = UserScopedStorage.currentUserId() ?? "local-user"
         let key = UserScopedStorage.key("process.debloat.food_prefs", userId: uid)
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
         Task.detached(priority: .utility) {
-            guard let data = try? JSONEncoder().encode(snapshot) else { return }
             await MainActor.run {
                 guard generation == self.persistenceGeneration else { return }
                 UserDefaults.standard.set(data, forKey: key)

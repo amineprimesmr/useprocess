@@ -243,19 +243,13 @@ final class MealPhotoScanViewModel {
                 await runBackgroundOptimize(meal: meal, profile: profile)
             }
         } catch let error as ProcessPrivacyConsentError {
-            fail(error.localizedDescription ?? AppCopy.t(
-                "Autorise l'analyse dans les réglages.",
-                en: "Allow analysis in Settings."
-            ))
+            fail(error.localizedDescription)
         } catch let error as MealHubError {
             fail(message(for: error))
         } catch let error as ClaudeAPIError {
             fail(claudeMessage(for: error))
         } catch let error as CoachRemoteError {
-            fail(error.localizedDescription ?? AppCopy.t(
-                "Analyse indisponible. Réessaie.",
-                en: "Analysis unavailable. Try again."
-            ))
+            fail(error.localizedDescription)
         } catch {
             fail(AppCopy.t(
                 "Connexion ou analyse indisponible. Réessaie dans un instant.",

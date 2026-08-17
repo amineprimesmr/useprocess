@@ -58,7 +58,7 @@ enum ProcessAppStoreReviewPrompt {
 
         markPresented(source: opportunity.rawValue)
         ProcessAnalytics.trackAppStoreReviewPrompted(source: opportunity.rawValue)
-        await requestReview()
+        requestReview()
     }
 
     static func isEligible(_ opportunity: ProcessAppStoreReviewOpportunity) -> Bool {

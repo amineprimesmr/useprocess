@@ -9,7 +9,7 @@ final class ProcessHydrationTimerLiveActivityController {
     private var currentActivity: Activity<ProcessHydrationActivityAttributes>?
 
     var hasActiveActivity: Bool {
-        if let currentActivity { return true }
+        if currentActivity != nil { return true }
         return !Activity<ProcessHydrationActivityAttributes>.activities.isEmpty
     }
 

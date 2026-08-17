@@ -17,12 +17,12 @@ enum ProcessScanCamera {
     }
 
     /// À appeler **avant** `ARSession.run` / `startRunning`.
-    static func prepareForFrontPortraitScan() {
+    nonisolated static func prepareForFrontPortraitScan() {
         disableCenterStageSafely()
     }
 
     /// Center Stage ne peut pas être coupé tant que le mode est `.user` (crash).
-    static func disableCenterStageSafely() {
+    nonisolated static func disableCenterStageSafely() {
         guard #available(iOS 14.5, *) else { return }
         if AVCaptureDevice.centerStageControlMode == .user {
             AVCaptureDevice.centerStageControlMode = .app
@@ -33,7 +33,7 @@ enum ProcessScanCamera {
         }
     }
 
-    static func lockFrontCameraOutOfUltraWide(_ device: AVCaptureDevice) {
+    nonisolated static func lockFrontCameraOutOfUltraWide(_ device: AVCaptureDevice) {
         guard device.position == .front else { return }
 
         do {
@@ -51,7 +51,7 @@ enum ProcessScanCamera {
         }
     }
 
-    static func lockActiveFrontCamerasIfPossible() {
+    nonisolated static func lockActiveFrontCamerasIfPossible() {
         disableCenterStageSafely()
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [

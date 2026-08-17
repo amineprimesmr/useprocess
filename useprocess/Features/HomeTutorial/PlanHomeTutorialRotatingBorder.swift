@@ -151,7 +151,20 @@ struct PlanHomeTutorialFocusChrome<Content: View>: View {
 extension PlanHomeTutorialFocusChrome {
     init(
         focus: PlanHomeTutorialFocus,
-        store: PlanHomeTutorialStore = .shared,
+        cornerRadius: CGFloat? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.init(
+            focus: focus,
+            store: PlanHomeTutorialStore.shared,
+            cornerRadius: cornerRadius,
+            content: content
+        )
+    }
+
+    init(
+        focus: PlanHomeTutorialFocus,
+        store: PlanHomeTutorialStore,
         cornerRadius: CGFloat? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {

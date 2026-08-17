@@ -3,7 +3,13 @@ import SwiftUI
 extension View {
     /// Présente le bilan en grande capsule animée depuis le Dynamic Island.
     func eveningCheckInIsland(
-        presenter: ProcessEveningCheckInPresenter = .shared,
+        onDismiss: @escaping (_ submitted: Bool) -> Void = { _ in }
+    ) -> some View {
+        eveningCheckInIsland(presenter: ProcessEveningCheckInPresenter.shared, onDismiss: onDismiss)
+    }
+
+    func eveningCheckInIsland(
+        presenter: ProcessEveningCheckInPresenter,
         onDismiss: @escaping (_ submitted: Bool) -> Void = { _ in }
     ) -> some View {
         modifier(ProcessEveningCheckInIslandModifier(presenter: presenter, onDismiss: onDismiss))

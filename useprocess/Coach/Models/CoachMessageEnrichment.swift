@@ -273,16 +273,6 @@ enum CoachResponseParser {
 extension CoachMessage {
 
     var enrichment: CoachMessageEnrichment? {
-        var link: CoachDeepLink?
-        if let actionRaw = deepLinkAction,
-           let action = CoachDeepLinkAction(rawValue: actionRaw) {
-            let label = deepLinkLabel?.trimmingCharacters(in: .whitespacesAndNewlines)
-            link = CoachDeepLink(
-                action: action,
-                label: (label?.isEmpty == false ? label! : action.defaultLabel)
-            )
-        }
-
         let resolvedFollowUps = CoachFollowUpSanitizer.sanitized(followUps ?? [])
         let resolvedActions = resolvedContextualActions.filter { $0.kind == .applyPlanChanges }
         guard !resolvedFollowUps.isEmpty || !resolvedActions.isEmpty else { return nil }

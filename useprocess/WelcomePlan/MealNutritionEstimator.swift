@@ -83,11 +83,9 @@ enum MealNutritionEstimator {
 
         let macros = macroTemplate(for: food, grams: grams, role: role)
 
-        var qualityPenalty = tierQualityPenalty(food.tier)
-        var digestivePenalty = tierDigestivePenalty(food.tier, name: food.name)
-
-        qualityPenalty += keywordQualityPenalty(in: normalize(food.name))
-        digestivePenalty += keywordDigestivePenalty(in: normalize(food.name))
+        let qualityPenalty = tierQualityPenalty(food.tier) + keywordQualityPenalty(in: normalize(food.name))
+        let digestivePenalty = tierDigestivePenalty(food.tier, name: food.name)
+            + keywordDigestivePenalty(in: normalize(food.name))
 
         return IngredientBreakdown(
             grams: grams,
@@ -230,8 +228,8 @@ enum MealNutritionEstimator {
         role: String
     ) -> IngredientBreakdown {
         let factor = grams / 100.0
-        var quality = template.qualityPenalty + keywordQualityPenalty(in: name)
-        var digestive = template.digestivePenalty + keywordDigestivePenalty(in: name)
+        let quality = template.qualityPenalty + keywordQualityPenalty(in: name)
+        let digestive = template.digestivePenalty + keywordDigestivePenalty(in: name)
 
         return IngredientBreakdown(
             grams: grams,
@@ -254,10 +252,10 @@ enum MealNutritionEstimator {
         var carbs = 0.0
         var fats = 0.0
         var fiber = 1.0
-        var sugar = 1.0
+        let sugar = 1.0
         var sodium = 180.0
         var potassium = 120.0
-        var magnesium = 12.0
+        let magnesium = 12.0
 
         if role.contains("prot") {
             protein = 22; sodium = 90; potassium = 250

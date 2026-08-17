@@ -126,7 +126,7 @@ final class ProcessHydrationTimerMonitor {
                 queue: .main
             ) { _ in
                 Task { @MainActor in
-                    await ProcessHydrationTimerMonitor.shared.handleSceneWillBackground()
+                    ProcessHydrationTimerMonitor.shared.handleSceneWillBackground()
                 }
             }
         )

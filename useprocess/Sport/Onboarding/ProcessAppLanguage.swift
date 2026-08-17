@@ -1,13 +1,18 @@
 import Foundation
 import Observation
 
+private enum ProcessAppLanguageKeys {
+    static let storageKey = "process.app.language"
+    static let legacyUserDefaultsKey = "selectedLanguage"
+}
+
 /// Langue produit de l’app — pilotée par le device au premier lancement, puis par le sélecteur onboarding.
 @MainActor
 @Observable
 final class ProcessAppLanguage {
     static let shared = ProcessAppLanguage()
 
-    enum Code: String, CaseIterable, Identifiable {
+    enum Code: String, CaseIterable, Identifiable, Sendable {
         case french = "fr"
         case english = "en"
 
@@ -27,16 +32,13 @@ final class ProcessAppLanguage {
             }
         }
 
-        var localeIdentifier: String {
+        nonisolated var localeIdentifier: String {
             switch self {
             case .french: return "fr_FR"
             case .english: return "en_US"
             }
         }
     }
-
-    private static let storageKey = "process.app.language"
-    private static let legacyUserDefaultsKey = "selectedLanguage"
 
     private(set) var code: Code
 
@@ -108,10 +110,10 @@ final class ProcessAppLanguage {
     // MARK: - Persistence
 
     nonisolated private static func loadStoredCode() -> Code? {
-        if let value = UserDefaults.standard.string(forKey: storageKey) {
+        if let value = UserDefaults.standard.string(forKey: ProcessAppLanguageKeys.storageKey) {
             return normalize(value)
         }
-        if let legacy = UserDefaults.standard.string(forKey: legacyUserDefaultsKey) {
+        if let legacy = UserDefaults.standard.string(forKey: ProcessAppLanguageKeys.legacyUserDefaultsKey) {
             let code = normalize(legacy)
             persist(code)
             return code
@@ -120,7 +122,7 @@ final class ProcessAppLanguage {
     }
 
     nonisolated private static func persist(_ code: Code) {
-        UserDefaults.standard.set(code.rawValue, forKey: storageKey)
-        UserDefaults.standard.set(code.rawValue, forKey: legacyUserDefaultsKey)
+        UserDefaults.standard.set(code.rawValue, forKey: ProcessAppLanguageKeys.storageKey)
+        UserDefaults.standard.set(code.rawValue, forKey: ProcessAppLanguageKeys.legacyUserDefaultsKey)
     }
 }

@@ -4,7 +4,7 @@ import UIKit
 /// Outil timer hydratation — rappel boire + Dynamic Island / Live Activity.
 struct ProcessHydrationTimerView: View {
     var dayId: String?
-    var targetMilliliters: Int = ProcessDailyTargets.hydrationTargetMilliliters
+    var targetMilliliters: Int = ProcessHydrationTimerState.defaultHydrationTargetML
     var onDismiss: () -> Void
 
     @Environment(\.appTheme) private var theme

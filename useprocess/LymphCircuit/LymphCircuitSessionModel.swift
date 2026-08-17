@@ -131,8 +131,8 @@ final class LymphCircuitSessionModel {
 
     nonisolated func enqueueFrame(_ sampleBuffer: CMSampleBuffer) {
         let frame = SendableSampleBuffer(sampleBuffer)
-        BodyScanLiveFrameRouter.shared.process(sampleBuffer: frame.buffer) { [weak self] analysis in
-            Task { @MainActor in
+        BodyScanLiveFrameRouter.shared.process(sampleBuffer: frame.buffer) { analysis in
+            Task { @MainActor [weak self] in
                 self?.applyLiveAnalysis(analysis)
             }
         }
