@@ -118,6 +118,33 @@
     },
   };
 
+  var cachedFrCardInner = null;
+
+  function applyLegalBody(lang) {
+    var card = document.querySelector(".card");
+    if (!card || !window.LEGAL_BODY_EN) return;
+    var path = window.location.pathname.replace(/\/$/, "");
+    var enBody = window.LEGAL_BODY_EN[path];
+    if (!enBody) return;
+
+    if (!cachedFrCardInner) {
+      cachedFrCardInner = card.innerHTML;
+    }
+
+    var page = LEGAL_PAGES[path];
+    var meta = page && (page[lang] || page.fr);
+
+    if (lang === "en") {
+      card.innerHTML = "<h1>" + (meta ? meta.h1 : "") + "</h1>" + enBody;
+    } else {
+      card.innerHTML = cachedFrCardInner;
+      if (meta) {
+        var h1 = card.querySelector("h1");
+        if (h1) h1.textContent = meta.h1;
+      }
+    }
+  }
+
   function applyLegalPageMeta(lang) {
     var path = window.location.pathname.replace(/\/$/, "");
     var page = LEGAL_PAGES[path];
@@ -145,6 +172,7 @@
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
     applyLegalPageMeta(lang);
+    applyLegalBody(lang);
   }
 
   function mountSwitcher() {
@@ -181,6 +209,10 @@
     }
     var lang = getLang();
     document.documentElement.lang = lang === "en" ? "en-US" : "fr";
+    var card = document.querySelector(".card");
+    if (card && !cachedFrCardInner) {
+      cachedFrCardInner = card.innerHTML;
+    }
     mountSwitcher();
     applyCopy(lang);
   }

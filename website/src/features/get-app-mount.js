@@ -1,4 +1,3 @@
-import { getIosAppStoreUrl } from "./app-store-urls.js";
 import {
   detectInAppBrowser,
   getStoreButtonHref,
@@ -7,6 +6,7 @@ import {
 import { subscribeSiteLanguage, appCopy } from "./app-copy.js";
 import {
   applyGetAppDocumentLanguage,
+  applyGetAppChromeCopy,
   getAppPageCopy,
   mountLanguageSwitch,
 } from "./site-chrome.js";
@@ -17,6 +17,7 @@ import {
   copyReferralInvite,
   parseReferralCodeFromLocation,
   rememberReferralCode,
+  resolveAcquisitionUtm,
 } from "./referral-link.js";
 
 const QR_SCRIPT = "/js/qr_code_styling.js";
@@ -51,43 +52,37 @@ function detectDevicePlatform() {
   return "unknown";
 }
 
-function redirectWithUtmParams(baseUrl) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const utmParams = new URLSearchParams();
-  for (const [key, value] of urlParams) {
-    if (key.startsWith("utm_")) utmParams.append(key, value);
-  }
-  const utmString = utmParams.toString();
-  const url = utmString ? `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}${utmString}` : baseUrl;
-  window.location.href = url;
-}
-
-function openStorePage(referralCode = "") {
-  const base = referralCode
-    ? buildAppStoreUrlWithReferral(referralCode)
-    : getIosAppStoreUrl();
+function openStorePage(referralCode = "", utm = {}) {
+  const base = buildAppStoreUrlWithReferral(referralCode, utm);
 
   if (shouldUseSafariStoreFlow()) {
     return;
   }
 
-  redirectWithUtmParams(base);
+  window.location.href = base;
 }
 
-async function openStoreWithReferral(referralCode) {
+async function openStoreWithReferral(referralCode, utm = {}) {
   if (referralCode) {
     await copyReferralInvite(referralCode);
     rememberReferralCode(referralCode);
 
     if (detectDevicePlatform() === "ios" && !shouldUseSafariStoreFlow()) {
-      const deepLink = buildReferralDeepLink(referralCode);
+      const deepLink = buildReferralDeepLink(referralCode, utm);
       window.location.href = deepLink;
-      window.setTimeout(() => openStorePage(referralCode), 700);
+      window.setTimeout(() => openStorePage(referralCode, utm), 700);
+      return;
+    }
+  } else if (Object.keys(utm).length && detectDevicePlatform() === "ios" && !shouldUseSafariStoreFlow()) {
+    const deepLink = buildReferralDeepLink("", utm);
+    if (deepLink && deepLink !== "process://acquire") {
+      window.location.href = deepLink;
+      window.setTimeout(() => openStorePage("", utm), 700);
       return;
     }
   }
 
-  openStorePage(referralCode);
+  openStorePage(referralCode, utm);
 }
 
 function showReferralBanner(referralCode) {
@@ -149,7 +144,7 @@ function shouldStayOnPage() {
   return ["1", "true", "yes"].includes(String(params.get("stay") || "").toLowerCase());
 }
 
-async function renderQR(referralCode = "") {
+async function renderQR(referralCode = "", utm = {}) {
   await loadQrScript();
   const QRCodeStyling = window.QRCodeStyling;
   const target = document.getElementById("get-app-qr");
@@ -160,7 +155,9 @@ async function renderQR(referralCode = "") {
     width: 250,
     height: 250,
     type: "svg",
-    data: referralCode ? buildReferralLandingUrl(referralCode) : getIosAppStoreUrl(),
+    data: referralCode
+      ? buildReferralLandingUrl(referralCode, utm)
+      : buildAppStoreUrlWithReferral("", utm),
     qrOptions: { typeNumber: 0, errorCorrectionLevel: "H" },
     image: "/assets/icone.png?v=20260808",
     dotsOptions: { color: "#F6F4EC", type: "dots" },
@@ -176,30 +173,31 @@ async function renderQR(referralCode = "") {
   container.classList.remove("hidden");
 }
 
-function wireStoreButtons(referralCode = "") {
+function wireStoreButtons(referralCode = "", utm = {}) {
   const btn = document.getElementById("get-app-store-ios");
   if (!btn) return;
 
   btn.addEventListener("click", () => {
-    const storeUrl = referralCode
-      ? buildAppStoreUrlWithReferral(referralCode)
-      : getIosAppStoreUrl();
+    const storeUrl = buildAppStoreUrlWithReferral(referralCode, utm);
 
     if (shouldUseSafariStoreFlow()) {
       window.location.href = getStoreButtonHref(storeUrl);
       return;
     }
 
-    openStoreWithReferral(referralCode);
+    openStoreWithReferral(referralCode, utm);
   });
 }
 
 export async function mountGetAppPage() {
   const referralCode = parseReferralCodeFromLocation();
+  const utm = resolveAcquisitionUtm();
   const langHost = document.getElementById("get-app-lang-host");
   mountLanguageSwitch(langHost, { compact: true });
 
   const resync = () => {
+    applyGetAppDocumentLanguage();
+    applyGetAppChromeCopy();
     if (referralCode) showReferralBanner(referralCode);
     else applyGetAppPageCopy();
   };
@@ -208,6 +206,7 @@ export async function mountGetAppPage() {
   if (referralCode) {
     rememberReferralCode(referralCode);
     showReferralBanner(referralCode);
+    applyGetAppDocumentLanguage();
   } else {
     applyGetAppPageCopy();
   }
@@ -220,15 +219,15 @@ export async function mountGetAppPage() {
     detectDevicePlatform() === "ios" &&
     !detectInAppBrowser()
   ) {
-    openStorePage();
+    openStorePage("", utm);
     return;
   }
 
-  wireStoreButtons(referralCode);
+  wireStoreButtons(referralCode, utm);
 
   if (!isMobileDevice()) {
     try {
-      await renderQR(referralCode);
+      await renderQR(referralCode, utm);
     } catch (err) {
       console.warn("[get-app] QR indisponible :", err?.message || err);
     }

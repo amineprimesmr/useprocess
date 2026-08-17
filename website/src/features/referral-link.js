@@ -3,7 +3,11 @@ import { appCopy } from "./app-copy.js";
 
 const REFERRAL_STORAGE_KEY = "process_referral_code";
 const REFERRAL_STORAGE_TS_KEY = "process_referral_code_at";
+const UTM_STORAGE_KEY = "process_acquisition_utm";
+const UTM_STORAGE_TS_KEY = "process_acquisition_utm_at";
 const REFERRAL_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 jours
+
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 
 export function normalizeReferralCode(raw) {
   return String(raw || "")
@@ -13,13 +17,99 @@ export function normalizeReferralCode(raw) {
     .replace(/[^A-Z0-9-]/g, "");
 }
 
+export function parseUtmFromLocation(location = window.location) {
+  const params = new URLSearchParams(location.search || "");
+  const utm = {};
+  for (const key of UTM_KEYS) {
+    const value = String(params.get(key) || "").trim();
+    if (value) utm[key] = value;
+  }
+  // Alias courts
+  const source = String(params.get("source") || "").trim();
+  const medium = String(params.get("medium") || "").trim();
+  const campaign = String(params.get("campaign") || "").trim();
+  if (source && !utm.utm_source) utm.utm_source = source;
+  if (medium && !utm.utm_medium) utm.utm_medium = medium;
+  if (campaign && !utm.utm_campaign) utm.utm_campaign = campaign;
+
+  // Path /c/tiktok
+  const path = String(location.pathname || "").replace(/\/$/, "");
+  const campaignPath = path.match(/^\/c\/([^/]+)$/i);
+  if (campaignPath?.[1]) {
+    const slug = decodeURIComponent(campaignPath[1]).trim().toLowerCase();
+    if (slug) {
+      if (!utm.utm_source) utm.utm_source = slug;
+      if (!utm.utm_medium) utm.utm_medium = "campaign";
+      if (!utm.utm_campaign) utm.utm_campaign = slug;
+    }
+  }
+
+  return utm;
+}
+
+export function rememberUtm(utm) {
+  if (!utm || typeof utm !== "object") return;
+  const cleaned = {};
+  for (const key of UTM_KEYS) {
+    const value = String(utm[key] || "").trim();
+    if (value) cleaned[key] = value;
+  }
+  if (!Object.keys(cleaned).length) return;
+  try {
+    localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(cleaned));
+    localStorage.setItem(UTM_STORAGE_TS_KEY, String(Date.now()));
+  } catch {
+    // ignore
+  }
+}
+
+export function readRememberedUtm() {
+  try {
+    const savedAt = Number(localStorage.getItem(UTM_STORAGE_TS_KEY) || "0");
+    if (savedAt > 0 && Date.now() - savedAt > REFERRAL_TTL_MS) {
+      localStorage.removeItem(UTM_STORAGE_KEY);
+      localStorage.removeItem(UTM_STORAGE_TS_KEY);
+      return {};
+    }
+    const raw = localStorage.getItem(UTM_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function resolveAcquisitionUtm(location = window.location) {
+  const fromUrl = parseUtmFromLocation(location);
+  if (Object.keys(fromUrl).length) {
+    rememberUtm(fromUrl);
+    return fromUrl;
+  }
+  return readRememberedUtm();
+}
+
+function appendParams(baseUrl, params) {
+  const entries = Object.entries(params || {}).filter(([, v]) => String(v || "").trim());
+  if (!entries.length) return baseUrl;
+  const url = new URL(baseUrl, "https://useprocess.xyz");
+  for (const [key, value] of entries) {
+    url.searchParams.set(key, String(value).trim());
+  }
+  // Keep absolute App Store / join URLs intact
+  if (/^https?:\/\//i.test(baseUrl)) {
+    return url.toString();
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 export function parseReferralCodeFromLocation(location = window.location) {
   const path = String(location.pathname || "").replace(/\/$/, "");
   const host = String(location.hostname || "").toLowerCase();
 
   if (host === "join.useprocess.xyz" && path) {
     const rootCode = path.replace(/^\//, "");
-    if (rootCode && !["get", "telecharger", "join"].includes(rootCode.toLowerCase())) {
+    if (rootCode && !["get", "telecharger", "join", "c"].includes(rootCode.toLowerCase())) {
       return normalizeReferralCode(decodeURIComponent(rootCode));
     }
   }
@@ -36,10 +126,29 @@ export function parseReferralCodeFromLocation(location = window.location) {
   return readRememberedReferralCode();
 }
 
-export function buildReferralLandingUrl(code) {
+export function buildReferralLandingUrl(code, utm = {}) {
   const normalized = normalizeReferralCode(code);
-  if (!normalized) return "https://useprocess.xyz/?get=1";
-  return `https://useprocess.xyz/join/${encodeURIComponent(normalized)}`;
+  if (!normalized) {
+    return appendParams("https://useprocess.xyz/?get=1", utm);
+  }
+  return appendParams(
+    `https://useprocess.xyz/join/${encodeURIComponent(normalized)}`,
+    utm
+  );
+}
+
+export function buildCampaignLandingUrl(slug, utm = {}) {
+  const clean = String(slug || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "");
+  if (!clean) return appendParams("https://useprocess.xyz/?get=1", utm);
+  return appendParams(`https://useprocess.xyz/c/${encodeURIComponent(clean)}`, {
+    utm_source: utm.utm_source || clean,
+    utm_medium: utm.utm_medium || "campaign",
+    utm_campaign: utm.utm_campaign || clean,
+    ...utm,
+  });
 }
 
 export function buildReferralShareText(code) {
@@ -52,17 +161,35 @@ export function buildReferralShareText(code) {
   );
 }
 
-export function buildReferralDeepLink(code) {
+export function buildReferralDeepLink(code, utm = {}) {
   const normalized = normalizeReferralCode(code);
-  return `process://referral?code=${encodeURIComponent(normalized)}`;
+  const params = { ...utm };
+  if (normalized) params.code = normalized;
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (String(value || "").trim()) query.set(key, String(value).trim());
+  }
+  const qs = query.toString();
+  if (normalized) {
+    return `process://referral${qs ? `?${qs}` : `?code=${encodeURIComponent(normalized)}`}`;
+  }
+  return `process://acquire${qs ? `?${qs}` : ""}`;
 }
 
-export function buildAppStoreUrlWithReferral(code) {
+export function buildAppStoreUrlWithReferral(code, utm = {}) {
   const base = getIosAppStoreUrl();
   const normalized = normalizeReferralCode(code);
-  if (!normalized) return base;
-  const separator = base.includes("?") ? "&" : "?";
-  return `${base}${separator}ct=ref_${encodeURIComponent(normalized)}`;
+  const params = { ...utm };
+  if (normalized) {
+    params.ct = `ref_${normalized}`;
+  } else if (utm.utm_campaign || utm.utm_source) {
+    const label = String(utm.utm_campaign || utm.utm_source || "web")
+      .trim()
+      .replace(/\s+/g, "_")
+      .slice(0, 40);
+    if (label) params.ct = label;
+  }
+  return appendParams(base, params);
 }
 
 export function rememberReferralCode(code) {

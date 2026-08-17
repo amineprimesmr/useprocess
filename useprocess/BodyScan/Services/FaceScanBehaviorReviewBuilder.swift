@@ -41,7 +41,7 @@ enum FaceScanBehaviorReviewBuilder {
         )
 
         let isBaseline = previous == nil
-            || result.relativeSignals?.baselineLabel == "Premier scan de référence"
+            || result.relativeSignals?.baselineLabel == FaceScanBaselineLabel.firstReference
 
         if isBaseline {
             return baselineReview(for: result, now: now)

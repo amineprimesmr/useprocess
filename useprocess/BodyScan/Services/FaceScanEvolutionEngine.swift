@@ -116,7 +116,7 @@ enum FaceScanEvolutionEngine {
         let retention = FaceScanMetricDisplay.item(for: .retention, result: result, previous: previous)
         let retentionLoad = FaceScanIndicators.displayPercent(for: .retention, result: result)
 
-        if result.relativeSignals?.baselineLabel == "Premier scan de référence" || previous == nil {
+        if result.relativeSignals?.baselineLabel == FaceScanBaselineLabel.firstReference || previous == nil {
             return AppCopy.tSync("Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend.", en: "Starting point saved: all your indicators are tracked. Next scans will show what rises or falls.")
         }
 
@@ -237,7 +237,7 @@ enum FaceScanEvolutionEngine {
             )
         ]
 
-        if let rel = result.relativeSignals, rel.baselineLabel != "Premier scan de référence" {
+        if let rel = result.relativeSignals, rel.baselineLabel != FaceScanBaselineLabel.firstReference {
             lines.append(AppCopy.tSync(
                 "- vs baseline : rétention \(signed(rel.puffinessDelta)), cernes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0)), peau \(signed(rel.skinClarityDelta)).",
                 en: "- vs baseline: retention \(signed(rel.puffinessDelta)), under-eyes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0)), skin \(signed(rel.skinClarityDelta))."

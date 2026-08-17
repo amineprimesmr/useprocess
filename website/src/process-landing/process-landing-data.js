@@ -69,7 +69,7 @@ export function heroCopy() {
     trustBadge: appCopy("Approuvé par +8500 utilisateurs", "Trusted by +8,500 users"),
     title: appCopy(
       "Téléchargez Process et dégonflez votre visage",
-      "Download Process and de-bloat your face"
+      "Download Process and debloat your face"
     ),
     subtitle: appCopy(
       "Scan 3D, protocole debloat sur mesure et coach IA — mesure ton visage, suis tes progrès et vois la différence.",
@@ -212,7 +212,7 @@ export function testimonialsCopy() {
     title: appCopy("Nos témoignages", "Our Testimonials"),
     subtitle: appCopy(
       "Découvre comment Process aide les utilisateurs à dégonfler et suivre leur visage.",
-      "See how Process helps users de-bloat and track their face over time."
+      "See how Process helps users debloat and track their face over time."
     ),
     items: [
       {

@@ -569,11 +569,15 @@ enum MealSuggestionParser {
         let cleaned = CoachFormattedText.plainText(from: text)
         if looksLikeJSON(cleaned) {
             return MealSuggestionContent(
-                name: "Repas à ajuster",
-                mealType: "Repas",
+                name: AppCopy.tSync("Repas à ajuster", en: "Meal to adjust"),
+                mealType: AppCopy.tSync("Repas", en: "Meal"),
                 protocolScore: 70,
-                scoreSummary: "Réponse IA illisible — réessaie.",
-                items: [MealSuggestionItem(name: "Réessayer", quantity: "—", role: "Autre")],
+                scoreSummary: AppCopy.tSync("Réponse IA illisible — réessaie.", en: "Unreadable AI response — try again."),
+                items: [MealSuggestionItem(
+                    name: AppCopy.tSync("Réessayer", en: "Try again"),
+                    quantity: "—",
+                    role: AppCopy.tSync("Autre", en: "Other")
+                )],
                 prepMinutes: 15,
                 prepSummary: "",
                 coachTip: "",
@@ -585,10 +589,14 @@ enum MealSuggestionParser {
 
         return MealSuggestionContent(
             name: String(cleaned.prefix(48)),
-            mealType: "Repas",
+            mealType: AppCopy.tSync("Repas", en: "Meal"),
             protocolScore: 70,
-            scoreSummary: "Aligné avec ton plan personnalisé.",
-            items: [MealSuggestionItem(name: "Voir détail", quantity: "—", role: "Autre")],
+            scoreSummary: AppCopy.tSync("Aligné avec ton plan personnalisé.", en: "Aligned with your personalized plan."),
+            items: [MealSuggestionItem(
+                name: AppCopy.tSync("Voir détail", en: "View details"),
+                quantity: "—",
+                role: AppCopy.tSync("Autre", en: "Other")
+            )],
             prepMinutes: 15,
             prepSummary: cleaned,
             coachTip: "",

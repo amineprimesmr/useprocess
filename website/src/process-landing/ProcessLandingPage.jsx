@@ -12,6 +12,7 @@ import { StoreDownloadButtons } from "../landing-cinematic/StoreDownloadButtons.
 import { BeforeAfterSlider } from "./BeforeAfterSlider.jsx";
 import { StatAnimatedValue } from "./StatAnimatedValue.jsx";
 import { StickyDownloadBar } from "./StickyDownloadBar.jsx";
+import { LanguageSwitch } from "./LanguageSwitch.jsx";
 import {
   APP_STORE_URL,
   HERO_PHONE_IMAGE,
@@ -438,6 +439,7 @@ export function ProcessLandingPage() {
 
   return (
     <div className="fk-page">
+      <LanguageSwitch />
       <InAppEscapeHint />
       <main>
         <Hero />

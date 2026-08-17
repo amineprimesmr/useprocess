@@ -8,7 +8,13 @@ export function getRoute() {
   const params = new URLSearchParams(window.location.search || "");
 
   const hasReferral = Boolean(params.get("ref") || params.get("code"));
-  const wantsGetApp = params.get("get") === "1" || hasReferral;
+  const hasUtm = Boolean(
+    params.get("utm_source") ||
+      params.get("utm_campaign") ||
+      params.get("source") ||
+      params.get("campaign")
+  );
+  const wantsGetApp = params.get("get") === "1" || hasReferral || hasUtm;
 
   if (host === "join.useprocess.xyz") {
     return { type: "get-app" };
@@ -16,7 +22,13 @@ export function getRoute() {
   if (path === "/studio" || path === "/studio.html") {
     return { type: "studio" };
   }
-  if (path === "/get" || path === "/telecharger" || /^\/join\/[^/]+$/i.test(path) || wantsGetApp) {
+  if (
+    path === "/get" ||
+    path === "/telecharger" ||
+    /^\/join\/[^/]+$/i.test(path) ||
+    /^\/c\/[^/]+$/i.test(path) ||
+    wantsGetApp
+  ) {
     return { type: "get-app" };
   }
   if (path === "") return { type: "landing" };

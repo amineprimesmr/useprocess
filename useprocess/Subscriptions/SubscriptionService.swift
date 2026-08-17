@@ -144,6 +144,9 @@ final class SubscriptionService: NSObject, ObservableObject {
         Purchases.configure(withAPIKey: apiKey)
         Purchases.shared.delegate = self
         isConfigured = true
+        Task {
+            await syncAcquisitionAttributesIfPossible()
+        }
 
         Task {
             PaywallPricingExperiment.shared.resolve()
@@ -154,6 +157,14 @@ final class SubscriptionService: NSObject, ObservableObject {
                 await checkSubscriptionStatus()
             }
         }
+    }
+
+    /// Attributs RevenueCat pour savoir d’où viennent les ventes (referral / ASA / UTM).
+    func syncAcquisitionAttributesIfPossible() async {
+        guard isConfigured else { return }
+        let attrs = ProcessAcquisitionAttribution.revenueCatAttributes()
+        guard !attrs.isEmpty else { return }
+        Purchases.shared.attribution.setAttributes(attrs)
     }
 
     func syncAppUserID(_ userID: String?) async {
@@ -175,6 +186,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         do {
             _ = try await Purchases.shared.logIn(userID)
             syncedRevenueCatUserID = userID
+            await syncAcquisitionAttributesIfPossible()
             await checkSubscriptionStatus()
             await loadSubscriptions()
         } catch {

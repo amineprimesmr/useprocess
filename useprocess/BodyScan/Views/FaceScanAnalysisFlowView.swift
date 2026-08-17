@@ -10,6 +10,8 @@ struct FaceScanAnalysisFlowView: View {
     let markers: FaceWellnessMarkers
     var profile: UnifiedUserProfile?
     var showsResultScreen: Bool = true
+    /// Onboarding Moss funnel: track analysis sub-phases + abandon.
+    var tracksOnboardingMossFunnel: Bool = false
     var onDismiss: () -> Void
     var onComplete: (FaceScanResult) -> Void
     /// Mode dev / studio — revient à la capture visage sans enregistrer l’analyse.
@@ -27,6 +29,7 @@ struct FaceScanAnalysisFlowView: View {
     @State private var elapsedTask: Task<Void, Never>?
     @State private var didCompleteAnalysis = false
     @State private var didSaveScan = false
+    @State private var lastTrackedMossSubphaseIndex = -1
 
     private var steps: [OnboardingAnalysisProgressConfig.ProgressStep] {
         OnboardingAnalysisProgressConfig.faceScanAnalysisSteps
@@ -137,6 +140,16 @@ struct FaceScanAnalysisFlowView: View {
             guard !didCompleteAnalysis else { return }
             analysisTask?.cancel()
             elapsedTask?.cancel()
+            if tracksOnboardingMossFunnel {
+                ProcessAnalytics.trackMossAction(
+                    page: .faceScanAnalyzing,
+                    action: "abandoned",
+                    extra: [
+                        "phase_index": analysisPhaseIndex,
+                        "progress_pct": analysisDisplayedPercentage
+                    ]
+                )
+            }
         }
     }
 
@@ -411,6 +424,24 @@ struct FaceScanAnalysisFlowView: View {
         }
     }
 
+    @MainActor
+    private func trackMossAnalysisSubphaseIfNeeded(stepIndex: Int) {
+        guard tracksOnboardingMossFunnel,
+              steps.indices.contains(stepIndex),
+              stepIndex != lastTrackedMossSubphaseIndex else { return }
+        lastTrackedMossSubphaseIndex = stepIndex
+        let step = steps[stepIndex]
+        ProcessAnalytics.trackMossAction(
+            page: .faceScanAnalyzing,
+            action: "subphase_reached",
+            extra: [
+                "subphase_id": step.id,
+                "subphase_index": stepIndex,
+                "subphase_label": step.phaseLabel
+            ]
+        )
+    }
+
     private func startProgressAnimation() {
         analysisTask?.cancel()
 
@@ -434,6 +465,7 @@ struct FaceScanAnalysisFlowView: View {
                     analysisDisplayedPercentage = Int((eased * 100).rounded())
                     analysisPhaseIndex = stepIndex
                     analysisPhaseLabel = steps[stepIndex].phaseLabel
+                    trackMossAnalysisSubphaseIfNeeded(stepIndex: stepIndex)
                 }
 
                 if normalized >= 1 { break }

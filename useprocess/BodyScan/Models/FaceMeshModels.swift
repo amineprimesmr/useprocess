@@ -199,6 +199,12 @@ struct FaceScanResult: nonisolated Codable, Identifiable, Hashable, @unchecked S
     }
 }
 
+enum FaceScanBaselineLabel {
+    static let firstReference = "Premier scan de référence"
+    static let comparedToRecentAverage = "Comparé à ta moyenne récente"
+    static let comparedToFirstScans = "Comparé à tes premiers scans"
+}
+
 struct FaceScanRelativeSignals: Codable, Hashable {
     var puffinessDelta: Int
     var underEyeFatigueDelta: Int
@@ -210,11 +216,11 @@ struct FaceScanRelativeSignals: Codable, Hashable {
 
     var localizedBaselineLabel: String {
         switch baselineLabel {
-        case "Premier scan de référence":
+        case FaceScanBaselineLabel.firstReference:
             return AppCopy.tSync("Premier scan de référence", en: "First reference scan")
-        case "Comparé à ta moyenne récente":
+        case FaceScanBaselineLabel.comparedToRecentAverage:
             return AppCopy.tSync("Comparé à ta moyenne récente", en: "Compared to your recent average")
-        case "Comparé à tes premiers scans":
+        case FaceScanBaselineLabel.comparedToFirstScans:
             return AppCopy.tSync("Comparé à tes premiers scans", en: "Compared to your first scans")
         default:
             return baselineLabel

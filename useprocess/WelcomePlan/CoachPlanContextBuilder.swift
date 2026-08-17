@@ -180,15 +180,15 @@ enum CoachPlanContextBuilder {
             }
 
             let ingredients = entry.meal.foodItems
-                .map { "\($0.name) (\($0.quantity))" }
+                .map { "\($0.localizedName) (\($0.localizedQuantity))" }
                 .joined(separator: ", ")
 
-            lines.append("• \(entry.slot.displayTitle) [\(status)] : \(entry.meal.name)")
+            lines.append("• \(entry.slot.displayTitle) [\(status)] : \(entry.meal.localizedDisplayName)")
             if !ingredients.isEmpty {
                 lines.append(AppCopy.tSync("  Ingrédients : \(ingredients)", en: "  Ingredients: \(ingredients)"))
             }
-            if !entry.meal.prepSummary.isEmpty {
-                lines.append(AppCopy.tSync("  Préparation : \(entry.meal.prepSummary)", en: "  Prep: \(entry.meal.prepSummary)"))
+            if !entry.meal.localizedPrep.isEmpty {
+                lines.append(AppCopy.tSync("  Préparation : \(entry.meal.localizedPrep)", en: "  Prep: \(entry.meal.localizedPrep)"))
             }
             if entry.meal.showsScore, entry.meal.protocolScore > 0 {
                 lines.append(AppCopy.tSync(
@@ -380,7 +380,7 @@ enum CoachPlanContextBuilder {
     // MARK: - Private
 
     private static func formattedAnswer(questionId: String, answer: WelcomePlanAnswer) -> String {
-        if answer.skipped { return "passé" }
+        if answer.skipped { return AppCopy.tSync("passé", en: "skipped") }
         if !answer.choiceIds.isEmpty {
             return answer.choiceIds
                 .map { WelcomePlanQuestionBank.choiceLabel(for: questionId, choiceId: $0) }
@@ -392,7 +392,7 @@ enum CoachPlanContextBuilder {
 
     private static func formatShortDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         formatter.dateFormat = "d MMM"
         return formatter.string(from: date)
     }

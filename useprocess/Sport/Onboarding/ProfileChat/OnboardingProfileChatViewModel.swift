@@ -205,6 +205,7 @@ final class OnboardingProfileChatViewModel {
         questions[currentIndex] = question
         currentQuestion = question
         isQuestionReadyForAnswers = false
+        trackCurrentChatQuestionViewed()
 
         appendAssistantMessagesInstant(for: question)
 
@@ -238,6 +239,7 @@ final class OnboardingProfileChatViewModel {
         guard let question = currentQuestion else { return }
 
         isQuestionReadyForAnswers = false
+        trackCurrentChatQuestionViewed()
 
         let progress = OnboardingMossChatHelpers.answerProgress(for: question, in: questions)
         let lines = OnboardingMossChatHelpers.mossLines(
@@ -314,6 +316,7 @@ final class OnboardingProfileChatViewModel {
                 questions[index] = question
                 currentQuestion = question
                 isQuestionReadyForAnswers = true
+                trackCurrentChatQuestionViewed()
                 rebuildMessages(upToCompletedExclusiveOf: "face_scan_offer")
                 appendAssistantMessagesInstant(for: question)
             }
@@ -354,6 +357,7 @@ final class OnboardingProfileChatViewModel {
         questions[targetIndex] = question
         currentQuestion = question
         isQuestionReadyForAnswers = true
+        trackCurrentChatQuestionViewed()
 
         rebuildMessages(upToCompletedExclusiveOf: targetID)
         appendAssistantMessagesInstant(for: question)
@@ -466,7 +470,7 @@ final class OnboardingProfileChatViewModel {
             break
         }
 
-        await recordAnswer(display: label, questionID: question.id)
+        await recordAnswer(display: label, questionID: question.id, answerID: choiceId)
     }
 
     func submitMultiChoice(_ choiceIds: Set<String>) async {
@@ -480,7 +484,11 @@ final class OnboardingProfileChatViewModel {
                 choiceIds.compactMap(OnboardingDebloatDriver.init(rawValue:))
             )
         }
-        await recordAnswer(display: labels.joined(separator: ", "), questionID: question.id)
+        await recordAnswer(
+            display: labels.joined(separator: ", "),
+            questionID: question.id,
+            answerID: choiceIds.sorted().joined(separator: ",")
+        )
     }
 
     func submitSearchedSport(_ sport: String) async {
@@ -491,7 +499,7 @@ final class OnboardingProfileChatViewModel {
         OnboardingDataModel.shared.selectedSports = [sport]
         OnboardingDataModel.shared.persistSelectedSports()
         onboardingViewModel?.isSportsSelected = true
-        await recordAnswer(display: display, questionID: "sport_pick")
+        await recordAnswer(display: display, questionID: "sport_pick", answerID: sport)
     }
 
     func submitFaceScanNow() async {
@@ -501,6 +509,16 @@ final class OnboardingProfileChatViewModel {
         if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
             ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
+
+        ProcessAnalytics.trackMossAction(
+            page: .faceScanOffer,
+            action: "started_scan",
+            extra: [
+                "question_id": "face_scan_offer",
+                "question_index": currentIndex,
+                "questions_total": questions.count
+            ]
+        )
 
         let launchScanLabel = OnboardingCopy.t("Lancer le scan", en: "Start the scan")
         if conversationEngine.messages.last?.sender != .user
@@ -519,6 +537,16 @@ final class OnboardingProfileChatViewModel {
         onboardingViewModel?.onboardingFaceMesh = nil
         onboardingViewModel?.onboardingFaceMarkers = nil
         markQuestionCompleted("face_scan_offer")
+        ProcessAnalytics.trackMossAction(
+            page: .faceScanOffer,
+            action: "skipped",
+            answerDisplay: OnboardingCopy.t("Faire mon scan plus tard", en: "I’ll scan later"),
+            extra: [
+                "question_id": "face_scan_offer",
+                "question_index": currentIndex,
+                "questions_total": questions.count
+            ]
+        )
         let scanLaterLabel = OnboardingCopy.t("Faire mon scan plus tard", en: "I’ll scan later")
         if conversationEngine.messages.last?.sender != .user
             || conversationEngine.messages.last?.text != scanLaterLabel {
@@ -544,6 +572,10 @@ final class OnboardingProfileChatViewModel {
         guard currentQuestion?.id == "face_scan_offer", !shouldFinish else { return }
         isSubmittingAnswer = false
         isQuestionReadyForAnswers = true
+        // Force re-view after cancel from capture (dedupe would skip if still on offer).
+        ProcessAnalytics.lastMossPageName = nil
+        trackCurrentChatQuestionViewed()
+        ProcessAnalytics.trackMossAction(page: .faceScanOffer, action: "returned_from_scan")
     }
 
     func submitFaceScanResultsContinue() {
@@ -558,6 +590,7 @@ final class OnboardingProfileChatViewModel {
             onboardingViewModel?.isFaceAnalysisCompleted = true
             markQuestionCompleted("face_scan_offer")
         }
+        ProcessAnalytics.trackMossAction(page: .faceScanResults, action: "continued")
         currentQuestion = nil
         isQuestionReadyForAnswers = false
         programCreationPhase = .idle
@@ -762,28 +795,41 @@ final class OnboardingProfileChatViewModel {
         isSubmittingAnswer = false
     }
 
-    private func recordAnswer(display: String, questionID: String? = nil) async {
+    private func recordAnswer(
+        display: String,
+        questionID: String? = nil,
+        answerID: String? = nil
+    ) async {
         let completedQuestionID = questionID ?? currentQuestion?.id
+        let kind = currentQuestion.map { mossQuestionKindName($0.kind) } ?? "unknown"
+        let index = completedQuestionID.flatMap { id in
+            questions.firstIndex(where: { $0.id == id })
+        } ?? currentIndex
+
         if let completedQuestionID {
             markQuestionCompleted(completedQuestionID)
-            var props: [String: Any] = [
-                "question_id": completedQuestionID,
-                "answer_display": display,
-                "answer_length": display.count
-            ]
+            var profileExtras: [String: Any] = [:]
             if let vm = onboardingViewModel {
-                if let gender = vm.selectedGender { props["gender"] = gender.rawValue }
-                if vm.isAgeSelected { props["age"] = vm.selectedAge }
+                if let gender = vm.selectedGender { profileExtras["gender"] = gender.rawValue }
+                if vm.isAgeSelected { profileExtras["age"] = vm.selectedAge }
                 if OnboardingViewModel.isPlausibleWeight(vm.selectedWeight) {
-                    props["weight_kg"] = vm.selectedWeight
+                    profileExtras["weight_kg"] = vm.selectedWeight
                 }
-                if vm.selectedHeight > 0 { props["height_cm"] = vm.selectedHeight }
+                if vm.selectedHeight > 0 { profileExtras["height_cm"] = vm.selectedHeight }
                 let name = vm.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
                 if OnboardingViewModel.isRealUserFirstName(name) {
-                    props["first_name"] = name
+                    profileExtras["first_name"] = name
                 }
             }
-            ProcessAnalytics.capture("onboarding_chat_answer", properties: props)
+            ProcessAnalytics.trackMossChatAnswer(
+                questionID: completedQuestionID,
+                questionKind: kind,
+                questionIndex: index,
+                questionsTotal: questions.count,
+                answerDisplay: display,
+                answerID: answerID,
+                profileExtras: profileExtras
+            )
         }
         isQuestionReadyForAnswers = false
         currentQuestion = nil
@@ -796,6 +842,29 @@ final class OnboardingProfileChatViewModel {
         }
 
         isSubmittingAnswer = false
+    }
+
+    private func trackCurrentChatQuestionViewed() {
+        guard let question = currentQuestion else { return }
+        ProcessAnalytics.trackMossChatQuestionViewed(
+            questionID: question.id,
+            questionKind: mossQuestionKindName(question.kind),
+            questionIndex: currentIndex,
+            questionsTotal: questions.count
+        )
+    }
+
+    private func mossQuestionKindName(_ kind: OnboardingProfileChatQuestionKind) -> String {
+        switch kind {
+        case .infoContinue: return "info_continue"
+        case .yesNo: return "yes_no"
+        case .singleChoice: return "single_choice"
+        case .multiChoice: return "multi_choice"
+        case .faceScanOffer: return "face_scan_offer"
+        case .answersAnalysis: return "answers_analysis"
+        case .analysisProgress: return "analysis_progress"
+        case .autoPlanCreation: return "auto_plan_creation"
+        }
     }
 
     private func markQuestionCompleted(_ questionID: String) {

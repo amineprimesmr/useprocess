@@ -1,9 +1,38 @@
 /* Process landing — base 16px */
 @import "../landing-cinematic/store-download-buttons.css";
 
-html:has(.fk-page) {
-  font-size: 16px;
+.fk-lang-switch {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  right: max(16px, env(safe-area-inset-right, 16px));
+  z-index: 120;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--fk-border);
+  backdrop-filter: blur(8px);
 }
+
+.fk-lang-switch button {
+  min-width: 36px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fk-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.fk-lang-switch button.is-active {
+  background: var(--fk-text);
+  color: #fff;
+}
+
 
 .fk-page {
   --fk-bg: #f2f2f2;

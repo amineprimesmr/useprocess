@@ -76,7 +76,7 @@ const SITE_META = {
     lang: "en-US",
     title: "Process — AI Coach & Face Debloat Protocol",
     description:
-      "Process — AI coach, face scan and personalized debloat protocol. De-bloat your face with nutrition, hydration and Apple Health tracking.",
+      "Process — AI coach, face scan and personalized debloat protocol. Debloat your face with nutrition, hydration and Apple Health tracking.",
     ogTitle: "Process — AI Coach & Face Debloat",
     ogDescription: "AI coach, face scan and debloat protocol — iOS app.",
   },

@@ -34,7 +34,7 @@ enum FaceWellnessScore {
         appreciation(
             markers: result.markers,
             relativeSignals: result.relativeSignals,
-            isBaselineScan: result.relativeSignals?.baselineLabel == "Premier scan de référence"
+            isBaselineScan: result.relativeSignals?.baselineLabel == FaceScanBaselineLabel.firstReference
         )
     }
 
@@ -219,7 +219,7 @@ enum FaceWellnessScore {
                     skinClarityDelta: 0,
                     faceDefinitionDelta: 0,
                     stressLoadDelta: 0,
-                    baselineLabel: "Premier scan de référence"
+                    baselineLabel: FaceScanBaselineLabel.firstReference
                 )
             )
         }

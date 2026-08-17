@@ -59,7 +59,10 @@ final class ProcessSceneDelegate: NSObject, UIWindowSceneDelegate {
         if ProcessReferralLink.parseCode(from: url) != nil {
             ProcessReferralAttribution.capture(from: url)
             NotificationCenter.default.post(name: .processReferralCodeCaptured, object: nil)
+        } else if ProcessReferralLink.isAcquisitionURL(url) {
+            ProcessAcquisitionAttribution.capture(from: url)
         } else {
+            ProcessAcquisitionAttribution.capture(from: url)
             AppLaunchRouter.shared.handleHydrationURL(url)
         }
     }

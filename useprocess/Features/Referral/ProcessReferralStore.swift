@@ -65,7 +65,7 @@ final class ProcessReferralStore {
 
     var shareMessage: String {
         """
-        \(AppCopy.t("Télécharge Process avec mon lien :", en: "Download Process with my link:"))
+        \(AppCopy.t("Télécharge Process gratuitement avec mon lien :", en: "Download Process for free with my link:"))
         \(referralLink)
 
         \(AppCopy.t("Mon code parrainage : \(displayReferralCode)", en: "My referral code: \(displayReferralCode)"))

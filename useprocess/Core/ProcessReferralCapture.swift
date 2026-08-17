@@ -118,6 +118,7 @@ enum ProcessReferralAttribution {
     }
 
     static func capture(from url: URL) {
+        ProcessAcquisitionAttribution.capture(from: url)
         guard let code = ProcessReferralLink.parseCode(from: url) else { return }
         storePending(code)
     }
@@ -131,6 +132,7 @@ enum ProcessReferralAttribution {
         if current.isEmpty {
             viewModel.referralCode = code
             viewModel.saveProgress()
+            ProcessAcquisitionAttribution.captureReferralCode(code)
             Task { @MainActor in
                 ProcessAnalytics.trackReferralCodeApplied(source: "onboarding")
             }
@@ -145,9 +147,17 @@ enum ProcessReferralAttribution {
         let normalized = ProcessReferralLink.normalizeCode(code)
         guard !normalized.isEmpty else { return }
         UserDefaults.standard.set(normalized, forKey: pendingKey)
+        ProcessAcquisitionAttribution.captureReferralCode(normalized)
         Task { @MainActor in
             ProcessAnalytics.trackReferralCodeCaptured(source: "deep_link")
         }
+    }
+}
+
+extension ProcessReferralLink {
+    /// Deep link campagne sans code parrain (`process://acquire?utm_source=tiktok`).
+    static func isAcquisitionURL(_ url: URL) -> Bool {
+        url.scheme == "process" && (url.host == "acquire" || url.host == "referral")
     }
 }
 

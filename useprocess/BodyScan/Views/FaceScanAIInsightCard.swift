@@ -461,7 +461,7 @@ enum FaceScanAIInsightBuilder {
 
     private static func delta(for kind: FaceScanIndicators.Kind, result: FaceScanResult) -> Int? {
         guard let signals = result.relativeSignals,
-              signals.baselineLabel != "Premier scan de référence" else { return nil }
+              signals.baselineLabel != FaceScanBaselineLabel.firstReference else { return nil }
         switch kind {
         case .retention: return signals.puffinessDelta
         case .recovery: return signals.underEyeFatigueDelta
@@ -550,7 +550,7 @@ enum FaceScanAIInsightBuilder {
             contextLines.append(AppCopy.tSync("Facteur secondaire : \(label(for: secondary)).", en: "Secondary factor: \(label(for: secondary))."))
         }
 
-        if let rel = result.relativeSignals, rel.baselineLabel != "Premier scan de référence" {
+        if let rel = result.relativeSignals, rel.baselineLabel != FaceScanBaselineLabel.firstReference {
             contextLines.append(
                 AppCopy.tSync(
                     "Évolution vs baseline : rétention \(signed(rel.puffinessDelta)), cernes \(signed(rel.underEyeFatigueDelta)), stress \(signed(rel.stressLoadDelta ?? 0)).",

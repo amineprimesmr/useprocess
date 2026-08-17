@@ -136,10 +136,13 @@ enum ProcessDebloatMealLibrary {
     static func localizedSummary(for summary: String) -> String {
         let trimmed = summary.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return trimmed }
-        guard let en = ProcessLocalizedMealContent.mealSummariesFRToEN[trimmed] else {
-            return trimmed
+        if let en = ProcessLocalizedMealContent.mealSummariesFRToEN[trimmed] {
+            return ProcessLocalizedMealContent.summary(trimmed, en: en)
         }
-        return ProcessLocalizedMealContent.summary(trimmed, en: en)
+        if ProcessAppLanguage.prefersEnglish {
+            return AppCopy.tSync("Repas aligné avec ton protocole.", en: "Meal aligned with your protocol.")
+        }
+        return trimmed
     }
 
     /// Étapes de préparation catalogue — lookup par bloc FR normalisé.

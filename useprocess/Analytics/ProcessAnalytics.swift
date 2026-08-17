@@ -8,6 +8,8 @@ enum ProcessAnalytics {
     private static var didTrackOnboardingStarted = false
     private static var lastOnboardingStepName: String?
     private static var lastTrackedFirstName: String?
+    /// Dedupe consecutive Moss sub-page views (chat / scan / program creation).
+    static var lastMossPageName: String?
 
     // MARK: - Lifecycle
 
@@ -41,6 +43,7 @@ enum ProcessAnalytics {
         capture("analytics_ready", properties: [
             "host": PostHogConfiguration.host
         ])
+        ProcessAcquisitionAttribution.bootstrap()
     }
 
     static var isReady: Bool { didConfigure && PostHogConfiguration.isConfigured }
@@ -57,7 +60,11 @@ enum ProcessAnalytics {
             props["name"] = name
             registerFirstNameSuperProperties(name)
         }
+        for (key, value) in ProcessAcquisitionAttribution.analyticsProperties() {
+            if props[key] == nil { props[key] = value }
+        }
         PostHogSDK.shared.identify(userId, userProperties: props.isEmpty ? nil : props)
+        ProcessAcquisitionAttribution.syncToAnalytics(emitResolvedEvent: false)
     }
 
     static func reset() {
@@ -68,6 +75,7 @@ enum ProcessAnalytics {
         didTrackOnboardingStarted = false
         lastOnboardingStepName = nil
         lastTrackedFirstName = nil
+        lastMossPageName = nil
     }
 
     /// Enregistre le prénom pour différencier les users (event + person + super properties).
@@ -94,11 +102,30 @@ enum ProcessAnalytics {
         guard isReady else { return }
         var props = properties
         props["app"] = "process"
+        // Fallback si les super-properties n’ont pas encore été register — pas de double surcharge lourde.
+        if props["acquisition_source"] == nil {
+            for (key, value) in ProcessAcquisitionAttribution.analyticsProperties(includeLastTouch: false) {
+                if props[key] == nil { props[key] = value }
+            }
+        }
         if let userProperties, !userProperties.isEmpty {
             PostHogSDK.shared.capture(event, properties: props, userProperties: userProperties)
         } else {
             PostHogSDK.shared.capture(event, properties: props)
         }
+    }
+
+    static func registerAcquisitionSuperProperties(_ properties: [String: Any]) {
+        guard isReady, !properties.isEmpty else { return }
+        var supers: [String: Any] = [:]
+        for (key, value) in properties {
+            // Évite d’enregistrer des payloads trop larges en super-props.
+            if key.hasPrefix("acquisition_") || key.hasPrefix("asa_") || key == "referral_code" || key == "has_referral_code" {
+                supers[key] = value
+            }
+        }
+        guard !supers.isEmpty else { return }
+        PostHogSDK.shared.register(supers)
     }
 
     static func setPersonProperties(_ properties: [String: Any]) {
@@ -118,16 +145,27 @@ enum ProcessAnalytics {
     // MARK: - App
 
     static func trackAppOpened(hasCompletedOnboarding: Bool) {
-        capture("app_opened", properties: [
+        var props: [String: Any] = [
             "has_completed_onboarding": hasCompletedOnboarding,
             "app_language": ProcessAppLanguage.shared.isEnglish ? "en" : "fr"
-        ])
-        setPersonProperties([
+        ]
+        for (key, value) in ProcessAcquisitionAttribution.analyticsProperties() {
+            props[key] = value
+        }
+        capture("app_opened", properties: props)
+        var person: [String: Any] = [
             "app_language": ProcessAppLanguage.shared.isEnglish ? "en" : "fr",
             "has_completed_onboarding": hasCompletedOnboarding
-        ])
+        ]
+        for (key, value) in ProcessAcquisitionAttribution.analyticsProperties() {
+            person[key] = value
+        }
+        setPersonProperties(person)
         Task {
             await PermissionsManager.shared.refreshNotificationAuthorizationStatus()
+        }
+        Task {
+            await ProcessAcquisitionAttribution.resolveAppleSearchAdsIfNeeded()
         }
     }
 
@@ -196,6 +234,14 @@ enum ProcessAnalytics {
     private static func withPricingVariant(_ properties: [String: Any]) -> [String: Any] {
         var props = properties
         for (key, value) in PaywallPricingExperiment.shared.analyticsProperties {
+            props[key] = value
+        }
+        return props
+    }
+
+    private static func withAcquisition(_ properties: [String: Any]) -> [String: Any] {
+        var props = properties
+        for (key, value) in ProcessAcquisitionAttribution.analyticsProperties() {
             props[key] = value
         }
         return props
@@ -455,12 +501,12 @@ enum ProcessAnalytics {
     }
 
     static func trackReferralCodeCaptured(source: String = "deep_link") {
-        capture("referral_code_captured", properties: ["source": source])
+        capture("referral_code_captured", properties: withAcquisition(["source": source]))
         setPersonProperties(["has_referral_code": true])
     }
 
     static func trackReferralCodeApplied(source: String = "onboarding") {
-        capture("referral_code_applied", properties: ["source": source])
+        capture("referral_code_applied", properties: withAcquisition(["source": source]))
     }
 
     // MARK: - Purchases
@@ -473,7 +519,7 @@ enum ProcessAnalytics {
         var props: [String: Any] = ["plan": plan]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_started", properties: withPricingVariant(props))
+        capture("purchase_started", properties: withPricingVariant(withAcquisition(props)))
     }
 
     static func trackPurchaseCompleted(
@@ -484,7 +530,7 @@ enum ProcessAnalytics {
         var props: [String: Any] = ["plan": plan]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_completed", properties: withPricingVariant(props))
+        capture("purchase_completed", properties: withPricingVariant(withAcquisition(props)))
     }
 
     static func trackPurchaseCancelled(
@@ -495,7 +541,7 @@ enum ProcessAnalytics {
         var props: [String: Any] = ["plan": plan]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_cancelled", properties: withPricingVariant(props))
+        capture("purchase_cancelled", properties: withPricingVariant(withAcquisition(props)))
     }
 
     static func trackPurchaseFailed(
@@ -510,7 +556,7 @@ enum ProcessAnalytics {
         ]
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
-        capture("purchase_failed", properties: withPricingVariant(props))
+        capture("purchase_failed", properties: withPricingVariant(withAcquisition(props)))
     }
 
     static func trackRestoreStarted(source: String = "paywall") {

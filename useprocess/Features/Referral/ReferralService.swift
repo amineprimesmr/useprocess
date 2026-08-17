@@ -16,6 +16,7 @@ final class ReferralService {
 
         persistLocalReferredBy(code: normalized, userId: referredUserId)
         ProcessReferralAttribution.clearPending()
+        ProcessAcquisitionAttribution.captureReferralCode(normalized)
 
         guard FirebaseBootstrap.isConfigured,
               AuthUser.current != nil,

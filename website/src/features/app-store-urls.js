@@ -1,3 +1,5 @@
+import { prefersEnglish } from "./app-copy.js";
+
 /** URLs App Store — Process (iOS). */
 export function getIosAppStoreUrl() {
   const direct =
@@ -5,12 +7,13 @@ export function getIosAppStoreUrl() {
       ? String(import.meta.env?.VITE_APP_STORE_IOS_URL || "").trim()
       : "";
   if (direct) return direct;
+  const storefront = prefersEnglish() ? "us" : "fr";
   const id =
     typeof import.meta !== "undefined"
       ? String(import.meta.env?.VITE_IOS_APP_STORE_ID || "").trim()
       : "";
-  if (id) return `https://apps.apple.com/fr/app/id${id}`;
-  return "https://apps.apple.com/fr/app/process-debloat-ton-visage/id6753808143";
+  if (id) return `https://apps.apple.com/${storefront}/app/id${id}`;
+  return `https://apps.apple.com/${storefront}/app/process-debloat-ton-visage/id6753808143`;
 }
 
 export function getAndroidAppStoreUrl() {

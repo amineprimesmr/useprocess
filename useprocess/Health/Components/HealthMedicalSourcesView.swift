@@ -24,7 +24,9 @@ enum HealthMedicalSources {
                     "Apple Santé — données et confidentialité",
                     en: "Apple Health — data & privacy"
                 ),
-                url: URL(string: "https://www.apple.com/fr/health/")!
+                url: URL(string: ProcessAppLanguage.prefersEnglish
+                    ? "https://www.apple.com/health/"
+                    : "https://www.apple.com/fr/health/")!
             ),
             .init(
                 id: "who_activity",
@@ -32,7 +34,9 @@ enum HealthMedicalSources {
                     "OMS — activité physique et santé",
                     en: "WHO — physical activity & health"
                 ),
-                url: URL(string: "https://www.who.int/fr/news-room/fact-sheets/detail/physical-activity")!
+                url: URL(string: ProcessAppLanguage.prefersEnglish
+                    ? "https://www.who.int/news-room/fact-sheets/detail/physical-activity"
+                    : "https://www.who.int/fr/news-room/fact-sheets/detail/physical-activity")!
             ),
             .init(
                 id: "cdc_activity",

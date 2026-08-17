@@ -90,6 +90,15 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     func handlePopupAnswer(_ answer: Bool) {
         guard popupPhaseIndex >= 0, let popupKind = activePopup?.kind else { return }
 
+        let page = ProcessAnalytics.MossPage.programCreationPopup(kind: popupKind)
+        ProcessAnalytics.trackMossAction(
+            page: page,
+            action: answer ? "accepted" : "declined",
+            answerID: answer ? "yes" : "no",
+            answerDisplay: answer ? activePopup?.affirmativeTitle : activePopup?.negativeTitle,
+            extra: ["popup_kind": popupKind == .healthKit ? "healthkit" : "yes_no", "phase_index": popupPhaseIndex]
+        )
+
         activePopup = nil
 
         // HealthKit: keep progress paused until the system sheet finishes.
@@ -109,10 +118,21 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
 
     func submitContinue() {
         guard continueUnlocked else { return }
+        ProcessAnalytics.trackMossAction(page: .programCreationSuccess, action: "continued")
         onboardingViewModel?.isProgramCreationCompleted = true
     }
 
     func cancel() {
+        if phase == .running || activePopup != nil {
+            ProcessAnalytics.trackMossAction(
+                page: .programCreationPhaseHealth,
+                action: "abandoned",
+                extra: [
+                    "progress_pct": displayedPercentage,
+                    "had_popup": activePopup != nil
+                ]
+            )
+        }
         progressTask?.cancel()
         progressTask = nil
         isPaused = false
@@ -146,6 +166,10 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
 
             for index in 0..<phases.count {
                 guard !Task.isCancelled else { return }
+
+                if let page = ProcessAnalytics.MossPage.programCreationPhase(index: index) {
+                    ProcessAnalytics.trackMossPageViewed(page)
+                }
 
                 await animatePhaseIrregularly(index: index, phasesCount: phases.count)
 
@@ -193,6 +217,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         barProgresses = Array(repeating: 1, count: phaseCount)
         visibleBarCount = phaseCount
         phase = .complete
+        ProcessAnalytics.trackMossPageViewed(.programCreationSuccess)
 
         try? await Task.sleep(nanoseconds: 200_000_000)
         guard !Task.isCancelled else { return }
@@ -233,6 +258,15 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
 
         popupPhaseIndex = phaseIndex
         isPaused = true
+
+        let mossPage = ProcessAnalytics.MossPage.programCreationPopup(kind: popup.kind)
+        ProcessAnalytics.trackMossPageViewed(
+            mossPage,
+            extra: [
+                "popup_kind": popup.kind == .healthKit ? "healthkit" : "yes_no",
+                "phase_index": phaseIndex
+            ]
+        )
 
         if popup.kind == .healthKit {
             ProcessAnalytics.trackHealthKitPromptShown(source: "onboarding_program_creation")

@@ -363,6 +363,14 @@ final class WelcomePlanStore {
         )
     }
 
+    /// Regénère le texte du plan dans la langue produit courante — conserve progrès et identité.
+    func refreshLocalizedCopy(profile: UnifiedUserProfile?) {
+        guard var current = plan else { return }
+        guard !questionnaire.answers.isEmpty else { return }
+        upgradePlanStructure(plan: &current, answers: questionnaire.answers, profile: profile)
+        savePlan(current)
+    }
+
     /// Réaligne `imageAssetName` sur les repas draft/validés (legacy IA sans asset valide).
     private func repairStoredMealImageAssets(plan: inout FaceOriginPlan) {
         let days = plan.calendar.weeks.flatMap(\.days)

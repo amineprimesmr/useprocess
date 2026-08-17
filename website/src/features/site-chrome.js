@@ -1,4 +1,4 @@
-import { getSiteLanguage, setSiteLanguage, subscribeSiteLanguage, appCopy, applySiteDocumentLanguage } from "./app-copy.js";
+import { getSiteLanguage, setSiteLanguage, subscribeSiteLanguage, appCopy } from "./app-copy.js";
 
 export function notFoundCopy() {
   return {
@@ -9,7 +9,7 @@ export function notFoundCopy() {
 
 export function getAppPageCopy() {
   return {
-    title: appCopy("Téléchargez Process et dégonflez votre visage.", "Download Process and de-bloat your face."),
+    title: appCopy("Téléchargez Process et dégonflez votre visage.", "Download Process and debloat your face."),
     subtitle: appCopy(
       "Process — coach IA & protocole debloat. Télécharge sur iPhone.",
       "Process — AI coach & debloat protocol. Download on iPhone."
@@ -37,13 +37,13 @@ const GET_APP_META = {
   },
 };
 
-export function applyGetAppDocumentLanguage(lang) {
+export function applyGetAppDocumentLanguage(lang = getSiteLanguage()) {
   const normalized = lang === "en" ? "en" : "fr";
+  document.documentElement.lang = normalized === "en" ? "en-US" : "fr";
   const meta = GET_APP_META[normalized];
   document.title = meta.title;
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.setAttribute("content", meta.description);
-  applySiteDocumentLanguage(normalized);
 }
 
 export function mountLanguageSwitch(container, { compact = false } = {}) {
@@ -98,10 +98,18 @@ export function landingFooterCopy() {
 
 export function applyLandingFooterCopy() {
   const copy = landingFooterCopy();
+  const aria = appCopy("Liens pied de page", "Footer links");
+  const footerNav = document.querySelector("#site-footer-process .landing-footer-sf-nav");
+  if (footerNav) footerNav.setAttribute("aria-label", aria);
   const links = document.querySelectorAll("#site-footer-process .landing-footer-sf-nav a");
   const keys = ["terms", "privacy", "support", "health"];
   links.forEach((link, index) => {
     const key = keys[index];
     if (key && copy[key]) link.textContent = copy[key];
   });
+}
+
+export function applyGetAppChromeCopy() {
+  const back = document.querySelector("#landing-legal .landing-btn-secondary");
+  if (back) back.textContent = appCopy("← Retour", "← Back");
 }

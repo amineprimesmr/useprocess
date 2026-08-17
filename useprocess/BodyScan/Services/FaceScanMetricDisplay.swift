@@ -111,7 +111,7 @@ enum FaceScanMetricDisplay {
         let retention = item(for: .retention, result: result, previous: previous)
         let retentionLoad = FaceScanIndicators.displayPercent(for: .retention, result: result)
 
-        if result.relativeSignals?.baselineLabel == "Premier scan de référence" || previous == nil {
+        if result.relativeSignals?.baselineLabel == FaceScanBaselineLabel.firstReference || previous == nil {
             return AppCopy.tSync("Point de départ enregistré : tous tes indicateurs sont suivis. Les prochains scans montreront ce qui monte ou descend.", en: "Starting point saved: all your indicators are tracked. Next scans will show what rises or falls.")
         }
 
@@ -180,7 +180,7 @@ enum FaceScanMetricDisplay {
             trend: trend,
             previous: previous
         )
-        let isFirstScan = result.relativeSignals?.baselineLabel == "Premier scan de référence"
+        let isFirstScan = result.relativeSignals?.baselineLabel == FaceScanBaselineLabel.firstReference
         let usesBaseline = result.relativeSignals != nil && !isFirstScan
         let (comparison, kind_, arrow) = comparisonPhrase(
             delta: delta,
@@ -209,7 +209,7 @@ enum FaceScanMetricDisplay {
         previous: FaceScanResult?
     ) -> Int? {
         if let signals = result.relativeSignals,
-           signals.baselineLabel != "Premier scan de référence" {
+           signals.baselineLabel != FaceScanBaselineLabel.firstReference {
             switch kind {
             case .retention: return signals.puffinessDelta
             case .recovery: return signals.underEyeFatigueDelta
