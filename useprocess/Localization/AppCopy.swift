@@ -1,6 +1,6 @@
 import Foundation
 
-/// Textes produit bilingues FR / US English — langue pilotée par `ProcessAppLanguage`.
+/// Textes produit — FR / EN dans le call site, autres langues via `ProcessCopyCatalog`.
 /// `OnboardingCopy` reste un alias de compatibilité.
 ///
 /// Explicitement non-isolé : avec `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`,
@@ -16,7 +16,11 @@ nonisolated enum AppCopy {
 
     /// Alias explicite pour contextes nonisolés (HUD caméra, quality feedback).
     static func tSync(_ fr: String, en: String) -> String {
-        let value = ProcessAppLanguage.prefersEnglish ? en : fr
+        let value = ProcessCopyCatalog.resolve(
+            fr: fr,
+            en: en,
+            code: ProcessSharedLanguage.currentCode
+        )
         return AppBranding.replacingProcess(in: value)
     }
 
@@ -27,8 +31,8 @@ nonisolated enum AppCopy {
 
     @MainActor
     static func text(_ value: String, blank english: String = "") -> String {
-        if !english.isEmpty, ProcessAppLanguage.shared.isEnglish {
-            return AppBranding.replacingProcess(in: english)
+        if !english.isEmpty {
+            return tSync(value, en: english)
         }
         return AppBranding.replacingProcess(in: value)
     }
@@ -48,10 +52,10 @@ nonisolated enum AppCopy {
         frFirst: String, frSecond: String,
         enFirst: String, enSecond: String
     ) -> (String, String) {
-        if ProcessAppLanguage.shared.isEnglish {
-            return (enFirst, enSecond)
-        }
-        return (frFirst, frSecond)
+        return (
+            tSync(frFirst, en: enFirst),
+            tSync(frSecond, en: enSecond)
+        )
     }
 
     @MainActor

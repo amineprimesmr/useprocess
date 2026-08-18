@@ -1,4 +1,4 @@
-import { prefersEnglish } from "./app-copy.js";
+import { siteStorefront } from "./app-copy.js";
 
 /** URLs App Store — Process (iOS). */
 export function getIosAppStoreUrl() {
@@ -7,7 +7,7 @@ export function getIosAppStoreUrl() {
       ? String(import.meta.env?.VITE_APP_STORE_IOS_URL || "").trim()
       : "";
   if (direct) return direct;
-  const storefront = prefersEnglish() ? "us" : "fr";
+  const storefront = siteStorefront();
   const id =
     typeof import.meta !== "undefined"
       ? String(import.meta.env?.VITE_IOS_APP_STORE_ID || "").trim()

@@ -6,16 +6,16 @@ enum EnzoCoachingVoiceGuide {
 
     static var systemPrompt: String {
         let languageHeader: String
-        if ProcessAppLanguage.prefersEnglish {
+        if ProcessAppLanguage.usesFrenchCopy {
             languageHeader = """
-            LANGUAGE (MANDATORY): Reply ONLY in American English. Use singular “you”. Never reply in French.
-            The knowledge rules below may be written in French — IGNORE their language; translate every \
-            user-facing sentence to American English. Same coaching substance, English output only.
+            LANGUE (OBLIGATOIRE) : Réponds UNIQUEMENT en français. Tutoiement.
 
             """
         } else {
             languageHeader = """
-            LANGUE (OBLIGATOIRE) : Réponds UNIQUEMENT en français. Tutoiement.
+            LANGUAGE (MANDATORY): \(ProcessAppLanguage.currentCode.llmLanguageDirective)
+            The knowledge rules below may be written in French — IGNORE their language; translate every \
+            user-facing sentence. Same coaching substance, output only in the required language.
 
             """
         }

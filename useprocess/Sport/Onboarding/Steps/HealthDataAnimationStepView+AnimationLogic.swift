@@ -41,7 +41,7 @@ extension HealthDataAnimationStepView {
         if let bedtime = displayBedtime {
             let formatter = DateFormatter()
             formatter.timeStyle = .short
-            formatter.locale = Locale(identifier: ProcessAppLanguage.shared.isEnglish ? "en_US" : "fr_FR")
+            formatter.locale = ProcessAppLanguage.currentLocale
             bedtimeString = formatter.string(from: bedtime)
         } else {
             bedtimeString = "--:--"

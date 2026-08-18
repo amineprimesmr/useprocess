@@ -6,7 +6,7 @@ import UIKit
 enum MealPhotoScanAnalysisService {
 
     private static var labeledFormatExample: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             MEAL_NAME: Sweet potato and cream
             MEAL_TYPE: Meal
@@ -31,7 +31,7 @@ enum MealPhotoScanAnalysisService {
     }
 
     private static var visionSystemPrompt: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             You are a VISUAL meal analyzer for Process (facial debloat).
             You look at the photo and describe ONLY what is actually visible.
@@ -54,7 +54,7 @@ enum MealPhotoScanAnalysisService {
 
             Reply ONLY with these labels (one line per label):
             \(labeledFormatExample)
-            American English only for names, tips, and summaries.
+            \(ProcessAppLanguage.currentCode.llmLanguageDirective) Names, tips, and summaries must be in that language.
             """
         }
         return """
@@ -83,7 +83,7 @@ enum MealPhotoScanAnalysisService {
     }
 
     private static var optimizeSystemPrompt: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             You optimize an ALREADY SCANNED meal for Process facial debloat.
             Start from the scanned ingredients — do not replace the meal with a catalog recipe.
@@ -92,7 +92,7 @@ enum MealPhotoScanAnalysisService {
             FORBIDDEN: full catalog meal, ingredients absent from the original scan.
 
             Same labeled format (MEAL_NAME, SCORE, SCORE_WHY, ITEM_1…, PREP, TIP). No JSON. No markdown.
-            American English only.
+            \(ProcessAppLanguage.currentCode.llmLanguageDirective)
             """
         }
         return """

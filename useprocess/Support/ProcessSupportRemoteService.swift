@@ -54,7 +54,7 @@ enum ProcessSupportRemoteService {
         var payload: [String: Any] = [
             "text": text,
             "messageId": messageId,
-            "language": ProcessAppLanguage.shared.isEnglish ? "en" : "fr",
+            "language": ProcessAppLanguage.shared.code.rawValue,
             "subscription": SubscriptionService.shared.subscriptionStatus.isActive ? "premium" : "free",
             "acquisitionSource": ProcessAcquisitionAttribution.snapshot.primarySource,
         ]

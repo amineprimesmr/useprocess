@@ -139,7 +139,7 @@ enum ProcessDebloatMealLibrary {
         if let en = ProcessLocalizedMealContent.mealSummariesFRToEN[trimmed] {
             return ProcessLocalizedMealContent.summary(trimmed, en: en)
         }
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return AppCopy.tSync("Repas aligné avec ton protocole.", en: "Meal aligned with your protocol.")
         }
         return trimmed

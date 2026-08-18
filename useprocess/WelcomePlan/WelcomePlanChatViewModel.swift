@@ -490,7 +490,7 @@ final class WelcomePlanChatViewModel {
             """,
             en: """
             Rewrite this personalized-plan summary in 6–8 sentences (Enzo tone, singular you).
-            100% natural, zero pills, zero supplements. American English only.
+            100% natural, zero pills, zero supplements. \(ProcessAppLanguage.currentCode.llmLanguageDirective)
             \(block)
             """
         )

@@ -14,7 +14,7 @@ enum OriginMealSuggestionService {
     }
 
     private static var jsonSchema: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             {
               "name": "Appetizing name",
@@ -49,7 +49,7 @@ enum OriginMealSuggestionService {
     }
 
     private static var systemPrompt: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             You are the Process nutrition coach (personalized facial debloat plan).
             Enzo style: direct, singular you, supportive.
@@ -58,7 +58,7 @@ enum OriginMealSuggestionService {
             Reply ONLY with valid JSON (no text before/after):
             \(jsonSchema)
             - 3 to 5 items. Realistic protocolScore (60-95). tags: 2 max.
-            American English only for name, scoreSummary, prepSummary, coachTip, and item names.
+            \(ProcessAppLanguage.currentCode.llmLanguageDirective) Apply it to name, scoreSummary, prepSummary, coachTip, and item names.
             mealType must be one of: Breakfast|Lunch|Dinner|Snack
             item role must be one of: Protein|Carb|Vegetable|Fat|Other
             """

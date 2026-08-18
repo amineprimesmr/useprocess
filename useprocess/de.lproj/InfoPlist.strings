@@ -1,0 +1,10 @@
+"NSCameraUsageDescription" = "Front- und Rückkamera ermöglichen lokale Gesichtsscans, Haltungsanalysen und Körperscans. Ein Foto geht nur an Anthropic Claude, wenn du die KI-Analyse ausdrücklich aktivierst.";
+"NSPhotoLibraryUsageDescription" = "Die Mediathek lässt dich ein Profilfoto wählen oder ein Bild an den Coach senden.";
+"NSPhotoLibraryAddUsageDescription" = "Process kann Fotos aus dem Support-Chat in deiner Mediathek speichern.";
+"NSHealthShareUsageDescription" = "Process liest deine Health-Daten (Schritte, Schlaf, Herzfrequenz), um deinen Bereitschaftswert zu berechnen und dein Programm zu personalisieren. Diese Zusammenfassungen können mit dem KI-Coach geteilt werden, wenn du es erlaubst.";
+"NSHealthUpdateUsageDescription" = "Process kann Workouts und Aktivitätsdaten in Health speichern, damit dein Fitness-Tracking an einem Ort bleibt.";
+"NSFaceIDUsageDescription" = "Die Frontkamera dient lokalen Gesichtsscans (Gesichtmesh und Indikatoren). Process erstellt kein Modell zur Gesichtserkennung.";
+"NSMotionUsageDescription" = "Process nutzt Bewegungssensoren, um deine tägliche Aktivität zu schätzen und Health-Daten zu ergänzen. Zum Beispiel Schritte zählen ohne Apple Watch.";
+"NSUserNotificationsUsageDescription" = "Mitteilungen erinnern dich an Hydration, Sessions und Recovery.";
+"NSMicrophoneUsageDescription" = "Das Mikrofon nimmt Sprachnachrichten auf, die als Text an den Coach gehen. Der Text kann an Anthropic (Claude) gesendet werden, wenn du es erlaubst.";
+"NSSpeechRecognitionUsageDescription" = "Diktat macht aus deiner Stimme Text auf dem Gerät, um mit dem Coach zu chatten. Der Text kann danach an Anthropic (Claude) gehen, wenn du es erlaubst.";

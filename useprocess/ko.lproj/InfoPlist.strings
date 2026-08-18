@@ -1,0 +1,10 @@
+"NSCameraUsageDescription" = "전면·후면 카메라로 기기 안에서 얼굴 스캔, 자세 분석, 바디 스캔을 합니다. 사진을 Anthropic Claude로 보내는 것은 AI 분석을 직접 켠 경우에만입니다.";
+"NSPhotoLibraryUsageDescription" = "사진 보관함에서 프로필 사진을 고르거나 코치에게 이미지를 보낼 수 있습니다.";
+"NSPhotoLibraryAddUsageDescription" = "지원 채팅에서 받은 사진을 보관함에 저장할 수 있습니다.";
+"NSHealthShareUsageDescription" = "Process는 건강 데이터(걸음, 수면, 심박수)를 읽어 컨디션 점수를 계산하고 프로그램을 개인화합니다. 허용하면 요약이 AI 코치와 공유될 수 있습니다.";
+"NSHealthUpdateUsageDescription" = "운동과 활동 데이터를 건강 앱에 저장해 피트니스 기록을 한곳에 모을 수 있습니다.";
+"NSFaceIDUsageDescription" = "전면 카메라는 기기 안 얼굴 스캔(페이스 메시와 지표)에 사용됩니다. Process는 얼굴 식별 모델을 만들지 않습니다.";
+"NSMotionUsageDescription" = "모션 센서로 하루 활동량을 추정하고 건강 데이터를 보완합니다. 예: Apple Watch 없이 걸음 수 세기.";
+"NSUserNotificationsUsageDescription" = "수분, 세션, 회복 알림을 보냅니다.";
+"NSMicrophoneUsageDescription" = "마이크로 음성 메시지를 녹음해 텍스트로 코치에게 보냅니다. 허용하면 텍스트가 Anthropic(Claude)로 전송될 수 있습니다.";
+"NSSpeechRecognitionUsageDescription" = "받아쓰기는 기기에서 음성을 텍스트로 바꿔 코치와 채팅합니다. 허용하면 그 텍스트가 Anthropic(Claude)로 전송될 수 있습니다.";

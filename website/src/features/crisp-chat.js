@@ -24,9 +24,18 @@ export async function mountCrispChat() {
   window.$crisp = [];
   window.CRISP_WEBSITE_ID = websiteID;
 
-  const lang = getSiteLanguage() === "en" ? "en" : "fr";
+  const crispLang = {
+    fr: "fr",
+    en: "en",
+    ja: "ja",
+    de: "de",
+    ko: "ko",
+    es: "es",
+    "pt-BR": "pt",
+  }[getSiteLanguage()] || "en";
   window.$crisp.push(["set", "session:segments", [["website"]]]);
-  window.$crisp.push(["set", "session:data", [[["app_language", lang]]]]);
+  window.$crisp.push(["set", "session:data", [[["app_language", getSiteLanguage()]]]]);
+  window.CRISP_RUNTIME_CONFIG = { locale: crispLang };
 
   const script = document.createElement("script");
   script.src = "https://client.crisp.chat/l.js";

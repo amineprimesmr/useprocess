@@ -381,7 +381,7 @@ struct OnboardingEstimationGraphView: View {
 
     private func formatGraphDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: ProcessAppLanguage.shared.isEnglish ? "en_US" : "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         formatter.dateFormat = "d MMM"
         return formatter.string(from: date)
     }

@@ -67,7 +67,7 @@ enum ProcessAppUpdateChecker {
         var components = URLComponents(string: "https://itunes.apple.com/lookup")
         components?.queryItems = [
             URLQueryItem(name: "bundleId", value: bundleID),
-            URLQueryItem(name: "country", value: ProcessAppLanguage.prefersEnglish ? "us" : "fr")
+            URLQueryItem(name: "country", value: ProcessAppLanguage.currentCode.appStoreCountry)
         ]
         return components?.url
     }

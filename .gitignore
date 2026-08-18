@@ -33,6 +33,10 @@ content/app-media/source/**/*
 # Onboarding transformation videos (recompress locally via scripts/compress-app-bundle-assets.sh)
 useprocess/Resources/Onboarding/**/*.mp4
 
+# Localization extract artifacts
+scripts/_extracted_copy.json
+scripts/copy_chunks/
+
 # TikTok content assets (keep folder structure, ignore media)
 content/tiktok/raw/**/*.{jpg,jpeg,png,webp,heic,mov,mp4}
 content/tiktok/branded/**/*.{jpg,jpeg,png,webp,heic,mov,mp4}

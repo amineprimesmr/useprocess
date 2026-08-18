@@ -57,7 +57,7 @@ enum FaceScanWhoopDateLabel {
     static func header(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = ProcessAppLanguage.shared.isEnglish ? "EEEE, MMMM d" : "EEEE d MMMM"
+        formatter.dateFormat = ProcessAppLanguage.usesFrenchCopy ? "EEEE d MMMM" : "EEEE, MMMM d"
         return formatter.string(from: date)
     }
 
@@ -65,9 +65,9 @@ enum FaceScanWhoopDateLabel {
     static func historyRow(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = ProcessAppLanguage.shared.isEnglish
-            ? "EEEE, MMMM d · h:mm a"
-            : "EEEE d MMMM · HH:mm"
+        formatter.dateFormat = ProcessAppLanguage.usesFrenchCopy
+            ? "EEEE d MMMM · HH:mm"
+            : "EEEE, MMMM d · h:mm a"
         return formatter.string(from: date)
     }
 }

@@ -1,33 +1,56 @@
 (function () {
   var KEY = "process.app.language";
+  var LANGS = ["fr", "en", "ja", "de", "ko", "es", "pt-BR"];
+  var HTML_LANG = {
+    fr: "fr",
+    en: "en-US",
+    ja: "ja",
+    de: "de",
+    ko: "ko",
+    es: "es",
+    "pt-BR": "pt-BR",
+  };
 
-  function prefersEnglishFromBrowser() {
+  function normalizeLang(raw) {
+    var lower = String(raw || "")
+      .toLowerCase()
+      .replace(/_/g, "-");
+    if (lower.indexOf("fr") === 0) return "fr";
+    if (lower.indexOf("ja") === 0) return "ja";
+    if (lower.indexOf("de") === 0) return "de";
+    if (lower.indexOf("ko") === 0) return "ko";
+    if (lower.indexOf("pt") === 0) return "pt-BR";
+    if (lower.indexOf("es") === 0) return "es";
+    if (lower.indexOf("en") === 0) return "en";
+    return null;
+  }
+
+  function prefersLanguageFromBrowser() {
     var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "fr"];
     for (var i = 0; i < langs.length; i++) {
-      var lower = String(langs[i]).toLowerCase();
-      if (lower.indexOf("fr") === 0) return false;
-      if (lower.indexOf("en") === 0) return true;
+      var mapped = normalizeLang(langs[i]);
+      if (mapped) return mapped;
     }
-    return false;
+    return "en";
   }
 
   function getLang() {
     var params = new URLSearchParams(window.location.search);
-    var q = params.get("lang");
-    if (q === "fr" || q === "en") return q;
+    var q = normalizeLang(params.get("lang"));
+    if (q) return q;
     try {
-      var stored = localStorage.getItem(KEY);
-      if (stored === "fr" || stored === "en") return stored;
+      var stored = normalizeLang(localStorage.getItem(KEY));
+      if (stored) return stored;
     } catch (e) {}
-    return prefersEnglishFromBrowser() ? "en" : "fr";
+    return prefersLanguageFromBrowser();
   }
 
   function setLang(lang) {
-    var normalized = lang === "en" ? "en" : "fr";
+    var normalized = normalizeLang(lang) || "fr";
     try {
       localStorage.setItem(KEY, normalized);
     } catch (e) {}
-    document.documentElement.lang = normalized === "en" ? "en-US" : "fr";
+    document.documentElement.lang = HTML_LANG[normalized] || "en-US";
     applyCopy(normalized);
     window.dispatchEvent(new CustomEvent("process:language-change", { detail: normalized }));
   }
@@ -52,6 +75,56 @@
       health: "Health sources",
       rights: "All rights reserved.",
       chooseLang: "Choose language",
+    },
+    ja: {
+      home: "ホーム",
+      privacy: "プライバシー",
+      terms: "利用規約",
+      legal: "特定商取引",
+      support: "サポート",
+      health: "健康ソース",
+      rights: "All rights reserved.",
+      chooseLang: "言語を選択",
+    },
+    de: {
+      home: "Start",
+      privacy: "Datenschutz",
+      terms: "AGB",
+      legal: "Impressum",
+      support: "Support",
+      health: "Gesundheitsquellen",
+      rights: "Alle Rechte vorbehalten.",
+      chooseLang: "Sprache wählen",
+    },
+    ko: {
+      home: "홈",
+      privacy: "개인정보",
+      terms: "이용약관",
+      legal: "법적 고지",
+      support: "지원",
+      health: "건강 출처",
+      rights: "All rights reserved.",
+      chooseLang: "언어 선택",
+    },
+    es: {
+      home: "Inicio",
+      privacy: "Privacidad",
+      terms: "Términos",
+      legal: "Aviso legal",
+      support: "Soporte",
+      health: "Fuentes de salud",
+      rights: "Todos los derechos reservados.",
+      chooseLang: "Elegir idioma",
+    },
+    "pt-BR": {
+      home: "Início",
+      privacy: "Privacidade",
+      terms: "Termos",
+      legal: "Aviso legal",
+      support: "Suporte",
+      health: "Fontes de saúde",
+      rights: "Todos os direitos reservados.",
+      chooseLang: "Escolher idioma",
     },
   };
 
@@ -132,9 +205,9 @@
     }
 
     var page = LEGAL_PAGES[path];
-    var meta = page && (page[lang] || page.fr);
+    var meta = page && (page[lang] || page.en || page.fr);
 
-    if (lang === "en") {
+    if (lang !== "fr") {
       card.innerHTML = "<h1>" + (meta ? meta.h1 : "") + "</h1>" + enBody;
     } else {
       card.innerHTML = cachedFrCardInner;
@@ -161,16 +234,13 @@
   }
 
   function applyCopy(lang) {
-    var c = COPY[lang] || COPY.fr;
+    var c = COPY[lang] || COPY.en;
     document.querySelectorAll("[data-i18n]").forEach(function (el) {
       var key = el.getAttribute("data-i18n");
       if (c[key]) el.textContent = c[key];
     });
-    document.querySelectorAll(".site-lang-switch button").forEach(function (btn) {
-      var active = btn.getAttribute("data-lang") === lang;
-      btn.classList.toggle("is-active", active);
-      btn.setAttribute("aria-pressed", active ? "true" : "false");
-    });
+    var select = document.querySelector(".site-lang-switch select");
+    if (select) select.value = lang;
     applyLegalPageMeta(lang);
     applyLegalBody(lang);
   }
@@ -180,35 +250,35 @@
     var host = document.querySelector("header.site");
     if (!host) return;
 
-    var wrap = document.createElement("div");
-    wrap.className = "site-lang-switch";
-    wrap.setAttribute("role", "group");
-    wrap.setAttribute("aria-label", COPY[getLang()].chooseLang);
-
-    ["fr", "en"].forEach(function (code) {
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.setAttribute("data-lang", code);
-      btn.textContent = code.toUpperCase();
-      btn.addEventListener("click", function () {
-        setLang(code);
-      });
-      wrap.appendChild(btn);
+    var wrap = document.createElement("label");
+    wrap.className = "site-lang-switch site-lang-switch--select";
+    var select = document.createElement("select");
+    var choose = (COPY[getLang()] || COPY.en).chooseLang;
+    select.setAttribute("aria-label", choose);
+    LANGS.forEach(function (code) {
+      var option = document.createElement("option");
+      option.value = code;
+      option.textContent = code === "pt-BR" ? "PT" : code.toUpperCase();
+      select.appendChild(option);
     });
-
+    select.value = getLang();
+    select.addEventListener("change", function () {
+      setLang(select.value);
+    });
+    wrap.appendChild(select);
     host.appendChild(wrap);
   }
 
   function init() {
     var params = new URLSearchParams(window.location.search);
-    var fromQuery = params.get("lang");
-    if (fromQuery === "fr" || fromQuery === "en") {
+    var fromQuery = normalizeLang(params.get("lang"));
+    if (fromQuery) {
       try {
         localStorage.setItem(KEY, fromQuery);
       } catch (e) {}
     }
     var lang = getLang();
-    document.documentElement.lang = lang === "en" ? "en-US" : "fr";
+    document.documentElement.lang = HTML_LANG[lang] || "en-US";
     var card = document.querySelector(".card");
     if (card && !cachedFrCardInner) {
       cachedFrCardInner = card.innerHTML;

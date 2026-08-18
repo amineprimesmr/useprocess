@@ -25,7 +25,7 @@ enum PlanMealSchedule {
         }
 
         private static func format(hour: Int, minute: Int) -> String {
-            if ProcessAppLanguage.prefersEnglish {
+            if !ProcessAppLanguage.usesFrenchCopy {
                 let hour12 = hour % 12 == 0 ? 12 : hour % 12
                 let suffix = hour < 12 ? "AM" : "PM"
                 if minute == 0 { return "\(hour12) \(suffix)" }

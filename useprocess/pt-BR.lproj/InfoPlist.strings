@@ -1,0 +1,10 @@
+"NSCameraUsageDescription" = "As câmeras frontal e traseira fazem scans faciais, de postura e corporais no aparelho. Uma foto só vai para a Anthropic Claude se você ativar a análise de IA.";
+"NSPhotoLibraryUsageDescription" = "A Fototeca deixa você escolher uma foto de perfil ou enviar uma imagem ao coach.";
+"NSPhotoLibraryAddUsageDescription" = "O Process pode salvar na Fototeca as fotos que você baixar do chat de suporte.";
+"NSHealthShareUsageDescription" = "O Process lê seus dados do Saúde (passos, sono, frequência cardíaca) para calcular seu score de disposição e personalizar o programa. Esses resumos podem ser compartilhados com o coach de IA se você permitir.";
+"NSHealthUpdateUsageDescription" = "O Process pode salvar treinos e atividade no Saúde para manter o acompanhamento num só lugar.";
+"NSFaceIDUsageDescription" = "A câmera frontal é usada para scans faciais locais (malha facial e indicadores). O Process não cria um modelo de identificação facial.";
+"NSMotionUsageDescription" = "O Process usa sensores de movimento para estimar sua atividade diária e complementar o Saúde. Por exemplo: contar passos sem Apple Watch.";
+"NSUserNotificationsUsageDescription" = "As notificações lembram hidratação, sessões e recuperação.";
+"NSMicrophoneUsageDescription" = "O microfone grava recados de voz que viram texto para o coach. O texto pode ser enviado à Anthropic (Claude) se você permitir.";
+"NSSpeechRecognitionUsageDescription" = "O ditado transforma sua voz em texto no aparelho para conversar com o coach. Depois o texto pode ir para a Anthropic (Claude) se você permitir.";

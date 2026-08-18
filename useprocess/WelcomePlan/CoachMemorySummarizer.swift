@@ -58,7 +58,7 @@ enum CoachMemorySummarizer {
             Faits existants : \(memory.keyFacts.prefix(8).joined(separator: " · "))
             """,
             en: """
-            Summarize ALL useprocess user memory in 12 bullet points max (American English).
+            Summarize ALL useprocess user memory in 12 bullet points max (\(ProcessAppLanguage.currentCode.llmLanguageDirective)).
             Include: goals, habits, pain points, plan adjustments, recurring coach topics.
             \(planBlock)
 

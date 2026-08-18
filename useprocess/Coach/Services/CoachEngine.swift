@@ -5,8 +5,12 @@ import UIKit
 @MainActor
 enum CoachEngine {
 
+    private static var replyLanguageLock: String {
+        ProcessAppLanguage.currentCode.llmLanguageDirective
+    }
+
     private static var chatSystemPrompt: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             You are the useprocess coach. Enzo style: direct, warm, singular “you”.
 
@@ -21,7 +25,7 @@ enum CoachEngine {
             - FORBIDDEN: structured meal format (INTRO:, MEAL_NAME:, ITEM_*, SCORE:, PREP:, TIP:, TAG_*).
             - Nutrition: advise from TODAY’S MEALS / the plan — do not generate a meal sheet.
             - Rest day: say it clearly. Do not propose “change the workout” or UI actions.
-            - American English only. No medical diagnosis. No pills. No markdown (** #).
+            - \(replyLanguageLock) No medical diagnosis. No pills.
             """
         }
         return """
@@ -43,7 +47,7 @@ enum CoachEngine {
     }
 
     private static var planModificationPrompt: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             ⚡ PLAN MODIFICATION MODE — ACTIVE:
             - The user wants to MODIFY their personalized plan in the app.
@@ -237,14 +241,14 @@ enum CoachEngine {
     // MARK: - Brief quotidien
 
     private static var dailyBriefSystemPrompt: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             You are the Process coach. Address ONE person (you / your).
             Never “guys”, never group plural.
 
             Health brief: short, clear, actionable. No medical diagnosis.
             No biology lecture. No markdown. No long lists.
-            American English only.
+            \(replyLanguageLock)
             """
         }
         return """
@@ -301,7 +305,7 @@ enum CoachEngine {
             ACTION_1: [concrete action for today]
             ACTION_2: [concrete action for tomorrow]
 
-            Rules: singular you, 2 actions max, no walls of text, no invented numbers, never the word readiness. American English only.
+            Rules: singular you, 2 actions max, no walls of text, no invented numbers, never the word readiness. \(replyLanguageLock)
             """
         ))
         """
@@ -326,11 +330,11 @@ enum CoachEngine {
     // MARK: - Scan visage
 
     private static var faceScanSystemPrompt: String {
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             return """
             You are the Process coach — face analysis (water retention, fatigue, cortisol, jaw/cervical tension).
             Address ONE person (you). Never “guys”. No medical diagnosis.
-            American English only for every user-visible sentence.
+            \(replyLanguageLock) Every user-visible sentence must follow it.
             """
         }
         return """
@@ -422,7 +426,7 @@ enum CoachEngine {
             - If yesterday’s nutrition data is available, link it to retention (sodium/potassium).
             - Never mention diagnosis, pathology, treatment, diuretics, or potassium supplements.
 
-            Analyze this photo + evolution facts. EXACT format (keep these labels, write VALUES in American English only):
+            Analyze this photo + evolution facts. EXACT format (keep these labels, write VALUES in the required language):
 
             RESUME: [1 sentence — overall face state today, max 18 words, factual]
             SIGNAUX: [signal 1] | [signal 2] | [signal 3 max — factual observation]
@@ -479,7 +483,7 @@ enum CoachEngine {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.locale = ProcessAppLanguage.currentLocale
-        let en = ProcessAppLanguage.prefersEnglish
+        let en = !ProcessAppLanguage.usesFrenchCopy
 
         let lines = past.map { scan in
             let date = formatter.string(from: scan.createdAt)
@@ -646,7 +650,7 @@ enum CoachEngine {
             Analyze this body-scan photo in 4–6 sentences.
             Posture score: \(result.postureScore)/100.
             \(scanMetricsBlock(result))
-            No medical diagnosis. Direct Enzo tone. American English only.
+            No medical diagnosis. Direct Enzo tone. \(ProcessAppLanguage.currentCode.llmLanguageDirective)
             """
         )
 
@@ -678,7 +682,7 @@ enum CoachEngine {
             \(scanMetricsBlock(result))
             Pillars: \(pillarHints)
             Raw report: \(base)
-            American English only.
+            \(replyLanguageLock)
             """
         )
 

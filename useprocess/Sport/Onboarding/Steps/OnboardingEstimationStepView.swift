@@ -274,7 +274,7 @@ struct OnboardingEstimationStepView: View {
 
     private func formatMonth(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: ProcessAppLanguage.shared.isEnglish ? "en_US" : "fr_FR")
+        formatter.locale = ProcessAppLanguage.currentLocale
         formatter.dateFormat = "MMMM"
         return formatter.string(from: date).capitalized
     }

@@ -99,7 +99,7 @@ enum SubscriptionConfiguration {
     /// FR produit → EUR à l’écran. EN → devise StoreKit (souvent USD).
     /// Évite d’afficher `$` sur un paywall FR quand le sandbox / compte App Store est US.
     nonisolated static func shouldUseEuroPaywallDisplay(storeCurrencyCode: String?) -> Bool {
-        guard !ProcessAppLanguage.prefersEnglish else { return false }
+        guard ProcessAppLanguage.usesFrenchCopy else { return false }
         let code = storeCurrencyCode?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() ?? ""
         return code != "EUR"
     }

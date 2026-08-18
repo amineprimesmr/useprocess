@@ -16,6 +16,12 @@
 	<array>
 		<string>en</string>
 		<string>fr</string>
+		<string>ja</string>
+		<string>de</string>
+		<string>ko</string>
+		<string>es</string>
+		<string>es-MX</string>
+		<string>pt-BR</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>The front and rear cameras power local face scans, posture analysis, and body scans. A photo is sent to Anthropic Claude only if you explicitly enable AI analysis.</string>

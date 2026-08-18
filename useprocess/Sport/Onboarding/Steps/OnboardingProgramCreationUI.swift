@@ -87,7 +87,7 @@ struct OnboardingProgramCreationBadge: View {
 
     /// Assets FR (`reward*`) / EN (`reward*EN`) — texte baked dans les PNG.
     private var assetName: String {
-        let english = ProcessAppLanguage.shared.isEnglish
+        let english = !ProcessAppLanguage.shared.isFrench
         switch style {
         case .scienceApproved:
             return english ? "rewardScienceEN" : "rewardScience"

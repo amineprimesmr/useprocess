@@ -147,14 +147,14 @@ enum ProcessAnalytics {
     static func trackAppOpened(hasCompletedOnboarding: Bool) {
         var props: [String: Any] = [
             "has_completed_onboarding": hasCompletedOnboarding,
-            "app_language": ProcessAppLanguage.shared.isEnglish ? "en" : "fr"
+            "app_language": ProcessAppLanguage.shared.code.rawValue
         ]
         for (key, value) in ProcessAcquisitionAttribution.analyticsProperties() {
             props[key] = value
         }
         capture("app_opened", properties: props)
         var person: [String: Any] = [
-            "app_language": ProcessAppLanguage.shared.isEnglish ? "en" : "fr",
+            "app_language": ProcessAppLanguage.shared.code.rawValue,
             "has_completed_onboarding": hasCompletedOnboarding
         ]
         for (key, value) in ProcessAcquisitionAttribution.analyticsProperties() {

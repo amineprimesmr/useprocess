@@ -15,7 +15,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     private var fullDateTitle: String {
         let formatter = DateFormatter()
         formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = ProcessAppLanguage.shared.isEnglish ? "EEEE, MMMM d" : "EEEE d MMMM"
+        formatter.dateFormat = ProcessAppLanguage.usesFrenchCopy ? "EEEE d MMMM" : "EEEE, MMMM d"
         let raw = formatter.string(from: result.createdAt)
         return raw.prefix(1).uppercased() + raw.dropFirst()
     }

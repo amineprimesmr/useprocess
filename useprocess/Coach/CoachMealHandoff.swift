@@ -18,7 +18,7 @@ enum CoachMealHandoffBuilder {
             Pas de markdown (** #), pas de fiche repas structurée.
             """,
             en: """
-             Reply in American English, concrete and direct.
+             \(ProcessAppLanguage.currentCode.llmLanguageDirective)
             If you list options or ingredients, put each point on a new line with a dash (– ).
             No markdown (** #), no structured meal sheet.
             """

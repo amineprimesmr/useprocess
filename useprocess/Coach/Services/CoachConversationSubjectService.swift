@@ -33,10 +33,10 @@ enum CoachConversationSubjectService {
 
         let prompt: String
         let system: String
-        if ProcessAppLanguage.prefersEnglish {
+        if !ProcessAppLanguage.usesFrenchCopy {
             prompt = """
             Extract 2 to 4 keywords (nouns) that summarize the main TOPIC of this user message.
-            Not a question. Not a full sentence. American English. Separate with “ · ”.
+            Not a question. Not a full sentence. \(ProcessAppLanguage.currentCode.llmLanguageDirective) Separate with “ · ”.
             Examples:
             - “How can I improve my sleep?” → Sleep · Recovery
             - “My knee hurts” → Knee · Pain

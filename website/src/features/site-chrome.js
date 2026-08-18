@@ -1,4 +1,5 @@
 import { getSiteLanguage, setSiteLanguage, subscribeSiteLanguage, appCopy } from "./app-copy.js";
+import { SITE_LANGUAGES, normalizeSiteLanguage } from "./languages.js";
 
 export function notFoundCopy() {
   return {
@@ -36,17 +37,44 @@ const GET_APP_META = {
   fr: {
     title: "Télécharger Process — Coach IA debloat",
     description: "Télécharge Process sur iPhone. Coach IA, scan visage et protocole debloat personnalisé.",
+    htmlLang: "fr",
   },
   en: {
     title: "Download Process — AI Debloat Coach",
     description: "Download Process on iPhone. AI coach, face scan and personalized debloat protocol.",
+    htmlLang: "en-US",
+  },
+  ja: {
+    title: "Process をダウンロード — AIデブロートコーチ",
+    description: "iPhoneでProcessをダウンロード。AIコーチ、顔スキャン、あなた専用のデブロートプロトコル。",
+    htmlLang: "ja",
+  },
+  de: {
+    title: "Process laden — KI-Debloat-Coach",
+    description: "Lade Process aufs iPhone. KI-Coach, Gesichtsscan und persönliches Debloat-Protokoll.",
+    htmlLang: "de",
+  },
+  ko: {
+    title: "Process 다운로드 — AI 디블로트 코치",
+    description: "iPhone에서 Process를 다운로드하세요. AI 코치, 얼굴 스캔, 맞춤 디블로트 프로토콜.",
+    htmlLang: "ko",
+  },
+  es: {
+    title: "Descarga Process — Coach IA debloat",
+    description: "Descarga Process en iPhone. Coach IA, escáner facial y protocolo debloat personalizado.",
+    htmlLang: "es",
+  },
+  "pt-BR": {
+    title: "Baixe o Process — Coach de IA debloat",
+    description: "Baixe o Process no iPhone. Coach de IA, scan facial e protocolo debloat personalizado.",
+    htmlLang: "pt-BR",
   },
 };
 
 export function applyGetAppDocumentLanguage(lang = getSiteLanguage()) {
-  const normalized = lang === "en" ? "en" : "fr";
-  document.documentElement.lang = normalized === "en" ? "en-US" : "fr";
-  const meta = GET_APP_META[normalized];
+  const normalized = normalizeSiteLanguage(lang) || "fr";
+  const meta = GET_APP_META[normalized] || GET_APP_META.en;
+  document.documentElement.lang = meta.htmlLang;
   document.title = meta.title;
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.setAttribute("content", meta.description);
@@ -55,28 +83,23 @@ export function applyGetAppDocumentLanguage(lang = getSiteLanguage()) {
 export function mountLanguageSwitch(container, { compact = false } = {}) {
   if (!container || container.querySelector(".site-lang-switch")) return () => {};
 
-  const wrap = document.createElement("div");
-  wrap.className = `site-lang-switch${compact ? " site-lang-switch--compact" : ""}`;
-  wrap.setAttribute("role", "group");
-  wrap.setAttribute("aria-label", getAppPageCopy().langAria);
+  const wrap = document.createElement("label");
+  wrap.className = `site-lang-switch site-lang-switch--select${compact ? " site-lang-switch--compact" : ""}`;
 
-  for (const code of ["fr", "en"]) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.dataset.lang = code;
-    btn.textContent = code.toUpperCase();
-    btn.addEventListener("click", () => setSiteLanguage(code));
-    wrap.appendChild(btn);
+  const select = document.createElement("select");
+  select.setAttribute("aria-label", getAppPageCopy().langAria);
+  for (const item of SITE_LANGUAGES) {
+    const option = document.createElement("option");
+    option.value = item.code;
+    option.textContent = item.label;
+    select.appendChild(option);
   }
-
+  select.addEventListener("change", () => setSiteLanguage(select.value));
+  wrap.appendChild(select);
   container.appendChild(wrap);
 
   const sync = (lang) => {
-    wrap.querySelectorAll("button").forEach((btn) => {
-      const active = btn.dataset.lang === lang;
-      btn.classList.toggle("is-active", active);
-      btn.setAttribute("aria-pressed", String(active));
-    });
+    select.value = lang;
   };
 
   sync(getSiteLanguage());

@@ -2,7 +2,7 @@
 //  LanguageSelectorView.swift
 //  Process
 //
-//  Sélecteur de langue — FR / EN (piloté par ProcessAppLanguage).
+//  Sélecteur de langue — FR / EN / JA / DE / KO / ES / PT-BR.
 //
 
 import SwiftUI

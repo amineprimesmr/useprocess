@@ -1,0 +1,29 @@
+/* Camera */
+"NSCameraUsageDescription" = "前面カメラと背面カメラで、端末内の顔スキャン・姿勢分析・ボディスキャンを行います。写真が Anthropic Claude に送られるのは、AI分析を明示的にオンにした場合のみです。";
+
+/* Photo Library */
+"NSPhotoLibraryUsageDescription" = "写真ライブラリからプロフィール写真を選んだり、コーチに画像を送れます。";
+
+/* Photo Library add */
+"NSPhotoLibraryAddUsageDescription" = "サポートチャットからダウンロードした写真をライブラリに保存できます。";
+
+/* Health share */
+"NSHealthShareUsageDescription" = "Processはヘルスケアデータ（歩数、睡眠、心拍）を読み、コンディションスコアの計算とプログラムの個別化に使います。許可した場合のみ、要約がAIコーチと共有されます。";
+
+/* Health update */
+"NSHealthUpdateUsageDescription" = "ワークアウトとアクティビティをヘルスケアに保存し、フィットネス記録を一箇所にまとめられます。";
+
+/* Face ID */
+"NSFaceIDUsageDescription" = "前面カメラは端末内の顔スキャン（フェイスメッシュと指標）に使います。Processは顔識別モデルを作りません。";
+
+/* Motion */
+"NSMotionUsageDescription" = "モーションセンサーで日常の活動量を推定し、ヘルスケアデータを補います。例: Apple Watchなしで歩数を数える。";
+
+/* Notifications */
+"NSUserNotificationsUsageDescription" = "水分補給、セッション、リカバリーのリマインダーを送ります。";
+
+/* Microphone */
+"NSMicrophoneUsageDescription" = "マイクでボイスメッセージを録音し、テキストにしてコーチに送ります。許可した場合、テキストは Anthropic（Claude）に送られることがあります。";
+
+/* Speech */
+"NSSpeechRecognitionUsageDescription" = "音声入力は端末内でテキストに変換し、コーチとチャットします。許可した場合、そのテキストは Anthropic（Claude）に送られることがあります。";

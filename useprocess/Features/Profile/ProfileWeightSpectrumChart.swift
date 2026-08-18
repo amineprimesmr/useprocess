@@ -194,7 +194,7 @@ struct ProfileWeightSpectrumChart: View {
     private func formattedTooltipValue(_ value: Double) -> String {
         let text = String(format: "%.1f", value).replacingOccurrences(
             of: ".",
-            with: ProcessAppLanguage.shared.isEnglish ? "." : ","
+            with: ProcessAppLanguage.currentCode == .english ? "." : (ProcessAppLanguage.currentLocale.decimalSeparator ?? ",")
         )
         return "\(text) kg"
     }
