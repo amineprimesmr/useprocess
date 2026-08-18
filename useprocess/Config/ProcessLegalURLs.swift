@@ -2,7 +2,8 @@ import Foundation
 
 enum ProcessLegalURLs {
     private static var langQuery: String {
-        ProcessAppLanguage.usesFrenchCopy ? "" : "?lang=en"
+        let code = ProcessAppLanguage.currentCode
+        return code == .french ? "" : "?lang=\(code.rawValue)"
     }
 
     static var termsOfUse: URL {

@@ -55,20 +55,14 @@ enum FaceScanWhoopPalette {
 enum FaceScanWhoopDateLabel {
     @MainActor
     static func header(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = ProcessAppLanguage.usesFrenchCopy ? "EEEE d MMMM" : "EEEE, MMMM d"
-        return formatter.string(from: date)
+        return ProcessLocalizedDate.string(from: date, template: "EEEEdMMMM")
     }
 
     @MainActor
     static func historyRow(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = ProcessAppLanguage.usesFrenchCopy
-            ? "EEEE d MMMM · HH:mm"
-            : "EEEE, MMMM d · h:mm a"
-        return formatter.string(from: date)
+        let day = ProcessLocalizedDate.string(from: date, template: "EEEEdMMMM")
+        let time = ProcessLocalizedDate.string(from: date, template: "jmm")
+        return "\(day) · \(time)"
     }
 }
 

@@ -13,10 +13,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     @State private var showsCreatePlanButton = false
 
     private var fullDateTitle: String {
-        let formatter = DateFormatter()
-        formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = ProcessAppLanguage.usesFrenchCopy ? "EEEE d MMMM" : "EEEE, MMMM d"
-        let raw = formatter.string(from: result.createdAt)
+        let raw = ProcessLocalizedDate.string(from: result.createdAt, template: "EEEEdMMMM")
         return raw.prefix(1).uppercased() + raw.dropFirst()
     }
 

@@ -73,9 +73,14 @@ nonisolated enum ProcessCopyCatalog {
 
     private static func load(_ code: String) -> Loaded {
         let resource = "copy-\(code)"
-        let url =
-            Bundle.main.url(forResource: resource, withExtension: "json")
+        var url = Bundle.main.url(forResource: resource, withExtension: "json")
             ?? Bundle.main.url(forResource: resource, withExtension: "json", subdirectory: "Localization")
+        if url == nil {
+            for bundle in Bundle.allBundles + Bundle.allFrameworks {
+                url = bundle.url(forResource: resource, withExtension: "json")
+                if url != nil { break }
+            }
+        }
         guard let url,
               let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(File.self, from: data)

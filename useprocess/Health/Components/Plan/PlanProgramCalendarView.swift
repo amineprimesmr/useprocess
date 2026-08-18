@@ -378,7 +378,7 @@ struct PlanProgramCalendarView: View {
 
     private var streakValue: String {
         let days = streakStore.displayStreak
-        return ProcessAppLanguage.shared.isFrench ? "\(days)j" : "\(days)d"
+        return AppCopy.t("\(days)j", en: "\(days)d")
     }
 
     private var bestDayLabel: String {

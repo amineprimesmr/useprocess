@@ -432,7 +432,7 @@ enum PlanDurationPersonalizer {
             ?? "en"
         let code = ProcessAppLanguage.normalize(stored)
         formatter.locale = Locale(identifier: code.localeIdentifier)
-        formatter.dateFormat = code == .english ? "MMM d" : "d MMM"
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         return formatter.string(from: date)
     }
 
