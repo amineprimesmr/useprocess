@@ -7,48 +7,53 @@ import SwiftUI
 
 struct OnboardingProfileChatProfileSummarySection: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let sections: [OnboardingProfileSummarySection]
-    let isSubmitting: Bool
     let isRevealed: Bool
-    let onContinue: () -> Void
+    var isContinueEnabled: Bool = true
+    var onContinue: () -> Void = {}
 
     private let readyGreen = Color(red: 0.18, green: 0.72, blue: 0.44)
-    private let cardShape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+    private let cardRadius: CGFloat = 24
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.l) {
-            summaryCard
-
-            Button {
-                guard !isSubmitting else { return }
-                HapticManager.shared.impact(.medium)
-                onContinue()
-            } label: {
-                Text(OnboardingCopy.t("Emmène-moi →", en: "Take me there →"))
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
+        ZStack {
+            Button(action: handleContinue) {
+                cardContent
+                    .padding(20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(cardShape.fill(OnboardingTheme.cardBackground))
+                    .overlay {
+                        cardShape.strokeBorder(
+                            Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.06),
+                            lineWidth: 1
+                        )
+                    }
+                    .shadow(
+                        color: Color.black.opacity(colorScheme == .dark ? 0.28 : 0.07),
+                        radius: 16,
+                        y: 6
+                    )
+                    .contentShape(cardShape)
             }
-            .onboardingPrimaryActionStyle()
-            .disabled(isSubmitting)
-            .opacity(isSubmitting ? 0.55 : 1)
+            .buttonStyle(.processPlain)
+            .accessibilityLabel(
+                OnboardingCopy.t("Emmène-moi", en: "Take me there")
+            )
+
+            ProfileSummaryTravelingBeam(cornerRadius: cardRadius, reduceMotion: reduceMotion)
+                .allowsHitTesting(false)
         }
         .onboardingChatAnswerReveal(isRevealed: isRevealed)
     }
 
-    private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.l) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(readyGreen)
-                    .frame(width: 8, height: 8)
-                Text(OnboardingCopy.t("DASHBOARD PRÊT", en: "DASHBOARD READY"))
-                    .font(.system(size: 12, weight: .bold))
-                    .tracking(0.8)
-                    .foregroundStyle(readyGreen)
-            }
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            statusPill
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(OnboardingCopy.t("Construit autour de toi", en: "Built around you"))
@@ -62,27 +67,45 @@ struct OnboardingProfileChatProfileSummarySection: View {
                 .foregroundStyle(OnboardingTheme.mutedText)
             }
 
-            VStack(alignment: .leading, spacing: Theme.Space.m) {
+            VStack(alignment: .leading, spacing: 14) {
                 ForEach(sections) { section in
                     summarySection(section)
                 }
             }
+
+            continueRow
+                .padding(.top, 6)
         }
-        .padding(20)
+    }
+
+    private var statusPill: some View {
+        HStack(spacing: 7) {
+            Circle()
+                .fill(readyGreen)
+                .frame(width: 7, height: 7)
+            Text(OnboardingCopy.t("DASHBOARD PRÊT", en: "DASHBOARD READY"))
+                .font(.system(size: 11, weight: .bold))
+                .tracking(0.7)
+                .foregroundStyle(readyGreen)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
         .background(
-            cardShape.fill(OnboardingTheme.cardBackground)
+            Capsule(style: .continuous)
+                .fill(readyGreen.opacity(colorScheme == .dark ? 0.16 : 0.10))
         )
-        .overlay {
-            cardShape.strokeBorder(
-                Color.black.opacity(colorScheme == .dark ? 0.12 : 0.06),
-                lineWidth: 1
+    }
+
+    private var continueRow: some View {
+        Text(OnboardingCopy.t("Emmène-moi →", en: "Take me there →"))
+            .font(.system(size: 17, weight: .semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                OnboardingTheme.filledButtonBackground(for: colorScheme),
+                in: Capsule(style: .continuous)
             )
-        }
-        .shadow(
-            color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.08),
-            radius: 18,
-            y: 8
-        )
+            .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
     }
 
     private func summarySection(_ section: OnboardingProfileSummarySection) -> some View {
@@ -108,16 +131,64 @@ struct OnboardingProfileChatProfileSummarySection: View {
                 .foregroundStyle(OnboardingTheme.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
         .background(
             Capsule(style: .continuous)
-                .fill(OnboardingTheme.screenBackground.opacity(colorScheme == .dark ? 0.55 : 0.92))
+                .fill(OnboardingTheme.screenBackground.opacity(colorScheme == .dark ? 0.48 : 0.88))
         )
-        .overlay {
-            Capsule(style: .continuous)
-                .strokeBorder(Color.black.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 1)
+    }
+
+    private func handleContinue() {
+        guard isContinueEnabled else { return }
+        HapticManager.shared.impact(.medium)
+        onContinue()
+    }
+}
+
+/// Arc lumineux court qui circule — le reste du contour reste invisible.
+private struct ProfileSummaryTravelingBeam: View {
+    var cornerRadius: CGFloat
+    var reduceMotion: Bool
+
+    private let lineWidth: CGFloat = 2.2
+    private let rotationPeriod: Double = 4.6
+
+    private static let glow = Color(red: 0.38, green: 0.58, blue: 1.0)
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: reduceMotion ? 120 : 1.0 / 30.0)) { timeline in
+            let angle: Angle = {
+                guard !reduceMotion else { return .degrees(48) }
+                let elapsed = timeline.date.timeIntervalSinceReferenceDate
+                let progress = elapsed.truncatingRemainder(dividingBy: rotationPeriod) / rotationPeriod
+                return .degrees(progress * 360)
+            }()
+
+            let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+            shape
+                .strokeBorder(beamGradient(angle: angle), lineWidth: lineWidth)
         }
+        .allowsHitTesting(false)
+    }
+
+    private func beamGradient(angle: Angle) -> AngularGradient {
+        AngularGradient(
+            gradient: Gradient(stops: [
+                .init(color: .clear, location: 0.0),
+                .init(color: .clear, location: 0.44),
+                .init(color: Self.glow.opacity(0.28), location: 0.47),
+                .init(color: .white.opacity(0.88), location: 0.495),
+                .init(color: .white, location: 0.505),
+                .init(color: Self.glow, location: 0.52),
+                .init(color: Self.glow.opacity(0.28), location: 0.55),
+                .init(color: .clear, location: 0.58),
+                .init(color: .clear, location: 1.0)
+            ]),
+            center: .center,
+            angle: angle
+        )
     }
 }
 

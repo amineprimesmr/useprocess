@@ -77,12 +77,13 @@ struct FaceLeverageIntroStepView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             continueButton
-                .opacity(viewModel.isFaceLeverageIntroCompleted ? 1 : 0.42)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .opacity(viewModel.isFaceLeverageIntroCompleted ? 1 : 0)
+                .allowsHitTesting(viewModel.isFaceLeverageIntroCompleted)
+                .accessibilityHidden(!viewModel.isFaceLeverageIntroCompleted)
         }
         .onAppear {
-            viewModel.isFaceLeverageIntroCompleted = false
-            onValidationChanged?(false)
+            viewModel.isFaceLeverageIntroCompleted = true
+            onValidationChanged?(true)
             startRevealSequence()
         }
         .onDisappear {
@@ -107,8 +108,6 @@ struct FaceLeverageIntroStepView: View {
                 .frame(height: 56)
         }
         .onboardingPrimaryActionStyle()
-        .disabled(!viewModel.isFaceLeverageIntroCompleted)
-        .opacity(viewModel.isFaceLeverageIntroCompleted ? 1 : 0.45)
         .padding(.horizontal, 34)
         .padding(.top, 8)
         .padding(.bottom, 34)

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Cover Flow horizontal — inspiré de iPCoverflow (Balaji Venkatesh).
-/// Rotation 3D + offset pilotés par la position réelle dans le `ScrollView`.
+/// Cover Flow horizontal — rotation 3D + offset pilotés par `scrollPosition`.
+/// Le défilement au doigt est désactivé : l’index avance uniquement de façon programmatique.
 struct ProcessCoverFlowConfig: Sendable {
     var cardWidth: CGFloat
     /// Hauteur explicite de la carte. Si nil, remplit le conteneur (comportement legacy).
@@ -13,26 +13,16 @@ struct ProcessCoverFlowConfig: Sendable {
     var sideScaleMinimum: CGFloat = 0.82
     /// Espace horizontal entre les cartes dans le scroll (cover flow).
     var cardSpacing: CGFloat = 0
-    /// Pousse les cartes latérales loin du centre (pt par « pas » de scroll). Compense le tirage cover-flow.
+    /// Pousse les cartes latérales loin du centre (pt par « pas » de scroll).
     var sideSpread: CGFloat = 0
     /// Au-delà de ±1 « carte », on cache — une seule voisine visible par côté.
     var maxSideVisibleProgress: CGFloat = 1.08
-    /// Limite le swipe manuel à une carte par geste (dashboard preview).
-    var limitsScrollToOneCard: Bool = false
-    /// Index max atteignable au doigt — au-delà, uniquement via un bouton (Continuer).
-    var maxUnlockedIndex: Int? = nil
-}
-
-enum ProcessCoverFlowMotion {
-    static let advance = Animation.spring(response: 0.46, dampingFraction: 0.94, blendDuration: 0)
 }
 
 struct ProcessCoverFlow<Card: View>: View {
     var config: ProcessCoverFlowConfig
     @Binding var activeIndex: Int?
     let itemCount: Int
-    var onFocusedIndexChange: ((Int) -> Void)? = nil
-    var onScrollIdle: ((Int?) -> Void)?
     @ViewBuilder var card: (Int, Bool) -> Card
 
     var body: some View {
@@ -48,8 +38,8 @@ struct ProcessCoverFlow<Card: View>: View {
                         let zIndex = currentIndex > index ? Double(index) : Double(-index)
 
                         card(index, isFocused)
-                            .frame(width: config.cardWidth, height: resolvedCardHeight)
-                            .frame(height: containerSize.height)
+                            .frame(width: config.cardWidth, height: resolvedCardHeight, alignment: .center)
+                            .frame(height: containerSize.height, alignment: .center)
                             .visualEffect { content, proxy in
                                 let values = layoutAdjustmentValues(
                                     proxy: proxy,
@@ -85,55 +75,12 @@ struct ProcessCoverFlow<Card: View>: View {
                 }
                 .scrollTargetLayout()
             }
+            .scrollDisabled(true)
             .safeAreaPadding(.horizontal, max(0, (containerSize.width - config.cardWidth) / 2))
             .scrollPosition(id: $activeIndex, anchor: .center)
-            .scrollTargetBehavior(
-                config.limitsScrollToOneCard
-                    ? .viewAligned(limitBehavior: .alwaysByOne)
-                    : .viewAligned
-            )
+            .scrollTargetBehavior(.viewAligned)
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             .clipped()
-            .onScrollGeometryChange(for: Int.self) { geo in
-                let stride = max(config.cardWidth + config.cardSpacing, 1)
-                let offset = geo.contentOffset.x + geo.contentInsets.leading
-                let index = Int((offset / stride).rounded())
-                return min(max(index, 0), max(itemCount - 1, 0))
-            } action: { _, newIndex in
-                let clamped = clampUnlocked(newIndex)
-                guard clamped == newIndex else { return }
-                onFocusedIndexChange?(clamped)
-            }
-            .onChange(of: activeIndex) { _, newValue in
-                guard let newValue else { return }
-                let clamped = clampUnlocked(newValue)
-                guard clamped == newValue else { return }
-                onFocusedIndexChange?(clamped)
-            }
-            .onScrollPhaseChange { _, phase in
-                guard phase == .idle else { return }
-                if let current = activeIndex {
-                    let clamped = clampUnlocked(current)
-                    if clamped != current {
-                        snapToUnlockedIndex(clamped)
-                        return
-                    }
-                }
-                onScrollIdle?(activeIndex)
-            }
-        }
-    }
-
-    private func clampUnlocked(_ index: Int) -> Int {
-        let bounded = min(max(index, 0), max(itemCount - 1, 0))
-        guard let cap = config.maxUnlockedIndex else { return bounded }
-        return min(bounded, cap)
-    }
-
-    private func snapToUnlockedIndex(_ index: Int) {
-        guard activeIndex != index else { return }
-        withAnimation(ProcessCoverFlowMotion.advance) {
-            activeIndex = index
         }
     }
 

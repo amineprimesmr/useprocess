@@ -554,9 +554,8 @@ final class OnboardingProfileChatViewModel {
         guard !isSubmittingAnswer,
               let question = currentQuestion,
               question.kind == .profileSummary else { return }
-        isSubmittingAnswer = true
-        defer { isSubmittingAnswer = false }
 
+        isSubmittingAnswer = true
         let continueLabel = OnboardingCopy.t("Emmène-moi →", en: "Take me there →")
         ProcessAnalytics.trackMossAction(
             page: .profileSummary,
@@ -570,10 +569,8 @@ final class OnboardingProfileChatViewModel {
         )
 
         onboardingViewModel?.dashboardPreviewPresentation = .firstScanPending
-        await recordAnswer(
-            display: continueLabel,
-            questionID: question.id
-        )
+        onboardingViewModel?.isWeightMotivationCompleted = true
+        markQuestionCompleted(question.id)
         shouldFinish = true
     }
 

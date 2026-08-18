@@ -10,7 +10,7 @@ When generating images with Higgsfield in this workspace (Manny, mannydebloat, p
 ## Format (locked)
 
 - Always `aspect_ratio: "9:16"` (TikTok vertical). Never 3:4, 4:5, 1:1, etc. unless the user explicitly overrides.
-- Save Manny / mannydebloat / mannyprime outputs under `/Users/amine/Desktop/process-tiktok/UGC/manny/` with clear filenames. Same folder as the rest of the Manny UGC — never `ugc-faces/`. Toji outputs stay in their own persona folder.
+- Save **Manny / mannyprime** outputs under `/Users/amine/Desktop/process-tiktok/UGC/manny/`. Save **mannybloat** under `/Users/amine/Desktop/process-tiktok/UGC/mannybloat/`. Never `ugc-faces/`. Toji stays in its own persona folder.
 - Open the file when done. Do not ask the user which variant they prefer.
 
 ## Cost / credits (locked)
@@ -19,7 +19,7 @@ When generating images with Higgsfield in this workspace (Manny, mannydebloat, p
 - Model default: **`nano_banana_pro`** (server may map to nano_banana_2).
 - Resolution default: **`1k`** (cheaper). Use `2k`/`4k` only if the user asks for higher quality.
 - Do not call `get_cost` every time. Do not spam retries. Max **1 retry** if NSFW/fail, then stop and report.
-- Prefer reuse of already-uploaded `media_id`s for mannydebloat refs; re-upload only when IDs are missing/expired.
+- Prefer reuse of already-uploaded `media_id`s for locked identity refs; re-upload only when IDs are missing/expired.
 
 ## Realism / spontaneity (locked)
 
@@ -27,7 +27,7 @@ Prompts must push **real unedited iPhone photo**, not AI polish:
 
 - Front-camera selfie OR candid phone photo; say explicitly if mirror vs front camera.
 - Imperfections: slight motion blur, phone noise/grain, uneven indoor light, mild wide-angle face distortion, natural skin pores, not beauty-filtered, not studio, not cinematic color grade.
-- Identity lock from mannydebloat refs: short buzz lineup, thin mustache + small chin goatee (not full beard), thick brows, lean jaw.
+- Identity: use the locked persona below. Never mix Prime facial hair onto manybloat, never give Prime a bloated face unless asked.
 - Avoid shirtless / sexualized locker-room phrasing that triggers NSFW; keep SFW and clothed unless user asks otherwise.
 
 ## Colorimetry / forbidden looks (locked)
@@ -51,9 +51,46 @@ This workspace must use **mcp-remote** (stdio) in `.cursor/mcp.json` and `~/.cur
 - If Cursor Auto-review still blocks Higgsfield MCP, retry once with approval request; remind once that `user-higgsfield:*` must stay on the MCP allowlist / Auto-review allow instructions (see `.cursor/permissions.json`).
 - Never narrate long status updates; deliver the file.
 
+## Identity lock — Manny vs manybloat (locked 18 Aug 2026)
+
+When the user says **mannybloat** / many bloat / mannydebloat, ALWAYS use this look. Do not invent a new face.
+
+Canonical file (always first identity media):
+
+`/Users/amine/Desktop/process-tiktok/UGC/mannybloat/_identity/mannybloat-lock-01.png`
+
+Approved scene copy of the same still: `UGC/mannybloat/mannybloat-scene-07-car-pinch.png`
+
+**mannybloat (this is the lock):**
+- Same person as Manny, not a stranger
+- Short dark buzz + lineup (NOT curly volume / afro on top)
+- **Clean shaven** — no mustache, no chin goatee, no soul patch
+- Puffy water-retention face: rounder cheeks, softer jaw, slightly fuller than Prime
+- Thick dark brows, olive/tan skin, same eyes and nose as Manny
+- Always attach `mannybloat-lock-01.png` as identity ref #1. Scene photos = pose/clothes/lighting only.
+
+**Manny / mannyprime / “many normal”:**
+- Refs: `UGC/manny/manny-prime-01-profile-polo.png` + `manny-prime-02-night-selfie.png`
+- Short buzz lineup, **thin mustache + small chin goatee**, thick brows, **lean** jaw
+- Never use the manybloat lock as Prime identity
+
+Do not revert manybloat to the old curly-hair first gens (scene-01 knit, 2F08, etc.) unless the user explicitly asks.
+
+## Source-video recreation (locked)
+
+When the user gives a video to recreate (TikTok, screen recording, etc.):
+
+1. **Decompose first** — never guess. `ffprobe` duration/fps, scene-cut detect, extract ≥10 fps frames, **read the frames**, write a second-by-second shot list (gesture, camera, cut times, text to drop). Scene-detect spikes from overlay text changes are NOT hard cuts — confirm by looking at the pictures.
+2. **Omni EDIT, not still→I2V.** Upload the source clip as `@Video1` (`omni_reference_task_type: "edit"`, `duration: -1`). Identity images are `@ImageN` only. Prompt: replace the person, inherit timing/gestures/camera/cuts from `@Video1`. Do **not** animate a still and hope.
+3. **Strip source audio before upload.** TikTok music trips provider copyright and fails the whole job. `ffmpeg -c:v copy -an`, then `generate_audio: false`.
+4. **No default zoom.** Explicit: locked focal length, no push-in, no dolly-in, no extra crop. Camera path = `@Video1` only.
+5. **Cuts stay.** If the source hard-cuts at 2.93s then 4.53s, the output hard-cuts at those times. Do not blend scenes into one morph.
+6. Strip burned-in captions on live-action shots unless the user wants them. Keep the beat/gap of a text/app card as a cut of the same length if it is a structural cut.
+7. Match source duration (±0.3s). iPhone 13 Pro Camera app, Photographic Style Natural, 9:16. Native 1080p `duration: -1` can hold ~30s of 1080p price (~$18); if Atlas balance is under that, use `1080p-sr` (or 720p) rather than inventing I2V.
+
 ## Scene-reference workflow (locked)
 
-When the user provides example photos for tojibloat (or tojiprime) regenerations:
+When the user provides example photos for manybloat, tojibloat (or tojiprime) regenerations:
 
 - Example images are **pose / framing / context / mise-en-scène / lighting situation ONLY**.
 - Recreate the scene as closely as possible (angle, crop, body pose, environment, props, activity).

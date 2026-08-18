@@ -219,7 +219,7 @@ final class AuthenticationManager: NSObject, ObservableObject {
                 }
 
                 defer { group.cancelAll() }
-                try await group.next()!
+                return try await group.next()!
             }
         } catch let error as AccountDeletionError {
             throw error

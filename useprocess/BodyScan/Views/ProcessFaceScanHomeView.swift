@@ -14,6 +14,7 @@ struct ProcessFaceScanHomeView: View {
     @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
 
     @Environment(\.onboardingScanPreviewPaused) private var onboardingScanPreviewPaused
+    @Environment(\.onboardingDashboardScanSession) private var onboardingDashboardScanSession
 
     @State private var isScanFlowActive = false
     @State private var selectedFilter: ProcessFaceScanHistoryFilter = .all
@@ -66,7 +67,7 @@ struct ProcessFaceScanHomeView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .padding(.bottom, ProcessIGTabMetrics.tabBarOverlayClearance + 16)
+                .padding(.bottom, isOnboardingPreview ? 16 : ProcessIGTabMetrics.tabBarOverlayClearance + 16)
             }
             .navigationBarHidden(true)
         }
@@ -74,11 +75,29 @@ struct ProcessFaceScanHomeView: View {
         .background(Color.clear)
         .processClearUIKitHostingBackground()
         .fullScreenCover(isPresented: $isScanFlowActive) {
-            FaceScanSessionView(
-                onDismiss: { isScanFlowActive = false },
-                onComplete: { _ in isScanFlowActive = false },
-                showsMediaImport: creatorMode.allowsPhotoImport
-            )
+            Group {
+                if let session = onboardingDashboardScanSession {
+                    OnboardingFaceScanSessionView(
+                        usesAppScreenBackground: true,
+                        playsArrivalCountdown: false,
+                        onCancel: {
+                            isScanFlowActive = false
+                            session.onCancel()
+                        },
+                        onResultReady: session.onResult,
+                        onContinueAfterResults: {
+                            isScanFlowActive = false
+                            session.onContinue()
+                        }
+                    )
+                } else {
+                    FaceScanSessionView(
+                        onDismiss: { isScanFlowActive = false },
+                        onComplete: { _ in isScanFlowActive = false },
+                        showsMediaImport: creatorMode.allowsPhotoImport
+                    )
+                }
+            }
             .environmentObject(profileService)
             .processZoomTransition(id: .faceScanCapture, namespace: scanCaptureZoomNamespace)
         }
@@ -826,4 +845,20 @@ extension EnvironmentValues {
         get { self[OnboardingScanPreviewPausedKey.self] }
         set { self[OnboardingScanPreviewPausedKey.self] = newValue }
     }
+
+    /// Premier scan depuis l’aperçu dashboard — capture + résultats onboarding.
+    var onboardingDashboardScanSession: OnboardingDashboardScanSession? {
+        get { self[OnboardingDashboardScanSessionKey.self] }
+        set { self[OnboardingDashboardScanSessionKey.self] = newValue }
+    }
+}
+
+struct OnboardingDashboardScanSession {
+    var onResult: (FaceScanResult) -> Void
+    var onCancel: () -> Void
+    var onContinue: () -> Void
+}
+
+private struct OnboardingDashboardScanSessionKey: EnvironmentKey {
+    static let defaultValue: OnboardingDashboardScanSession? = nil
 }

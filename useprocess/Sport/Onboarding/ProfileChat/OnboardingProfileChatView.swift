@@ -145,6 +145,10 @@ struct OnboardingProfileChatView: View {
                         mossConversationStack
                             .padding(.top, 12)
                             .padding(.bottom, Theme.Space.xl)
+                            .padding(
+                                .bottom,
+                                chatViewModel.currentQuestion?.kind == .profileSummary ? 36 : 0
+                            )
                             .frame(
                                 maxWidth: .infinity,
                                 minHeight: geometry.size.height,
@@ -163,22 +167,6 @@ struct OnboardingProfileChatView: View {
             }
             .padding(.top, conversationTopInset)
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
-
-            if mossEngine.isTyping {
-                VStack(spacing: 0) {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            mossEngine.completeCurrent()
-                        }
-                    Spacer(minLength: 0)
-                        .frame(maxHeight: 260)
-                        .allowsHitTesting(false)
-                }
-                .ignoresSafeArea()
-                .accessibilityLabel(OnboardingCopy.t("Appuie pour afficher la suite", en: "Tap to show the rest"))
-                .accessibilityAddTraits(.isButton)
-            }
         }
     }
 
@@ -197,6 +185,10 @@ struct OnboardingProfileChatView: View {
                     .scaleEffect(MossChatStyle.scale(forDepth: depth), anchor: .top)
                     .transition(.opacity)
                     .id(item.element.id)
+                    .onTapGesture {
+                        guard mossEngine.isTyping else { return }
+                        mossEngine.completeCurrent()
+                    }
             }
 
             VStack(alignment: .leading, spacing: Theme.Space.l) {
@@ -212,7 +204,7 @@ struct OnboardingProfileChatView: View {
                    let question = chatViewModel.currentQuestion {
                     mossAnswerControls(for: question)
                         .opacity(engine.controlsVisible ? 1 : 0)
-                        .allowsHitTesting(engine.controlsVisible && !engine.isTyping)
+                        .allowsHitTesting(profileSummaryHitsEnabled(question, engine: engine))
                         .id("controls.\(question.id)")
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .offset(y: 10)),
@@ -237,6 +229,18 @@ struct OnboardingProfileChatView: View {
         return 16
     }
 
+    /// La carte résumé reste tappable dès qu’elle est visible — le typewriter ne doit plus voler le tap.
+    private func profileSummaryHitsEnabled(
+        _ question: OnboardingProfileChatQuestion,
+        engine: MossConversationEngine
+    ) -> Bool {
+        guard engine.controlsVisible else { return false }
+        if question.kind == .profileSummary {
+            return true
+        }
+        return !engine.isTyping
+    }
+
     private func scrollToLatestMessage(proxy: ScrollViewProxy) {
         guard let last = mossEngine.messages.last else { return }
         if reduceMotion {
@@ -249,11 +253,14 @@ struct OnboardingProfileChatView: View {
     }
 
     private func scrollToInlineAnswer(proxy: ScrollViewProxy) {
+        let anchor: UnitPoint = chatViewModel.currentQuestion?.kind == .profileSummary
+            ? .bottom
+            : .center
         if reduceMotion {
-            proxy.scrollTo("inlineAnswer", anchor: .center)
+            proxy.scrollTo("inlineAnswer", anchor: anchor)
         } else {
             withAnimation(.smooth(duration: 0.28)) {
-                proxy.scrollTo("inlineAnswer", anchor: .center)
+                proxy.scrollTo("inlineAnswer", anchor: anchor)
             }
         }
     }
@@ -348,12 +355,13 @@ struct OnboardingProfileChatView: View {
             case .profileSummary:
                 OnboardingProfileChatProfileSummarySection(
                     sections: OnboardingProfileSummaryBuilder.sections(for: onboardingViewModel),
-                    isSubmitting: chatViewModel.isSubmittingAnswer,
                     isRevealed: mossEngine.controlsVisible,
+                    isContinueEnabled: !chatViewModel.isSubmittingAnswer,
                     onContinue: {
                         Task { await chatViewModel.submitProfileSummaryContinue() }
                     }
                 )
+                .zIndex(20)
                 .settleIn(0)
 
             case .autoPlanCreation, .answersAnalysis, .analysisProgress:

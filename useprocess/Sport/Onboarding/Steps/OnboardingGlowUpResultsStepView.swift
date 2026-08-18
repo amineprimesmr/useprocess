@@ -40,12 +40,13 @@ struct OnboardingGlowUpResultsStepView: View {
         .background(OnboardingTheme.screenBackground.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             continueButton
-                .opacity(showContinueButton ? 1 : 0.42)
+                .opacity(showContinueButton ? 1 : 0)
+                .offset(y: showContinueButton ? 0 : 16)
                 .allowsHitTesting(showContinueButton)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .accessibilityHidden(!showContinueButton)
         }
         .onAppear {
-            showContinueButton = false
+            showContinueButton = true
             startRevealSequence()
         }
     }
@@ -242,7 +243,6 @@ struct OnboardingGlowUpResultsStepView: View {
         showStatUsers = false
         showStatRating = false
         showStatResults = false
-        showContinueButton = false
 
         if reduceMotion {
             revealAllImmediately()
@@ -255,10 +255,7 @@ struct OnboardingGlowUpResultsStepView: View {
         reveal(after: 0.40) { showTestimonial = true }
         reveal(after: 0.54) { showStatUsers = true }
         reveal(after: 0.64) { showStatRating = true }
-        reveal(after: 0.74) {
-            showStatResults = true
-            revealContinueButton()
-        }
+        reveal(after: 0.74) { showStatResults = true }
     }
 
     private func revealAllImmediately() {
@@ -277,15 +274,6 @@ struct OnboardingGlowUpResultsStepView: View {
             withAnimation(.spring(response: 0.56, dampingFraction: 0.84)) {
                 action()
             }
-        }
-    }
-
-    private func revealContinueButton() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
-                showContinueButton = true
-            }
-            HapticManager.shared.impact(.soft)
         }
     }
 }
