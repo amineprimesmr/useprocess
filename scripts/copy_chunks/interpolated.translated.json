@@ -1,0 +1,3229 @@
+{
+  "  Ingredients: \\(ingredients)": {
+    "ja": "  材料: \\(ingredients)",
+    "de": "  Zutaten: \\(ingredients)",
+    "ko": "  재료: \\(ingredients)",
+    "es": "  Ingredientes: \\(ingredients)",
+    "pt-BR": "  Ingredientes: \\(ingredients)"
+  },
+  "  Prep: \\(entry.meal.localizedPrep)": {
+    "ja": "  準備: \\(entry.meal.localizedPrep)",
+    "de": "  Vorbereitung: \\(entry.meal.localizedPrep)",
+    "ko": "  준비: \\(entry.meal.localizedPrep)",
+    "es": "  Preparación: \\(entry.meal.localizedPrep)",
+    "pt-BR": "  Preparação: \\(entry.meal.localizedPrep)"
+  },
+  "  Protocol score: \\(entry.meal.protocolScore)/100": {
+    "ja": "  プロトコルスコア: \\(entry.meal.protocolScore)/100",
+    "de": "  Protokollbewertung: \\(entry.meal.protocolScore)/100",
+    "ko": "  프로토콜 점수: \\(entry.meal.protocolScore)/100",
+    "es": "  Puntuación del protocolo: \\(entry.meal.protocolScore)/100",
+    "pt-BR": "  Pontuação do protocolo: \\(entry.meal.protocolScore)/100"
+  },
+  "  → \\(DebloatCardioDayCatalog.frequencyCaption) · no other cardio": {
+    "ja": "  → \\(DebloatCardioDayCatalog.frequencyCaption) · 他に有酸素運動はありません",
+    "de": "  → \\(DebloatCardioDayCatalog.frequencyCaption) · kein anderes Cardiotraining",
+    "ko": "  → \\(DebloatCardioDayCatalog.frequencyCaption) · 다른 유산소 운동 없음",
+    "es": "  → \\(DebloatCardioDayCatalog.frequencyCaption) · ningún otro cardio",
+    "pt-BR": "  → \\(DebloatCardioDayCatalog.frequencyCaption) · nenhum outro cardio"
+  },
+  "  → Required cardio: \\(cardio.title) — \\(cardio.prescriptionLine)": {
+    "ja": "  → 必要な有酸素運動: \\(cardio.title) — \\(cardio.prescriptionLine)",
+    "de": "  → Erforderliches Cardiotraining: \\(cardio.title) – \\(cardio.prescriptionLine)",
+    "ko": "  → 필수 유산소 운동: \\(cardio.title) — \\(cardio.prescriptionLine)",
+    "es": "  → Cardio requerido: \\(cardio.title) — \\(cardio.prescriptionLine)",
+    "pt-BR": "  → Cardio necessário: \\(cardio.title) — \\(cardio.prescriptionLine)"
+  },
+  "+\\(cashAmount)": {
+    "ja": "+\\(cashAmount)",
+    "de": "+\\(cashAmount)",
+    "ko": "+\\(cashAmount)",
+    "es": "+\\(cashAmount)",
+    "pt-BR": "+\\(cashAmount)"
+  },
+  "+\\(delta) pts": {
+    "ja": "+\\(delta) ポイント",
+    "de": "+\\(delta) Pkt",
+    "ko": "+\\(delta) 포인트",
+    "es": "+\\(delta) puntos",
+    "pt-BR": "+\\(delta) pontos"
+  },
+  "+\\(n) people already debloated": {
+    "ja": "+\\(n) すでに顔のむくみが改善されている方",
+    "de": "+\\(n) Menschen, die ihre Schwellungen im Gesicht bereits reduziert haben",
+    "ko": "+\\(n) 이미 얼굴 붓기가 가라앉으신 분들",
+    "es": "+\\(n) personas que ya han reducido tu hinchazón facial",
+    "pt-BR": "+\\(n) pessoas que já reduziram o inchaço facial"
+  },
+  "+\\(TransformationCaseStudyCatalog.transformedPeopleCount) people": {
+    "ja": "+\\(TransformationCaseStudyCatalog.transformedPeopleCount) 人",
+    "de": "+\\(TransformationCaseStudyCatalog.transformedPeopleCount) Leute",
+    "ko": "+\\(TransformationCaseStudyCatalog.transformedPeopleCount) 명",
+    "es": "+\\(TransformationCaseStudyCatalog.transformedPeopleCount) personas",
+    "pt-BR": "+\\(TransformationCaseStudyCatalog.transformedPeopleCount) pessoas"
+  },
+  "- Correlation: \\(correlation.message)": {
+    "ja": "- 相関関係: \\(correlation.message)",
+    "de": "- Korrelation: \\(correlation.message)",
+    "ko": "- 상관관계: \\(correlation.message)",
+    "es": "- Correlación: \\(correlation.message)",
+    "pt-BR": "- Correlação: \\(correlation.message)"
+  },
+  "- Debloat trajectory: streak \\(streak), trend \\(trend).": {
+    "ja": "- 顔のむくみ改善の進捗状況: 連日の連続記録\\(streak)、トレンド\\(trend)。",
+    "de": "- Fortschritt bei der Reduzierung der Gesichtsschwellungen: Serie an aufeinanderfolgenden Tagen \\(streak), Trend \\(trend).",
+    "ko": "- 안면 붓기 감소 진행 상황: 연속 연속 \\(streak), 추세 \\(trend).",
+    "es": "- Progreso de la reducción de la hinchazón facial: racha de días consecutivos \\(streak), tendencia \\(trend).",
+    "pt-BR": "- Progresso da redução do inchaço facial: sequência de dias consecutivos \\(streak), tendência \\(trend)."
+  },
+  "- High retention for \\(facts.retentionPersistingScans) consecutive scans.": {
+    "ja": "- \\(facts.retentionPersistingScans) 連続スキャンでの高い水分滞留。",
+    "de": "- Hohe Wassereinlagerungen bei \\(facts.retentionPersistingScans) aufeinanderfolgenden Scans.",
+    "ko": "- \\(facts.retentionPersistingScans) 연속 스캔으로 높은 수분 정체가 높아요.",
+    "es": "- Alta retención de líquidos para \\(facts.retentionPersistingScans) escaneos consecutivos.",
+    "pt-BR": "- Alta retenção de líquidos para escaneamentos consecutivas \\(facts.retentionPersistingScans)."
+  },
+  "- Hips: \\(metrics.hipAlignmentScore)/100": {
+    "ja": "- ヒップ: \\(metrics.hipAlignmentScore)/100",
+    "de": "- Hüften: \\(metrics.hipAlignmentScore)/100",
+    "ko": "- 엉덩이: \\(metrics.hipAlignmentScore)/100",
+    "es": "- Caderas: \\(metrics.hipAlignmentScore)/100",
+    "pt-BR": "- Quadris: \\(metrics.hipAlignmentScore)/100"
+  },
+  "- Jaw tension: \\(face.jawTensionScore)/100": {
+    "ja": "- 顎の筋肉の緊張: \\(face.jawTensionScore)/100",
+    "de": "- Anspannung der Kiefermuskulatur: \\(face.jawTensionScore)/100",
+    "ko": "- 턱 근육의 긴장도: \\(face.jawTensionScore)/100",
+    "es": "- Tensión en los músculos de la mandíbula: \\(face.jawTensionScore)/100",
+    "pt-BR": "- Tensão nos músculos da mandíbula: \\(face.jawTensionScore)/100"
+  },
+  "- Knees: \\(metrics.kneeAlignmentScore)/100": {
+    "ja": "- 膝: \\(metrics.kneeAlignmentScore)/100",
+    "de": "- Knie: \\(metrics.kneeAlignmentScore)/100",
+    "ko": "- 무릎: \\(metrics.kneeAlignmentScore)/100",
+    "es": "- Rodillas: \\(metrics.kneeAlignmentScore)/100",
+    "pt-BR": "- Joelhos: \\(metrics.kneeAlignmentScore)/100"
+  },
+  "- Nutrition: \\(nutrition)": {
+    "ja": "- 栄養: \\(nutrition)",
+    "de": "- Ernährung: \\(nutrition)",
+    "ko": "- 영양: \\(nutrition)",
+    "es": "- Nutrición: \\(nutrition)",
+    "pt-BR": "- Nutrição: \\(nutrition)"
+  },
+  "- Perceived clarity: \\(face.skinClarityScore)/100": {
+    "ja": "- 知覚される肌の透明度: \\(face.skinClarityScore)/100",
+    "de": "- Wahrgenommene Hautklarheit: \\(face.skinClarityScore)/100",
+    "ko": "- 인지된 피부 투명도: \\(face.skinClarityScore)/100",
+    "es": "- Claridad de piel percibida: \\(face.skinClarityScore)/100",
+    "pt-BR": "- Clareza da pele percebida: \\(face.skinClarityScore)/100"
+  },
+  "- Perceived fatigue: \\(face.underEyeFatigueScore)/100": {
+    "ja": "- 目の下の疲労感: \\(face.underEyeFatigueScore)/100",
+    "de": "- Wahrgenommene Ermüdung unter den Augen: \\(face.underEyeFatigueScore)/100",
+    "ko": "- 인지된 눈 밑 피로: \\(face.underEyeFatigueScore)/100",
+    "es": "- Fatiga percibida debajo de los ojos: \\(face.underEyeFatigueScore)/100",
+    "pt-BR": "- Fadiga ocular percebida: \\(face.underEyeFatigueScore)/100"
+  },
+  "- Recovery trend: \\(trend.label).": {
+    "ja": "- 回復傾向: \\(trend.label)。",
+    "de": "- Erholungstrend: \\(trend.label).",
+    "ko": "- 회복 추세: \\(trend.label).",
+    "es": "- Tendencia de recuperación: \\(trend.label).",
+    "pt-BR": "- Tendência de recuperação: \\(trend.label)."
+  },
+  "- Retention / puffiness: \\(face.puffinessScore)/100": {
+    "ja": "- 水分滞留/むくみ：\\(face.puffinessScore)/100",
+    "de": "- Wassereinlagerungen/Schwellungen: \\(face.puffinessScore)/100",
+    "ko": "- 수분 정체/붓기: \\(face.puffinessScore)/100",
+    "es": "- Retención de agua/hinchazón: \\(face.puffinessScore)/100",
+    "pt-BR": "- Retenção de água/inchaço: \\(face.puffinessScore)/100"
+  },
+  "- Retention trend: \\(trend.label).": {
+    "ja": "- 水分滞留の傾向: \\(trend.label)。",
+    "de": "- Trend zur Wassereinlagerung: \\(trend.label).",
+    "ko": "- 수분 유지 추세: \\(trend.label).",
+    "es": "- Tendencia de retención de líquidos: \\(trend.label).",
+    "pt-BR": "- Tendência de retenção de líquidos: \\(trend.label)."
+  },
+  "- Shoulders: \\(metrics.shoulderAlignmentScore)/100": {
+    "ja": "- ショルダー: \\(metrics.shoulderAlignmentScore)/100",
+    "de": "- Schultern: \\(metrics.shoulderAlignmentScore)/100",
+    "ko": "- 어깨: \\(metrics.shoulderAlignmentScore)/100",
+    "es": "- Hombros: \\(metrics.shoulderAlignmentScore)/100",
+    "pt-BR": "- Ombros: \\(metrics.shoulderAlignmentScore)/100"
+  },
+  "- Spine / head: \\(metrics.spineAlignmentScore)/100": {
+    "ja": "- 背骨のアライメント/頭: \\(metrics.spineAlignmentScore)/100",
+    "de": "- Wirbelsäulenausrichtung / Kopf: \\(metrics.spineAlignmentScore)/100",
+    "ko": "- 척추 정렬/머리: \\(metrics.spineAlignmentScore)/100",
+    "es": "- Alineación de columna/cabeza: \\(metrics.spineAlignmentScore)/100",
+    "pt-BR": "- Alinhamento da coluna/cabeça: \\(metrics.spineAlignmentScore)/100"
+  },
+  "- Symmetry: \\(metrics.leftRightSymmetryScore)/100": {
+    "ja": "- 対称性: \\(metrics.leftRightSymmetryScore)/100",
+    "de": "- Symmetrie: \\(metrics.leftRightSymmetryScore)/100",
+    "ko": "- 대칭: \\(metrics.leftRightSymmetryScore)/100",
+    "es": "- Simetría: \\(metrics.leftRightSymmetryScore)/100",
+    "pt-BR": "- Simetria: \\(metrics.leftRightSymmetryScore)/100"
+  },
+  "- vs 30-day average: \\(signed(month)) overall score pts.": {
+    "ja": "- 対 30 日平均: \\(signed(month)) 全体スコア ポイント。",
+    "de": "- vs. 30-Tage-Durchschnitt: \\(signed(month)) Gesamtpunktzahl Pkt.",
+    "ko": "- 30일 평균 대비: \\(signed(month)) 전체 점수 포인트.",
+    "es": "- vs promedio de 30 días: \\(signed(month)) puntuación general pts.",
+    "pt-BR": "- vs média de 30 dias: \\(signed(month)) pontuação geral em pontos."
+  },
+  "- vs baseline: retention \\(signed(rel.puffinessDelta)), under-eyes \\(signed(rel.underEyeFatigueDelta)), stress \\(signed(rel.stressLoadDelta ?? 0)), skin \\(signed(rel.skinClarityDelta)).": {
+    "ja": "- 対ベースライン: 水分滞留 \\(signed(rel.puffinessDelta))、目の下の疲労 \\(signed(rel.underEyeFatigueDelta))、ストレス \\(signed(rel.stressLoadDelta ?? 0))、皮膚 \\(signed(rel.skinClarityDelta))。",
+    "de": "- vs. Ausgangswert: Wassereinlagerungen \\(signed(rel.puffinessDelta)), Ermüdung unter den Augen \\(signed(rel.underEyeFatigueDelta)), Stress \\(signed(rel.stressLoadDelta ?? 0)), Haut \\(signed(rel.skinClarityDelta)).",
+    "ko": "- 기준 대비: 수분 정체 \\(signed(rel.puffinessDelta)), 눈 밑 피로 \\(signed(rel.underEyeFatigueDelta)), 스트레스 \\(signed(rel.stressLoadDelta ?? 0)), 피부 \\(signed(rel.skinClarityDelta)).",
+    "es": "- frente al valor inicial: retención de líquidos \\(signed(rel.puffinessDelta)), fatiga debajo de los ojos \\(signed(rel.underEyeFatigueDelta)), estrés \\(signed(rel.stressLoadDelta ?? 0)), piel \\(signed(rel.skinClarityDelta)).",
+    "pt-BR": "- vs linha de base: retenção de líquidos \\(signed(rel.puffinessDelta)), fadiga sob os olhos \\(signed(rel.underEyeFatigueDelta)), estresse \\(signed(rel.stressLoadDelta ?? 0)), pele \\(signed(rel.skinClarityDelta))."
+  },
+  "24/7: \\(continuous)": {
+    "ja": "年中無休: \\(continuous)",
+    "de": "24/7: \\(continuous)",
+    "ko": "연중무휴: \\(continuous)",
+    "es": "24/7: \\(continuous)",
+    "pt-BR": "24/7: \\(continuous)"
+  },
+  "\\($0) yrs": {
+    "ja": "\\($0)歳",
+    "de": "\\($0) Jahre",
+    "ko": "\\($0)세",
+    "es": "\\($0) años",
+    "pt-BR": "\\($0) anos"
+  },
+  "\\(actionText.capitalized) \\(kg) kg is a realistic goal\\(firstNameSuffix). It's not hard at all": {
+    "ja": "\\(actionText.capitalized) \\(kg) kg は現実的な目標です\\(firstNameSuffix)。まったく難しくないです",
+    "de": "\\(actionText.capitalized) \\(kg) kg ist ein realistisches Ziel\\(firstNameSuffix). Es ist überhaupt nicht schwer",
+    "ko": "\\(actionText.capitalized) \\(kg) kg는 현실적인 목표\\(firstNameSuffix)이에요. 전혀 어렵지 않아요",
+    "es": "\\(actionText.capitalized) \\(kg) kg es un objetivo realista\\(firstNameSuffix). No es nada difícil",
+    "pt-BR": "\\(actionText.capitalized) \\(kg) kg é uma meta realista\\(firstNameSuffix). Não é nada difícil"
+  },
+  "\\(activeCount) items": {
+    "ja": "\\(activeCount) アイテム",
+    "de": "\\(activeCount) Artikel",
+    "ko": "\\(activeCount) 항목",
+    "es": "\\(activeCount) artículos",
+    "pt-BR": "Itens \\(activeCount)"
+  },
+  "\\(AppBranding.name) will send useful reminders\\nto track your progress.": {
+    "ja": "\\(AppBranding.name) は、進捗状況を追跡するために役立つリマインダー\\nを送信します。",
+    "de": "\\(AppBranding.name) sendet nützliche Erinnerungen\\n, um deinen Fortschritt zu verfolgen.",
+    "ko": "\\(AppBranding.name)는 진행 상황을 추적할 수 있는 유용한 알림\\n을 보내드려요.",
+    "es": "\\(AppBranding.name) enviará recordatorios útiles\\npara realizar un seguimiento de tu progreso.",
+    "pt-BR": "\\(AppBranding.name) enviará lembretes úteis\\npara monitorar seu progresso."
+  },
+  "\\(archetype.label) — \\(totalWeeks) wk": {
+    "ja": "\\(archetype.label) — \\(totalWeeks) 週",
+    "de": "\\(archetype.label) — \\(totalWeeks) Wo",
+    "ko": "\\(archetype.label) — \\(totalWeeks) 주",
+    "es": "\\(archetype.label) — \\(totalWeeks) semana",
+    "pt-BR": "\\(archetype.label) — \\(totalWeeks) semana"
+  },
+  "\\(caption), next scan unlocked": {
+    "ja": "\\(caption)、次のスキャンのロックが解除されました",
+    "de": "\\(caption), nächster Scan freigeschaltet",
+    "ko": "\\(caption), 다음 스캔 잠금 해제됨",
+    "es": "\\(caption), siguiente escaneo desbloqueado",
+    "pt-BR": "\\(caption), próximo escaneamento desbloqueado"
+  },
+  "\\(caption), scan from \\(scanDateLabel(scan.createdAt))": {
+    "ja": "\\(caption)、\\(scanDateLabel(scan.createdAt)) からスキャン",
+    "de": "\\(caption), scannen von \\(scanDateLabel(scan.createdAt))",
+    "ko": "\\(caption), \\(scanDateLabel(scan.createdAt))에서 스캔",
+    "es": "\\(caption), escanear desde \\(scanDateLabel(scan.createdAt))",
+    "pt-BR": "\\(caption), digitalize de \\(scanDateLabel(scan.createdAt))"
+  },
+  "\\(cardioMisses) days ago": {
+    "ja": "\\(cardioMisses)日前",
+    "de": "vor \\(cardioMisses) Tagen",
+    "ko": "\\(cardioMisses)일 전",
+    "es": "hace \\(cardioMisses) días",
+    "pt-BR": "há \\(cardioMisses) dias"
+  },
+  "\\(cardioMisses) days without walk/cardio — weak lymph drainage.": {
+    "ja": "\\(cardioMisses) 数日間散歩や有酸素運動をしなかった場合 - リンパドレナージが弱い。",
+    "de": "\\(cardioMisses) Tage ohne Gehen/Cardio – schwache Lymphdrainage.",
+    "ko": "\\(cardioMisses) 걷기/유산소 운동이 없는 날 — 약한 림프 배수.",
+    "es": "\\(cardioMisses) días sin caminata/cardio: drenaje linfático débil.",
+    "pt-BR": "\\(cardioMisses) dias sem caminhada/cardio — drenagem linfática fraca."
+  },
+  "\\(clearGoal) by \\(dateString)": {
+    "ja": "\\(clearGoal) 作: \\(dateString)",
+    "de": "\\(clearGoal) von \\(dateString)",
+    "ko": "\\(clearGoal) by \\(dateString)",
+    "es": "\\(clearGoal) por \\(dateString)",
+    "pt-BR": "\\(clearGoal) por \\(dateString)"
+  },
+  "\\(completed.count) validated, \\(failed.count) to retry tomorrow.": {
+    "ja": "\\(completed.count) が検証されました。\\(failed.count) は明日再試行します。",
+    "de": "\\(completed.count) validiert, \\(failed.count) zum erneuten Versuch morgen.",
+    "ko": "\\(completed.count)가 확인됐어요. \\(failed.count) 내일 다시 시도하세요.",
+    "es": "\\(completed.count) validado, \\(failed.count) para volver a intentarlo mañana.",
+    "pt-BR": "\\(completed.count) validado, \\(failed.count) para tentar novamente amanhã."
+  },
+  "\\(completed.count)/\\(tasks.count) habits validated.": {
+    "ja": "\\(completed.count)/\\(tasks.count) の習慣が検証されました。",
+    "de": "\\(completed.count)/\\(tasks.count) Gewohnheiten validiert.",
+    "ko": "\\(completed.count)/\\(tasks.count) 습관이 검증됐어요.",
+    "es": "\\(completed.count)/\\(tasks.count) hábitos validados.",
+    "pt-BR": "\\(completed.count)/\\(tasks.count) hábitos validados."
+  },
+  "\\(count) character": {
+    "ja": "\\(count) キャラクター",
+    "de": "\\(count) Zeichen",
+    "ko": "\\(count) 문자",
+    "es": "\\(count) carácter",
+    "pt-BR": "Caractere \\(count)"
+  },
+  "\\(count) characters": {
+    "ja": "\\(count) 文字",
+    "de": "\\(count) Zeichen",
+    "ko": "\\(count) 문자",
+    "es": "\\(count) caracteres",
+    "pt-BR": "Caracteres \\(count)"
+  },
+  "\\(count) weeks": {
+    "ja": "\\(count) 週間",
+    "de": "\\(count) Wochen",
+    "ko": "\\(count) 주",
+    "es": "\\(count) semanas",
+    "pt-BR": "\\(count) semanas"
+  },
+  "\\(counts.done)/\\(counts.total) tasks": {
+    "ja": "\\(counts.done)/\\(counts.total) タスク",
+    "de": "\\(counts.done)/\\(counts.total) Aufgaben",
+    "ko": "\\(counts.done)/\\(counts.total) 작업",
+    "es": "Tareas \\(counts.done)/\\(counts.total)",
+    "pt-BR": "Tarefas \\(counts.done)/\\(counts.total)"
+  },
+  "\\(dailyLiters) (\\(ProcessDailyTargets.hydrationLitersPerDay * 1000) ml). \\(brands) Electrolytes only based on heat, sport, and sweat.": {
+    "ja": "\\(dailyLiters) (\\(ProcessDailyTargets.hydrationLitersPerDay * 1000) ミリリットル)。 \\(brands) 熱、スポーツ、汗のみに基づく電解質。",
+    "de": "\\(dailyLiters) (\\(ProcessDailyTargets.hydrationLitersPerDay * 1000) ml). \\(brands) Elektrolyte nur basierend auf Hitze, Sport und Schweiß.",
+    "ko": "\\(dailyLiters) (\\(ProcessDailyTargets.hydrationLitersPerDay * 1000)ml). \\(brands) 열, 스포츠, 땀만을 기반으로 한 전해질이에요.",
+    "es": "\\(dailyLiters) (\\(ProcessDailyTargets.hydrationLitersPerDay * 1000) ml). \\(brands) Electrolitos solo a base de calor, deporte y sudor.",
+    "pt-BR": "\\(dailyLiters) (\\(ProcessDailyTargets.hydrationLitersPerDay * 1000)ml). \\(brands) Eletrólitos baseados apenas em calor, esporte e suor."
+  },
+  "\\(dailyTargets.dailySteps) steps/day": {
+    "ja": "\\(dailyTargets.dailySteps) 歩数/日",
+    "de": "\\(dailyTargets.dailySteps) Schritte/Tag",
+    "ko": "\\(dailyTargets.dailySteps)걸음/일",
+    "es": "\\(dailyTargets.dailySteps) pasos/día",
+    "pt-BR": "\\(dailyTargets.dailySteps) passos/dia"
+  },
+  "\\(days) days ago": {
+    "ja": "\\(days)日前",
+    "de": "vor \\(days) Tagen",
+    "ko": "\\(days)일 전",
+    "es": "hace \\(days) días",
+    "pt-BR": "há \\(days) dias"
+  },
+  "\\(days)-day free trial": {
+    "ja": "\\(days)日間無料トライアル",
+    "de": "\\(days) Tage kostenlos testen",
+    "ko": "\\(days)일 무료 체험",
+    "es": "Prueba gratuita de \\(days) días",
+    "pt-BR": "Teste grátis por \\(days) dias"
+  },
+  "\\(delta) pts": {
+    "ja": "\\(delta) ポイント",
+    "de": "\\(delta) Pkt",
+    "ko": "\\(delta) 포인트",
+    "es": "\\(delta) puntos",
+    "pt-BR": "\\(delta) pontos"
+  },
+  "\\(done) of \\(total) tasks checked": {
+    "ja": "\\(total)件中\\(done)件のタスクをチェック済み",
+    "de": "\\(done) von \\(total) Aufgaben erledigt",
+    "ko": "작업 \\(total)개 중 \\(done)개 완료",
+    "es": "\\(total) tareas, \\(done) marcadas",
+    "pt-BR": "\\(done) de \\(total) tarefas marcadas"
+  },
+  "\\(FaceWellnessScore.confidenceLabel(for: confidence)) · score relative to your baseline, not your face shape.": {
+    "ja": "\\(FaceWellnessScore.confidenceLabel(for: confidence)) · 顔の形ではなく、ベースラインを基準としたスコアです。",
+    "de": "\\(FaceWellnessScore.confidenceLabel(for: confidence)) · Bewertung relativ zu deiner Grundlinie, nicht zu deiner Gesichtsform.",
+    "ko": "\\(FaceWellnessScore.confidenceLabel(for: confidence)) · 얼굴 모양이 아닌 기준선을 기준으로 점수를 매겨요.",
+    "es": "\\(FaceWellnessScore.confidenceLabel(for: confidence)) · puntuación relativa a tu línea de base, no a la forma de tu cara.",
+    "pt-BR": "\\(FaceWellnessScore.confidenceLabel(for: confidence)) · pontuação relativa à sua linha de base, não ao formato do seu rosto."
+  },
+  "\\(firstPhase.weeksRange): \\(firstPhase.title). The face follows biology, not the reverse.": {
+    "ja": "\\(firstPhase.weeksRange): \\(firstPhase.title)。顔は生物学に従っていますが、その逆ではありません。",
+    "de": "\\(firstPhase.weeksRange): \\(firstPhase.title). Das Gesicht folgt der Biologie, nicht umgekehrt.",
+    "ko": "\\(firstPhase.weeksRange): \\(firstPhase.title). 얼굴은 생물학을 따르는 것이지 그 반대는 아니에요.",
+    "es": "\\(firstPhase.weeksRange): \\(firstPhase.title). El rostro sigue la biología, no al revés.",
+    "pt-BR": "\\(firstPhase.weeksRange): \\(firstPhase.title). O rosto segue a biologia, e não o contrário."
+  },
+  "\\(formatHours(sleepHours)) logged — too short to debloat properly.": {
+    "ja": "\\(formatHours(sleepHours)) が記録されました — 顔のむくみを適切に軽減するには短すぎます。",
+    "de": "\\(formatHours(sleepHours)) protokolliert – zu kurz, um Schwellungen im Gesicht richtig zu reduzieren.",
+    "ko": "\\(formatHours(sleepHours)) 기록 — 얼굴 붓기를 제대로 줄이기에는 너무 짧아요.",
+    "es": "\\(formatHours(sleepHours)) registrado: demasiado corto para reducir adecuadamente la hinchazón facial.",
+    "pt-BR": "\\(formatHours(sleepHours)) registrado – muito curto para reduzir o inchaço facial de maneira adequada."
+  },
+  "\\(formatHours(sleepHours)) — good base for facial recovery.": {
+    "ja": "\\(formatHours(sleepHours)) — 顔の回復に適したベースです。",
+    "de": "\\(formatHours(sleepHours)) – gute Basis für die Gesichtserholung.",
+    "ko": "\\(formatHours(sleepHours)) — 얼굴 회복에 좋은 기반이에요.",
+    "es": "\\(formatHours(sleepHours)) — buena base para la recuperación facial.",
+    "pt-BR": "\\(formatHours(sleepHours)) — boa base para recuperação facial."
+  },
+  "\\(formatted(steps)) steps": {
+    "ja": "\\(formatted(steps)) 歩",
+    "de": "\\(formatted(steps)) Schritte",
+    "ko": "\\(formatted(steps))걸음",
+    "es": "\\(formatted(steps)) pasos",
+    "pt-BR": "\\(formatted(steps)) passos"
+  },
+  "\\(formatted(target))+ steps": {
+    "ja": "\\(formatted(target))+ 歩",
+    "de": "\\(formatted(target))+ Schritte",
+    "ko": "\\(formatted(target))+걸음",
+    "es": "\\(formatted(target))+ pasos",
+    "pt-BR": "\\(formatted(target))+ passos"
+  },
+  "\\(formattedScore), debloat score evolution": {
+    "ja": "\\(formattedScore)、顔のむくみ軽減スコアの進化",
+    "de": "\\(formattedScore), Entwicklung des Scores zur Reduzierung von Schwellungen im Gesicht",
+    "ko": "\\(formattedScore), 얼굴 붓기 감소 점수 진화",
+    "es": "\\(formattedScore), evolución del puntaje de reducción de hinchazón facial",
+    "pt-BR": "\\(formattedScore), evolução da pontuação de redução de inchaço facial"
+  },
+  "\\(formattedSteps(steps)) steps — lymph flow stalls and water retention lingers.": {
+    "ja": "\\(formattedSteps(steps)) 歩 - リンパの流れが滞り、水分が滞留します。",
+    "de": "\\(formattedSteps(steps)) Schritte – Lymphfluss stockt und Wassereinlagerungen bleiben bestehen.",
+    "ko": "\\(formattedSteps(steps)) 걸음 — 림프 흐름이 멈추고 수분 정체가 지속돼요.",
+    "es": "\\(formattedSteps(steps)) pasos: el flujo linfático se detiene y la retención de líquidos persiste.",
+    "pt-BR": "Passos \\(formattedSteps(steps)) – o fluxo linfático para e a retenção de líquidos persiste."
+  },
+  "\\(h)h": {
+    "ja": "\\(h)時間",
+    "de": "\\(h) Std.",
+    "ko": "\\(h)시간",
+    "es": "\\(h) h",
+    "pt-BR": "\\(h) h"
+  },
+  "\\(hours) h": {
+    "ja": "\\(hours)時間",
+    "de": "\\(hours) Std.",
+    "ko": "\\(hours)시간",
+    "es": "\\(hours) h",
+    "pt-BR": "\\(hours) h"
+  },
+  "\\(hours) h \\(minutes)": {
+    "ja": "\\(hours)時間 \\(minutes)",
+    "de": "\\(hours) Std. \\(minutes)",
+    "ko": "\\(hours)시간 \\(minutes)",
+    "es": "\\(hours) h \\(minutes)",
+    "pt-BR": "\\(hours) h \\(minutes)"
+  },
+  "\\(hours) logged — puffiness and under-eyes come back fast below your target.": {
+    "ja": "\\(hours) が記録されました — 目の下のむくみと疲労が目標値を下回って急速に再発します。",
+    "de": "\\(hours) protokolliert – Schwellungen und Müdigkeit unter den Augen kehren unter deinem Ziel schnell zurück.",
+    "ko": "\\(hours) 기록 — 붓기와 눈 밑의 피로가 목표 수준 이하로 빠르게 돌아와요.",
+    "es": "\\(hours) registrado: la hinchazón y la fatiga debajo de los ojos regresan rápidamente por debajo de tu objetivo.",
+    "pt-BR": "\\(hours) registrado – o inchaço e a fadiga ocular voltam rapidamente abaixo do seu alvo."
+  },
+  "\\(Int(targets.sleepHours)) h per night. Under-eyes = cortisol + stagnant lymph.": {
+    "ja": "毎晩\\(Int(targets.sleepHours))時間。目の下の疲れ＝コルチゾール＋リンパの滞り。",
+    "de": "\\(Int(targets.sleepHours)) Std. pro Nacht. Müdigkeit unter den Augen = Cortisol + stockender Lymphfluss.",
+    "ko": "매일 밤 \\(Int(targets.sleepHours))시간. 눈 밑 피로 = 코르티솔 + 림프 정체.",
+    "es": "\\(Int(targets.sleepHours)) h por noche. Fatiga bajo los ojos = cortisol + flujo linfático estancado.",
+    "pt-BR": "\\(Int(targets.sleepHours)) h por noite. Fadiga sob os olhos = cortisol + fluxo linfático estagnado."
+  },
+  "\\(item.title), detail locked": {
+    "ja": "\\(item.title)、詳細はロックされています",
+    "de": "\\(item.title), Detail gesperrt",
+    "ko": "\\(item.title), 세부정보 잠김",
+    "es": "\\(item.title), detalle bloqueado",
+    "pt-BR": "\\(item.title), detalhe bloqueado"
+  },
+  "\\(meal.localizedDisplayName), Debloat score \\(assessment.score)": {
+    "ja": "\\(meal.localizedDisplayName)、顔のむくみ軽減スコア\\(assessment.score)",
+    "de": "\\(meal.localizedDisplayName), Bewertung zur Reduzierung von Gesichtsschwellungen \\(assessment.score)",
+    "ko": "\\(meal.localizedDisplayName), 얼굴 붓기 감소 점수 \\(assessment.score)",
+    "es": "\\(meal.localizedDisplayName), Puntuación de reducción de hinchazón facial \\(assessment.score)",
+    "pt-BR": "\\(meal.localizedDisplayName), pontuação de redução de inchaço facial \\(assessment.score)"
+  },
+  "\\(metric.kind.title), score locked": {
+    "ja": "\\(metric.kind.title)、スコアがロックされました",
+    "de": "\\(metric.kind.title), Punktestand gesperrt",
+    "ko": "\\(metric.kind.title), 점수 잠김",
+    "es": "\\(metric.kind.title), puntuación bloqueada",
+    "pt-BR": "\\(metric.kind.title), pontuação bloqueada"
+  },
+  "\\(metrics.activeCalories) active kcal": {
+    "ja": "\\(metrics.activeCalories) 有効カロリー",
+    "de": "\\(metrics.activeCalories) aktive kcal",
+    "ko": "\\(metrics.activeCalories) 활성칼로리",
+    "es": "\\(metrics.activeCalories) kcal activas",
+    "pt-BR": "\\(metrics.activeCalories) kcal ativa"
+  },
+  "\\(metrics.activeCalories) kcal": {
+    "ja": "\\(metrics.activeCalories) kcal",
+    "de": "\\(metrics.activeCalories) kcal",
+    "ko": "\\(metrics.activeCalories) kcal",
+    "es": "\\(metrics.activeCalories) kcal",
+    "pt-BR": "\\(metrics.activeCalories) kcal"
+  },
+  "\\(metrics.exerciseMinutes) min of activity detected": {
+    "ja": "\\(metrics.exerciseMinutes) 分のアクティビティが検出されました",
+    "de": "\\(metrics.exerciseMinutes) Mindestaktivität erkannt",
+    "ko": "\\(metrics.exerciseMinutes) 최소 활동 감지됨",
+    "es": "\\(metrics.exerciseMinutes) min de actividad detectada",
+    "pt-BR": "\\(metrics.exerciseMinutes) min de atividade detectada"
+  },
+  "\\(minutes) min": {
+    "ja": "\\(minutes)分",
+    "de": "\\(minutes) min",
+    "ko": "\\(minutes) 분",
+    "es": "\\(minutes) min",
+    "pt-BR": "\\(minutes) min"
+  },
+  "\\(minutes) min · \\(inclinePercent)% incline · \\(paceLabel) pace": {
+    "ja": "\\(minutes) 分 · \\(inclinePercent)% 傾斜 · \\(paceLabel) ペース",
+    "de": "\\(minutes) min · \\(inclinePercent) % Steigung · \\(paceLabel) Tempo",
+    "ko": "\\(minutes) 분 · \\(inclinePercent)% 경사 · \\(paceLabel) 속도",
+    "es": "\\(minutes) min · \\(inclinePercent)% de inclinación · \\(paceLabel) ritmo",
+    "pt-BR": "\\(minutes) min · \\(inclinePercent)% inclinação · \\(paceLabel) ritmo"
+  },
+  "\\(minWeeks) to \\(maxWeeks) weeks": {
+    "ja": "\\(minWeeks) ～ \\(maxWeeks) 週間",
+    "de": "\\(minWeeks) bis \\(maxWeeks) Wochen",
+    "ko": "\\(minWeeks)~\\(maxWeeks)주",
+    "es": "\\(minWeeks) a \\(maxWeeks) semanas",
+    "pt-BR": "\\(minWeeks) a \\(maxWeeks) semanas"
+  },
+  "\\(model.capturedAnglesCount) angles": {
+    "ja": "\\(model.capturedAnglesCount) 角度",
+    "de": "\\(model.capturedAnglesCount) Winkel",
+    "ko": "\\(model.capturedAnglesCount) 각도",
+    "es": "\\(model.capturedAnglesCount) ángulos",
+    "pt-BR": "Ângulos \\(model.capturedAnglesCount)"
+  },
+  "\\(model.completedCarouselIds.count) steps done — great lymph pump.": {
+    "ja": "\\(model.completedCarouselIds.count) 手順完了 — 素晴らしいリンパポンプです。",
+    "de": "\\(model.completedCarouselIds.count) Schritte erledigt – tolle Lymphpumpe.",
+    "ko": "\\(model.completedCarouselIds.count) 단계 완료 — 훌륭한 림프 펌프.",
+    "es": "\\(model.completedCarouselIds.count) pasos realizados: excelente bomba linfática.",
+    "pt-BR": "\\(model.completedCarouselIds.count) etapas concluídas - ótima bomba linfática."
+  },
+  "\\(morningLine) Total: \\(dailyLiters). Waters: \\(brands).": {
+    "ja": "\\(morningLine) 合計: \\(dailyLiters)。ウォーターズ: \\(brands)。",
+    "de": "\\(morningLine) Gesamt: \\(dailyLiters). Gewässer: \\(brands).",
+    "ko": "\\(morningLine) 합계: \\(dailyLiters). 워터스: \\(brands).",
+    "es": "\\(morningLine) Total: \\(dailyLiters). Aguas: \\(brands).",
+    "pt-BR": "\\(morningLine) Total: \\(dailyLiters). Águas: \\(brands)."
+  },
+  "\\(name) falling over \\(spanDays)d (\\(signed(pointDelta)))": {
+    "ja": "\\(name) 転倒 \\(spanDays)d (\\(signed(pointDelta)))",
+    "de": "\\(name) fällt um \\(spanDays)d (\\(signed(pointDelta)))",
+    "ko": "\\(name) 넘어짐 \\(spanDays)d (\\(signed(pointDelta)))",
+    "es": "\\(name) cayendo sobre \\(spanDays)d (\\(signed(pointDelta)))",
+    "pt-BR": "\\(name) caindo \\(spanDays)d (\\(signed(pointDelta)))"
+  },
+  "\\(name) little change over \\(spanDays)d": {
+    "ja": "\\(name) 少し変更\\(spanDays)d",
+    "de": "\\(name) kleine Änderung gegenüber \\(spanDays)d",
+    "ko": "\\(name) 약간의 변화 \\(spanDays)d",
+    "es": "\\(name) pequeño cambio sobre \\(spanDays)d",
+    "pt-BR": "\\(name) pouca mudança em relação a \\(spanDays)d"
+  },
+  "\\(name) rising over \\(spanDays)d (\\(signed(pointDelta)))": {
+    "ja": "\\(name) が\\(spanDays)d (\\(signed(pointDelta))) を超えて上昇",
+    "de": "\\(name) steigt über \\(spanDays)d (\\(signed(pointDelta)))",
+    "ko": "\\(name)가 \\(spanDays)d보다 상승함 (\\(signed(pointDelta)))",
+    "es": "\\(name) subiendo sobre \\(spanDays)d (\\(signed(pointDelta)))",
+    "pt-BR": "\\(name) subindo sobre \\(spanDays)d (\\(signed(pointDelta)))"
+  },
+  "\\(name) stable for \\(spanDays) scans": {
+    "ja": "\\(name) は \\(spanDays) スキャンに対して安定しています",
+    "de": "\\(name) stabil für \\(spanDays) Scans",
+    "ko": "\\(name) \\(spanDays) 스캔에 안정적",
+    "es": "\\(name) estable para escaneos \\(spanDays)",
+    "pt-BR": "\\(name) estável para escaneamentos \\(spanDays)"
+  },
+  "\\(name), come back right now": {
+    "ja": "\\(name)、今すぐ戻ってきてください",
+    "de": "\\(name), komm gleich wieder vorbei",
+    "ko": "\\(name) 지금 당장 돌아와",
+    "es": "\\(name), vuelve ahora mismo",
+    "pt-BR": "\\(name), volte agora mesmo"
+  },
+  "\\(name), your plan is waiting": {
+    "ja": "\\(name)、あなたの計画が待っています",
+    "de": "\\(name), dein Plan wartet",
+    "ko": "\\(name), 계획이 기다리고 있어요",
+    "es": "\\(name), tu plan te está esperando",
+    "pt-BR": "\\(name), seu plano está aguardando"
+  },
+  "\\(previous.displayWellnessScore)% → \\(result.displayWellnessScore)% (\\(delta)) — something in your recent routine isn't landing.": {
+    "ja": "\\(previous.displayWellnessScore)% → \\(result.displayWellnessScore)% (\\(delta)) — 最近のルーティンに何かが反映されていません。",
+    "de": "\\(previous.displayWellnessScore)% → \\(result.displayWellnessScore)% (\\(delta)) – etwas in deiner letzten Routine funktioniert nicht.",
+    "ko": "\\(previous.displayWellnessScore)% → \\(result.displayWellnessScore)% (\\(delta)) — 최근 루틴의 무언가가 효과가 없어요.",
+    "es": "\\(previous.displayWellnessScore)% → \\(result.displayWellnessScore)% (\\(delta)): algo en tu rutina reciente no funciona.",
+    "pt-BR": "\\(previous.displayWellnessScore)% → \\(result.displayWellnessScore)% (\\(delta)) – algo em sua rotina recente não está funcionando."
+  },
+  "\\(previous.displayWellnessScore)% → \\(score)% — the routine is working.": {
+    "ja": "\\(previous.displayWellnessScore)% → \\(score)% — ルーチンは機能しています。",
+    "de": "\\(previous.displayWellnessScore)% → \\(score)% – die Routine funktioniert.",
+    "ko": "\\(previous.displayWellnessScore)% → \\(score)% — 루틴이 작동 중이에요.",
+    "es": "\\(previous.displayWellnessScore)% → \\(score)%: la rutina está funcionando.",
+    "pt-BR": "\\(previous.displayWellnessScore)% → \\(score)% — a rotina está funcionando."
+  },
+  "\\(previous.displayWellnessScore)% → \\(score)% — your recent routine isn't holding.": {
+    "ja": "\\(previous.displayWellnessScore)% → \\(score)% — 最近のルーチンが維持されていません。",
+    "de": "\\(previous.displayWellnessScore)% → \\(score)% – deine aktuelle Routine hält nicht.",
+    "ko": "\\(previous.displayWellnessScore)% → \\(score)% — 최근 루틴이 유지되지 않아요.",
+    "es": "\\(previous.displayWellnessScore)% → \\(score)%: tu rutina reciente no se mantiene.",
+    "pt-BR": "\\(previous.displayWellnessScore)% → \\(score)% — sua rotina recente não está aguentando."
+  },
+  "\\(ProcessDailyTargets.chewsPerBite) chews per bite — chew slowly at every meal.": {
+    "ja": "\\(ProcessDailyTargets.chewsPerBite) 一口ごとに噛む — 食事のたびにゆっくりと噛んでください。",
+    "de": "\\(ProcessDailyTargets.chewsPerBite) Kauen pro Bissen – kauen du bei jeder Mahlzeit langsam.",
+    "ko": "\\(ProcessDailyTargets.chewsPerBite) 씹을 때마다 씹어요. 매 식사마다 천천히 씹어요.",
+    "es": "\\(ProcessDailyTargets.chewsPerBite) mastica por bocado: mastique lentamente en cada comida.",
+    "pt-BR": "\\(ProcessDailyTargets.chewsPerBite) mastiga por mordida – mastigue lentamente em cada refeição."
+  },
+  "\\(ProcessDailyTargets.chewsPerBite) chews per bite — slow digestion = less bloating": {
+    "ja": "\\(ProcessDailyTargets.chewsPerBite) 一口ごとに噛む - 消化が遅い = 膨満感が少ない",
+    "de": "\\(ProcessDailyTargets.chewsPerBite) Kauen pro Bissen – langsame Verdauung = weniger Blähungen",
+    "ko": "\\(ProcessDailyTargets.chewsPerBite) 한 입에 씹는 맛 — 느린 소화 = 더부룩함 감소",
+    "es": "\\(ProcessDailyTargets.chewsPerBite) mastica por bocado: digestión lenta = menos hinchazón",
+    "pt-BR": "\\(ProcessDailyTargets.chewsPerBite) mastiga por mordida – digestão lenta = menos inchaço"
+  },
+  "\\(ProcessDailyTargets.coldFaceRinseSeconds) s of cold water — temporary vasoconstriction.": {
+    "ja": "\\(ProcessDailyTargets.coldFaceRinseSeconds) の冷水 — 一時的な血管収縮。",
+    "de": "\\(ProcessDailyTargets.coldFaceRinseSeconds) s kaltes Wasser – vorübergehende Gefäßverengung.",
+    "ko": "\\(ProcessDailyTargets.coldFaceRinseSeconds) 냉수 — 일시적인 혈관 수축.",
+    "es": "\\(ProcessDailyTargets.coldFaceRinseSeconds) s de agua fría: vasoconstricción temporal.",
+    "pt-BR": "\\(ProcessDailyTargets.coldFaceRinseSeconds) s de água fria – vasoconstrição temporária."
+  },
+  "\\(ProcessDailyTargets.dailySteps.formatted()) steps — circulation and drainage.": {
+    "ja": "\\(ProcessDailyTargets.dailySteps.formatted()) 歩 - 循環と排水。",
+    "de": "\\(ProcessDailyTargets.dailySteps.formatted()) Stufen – Zirkulation und Entwässerung.",
+    "ko": "\\(ProcessDailyTargets.dailySteps.formatted()) 걸음 — 순환 및 배수.",
+    "es": "\\(ProcessDailyTargets.dailySteps.formatted()) pasos: circulación y drenaje.",
+    "pt-BR": "Passos \\(ProcessDailyTargets.dailySteps.formatted()) — circulação e drenagem."
+  },
+  "\\(ProcessDailyTargets.faceScanSeconds) s every morning, same light": {
+    "ja": "\\(ProcessDailyTargets.faceScanSeconds) 毎朝、同じ光",
+    "de": "\\(ProcessDailyTargets.faceScanSeconds) ist jeden Morgen das gleiche Licht",
+    "ko": "\\(ProcessDailyTargets.faceScanSeconds) 매일 아침, 같은 빛",
+    "es": "\\(ProcessDailyTargets.faceScanSeconds) s todas las mañanas, misma luz",
+    "pt-BR": "\\(ProcessDailyTargets.faceScanSeconds) todas as manhãs, a mesma luz"
+  },
+  "\\(ProcessDailyTargets.hydrationLabel) of water": {
+    "ja": "\\(ProcessDailyTargets.hydrationLabel)の水",
+    "de": "\\(ProcessDailyTargets.hydrationLabel) Wasser",
+    "ko": "\\(ProcessDailyTargets.hydrationLabel) 물",
+    "es": "\\(ProcessDailyTargets.hydrationLabel) de agua",
+    "pt-BR": "\\(ProcessDailyTargets.hydrationLabel) de água"
+  },
+  "\\(ProcessDailyTargets.lymphFaceMassageMinutes) min — boosts drainage, not fat loss.": {
+    "ja": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) 分 — 脂肪の減少ではなく、排出を促進します。",
+    "de": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) min – fördert die Entwässerung, nicht den Fettabbau.",
+    "ko": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) 분 — 지방 손실이 아니라 배수를 촉진해요.",
+    "es": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) min: aumenta el drenaje, no la pérdida de grasa.",
+    "pt-BR": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) min – aumenta a drenagem, não a perda de gordura."
+  },
+  "\\(ProcessDailyTargets.lymphFaceMassageMinutes) minute in the morning, strokes toward the ears then neck": {
+    "ja": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) 朝、耳、首の順にストロークします。",
+    "de": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) Minute morgens, streichen du zu den Ohren und dann zum Hals",
+    "ko": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) 아침 1분, 귀 방향, 목 방향으로 스트로크",
+    "es": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) minuto por la mañana, acaricia las orejas y luego el cuello",
+    "pt-BR": "\\(ProcessDailyTargets.lymphFaceMassageMinutes) minuto pela manhã, acariciando as orelhas e depois o pescoço"
+  },
+  "\\(ProcessDailyTargets.morningLightMinutes) min natural light within an hour of waking": {
+    "ja": "\\(ProcessDailyTargets.morningLightMinutes) 起床後 1 時間以内に自然光が当たる時間",
+    "de": "\\(ProcessDailyTargets.morningLightMinutes) min. natürliches Licht innerhalb einer Stunde nach dem Aufwachen",
+    "ko": "\\(ProcessDailyTargets.morningLightMinutes) 깨어난 후 1시간 이내에 최소한의 자연광",
+    "es": "\\(ProcessDailyTargets.morningLightMinutes) luz natural mínima una hora después de despertarse",
+    "pt-BR": "\\(ProcessDailyTargets.morningLightMinutes) min de luz natural uma hora depois de acordar"
+  },
+  "\\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) outdoor walks / week": {
+    "ja": "\\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) 屋外散歩 / 週",
+    "de": "\\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) Spaziergänge im Freien pro Woche",
+    "ko": "\\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) 야외 산책/주",
+    "es": "\\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) paseos al aire libre / semana",
+    "pt-BR": "\\(ProcessDailyTargets.outdoorWalkSessionsPerWeek) caminhadas ao ar livre / semana"
+  },
+  "\\(ProcessDailyTargets.restDaysPerWeek) active rest days / week": {
+    "ja": "\\(ProcessDailyTargets.restDaysPerWeek) 週あたりのアクティブな休息日",
+    "de": "\\(ProcessDailyTargets.restDaysPerWeek) aktive Ruhetage / Woche",
+    "ko": "\\(ProcessDailyTargets.restDaysPerWeek) 활동적 휴식일/주",
+    "es": "\\(ProcessDailyTargets.restDaysPerWeek) días de descanso activo/semana",
+    "pt-BR": "\\(ProcessDailyTargets.restDaysPerWeek) dias de descanso ativo/semana"
+  },
+  "\\(ProcessDailyTargets.screenCurfewMinutes) min before bed — airplane mode": {
+    "ja": "\\(ProcessDailyTargets.screenCurfewMinutes) 就寝分前 — 機内モード",
+    "de": "\\(ProcessDailyTargets.screenCurfewMinutes) Minuten vor dem Schlafengehen – Flugmodus",
+    "ko": "\\(ProcessDailyTargets.screenCurfewMinutes) 잠들기 전 — 비행기 모드",
+    "es": "\\(ProcessDailyTargets.screenCurfewMinutes) minutos antes de acostarse — modo avión",
+    "pt-BR": "\\(ProcessDailyTargets.screenCurfewMinutes) min antes de dormir — modo avião"
+  },
+  "\\(ProcessDailyTargets.sleepHours) h — sleep regulates water and salt.": {
+    "ja": "\\(ProcessDailyTargets.sleepHours) h — 睡眠は水分と塩分を調節します。",
+    "de": "\\(ProcessDailyTargets.sleepHours) h – Schlaf reguliert Wasser und Salz.",
+    "ko": "\\(ProcessDailyTargets.sleepHours) h — 수면은 물과 염분을 조절해요.",
+    "es": "\\(ProcessDailyTargets.sleepHours) h — el sueño regula el agua y la sal.",
+    "pt-BR": "\\(ProcessDailyTargets.sleepHours) h — o sono regula a água e o sal."
+  },
+  "\\(rawValue) min": {
+    "ja": "\\(rawValue)分",
+    "de": "\\(rawValue) min",
+    "ko": "\\(rawValue) 분",
+    "es": "\\(rawValue) min",
+    "pt-BR": "\\(rawValue) min"
+  },
+  "\\(remainingLabel), \\(Int(fillProgress * 100)) percent of the program": {
+    "ja": "プログラムの\\(remainingLabel)、\\(Int(fillProgress * 100)) パーセント",
+    "de": "\\(remainingLabel), \\(Int(fillProgress * 100)) Prozent des Programms",
+    "ko": "\\(remainingLabel), \\(Int(fillProgress * 100)) 프로그램의 퍼센트",
+    "es": "\\(remainingLabel), \\(Int(fillProgress * 100)) por ciento del programa",
+    "pt-BR": "\\(remainingLabel), \\(Int(fillProgress * 100)) por cento do programa"
+  },
+  "\\(Self.formatSleep(metrics.sleepHours)) sleep": {
+    "ja": "\\(Self.formatSleep(metrics.sleepHours)) 睡眠",
+    "de": "\\(Self.formatSleep(metrics.sleepHours)) schlafen",
+    "ko": "\\(Self.formatSleep(metrics.sleepHours)) 잠",
+    "es": "\\(Self.formatSleep(metrics.sleepHours)) dormir",
+    "pt-BR": "\\(Self.formatSleep(metrics.sleepHours)) dormir"
+  },
+  "\\(Self.formatSteps(metrics.steps)) steps": {
+    "ja": "\\(Self.formatSteps(metrics.steps)) 歩",
+    "de": "\\(Self.formatSteps(metrics.steps)) Schritte",
+    "ko": "\\(Self.formatSteps(metrics.steps))걸음",
+    "es": "\\(Self.formatSteps(metrics.steps)) pasos",
+    "pt-BR": "\\(Self.formatSteps(metrics.steps)) passos"
+  },
+  "\\(Self.formatSteps(metrics.steps)) steps today": {
+    "ja": "今日の\\(Self.formatSteps(metrics.steps)) 歩数",
+    "de": "\\(Self.formatSteps(metrics.steps)) Schritte heute",
+    "ko": "오늘 \\(Self.formatSteps(metrics.steps))걸음",
+    "es": "\\(Self.formatSteps(metrics.steps)) pasos hoy",
+    "pt-BR": "\\(Self.formatSteps(metrics.steps)) passos hoje"
+  },
+  "\\(sessions) light sessions": {
+    "ja": "\\(sessions) ライトセッション",
+    "de": "\\(sessions) leichte Sitzungen",
+    "ko": "\\(sessions) 가벼운 세션",
+    "es": "\\(sessions) sesiones de luz",
+    "pt-BR": "\\(sessions) sessões de luz"
+  },
+  "\\(sessions) progressive-overload sessions": {
+    "ja": "\\(sessions) プログレッシブ オーバーロード セッション",
+    "de": "\\(sessions) Sitzungen mit progressiver Überlastung",
+    "ko": "\\(sessions) 점진적 과부하 세션",
+    "es": "\\(sessions) sesiones de sobrecarga progresiva",
+    "pt-BR": "\\(sessions) sessões de sobrecarga progressiva"
+  },
+  "\\(sessions) sessions/week + walking (HealthKit) + mewing & maxillary work.": {
+    "ja": "\\(sessions) セッション/週 + ウォーキング (HealthKit) + 鳴き声と上顎の作業。",
+    "de": "\\(sessions) Sitzungen/Woche + Gehen (HealthKit) + Miauen und Oberkieferarbeit.",
+    "ko": "\\(sessions) 세션/주 + 걷기(HealthKit) + 야유 및 상악 운동.",
+    "es": "\\(sessions) sesiones/semana + caminata (HealthKit) + maullido y trabajo maxilar.",
+    "pt-BR": "\\(sessions) sessões/semana + caminhada (HealthKit) + miado e trabalho maxilar."
+  },
+  "\\(sessions) sessions/week progressive overload": {
+    "ja": "\\(sessions) セッション/週の進行性過負荷",
+    "de": "\\(sessions) Sitzungen/Woche progressive Überlastung",
+    "ko": "\\(sessions) 세션/주 점진적 과부하",
+    "es": "\\(sessions) sesiones/semana sobrecarga progresiva",
+    "pt-BR": "\\(sessions) sessões/semana sobrecarga progressiva"
+  },
+  "\\(sessions) strength sessions + daily walks": {
+    "ja": "\\(sessions) 筋力トレーニング + 毎日の散歩",
+    "de": "\\(sessions) Krafttraining + tägliche Spaziergänge",
+    "ko": "\\(sessions) 근력 운동 + 매일 걷기",
+    "es": "\\(sessions) sesiones de fuerza + paseos diarios",
+    "pt-BR": "\\(sessions) sessões de força + caminhadas diárias"
+  },
+  "\\(severity.capitalizedFirst) around the eyes: slowed lymphatic drainage, duller complexion.": {
+    "ja": "\\(severity.capitalizedFirst) 目の周り: リンパの流れが遅くなり、顔色が鈍くなります。",
+    "de": "\\(severity.capitalizedFirst) um die Augen: verlangsamter Lymphabfluss, stumpferer Teint.",
+    "ko": "\\(severity.capitalizedFirst) 눈 주위: 림프 배수가 느려지고 안색이 칙칙해져요.",
+    "es": "\\(severity.capitalizedFirst) alrededor de los ojos: drenaje linfático lento, tez más apagada.",
+    "pt-BR": "\\(severity.capitalizedFirst) ao redor dos olhos: drenagem linfática lenta, tez mais opaca."
+  },
+  "\\(severity.capitalizedFirst) — common when sleep is short or fragmented.": {
+    "ja": "\\(severity.capitalizedFirst) — 睡眠が短いか断片的な場合によく発生します。",
+    "de": "\\(severity.capitalizedFirst) – häufig, wenn der Schlaf kurz oder fragmentiert ist.",
+    "ko": "\\(severity.capitalizedFirst) — 수면이 짧거나 단편적일 때 일반적이에요.",
+    "es": "\\(severity.capitalizedFirst): común cuando el sueño es corto o fragmentado.",
+    "pt-BR": "\\(severity.capitalizedFirst) — comum quando o sono é curto ou fragmentado."
+  },
+  "\\(severity.capitalizedFirst): \\(health.sleepHoursLabel ?? littleSleep) doesn't let the face regenerate.": {
+    "ja": "\\(severity.capitalizedFirst): \\(health.sleepHoursLabel ?? littleSleep) では顔は再生されません。",
+    "de": "\\(severity.capitalizedFirst): \\(health.sleepHoursLabel ?? littleSleep) lässt das Gesicht nicht regenerieren.",
+    "ko": "\\(severity.capitalizedFirst): \\(health.sleepHoursLabel ?? littleSleep)는 얼굴이 재생되지 않도록 해요.",
+    "es": "\\(severity.capitalizedFirst): \\(health.sleepHoursLabel ?? littleSleep) no deja que el rostro se regenere.",
+    "pt-BR": "\\(severity.capitalizedFirst): \\(health.sleepHoursLabel ?? littleSleep) não deixa o rosto se regenerar."
+  },
+  "\\(sleep) of sleep read via Health. Puffiness often follows — unlock your plan to act.": {
+    "ja": "ヘルスケア経由で睡眠の\\(sleep)を読み取りました。むくみが続くことがよくあります。行動計画を立てましょう。",
+    "de": "\\(sleep) des Schlafes, gelesen über Gesundheit. Schwellungen sind oft die Folge – setzen du deinen Handlungsplan frei.",
+    "ko": "건강을 통해 읽은 수면의 \\(sleep). 붓기가 뒤따르는 경우가 많아요. 행동 계획을 세우세요.",
+    "es": "\\(sleep) de sueño leído vía Salud. A menudo sigue la hinchazón: desbloquea tu plan para actuar.",
+    "pt-BR": "\\(sleep) do sono lido via Health. Muitas vezes ocorre inchaço - desbloqueie seu plano de ação."
+  },
+  "\\(snapshot.archetype.label) — \\(duration.rangeLabel) (\\(duration.totalWeeks) wk calendar).": {
+    "ja": "\\(snapshot.archetype.label) — \\(duration.rangeLabel) (\\(duration.totalWeeks) 週カレンダー)。",
+    "de": "\\(snapshot.archetype.label) — \\(duration.rangeLabel) (\\(duration.totalWeeks) Wochenkalender).",
+    "ko": "\\(snapshot.archetype.label) — \\(duration.rangeLabel) (\\(duration.totalWeeks) 주 달력).",
+    "es": "\\(snapshot.archetype.label) — \\(duration.rangeLabel) (\\(duration.totalWeeks) calendario semanal).",
+    "pt-BR": "\\(snapshot.archetype.label) — \\(duration.rangeLabel) (\\(duration.totalWeeks) calendário semanal)."
+  },
+  "\\(span)d": {
+    "ja": "\\(span)d",
+    "de": "\\(span)d",
+    "ko": "\\(span)d",
+    "es": "\\(span)d",
+    "pt-BR": "\\(span)d"
+  },
+  "\\(step.title), done": {
+    "ja": "\\(step.title)、完了",
+    "de": "\\(step.title), fertig",
+    "ko": "\\(step.title), 완료",
+    "es": "\\(step.title), listo",
+    "pt-BR": "\\(step.title), concluído"
+  },
+  "\\(step.title), in progress": {
+    "ja": "\\(step.title)、進行中",
+    "de": "\\(step.title), in Bearbeitung",
+    "ko": "\\(step.title), 진행 중",
+    "es": "\\(step.title), en progreso",
+    "pt-BR": "\\(step.title), em andamento"
+  },
+  "\\(step.title), pending": {
+    "ja": "\\(step.title)、保留中",
+    "de": "\\(step.title), ausstehend",
+    "ko": "\\(step.title), 보류 중",
+    "es": "\\(step.title), pendiente",
+    "pt-BR": "\\(step.title), pendente"
+  },
+  "\\(steps) steps": {
+    "ja": "\\(steps) 歩",
+    "de": "\\(steps) Schritte",
+    "ko": "\\(steps)걸음",
+    "es": "\\(steps) pasos",
+    "pt-BR": "\\(steps) passos"
+  },
+  "\\(stepsText) steps of \\(targetText), \\(percent) percent": {
+    "ja": "\\(stepsText) 歩、\\(targetText)、\\(percent) パーセント",
+    "de": "\\(stepsText) Schritte von \\(targetText), \\(percent) Prozent",
+    "ko": "\\(stepsText) \\(targetText) 걸음, \\(percent) 퍼센트",
+    "es": "\\(stepsText) pasos de \\(targetText), \\(percent) por ciento",
+    "pt-BR": "\\(stepsText) passos de \\(targetText), \\(percent) por cento"
+  },
+  "\\(streak) validated days — program accelerated by \\(days) days.": {
+    "ja": "\\(streak) 検証日 — プログラムは \\(days) 日加速されます。",
+    "de": "\\(streak) validierte Tage – Programm beschleunigt um \\(days) Tage.",
+    "ko": "\\(streak) 검증 일수 — 프로그램이 \\(days)일 앞당겨졌어요.",
+    "es": "\\(streak) días validados: programa acelerado en \\(days) días.",
+    "pt-BR": "\\(streak) dias validados — programa acelerado em \\(days) dias."
+  },
+  "\\(streakDays) d · scans": {
+    "ja": "\\(streakDays) d · スキャン",
+    "de": "\\(streakDays) d · scannt",
+    "ko": "\\(streakDays) d · 스캔",
+    "es": "\\(streakDays) d · escaneos",
+    "pt-BR": "\\(streakDays) d · verifica"
+  },
+  "\\(SubscriptionConfiguration.winbackLifetimePrice) lifetime": {
+    "ja": "\\(SubscriptionConfiguration.winbackLifetimePrice) 生涯",
+    "de": "\\(SubscriptionConfiguration.winbackLifetimePrice) Lebensdauer",
+    "ko": "\\(SubscriptionConfiguration.winbackLifetimePrice) 평생",
+    "es": "\\(SubscriptionConfiguration.winbackLifetimePrice) vida útil",
+    "pt-BR": "\\(SubscriptionConfiguration.winbackLifetimePrice) vida útil"
+  },
+  "\\(summary). We worked for you today — open the app.": {
+    "ja": "\\(summary)。今日はあなたのために働きました — アプリを開いてください。",
+    "de": "\\(summary). Wir haben heute für du gearbeitet – öffnen du die App.",
+    "ko": "\\(summary). 오늘 우리는 위해 일했어요. 앱을 열어 보세요.",
+    "es": "\\(summary). Trabajamos para ti hoy: abre la aplicación.",
+    "pt-BR": "\\(summary). Trabalhamos para você hoje – abra o aplicativo."
+  },
+  "\\(targets.coldFaceRinseSeconds) sec on waking — boosts lymph and debloats.": {
+    "ja": "\\(targets.coldFaceRinseSeconds) 起床後 2 秒間 — リンパの流れを改善し、顔のむくみを軽減します。",
+    "de": "\\(targets.coldFaceRinseSeconds) Sek. beim Aufwachen – verbessert den Lymphfluss und reduziert Schwellungen im Gesicht.",
+    "ko": "잠에서 깨자마자 \\(targets.coldFaceRinseSeconds) — 림프 흐름을 개선하고 얼굴 붓기를 줄여줘요.",
+    "es": "\\(targets.coldFaceRinseSeconds) segundo al despertar: mejora el flujo linfático y reduce la hinchazón facial.",
+    "pt-BR": "\\(targets.coldFaceRinseSeconds) segundos ao acordar — melhora o fluxo linfático e reduz o inchaço facial."
+  },
+  "\\(targets.dailySteps) steps — daily movement.": {
+    "ja": "\\(targets.dailySteps) 歩数 - 毎日の動き。",
+    "de": "\\(targets.dailySteps) Schritte – tägliche Bewegung.",
+    "ko": "\\(targets.dailySteps) 걸음 — 일일 움직임.",
+    "es": "\\(targets.dailySteps) pasos: movimiento diario.",
+    "pt-BR": "\\(targets.dailySteps) passos — movimento diário."
+  },
+  "\\(targets.morningLightMinutes) min of natural light within an hour of waking.": {
+    "ja": "\\(targets.morningLightMinutes) 起床後 1 時間以内に自然光を 1 分間浴びます。",
+    "de": "\\(targets.morningLightMinutes) Minute natürliches Licht innerhalb einer Stunde nach dem Aufwachen.",
+    "ko": "\\(targets.morningLightMinutes) 깨어난 후 1시간 이내에 자연광이 최소로 공급돼요.",
+    "es": "\\(targets.morningLightMinutes) min de luz natural dentro de una hora después de despertarse.",
+    "pt-BR": "\\(targets.morningLightMinutes) min de luz natural uma hora depois de acordar."
+  },
+  "\\(targets.outdoorWalkSessionsPerWeek) outdoor sessions/wk — light + grounding.": {
+    "ja": "\\(targets.outdoorWalkSessionsPerWeek) 屋外セッション/週 — 光 + グラウンディング。",
+    "de": "\\(targets.outdoorWalkSessionsPerWeek) Outdoor-Sitzungen/Woche – Licht + Erdung.",
+    "ko": "\\(targets.outdoorWalkSessionsPerWeek) 야외 세션/주 — 조명 + 접지.",
+    "es": "\\(targets.outdoorWalkSessionsPerWeek) sesiones al aire libre/semana: luz + conexión a tierra.",
+    "pt-BR": "\\(targets.outdoorWalkSessionsPerWeek) sessões ao ar livre/semana — luz + aterramento."
+  },
+  "\\(targets.restDaysPerWeek) full rest days. Sleep > extra session if fatigued.": {
+    "ja": "\\(targets.restDaysPerWeek) 完全休息日。睡眠 > 疲れている場合は追加のセッション。",
+    "de": "\\(targets.restDaysPerWeek) volle Ruhetage. Schlafen du > zusätzliche Sitzung, wenn du müde sind.",
+    "ko": "\\(targets.restDaysPerWeek) 완전한 휴식일. 피곤하면 수면 > 추가 세션.",
+    "es": "\\(targets.restDaysPerWeek) días de descanso completo. Dormir > sesión extra si estás fatigado.",
+    "pt-BR": "\\(targets.restDaysPerWeek) dias de descanso completos. Durma> sessão extra se estiver cansado."
+  },
+  "\\(totalCompletedDays) Validated Days": {
+    "ja": "\\(totalCompletedDays) 検証日数",
+    "de": "\\(totalCompletedDays) Validierte Tage",
+    "ko": "\\(totalCompletedDays) 검증된 날짜",
+    "es": "\\(totalCompletedDays) Días Validados",
+    "pt-BR": "\\(totalCompletedDays) Dias validados"
+  },
+  "\\(totalDays) days": {
+    "ja": "\\(totalDays) 日",
+    "de": "\\(totalDays) Tage",
+    "ko": "\\(totalDays)일",
+    "es": "\\(totalDays) días",
+    "pt-BR": "\\(totalDays) dias"
+  },
+  "\\(totalValidatedDays) Validated Days": {
+    "ja": "\\(totalValidatedDays) 検証日数",
+    "de": "\\(totalValidatedDays) Validierte Tage",
+    "ko": "\\(totalValidatedDays) 검증된 날짜",
+    "es": "\\(totalValidatedDays) Días Validados",
+    "pt-BR": "\\(totalValidatedDays) Dias validados"
+  },
+  "\\(trend.spanDays)d": {
+    "ja": "\\(trend.spanDays)d",
+    "de": "\\(trend.spanDays)d",
+    "ko": "\\(trend.spanDays)d",
+    "es": "\\(trend.spanDays)d",
+    "pt-BR": "\\(trend.spanDays)d"
+  },
+  "\\(trialDays) DAYS": {
+    "ja": "\\(trialDays) 日",
+    "de": "\\(trialDays) TAGE",
+    "ko": "\\(trialDays) 일",
+    "es": "\\(trialDays) DÍAS",
+    "pt-BR": "\\(trialDays) DIAS"
+  },
+  "\\(trialDays) free days": {
+    "ja": "\\(trialDays) 無料日",
+    "de": "\\(trialDays) kostenlose Tage",
+    "ko": "\\(trialDays) 무료 일수",
+    "es": "\\(trialDays) días gratis",
+    "pt-BR": "\\(trialDays) dias grátis"
+  },
+  "\\(trimmed), a puffy face is almost never fat.": {
+    "ja": "\\(trimmed)、むくんだ顔は太っていることはほとんどありません。",
+    "de": "\\(trimmed), ein geschwollenes Gesicht ist fast nie fett.",
+    "ko": "\\(trimmed), 부푼 얼굴은 거의 뚱뚱하지 않아요.",
+    "es": "\\(trimmed), una cara hinchada casi nunca es gorda.",
+    "pt-BR": "\\(trimmed), um rosto inchado quase nunca é gordo."
+  },
+  "\\(trimmedName), let's work on \\(mealName) for \\(slotTitle).": {
+    "ja": "\\(trimmedName) さん、\\(slotTitle) のために \\(mealName) に取り組みましょう。",
+    "de": "\\(trimmedName), lasst uns an \\(mealName) für \\(slotTitle) arbeiten.",
+    "ko": "\\(trimmedName), \\(slotTitle)를 위해 \\(mealName) 작업을 시작해 보세요.",
+    "es": "\\(trimmedName), trabajemos en \\(mealName) para \\(slotTitle).",
+    "pt-BR": "\\(trimmedName), vamos trabalhar em \\(mealName) para \\(slotTitle)."
+  },
+  "\\(userFirstName), for your current profile we focus on a facial debloat plan (retention, jawline, under-eyes) rather than adding volume. We're centering on facial puffiness.": {
+    "ja": "\\(userFirstName)、あなたの現在のプロフィールでは、ボリュームを追加するのではなく、顔のむくみ（水の滞留、顎のライン、目の下の疲労）を軽減するプランに焦点を当てています。顔のむくみを中心にケアしていきます。",
+    "de": "\\(userFirstName), für dein aktuelles Profil konzentrieren wir uns auf einen Plan zur Reduzierung von Schwellungen im Gesicht (Wassereinlagerungen, Kieferpartie, Ermüdung unter den Augen), anstatt Volumen hinzuzufügen. Wir konzentrieren uns auf Schwellungen im Gesicht.",
+    "ko": "\\(userFirstName), 현재 프로필에서는 볼륨을 더하기보다는 얼굴 붓기(수분 유지, 턱선, 눈 밑 피로)를 줄이는 계획에 중점을 두고 있어요. 우리는 얼굴 붓기에 중점을 두고 있어요.",
+    "es": "\\(userFirstName), para tu perfil actual nos centramos en un plan para reducir la hinchazón facial (retención de líquidos, línea de la mandíbula, fatiga debajo de los ojos) en lugar de agregar volumen. Nos centramos en la hinchazón facial.",
+    "pt-BR": "\\(userFirstName), para o seu perfil atual nos concentramos em um plano para reduzir o inchaço facial (retenção de líquidos, linha da mandíbula, fadiga sob os olhos) em vez de adicionar volume. Estamos nos concentrando no inchaço facial."
+  },
+  "\\(userFirstName), we skip any restriction mindset. Process focuses on facial debloat: sleep, salt, inflammation, and drainage — not weight loss.": {
+    "ja": "\\(userFirstName)、私たちは制限の考え方をスキップします。 Process は、体重減少ではなく、顔のむくみの軽減、つまり睡眠、塩分、炎症、排水に重点を置いています。",
+    "de": "\\(userFirstName), wir verzichten auf jegliche Einschränkungsmentalität. Process konzentriert sich auf die Reduzierung von Schwellungen im Gesicht: Schlaf, Salz, Entzündungen und Drainage – nicht Gewichtsverlust.",
+    "ko": "\\(userFirstName), 우리는 어떠한 제한적 사고방식도 건너뜁니다. Process는 체중 감량이 아닌 수면, 염분, 염증 및 배액 등 얼굴 붓기 감소에 중점을 둬요.",
+    "es": "\\(userFirstName), nos saltamos cualquier mentalidad de restricción. Process se centra en la reducción de la hinchazón facial: sueño, sal, inflamación y drenaje, no en la pérdida de peso.",
+    "pt-BR": "\\(userFirstName), ignoramos qualquer mentalidade de restrição. Process concentra-se na redução do inchaço facial: sono, sal, inflamação e drenagem - não na perda de peso."
+  },
+  "\\(userFirstName), we're refocusing your plan entirely on facial debloat.": {
+    "ja": "\\(userFirstName) さん、私たちはあなたの計画を完全に顔のむくみの軽減に焦点を合わせ直しています。",
+    "de": "\\(userFirstName), wir konzentrieren deinen Plan ganz auf die Reduzierung von Schwellungen im Gesicht.",
+    "ko": "\\(userFirstName), 우리는 얼굴 붓기 감소에 전적으로 계획을 다시 집중하고 있어요.",
+    "es": "\\(userFirstName), estamos reenfocando tu plan completamente en la reducción de la hinchazón facial.",
+    "pt-BR": "\\(userFirstName), estamos redirecionando seu plano inteiramente para a redução do inchaço facial."
+  },
+  "\\(verdict.shortLabel) — score \\(Int(snapshot.todayCompositeScore))/100 · \\(snapshot.totalValidatedDays) validated days": {
+    "ja": "\\(verdict.shortLabel) — スコア \\(Int(snapshot.todayCompositeScore))/100 · \\(snapshot.totalValidatedDays) 検証日",
+    "de": "\\(verdict.shortLabel) – Punktzahl \\(Int(snapshot.todayCompositeScore))/100 · \\(snapshot.totalValidatedDays) validierte Tage",
+    "ko": "\\(verdict.shortLabel) — 점수 \\(Int(snapshot.todayCompositeScore))/100 · \\(snapshot.totalValidatedDays) 검증된 날짜",
+    "es": "\\(verdict.shortLabel) — puntuación \\(Int(snapshot.todayCompositeScore))/100 · \\(snapshot.totalValidatedDays) días validados",
+    "pt-BR": "\\(verdict.shortLabel) — pontuação \\(Int(snapshot.todayCompositeScore))/100 · \\(snapshot.totalValidatedDays) dias validados"
+  },
+  "\\(weeklyUsagePercent)% used": {
+    "ja": "\\(weeklyUsagePercent)% 使用済み",
+    "de": "\\(weeklyUsagePercent)% verwendet",
+    "ko": "\\(weeklyUsagePercent)% 사용됨",
+    "es": "\\(weeklyUsagePercent)% usado",
+    "pt-BR": "\\(weeklyUsagePercent)% usado"
+  },
+  "\\(weeks) wk": {
+    "ja": "\\(weeks) 週間",
+    "de": "\\(weeks) Wo",
+    "ko": "\\(weeks) 주",
+    "es": "\\(weeks) semana",
+    "pt-BR": "\\(weeks) semana"
+  },
+  "\\(yesCount)/3 levers — debloat protocol incomplete.": {
+    "ja": "\\(yesCount)/3 レバー — 顔のむくみ軽減プロトコルは不完全です。",
+    "de": "\\(yesCount)/3 Hebel – Protokoll zur Reduzierung von Schwellungen im Gesicht unvollständig.",
+    "ko": "\\(yesCount)/3 레버 — 얼굴 붓기 감소 프로토콜이 불완전해요.",
+    "es": "\\(yesCount)/3 palancas: protocolo de reducción de hinchazón facial incompleto.",
+    "pt-BR": "\\(yesCount)/3 alavancas — protocolo de redução de inchaço facial incompleto."
+  },
+  "\\n\\n## What I see on your scan\\n\\(visionNote)": {
+    "ja": "\\n\\n## スキャンで見えたこと\\n\\(visionNote)",
+    "de": "\\n\\n## Was ich auf deinem Scan sehe\\n\\(visionNote)",
+    "ko": "\\n\\n## 스캔에서 본 내용\\n\\(visionNote)",
+    "es": "\\n\\n## Lo que veo en tu escaneo\\n\\(visionNote)",
+    "pt-BR": "\\n\\n## O que vejo em sua digitalização\\n\\(visionNote)"
+  },
+  "About \\(sodium) g sodium — classic for morning puffiness.": {
+    "ja": "ナトリウム約 \\(sodium) g — 朝のむくみに定番。",
+    "de": "Ungefähr \\(sodium) g Natrium – Klassiker gegen morgendliche Schwellungen.",
+    "ko": "\\(sodium) g 나트륨 정보 — 아침 부기에 대한 고전적인 효과이에요.",
+    "es": "Aproximadamente \\(sodium) g de sodio: clásico para la hinchazón matutina.",
+    "pt-BR": "Cerca de \\(sodium) g de sódio – clássico para inchaço matinal."
+  },
+  "Absolute priority: \\(Int(dailyTargets.sleepHours)) h of sleep": {
+    "ja": "絶対的な優先順位: \\(Int(dailyTargets.sleepHours)) 時間の睡眠",
+    "de": "Absolute Priorität: \\(Int(dailyTargets.sleepHours)) h Schlaf",
+    "ko": "절대 우선순위: \\(Int(dailyTargets.sleepHours)) 수면 시간",
+    "es": "Prioridad absoluta: \\(Int(dailyTargets.sleepHours)) h de sueño",
+    "pt-BR": "Prioridade absoluta: \\(Int(dailyTargets.sleepHours)) h de sono"
+  },
+  "Activity status, \\(status.title)": {
+    "ja": "アクティビティステータス、\\(status.title)",
+    "de": "Aktivitätsstatus, \\(status.title)",
+    "ko": "활동 상태, \\(status.title)",
+    "es": "Estado de actividad, \\(status.title)",
+    "pt-BR": "Status da atividade, \\(status.title)"
+  },
+  "Activity Status: \\(status.title)": {
+    "ja": "アクティビティステータス: \\(status.title)",
+    "de": "Aktivitätsstatus: \\(status.title)",
+    "ko": "활동 상태: \\(status.title)",
+    "es": "Estado de actividad: \\(status.title)",
+    "pt-BR": "Status da atividade: \\(status.title)"
+  },
+  "Add \\\"\\(searchText)\\\"": {
+    "ja": "「\\(searchText)」を追加",
+    "de": "Fügen du \\\"\\(searchText)\\\" hinzu",
+    "ko": "\\\"\\(searchText)\\\" 추가",
+    "es": "Añadir \\\"\\(searchText)\\\"",
+    "pt-BR": "Adicionar \\\"\\(searchText)\\\""
+  },
+  "Airplane mode or phone out of the room \\(ProcessDailyTargets.screenCurfewMinutes) min before": {
+    "ja": "機内モードまたは電話を部屋から出す \\(ProcessDailyTargets.screenCurfewMinutes) 分前",
+    "de": "Flugmodus oder Telefonieren außerhalb des Zimmers \\(ProcessDailyTargets.screenCurfewMinutes) Minute vorher",
+    "ko": "비행기 모드 또는 방에서 전화하기 \\(ProcessDailyTargets.screenCurfewMinutes)분 전",
+    "es": "Modo avión o teléfono fuera de la habitación \\(ProcessDailyTargets.screenCurfewMinutes) min antes",
+    "pt-BR": "Modo avião ou telefone fora da sala \\(ProcessDailyTargets.screenCurfewMinutes) min antes"
+  },
+  "Analyze these \\(images.count) images in 2–4 sentences max. useprocess coach context.": {
+    "ja": "これらの \\(images.count) 画像を最大 2 ～ 4 文で分析します。プロセスコーチコンテキストを使用します。",
+    "de": "Analysieren du diese \\(images.count)-Bilder in maximal 2–4 Sätzen. Verwenden du den Process Coach-Kontext.",
+    "ko": "최대 2~4개의 문장으로 \\(images.count) 이미지를 분석하세요. 프로세스 코치 컨텍스트를 사용해요.",
+    "es": "Analice estas imágenes \\(images.count) en 2 a 4 oraciones como máximo. utilizar el contexto del entrenador de procesos.",
+    "pt-BR": "Analise essas imagens \\(images.count) em no máximo 2–4 frases. contexto de treinador do processo de uso."
+  },
+  "Another meal idea for \\(slot).": {
+    "ja": "\\(slot) の別の食事のアイデア。",
+    "de": "Eine weitere Essensidee für \\(slot).",
+    "ko": "\\(slot)를 위한 또 다른 식사 아이디어.",
+    "es": "Otra idea de comida para \\(slot).",
+    "pt-BR": "Outra ideia de refeição para \\(slot)."
+  },
+  "Anti-retention dinner · \\(protein)": {
+    "ja": "保水対策ディナー・\\(protein)",
+    "de": "Abendessen gegen Wassereinlagerungen · \\(protein)",
+    "ko": "수분저류 방지 디너 · \\(protein)",
+    "es": "Cena anti-retención de líquidos · \\(protein)",
+    "pt-BR": "Jantar anti-retenção de líquidos · \\(protein)"
+  },
+  "At least 2 scans over \\(period.title) to show the chart.": {
+    "ja": "チャートを表示するには、\\(period.title) を少なくとも 2 回スキャンします。",
+    "de": "Mindestens 2 Scans über \\(period.title), um das Diagramm anzuzeigen.",
+    "ko": "차트를 표시하려면 \\(period.title)를 2번 이상 스캔하세요.",
+    "es": "Al menos 2 escaneos sobre \\(period.title) para mostrar el gráfico.",
+    "pt-BR": "Pelo menos 2 escaneamentos em \\(period.title) para mostrar o gráfico."
+  },
+  "At least \\(ProcessDebloatValidation.weeklyCardioMinimum)×/week": {
+    "ja": "少なくとも \\(ProcessDebloatValidation.weeklyCardioMinimum)×/週",
+    "de": "Mindestens \\(ProcessDebloatValidation.weeklyCardioMinimum)×/Woche",
+    "ko": "최소 \\(ProcessDebloatValidation.weeklyCardioMinimum)×/주",
+    "es": "Al menos \\(ProcessDebloatValidation.weeklyCardioMinimum)×/semana",
+    "pt-BR": "Pelo menos \\(ProcessDebloatValidation.weeklyCardioMinimum)×/semana"
+  },
+  "Baseline still consolidating (\\(count) scans).": {
+    "ja": "ベースラインはまだ統合中です (\\(count) スキャン)。",
+    "de": "Die Grundlinie wird immer noch konsolidiert (\\(count) Scans).",
+    "ko": "기준선은 여전히 통합 중이에요(\\(count) 스캔).",
+    "es": "La línea de base aún se está consolidando (escaneos \\(count)).",
+    "pt-BR": "Linha de base ainda em consolidação (escaneamentos \\(count))."
+  },
+  "Bedtime: \\(bedtimeString)": {
+    "ja": "就寝時間: \\(bedtimeString)",
+    "de": "Schlafenszeit: \\(bedtimeString)",
+    "ko": "취침 시간: \\(bedtimeString)",
+    "es": "Hora de dormir: \\(bedtimeString)",
+    "pt-BR": "Hora de dormir: \\(bedtimeString)"
+  },
+  "Body-fat gap ~\\(Int(bodyFatGap.rounded())) pts vs target — recomp before max refinement": {
+    "ja": "体脂肪ギャップ ~\\(Int(bodyFatGap.rounded())) ポイント対目標 — 最大リファインメントの前に再計算",
+    "de": "Körperfettlücke ~\\(Int(bodyFatGap.rounded())) Punkte vs. Ziel – Neukompensation vor maximaler Verfeinerung",
+    "ko": "체지방 갭 ~\\(Int(bodyFatGap.rounded())) 포인트 대 목표 — 최대 개선 전 재검토",
+    "es": "Brecha de grasa corporal ~\\(Int(bodyFatGap.rounded())) pts vs objetivo: recopilación antes del refinamiento máximo",
+    "pt-BR": "Diferença de gordura corporal ~\\(Int(bodyFatGap.rounded())) pts vs alvo – recompra antes do refinamento máximo"
+  },
+  "Calculated action: \\(FaceScanEvolutionEngine.actionSentence(for: result, history: history))": {
+    "ja": "計算されたアクション: \\(FaceScanEvolutionEngine.actionSentence(for: result, history: history))",
+    "de": "Berechnete Aktion: \\(FaceScanEvolutionEngine.actionSentence(for: result, history: history))",
+    "ko": "계산된 동작: \\(FaceScanEvolutionEngine.actionSentence(for: result, history: history))",
+    "es": "Acción calculada: \\(FaceScanEvolutionEngine.actionSentence(for: result, history: history))",
+    "pt-BR": "Ação calculada: \\(FaceScanEvolutionEngine.actionSentence(for: result, history: history))"
+  },
+  "Calibrated to your profile — a visibly less puffy face by \\(debloatFmt).": {
+    "ja": "\\(debloatFmt) により、あなたのプロフィールに合わせて調整され、むくみが目に見えて軽減された顔になります。",
+    "de": "Auf dein Profil abgestimmt – ein sichtbar weniger geschwollenes Gesicht von \\(debloatFmt).",
+    "ko": "프로필에 맞게 맞춰졌어요. \\(debloatFmt)를 통해 얼굴의 부기가 눈에 띄게 줄어들었어요.",
+    "es": "Calibrado según tu perfil: una cara visiblemente menos hinchada por \\(debloatFmt).",
+    "pt-BR": "Calibrado para o seu perfil – um rosto visivelmente menos inchado por \\(debloatFmt)."
+  },
+  "Calibration complete (\\(daysSinceDownload) days)": {
+    "ja": "校正完了 (\\(daysSinceDownload) 日)",
+    "de": "Kalibrierung abgeschlossen (\\(daysSinceDownload) Tage)",
+    "ko": "보정 완료(\\(daysSinceDownload)일)",
+    "es": "Calibración completa (\\(daysSinceDownload) días)",
+    "pt-BR": "Calibração concluída (\\(daysSinceDownload) dias)"
+  },
+  "Calibration in progress (\\(daysSinceDownload)/4 days)": {
+    "ja": "校正中 (\\(daysSinceDownload)/4 日)",
+    "de": "Kalibrierung läuft (\\(daysSinceDownload)/4 Tage)",
+    "ko": "보정 진행 중(\\(daysSinceDownload)/4일)",
+    "es": "Calibración en curso (\\(daysSinceDownload)/4 días)",
+    "pt-BR": "Calibração em andamento (\\(daysSinceDownload)/4 dias)"
+  },
+  "Change vs baseline: retention \\(signed(rel.puffinessDelta)), under-eyes \\(signed(rel.underEyeFatigueDelta)), stress \\(signed(rel.stressLoadDelta ?? 0)).": {
+    "ja": "ベースラインに対する変化: 水分保持 \\(signed(rel.puffinessDelta))、目の下の疲労 \\(signed(rel.underEyeFatigueDelta))、ストレス \\(signed(rel.stressLoadDelta ?? 0))。",
+    "de": "Veränderung gegenüber dem Ausgangswert: Wassereinlagerungen \\(signed(rel.puffinessDelta)), Ermüdung unter den Augen \\(signed(rel.underEyeFatigueDelta)), Stress \\(signed(rel.stressLoadDelta ?? 0)).",
+    "ko": "기준 대비 변화: 수분 유지 \\(signed(rel.puffinessDelta)), 눈 밑 피로 \\(signed(rel.underEyeFatigueDelta)), 스트레스 \\(signed(rel.stressLoadDelta ?? 0)).",
+    "es": "Cambio frente al valor inicial: retención de líquidos \\(signed(rel.puffinessDelta)), fatiga debajo de los ojos \\(signed(rel.underEyeFatigueDelta)), estrés \\(signed(rel.stressLoadDelta ?? 0)).",
+    "pt-BR": "Mudança versus linha de base: retenção de líquidos \\(signed(rel.puffinessDelta)), fadiga ocular \\(signed(rel.underEyeFatigueDelta)), estresse \\(signed(rel.stressLoadDelta ?? 0))."
+  },
+  "Chart · \\(title)": {
+    "ja": "チャート · \\(title)",
+    "de": "Diagramm · \\(title)",
+    "ko": "차트 · \\(title)",
+    "es": "Gráfico · \\(title)",
+    "pt-BR": "Gráfico · \\(title)"
+  },
+  "Checklist for \\(Self.shortDateFormatter.string(from: targetDate))": {
+    "ja": "\\(Self.shortDateFormatter.string(from: targetDate)) のチェックリスト",
+    "de": "Checkliste für \\(Self.shortDateFormatter.string(from: targetDate))",
+    "ko": "\\(Self.shortDateFormatter.string(from: targetDate)) 체크리스트",
+    "es": "Lista de verificación para \\(Self.shortDateFormatter.string(from: targetDate))",
+    "pt-BR": "Lista de verificação para \\(Self.shortDateFormatter.string(from: targetDate))"
+  },
+  "Chewing \\(dailyTargets.chewsPerBite)×": {
+    "ja": "咀嚼\\(dailyTargets.chewsPerBite)×",
+    "de": "Kauen \\(dailyTargets.chewsPerBite)×",
+    "ko": "씹어먹는 \\(dailyTargets.chewsPerBite)×",
+    "es": "Masticar \\(dailyTargets.chewsPerBite)×",
+    "pt-BR": "Mastigando \\(dailyTargets.chewsPerBite)×"
+  },
+  "Choose up to \\(ProfileInterestsCatalog.maxSelection)": {
+    "ja": "\\(ProfileInterestsCatalog.maxSelection) まで選択してください",
+    "de": "Wählen du bis zu \\(ProfileInterestsCatalog.maxSelection)",
+    "ko": "최대 \\(ProfileInterestsCatalog.maxSelection)까지 선택하세요.",
+    "es": "Elige hasta \\(ProfileInterestsCatalog.maxSelection)",
+    "pt-BR": "Escolha até \\(ProfileInterestsCatalog.maxSelection)"
+  },
+  "Claude HTTP \\(status): \\(body.prefix(200))": {
+    "ja": "クロード HTTP \\(status): \\(body.prefix(200))",
+    "de": "Claude HTTP \\(status): \\(body.prefix(200))",
+    "ko": "클로드 HTTP \\(status): \\(body.prefix(200))",
+    "es": "Claude HTTP \\(status): \\(body.prefix(200))",
+    "pt-BR": "Claude HTTP \\(status): \\(body.prefix(200))"
+  },
+  "Coach error (\\(code)). Try again.": {
+    "ja": "コーチエラー (\\(code))。もう一度やり直してください。",
+    "de": "Trainerfehler (\\(code)). Versuchen du es erneut.",
+    "ko": "코치 오류(\\(code)). 다시 시도해 보세요.",
+    "es": "Error del entrenador (\\(code)). Intentar otra vez.",
+    "pt-BR": "Erro de treinador (\\(code)). Tente novamente."
+  },
+  "Complete all — \\(coreCompletedCount) of \\(checklistTasks.count)": {
+    "ja": "\\(checklistTasks.count) の \\(coreCompletedCount) をすべて完了します",
+    "de": "Schließe alle ab – \\(coreCompletedCount) von \\(checklistTasks.count)",
+    "ko": "모두 완료 — \\(coreCompletedCount) / \\(checklistTasks.count)",
+    "es": "Completa todo — \\(coreCompletedCount) de \\(checklistTasks.count)",
+    "pt-BR": "Conclua tudo — \\(coreCompletedCount) de \\(checklistTasks.count)"
+  },
+  "Complete your check-in to start your trajectory, \\(trimmed).": {
+    "ja": "チェックインを完了して、\\(trimmed) の軌跡を開始してください。",
+    "de": "Schließen du deinen Check-in ab, um deine Flugbahn zu beginnen, \\(trimmed).",
+    "ko": "궤적을 시작하려면 체크인을 완료하세요, \\(trimmed).",
+    "es": "Completa tu check-in para iniciar tu trayectoria, \\(trimmed).",
+    "pt-BR": "Conclua seu check-in para iniciar sua trajetória, \\(trimmed)."
+  },
+  "Complete your check-in to start your trajectory\\(nameSuffix).": {
+    "ja": "チェックインを完了して、軌跡\\(nameSuffix)を開始してください。",
+    "de": "Schließen du deinen Check-in ab, um deine Flugbahn zu beginnen\\(nameSuffix).",
+    "ko": "궤적\\(nameSuffix)을 시작하려면 체크인을 완료하세요.",
+    "es": "Completa tu check-in para comenzar tu trayectoria\\(nameSuffix).",
+    "pt-BR": "Conclua seu check-in para iniciar sua trajetória\\(nameSuffix)."
+  },
+  "Composition ~\\(Int(gap.rounded()))% → target ~\\(Int(snapshot.targetBodyFatPercent))% — food density, not starvation": {
+    "ja": "構成 ~\\(Int(gap.rounded()))% → 目標 ~\\(Int(snapshot.targetBodyFatPercent))% — 食糧密度、飢餓ではない",
+    "de": "Zusammensetzung ~\\(Int(gap.rounded()))% → Ziel ~\\(Int(snapshot.targetBodyFatPercent))% – Nahrungsdichte, nicht Hunger",
+    "ko": "구성 ~\\(Int(gap.rounded()))% → 목표 ~\\(Int(snapshot.targetBodyFatPercent))% — 기아가 아닌 식량 밀도",
+    "es": "Composición ~\\(Int(gap.rounded()))% → objetivo ~\\(Int(snapshot.targetBodyFatPercent))% — densidad de alimentos, no inanición",
+    "pt-BR": "Composição ~\\(Int(gap.rounded()))% → alvo ~\\(Int(snapshot.targetBodyFatPercent))% - densidade alimentar, não fome"
+  },
+  "Cool room (\\(ProcessDailyTargets.bedroomTempCelsius) °C) + total darkness": {
+    "ja": "涼しい部屋 (\\(ProcessDailyTargets.bedroomTempCelsius) °C) + 完全な暗闇",
+    "de": "Kühler Raum (\\(ProcessDailyTargets.bedroomTempCelsius) °C) + völlige Dunkelheit",
+    "ko": "시원한 방 (\\(ProcessDailyTargets.bedroomTempCelsius) °C) + 완전한 암흑",
+    "es": "Habitación fresca (\\(ProcessDailyTargets.bedroomTempCelsius) °C) + oscuridad total",
+    "pt-BR": "Sala fria (\\(ProcessDailyTargets.bedroomTempCelsius) °C) + escuridão total"
+  },
+  "Cool room (\\(ProcessDailyTargets.bedroomTempCelsius) °C), total darkness": {
+    "ja": "涼しい部屋 (\\(ProcessDailyTargets.bedroomTempCelsius) °C)、完全な暗闇",
+    "de": "Kühler Raum (\\(ProcessDailyTargets.bedroomTempCelsius) °C), völlige Dunkelheit",
+    "ko": "서늘한 방(\\(ProcessDailyTargets.bedroomTempCelsius) °C), 완전한 암흑",
+    "es": "Habitación fresca (\\(ProcessDailyTargets.bedroomTempCelsius) °C), oscuridad total",
+    "pt-BR": "Sala fria (\\(ProcessDailyTargets.bedroomTempCelsius) °C), escuridão total"
+  },
+  "Correlation: \\(correlation.message)": {
+    "ja": "相関関係: \\(correlation.message)",
+    "de": "Korrelation: \\(correlation.message)",
+    "ko": "상관관계: \\(correlation.message)",
+    "es": "Correlación: \\(correlation.message)",
+    "pt-BR": "Correlação: \\(correlation.message)"
+  },
+  "Couldn't send the message (\\(code)).": {
+    "ja": "メッセージ (\\(code)) を送信できませんでした。",
+    "de": "Die Nachricht konnte nicht gesendet werden (\\(code)).",
+    "ko": "메시지를 보낼 수 없어요(\\(code)).",
+    "es": "No se pudo enviar el mensaje (\\(code)).",
+    "pt-BR": "Não foi possível enviar a mensagem (\\(code))."
+  },
+  "Creator error (\\(code)).": {
+    "ja": "作成者エラー (\\(code))。",
+    "de": "Erstellerfehler (\\(code)).",
+    "ko": "생성자 오류(\\(code)).",
+    "es": "Error del creador (\\(code)).",
+    "pt-BR": "Erro do criador (\\(code))."
+  },
+  "Creator: \\(name)": {
+    "ja": "作成者: \\(name)",
+    "de": "Ersteller: \\(name)",
+    "ko": "제작자: \\(name)",
+    "es": "Creador: \\(name)",
+    "pt-BR": "Criador: \\(name)"
+  },
+  "Current summary: \\(plan.executiveSummary)": {
+    "ja": "現在の概要: \\(plan.executiveSummary)",
+    "de": "Aktuelle Zusammenfassung: \\(plan.executiveSummary)",
+    "ko": "현재 요약: \\(plan.executiveSummary)",
+    "es": "Resumen actual: \\(plan.executiveSummary)",
+    "pt-BR": "Resumo atual: \\(plan.executiveSummary)"
+  },
+  "Cut caffeine by \\(ProcessDailyTargets.caffeineCutoffHour):00 to protect sleep (linked to morning puffiness)": {
+    "ja": "睡眠を守るために\\(ProcessDailyTargets.caffeineCutoffHour):00までにカフェインをカットしてください（朝のむくみと関連しています）",
+    "de": "Koffein um \\(ProcessDailyTargets.caffeineCutoffHour):00 reduzieren, um den Schlaf zu schützen (verbunden mit morgendlicher Schwellung)",
+    "ko": "수면을 보호하기 위해 카페인을 \\(ProcessDailyTargets.caffeineCutoffHour):00로 줄이에요. (아침 붓기와 관련)",
+    "es": "Reduzca la cafeína en \\(ProcessDailyTargets.caffeineCutoffHour):00 para proteger el sueño (relacionado con la hinchazón matutina)",
+    "pt-BR": "Reduza a cafeína em \\(ProcessDailyTargets.caffeineCutoffHour):00 para proteger o sono (ligado ao inchaço matinal)"
+  },
+  "Daily check-in, \\(streakStore.displayStreak)-day streak": {
+    "ja": "毎日のチェックイン、\\(streakStore.displayStreak) 日連続の連続チェックイン",
+    "de": "Täglicher Check-in, \\(streakStore.displayStreak)-Tag aufeinanderfolgender Tag",
+    "ko": "일일 체크인, \\(streakStore.displayStreak)일 연속 연속",
+    "es": "Registro diario, racha de \\(streakStore.displayStreak) días consecutivos",
+    "pt-BR": "Check-in diário, \\(streakStore.displayStreak) dias consecutivos consecutivos"
+  },
+  "Data collection error: \\(message)": {
+    "ja": "データ収集エラー: \\(message)",
+    "de": "Datenerfassungsfehler: \\(message)",
+    "ko": "데이터 수집 오류: \\(message)",
+    "es": "Error de recopilación de datos: \\(message)",
+    "pt-BR": "Erro de coleta de dados: \\(message)"
+  },
+  "Day \\(day.globalDayIndex + 1) · \\(day.weekdayLabel)": {
+    "ja": "日 \\(day.globalDayIndex + 1) · \\(day.weekdayLabel)",
+    "de": "Tag \\(day.globalDayIndex + 1) · \\(day.weekdayLabel)",
+    "ko": "일 \\(day.globalDayIndex + 1) · \\(day.weekdayLabel)",
+    "es": "Día \\(day.globalDayIndex + 1) · \\(day.weekdayLabel)",
+    "pt-BR": "Dia \\(day.globalDayIndex + 1) · \\(day.weekdayLabel)"
+  },
+  "Day \\(dayIndex + 1)": {
+    "ja": "日 \\(dayIndex + 1)",
+    "de": "Tag \\(dayIndex + 1)",
+    "ko": "일 \\(dayIndex + 1)",
+    "es": "Día \\(dayIndex + 1)",
+    "pt-BR": "Dia \\(dayIndex + 1)"
+  },
+  "Day \\(elapsedDays) / \\(totalDays)": {
+    "ja": "日 \\(elapsedDays) / \\(totalDays)",
+    "de": "Tag \\(elapsedDays) / \\(totalDays)",
+    "ko": "일 \\(elapsedDays) / \\(totalDays)",
+    "es": "Día \\(elapsedDays) / \\(totalDays)",
+    "pt-BR": "Dia \\(elapsedDays) / \\(totalDays)"
+  },
+  "DAY \\(idx + 1) SCHEDULE — \\(day.title)": {
+    "ja": "曜日 \\(idx + 1) スケジュール — \\(day.title)",
+    "de": "TAG \\(idx + 1) ZEITPLAN – \\(day.title)",
+    "ko": "요일 \\(idx + 1) 일정 — \\(day.title)",
+    "es": "DÍA \\(idx + 1) HORARIO — \\(day.title)",
+    "pt-BR": "DIA \\(idx + 1) PROGRAMAÇÃO — \\(day.title)"
+  },
+  "Day \\(programDay) of the program": {
+    "ja": "プログラムの日 \\(programDay)",
+    "de": "Tag \\(programDay) des Programms",
+    "ko": "프로그램 \\(programDay)일",
+    "es": "Día \\(programDay) del programa",
+    "pt-BR": "Dia \\(programDay) do programa"
+  },
+  "Day \\(programDay) of your personalized plan": {
+    "ja": "パーソナライズされたプランの日 \\(programDay)",
+    "de": "Tag \\(programDay) Ihres personalisierten Plans",
+    "ko": "맞춤 계획의 \\(programDay)일",
+    "es": "Día \\(programDay) de tu plan personalizado",
+    "pt-BR": "Dia \\(programDay) do seu plano personalizado"
+  },
+  "Day \\(programDayNumber) of the program": {
+    "ja": "プログラムの日 \\(programDayNumber)",
+    "de": "Tag \\(programDayNumber) des Programms",
+    "ko": "프로그램 \\(programDayNumber)일",
+    "es": "Día \\(programDayNumber) del programa",
+    "pt-BR": "Dia \\(programDayNumber) do programa"
+  },
+  "debloat by \\(Self.formatDate(endDate))": {
+    "ja": "\\(Self.formatDate(endDate))により顔のむくみを軽減します",
+    "de": "Reduzieren du Schwellungen im Gesicht um \\(Self.formatDate(endDate))",
+    "ko": "\\(Self.formatDate(endDate))로 얼굴 붓기 감소",
+    "es": "reducir la hinchazón facial en \\(Self.formatDate(endDate))",
+    "pt-BR": "reduza o inchaço facial em \\(Self.formatDate(endDate))"
+  },
+  "Debloat morning · \\(protein) & \\(carb)": {
+    "ja": "むくみ解消の朝 · \\(protein) & \\(carb)",
+    "de": "Morgen gegen Schwellungen · \\(protein) & \\(carb)",
+    "ko": "모닝 부기개선 · \\(protein) & \\(carb)",
+    "es": "Mañana anti-hinchazón · \\(protein) & \\(carb)",
+    "pt-BR": "Manhã anti-inchaço · \\(protein) e \\(carb)"
+  },
+  "Debloat Program · \\(daysLabel)": {
+    "ja": "顔のむくみ改善プログラム · \\(daysLabel)",
+    "de": "Programm zur Reduzierung von Schwellungen im Gesicht · \\(daysLabel)",
+    "ko": "얼굴 붓기 감소 프로그램 · \\(daysLabel)",
+    "es": "Programa de reducción de bolsas faciales · \\(daysLabel)",
+    "pt-BR": "Programa de redução de inchaço facial · \\(daysLabel)"
+  },
+  "Debloat score \\(assessment.score) out of 100": {
+    "ja": "顔のむくみ軽減スコア \\(assessment.score) (100 点中)",
+    "de": "Bewertung der Reduzierung von Schwellungen im Gesicht \\(assessment.score) von 100",
+    "ko": "얼굴 붓기 감소 점수 \\(assessment.score) 100점 만점",
+    "es": "Puntuación de reducción de la hinchazón facial \\(assessment.score) sobre 100",
+    "pt-BR": "Pontuação de redução de inchaço facial \\(assessment.score) em 100"
+  },
+  "Debloat score \\(assessment.scoreText)": {
+    "ja": "顔のむくみ軽減スコア \\(assessment.scoreText)",
+    "de": "Bewertung der Reduzierung von Schwellungen im Gesicht \\(assessment.scoreText)",
+    "ko": "얼굴 붓기 감소 점수 \\(assessment.scoreText)",
+    "es": "Puntuación de reducción de hinchazón facial \\(assessment.scoreText)",
+    "pt-BR": "Pontuação de redução de inchaço facial \\(assessment.scoreText)"
+  },
+  "Debloat score \\(score) out of 100": {
+    "ja": "顔のむくみ軽減スコア \\(score) (100 点中)",
+    "de": "Bewertung der Reduzierung von Schwellungen im Gesicht \\(score) von 100",
+    "ko": "얼굴 붓기 감소 점수 \\(score) 100점 만점",
+    "es": "Puntuación de reducción de la hinchazón facial \\(score) sobre 100",
+    "pt-BR": "Pontuação de redução de inchaço facial \\(score) em 100"
+  },
+  "Debloat target: \\(Self.formatDate(endDate))": {
+    "ja": "顔のむくみ改善目標: \\(Self.formatDate(endDate))",
+    "de": "Ziel zur Reduzierung von Schwellungen im Gesicht: \\(Self.formatDate(endDate))",
+    "ko": "얼굴 붓기 감소 목표 : \\(Self.formatDate(endDate))",
+    "es": "Objetivo de reducción de la hinchazón facial: \\(Self.formatDate(endDate))",
+    "pt-BR": "Meta de redução de inchaço facial: \\(Self.formatDate(endDate))"
+  },
+  "Debloat version — \\(scanned.name)": {
+    "ja": "膨らみの少ないバージョン — \\(scanned.name)",
+    "de": "Weniger bauschige Version – \\(scanned.name)",
+    "ko": "덜 푹신한 버전 — \\(scanned.name)",
+    "es": "Versión menos hinchada: \\(scanned.name)",
+    "pt-BR": "Versão menos inchada — \\(scanned.name)"
+  },
+  "Draft meal · \\(meal.timeSlot.displayTitle)": {
+    "ja": "ドラフトミール · \\(meal.timeSlot.displayTitle)",
+    "de": "Fassgericht · \\(meal.timeSlot.displayTitle)",
+    "ko": "임시 식사 · \\(meal.timeSlot.displayTitle)",
+    "es": "Comida de borrador · \\(meal.timeSlot.displayTitle)",
+    "pt-BR": "Refeição à pressão · \\(meal.timeSlot.displayTitle)"
+  },
+  "Draining snack · \\(veg)": {
+    "ja": "水切りスナック · \\(veg)",
+    "de": "Snack abtropfen lassen · \\(veg)",
+    "ko": "물기를 빼는 간식 · \\(veg)",
+    "es": "Snack drenante · \\(veg)",
+    "pt-BR": "Lanche drenante · \\(veg)"
+  },
+  "Drink \\(ProcessDailyTargets.hydrationLitersPerDay) liters": {
+    "ja": "\\(ProcessDailyTargets.hydrationLitersPerDay) リットル飲む",
+    "de": "Trinken du \\(ProcessDailyTargets.hydrationLitersPerDay) Liter",
+    "ko": "\\(ProcessDailyTargets.hydrationLitersPerDay)리터 마시기",
+    "es": "Beber \\(ProcessDailyTargets.hydrationLitersPerDay) litros",
+    "pt-BR": "Beba \\(ProcessDailyTargets.hydrationLitersPerDay) litros"
+  },
+  "Duration: \\(groceryRequest.dayCount) days": {
+    "ja": "期間: \\(groceryRequest.dayCount) 日",
+    "de": "Dauer: \\(groceryRequest.dayCount) Tage",
+    "ko": "기간: \\(groceryRequest.dayCount)일",
+    "es": "Duración: \\(groceryRequest.dayCount) días",
+    "pt-BR": "Duração: \\(groceryRequest.dayCount) dias"
+  },
+  "Earn \\(cashAmount) /friend.": {
+    "ja": "\\(cashAmount) /友達を獲得しましょう。",
+    "de": "Verdiene \\(cashAmount) /Freund.",
+    "ko": "\\(cashAmount) /친구를 획득하세요.",
+    "es": "Gana \\(cashAmount)/amigo.",
+    "pt-BR": "Ganhe \\(cashAmount) /amigo."
+  },
+  "Edit \\(item.ingredientDisplayLine)": {
+    "ja": "編集 \\(item.ingredientDisplayLine)",
+    "de": "Bearbeiten \\(item.ingredientDisplayLine)",
+    "ko": "편집 \\(item.ingredientDisplayLine)",
+    "es": "Editar \\(item.ingredientDisplayLine)",
+    "pt-BR": "Editar \\(item.ingredientDisplayLine)"
+  },
+  "Effort score today: \\(effortScore)%": {
+    "ja": "今日の努力スコア: \\(effortScore)%",
+    "de": "Aufwandsbewertung heute: \\(effortScore)%",
+    "ko": "오늘의 노력 점수: \\(effortScore)%",
+    "es": "Puntuación de esfuerzo hoy: \\(effortScore)%",
+    "pt-BR": "Pontuação de esforço hoje: \\(effortScore)%"
+  },
+  "Estimated cortisol · \\(value)%": {
+    "ja": "推定コルチゾール · \\(value)%",
+    "de": "Geschätztes Cortisol · \\(value) %",
+    "ko": "예상 코르티솔 · \\(value)%",
+    "es": "Cortisol estimado · \\(value)%",
+    "pt-BR": "Cortisol estimado · \\(value)%"
+  },
+  "Every friend who starts a subscription earns you \\(price). The more you refer, the more you earn.": {
+    "ja": "サブスクリプションを開始する友達全員が、\\(price) を獲得します。紹介すればするほど収益が上がります。",
+    "de": "Jeder Freund, der ein Abonnement beginnt, bringt dir \\(price) ein. Je mehr du empfehlen, desto mehr verdienen du.",
+    "ko": "구독을 시작하는 모든 친구는 \\(price)를 받아요. 더 많이 참조할수록 더 많은 수익을 얻을 수 있어요.",
+    "es": "Cada amigo que inicia una suscripción te da \\(price). Cuanto más refieras, más ganarás.",
+    "pt-BR": "Cada amigo que inicia uma assinatura ganha \\(price). Quanto mais você indica, mais você ganha."
+  },
+  "Excellent day\\(nameSuffix) — score \\(Int(todayCompositeScore))/100.": {
+    "ja": "素晴らしい一日\\(nameSuffix) — スコア\\(Int(todayCompositeScore))/100。",
+    "de": "Ausgezeichneter Tag\\(nameSuffix) – Punktzahl \\(Int(todayCompositeScore))/100.",
+    "ko": "좋은 하루\\(nameSuffix) — 점수 \\(Int(todayCompositeScore))/100.",
+    "es": "Excelente día\\(nameSuffix) — puntuación \\(Int(todayCompositeScore))/100.",
+    "pt-BR": "Excelente dia\\(nameSuffix) — pontuação \\(Int(todayCompositeScore))/100."
+  },
+  "Exclusive offer — \\(SubscriptionConfiguration.winbackLifetimePrice)": {
+    "ja": "特別オファー — \\(SubscriptionConfiguration.winbackLifetimePrice)",
+    "de": "Exklusives Angebot – \\(SubscriptionConfiguration.winbackLifetimePrice)",
+    "ko": "독점 제안 — \\(SubscriptionConfiguration.winbackLifetimePrice)",
+    "es": "Oferta exclusiva — \\(SubscriptionConfiguration.winbackLifetimePrice)",
+    "pt-BR": "Oferta exclusiva — \\(SubscriptionConfiguration.winbackLifetimePrice)"
+  },
+  "Exercise \\(step.stepNumber)/\\(FaceMorningRoutineCatalog.Step.totalStepCount)": {
+    "ja": "エクササイズ \\(step.stepNumber)/\\(FaceMorningRoutineCatalog.Step.totalStepCount)",
+    "de": "Übung \\(step.stepNumber)/\\(FaceMorningRoutineCatalog.Step.totalStepCount)",
+    "ko": "운동 \\(step.stepNumber)/\\(FaceMorningRoutineCatalog.Step.totalStepCount)",
+    "es": "Ejercicio \\(step.stepNumber)/\\(FaceMorningRoutineCatalog.Step.totalStepCount)",
+    "pt-BR": "Exercício \\(step.stepNumber)/\\(FaceMorningRoutineCatalog.Step.totalStepCount)"
+  },
+  "Face intensity — cortisol \\(cortisol)%: \\(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol)).": {
+    "ja": "顔の強度 — コルチゾール \\(cortisol)%: \\(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol))。",
+    "de": "Gesichtsintensität – Cortisol \\(cortisol) %: \\(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol)).",
+    "ko": "얼굴 강도 — 코티솔 \\(cortisol)%: \\(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol)).",
+    "es": "Intensidad facial: cortisol \\(cortisol)%: \\(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol)).",
+    "pt-BR": "Intensidade facial — cortisol \\(cortisol)%: \\(FaceScanIndicators.adverseFacePhrase(for: .stressLoad, load: cortisol))."
+  },
+  "Face intensity — recovery \\(recovery)%: \\(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery)).": {
+    "ja": "顔の強度 — 回復 \\(recovery)%: \\(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery))。",
+    "de": "Gesichtsintensität – Erholung \\(recovery)%: \\(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery)).",
+    "ko": "얼굴 강도 — 회복 \\(recovery)%: \\(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery)).",
+    "es": "Intensidad de la cara - recuperación \\(recovery)%: \\(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery)).",
+    "pt-BR": "Intensidade facial — recuperação \\(recovery)%: \\(FaceScanIndicators.adverseFacePhrase(for: .recovery, load: recovery))."
+  },
+  "Face intensity — retention \\(retention)%: \\(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention)).": {
+    "ja": "顔の強度 — 水分滞留 \\(retention)%: \\(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention))。",
+    "de": "Gesichtsintensität – Wassereinlagerungen \\(retention)%: \\(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention)).",
+    "ko": "페이스 강도 — 수분 정체 \\(retention)%: \\(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention)).",
+    "es": "Intensidad facial: retención de líquidos \\(retention)%: \\(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention)).",
+    "pt-BR": "Intensidade facial — retenção de líquidos \\(retention)%: \\(FaceScanIndicators.adverseFacePhrase(for: .retention, load: retention))."
+  },
+  "Face looking good · \\(score)%": {
+    "ja": "顔はいい感じ · \\(score)%",
+    "de": "Gesicht sieht gut aus · \\(score)%",
+    "ko": "얼굴이 좋아 보여 · \\(score)%",
+    "es": "Cara con buen aspecto · \\(score)%",
+    "pt-BR": "Rosto com boa aparência · \\(score)%"
+  },
+  "Face looking good · \\(value)%": {
+    "ja": "顔はいい感じ · \\(value)%",
+    "de": "Gesicht sieht gut aus · \\(value)%",
+    "ko": "얼굴이 좋아 보여 · \\(value)%",
+    "es": "Cara con buen aspecto · \\(value)%",
+    "pt-BR": "Rosto com boa aparência · \\(value)%"
+  },
+  "Face rinse \\(ProcessDailyTargets.coldFaceRinseSeconds) s after waking": {
+    "ja": "起床後 1 秒以内に洗顔します \\(ProcessDailyTargets.coldFaceRinseSeconds)",
+    "de": "Gesichtsspülung \\(ProcessDailyTargets.coldFaceRinseSeconds) nach dem Aufwachen",
+    "ko": "잠에서 깨어난 후 세안 \\(ProcessDailyTargets.coldFaceRinseSeconds) 초",
+    "es": "Enjuague facial \\(ProcessDailyTargets.coldFaceRinseSeconds) s después de despertarse",
+    "pt-BR": "Enxágue facial \\(ProcessDailyTargets.coldFaceRinseSeconds) s depois de acordar"
+  },
+  "Face scan #\\(scanNumber) — analyze my debloat progress vs my previous scans.": {
+    "ja": "顔スキャン #\\(scanNumber) — 顔のむくみ軽減の進行状況と以前のスキャンを比較して分析します。",
+    "de": "Gesichtsscan #\\(scanNumber) – Analysieren du den Fortschritt meiner Reduzierung von Schwellungen im Gesicht im Vergleich zu meinen vorherigen Scans.",
+    "ko": "얼굴 스캔 #\\(scanNumber) — 이전 스캔과 비교하여 얼굴 붓기 감소 진행 상황을 분석해요.",
+    "es": "Escaneo facial n.°\\(scanNumber): analiza el progreso de mi reducción de la hinchazón facial en comparación con mis escaneos anteriores.",
+    "pt-BR": "Exame facial #\\(scanNumber) — analise meu progresso na redução do inchaço facial em comparação com meus exames anteriores."
+  },
+  "Face scan D1 and D\\(p1End)": {
+    "ja": "顔スキャン D1 および D\\(p1End)",
+    "de": "Gesichtsscan D1 und D\\(p1End)",
+    "ko": "얼굴 스캔 D1 및 D\\(p1End)",
+    "es": "Escaneo facial D1 y D\\(p1End)",
+    "pt-BR": "Varredura facial D1 e D\\(p1End)"
+  },
+  "Face score \\(displayScore) percent": {
+    "ja": "顔スコア \\(displayScore) パーセント",
+    "de": "Gesichtspunktzahl \\(displayScore) Prozent",
+    "ko": "얼굴 점수 \\(displayScore) 퍼센트",
+    "es": "Puntuación facial \\(displayScore) por ciento",
+    "pt-BR": "Pontuação facial \\(displayScore) por cento"
+  },
+  "Face signals · \\(value)%": {
+    "ja": "顔シグナル · \\(value)%",
+    "de": "Gesichtssignale · \\(value)%",
+    "ko": "얼굴 신호 · \\(value)%",
+    "es": "Señales faciales · \\(value)%",
+    "pt-BR": "Sinais faciais · \\(value)%"
+  },
+  "Face visibly less puffy by \\(debloatFmt) — optimistic trajectory calibrated to your profile.": {
+    "ja": "\\(debloatFmt) により、顔のむくみが目に見えて軽減されます — プロフィールに合わせて調整された楽観的な軌道。",
+    "de": "Das Gesicht ist um \\(debloatFmt) sichtbar weniger geschwollen – eine optimistische Flugbahn, die auf dein Profil abgestimmt ist.",
+    "ko": "\\(debloatFmt)로 얼굴의 부기가 눈에 띄게 줄어듭니다. 프로필에 맞게 조정된 낙관적인 궤적이에요.",
+    "es": "Cara visiblemente menos hinchada gracias a \\(debloatFmt): trayectoria optimista calibrada según tu perfil.",
+    "pt-BR": "Rosto visivelmente menos inchado por \\(debloatFmt) – trajetória otimista calibrada para o seu perfil."
+  },
+  "Facial definition · \\(value)%": {
+    "ja": "顔の定義 · \\(value)%",
+    "de": "Gesichtsdefinition · \\(value)%",
+    "ko": "얼굴 정의 · \\(value)%",
+    "es": "Definición facial · \\(value)%",
+    "pt-BR": "Definição facial · \\(value)%"
+  },
+  "Few negative signals — retention \\(retention)%, solid recovery.": {
+    "ja": "ネガティブなシグナルはほとんどありません — 水分保持率 \\(retention)%、確実な回復。",
+    "de": "Wenige negative Signale – Wassereinlagerungen \\(retention) %, solide Erholung.",
+    "ko": "부정적인 신호가 거의 없음 — 수분 정체 \\(retention)%, 고체 회복.",
+    "es": "Pocas señales negativas: retención de líquidos \\(retention)%, recuperación sólida.",
+    "pt-BR": "Poucos sinais negativos – retenção de líquidos \\(retention)%, recuperação sólida."
+  },
+  "Firebase · Auth pending · \\(sub) · \\(analytics)": {
+    "ja": "Firebase · 認証保留中 · \\(sub) · \\(analytics)",
+    "de": "Firebase · Authentifizierung ausstehend · \\(sub) · \\(analytics)",
+    "ko": "Firebase · 인증 보류 중 · \\(sub) · \\(analytics)",
+    "es": "Firebase · Autenticación pendiente · \\(sub) · \\(analytics)",
+    "pt-BR": "Firebase · Autenticação pendente · \\(sub) · \\(analytics)"
+  },
+  "First name: \\(firstName).": {
+    "ja": "名前: \\(firstName)。",
+    "de": "Vorname: \\(firstName).",
+    "ko": "이름: \\(firstName).",
+    "es": "Nombre: \\(firstName).",
+    "pt-BR": "Nome: \\(firstName)."
+  },
+  "for \\(SubscriptionConfiguration.winbackLifetimePrice) — premium access": {
+    "ja": "\\(SubscriptionConfiguration.winbackLifetimePrice) の場合 — プレミアム アクセス",
+    "de": "für \\(SubscriptionConfiguration.winbackLifetimePrice) – Premium-Zugang",
+    "ko": "\\(SubscriptionConfiguration.winbackLifetimePrice)용 — 프리미엄 액세스",
+    "es": "para \\(SubscriptionConfiguration.winbackLifetimePrice) — acceso premium",
+    "pt-BR": "para \\(SubscriptionConfiguration.winbackLifetimePrice) — acesso premium"
+  },
+  "Full debloat protocol — hydration, Na/K/Mg meals and cardio validated (\\(Int(compositeScore))%).": {
+    "ja": "顔全体のむくみ軽減プロトコル — 水分補給、Na/K/Mg の食事、有酸素運動の検証済み (\\(Int(compositeScore))%)。",
+    "de": "Vollständiges Protokoll zur Reduzierung von Schwellungen im Gesicht – Flüssigkeitszufuhr, Na/K/Mg-Mahlzeiten und Cardio validiert (\\(Int(compositeScore)) %).",
+    "ko": "완전한 얼굴 붓기 감소 프로토콜 — 수분 공급, Na/K/Mg 식사 및 심장 강화가 검증됐어요(\\(Int(compositeScore))%).",
+    "es": "Protocolo completo de reducción de la hinchazón facial: hidratación, comidas con Na/K/Mg y cardio validados (\\(Int(compositeScore))%).",
+    "pt-BR": "Protocolo completo de redução de inchaço facial – hidratação, refeições Na/K/Mg e cardio validado (\\(Int(compositeScore))%)."
+  },
+  "Go from version \\(info.currentVersion) to \\(info.availableVersion).": {
+    "ja": "バージョン \\(info.currentVersion) から \\(info.availableVersion) に移行します。",
+    "de": "Wechseln du von der Version \\(info.currentVersion) zu \\(info.availableVersion).",
+    "ko": "버전 \\(info.currentVersion)에서 \\(info.availableVersion)로 이동하세요.",
+    "es": "Pase de la versión \\(info.currentVersion) a \\(info.availableVersion).",
+    "pt-BR": "Vá da versão \\(info.currentVersion) para \\(info.availableVersion)."
+  },
+  "Goal \\(goal)": {
+    "ja": "目標\\(goal)",
+    "de": "Ziel \\(goal)",
+    "ko": "목표 \\(goal)",
+    "es": "Objetivo \\(goal)",
+    "pt-BR": "Meta \\(goal)"
+  },
+  "Goal \\(goal), recent sleep \\(sleepHours)": {
+    "ja": "目標\\(goal)、最近の睡眠\\(sleepHours)",
+    "de": "Ziel \\(goal), letzter Schlaf \\(sleepHours)",
+    "ko": "목표 \\(goal), 최근 수면 \\(sleepHours)",
+    "es": "Objetivo \\(goal), sueño reciente \\(sleepHours)",
+    "pt-BR": "Meta \\(goal), sono recente \\(sleepHours)"
+  },
+  "Goal \\(ProcessDailyTargets.hydrationLabel) spread across the day.": {
+    "ja": "目標 \\(ProcessDailyTargets.hydrationLabel) は 1 日を通して達成されます。",
+    "de": "Ziel \\(ProcessDailyTargets.hydrationLabel) über den Tag verteilt.",
+    "ko": "목표 \\(ProcessDailyTargets.hydrationLabel)가 하루 종일 고르게 나뉘어 있어요.",
+    "es": "Objetivo \\(ProcessDailyTargets.hydrationLabel) repartido a lo largo del día.",
+    "pt-BR": "Meta \\(ProcessDailyTargets.hydrationLabel) distribuída ao longo do dia."
+  },
+  "Goal \\(targets.dailySteps) steps + mindful walking (toes in) — HealthKit": {
+    "ja": "目標 \\(targets.dailySteps) 歩数 + マインドフル ウォーキング (つま先立ち) — HealthKit",
+    "de": "Ziel \\(targets.dailySteps) Schritte + achtsames Gehen (Zehen hinein) – HealthKit",
+    "ko": "목표 \\(targets.dailySteps) 걸음 수 + 주의 깊게 걷기(발가락 안쪽) — HealthKit",
+    "es": "Objetivo \\(targets.dailySteps) pasos + caminar consciente (con los dedos de los pies hacia adentro) — HealthKit",
+    "pt-BR": "Meta \\(targets.dailySteps) passos + caminhada consciente (dedos dos pés para dentro) - HealthKit"
+  },
+  "Goal \\(targets.hydrationLabel) across the day": {
+    "ja": "1 日を通して目標 \\(targets.hydrationLabel)",
+    "de": "Ziel \\(targets.hydrationLabel) im Laufe des Tages",
+    "ko": "하루 동안 목표 \\(targets.hydrationLabel)",
+    "es": "Objetivo \\(targets.hydrationLabel) a lo largo del día",
+    "pt-BR": "Meta \\(targets.hydrationLabel) ao longo do dia"
+  },
+  "Goal \\(targets.hydrationLabel) — spread across the day.": {
+    "ja": "目標 \\(targets.hydrationLabel) — 1 日を通して設定します。",
+    "de": "Ziel \\(targets.hydrationLabel) – über den Tag verteilt.",
+    "ko": "목표 \\(targets.hydrationLabel) — 하루 종일 확산돼요.",
+    "es": "Objetivo \\(targets.hydrationLabel): repartido a lo largo del día.",
+    "pt-BR": "Meta \\(targets.hydrationLabel) — distribuída ao longo do dia."
+  },
+  "Goal \\(targets.hydrationLabel)/day — spread out, no excess at night (face debloat)": {
+    "ja": "目標 \\(targets.hydrationLabel)/日 — 広げて、夜は余分にしない（顔のむくみの軽減）",
+    "de": "Ziel \\(targets.hydrationLabel)/Tag – verteilt, kein Übermaß in der Nacht (Reduzierung von Schwellungen im Gesicht)",
+    "ko": "목표 \\(targets.hydrationLabel)/일 — 펴 바르고, 밤에는 넘치지 않게 (얼굴 얼굴 붓기 감소)",
+    "es": "Objetivo \\(targets.hydrationLabel)/día: extendido, sin exceso por la noche (reducción de la hinchazón facial del rostro)",
+    "pt-BR": "Meta \\(targets.hydrationLabel)/dia — espalhar, sem excessos à noite (redução do inchaço facial)"
+  },
+  "Goal: \\(plan.primaryFaceGoal)": {
+    "ja": "目標: \\(plan.primaryFaceGoal)",
+    "de": "Ziel: \\(plan.primaryFaceGoal)",
+    "ko": "목표: \\(plan.primaryFaceGoal)",
+    "es": "Objetivo: \\(plan.primaryFaceGoal)",
+    "pt-BR": "Meta: \\(plan.primaryFaceGoal)"
+  },
+  "Goal: \\(plan.primaryFaceGoal). Nutrition: \\(plan.nutritionStructureLabel).": {
+    "ja": "目標: \\(plan.primaryFaceGoal)。栄養: \\(plan.nutritionStructureLabel)。",
+    "de": "Ziel: \\(plan.primaryFaceGoal). Ernährung: \\(plan.nutritionStructureLabel).",
+    "ko": "목표: \\(plan.primaryFaceGoal). 영양: \\(plan.nutritionStructureLabel).",
+    "es": "Objetivo: \\(plan.primaryFaceGoal). Nutrición: \\(plan.nutritionStructureLabel).",
+    "pt-BR": "Meta: \\(plan.primaryFaceGoal). Nutrição: \\(plan.nutritionStructureLabel)."
+  },
+  "Goals reached early — program shortened by \\(days) days.": {
+    "ja": "目標は早期に達成され、プログラムは \\(days) 日短縮されました。",
+    "de": "Ziele frühzeitig erreicht – Programm um \\(days) Tage verkürzt.",
+    "ko": "목표를 조기에 달성했어요. 프로그램이 \\(days)일 단축됐어요.",
+    "es": "Metas alcanzadas temprano: programa acortado en \\(days) días.",
+    "pt-BR": "Metas alcançadas antecipadamente — programa encurtado em \\(days) dias."
+  },
+  "Good electrolyte balance yesterday (score \\(avgElectrolyte)/100) — keep that profile.": {
+    "ja": "昨日の電解質バランスは良好でした (スコア \\(avgElectrolyte)/100) — そのプロファイルを維持します。",
+    "de": "Guter Elektrolythaushalt gestern (Punktzahl \\(avgElectrolyte)/100) – behalten du dieses Profil bei.",
+    "ko": "어제 좋은 전해질 균형(점수 \\(avgElectrolyte)/100) — 해당 프로필을 유지하세요.",
+    "es": "Buen equilibrio de electrolitos ayer (puntuación \\(avgElectrolyte)/100): mantén ese perfil.",
+    "pt-BR": "Bom equilíbrio eletrolítico ontem (pontuação \\(avgElectrolyte)/100) – mantenha esse perfil."
+  },
+  "Good facial balance today — \\(trend.label.lowercased()). Keep hydration and plan meals.": {
+    "ja": "今日は顔のバランスが良い — \\(trend.label.lowercased())。水分補給を心がけ、食事を計画しましょう。",
+    "de": "Gute Gesichtsbalance heute – \\(trend.label.lowercased()). Halten du ausreichend Flüssigkeit zu sich und planen du Mahlzeiten.",
+    "ko": "오늘은 얼굴 균형이 좋아요 — \\(trend.label.lowercased()). 수분을 유지하고 식사를 계획하세요.",
+    "es": "Buen equilibrio facial hoy - \\(trend.label.lowercased()). Mantén la hidratación y planifica las comidas.",
+    "pt-BR": "Bom equilíbrio facial hoje — \\(trend.label.lowercased()). Mantenha a hidratação e planeje as refeições."
+  },
+  "Heavy retention · \\(retention)%": {
+    "ja": "高い水分滞留 · \\(retention)%",
+    "de": "Starke Wassereinlagerungen · \\(retention)%",
+    "ko": "중수분 보유 · \\(retention)%",
+    "es": "Retención pesada de agua · \\(retention)%",
+    "pt-BR": "Retenção intensa de água · \\(retention)%"
+  },
+  "Hi \\(name)": {
+    "ja": "こんにちは\\(name)",
+    "de": "Hallo \\(name)",
+    "ko": "안녕하세요 \\(name)",
+    "es": "Hola \\(name)",
+    "pt-BR": "Olá \\(name)"
+  },
+  "Hi \\(trimmedName), what's up?": {
+    "ja": "こんにちは \\(trimmedName)、どうしたのですか？",
+    "de": "Hallo \\(trimmedName), was ist los?",
+    "ko": "안녕하세요 \\(trimmedName), 무슨 일인가요?",
+    "es": "Hola \\(trimmedName), ¿qué pasa?",
+    "pt-BR": "Olá \\(trimmedName), tudo bem?"
+  },
+  "Hi \\(trimmedName).": {
+    "ja": "こんにちは\\(trimmedName)。",
+    "de": "Hallo \\(trimmedName).",
+    "ko": "안녕하세요 \\(trimmedName).",
+    "es": "Hola \\(trimmedName).",
+    "pt-BR": "Olá, \\(trimmedName)."
+  },
+  "High stress load (\\(load)%): low HRV — the nervous system hasn't fully recovered.": {
+    "ja": "高ストレス負荷 (\\(load)%): 低 HRV — 神経系が完全に回復していません。",
+    "de": "Hohe Stressbelastung (\\(load)%): niedrige HRV – das Nervensystem hat sich nicht vollständig erholt.",
+    "ko": "높은 스트레스 부하(\\(load)%): 낮은 HRV — 신경계가 완전히 회복되지 않았어요.",
+    "es": "Carga de estrés alta (\\(load)%): VFC baja: el sistema nervioso no se ha recuperado por completo.",
+    "pt-BR": "Alta carga de estresse (\\(load)%): baixa VFC — o sistema nervoso não se recuperou totalmente."
+  },
+  "Hips tilting toward the \\(side)": {
+    "ja": "腰を\\(side)に向かって傾けます",
+    "de": "Hüfte neigt sich in Richtung \\(side)",
+    "ko": "\\(side) 쪽으로 기울어진 엉덩이",
+    "es": "Caderas inclinándose hacia el \\(side)",
+    "pt-BR": "Quadris inclinados em direção ao \\(side)"
+  },
+  "How do you feel after “\\(mealName)”?": {
+    "ja": "「\\(mealName)」の後はどう思いますか？",
+    "de": "Wie fühlst du dich nach „\\(mealName)“?",
+    "ko": "“\\(mealName)” 이후의 기분은 어떤가요?",
+    "es": "¿Cómo te sientes después de “\\(mealName)”?",
+    "pt-BR": "Como você se sente depois de “\\(mealName)”?"
+  },
+  "Hydration \\(dailyTargets.hydrationLabel)": {
+    "ja": "水分補給 \\(dailyTargets.hydrationLabel)",
+    "de": "Flüssigkeitszufuhr \\(dailyTargets.hydrationLabel)",
+    "ko": "수분공급 \\(dailyTargets.hydrationLabel)",
+    "es": "Hidratación \\(dailyTargets.hydrationLabel)",
+    "pt-BR": "Hidratação \\(dailyTargets.hydrationLabel)"
+  },
+  "Hydration \\(dailyTargets.hydrationLabel) spread across the day": {
+    "ja": "一日中水分補給 \\(dailyTargets.hydrationLabel)",
+    "de": "Flüssigkeitszufuhr \\(dailyTargets.hydrationLabel) über den Tag verteilt",
+    "ko": "하루 종일 수분 공급 \\(dailyTargets.hydrationLabel)",
+    "es": "Hidratación \\(dailyTargets.hydrationLabel) repartida a lo largo del día",
+    "pt-BR": "Hidratação \\(dailyTargets.hydrationLabel) distribuída ao longo do dia"
+  },
+  "Hydration \\(formatLiters(effectiveMilliliters)) of \\(formatLiters(targetMilliliters)) liters": {
+    "ja": "水分補給量 \\(formatLiters(effectiveMilliliters)) / \\(formatLiters(targetMilliliters)) リットル",
+    "de": "Flüssigkeitszufuhr \\(formatLiters(effectiveMilliliters)) von \\(formatLiters(targetMilliliters)) Litern",
+    "ko": "\\(formatLiters(targetMilliliters))리터의 수분 공급 \\(formatLiters(effectiveMilliliters))",
+    "es": "Hidratación \\(formatLiters(effectiveMilliliters)) de \\(formatLiters(targetMilliliters)) litros",
+    "pt-BR": "Hidratação \\(formatLiters(effectiveMilliliters)) de \\(formatLiters(targetMilliliters)) litros"
+  },
+  "Hydration \\(litersLabel) · goal not reached": {
+    "ja": "水分補給 \\(litersLabel) · 目標未達成",
+    "de": "Flüssigkeitszufuhr \\(litersLabel) · Ziel nicht erreicht",
+    "ko": "수분 공급 \\(litersLabel) · 목표 달성 실패",
+    "es": "Hidratación \\(litersLabel) · objetivo no alcanzado",
+    "pt-BR": "Hidratação \\(litersLabel) · meta não alcançada"
+  },
+  "Hydration \\(litersLabel) · goal reached": {
+    "ja": "水分補給 \\(litersLabel) · 目標達成",
+    "de": "Flüssigkeitszufuhr \\(litersLabel) · Ziel erreicht",
+    "ko": "수분 공급 \\(litersLabel) · 목표 달성",
+    "es": "Hidratación \\(litersLabel) · objetivo alcanzado",
+    "pt-BR": "Hidratação \\(litersLabel) · meta alcançada"
+  },
+  "I have a question about this part of my plan:\\n\\n[\\(focus.sectionTitle)]\\n\\(focus.sectionContent)\\n\\nExplain it and tell me if it’s relevant for me.": {
+    "ja": "私のこの部分について質問がありますプラン:\\n\\n[\\(focus.sectionTitle)]\\n\\(focus.sectionContent)\\n\\n説明してくださいそれが私に関係があるかどうか教えてください。",
+    "de": "Ich habe eine Frage zu diesem Teil meines Plan:\\n\\n[\\(focus.sectionTitle)]\\n\\(focus.sectionContent)\\n\\nErklären es und sagen du mir, ob es für mich relevant ist.",
+    "ko": "내 이 부분에 대해 질문이 있어요. 계획:\\n\\n[\\(focus.sectionTitle)]\\n\\(focus.sectionContent)\\n\\n설명 그것을 보고 그것이 나와 관련이 있는지 말해주세요.",
+    "es": "Tengo una pregunta sobre esta parte de mi plan:\\n\\n[\\(focus.sectionTitle)]\\n\\(focus.sectionContent)\\n\\nExplicar y dime si es relevante para mí.",
+    "pt-BR": "Eu tenho uma pergunta sobre esta parte da minha plano:\\n\\n[\\(focus.sectionTitle)]\\n\\(focus.sectionContent)\\n\\nExplicar e me diga se é relevante para mim."
+  },
+  "I want to adjust this meal (\\($0)): ": {
+    "ja": "この食事を調整したいです (\\($0)): ",
+    "de": "Ich möchte diese Mahlzeit anpassen (\\($0)): ",
+    "ko": "이 식사를 조정하고 싶어요(\\($0)): ",
+    "es": "Quiero ajustar esta comida (\\($0)): ",
+    "pt-BR": "Quero ajustar esta refeição (\\($0)): "
+  },
+  "Incomplete recovery (\\(load)%) — the face shows a nervous system still on alert.": {
+    "ja": "回復が不完全 (\\(load)%) — 顔には神経系がまだ警戒していることが示されています。",
+    "de": "Unvollständige Genesung (\\(load)%) – das Gesicht zeigt ein immer noch in Alarmbereitschaft befindliches Nervensystem.",
+    "ko": "불완전 회복(\\(load)%) — 얼굴에 신경계가 여전히 경계하고 있는 모습이 보이에요.",
+    "es": "Recuperación incompleta (\\(load)%): el rostro muestra un sistema nervioso todavía en alerta.",
+    "pt-BR": "Recuperação incompleta (\\(load)%) — o rosto mostra um sistema nervoso ainda em alerta."
+  },
+  "Individual tolerance to check: \\(joined).": {
+    "ja": "個別の許容誤差を確認してください: \\(joined)。",
+    "de": "Zu prüfende individuelle Toleranz: \\(joined).",
+    "ko": "확인할 개별 공차: \\(joined).",
+    "es": "Tolerancia individual a comprobar: \\(joined).",
+    "pt-BR": "Tolerância individual para verificação: \\(joined)."
+  },
+  "Insufficient cardio (\\(count)/\\(ProcessDebloatValidation.weeklyCardioMinimum) this week) — +\\(days) days.": {
+    "ja": "有酸素運動が不十分です (今週\\(count)/\\(ProcessDebloatValidation.weeklyCardioMinimum)) — +\\(days) 日。",
+    "de": "Unzureichendes Cardiotraining (\\(count)/\\(ProcessDebloatValidation.weeklyCardioMinimum) diese Woche) – +\\(days) Tage.",
+    "ko": "심장강화 부족(\\(count)/\\(ProcessDebloatValidation.weeklyCardioMinimum) 이번 주) — +\\(days)일.",
+    "es": "Cardio insuficiente (\\(count)/\\(ProcessDebloatValidation.weeklyCardioMinimum) esta semana) - +\\(days) días.",
+    "pt-BR": "Cardio insuficiente (\\(count)/\\(ProcessDebloatValidation.weeklyCardioMinimum) esta semana) — +\\(days) dias."
+  },
+  "Invited \\(Self.dateFormatter.string(from: entry.invitedAt))": {
+    "ja": "招待されました \\(Self.dateFormatter.string(from: entry.invitedAt))",
+    "de": "Eingeladen \\(Self.dateFormatter.string(from: entry.invitedAt))",
+    "ko": "초대됨 \\(Self.dateFormatter.string(from: entry.invitedAt))",
+    "es": "Invitado \\(Self.dateFormatter.string(from: entry.invitedAt))",
+    "pt-BR": "Convidado \\(Self.dateFormatter.string(from: entry.invitedAt))"
+  },
+  "Invited on \\(Self.dateFormatter.string(from: entry.invitedAt))": {
+    "ja": "\\(Self.dateFormatter.string(from: entry.invitedAt)) に招待されました",
+    "de": "Eingeladen am \\(Self.dateFormatter.string(from: entry.invitedAt))",
+    "ko": "\\(Self.dateFormatter.string(from: entry.invitedAt))에 초대됨",
+    "es": "Invitado el \\(Self.dateFormatter.string(from: entry.invitedAt))",
+    "pt-BR": "Convidado em \\(Self.dateFormatter.string(from: entry.invitedAt))"
+  },
+  "Join +\\(TransformationCaseStudyCatalog.transformedPeopleCount) people who already debloated their face with Process.": {
+    "ja": "すでに顔のむくみが軽減されている+\\(TransformationCaseStudyCatalog.transformedPeopleCount)をProcessで参加してください。",
+    "de": "Schließen du sich +\\(TransformationCaseStudyCatalog.transformedPeopleCount) Menschen an, die bereits weniger Schwellungen im Gesicht haben, mit Process.",
+    "ko": "Process로 이미 얼굴 붓기가 줄어든 +\\(TransformationCaseStudyCatalog.transformedPeopleCount) 사람들과 함께하세요.",
+    "es": "Únete a +\\(TransformationCaseStudyCatalog.transformedPeopleCount) personas que ya tienen hinchazón facial reducida en tu rostro con Process.",
+    "pt-BR": "Junte-se a +\\(TransformationCaseStudyCatalog.transformedPeopleCount) pessoas que já estão com inchaço facial reduzido em seu rosto com Process."
+  },
+  "K bowl · \\(protein), \\(veg)": {
+    "ja": "Kボウル・\\(protein)、\\(veg)",
+    "de": "K-Schale · \\(protein), \\(veg)",
+    "ko": "K그릇 · \\(protein), \\(veg)",
+    "es": "Cuenco K · \\(protein), \\(veg)",
+    "pt-BR": "Tigela K · \\(protein), \\(veg)"
+  },
+  "Keep it up, \\(trimmed)!": {
+    "ja": "頑張れ、\\(trimmed)!",
+    "de": "Weiter so, \\(trimmed)!",
+    "ko": "계속 힘내세요, \\(trimmed)!",
+    "es": "¡Sigue así, \\(trimmed)!",
+    "pt-BR": "Continue assim, \\(trimmed)!"
+  },
+  "Keep it up\\(nameSuffix)!": {
+    "ja": "これからも\\(nameSuffix)!",
+    "de": "Weiter so\\(nameSuffix)!",
+    "ko": "계속 힘내세요\\(nameSuffix)!",
+    "es": "¡Sigue así\\(nameSuffix)!",
+    "pt-BR": "Continue assim\\(nameSuffix)!"
+  },
+  "Last caffeine before \\(ProcessDailyTargets.caffeineCutoffHour):00": {
+    "ja": "\\(ProcessDailyTargets.caffeineCutoffHour):00 までの最後のカフェイン",
+    "de": "Letztes Koffein vor \\(ProcessDailyTargets.caffeineCutoffHour):00",
+    "ko": "\\(ProcessDailyTargets.caffeineCutoffHour):00 이전 마지막 카페인",
+    "es": "Última cafeína antes de \\(ProcessDailyTargets.caffeineCutoffHour):00",
+    "pt-BR": "Última cafeína antes de \\(ProcessDailyTargets.caffeineCutoffHour):00"
+  },
+  "Latest scan: \\(latest.createdAt.formatted(date: .abbreviated, time: .shortened))": {
+    "ja": "最新のスキャン: \\(latest.createdAt.formatted(date: .abbreviated, time: .shortened))",
+    "de": "Letzter Scan: \\(latest.createdAt.formatted(date: .abbreviated, time: .shortened))",
+    "ko": "최신 스캔: \\(latest.createdAt.formatted(date: .abbreviated, time: .shortened))",
+    "es": "Último escaneo: \\(latest.createdAt.formatted(date: .abbreviated, time: .shortened))",
+    "pt-BR": "Última verificação: \\(latest.createdAt.formatted(date: .abbreviated, time: .shortened))"
+  },
+  "Let's work on \\(mealName) for \\(slotTitle).": {
+    "ja": "\\(slotTitle) のために \\(mealName) に取り組みましょう。",
+    "de": "Lassen du uns an \\(mealName) für \\(slotTitle) arbeiten.",
+    "ko": "\\(slotTitle)에 대한 \\(mealName) 작업을 시작해 보세요.",
+    "es": "Trabajemos en \\(mealName) para \\(slotTitle).",
+    "pt-BR": "Vamos trabalhar em \\(mealName) para \\(slotTitle)."
+  },
+  "Limit resets on \\(day) at \\(time)": {
+    "ja": "\\(day)の\\(time)でリミットリセット",
+    "de": "Limit wird am \\(day) um \\(time) zurückgesetzt",
+    "ko": "\\(day)의 \\(time)에서 한도 재설정",
+    "es": "El límite se restablece en \\(day) en \\(time)",
+    "pt-BR": "Redefinições de limite em \\(day) em \\(time)"
+  },
+  "Low HRV (\\(Int(hrv))) — yesterday's stress or late effort is still showing.": {
+    "ja": "HRV が低い (\\(Int(hrv))) — 昨日のストレスまたは遅れた努力がまだ現れています。",
+    "de": "Niedrige HRV (\\(Int(hrv))) – der Stress oder die verspätete Anstrengung von gestern ist immer noch sichtbar.",
+    "ko": "낮은 HRV(\\(Int(hrv))) — 어제의 스트레스나 늦은 노력이 여전히 나타나고 있어요.",
+    "es": "VFC baja (\\(Int(hrv))): el estrés de ayer o el esfuerzo tardío todavía se notan.",
+    "pt-BR": "VFC baixa (\\(Int(hrv))) — o estresse de ontem ou o esforço tardio ainda estão aparecendo."
+  },
+  "Lymph circuit — 6 moves (\\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))": {
+    "ja": "リンパ回路 — 6 動作 (\\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
+    "de": "Lymphkreislauf – 6 Züge (\\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
+    "ko": "림프 회로 — 6회 동작(\\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
+    "es": "Circuito linfático: 6 movimientos (\\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))",
+    "pt-BR": "Circuito linfático — 6 movimentos (\\(FaceMorningRoutineCatalog.lymphCircuitMinutesLabel))"
+  },
+  "Lymphatic circuit — 6 moves · \\(lymphCircuitMinutesLabel)": {
+    "ja": "リンパ回路 — 6 動作 · \\(lymphCircuitMinutesLabel)",
+    "de": "Lymphkreislauf – 6 Züge · \\(lymphCircuitMinutesLabel)",
+    "ko": "림프 회로 — 6개 동작 · \\(lymphCircuitMinutesLabel)",
+    "es": "Circuito linfático — 6 movimientos · \\(lymphCircuitMinutesLabel)",
+    "pt-BR": "Circuito linfático — 6 movimentos · \\(lymphCircuitMinutesLabel)"
+  },
+  "Marked puffiness · \\(retention)%": {
+    "ja": "顕著な腫れ · \\(retention)%",
+    "de": "Deutliche Schwellung · \\(retention)%",
+    "ko": "뚜렷한 붓기 · \\(retention)%",
+    "es": "Hinchazón marcada · \\(retention)%",
+    "pt-BR": "Inchaço acentuado · \\(retention)%"
+  },
+  "Maximum \\(maxLength) characters.": {
+    "ja": "最大 \\(maxLength) 文字。",
+    "de": "Maximal \\(maxLength) Zeichen.",
+    "ko": "최대 \\(maxLength)자.",
+    "es": "Máximo de caracteres \\(maxLength).",
+    "pt-BR": "Máximo de caracteres \\(maxLength)."
+  },
+  "Meal logged: \\(meal.name) (\\(meal.timeSlot.displayTitle), score \\(meal.protocolScore)/100) — \\(meal.compactSummary.prefix(120))": {
+    "ja": "記録された食事: \\(meal.name) (\\(meal.timeSlot.displayTitle), スコア \\(meal.protocolScore)/100) — \\(meal.compactSummary.prefix(120))",
+    "de": "Protokollierte Mahlzeit: \\(meal.name) (\\(meal.timeSlot.displayTitle), Punktzahl \\(meal.protocolScore)/100) – \\(meal.compactSummary.prefix(120))",
+    "ko": "기록된 식사: \\(meal.name) (\\(meal.timeSlot.displayTitle), 점수 \\(meal.protocolScore)/100) — \\(meal.compactSummary.prefix(120))",
+    "es": "Comida registrada: \\(meal.name) (\\(meal.timeSlot.displayTitle), puntuación \\(meal.protocolScore)/100) — \\(meal.compactSummary.prefix(120))",
+    "pt-BR": "Refeição registrada: \\(meal.name) (\\(meal.timeSlot.displayTitle), pontuação \\(meal.protocolScore)/100) — \\(meal.compactSummary.prefix(120))"
+  },
+  "Meal structure: \\(planType.label).": {
+    "ja": "食事構成: \\(planType.label)。",
+    "de": "Essensstruktur: \\(planType.label).",
+    "ko": "식사 구성: \\(planType.label).",
+    "es": "Estructura de las comidas: \\(planType.label).",
+    "pt-BR": "Estrutura da refeição: \\(planType.label)."
+  },
+  "Meal structure: \\(target) intakes / day — densify each meal (protein + tuber/veggies)": {
+    "ja": "食事構成: \\(target) 摂取量 / 日 — 各食事の密度を高めます (タンパク質 + 塊茎/野菜)",
+    "de": "Mahlzeitstruktur: \\(target) Zufuhr pro Tag – jede Mahlzeit verdichten (Protein + Knollen/Gemüse)",
+    "ko": "식사 구조: \\(target) 일일 섭취량 — 각 식사의 밀도를 높이에요(단백질 + 덩이줄기/채소)",
+    "es": "Estructura de las comidas: \\(target) ingestas/día — densificar cada comida (proteínas + tubérculos/verduras)",
+    "pt-BR": "Estrutura da refeição: \\(target) ingestões/dia — adensar cada refeição (proteína + tubérculos/vegetais)"
+  },
+  "Meal transition: \\(current) → \\(target) / day — taper gradually over 1–2 weeks": {
+    "ja": "食事の移行: \\(current) → \\(target) / 日 — 1 ～ 2 週間かけて徐々に減らしていきます",
+    "de": "Mahlzeitenumstellung: \\(current) → \\(target) / Tag – schrittweise Reduzierung über 1–2 Wochen",
+    "ko": "식사 전환: \\(current) → \\(target)/일 — 1~2주에 걸쳐 점차 감량",
+    "es": "Transición de comidas: \\(current) → \\(target) / día; disminuya gradualmente durante 1 a 2 semanas",
+    "pt-BR": "Transição de refeição: \\(current) → \\(target) / dia – redução gradual ao longo de 1–2 semanas"
+  },
+  "Meal: \\(mealLabel).": {
+    "ja": "食事: \\(mealLabel)。",
+    "de": "Mahlzeit: \\(mealLabel).",
+    "ko": "식사: \\(mealLabel).",
+    "es": "Comida: \\(mealLabel).",
+    "pt-BR": "Refeição: \\(mealLabel)."
+  },
+  "Minimum \\(minLength) characters.": {
+    "ja": "最小\\(minLength) 文字。",
+    "de": "Mindestens \\(minLength) Zeichen.",
+    "ko": "최소 \\(minLength)자.",
+    "es": "Mínimo \\(minLength) caracteres.",
+    "pt-BR": "Mínimo de caracteres \\(minLength)."
+  },
+  "Missed check-ins — program extended by \\(days) days.": {
+    "ja": "チェックインを逃した — プログラムは \\(days) 日延長されました。",
+    "de": "Versäumte Check-ins – Programm um \\(days) Tage verlängert.",
+    "ko": "체크인을 놓쳤어요. 프로그램이 \\(days)일 연장됐어요.",
+    "es": "Registros perdidos: programa extendido por \\(days) días.",
+    "pt-BR": "Check-ins perdidos — programa estendido por \\(days) dias."
+  },
+  "Morning puffiness (\\(load)% retention): your body is compensating for low hydration by storing water at the surface.": {
+    "ja": "朝のむくみ (\\(load)% 水分保持率): 体は表面に水を蓄えることで水分不足を補っています。",
+    "de": "Morgendliche Schwellungen (\\(load)% Wassereinlagerungen): dein Körper gleicht die geringe Flüssigkeitszufuhr aus, indem er Wasser an der Oberfläche speichert.",
+    "ko": "아침 붓기(\\(load)% 수분 보유율): 신체는 표면에 수분을 저장하여 수분 부족을 보상해요.",
+    "es": "Hinchazón matutina (\\(load)% de retención de líquidos): tu cuerpo compensa la falta de hidratación almacenando agua en la superficie.",
+    "pt-BR": "Inchaço matinal (\\(load)% retenção de líquidos): seu corpo está compensando a baixa hidratação armazenando água na superfície."
+  },
+  "Multi-angle 3D scan captured (\\(Int(capture.yawCoverage * 100))% of the circle).": {
+    "ja": "マルチアングル 3D スキャンでキャプチャされました (円の\\(Int(capture.yawCoverage * 100))%)。",
+    "de": "3D-Scan aus mehreren Winkeln erfasst (\\(Int(capture.yawCoverage * 100)) % des Kreises).",
+    "ko": "다각도 3D 스캔이 캡처됐어요(원의 \\(Int(capture.yawCoverage * 100))%).",
+    "es": "Escaneo 3D multiángulo capturado (\\(Int(capture.yawCoverage * 100))% del círculo).",
+    "pt-BR": "Varredura 3D multiângulo capturada (\\(Int(capture.yawCoverage * 100))% do círculo)."
+  },
+  "My plan · W\\(week)/\\(plan.totalWeeks)": {
+    "ja": "私の計画 · W\\(week)/\\(plan.totalWeeks)",
+    "de": "Mein Plan · W\\(week)/\\(plan.totalWeeks)",
+    "ko": "내 계획 · W\\(week)/\\(plan.totalWeeks)",
+    "es": "Mi plan · W\\(week)/\\(plan.totalWeeks)",
+    "pt-BR": "Meu plano · W\\(week)/\\(plan.totalWeeks)"
+  },
+  "My referral code: \\(displayReferralCode)": {
+    "ja": "私の紹介コード: \\(displayReferralCode)",
+    "de": "Mein Empfehlungscode: \\(displayReferralCode)",
+    "ko": "내 추천 코드: \\(displayReferralCode)",
+    "es": "Mi código de referencia: \\(displayReferralCode)",
+    "pt-BR": "Meu código de referência: \\(displayReferralCode)"
+  },
+  "Network error (\\(status)). Try again.": {
+    "ja": "ネットワークエラー (\\(status))。もう一度やり直してください。",
+    "de": "Netzwerkfehler (\\(status)). Versuchen du es erneut.",
+    "ko": "네트워크 오류(\\(status)). 다시 시도해 보세요.",
+    "es": "Error de red (\\(status)). Intentar otra vez.",
+    "pt-BR": "Erro de rede (\\(status)). Tente novamente."
+  },
+  "Nice work, \\(trimmed). Come back tomorrow.": {
+    "ja": "よかったです、\\(trimmed)。明日また来てください。",
+    "de": "Gute Arbeit, \\(trimmed). Komm morgen wieder.",
+    "ko": "잘했어요, \\(trimmed). 내일 다시 오세요.",
+    "es": "Buen trabajo, \\(trimmed). Vuelve mañana.",
+    "pt-BR": "Bom trabalho, \\(trimmed). Volte amanhã."
+  },
+  "No caffeine after \\(ProcessDailyTargets.caffeineCutoffHour):00": {
+    "ja": "\\(ProcessDailyTargets.caffeineCutoffHour):00以降はカフェイン禁止",
+    "de": "Kein Koffein nach \\(ProcessDailyTargets.caffeineCutoffHour):00",
+    "ko": "\\(ProcessDailyTargets.caffeineCutoffHour):00 이후에는 카페인이 없어요.",
+    "es": "Sin cafeína después de \\(ProcessDailyTargets.caffeineCutoffHour):00",
+    "pt-BR": "Sem cafeína depois de \\(ProcessDailyTargets.caffeineCutoffHour):00"
+  },
+  "No caffeine after \\(ProcessDailyTargets.caffeineCutoffHour):00 — direct impact on morning debloat": {
+    "ja": "\\(ProcessDailyTargets.caffeineCutoffHour):00以降はカフェインを摂取しない — 朝の顔のむくみの軽減に直接効果",
+    "de": "Kein Koffein nach \\(ProcessDailyTargets.caffeineCutoffHour):00 – direkte Auswirkung auf die Reduzierung morgendlicher Schwellungen im Gesicht",
+    "ko": "\\(ProcessDailyTargets.caffeineCutoffHour):00 이후 카페인 없음 — 아침 얼굴 붓기 감소에 직접적인 영향",
+    "es": "Sin cafeína después de \\(ProcessDailyTargets.caffeineCutoffHour):00: impacto directo en la reducción de la hinchazón facial matutina",
+    "pt-BR": "Sem cafeína após \\(ProcessDailyTargets.caffeineCutoffHour):00 — impacto direto na redução do inchaço facial matinal"
+  },
+  "No cardio for 3 consecutive days — program extended by \\(days) days.": {
+    "ja": "3 日間連続で有酸素運動を行わない — プログラムは \\(days) 日間延長されます。",
+    "de": "An 3 aufeinanderfolgenden Tagen kein Cardiotraining – Programm um \\(days) Tage verlängert.",
+    "ko": "연속 3일 동안 심장강화 운동을 하지 않았어요. 프로그램이 \\(days)일 연장됐어요.",
+    "es": "Sin ejercicios cardiovasculares durante 3 días consecutivos: programa extendido por \\(days) días.",
+    "pt-BR": "Sem cardio por 3 dias consecutivos — programa estendido por \\(days) dias."
+  },
+  "No incline walk for \\(days) days in a row — minimum 3/week. Start a session.": {
+    "ja": "\\(days) 日間連続してインクライン ウォークを行わないでください (週に最低 3 回)。セッションを開始します。",
+    "de": "Kein Steigungsgang für \\(days) Tage hintereinander – mindestens 3/Woche. Starten du eine Sitzung.",
+    "ko": "연속 \\(days)일 동안 경사 걷기가 금지돼요. 최소 3회/주이에요. 세션을 시작해요.",
+    "es": "Caminata sin inclinación durante \\(days) días seguidos: mínimo 3 por semana. Iniciar una sesión.",
+    "pt-BR": "Nenhuma caminhada inclinada por \\(days) dias consecutivos – mínimo 3/semana. Inicie uma sessão."
+  },
+  "No late meal · screen curfew \\(ProcessDailyTargets.screenCurfewMinutes) min · sleep on your side": {
+    "ja": "遅い食事なし · スクリーンの門限 \\(ProcessDailyTargets.screenCurfewMinutes)分 · 横向きで寝る",
+    "de": "Keine späte Mahlzeit · Ausgangssperre am Bildschirm \\(ProcessDailyTargets.screenCurfewMinutes) min · Schlafen auf der Seite",
+    "ko": "늦은 식사 금지 · 화면 통행 금지 \\(ProcessDailyTargets.screenCurfewMinutes) 분 · 옆으로 자기",
+    "es": "No comer tarde · toque de queda en la pantalla \\(ProcessDailyTargets.screenCurfewMinutes) min · dormir de lado",
+    "pt-BR": "Nenhuma refeição tardia · toque de recolher na tela \\(ProcessDailyTargets.screenCurfewMinutes) min · durma de lado"
+  },
+  "No payment today, then \\(normalized)/mo": {
+    "ja": "今日は支払いがありません。その後は \\(normalized)/月",
+    "de": "Heute keine Zahlung, dann \\(normalized)/Monat",
+    "ko": "오늘 결제가 없으면 \\(normalized)/월",
+    "es": "No hay pago hoy, entonces \\(normalized)/mes",
+    "pt-BR": "Nenhum pagamento hoje, então \\(normalized)/mês"
+  },
+  "No payment today, then \\(normalized)/week": {
+    "ja": "今日は支払いがありません。その後は \\(normalized)/週",
+    "de": "Heute keine Zahlung, dann \\(normalized)/Woche",
+    "ko": "오늘 결제가 없으면 \\(normalized)/주",
+    "es": "No hay pago hoy, entonces \\(normalized)/semana",
+    "pt-BR": "Nenhum pagamento hoje, então \\(normalized)/semana"
+  },
+  "No payment today, then \\(normalized)/year": {
+    "ja": "今日は支払いがありません。その後は \\(normalized)/年",
+    "de": "Heute keine Zahlung, dann \\(normalized)/Jahr",
+    "ko": "오늘 지불하지 않으면 \\(normalized)/년",
+    "es": "No hay pago hoy, entonces \\(normalized)/año",
+    "pt-BR": "Nenhum pagamento hoje, então \\(normalized)/ano"
+  },
+  "No referrals yet. Share your link: every subscribed friend earns you \\(ProcessReferralProgramTerms.cashAmount).": {
+    "ja": "まだ紹介はありません。リンクを共有: 登録した友達全員が \\(ProcessReferralProgramTerms.cashAmount) を獲得します。",
+    "de": "Noch keine Empfehlungen. Teilen du deinen Link: Jeder abonnierte Freund bringt dir \\(ProcessReferralProgramTerms.cashAmount) ein.",
+    "ko": "아직 추천이 없어요. 링크를 공유하세요. 구독하는 모든 친구는 \\(ProcessReferralProgramTerms.cashAmount)를 받아요.",
+    "es": "Aún no hay referencias. Comparte tu enlace: cada amigo suscrito te da \\(ProcessReferralProgramTerms.cashAmount).",
+    "pt-BR": "Nenhuma referência ainda. Compartilhe seu link: cada amigo inscrito ganha \\(ProcessReferralProgramTerms.cashAmount)."
+  },
+  "Not enough angles captured (\\(totalCaptures)). Step back to 3 m and try again.": {
+    "ja": "撮影したアングルが足りません (\\(totalCaptures))。 3 メートルまで戻って再試行してください。",
+    "de": "Es wurden nicht genügend Winkel erfasst (\\(totalCaptures)). Gehen du auf 3 m zurück und versuchen du es erneut.",
+    "ko": "캡처된 각도가 충분하지 않아요(\\(totalCaptures)). 3m 뒤로 물러나서 다시 시도하세요.",
+    "es": "No se capturaron suficientes ángulos (\\(totalCaptures)). Retroceda a 3 m e inténtelo de nuevo.",
+    "pt-BR": "Não foram capturados ângulos suficientes (\\(totalCaptures)). Volte para 3 m e tente novamente."
+  },
+  "Not enough incline walks this week (\\(sessions)/\\(weeklyCardioMinimum)).": {
+    "ja": "今週はインクラインウォークが足りません (\\(sessions)/\\(weeklyCardioMinimum))。",
+    "de": "Nicht genügend Steigungswanderungen diese Woche (\\(sessions)/\\(weeklyCardioMinimum)).",
+    "ko": "이번 주에는 경사 걷기가 충분하지 않아요(\\(sessions)/\\(weeklyCardioMinimum)).",
+    "es": "No hay suficientes caminatas inclinadas esta semana (\\(sessions)/\\(weeklyCardioMinimum)).",
+    "pt-BR": "Não há caminhadas inclinadas suficientes esta semana (\\(sessions)/\\(weeklyCardioMinimum))."
+  },
+  "NUTRITION MODEL (calendar): Breakfast \\(day.nutrition.breakfast) · Lunch \\(day.nutrition.lunch) · Dinner \\(day.nutrition.dinner)": {
+    "ja": "栄養モデル (カレンダー): 朝食 \\(day.nutrition.breakfast) · 昼食 \\(day.nutrition.lunch) · 夕食 \\(day.nutrition.dinner)",
+    "de": "ERNÄHRUNGSMODELL (Kalender): Frühstück \\(day.nutrition.breakfast) · Mittagessen \\(day.nutrition.lunch) · Abendessen \\(day.nutrition.dinner)",
+    "ko": "영양 모델(캘린더): 아침 \\(day.nutrition.breakfast) · 점심 \\(day.nutrition.lunch) · 저녁 \\(day.nutrition.dinner)",
+    "es": "MODELO DE NUTRICIÓN (calendario): Desayuno \\(day.nutrition.breakfast) · Almuerzo \\(day.nutrition.lunch) · Cena \\(day.nutrition.dinner)",
+    "pt-BR": "MODELO DE NUTRIÇÃO (calendário): Café da manhã \\(day.nutrition.breakfast) · Almoço \\(day.nutrition.lunch) · Jantar \\(day.nutrition.dinner)"
+  },
+  "OMAD NUTRITION MODEL (calendar): \\(meal)": {
+    "ja": "OMAD 栄養モデル (カレンダー): \\(meal)",
+    "de": "OMAD ERNÄHRUNGSMODELL (Kalender): \\(meal)",
+    "ko": "OMAD 영양 모델(달력): \\(meal)",
+    "es": "MODELO DE NUTRICIÓN OMAD (calendario): \\(meal)",
+    "pt-BR": "MODELO DE NUTRIÇÃO OMAD (calendário): \\(meal)"
+  },
+  "On track\\(nameSuffix) — \\(velocityLabel.lowercased()).": {
+    "ja": "予定通り\\(nameSuffix) — \\(velocityLabel.lowercased())。",
+    "de": "Auf Kurs\\(nameSuffix) – \\(velocityLabel.lowercased()).",
+    "ko": "순조롭게 진행 중\\(nameSuffix) — \\(velocityLabel.lowercased()).",
+    "es": "En camino\\(nameSuffix) — \\(velocityLabel.lowercased()).",
+    "pt-BR": "No caminho certo\\(nameSuffix) — \\(velocityLabel.lowercased())."
+  },
+  "One or two levers to fix — retention \\(retention)% still a bit high.": {
+    "ja": "1 つまたは 2 つのレバーを修正する必要があります。保水率 \\(retention)% はまだ少し高いです。",
+    "de": "Ein oder zwei Hebel zum Reparieren – Wassereinlagerungen \\(retention) % immer noch etwas hoch.",
+    "ko": "하나 또는 두 개의 레버를 고쳐야 해요. 수분 유지율 \\(retention)%가 여전히 약간 높아요.",
+    "es": "Una o dos palancas para arreglar: la retención de líquidos \\(retention)% aún es un poco alta.",
+    "pt-BR": "Uma ou duas alavancas para consertar – retenção de líquidos \\(retention)% ainda um pouco alta."
+  },
+  "Only \\(Self.formatSteps(metrics.steps)) steps read. A walk helps your face — your protocol is waiting.": {
+    "ja": "\\(Self.formatSteps(metrics.steps)) 歩のみが読み取られます。散歩はあなたの顔を助けます - あなたのプロトコルが待っています。",
+    "de": "Nur \\(Self.formatSteps(metrics.steps)) Schritte gelesen. Ein Spaziergang hilft deinem Gesicht – dein Protokoll wartet.",
+    "ko": "\\(Self.formatSteps(metrics.steps)) 걸음만 기록돼요. 걷기는 얼굴에 도움이 돼요. 프로토콜이 기다리고 있어요.",
+    "es": "Solo se leen los pasos \\(Self.formatSteps(metrics.steps)). Una caminata ayuda a tu rostro: tu protocolo está esperando.",
+    "pt-BR": "Apenas as passos \\(Self.formatSteps(metrics.steps)) são lidas. Uma caminhada ajuda seu rosto – seu protocolo está esperando."
+  },
+  "Outdoor walk \\(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/wk": {
+    "ja": "屋外散歩 \\(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/週",
+    "de": "Spaziergang im Freien \\(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/Woche",
+    "ko": "야외 산책 \\(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/주",
+    "es": "Paseo al aire libre \\(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/semana",
+    "pt-BR": "Caminhada ao ar livre \\(ProcessDailyTargets.outdoorWalkSessionsPerWeek)×/semana"
+  },
+  "Over \\(facts.retentionPersistingScans) scans": {
+    "ja": "\\(facts.retentionPersistingScans) スキャン以上",
+    "de": "Über \\(facts.retentionPersistingScans) Scans",
+    "ko": "\\(facts.retentionPersistingScans) 스캔 이상",
+    "es": "Más de \\(facts.retentionPersistingScans) escaneos",
+    "pt-BR": "Mais de escaneamentos \\(facts.retentionPersistingScans)"
+  },
+  "Overall score: **\\(metrics.overallScore)/100** (confidence \\(Int(confidence * 100))%)": {
+    "ja": "全体スコア: **\\(metrics.overallScore)/100** (信頼度 \\(Int(confidence * 100))%)",
+    "de": "Gesamtpunktzahl: **\\(metrics.overallScore)/100** (Konfidenz \\(Int(confidence * 100))%)",
+    "ko": "총점: **\\(metrics.overallScore)/100** (신뢰도 \\(Int(confidence * 100))%)",
+    "es": "Puntuación general: **\\(metrics.overallScore)/100** (confianza \\(Int(confidence * 100))%)",
+    "pt-BR": "Pontuação geral: **\\(metrics.overallScore)/100** (confiança \\(Int(confidence * 100))%)"
+  },
+  "Overall wellness score: \\(result.displayWellnessScore)%.": {
+    "ja": "全体的な健康スコア: \\(result.displayWellnessScore)%。",
+    "de": "Gesamtgesundheitsbewertung: \\(result.displayWellnessScore) %.",
+    "ko": "전반적인 웰빙 점수: \\(result.displayWellnessScore)%.",
+    "es": "Puntuación de bienestar general: \\(result.displayWellnessScore)%.",
+    "pt-BR": "Pontuação geral de bem-estar: \\(result.displayWellnessScore)%."
+  },
+  "Partial calibration (\\(daysSinceDownload)/14 days)": {
+    "ja": "部分校正 (\\(daysSinceDownload)/14 日間)",
+    "de": "Teilkalibrierung (\\(daysSinceDownload)/14 Tage)",
+    "ko": "부분 교정(\\(daysSinceDownload)/14일)",
+    "es": "Calibración parcial (\\(daysSinceDownload)/14 días)",
+    "pt-BR": "Calibração parcial (\\(daysSinceDownload)/14 dias)"
+  },
+  "Partial day\\(nameSuffix) — tighten the protocol tomorrow.": {
+    "ja": "半日\\(nameSuffix) — 明日はプロトコルを強化します。",
+    "de": "Teilweise Tag\\(nameSuffix) – verschärfen du das Protokoll morgen.",
+    "ko": "부분일\\(nameSuffix) — 내일 프로토콜을 강화하세요.",
+    "es": "Día parcial\\(nameSuffix) — mañana endurecerá el protocolo.",
+    "pt-BR": "Dia parcial\\(nameSuffix) — aperte o protocolo amanhã."
+  },
+  "Partial day\\(nameSuffix) — tighten up the protocol tomorrow.": {
+    "ja": "半日\\(nameSuffix) — 明日はプロトコルを強化します。",
+    "de": "Halber Tag\\(nameSuffix) – verschärfen du das Protokoll morgen.",
+    "ko": "부분일\\(nameSuffix) — 내일 프로토콜을 강화하세요.",
+    "es": "Día parcial\\(nameSuffix) — mañana endurecerá el protocolo.",
+    "pt-BR": "Dia parcial\\(nameSuffix) — aperte o protocolo amanhã."
+  },
+  "Persistent retention: \\(facts.retentionPersistingScans) consecutive scans.": {
+    "ja": "持続的な水分保持: \\(facts.retentionPersistingScans) 連続スキャン。",
+    "de": "Anhaltende Wassereinlagerungen: \\(facts.retentionPersistingScans) aufeinanderfolgende Scans.",
+    "ko": "지속적인 수분 유지: \\(facts.retentionPersistingScans) 연속 스캔.",
+    "es": "Retención de agua persistente: \\(facts.retentionPersistingScans) exploraciones consecutivas.",
+    "pt-BR": "Retenção persistente de água: \\(facts.retentionPersistingScans) escaneamentos consecutivas."
+  },
+  "Personalized plan — \\(totalWeeks) weeks": {
+    "ja": "パーソナライズされたプラン — \\(totalWeeks) 週間",
+    "de": "Personalisierter Plan – \\(totalWeeks) Wochen",
+    "ko": "맞춤형 계획 — \\(totalWeeks)주",
+    "es": "Plan personalizado — \\(totalWeeks) semanas",
+    "pt-BR": "Plano personalizado — \\(totalWeeks) semanas"
+  },
+  "Phase: \\(phase).": {
+    "ja": "フェーズ: \\(phase)。",
+    "de": "Phase: \\(phase).",
+    "ko": "단계: \\(phase).",
+    "es": "Fase: \\(phase).",
+    "pt-BR": "Fase: \\(phase)."
+  },
+  "Plan day: \\(day.title)": {
+    "ja": "予定日: \\(day.title)",
+    "de": "Plantag: \\(day.title)",
+    "ko": "계획일: \\(day.title)",
+    "es": "Día del plan: \\(day.title)",
+    "pt-BR": "Dia do plano: \\(day.title)"
+  },
+  "Plan goal: \\(plan.primaryFaceGoal)": {
+    "ja": "計画目標: \\(plan.primaryFaceGoal)",
+    "de": "Planziel: \\(plan.primaryFaceGoal)",
+    "ko": "계획 목표: \\(plan.primaryFaceGoal)",
+    "es": "Objetivo del plan: \\(plan.primaryFaceGoal)",
+    "pt-BR": "Meta do plano: \\(plan.primaryFaceGoal)"
+  },
+  "Potassium priority: \\(vegName) + \\(carbName). Skip salt this meal.": {
+    "ja": "カリウムの優先順位: \\(vegName) + \\(carbName)。この食事では塩分を控えてください。",
+    "de": "Kaliumpriorität: \\(vegName) + \\(carbName). Verzichten du bei dieser Mahlzeit auf Salz.",
+    "ko": "칼륨 우선순위: \\(vegName) + \\(carbName). 이번 식사에는 소금을 넣지 마세요.",
+    "es": "Prioridad de potasio: \\(vegName) + \\(carbName). Evita la sal en esta comida.",
+    "pt-BR": "Prioridade de potássio: \\(vegName) + \\(carbName). Pule o sal nesta refeição."
+  },
+  "Preview: Day \\(snapshot.elapsedProgramDays) / \\(snapshot.totalProgramDays)": {
+    "ja": "プレビュー: 日 \\(snapshot.elapsedProgramDays) / \\(snapshot.totalProgramDays)",
+    "de": "Vorschau: Tag \\(snapshot.elapsedProgramDays) / \\(snapshot.totalProgramDays)",
+    "ko": "미리보기: 일 \\(snapshot.elapsedProgramDays) / \\(snapshot.totalProgramDays)",
+    "es": "Vista previa: Día \\(snapshot.elapsedProgramDays) / \\(snapshot.totalProgramDays)",
+    "pt-BR": "Antevisão: Dia \\(snapshot.elapsedProgramDays) / \\(snapshot.totalProgramDays)"
+  },
+  "Previous AI analysis (enrich, do not copy): \\(parsed)": {
+    "ja": "以前の AI 分析 (強化、コピーしない): \\(parsed)",
+    "de": "Bisherige KI-Analyse (anreichern, nicht kopieren): \\(parsed)",
+    "ko": "이전 AI 분석(풍부함, 복사하지 않음): \\(parsed)",
+    "es": "Análisis de IA anterior (enriquecer, no copiar): \\(parsed)",
+    "pt-BR": "Análise anterior de IA (enriquecer, não copiar): \\(parsed)"
+  },
+  "Primary cause: \\(label(for: primary)).": {
+    "ja": "主な原因: \\(label(for: primary))。",
+    "de": "Hauptursache: \\(label(for: primary)).",
+    "ko": "주요 원인: \\(label(for: primary)).",
+    "es": "Causa principal: \\(label(for: primary)).",
+    "pt-BR": "Causa primária: \\(label(for: primary))."
+  },
+  "Primary indicator: \\(metricValue(for: primary, result: result))%.": {
+    "ja": "主な指標: \\(metricValue(for: primary, result: result))%。",
+    "de": "Primärindikator: \\(metricValue(for: primary, result: result))%.",
+    "ko": "주요 지표: \\(metricValue(for: primary, result: result))%.",
+    "es": "Indicador principal: \\(metricValue(for: primary, result: result))%.",
+    "pt-BR": "Indicador primário: \\(metricValue(for: primary, result: result))%."
+  },
+  "Priorities: \\(faceGoal).": {
+    "ja": "優先順位: \\(faceGoal)。",
+    "de": "Prioritäten: \\(faceGoal).",
+    "ko": "우선순위: \\(faceGoal).",
+    "es": "Prioridades: \\(faceGoal).",
+    "pt-BR": "Prioridades: \\(faceGoal)."
+  },
+  "Priority focus this week: **\\(top.name)**.": {
+    "ja": "今週の優先焦点: **\\(top.name)**。",
+    "de": "Schwerpunkt diese Woche: **\\(top.name)**.",
+    "ko": "이번 주의 우선순위: **\\(top.name)**.",
+    "es": "Enfoque prioritario esta semana: **\\(top.name)**.",
+    "pt-BR": "Foco prioritário esta semana: **\\(top.name)**."
+  },
+  "Priority lever: \\(priority.pillar.lowercased()).": {
+    "ja": "優先レバー: \\(priority.pillar.lowercased())。",
+    "de": "Prioritätshebel: \\(priority.pillar.lowercased()).",
+    "ko": "우선순위 레버: \\(priority.pillar.lowercased()).",
+    "es": "Palanca de prioridad: \\(priority.pillar.lowercased()).",
+    "pt-BR": "Alavanca de prioridade: \\(priority.pillar.lowercased())."
+  },
+  "Priority today: \\(line) — repeat a plan meal richer in potassium.": {
+    "ja": "今日の優先事項: \\(line) — カリウムが豊富な計画的な食事を繰り返します。",
+    "de": "Priorität heute: \\(line) – Wiederholen du eine geplante kaliumreichere Mahlzeit.",
+    "ko": "오늘의 우선순위: \\(line) — 칼륨이 풍부한 계획 식사를 반복하세요.",
+    "es": "Prioridad hoy: \\(line) — repetir una comida planificada más rica en potasio.",
+    "pt-BR": "Prioridade hoje: \\(line) — repetir uma refeição planejada mais rica em potássio."
+  },
+  "Process goal: \\(ProcessDailyTargets.dailySteps.formatted()) steps/day": {
+    "ja": "Process 目標: \\(ProcessDailyTargets.dailySteps.formatted()) 歩数/日",
+    "de": "Process Ziel: \\(ProcessDailyTargets.dailySteps.formatted()) Schritte/Tag",
+    "ko": "Process 목표: \\(ProcessDailyTargets.dailySteps.formatted())걸음/일",
+    "es": "Process objetivo: \\(ProcessDailyTargets.dailySteps.formatted()) pasos/día",
+    "pt-BR": "Process meta: \\(ProcessDailyTargets.dailySteps.formatted()) passos/dia"
+  },
+  "Process Profile — \\(profile.displayName)": {
+    "ja": "Process プロフィール — \\(profile.displayName)",
+    "de": "Process Profil — \\(profile.displayName)",
+    "ko": "Process 프로필 — \\(profile.displayName)",
+    "es": "Process Perfil — \\(profile.displayName)",
+    "pt-BR": "Process Perfil — \\(profile.displayName)"
+  },
+  "Process Profile — \\(profile.displayName) (\\(tag))": {
+    "ja": "Process プロフィール — \\(profile.displayName) (\\(tag))",
+    "de": "Process Profil — \\(profile.displayName) (\\(tag))",
+    "ko": "Process 프로필 — \\(profile.displayName) (\\(tag))",
+    "es": "Process Perfil — \\(profile.displayName) (\\(tag))",
+    "pt-BR": "Process Perfil — \\(profile.displayName) (\\(tag))"
+  },
+  "Process target: \\(ProcessDailyTargets.hydrationLabel) spread across the day": {
+    "ja": "Process ターゲット: \\(ProcessDailyTargets.hydrationLabel) が 1 日全体に分散",
+    "de": "Process Ziel: \\(ProcessDailyTargets.hydrationLabel) über den Tag verteilt",
+    "ko": "Process 대상: \\(ProcessDailyTargets.hydrationLabel) 하루 종일 확산",
+    "es": "Process objetivo: \\(ProcessDailyTargets.hydrationLabel) repartido a lo largo del día",
+    "pt-BR": "Meta Process: \\(ProcessDailyTargets.hydrationLabel) distribuída ao longo do dia"
+  },
+  "Profile: \\(snapshot.archetype.label) — \\(snapshot.blockerSummary)": {
+    "ja": "プロフィール: \\(snapshot.archetype.label) — \\(snapshot.blockerSummary)",
+    "de": "Profil: \\(snapshot.archetype.label) — \\(snapshot.blockerSummary)",
+    "ko": "프로필: \\(snapshot.archetype.label) — \\(snapshot.blockerSummary)",
+    "es": "Perfil: \\(snapshot.archetype.label) — \\(snapshot.blockerSummary)",
+    "pt-BR": "Perfil: \\(snapshot.archetype.label) — \\(snapshot.blockerSummary)"
+  },
+  "Progression \\(OriginUserAssessment.sessionsFromAnswers(answers))×/wk": {
+    "ja": "進捗 \\(OriginUserAssessment.sessionsFromAnswers(answers))×/週",
+    "de": "Fortschritt \\(OriginUserAssessment.sessionsFromAnswers(answers))×/Woche",
+    "ko": "진행률 \\(OriginUserAssessment.sessionsFromAnswers(answers))×/주",
+    "es": "Progresión \\(OriginUserAssessment.sessionsFromAnswers(answers))×/semana",
+    "pt-BR": "Progressão \\(OriginUserAssessment.sessionsFromAnswers(answers))×/semana"
+  },
+  "Puffiness above your baseline for \\(facts.retentionPersistingScans) scans in a row.": {
+    "ja": "\\(facts.retentionPersistingScans) スキャンを連続して行うと、ベースラインを超えるむくみが発生します。",
+    "de": "Schwellungen über deinem Ausgangswert bei \\(facts.retentionPersistingScans)-Scans in Folge.",
+    "ko": "\\(facts.retentionPersistingScans) 스캔이 연속으로 기준선을 초과하는 부종이 나타나요.",
+    "es": "Hinchazón por encima de tu línea base en escaneos \\(facts.retentionPersistingScans) seguidos.",
+    "pt-BR": "Inchaço acima da linha de base para escaneamentos \\(facts.retentionPersistingScans) consecutivas."
+  },
+  "Puffiness above your baseline for \\(span) scans in a row.": {
+    "ja": "\\(span) スキャンを連続して行うと、ベースラインを超えるむくみが発生します。",
+    "de": "Schwellungen über deinem Ausgangswert bei \\(span)-Scans in Folge.",
+    "ko": "\\(span) 스캔이 연속으로 기준선을 초과하는 부종이 나타나요.",
+    "es": "Hinchazón por encima de tu línea base en escaneos \\(span) seguidos.",
+    "pt-BR": "Inchaço acima da linha de base para escaneamentos \\(span) consecutivas."
+  },
+  "Recent sleep: \\(sleep)\\(sleepNote).": {
+    "ja": "最近の睡眠時間: \\(sleep)\\(sleepNote)。",
+    "de": "Letzter Schlaf: \\(sleep)\\(sleepNote).",
+    "ko": "최근 수면: \\(sleep)\\(sleepNote).",
+    "es": "Sueño reciente: \\(sleep)\\(sleepNote).",
+    "pt-BR": "Suspensão recente: \\(sleep)\\(sleepNote)."
+  },
+  "Reduce puffiness vs baseline (\\(markers.puffinessScore))": {
+    "ja": "ベースラインと比較してむくみを軽減 (\\(markers.puffinessScore))",
+    "de": "Schwellungen im Vergleich zum Ausgangswert reduzieren (\\(markers.puffinessScore))",
+    "ko": "베이스라인 대비 붓기 감소 (\\(markers.puffinessScore))",
+    "es": "Reducir la hinchazón respecto al valor inicial (\\(markers.puffinessScore))",
+    "pt-BR": "Reduza o inchaço em relação à linha de base (\\(markers.puffinessScore))"
+  },
+  "Referral code \\(referralCode)": {
+    "ja": "紹介コード \\(referralCode)",
+    "de": "Empfehlungscode \\(referralCode)",
+    "ko": "추천 코드 \\(referralCode)",
+    "es": "Código de referencia \\(referralCode)",
+    "pt-BR": "Código de referência \\(referralCode)"
+  },
+  "Referral error (\\(code)).": {
+    "ja": "紹介エラー (\\(code))。",
+    "de": "Überweisungsfehler (\\(code)).",
+    "ko": "추천 오류(\\(code)).",
+    "es": "Error de referencia (\\(code)).",
+    "pt-BR": "Erro de referência (\\(code))."
+  },
+  "Referral: \\(name)": {
+    "ja": "紹介: \\(name)",
+    "de": "Empfehlung: \\(name)",
+    "ko": "추천인: \\(name)",
+    "es": "Referencia: \\(name)",
+    "pt-BR": "Referência: \\(name)"
+  },
+  "Regression detected — program extended by \\(days) days.": {
+    "ja": "回帰が検出されました — プログラムは \\(days) 日延長されました。",
+    "de": "Regression erkannt – Programm um \\(days) Tage verlängert.",
+    "ko": "회귀가 감지됐어요. 프로그램이 \\(days)일 연장됐어요.",
+    "es": "Regresión detectada: programa extendido por \\(days) días.",
+    "pt-BR": "Regressão detectada — programa estendido por \\(days) dias."
+  },
+  "Regression detected\\(nameSuffix) — the coach will help you recalibrate.": {
+    "ja": "回帰が検出されました\\(nameSuffix) — コーチが再調整をお手伝いします。",
+    "de": "Regression erkannt\\(nameSuffix) – der Coach hilft dir bei der Neukalibrierung.",
+    "ko": "회귀가 감지됐어요\\(nameSuffix) — 코치가 재조정을 도와줄 것이에요.",
+    "es": "Regresión detectada\\(nameSuffix): el entrenador le ayudará a recalibrarse.",
+    "pt-BR": "Regressão detectada\\(nameSuffix) — o treinador irá ajudá-lo a recalibrar."
+  },
+  "Regression\\(nameSuffix) — let's get your trajectory back on track.": {
+    "ja": "回帰\\(nameSuffix) — 軌道に戻りましょう。",
+    "de": "Regression\\(nameSuffix) – bringen wir deine Flugbahn wieder auf den richtigen Weg.",
+    "ko": "회귀\\(nameSuffix) — 궤도를 다시 정상으로 되돌리자.",
+    "es": "Regresión\\(nameSuffix): volvamos a encarrilar tu trayectoria.",
+    "pt-BR": "Regressão\\(nameSuffix) — vamos colocar sua trajetória de volta nos trilhos."
+  },
+  "Relative score vs baseline: \\(result.resolvedFaceDayScore)/100.": {
+    "ja": "相対スコア対ベースライン: \\(result.resolvedFaceDayScore)/100。",
+    "de": "Relativer Wert gegenüber dem Ausgangswert: \\(result.resolvedFaceDayScore)/100.",
+    "ko": "기준점 대비 상대 점수: \\(result.resolvedFaceDayScore)/100.",
+    "es": "Puntuación relativa frente al valor inicial: \\(result.resolvedFaceDayScore)/100.",
+    "pt-BR": "Pontuação relativa vs linha de base: \\(result.resolvedFaceDayScore)/100."
+  },
+  "Replace with \\(alt)": {
+    "ja": "\\(alt) に置き換えます",
+    "de": "Ersetzen durch \\(alt)",
+    "ko": "\\(alt)로 교체",
+    "es": "Reemplazar con \\(alt)",
+    "pt-BR": "Substitua por \\(alt)"
+  },
+  "Replace with \\(swap.localizedName)": {
+    "ja": "\\(swap.localizedName) に置き換えます",
+    "de": "Ersetzen durch \\(swap.localizedName)",
+    "ko": "\\(swap.localizedName)로 교체",
+    "es": "Reemplazar con \\(swap.localizedName)",
+    "pt-BR": "Substitua por \\(swap.localizedName)"
+  },
+  "REQUIRED CARDIO: \\(cardio.title) — \\(cardio.prescriptionLine)": {
+    "ja": "必要な有酸素運動: \\(cardio.title) — \\(cardio.prescriptionLine)",
+    "de": "ERFORDERLICHES CARDIO: \\(cardio.title) – \\(cardio.prescriptionLine)",
+    "ko": "필수 유산소 운동: \\(cardio.title) — \\(cardio.prescriptionLine)",
+    "es": "CARDIO REQUERIDO: \\(cardio.title) — \\(cardio.prescriptionLine)",
+    "pt-BR": "CARDIO NECESSÁRIO: \\(cardio.title) — \\(cardio.prescriptionLine)"
+  },
+  "REQUIRED CARDIO: \\(cardio.title) — \\(cardio.prescriptionLine) — \\(DebloatCardioDayCatalog.frequencyCaption)": {
+    "ja": "必要な有酸素運動: \\(cardio.title) — \\(cardio.prescriptionLine) — \\(DebloatCardioDayCatalog.frequencyCaption)",
+    "de": "ERFORDERLICHES CARDIO: \\(cardio.title) – \\(cardio.prescriptionLine) – \\(DebloatCardioDayCatalog.frequencyCaption)",
+    "ko": "필수 유산소 운동: \\(cardio.title) — \\(cardio.prescriptionLine) — \\(DebloatCardioDayCatalog.frequencyCaption)",
+    "es": "CARDIO REQUERIDO: \\(cardio.title) — \\(cardio.prescriptionLine) — \\(DebloatCardioDayCatalog.frequencyCaption)",
+    "pt-BR": "CARDIO NECESSÁRIO: \\(cardio.title) — \\(cardio.prescriptionLine) — \\(DebloatCardioDayCatalog.frequencyCaption)"
+  },
+  "Result: \\(creator.qualityLabel) · \\(creator.scanResultsLayout.title)": {
+    "ja": "結果: \\(creator.qualityLabel) · \\(creator.scanResultsLayout.title)",
+    "de": "Ergebnis: \\(creator.qualityLabel) · \\(creator.scanResultsLayout.title)",
+    "ko": "결과: \\(creator.qualityLabel) · \\(creator.scanResultsLayout.title)",
+    "es": "Resultado: \\(creator.qualityLabel) · \\(creator.scanResultsLayout.title)",
+    "pt-BR": "Resultado: \\(creator.qualityLabel) · \\(creator.scanResultsLayout.title)"
+  },
+  "Retention at \\(load)%: \\(nutrition)": {
+    "ja": "\\(load)%での水分保持率: \\(nutrition)",
+    "de": "Wassereinlagerungen bei \\(load) %: \\(nutrition)",
+    "ko": "\\(load)%의 수분 정체: \\(nutrition)",
+    "es": "Retención de agua al \\(load)%: \\(nutrition)",
+    "pt-BR": "Retenção de água em \\(load)%: \\(nutrition)"
+  },
+  "Retention at \\(load)%: \\(severity.capitalizedFirst) — cheeks and eyelids first.": {
+    "ja": "\\(load)% の水分滞留: \\(severity.capitalizedFirst) — 最初に頬とまぶた。",
+    "de": "Wassereinlagerungen bei \\(load) %: \\(severity.capitalizedFirst) – Wangen und Augenlider zuerst.",
+    "ko": "\\(load)%의 수분 유지율: \\(severity.capitalizedFirst) — 볼과 눈꺼풀 먼저.",
+    "es": "Retención de agua al \\(load)%: \\(severity.capitalizedFirst): mejillas y párpados primero.",
+    "pt-BR": "Retenção de água em \\(load)%: \\(severity.capitalizedFirst) — bochechas e pálpebras primeiro."
+  },
+  "Retention is falling (\\(retention.deltaLabel)) but still visible at \\(retentionLoad)%.": {
+    "ja": "水分滞留は低下していますが (\\(retention.deltaLabel))、まだ \\(retentionLoad)% で表示されます。",
+    "de": "Die Wassereinlagerung nimmt ab (\\(retention.deltaLabel)), ist aber immer noch bei \\(retentionLoad) % sichtbar.",
+    "ko": "수분 정체가 감소하고 있지만(\\(retention.deltaLabel)) \\(retentionLoad)%에서는 여전히 보이에요.",
+    "es": "La retención de líquidos está disminuyendo (\\(retention.deltaLabel)) pero aún es visible en \\(retentionLoad)%.",
+    "pt-BR": "A retenção de líquidos está caindo (\\(retention.deltaLabel)), mas ainda é visível em \\(retentionLoad)%."
+  },
+  "Retention is falling (\\(retention.deltaLabel)): face less puffy than your recent baseline.": {
+    "ja": "水分滞留が低下しています (\\(retention.deltaLabel)): 顔のむくみが最近のベースラインよりも軽減されています。",
+    "de": "Die Wassereinlagerungen nehmen ab (\\(retention.deltaLabel)): Das Gesicht ist weniger geschwollen als bei deinem letzten Ausgangswert.",
+    "ko": "수분 정체가 떨어지고 있어요(\\(retention.deltaLabel)): 최근 기준보다 얼굴이 덜 부어요.",
+    "es": "La retención de líquidos está disminuyendo (\\(retention.deltaLabel)): cara menos hinchada que tu valor inicial reciente.",
+    "pt-BR": "A retenção de líquidos está caindo (\\(retention.deltaLabel)): rosto menos inchado do que sua linha de base recente."
+  },
+  "Retention still visible (\\(load)%) for \\(facts.retentionPersistingScans) scans — \\(severity).": {
+    "ja": "\\(facts.retentionPersistingScans) スキャン — \\(severity) では、水分保持が依然として表示されます (\\(load)%)。",
+    "de": "Bei \\(facts.retentionPersistingScans) Scans – \\(severity) sind noch Wassereinlagerungen sichtbar (\\(load) %).",
+    "ko": "\\(facts.retentionPersistingScans) 스캔 — \\(severity)에 대한 수분 정체가 여전히 표시돼요(\\(load)%).",
+    "es": "La retención de líquidos aún es visible (\\(load)%) para los escaneos \\(facts.retentionPersistingScans): \\(severity).",
+    "pt-BR": "Retenção de água ainda visível (\\(load)%) para escaneamentos \\(facts.retentionPersistingScans) — \\(severity)."
+  },
+  "Room \\(ProcessDailyTargets.bedroomTempCelsius) °C": {
+    "ja": "部屋\\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "de": "Raum \\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "ko": "방 \\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "es": "Habitación \\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "pt-BR": "Sala \\(ProcessDailyTargets.bedroomTempCelsius) °C"
+  },
+  "Room temp ~\\(ProcessDailyTargets.bedroomTempCelsius) °C": {
+    "ja": "室温 ~\\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "de": "Raumtemperatur ~\\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "ko": "실온 ~\\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "es": "Temperatura ambiente ~\\(ProcessDailyTargets.bedroomTempCelsius) °C",
+    "pt-BR": "Temperatura ambiente ~\\(ProcessDailyTargets.bedroomTempCelsius) °C"
+  },
+  "Scan from \\(scan.createdAt.formatted(date: .abbreviated, time: .omitted))": {
+    "ja": "\\(scan.createdAt.formatted(date: .abbreviated, time: .omitted)) からスキャン",
+    "de": "Scannen von \\(scan.createdAt.formatted(date: .abbreviated, time: .omitted))",
+    "ko": "\\(scan.createdAt.formatted(date: .abbreviated, time: .omitted))에서 스캔",
+    "es": "Escanear desde \\(scan.createdAt.formatted(date: .abbreviated, time: .omitted))",
+    "pt-BR": "Digitalizar de \\(scan.createdAt.formatted(date: .abbreviated, time: .omitted))"
+  },
+  "Scan score \\(displayScore)": {
+    "ja": "スキャンスコア \\(displayScore)",
+    "de": "Scan-Score \\(displayScore)",
+    "ko": "스캔 점수 \\(displayScore)",
+    "es": "Puntuación de escaneo \\(displayScore)",
+    "pt-BR": "Pontuação de digitalização \\(displayScore)"
+  },
+  "Scan score \\(score) percent": {
+    "ja": "スキャン スコア \\(score) パーセント",
+    "de": "Scan-Score \\(score) Prozent",
+    "ko": "스캔 점수 \\(score) 퍼센트",
+    "es": "Puntuación de escaneo \\(score) por ciento",
+    "pt-BR": "Pontuação de verificação \\(score) por cento"
+  },
+  "Scan starts in \\(arrivalCountdownValue)": {
+    "ja": "スキャンは\\(arrivalCountdownValue)に開始されます",
+    "de": "Der Scan beginnt in \\(arrivalCountdownValue)",
+    "ko": "\\(arrivalCountdownValue)에서 스캔이 시작돼요.",
+    "es": "El escaneo comienza en \\(arrivalCountdownValue)",
+    "pt-BR": "A verificação começa em \\(arrivalCountdownValue)"
+  },
+  "Scans & Diary — \\(month)": {
+    "ja": "スキャンと日記 — \\(month)",
+    "de": "Scans und Tagebuch – \\(month)",
+    "ko": "스캔 및 일기 — \\(month)",
+    "es": "Escaneos y diario — \\(month)",
+    "pt-BR": "Varreduras e diário — \\(month)"
+  },
+  "Score \\(displayScore)": {
+    "ja": "スコア \\(displayScore)",
+    "de": "Ergebnis \\(displayScore)",
+    "ko": "점수 \\(displayScore)",
+    "es": "Puntuación \\(displayScore)",
+    "pt-BR": "Pontuação \\(displayScore)"
+  },
+  "Score \\(result.postureScore)/100": {
+    "ja": "スコア \\(result.postureScore)/100",
+    "de": "Ergebnis \\(result.postureScore)/100",
+    "ko": "점수 \\(result.postureScore)/100",
+    "es": "Puntuación \\(result.postureScore)/100",
+    "pt-BR": "Pontuação \\(result.postureScore)/100"
+  },
+  "Score \\(scan.displayWellnessScore)%": {
+    "ja": "スコア \\(scan.displayWellnessScore)%",
+    "de": "Punktzahl \\(scan.displayWellnessScore) %",
+    "ko": "점수 \\(scan.displayWellnessScore)%",
+    "es": "Puntuación \\(scan.displayWellnessScore)%",
+    "pt-BR": "Pontuação \\(scan.displayWellnessScore)%"
+  },
+  "Score \\(scan.displayWellnessScore)/100": {
+    "ja": "スコア \\(scan.displayWellnessScore)/100",
+    "de": "Ergebnis \\(scan.displayWellnessScore)/100",
+    "ko": "점수 \\(scan.displayWellnessScore)/100",
+    "es": "Puntuación \\(scan.displayWellnessScore)/100",
+    "pt-BR": "Pontuação \\(scan.displayWellnessScore)/100"
+  },
+  "Score \\(score)% — several recent habits aren't aligned.": {
+    "ja": "スコア \\(score)% — 最近の習慣がいくつか一致していません。",
+    "de": "Punktzahl \\(score) % – mehrere neuere Gewohnheiten passen nicht zusammen.",
+    "ko": "점수 \\(score)% — 최근 몇 가지 습관이 일치하지 않아요.",
+    "es": "Puntuación \\(score)%: varios hábitos recientes no están alineados.",
+    "pt-BR": "Pontuação \\(score)% — vários hábitos recentes não estão alinhados."
+  },
+  "Score \\(score)% — sleep, salt, or hydration clearly played a role.": {
+    "ja": "スコア \\(score)% — 睡眠、塩分、または水分補給が明らかに役割を果たしています。",
+    "de": "Wert \\(score) % – Schlaf, Salz oder Flüssigkeitszufuhr spielten eindeutig eine Rolle.",
+    "ko": "점수 \\(score)% — 수면, 염분 또는 수분 공급이 확실히 중요한 역할을 했어요.",
+    "es": "Puntuación \\(score)%: el sueño, la sal o la hidratación claramente influyeron.",
+    "pt-BR": "Pontuação \\(score)% – sono, sal ou hidratação claramente desempenharam um papel."
+  },
+  "Score \\(score)% — stacked mistakes over the last few days.": {
+    "ja": "スコア \\(score)% — 過去数日間のミスの積み重ね。",
+    "de": "Ergebnis \\(score) % – gehäufte Fehler in den letzten Tagen.",
+    "ko": "점수 \\(score)% — 지난 며칠 동안 누적된 실수이에요.",
+    "es": "Puntuación \\(score)%: errores acumulados en los últimos días.",
+    "pt-BR": "Pontuação \\(score)% — erros acumulados nos últimos dias."
+  },
+  "Score ≈\\(food.debloatScore)": {
+    "ja": "スコア ≈\\(food.debloatScore)",
+    "de": "Ergebnis ≈\\(food.debloatScore)",
+    "ko": "점수 \\(food.debloatScore)",
+    "es": "Puntuación ≈\\(food.debloatScore)",
+    "pt-BR": "Pontuação ≈\\(food.debloatScore)"
+  },
+  "Screen curfew \\(ProcessDailyTargets.screenCurfewMinutes) min": {
+    "ja": "画面制限時間 \\(ProcessDailyTargets.screenCurfewMinutes) 分",
+    "de": "Bildschirmsperre \\(ProcessDailyTargets.screenCurfewMinutes) min",
+    "ko": "화면 통행금지 시간 \\(ProcessDailyTargets.screenCurfewMinutes)분",
+    "es": "Toque de queda de pantalla \\(ProcessDailyTargets.screenCurfewMinutes) min",
+    "pt-BR": "Toque de recolher da tela \\(ProcessDailyTargets.screenCurfewMinutes) min"
+  },
+  "Screen curfew \\(ProcessDailyTargets.screenCurfewMinutes) min before bed": {
+    "ja": "スクリーンの門限 \\(ProcessDailyTargets.screenCurfewMinutes) 就寝分前",
+    "de": "Ausgangssperre \\(ProcessDailyTargets.screenCurfewMinutes) Minuten vor dem Schlafengehen",
+    "ko": "화면 통금 시간 \\(ProcessDailyTargets.screenCurfewMinutes) 잠들기 전 분",
+    "es": "Toque de queda de pantalla \\(ProcessDailyTargets.screenCurfewMinutes) minutos antes de acostarse",
+    "pt-BR": "Toque de recolher na tela \\(ProcessDailyTargets.screenCurfewMinutes) min antes de dormir"
+  },
+  "Secondary factor: \\(label(for: secondary)).": {
+    "ja": "二次要素: \\(label(for: secondary))。",
+    "de": "Sekundärfaktor: \\(label(for: secondary)).",
+    "ko": "보조 요소: \\(label(for: secondary)).",
+    "es": "Factor secundario: \\(label(for: secondary)).",
+    "pt-BR": "Fator secundário: \\(label(for: secondary))."
+  },
+  "Server error (\\(status)).": {
+    "ja": "サーバーエラー (\\(status))。",
+    "de": "Serverfehler (\\(status)).",
+    "ko": "서버 오류(\\(status)).",
+    "es": "Error del servidor (\\(status)).",
+    "pt-BR": "Erro do servidor (\\(status))."
+  },
+  "Several factors are stacking — \\(correlation.message.lowercased()).": {
+    "ja": "いくつかの要因が重なっています — \\(correlation.message.lowercased())。",
+    "de": "Mehrere Faktoren kommen zusammen – \\(correlation.message.lowercased()).",
+    "ko": "여러 가지 요소가 쌓이고 있어요 — \\(correlation.message.lowercased()).",
+    "es": "Se acumulan varios factores: \\(correlation.message.lowercased()).",
+    "pt-BR": "Vários fatores estão se acumulando – \\(correlation.message.lowercased())."
+  },
+  "Several signals stack up and retention has persisted for \\(facts.retentionPersistingScans) scans — yesterday's sleep, salt, or stress likely play a role.": {
+    "ja": "いくつかの信号が重なっており、\\(facts.retentionPersistingScans) スキャンの間、水分保持が続いています。昨日の睡眠、塩分、またはストレスが影響している可能性があります。",
+    "de": "Mehrere Signale häufen sich und Wassereinlagerungen bleiben bei \\(facts.retentionPersistingScans)-Scans bestehen – wahrscheinlich spielen der gestrige Schlaf, Salz oder Stress eine Rolle.",
+    "ko": "\\(facts.retentionPersistingScans) 스캔에서 여러 신호가 누적되고 수분 정체가 지속됐어요. 어제의 수면, 염분 또는 스트레스가 영향을 미칠 가능성이 높아요.",
+    "es": "Varias señales se acumulan y la retención de líquidos ha persistido en las exploraciones \\(facts.retentionPersistingScans); el sueño de ayer, la sal o el estrés probablemente influyan.",
+    "pt-BR": "Vários sinais se acumulam e a retenção de líquidos persiste nas escaneamentos \\(facts.retentionPersistingScans) – o sono, o sal ou o estresse de ontem provavelmente desempenham um papel."
+  },
+  "Share your link. Every subscribed friend earns you \\(price).": {
+    "ja": "リンクを共有してください。友達登録すると、\\(price) を獲得できます。",
+    "de": "Teilen du deinen Link. Jeder abonnierte Freund bringt dir \\(price) ein.",
+    "ko": "링크를 공유하세요. 구독하는 모든 친구는 \\(price)를 받아요.",
+    "es": "Comparte tu enlace. Cada amigo suscrito te da \\(price).",
+    "pt-BR": "Compartilhe seu link. Cada amigo inscrito ganha \\(price)."
+  },
+  "Short or irregular sleep disrupts fluid regulation and favors morning puffiness. Aim for a stable window ± \\(ProcessDailyTargets.sleepScheduleMarginMinutes) min.": {
+    "ja": "睡眠が短いか不規則だと、体液の調節が乱れ、朝のむくみが生じやすくなります。安定したウィンドウ ± \\(ProcessDailyTargets.sleepScheduleMarginMinutes) 分を目指します。",
+    "de": "Kurzer oder unregelmäßiger Schlaf stört die Flüssigkeitsregulation und begünstigt morgendliche Schwellungen. Streben du ein stabiles Fenster an ± \\(ProcessDailyTargets.sleepScheduleMarginMinutes) min.",
+    "ko": "짧거나 불규칙한 수면은 체액 조절을 방해하고 아침 붓기를 촉진해요. 안정적인 창을 목표로 하세요. ± \\(ProcessDailyTargets.sleepScheduleMarginMinutes) min.",
+    "es": "El sueño breve o irregular altera la regulación de líquidos y favorece la hinchazón matutina. Apunte a una ventana estable ± \\(ProcessDailyTargets.sleepScheduleMarginMinutes) min.",
+    "pt-BR": "O sono curto ou irregular perturba a regulação de fluidos e favorece o inchaço matinal. Procure uma janela estável ± \\(ProcessDailyTargets.sleepScheduleMarginMinutes) min."
+  },
+  "Skin quality · \\(value)%": {
+    "ja": "肌の質 · \\(value)%",
+    "de": "Hautqualität · \\(value)%",
+    "ko": "피부 질 · \\(value)%",
+    "es": "Calidad de la piel · \\(value)%",
+    "pt-BR": "Qualidade da pele · \\(value)%"
+  },
+  "Sleep \\(Int(dailyTargets.sleepHours)) h": {
+    "ja": "睡眠 \\(Int(dailyTargets.sleepHours)) 時間",
+    "de": "Schlaf \\(Int(dailyTargets.sleepHours)) h",
+    "ko": "수면 \\(Int(dailyTargets.sleepHours)) 시간",
+    "es": "Dormir \\(Int(dailyTargets.sleepHours))h",
+    "pt-BR": "Dormir \\(Int(dailyTargets.sleepHours))h"
+  },
+  "Sleep \\(Int(dailyTargets.sleepHours)) h+": {
+    "ja": "睡眠 \\(Int(dailyTargets.sleepHours)) h+",
+    "de": "Schlaf \\(Int(dailyTargets.sleepHours)) h+",
+    "ko": "잠자기 \\(Int(dailyTargets.sleepHours)) h+",
+    "es": "Dormir \\(Int(dailyTargets.sleepHours)) h+",
+    "pt-BR": "Dormir \\(Int(dailyTargets.sleepHours)) h+"
+  },
+  "Sleep debt: \\(sleepDebtString)": {
+    "ja": "睡眠負債: \\(sleepDebtString)",
+    "de": "Schlafschuld: \\(sleepDebtString)",
+    "ko": "수면 빚: \\(sleepDebtString)",
+    "es": "Deuda de sueño: \\(sleepDebtString)",
+    "pt-BR": "Dívida de sono: \\(sleepDebtString)"
+  },
+  "Sleep duration: \\(sleepDurationString)": {
+    "ja": "睡眠時間: \\(sleepDurationString)",
+    "de": "Schlafdauer: \\(sleepDurationString)",
+    "ko": "수면 시간: \\(sleepDurationString)",
+    "es": "Duración del sueño: \\(sleepDurationString)",
+    "pt-BR": "Duração do sono: \\(sleepDurationString)"
+  },
+  "Sleeping on your stomach or side favors fluid pooling toward the face. A room around \\(ProcessDailyTargets.bedroomTempCelsius) °C improves deep-sleep quality.": {
+    "ja": "うつ伏せや横向きで寝ると、体液が顔にたまりやすくなります。 \\(ProcessDailyTargets.bedroomTempCelsius) °C 付近の部屋では、深い睡眠の質が向上します。",
+    "de": "Das Schlafen auf dem Bauch oder auf der Seite begünstigt die Ansammlung von Flüssigkeit in Richtung Gesicht. Ein Raum mit einer Temperatur von \\(ProcessDailyTargets.bedroomTempCelsius) °C verbessert die Tiefschlafqualität.",
+    "ko": "엎드려 자거나 옆으로 누워 자면 체액이 얼굴 쪽으로 고이는 데 도움이 돼요. \\(ProcessDailyTargets.bedroomTempCelsius) °C 정도의 방은 깊은 수면의 질을 높여줘요.",
+    "es": "Dormir boca abajo o de lado favorece que el líquido se acumule hacia la cara. Una habitación alrededor de \\(ProcessDailyTargets.bedroomTempCelsius) °C mejora la calidad del sueño profundo.",
+    "pt-BR": "Dormir de bruços ou de lado favorece o acúmulo de líquidos em direção ao rosto. Uma sala em torno de \\(ProcessDailyTargets.bedroomTempCelsius) °C melhora a qualidade do sono profundo."
+  },
+  "Slight drift · \\(score)%": {
+    "ja": "わずかなドリフト · \\(score)%",
+    "de": "Leichte Drift · \\(score)%",
+    "ko": "약간의 드리프트 · \\(score)%",
+    "es": "Ligera deriva · \\(score)%",
+    "pt-BR": "Ligeira deriva · \\(score)%"
+  },
+  "Snack: \\(s)": {
+    "ja": "スナック: \\(s)",
+    "de": "Snack: \\(s)",
+    "ko": "간식: \\(s)",
+    "es": "Merienda: \\(s)",
+    "pt-BR": "Lanche: \\(s)"
+  },
+  "Sodium trap — prefer \\(swap)": {
+    "ja": "ナトリウムトラップ — \\(swap) を推奨",
+    "de": "Natriumfalle – bevorzugen du \\(swap)",
+    "ko": "나트륨 함정 — \\(swap) 선호",
+    "es": "Trampa de sodio: prefiera \\(swap)",
+    "pt-BR": "Armadilha de sódio – prefira \\(swap)"
+  },
+  "Solid consistency\\(nameSuffix) — don't quit.": {
+    "ja": "堅実な一貫性\\(nameSuffix) — やめないでください。",
+    "de": "Solide Konsistenz\\(nameSuffix) – nicht aufgeben.",
+    "ko": "확고한 일관성\\(nameSuffix) — 포기하지 마세요.",
+    "es": "Consistencia sólida\\(nameSuffix): no abandones.",
+    "pt-BR": "Consistência sólida\\(nameSuffix) – não desista."
+  },
+  "Stable signals this morning — face above your month average (+\\(month) pts). Keep your debloat routine.": {
+    "ja": "今朝は安定したシグナル — 月平均（+\\(month) ポイント）を上回っています。顔のむくみを軽減する習慣を継続しましょう。",
+    "de": "Stabile Signale heute Morgen – Gesicht über deinem Monatsdurchschnitt (+\\(month) Punkte). Behalten du deine Routine zur Reduzierung von Schwellungen im Gesicht bei.",
+    "ko": "오늘 아침에는 안정적인 신호이에요. 월 평균(+\\(month) 포인트)을 웃도는 수준이에요. 얼굴 붓기 감소 루틴을 유지하세요.",
+    "es": "Señales estables esta mañana: cara por encima del promedio mensual (+\\(month) pts). Mantén tu rutina de reducción de bolsas faciales.",
+    "pt-BR": "Sinais estáveis esta manhã – acima da média do mês (+\\(month) pts). Mantenha sua rotina de redução de inchaço facial."
+  },
+  "Step \\(current) of \\(progress.segmentCount)": {
+    "ja": "\\(progress.segmentCount) のステップ \\(current)",
+    "de": "Schritt \\(current) von \\(progress.segmentCount)",
+    "ko": "\\(progress.segmentCount)의 \\(current) 단계",
+    "es": "Paso \\(current) de \\(progress.segmentCount)",
+    "pt-BR": "Etapa \\(current) de \\(progress.segmentCount)"
+  },
+  "Step \\(logicalSlideIndex + 1) of \\(slides.count)": {
+    "ja": "\\(slides.count) のステップ \\(logicalSlideIndex + 1)",
+    "de": "Schritt \\(logicalSlideIndex + 1) von \\(slides.count)",
+    "ko": "\\(slides.count)의 \\(logicalSlideIndex + 1) 단계",
+    "es": "Paso \\(logicalSlideIndex + 1) de \\(slides.count)",
+    "pt-BR": "Etapa \\(logicalSlideIndex + 1) de \\(slides.count)"
+  },
+  "Step count: \\(displaySteps) / 9500": {
+    "ja": "歩数: \\(displaySteps) / 9500",
+    "de": "Schrittzahl: \\(displaySteps) / 9500",
+    "ko": "걸음 수: \\(displaySteps) / 9500",
+    "es": "Recuento de pasos: \\(displaySteps) / 9500",
+    "pt-BR": "Contagem de passos: \\(displaySteps) / 9500"
+  },
+  "Strong day\\(nameSuffix) — your trajectory is accelerating.": {
+    "ja": "好調な日\\(nameSuffix) — あなたの軌道は加速しています。",
+    "de": "Starker Tag\\(nameSuffix) – deine Flugbahn beschleunigt sich.",
+    "ko": "Strong day\\(nameSuffix) — 궤도가 가속화되고 있어요.",
+    "es": "Día fuerte\\(nameSuffix): tu trayectoria se está acelerando.",
+    "pt-BR": "Dia forte\\(nameSuffix) – sua trajetória está se acelerando."
+  },
+  "Suction mew — \\(suctionMewDetail)": {
+    "ja": "吸引ミュウ — \\(suctionMewDetail)",
+    "de": "Saugmiauen – \\(suctionMewDetail)",
+    "ko": "빨아먹는 야옹 — \\(suctionMewDetail)",
+    "es": "Maullido de succión — \\(suctionMewDetail)",
+    "pt-BR": "Mew de sucção — \\(suctionMewDetail)"
+  },
+  "Take a sip — \\(hydrationLabel) goal.": {
+    "ja": "一口飲んで — \\(hydrationLabel) 目標。",
+    "de": "Nehmen du einen Schluck – \\(hydrationLabel) Ziel.",
+    "ko": "한 모금 마시세요 — \\(hydrationLabel) 목표.",
+    "es": "Toma un sorbo - objetivo \\(hydrationLabel).",
+    "pt-BR": "Tome um gole - meta \\(hydrationLabel)."
+  },
+  "Target \\(bedtime) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) min margin)": {
+    "ja": "ターゲット \\(bedtime) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) 最小証拠金)",
+    "de": "Ziel \\(bedtime) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) Mindestmarge)",
+    "ko": "대상 \\(bedtime) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) 최소 마진)",
+    "es": "Objetivo \\(bedtime) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) margen mínimo)",
+    "pt-BR": "Alvo \\(bedtime) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) margem mínima)"
+  },
+  "Target \\(wake) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) min margin)": {
+    "ja": "ターゲット \\(wake) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) 最小証拠金)",
+    "de": "Ziel \\(wake) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) Mindestmarge)",
+    "ko": "대상 \\(wake) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) 최소 마진)",
+    "es": "Objetivo \\(wake) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) margen mínimo)",
+    "pt-BR": "Alvo \\(wake) (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) margem mínima)"
+  },
+  "Target ~\\(Int(targetBF))% body fat (estimate)": {
+    "ja": "目標 ~\\(Int(targetBF))% 体脂肪 (推定)",
+    "de": "Ziel ~\\(Int(targetBF)) % Körperfett (Schätzung)",
+    "ko": "목표 ~\\(Int(targetBF))% 체지방(추정치)",
+    "es": "Objetivo ~\\(Int(targetBF))% de grasa corporal (estimación)",
+    "pt-BR": "Meta ~\\(Int(targetBF))% de gordura corporal (estimativa)"
+  },
+  "Target: \\(ProcessDailyTargets.sleepHours) h per night": {
+    "ja": "目標: 1 泊あたり \\(ProcessDailyTargets.sleepHours) 時間",
+    "de": "Ziel: \\(ProcessDailyTargets.sleepHours) h pro Nacht",
+    "ko": "목표: 1박당 \\(ProcessDailyTargets.sleepHours)h",
+    "es": "Objetivo: \\(ProcessDailyTargets.sleepHours) h por noche",
+    "pt-BR": "Meta: \\(ProcessDailyTargets.sleepHours) horas por noite"
+  },
+  "Thanks for trusting me with this, \\(trimmed).": {
+    "ja": "\\(trimmed)、私を信頼してくれてありがとう。",
+    "de": "Vielen Dank, dass du mir das anvertrauen, \\(trimmed).",
+    "ko": "저를 믿어주셔서 감사해요, \\(trimmed).",
+    "es": "Gracias por confiarme esto, \\(trimmed).",
+    "pt-BR": "Obrigado por confiar em mim, \\(trimmed)."
+  },
+  "The next \\(min(visibleDayCount, dayBundles.count)) days of your personalized plan — validate, adjust with AI, then manage your grocery list.": {
+    "ja": "パーソナライズされたプランの次の \\(min(visibleDayCount, dayBundles.count)) 日 — AI で検証、調整し、食料品リストを管理します。",
+    "de": "Die nächsten \\(min(visibleDayCount, dayBundles.count)) Tage Ihres personalisierten Plans – validieren du ihn, passen du ihn mit KI an und verwalten du dann deine Einkaufsliste.",
+    "ko": "다음 \\(min(visibleDayCount, dayBundles.count))일 동안 개인화된 계획을 확인하고 AI로 조정한 후 식료품 목록을 관리하세요.",
+    "es": "Los próximos \\(min(visibleDayCount, dayBundles.count)) días de tu plan personalizado: valida, ajusta con IA y luego gestiona tu lista de compras.",
+    "pt-BR": "Os próximos \\(min(visibleDayCount, dayBundles.count)) dias do seu plano personalizado - valide, ajuste com IA e gerencie sua lista de compras."
+  },
+  "Today's cardio · \\(DebloatCardioDayCatalog.frequencyCaption) · sports: \\(sportsLine)": {
+    "ja": "今日の有酸素運動 · \\(DebloatCardioDayCatalog.frequencyCaption) · スポーツ: \\(sportsLine)",
+    "de": "Heutiges Cardio · \\(DebloatCardioDayCatalog.frequencyCaption) · Sport: \\(sportsLine)",
+    "ko": "오늘의 유산소 운동 · \\(DebloatCardioDayCatalog.frequencyCaption) · 스포츠: \\(sportsLine)",
+    "es": "Cardio de hoy · \\(DebloatCardioDayCatalog.frequencyCaption) · deportes: \\(sportsLine)",
+    "pt-BR": "Cardio de hoje · \\(DebloatCardioDayCatalog.frequencyCaption) · esportes: \\(sportsLine)"
+  },
+  "TODAY'S MEALS (\\(day.weekdayLabel), day \\(dayIdx + 1)) — real state in the app:": {
+    "ja": "今日の食事 (\\(day.weekdayLabel)、日 \\(dayIdx + 1)) — アプリ内の実際の状態:",
+    "de": "HEUTE MAHLZEITEN (\\(day.weekdayLabel), Tag \\(dayIdx + 1)) – aktueller Stand in der App:",
+    "ko": "오늘의 식사(\\(day.weekdayLabel), 일 \\(dayIdx + 1)) — 앱의 실제 상태:",
+    "es": "COMIDAS DE HOY (\\(day.weekdayLabel), día \\(dayIdx + 1)) — estado real en la aplicación:",
+    "pt-BR": "REFEIÇÕES DE HOJE (\\(day.weekdayLabel), dia \\(dayIdx + 1)) — estado real no aplicativo:"
+  },
+  "Today's meals, Debloat score \\(score)": {
+    "ja": "今日の食事、顔のむくみ改善スコア\\(score)",
+    "de": "Heutige Mahlzeiten, Bewertung der Reduzierung von Gesichtsschwellungen \\(score)",
+    "ko": "오늘의 식사, 얼굴 붓기 감소 점수 \\(score)",
+    "es": "Comidas de hoy, puntuación de reducción de hinchazón facial \\(score)",
+    "pt-BR": "Refeições de hoje, pontuação de redução de inchaço facial \\(score)"
+  },
+  "Tongue posture — \\(tonguePostureDetail)": {
+    "ja": "舌の姿勢 — \\(tonguePostureDetail)",
+    "de": "Zungenhaltung – \\(tonguePostureDetail)",
+    "ko": "혀 자세 — \\(tonguePostureDetail)",
+    "es": "Postura de la lengua — \\(tonguePostureDetail)",
+    "pt-BR": "Postura da língua — \\(tonguePostureDetail)"
+  },
+  "Top priority: hydration + low salt + light cardio — retention \\(retention)%.": {
+    "ja": "最優先事項: 水分補給 + 減塩 + 軽い有酸素運動 — 水分保持率 \\(retention)%。",
+    "de": "Oberste Priorität: Flüssigkeitszufuhr + wenig Salz + leichtes Cardio – Wassereinlagerungen \\(retention) %.",
+    "ko": "최우선 사항: 수분 공급 + 저염분 + 가벼운 유산소 운동 — 수분 유지율 \\(retention)%.",
+    "es": "Prioridad máxima: hidratación + bajo contenido de sal + cardio ligero - retención de líquidos \\(retention)%.",
+    "pt-BR": "Prioridade máxima: hidratação + baixo teor de sal + cardio leve - retenção de líquidos \\(retention)%."
+  },
+  "Total calories: \\(calories)kcal / \\(targetCalories)kcal": {
+    "ja": "総カロリー: \\(calories)kcal / \\(targetCalories)kcal",
+    "de": "Gesamtkalorien: \\(calories)kcal / \\(targetCalories)kcal",
+    "ko": "총 칼로리: \\(calories)kcal / \\(targetCalories)kcal",
+    "es": "Calorías totales: \\(calories)kcal / \\(targetCalories)kcal",
+    "pt-BR": "Calorias totais: \\(calories)kcal / \\(targetCalories)kcal"
+  },
+  "tried to \\(actionText) weight?": {
+    "ja": "\\(actionText) 体重を計ってみましたか？",
+    "de": "versucht zu \\(actionText) Gewicht?",
+    "ko": "\\(actionText) 무게를 시험해 보셨나요?",
+    "es": "¿Intentaste pesar \\(actionText)?",
+    "pt-BR": "tentou peso \\(actionText)?"
+  },
+  "Under-eyes & fatigue · \\(value)%": {
+    "ja": "目の下の疲労と倦怠感 · \\(value)%",
+    "de": "Ermüdung und Müdigkeit unter den Augen · \\(value)%",
+    "ko": "눈 밑 피로 & 피로 · \\(value)%",
+    "es": "Fatiga y fatiga debajo de los ojos · \\(value)%",
+    "pt-BR": "Fadiga e fadiga ocular · \\(value)%"
+  },
+  "Under-eyes down over 7 days (\\(delta) pts) — good trajectory.": {
+    "ja": "7 日間で目の下の疲労が軽減 (\\(delta) ポイント) — 順調な推移。",
+    "de": "Rückgang der Ermüdung unter den Augen über 7 Tage (\\(delta) Punkte) – gute Entwicklung.",
+    "ko": "7일 동안 눈 밑 피로가 감소함(\\(delta) 포인트) - 좋은 궤적.",
+    "es": "La fatiga debajo de los ojos disminuyó durante 7 días (\\(delta) pts): buena trayectoria.",
+    "pt-BR": "A fadiga ocular diminuiu em 7 dias (\\(delta) pts) — boa trajetória."
+  },
+  "Under-eyes up over 7 days (+\\(delta) pts) — prioritize sleep.": {
+    "ja": "目の下の疲労が 7 日間で増加 (+\\(delta) ポイント) — 睡眠を優先します。",
+    "de": "Die Ermüdung unter den Augen hat über 7 Tage hinweg zugenommen (+\\(delta) Punkte) – Schlaf priorisieren.",
+    "ko": "7일 동안 눈 밑 피로 증가(+\\(delta) 포인트) — 수면을 우선시해요.",
+    "es": "La fatiga debajo de los ojos aumentó durante 7 días (+\\(delta) pts): priorice el sueño.",
+    "pt-BR": "Fadiga sob os olhos aumenta em 7 dias (+\\(delta) pts) – priorize o sono."
+  },
+  "Under-eyes worsen on nights under 6 h (+\\(delta) pts on average).": {
+    "ja": "目の下の疲労は、6 時間未満の夜に悪化します (平均 +\\(delta) ポイント)。",
+    "de": "Die Ermüdung unter den Augen verschlimmert sich in Nächten unter 6 Stunden (+\\(delta) Pkt. im Durchschnitt).",
+    "ko": "눈 밑의 피로는 6시간 미만의 밤에 더욱 심해집니다(평균 +\\(delta)점).",
+    "es": "La fatiga debajo de los ojos empeora en las noches antes de las 6 h (+\\(delta) pts en promedio).",
+    "pt-BR": "A fadiga ocular piora em noites abaixo de 6 horas (+\\(delta) pontos em média)."
+  },
+  "Unlimited coach, scans, and your plan for \\(trialDays) days.": {
+    "ja": "\\(trialDays) 日間、無制限のコーチ、スキャン、プランをご利用いただけます。",
+    "de": "Unbegrenzter Coach, Scans und dein Plan für \\(trialDays) Tage.",
+    "ko": "\\(trialDays)일 동안 무제한 코치, 스캔 및 계획을 제공해요.",
+    "es": "Entrenador, escaneos y tu plan ilimitados por \\(trialDays) días.",
+    "pt-BR": "Coach, escaneamentos e seu plano ilimitados para \\(trialDays) dias."
+  },
+  "Upright neck — \\(neckAlignmentDetail)": {
+    "ja": "直立した首 — \\(neckAlignmentDetail)",
+    "de": "Aufrechter Hals – \\(neckAlignmentDetail)",
+    "ko": "곧은 목 — \\(neckAlignmentDetail)",
+    "es": "Cuello erguido — \\(neckAlignmentDetail)",
+    "pt-BR": "Pescoço vertical — \\(neckAlignmentDetail)"
+  },
+  "Visible retention · \\(retention)%": {
+    "ja": "目に見える保水率 · \\(retention)%",
+    "de": "Sichtbare Wassereinlagerungen · \\(retention)%",
+    "ko": "눈에 보이는 수분 정체 · \\(retention)%",
+    "es": "Retención de agua visible · \\(retention)%",
+    "pt-BR": "Retenção de água visível · \\(retention)%"
+  },
+  "vs \\(days)d ago": {
+    "ja": "vs \\(days)日前",
+    "de": "gegen \\(days)d vor",
+    "ko": "vs \\(days)일 전",
+    "es": "vs hace \\(days)d",
+    "pt-BR": "vs \\(days)d atrás"
+  },
+  "Wake at the same time (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) min max margin, weekends included)": {
+    "ja": "同時に起動 (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) 最小最大マージン、週末を含む)",
+    "de": "Zur gleichen Zeit aufwachen (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) Min. Max. Marge, Wochenenden eingeschlossen)",
+    "ko": "동시에 일어나기(\\(ProcessDailyTargets.sleepScheduleMarginMinutes) 최소 최대 마진, 주말 포함)",
+    "es": "Despierta a la misma hora (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) margen máximo mínimo, fines de semana incluidos)",
+    "pt-BR": "Acorde ao mesmo tempo (\\(ProcessDailyTargets.sleepScheduleMarginMinutes) margem máxima mínima, fins de semana incluídos)"
+  },
+  "Walk \\(dailyTargets.dailySteps) steps": {
+    "ja": "\\(dailyTargets.dailySteps)歩歩きます",
+    "de": "Gehen du \\(dailyTargets.dailySteps) Schritte",
+    "ko": "\\(dailyTargets.dailySteps)걸음 걷기",
+    "es": "Camina \\(dailyTargets.dailySteps) pasos",
+    "pt-BR": "Caminhe passos \\(dailyTargets.dailySteps)"
+  },
+  "Water \\(ProcessDailyTargets.hydrationLabel) · scan · meal · routine.": {
+    "ja": "水\\(ProcessDailyTargets.hydrationLabel) · スキャン · 食事 · ルーチン。",
+    "de": "Wasser \\(ProcessDailyTargets.hydrationLabel) · Scan · Mahlzeit · Routine.",
+    "ko": "물 \\(ProcessDailyTargets.hydrationLabel) · 스캔 · 식사 · 루틴.",
+    "es": "Agua \\(ProcessDailyTargets.hydrationLabel) · escaneo · comida · rutina.",
+    "pt-BR": "Água \\(ProcessDailyTargets.hydrationLabel) · exame · refeição · rotina."
+  },
+  "Water retention · \\(value)%": {
+    "ja": "水分保水率・\\(value)%",
+    "de": "Wassereinlagerungen · \\(value)%",
+    "ko": "수분 보수력 · \\(value)%",
+    "es": "Retención de agua · \\(value)%",
+    "pt-BR": "Retenção de água · \\(value)%"
+  },
+  "Week 1: strict execution. \\(phase.objectives.first ?? fallback)": {
+    "ja": "第 1 週: 厳格な実行。 \\(phase.objectives.first ?? fallback)",
+    "de": "Woche 1: strikte Ausführung. \\(phase.objectives.first ?? fallback)",
+    "ko": "1주차: 엄격한 실행. \\(phase.objectives.first ?? fallback)",
+    "es": "Semana 1: ejecución estricta. \\(phase.objectives.first ?? fallback)",
+    "pt-BR": "Semana 1: execução rigorosa. \\(phase.objectives.first ?? fallback)"
+  },
+  "Week \\(start)": {
+    "ja": "週 \\(start)",
+    "de": "Woche \\(start)",
+    "ko": "주 \\(start)",
+    "es": "Semana \\(start)",
+    "pt-BR": "Semana \\(start)"
+  },
+  "Week \\(week) — \\(labels[weekday]) · Cardio & circuit": {
+    "ja": "週 \\(week) — \\(labels[weekday]) · 有酸素運動とサーキット",
+    "de": "Woche \\(week) — \\(labels[weekday]) · Cardio & Zirkeltraining",
+    "ko": "주 \\(week) — \\(labels[weekday]) · 유산소 운동 및 서킷",
+    "es": "Semana \\(week) — \\(labels[weekday]) · Cardio y circuito",
+    "pt-BR": "Semana \\(week) — \\(labels[weekday]) · Cardio e circuito"
+  },
+  "Week \\(week) — Recovery": {
+    "ja": "週 \\(week) — 回復",
+    "de": "Woche \\(week) – Erholung",
+    "ko": "주 \\(week) — 회복",
+    "es": "Semana \\(week) — Recuperación",
+    "pt-BR": "Semana \\(week) — Recuperação"
+  },
+  "Week \\(week)/\\(plan.totalWeeks)": {
+    "ja": "週 \\(week)/\\(plan.totalWeeks)",
+    "de": "Woche \\(week)/\\(plan.totalWeeks)",
+    "ko": "주 \\(week)/\\(plan.totalWeeks)",
+    "es": "Semana \\(week)/\\(plan.totalWeeks)",
+    "pt-BR": "Semana \\(week)/\\(plan.totalWeeks)"
+  },
+  "Week \\(week): \\(phase.title). Consistency > intensity.": {
+    "ja": "週 \\(week): \\(phase.title)。一貫性 > 強度。",
+    "de": "Woche \\(week): \\(phase.title). Konsistenz > Intensität.",
+    "ko": "주 \\(week): \\(phase.title). 일관성 > 강도.",
+    "es": "Semana \\(week): \\(phase.title). Consistencia > intensidad.",
+    "pt-BR": "Semana \\(week): \\(phase.title). Consistência > intensidade."
+  },
+  "Week \\(week): debloat reset — consistency > perfection.": {
+    "ja": "週 \\(week): 顔のむくみ軽減リセット — 一貫性 > 完璧。",
+    "de": "Woche \\(week): Zurücksetzen der Reduzierung von Schwellungen im Gesicht – Konsistenz > Perfektion.",
+    "ko": "주 \\(week): 얼굴 붓기 감소 재설정 — 일관성 > 완벽함.",
+    "es": "Semana \\(week): restablecimiento de la reducción de la hinchazón facial - consistencia > perfección.",
+    "pt-BR": "Semana \\(week): redefinição da redução de inchaço facial — consistência > perfeição."
+  },
+  "Weekly limit reached. \\(weeklyResetLabel).": {
+    "ja": "週間制限に達しました。 \\(weeklyResetLabel)。",
+    "de": "Wöchentliches Limit erreicht. \\(weeklyResetLabel).",
+    "ko": "주간 한도에 도달했어요. \\(weeklyResetLabel).",
+    "es": "Límite semanal alcanzado. \\(weeklyResetLabel).",
+    "pt-BR": "Limite semanal atingido. \\(weeklyResetLabel)."
+  },
+  "Weeks \\(start)–\\(end)": {
+    "ja": "週間 \\(start)–\\(end)",
+    "de": "Wochen \\(start)–\\(end)",
+    "ko": "주 \\(start)–\\(end)",
+    "es": "Semanas \\(start)–\\(end)",
+    "pt-BR": "Semanas \\(start)–\\(end)"
+  },
+  "What do you want to change about “\\(item.localizedName)”?": {
+    "ja": "「\\(item.localizedName)」の何を変更したいですか?",
+    "de": "Was möchten du an „\\(item.localizedName)“ ändern?",
+    "ko": "“\\(item.localizedName)”에서 무엇을 바꾸고 싶나요?",
+    "es": "¿Qué desea cambiar acerca de “\\(item.localizedName)”?",
+    "pt-BR": "O que você deseja mudar em “\\(item.localizedName)”?"
+  },
+  "What's bloating, \\(name):": {
+    "ja": "膨満感は何ですか、\\(name):",
+    "de": "Was ist Blähungen, \\(name):",
+    "ko": "뭐가 더부룩해요, \\(name):",
+    "es": "¿Qué es la hinchazón, \\(name)?:",
+    "pt-BR": "O que é inchaço, \\(name):"
+  },
+  "Yesterday’s nutrition: \\(nutrition)": {
+    "ja": "昨日の栄養: \\(nutrition)",
+    "de": "Ernährung von gestern: \\(nutrition)",
+    "ko": "어제의 영양 : \\(nutrition)",
+    "es": "Nutrición de ayer: \\(nutrition)",
+    "pt-BR": "Nutrição de ontem: \\(nutrition)"
+  },
+  "You earn \\(ProcessReferralProgramTerms.cashAmount) for every friend who starts a subscription.": {
+    "ja": "友達がサブスクリプションを開始するたびに、\\(ProcessReferralProgramTerms.cashAmount) を獲得できます。",
+    "de": "du verdienen \\(ProcessReferralProgramTerms.cashAmount) für jeden Freund, der ein Abonnement beginnt.",
+    "ko": "친구가 구독을 시작하면 \\(ProcessReferralProgramTerms.cashAmount)를 얻을 수 있어요.",
+    "es": "Obtienes \\(ProcessReferralProgramTerms.cashAmount) por cada amigo que inicia una suscripción.",
+    "pt-BR": "Você ganha \\(ProcessReferralProgramTerms.cashAmount) para cada amigo que inicia uma assinatura."
+  },
+  "You earn \\(ProcessReferralProgramTerms.cashAmount) per friend": {
+    "ja": "友達 1 人あたり \\(ProcessReferralProgramTerms.cashAmount) を獲得できます",
+    "de": "du verdienen \\(ProcessReferralProgramTerms.cashAmount) pro Freund",
+    "ko": "친구당 \\(ProcessReferralProgramTerms.cashAmount)를 받아요.",
+    "es": "Ganas \\(ProcessReferralProgramTerms.cashAmount) por amigo",
+    "pt-BR": "Você ganha \\(ProcessReferralProgramTerms.cashAmount) por amigo"
+  },
+  "You still have visible water retention (\\(retentionLoad)%) and it's rising vs your recent average (\\(retention.deltaLabel)).": {
+    "ja": "まだ目に見える水分保持量 (\\(retentionLoad)%) があり、最近の平均値 (\\(retention.deltaLabel)) と比較して増加しています。",
+    "de": "du haben immer noch sichtbare Wassereinlagerungen (\\(retentionLoad)%) und diese steigen im Vergleich zu deinem aktuellen Durchschnitt (\\(retention.deltaLabel)).",
+    "ko": "여전히 눈에 띄는 수분 정체(\\(retentionLoad)%)을 보이고 있으며 최근 평균(\\(retention.deltaLabel))에 비해 상승하고 있어요.",
+    "es": "Todavía tienes retención de líquidos visible (\\(retentionLoad)%) y está aumentando en comparación con tu promedio reciente (\\(retention.deltaLabel)).",
+    "pt-BR": "Você ainda tem retenção de líquidos visível (\\(retentionLoad)%) e está aumentando em relação à sua média recente (\\(retention.deltaLabel))."
+  },
+  "You still have visible water retention (\\(retentionLoad)%) and it's rising vs your recent average.": {
+    "ja": "まだ目に見える水分保持量 (\\(retentionLoad)%) があり、最近の平均と比べて増加しています。",
+    "de": "du haben immer noch sichtbare Wassereinlagerungen (\\(retentionLoad)%) und diese steigen im Vergleich zu deinem aktuellen Durchschnitt.",
+    "ko": "여전히 눈에 띄는 수분 정체(\\(retentionLoad)%)을 보이고 있으며 최근 평균에 비해 상승하고 있어요.",
+    "es": "Todavía tienes una retención de líquidos visible (\\(retentionLoad)%) y está aumentando en comparación con tu promedio reciente.",
+    "pt-BR": "Você ainda tem retenção de líquidos visível (\\(retentionLoad)%) e está aumentando em relação à sua média recente."
+  },
+  "You still have visible water retention (\\(retentionLoad)%) — \\(facts.retentionPersistingScans) scans in a row above your baseline.": {
+    "ja": "目に見える水分保持がまだ残っています (\\(retentionLoad)%) — \\(facts.retentionPersistingScans) はベースラインを上回る連続スキャンです。",
+    "de": "du haben immer noch sichtbare Wassereinlagerungen (\\(retentionLoad)%) – \\(facts.retentionPersistingScans) scannt in einer Reihe oberhalb deiner Grundlinie.",
+    "ko": "여전히 수분 정체가 눈에 띕니다(\\(retentionLoad)%) — \\(facts.retentionPersistingScans)가 기준선보다 연속으로 스캔돼요.",
+    "es": "Todavía tienes retención de líquidos visible (\\(retentionLoad)%): \\(facts.retentionPersistingScans) escanea en una fila por encima de tu línea base.",
+    "pt-BR": "Você ainda tem retenção de líquidos visível (\\(retentionLoad)%) — \\(facts.retentionPersistingScans) faz escaneamentos consecutivas acima de sua linha de base."
+  },
+  "You still have visible water retention (\\(retentionLoad)%): watch water, sodium, and dietary potassium.": {
+    "ja": "目に見える水分保持量 (\\(retentionLoad)%) がまだ残っています。水、ナトリウム、食事のカリウムに注意してください。",
+    "de": "du haben immer noch sichtbare Wassereinlagerungen (\\(retentionLoad) %): Achten du auf Wasser, Natrium und Kalium in der Nahrung.",
+    "ko": "여전히 눈에 보이는 수분 정체(\\(retentionLoad)%)이 있어요. 물, 나트륨, 식이 칼륨에 주의하세요.",
+    "es": "Aún tienes retención de líquidos visible (\\(retentionLoad)%): ten cuidado con el agua, el sodio y el potasio de la dieta.",
+    "pt-BR": "Você ainda tem retenção visível de água (\\(retentionLoad)%): observe água, sódio e potássio na dieta."
+  },
+  "You're doing great, \\(trimmed)!": {
+    "ja": "\\(trimmed)さん、頑張ってますよ！",
+    "de": "Du machst das großartig, \\(trimmed)!",
+    "ko": "잘하고 있어요, \\(trimmed)!",
+    "es": "¡Lo estás haciendo genial, \\(trimmed)!",
+    "pt-BR": "Você está indo muito bem, \\(trimmed)!"
+  },
+  "You're puffier than usual (\\(load)%, \\(signed(delta)) vs your average).": {
+    "ja": "通常よりも腫れています (\\(load)%、\\(signed(delta)) 対平均)。",
+    "de": "Du bist geschwollener als sonst (\\(load) %, \\(signed(delta)) im Vergleich zu deinem Durchschnitt).",
+    "ko": "평소보다 더 부풀어 오릅니다(평균 대비 \\(load)%, \\(signed(delta))).",
+    "es": "Estás más hinchado de lo habitual (\\(load)%, \\(signed(delta)) frente a tu promedio).",
+    "pt-BR": "Você está mais inchado do que o normal (\\(load)%, \\(signed(delta)) versus sua média)."
+  },
+  "You're staying on track\\(nameSuffix).": {
+    "ja": "順調に進んでいます\\(nameSuffix)。",
+    "de": "Du bleibst auf dem richtigen Weg\\(nameSuffix).",
+    "ko": "순조롭게 진행되고 있어요\\(nameSuffix).",
+    "es": "Estás manteniendo el rumbo\\(nameSuffix).",
+    "pt-BR": "Você está no caminho certo\\(nameSuffix)."
+  },
+  "Young active profile — face debloated by \\(debloatFmt), \\(weight) on the trajectory.": {
+    "ja": "若いアクティブなプロファイル — 軌道上で \\(debloatFmt)、\\(weight) によって顔のむくみが軽減された顔。",
+    "de": "Junges aktives Profil – Gesicht mit reduzierter Gesichtsschwellung um \\(debloatFmt), \\(weight) auf der Flugbahn.",
+    "ko": "젊은 활성 프로필 — 궤적에서 얼굴 붓기가 \\(debloatFmt), \\(weight)만큼 감소한 얼굴.",
+    "es": "Perfil joven activo: rostro con hinchazón facial reducida en \\(debloatFmt), \\(weight) en la trayectoria.",
+    "pt-BR": "Perfil ativo jovem — rosto com inchaço facial reduzido em \\(debloatFmt), \\(weight) na trajetória."
+  },
+  "Your data stays private and is only used to personalize \\(AppBranding.name).": {
+    "ja": "あなたのデータは非公開のままであり、\\(AppBranding.name) をパーソナライズするためにのみ使用されます。",
+    "de": "deine Daten bleiben vertraulich und werden nur zur Personalisierung von \\(AppBranding.name) verwendet.",
+    "ko": "데이터는 비공개로 유지되며 \\(AppBranding.name)를 개인화하는 데에만 사용돼요.",
+    "es": "Tus datos permanecen privados y solo se utilizan para personalizar \\(AppBranding.name).",
+    "pt-BR": "Seus dados permanecem privados e são usados apenas para personalizar \\(AppBranding.name)."
+  },
+  "Your face shows \\(severity) — classic after \\(health.sleepHoursLabel ?? shortNight), when aldosterone stays high.": {
+    "ja": "あなたの顔には \\(severity) が表示されます。アルドステロンが高い状態が続くと、典型的な \\(health.sleepHoursLabel ?? shortNight) の後の状態になります。",
+    "de": "dein Gesicht zeigt \\(severity) – klassisch nach \\(health.sleepHoursLabel ?? shortNight), wenn der Aldosteronspiegel hoch bleibt.",
+    "ko": "얼굴은 \\(severity)를 보여줍니다 — 알도스테론 수치가 높게 유지되는 \\(health.sleepHoursLabel ?? shortNight) 이후 전형적인 모습이에요.",
+    "es": "Tu cara muestra \\(severity), clásico después de \\(health.sleepHoursLabel ?? shortNight), cuando la aldosterona se mantiene alta.",
+    "pt-BR": "Seu rosto mostra \\(severity) – clássico depois de \\(health.sleepHoursLabel ?? shortNight), quando a aldosterona permanece alta."
+  },
+  "Your face shows \\(severity): puffiness, under-eyes, or jaw tension combined.": {
+    "ja": "あなたの顔には、\\(severity): むくみ、目の下の疲れ、または顎の筋肉の緊張が組み合わさっています。",
+    "de": "dein Gesicht zeigt \\(severity): Schwellungen, Müdigkeit unter den Augen oder Verspannungen in den Kiefermuskeln zusammen.",
+    "ko": "얼굴에 \\(severity) 증상이 나타나는 경우: 붓기, 눈 밑의 피로 또는 턱 근육의 긴장이 복합적으로 나타나요.",
+    "es": "Tu cara muestra \\(severity): hinchazón, fatiga debajo de los ojos o tensión en los músculos de la mandíbula combinados.",
+    "pt-BR": "Seu rosto mostra \\(severity): inchaço, fadiga sob os olhos ou tensão nos músculos da mandíbula combinados."
+  },
+  "“\\(food.localizedName)” slows a debloated face\\(saltNoteEN).": {
+    "ja": "「\\(food.localizedName)」は、顔のむくみが軽減された顔\\(saltNoteEN)を遅くします。",
+    "de": "„\\(food.localizedName)“ verlangsamt ein Gesicht mit reduzierter Gesichtsschwellung\\(saltNoteEN).",
+    "ko": "“\\(food.localizedName)”는 얼굴 붓기를 줄여 얼굴\\(saltNoteEN)을 느리게 만들어요.",
+    "es": "“\\(food.localizedName)” ralentiza una cara con hinchazón facial reducida\\(saltNoteEN).",
+    "pt-BR": "“\\(food.localizedName)” retarda um rosto com inchaço facial reduzido\\(saltNoteEN)."
+  },
+  "• Debloat program: day \\(progress.elapsedProgramDays)/\\(progress.totalProgramDays)": {
+    "ja": "• 顔のむくみ軽減プログラム: 日 \\(progress.elapsedProgramDays)/\\(progress.totalProgramDays)",
+    "de": "• Programm zur Reduzierung von Gesichtsschwellungen: Tag \\(progress.elapsedProgramDays)/\\(progress.totalProgramDays)",
+    "ko": "• 얼굴 붓기 완화 프로그램 : 낮 \\(progress.elapsedProgramDays)/\\(progress.totalProgramDays)",
+    "es": "• Programa de reducción de hinchazón facial: día \\(progress.elapsedProgramDays)/\\(progress.totalProgramDays)",
+    "pt-BR": "• Programa de redução de inchaço facial: dia \\(progress.elapsedProgramDays)/\\(progress.totalProgramDays)"
+  },
+  "• Debloat target in \\(progress.remainingProgramDays) d · \\(Self.formatShortDate(end))": {
+    "ja": "• \\(progress.remainingProgramDays) d · \\(Self.formatShortDate(end)) における顔のむくみ軽減目標",
+    "de": "• Ziel zur Reduzierung von Gesichtsschwellungen in \\(progress.remainingProgramDays) d · \\(Self.formatShortDate(end))",
+    "ko": "• \\(progress.remainingProgramDays) d · \\(Self.formatShortDate(end))의 얼굴 붓기 감소 목표",
+    "es": "• Objetivo de reducción de hinchazón facial en \\(progress.remainingProgramDays) d · \\(Self.formatShortDate(end))",
+    "pt-BR": "• Meta de redução de inchaço facial em \\(progress.remainingProgramDays) d · \\(Self.formatShortDate(end))"
+  },
+  "• Face: puffiness \\(face.puffiness ?? 0), under-eyes \\(face.underEyeFatigue ?? 0)": {
+    "ja": "• 顔: むくみ \\(face.puffiness ?? 0)、目の下の疲労感 \\(face.underEyeFatigue ?? 0)",
+    "de": "• Gesicht: Schwellungen \\(face.puffiness ?? 0), Müdigkeit unter den Augen \\(face.underEyeFatigue ?? 0)",
+    "ko": "• 얼굴 : 붓기 \\(face.puffiness ?? 0), 눈밑 피로 \\(face.underEyeFatigue ?? 0)",
+    "es": "• Cara: hinchazón \\(face.puffiness ?? 0), fatiga debajo de los ojos \\(face.underEyeFatigue ?? 0)",
+    "pt-BR": "• Rosto: inchaço \\(face.puffiness ?? 0), fadiga sob os olhos \\(face.underEyeFatigue ?? 0)"
+  },
+  "• Global AI memory:\\n\\(summary)": {
+    "ja": "• グローバル AI メモリ:\\n\\(summary)",
+    "de": "• Globaler KI-Speicher:\\n\\(summary)",
+    "ko": "• 글로벌 AI 메모리:\\n\\(summary)",
+    "es": "• Memoria IA global:\\n\\(summary)",
+    "pt-BR": "• Memória global de IA:\\n\\(summary)"
+  },
+  "• Goal: \\(plan.primaryFaceGoal)": {
+    "ja": "• 目標: \\(plan.primaryFaceGoal)",
+    "de": "• Ziel: \\(plan.primaryFaceGoal)",
+    "ko": "• 목표: \\(plan.primaryFaceGoal)",
+    "es": "• Objetivo: \\(plan.primaryFaceGoal)",
+    "pt-BR": "• Meta: \\(plan.primaryFaceGoal)"
+  },
+  "• Journal notes: \\(sample)": {
+    "ja": "• 日記メモ: \\(sample)",
+    "de": "• Tagebuchnotizen: \\(sample)",
+    "ko": "• 일지 메모: \\(sample)",
+    "es": "• Notas del diario: \\(sample)",
+    "pt-BR": "• Notas do diário: \\(sample)"
+  },
+  "• Latest check-in: \\(last.dayKey) — \\(last.verdict), \\(last.yesCount)/3 levers, score \\(Int(last.score))": {
+    "ja": "• 最新のチェックイン: \\(last.dayKey) — \\(last.verdict)、\\(last.yesCount)/3 レバー、スコア \\(Int(last.score))",
+    "de": "• Letzter Check-in: \\(last.dayKey) – \\(last.verdict), \\(last.yesCount)/3 Hebel, Punktestand \\(Int(last.score))",
+    "ko": "• 최근 체크인: \\(last.dayKey) — \\(last.verdict), \\(last.yesCount)/3 레버, 점수 \\(Int(last.score))",
+    "es": "• Último registro: \\(last.dayKey) — \\(last.verdict), \\(last.yesCount)/3 palancas, puntuación \\(Int(last.score))",
+    "pt-BR": "• Último check-in: \\(last.dayKey) — \\(last.verdict), \\(last.yesCount)/3 alavancas, pontuação \\(Int(last.score))"
+  },
+  "• Latest posture scan \\(score)/100": {
+    "ja": "• 最新の姿勢スキャン \\(score)/100",
+    "de": "• Neuester Haltungsscan \\(score)/100",
+    "ko": "• 최신 자세 스캔 \\(score)/100",
+    "es": "• Último escaneo de postura \\(score)/100",
+    "pt-BR": "• Verificação de postura mais recente \\(score)/100"
+  },
+  "• Past conversations: \\(convs)": {
+    "ja": "• 過去の会話: \\(convs)",
+    "de": "• Vergangene Gespräche: \\(convs)",
+    "ko": "• 지난 대화: \\(convs)",
+    "es": "• Conversaciones pasadas: \\(convs)",
+    "pt-BR": "• Conversas anteriores: \\(convs)"
+  },
+  "• Plan [\\(mod.sectionPath)]: “\\(String(req.prefix(100)))”": {
+    "ja": "• プラン [\\(mod.sectionPath)]: 「\\(String(req.prefix(100)))」",
+    "de": "• Planen du [\\(mod.sectionPath)]: „\\(String(req.prefix(100)))“",
+    "ko": "• 계획 [\\(mod.sectionPath)]: “\\(String(req.prefix(100)))”",
+    "es": "• Plan [\\(mod.sectionPath)]: “\\(String(req.prefix(100)))”",
+    "pt-BR": "• Plano [\\(mod.sectionPath)]: “\\(String(req.prefix(100)))”"
+  },
+  "• Posture: \\(plan.postureProtocol.mobilityBlocks.count) daily mobility blocks": {
+    "ja": "• 姿勢: \\(plan.postureProtocol.mobilityBlocks.count) 日常の可動性ブロック",
+    "de": "• Körperhaltung: \\(plan.postureProtocol.mobilityBlocks.count) tägliche Mobilitätsblockaden",
+    "ko": "• 자세: \\(plan.postureProtocol.mobilityBlocks.count) 일일 이동 블록",
+    "es": "• Postura: \\(plan.postureProtocol.mobilityBlocks.count) bloques de movilidad diaria",
+    "pt-BR": "• Postura: \\(plan.postureProtocol.mobilityBlocks.count) bloqueios diários de mobilidade"
+  },
+  "• Recent meal feedback: \\(fb)": {
+    "ja": "• 最近の食事のフィードバック: \\(fb)",
+    "de": "• Aktuelles Essens-Feedback: \\(fb)",
+    "ko": "• 최근 식사 피드백: \\(fb)",
+    "es": "• Comentarios recientes sobre comidas: \\(fb)",
+    "pt-BR": "• Feedback recente sobre refeições: \\(fb)"
+  },
+  "• Recently logged meal (\\(entry.mealSlot.displayTitle)): \\(content.name)": {
+    "ja": "• 最近記録した食事 (\\(entry.mealSlot.displayTitle)): \\(content.name)",
+    "de": "• Kürzlich protokollierte Mahlzeit (\\(entry.mealSlot.displayTitle)): \\(content.name)",
+    "ko": "• 최근 기록된 식사(\\(entry.mealSlot.displayTitle)): \\(content.name)",
+    "es": "• Comida registrada recientemente (\\(entry.mealSlot.displayTitle)): \\(content.name)",
+    "pt-BR": "• Refeição registrada recentemente (\\(entry.mealSlot.displayTitle)): \\(content.name)"
+  },
+  "• Relative face \\(relativeScore)/100: puffiness \\(puffinessDelta), under-eyes \\(fatigueDelta)": {
+    "ja": "• 相対的な顔 \\(relativeScore)/100: むくみ \\(puffinessDelta)、目の下の疲労 \\(fatigueDelta)",
+    "de": "• Relatives Gesicht \\(relativeScore)/100: Schwellungen \\(puffinessDelta), Ermüdung unter den Augen \\(fatigueDelta)",
+    "ko": "• 상대 얼굴 \\(relativeScore)/100: 붓기 \\(puffinessDelta), 눈 밑 피로 \\(fatigueDelta)",
+    "es": "• Cara relativa \\(relativeScore)/100: hinchazón \\(puffinessDelta), fatiga debajo de los ojos \\(fatigueDelta)",
+    "pt-BR": "• Rosto relativo \\(relativeScore)/100: inchaço \\(puffinessDelta), fadiga sob os olhos \\(fatigueDelta)"
+  },
+  "• Sleep: \\(sleepStep)": {
+    "ja": "• 睡眠: \\(sleepStep)",
+    "de": "• Schlaf: \\(sleepStep)",
+    "ko": "• 수면: \\(sleepStep)",
+    "es": "• Dormir: \\(sleepStep)",
+    "pt-BR": "• Dormir: \\(sleepStep)"
+  },
+  "• Tasks checked: \\(completed)": {
+    "ja": "• チェックしたタスク: \\(completed)",
+    "de": "• Geprüfte Aufgaben: \\(completed)",
+    "ko": "• 확인된 작업: \\(completed)",
+    "es": "• Tareas marcadas: \\(completed)",
+    "pt-BR": "• Tarefas verificadas: \\(completed)"
+  },
+  "• Today (\\(today.weekdayLabel)): \\(today.title)": {
+    "ja": "• 今日 (\\(today.weekdayLabel)): \\(today.title)",
+    "de": "• Heute (\\(today.weekdayLabel)): \\(today.title)",
+    "ko": "• 오늘(\\(today.weekdayLabel)): \\(today.title)",
+    "es": "• Hoy (\\(today.weekdayLabel)): \\(today.title)",
+    "pt-BR": "• Hoje (\\(today.weekdayLabel)): \\(today.title)"
+  },
+  "• Validated days: \\(progress.validatedDays)": {
+    "ja": "• 検証日: \\(progress.validatedDays)",
+    "de": "• Validierte Tage: \\(progress.validatedDays)",
+    "ko": "• 확인된 날짜: \\(progress.validatedDays)",
+    "es": "• Días validados: \\(progress.validatedDays)",
+    "pt-BR": "• Dias validados: \\(progress.validatedDays)"
+  },
+  "✅ Updated in your program\\n\\(list)\\n\\n": {
+    "ja": "✅ プログラムで更新されました\\n\\(list)\\n\\n",
+    "de": "✅ In deinem Programm aktualisiert\\n\\(list)\\n\\n",
+    "ko": "✅ 프로그램에서 업데이트됨\\n\\(list)\\n\\n",
+    "es": "✅ Actualizado en tu programa\\n\\(list)\\n\\n",
+    "pt-BR": "✅ Atualizado em seu programa\\n\\(list)\\n\\n"
+  },
+  "🎁 Earn \\(price) right now": {
+    "ja": "🎁 今すぐ \\(price) を獲得しましょう",
+    "de": "🎁 Verdienen du jetzt \\(price)",
+    "ko": "🎁 지금 바로 \\(price)를 획득하세요",
+    "es": "🎁 Gane \\(price) ahora mismo",
+    "pt-BR": "🎁 Ganhe \\(price) agora mesmo"
+  },
+  "📅 Member since \\(monthEN)": {
+    "ja": "📅 \\(monthEN) からのメンバー",
+    "de": "📅 Mitglied seit \\(monthEN)",
+    "ko": "📅 \\(monthEN) 이후의 회원",
+    "es": "📅 Miembro desde \\(monthEN)",
+    "pt-BR": "📅 Membro desde \\(monthEN)"
+  },
+  "📎 File: \\(name)": {
+    "ja": "📎 ファイル: \\(name)",
+    "de": "📎 Datei: \\(name)",
+    "ko": "📎 파일: \\(name)",
+    "es": "📎 Archivo: \\(name)",
+    "pt-BR": "📎 Arquivo: \\(name)"
+  },
+  "📷 \\(images.count) photos": {
+    "ja": "📷 \\(images.count) 写真",
+    "de": "📷 \\(images.count) Fotos",
+    "ko": "📷 \\(images.count) 사진",
+    "es": "📷 \\(images.count) fotos",
+    "pt-BR": "📷 \\(images.count) fotos"
+  }
+}
