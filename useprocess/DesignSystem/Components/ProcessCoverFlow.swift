@@ -126,8 +126,8 @@ struct ProcessCoverFlow<Card: View>: View {
 
     private func clampUnlocked(_ index: Int) -> Int {
         let bounded = min(max(index, 0), max(itemCount - 1, 0))
-        guard let maxUnlockedIndex else { return bounded }
-        return min(bounded, maxUnlockedIndex)
+        guard let cap = config.maxUnlockedIndex else { return bounded }
+        return min(bounded, cap)
     }
 
     private func snapToUnlockedIndex(_ index: Int) {

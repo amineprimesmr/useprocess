@@ -470,14 +470,10 @@ final class SubscriptionService: NSObject, ObservableObject {
             do {
                 try await purchaseWinbackWithRevenueCat()
                 return
-            } catch let error as SubscriptionError where error == .productNotFound {
-                // Produit absent du catalogue RC (souvent pas encore ajouté / pas lié) → StoreKit direct.
-            } catch let error as SubscriptionError {
-                throw error
-            } catch let error as ErrorCode where error == .purchaseCancelledError {
-                throw SubscriptionError.userCancelled
             } catch {
-                throw SubscriptionError.unknown
+                guard case SubscriptionError.productNotFound = error else {
+                    throw mappedPurchaseError(error)
+                }
             }
         }
         try await purchaseWinbackWithStoreKit()
@@ -499,13 +495,19 @@ final class SubscriptionService: NSObject, ObservableObject {
             if result.userCancelled { throw SubscriptionError.userCancelled }
             applyCustomerInfo(result.customerInfo)
             await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
-        } catch let error as ErrorCode where error == .purchaseCancelledError {
-            throw SubscriptionError.userCancelled
-        } catch let error as SubscriptionError {
-            throw error
         } catch {
-            throw SubscriptionError.unknown
+            throw mappedPurchaseError(error)
         }
+    }
+
+    private func mappedPurchaseError(_ error: Error) -> SubscriptionError {
+        if let subscriptionError = error as? SubscriptionError {
+            return subscriptionError
+        }
+        if let code = error as? ErrorCode, code == .purchaseCancelledError {
+            return .userCancelled
+        }
+        return .unknown
     }
 
     private func purchaseWinbackWithStoreKit() async throws {
