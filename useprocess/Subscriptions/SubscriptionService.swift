@@ -467,47 +467,35 @@ final class SubscriptionService: NSObject, ObservableObject {
     /// Achat winback — accès à vie à 19 € (non consommable).
     func purchaseWinbackLifetime() async throws {
         if isConfigured {
-            do {
-                try await purchaseWinbackWithRevenueCat()
-                return
-            } catch {
-                guard case SubscriptionError.productNotFound = error else {
-                    throw mappedPurchaseError(error)
-                }
-            }
+            let purchasedWithRevenueCat = try await attemptRevenueCatWinbackPurchase()
+            if purchasedWithRevenueCat { return }
         }
         try await purchaseWinbackWithStoreKit()
     }
 
-    /// Compat — ancien nom (offre annuelle winback).
-    func purchaseWinbackAnnual() async throws {
-        try await purchaseWinbackLifetime()
-    }
-
-    private func purchaseWinbackWithRevenueCat() async throws {
+    /// `true` si l’achat RC a réussi, `false` si le produit lifetime est absent du catalogue RC.
+    private func attemptRevenueCatWinbackPurchase() async throws -> Bool {
         let products = await Purchases.shared.products([SubscriptionConfiguration.lifetimeProductID])
-        guard let lifetime = products.first else {
-            throw SubscriptionError.productNotFound
-        }
+        guard let lifetime = products.first else { return false }
 
         do {
             let result = try await Purchases.shared.purchase(product: lifetime)
             if result.userCancelled { throw SubscriptionError.userCancelled }
             applyCustomerInfo(result.customerInfo)
             await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+            return true
+        } catch let error as ErrorCode where error == .purchaseCancelledError {
+            throw SubscriptionError.userCancelled
+        } catch let error as SubscriptionError {
+            throw error
         } catch {
-            throw mappedPurchaseError(error)
+            throw SubscriptionError.unknown
         }
     }
 
-    private func mappedPurchaseError(_ error: Error) -> SubscriptionError {
-        if let subscriptionError = error as? SubscriptionError {
-            return subscriptionError
-        }
-        if let code = error as? ErrorCode, code == .purchaseCancelledError {
-            return .userCancelled
-        }
-        return .unknown
+    /// Compat — ancien nom (offre annuelle winback).
+    func purchaseWinbackAnnual() async throws {
+        try await purchaseWinbackLifetime()
     }
 
     private func purchaseWinbackWithStoreKit() async throws {
