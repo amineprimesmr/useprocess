@@ -95,12 +95,6 @@ struct SportOnboardingView: View {
             }
             }
 
-            continueButtonOverlay
-                .opacity(shouldShowGlobalContinueButton ? continueButtonOpacity : 0)
-                .accessibilityHidden(!shouldShowGlobalContinueButton)
-                .allowsHitTesting(shouldShowGlobalContinueButton)
-                .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
-
             if !isImmersiveOnboardingStep,
                isOnboardingRestoreComplete,
                !OnboardingHeaderLayout.usesDedicatedFullScreenChrome(currentStep: viewModel.currentStep),
@@ -113,6 +107,13 @@ struct SportOnboardingView: View {
                 .ignoresSafeArea(.all)
                 .allowsHitTesting(false)
             }
+        }
+        .overlay(alignment: .bottom) {
+            continueButtonOverlay
+                .opacity(shouldShowGlobalContinueButton ? continueButtonOpacity : 0)
+                .accessibilityHidden(!shouldShowGlobalContinueButton)
+                .allowsHitTesting(shouldShowGlobalContinueButton)
+                .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
         }
         .overlay(alignment: .top) {
             if !isImmersiveOnboardingStep,
@@ -290,10 +291,7 @@ struct SportOnboardingView: View {
     }
 
     private var continueButtonOverlay: some View {
-        VStack {
-            Spacer()
-                .allowsHitTesting(false)
-
+        VStack(spacing: 0) {
             Button(action: {
                 handleContinueButtonTap()
             }) {
@@ -307,11 +305,7 @@ struct SportOnboardingView: View {
             .onboardingPrimaryActionStyle()
             .padding(.horizontal, 34)
             .disabled(!canContinue)
-            .allowsHitTesting(
-                shouldShowGlobalContinueButton
-                    && continueButtonHitTestingEnabled
-                    && canContinue
-            )
+            .allowsHitTesting(continueButtonHitTestingEnabled && canContinue)
 
             if shouldShowNoWeightGoalLink {
                 Button(action: skipWeightGoalFromIdealWeight) {
@@ -324,12 +318,10 @@ struct SportOnboardingView: View {
                         .processTappableButtonLabel(maxWidth: true)
                 }
                 .buttonStyle(.processPlain)
+                .allowsHitTesting(canContinue)
             }
-
-            Spacer()
-                .frame(height: effectiveContinueBottomOffset)
-                .allowsHitTesting(false)
         }
+        .padding(.bottom, effectiveContinueBottomOffset)
         .id("onboarding_global_continue")
         .ios26SafeAnimation(.spring(response: 0.34, dampingFraction: 0.88), value: keyboardHeight.height)
     }

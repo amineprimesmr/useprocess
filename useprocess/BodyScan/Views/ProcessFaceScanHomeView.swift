@@ -13,6 +13,8 @@ struct ProcessFaceScanHomeView: View {
     @Bindable private var historyStore = FaceScanHistoryStore.shared
     @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
 
+    @Environment(\.onboardingScanPreviewPaused) private var onboardingScanPreviewPaused
+
     @State private var isScanFlowActive = false
     @State private var selectedFilter: ProcessFaceScanHistoryFilter = .all
     @State private var selectedAnalysisScan: FaceScanResult?
@@ -35,7 +37,7 @@ struct ProcessFaceScanHomeView: View {
     }
 
     private var livePreviewActive: Bool {
-        isRuntimeActive && !isScanFlowActive
+        isRuntimeActive && !isScanFlowActive && !onboardingScanPreviewPaused
     }
 
     private var filteredHistory: [FaceScanResult] {
@@ -811,5 +813,17 @@ private struct ProcessFaceScanOvalCameraPreview: View {
         }
         guard camera.authorizationStatus == .authorized else { return }
         await camera.restartPreviewIfNeeded(preferredPosition: .front)
+    }
+}
+
+private struct OnboardingScanPreviewPausedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Coupe l’aperçu AV du hub Scan pendant la capture plein écran onboarding.
+    var onboardingScanPreviewPaused: Bool {
+        get { self[OnboardingScanPreviewPausedKey.self] }
+        set { self[OnboardingScanPreviewPausedKey.self] = newValue }
     }
 }

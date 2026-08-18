@@ -10,16 +10,41 @@ final class AppleSignInManager: NSObject, ObservableObject {
 
     private var currentNonce: String?
     private var completion: ((Result<Void, Error>) -> Void)?
+    private var deletionCompletion: ((Result<String?, Error>) -> Void)?
     private var intent: AppleSignInIntent = .signIn
     private var isPerformingRequest = false
 
     private override init() {
         super.init()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleCredentialRevoked),
+            name: ASAuthorizationAppleIDProvider.credentialRevokedNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleCredentialRevoked() {
+        Task { @MainActor in
+            guard AppSession.shared.hasCompletedOnboarding else { return }
+            AuthenticationManager.shared.applyPostAccountDeletion()
+            AuthenticationManager.shared.startOnboarding()
+            AppSession.shared.resetOnboarding()
+        }
+    }
+
+    private func finishDeletion(with result: Result<String?, Error>) {
+        isPerformingRequest = false
+        deletionCompletion?(result)
+        deletionCompletion = nil
+        currentNonce = nil
+        intent = .signIn
     }
 
     enum AppleSignInIntent {
         case signIn
         case reauthenticate
+        case reauthenticateForAccountDeletion
     }
 
     func startSignInWithAppleFlow(completion: @escaping (Result<Void, Error>) -> Void) {
@@ -28,6 +53,47 @@ final class AppleSignInManager: NSObject, ObservableObject {
 
     func startReauthenticationFlow(completion: @escaping (Result<Void, Error>) -> Void) {
         startAuthorization(intent: .reauthenticate, completion: completion)
+    }
+
+    /// Réauth Apple avant suppression — retourne l'authorization code pour révocation serveur.
+    func startReauthenticationForAccountDeletion() async throws -> String? {
+        try await withCheckedThrowingContinuation { continuation in
+            startAuthorizationForDeletion { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    private func startAuthorizationForDeletion(
+        completion: @escaping (Result<String?, Error>) -> Void
+    ) {
+        guard AppConfiguration.firebaseConfigured else {
+            completion(.failure(AppleSignInError.firebaseNotConfigured))
+            return
+        }
+
+        guard !isPerformingRequest else {
+            completion(.failure(AppleSignInError.requestInProgress))
+            return
+        }
+
+        isPerformingRequest = true
+        deletionCompletion = completion
+        intent = .reauthenticateForAccountDeletion
+        let nonce = randomNonceString()
+        currentNonce = nonce
+
+        let provider = ASAuthorizationAppleIDProvider()
+        let request = provider.createRequest()
+        request.nonce = sha256(nonce)
+
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+
+        DispatchQueue.main.async {
+            controller.performRequests()
+        }
     }
 
     private func startAuthorization(
@@ -104,22 +170,39 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
         didCompleteWithAuthorization authorization: ASAuthorization
     ) {
         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-            finish(with: .failure(AppleSignInError.invalidCredential))
+            if intent == .reauthenticateForAccountDeletion {
+                finishDeletion(with: .failure(AppleSignInError.invalidCredential))
+            } else {
+                finish(with: .failure(AppleSignInError.invalidCredential))
+            }
             return
         }
 
         guard let nonce = currentNonce else {
-            finish(with: .failure(AppleSignInError.missingNonce))
-            return
-        }
-
-        guard let tokenData = credential.identityToken,
-              let token = String(data: tokenData, encoding: .utf8) else {
-            finish(with: .failure(AppleSignInError.missingToken))
+            if intent == .reauthenticateForAccountDeletion {
+                finishDeletion(with: .failure(AppleSignInError.missingNonce))
+            } else {
+                finish(with: .failure(AppleSignInError.missingNonce))
+            }
             return
         }
 
         let activeIntent = intent
+
+        guard let tokenData = credential.identityToken,
+              let token = String(data: tokenData, encoding: .utf8) else {
+            if activeIntent == .reauthenticateForAccountDeletion {
+                finishDeletion(with: .failure(AppleSignInError.missingToken))
+            } else {
+                finish(with: .failure(AppleSignInError.missingToken))
+            }
+            return
+        }
+
+        let authorizationCode = credential.authorizationCode.flatMap {
+            String(data: $0, encoding: .utf8)
+        }
+        let appleUserId = credential.user
 
         Task { @MainActor in
             do {
@@ -141,21 +224,44 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
                             try? await changeRequest.commitChanges()
                         }
                     }
+                    AppleSignInTokenRegistrar.registerAuthorizationCodeIfPresent(
+                        authorizationCode,
+                        appleUserId: appleUserId
+                    )
                 case .reauthenticate:
                     guard let user = Auth.auth().currentUser else {
                         throw AppleSignInError.invalidCredential
                     }
                     try await user.reauthenticate(with: firebaseCredential)
+                    AppleSignInTokenRegistrar.registerAuthorizationCodeIfPresent(
+                        authorizationCode,
+                        appleUserId: appleUserId
+                    )
+                case .reauthenticateForAccountDeletion:
+                    guard let user = Auth.auth().currentUser else {
+                        throw AppleSignInError.invalidCredential
+                    }
+                    try await user.reauthenticate(with: firebaseCredential)
+                    finishDeletion(with: .success(authorizationCode))
+                    return
                 }
 
                 finish(with: .success(()))
             } catch {
-                finish(with: .failure(error))
+                if activeIntent == .reauthenticateForAccountDeletion {
+                    finishDeletion(with: .failure(error))
+                } else {
+                    finish(with: .failure(error))
+                }
             }
         }
     }
 
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        if intent == .reauthenticateForAccountDeletion {
+            finishDeletion(with: .failure(error))
+            return
+        }
         finish(with: .failure(error))
     }
 }

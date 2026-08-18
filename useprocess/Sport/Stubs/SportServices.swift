@@ -175,8 +175,15 @@ final class AuthenticationManager: NSObject, ObservableObject {
             throw AccountDeletionError.notSignedIn
         }
 
+        var appleAuthorizationCode: String?
+        if usesAppleProvider {
+            appleAuthorizationCode = try await reauthenticateWithAppleForAccountDeletion()
+        }
+
         do {
-            try await AccountDeletionRemoteService.deleteViaCloudFunction()
+            try await AccountDeletionRemoteService.deleteViaCloudFunction(
+                appleAuthorizationCode: appleAuthorizationCode
+            )
             #if DEBUG
             print("[Auth] Compte supprimé via Cloud Function")
             #endif
@@ -188,8 +195,8 @@ final class AuthenticationManager: NSObject, ObservableObject {
             if case AccountDeletionError.cancelled = error { throw error }
         }
 
-        if usesAppleProvider {
-            try await reauthenticateWithApple()
+        if usesAppleProvider, appleAuthorizationCode == nil {
+            appleAuthorizationCode = try await reauthenticateWithAppleForAccountDeletion()
         }
         try await AccountDeletionRemoteService.deleteViaClientSDK()
     }
@@ -198,15 +205,11 @@ final class AuthenticationManager: NSObject, ObservableObject {
         currentFirebaseUser?.providerData.contains { $0.providerID == "apple.com" } == true
     }
 
-    private func reauthenticateWithApple() async throws {
+    private func reauthenticateWithAppleForAccountDeletion() async throws -> String? {
         do {
-            try await withThrowingTaskGroup(of: Void.self) { group in
+            return try await withThrowingTaskGroup(of: String?.self) { group in
                 group.addTask { @MainActor in
-                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                        AppleSignInManager.shared.startReauthenticationFlow { result in
-                            continuation.resume(with: result)
-                        }
-                    }
+                    try await AppleSignInManager.shared.startReauthenticationForAccountDeletion()
                 }
                 group.addTask {
                     try await Task.sleep(nanoseconds: 60_000_000_000)

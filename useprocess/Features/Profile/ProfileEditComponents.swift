@@ -21,7 +21,10 @@ enum AccountConfirmation: Identifiable {
         case .logout:
             return AppCopy.t("Tu pourras te reconnecter à tout moment.", en: "You can log back in at any time.")
         case .deleteAccount:
-            return AppCopy.t("Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.", en: "This action is permanent. All your data will be erased and you'll return to the beginning of Process.")
+            return AppCopy.t(
+                "Cette action est définitive. Toutes tes données seront effacées, la liaison Se connecter avec Apple sera révoquée, et tu reviendras au début de Process. Ton abonnement App Store, s'il est actif, n'est pas annulé automatiquement.",
+                en: "This action is permanent. All your data will be erased, your Sign in with Apple link will be revoked, and you'll return to the beginning of Process. Your App Store subscription, if active, is not cancelled automatically."
+            )
         }
     }
 
@@ -499,8 +502,8 @@ private struct AccountDeleteConfirmationSheet: View {
                 .foregroundStyle(theme.primaryText)
 
             Text(AppCopy.t(
-                "Cette action est définitive. Toutes tes données seront effacées et tu reviendras au début de Process.",
-                en: "This action is permanent. All your data will be erased and you'll return to the beginning of Process."
+                "Cette action est définitive. Toutes tes données seront effacées, la liaison Se connecter avec Apple sera révoquée, et tu reviendras au début de Process. Ton abonnement App Store, s'il est actif, n'est pas annulé automatiquement — gère-le dans Réglages iPhone → Abonnements.",
+                en: "This action is permanent. All your data will be erased, your Sign in with Apple link will be revoked, and you'll return to the beginning of Process. Your App Store subscription, if active, is not cancelled automatically — manage it in iPhone Settings → Subscriptions."
             ))
             .font(.subheadline)
             .foregroundStyle(theme.secondaryText)

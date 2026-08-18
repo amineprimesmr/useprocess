@@ -242,6 +242,7 @@ struct MossSettleIn: ViewModifier {
         content
             .opacity(shown ? 1 : 0)
             .offset(y: shown ? 0 : 6)
+            .allowsHitTesting(shown)
             .onAppear {
                 if reduceMotion { shown = true; return }
                 withAnimation(.smooth(duration: 0.32)

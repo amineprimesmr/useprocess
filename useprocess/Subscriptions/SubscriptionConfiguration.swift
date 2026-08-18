@@ -48,18 +48,26 @@ enum SubscriptionConfiguration {
     /// Quick action long-press icône : offre lifetime winback (pas d’essai gratuit).
     static let retentionQuickActionLifetimeOfferEnabled = true
 
-    /// Toujours 0 — aucun essai gratuit dans l’app (ni UI, ni StoreKit local).
+    /// Quick action = lifetime 19 € uniquement (pas d’essai annuel rétention).
     static let retentionQuickActionTrialDays = 0
+
+    /// Fallback UI — essai annuel marché FR tant que StoreKit n’a pas répondu.
+    static let frenchMarketAnnualTrialDays = 3
 
     static func retentionTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
         _ = plan
         return nil
     }
 
-    /// Aucun essai gratuit — ni paywall, ni rétention, ni StoreKit.
+    /// Essai gratuit annuel — storefront FR uniquement (Apple facture selon le compte App Store).
     static func supportsFreeTrial(_ plan: SubscriptionBillingPlan) -> Bool {
-        _ = plan
-        return false
+        guard SubscriptionMarketPolicy.allowsIntroductoryFreeTrial else { return false }
+        return plan == .annual
+    }
+
+    static func configuredFallbackTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
+        guard supportsFreeTrial(plan) else { return nil }
+        return frenchMarketAnnualTrialDays
     }
 
     /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR) — legacy.
@@ -214,8 +222,10 @@ struct SubscriptionProductDisplay: Equatable {
     let isIntroOfferEligible: Bool
 
     var trialInfo: SubscriptionTrialInfo {
-        // Essais gratuits désactivés — jamais exposer un essai depuis le display produit.
-        SubscriptionTrialInfo(days: 0, isEligible: false)
+        if isIntroOfferEligible, let freeTrialDays, freeTrialDays > 0 {
+            return SubscriptionTrialInfo(days: freeTrialDays, isEligible: true)
+        }
+        return SubscriptionTrialInfo(days: 0, isEligible: false)
     }
 
     static func fallback(
@@ -262,6 +272,10 @@ struct SubscriptionProductDisplay: Equatable {
     }
 
     func updatingIntroEligibility(_ eligible: Bool) -> SubscriptionProductDisplay {
+        updatingTrial(days: freeTrialDays, eligible: eligible)
+    }
+
+    func updatingTrial(days: Int?, eligible: Bool) -> SubscriptionProductDisplay {
         SubscriptionProductDisplay(
             productID: productID,
             displayName: displayName,
@@ -269,7 +283,7 @@ struct SubscriptionProductDisplay: Equatable {
             periodLabel: periodLabel,
             monthlyEquivalentPrice: monthlyEquivalentPrice,
             paywallStrikethroughAnnualTotal: paywallStrikethroughAnnualTotal,
-            freeTrialDays: freeTrialDays,
+            freeTrialDays: days,
             isIntroOfferEligible: eligible
         )
     }

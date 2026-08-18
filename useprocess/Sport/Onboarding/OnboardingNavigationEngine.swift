@@ -325,7 +325,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.dreamFaceCommit.rawValue
 
         case .dreamFaceCommit:
-            return OnboardingStep.referralCode.rawValue
+            return OnboardingConstants.showsReferralCodeStepInOnboarding
+                ? OnboardingStep.referralCode.rawValue
+                : OnboardingStep.payment.rawValue
 
         case .payment:
             return OnboardingStep.appleSignIn.rawValue
@@ -454,7 +456,9 @@ class OnboardingNavigationEngine {
             return OnboardingStep.dashboardPreview.rawValue
 
         case .payment:
-            return OnboardingStep.referralCode.rawValue
+            return OnboardingConstants.showsReferralCodeStepInOnboarding
+                ? OnboardingStep.referralCode.rawValue
+                : OnboardingStep.dreamFaceCommit.rawValue
 
         case .appleSignIn:
             return OnboardingStep.payment.rawValue

@@ -165,13 +165,19 @@ struct OnboardingProfileChatView: View {
             .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
 
             if mossEngine.isTyping {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        mossEngine.completeCurrent()
-                    }
-                    .accessibilityHidden(true)
+                VStack(spacing: 0) {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            mossEngine.completeCurrent()
+                        }
+                    Spacer(minLength: 0)
+                        .frame(maxHeight: 260)
+                        .allowsHitTesting(false)
+                }
+                .ignoresSafeArea()
+                .accessibilityLabel(OnboardingCopy.t("Appuie pour afficher la suite", en: "Tap to show the rest"))
+                .accessibilityAddTraits(.isButton)
             }
         }
     }

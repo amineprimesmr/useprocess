@@ -19,6 +19,9 @@ struct PaywallView: View {
     let onComplete: (() -> Void)?
     /// Sortie sans achat (retour onboarding, ou dismiss si présenté en sheet).
     let onLeaveWithoutPurchase: (() -> Void)?
+    /// Bloque la croix / swipe Home — paywall obligatoire après onboarding.
+    let allowsLeaveWithoutPurchase: Bool
+    private let analyticsSource: String
 
     /// Plan choisi dans le paywall (source de vérité unique).
     @State private var selectedBillingPlan: SubscriptionBillingPlan = .annual
@@ -42,9 +45,16 @@ struct PaywallView: View {
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
 
-    init(onComplete: (() -> Void)? = nil, onBack: (() -> Void)? = nil) {
+    init(
+        onComplete: (() -> Void)? = nil,
+        onBack: (() -> Void)? = nil,
+        allowsLeaveWithoutPurchase: Bool = true,
+        analyticsSource: String = "onboarding_or_paywall"
+    ) {
         self.onComplete = onComplete
-        self.onLeaveWithoutPurchase = onBack
+        self.allowsLeaveWithoutPurchase = allowsLeaveWithoutPurchase
+        self.onLeaveWithoutPurchase = allowsLeaveWithoutPurchase ? onBack : nil
+        self.analyticsSource = analyticsSource
     }
 
     private var pricingVariant: PaywallPricingExperiment.Variant {
@@ -148,6 +158,7 @@ struct PaywallView: View {
         .onAppear {
             refreshMeasuredTopSafeInset()
             trackPaywallAppear()
+            guard allowsLeaveWithoutPurchase else { return }
             Task {
                 try? await Task.sleep(for: .seconds(5))
                 guard !Task.isCancelled else { return }
@@ -212,6 +223,7 @@ struct PaywallView: View {
     }
 
     private func handleDeferredHomeSwipe() {
+        guard allowsLeaveWithoutPurchase else { return }
         // Swipe Home → pop rétention (indépendant de la croix).
         guard homeSwipeGate.shouldShowPaywallStayPopup else { return }
         guard !showsSpinWinback, !showsStayPopup else { return }
@@ -240,7 +252,7 @@ struct PaywallView: View {
     }
 
     private func trackPaywallAppear() {
-        ProcessAnalytics.trackPaywallViewed(source: "onboarding_or_paywall")
+        ProcessAnalytics.trackPaywallViewed(source: analyticsSource)
     }
 
     // MARK: - Header
@@ -269,19 +281,21 @@ struct PaywallView: View {
 
             Spacer(minLength: 0)
 
-            Button {
-                handlePaywallCloseAttempt(source: "xmark")
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-                    .frame(width: 36, height: 36)
+            if allowsLeaveWithoutPurchase {
+                Button {
+                    handlePaywallCloseAttempt(source: "xmark")
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 36, height: 36)
+                }
+                .processGlassIconButtonStyle()
+                .opacity(showsCloseXButton ? 1 : 0)
+                .allowsHitTesting(showsCloseXButton)
+                .accessibilityHidden(!showsCloseXButton)
+                .accessibilityLabel(OnboardingCopy.t("Fermer", en: "Close"))
             }
-            .processGlassIconButtonStyle()
-            .opacity(showsCloseXButton ? 1 : 0)
-            .allowsHitTesting(showsCloseXButton)
-            .accessibilityHidden(!showsCloseXButton)
-            .accessibilityLabel(OnboardingCopy.t("Fermer", en: "Close"))
         }
         .padding(.horizontal, 18)
     }
@@ -429,10 +443,7 @@ struct PaywallView: View {
             }
             .modifier(PaywallContinueShakeEffect(shakes: continueShakeTicks))
 
-            Text(OnboardingCopy.t(
-                "Sans engagement, annulable à tout moment.",
-                en: "No commitment — cancel anytime."
-            ))
+            Text(paywallContinueSubtitle)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -464,8 +475,27 @@ struct PaywallView: View {
         return display.paywallShortPlanPriceLabel(for: shortBillingPlan)
     }
 
+    private var selectedPlanTrialInfo: SubscriptionTrialInfo {
+        subscriptionService.trialInfo(for: selectedBillingPlan)
+    }
+
     private var paywallContinueButtonTitle: String {
-        OnboardingCopy.t("Continuer, aucun engagement.", en: "Continue — no commitment.")
+        selectedPlanTrialInfo.ctaTitle(
+            fallback: OnboardingCopy.t("Continuer, aucun engagement.", en: "Continue — no commitment.")
+        )
+    }
+
+    private var paywallContinueSubtitle: String {
+        if let trialSubtitle = selectedPlanTrialInfo.ctaSubtitle(
+            for: selectedBillingPlan,
+            displayPrice: subscriptionService.displayProduct(for: selectedBillingPlan).displayPrice
+        ) {
+            return trialSubtitle
+        }
+        return OnboardingCopy.t(
+            "Sans engagement, annulable à tout moment.",
+            en: "No commitment — cancel anytime."
+        )
     }
 
     private var paywallContinueButtonEnabled: Bool {
@@ -561,19 +591,20 @@ struct PaywallView: View {
         defer { isPurchasing = false }
 
         let plan = selectedBillingPlan.rawValue
+        let offer = selectedPlanTrialInfo.isActiveOffer ? "trial" : "standard"
         ProcessAnalytics.trackPaywallCTATapped(plan: plan, source: "paywall")
-        ProcessAnalytics.trackPurchaseStarted(plan: plan, offer: "standard", source: "paywall")
+        ProcessAnalytics.trackPurchaseStarted(plan: plan, offer: offer, source: "paywall")
 
         do {
             try await subscriptionService.purchase(plan: selectedBillingPlan)
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
-                ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: "standard", source: "paywall")
+                ProcessAnalytics.trackPurchaseCompleted(plan: plan, offer: offer, source: "paywall")
                 ProcessMarketingNotificationService.shared.handlePurchaseSuccess(plan: plan)
                 completePaywallFlow()
             }
         } catch SubscriptionError.userCancelled {
-            ProcessAnalytics.trackPurchaseCancelled(plan: plan, offer: "standard", source: "paywall")
+            ProcessAnalytics.trackPurchaseCancelled(plan: plan, offer: offer, source: "paywall")
             presentSpinWinbackIfNeeded()
             Task {
                 await ProcessMarketingNotificationService.shared.startAfterPaywallDropoff(
@@ -586,7 +617,7 @@ struct PaywallView: View {
             ProcessAnalytics.trackPurchaseFailed(
                 plan: plan,
                 error: message,
-                offer: "standard",
+                offer: offer,
                 source: "paywall"
             )
             purchaseError = message

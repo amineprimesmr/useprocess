@@ -19,10 +19,12 @@ struct ProcessCoverFlowConfig: Sendable {
     var maxSideVisibleProgress: CGFloat = 1.08
     /// Limite le swipe manuel à une carte par geste (dashboard preview).
     var limitsScrollToOneCard: Bool = false
+    /// Index max atteignable au doigt — au-delà, uniquement via un bouton (Continuer).
+    var maxUnlockedIndex: Int? = nil
 }
 
 enum ProcessCoverFlowMotion {
-    static let advance = Animation.spring(response: 0.44, dampingFraction: 0.92, blendDuration: 0)
+    static let advance = Animation.spring(response: 0.46, dampingFraction: 0.94, blendDuration: 0)
 }
 
 struct ProcessCoverFlow<Card: View>: View {
@@ -98,16 +100,40 @@ struct ProcessCoverFlow<Card: View>: View {
                 let index = Int((offset / stride).rounded())
                 return min(max(index, 0), max(itemCount - 1, 0))
             } action: { _, newIndex in
-                onFocusedIndexChange?(newIndex)
+                let clamped = clampUnlocked(newIndex)
+                guard clamped == newIndex else { return }
+                onFocusedIndexChange?(clamped)
             }
             .onChange(of: activeIndex) { _, newValue in
                 guard let newValue else { return }
-                onFocusedIndexChange?(newValue)
+                let clamped = clampUnlocked(newValue)
+                guard clamped == newValue else { return }
+                onFocusedIndexChange?(clamped)
             }
             .onScrollPhaseChange { _, phase in
                 guard phase == .idle else { return }
+                if let current = activeIndex {
+                    let clamped = clampUnlocked(current)
+                    if clamped != current {
+                        snapToUnlockedIndex(clamped)
+                        return
+                    }
+                }
                 onScrollIdle?(activeIndex)
             }
+        }
+    }
+
+    private func clampUnlocked(_ index: Int) -> Int {
+        let bounded = min(max(index, 0), max(itemCount - 1, 0))
+        guard let maxUnlockedIndex else { return bounded }
+        return min(bounded, maxUnlockedIndex)
+    }
+
+    private func snapToUnlockedIndex(_ index: Int) {
+        guard activeIndex != index else { return }
+        withAnimation(ProcessCoverFlowMotion.advance) {
+            activeIndex = index
         }
     }
 

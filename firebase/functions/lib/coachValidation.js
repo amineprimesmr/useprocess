@@ -83,6 +83,8 @@ function httpStatusForError(message) {
         return 401;
     if (message === "INVALID_APP_CHECK")
         return 403;
+    if (message === "PREMIUM_REQUIRED")
+        return 402;
     if (message === "RATE_LIMITED")
         return 429;
     return 500;

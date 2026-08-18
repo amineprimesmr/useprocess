@@ -4,9 +4,9 @@ import UIKit
 /// Caméra des scans Process — selfie standard (TrueDepth), pas l’ultra grand-angle front.
 enum ProcessScanCamera {
     /// Crop visuel UIKit / conteneur ARKit preview.
-    nonisolated static let frontPreviewLayoutZoom: CGFloat = 1.18
+    nonisolated static let frontPreviewLayoutZoom: CGFloat = 1.28
     /// Zoom capteur AVCapture — ≥ 1 force l’optique « standard » sur iPhone dual-front.
-    nonisolated static let frontPortraitZoom: CGFloat = 1.20
+    nonisolated static let frontPortraitZoom: CGFloat = 1.28
 
     static func device(position: AVCaptureDevice.Position) -> AVCaptureDevice? {
         if position == .front {
@@ -17,6 +17,10 @@ enum ProcessScanCamera {
 
     /// Selfie Face ID / TrueDepth en priorité — évite l’ultra-wide front quand un 2e capteur existe.
     static func preferredFrontPortraitDevice() -> AVCaptureDevice? {
+        if let trueDepth = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) {
+            return trueDepth
+        }
+
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInTrueDepthCamera, .builtInWideAngleCamera],
             mediaType: .video,
@@ -24,6 +28,11 @@ enum ProcessScanCamera {
         )
         if let trueDepth = discovery.devices.first(where: { $0.deviceType == .builtInTrueDepthCamera }) {
             return trueDepth
+        }
+
+        // Dual-front : préférer un capteur qui peut rester à zoom ≥ 1 (pas ultra grand-angle).
+        if let standard = discovery.devices.first(where: { $0.minAvailableVideoZoomFactor >= 0.99 }) {
+            return standard
         }
         return discovery.devices.first
     }

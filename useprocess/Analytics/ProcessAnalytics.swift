@@ -236,6 +236,9 @@ enum ProcessAnalytics {
         for (key, value) in PaywallPricingExperiment.shared.analyticsProperties {
             props[key] = value
         }
+        for (key, value) in SubscriptionMarketPolicy.analyticsProperties {
+            props[key] = value
+        }
         return props
     }
 

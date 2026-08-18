@@ -162,6 +162,8 @@ final class BodyScanCameraService: NSObject, ObservableObject {
 
         session.commitConfiguration()
 
+        ProcessScanCamera.lockFrontCameraOutOfUltraWide(device)
+
         DispatchQueue.main.async {
             self.activePosition = position
         }

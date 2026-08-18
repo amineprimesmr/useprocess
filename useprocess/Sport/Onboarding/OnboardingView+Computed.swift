@@ -150,7 +150,7 @@ var shouldUseScanPagePush: Bool {
     let from = OnboardingStep(rawValue: previousStepIndex ?? viewModel.currentStep)
     let to = OnboardingStep(rawValue: viewModel.currentStep)
     if from == .dashboardPreview || to == .dashboardPreview {
-        return false
+        return true
     }
     return Self.usesScanStylePagePush(
         from: previousStepIndex ?? viewModel.currentStep,

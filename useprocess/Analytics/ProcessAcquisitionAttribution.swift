@@ -202,6 +202,9 @@ enum ProcessAcquisitionAttribution {
                 attrs["asa_campaign_id"] = String(id.prefix(40))
             }
         }
+        for (key, value) in SubscriptionMarketPolicy.analyticsProperties {
+            attrs[key] = value
+        }
         return attrs
     }
 

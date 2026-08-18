@@ -221,6 +221,8 @@ enum OnboardingStep: Int, CaseIterable {
              .healthKitPermissions, .notificationPermission,
              .idealWeight, .weightGoalIncompatible:
             return true
+        case .referralCode:
+            return !OnboardingConstants.showsReferralCodeStepInOnboarding
         default:
             return false
         }

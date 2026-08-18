@@ -8,7 +8,7 @@ enum AccountDeletionRemoteService {
     private static let tokenTimeout: TimeInterval = 25
     private static let firestoreCleanupTimeout: TimeInterval = 45
 
-    static func deleteViaCloudFunction() async throws {
+    static func deleteViaCloudFunction(appleAuthorizationCode: String? = nil) async throws {
         try ensureFirebaseReady()
 
         guard let user = Auth.auth().currentUser else {
@@ -29,7 +29,11 @@ enum AccountDeletionRemoteService {
         request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data("{}".utf8)
+        var payload: [String: Any] = [:]
+        if let appleAuthorizationCode, !appleAuthorizationCode.isEmpty {
+            payload["appleAuthorizationCode"] = appleAuthorizationCode
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         request.timeoutInterval = cloudRequestTimeout
         await applyAppCheckHeader(to: &request)
 

@@ -48,6 +48,12 @@ enum CoachRemoteError: LocalizedError {
         if code == 401 {
             return AppCopy.tSync("Session expirée — reconnecte-toi.", en: "Your session expired — sign in again.")
         }
+        if code == 402 || lower.contains("premium_required") {
+            return AppCopy.tSync(
+                "Abonnement Pro requis pour utiliser le coach.",
+                en: "A Pro subscription is required to use the coach."
+            )
+        }
         return AppCopy.tSync("Erreur coach (\(code)). Réessaie.", en: "Coach error (\(code)). Try again.")
     }
 

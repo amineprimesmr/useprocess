@@ -146,6 +146,7 @@ extension SportOnboardingView {
             DashboardPreviewStepView(
                 presentation: viewModel.dashboardPreviewPresentation,
                 onComplete: { advanceFromDashboardPreview() },
+                onBack: { handleOnboardingBack() },
                 onFirstScanResult: { viewModel.recordDashboardFaceScanResult($0) },
                 onFirstScanContinue: { advanceFromEarlyDashboardFaceScan() }
             )

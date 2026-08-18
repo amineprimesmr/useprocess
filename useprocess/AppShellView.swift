@@ -17,15 +17,48 @@ struct AppShellView: View {
         AppTheme(appearance: session.appearance, colorScheme: colorScheme)
     }
 
+    private var mainAppBootstrapToken: String {
+        guard session.hasCompletedOnboarding,
+              subscriptionService.hasResolvedInitialSubscriptionStatus,
+              subscriptionService.subscriptionStatus.isActive else {
+            return "main-app-idle"
+        }
+        return "main-app-ready-\(appLanguage.code.rawValue)"
+    }
+
+    private var coachRuntimeBootstrapToken: String {
+        guard session.hasCompletedOnboarding,
+              subscriptionService.hasResolvedInitialSubscriptionStatus,
+              subscriptionService.subscriptionStatus.isActive,
+              session.hasCompletedWelcomePlanChat else {
+            return "coach-runtime-idle"
+        }
+        return "coach-runtime-ready-\(appLanguage.code.rawValue)"
+    }
+
     var body: some View {
         ZStack {
             ProcessScreenBackground()
 
             if session.hasCompletedOnboarding {
-                MainAppView()
-                    .processAppStoreReviewPrompts()
+                if !subscriptionService.hasResolvedInitialSubscriptionStatus {
+                    Color.clear
+                        .task {
+                            await subscriptionService.checkSubscriptionStatus()
+                        }
+                } else if subscriptionService.subscriptionStatus.isActive {
+                    MainAppView()
+                        .processAppStoreReviewPrompts()
+                        .transition(.opacity)
+                        .id("main-app-\(appLanguage.code.rawValue)")
+                } else {
+                    PaywallView(
+                        allowsLeaveWithoutPurchase: false,
+                        analyticsSource: "subscription_gate"
+                    )
                     .transition(.opacity)
-                    .id("main-app-\(appLanguage.code.rawValue)")
+                    .id("subscription-gate-\(appLanguage.code.rawValue)")
+                }
             } else {
                 SportOnboardingRootView()
                     .transition(.opacity)
@@ -34,6 +67,8 @@ struct AppShellView: View {
         }
         .environment(\.locale, appLanguage.locale)
         .animation(.easeInOut(duration: 0.28), value: session.hasCompletedOnboarding)
+        .animation(.easeInOut(duration: 0.28), value: subscriptionService.subscriptionStatus)
+        .animation(.easeInOut(duration: 0.28), value: subscriptionService.hasResolvedInitialSubscriptionStatus)
         // Double-swipe Home après stabilisation du launch (pas au tout premier frame).
         .processPreAccessDoubleHomeSwipe(
             isActive: !session.hasCompletedOnboarding && isHomeSwipeArmed
@@ -48,6 +83,9 @@ struct AppShellView: View {
                 ProcessMarketingNotificationService.shared.handleAppBecameActive()
                 ProcessAudioSession.configureForMixingWithOthersIfIdle()
                 ProcessHomeScreenQuickActions.syncForCurrentUser()
+                if session.hasCompletedOnboarding {
+                    Task { await subscriptionService.checkSubscriptionStatus() }
+                }
                 Task { await CoachDailyRhythmService.refreshEveningNotification() }
                 if let delegate = UIApplication.shared.delegate as? ProcessAppDelegate {
                     delegate.consumePendingLaunchShortcut()
@@ -122,8 +160,10 @@ struct AppShellView: View {
                 profile: UnifiedProfileService.shared.currentProfile
             )
         }
-        .task(id: session.hasCompletedOnboarding) {
-            guard session.hasCompletedOnboarding else {
+        .task(id: mainAppBootstrapToken) {
+            guard session.hasCompletedOnboarding,
+                  subscriptionService.hasResolvedInitialSubscriptionStatus,
+                  subscriptionService.subscriptionStatus.isActive else {
                 didPrepareMainApp = false
                 didPrepareCoachRuntime = false
                 return
@@ -138,13 +178,18 @@ struct AppShellView: View {
             PlanHomeTutorialStore.shared.suppressPresentationForPreview(false)
             PlanHomeTutorialStore.shared.activateImmediatelyIfNeeded()
             try? await Task.sleep(for: .milliseconds(650))
-            guard !Task.isCancelled, session.hasCompletedOnboarding else { return }
+            guard !Task.isCancelled,
+                  session.hasCompletedOnboarding,
+                  subscriptionService.subscriptionStatus.isActive else { return }
             if AppConfiguration.firebaseConfigured {
                 _ = UserSessionCoordinator.shared
             }
         }
-        .task(id: session.hasCompletedWelcomePlanChat) {
-            guard session.hasCompletedOnboarding, session.hasCompletedWelcomePlanChat else {
+        .task(id: coachRuntimeBootstrapToken) {
+            guard session.hasCompletedOnboarding,
+                  subscriptionService.hasResolvedInitialSubscriptionStatus,
+                  subscriptionService.subscriptionStatus.isActive,
+                  session.hasCompletedWelcomePlanChat else {
                 didPrepareCoachRuntime = false
                 return
             }
@@ -153,6 +198,7 @@ struct AppShellView: View {
             try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled,
                   session.hasCompletedOnboarding,
+                  subscriptionService.subscriptionStatus.isActive,
                   session.hasCompletedWelcomePlanChat else { return }
             WelcomePlanStore.shared.reloadForCurrentUser()
             await CoachMemorySummarizer.refreshIfNeeded(

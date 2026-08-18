@@ -62,6 +62,9 @@ struct OnboardingConstants {
     static var mossChatContentTopInset: CGFloat {
         headerBackButtonTopPadding + backButtonSize + mossChatSpacingBelowHeaderBar
     }
+
+    /// Remettre à `true` pour réafficher l’étape code parrainage avant le paywall.
+    static let showsReferralCodeStepInOnboarding = false
 }
 
 // MARK: - Visibilité du header

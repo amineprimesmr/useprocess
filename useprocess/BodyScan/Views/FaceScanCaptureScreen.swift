@@ -39,6 +39,8 @@ struct FaceScanCaptureScreen: View {
     var usesOnboardingFaceOval: Bool = false
     /// Fond app (`ProcessBackgroundPalette`) au lieu du canvas scan onboarding.
     var usesAppScreenBackground: Bool = false
+    /// Chrono 3-2-1 à la place du titre, à l’arrivée sur l’écran.
+    var playsArrivalCountdown: Bool = false
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
     @State private var scanProgress: Double = 0
@@ -77,6 +79,10 @@ struct FaceScanCaptureScreen: View {
     @State private var importingPreviewImage: UIImage?
     @State private var hasSubmittedCapture = false
     @State private var captureSessionPaused = false
+    @State private var didFinishArrivalCountdown = false
+    @State private var arrivalCountdownValue = 3
+    @State private var arrivalCountdownTask: Task<Void, Never>?
+    @State private var isArrivalCameraRevealed = false
 
     private var cameraZoom: CGFloat {
         AdaptiveScreenLayout.faceScanCameraZoom(horizontalSizeClass: horizontalSizeClass)
@@ -108,7 +114,7 @@ struct FaceScanCaptureScreen: View {
 
     /// Masque bleu + anneau de tirets onboarding — uniquement quand le cadrage est bon ou le scan actif.
     private var showsOnboardingScanCalibrationChrome: Bool {
-        guard usesOnboardingFaceOval, !isInlinePreview, !scanBlockedByLighting else { return false }
+        guard usesOnboardingFaceOval, !isInlinePreview, !isArrivalCountdownActive, !scanBlockedByLighting else { return false }
         if phase == .scanning || phase == .completed || scanProgress > 0.005 { return true }
         return isOnboardingFaceCalibrated
     }
@@ -163,6 +169,10 @@ struct FaceScanCaptureScreen: View {
         return false
     }
 
+    private var isArrivalCountdownActive: Bool {
+        playsArrivalCountdown && !didFinishArrivalCountdown && !isEmbedded
+    }
+
     var body: some View {
         Group {
             switch presentation {
@@ -178,8 +188,11 @@ struct FaceScanCaptureScreen: View {
             userFlashOverride = false
             isFlashEnabled = false
             FaceScanScreenFlash.shared.deactivate(animated: false)
+            startArrivalCountdownIfNeeded()
         }
         .onDisappear {
+            arrivalCountdownTask?.cancel()
+            arrivalCountdownTask = nil
             FaceScanScreenFlash.shared.deactivate()
         }
         .task {
@@ -439,23 +452,39 @@ struct FaceScanCaptureScreen: View {
             .padding(.horizontal, 20)
 
             VStack(spacing: 7) {
-                Text(onboardingScanTitle)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.92) : Color.white.opacity(0.94))
-                    .multilineTextAlignment(.center)
-                    .contentTransition(.opacity)
-                    .animation(.easeInOut(duration: 0.22), value: onboardingScanCopyToken)
+                if isArrivalCountdownActive {
+                    Text("\(arrivalCountdownValue)")
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.92) : Color.white.opacity(0.94))
+                        .contentTransition(.numericText(countsDown: true))
+                        .accessibilityLabel(
+                            AppCopy.t(
+                                "Le scan commence dans \(arrivalCountdownValue)",
+                                en: "Scan starts in \(arrivalCountdownValue)"
+                            )
+                        )
+                } else {
+                    Text(onboardingScanTitle)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.92) : Color.white.opacity(0.94))
+                        .multilineTextAlignment(.center)
+                        .contentTransition(.opacity)
 
-                Text(onboardingScanSubtitle)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.38) : Color.white.opacity(0.42))
-                .multilineTextAlignment(.center)
-                .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.22), value: onboardingScanCopyToken)
+                    Text(onboardingScanSubtitle)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(onboardingUsesLightChrome ? Color.black.opacity(0.38) : Color.white.opacity(0.42))
+                        .multilineTextAlignment(.center)
+                        .contentTransition(.opacity)
+                }
             }
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 72, alignment: .center)
             .padding(.top, 8)
             .padding(.horizontal, 28)
+            .animation(.easeInOut(duration: 0.22), value: arrivalCountdownValue)
+            .animation(.easeInOut(duration: 0.22), value: isArrivalCountdownActive)
+            .animation(.easeInOut(duration: 0.22), value: onboardingScanCopyToken)
 
             Spacer()
                 .frame(minHeight: 6, maxHeight: 12)
@@ -601,6 +630,33 @@ struct FaceScanCaptureScreen: View {
     /// TEMP — retour visible sur la capture plein écran (à côté du flash).
     private var showsTemporaryCaptureBackButton: Bool {
         usesOnboardingFaceOval && !isEmbedded && phase != .completed
+    }
+
+    private func startArrivalCountdownIfNeeded() {
+        guard playsArrivalCountdown, !isEmbedded, !didFinishArrivalCountdown else { return }
+        arrivalCountdownTask?.cancel()
+        arrivalCountdownValue = 3
+        HapticManager.shared.impact(.light)
+        withAnimation(.easeOut(duration: 0.42).delay(0.10)) {
+            isArrivalCameraRevealed = true
+        }
+        arrivalCountdownTask = Task { @MainActor in
+            for value in [3, 2, 1] {
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    arrivalCountdownValue = value
+                }
+                if value != 3 {
+                    HapticManager.shared.impact(.light)
+                }
+                try? await Task.sleep(for: .milliseconds(720))
+            }
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.22)) {
+                didFinishArrivalCountdown = true
+            }
+            HapticManager.shared.impact(.medium)
+        }
     }
 
     private func embeddedCardLayout(viewportDiameter: CGFloat) -> some View {
@@ -927,29 +983,36 @@ struct FaceScanCaptureScreen: View {
                     morphToCircle: scanBlockedByLighting ? 1 : viewportMorph,
                     style: viewportStyle,
                     camera: {
-                        FaceMeshScanView(
-                            progress: $scanProgress,
-                            ringProgress: $ringProgress,
-                            activeTickSectors: $activeTickSectors,
-                            currentTickSector: $currentTickSector,
-                            overlayMode: $overlayMode,
-                            tiltHoldProgress: $tiltHoldProgress,
-                            tiltDirection: $tiltDirection,
-                            tiltIsEngaged: $tiltIsEngaged,
-                            instruction: $instruction,
-                            frameHint: $frameHint,
-                            isFaceDetected: $isFaceDetected,
-                            isDeviceSupported: $isDeviceSupported,
-                            isLowLight: $isLowLight,
-                            isPreviewOnly: isInlinePreview,
-                            isSessionRunning: isARSessionActive,
-                            allowsScreenFlash: allowsScreenFlash,
-                            skipsHeadTiltPhase: skipsHeadTiltPhase,
-                            cameraZoom: cameraZoom,
-                            onComplete: handleCapture
-                        )
-                        .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
-                        .blur(radius: scanBlockedByLighting ? 7 : 0)
+                        ZStack {
+                            if usesOnboardingFaceOval {
+                                FaceScanOnboardingOvalShape()
+                                    .fill(Color(red: 0.09, green: 0.09, blue: 0.10))
+                            }
+                            FaceMeshScanView(
+                                progress: $scanProgress,
+                                ringProgress: $ringProgress,
+                                activeTickSectors: $activeTickSectors,
+                                currentTickSector: $currentTickSector,
+                                overlayMode: $overlayMode,
+                                tiltHoldProgress: $tiltHoldProgress,
+                                tiltDirection: $tiltDirection,
+                                tiltIsEngaged: $tiltIsEngaged,
+                                instruction: $instruction,
+                                frameHint: $frameHint,
+                                isFaceDetected: $isFaceDetected,
+                                isDeviceSupported: $isDeviceSupported,
+                                isLowLight: $isLowLight,
+                                isPreviewOnly: isInlinePreview || isArrivalCountdownActive,
+                                isSessionRunning: isARSessionActive,
+                                allowsScreenFlash: allowsScreenFlash,
+                                skipsHeadTiltPhase: skipsHeadTiltPhase,
+                                cameraZoom: cameraZoom,
+                                onComplete: handleCapture
+                            )
+                            .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
+                            .blur(radius: scanBlockedByLighting ? 7 : 0)
+                            .opacity(playsArrivalCountdown && !isArrivalCameraRevealed ? 0 : 1)
+                        }
                     },
                     overlay: { EmptyView() }
                 )

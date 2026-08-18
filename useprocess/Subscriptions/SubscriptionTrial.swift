@@ -71,19 +71,29 @@ struct SubscriptionTrialInfo: Equatable {
 }
 
 enum SubscriptionIntroOfferParser {
-    /// Essais gratuits désactivés — ne jamais parser une intro offer StoreKit / ASC.
     static func trialDays(from product: Product?) -> Int? {
-        _ = product
-        return nil
+        guard SubscriptionMarketPolicy.allowsIntroductoryFreeTrial,
+              let offer = product?.subscription?.introductoryOffer,
+              offer.paymentMode == .freeTrial else { return nil }
+        return days(in: offer.period)
     }
 
     static func trialDays(from storeProduct: StoreProduct?) -> Int? {
-        _ = storeProduct
-        return nil
+        trialDays(from: storeProduct?.sk2Product)
     }
 
     static func days(in period: Product.SubscriptionPeriod) -> Int {
-        _ = period
-        return 0
+        switch period.unit {
+        case .day:
+            return max(1, period.value)
+        case .week:
+            return max(1, period.value * 7)
+        case .month:
+            return max(1, period.value * 30)
+        case .year:
+            return max(1, period.value * 365)
+        @unknown default:
+            return max(1, SubscriptionConfiguration.frenchMarketAnnualTrialDays)
+        }
     }
 }

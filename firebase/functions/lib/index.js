@@ -36,14 +36,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.deleteUserAccount = void 0;
+exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const coachValidation_1 = require("./coachValidation");
+const premiumAccess_1 = require("./premiumAccess");
+const appleSignIn_1 = require("./appleSignIn");
 admin.initializeApp();
 const anthropicApiKey = (0, params_1.defineSecret)("ANTHROPIC_API_KEY");
+const revenueCatSecretKey = (0, params_1.defineSecret)("REVENUECAT_SECRET_API_KEY");
+const appleSignInTeamId = (0, params_1.defineSecret)("APPLE_SIGNIN_TEAM_ID");
+const appleSignInKeyId = (0, params_1.defineSecret)("APPLE_SIGNIN_KEY_ID");
+const appleSignInPrivateKey = (0, params_1.defineSecret)("APPLE_SIGNIN_PRIVATE_KEY");
+const APPLE_SIGNIN_SECRETS = [
+    appleSignInTeamId,
+    appleSignInKeyId,
+    appleSignInPrivateKey,
+];
+function appleSignInConfigFromSecrets() {
+    const secrets = {
+        teamId: appleSignInTeamId.value(),
+        keyId: appleSignInKeyId.value(),
+        privateKey: appleSignInPrivateKey.value(),
+        clientId: process.env.APPLE_SIGNIN_CLIENT_ID || "com.useprocess",
+    };
+    return (0, appleSignIn_1.resolveAppleSignInConfig)(secrets);
+}
+function isAppleSignInProvider(user) {
+    return user.providerData.some((provider) => provider.providerId === "apple.com");
+}
 const enforceAppCheck = process.env.ENFORCE_APP_CHECK === "true";
 function setCors(res) {
     res.set("Access-Control-Allow-Origin", "*");
@@ -205,6 +228,7 @@ async function deleteAllUserFirestoreData(uid) {
 exports.deleteUserAccount = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
+    secrets: APPLE_SIGNIN_SECRETS,
     timeoutSeconds: 180,
     memory: "1GiB",
 }, async (req, res) => {
@@ -220,6 +244,31 @@ exports.deleteUserAccount = (0, https_1.onRequest)({
     try {
         const uid = await verifyFirebaseUser(req);
         await verifyAppAttestation(req);
+        const body = (req.body ?? {});
+        const appleAuthorizationCode = typeof body.appleAuthorizationCode === "string"
+            ? body.appleAuthorizationCode.trim()
+            : undefined;
+        let appleRevoked;
+        let appleRevokeReason;
+        try {
+            const authUser = await admin.auth().getUser(uid);
+            if (isAppleSignInProvider(authUser)) {
+                try {
+                    const appleConfig = appleSignInConfigFromSecrets();
+                    const revokeResult = await (0, appleSignIn_1.revokeAppleSignInForUser)(uid, appleConfig, appleAuthorizationCode);
+                    appleRevoked = revokeResult.revoked;
+                    appleRevokeReason = revokeResult.reason;
+                }
+                catch (appleError) {
+                    console.warn("[deleteUserAccount] Apple revoke skipped", appleError?.message ?? appleError);
+                    appleRevoked = false;
+                    appleRevokeReason = appleError?.message ?? "APPLE_CONFIG_UNAVAILABLE";
+                }
+            }
+        }
+        catch (authLookupError) {
+            console.warn("[deleteUserAccount] auth lookup before Apple revoke", authLookupError?.message ?? authLookupError);
+        }
         // Les données sont effacées avant l'identité : aucune réponse positive
         // n'est envoyée si le nettoyage des données personnelles échoue.
         await deleteAllUserFirestoreData(uid);
@@ -231,8 +280,11 @@ exports.deleteUserAccount = (0, https_1.onRequest)({
                 throw authError;
             }
         }
-        console.info("[deleteUserAccount] Deleted user and data", uid);
-        res.status(200).json({ ok: true, uid });
+        console.info("[deleteUserAccount] Deleted user and data", uid, {
+            appleRevoked,
+            appleRevokeReason,
+        });
+        res.status(200).json({ ok: true, uid, appleRevoked, appleRevokeReason });
     }
     catch (error) {
         const message = error?.message ?? "Unknown error";
@@ -241,10 +293,53 @@ exports.deleteUserAccount = (0, https_1.onRequest)({
         res.status(status).json({ error: message });
     }
 });
+exports.appleSignInRegisterToken = (0, https_1.onRequest)({
+    invoker: "public",
+    cors: true,
+    secrets: APPLE_SIGNIN_SECRETS,
+    timeoutSeconds: 60,
+    memory: "256MiB",
+}, async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+    }
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+    try {
+        const uid = await verifyFirebaseUser(req);
+        await verifyAppAttestation(req);
+        const body = (req.body ?? {});
+        const authorizationCode = typeof body.authorizationCode === "string"
+            ? body.authorizationCode.trim()
+            : "";
+        if (!authorizationCode) {
+            res.status(400).json({ error: "Missing authorizationCode" });
+            return;
+        }
+        const appleUserId = typeof body.appleUserId === "string" ? body.appleUserId.trim() : undefined;
+        const appleConfig = appleSignInConfigFromSecrets();
+        await (0, appleSignIn_1.registerAppleAuthorizationCode)(uid, authorizationCode, appleConfig, appleUserId);
+        res.status(200).json({ ok: true, uid });
+    }
+    catch (error) {
+        const message = error?.message ?? "Unknown error";
+        const status = message === "UNAUTHORIZED"
+            ? 401
+            : message.startsWith("APPLE_") || message === "APPLE_SIGNIN_CONFIG_INCOMPLETE"
+                ? 503
+                : 500;
+        console.error("[appleSignInRegisterToken]", message);
+        res.status(status).json({ error: message });
+    }
+});
 exports.coachComplete = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
-    secrets: [anthropicApiKey],
+    secrets: [anthropicApiKey, revenueCatSecretKey],
     timeoutSeconds: 120,
     memory: "512MiB",
 }, async (req, res) => {
@@ -260,6 +355,7 @@ exports.coachComplete = (0, https_1.onRequest)({
     try {
         const uid = await verifyFirebaseUser(req);
         await verifyAppAttestation(req);
+        await (0, premiumAccess_1.verifyPremiumSubscriber)(uid, revenueCatSecretKey.value());
         const body = req.body;
         const validationError = (0, coachValidation_1.validateCoachBody)(body);
         if (validationError) {
@@ -303,7 +399,7 @@ exports.coachComplete = (0, https_1.onRequest)({
 exports.coachStream = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
-    secrets: [anthropicApiKey],
+    secrets: [anthropicApiKey, revenueCatSecretKey],
     timeoutSeconds: 180,
     memory: "512MiB",
 }, async (req, res) => {
@@ -319,6 +415,7 @@ exports.coachStream = (0, https_1.onRequest)({
     try {
         const uid = await verifyFirebaseUser(req);
         await verifyAppAttestation(req);
+        await (0, premiumAccess_1.verifyPremiumSubscriber)(uid, revenueCatSecretKey.value());
         const body = req.body;
         const validationError = (0, coachValidation_1.validateCoachBody)(body);
         if (validationError) {

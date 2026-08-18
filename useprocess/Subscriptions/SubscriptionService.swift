@@ -78,7 +78,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     /// `false` tant que le 1er `checkSubscriptionStatus` / `applyCustomerInfo` n’a pas fini.
-    private(set) var hasResolvedInitialSubscriptionStatus = false
+    @Published private(set) var hasResolvedInitialSubscriptionStatus = false
 
     var canPurchase: Bool {
         hasLiveShortPlanProduct || hasLiveAnnualProduct
@@ -137,6 +137,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             PaywallPricingExperiment.shared.resolve()
             applyFallbackProducts()
             Task {
+                await SubscriptionMarketPolicy.refreshStorefrontCountryCode()
                 await loadSubscriptions()
                 await checkSubscriptionStatus()
             }
@@ -153,6 +154,7 @@ final class SubscriptionService: NSObject, ObservableObject {
 
         Task {
             PaywallPricingExperiment.shared.resolve()
+            await SubscriptionMarketPolicy.refreshStorefrontCountryCode()
             if let uid = AuthUser.current?.uid {
                 await syncAppUserID(uid)
             } else {
@@ -268,7 +270,14 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     func trialInfo(for plan: SubscriptionBillingPlan) -> SubscriptionTrialInfo {
-        _ = plan
+        let fromDisplay = displayProduct(for: plan).trialInfo
+        if fromDisplay.isActiveOffer { return fromDisplay }
+
+        if SubscriptionConfiguration.supportsFreeTrial(plan),
+           isIntroOfferEligible,
+           let days = SubscriptionConfiguration.configuredFallbackTrialDays(for: plan) {
+            return SubscriptionTrialInfo(days: days, isEligible: true)
+        }
         return SubscriptionTrialInfo(days: 0, isEligible: false)
     }
 
@@ -289,6 +298,8 @@ final class SubscriptionService: NSObject, ObservableObject {
     func loadSubscriptions() async {
         isLoading = true
         defer { isLoading = false }
+
+        await SubscriptionMarketPolicy.refreshStorefrontCountryCode()
 
         // Prefer async flag load when called from paywall; sync resolve is a no-op if sticky.
         PaywallPricingExperiment.shared.resolve()
@@ -459,10 +470,14 @@ final class SubscriptionService: NSObject, ObservableObject {
             do {
                 try await purchaseWinbackWithRevenueCat()
                 return
-            } catch SubscriptionError.productNotFound {
+            } catch let error as SubscriptionError where error == .productNotFound {
                 // Produit absent du catalogue RC (souvent pas encore ajouté / pas lié) → StoreKit direct.
-            } catch SubscriptionError.userCancelled {
+            } catch let error as SubscriptionError {
+                throw error
+            } catch let error as ErrorCode where error == .purchaseCancelledError {
                 throw SubscriptionError.userCancelled
+            } catch {
+                throw SubscriptionError.unknown
             }
         }
         try await purchaseWinbackWithStoreKit()
@@ -486,6 +501,10 @@ final class SubscriptionService: NSObject, ObservableObject {
             await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
         } catch let error as ErrorCode where error == .purchaseCancelledError {
             throw SubscriptionError.userCancelled
+        } catch let error as SubscriptionError {
+            throw error
+        } catch {
+            throw SubscriptionError.unknown
         }
     }
 
@@ -611,11 +630,12 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func refreshIntroOfferEligibility() async {
-        // Pas d’essai gratuit — ne jamais marquer les produits comme éligibles intro.
-        _ = await Product.SubscriptionInfo.isEligibleForIntroOffer(
-            for: SubscriptionConfiguration.subscriptionGroupID
-        )
-        isIntroOfferEligible = false
+        await SubscriptionMarketPolicy.refreshStorefrontCountryCode()
+
+        let groupID = SubscriptionConfiguration.subscriptionGroupID
+        let storeEligible = await Product.SubscriptionInfo.isEligibleForIntroOffer(for: groupID)
+        let marketAllows = SubscriptionMarketPolicy.allowsIntroductoryFreeTrial
+        isIntroOfferEligible = storeEligible && marketAllows
         isRetentionTrialOfferActive = false
 
         if let weeklyDisplay {
@@ -624,22 +644,40 @@ final class SubscriptionService: NSObject, ObservableObject {
         if let monthlyDisplay {
             self.monthlyDisplay = monthlyDisplay.updatingIntroEligibility(false)
         }
-        if let annualDisplay {
-            self.annualDisplay = annualDisplay.updatingIntroEligibility(false)
+        if var annualDisplay {
+            let trialAllowed = SubscriptionConfiguration.supportsFreeTrial(.annual)
+            let eligible = isIntroOfferEligible && trialAllowed
+            if eligible, annualDisplay.freeTrialDays == nil,
+               let fallbackDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual) {
+                annualDisplay = annualDisplay.updatingTrial(days: fallbackDays, eligible: true)
+            } else {
+                annualDisplay = annualDisplay.updatingIntroEligibility(eligible)
+            }
+            self.annualDisplay = annualDisplay
         }
 
         ProcessHomeScreenQuickActions.syncForCurrentUser()
     }
 
     private func applyRetentionTrialDisplayState() {
-        guard let annualDisplay else { return }
-        self.annualDisplay = annualDisplay.updatingIntroEligibility(false)
+        guard var annualDisplay else { return }
+        let eligible = isIntroOfferEligible && SubscriptionConfiguration.supportsFreeTrial(.annual)
+        if eligible, annualDisplay.freeTrialDays == nil,
+           let fallbackDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual) {
+            annualDisplay = annualDisplay.updatingTrial(days: fallbackDays, eligible: true)
+        } else {
+            annualDisplay = annualDisplay.updatingIntroEligibility(eligible)
+        }
+        self.annualDisplay = annualDisplay
     }
 
     private func scheduleTrialReminderIfNeeded(from info: CustomerInfo) async {
-        // Essais gratuits désactivés — aucun rappel d’essai.
-        _ = info
-        PaywallTrialNotificationService.shared.clearTrialNotifications()
+        guard SubscriptionMarketPolicy.allowsIntroductoryFreeTrial,
+              let entitlement = info.entitlements[SubscriptionConfiguration.entitlementID],
+              entitlement.isActive,
+              entitlement.periodType == .trial,
+              let expiration = entitlement.expirationDate else { return }
+        await PaywallTrialNotificationService.shared.scheduleTrialEndingReminder(trialEndDate: expiration)
     }
 
     private func fetchStoreProductsWithRetry(ids: [String], attempts: Int = 4) async -> [StoreProduct] {
@@ -682,8 +720,15 @@ final class SubscriptionService: NSObject, ObservableObject {
         case .annual:
             break
         }
-        annualDisplay = .fallback(for: .annual)
-        isIntroOfferEligible = false
+
+        let annualTrialDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual)
+        let annualIntroEligible = SubscriptionMarketPolicy.allowsIntroductoryFreeTrial && annualTrialDays != nil
+        annualDisplay = .fallback(
+            for: .annual,
+            freeTrialDays: annualTrialDays,
+            isIntroOfferEligible: annualIntroEligible
+        )
+        isIntroOfferEligible = annualIntroEligible
         isRetentionTrialOfferActive = false
     }
 
@@ -911,15 +956,15 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func configuredTrialDays(from product: StoreProduct, plan: SubscriptionBillingPlan) -> Int? {
-        _ = product
-        _ = plan
-        return nil
+        guard SubscriptionConfiguration.supportsFreeTrial(plan) else { return nil }
+        return SubscriptionIntroOfferParser.trialDays(from: product)
+            ?? SubscriptionConfiguration.configuredFallbackTrialDays(for: plan)
     }
 
     private func trialDays(from product: Product, plan: SubscriptionBillingPlan) -> Int? {
-        _ = product
-        _ = plan
-        return nil
+        guard SubscriptionConfiguration.supportsFreeTrial(plan) else { return nil }
+        return SubscriptionIntroOfferParser.trialDays(from: product)
+            ?? SubscriptionConfiguration.configuredFallbackTrialDays(for: plan)
     }
 
     private func purchaseWithStoreKit(plan: SubscriptionBillingPlan) async throws {

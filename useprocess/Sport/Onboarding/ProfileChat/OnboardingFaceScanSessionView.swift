@@ -14,6 +14,8 @@ struct OnboardingFaceScanSessionView: View {
     var initialResult: FaceScanResult? = nil
     /// Fond identique aux pages app (aperçu dashboard) au lieu du canvas scan onboarding.
     var usesAppScreenBackground: Bool = false
+    /// Chrono 3-2-1 à la place du titre à l’arrivée (premier scan onboarding).
+    var playsArrivalCountdown: Bool = false
     var onCancel: () -> Void
     /// Skip pendant la capture (bouton sous « Recommencer le scan »).
     var onSkip: (() -> Void)? = nil
@@ -81,6 +83,7 @@ struct OnboardingFaceScanSessionView: View {
                     skipsHeadTiltPhase: true,
                     usesOnboardingFaceOval: true,
                     usesAppScreenBackground: usesAppScreenBackground,
+                    playsArrivalCountdown: playsArrivalCountdown,
                     onContinue: advanceToAnalysis
                 )
                 .id(captureResetToken)

@@ -24,7 +24,6 @@ struct FaceLeverageIntroStepView: View {
     @State private var showBentoLeft = false
     @State private var showBentoStatus = false
     @State private var showBentoDating = false
-    @State private var showContinueButton = false
 
     private let accent = Color(red: 0.22, green: 0.47, blue: 0.98)
     private let testimonialAvatars = ["leo", "lucas", "imran"]
@@ -77,20 +76,17 @@ struct FaceLeverageIntroStepView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if showContinueButton {
-                continueButton
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            continueButton
+                .opacity(viewModel.isFaceLeverageIntroCompleted ? 1 : 0.42)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
         .onAppear {
             viewModel.isFaceLeverageIntroCompleted = false
-            showContinueButton = false
             onValidationChanged?(false)
             startRevealSequence()
         }
         .onDisappear {
             viewModel.isFaceLeverageIntroCompleted = false
-            showContinueButton = false
             onValidationChanged?(false)
         }
         .processRestoreOpaqueUIKitHostingBackground(
@@ -403,7 +399,6 @@ struct FaceLeverageIntroStepView: View {
         showBentoLeft = false
         showBentoStatus = false
         showBentoDating = false
-        showContinueButton = false
 
         if reduceMotion {
             revealAllImmediately()
@@ -451,9 +446,6 @@ struct FaceLeverageIntroStepView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0 : 0.12)) {
             viewModel.isFaceLeverageIntroCompleted = true
             onValidationChanged?(true)
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
-                showContinueButton = true
-            }
             HapticManager.shared.impact(.soft)
         }
     }
@@ -474,5 +466,6 @@ private struct FaceLeverageStaggerReveal: ViewModifier {
             .opacity(isVisible ? 1 : 0)
             .offset(y: isVisible || reduceMotion ? 0 : 18)
             .scaleEffect(isVisible || reduceMotion ? 1 : 0.97, anchor: .topLeading)
+            .allowsHitTesting(isVisible || reduceMotion)
     }
 }

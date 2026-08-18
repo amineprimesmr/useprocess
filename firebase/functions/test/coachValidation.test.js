@@ -47,6 +47,7 @@ test("token requests are capped", () => {
 test("security errors map to explicit HTTP statuses", () => {
   assert.equal(httpStatusForError("UNAUTHORIZED"), 401);
   assert.equal(httpStatusForError("INVALID_APP_CHECK"), 403);
+  assert.equal(httpStatusForError("PREMIUM_REQUIRED"), 402);
   assert.equal(httpStatusForError("RATE_LIMITED"), 429);
   assert.equal(httpStatusForError("OTHER"), 500);
 });
