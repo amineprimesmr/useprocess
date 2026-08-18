@@ -466,31 +466,23 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     /// Achat winback — accès à vie à 19 € (non consommable).
     func purchaseWinbackLifetime() async throws {
-        if isConfigured {
-            let purchasedWithRevenueCat = try await attemptRevenueCatWinbackPurchase()
-            if purchasedWithRevenueCat { return }
+        if isConfigured, try await purchaseLifetimeWithRevenueCatIfAvailable() {
+            return
         }
         try await purchaseWinbackWithStoreKit()
     }
 
-    /// `true` si l’achat RC a réussi, `false` si le produit lifetime est absent du catalogue RC.
-    private func attemptRevenueCatWinbackPurchase() async throws -> Bool {
-        let products = await Purchases.shared.products([SubscriptionConfiguration.lifetimeProductID])
+    // RevenueCat lifetime : true = achat OK, false = produit absent -> fallback StoreKit.
+    private func purchaseLifetimeWithRevenueCatIfAvailable() async throws -> Bool {
+        let productIDs: [String] = [SubscriptionConfiguration.lifetimeProductID]
+        let products: [StoreProduct] = await Purchases.shared.products(productIDs)
         guard let lifetime = products.first else { return false }
 
-        do {
-            let result = try await Purchases.shared.purchase(product: lifetime)
-            if result.userCancelled { throw SubscriptionError.userCancelled }
-            applyCustomerInfo(result.customerInfo)
-            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
-            return true
-        } catch let error as ErrorCode where error == .purchaseCancelledError {
-            throw SubscriptionError.userCancelled
-        } catch let error as SubscriptionError {
-            throw error
-        } catch {
-            throw SubscriptionError.unknown
-        }
+        let result = try await Purchases.shared.purchase(product: lifetime)
+        if result.userCancelled { throw SubscriptionError.userCancelled }
+        applyCustomerInfo(result.customerInfo)
+        await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+        return true
     }
 
     /// Compat — ancien nom (offre annuelle winback).
