@@ -491,31 +491,30 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func purchaseWinbackWithStoreKit() async throws {
-        if let lifetime = try? await Product.products(for: [SubscriptionConfiguration.lifetimeProductID]).first {
-            let result = try await lifetime.purchase()
-            switch result {
-            case .success(let verification):
-                let transaction = try verified(verification)
-                await transaction.finish()
-                if isConfigured {
-                    // Remonte le non-consommable vers RC pour l’entitlement `premium`.
-                    _ = try? await Purchases.shared.syncPurchases()
-                    await checkSubscriptionStatus()
-                } else {
-                    await checkStoreKitSubscriptionStatus()
-                }
-                await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
-                return
-            case .userCancelled:
-                throw SubscriptionError.userCancelled
-            case .pending:
-                throw SubscriptionError.pending
-            @unknown default:
-                throw SubscriptionError.unknown
-            }
+        guard let lifetime = (try? await Product.products(for: [SubscriptionConfiguration.lifetimeProductID]))?.first else {
+            throw SubscriptionError.productNotFound
         }
 
-        throw SubscriptionError.productNotFound
+        let result = try await lifetime.purchase()
+        switch result {
+        case .success(let verification):
+            let transaction = try verified(verification)
+            await transaction.finish()
+            if isConfigured {
+                // Remonte le non-consommable vers RC pour l’entitlement `premium`.
+                _ = try? await Purchases.shared.syncPurchases()
+                await checkSubscriptionStatus()
+            } else {
+                await checkStoreKitSubscriptionStatus()
+            }
+            await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+        case .userCancelled:
+            throw SubscriptionError.userCancelled
+        case .pending:
+            throw SubscriptionError.pending
+        @unknown default:
+            throw SubscriptionError.unknown
+        }
     }
 
     func restorePurchases() async throws {
