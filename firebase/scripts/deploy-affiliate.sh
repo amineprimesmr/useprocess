@@ -28,7 +28,9 @@ FUNCTIONS=(
   functions:affiliateSyncProfile
   functions:affiliateDashboard
   functions:affiliateAdminCreate
+  functions:affiliateAdminProvisionAuth
   functions:affiliateAdminApprove
+  functions:affiliateAdminListPending
   functions:affiliateAdminMarkPaid
   functions:affiliateReleaseHeldCommissions
 )
@@ -58,7 +60,13 @@ echo "Authorization header:"
 echo "  Bearer <REVENUECAT_WEBHOOK_SECRET>"
 echo ""
 echo "Create a clipper code:"
-echo "  curl -X POST https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminCreate \\"
-echo "    -H 'Content-Type: application/json' \\"
-echo "    -H 'X-Affiliate-Admin-Secret: <AFFILIATE_ADMIN_SECRET>' \\"
-echo "    -d '{\"code\":\"MANNY\",\"displayName\":\"Manny\"}'"
+echo "  ./firebase/scripts/create-clipper.sh MANNY \"Manny\" email@example.com"
+echo ""
+echo "List pending applications:"
+echo "  ./firebase/scripts/list-pending-clippers.sh"
+echo ""
+echo "Approve pending clipper:"
+echo "  ./firebase/scripts/approve-clipper.sh <affiliateId>"
+echo ""
+echo "Mark PayPal payout:"
+echo "  ./firebase/scripts/mark-paid-clipper.sh <affiliateId> 42.50 \"March payout\""

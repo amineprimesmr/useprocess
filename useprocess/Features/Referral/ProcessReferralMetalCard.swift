@@ -4,6 +4,8 @@ import SwiftUI
 struct ProcessReferralMetalCard: View {
     let referralCode: String
     let copyText: String
+    let lifetimeEarningsCents: Int
+    var captionTitle: String = AppCopy.tSync("TON CODE PARRAIN", en: "YOUR REFERRAL CODE")
     var onCopy: () -> Void
 
     @State private var tiltX: Double = 0
@@ -12,10 +14,13 @@ struct ProcessReferralMetalCard: View {
     @State private var parallaxY: CGFloat = 0
     @State private var isInteracting = false
     @State private var copiedFlash = false
+    @State private var copyPulse = false
 
     private let cardShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
     private let maxTiltDegrees: Double = 10
     private let maxParallax: CGFloat = 7
+    private let tiltDragThreshold: CGFloat = 10
+    private let copyTapThreshold: CGFloat = 12
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -29,63 +34,132 @@ struct ProcessReferralMetalCard: View {
                 }
 
             VStack(spacing: 0) {
-                Text(AppCopy.t("TON CODE PARRAIN", en: "YOUR REFERRAL CODE"))
+                Text(captionTitle)
                     .font(.system(size: 11, weight: .semibold))
                     .tracking(1.6)
                     .foregroundStyle(Color(white: 0.46))
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 28)
+                    .padding(.top, 22)
 
-                Spacer(minLength: 12)
+                HStack(alignment: .center, spacing: 10) {
+                    ProcessReferralDotMatrixCode(text: referralCode)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                ProcessReferralDotMatrixCode(text: referralCode)
-                    .padding(.horizontal, 20)
-
-                Spacer(minLength: 12)
-
-                Text(AppCopy.t("PARTAGE À 3 AMIS", en: "SHARE WITH 3 FRIENDS"))
-                    .font(.system(size: 10, weight: .semibold))
-                    .tracking(1.4)
-                    .foregroundStyle(Color(white: 0.42))
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, 58)
-            }
-
-            Button {
-                UIPasteboard.general.string = copyText
-                HapticManager.shared.notification(.success)
-                withAnimation(.easeOut(duration: 0.18)) { copiedFlash = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    withAnimation { copiedFlash = false }
+                    engravedEarningsBadge
                 }
-                onCopy()
-            } label: {
-                Text(copiedFlash
-                     ? AppCopy.t("Lien copié", en: "Link copied")
-                     : AppCopy.t("Copier le lien", en: "Copy link"))
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.black.opacity(0.88))
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 11)
-                    .background(Capsule(style: .continuous).fill(Color.white))
+                .padding(.horizontal, 18)
+                .padding(.top, 10)
+
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.processPlain)
-            .padding(.leading, 18)
-            .padding(.bottom, 18)
-            .zIndex(2)
+            .padding(.bottom, 52)
+            .allowsHitTesting(false)
+
+            copyLinkLabel
+                .padding(.leading, 18)
+                .padding(.bottom, 18)
+                .allowsHitTesting(false)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 220)
         .clipShape(cardShape)
-        .scaleEffect(isInteracting ? 1.014 : 1)
+        .scaleEffect(copyPulse ? 0.972 : (isInteracting ? 1.014 : 1))
         .offset(x: parallaxX, y: parallaxY)
         .rotation3DEffect(.degrees(tiltX), axis: (x: 1, y: 0, z: 0), perspective: 0.62)
         .rotation3DEffect(.degrees(tiltY), axis: (x: 0, y: 1, z: 0), perspective: 0.62)
-        .shadow(color: .black.opacity(isInteracting ? 0.55 : 0.42), radius: isInteracting ? 28 : 22, y: 14)
+        .shadow(color: ProcessReferralRewardsPalette.mintSoft.opacity(isInteracting ? 0.32 : 0.18), radius: isInteracting ? 28 : 22, y: 14)
         .animation(.interactiveSpring(response: 0.34, dampingFraction: 0.8), value: isInteracting)
+        .animation(.spring(response: 0.28, dampingFraction: 0.72), value: copyPulse)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(AppCopy.t("Code parrainage \(referralCode)", en: "Referral code \(referralCode)"))
-        .accessibilityHint(AppCopy.t("Maintiens pour incliner, touche Copier le lien pour copier ton invitation", en: "Hold to tilt, tap Copy link to copy your invite"))
+        .accessibilityHint(AppCopy.t("Touche la carte pour copier ton lien, maintiens pour incliner", en: "Tap the card to copy your link, hold to tilt"))
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var copyLinkLabel: some View {
+        HStack(spacing: 5) {
+            Image(systemName: copiedFlash ? "checkmark" : "link")
+                .font(.system(size: 10, weight: .semibold))
+
+            Text(
+                copiedFlash
+                    ? AppCopy.t("Lien copié", en: "Link copied")
+                    : AppCopy.t("Copier le lien", en: "Copy link")
+            )
+            .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundStyle(
+            LinearGradient(
+                colors: [
+                    Color(red: 0.34, green: 0.35, blue: 0.38),
+                    Color(red: 0.46, green: 0.47, blue: 0.50)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .shadow(color: Color.white.opacity(0.22), radius: 0, x: 0, y: 1)
+        .opacity(copiedFlash ? 0.92 : 0.62)
+        .animation(.easeOut(duration: 0.18), value: copiedFlash)
+    }
+
+    private func performCopy() {
+        guard !copyText.isEmpty else { return }
+
+        UIPasteboard.general.string = copyText
+        HapticManager.shared.notification(.success)
+        ProcessSoundPlayer.playSettingsChange()
+
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+            copiedFlash = true
+            copyPulse = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+            withAnimation(.spring(response: 0.36, dampingFraction: 0.82)) {
+                copyPulse = false
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                copiedFlash = false
+            }
+        }
+
+        onCopy()
+    }
+
+    private var engravedEarningsBadge: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Text(AppCopy.t("Gains", en: "Earnings"))
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(1.2)
+                .foregroundStyle(Color(white: 0.40))
+
+            Text(ProcessReferralProgramTerms.formattedCents(lifetimeEarningsCents))
+                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.30, green: 0.31, blue: 0.34),
+                            Color(red: 0.42, green: 0.43, blue: 0.46)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .shadow(color: Color.white.opacity(0.28), radius: 0, x: 0, y: 1)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            AppCopy.t(
+                "Gains \(ProcessReferralProgramTerms.formattedCents(lifetimeEarningsCents))",
+                en: "Earnings \(ProcessReferralProgramTerms.formattedCents(lifetimeEarningsCents))"
+            )
+        )
     }
 
     private var metalSurface: some View {
@@ -161,10 +235,15 @@ struct ProcessReferralMetalCard: View {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .onChanged { value in
                 guard cardSize.width > 1, cardSize.height > 1 else { return }
+
+                let dragDistance = hypot(value.translation.width, value.translation.height)
+                guard dragDistance >= tiltDragThreshold else { return }
+
                 if !isInteracting {
                     isInteracting = true
                     HapticManager.shared.beginContinuousCardHold()
                 }
+
                 let center = CGPoint(x: cardSize.width * 0.5, y: cardSize.height * 0.5)
                 let nx = min(1, max(-1, (value.location.x - center.x) / (cardSize.width * 0.5)))
                 let ny = min(1, max(-1, (value.location.y - center.y) / (cardSize.height * 0.5)))
@@ -175,14 +254,24 @@ struct ProcessReferralMetalCard: View {
                     parallaxY = ny * maxParallax * 0.5
                 }
             }
-            .onEnded { _ in
-                isInteracting = false
-                HapticManager.shared.endContinuousCardHold()
+            .onEnded { value in
+                let dragDistance = hypot(value.translation.width, value.translation.height)
+                let shouldCopy = dragDistance < copyTapThreshold
+
+                if isInteracting {
+                    isInteracting = false
+                    HapticManager.shared.endContinuousCardHold()
+                }
+
                 withAnimation(.spring(response: 0.52, dampingFraction: 0.76)) {
                     tiltX = 0
                     tiltY = 0
                     parallaxX = 0
                     parallaxY = 0
+                }
+
+                if shouldCopy {
+                    performCopy()
                 }
             }
     }
@@ -193,8 +282,8 @@ private struct ProcessReferralDotMatrixCode: View {
 
     var body: some View {
         Text(text.uppercased())
-            .font(.system(size: 34, weight: .heavy, design: .monospaced))
-            .tracking(3)
+            .font(.system(size: 44, weight: .heavy, design: .monospaced))
+            .tracking(2.5)
             .foregroundStyle(
                 LinearGradient(
                     colors: [

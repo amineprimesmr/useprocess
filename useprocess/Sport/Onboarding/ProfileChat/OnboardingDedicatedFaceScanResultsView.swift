@@ -10,7 +10,11 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     let result: FaceScanResult
     var onContinue: () -> Void
 
-    @State private var showsCreatePlanButton = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsHeader = false
+    @State private var showsRing = false
+    @State private var showsIndicators = false
+    @State private var didSubmitContinue = false
 
     private var fullDateTitle: String {
         let raw = ProcessLocalizedDate.string(from: result.createdAt, template: "EEEEdMMMM")
@@ -18,45 +22,73 @@ struct OnboardingDedicatedFaceScanResultsView: View {
     }
 
     var body: some View {
-        ZStack {
-            FaceScanWhoopPalette.canvas.ignoresSafeArea()
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                header
+                    .padding(.horizontal, 20)
+                    .padding(.top, topContentInset)
+                    .padding(.bottom, 12)
+                    .opacity(showsHeader ? 1 : 0)
+                    .offset(x: showsHeader ? 0 : 24)
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    header
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                        .padding(.bottom, 18)
+                FaceScanWhoopScoreRing(result: result, showsGlobalScore: false, ringSize: 252)
+                    .padding(.bottom, 28)
+                    .opacity(showsRing ? 1 : 0)
+                    .offset(x: showsRing ? 0 : 28)
+                    .scaleEffect(showsRing ? 1 : 0.96)
 
-                    FaceScanWhoopScoreRing(result: result, showsGlobalScore: false, ringSize: 232)
-                        .padding(.bottom, 28)
-
-                    OnboardingFaceDeepAnalysisView(
-                        result: result,
-                        ringScale: 1,
-                        showsScoreRing: false,
-                        showsUnlockTeaser: false
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                    .frame(minHeight: 430)
-                }
+                OnboardingFaceDeepAnalysisView(
+                    result: result,
+                    ringScale: 1,
+                    showsScoreRing: false,
+                    showsUnlockTeaser: false,
+                    carouselMinHeight: 300,
+                    animatesIndicatorReveal: showsIndicators
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+                .opacity(showsIndicators ? 1 : 0)
+                .offset(y: showsIndicators ? 0 : 14)
             }
-            .processTransparentScrollSurface()
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if showsCreatePlanButton {
-                    bottomCTA
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
+            .padding(.bottom, 8)
         }
-        .processClearUIKitHostingBackground()
+        .processTransparentScrollSurface()
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            createPlanBar
+        }
         .background(FaceScanWhoopPalette.canvas)
+        .processRestoreOpaqueUIKitHostingBackground(FaceScanWhoopPalette.canvas.uiColor)
         .onAppear {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
-                showsCreatePlanButton = true
-            }
+            didSubmitContinue = false
+            runResultsEntrance()
         }
+        .onDisappear {
+            didSubmitContinue = false
+        }
+    }
+
+    private func runResultsEntrance() {
+        if reduceMotion {
+            showsHeader = true
+            showsRing = true
+            showsIndicators = true
+            return
+        }
+
+        withAnimation(OnboardingScanFlowMotion.animation) {
+            showsHeader = true
+        }
+        withAnimation(OnboardingScanFlowMotion.animation.delay(0.06)) {
+            showsRing = true
+        }
+        withAnimation(.smooth(duration: 0.30).delay(0.14)) {
+            showsIndicators = true
+        }
+    }
+
+    private var topContentInset: CGFloat {
+        OnboardingConstants.safeAreaTop + 10
     }
 
     private var header: some View {
@@ -74,16 +106,26 @@ struct OnboardingDedicatedFaceScanResultsView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var bottomCTA: some View {
+    /// Aligné sur le CTA global prénom (`standardContinueBottomOffset` = 50).
+    private var createPlanBar: some View {
         OnboardingCreatePlanButton(
             title: AppCopy.t("Créer mon plan", en: "Create my plan")
         ) {
-            HapticManager.shared.impact(.medium)
-            onContinue()
+            submitContinue()
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 34)
         .padding(.top, 8)
-        .padding(.bottom, 10)
+        .padding(.bottom, OnboardingConstants.standardContinueBottomOffset)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .background(FaceScanWhoopPalette.canvas.opacity(0.98))
+    }
+
+    private func submitContinue() {
+        guard !didSubmitContinue else { return }
+        didSubmitContinue = true
+        HapticManager.shared.impact(.medium)
+        onContinue()
     }
 }
 
@@ -96,6 +138,7 @@ struct OnboardingCreatePlanButton: View {
             OnboardingCreatePlanButtonVisual(title: title)
         }
         .buttonStyle(OnboardingCreatePlanButtonStyle())
+        .contentShape(Capsule())
         .accessibilityLabel(title)
     }
 }
@@ -128,7 +171,7 @@ struct OnboardingCreatePlanButtonVisual: View {
                 .foregroundStyle(isLight ? Color.white : Color.black)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 62)
+        .frame(height: 58)
         .background(isLight ? Color.black : Color.white, in: Capsule())
         .overlay {
             OnboardingCreatePlanRotatingBorder()
@@ -180,5 +223,11 @@ private struct OnboardingCreatePlanRotatingBorder: View {
             }
         }
         .allowsHitTesting(false)
+    }
+}
+
+private extension Color {
+    var uiColor: UIColor {
+        UIColor(self)
     }
 }

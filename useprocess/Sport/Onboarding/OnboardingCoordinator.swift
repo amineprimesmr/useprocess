@@ -61,8 +61,8 @@ class OnboardingCoordinator {
 
             try await profileService.saveProfile(newProfile)
 
-            // ✨ Vérifier si un code de parrainage a été utilisé
-            if let referralCode = viewModel.referralCode, !referralCode.isEmpty {
+            // ✨ Code parrainage / créateur (étape onboarding ou fallback paywall)
+            if let referralCode = Self.resolvedAcquisitionCode(from: viewModel), !referralCode.isEmpty {
                 await AcquisitionCodeService.registerIfPresent(
                     code: referralCode,
                     referredUserId: userId,
@@ -161,7 +161,7 @@ class OnboardingCoordinator {
 
             try await profileService.saveProfile(currentProfile)
 
-            if let referralCode = viewModel.referralCode, !referralCode.isEmpty,
+            if let referralCode = Self.resolvedAcquisitionCode(from: viewModel), !referralCode.isEmpty,
                let userId = AuthUser.current?.uid {
                 await AcquisitionCodeService.registerIfPresent(
                     code: referralCode,
@@ -199,5 +199,12 @@ class OnboardingCoordinator {
 
         profile.hasCompletedOnboarding = true
         try await profileService.saveProfile(profile)
+    }
+
+    private static func resolvedAcquisitionCode(from viewModel: OnboardingViewModel) -> String? {
+        if let code = viewModel.referralCode?.trimmingCharacters(in: .whitespacesAndNewlines), !code.isEmpty {
+            return code
+        }
+        return ProcessReferralAttribution.pendingCode ?? ProcessAffiliateAttribution.pendingCode
     }
 }

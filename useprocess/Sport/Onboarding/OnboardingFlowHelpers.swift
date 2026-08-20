@@ -41,6 +41,103 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
     }
 }
 
+// MARK: - Reprise 1er dashboard preview
+
+/// Étapes réelles après le 1er dashboard (scan) et avant le paywall.
+private let onboardingStepsAfterFirstDashboardPreview: [OnboardingStep] = [
+    .programCreation,
+    .weightEstimation,
+    .goalProjection,
+    .faceAnalysis,
+    .biometricAuth,
+    .transformationPreview,
+    .referralCode
+]
+
+/// L'utilisateur a dépassé le 1er tour dashboard (carrousel + scan).
+func hasPassedFirstDashboardPreviewSection(viewModel: OnboardingViewModel) -> Bool {
+    if viewModel.hasCompletedFirstDashboardPreview { return true }
+    if viewModel.isFaceAnalysisCompleted { return true }
+    if viewModel.isProgramCreationCompleted { return true }
+
+    let markerRawValues = Set(onboardingStepsAfterFirstDashboardPreview.map(\.rawValue))
+    if viewModel.visitedSteps.contains(where: markerRawValues.contains) {
+        return true
+    }
+
+    let lastCompleted = OnboardingProgressService.shared.loadLastCompletedStep()
+    if markerRawValues.contains(lastCompleted) {
+        return true
+    }
+
+    return false
+}
+
+/// Meilleure étape mid-flow quand le 1er dashboard ne doit plus s'afficher.
+func bestMidOnboardingResumeStep(viewModel: OnboardingViewModel) -> Int {
+    let orderedSteps = onboardingStepsAfterFirstDashboardPreview
+    let visited = Set(viewModel.visitedSteps)
+
+    if let match = orderedSteps.reversed().first(where: { visited.contains($0.rawValue) }) {
+        return match.rawValue
+    }
+
+    let lastCompleted = OnboardingProgressService.shared.loadLastCompletedStep()
+    if let step = OnboardingStep(rawValue: lastCompleted),
+       orderedSteps.contains(step) {
+        return lastCompleted
+    }
+
+    if viewModel.isProgramCreationCompleted || viewModel.isFaceAnalysisCompleted {
+        return OnboardingStep.programCreation.rawValue
+    }
+
+    return OnboardingStep.programCreation.rawValue
+}
+
+/// Reprise onboarding : ne pas rouvrir le 1er dashboard si déjà dépassé.
+func reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: OnboardingViewModel) {
+    guard !AppSession.shared.hasCompletedOnboarding else { return }
+    if SubscriptionService.shared.subscriptionStatus.isActive { return }
+    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return }
+
+    if onboardingStepsAfterFirstDashboardPreview.contains(step) {
+        return
+    }
+
+    guard step == .dashboardPreview else { return }
+
+    let hasSeenLateOnboarding = viewModel.visitedSteps.contains(
+        OnboardingStep.transformationPreview.rawValue
+    ) || viewModel.visitedSteps.contains(OnboardingStep.referralCode.rawValue)
+
+    if hasSeenLateOnboarding {
+        viewModel.currentStep = OnboardingStep.dreamFaceCommit.rawValue
+        OnboardingProgressService.shared.saveCurrentStep(OnboardingStep.dreamFaceCommit.rawValue)
+        return
+    }
+
+    if viewModel.hasActiveFirstDashboardScanSession {
+        return
+    }
+
+    if viewModel.isFaceAnalysisCompleted, !viewModel.hasCompletedFirstDashboardPreview {
+        return
+    }
+
+    guard hasPassedFirstDashboardPreviewSection(viewModel: viewModel) else { return }
+
+    let target = bestMidOnboardingResumeStep(viewModel: viewModel)
+    guard target != OnboardingStep.dashboardPreview.rawValue else { return }
+
+    if viewModel.isFaceAnalysisCompleted, !viewModel.hasCompletedFirstDashboardPreview {
+        viewModel.hasCompletedFirstDashboardPreview = true
+    }
+
+    viewModel.currentStep = target
+    OnboardingProgressService.shared.saveCurrentStep(target)
+}
+
 // MARK: - Dernière étape valide (reprise)
 
 /// Parcourt l'historique des étapes visitées et retourne la dernière étape affichable.
@@ -202,7 +299,9 @@ func rebuildVisitedStepsPrefix(
         return !step.isTransientSkippedStep
     }
 
-    if let index = visiblePath.firstIndex(of: targetStep) {
+    let pathIndex = visiblePath.firstIndex(of: targetStep)
+
+    if let index = pathIndex {
         return Array(visiblePath.prefix(index + 1))
     }
 

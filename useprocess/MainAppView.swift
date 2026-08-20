@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Shell principal — tab bar (Accueil · Routine · Série · Profil).
+/// Shell principal — tab bar (Accueil · Série · Routine · Progrès).
 struct MainAppView: View {
     @State private var selectedSection: ProcessMainSection = .plan
     @State private var tabBeforeCoach: ProcessMainSection = .plan
@@ -9,6 +9,7 @@ struct MainAppView: View {
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
     @Bindable private var coachTracker = CoachPresentationTracker.shared
     @State private var showMealPhotoScan = false
+    @State private var showFaceScanSession = false
     @Bindable private var screenFlash = FaceScanScreenFlash.shared
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.appTheme) private var theme
@@ -44,6 +45,7 @@ struct MainAppView: View {
             _ = UserSessionCoordinator.shared
             syncCoachPresentationState()
             redirectFromDisabledCoachTabIfNeeded()
+            redirectFromRemovedScanTabIfNeeded()
             ProcessHydrationTimerMonitor.shared.handleSceneBecameActive()
         }
         .onChange(of: selectedSection) { oldValue, newValue in
@@ -82,11 +84,22 @@ struct MainAppView: View {
             }
             planBridge.shouldOpenPlan = false
         }
+        .onChange(of: planBridge.shouldOpenScanHub) { _, should in
+            guard should else { return }
+            planBridge.shouldOpenScanHub = false
+            presentFaceScanSession()
+        }
         .modifier(MealPhotoScanCoverModifier(
             isPresented: $showMealPhotoScan,
             selectedSection: $selectedSection,
             planBridge: planBridge
         ))
+        .fullScreenCover(isPresented: $showFaceScanSession) {
+            ProcessFaceScanSessionHost {
+                showFaceScanSession = false
+            }
+            .environmentObject(UnifiedProfileService.shared)
+        }
         .onChange(of: planBridge.shouldOpenEveningCheckIn) { _, should in
             guard should else { return }
             planBridge.shouldOpenEveningCheckIn = false
@@ -120,11 +133,6 @@ struct MainAppView: View {
                 .allowsHitTesting(selectedSection == .plan)
                 .accessibilityHidden(selectedSection != .plan)
 
-            scanTabRoot
-                .opacity(selectedSection == .scan ? 1 : 0)
-                .allowsHitTesting(selectedSection == .scan)
-                .accessibilityHidden(selectedSection != .scan)
-
             routineTabRoot
                 .opacity(selectedSection == .routine ? 1 : 0)
                 .allowsHitTesting(selectedSection == .routine)
@@ -157,15 +165,6 @@ struct MainAppView: View {
             selectedSection: $selectedSection,
             isTabActive: selectedSection == .plan
         )
-        .background(Color.clear)
-    }
-
-    private var scanTabRoot: some View {
-        ProcessFaceScanHomeView(
-            selectedSection: $selectedSection,
-            isTabActive: selectedSection == .scan
-        )
-        .environmentObject(UnifiedProfileService.shared)
         .background(Color.clear)
     }
 
@@ -217,9 +216,6 @@ struct MainAppView: View {
             FaceScanScreenFlash.shared.deactivate(animated: false)
             ProcessEveningCheckInPresenter.shared.dismissImmediately()
             PlanHomeTutorialStore.shared.cancelScheduledPresentation()
-        }
-        if newValue == .scan {
-            FaceScanScreenFlash.shared.deactivate(animated: false)
         }
         if newValue == .statistics {
             ProcessPerformanceTrace.beginProfileOpen()
@@ -312,6 +308,17 @@ struct MainAppView: View {
     private func redirectFromDisabledCoachTabIfNeeded() {
         guard !ProcessMainSection.isCoachTabEnabled, selectedSection == .coach else { return }
         selectedSection = .plan
+    }
+
+    private func redirectFromRemovedScanTabIfNeeded() {
+        guard selectedSection == .scan else { return }
+        selectedSection = .plan
+    }
+
+    private func presentFaceScanSession() {
+        resignFirstResponder()
+        FaceScanScreenFlash.shared.deactivate(animated: false)
+        showFaceScanSession = true
     }
 
     private func openProfile() {

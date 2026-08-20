@@ -227,8 +227,7 @@ struct PlanHomeUpgradeProCard: View {
         case .welcome:
             return AppCopy.t("Bienvenue dans Process", en: "Welcome to Process")
         case .referral:
-            let price = subscriptionService.referralRewardDisplayPrice
-            return AppCopy.t("🎁 Gagne \(price) tout de suite", en: "🎁 Earn \(price) right now")
+            return AppCopy.t("🎁 40 % à vie", en: "🎁 40% for life")
         }
     }
 
@@ -240,10 +239,9 @@ struct PlanHomeUpgradeProCard: View {
                 en: "Your plan is ready. Scan, follow the program, and move forward every day."
             )
         case .referral:
-            let price = subscriptionService.referralRewardDisplayPrice
             return AppCopy.t(
-                "Partage ton lien. Chaque ami abonné te rapporte \(price).",
-                en: "Share your link. Every subscribed friend earns you \(price)."
+                "Partage ton lien. Tu touches 40 % du net à chaque paiement de tes amis.",
+                en: "Share your link. You earn 40% of net on every payment from friends."
             )
         }
     }

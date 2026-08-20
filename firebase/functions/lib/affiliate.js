@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.affiliateAdminMarkPaid = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = void 0;
+exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -489,6 +489,50 @@ exports.affiliateAdminApprove = (0, https_1.onRequest)({
     catch (error) {
         const message = error?.message ?? "Unknown error";
         console.error("[affiliateAdminApprove]", message);
+        res.status((0, affiliateShared_1.affiliateHttpStatus)(message)).json({ error: message });
+    }
+});
+exports.affiliateAdminListPending = (0, https_1.onRequest)({
+    invoker: "public",
+    cors: true,
+    secrets: [affiliateAdminSecret],
+    timeoutSeconds: 30,
+    memory: "256MiB",
+}, async (req, res) => {
+    (0, referralShared_1.setCors)(res);
+    if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+    }
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+    try {
+        (0, affiliateShared_1.verifyAffiliateAdmin)(req, affiliateAdminSecret.value());
+        const snap = await (0, affiliateShared_1.db)()
+            .collection("affiliates")
+            .where("status", "==", "pending")
+            .limit(100)
+            .get();
+        const pending = snap.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                affiliateId: doc.id,
+                displayName: data.displayName ?? doc.id,
+                email: data.email ?? null,
+                uid: data.uid ?? null,
+                codes: data.codes ?? [],
+                paypalEmail: data.paypalEmail ?? null,
+                createdAt: data.createdAt?.toMillis?.() ?? null,
+            };
+        });
+        pending.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+        res.status(200).json({ ok: true, pending, count: pending.length });
+    }
+    catch (error) {
+        const message = error?.message ?? "Unknown error";
+        console.error("[affiliateAdminListPending]", message);
         res.status((0, affiliateShared_1.affiliateHttpStatus)(message)).json({ error: message });
     }
 });

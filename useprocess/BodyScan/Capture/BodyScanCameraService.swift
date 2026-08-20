@@ -16,6 +16,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
     private let videoOutput = AVCaptureVideoDataOutput()
     private var currentInput: AVCaptureDeviceInput?
     private var deliversFrames = true
+    private var captureProfileIsFullBody = false
 
     @MainActor
     func refreshAuthorizationStatus() {
@@ -35,13 +36,19 @@ final class BodyScanCameraService: NSObject, ObservableObject {
     }
 
     @MainActor
-    func start(preferredPosition: AVCaptureDevice.Position = .front, deliversFrames: Bool = true) {
+    func start(
+        preferredPosition: AVCaptureDevice.Position = .front,
+        deliversFrames: Bool = true,
+        profile: ProcessScanCameraProfile = .facePortrait
+    ) {
         ProcessAudioSession.configureForMixingWithOthersIfIdle()
+        let wantsFullBody = profile.isFullBody
         sessionQueue.async { [weak self] in
             guard let self else { return }
             let sameConfig = self.currentInput != nil
                 && self.activePosition == preferredPosition
                 && self.deliversFrames == deliversFrames
+                && self.captureProfileIsFullBody == wantsFullBody
 
             if self.session.isRunning, sameConfig {
                 DispatchQueue.main.async { self.isRunning = true }
@@ -53,7 +60,12 @@ final class BodyScanCameraService: NSObject, ObservableObject {
             }
 
             self.deliversFrames = deliversFrames
-            self.configureSession(position: preferredPosition, deliversFrames: deliversFrames)
+            self.captureProfileIsFullBody = wantsFullBody
+            self.configureSession(
+                position: preferredPosition,
+                deliversFrames: deliversFrames,
+                profile: profile
+            )
             if !self.session.isRunning {
                 self.session.startRunning()
             }
@@ -76,7 +88,11 @@ final class BodyScanCameraService: NSObject, ObservableObject {
 
     /// Stop propre puis redémarrage — évite les sessions figées après background / relance.
     @MainActor
-    func restartPreviewIfNeeded(preferredPosition: AVCaptureDevice.Position = .front) async {
+    func restartPreviewIfNeeded(
+        preferredPosition: AVCaptureDevice.Position = .front,
+        profile: ProcessScanCameraProfile = .facePortrait
+    ) async {
+        let wantsFullBody = profile.isFullBody
         await withCheckedContinuation { continuation in
             sessionQueue.async { [weak self] in
                 guard let self else {
@@ -89,7 +105,12 @@ final class BodyScanCameraService: NSObject, ObservableObject {
                 }
 
                 self.deliversFrames = false
-                self.configureSession(position: preferredPosition, deliversFrames: false)
+                self.captureProfileIsFullBody = wantsFullBody
+                self.configureSession(
+                    position: preferredPosition,
+                    deliversFrames: false,
+                    profile: profile
+                )
                 if !self.session.isRunning {
                     self.session.startRunning()
                 }
@@ -114,7 +135,11 @@ final class BodyScanCameraService: NSObject, ObservableObject {
         return UIImage(cgImage: cgImage, scale: 1, orientation: orientation)
     }
 
-    private func configureSession(position: AVCaptureDevice.Position, deliversFrames: Bool) {
+    private func configureSession(
+        position: AVCaptureDevice.Position,
+        deliversFrames: Bool,
+        profile: ProcessScanCameraProfile
+    ) {
         session.beginConfiguration()
         session.sessionPreset = .hd1280x720
 
@@ -127,7 +152,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
             session.removeOutput(videoOutput)
         }
 
-        guard let device = ProcessScanCamera.device(position: position),
+        guard let device = ProcessScanCamera.device(position: position, profile: profile),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else {
             session.commitConfiguration()
@@ -137,7 +162,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
         session.addInput(input)
         currentInput = input
         ProcessScanCamera.prepareForFrontPortraitScan()
-        ProcessScanCamera.lockFrontCameraOutOfUltraWide(device)
+        ProcessScanCamera.applyZoomProfile(to: device, profile: profile)
 
         if deliversFrames {
             videoOutput.videoSettings = [
@@ -162,7 +187,7 @@ final class BodyScanCameraService: NSObject, ObservableObject {
 
         session.commitConfiguration()
 
-        ProcessScanCamera.lockFrontCameraOutOfUltraWide(device)
+        ProcessScanCamera.applyZoomProfile(to: device, profile: profile)
 
         DispatchQueue.main.async {
             self.activePosition = position

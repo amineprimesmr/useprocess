@@ -20,6 +20,12 @@ final class AppSession {
     private(set) var isAccountWipeInProgress = false
     private(set) var accountDeletionPhase: AccountDeletionPhase = .idle
     var accountDeletionErrorMessage: String?
+    private var accountDeletionUITask: Task<Void, Never>?
+    /// Après suppression : bloque reload profil / Auth qui remettraient hasCompletedOnboarding à true.
+    private(set) var blocksAuthenticatedOnboardingRestore = false
+
+    /// True une fois le wipe local terminé — évite de restaurer l'état si l'utilisateur annule avant.
+    private var accountDeletionDidFinalizeLocally = false
 
     var accountDeletionStatusMessage: String {
         switch accountDeletionPhase {
@@ -36,39 +42,73 @@ final class AppSession {
 
     func beginAccountDeletion() {
         isAccountWipeInProgress = true
+        accountDeletionDidFinalizeLocally = false
         accountDeletionPhase = .remote
         accountDeletionErrorMessage = nil
+        UserSessionCoordinator.shared.cancelPendingBindWork()
     }
 
     func cancelAccountDeletion() {
+        accountDeletionUITask?.cancel()
+        accountDeletionUITask = nil
         isAccountWipeInProgress = false
         accountDeletionPhase = .idle
+
+        guard !accountDeletionDidFinalizeLocally else { return }
+
+        persistBlocksAuthenticatedOnboardingRestore(false)
+        reloadForCurrentUser()
+        if !hasCompletedOnboarding {
+            AuthenticationManager.shared.startOnboarding()
+        }
     }
 
     /// Point d'entrée unique depuis les réglages — overlay immédiat + gestion d'erreur.
+    /// Tâche détachée du cycle de vie SwiftUI (survit au dismiss des réglages).
+    func enqueueAccountDeletionFromUI(afterDismiss dismiss: (@MainActor () -> Void)? = nil) {
+        accountDeletionUITask?.cancel()
+        accountDeletionUITask = Task.detached(priority: .userInitiated) { @MainActor [self] in
+            self.beginAccountDeletion()
+            dismiss?()
+            if dismiss != nil {
+                try? await Task.sleep(for: .milliseconds(320))
+            }
+
+            await self.performAccountDeletionFromUI()
+            self.accountDeletionUITask = nil
+        }
+    }
+
     func performAccountDeletionFromUI() async {
         if !isAccountWipeInProgress {
             beginAccountDeletion()
         }
 
+        defer {
+            if isAccountWipeInProgress {
+                isAccountWipeInProgress = false
+                accountDeletionPhase = .idle
+            }
+        }
+
         do {
             try await deleteAccount()
-        } catch let error as AccountDeletionError {
-            if case .cancelled = error {
-                cancelAccountDeletion()
-                return
-            }
-            cancelAccountDeletion()
-            accountDeletionErrorMessage = error.localizedDescription
         } catch {
-            cancelAccountDeletion()
-            accountDeletionErrorMessage = error.localizedDescription
+            if !accountDeletionDidFinalizeLocally {
+                accountDeletionErrorMessage = error.localizedDescription
+            }
         }
     }
 
     private init() {
         let uid = UserScopedStorage.currentUserId()
-        let completedOnboarding = Self.resolveOnboardingCompleted(userId: uid)
+        let blocksRestore = UserDefaults.standard.bool(
+            forKey: Keys.blocksAuthenticatedOnboardingRestore
+        )
+
+        let completedOnboarding = blocksRestore
+            ? false
+            : Self.resolveOnboardingCompleted(userId: uid)
         hasCompletedOnboarding = completedOnboarding
 
         hasCompletedWelcomePlanChat = Self.resolveWelcomePlanChatCompleted(
@@ -78,9 +118,12 @@ final class AppSession {
 
         let rawAppearance = UserDefaults.standard.string(forKey: Keys.appearance) ?? AppAppearance.system.rawValue
         appearance = AppAppearance(rawValue: rawAppearance) ?? .system
+
+        blocksAuthenticatedOnboardingRestore = blocksRestore
     }
 
     func completeOnboarding() {
+        allowAppleSignInDuringOnboarding()
         hasCompletedOnboarding = true
         UserDefaults.standard.set(true, forKey: onboardingStorageKey)
         AuthenticationManager.shared.completeOnboarding()
@@ -105,6 +148,12 @@ final class AppSession {
         UserDefaults.standard.set(completed, forKey: welcomePlanChatStorageKey)
     }
 
+    /// Sign in with Apple explicite pendant l'onboarding — lève le blocage post-suppression.
+    func allowAppleSignInDuringOnboarding() {
+        guard !isAccountWipeInProgress else { return }
+        persistBlocksAuthenticatedOnboardingRestore(false)
+    }
+
     func resetOnboarding() {
         let uid = UnifiedProfileService.shared.currentProfile?.userId
             ?? UserScopedStorage.currentUserId()
@@ -125,6 +174,7 @@ final class AppSession {
 
     /// Remet l'app au parcours d'accueil (onboarding) après suppression de compte.
     func resetAfterAccountDeletion(primaryUID: String? = nil) {
+        persistBlocksAuthenticatedOnboardingRestore(true)
         hasCompletedOnboarding = false
         hasCompletedWelcomePlanChat = false
 
@@ -138,7 +188,8 @@ final class AppSession {
             UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan.chat.completed", userId: uid))
         }
 
-        OnboardingProgressService.shared.resetProgress()
+        clearLegacyOnboardingFlags()
+        OnboardingProgressService.shared.resetProgressForAccountDeletion(primaryUID: primary)
         WelcomePlanStore.shared.resetForCurrentUser()
         ProcessAnalytics.reset()
         ProcessCrispSupport.resetSession()
@@ -147,26 +198,84 @@ final class AppSession {
         AuthenticationManager.shared.startOnboarding()
     }
 
-    /// Suppression complète du compte : Firebase d'abord, puis données locales + retour onboarding.
+    /// Suppression complète : tente Firebase, efface **toujours** les données locales, retour onboarding.
     func deleteAccount() async throws {
         accountDeletionErrorMessage = nil
         if !isAccountWipeInProgress {
             beginAccountDeletion()
         }
-        defer {
-            isAccountWipeInProgress = false
-            accountDeletionPhase = .idle
-        }
-
-        accountDeletionPhase = .remote
-        try await AuthenticationManager.shared.deleteRemoteAccount()
-
-        accountDeletionPhase = .local
 
         let primaryUID = UserScopedStorage.currentUserId()
             ?? UnifiedProfileService.shared.currentProfile?.userId
             ?? "local-user"
 
+        accountDeletionPhase = .remote
+        let remoteDeletionWarning = await AuthenticationManager.shared.deleteRemoteAccountBestEffort()
+
+        await finalizeAccountDeletionLocally(
+            primaryUID: primaryUID,
+            remoteDeletionWarning: remoteDeletionWarning
+        )
+    }
+
+    /// Wipe local garanti + retour onboarding — appelé même si Firebase échoue.
+    @MainActor
+    private func finalizeAccountDeletionLocally(
+        primaryUID: String,
+        remoteDeletionWarning: String?
+    ) async {
+        accountDeletionPhase = .local
+        persistBlocksAuthenticatedOnboardingRestore(true)
+        hasCompletedOnboarding = false
+        hasCompletedWelcomePlanChat = false
+        AuthenticationManager.shared.hasCompletedOnboarding = false
+        AuthenticationManager.shared.isInOnboarding = true
+
+        wipeAllLocalAccountData(primaryUID: primaryUID)
+        OnboardingProgressService.shared.resetProgressForAccountDeletion(primaryUID: primaryUID)
+
+        accountDeletionPhase = .finishing
+        UnifiedProfileService.shared.clearAllPersistedProfiles(primaryUID: primaryUID)
+        AuthenticationManager.shared.applyPostAccountDeletion()
+        AuthenticationManager.shared.startOnboarding()
+        clearAllOnboardingCompletionFlags(primaryUID: primaryUID)
+
+        accountDeletionDidFinalizeLocally = true
+        UserDefaults.standard.synchronize()
+
+        Task {
+            await SubscriptionService.shared.logOutAfterAccountDeletion()
+        }
+        UserSessionCoordinator.shared.handleAccountDeleted()
+
+        isAccountWipeInProgress = false
+        accountDeletionPhase = .idle
+
+        if let remoteDeletionWarning {
+            accountDeletionErrorMessage = AppCopy.t(
+                "\(remoteDeletionWarning) Tes données sur cet appareil ont été effacées.",
+                en: "\(remoteDeletionWarning) Your data on this device has been erased."
+            )
+        }
+    }
+
+    private func clearAllOnboardingCompletionFlags(primaryUID: String) {
+        for uid in UserScopedStorage.likelyUserIds(primary: primaryUID) {
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("onboarding.completed", userId: uid))
+            UserDefaults.standard.removeObject(forKey: UserScopedStorage.key("welcome.plan.chat.completed", userId: uid))
+        }
+        clearLegacyOnboardingFlags()
+        purgeUserDefaults(matching: "onboarding.completed")
+        purgeUserDefaults(matching: "unified.profile")
+    }
+
+    private func purgeUserDefaults(matching fragment: String) {
+        for key in UserDefaults.standard.dictionaryRepresentation().keys where key.contains(fragment) {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
+    private func wipeAllLocalAccountData(primaryUID: String) {
         let userIds = UserScopedStorage.likelyUserIds(primary: primaryUID)
 
         CoachConversationStore.resetThread()
@@ -194,16 +303,31 @@ final class AppSession {
             ProcessPrivacyConsentStore.shared.clearForUser(userId: uid)
         }
 
-        accountDeletionPhase = .finishing
+        clearLegacyOnboardingFlags()
+    }
 
-        UnifiedProfileService.shared.clearLocalProfile()
-        resetAfterAccountDeletion(primaryUID: primaryUID)
-        await SubscriptionService.shared.logOutAfterAccountDeletion()
-        UserSessionCoordinator.shared.handleAccountDeleted()
+    private func clearLegacyOnboardingFlags() {
+        let bundlePrefix = AppConfiguration.bundleIdentifier + "."
+        let legacyPrefix = (Bundle.main.bundleIdentifier ?? "useprocess") + "."
+        for prefix in [bundlePrefix, legacyPrefix] {
+            UserDefaults.standard.removeObject(forKey: prefix + "onboarding.completed")
+            UserDefaults.standard.removeObject(forKey: prefix + "onboarding_current_step")
+            UserDefaults.standard.removeObject(forKey: prefix + "onboarding_last_completed_step")
+            UserDefaults.standard.removeObject(forKey: prefix + "onboarding_visited_steps")
+            UserDefaults.standard.removeObject(forKey: prefix + "onboarding_answers_cache")
+            UserDefaults.standard.removeObject(forKey: prefix + "onboarding_flow_progress")
+        }
     }
 
     func reloadForCurrentUser() {
         guard !isAccountWipeInProgress else { return }
+        guard !blocksAuthenticatedOnboardingRestore else {
+            hasCompletedOnboarding = false
+            hasCompletedWelcomePlanChat = false
+            AuthenticationManager.shared.hasCompletedOnboarding = false
+            AuthenticationManager.shared.isInOnboarding = true
+            return
+        }
 
         guard AuthUser.current != nil else { return }
 
@@ -233,6 +357,8 @@ final class AppSession {
 
     /// Firestore / cache profil — filet de sécurité si UserDefaults a raté le cold start.
     func reconcileOnboardingFromProfileIfNeeded() {
+        guard !isAccountWipeInProgress else { return }
+        guard !blocksAuthenticatedOnboardingRestore else { return }
         guard !hasCompletedOnboarding else { return }
         guard let profile = UnifiedProfileService.shared.currentProfile,
               profile.hasCompletedOnboarding else { return }
@@ -339,8 +465,20 @@ final class AppSession {
         )
     }
 
+    private func persistBlocksAuthenticatedOnboardingRestore(_ enabled: Bool) {
+        blocksAuthenticatedOnboardingRestore = enabled
+        if enabled {
+            UserDefaults.standard.set(true, forKey: Keys.blocksAuthenticatedOnboardingRestore)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Keys.blocksAuthenticatedOnboardingRestore)
+        }
+    }
+
     private enum Keys {
         static var appearance: String { UserScopedStorage.globalKey("appearance") }
+        static var blocksAuthenticatedOnboardingRestore: String {
+            UserScopedStorage.globalKey("account.deletion.blocks_onboarding_restore")
+        }
     }
 }
 

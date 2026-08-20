@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Point d’entrée catalogue — hub aliments Debloat (visage dégonflé).
+/// Point d’entrée catalogue — recettes Process + aliments Debloat (privilégier / éviter).
 struct PlanMealIdeasCatalogSheet: View {
     let plan: FaceOriginPlan
     let day: OriginProgramDay

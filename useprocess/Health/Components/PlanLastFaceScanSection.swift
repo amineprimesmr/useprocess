@@ -3,7 +3,6 @@ import SwiftUI
 
 /// Résumé scan visage — page Plan (liquid glass, aligné cartes repas).
 struct PlanLastFaceScanSection: View {
-    @Binding var isScanFlowActive: Bool
     var isPlanActive: Bool = true
     var healthMetrics: PlanHomeHealthMetrics = PlanHomeHealthMetrics()
     var zoomNamespace: Namespace.ID? = nil
@@ -13,11 +12,8 @@ struct PlanLastFaceScanSection: View {
 
     @Environment(\.appTheme) private var theme
     @EnvironmentObject private var profileService: UnifiedProfileService
-    @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
     @Bindable private var historyStore = FaceScanHistoryStore.shared
     @Bindable private var displayPreferences = PlanHomeFaceScanDisplayPreferences.shared
-
-    @Namespace private var embeddedCaptureZoomNamespace
 
     @State private var latestAnalysisScan: FaceScanResult?
 
@@ -69,7 +65,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var livePreviewActive: Bool {
-        isPlanActive && needsLiveCameraPreview && !isScanFlowActive && !showsUnifiedScanCard
+        isPlanActive && needsLiveCameraPreview && !showsUnifiedScanCard
     }
 
     private var isMediaPlaybackActive: Bool {
@@ -77,7 +73,7 @@ struct PlanLastFaceScanSection: View {
     }
 
     private var showsUnifiedScanCard: Bool {
-        isScanAvailable || isScanFlowActive
+        isScanAvailable
     }
 
     var body: some View {
@@ -114,35 +110,14 @@ struct PlanLastFaceScanSection: View {
         }
         .processHomeGlassCardShadow(isDark: theme.isDark)
         .processZoomSource(id: .faceScanHistory, namespace: zoomNamespace)
-        .animation(.spring(response: 0.56, dampingFraction: 0.84), value: isScanFlowActive)
         .onAppear {
             displayPreferences.reload()
-        }
-        .fullScreenCover(isPresented: $isScanFlowActive) {
-            FaceScanSessionView(
-                onDismiss: {
-                    isScanFlowActive = false
-                    if ProcessEveningCheckInPresenter.shared.presentation != nil {
-                        ProcessEveningCheckInPresenter.shared.dismissImmediately()
-                    }
-                },
-                onComplete: { result in
-                    onScanComplete?(result)
-                },
-                showsMediaImport: creatorMode.allowsPhotoImport
-            )
-            .environmentObject(profileService)
-            .processZoomTransition(id: .faceScanCapture, namespace: captureZoomNamespace)
         }
         .animation(.easeInOut(duration: 0.28), value: historyStore.latestResult?.id)
         .animation(.easeInOut(duration: 0.28), value: historyStore.isScanDue)
         .fullScreenCover(item: $latestAnalysisScan) { scan in
             latestAnalysisCover(for: scan)
         }
-    }
-
-    private var captureZoomNamespace: Namespace.ID {
-        zoomNamespace ?? embeddedCaptureZoomNamespace
     }
 
     @MainActor
@@ -204,13 +179,13 @@ struct PlanLastFaceScanSection: View {
             onBack: {},
             showsMediaImport: false,
             allowsScreenFlash: false,
-            isCameraSessionActive: isPlanActive && !isScanFlowActive,
+            isCameraSessionActive: isPlanActive,
+            showsInFrameCameraPermissionGate: false,
             onContinue: { _, _ in }
         )
         .id("plan-inline-face-scan")
         .frame(width: compactVideoWidth, height: Layout.scanAvailableHeight, alignment: .topLeading)
         .clipShape(UnifiedScanCameraClipShape(expanded: false, cardRadius: cardRadius))
-        .processZoomSource(id: .faceScanCapture, namespace: captureZoomNamespace)
     }
 
     private var compactScanDueTrailingColumnContent: some View {
@@ -229,17 +204,16 @@ struct PlanLastFaceScanSection: View {
     }
 
     private func beginInlineScan() {
-        guard historyStore.canStartTodayScan else {
-            onOpenScanHub?()
-            return
-        }
         if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
             ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
         }
         HapticManager.shared.impact(.medium)
-        withAnimation(ProcessZoomTransitionID.presentationSpring) {
-            isScanFlowActive = true
+
+        if historyStore.canStartTodayScan {
+            ProcessFaceScanDayCoordinator.shared.requestAutoStart()
         }
+
+        onOpenScanHub?()
         onScan?()
     }
 
@@ -639,5 +613,3 @@ private struct PlanFaceScanLiveCameraPanel: View {
         await camera.restartPreviewIfNeeded(preferredPosition: .front)
     }
 }
-
-

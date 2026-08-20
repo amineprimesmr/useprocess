@@ -42,7 +42,6 @@ struct DailyJournalChecklistView: View {
     @Namespace private var faceScanHistoryZoomNamespace
     @Namespace private var mealZoomNamespace
     @State private var isChecklistExpanded = true
-    @State private var showFaceScan = false
     @Bindable private var layoutStore = PlanHomeLayoutStore.shared
     @Bindable private var tutorialStore = PlanHomeTutorialStore.shared
     @Bindable private var planBridge = CoachPlanNavigationBridge.shared
@@ -140,15 +139,6 @@ struct DailyJournalChecklistView: View {
         .onChange(of: livePlan.calendar.totalDays) { _, _ in
             clampSelectedDateToPlanIfNeeded()
         }
-        .onChange(of: planBridge.shouldOpenHomeFaceScan) { _, should in
-            guard should else { return }
-            planBridge.shouldOpenHomeFaceScan = false
-            if let onOpenScanHub {
-                onOpenScanHub()
-            } else if FaceScanHistoryStore.shared.canStartTodayScan {
-                showFaceScan = true
-            }
-        }
     }
 
     @ViewBuilder
@@ -195,7 +185,6 @@ struct DailyJournalChecklistView: View {
             VStack(alignment: .leading, spacing: 0) {
                 PlanHomeTutorialFocusChrome(focus: .faceScan) {
                     PlanLastFaceScanSection(
-                        isScanFlowActive: $showFaceScan,
                         isPlanActive: isPlanActive,
                         healthMetrics: healthMetrics,
                         zoomNamespace: faceScanHistoryZoomNamespace,

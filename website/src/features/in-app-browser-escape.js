@@ -42,7 +42,7 @@ function siteOrigin() {
 
 /** Page intermédiaire ouverte dans Safari avant l’App Store. */
 export function getSafariStoreLandingUrl() {
-  return `${siteOrigin()}/get?stay=1`;
+  return `${siteOrigin()}/app?stay=1`;
 }
 
 function iosEscapeHref(targetUrl, app) {

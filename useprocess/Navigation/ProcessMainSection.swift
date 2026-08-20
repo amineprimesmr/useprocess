@@ -14,7 +14,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
     static let isCoachTabEnabled = false
 
     static var tabOrder: [ProcessMainSection] {
-        var tabs: [ProcessMainSection] = [.plan, .scan, .routine, .statistics]
+        var tabs: [ProcessMainSection] = [.plan, .statistics, .routine]
         if isCoachTabEnabled {
             tabs.append(.coach)
         }
@@ -34,7 +34,7 @@ enum ProcessMainSection: String, CaseIterable, Identifiable, Hashable {
         case .scan: AppCopy.t("Scan", en: "Scan")
         case .routine: AppCopy.t("Routine", en: "Routine")
         case .statistics: AppCopy.t("Série", en: "Streak")
-        case .profile: AppCopy.profile
+        case .profile: AppCopy.t("Progrès", en: "Progress")
         }
     }
 

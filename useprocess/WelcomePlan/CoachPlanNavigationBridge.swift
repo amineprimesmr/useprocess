@@ -16,8 +16,8 @@ final class CoachPlanNavigationBridge {
     var shouldOpenPlan = false
     var focusHydrationCarouselNonce = 0
     var shouldOpenFaceScan = false
-    /// Ouvre le scan depuis l’accueil (checklist), sans basculer sur le coach.
-    var shouldOpenHomeFaceScan = false
+    /// Ouvre la capture scan en plein écran (depuis l’accueil) avec auto-start si cadence OK.
+    var shouldOpenScanHub = false
     var shouldOpenTracking = false
     var shouldOpenIntegration = false
     var pendingFaceScanHandoff: FaceScanCoachHandoff?
@@ -40,8 +40,10 @@ final class CoachPlanNavigationBridge {
     }
 
     func requestHomeFaceScan() {
-        shouldOpenPlan = true
-        shouldOpenHomeFaceScan = true
+        if FaceScanHistoryStore.shared.canStartTodayScan {
+            ProcessFaceScanDayCoordinator.shared.requestAutoStart()
+        }
+        shouldOpenScanHub = true
     }
 
     func openCoach(conversationId: UUID? = nil) {

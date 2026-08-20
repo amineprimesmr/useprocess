@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SportOnboardingView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
     @EnvironmentObject var profileService: UnifiedProfileService
     @EnvironmentObject var healthManager: HealthManager
     @EnvironmentObject var permissionsManager: PermissionsManager
@@ -22,9 +23,6 @@ struct SportOnboardingView: View {
     @State var transitionDirection: TransitionDirection = .forward
     @State var isTransitioning: Bool = false
 
-    // État pour l'authentification biométrique
-    @State var biometricAuthCompleted: Bool = false
-
     /// Recherche sport active : masque le bouton retour
     @State var isSportSearchActive = false
 
@@ -35,7 +33,9 @@ struct SportOnboardingView: View {
     @State private var isOnboardingRestoreComplete = false
     @State var flowProgressRefreshTask: Task<Void, Never>?
 
+    /// Padding bas animé du CTA — monte avec le clavier (taille → poids, etc.).
     @State var animatedContinueBottomOffset: CGFloat = 50
+
     /// Hauteur live du clavier — le CTA global ignoreSafeArea, donc SwiftUI
     /// n'évite pas le clavier tout seul (bug CONTINUER sous le pad sur certains iPhone).
     @StateObject var keyboardHeight = KeyboardHeightObserver()
@@ -54,46 +54,7 @@ struct SportOnboardingView: View {
                 .ignoresSafeArea(.all)
                 .allowsHitTesting(false)
 
-            if isImmersiveOnboardingStep {
-                Group {
-                    if let step = OnboardingStep(rawValue: viewModel.currentStep) {
-                        onboardingStepContent(for: step)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea()
-                .transition(onboardingPageTransition)
-                .ios26SafeAnimation(onboardingPageChangeAnimation, value: viewModel.currentStep)
-                .id(onboardingContentIdentity)
-            } else {
-            VStack(spacing: 0) {
-                // Contenu principal — à partir du scan : même push que capture → analyse → résultats.
-                Group {
-                    if let step = OnboardingStep(rawValue: viewModel.currentStep) {
-                        onboardingStepContent(for: step)
-                    } else {
-                        GenderSelectionStepView(
-                            selectedGender: $viewModel.selectedGender,
-                            onValidationChanged: { isValid in
-                                viewModel.isGenderSelected = isValid
-                            }
-                        )
-                            .task {
-                                viewModel.currentStep = OnboardingStep.genderSelection.rawValue
-                                viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
-                            }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.top, shouldAddTopPadding ? OnboardingConstants.titleTopPaddingFromScreenTop : 0)
-                .ignoresSafeArea(.all)
-                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
-                .transition(onboardingPageTransition)
-                .ios26SafeAnimation(onboardingPageChangeAnimation, value: viewModel.currentStep)
-                .id(onboardingContentIdentity)
-
-            }
-            }
+            onboardingAnimatedStepLayer
 
             if !isImmersiveOnboardingStep,
                isOnboardingRestoreComplete,
@@ -110,7 +71,7 @@ struct SportOnboardingView: View {
         }
         .overlay(alignment: .bottom) {
             continueButtonOverlay
-                .opacity(shouldShowGlobalContinueButton ? continueButtonOpacity : 0)
+                .opacity(shouldShowGlobalContinueButton ? 1 : 0)
                 .accessibilityHidden(!shouldShowGlobalContinueButton)
                 .allowsHitTesting(shouldShowGlobalContinueButton)
                 .zIndex(shouldShowGlobalContinueButton ? 20 : -1)
@@ -132,18 +93,6 @@ struct SportOnboardingView: View {
                         : nil,
                     onPreviousStep: handleOnboardingBack
                 )
-                .background(alignment: .top) {
-                    if OnboardingStep(rawValue: viewModel.currentStep) == .faceLeverageIntro {
-                        OnboardingTheme.faceLeverageIntroBackground
-                            .frame(
-                                maxWidth: .infinity,
-                                minHeight: OnboardingConstants.headerBackButtonTopPadding
-                                    + OnboardingConstants.backButtonSize
-                                    + 12
-                            )
-                            .ignoresSafeArea(edges: .top)
-                    }
-                }
                 .ignoresSafeArea(edges: .top)
             }
         }
@@ -152,7 +101,6 @@ struct SportOnboardingView: View {
             if !authManager.isInOnboarding {
                 authManager.startOnboarding()
             }
-            checkPermissions()
 
             if let cached = OnboardingProgressService.shared.loadAnswers() {
                 viewModel.applyCachedAnswers(cached)
@@ -168,7 +116,7 @@ struct SportOnboardingView: View {
                 navigationEngine: navigationEngine
             )
             refreshOnboardingFlowProgress()
-            updateContinueButtonLayout(animated: false)
+            animatedContinueBottomOffset = continueButtonBottomOffset
             isOnboardingRestoreComplete = true
 
             ProcessReferralAttribution.applyPendingIfNeeded(to: viewModel)
@@ -209,9 +157,12 @@ struct SportOnboardingView: View {
         }
         .onChange(of: viewModel.currentStep) { _, newStep in
             viewModel.saveProgress()
-            updateContinueButtonLayout(animated: true)
+            syncAnimatedContinueBottomOffset(stepTransition: true)
             ProcessAnalytics.trackOnboardingStep(step: OnboardingStep(rawValue: newStep))
             scheduleRefreshOnboardingFlowProgress()
+        }
+        .onChange(of: keyboardHeight.height) { _, _ in
+            syncAnimatedContinueBottomOffset(stepTransition: false)
         }
         .onChange(of: viewModel.visitedSteps) { _, _ in
             scheduleRefreshOnboardingFlowProgress()
@@ -262,12 +213,17 @@ struct SportOnboardingView: View {
         .fullScreenCover(item: $viewModel.presentedOnboardingFaceScan) { presentation in
             OnboardingFaceScanSessionView(
                 initialResult: presentation.initialResult,
+                showsBackButton: presentation.usesChatCallbacks,
                 onCancel: {
                     viewModel.dismissOnboardingFaceScan()
                     if presentation.usesChatCallbacks {
                         viewModel.onOnboardingFaceScanCancel?()
                     }
                 },
+                onSkip: presentation.usesChatCallbacks ? {
+                    viewModel.dismissOnboardingFaceScan()
+                    viewModel.onOnboardingFaceScanSkip?()
+                } : nil,
                 onResultReady: { result in
                     if presentation.usesChatCallbacks {
                         viewModel.onOnboardingFaceScanResult?(result)
@@ -292,41 +248,91 @@ struct SportOnboardingView: View {
 
     private var continueButtonOverlay: some View {
         VStack(spacing: 0) {
-            Button(action: {
-                handleContinueButtonTap()
-            }) {
-                Text(OnboardingCopy.continueCTAUpper)
-                    .font(.system(size: 22, weight: .black))
-                    .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
-                    .id("continue_button_label_\(viewModel.currentStep)")
-                .frame(maxWidth: .infinity)
-                .frame(height: 58)
+            Group {
+                if OnboardingStep(rawValue: viewModel.currentStep) == .weightEstimation {
+                    Button(action: {
+                        handleContinueButtonTap()
+                    }) {
+                        OnboardingContinueFillRevealLabel(
+                            title: OnboardingCopy.continueCTAUpper,
+                            progress: viewModel.estimationContinueUnlockProgress
+                        )
+                        .id("continue_button_label_\(viewModel.currentStep)")
+                    }
+                    .buttonStyle(
+                        OnboardingContinueFillRevealButtonStyle(
+                            isUnlocked: isEstimationContinueUnlocked
+                        )
+                    )
+                } else {
+                    Button(action: {
+                        handleContinueButtonTap()
+                    }) {
+                        Text(OnboardingCopy.continueCTAUpper)
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
+                            .id("continue_button_label_\(viewModel.currentStep)")
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 58)
+                    }
+                    .onboardingPrimaryActionStyle()
+                }
             }
-            .onboardingPrimaryActionStyle()
             .padding(.horizontal, 34)
-            .disabled(!canContinue)
-            .allowsHitTesting(continueButtonHitTestingEnabled && canContinue)
+            .disabled(!canContinue && OnboardingStep(rawValue: viewModel.currentStep) != .referralCode)
+            .opacity(continueButtonOpacity)
+            .allowsHitTesting(continueButtonHitTestingEnabled && !isTransitioning)
 
-            if shouldShowNoWeightGoalLink {
-                Button(action: skipWeightGoalFromIdealWeight) {
-                    Text(OnboardingCopy.t("Passer — je me concentre sur mon visage", en: "Skip — I'm focusing on my face"))
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(OnboardingTheme.mutedText.opacity(0.75))
+            if shouldShowCreatorCodeSkipLink {
+                Button(action: skipCreatorCodeStep) {
+                    Text(AppCopy.t("Passer", en: "Skip"))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(OnboardingTheme.mutedText)
                         .padding(.vertical, 12)
                         .padding(.horizontal, 16)
                         .frame(maxWidth: .infinity)
                         .processTappableButtonLabel(maxWidth: true)
                 }
                 .buttonStyle(.processPlain)
-                .allowsHitTesting(canContinue)
+                .allowsHitTesting(!isTransitioning)
             }
         }
-        .padding(.bottom, effectiveContinueBottomOffset)
+        .padding(.bottom, animatedContinueBottomOffset)
         .id("onboarding_global_continue")
-        .ios26SafeAnimation(.spring(response: 0.34, dampingFraction: 0.88), value: keyboardHeight.height)
     }
 
     private var onboardingContentIdentity: String {
         "\(appLanguage.code)_\(viewModel.currentStep)"
+    }
+
+    @ViewBuilder
+    private var onboardingAnimatedStepLayer: some View {
+        Group {
+            if let step = OnboardingStep(rawValue: viewModel.currentStep) {
+                onboardingStepContent(for: step)
+            } else {
+                GenderSelectionStepView(
+                    selectedGender: $viewModel.selectedGender,
+                    onValidationChanged: { isValid in
+                        viewModel.isGenderSelected = isValid
+                    }
+                )
+                .task {
+                    viewModel.currentStep = OnboardingStep.genderSelection.rawValue
+                    viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(
+            .top,
+            isImmersiveOnboardingStep || !shouldAddTopPadding
+                ? 0
+                : OnboardingConstants.titleTopPaddingFromScreenTop
+        )
+        .modifier(OnboardingStepLayoutModifier(immersive: isImmersiveOnboardingStep))
+        .transition(onboardingPageTransition)
+        .ios26SafeAnimation(onboardingPageChangeAnimation, value: viewModel.currentStep)
+        .id(onboardingContentIdentity)
     }
 }

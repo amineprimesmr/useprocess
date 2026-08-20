@@ -34,11 +34,6 @@ struct PlanHomeTopChrome: View {
 
     private var programProgress: PlanProgressSnapshot { planProgressStore.snapshot }
 
-    private var greetingFirstName: String {
-        profileService.currentProfile?.firstName
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    }
-
     init(
         selectedSection: Binding<ProcessMainSection>,
         selectedDate: Binding<Date>,
@@ -181,7 +176,7 @@ struct PlanHomeTopChrome: View {
     }
 
     private var homeGreeting: PlanHomeGreeting {
-        PlanHomeGreetingBuilder.make(firstName: greetingFirstName)
+        PlanHomeGreetingBuilder.make(profile: profileService.currentProfile)
     }
 
     @ViewBuilder
@@ -205,17 +200,20 @@ struct PlanHomeToolbarActions: View {
 
     var body: some View {
         if #available(iOS 26.0, *) {
-            GlassEffectContainer(spacing: GlassClusterMetrics.spacing) {
-                HStack(spacing: GlassClusterMetrics.spacing) {
+            GlassEffectContainer(spacing: ProcessAppHeaderControlMetrics.glassClusterSpacing) {
+                HStack(spacing: ProcessAppHeaderControlMetrics.glassClusterSpacing) {
                     Button(action: openCalendar) {
                         Image(systemName: "calendar")
-                            .font(.system(size: GlassClusterMetrics.iconSize, weight: .semibold))
+                            .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
                             .foregroundStyle(theme.primaryText)
-                            .frame(width: GlassClusterMetrics.tileSize, height: GlassClusterMetrics.tileSize)
+                            .frame(
+                                width: ProcessAppHeaderControlMetrics.size,
+                                height: ProcessAppHeaderControlMetrics.size
+                            )
                             .contentShape(Circle())
                     }
                     .processGlassButton(in: Circle())
-                    .offset(x: GlassClusterMetrics.mergeOffset, y: 0)
+                    .offset(x: ProcessAppHeaderControlMetrics.glassClusterMergeOffset, y: 0)
                     .zIndex(0)
                     .processZoomSource(id: .planCalendar, namespace: calendarZoomNamespace)
                     .accessibilityLabel(AppCopy.t(
@@ -231,9 +229,12 @@ struct PlanHomeToolbarActions: View {
             HStack(spacing: 6) {
                 Button(action: openCalendar) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
                         .foregroundStyle(theme.primaryText)
-                        .frame(width: 40, height: 40)
+                        .frame(
+                            width: ProcessAppHeaderControlMetrics.size,
+                            height: ProcessAppHeaderControlMetrics.size
+                        )
                         .contentShape(Circle())
                 }
                 .processGlassButton(in: Circle())
@@ -246,13 +247,6 @@ struct PlanHomeToolbarActions: View {
                 PlanHomeCheckInButton(action: openStreak)
             }
         }
-    }
-
-    private enum GlassClusterMetrics {
-        static let tileSize: CGFloat = 44
-        static let spacing: CGFloat = 10
-        static let mergeOffset: CGFloat = 14
-        static let iconSize: CGFloat = 14
     }
 
     private func openCalendar() {
@@ -276,9 +270,10 @@ struct PlanHomeCheckInButton: View {
     @Bindable private var eveningStore = ProcessEveningCheckInStore.shared
 
     private enum Metrics {
-        static let tileSize: CGFloat = 44
-        static let iconSize: CGFloat = 12
-        static let badgeSize: CGFloat = 10
+        static let tileSize = ProcessAppHeaderControlMetrics.size
+        static let iconSize = ProcessAppHeaderControlMetrics.streakIconSize
+        static let numberFontSize = ProcessAppHeaderControlMetrics.streakNumberFontSize
+        static let badgeSize = ProcessAppHeaderControlMetrics.attentionBadgeSize
     }
 
     private var flameColor: Color {
@@ -293,7 +288,7 @@ struct PlanHomeCheckInButton: View {
                     .foregroundStyle(flameColor)
 
                 Text("\(streakStore.displayStreak)")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: Metrics.numberFontSize, weight: .bold))
                     .foregroundStyle(theme.primaryText)
                     .monospacedDigit()
                     .lineLimit(1)
@@ -332,7 +327,7 @@ struct PlanHomeCheckInButton: View {
         Circle()
             .fill(Color.red)
             .frame(width: Metrics.badgeSize, height: Metrics.badgeSize)
-            .padding(7)
+            .padding(5)
             .accessibilityHidden(true)
     }
 }

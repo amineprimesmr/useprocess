@@ -36,12 +36,3 @@ struct OnboardingProfileChatInlineFaceScanSection: View {
         .onboardingChatAnswerReveal(isRevealed: isScanRevealed)
     }
 }
-
-enum FaceScanThreadAnchor {
-    static let idle = "face_scan_idle"
-    static let capturing = "face_scan_capturing"
-    static let analyzing = "face_scan_analyzing"
-    static let results = "face_scan_results"
-    static let continueButton = "face_scan_continue"
-    static let bottom = "face_scan_bottom"
-}

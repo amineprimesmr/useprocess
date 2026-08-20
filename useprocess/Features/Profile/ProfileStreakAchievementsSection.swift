@@ -32,6 +32,9 @@ struct ProfileStreakAchievementsSection: View {
     @Binding var selectedDate: Date
     /// Pause l’anim hors onglet / app inactive — la flamme bouge même si streak = 0.
     var isPlaybackActive: Bool = true
+    var isOnboardingPreview: Bool = false
+    /// Titre + check-in inline (aperçu onboarding). Masqué quand la page fournit la top bar.
+    var showsSectionHeader: Bool = true
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
@@ -69,7 +72,9 @@ struct ProfileStreakAchievementsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 28) {
-            sectionHeader
+            if showsSectionHeader {
+                sectionHeader
+            }
 
             streakHeroBlock
                 .opacity(heroAppeared ? 1 : 0)
@@ -82,16 +87,22 @@ struct ProfileStreakAchievementsSection: View {
             }
 
             statsGrid
+                .id(ProfileStreakStatsAnchor.id)
                 .opacity(statsAppeared ? 1 : 0)
                 .offset(y: statsAppeared ? 0 : 14)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, ProfileTheme.horizontalPadding)
-        .padding(.top, 16)
+        .padding(.top, showsSectionHeader ? 16 : 0)
         .padding(.bottom, 12)
         .onAppear {
             refreshStores()
-            runEntranceAnimations()
+            if isOnboardingPreview {
+                heroAppeared = true
+                statsAppeared = true
+            } else {
+                runEntranceAnimations()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
@@ -122,7 +133,10 @@ struct ProfileStreakAchievementsSection: View {
     private var sectionHeader: some View {
         HStack(spacing: 12) {
             Color.clear
-                .frame(width: 44, height: 44)
+                .frame(
+                    width: ProcessAppHeaderControlMetrics.size,
+                    height: ProcessAppHeaderControlMetrics.size
+                )
 
             Text(AppCopy.t("Série", en: "Streak"))
                 .font(.system(size: 17, weight: .semibold))
@@ -436,6 +450,10 @@ struct ProfileStreakAchievementsSection: View {
                     )
             }
     }
+}
+
+enum ProfileStreakStatsAnchor {
+    static let id = "profileStreakStatsGrid"
 }
 
 private struct ProfileStreakTodaySpinner: View {

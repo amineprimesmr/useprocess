@@ -19,6 +19,20 @@ enum ProcessSoundPlayer {
         )
     }
 
+    /// Changement de langue — feedback court (Réglages).
+    static func playLanguageSwitch() {
+        playBundledSound(
+            named: "revolut_pay",
+            maxDuration: 0.42,
+            fadeOutDuration: 0.14
+        )
+    }
+
+    /// Confirmation Réglages (langue, apparence, enregistrer…).
+    static func playSettingsChange() {
+        playLanguageSwitch()
+    }
+
     static func playBundledSound(
         named name: String,
         fileExtension: String = "mp3",

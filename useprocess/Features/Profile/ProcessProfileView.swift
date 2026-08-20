@@ -38,39 +38,7 @@ struct ProcessProfileView: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                // VStack (pas LazyVStack) en tête : TimelineView de la flamme doit rester actif.
-                VStack(spacing: 0) {
-                    ProfileStreakAchievementsSection(
-                        selectedDate: $selectedProfileDate,
-                        isPlaybackActive: isFlamePlaybackActive
-                    )
-
-                    Color.clear
-                        .frame(height: 0)
-                        .id(ProfileStatisticsAnchor.id)
-
-                    profileScrollContent
-                }
-                .frame(maxWidth: .infinity, alignment: .top)
-                .processReportsTabBarScrollOffset()
-            }
-            .coordinateSpace(name: "processMainScroll")
-            .scrollIndicators(.hidden)
-            .modifier(ProcessProfileTabBarAdoption(enabled: !isOnboardingPreview))
-            .processTransparentScrollSurface()
-            .simultaneousGesture(profileDaySwipeGesture)
-            .onAppear {
-                selectedProfileDate = Calendar.current.startOfDay(for: creatorMode.effectiveNow)
-                focusProfileStatisticsIfNeeded(using: proxy)
-            }
-            .onChange(of: planBridge.shouldFocusProfileStatistics) { _, should in
-                guard should else { return }
-                _ = planBridge.consumeProfileStatisticsFocus()
-                focusProfileStatistics(using: proxy)
-            }
-        }
+        streakScroll
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
         .processClearUIKitHostingBackground()
@@ -110,6 +78,58 @@ struct ProcessProfileView: View {
         }
         .onChange(of: faceHistoryStore.history.count) { _, _ in
             rebuildPresentations()
+        }
+    }
+
+    private var streakScroll: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                // VStack (pas LazyVStack) en tête : TimelineView de la flamme doit rester actif.
+                VStack(spacing: 0) {
+                    Color.clear
+                        .frame(height: 0)
+                        .id(ProfileOnboardingPreviewTopAnchor.id)
+
+                    ProfileStreakAchievementsSection(
+                        selectedDate: $selectedProfileDate,
+                        isPlaybackActive: isFlamePlaybackActive,
+                        isOnboardingPreview: isOnboardingPreview,
+                        showsSectionHeader: true
+                    )
+
+                    Color.clear
+                        .frame(height: 0)
+                        .id(ProfileStatisticsAnchor.id)
+
+                    profileScrollContent
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .processReportsTabBarScrollOffset()
+            }
+            .coordinateSpace(name: "processMainScroll")
+            .scrollIndicators(.hidden)
+            .modifier(ProcessProfileTabBarAdoption(enabled: !isOnboardingPreview))
+            .processTransparentScrollSurface()
+            .simultaneousGesture(profileDaySwipeGesture)
+            .onAppear {
+                selectedProfileDate = Calendar.current.startOfDay(for: creatorMode.effectiveNow)
+                if isOnboardingPreview {
+                    bootstrapOnboardingPreview()
+                    focusOnboardingPreviewStreakTop(using: proxy)
+                } else {
+                    focusProfileStatisticsIfNeeded(using: proxy)
+                }
+            }
+            .onChange(of: planBridge.shouldFocusProfileStatistics) { _, should in
+                guard should else { return }
+                _ = planBridge.consumeProfileStatisticsFocus()
+                focusProfileStatistics(using: proxy)
+            }
+            .onChange(of: isTabActive) { _, active in
+                guard isOnboardingPreview, active else { return }
+                bootstrapOnboardingPreview()
+                focusOnboardingPreviewStreakTop(using: proxy)
+            }
         }
     }
 
@@ -181,12 +201,55 @@ struct ProcessProfileView: View {
         focusProfileStatistics(using: proxy)
     }
 
+    private func focusOnboardingPreviewStreakTop(using proxy: ScrollViewProxy) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            proxy.scrollTo(ProfileOnboardingPreviewTopAnchor.id, anchor: .top)
+        }
+    }
+
     private func focusProfileStatistics(using proxy: ScrollViewProxy) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
                 proxy.scrollTo(ProfileStatisticsAnchor.id, anchor: .top)
             }
         }
+    }
+
+    private func bootstrapOnboardingPreview() {
+        ProcessDebloatTrajectoryStore.shared.reload()
+        ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
+        ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
+        ProcessStreakStore.shared.sync(from: WelcomePlanStore.shared.plan)
+        chartHistories = Self.previewChartHistories()
+        chartDataRevision &+= 1
+        rebuildPresentations()
+    }
+
+    private static func previewChartHistories() -> [ProfileChartMetric: [ProfileAnalyticsPoint]] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let series: [(ProfileChartMetric, [Double])] = [
+            (.cortisol, [68, 64, 61, 58, 55, 52, 49]),
+            (.recovery, [62, 58, 55, 51, 48, 45, 42]),
+            (.retention, [72, 68, 63, 58, 54, 50, 46]),
+            (.definition, [55, 58, 61, 64, 67, 70, 73]),
+            (.skin, [58, 61, 64, 67, 70, 73, 76])
+        ]
+
+        var histories: [ProfileChartMetric: [ProfileAnalyticsPoint]] = [:]
+        for (metric, values) in series {
+            histories[metric] = values.enumerated().compactMap { index, value in
+                guard let date = calendar.date(byAdding: .day, value: -(values.count - 1 - index), to: today) else {
+                    return nil
+                }
+                return ProfileAnalyticsPoint(
+                    id: "preview-\(metric.id)-\(index)",
+                    date: date,
+                    value: value
+                )
+            }
+        }
+        return histories
     }
 
     private func rebuildPresentations() {
@@ -393,4 +456,8 @@ struct ProcessProfileView: View {
 
 private enum ProfileStatisticsAnchor {
     static let id = "profileStatistics"
+}
+
+private enum ProfileOnboardingPreviewTopAnchor {
+    static let id = "profileOnboardingPreviewTop"
 }

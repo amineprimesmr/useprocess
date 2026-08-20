@@ -6,7 +6,6 @@
 //
 
 import SafariServices
-import StoreKit
 import SwiftUI
 import UIKit
 
@@ -31,6 +30,7 @@ struct PaywallView: View {
     @State private var purchaseError: String?
     @State private var legalSafariURL: URL?
     @State private var showsPaywallLegalMenu = false
+    @State private var showsReferralCodeSheet = false
     @State private var measuredTopSafeInset: CGFloat = 0
     @State private var continueShakeTicks: CGFloat = 0
     @State private var showsSpinWinback = false
@@ -138,6 +138,9 @@ struct PaywallView: View {
                 PaywallInAppSafariView(url: url)
                     .ignoresSafeArea()
             }
+        }
+        .sheet(isPresented: $showsReferralCodeSheet) {
+            PaywallReferralCodeSheet()
         }
         .task {
             await PaywallPricingExperiment.shared.resolveWhenFlagsReady()
@@ -536,11 +539,11 @@ struct PaywallView: View {
                 Task { await restorePurchases() }
             }
             paywallLegalMenuRow(
-                symbol: "tag",
-                title: OnboardingCopy.t("Code promo Apple", en: "Apple promo code")
+                symbol: "gift",
+                title: OnboardingCopy.t("Code de parrainage", en: "Referral code")
             ) {
                 showsPaywallLegalMenu = false
-                presentCodeRedemption()
+                showsReferralCodeSheet = true
             }
         }
         .padding(.vertical, 6)
@@ -675,27 +678,6 @@ struct PaywallView: View {
         }
     }
 
-    @MainActor
-    private func presentCodeRedemption() {
-        Task {
-            do {
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                    try await AppStore.presentOfferCodeRedeemSheet(in: windowScene)
-                } else {
-                    purchaseError = OnboardingCopy.t(
-                        "Impossible d'ouvrir la page de code promo.",
-                        en: "Couldn’t open the promo code page."
-                    )
-                }
-            } catch {
-                purchaseError = OnboardingCopy.t(
-                    "Impossible d'ouvrir la page de code promo.",
-                    en: "Couldn’t open the promo code page."
-                )
-            }
-        }
-    }
-
     private func activateDeveloperPremiumAccess() {
         #if DEBUG
         HapticManager.shared.notification(.success)
@@ -703,6 +685,131 @@ struct PaywallView: View {
         ProcessMarketingNotificationService.shared.cancelAll()
         completePaywallFlow()
         #endif
+    }
+}
+
+// MARK: - Code parrainage (fallback paywall)
+
+private struct PaywallReferralCodeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+
+    @State private var draftCode = ""
+    @State private var isSubmitting = false
+    @State private var feedback: String?
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                Text(OnboardingCopy.t(
+                    "Tu as oublié ton code pendant l'onboarding ? Saisis-le ici.",
+                    en: "Forgot your code during onboarding? Enter it here."
+                ))
+                .font(.system(size: 15))
+                .foregroundStyle(OnboardingTheme.bodyText)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+
+                TextField(
+                    "",
+                    text: $draftCode,
+                    prompt: Text(OnboardingCopy.t("Ex. K7X2M", en: "e.g. K7X2M"))
+                        .foregroundStyle(OnboardingTheme.mutedText)
+                )
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(OnboardingTheme.primaryText)
+                .multilineTextAlignment(.center)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .focused($isFocused)
+                .submitLabel(.done)
+                .onSubmit { Task { await applyCode() } }
+                .onChange(of: draftCode) { _, newValue in
+                    let filtered = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
+                    draftCode = String(filtered.prefix(ProcessReferralCode.length))
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 28)
+
+                if let feedback {
+                    Text(feedback)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(OnboardingTheme.mutedText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 14)
+                }
+
+                Spacer(minLength: 0)
+
+                Button {
+                    Task { await applyCode() }
+                } label: {
+                    Text(OnboardingCopy.t("Utiliser", en: "Apply"))
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                }
+                .onboardingPrimaryActionStyle()
+                .disabled(!ProcessReferralCode.isValid(normalizedCode) || isSubmitting)
+                .opacity(!ProcessReferralCode.isValid(normalizedCode) || isSubmitting ? 0.45 : 1)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
+            .navigationTitle(OnboardingCopy.t("Code de parrainage", en: "Referral code"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(OnboardingCopy.t("Fermer", en: "Close")) { dismiss() }
+                }
+            }
+        }
+        .onAppear {
+            if let pending = ProcessReferralAttribution.pendingCode ?? ProcessAffiliateAttribution.pendingCode {
+                draftCode = pending
+            }
+            isFocused = true
+        }
+    }
+
+    private var normalizedCode: String {
+        ProcessReferralCode.normalize(draftCode)
+    }
+
+    @MainActor
+    private func applyCode() async {
+        let normalized = normalizedCode
+        guard ProcessReferralCode.isValid(normalized) else { return }
+
+        isSubmitting = true
+        defer { isSubmitting = false }
+
+        ProcessAcquisitionAttribution.captureReferralCode(normalized, source: "paywall", medium: "referral")
+        ProcessAcquisitionAttribution.captureAffiliateCode(normalized, source: "paywall", medium: "creator")
+        ProcessReferralAttribution.rememberManualEntry(normalized)
+        ProcessAnalytics.trackReferralCodeApplied(source: "paywall_menu")
+
+        let userId = UnifiedProfileService.shared.currentProfile?.userId
+            ?? UserScopedStorage.currentUserId()
+        let displayName = UnifiedProfileService.shared.currentProfile?.firstName
+
+        if let userId {
+            await AcquisitionCodeService.registerIfPresent(
+                code: normalized,
+                referredUserId: userId,
+                displayName: displayName
+            )
+            ProcessReferralAttribution.clearPending()
+            ProcessAffiliateAttribution.clearPending()
+        }
+
+        HapticManager.shared.notification(.success)
+        feedback = OnboardingCopy.t("Code enregistré.", en: "Code saved.")
+        try? await Task.sleep(for: .milliseconds(650))
+        dismiss()
     }
 }
 

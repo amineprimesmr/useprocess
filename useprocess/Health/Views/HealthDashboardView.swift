@@ -41,15 +41,3 @@ struct ProfileHealthSection: View {
         }
     }
 }
-
-/// Conservé pour compatibilité — redirige vers le contenu profil.
-struct HealthDashboardView: View {
-    @Binding var selectedSection: ProcessMainSection
-
-    var body: some View {
-        ProcessProfileView(selectedSection: $selectedSection)
-            .onAppear {
-                selectedSection = .statistics
-            }
-    }
-}

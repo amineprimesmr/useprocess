@@ -1,132 +1,148 @@
 import SafariServices
 import SwiftUI
 import UIKit
+import FirebaseAuth
 
-// MARK: - Compte
+// MARK: - Mon compte (Opal)
 
 struct ProfileSettingsAccountDetailView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
     @Environment(\.profileAccountDeletionHandler) private var onDeleteConfirmed
-    @Bindable private var session = AppSession.shared
 
     @State private var showsLogoutConfirmation = false
+    @State private var isRestoringPurchases = false
+    @State private var isOpeningManageSubscriptions = false
+    @State private var restoreMessage: String?
+    @State private var manageSubscriptionsMessage: String?
 
-    private var profile: UnifiedUserProfile? {
-        profileService.currentProfile
-    }
-
-    private var ageText: String? {
-        guard let profile, profile.age > 0 else { return nil }
-        return profile.ageFormatted
-    }
+    private var profile: UnifiedUserProfile? { profileService.currentProfile }
+    private let sectionBlockSpacing: CGFloat = 22
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: AppCopy.t("Identité", en: "Identity"))
-
-                AccountDetailsCard {
-                    NavigationLink(value: ProfileEditDestination.firstName) {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Prénom", en: "First Name"),
+        ProcessSettingsOpalScrollPage(
+            title: AppCopy.t("Mon compte", en: "My Account")
+        ) {
+            VStack(spacing: sectionBlockSpacing) {
+                ProcessSettingsOpalCard {
+                        NavigationLink(value: ProfileEditDestination.firstName) {
+                            ProcessSettingsOpalAccountRow(
+                                icon: "person.fill",
+                                title: AppCopy.t("Ton prénom", en: "Your first name"),
                                 value: profile?.firstName,
-                                placeholder: AppCopy.t("Non renseigné", en: "Not provided"),
-                                showsChevron: false
+                                placeholder: AppCopy.t("Non renseigné", en: "Not provided")
                             )
                         }
-                    }
-                    .buttonStyle(.processPlain)
+                        .processSettingsOpalRowButton()
 
-                    NavigationLink(value: ProfileEditDestination.gender) {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Sexe", en: "Gender"),
+                        ProcessSettingsOpalRowDivider()
+
+                        NavigationLink(value: ProfileEditDestination.gender) {
+                            ProcessSettingsOpalAccountRow(
+                                icon: "briefcase.fill",
+                                title: AppCopy.t("Sexe", en: "Gender"),
                                 value: profile?.gender.displayName,
                                 placeholder: AppCopy.t("Non renseigné", en: "Not provided")
                             )
                         }
-                    }
-                    .buttonStyle(.processPlain)
+                        .processSettingsOpalRowButton()
 
-                    NavigationLink(value: ProfileEditDestination.birthDate) {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Date de naissance", en: "Date of Birth"),
-                                value: birthDateDisplay,
-                                placeholder: AppCopy.t("Non renseigné", en: "Not provided")
+                        if let ageText {
+                            ProcessSettingsOpalRowDivider()
+
+                            ProcessSettingsOpalAccountRow(
+                                icon: "hourglass.circle.fill",
+                                title: AppCopy.t("Mon âge", en: "My Age"),
+                                value: ageText,
+                                trailingIcon: .none
                             )
                         }
                     }
-                    .buttonStyle(.processPlain)
+                    .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
 
-                    AccountDetailsGlassRow {
-                        ProfileEditListRow(
-                            label: AppCopy.t("Âge", en: "Age"),
-                            value: ageText,
-                            placeholder: "—",
-                            showsChevron: false,
-                            valueIsMuted: true
+                    ProcessSettingsOpalCard {
+                        ProcessSettingsOpalAccountRow(
+                            icon: "envelope.fill",
+                            title: AppCopy.t("E-mail", en: "Email"),
+                            value: profile?.email,
+                            placeholder: AppCopy.t("Non renseigné", en: "Not provided"),
+                            trailingIcon: .chevron
+                        )
+
+                        ProcessSettingsOpalRowDivider()
+
+                        ProcessSettingsOpalRow(
+                            icon: "apple.logo",
+                            title: AppCopy.t("Se connecter avec Apple", en: "Sign in with Apple"),
+                            trailingIcon: .status(appleLinkedLabel)
+                        )
+
+                        ProcessSettingsOpalRowDivider()
+
+                        ProcessSettingsOpalRow(
+                            icon: "phone.fill",
+                            title: AppCopy.t("Numéro de téléphone", en: "Phone Number"),
+                            trailingIcon: .status(AppCopy.t("Ajouter", en: "Add"))
                         )
                     }
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                    .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
 
-                ProfileSummarySectionHeader(title: AppCopy.t("Informations", en: "Information"))
-
-                AccountDetailsCard {
-                    if let profile = profile {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: "E-mail",
-                                value: profile.email,
-                                placeholder: AppCopy.t("Non renseigné", en: "Not provided"),
-                                showsChevron: false,
-                                valueIsMuted: true
+                    ProcessSettingsOpalCard {
+                        Button {
+                            Task { await openManageSubscriptions() }
+                        } label: {
+                            ProcessSettingsOpalRow(
+                                icon: "creditcard.fill",
+                                title: AppCopy.t("Gérer mon abonnement", en: "Manage Subscription"),
+                                trailingIcon: isOpeningManageSubscriptions ? .status("…") : .chevron
                             )
                         }
-                    }
+                        .processSettingsOpalRowButton()
+                        .disabled(isOpeningManageSubscriptions || isRestoringPurchases)
 
-                    if let score = BodyScanHistoryStore.shared.latestResult?.postureScore {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Dernier scan", en: "Latest Scan"),
-                                value: "\(score)/100",
-                                placeholder: "—",
-                                showsChevron: false,
-                                valueIsMuted: true
+                        ProcessSettingsOpalRowDivider()
+
+                        Button {
+                            Task { await restorePurchases() }
+                        } label: {
+                            ProcessSettingsOpalRow(
+                                icon: "arrow.clockwise.circle.fill",
+                                title: AppCopy.t("Restaurer l'achat", en: "Restore Purchase"),
+                                trailingIcon: isRestoringPurchases ? .status("…") : .none,
+                                showsDivider: false
                             )
                         }
+                        .processSettingsOpalRowButton()
+                        .disabled(isRestoringPurchases || isOpeningManageSubscriptions)
                     }
+                    .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
 
-                    AccountDetailsGlassRow {
-                        ProfileEditListRow(
-                            label: AppCopy.t("Appareil", en: "Device"),
-                            value: deviceLine,
-                            placeholder: "—",
-                            showsChevron: false,
-                            valueIsMuted: true
-                        )
+                    ProcessSettingsOpalCard {
+                        ProcessSettingsOpalActionRow(
+                            icon: "rectangle.portrait.and.arrow.right.fill",
+                            title: AppCopy.t("Se déconnecter", en: "Log Out")
+                        ) {
+                            showsLogoutConfirmation = true
+                        }
                     }
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                    .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
 
-                AccountDetailsActionButton(title: AppCopy.t("Se déconnecter", en: "Log Out")) {
-                    showsLogoutConfirmation = true
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                .padding(.top, 28)
+                    Text(AppCopy.t(
+                        "Tu pourrais perdre l'accès à certaines fonctionnalités comme la série, la communauté et d'autres.",
+                        en: "You might lose access to some features like your streak, community, and more."
+                    ))
+                    .font(.system(size: 13))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 8)
 
-                AccountDeleteAnimatedButton(onConfirm: handleAccountDeletion)
-                    .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                    AccountDeleteAnimatedButton(onConfirm: handleAccountDeletion)
                     .padding(.top, 12)
             }
-            .padding(.bottom, 32)
         }
-        .scrollIndicators(.hidden)
-        .processTransparentScrollSurface()
-        .navigationTitle(AppCopy.t("Compte", en: "Account"))
-        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
+        }
         .alert(
             AppCopy.t("Se déconnecter ?", en: "Log Out?"),
             isPresented: $showsLogoutConfirmation
@@ -138,18 +154,43 @@ struct ProfileSettingsAccountDetailView: View {
         } message: {
             Text(AppCopy.t("Tu pourras te reconnecter à tout moment.", en: "You can log back in at any time."))
         }
+        .alert(
+            AppCopy.t("Restaurer l'achat", en: "Restore Purchase"),
+            isPresented: Binding(
+                get: { restoreMessage != nil },
+                set: { if !$0 { restoreMessage = nil } }
+            )
+        ) {
+            Button(AppCopy.close, role: .cancel) { restoreMessage = nil }
+        } message: {
+            Text(restoreMessage ?? "")
+        }
+        .alert(
+            AppCopy.t("Gérer mon abonnement", en: "Manage Subscription"),
+            isPresented: Binding(
+                get: { manageSubscriptionsMessage != nil },
+                set: { if !$0 { manageSubscriptionsMessage = nil } }
+            )
+        ) {
+            Button(AppCopy.close, role: .cancel) { manageSubscriptionsMessage = nil }
+        } message: {
+            Text(manageSubscriptionsMessage ?? "")
+        }
     }
 
-    private var birthDateDisplay: String? {
-        guard let profile else { return nil }
-        let formatter = DateFormatter()
-        formatter.locale = ProcessAppLanguage.shared.locale
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: profile.birthDate)
+    private var ageText: String? {
+        guard let profile, profile.age > 0 else { return nil }
+        return profile.ageFormatted
     }
 
-    private var deviceLine: String {
-        "\(UIDevice.current.model) · iOS \(UIDevice.current.systemVersion)"
+    private var appleLinkedLabel: String {
+        guard FirebaseBootstrap.isConfigured else {
+            return AppCopy.t("Non lié", en: "Not linked")
+        }
+        let linked = Auth.auth().currentUser?.providerData.contains { $0.providerID == "apple.com" } == true
+        return linked
+            ? AppCopy.t("Lié", en: "Linked")
+            : AppCopy.t("Non lié", en: "Not linked")
     }
 
     private func handleAccountDeletion() {
@@ -157,9 +198,37 @@ struct ProfileSettingsAccountDetailView: View {
             onDeleteConfirmed()
             return
         }
+        AppSession.shared.enqueueAccountDeletionFromUI()
+    }
 
-        Task { @MainActor in
-            await session.performAccountDeletionFromUI()
+    private func openManageSubscriptions() async {
+        guard !isOpeningManageSubscriptions else { return }
+        isOpeningManageSubscriptions = true
+        defer { isOpeningManageSubscriptions = false }
+
+        do {
+            try await SubscriptionService.shared.showManageSubscriptions()
+        } catch {
+            manageSubscriptionsMessage = error.localizedDescription
+        }
+    }
+
+    private func restorePurchases() async {
+        guard !isRestoringPurchases else { return }
+        isRestoringPurchases = true
+        defer { isRestoringPurchases = false }
+
+        do {
+            try await SubscriptionService.shared.restorePurchases()
+            restoreMessage = AppCopy.t(
+                "Achats restaurés. Si tu as un abonnement actif, il sera disponible sous peu.",
+                en: "Purchases restored. If you have an active subscription, it will be available shortly."
+            )
+        } catch {
+            restoreMessage = AppCopy.t(
+                "Impossible de restaurer pour l'instant. Réessaie ou contacte le support.",
+                en: "Couldn't restore right now. Try again or contact support."
+            )
         }
     }
 }
@@ -170,176 +239,141 @@ struct ProfileSettingsHealthDetailView: View {
     @EnvironmentObject private var healthManager: HealthManager
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: AppCopy.t("Santé & outils", en: "Health & Tools"))
+        ProcessSettingsOpalScrollPage(
+            title: AppCopy.t("Santé & données", en: "Health & Data")
+        ) {
+            ProcessSettingsOpalSectionTitle(
+                title: AppCopy.t("Santé & outils", en: "Health & Tools")
+            )
 
-                AccountDetailsCard {
-                    NavigationLink {
-                        BodyScanHistoryTabContent()
-                            .processSettingsDetailPage()
-                            .reportsProfileSubrouteActive(true)
-                    } label: {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Mes rapports de scan", en: "My Scan Reports"),
-                                value: nil,
-                                placeholder: AppCopy.t("Historique posture", en: "Posture history")
-                            )
-                        }
-                    }
-                    .buttonStyle(.processPlain)
-
-                    AccountDetailsGlassRow {
-                        Button {
-                            Task {
-                                if healthManager.isAuthorized {
-                                    await healthManager.performFullSync()
-                                } else {
-                                    await healthManager.requestAuthorizationAsync(analyticsSource: "profile_settings")
-                                }
-                            }
-                        } label: {
-                            ProfileEditListRow(
-                                label: healthManager.isAuthorized
-                                    ? AppCopy.t("Synchroniser Santé", en: "Sync Health")
-                                    : AppCopy.t("Connecter Apple Santé", en: "Connect Apple Health"),
-                                value: healthManager.isAuthorized
-                                    ? (healthManager.hasAppleWatch ? "Apple Watch" : AppCopy.t("App Santé", en: "Health app"))
-                                    : nil,
-                                placeholder: AppCopy.t("Autoriser l'accès", en: "Allow access")
-                            )
-                        }
-                        .buttonStyle(.processPlain)
-                    }
-
-                    NavigationLink {
-                        HealthConnectedSourcesSettingsView()
-                            .environmentObject(healthManager)
-                            .processSettingsDetailPage()
-                            .reportsProfileSubrouteActive(true)
-                    } label: {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Sources connectées", en: "Connected Sources"),
-                                value: healthManager.connectedSources.isEmpty
-                                    ? nil
-                                    : "\(healthManager.connectedSources.count)",
-                                placeholder: AppCopy.t("Apps et appareils", en: "Apps and devices")
-                            )
-                        }
-                    }
-                    .buttonStyle(.processPlain)
+            ProcessSettingsOpalCard {
+                NavigationLink {
+                    BodyScanHistoryTabContent()
+                        .reportsProfileSubrouteActive(true)
+                } label: {
+                    ProcessSettingsOpalRow(
+                        icon: "doc.text.fill",
+                        title: AppCopy.t("Mes rapports de scan", en: "My Scan Reports"),
+                        subtitle: AppCopy.t("Historique posture", en: "Posture history"),
+                        showsDivider: false
+                    )
                 }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+                .processSettingsOpalRowButton()
+
+                ProcessSettingsOpalRowDivider()
+
+                Button {
+                    Task {
+                        if healthManager.isAuthorized {
+                            await healthManager.performFullSync()
+                        } else {
+                            await healthManager.requestAuthorizationAsync(analyticsSource: "profile_settings")
+                        }
+                    }
+                } label: {
+                    ProcessSettingsOpalRow(
+                        icon: "heart.text.square.fill",
+                        title: healthManager.isAuthorized
+                            ? AppCopy.t("Synchroniser Santé", en: "Sync Health")
+                            : AppCopy.t("Connecter Apple Santé", en: "Connect Apple Health"),
+                        trailingIcon: .status(
+                            healthManager.isAuthorized
+                                ? (healthManager.hasAppleWatch ? "Apple Watch" : AppCopy.t("Connecté", en: "Connected"))
+                                : AppCopy.t("Connecter", en: "Connect")
+                        ),
+                        showsDivider: false
+                    )
+                }
+                .processSettingsOpalRowButton()
+
+                ProcessSettingsOpalRowDivider()
+
+                NavigationLink {
+                    HealthConnectedSourcesSettingsView()
+                        .environmentObject(healthManager)
+                        .reportsProfileSubrouteActive(true)
+                } label: {
+                    ProcessSettingsOpalRow(
+                        icon: "link.circle.fill",
+                        title: AppCopy.t("Sources connectées", en: "Connected Sources"),
+                        subtitle: AppCopy.t("Apps et appareils", en: "Apps and devices"),
+                        showsDivider: false
+                    )
+                }
+                .processSettingsOpalRowButton()
             }
-            .padding(.bottom, 32)
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
         }
-        .scrollIndicators(.hidden)
-        .processTransparentScrollSurface()
-        .navigationTitle(AppCopy.t("Santé & données", en: "Health & Data"))
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 // MARK: - Application
 
 struct ProfileSettingsAppDetailView: View {
-    @EnvironmentObject private var profileService: UnifiedProfileService
     @Bindable private var session = AppSession.shared
-    @Bindable private var appLanguage = ProcessAppLanguage.shared
+    @State private var highlightedAppearance: AppAppearance?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: AppCopy.t("Apparence", en: "Appearance"))
+        ProcessSettingsOpalScrollPage(
+            title: AppCopy.t("Apparence", en: "Appearance")
+        ) {
+            ProcessSettingsOpalSectionTitle(title: AppCopy.t("Apparence", en: "Appearance"))
 
-                AccountDetailsCard {
-                    ForEach(Array(AppAppearance.allCases.enumerated()), id: \.element.id) { index, mode in
-                        Group {
-                            if index > 0 {
-                                Color.clear.frame(height: AccountDetailsTheme.rowSpacing)
-                            }
-                            AccountDetailsGlassRow {
-                                Button {
-                                    session.setAppearance(mode)
-                                } label: {
-                                    ProfileEditListRow(
-                                        label: mode.label,
-                                        value: session.appearance == mode ? AppCopy.t("Actif", en: "Active") : nil,
-                                        placeholder: "",
-                                        showsChevron: false,
-                                        valueIsMuted: session.appearance != mode
-                                    )
-                                }
-                                .buttonStyle(.processPlain)
-                            }
+            ProcessSettingsOpalCard {
+                ForEach(Array(AppAppearance.allCases.enumerated()), id: \.element.id) { index, mode in
+                    if index > 0 { ProcessSettingsOpalRowDivider() }
+
+                    Button {
+                        ProcessSettingsChangeFeedback.performRowSelection(
+                            highlight: $highlightedAppearance,
+                            value: mode,
+                            isSameValue: session.appearance == mode
+                        ) {
+                            session.setAppearance(mode)
                         }
+                    } label: {
+                        ProcessSettingsOpalRow(
+                            icon: appearanceIcon(for: mode),
+                            title: mode.label,
+                            trailingIcon: session.appearance == mode
+                                ? .status(AppCopy.t("Actif", en: "Active"))
+                                : .none,
+                            showsDivider: false
+                        )
+                        .processSettingsSelectionHighlight(
+                            isHighlighted: highlightedAppearance == mode,
+                            isActive: session.appearance == mode
+                        )
                     }
+                    .processSettingsOpalRowButton()
                 }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-
-                ProfileSummarySectionHeader(title: AppCopy.t("Langue", en: "Language"))
-
-                AccountDetailsCard {
-                    ForEach(Array(ProcessAppLanguage.Code.allCases.enumerated()), id: \.element.id) { index, language in
-                        Group {
-                            if index > 0 {
-                                Color.clear.frame(height: AccountDetailsTheme.rowSpacing)
-                            }
-                            AccountDetailsGlassRow {
-                                Button {
-                                    HapticManager.shared.selection()
-                                    Task {
-                                        await applyLanguage(language)
-                                    }
-                                } label: {
-                                    ProfileEditListRow(
-                                        label: "\(language.flag) \(language.displayName)",
-                                        value: appLanguage.code == language ? AppCopy.t("Actif", en: "Active") : nil,
-                                        placeholder: "",
-                                        showsChevron: false,
-                                        valueIsMuted: appLanguage.code != language
-                                    )
-                                }
-                                .buttonStyle(.processPlain)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
             }
-            .padding(.bottom, 32)
-        }
-        .scrollIndicators(.hidden)
-        .processTransparentScrollSurface()
-        .navigationTitle(AppCopy.t("Application", en: "App"))
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            syncLanguageFromProfileIfNeeded()
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
         }
     }
 
-    private func syncLanguageFromProfileIfNeeded() {
-        guard let profileLang = profileService.currentProfile?.preferences.language else { return }
-        let normalized = ProcessAppLanguage.normalize(profileLang)
-        if normalized != appLanguage.code {
-            appLanguage.setLanguage(normalized)
+    private func appearanceIcon(for mode: AppAppearance) -> String {
+        switch mode {
+        case .system: return "circle.lefthalf.filled"
+        case .dark: return "moon.fill"
+        case .light: return "sun.max.fill"
         }
     }
+}
 
-    private func applyLanguage(_ language: ProcessAppLanguage.Code) async {
-        appLanguage.setLanguage(language)
+// MARK: - Langue
 
-        guard let profile = profileService.currentProfile else { return }
+struct ProfileSettingsLanguageDetailView: View {
+    var body: some View {
+        ProcessSettingsOpalScrollPage(
+            title: AppCopy.t("Langue", en: "Language")
+        ) {
+            ProcessSettingsOpalSectionTitle(title: AppCopy.t("Langue", en: "Language"))
 
-        var preferences = profile.preferences
-        preferences.language = language.rawValue
-
-        do {
-            try await profileService.updatePreferences(preferences)
-        } catch {
-            DebugLogger.error("\(error.localizedDescription)")
+            ProcessSettingsOpalCard {
+                ProcessSettingsInlineLanguageRows()
+            }
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
         }
     }
 }
@@ -352,127 +386,85 @@ struct ProfileSettingsLegalDetailView: View {
     @State private var showsSupportChat = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ProfileSummarySectionHeader(title: AppCopy.t("Légal", en: "Legal"))
+        ProcessSettingsOpalScrollPage(
+            title: AppCopy.t("Aide & confidentialité", en: "Help & Privacy")
+        ) {
+            ProcessSettingsOpalSectionTitle(title: AppCopy.t("Légal", en: "Legal"))
 
-                AccountDetailsCard {
-                    legalRow(title: AppCopy.t("Conditions d'utilisation", en: "Terms of Use"), url: ProcessLegalURLs.termsOfUse)
-                    legalRow(title: AppCopy.t("Politique de confidentialité", en: "Privacy Policy"), url: ProcessLegalURLs.privacyPolicy)
-                    legalRow(title: AppCopy.t("Données faciales", en: "Facial Data"), url: ProcessLegalURLs.privacyPolicyFaceData)
-                    legalRow(title: AppCopy.t("Mentions légales", en: "Legal Notice"), url: ProcessLegalURLs.legalNotice)
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-
-                ProfileSummarySectionHeader(title: AppCopy.t("Aide", en: "Help"))
-
-                AccountDetailsCard {
-                    AccountDetailsGlassRow {
-                        Button { openURL(ProcessAppStoreReviewPrompt.writeReviewURL) } label: {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Noter Process", en: "Rate Process"),
-                                value: nil,
-                                placeholder: AppCopy.t("App Store", en: "App Store")
-                            )
-                        }
-                        .buttonStyle(.processPlain)
-                    }
-
-                    NavigationLink {
-                        ScrollView {
-                            HealthMedicalSourcesView()
-                                .padding(AccountDetailsTheme.horizontalPadding)
-                                .padding(.vertical, 16)
-                        }
-                        .processTransparentScrollSurface()
-                        .navigationTitle(AppCopy.t("Scores et recommandations", en: "Scores and Recommendations"))
-                        .navigationBarTitleDisplayMode(.inline)
-                        .processSettingsDetailPage()
-                        .reportsProfileSubrouteActive(true)
-                    } label: {
-                        AccountDetailsGlassRow {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Scores et recommandations", en: "Scores and Recommendations"),
-                                value: nil,
-                                placeholder: AppCopy.t("Sources et avertissements", en: "Sources and warnings")
-                            )
-                        }
-                    }
-                    .buttonStyle(.processPlain)
-
-                    AccountDetailsGlassRow {
-                        Button { inAppSafariURL = ProcessLegalURLs.supportPage } label: {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Centre d'aide", en: "Help Center"),
-                                value: nil,
-                                placeholder: AppCopy.t("FAQ et assistance", en: "FAQ and support")
-                            )
-                        }
-                        .buttonStyle(.processPlain)
-                    }
-
-                    AccountDetailsGlassRow {
-                        Button { openSupportChat() } label: {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Discuter avec l'équipe", en: "Chat with the team"),
-                                value: nil,
-                                placeholder: AppCopy.t("Bug, idée, question — réponse dans l'app", en: "Bug, idea, question — reply in the app")
-                            )
-                        }
-                        .buttonStyle(.processPlain)
-                    }
-
-                    AccountDetailsGlassRow {
-                        Button { openURL(ProcessLegalURLs.supportMail) } label: {
-                            ProfileEditListRow(
-                                label: AppCopy.t("Écrire un e-mail", en: "Send an email"),
-                                value: nil,
-                                placeholder: AppCopy.t("support@useprocess.xyz", en: "support@useprocess.xyz")
-                            )
-                        }
-                        .buttonStyle(.processPlain)
-                    }
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-
-                ProfileSummarySectionHeader(title: AppCopy.t("Services intelligents", en: "Smart Services"))
-
-                AccountDetailsCard {
-                    AccountDetailsGlassRow {
-                        ProfileEditListRow(
-                            label: AppCopy.t("Coach IA", en: "AI Coach"),
-                            value: AppCopy.t("Activé", en: "Enabled"),
-                            placeholder: "—",
-                            showsChevron: false,
-                            valueIsMuted: true
-                        )
-                    }
-
-                    AccountDetailsGlassRow {
-                        ProfileEditListRow(
-                            label: AppCopy.t("Analyse scan visage", en: "Face Scan Analysis"),
-                            value: AppCopy.t("Activée", en: "Enabled"),
-                            placeholder: "—",
-                            showsChevron: false,
-                            valueIsMuted: true
-                        )
-                    }
-                }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+            ProcessSettingsOpalCard {
+                legalRow(
+                    icon: "doc.text.fill",
+                    title: AppCopy.t("Conditions d'utilisation", en: "Terms of Use"),
+                    url: ProcessLegalURLs.termsOfUse,
+                    showsDivider: false
+                )
+                ProcessSettingsOpalRowDivider()
+                legalRow(icon: "hand.raised.fill", title: AppCopy.t("Politique de confidentialité", en: "Privacy Policy"), url: ProcessLegalURLs.privacyPolicy)
+                ProcessSettingsOpalRowDivider()
+                legalRow(icon: "face.smiling.fill", title: AppCopy.t("Données faciales", en: "Facial Data"), url: ProcessLegalURLs.privacyPolicyFaceData)
+                ProcessSettingsOpalRowDivider()
+                legalRow(icon: "building.columns.fill", title: AppCopy.t("Mentions légales", en: "Legal Notice"), url: ProcessLegalURLs.legalNotice)
             }
-            .padding(.bottom, 32)
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
+
+            ProcessSettingsOpalSectionTitle(title: AppCopy.t("Aide", en: "Help"))
+
+            ProcessSettingsOpalCard {
+                NavigationLink {
+                    ProcessSettingsNestedScrollPage(
+                        title: AppCopy.t("Scores et recommandations", en: "Scores and Recommendations")
+                    ) {
+                        HealthMedicalSourcesView()
+                            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
+                            .padding(.vertical, 16)
+                    }
+                    .reportsProfileSubrouteActive(true)
+                } label: {
+                    ProcessSettingsOpalRow(icon: "chart.bar.doc.horizontal.fill", title: AppCopy.t("Scores et recommandations", en: "Scores and Recommendations"), showsDivider: false)
+                }
+                .processSettingsOpalRowButton()
+
+                ProcessSettingsOpalRowDivider()
+
+                Button { openSupportChat() } label: {
+                    ProcessSettingsOpalRow(icon: "bubble.left.and.bubble.right.fill", title: AppCopy.t("Discuter avec l'équipe", en: "Chat with the team"), showsDivider: false)
+                }
+                .processSettingsOpalRowButton()
+
+                ProcessSettingsOpalRowDivider()
+
+                Button { openURL(ProcessLegalURLs.supportMail) } label: {
+                    ProcessSettingsOpalRow(icon: "envelope.fill", title: AppCopy.t("Écrire un e-mail", en: "Send an email"), trailingIcon: .external, showsDivider: false)
+                }
+                .processSettingsOpalRowButton()
+            }
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
+
+            ProcessSettingsOpalSectionTitle(title: AppCopy.t("Services intelligents", en: "Smart Services"))
+
+            ProcessSettingsOpalCard {
+                ProcessSettingsOpalRow(
+                    icon: "sparkles",
+                    title: AppCopy.t("Coach IA", en: "AI Coach"),
+                    trailingIcon: .status(AppCopy.t("Activé", en: "Enabled")),
+                    showsDivider: false
+                )
+                ProcessSettingsOpalRowDivider()
+                ProcessSettingsOpalRow(
+                    icon: "viewfinder.circle.fill",
+                    title: AppCopy.t("Analyse scan visage", en: "Face Scan Analysis"),
+                    trailingIcon: .status(AppCopy.t("Activée", en: "Enabled")),
+                    showsDivider: false
+                )
+            }
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
         }
-        .scrollIndicators(.hidden)
-        .processTransparentScrollSurface()
-        .navigationTitle(AppCopy.t("Aide & confidentialité", en: "Help & Privacy"))
-        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: Binding(
             get: { inAppSafariURL != nil },
             set: { if !$0 { inAppSafariURL = nil } }
         )) {
             if let url = inAppSafariURL {
-                ProfileSettingsSafariView(url: url)
-                    .ignoresSafeArea()
+                ProfileSettingsSafariView(url: url).ignoresSafeArea()
             }
         }
         .fullScreenCover(isPresented: $showsSupportChat) {
@@ -481,7 +473,7 @@ struct ProfileSettingsLegalDetailView: View {
     }
 
     private func openSupportChat() {
-        ProcessAnalytics.trackSupportChatOpened(source: "settings_help")
+        ProcessAnalytics.trackSupportChatOpened(source: "settings_legal")
         if ProcessCrispSupport.isReady {
             showsSupportChat = true
         } else {
@@ -489,17 +481,15 @@ struct ProfileSettingsLegalDetailView: View {
         }
     }
 
-    private func legalRow(title: String, url: URL) -> some View {
-        AccountDetailsGlassRow {
-            Button { inAppSafariURL = url } label: {
-                ProfileEditListRow(label: title, value: nil, placeholder: AppCopy.t("Ouvrir", en: "Open"))
-            }
-            .buttonStyle(.processPlain)
+    private func legalRow(icon: String, title: String, url: URL, showsDivider: Bool = false) -> some View {
+        Button { inAppSafariURL = url } label: {
+            ProcessSettingsOpalRow(icon: icon, title: title, trailingIcon: .external, showsDivider: showsDivider)
         }
+        .processSettingsOpalRowButton()
     }
 }
 
-private struct ProfileSettingsSafariView: UIViewControllerRepresentable {
+struct ProfileSettingsSafariView: UIViewControllerRepresentable {
     let url: URL
 
     func makeUIViewController(context: Context) -> SFSafariViewController {
@@ -511,6 +501,7 @@ private struct ProfileSettingsSafariView: UIViewControllerRepresentable {
 
 /// Historique scans — depuis Paramètres profil.
 struct BodyScanHistoryTabContent: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.appTheme) private var theme
     @Bindable private var historyStore = BodyScanHistoryStore.shared
 
@@ -526,6 +517,11 @@ struct BodyScanHistoryTabContent: View {
                 ForEach(historyStore.history) { result in
                     NavigationLink {
                         BodyScanReportView(result: result) {}
+                            .processSettingsSubpageToolbar(
+                                title: AppCopy.t("Rapport", en: "Report")
+                            )
+                            .processSettingsOpalPage()
+                            .reportsProfileSubrouteActive(true)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(AppCopy.t("Score \(result.postureScore)/100", en: "Score \(result.postureScore)/100"))
@@ -538,7 +534,12 @@ struct BodyScanHistoryTabContent: View {
                 }
             }
         }
-        .navigationTitle(AppCopy.t("Rapports", en: "Reports"))
+        .scrollContentBackground(.hidden)
+        .processSettingsStandardToolbar(
+            title: AppCopy.t("Rapports", en: "Reports"),
+            onBack: { dismiss() }
+        )
+        .processSettingsOpalPage()
         .reportsProfileSubrouteActive(true)
     }
 }

@@ -73,4 +73,19 @@ struct OnboardingAnswersSnapshot: Codable, Equatable {
     var isFaceAnalysisCompleted: Bool?
     var isProgramCreationCompleted: Bool?
     var hasDoneFirstGoalPace: Bool?
+    /// Variante dashboard preview (legacy : `postTransformation` → 1er scan).
+    var dashboardPreviewPresentation: String?
+    /// Premier tour dashboard (scan) terminé — ne pas rouvrir ce tour à la reprise.
+    var hasCompletedFirstDashboardPreview: Bool?
+    /// Session scan du 1er dashboard en cours (reprise après kill ou retour Réglages).
+    var dashboardScanPersistedState: OnboardingDashboardScanPersistedState?
+}
+
+/// État UI du 1er dashboard quand le scan est ouvert — persisté pour reprise.
+struct OnboardingDashboardScanPersistedState: Codable, Equatable {
+    var carouselStep: Int
+    var scanExpandProgress: Double
+    var isScanPageInteractive: Bool
+    var showsSideCards: Bool
+    var showsTourChrome: Bool
 }

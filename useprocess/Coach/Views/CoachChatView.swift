@@ -152,9 +152,7 @@ struct CoachChatView: View {
             .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenFaceScan) { _, should in
                 guard should else { return }
                 CoachPlanNavigationBridge.shared.shouldOpenFaceScan = false
-                withAnimation(ProcessGlass.spring) {
-                    selectedSection = .scan
-                }
+                CoachPlanNavigationBridge.shared.requestHomeFaceScan()
             }
             .onChange(of: CoachPlanNavigationBridge.shared.shouldOpenTracking) { _, should in
                 guard should else { return }
@@ -685,9 +683,7 @@ struct CoachChatView: View {
             selectedSection = .plan
             onOpenWelcomePlan?()
         case .scan:
-            withAnimation(ProcessGlass.spring) {
-                selectedSection = .scan
-            }
+            CoachPlanNavigationBridge.shared.requestHomeFaceScan()
         case .streak:
             CoachPlanNavigationBridge.shared.openProfileStatistics()
             selectedSection = .statistics

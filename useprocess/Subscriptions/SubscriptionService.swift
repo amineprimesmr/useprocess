@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import RevenueCat
 import StoreKit
+import UIKit
 
 @MainActor
 final class SubscriptionService: NSObject, ObservableObject {
@@ -529,6 +530,23 @@ final class SubscriptionService: NSObject, ObservableObject {
         applyCustomerInfo(info)
         guard subscriptionStatus.isActive else { throw SubscriptionError.noActiveSubscription }
         await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
+    }
+
+    /// Ouvre la feuille Apple « Gérer les abonnements » (écran où s’affiche la Retention Messaging API).
+    func showManageSubscriptions() async throws {
+        guard #available(iOS 15.0, *) else {
+            throw SubscriptionError.manageSubscriptionsUnavailable
+        }
+        guard let windowScene = Self.activeWindowScene else {
+            throw SubscriptionError.manageSubscriptionsUnavailable
+        }
+
+        try await AppStore.showManageSubscriptions(in: windowScene)
+    }
+
+    private static var activeWindowScene: UIWindowScene? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
     }
 
     func checkSubscriptionStatus() async {

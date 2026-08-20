@@ -160,42 +160,47 @@ struct MossAppIconRow: View {
     }
 }
 
+// MARK: - Answer chip
+
+enum MossAnswerChipMetrics {
+    static let fontSize: CGFloat = 15
+    static let horizontalPadding: CGFloat = 12
+    static let verticalPadding: CGFloat = 8
+    static let stackSpacing: CGFloat = 8
+    static let iconSide: CGFloat = 18
+    static let checkmarkSize: CGFloat = 15
+    /// Largeur max — le libellé wrap sans forcer une pill pleine largeur.
+    static let maxChipWidth: CGFloat = 280
+}
+
 struct MossChip: View {
     let title: String
     var iconURL: URL? = nil
     let isSelected: Bool
     let action: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    private let shape = Capsule(style: .continuous)
 
     var body: some View {
         Button(action: action) {
-            surface
+            label
+                .padding(.horizontal, MossAnswerChipMetrics.horizontalPadding)
+                .padding(.vertical, MossAnswerChipMetrics.verticalPadding)
+                .contentShape(shape)
         }
-        .buttonStyle(MossChipPress())
+        .processGlassButton(in: shape)
+        .fixedSize(horizontal: true, vertical: false)
+        .overlay {
+            if isSelected {
+                shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
+            }
+        }
+        .opacity(isSelected ? 1 : 0.88)
         .animation(.smooth(duration: 0.2), value: isSelected)
         .sensoryFeedback(.selection, trigger: isSelected) { _, selected in
             selected
         }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private var surface: some View {
-        label
-            .background {
-                Capsule(style: .continuous)
-                    .fill(OnboardingTheme.filledButtonBackground(for: colorScheme))
-                    .overlay {
-                        if isSelected {
-                            Capsule(style: .continuous)
-                                .strokeBorder(
-                                    OnboardingTheme.onboardingPrimaryActionText(for: colorScheme).opacity(0.35),
-                                    lineWidth: 2
-                                )
-                        }
-                    }
-            }
-            .contentShape(Capsule(style: .continuous))
     }
 
     private var label: some View {
@@ -204,18 +209,27 @@ struct MossChip: View {
                 AsyncImage(url: iconURL) { image in
                     image.resizable().scaledToFit()
                 } placeholder: {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .fill(Color.white.opacity(0.10))
                 }
-                .frame(width: 24, height: 24)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .frame(width: MossAnswerChipMetrics.iconSide, height: MossAnswerChipMetrics.iconSide)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             }
+
             Text(title)
-                .font(Theme.Fonts.sans(15, weight: .medium))
-                .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
+                .font(.system(size: MossAnswerChipMetrics.fontSize, weight: .medium))
+                .foregroundStyle(OnboardingTheme.primaryText)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .minimumScaleFactor(0.92)
+                .frame(maxWidth: MossAnswerChipMetrics.maxChipWidth, alignment: .leading)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: MossAnswerChipMetrics.checkmarkSize, weight: .semibold))
+                    .foregroundStyle(OnboardingTheme.primaryText.opacity(0.85))
+            }
         }
-        .padding(.horizontal, 16)
-        .frame(minHeight: 46)
     }
 }
 
@@ -244,8 +258,8 @@ struct MossSettleIn: ViewModifier {
             .offset(y: shown ? 0 : 6)
             .onAppear {
                 if reduceMotion { shown = true; return }
-                withAnimation(.smooth(duration: 0.32)
-                    .delay(Double(index) * stride)) { shown = true }
+                withAnimation(.smooth(duration: 0.37)
+                    .delay(Double(index) * 0.058)) { shown = true }
             }
     }
 }
@@ -417,21 +431,41 @@ struct MossBreathingArc: View {
     /// Anchor edge: the arc rises from the bottom by default; `.top`
     /// inverts it for surfaces that want the light overhead.
     enum Edge { case bottom, top }
+
+    enum Palette {
+        case moss
+        case processBlue
+    }
+
     var edge: Edge = .bottom
+    var palette: Palette = .moss
     /// Overall presence multiplier — surfaces that carry their own light
     /// (the comparison chart) quiet the aurora rather than fight it.
     var intensity: Double = 1
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// The moss family — luminous accent through deeper forest greens.
-    private static let auroraColors: [Color] = [
-        Color(red: 0.706, green: 0.839, blue: 0.604).opacity(0.85), // luminous moss
+    private static let mossAuroraColors: [Color] = [
+        Color(red: 0.706, green: 0.839, blue: 0.604).opacity(0.85),
         Color(red: 0.612, green: 0.796, blue: 0.525).opacity(0.85),
-        Color(red: 0.498, green: 0.710, blue: 0.420).opacity(0.85), // deep moss
-        Color(red: 0.827, green: 0.910, blue: 0.753).opacity(0.80), // pale dew
+        Color(red: 0.498, green: 0.710, blue: 0.420).opacity(0.85),
+        Color(red: 0.827, green: 0.910, blue: 0.753).opacity(0.80),
         Color(red: 0.706, green: 0.839, blue: 0.604).opacity(0.85),
     ]
+
+    private static let blueAuroraColors: [Color] = [
+        Color(red: 0.42, green: 0.72, blue: 1.0).opacity(0.95),
+        Color(red: 0.22, green: 0.47, blue: 0.98).opacity(0.92),
+        Color(red: 0.08, green: 0.38, blue: 0.96).opacity(0.90),
+        Color(red: 0.35, green: 0.62, blue: 1.0).opacity(0.88),
+        Color(red: 0.22, green: 0.47, blue: 0.98).opacity(0.92),
+    ]
+
+    private var auroraColors: [Color] {
+        palette == .processBlue ? Self.blueAuroraColors : Self.mossAuroraColors
+    }
+
+    private var isBlue: Bool { palette == .processBlue }
 
     var body: some View {
         GeometryReader { geometry in
@@ -444,36 +478,33 @@ struct MossBreathingArc: View {
                 let phase = reduceMotion ? 0.3 : (sin(time * 0.1) + 1) / 2
                 let breath = reduceMotion ? 0.5 : (sin(time * 0.6) + 1) / 2
 
-                let scaled = phase * Double(Self.auroraColors.count - 1)
-                let index = min(Int(scaled), Self.auroraColors.count - 2)
+                let scaled = phase * Double(auroraColors.count - 1)
+                let index = min(Int(scaled), auroraColors.count - 2)
                 let color = Self.interpolate(
-                    from: Self.auroraColors[index],
-                    to: Self.auroraColors[index + 1],
+                    from: auroraColors[index],
+                    to: auroraColors[index + 1],
                     progress: scaled.truncatingRemainder(dividingBy: 1.0))
 
                 RadialGradient(
                     colors: [
                         color,
-                        color.opacity(0.45),
-                        color.opacity(0.28),
-                        color.opacity(0.16),
-                        color.opacity(0.05),
+                        color.opacity(isBlue ? 0.62 : 0.45),
+                        color.opacity(isBlue ? 0.40 : 0.28),
+                        color.opacity(isBlue ? 0.24 : 0.16),
+                        color.opacity(isBlue ? 0.10 : 0.05),
                         .clear,
                     ],
                     center: .init(x: 0.5, y: edge == .bottom ? 1.0 : 0.0),
                     startRadius: 0,
-                    endRadius: geometry.size.height * (0.40 + 0.10 * breath)
+                    endRadius: geometry.size.height * ((isBlue ? 0.34 : 0.40) + 0.08 * breath)
                 )
                 .offset(y: geometry.size.height
-                        * (0.10 + 0.035 * breath)
+                        * ((isBlue ? 0.16 : 0.10) + (isBlue ? 0.03 : 0.035) * breath)
                         * (edge == .bottom ? 1 : -1))
-                // Constant blur: re-blurring a full screen every frame was
-                // the arc's whole GPU bill. The breath now lives in scale
-                // and opacity over one fixed softness.
-                .blur(radius: 42)
-                .scaleEffect(1 + 0.06 * breath,
+                .blur(radius: isBlue ? 34 : 42)
+                .scaleEffect(1 + (isBlue ? 0.06 : 0.06) * breath,
                              anchor: edge == .bottom ? .bottom : .top)
-                .opacity((0.30 + 0.14 * breath) * intensity)
+                .opacity(((isBlue ? 0.48 : 0.30) + (isBlue ? 0.22 : 0.14) * breath) * intensity)
                 .blendMode(.screen)
             }
         }

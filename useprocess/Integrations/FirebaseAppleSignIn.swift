@@ -26,10 +26,12 @@ final class AppleSignInManager: NSObject, ObservableObject {
 
     @objc private func handleCredentialRevoked() {
         Task { @MainActor in
+            guard !AppSession.shared.isAccountWipeInProgress else { return }
             guard AppSession.shared.hasCompletedOnboarding else { return }
-            AuthenticationManager.shared.applyPostAccountDeletion()
-            AuthenticationManager.shared.startOnboarding()
-            AppSession.shared.resetOnboarding()
+            let uid = UserScopedStorage.currentUserId()
+                ?? UnifiedProfileService.shared.currentProfile?.userId
+                ?? "local-user"
+            AppSession.shared.resetAfterAccountDeletion(primaryUID: uid)
         }
     }
 
@@ -67,6 +69,11 @@ final class AppleSignInManager: NSObject, ObservableObject {
     private func startAuthorizationForDeletion(
         completion: @escaping (Result<String?, Error>) -> Void
     ) {
+        guard !AppSession.shared.isAccountWipeInProgress else {
+            completion(.failure(AppleSignInError.requestInProgress))
+            return
+        }
+
         guard AppConfiguration.firebaseConfigured else {
             completion(.failure(AppleSignInError.firebaseNotConfigured))
             return
@@ -100,6 +107,11 @@ final class AppleSignInManager: NSObject, ObservableObject {
         intent: AppleSignInIntent,
         completion: @escaping (Result<Void, Error>) -> Void
     ) {
+        guard !AppSession.shared.isAccountWipeInProgress else {
+            completion(.failure(AppleSignInError.requestInProgress))
+            return
+        }
+
         guard AppConfiguration.firebaseConfigured else {
             completion(.failure(AppleSignInError.firebaseNotConfigured))
             return
@@ -258,11 +270,19 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
     }
 
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        let mapped = Self.userFacingError(from: error)
         if intent == .reauthenticateForAccountDeletion {
-            finishDeletion(with: .failure(error))
+            finishDeletion(with: .failure(mapped))
             return
         }
-        finish(with: .failure(error))
+        finish(with: .failure(mapped))
+    }
+
+    private static func userFacingError(from error: Error) -> Error {
+        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+            return AppleSignInError.cancelled
+        }
+        return error
     }
 }
 
@@ -291,6 +311,9 @@ enum AppleSignInError: LocalizedError {
     case missingToken
     case firebaseNotConfigured
     case requestInProgress
+    case cancelled
+    case accountDeletionInProgress
+    case signInIncomplete
 
     var errorDescription: String? {
         switch self {
@@ -306,6 +329,18 @@ enum AppleSignInError: LocalizedError {
             return AppCopy.tSync(
                 "Une authentification Apple est déjà en cours",
                 en: "An Apple sign-in is already in progress"
+            )
+        case .cancelled:
+            return AppCopy.tSync("Connexion annulée", en: "Sign-in cancelled")
+        case .accountDeletionInProgress:
+            return AppCopy.tSync(
+                "Patiente — suppression de compte en cours",
+                en: "Please wait — account deletion in progress"
+            )
+        case .signInIncomplete:
+            return AppCopy.tSync(
+                "Connexion Apple non terminée. Réessaie.",
+                en: "Apple sign-in didn't finish. Try again."
             )
         }
     }

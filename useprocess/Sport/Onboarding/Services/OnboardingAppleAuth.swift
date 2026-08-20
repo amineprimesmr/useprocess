@@ -26,7 +26,7 @@ enum OnboardingAppleAuth {
         }
 
         guard let user = AuthUser.current else {
-            throw AppleSignInError.invalidCredential
+            throw AppleSignInError.signInIncomplete
         }
 
         let coordinator = OnboardingCoordinator(
@@ -52,6 +52,11 @@ enum OnboardingAppleAuth {
         authManager: AuthenticationManager,
         profileService: UnifiedProfileService
     ) async throws {
+        guard !AppSession.shared.isAccountWipeInProgress else {
+            throw AppleSignInError.accountDeletionInProgress
+        }
+        AppSession.shared.allowAppleSignInDuringOnboarding()
+
         if !authManager.isInOnboarding {
             authManager.startOnboarding()
         }
@@ -76,7 +81,7 @@ enum OnboardingAppleAuth {
         }
 
         guard AuthUser.current != nil else {
-            throw AppleSignInError.invalidCredential
+            throw AppleSignInError.signInIncomplete
         }
 
         try await createProfileIfNeeded(profileService: profileService)

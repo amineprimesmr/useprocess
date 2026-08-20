@@ -328,13 +328,13 @@ struct OnboardingChatScrollableAnswerStack<Content: View>: View {
     var body: some View {
         if OnboardingProfileChatDepthStyle.shouldScrollAnswers(choiceCount: choiceCount) {
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: MossAnswerChipMetrics.stackSpacing) {
                     content()
                 }
             }
             .frame(maxHeight: maxHeight)
         } else {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: MossAnswerChipMetrics.stackSpacing) {
                 content()
             }
         }

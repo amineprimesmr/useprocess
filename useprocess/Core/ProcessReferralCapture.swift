@@ -18,20 +18,7 @@ enum ProcessReferralLink {
     }
 
     static func normalizeCode(_ raw: String) -> String {
-        let cleaned = raw
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .uppercased()
-            .replacingOccurrences(of: " ", with: "")
-        guard !cleaned.isEmpty else { return cleaned }
-
-        if cleaned.contains("-") {
-            return cleaned.filter { $0.isLetter || $0.isNumber || $0 == "-" }
-        }
-
-        let alnum = cleaned.filter { $0.isLetter || $0.isNumber }
-        guard alnum.count > 4 else { return alnum }
-        let split = alnum.index(alnum.startIndex, offsetBy: 4)
-        return "\(alnum[..<split])-\(alnum[split...])"
+        ProcessReferralCode.normalize(raw)
     }
 
     static func displayCode(from raw: String) -> String {
@@ -53,14 +40,15 @@ enum ProcessReferralLink {
            host == landingHost || host == joinHost || host.hasSuffix(".\(landingHost)") {
             let path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             if host == joinHost, !path.isEmpty,
-               path.lowercased() != "get", path.lowercased() != "telecharger" {
+               path.lowercased() != "get", path.lowercased() != "telecharger",
+               path.lowercased() != "app", path.lowercased() != "i", path.lowercased() != "a" {
                 return normalizeCode(path)
             }
             if path.lowercased().hasPrefix("join/") {
                 let code = String(path.dropFirst(5))
                 if !code.isEmpty { return normalizeCode(code) }
             }
-            if path == "get" || path == "telecharger" || path.isEmpty {
+            if path == "get" || path == "telecharger" || path == "app" || path == "i" || path == "a" || path.isEmpty {
                 if let item = URLComponents(url: url, resolvingAgainstBaseURL: false)?
                     .queryItems?
                     .first(where: { $0.name == "ref" || $0.name == "code" })?
@@ -97,7 +85,7 @@ enum ProcessReferralLink {
             return normalizeCode(String(match.1))
         }
 
-        let codePattern = #/\b([A-Z0-9]{2,6}-[A-Z0-9]{3,8})\b/#
+        let codePattern = #/\b([A-Z0-9]{5})\b/#
         if let match = trimmed.uppercased().firstMatch(of: codePattern) {
             return normalizeCode(String(match.1))
         }
@@ -141,6 +129,11 @@ enum ProcessReferralAttribution {
 
     static func clearPending() {
         UserDefaults.standard.removeObject(forKey: pendingKey)
+    }
+
+    /// Saisie manuelle (paywall, réglages) — persiste jusqu'à inscription / onboarding.
+    static func rememberManualEntry(_ raw: String) {
+        storePending(raw)
     }
 
     private static func storePending(_ code: String) {

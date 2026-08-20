@@ -399,7 +399,7 @@ private struct ProcessIGTabBarGlassChrome: ViewModifier {
 
     private var legacyTint: Color {
         colorScheme == .dark
-            ? Color.black.opacity(0.34)
+            ? Color.black.opacity(0.22)
             : Color.white.opacity(0.55)
     }
 

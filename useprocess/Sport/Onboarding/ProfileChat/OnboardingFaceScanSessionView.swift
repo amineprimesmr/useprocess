@@ -16,6 +16,11 @@ struct OnboardingFaceScanSessionView: View {
     var usesAppScreenBackground: Bool = false
     /// Chrono 3-2-1 à la place du titre à l’arrivée (premier scan onboarding).
     var playsArrivalCountdown: Bool = false
+    var arrivalCountdownDelay: TimeInterval = 0
+    /// Caméra live sans capture — aperçu carousel dashboard avant le CTA.
+    var isScanCaptureEnabled: Bool = true
+    var isCameraSessionActive: Bool = true
+    var showsBackButton: Bool = true
     var onCancel: () -> Void
     /// Skip pendant la capture (bouton sous « Recommencer le scan »).
     var onSkip: (() -> Void)? = nil
@@ -73,21 +78,25 @@ struct OnboardingFaceScanSessionView: View {
             } else {
                 FaceScanCaptureScreen(
                     presentation: .fullScreen,
+                    showsBackButton: showsBackButton,
                     onBack: {
                         ProcessAnalytics.trackMossAction(page: .faceScanCapture, action: "cancelled")
                         onCancel()
                     },
-                    onSkip: nil,
+                    onSkip: onSkip,
                     showsMediaImport: false,
                     allowsScreenFlash: true,
+                    isCameraSessionActive: isCameraSessionActive,
                     skipsHeadTiltPhase: true,
                     usesOnboardingFaceOval: true,
                     usesAppScreenBackground: usesAppScreenBackground,
                     playsArrivalCountdown: playsArrivalCountdown,
+                    arrivalCountdownDelay: arrivalCountdownDelay,
+                    isScanCaptureEnabled: isScanCaptureEnabled,
                     onContinue: advanceToAnalysis
                 )
                 .id(captureResetToken)
-                .transition(Self.capturePopTransition)
+                .transition(Self.analysisPushTransition)
                 .zIndex(0)
                 .onAppear { trackCapturePageIfNeeded() }
             }
@@ -135,13 +144,9 @@ struct OnboardingFaceScanSessionView: View {
         ProcessAnalytics.trackMossPageViewed(.faceScanResults)
     }
 
-    private static let pagePushAnimation = Animation.onboardingScanPagePush
+    private static let pagePushAnimation = OnboardingScanFlowMotion.animation
 
     private static var analysisPushTransition: AnyTransition {
-        .onboardingScanPagePush(direction: .forward)
-    }
-
-    private static var capturePopTransition: AnyTransition {
-        .onboardingScanPagePush(direction: .backward)
+        OnboardingScanFlowMotion.forwardTransition
     }
 }

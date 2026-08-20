@@ -48,9 +48,12 @@ struct ProfilePageTopBar: View {
 
             Button(action: onSettings) {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
-                    .frame(width: 40, height: 40)
+                    .frame(
+                        width: ProcessAppHeaderControlMetrics.size,
+                        height: ProcessAppHeaderControlMetrics.size
+                    )
             }
             .processGlassIconButtonStyle()
             .accessibilityLabel(AppCopy.settings)

@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import UIKit
 
 struct SocialProfilePin: Identifiable, Codable, Equatable, Hashable {
     var id: String
@@ -18,8 +17,6 @@ struct SocialProfile: Codable, Equatable {
     var interests: String?
     var interestTags: [String]
     var isPrivate: Bool
-    var profilePhotoFilename: String?
-    var coverPhotoFilename: String?
     var pins: [SocialProfilePin]
 
     static func from(unified: UnifiedUserProfile) -> SocialProfile {
@@ -39,8 +36,6 @@ struct SocialProfile: Codable, Equatable {
             interests: nil,
             interestTags: [],
             isPrivate: false,
-            profilePhotoFilename: nil,
-            coverPhotoFilename: nil,
             pins: []
         )
     }
@@ -54,8 +49,6 @@ struct SocialProfile: Codable, Equatable {
             interests: nil,
             interestTags: [],
             isPrivate: false,
-            profilePhotoFilename: nil,
-            coverPhotoFilename: nil,
             pins: []
         )
     }
@@ -68,17 +61,6 @@ final class SocialProfileStore {
 
     private(set) var profile: SocialProfile?
     private var activeUserID: String?
-    private let fileManager = FileManager.default
-    private let imageCache = NSCache<NSString, UIImage>()
-
-    private var photosDirectory: URL {
-        let base = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("ProcessProfilePhotos", isDirectory: true)
-        if !fileManager.fileExists(atPath: dir.path) {
-            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }
 
     private init() {}
 
@@ -90,7 +72,6 @@ final class SocialProfileStore {
         }
         if activeUserID == unified.userId, profile != nil {
             syncFromUnified(unified)
-            migratePhotoAssetsIfNeeded()
             return
         }
         activeUserID = unified.userId
@@ -124,41 +105,9 @@ final class SocialProfileStore {
         }
         profile = current
         persist()
-        migratePhotoAssetsIfNeeded()
-    }
-
-    /// Anciennes versions stockaient un seul JPEG carré pour cover + avatar.
-    private func migratePhotoAssetsIfNeeded() {
-        guard var current = profile,
-              let coverName = current.coverPhotoFilename,
-              let cover = image(for: coverName) else { return }
-
-        let needsAvatarSplit =
-            current.profilePhotoFilename == nil
-            || current.profilePhotoFilename == current.coverPhotoFilename
-
-        guard needsAvatarSplit else { return }
-
-        let avatar = cover.profileAvatarSquareCrop()
-        guard let avatarFilename = saveImage(avatar, prefix: "avatar") else { return }
-
-        let previousAvatar = current.profilePhotoFilename
-        current.profilePhotoFilename = avatarFilename
-        profile = current
-        persist()
-
-        if let previousAvatar, previousAvatar != coverName {
-            deleteFile(previousAvatar)
-        }
     }
 
     func resetForUser(userId: String) {
-        if let cover = profile?.coverPhotoFilename {
-            deleteFile(cover)
-        }
-        if let avatar = profile?.profilePhotoFilename, avatar != profile?.coverPhotoFilename {
-            deleteFile(avatar)
-        }
         profile = nil
         activeUserID = nil
         UserDefaults.standard.removeObject(forKey: Self.storageKey(for: userId))
@@ -172,7 +121,6 @@ final class SocialProfileStore {
             profile = .from(unified: unified)
             persist()
         }
-        migratePhotoAssetsIfNeeded()
     }
 
     func update(_ transform: (inout SocialProfile) -> Void) {
@@ -180,59 +128,6 @@ final class SocialProfileStore {
         transform(&current)
         profile = current
         persist()
-    }
-
-    func applyProfilePhoto(_ image: UIImage) {
-        let previousCover = profile?.coverPhotoFilename
-        let previousAvatar = profile?.profilePhotoFilename
-
-        guard let avatarFilename = saveImage(image, prefix: "avatar") else { return }
-
-        update {
-            $0.profilePhotoFilename = avatarFilename
-            $0.coverPhotoFilename = nil
-        }
-
-        if let previousCover {
-            deleteFile(previousCover)
-        }
-        if let previousAvatar, previousAvatar != avatarFilename {
-            deleteFile(previousAvatar)
-        }
-    }
-
-    func applyPhotos(_ coverImage: UIImage) {
-        let previousCover = profile?.coverPhotoFilename
-        let previousAvatar = profile?.profilePhotoFilename
-
-        guard let coverFilename = saveImage(coverImage, prefix: "cover") else { return }
-        let avatarImage = coverImage.profileAvatarSquareCrop()
-        guard let avatarFilename = saveImage(avatarImage, prefix: "avatar") else { return }
-
-        update {
-            $0.coverPhotoFilename = coverFilename
-            $0.profilePhotoFilename = avatarFilename
-        }
-
-        if let previousCover, previousCover != coverFilename {
-            deleteFile(previousCover)
-        }
-        if let previousAvatar,
-           previousAvatar != avatarFilename,
-           previousAvatar != previousCover {
-            deleteFile(previousAvatar)
-        }
-    }
-
-    func removeAllPhotos() {
-        if let cover = profile?.coverPhotoFilename { deleteFile(cover) }
-        if let avatar = profile?.profilePhotoFilename, avatar != profile?.coverPhotoFilename {
-            deleteFile(avatar)
-        }
-        update {
-            $0.profilePhotoFilename = nil
-            $0.coverPhotoFilename = nil
-        }
     }
 
     func addPin(title: String, emoji: String = "📌") {
@@ -250,17 +145,6 @@ final class SocialProfileStore {
         update { $0.pins.removeAll { $0.id == id } }
     }
 
-    var coverPhoto: UIImage? { image(for: profile?.coverPhotoFilename) }
-    var profilePhoto: UIImage? { image(for: profile?.profilePhotoFilename) }
-
-    var hasCoverPhoto: Bool {
-        profile?.coverPhotoFilename != nil && coverPhoto != nil
-    }
-
-    var hasProfilePhoto: Bool {
-        profile?.profilePhotoFilename != nil && profilePhoto != nil
-    }
-
     var shareText: String {
         guard let profile else { return "Process" }
         let tag = ProcessUsernameTag.display(profile.username)
@@ -276,18 +160,6 @@ final class SocialProfileStore {
         )
     }
 
-    private func image(for filename: String?) -> UIImage? {
-        guard let filename else { return nil }
-        if let cached = imageCache.object(forKey: filename as NSString) {
-            return cached
-        }
-        let url = photosDirectory.appendingPathComponent(filename)
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        guard let image = UIImage(contentsOfFile: url.path) else { return nil }
-        imageCache.setObject(image, forKey: filename as NSString)
-        return image
-    }
-
     private func loadPersistedProfile(userId: String) -> SocialProfile? {
         guard let data = UserDefaults.standard.data(forKey: Self.storageKey(for: userId)) else {
             return nil
@@ -295,7 +167,7 @@ final class SocialProfileStore {
         return try? JSONDecoder().decode(SocialProfile.self, from: data)
     }
 
-    /// Reprend une photo enregistrée sous `local-user` avant connexion Apple/Firebase.
+    /// Reprend les métadonnées enregistrées sous `local-user` avant connexion Apple/Firebase.
     private func migrateFromLegacyLocalUserIfNeeded(to userId: String) {
         guard userId != "local-user", userId != "anonymous" else { return }
         guard let legacy = loadPersistedProfile(userId: "local-user") else { return }
@@ -303,11 +175,6 @@ final class SocialProfileStore {
         var current = profile ?? legacy
         var didChange = false
 
-        if current.profilePhotoFilename == nil, legacy.profilePhotoFilename != nil {
-            current.profilePhotoFilename = legacy.profilePhotoFilename
-            current.coverPhotoFilename = legacy.coverPhotoFilename
-            didChange = true
-        }
         if current.pins.isEmpty, !legacy.pins.isEmpty {
             current.pins = legacy.pins
             didChange = true
@@ -346,50 +213,5 @@ final class SocialProfileStore {
 
     private static func storageKey(for userID: String) -> String {
         UserScopedStorage.key("socialProfile", userId: userID)
-    }
-
-    private enum PhotoStorage {
-        /// Cover hero pleine largeur (Retina 3× ~430 pt → ~1290 px, marge pour zoom/crop).
-        static let coverMaxPixelDimension: CGFloat = 1600
-        static let jpegQuality: CGFloat = 0.92
-    }
-
-    private func saveImage(_ image: UIImage, prefix: String) -> String? {
-        let prepared = image.resizedForProfile(maxPixelDimension: PhotoStorage.coverMaxPixelDimension)
-        guard let data = prepared.jpegData(compressionQuality: PhotoStorage.jpegQuality) else { return nil }
-        let filename = "\(prefix)-\(UUID().uuidString).jpg"
-        let url = photosDirectory.appendingPathComponent(filename)
-        do {
-            try data.write(to: url, options: .atomic)
-            imageCache.setObject(prepared, forKey: filename as NSString)
-            return filename
-        } catch {
-            return nil
-        }
-    }
-
-    private func deleteFile(_ filename: String) {
-        imageCache.removeObject(forKey: filename as NSString)
-        let url = photosDirectory.appendingPathComponent(filename)
-        try? fileManager.removeItem(at: url)
-    }
-}
-
-private extension UIImage {
-    /// Downscale only if larger than `maxPixelDimension` (pixels), preserving native scale.
-    func resizedForProfile(maxPixelDimension: CGFloat) -> UIImage {
-        let pixelWidth = size.width * scale
-        let pixelHeight = size.height * scale
-        let maxPixelSide = max(pixelWidth, pixelHeight)
-        guard maxPixelSide > maxPixelDimension else { return self }
-
-        let ratio = maxPixelDimension / maxPixelSide
-        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = scale
-        format.opaque = true
-        return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
-            draw(in: CGRect(origin: .zero, size: newSize))
-        }
     }
 }

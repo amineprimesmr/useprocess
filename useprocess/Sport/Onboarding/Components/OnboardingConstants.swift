@@ -11,7 +11,7 @@ import UIKit
 struct OnboardingConstants {
     // MARK: - Header (retour, progression, langue)
 
-    static let backButtonSize: CGFloat = 34
+    static let backButtonSize: CGFloat = 30
     static let headerHorizontalPadding: CGFloat = 24
     /// Espace entre la safe area et le haut du bouton retour.
     static let backButtonOffsetBelowSafeArea: CGFloat = 6
@@ -63,8 +63,11 @@ struct OnboardingConstants {
         headerBackButtonTopPadding + backButtonSize + mossChatSpacingBelowHeaderBar
     }
 
-    /// Remettre à `true` pour réafficher l’étape code parrainage avant le paywall.
-    static let showsReferralCodeStepInOnboarding = false
+    /// Marge basse standard du CTA onboarding (prénom, poids, etc.).
+    static let standardContinueBottomOffset: CGFloat = 50
+
+    /// Étape code créateur / parrainage juste avant le paywall.
+    static let showsReferralCodeStepInOnboarding = true
 }
 
 // MARK: - Visibilité du header

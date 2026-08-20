@@ -26,9 +26,9 @@ final class ProcessReferralStore {
             snapshot = ProcessReferralSnapshot(
                 referralCode: makeReferralCode(username: username, userId: uid),
                 entries: [],
-                redeemedRewardIDs: [],
                 pendingCount: 0,
-                acceptedCount: 0
+                acceptedCount: 0,
+                commissionStats: .empty
             )
             persist(userId: uid)
         }
@@ -69,6 +69,7 @@ final class ProcessReferralStore {
         \(referralLink)
 
         \(AppCopy.t("Mon code parrainage : \(displayReferralCode)", en: "My referral code: \(displayReferralCode)"))
+        \(AppCopy.t("40 % de commission à vie pour moi sur ton abonnement.", en: "I earn 40% lifetime commission on your subscription."))
         """
     }
 
@@ -100,6 +101,38 @@ final class ProcessReferralStore {
 
         Task {
             await syncRemote(displayName: displayName)
+            await refreshDashboard()
+        }
+    }
+
+    func refreshDashboard() async {
+        guard FirebaseBootstrap.isConfigured,
+              AuthUser.current != nil,
+              ClaudeConfiguration.functionsBaseURL != nil else {
+            return
+        }
+
+        do {
+            let dashboard = try await ReferralRemoteService.fetchDashboard()
+            guard dashboard.ok, let stats = dashboard.stats else { return }
+            snapshot.commissionStats = ProcessReferralCommissionStats(
+                pendingCents: stats.pendingCents,
+                payableCents: stats.payableCents,
+                paidCents: stats.paidCents,
+                lifetimeCents: stats.lifetimeCents,
+                activeSubscribers: stats.activeSubscribers
+            )
+            if let pending = dashboard.pendingCount {
+                snapshot.pendingCount = pending
+            }
+            if let accepted = dashboard.acceptedCount {
+                snapshot.acceptedCount = accepted
+            }
+            persist()
+        } catch {
+            #if DEBUG
+            print("[ReferralStore] dashboard failed: \(error.localizedDescription)")
+            #endif
         }
     }
 
@@ -112,23 +145,6 @@ final class ProcessReferralStore {
     }
 
     private func makeReferralCode(username: String?, userId: String) -> String {
-        let tag = ProcessUsernameTag.normalize(username ?? "")
-        let prefix: String
-        if tag.count >= 4 {
-            prefix = String(tag.prefix(4)).uppercased()
-        } else if tag.count >= 2 {
-            prefix = String(tag.prefix(2)).uppercased() + "PR"
-        } else {
-            prefix = "PROC"
-        }
-
-        let sanitized = userId
-            .replacingOccurrences(of: "-", with: "")
-            .uppercased()
-            .filter { $0.isLetter || $0.isNumber }
-
-        let suffixSource = sanitized.isEmpty ? "7K2Q9" : sanitized
-        let suffix = String(suffixSource.suffix(5))
-        return "\(prefix)-\(suffix)"
+        ProcessReferralCode.makeCode(userId: userId, username: username)
     }
 }

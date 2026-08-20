@@ -2,111 +2,98 @@
 //  OnboardingTransition.swift
 //  Process
 //
-//  Système de transition ultra fluide pour l'onboarding
-//  Animations incroyables avec slide, fade et parallaxe
+//  Transitions onboarding — spring + slide directionnel (début), smooth (suite).
 //
 
 import SwiftUI
 
 // MARK: - Direction de transition
+
 enum TransitionDirection {
-    case forward  // Vers l'avant (next)
-    case backward // Vers l'arrière (previous)
+    case forward
+    case backward
 }
 
-// MARK: - Modifier de transition personnalisé
-struct OnboardingTransitionModifier: ViewModifier {
-    let direction: TransitionDirection
-    let isActive: Bool
+// MARK: - Timing
 
-    func body(content: Content) -> some View {
-        content
-            // ✅ Plus d'offset pour une transition plus visuelle
-            .offset(x: isActive ? 0 : (direction == .forward ? 80 : -80))
-            .opacity(isActive ? 1 : 0)
-            .scaleEffect(isActive ? 1 : 0.92)
-            .blur(radius: isActive ? 0 : 3)
-    }
-}
+enum OnboardingTransitionTiming {
+    static let earlyNavigationUnlockDelay: TimeInterval = 0.46
+    static let navigationUnlockDelay: TimeInterval = 0.36
+    static let dashboardRevealUnlockDelay: TimeInterval = 0.44
+    static let earlyKeyboardFocusDelay: TimeInterval = 0.62
+    static let keyboardFocusDelay: TimeInterval = 0.50
+    /// Focus pendant le slide de page (ex. taille → poids) pour monter le CTA avec le pad.
+    static let keyboardFocusDuringPageTransitionDelay: TimeInterval = 0.14
 
-extension View {
-    func onboardingTransition(direction: TransitionDirection, isActive: Bool) -> some View {
-        modifier(OnboardingTransitionModifier(direction: direction, isActive: isActive))
-    }
-}
-
-// MARK: - Container avec transition fluide
-struct OnboardingTransitionContainer<Content: View>: View {
-    let content: Content
-    let currentStep: Int
-    let previousStep: Int?
-    let isTransitioning: Bool
-
-    init(
-        currentStep: Int,
-        previousStep: Int?,
-        isTransitioning: Bool = false,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.currentStep = currentStep
-        self.previousStep = previousStep
-        self.isTransitioning = isTransitioning
-        self.content = content()
+    static func navigationUnlockDelay(early: Bool, dashboardReveal: Bool = false) -> TimeInterval {
+        if dashboardReveal { return dashboardRevealUnlockDelay }
+        return early ? earlyNavigationUnlockDelay : navigationUnlockDelay
     }
 
-    private var direction: TransitionDirection {
-        guard let previousStepValue = previousStep else { return .forward }
-        guard let current = OnboardingStep(rawValue: currentStep),
-              let previous = OnboardingStep(rawValue: previousStepValue) else {
-            return currentStep > previousStepValue ? .forward : .backward
-        }
-        return current.semanticOrderIndex > previous.semanticOrderIndex ? .forward : .backward
-    }
-
-    var body: some View {
-        content
-            .id("step_\(currentStep)") // Force le re-render pour chaque étape
-            .transition(.asymmetric(
-                // ✅ Transitions plus visuelles avec offset et scale
-                insertion: .move(edge: direction == .forward ? .trailing : .leading)
-                    .combined(with: .opacity)
-                    .combined(with: .scale(scale: 0.92)),
-                removal: .move(edge: direction == .forward ? .leading : .trailing)
-                    .combined(with: .opacity)
-                    .combined(with: .scale(scale: 0.92))
-            ))
+    static func keyboardFocusDelay(early: Bool) -> TimeInterval {
+        early ? earlyKeyboardFocusDelay : keyboardFocusDelay
     }
 }
 
-// MARK: - Transition personnalisée avec parallaxe
-struct ParallaxTransition: ViewModifier {
-    let progress: CGFloat // 0.0 à 1.0
-
-    func body(content: Content) -> some View {
-        content
-            .offset(x: (1.0 - progress) * 30)
-            .opacity(progress)
-            .scaleEffect(0.95 + (progress * 0.05))
-    }
-}
-
-extension View {
-    func parallaxTransition(progress: CGFloat) -> some View {
-        modifier(ParallaxTransition(progress: progress))
-    }
-}
-
-// MARK: - Push pages scan (capture → analyse → résultats)
+// MARK: - Animations
 
 extension Animation {
-    /// Même courbe que `OnboardingFaceScanSessionView`.
+    /// Début onboarding (genre → prénom) — spring visible, comme avant.
+    static var onboardingTransition: Animation {
+        .spring(response: 0.42, dampingFraction: 0.86, blendDuration: 0.18)
+    }
+
+    static var onboardingTransitionFast: Animation {
+        .spring(response: 0.4, dampingFraction: 0.9, blendDuration: 0.2)
+    }
+
+    /// Suite onboarding — fluide, sans rebond.
+    static var onboardingPage: Animation {
+        .smooth(duration: 0.33, extraBounce: 0)
+    }
+
     static var onboardingScanPagePush: Animation {
-        .easeInOut(duration: 0.36)
+        .smooth(duration: 0.40, extraBounce: 0)
+    }
+
+    /// Entrée dashboard depuis le chat Moss ou les témoignages — fondu + scale discret.
+    static var onboardingDashboardReveal: Animation {
+        .smooth(duration: 0.46, extraBounce: 0)
+    }
+
+    static var glowUpResultsCover: Animation {
+        .smooth(duration: 0.40, extraBounce: 0)
+    }
+
+    static var onboardingEntrance: Animation {
+        .spring(response: 0.54, dampingFraction: 0.82, blendDuration: 0.16)
     }
 }
 
+// MARK: - Transitions
+
 extension AnyTransition {
-    /// Insertion depuis le bord avant, sortie vers le bord arrière — comme le flux scan.
+    /// Slide questionnaire early — move(edge:) + fondu (genre → prénom).
+    static func onboardingQuestionnaireSlide(direction: TransitionDirection) -> AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: direction == .forward ? .trailing : .leading)
+                .combined(with: .opacity),
+            removal: .move(edge: direction == .forward ? .leading : .trailing)
+                .combined(with: .opacity)
+        )
+    }
+
+    /// Slide discret + crossfade — suite onboarding.
+    static func onboardingPageSlide(direction: TransitionDirection) -> AnyTransition {
+        let enterX: CGFloat = direction == .forward ? 22 : -22
+        let exitX: CGFloat = direction == .forward ? -14 : 14
+        return .asymmetric(
+            insertion: .offset(x: enterX).combined(with: .opacity),
+            removal: .offset(x: exitX).combined(with: .opacity)
+        )
+    }
+
+    /// Flux scan / chat — push plus marqué.
     static func onboardingScanPagePush(direction: TransitionDirection) -> AnyTransition {
         .asymmetric(
             insertion: .move(edge: direction == .forward ? .trailing : .leading)
@@ -116,95 +103,68 @@ extension AnyTransition {
         )
     }
 
-    /// Slide questionnaire (genre → prénom) — directionnel, sans blur.
-    static func onboardingQuestionnaireSlide(direction: TransitionDirection) -> AnyTransition {
+    /// Chat Moss / témoignages → dashboard — fondu croisé, sans slide latéral.
+    static func onboardingDashboardReveal(direction: TransitionDirection) -> AnyTransition {
+        let outgoingScale: CGFloat = direction == .forward ? 0.985 : 1.015
+        return .asymmetric(
+            insertion: .opacity
+                .combined(with: .scale(scale: 0.975, anchor: .center)),
+            removal: .opacity
+                .combined(with: .scale(scale: outgoingScale, anchor: .center))
+        )
+    }
+
+    /// Page glow-up : entre / sort par la droite.
+    static var glowUpResultsCover: AnyTransition {
         .asymmetric(
-            insertion: .move(edge: direction == .forward ? .trailing : .leading)
-                .combined(with: .opacity),
-            removal: .move(edge: direction == .forward ? .leading : .trailing)
-                .combined(with: .opacity)
+            insertion: .offset(x: 28).combined(with: .opacity),
+            removal: .offset(x: 28).combined(with: .opacity)
         )
     }
 }
 
-enum OnboardingTransitionTiming {
-    static let navigationUnlockDelay: TimeInterval = 0.46
-    static let keyboardFocusDelay: TimeInterval = 0.62
+// MARK: - Flux scan onboarding (capture → analyse → résultats)
+
+enum OnboardingScanFlowMotion {
+    static let animation = Animation.onboardingScanPagePush
+    static let forwardTransition = AnyTransition.onboardingScanPagePush(direction: .forward)
+    static let backwardTransition = AnyTransition.onboardingScanPagePush(direction: .backward)
 }
 
-// MARK: - Animation personnalisée ultra fluide
-extension Animation {
-    // ✅ Animation principale ULTRA VISUELLE - plus longue et plus fluide
-    static var onboardingTransition: Animation {
-        .spring(response: 0.42, dampingFraction: 0.86, blendDuration: 0.18)
-    }
+// MARK: - Layout onboarding (immersif vs questionnaire)
 
-    // Animation rapide pour interactions immédiates
-    static var onboardingTransitionFast: Animation {
-        .spring(response: 0.4, dampingFraction: 0.9, blendDuration: 0.2)
-    }
-
-    // Animation lente pour transitions importantes
-    static var onboardingTransitionSlow: Animation {
-        .spring(response: 0.7, dampingFraction: 0.8, blendDuration: 0.4)
-    }
-
-    // Animation ultra fluide avec courbe personnalisée (ease-in-out-cubic)
-    static var onboardingUltraSmooth: Animation {
-        .timingCurve(0.25, 0.1, 0.25, 1.0, duration: 0.55)
-    }
-
-    // Animation pour éléments d'entrée avec bounce subtil
-    static var onboardingEntrance: Animation {
-        .spring(response: 0.48, dampingFraction: 0.82, blendDuration: 0.16)
-    }
-}
-
-// MARK: - View Modifier pour animation d'entrée progressive
-struct StaggeredEntranceModifier: ViewModifier {
-    let delay: Double
-    let direction: TransitionDirection
-    @State private var isVisible = false
+struct OnboardingStepLayoutModifier: ViewModifier {
+    let immersive: Bool
 
     func body(content: Content) -> some View {
-        content
-            .opacity(isVisible ? 1 : 0)
-            .offset(
-                x: isVisible ? 0 : (direction == .forward ? 30 : -30),
-                y: isVisible ? 0 : 20
+        if immersive {
+            content.ignoresSafeArea()
+        } else {
+            content
+                .ignoresSafeArea(.all)
+                .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+        }
+    }
+}
+
+// MARK: - Shake horizontal (feedback erreur)
+
+struct OnboardingHorizontalShakeEffect: GeometryEffect {
+    var shakes: CGFloat
+    var amount: CGFloat = 10
+    var shakesPerUnit: CGFloat = 3
+
+    var animatableData: CGFloat {
+        get { shakes }
+        set { shakes = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(
+            CGAffineTransform(
+                translationX: amount * sin(shakes * .pi * shakesPerUnit),
+                y: 0
             )
-            .scaleEffect(isVisible ? 1 : 0.9)
-            .blur(radius: isVisible ? 0 : 5)
-            .onAppear {
-                withAnimation(.onboardingTransition.delay(delay)) {
-                    isVisible = true
-                }
-            }
-    }
-}
-
-extension View {
-    func staggeredEntrance(delay: Double = 0, direction: TransitionDirection = .forward) -> some View {
-        modifier(StaggeredEntranceModifier(delay: delay, direction: direction))
-    }
-}
-
-// MARK: - Transition avec blur et fade ultra fluide
-struct UltraSmoothTransition: ViewModifier {
-    let isActive: Bool
-    let direction: TransitionDirection
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(isActive ? 1 : 0)
-            .offset(x: isActive ? 0 : (direction == .forward ? 40 : -40))
-            .scaleEffect(isActive ? 1 : 0.96)
-            .blur(radius: isActive ? 0 : 8)
-    }
-}
-
-extension View {
-    func ultraSmoothTransition(isActive: Bool, direction: TransitionDirection = .forward) -> some View {
-        modifier(UltraSmoothTransition(isActive: isActive, direction: direction))
+        )
     }
 }

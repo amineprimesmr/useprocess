@@ -14,9 +14,6 @@ class OnboardingViewModel: ObservableObject {
     @Published var currentStep: Int = 0
     @Published var visitedSteps: [Int] = [] // Historique des étapes visitées pour navigation retour
     @Published var isCompleting: Bool = false
-    @Published var isLoading: Bool = false
-    @Published var isRequestingHealthKit: Bool = false
-    @Published var healthKitGranted: Bool = false
     @Published var errorMessage: String? = nil
     
     // MARK: - Informations personnelles
@@ -68,13 +65,14 @@ class OnboardingViewModel: ObservableObject {
     @Published var isDeadlineSelected: Bool = false
     @Published var isGoalPaceSelected: Bool = false
     @Published var isWeightEstimationCompleted: Bool = false
+    /// Progression 0…1 du remplissage CTA « Continuer » (écran estimations).
+    @Published var estimationContinueUnlockProgress: Double = 0
     @Published var isGoalProjectionCompleted: Bool = false
     @Published var isNutritionQualitySelected: Bool = false
     @Published var isHasDietaryRestrictionsSelected: Bool = false
     @Published var isWhichRestrictionsSelected: Bool = false
     @Published var isNutritionObstaclesSelected: Bool = false
     @Published var isWeightManagementExperienceSelected: Bool = false
-    @Published var isHardestMealSelected: Bool = false
     @Published var isHasSufficientHydrationSelected: Bool = false
     @Published var isHydrationLevelSelected: Bool = false
     @Published var isSleepQualitySelected: Bool = false
@@ -93,6 +91,9 @@ class OnboardingViewModel: ObservableObject {
     
     // MARK: - Referral
     @Published var referralCode: String? = nil // Code de parrainage utilisé à l'inscription
+    @Published var creatorCodeDraft: String = ""
+    @Published var creatorCodeIsVerified = false
+    @Published var creatorCodeContinueAttempt = 0
     @Published var completedProfileChatQuestionIDs: Set<String> = []
     @Published var onboardingPrimaryFocus: OnboardingPrimaryFocus?
     @Published var onboardingDebloatDrivers: Set<OnboardingDebloatDriver> = []
@@ -101,6 +102,8 @@ class OnboardingViewModel: ObservableObject {
     // MARK: - Initialization
     
     init() {
+        OnboardingProgressService.shared.migrateInProgressStorageIfNeeded()
+
         // Charger la progression sauvegardée
         let savedStep = OnboardingProgressService.shared.loadCurrentStep()
         
@@ -153,9 +156,11 @@ class OnboardingViewModel: ObservableObject {
             onboardingFaceMarkers = markers
             onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
             isFaceAnalysisCompleted = true
-        } else {
+        } else if !shouldRestoreFaceScan {
             isFaceAnalysisCompleted = false
         }
+
+        reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: self)
 
         if hasWeightGoal == nil, selectedPrimaryGoals.contains(.manageWeight) {
             hasWeightGoal = true
@@ -299,37 +304,13 @@ class OnboardingViewModel: ObservableObject {
                 return true
             }
             return isWeightManagementExperienceSelected
+        case .referralCode:
+            return creatorCodeIsVerified
         default:
             return true
         }
     }
     
-    // MARK: - Cross-step Validation
-    
-    func validateCrossStepConsistency() -> [String] {
-        var warnings: [String] = []
-        
-        // Cohérence expérience
-        if let level = selectedExperienceLevel {
-            if level == .debutant && selectedYearsOfExperience > 2 {
-                warnings.append("Débutant avec \(selectedYearsOfExperience) années d'expérience")
-            } else if level == .intermediaire && (selectedYearsOfExperience < 1 || selectedYearsOfExperience > 5) {
-                warnings.append("Cohérence à vérifier entre niveau et années d'expérience")
-            }
-        }
-        
-        // Cohérence poids idéal
-        if let weightGoal = selectedWeightGoal {
-            if weightGoal == .lose && idealWeightValue >= selectedWeight {
-                warnings.append("Poids idéal supérieur ou égal au poids actuel pour perte de poids")
-            } else if weightGoal == .gain && idealWeightValue <= selectedWeight {
-                warnings.append("Poids idéal inférieur ou égal au poids actuel pour prise de poids")
-            }
-        }
-        
-        return warnings
-    }
-
     // MARK: - Objectif poids (flux simplifié)
 
     var hasWeightObjective: Bool { hasWeightGoal == true }
@@ -344,7 +325,6 @@ class OnboardingViewModel: ObservableObject {
     }
 
     /// Étape « poids de référence / objectif de poids » retirée du parcours — toujours sautée.
-    var shouldSkipIdealWeightStep: Bool { true }
 
     func refreshBodyCompositionRouting() {
         // Défauts debloat une seule fois — évite une tempête de @Published pendant la nav.
@@ -452,16 +432,6 @@ class OnboardingViewModel: ObservableObject {
 
         return recommendation
     }
-
-    func isWeightGoalIncompatibleWithBMI() -> Bool {
-        guard let goal = selectedWeightGoal ?? inferredWeightGoalFromIdealWeight() else { return false }
-
-        let heightInMeters = selectedHeight / 100.0
-        guard heightInMeters > 0 else { return false }
-
-        let currentBMI = selectedWeight / (heightInMeters * heightInMeters)
-        return (currentBMI >= 25.0 && goal == .gain) || (currentBMI < 18.5 && goal == .lose)
-    }
     
     // MARK: - Progress Management
     
@@ -551,7 +521,10 @@ class OnboardingViewModel: ObservableObject {
             isGoalProjectionCompleted: isGoalProjectionCompleted,
             isFaceAnalysisCompleted: isFaceAnalysisCompleted,
             isProgramCreationCompleted: isProgramCreationCompleted,
-            hasDoneFirstGoalPace: hasDoneFirstGoalPace
+            hasDoneFirstGoalPace: hasDoneFirstGoalPace,
+            dashboardPreviewPresentation: dashboardPreviewPresentation.rawValue,
+            hasCompletedFirstDashboardPreview: hasCompletedFirstDashboardPreview,
+            dashboardScanPersistedState: dashboardScanPersistedState
         )
     }
 
@@ -693,6 +666,15 @@ class OnboardingViewModel: ObservableObject {
         }
         if let value = snapshot.isProgramCreationCompleted { isProgramCreationCompleted = value }
         if let value = snapshot.hasDoneFirstGoalPace { hasDoneFirstGoalPace = value }
+        if let raw = snapshot.dashboardPreviewPresentation, !raw.isEmpty {
+            dashboardPreviewPresentation = .firstScanPending
+        }
+        if let value = snapshot.hasCompletedFirstDashboardPreview {
+            hasCompletedFirstDashboardPreview = value
+        }
+        if let value = snapshot.dashboardScanPersistedState {
+            dashboardScanPersistedState = value
+        }
     }
 
     func markProfileChatQuestionCompleted(_ questionID: String) {
@@ -714,8 +696,30 @@ class OnboardingViewModel: ObservableObject {
     /// Barre segmentée header (discussion Moss) — alimentée par `OnboardingProfileChatView`.
     @Published var profileChatHeaderProgress: OnboardingProfileChatCoachHeaderProgress.Snapshot?
 
-    /// Variante de l’aperçu dashboard (premier scan vs fin onboarding).
-    @Published var dashboardPreviewPresentation: OnboardingDashboardPreviewPresentation = .postTransformation
+    /// Marqueur persistant — toujours le 1er tour dashboard (scan).
+    @Published var dashboardPreviewPresentation: OnboardingDashboardPreviewPresentation = .firstScanPending
+
+    /// Premier tour dashboard (carrousel + scan) terminé — ne pas rouvrir à la reprise.
+    @Published var hasCompletedFirstDashboardPreview = false
+
+    /// Session scan du 1er dashboard — persistée pour reprise (kill app / retour Réglages).
+    @Published var dashboardScanPersistedState: OnboardingDashboardScanPersistedState?
+
+    var hasActiveFirstDashboardScanSession: Bool {
+        dashboardScanPersistedState != nil
+    }
+
+    func persistDashboardScanState(_ state: OnboardingDashboardScanPersistedState) {
+        dashboardScanPersistedState = state
+        dashboardPreviewPresentation = .firstScanPending
+        saveProgress()
+    }
+
+    func clearDashboardScanPersistedState() {
+        guard dashboardScanPersistedState != nil else { return }
+        dashboardScanPersistedState = nil
+        saveProgress()
+    }
 
     /// Après un retour manuel vers le chat : ne pas enchaîner automatiquement vers la création du programme.
     var suppressProfileChatAutoFinish = false
@@ -727,32 +731,89 @@ class OnboardingViewModel: ObservableObject {
     @Published var presentedOnboardingFaceScan: OnboardingFaceScanPresentation?
 
     var onOnboardingFaceScanCancel: (() -> Void)?
+    var onOnboardingFaceScanSkip: (() -> Void)?
     var onOnboardingFaceScanResult: ((FaceScanResult) -> Void)?
     var onOnboardingFaceScanContinue: (() -> Void)?
     var onOnboardingFaceScanContinueFromDashboard: (() -> Void)?
 
     func configureDashboardPreviewPresentation(entering step: OnboardingStep, from previous: OnboardingStep?) {
         guard step == .dashboardPreview else { return }
-        switch previous {
-        case .transformationPreview:
-            dashboardPreviewPresentation = .postTransformation
-        case .weightMotivation:
-            dashboardPreviewPresentation = .firstScanPending
-        default:
-            break
-        }
+        dashboardPreviewPresentation = .firstScanPending
+        saveProgress()
     }
 
     func recordDashboardFaceScanResult(_ result: FaceScanResult) {
         onboardingFaceMesh = OnboardingFaceMarkersStore.loadMesh()
         onboardingFaceMarkers = result.markers
         isFaceAnalysisCompleted = true
+        clearDashboardScanPersistedState()
         markProfileChatQuestionCompleted("profile_summary")
         markProfileChatQuestionCompleted("face_scan_offer")
         saveProgress()
     }
 
+    func skipDashboardFaceScanForLater() {
+        onboardingFaceMesh = nil
+        onboardingFaceMarkers = nil
+        isFaceAnalysisCompleted = true
+        clearDashboardScanPersistedState()
+        markProfileChatQuestionCompleted("profile_summary")
+        markProfileChatQuestionCompleted("face_scan_offer")
+        ProcessAnalytics.trackMossAction(
+            page: .faceScanCapture,
+            action: "skipped_later",
+            answerDisplay: OnboardingCopy.t("Faire mon scan plus tard", en: "Do my scan later")
+        )
+        saveProgress()
+    }
+
+    /// Valide le brouillon « code créateur » (referralCode step) avant navigation.
+    func commitCreatorCodeDraft() {
+        guard creatorCodeIsVerified else {
+            clearCreatorCodeStep()
+            return
+        }
+
+        let normalized = ProcessReferralCode.normalize(creatorCodeDraft)
+        guard ProcessReferralCode.isValid(normalized) else {
+            clearCreatorCodeStep()
+            return
+        }
+
+        referralCode = normalized
+        creatorCodeDraft = normalized
+        ProcessAcquisitionAttribution.captureReferralCode(normalized)
+        ProcessAcquisitionAttribution.captureAffiliateCode(normalized)
+        saveProgress()
+    }
+
+    func clearCreatorCodeStep() {
+        creatorCodeDraft = ""
+        creatorCodeIsVerified = false
+        creatorCodeContinueAttempt = 0
+        referralCode = nil
+        ProcessReferralAttribution.clearPending()
+        ProcessAffiliateAttribution.clearPending()
+        saveProgress()
+    }
+
+    func bootstrapCreatorCodeDraftIfNeeded() {
+        if !creatorCodeDraft.isEmpty { return }
+        if let existing = referralCode, !existing.isEmpty {
+            creatorCodeDraft = existing
+            return
+        }
+        if let pending = ProcessReferralAttribution.pendingCode ?? ProcessAffiliateAttribution.pendingCode {
+            creatorCodeDraft = pending
+        }
+    }
+
     func presentOnboardingFaceScan(initialResult: FaceScanResult? = nil, usesChatCallbacks: Bool = true) {
+        if OnboardingStep(rawValue: currentStep) == .dashboardPreview,
+           dashboardPreviewPresentation == .firstScanPending,
+           initialResult == nil {
+            return
+        }
         presentedOnboardingFaceScan = OnboardingFaceScanPresentation(
             initialResult: initialResult,
             usesChatCallbacks: usesChatCallbacks
@@ -874,11 +935,8 @@ class OnboardingViewModel: ObservableObject {
     }
 }
 
-enum OnboardingDashboardPreviewPresentation: Equatable {
-    /// Juste après la discussion Moss — CTA « Fais ton premier scan ».
+enum OnboardingDashboardPreviewPresentation: String, Equatable {
     case firstScanPending
-    /// Après les témoignages — CTA « Je veux ça ».
-    case postTransformation
 }
 
 /// Cover scan onboarding (capture live ou résultats déjà calculés).

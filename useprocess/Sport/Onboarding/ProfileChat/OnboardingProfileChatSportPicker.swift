@@ -16,7 +16,7 @@ struct OnboardingProfileChatSportPicker: View {
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
 
-    private let buttonShape = Capsule()
+    private let buttonShape = Capsule(style: .continuous)
     private let spring = Animation.spring(response: 0.42, dampingFraction: 0.84)
 
     private var searchResults: [String] {
@@ -24,7 +24,7 @@ struct OnboardingProfileChatSportPicker: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: MossAnswerChipMetrics.stackSpacing) {
             if isSearching {
                 searchPanel
                     .transition(.opacity)
@@ -47,7 +47,7 @@ struct OnboardingProfileChatSportPicker: View {
     }
 
     private var featuredPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: MossAnswerChipMetrics.stackSpacing) {
             ForEach(OnboardingSportCatalog.featuredChoices) { choice in
                 sportButton(
                     title: OnboardingSportCatalog.localizedName(choice.label),
@@ -79,7 +79,7 @@ struct OnboardingProfileChatSportPicker: View {
     }
 
     private var searchPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: MossAnswerChipMetrics.stackSpacing) {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16, weight: .semibold))
@@ -140,34 +140,30 @@ struct OnboardingProfileChatSportPicker: View {
             HapticManager.shared.selection()
             action()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 if let emoji {
                     Text(emoji)
-                        .font(.system(size: 20))
+                        .font(.system(size: 16))
                 } else if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme).opacity(0.72))
-                        .frame(width: 22)
+                        .frame(width: 18)
                 }
 
                 Text(title)
-                    .font(.system(size: OnboardingProfileChatDepthStyle.answerFontSize, weight: .semibold))
+                    .font(.system(size: MossAnswerChipMetrics.fontSize, weight: .medium))
                     .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                     .multilineTextAlignment(.leading)
-
-                Spacer(minLength: 0)
+                    .lineLimit(2)
+                    .frame(maxWidth: MossAnswerChipMetrics.maxChipWidth, alignment: .leading)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                OnboardingTheme.filledButtonBackground(for: colorScheme),
-                in: buttonShape
-            )
+            .padding(.horizontal, MossAnswerChipMetrics.horizontalPadding)
+            .padding(.vertical, MossAnswerChipMetrics.verticalPadding)
             .contentShape(buttonShape)
         }
-        .buttonStyle(MossChipPress())
+        .processGlassButton(in: buttonShape)
+        .fixedSize(horizontal: true, vertical: false)
         .disabled(isSubmitting)
     }
 }

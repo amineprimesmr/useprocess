@@ -1,4 +1,5 @@
 import { getIosAppStoreUrl } from "./app-store-urls.js";
+import { getAppBioShortUrl } from "./bio-link.js";
 import { appCopy } from "./app-copy.js";
 
 const REFERRAL_STORAGE_KEY = "process_referral_code";
@@ -9,12 +10,19 @@ const REFERRAL_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 jours
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 
+export const REFERRAL_CODE_LENGTH = 5;
+
 export function normalizeReferralCode(raw) {
   return String(raw || "")
     .trim()
     .toUpperCase()
     .replace(/\s+/g, "")
-    .replace(/[^A-Z0-9-]/g, "");
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, REFERRAL_CODE_LENGTH);
+}
+
+export function isValidReferralCode(raw) {
+  return normalizeReferralCode(raw).length === REFERRAL_CODE_LENGTH;
 }
 
 export function parseUtmFromLocation(location = window.location) {
@@ -129,7 +137,7 @@ export function parseReferralCodeFromLocation(location = window.location) {
 export function buildReferralLandingUrl(code, utm = {}) {
   const normalized = normalizeReferralCode(code);
   if (!normalized) {
-    return appendParams("https://useprocess.xyz/?get=1", utm);
+    return appendParams(getAppBioShortUrl(), utm);
   }
   return appendParams(
     `https://useprocess.xyz/join/${encodeURIComponent(normalized)}`,
@@ -142,7 +150,7 @@ export function buildCampaignLandingUrl(slug, utm = {}) {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, "");
-  if (!clean) return appendParams("https://useprocess.xyz/?get=1", utm);
+  if (!clean) return appendParams(getAppBioShortUrl(), utm);
   return appendParams(`https://useprocess.xyz/c/${encodeURIComponent(clean)}`, {
     utm_source: utm.utm_source || clean,
     utm_medium: utm.utm_medium || "campaign",
@@ -156,8 +164,8 @@ export function buildReferralShareText(code) {
   if (!normalized) return "";
   const url = buildReferralLandingUrl(normalized);
   return appCopy(
-    `Télécharge Process gratuitement avec mon lien :\n${url}\n\nMon code parrainage : ${normalized}`,
-    `Download Process for free with my link:\n${url}\n\nMy referral code: ${normalized}`
+    `Télécharge Process gratuitement avec mon lien :\n${url}\n\nMon code parrainage : ${normalized}\n40 % de commission à vie pour moi sur ton abonnement.`,
+    `Download Process for free with my link:\n${url}\n\nMy referral code: ${normalized}\nI earn 40% lifetime commission on your subscription.`
   );
 }
 

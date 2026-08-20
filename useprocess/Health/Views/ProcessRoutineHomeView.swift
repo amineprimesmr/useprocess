@@ -25,12 +25,35 @@ struct ProcessRoutineHomeView: View {
         return OriginPlanPresenter.isEditableJournalDay(dayId: day.id, in: plan)
     }
 
+    private var routineTitle: String {
+        AppCopy.t("Routine", en: "Routine")
+    }
+
     var body: some View {
-        processMainScrollableChrome(
-            selectedSection: $selectedSection,
-            pageSection: .routine,
-            adoptsFloatingTabBar: !isOnboardingPreview
-        ) {
+        Group {
+            if isOnboardingPreview {
+                routineScroll
+            } else {
+                routineScroll.processAdoptForIGTabBar()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.clear)
+        .processClearUIKitHostingBackground()
+        .onAppear {
+            syncSelectedDate()
+        }
+        .onChange(of: livePlan?.id) { _, _ in
+            syncSelectedDate()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, isTabActive else { return }
+            syncSelectedDate()
+        }
+    }
+
+    private var routineScroll: some View {
+        ScrollView {
             VStack(alignment: .leading, spacing: PlanHomeSectionDesign.sectionSpacing) {
                 header
 
@@ -48,33 +71,21 @@ struct ProcessRoutineHomeView: View {
                 }
             }
             .padding()
+            .padding(.top, isOnboardingPreview ? 16 : 8)
             .padding(.bottom, isOnboardingPreview ? 12 : ProcessIGTabMetrics.tabBarOverlayClearance + 12)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.clear)
-        .toolbar(.hidden, for: .navigationBar)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .processClearUIKitHostingBackground()
-        .onAppear {
-            syncSelectedDate()
-        }
-        .onChange(of: livePlan?.id) { _, _ in
-            syncSelectedDate()
-        }
-        .onChange(of: scenePhase) { _, phase in
-            guard phase == .active, isTabActive else { return }
-            syncSelectedDate()
-        }
+        .scrollIndicators(.hidden)
+        .processTransparentScrollSurface()
     }
 
     private var header: some View {
-        Text(AppCopy.t("Routine", en: "Routine"))
+        Text(routineTitle)
             .font(.system(size: 34, weight: .bold))
             .foregroundStyle(theme.primaryText)
             .lineLimit(1)
             .minimumScaleFactor(0.78)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 16)
+            .padding(.top, 8)
     }
 
     private var emptyState: some View {

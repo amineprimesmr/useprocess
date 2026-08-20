@@ -11,30 +11,28 @@ struct ProcessCreatorStudioView: View {
     @State private var studioImportError: String?
 
     var body: some View {
-        ScrollView {
+        ProcessSettingsOpalScrollPage(
+            title: AppCopy.t("Studio contenu", en: "Content Studio")
+        ) {
             VStack(alignment: .leading, spacing: 18) {
-                Text(AppCopy.t("Studio contenu", en: "Content Studio"))
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(theme.primaryText)
-
                 Text(AppCopy.t("Import photo et vidéo illimité sur le scan. Sur l’écran résultats, un slider te laisse choisir un rendu de Mauvais → Réaliste → Excellent.", en: "Unlimited photo and video import for scans. On the results screen, a slider lets you choose a result from Poor → Realistic → Excellent."))
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(theme.secondaryText)
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text(AppCopy.t("Rendu par défaut", en: "Default Result"))
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(theme.primaryText)
+                            .foregroundStyle(.white)
                         Spacer()
                         Text(creator.qualityLabel)
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(theme.onboardingAccent)
+                            .foregroundStyle(ProcessSettingsOpalTheme.sectionTitleTint)
                     }
 
                     Slider(value: $creator.resultQuality, in: 0...1)
-                        .tint(theme.onboardingAccent)
+                        .tint(ProcessSettingsOpalTheme.sectionTitleTint)
 
                     HStack {
                         Text(AppCopy.t("Mauvais", en: "Poor"))
@@ -44,19 +42,22 @@ struct ProcessCreatorStudioView: View {
                         Text(AppCopy.t("Excellent", en: "Excellent"))
                     }
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(theme.secondaryText)
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
                 }
                 .padding(16)
                 .background {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(.clear)
-                        .processGlassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .fill(ProcessSettingsOpalTheme.cardFillDark)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(ProcessSettingsOpalTheme.cardBorderDark, lineWidth: 0.5)
+                        }
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text(AppCopy.t("Page scan analyse", en: "Scan analysis page"))
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(theme.primaryText)
+                        .foregroundStyle(.white)
 
                     Picker(
                         AppCopy.t("Page scan analyse", en: "Scan analysis page"),
@@ -70,14 +71,17 @@ struct ProcessCreatorStudioView: View {
 
                     Text(creator.scanResultsLayout.subtitle)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(theme.secondaryText)
+                        .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(16)
                 .background {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(.clear)
-                        .processGlassEffect(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .fill(ProcessSettingsOpalTheme.cardFillDark)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(ProcessSettingsOpalTheme.cardBorderDark, lineWidth: 0.5)
+                        }
                 }
 
                 studioProgressDatesCard
@@ -86,17 +90,11 @@ struct ProcessCreatorStudioView: View {
 
                 Text(AppCopy.t("Astuce : tu peux encore ajuster le slider pendant l’écran résultats, avant de taper Continuer.", en: "Tip: you can still adjust the slider on the results screen before tapping Continue."))
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.secondaryText.opacity(0.9))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint.opacity(0.9))
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-            .padding(.top, 12)
-            .padding(.bottom, 36)
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
         }
-        .navigationTitle(AppCopy.t("Studio", en: "Studio"))
-        .navigationBarTitleDisplayMode(.inline)
-        .processSettingsDetailPage()
-        .reportsProfileSubrouteActive(true)
         .sheet(item: $pendingImportSlot) { slot in
             FaceScanGalleryImportPicker(
                 onImage: { image in

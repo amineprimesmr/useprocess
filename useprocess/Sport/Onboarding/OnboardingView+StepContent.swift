@@ -78,10 +78,15 @@ extension SportOnboardingView {
             )
         case .referralCode:
             OnboardingCreatorCodeStepView(
-                referralCode: $viewModel.referralCode,
-                onContinue: nextStep,
-                onSkip: nextStep
+                draftCode: $viewModel.creatorCodeDraft,
+                isVerified: $viewModel.creatorCodeIsVerified,
+                continueAttempt: viewModel.creatorCodeContinueAttempt,
+                keyboardOverlap: keyboardHeight.height,
+                onAutoContinue: advanceFromVerifiedCreatorCode
             )
+            .onAppear {
+                viewModel.bootstrapCreatorCodeDraftIfNeeded()
+            }
         case .faceAnalysis:
             FaceScanStepView(
                 viewModel: viewModel,
@@ -114,6 +119,9 @@ extension SportOnboardingView {
                     if isValid {
                         viewModel.saveProgress()
                     }
+                },
+                onContinueUnlockProgressChanged: { progress in
+                    viewModel.estimationContinueUnlockProgress = progress
                 }
             )
         case .healthKitPermissions:
@@ -123,32 +131,31 @@ extension SportOnboardingView {
             EmptyView()
                 .onAppear { skipTransientStep() }
         case .biometricAuth:
-            BiometricAuthStepView(
-                onComplete: nextStep,
-                onBack: previousStep,
-                onAuthenticationComplete: { completed in
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                        biometricAuthCompleted = completed
-                    }
-                }
-            )
-            .onAppear {
-                // Réinitialiser l'état quand on arrive sur cette page
-                biometricAuthCompleted = false
-            }
+            BiometricAuthStepView(onComplete: nextStep)
         case .transformationPreview:
             TransformationPreviewStepView(
                 gender: viewModel.selectedGender,
-                onComplete: nextStep,
-                onBack: previousStep
+                onComplete: nextStep
             )
         case .dashboardPreview:
             DashboardPreviewStepView(
-                presentation: viewModel.dashboardPreviewPresentation,
-                onComplete: { advanceFromDashboardPreview() },
-                onBack: { handleOnboardingBack() },
+                hasCompletedFirstScan: viewModel.isFaceAnalysisCompleted,
                 onFirstScanResult: { viewModel.recordDashboardFaceScanResult($0) },
-                onFirstScanContinue: { advanceFromEarlyDashboardFaceScan() }
+                onFirstScanContinue: { advanceFromEarlyDashboardFaceScan() },
+                onBeginFirstScan: { viewModel.dismissOnboardingFaceScan() },
+                onFirstScanSkipLater: {
+                    viewModel.skipDashboardFaceScanForLater()
+                    advanceFromEarlyDashboardFaceScan()
+                },
+                initialScanPersistedState: viewModel.dashboardScanPersistedState,
+                pendingScanResult: pendingDashboardScanResultForRestore,
+                onScanPersistedStateChange: { state in
+                    if let state {
+                        viewModel.persistDashboardScanState(state)
+                    } else {
+                        viewModel.clearDashboardScanPersistedState()
+                    }
+                }
             )
             .onAppear {
                 viewModel.onOnboardingFaceScanContinueFromDashboard = {
@@ -160,8 +167,7 @@ extension SportOnboardingView {
         case .programCreation:
             OnboardingProgramCreationStepView(
                 viewModel: viewModel,
-                onComplete: nextStep,
-                onBack: handleBackFromProgramCreation
+                onComplete: nextStep
             )
         case .notificationPermission:
             EmptyView()

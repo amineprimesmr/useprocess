@@ -13,6 +13,10 @@ import UIKit
 @MainActor
 final class KeyboardHeightObserver: ObservableObject {
     @Published private(set) var height: CGFloat = 0
+    /// Dernière hauteur connue — projection CTA pendant willShow (taille → poids).
+    @Published private(set) var lastKnownOverlap: CGFloat = 0
+    /// Durée UIKit du clavier en cours (willChange / willHide).
+    @Published private(set) var transitionDuration: TimeInterval = 0.33
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -33,13 +37,22 @@ final class KeyboardHeightObserver: ObservableObject {
         )
 
         Publishers.MergeMany(willChange, didChange, willHide, didHide)
-            .compactMap { Self.overlapHeight(from: $0) }
-            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] overlap in
-                self?.height = overlap
+            .sink { [weak self] notification in
+                self?.apply(notification)
             }
             .store(in: &cancellables)
+    }
+
+    private func apply(_ notification: Notification) {
+        guard let overlap = Self.overlapHeight(from: notification) else { return }
+        if overlap > 0 {
+            lastKnownOverlap = overlap
+        }
+        if let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval {
+            transitionDuration = max(0.2, duration)
+        }
+        height = overlap
     }
 
     /// Overlap du clavier avec le bas de la fenêtre active (0 si masqué).

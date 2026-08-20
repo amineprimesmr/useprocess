@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.referralRegister = exports.referralSyncProgram = void 0;
+exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const referralShared_1 = require("./referralShared");
@@ -57,7 +57,7 @@ exports.referralSyncProgram = (0, https_1.onRequest)({
         await (0, referralShared_1.verifyAppAttestation)(req);
         const referralCode = (0, referralShared_1.normalizeReferralCode)(String(req.body?.referralCode ?? ""));
         const displayName = String(req.body?.displayName ?? "").trim();
-        if (!referralCode) {
+        if (!(0, referralShared_1.isValidReferralCode)(referralCode)) {
             res.status(400).json({ error: "INVALID_CODE" });
             return;
         }
@@ -94,7 +94,7 @@ exports.referralRegister = (0, https_1.onRequest)({
         await (0, referralShared_1.verifyAppAttestation)(req);
         const referralCode = (0, referralShared_1.normalizeReferralCode)(String(req.body?.referralCode ?? ""));
         const displayName = String(req.body?.displayName ?? "").trim();
-        if (!referralCode) {
+        if (!(0, referralShared_1.isValidReferralCode)(referralCode)) {
             res.status(400).json({ error: "INVALID_CODE" });
             return;
         }
@@ -122,6 +122,34 @@ exports.referralRegister = (0, https_1.onRequest)({
     catch (error) {
         const message = error?.message ?? "Unknown error";
         console.error("[referralRegister]", message);
+        res.status((0, referralShared_1.httpStatusForError)(message)).json({ error: message });
+    }
+});
+exports.referralDashboard = (0, https_1.onRequest)({
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 45,
+    memory: "512MiB",
+}, async (req, res) => {
+    (0, referralShared_1.setCors)(res);
+    if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+    }
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+    try {
+        const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
+        await (0, referralShared_1.verifyAppAttestation)(req);
+        const { fetchReferralDashboard } = await Promise.resolve().then(() => __importStar(require("./referralCommissions")));
+        const dashboard = await fetchReferralDashboard(uid);
+        res.status(200).json(dashboard);
+    }
+    catch (error) {
+        const message = error?.message ?? "Unknown error";
+        console.error("[referralDashboard]", message);
         res.status((0, referralShared_1.httpStatusForError)(message)).json({ error: message });
     }
 });

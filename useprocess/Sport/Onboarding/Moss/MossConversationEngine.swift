@@ -39,9 +39,9 @@ enum MossTypingProfile {
 
     var millisPerCharacter: Double {
         switch self {
-        case .ceremonial: 38
-        case .standard: 28
-        case .explanatory: 20
+        case .ceremonial: 25
+        case .standard: 18
+        case .explanatory: 14
         }
     }
 }
@@ -87,11 +87,11 @@ final class MossConversationEngine {
     }
 
     /// Breathing room after a normal line completes.
-    static let breathMillis = 300
+    static let breathMillis = 165
     /// Breathing room after an emotional reflection.
-    static let emotionalBreathMillis = 620
+    static let emotionalBreathMillis = 320
     /// Silence between a user's answer landing and the next Moss line.
-    static let postReplyMillis = 260
+    static let postReplyMillis = 140
 
     private(set) var messages: [Message] = []
     /// True while any line is still revealing — the tap-catcher's signal.
@@ -284,9 +284,9 @@ final class MossConversationEngine {
         var delays = characters.map { _ in base }
         for (index, character) in characters.enumerated() {
             switch character {
-            case ",": delays[index] += 45
-            case ".", "?", "!": delays[index] += 100
-            case "\n": delays[index] += 200
+            case ",": delays[index] += 26
+            case ".", "?", "!": delays[index] += 58
+            case "\n": delays[index] += 115
             default: break
             }
         }

@@ -12,6 +12,7 @@ import {
   type CoachTask,
 } from "./coachValidation";
 import { verifyPremiumSubscriber } from "./premiumAccess";
+import { isValidReferralCode, normalizeReferralCode } from "./referralShared";
 import {
   registerAppleAuthorizationCode,
   resolveAppleSignInConfig,
@@ -196,14 +197,8 @@ async function deleteReferralArtifactsForUser(uid: string): Promise<void> {
 
   const rawCode = program.data()?.referralCode;
   if (typeof rawCode === "string" && rawCode.trim()) {
-    const cleaned = rawCode.trim().toUpperCase().replace(/\s+/g, "");
-    const normalized = cleaned.includes("-")
-      ? cleaned.replace(/[^A-Z0-9-]/g, "")
-      : (() => {
-          const alnum = cleaned.replace(/[^A-Z0-9]/g, "");
-          return alnum.length <= 4 ? alnum : `${alnum.slice(0, 4)}-${alnum.slice(4)}`;
-        })();
-    if (!normalized) return;
+    const normalized = normalizeReferralCode(rawCode);
+    if (!isValidReferralCode(normalized)) return;
     const codeRef = db.collection("referralCodes").doc(normalized);
     const codeSnap = await codeRef.get();
     if (codeSnap.exists && codeSnap.data()?.userId === uid) {
@@ -577,7 +572,7 @@ export const coachStream = onRequest(
   }
 );
 
-export { referralSyncProgram, referralRegister } from "./referral";
+export { referralSyncProgram, referralRegister, referralDashboard } from "./referral";
 export {
   referralConfirmSubscription,
   referralRevenueCatWebhook,
@@ -591,6 +586,7 @@ export {
   affiliateAdminCreate,
   affiliateAdminProvisionAuth,
   affiliateAdminApprove,
+  affiliateAdminListPending,
   affiliateAdminMarkPaid,
 } from "./affiliate";
 export {

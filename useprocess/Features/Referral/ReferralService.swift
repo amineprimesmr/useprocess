@@ -12,7 +12,7 @@ final class ReferralService {
         displayName: String? = nil
     ) async throws {
         let normalized = ProcessReferralLink.normalizeCode(referralCode)
-        guard !normalized.isEmpty else { return }
+        guard ProcessReferralCode.isValid(normalized) else { return }
 
         persistLocalReferredBy(code: normalized, userId: referredUserId)
         ProcessReferralAttribution.clearPending()
@@ -76,10 +76,7 @@ final class ReferralService {
         }
 
         do {
-            let granted = try await ReferralRemoteService.confirmSubscription()
-            if granted {
-                await SubscriptionService.shared.checkSubscriptionStatus()
-            }
+            _ = try await ReferralRemoteService.confirmSubscription()
         } catch {
             #if DEBUG
             print("[ReferralService] confirmSubscription failed: \(error.localizedDescription)")

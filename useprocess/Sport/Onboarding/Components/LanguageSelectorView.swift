@@ -3,8 +3,8 @@
 //  Process
 //
 //  Sélecteur de langue — FR / EN / JA / DE / KO / ES / PT-BR.
-//  Bouton glass + sheet (pas un Menu) : le Menu + buttonStyle(.glass) n’affichait
-//  que FR/EN sur iOS 26.
+//  Bouton glass + popover (pas un Menu, pas un sheet) : Menu + buttonStyle(.glass)
+//  n’affichait que FR/EN sur iOS 26.
 //
 
 import SwiftUI
@@ -12,12 +12,12 @@ import SwiftUI
 struct LanguageSelectorView: View {
     @EnvironmentObject var profileService: UnifiedProfileService
     @Bindable private var appLanguage = ProcessAppLanguage.shared
-    @State private var showsPicker = false
+    @State private var showsMenu = false
 
     var body: some View {
         Button {
             HapticManager.shared.selection()
-            showsPicker = true
+            showsMenu = true
         } label: {
             Text(appLanguage.code.flag)
                 .font(.system(size: 18))
@@ -29,69 +29,54 @@ struct LanguageSelectorView: View {
         }
         .glassCircleStyle()
         .accessibilityLabel(AppCopy.t("Choisir la langue", en: "Choose language"))
-        .sheet(isPresented: $showsPicker) {
-            languagePickerSheet
+        .popover(isPresented: $showsMenu, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+            languageMenu
+                .presentationCompactAdaptation(.popover)
         }
         .onAppear {
             syncLanguageFromProfileIfNeeded()
         }
     }
 
-    private var languagePickerSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(ProcessLanguageCode.allCases) { language in
-                        languageButton(language)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 28)
-            }
-            .scrollIndicators(.hidden)
-            .navigationTitle(AppCopy.t("Langue", en: "Language"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppCopy.close) {
-                        showsPicker = false
-                    }
-                }
+    private var languageMenu: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(ProcessLanguageCode.allCases) { language in
+                languageMenuRow(language)
             }
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-        .presentationCornerRadius(28)
+        .padding(.vertical, 6)
+        .frame(minWidth: 248, alignment: .leading)
+        .modifier(LanguageMenuGlassModifier())
     }
 
-    private func languageButton(_ language: ProcessLanguageCode) -> some View {
+    private func languageMenuRow(_ language: ProcessLanguageCode) -> some View {
         let isActive = appLanguage.code == language
         return Button {
             HapticManager.shared.selection()
             Task {
                 await applyLanguage(language)
-                showsPicker = false
+                showsMenu = false
             }
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 Text(language.flag)
-                    .font(.system(size: 28))
+                    .font(.system(size: 20))
+                    .frame(width: 28, alignment: .center)
                 Text(language.displayName)
-                    .font(.system(size: 18, weight: .semibold))
-                Spacer(minLength: 0)
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 if isActive {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
         }
-        .controlSize(.large)
-        .processGlassButton(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .buttonStyle(.processPlain)
         .accessibilityAddTraits(isActive ? .isSelected : [])
+        .accessibilityLabel("\(language.flag) \(language.displayName)")
     }
 
     private func syncLanguageFromProfileIfNeeded() {
@@ -114,6 +99,20 @@ struct LanguageSelectorView: View {
             try await profileService.updatePreferences(preferences)
         } catch {
             DebugLogger.error("\(error.localizedDescription)")
+        }
+    }
+}
+
+private struct LanguageMenuGlassModifier: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(ProcessGlass.regularSurface, in: shape)
+        } else {
+            content
+                .background(.ultraThinMaterial, in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
     }
 }

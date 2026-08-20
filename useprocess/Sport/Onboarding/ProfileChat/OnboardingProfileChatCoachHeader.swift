@@ -67,30 +67,3 @@ enum OnboardingProfileChatCoachHeaderProgress {
         return min(1, Double(line.revealed) / Double(line.text.count))
     }
 }
-
-struct OnboardingProfileChatCoachHeader: View {
-    let progress: OnboardingProfileChatCoachHeaderProgress.Snapshot
-
-    /// Hauteur utile sous le bouton retour — alignée sur la barre onboarding standard.
-    static let blockHeight: CGFloat = 5
-
-    var body: some View {
-        OnboardingSegmentedProgressBar(
-            segmentCount: progress.segmentCount,
-            completedSegments: progress.completedSegments,
-            activeSegmentProgress: progress.activeProgress,
-            height: Self.blockHeight
-        )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(AppCopy.t("Progression", en: "Progress"))
-        .accessibilityValue(accessibilityValue)
-    }
-
-    private var accessibilityValue: String {
-        let current = min(progress.completedSegments + 1, progress.segmentCount)
-        return AppCopy.t(
-            "Étape \(current) sur \(progress.segmentCount)",
-            en: "Step \(current) of \(progress.segmentCount)"
-        )
-    }
-}

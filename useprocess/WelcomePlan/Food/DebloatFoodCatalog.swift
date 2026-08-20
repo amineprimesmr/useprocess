@@ -33,11 +33,45 @@ enum DebloatFoodCatalog {
     static func sections(for tab: DebloatFoodHubTab) -> [DebloatFoodCatalogSection] {
         switch tab {
         case .prefer:
-            return group(preferFoods.filter { $0.tier == .hero || $0.tier == .prefer })
+            return preferSections()
         case .avoid:
-            return group(avoidFoods + moderateFoods)
+            return avoidSections() + moderateSections()
         case .tastes:
             return []
+        }
+    }
+
+    static func preferSections() -> [DebloatFoodCatalogSection] {
+        group(preferFoods.filter { $0.tier == .hero || $0.tier == .prefer })
+    }
+
+    static func avoidSections() -> [DebloatFoodCatalogSection] {
+        group(avoidFoods)
+    }
+
+    static func moderateSections() -> [DebloatFoodCatalogSection] {
+        group(moderateFoods)
+    }
+
+    static var preferFoodCount: Int { preferFoods.count }
+    static var avoidFoodCount: Int { avoidFoods.count }
+    static var moderateFoodCount: Int { moderateFoods.count }
+    static var totalFoodCount: Int { all.count }
+
+    static func filteredSections(
+        _ sections: [DebloatFoodCatalogSection],
+        query: String
+    ) -> [DebloatFoodCatalogSection] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return sections }
+        let needle = DebloatFoodNameNormalizer.normalize(trimmed)
+        return sections.compactMap { section in
+            let items = section.items.filter {
+                DebloatFoodNameNormalizer.normalize($0.name).contains(needle)
+                    || $0.tags.contains(where: { DebloatFoodNameNormalizer.normalize($0).contains(needle) })
+            }
+            guard !items.isEmpty else { return nil }
+            return DebloatFoodCatalogSection(id: section.id, category: section.category, items: items)
         }
     }
 

@@ -14,6 +14,19 @@ struct ProcessGlassPressStyle: ButtonStyle {
     }
 }
 
+// MARK: - Header controls (aligné hub Réglages)
+
+enum ProcessAppHeaderControlMetrics {
+    /// Même empreinte que les boutons header (Réglages, streak, calendrier).
+    static let size: CGFloat = 36
+    static let iconSize: CGFloat = 17
+    static let streakIconSize: CGFloat = 15
+    static let streakNumberFontSize: CGFloat = 16
+    static let attentionBadgeSize: CGFloat = 10
+    static let glassClusterSpacing: CGFloat = 7
+    static let glassClusterMergeOffset: CGFloat = 11
+}
+
 // MARK: - Icon button (barre profil)
 
 struct ProcessGlassIconButton: View {
@@ -90,7 +103,7 @@ enum ProcessGlass {
     @available(iOS 26.0, *)
     static func tabBarChrome(for colorScheme: ColorScheme) -> Glass {
         if colorScheme == .dark {
-            .regular.tint(Color.black.opacity(0.58)).interactive()
+            .regular.tint(Color.black.opacity(0.42)).interactive()
         } else {
             .regular.tint(Color.white.opacity(0.78)).interactive()
         }

@@ -1,5 +1,14 @@
 import Foundation
 
+// MARK: - Erreurs scan repas / hub
+
+enum MealHubError: Error {
+    case noAlternatives
+    case photoRequired
+    case invalidResponse
+    case noFoodVisible
+}
+
 // MARK: - Créneaux repas
 
 enum MealTimeSlot: String, Codable, CaseIterable, Identifiable {

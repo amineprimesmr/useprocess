@@ -269,7 +269,8 @@ struct LymphCircuitSessionView: View {
             BodyScanLiveCameraRepresentable(
                 session: camera.session,
                 landmarks: model.liveLandmarks,
-                isReady: model.motion.isMoving || model.motion.bodyVisible
+                isReady: model.motion.isMoving || model.motion.bodyVisible,
+                previewLayoutZoom: ProcessScanCamera.fullBodyPreviewLayoutZoom
             )
         } else {
             staticStepBackground
@@ -580,7 +581,11 @@ struct LymphCircuitSessionView: View {
         guard camera.authorizationStatus == .authorized else { return }
         wireCamera()
         if !camera.isRunning {
-            camera.start(preferredPosition: .front, deliversFrames: true)
+            camera.start(
+                preferredPosition: .front,
+                deliversFrames: true,
+                profile: .fullBody
+            )
         }
     }
 

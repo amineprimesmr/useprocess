@@ -14,7 +14,6 @@ struct BiometricAuthStepView: View {
 
     let onComplete: () -> Void
     let onBack: (() -> Void)?
-    let onAuthenticationComplete: ((Bool) -> Void)?
 
     @State private var isAuthenticating = false
     @State private var isAuthenticated = false
@@ -41,10 +40,9 @@ struct BiometricAuthStepView: View {
         ]
     }
 
-    init(onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil, onAuthenticationComplete: ((Bool) -> Void)? = nil) {
+    init(onComplete: @escaping () -> Void, onBack: (() -> Void)? = nil) {
         self.onComplete = onComplete
         self.onBack = onBack
-        self.onAuthenticationComplete = onAuthenticationComplete
     }
 
     var body: some View {

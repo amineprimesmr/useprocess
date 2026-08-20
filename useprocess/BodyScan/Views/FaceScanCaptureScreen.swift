@@ -1,11 +1,23 @@
 import ARKit
+import AVFoundation
 import SwiftUI
+
+/// Copy remontée au hub « Fais le scan du jour » — titre / sous-titre / footer sur la même page.
+struct FaceScanHubCopySnapshot: Equatable {
+    var showsCountdown = false
+    var countdownValue = 3
+    var title = ""
+    var subtitle = ""
+    var footer = ""
+}
 
 enum FaceScanCapturePresentation: Equatable {
     case fullScreen
     case embeddedCard(viewportDiameter: CGFloat)
     /// Scan intégré à la carte « Dernier scan » sur l’accueil Plan.
     case inlineHome(viewportDiameter: CGFloat, phase: InlineHomePhase = .active)
+    /// Caméra seule — le hub parent gère titre / footer (même page).
+    case scanDayHubCamera(ovalWidth: CGFloat)
 
     enum InlineHomePhase: Equatable {
         /// Aperçu compact — caméra AR live sans lancer le scan.
@@ -21,9 +33,11 @@ struct FaceScanCaptureScreen: View {
     @Environment(\.appTheme) private var appTheme
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var presentation: FaceScanCapturePresentation = .fullScreen
     var showsInlineHeader: Bool = true
+    var showsBackButton: Bool = true
     var matchedCameraID: String? = nil
     var matchedCameraNamespace: Namespace.ID? = nil
     var onBack: () -> Void = {}
@@ -41,6 +55,17 @@ struct FaceScanCaptureScreen: View {
     var usesAppScreenBackground: Bool = false
     /// Chrono 3-2-1 à la place du titre, à l’arrivée sur l’écran.
     var playsArrivalCountdown: Bool = false
+    /// Attend la fin du zoom / fade hub avant le 3-2-1.
+    var arrivalCountdownDelay: TimeInterval = 0
+    /// Caméra live mais sans progression scan (aperçu carousel dashboard onboarding).
+    var isScanCaptureEnabled: Bool = true
+    /// Gate in-page (Réglages / Autoriser) — désactivé sur l’aperçu Accueil ; actif sur la page scan.
+    var showsInFrameCameraPermissionGate: Bool = true
+    /// Remonte titre / instructions au hub parent (`ProcessFaceScanHomeView`).
+    var reportsHubCopy = false
+    /// Hub scan du jour — AR live avant « Lancer le scan » (même session, pas de swap preview).
+    var scanDayHubIdlePreview: Bool = false
+    var onHubCopyChange: ((FaceScanHubCopySnapshot) -> Void)? = nil
     var onContinue: (FaceScanCapturePayload, FaceWellnessMarkers) -> Void
 
     @State private var scanProgress: Double = 0
@@ -80,12 +105,34 @@ struct FaceScanCaptureScreen: View {
     @State private var hasSubmittedCapture = false
     @State private var captureSessionPaused = false
     @State private var didFinishArrivalCountdown = false
+    @State private var hasBegunArrivalCountdown = false
     @State private var arrivalCountdownValue = 3
     @State private var arrivalCountdownTask: Task<Void, Never>?
     @State private var isArrivalCameraRevealed = false
+    @State private var cameraAuthorizationStatus = AVCaptureDevice.authorizationStatus(for: .video)
+    @State private var isRequestingCameraAccess = false
+    @State private var awaitingCameraSettingsReturn = false
+    @State private var cameraAccessRevealScale: CGFloat = 1
+    @State private var cameraAccessRevealOpacity: Double = 1
+    @State private var showsDelayedScanLaterLink = false
+    @State private var delayedScanLaterTask: Task<Void, Never>?
 
     private var cameraZoom: CGFloat {
-        AdaptiveScreenLayout.faceScanCameraZoom(horizontalSizeClass: horizontalSizeClass)
+        if isScanDayHubCamera {
+            return ProcessScanCamera.scanDayHubPreviewZoom
+        }
+        if usesOnboardingFaceOval {
+            return ProcessScanCamera.onboardingPortraitPreviewZoom
+        }
+        return AdaptiveScreenLayout.faceScanCameraZoom(horizontalSizeClass: horizontalSizeClass)
+    }
+
+    private var portraitFieldOfView: CGFloat {
+        (isScanDayHubCamera || usesOnboardingFaceOval) ? 24 : 32
+    }
+
+    private var prefersPortraitCameraLock: Bool {
+        isScanDayHubCamera || usesOnboardingFaceOval
     }
 
     private enum FaceScanPhase {
@@ -95,7 +142,36 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var isARSessionActive: Bool {
-        isCameraSessionActive && scenePhase == .active && !captureSessionPaused && phase != .completed
+        isCameraSessionActive
+            && scenePhase == .active
+            && !captureSessionPaused
+            && phase != .completed
+            && isCameraAuthorized
+    }
+
+    private var isCameraAuthorized: Bool {
+        cameraAuthorizationStatus == .authorized
+    }
+
+    private var needsCameraPermissionPrompt: Bool {
+        cameraAuthorizationStatus == .notDetermined
+    }
+
+    private var isCameraAccessBlocked: Bool {
+        switch cameraAuthorizationStatus {
+        case .denied, .restricted:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private var showsCameraPermissionGate: Bool {
+        showsInFrameCameraPermissionGate && isDeviceSupported && !isCameraAuthorized
+    }
+
+    private var usesSystemCameraPermissionPrompt: Bool {
+        !showsInFrameCameraPermissionGate
     }
     private var isPositioningWellFramed: Bool {
         frameHint == nil && isFaceDetected
@@ -150,11 +226,32 @@ struct FaceScanCaptureScreen: View {
 
     private var isEmbedded: Bool {
         switch presentation {
-        case .embeddedCard, .inlineHome:
+        case .embeddedCard, .inlineHome, .scanDayHubCamera:
             return true
         case .fullScreen:
             return false
         }
+    }
+
+    private var isScanDayHubCamera: Bool {
+        if case .scanDayHubCamera = presentation { return true }
+        return false
+    }
+
+    private var isScanDayHubInline: Bool {
+        isScanDayHubCamera
+    }
+
+    private var meshIsPreviewOnly: Bool {
+        isInlinePreview
+            || isArrivalCountdownActive
+            || (isScanDayHubCamera && scanDayHubIdlePreview)
+            || !isScanCaptureEnabled
+    }
+
+    /// Hub scan du jour — ne masque pas la caméra pendant le 3-2-1 (même flux AR).
+    private var meshPreviewHiddenForCountdown: Bool {
+        playsArrivalCountdown && !isScanDayHubCamera && !isArrivalCameraRevealed
     }
 
     private var isInlineHome: Bool {
@@ -170,106 +267,182 @@ struct FaceScanCaptureScreen: View {
     }
 
     private var isArrivalCountdownActive: Bool {
-        playsArrivalCountdown && !didFinishArrivalCountdown && !isEmbedded
+        playsArrivalCountdown
+            && hasBegunArrivalCountdown
+            && !didFinishArrivalCountdown
+            && (!isEmbedded || isScanDayHubInline)
     }
 
     var body: some View {
-        Group {
-            switch presentation {
-            case .fullScreen:
-                fullScreenLayout
-            case .embeddedCard(let viewportDiameter):
-                embeddedCardLayout(viewportDiameter: viewportDiameter)
-            case .inlineHome(let viewportDiameter, let phase):
-                inlineHomeSectionLayout(viewportDiameter: viewportDiameter, phase: phase)
-            }
+        captureImportOverlay(
+            content: captureAlerts(
+                content: captureSheets(
+                    content: captureEventHandlers(
+                        content: presentationContent
+                    )
+                )
+            )
+        )
+    }
+
+    @ViewBuilder
+    private var presentationContent: some View {
+        switch presentation {
+        case .fullScreen:
+            fullScreenLayout
+        case .embeddedCard(let viewportDiameter):
+            embeddedCardLayout(viewportDiameter: viewportDiameter)
+        case .inlineHome(let viewportDiameter, let phase):
+            inlineHomeSectionLayout(viewportDiameter: viewportDiameter, phase: phase)
+        case .scanDayHubCamera(let ovalWidth):
+            scanDayHubCameraLayout(ovalWidth: ovalWidth)
         }
-        .onAppear {
-            userFlashOverride = false
-            isFlashEnabled = false
-            FaceScanScreenFlash.shared.deactivate(animated: false)
-            startArrivalCountdownIfNeeded()
-        }
-        .onDisappear {
-            arrivalCountdownTask?.cancel()
-            arrivalCountdownTask = nil
-            FaceScanScreenFlash.shared.deactivate()
-        }
-        .task {
-            guard isDeviceSupported else {
-                canSkipScan = true
-                return
-            }
-            try? await Task.sleep(for: .seconds(6))
-            guard phase != .completed else { return }
-            withAnimation(.easeInOut(duration: 0.25)) {
-                canSkipScan = true
-            }
-        }
-        .onChange(of: isDeviceSupported) { _, supported in
-            if !supported { canSkipScan = true }
-        }
-        .onChange(of: isLowLight) { _, low in
-            guard allowsScreenFlash, !isInlinePreview, !usesOnboardingFaceOval else { return }
-            guard !userFlashOverride else { return }
-            guard low, !isFlashEnabled else { return }
-            isFlashEnabled = true
-        }
-        .onChange(of: scanBlockedByLighting) { _, blocked in
-            guard blocked, phase == .scanning else { return }
-            withAnimation(.easeInOut(duration: 0.2)) {
-                phase = .positioning
-            }
-        }
-        .onChange(of: isFaceDetected) { _, detected in
-            guard isDeviceSupported, phase != .completed else { return }
-            if !detected, phase == .scanning, scanProgress < 0.03 {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    phase = .positioning
-                }
-            }
-        }
-        .onChange(of: isInlinePreview) { _, isPreview in
-            guard isInlineHome else { return }
-            if isPreview {
+    }
+
+    private func captureEventHandlers<Content: View>(content: Content) -> some View {
+        captureProgressHandlers(content: captureLifecycleHandlers(content: content))
+    }
+
+    private func captureLifecycleHandlers<Content: View>(content: Content) -> some View {
+        content
+            .onAppear {
                 userFlashOverride = false
                 isFlashEnabled = false
+                FaceScanScreenFlash.shared.deactivate(animated: false)
+                refreshCameraAuthorizationStatus()
+                publishHubCopyIfNeeded()
+                startArrivalCountdownIfNeeded()
+                scheduleDelayedScanLaterLinkIfNeeded()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+                let wasAwaitingSettings = awaitingCameraSettingsReturn
+                refreshCameraAuthorizationStatus()
+                if wasAwaitingSettings {
+                    awaitingCameraSettingsReturn = false
+                }
+            }
+            .task(id: previewCameraPermissionTaskKey) {
+                await requestSystemCameraPermissionIfNeeded()
+            }
+            .onChange(of: cameraAuthorizationStatus) { old, status in
+                if status == .authorized {
+                    if old != .authorized {
+                        handleCameraAccessGranted()
+                    }
+                    startArrivalCountdownIfNeeded()
+                } else if status == .denied {
+                    ProcessAnalytics.trackCameraDenied(source: "face_scan_capture_screen")
+                }
+            }
+            .onChange(of: arrivalCountdownValue) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: didFinishArrivalCountdown) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: hasBegunArrivalCountdown) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: phase) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: scanProgress) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: frameHint) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: instruction) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: isFaceDetected) { _, _ in publishHubCopyIfNeeded() }
+            .onChange(of: phase) { _, newPhase in
+                if newPhase == .completed {
+                    cancelDelayedScanLaterLink()
+                }
+            }
+            .onDisappear {
+                arrivalCountdownTask?.cancel()
+                arrivalCountdownTask = nil
+                cancelDelayedScanLaterLink()
                 FaceScanScreenFlash.shared.deactivate()
-                resetCaptureState(instruction: "")
-            } else {
-                instruction = AppCopy.t("Rapproche-toi pour que ton visage remplisse le cadre.", en: "Move closer so your face fills the frame.")
-                frameHint = nil
             }
-        }
-        .onChange(of: scanProgress) { oldValue, value in
-            guard !isInlinePreview else { return }
-            if value > 0.005, phase == .positioning {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    phase = .scanning
-                }
-            }
-            if value >= 1, phase != .completed, capturedPayload != nil {
-                phase = .completed
-            } else if value < 0.03, oldValue > 0.15, phase == .scanning {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    phase = .positioning
-                    capturedPayload = nil
-                    capturedMarkers = nil
-                }
-            }
-        }
-        .onChange(of: isFlashEnabled) { _, enabled in
-            if enabled {
-                guard allowsScreenFlash, !isInlinePreview else {
-                    FaceScanScreenFlash.shared.deactivate(animated: true)
+            .task {
+                guard isDeviceSupported else {
+                    canSkipScan = true
                     return
                 }
-                FaceScanScreenFlash.shared.activate(animated: false)
-            } else {
-                FaceScanScreenFlash.shared.deactivate(animated: true)
+                try? await Task.sleep(for: .seconds(6))
+                guard phase != .completed else { return }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    canSkipScan = true
+                }
             }
-        }
-        .sheet(isPresented: $showGalleryPicker) {
+            .onChange(of: isDeviceSupported) { _, supported in
+                if !supported { canSkipScan = true }
+            }
+            .onChange(of: isLowLight) { _, low in
+                guard allowsScreenFlash, !isInlinePreview, !usesOnboardingFaceOval else { return }
+                guard !userFlashOverride else { return }
+                guard low, !isFlashEnabled else { return }
+                isFlashEnabled = true
+            }
+            .onChange(of: isFlashEnabled) { _, enabled in
+                if enabled {
+                    guard allowsScreenFlash, !isInlinePreview else {
+                        FaceScanScreenFlash.shared.deactivate(animated: true)
+                        return
+                    }
+                    FaceScanScreenFlash.shared.activate(animated: false)
+                } else {
+                    FaceScanScreenFlash.shared.deactivate(animated: true)
+                }
+            }
+            .onChange(of: playsArrivalCountdown) { _, shouldPlay in
+                if shouldPlay {
+                    startArrivalCountdownIfNeeded()
+                } else if isScanDayHubCamera {
+                    resetScanDayHubArrivalCountdown()
+                }
+            }
+    }
+
+    private func captureProgressHandlers<Content: View>(content: Content) -> some View {
+        content
+            .onChange(of: scanBlockedByLighting) { _, blocked in
+                guard blocked, phase == .scanning else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    phase = .positioning
+                }
+            }
+            .onChange(of: isFaceDetected) { _, detected in
+                guard isDeviceSupported, phase != .completed else { return }
+                if !detected, phase == .scanning, scanProgress < 0.03 {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        phase = .positioning
+                    }
+                }
+            }
+            .onChange(of: isInlinePreview) { _, isPreview in
+                guard isInlineHome else { return }
+                if isPreview {
+                    userFlashOverride = false
+                    isFlashEnabled = false
+                    FaceScanScreenFlash.shared.deactivate()
+                    resetCaptureState(instruction: "")
+                } else {
+                    instruction = AppCopy.t("Rapproche-toi pour que ton visage remplisse le cadre.", en: "Move closer so your face fills the frame.")
+                    frameHint = nil
+                }
+            }
+            .onChange(of: scanProgress) { oldValue, value in
+                guard !isInlinePreview else { return }
+                if value > 0.005, phase == .positioning {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        phase = .scanning
+                    }
+                }
+                if value >= 1, phase != .completed, capturedPayload != nil {
+                    phase = .completed
+                } else if value < 0.03, oldValue > 0.15, phase == .scanning {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        phase = .positioning
+                        capturedPayload = nil
+                        capturedMarkers = nil
+                    }
+                }
+            }
+    }
+
+    private func captureSheets<Content: View>(content: Content) -> some View {
+        content.sheet(isPresented: $showGalleryPicker) {
             FaceScanGalleryImportPicker(
                 onImage: { image in
                     showGalleryPicker = false
@@ -285,7 +458,10 @@ struct FaceScanCaptureScreen: View {
             )
             .ignoresSafeArea()
         }
-        .alert(
+    }
+
+    private func captureAlerts<Content: View>(content: Content) -> some View {
+        content.alert(
             AppCopy.t("Import impossible", en: "Import failed"),
             isPresented: Binding(
                 get: { importErrorMessage != nil },
@@ -298,7 +474,10 @@ struct FaceScanCaptureScreen: View {
         } message: {
             Text(importErrorMessage ?? AppCopy.t("Réessaie avec un autre fichier.", en: "Try another file."))
         }
-        .overlay {
+    }
+
+    private func captureImportOverlay<Content: View>(content: Content) -> some View {
+        content.overlay {
             if isImportingMedia {
                 mediaImportAnalysisOverlay
             }
@@ -464,6 +643,8 @@ struct FaceScanCaptureScreen: View {
                                 en: "Scan starts in \(arrivalCountdownValue)"
                             )
                         )
+                } else if playsArrivalCountdown && !didFinishArrivalCountdown {
+                    Color.clear
                 } else {
                     Text(onboardingScanTitle)
                         .font(.system(size: 22, weight: .bold))
@@ -507,13 +688,91 @@ struct FaceScanCaptureScreen: View {
                 .lineSpacing(4)
                 .padding(.horizontal, 40)
 
+            if showsDelayedScanLaterLink, onSkip != nil, phase != .completed {
+                delayedScanLaterLink
+                    .padding(.top, 10)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
             Spacer()
-                .frame(height: max(safeArea.bottom + 24, 40))
+                .frame(height: max(safeArea.bottom + (showsDelayedScanLaterLink ? 12 : 24), 40))
         }
+        .animation(.easeInOut(duration: 0.35), value: showsDelayedScanLaterLink)
         .regularWidthContainer(maxWidth: AdaptiveScreenLayout.faceScanColumnMaxWidth)
     }
 
+    private func scanDayHubCameraLayout(ovalWidth: CGFloat) -> some View {
+        let viewportSize = CGSize(
+            width: ovalWidth,
+            height: ovalWidth * FaceScanViewportMetrics.onboardingOvalAspect
+        )
+
+        return ZStack {
+            cameraSection(viewportSize: viewportSize)
+                .allowsHitTesting(phase != .completed)
+
+            if isDeviceSupported, phase != .completed {
+                VStack(spacing: 0) {
+                    HStack(alignment: .top, spacing: 0) {
+                        if allowsScreenFlash {
+                            embeddedFlashToggle
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Button {
+                            HapticManager.shared.impact(.light)
+                            restartScan()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(appTheme.secondaryText)
+                                .frame(width: 36, height: 36)
+                                .background {
+                                    Circle()
+                                        .fill(appTheme.isDark ? Color.black.opacity(0.45) : Color.white.opacity(0.92))
+                                        .overlay {
+                                            Circle()
+                                                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                                        }
+                                }
+                        }
+                        .buttonStyle(.processPlain)
+                        .accessibilityLabel(AppCopy.t("Recommencer le scan", en: "Restart scan"))
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(10)
+            }
+        }
+        .frame(width: viewportSize.width, height: viewportSize.height)
+    }
+
+    private func publishHubCopyIfNeeded() {
+        guard reportsHubCopy else { return }
+        let snapshot = FaceScanHubCopySnapshot(
+            showsCountdown: isArrivalCountdownActive,
+            countdownValue: arrivalCountdownValue,
+            title: onboardingScanTitle,
+            subtitle: onboardingScanSubtitle,
+            footer: onboardingScanFooterCopy
+        )
+        onHubCopyChange?(snapshot)
+    }
+
     private var onboardingScanFooterCopy: String {
+        if showsCameraPermissionGate {
+            return needsCameraPermissionPrompt
+                ? AppCopy.t(
+                    "Appuie sur « Autoriser la caméra » dans le cadre ci-dessus.",
+                    en: "Tap “Allow camera” in the frame above."
+                )
+                : AppCopy.t(
+                    "Réglages → Process → Caméra → Autoriser, puis reviens ici.",
+                    en: "Settings → Process → Camera → Allow, then come back here."
+                )
+        }
         if phase == .scanning || scanProgress > 0.005 {
             return AppCopy.t(
                 "Tourne la tête en cercle pour capturer tous les angles.",
@@ -526,6 +785,12 @@ struct FaceScanCaptureScreen: View {
                 en: "Perfect — hold still for a second."
             )
         }
+        if isScanDayHubCamera {
+            return AppCopy.t(
+                "Place ton visage dans le cadre.",
+                en: "Position your face in the frame."
+            )
+        }
         return AppCopy.t(
             "Place ton visage dans le cadre, puis bouge lentement la tête en cercle pour capturer tous les angles.",
             en: "Position your face in the frame, then slowly move your head in a circle to capture every angle."
@@ -534,6 +799,7 @@ struct FaceScanCaptureScreen: View {
 
     /// État copy onboarding — cadrage → calibré → scan actif.
     private var onboardingScanCopyToken: String {
+        if showsCameraPermissionGate { return "camera_permission" }
         if phase == .completed { return "completed" }
         if phase == .scanning || scanProgress > 0.005 { return "scanning" }
         if isOnboardingFaceCalibrated { return "ready" }
@@ -542,6 +808,10 @@ struct FaceScanCaptureScreen: View {
 
     private var onboardingScanTitle: String {
         switch onboardingScanCopyToken {
+        case "camera_permission":
+            return needsCameraPermissionPrompt
+                ? AppCopy.t("Autorise la caméra", en: "Allow camera access")
+                : AppCopy.t("Caméra bloquée", en: "Camera blocked")
         case "scanning":
             return AppCopy.t("Tourne ta tête", en: "Turn your head")
         case "ready":
@@ -555,6 +825,16 @@ struct FaceScanCaptureScreen: View {
 
     private var onboardingScanSubtitle: String {
         switch onboardingScanCopyToken {
+        case "camera_permission":
+            return needsCameraPermissionPrompt
+                ? AppCopy.t(
+                    "Process a besoin de la caméra avant pour analyser ton visage.",
+                    en: "Process needs the front camera to analyze your face."
+                )
+                : AppCopy.t(
+                    "Active la caméra dans Réglages pour lancer le scan.",
+                    en: "Turn on camera access in Settings to start the scan."
+                )
         case "scanning":
             return AppCopy.t(
                 "Tourne lentement la tête tout autour",
@@ -629,34 +909,68 @@ struct FaceScanCaptureScreen: View {
 
     /// TEMP — retour visible sur la capture plein écran (à côté du flash).
     private var showsTemporaryCaptureBackButton: Bool {
-        usesOnboardingFaceOval && !isEmbedded && phase != .completed
+        showsBackButton && usesOnboardingFaceOval && !isEmbedded && phase != .completed
     }
 
     private func startArrivalCountdownIfNeeded() {
-        guard playsArrivalCountdown, !isEmbedded, !didFinishArrivalCountdown else { return }
+        guard playsArrivalCountdown, (!isEmbedded || isScanDayHubInline), !didFinishArrivalCountdown else { return }
+        guard !scanDayHubIdlePreview else { return }
+        guard isCameraAuthorized else { return }
         arrivalCountdownTask?.cancel()
         arrivalCountdownValue = 3
-        HapticManager.shared.impact(.light)
-        withAnimation(.easeOut(duration: 0.42).delay(0.10)) {
-            isArrivalCameraRevealed = true
+        hasBegunArrivalCountdown = false
+        if !isScanDayHubCamera {
+            isArrivalCameraRevealed = false
         }
         arrivalCountdownTask = Task { @MainActor in
+            let delayMs = max(0, Int(arrivalCountdownDelay * 1000))
+            if delayMs > 0 {
+                try? await Task.sleep(for: .milliseconds(delayMs))
+            }
+            guard !Task.isCancelled else { return }
+
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.74)) {
+                hasBegunArrivalCountdown = true
+            }
+            HapticManager.shared.impact(.light)
+
+            let tickPause: UInt64 = isScanDayHubCamera ? 780 : 720
+            let tickAnimation: Animation = isScanDayHubCamera
+                ? .spring(response: 0.36, dampingFraction: 0.68)
+                : .easeInOut(duration: 0.18)
+
+            if !isScanDayHubCamera {
+                withAnimation(.easeOut(duration: 0.42).delay(0.08)) {
+                    isArrivalCameraRevealed = true
+                }
+            }
+
             for value in [3, 2, 1] {
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.18)) {
+                withAnimation(tickAnimation) {
                     arrivalCountdownValue = value
                 }
                 if value != 3 {
                     HapticManager.shared.impact(.light)
                 }
-                try? await Task.sleep(for: .milliseconds(720))
+                try? await Task.sleep(for: .milliseconds(tickPause))
             }
             guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.22)) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
                 didFinishArrivalCountdown = true
             }
             HapticManager.shared.impact(.medium)
         }
+    }
+
+    private func resetScanDayHubArrivalCountdown() {
+        arrivalCountdownTask?.cancel()
+        arrivalCountdownTask = nil
+        didFinishArrivalCountdown = false
+        hasBegunArrivalCountdown = false
+        arrivalCountdownValue = 3
+        isArrivalCameraRevealed = true
+        resetCaptureState(instruction: "")
     }
 
     private func embeddedCardLayout(viewportDiameter: CGFloat) -> some View {
@@ -952,10 +1266,12 @@ struct FaceScanCaptureScreen: View {
 
     private var scanHeader: some View {
         HStack(spacing: 12) {
-            OnboardingBackButton(action: {
-                FaceScanScreenFlash.shared.deactivate()
-                onBack()
-            })
+            if showsBackButton {
+                OnboardingBackButton(action: {
+                    FaceScanScreenFlash.shared.deactivate()
+                    onBack()
+                })
+            }
 
             Spacer(minLength: 0)
 
@@ -976,144 +1292,191 @@ struct FaceScanCaptureScreen: View {
     // MARK: - Camera
 
     private func cameraSection(viewportSize: CGSize) -> some View {
-        let core = ZStack {
-            if isDeviceSupported {
-                FaceScannerViewport(
-                    size: viewportSize,
-                    morphToCircle: scanBlockedByLighting ? 1 : viewportMorph,
-                    style: viewportStyle,
-                    camera: {
-                        ZStack {
-                            if usesOnboardingFaceOval {
-                                FaceScanOnboardingOvalShape()
-                                    .fill(Color(red: 0.09, green: 0.09, blue: 0.10))
-                            }
-                            FaceMeshScanView(
-                                progress: $scanProgress,
-                                ringProgress: $ringProgress,
-                                activeTickSectors: $activeTickSectors,
-                                currentTickSector: $currentTickSector,
-                                overlayMode: $overlayMode,
-                                tiltHoldProgress: $tiltHoldProgress,
-                                tiltDirection: $tiltDirection,
-                                tiltIsEngaged: $tiltIsEngaged,
-                                instruction: $instruction,
-                                frameHint: $frameHint,
-                                isFaceDetected: $isFaceDetected,
-                                isDeviceSupported: $isDeviceSupported,
-                                isLowLight: $isLowLight,
-                                isPreviewOnly: isInlinePreview || isArrivalCountdownActive,
-                                isSessionRunning: isARSessionActive,
-                                allowsScreenFlash: allowsScreenFlash,
-                                skipsHeadTiltPhase: skipsHeadTiltPhase,
-                                cameraZoom: cameraZoom,
-                                onComplete: handleCapture
-                            )
-                            .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
-                            .blur(radius: scanBlockedByLighting ? 7 : 0)
-                            .opacity(playsArrivalCountdown && !isArrivalCameraRevealed ? 0 : 1)
-                        }
-                    },
-                    overlay: { EmptyView() }
-                )
-                .overlay {
-                    if usesOnboardingFaceOval {
-                        FaceScanOnboardingInnerEdgeGlow(intensity: colorScheme == .dark ? 0.78 : 0.72)
-                            .opacity(showsOnboardingScanCalibrationChrome ? 1 : 0)
-                            .scaleEffect(showsOnboardingScanCalibrationChrome ? 1 : 0.988)
-                            .animation(
-                                .spring(response: 0.44, dampingFraction: 0.84),
-                                value: showsOnboardingScanCalibrationChrome
-                            )
-                            .allowsHitTesting(false)
-                    } else if scanBlockedByLighting {
-                        FaceMorphClipShape(morph: 1, style: viewportStyle)
-                            .fill(Color.black.opacity(0.14))
-                            .allowsHitTesting(false)
-                    }
-                }
-                .overlay {
-                    if usesOnboardingFaceOval {
-                        FaceScanOnboardingOvalShape()
-                            .stroke(
-                                colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.08),
-                                lineWidth: 0.6
-                            )
-                            .allowsHitTesting(false)
-                    } else {
-                        FaceMorphClipShape(morph: scanBlockedByLighting ? 1 : viewportMorph, style: viewportStyle)
-                            .strokeBorder(
-                                isFlashEnabled ? Color.black.opacity(0.08) : Color.white.opacity(0.18),
-                                lineWidth: 1.5
-                            )
-                    }
-                }
-                .animation(.easeInOut(duration: 0.28), value: scanBlockedByLighting)
-                .shadow(
-                    color: usesOnboardingFaceOval
-                        ? Color.black.opacity(colorScheme == .dark ? 0.45 : 0.12)
-                        : .black.opacity(isFlashEnabled ? (isInlineHome ? 0 : 0.12) : 0.35),
-                    radius: usesOnboardingFaceOval
-                        ? (colorScheme == .dark ? 10 : 18)
-                        : (isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 14),
-                    y: usesOnboardingFaceOval
-                        ? (colorScheme == .dark ? 2 : 6)
-                        : (isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 4)
-                )
+        let core = cameraViewportCore(viewportSize: viewportSize)
+            .frame(width: viewportSize.width, height: viewportSize.height)
+            .frame(
+                width: usesOnboardingFaceOval
+                    ? viewportSize.width + FaceScanViewportMetrics.onboardingTickOverflow
+                    : viewportSize.width,
+                height: usesOnboardingFaceOval
+                    ? viewportSize.height + FaceScanViewportMetrics.onboardingTickOverflow
+                    : viewportSize.height
+            )
+            .frame(maxWidth: .infinity, alignment: isInlinePreview ? .leading : .center)
+            .animation(phase == .completed || usesOnboardingFaceOval ? nil : .interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
+            .animation(phase == .completed ? nil : .easeInOut(duration: 0.25), value: phase)
+            .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsFrameCorners)
+            .animation(
+                phase == .completed
+                    ? nil
+                    : (usesOnboardingFaceOval
+                        ? .spring(response: 0.44, dampingFraction: 0.84)
+                        : .easeInOut(duration: 0.2)),
+                value: showsScanRing
+            )
+            .animation(
+                phase == .completed ? nil : .spring(response: 0.44, dampingFraction: 0.84),
+                value: showsOnboardingScanCalibrationChrome
+            )
 
-                if showsFrameCorners {
-                    FaceScanFrameCornerBrackets(size: viewportSize.width)
-                        .transition(.opacity)
-                }
+        return cameraSectionMatchedGeometry(core: core)
+    }
 
-                if showsScanRing, !scanBlockedByLighting {
-                    scannerOverlay(viewportSize: viewportSize)
-                        .transition(
-                            usesOnboardingFaceOval
-                                ? .opacity.combined(with: .scale(scale: 0.972))
-                                : .opacity
-                        )
-                }
-            } else {
-                unsupportedSection
-                    .frame(width: viewportSize.width, height: viewportSize.height)
+    @ViewBuilder
+    private func cameraSectionMatchedGeometry<Core: View>(core: Core) -> some View {
+        if isInlinePreview {
+            core
+        } else if let matchedCameraID, let matchedCameraNamespace {
+            core.matchedGeometryEffect(id: matchedCameraID, in: matchedCameraNamespace)
+        } else {
+            core
+        }
+    }
+
+    @ViewBuilder
+    private func cameraViewportCore(viewportSize: CGSize) -> some View {
+        if isDeviceSupported {
+            supportedCameraViewport(viewportSize: viewportSize)
+        } else {
+            unsupportedSection
+                .frame(width: viewportSize.width, height: viewportSize.height)
+        }
+    }
+
+    private func supportedCameraViewport(viewportSize: CGSize) -> some View {
+        FaceScannerViewport(
+            size: viewportSize,
+            morphToCircle: scanBlockedByLighting ? 1 : viewportMorph,
+            style: viewportStyle,
+            camera: {
+                cameraMeshLayer()
+            },
+            overlay: { EmptyView() }
+        )
+        .overlay { cameraCalibrationOverlay() }
+        .overlay { cameraBorderOverlay() }
+        .overlay {
+            if showsCameraPermissionGate {
+                cameraPermissionGateOverlay(viewportSize: viewportSize)
             }
         }
-        .frame(width: viewportSize.width, height: viewportSize.height)
-        .frame(
-            width: usesOnboardingFaceOval
-                ? viewportSize.width + FaceScanViewportMetrics.onboardingTickOverflow
-                : viewportSize.width,
-            height: usesOnboardingFaceOval
-                ? viewportSize.height + FaceScanViewportMetrics.onboardingTickOverflow
-                : viewportSize.height
+        .animation(.easeInOut(duration: 0.28), value: scanBlockedByLighting)
+        .animation(.easeInOut(duration: 0.28), value: showsCameraPermissionGate)
+        .shadow(
+            color: cameraShadowColor,
+            radius: cameraShadowRadius,
+            y: cameraShadowYOffset
         )
-        .frame(maxWidth: .infinity, alignment: isInlinePreview ? .leading : .center)
-        .animation(phase == .completed || usesOnboardingFaceOval ? nil : .interpolatingSpring(duration: isInlineHome ? 0.62 : 0.55, bounce: isInlineHome ? 0.14 : 0.08), value: viewportMorph)
-        .animation(phase == .completed ? nil : .easeInOut(duration: 0.25), value: phase)
-        .animation(phase == .completed ? nil : .easeInOut(duration: 0.2), value: showsFrameCorners)
-        .animation(
-            phase == .completed
-                ? nil
-                : (usesOnboardingFaceOval
-                    ? .spring(response: 0.44, dampingFraction: 0.84)
-                    : .easeInOut(duration: 0.2)),
-            value: showsScanRing
-        )
-        .animation(
-            phase == .completed ? nil : .spring(response: 0.44, dampingFraction: 0.84),
-            value: showsOnboardingScanCalibrationChrome
-        )
-
-        return Group {
-            if isInlinePreview {
-                core
-            } else if let matchedCameraID, let matchedCameraNamespace {
-                core.matchedGeometryEffect(id: matchedCameraID, in: matchedCameraNamespace)
-            } else {
-                core
+        .overlay {
+            if showsFrameCorners {
+                FaceScanFrameCornerBrackets(size: viewportSize.width)
+                    .transition(.opacity)
             }
         }
+        .scaleEffect(cameraAccessRevealScale)
+        .opacity(cameraAccessRevealOpacity)
+        .overlay {
+            if showsScanRing, !scanBlockedByLighting {
+                scannerOverlay(viewportSize: viewportSize)
+                    .transition(
+                        usesOnboardingFaceOval
+                            ? .opacity.combined(with: .scale(scale: 0.972))
+                            : .opacity
+                    )
+            }
+        }
+    }
+
+    private func cameraMeshLayer() -> some View {
+        ZStack {
+            if usesOnboardingFaceOval {
+                FaceScanOnboardingOvalShape()
+                    .fill(Color(red: 0.09, green: 0.09, blue: 0.10))
+            }
+            FaceMeshScanView(
+                progress: $scanProgress,
+                ringProgress: $ringProgress,
+                activeTickSectors: $activeTickSectors,
+                currentTickSector: $currentTickSector,
+                overlayMode: $overlayMode,
+                tiltHoldProgress: $tiltHoldProgress,
+                tiltDirection: $tiltDirection,
+                tiltIsEngaged: $tiltIsEngaged,
+                instruction: $instruction,
+                frameHint: $frameHint,
+                isFaceDetected: $isFaceDetected,
+                isDeviceSupported: $isDeviceSupported,
+                isLowLight: $isLowLight,
+                isPreviewOnly: meshIsPreviewOnly,
+                isSessionRunning: isARSessionActive,
+                allowsScreenFlash: allowsScreenFlash,
+                skipsHeadTiltPhase: skipsHeadTiltPhase,
+                cameraZoom: cameraZoom,
+                portraitFieldOfView: portraitFieldOfView,
+                prefersHubPortraitLock: prefersPortraitCameraLock,
+                onComplete: handleCapture
+            )
+            .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
+            .blur(radius: scanBlockedByLighting ? 7 : 0)
+            .opacity(meshPreviewHiddenForCountdown ? 0 : 1)
+        }
+    }
+
+    @ViewBuilder
+    private func cameraCalibrationOverlay() -> some View {
+        if usesOnboardingFaceOval {
+            FaceScanOnboardingInnerEdgeGlow(intensity: colorScheme == .dark ? 0.78 : 0.72)
+                .opacity(showsOnboardingScanCalibrationChrome ? 1 : 0)
+                .scaleEffect(showsOnboardingScanCalibrationChrome ? 1 : 0.988)
+                .animation(
+                    .spring(response: 0.44, dampingFraction: 0.84),
+                    value: showsOnboardingScanCalibrationChrome
+                )
+                .allowsHitTesting(false)
+        } else if scanBlockedByLighting {
+            FaceMorphClipShape(morph: 1, style: viewportStyle)
+                .fill(Color.black.opacity(0.14))
+                .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    private func cameraBorderOverlay() -> some View {
+        if usesOnboardingFaceOval {
+            FaceScanOnboardingOvalShape()
+                .stroke(
+                    colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.08),
+                    lineWidth: 0.6
+                )
+                .allowsHitTesting(false)
+        } else {
+            FaceMorphClipShape(morph: scanBlockedByLighting ? 1 : viewportMorph, style: viewportStyle)
+                .strokeBorder(
+                    isFlashEnabled ? Color.black.opacity(0.08) : Color.white.opacity(0.18),
+                    lineWidth: 1.5
+                )
+        }
+    }
+
+    private var cameraShadowColor: Color {
+        if usesOnboardingFaceOval {
+            return Color.black.opacity(colorScheme == .dark ? 0.45 : 0.12)
+        }
+        return .black.opacity(isFlashEnabled ? (isInlineHome ? 0 : 0.12) : 0.35)
+    }
+
+    private var cameraShadowRadius: CGFloat {
+        if usesOnboardingFaceOval {
+            return colorScheme == .dark ? 10 : 18
+        }
+        return isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 14
+    }
+
+    private var cameraShadowYOffset: CGFloat {
+        if usesOnboardingFaceOval {
+            return colorScheme == .dark ? 2 : 6
+        }
+        return isInlinePreview || (isFlashEnabled && isInlineHome) ? 0 : 4
     }
 
     @ViewBuilder
@@ -1316,6 +1679,48 @@ struct FaceScanCaptureScreen: View {
     }
 
     @ViewBuilder
+    private var delayedScanLaterLink: some View {
+        if let onSkip {
+            Button {
+                HapticManager.shared.impact(.light)
+                FaceScanScreenFlash.shared.deactivate()
+                cancelDelayedScanLaterLink()
+                onSkip()
+            } label: {
+                Text(AppCopy.t("Faire mon scan plus tard", en: "Do my scan later"))
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(
+                        onboardingUsesLightChrome
+                            ? Color.black.opacity(0.24)
+                            : Color.white.opacity(0.28)
+                    )
+            }
+            .buttonStyle(.processPlain)
+            .accessibilityLabel(AppCopy.t("Faire mon scan plus tard", en: "Do my scan later"))
+        }
+    }
+
+    private func scheduleDelayedScanLaterLinkIfNeeded() {
+        delayedScanLaterTask?.cancel()
+        guard onSkip != nil, usesOnboardingFaceOval else { return }
+
+        showsDelayedScanLaterLink = false
+        delayedScanLaterTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(10))
+            guard !Task.isCancelled, phase != .completed, onSkip != nil else { return }
+            withAnimation(.easeInOut(duration: 0.35)) {
+                showsDelayedScanLaterLink = true
+            }
+        }
+    }
+
+    private func cancelDelayedScanLaterLink() {
+        delayedScanLaterTask?.cancel()
+        delayedScanLaterTask = nil
+        showsDelayedScanLaterLink = false
+    }
+
+    @ViewBuilder
     private var skipScanButton: some View {
         if let onSkip {
             Button(action: {
@@ -1375,6 +1780,93 @@ struct FaceScanCaptureScreen: View {
                 .padding(.top, 8)
         }
         .padding(.horizontal, 16)
+    }
+
+    // MARK: - Camera permission
+
+    private var previewCameraPermissionTaskKey: String {
+        "\(showsInFrameCameraPermissionGate)-\(isCameraSessionActive)-\(scenePhase == .active)-\(cameraAuthorizationStatus.rawValue)"
+    }
+
+    @MainActor
+    private func requestSystemCameraPermissionIfNeeded() async {
+        guard usesSystemCameraPermissionPrompt else { return }
+        guard isCameraSessionActive, scenePhase == .active else { return }
+        guard cameraAuthorizationStatus == .notDetermined else { return }
+
+        let granted = await AVCaptureDevice.requestAccess(for: .video)
+        refreshCameraAuthorizationStatus()
+        if granted {
+            ProcessAnalytics.trackCameraAuthorized(source: "face_scan_preview")
+            inlineMeshResetNonce &+= 1
+            scanSessionID = UUID()
+        } else {
+            ProcessAnalytics.trackCameraDenied(source: "face_scan_preview")
+        }
+    }
+
+    private func refreshCameraAuthorizationStatus() {
+        cameraAuthorizationStatus = AVCaptureDevice.authorizationStatus(for: .video)
+    }
+
+    @MainActor
+    private func requestCameraAccessFromGate() async {
+        guard !isRequestingCameraAccess else { return }
+        isRequestingCameraAccess = true
+        defer { isRequestingCameraAccess = false }
+
+        let granted = await AVCaptureDevice.requestAccess(for: .video)
+        refreshCameraAuthorizationStatus()
+        if granted {
+            ProcessAnalytics.trackCameraAuthorized(source: "face_scan_capture_screen")
+        } else {
+            ProcessAnalytics.trackCameraDenied(source: "face_scan_capture_screen")
+        }
+    }
+
+    private func openCameraSettings() {
+        awaitingCameraSettingsReturn = true
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    @MainActor
+    private func handleCameraAccessGranted() {
+        guard showsInFrameCameraPermissionGate else { return }
+        HapticManager.shared.notification(.success)
+        ProcessSoundPlayer.playSettingsChange()
+        playCameraAccessRevealAnimation()
+        inlineMeshResetNonce &+= 1
+        scanSessionID = UUID()
+    }
+
+    private func playCameraAccessRevealAnimation() {
+        guard !reduceMotion else { return }
+        cameraAccessRevealScale = 0.94
+        cameraAccessRevealOpacity = 0.76
+        withAnimation(.spring(response: 0.48, dampingFraction: 0.84)) {
+            cameraAccessRevealScale = 1
+            cameraAccessRevealOpacity = 1
+        }
+    }
+
+    private func handleCameraPermissionPrimaryAction() {
+        if needsCameraPermissionPrompt {
+            Task { await requestCameraAccessFromGate() }
+        } else {
+            openCameraSettings()
+        }
+    }
+
+    @ViewBuilder
+    private func cameraPermissionGateOverlay(viewportSize: CGSize) -> some View {
+        FaceScanCameraPermissionGateOverlay(
+            viewportSize: viewportSize,
+            usesOnboardingFaceOval: usesOnboardingFaceOval,
+            needsCameraPermissionPrompt: needsCameraPermissionPrompt,
+            isRequestingCameraAccess: isRequestingCameraAccess,
+            onPrimaryAction: handleCameraPermissionPrimaryAction
+        )
     }
 
     // MARK: - Actions
@@ -1511,6 +2003,112 @@ private struct SkipScanButtonChromeModifier: ViewModifier {
             content
                 .processGlassButton(in: Capsule())
         }
+    }
+}
+
+// MARK: - Camera permission gate
+
+private struct FaceScanCameraPermissionGateOverlay: View {
+    let viewportSize: CGSize
+    let usesOnboardingFaceOval: Bool
+    let needsCameraPermissionPrompt: Bool
+    let isRequestingCameraAccess: Bool
+    let onPrimaryAction: () -> Void
+
+    var body: some View {
+        Group {
+            if usesOnboardingFaceOval {
+                gateContent
+                    .clipShape(FaceScanOnboardingOvalShape())
+            } else {
+                gateContent
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: viewportSize.width * 0.12,
+                            style: .continuous
+                        )
+                    )
+            }
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.985)))
+    }
+
+    private var gateContent: some View {
+        ZStack {
+            gateBackdrop
+
+            VStack(spacing: 14) {
+                Image(systemName: needsCameraPermissionPrompt ? "camera.fill" : "camera.slash.fill")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.88))
+
+                Text(titleCopy)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.94))
+                    .multilineTextAlignment(.center)
+
+                Text(subtitleCopy)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(Color.white.opacity(0.58))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 18)
+
+                gateActions
+            }
+            .padding(.vertical, 8)
+        }
+    }
+
+    @ViewBuilder
+    private var gateBackdrop: some View {
+        if usesOnboardingFaceOval {
+            FaceScanOnboardingOvalShape()
+                .fill(Color.black.opacity(0.72))
+        } else {
+            RoundedRectangle(cornerRadius: viewportSize.width * 0.12, style: .continuous)
+                .fill(Color.black.opacity(0.84))
+        }
+    }
+
+    @ViewBuilder
+    private var gateActions: some View {
+        Button(action: onPrimaryAction) {
+            Group {
+                if isRequestingCameraAccess {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text(AppCopy.t("Autoriser la caméra", en: "Allow camera"))
+                        .font(.system(size: 15, weight: .semibold))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+        .buttonBorderShape(.capsule)
+        .controlSize(.large)
+        .processGlassButton(in: Capsule())
+        .disabled(isRequestingCameraAccess)
+        .padding(.horizontal, 22)
+        .padding(.top, 4)
+    }
+
+    private var titleCopy: String {
+        needsCameraPermissionPrompt
+            ? AppCopy.t("Caméra requise", en: "Camera required")
+            : AppCopy.t("Caméra désactivée", en: "Camera disabled")
+    }
+
+    private var subtitleCopy: String {
+        needsCameraPermissionPrompt
+            ? AppCopy.t(
+                "Autorise l’accès pour lancer ton scan visage.",
+                en: "Allow access to start your face scan."
+            )
+            : AppCopy.t(
+                "Active la caméra pour Process dans Réglages iOS.",
+                en: "Turn on camera access for Process in iOS Settings."
+            )
     }
 }
 

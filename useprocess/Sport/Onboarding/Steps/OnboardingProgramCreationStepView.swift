@@ -12,18 +12,15 @@ struct OnboardingProgramCreationStepView: View {
     @EnvironmentObject private var permissionsManager: PermissionsManager
 
     var onComplete: () -> Void
-    var onBack: (() -> Void)?
 
     @StateObject private var creationViewModel = OnboardingProgramCreationViewModel()
 
     init(
         viewModel: OnboardingViewModel,
-        onComplete: @escaping () -> Void,
-        onBack: (() -> Void)? = nil
+        onComplete: @escaping () -> Void
     ) {
         self.viewModel = viewModel
         self.onComplete = onComplete
-        self.onBack = onBack
     }
 
     var body: some View {
@@ -77,13 +74,16 @@ struct OnboardingProgramCreationStepView: View {
         }
         .animation(.spring(response: 0.62, dampingFraction: 0.84), value: creationViewModel.displayMode)
         .task {
-            viewModel.isProgramCreationCompleted = false
             creationViewModel.bind(
                 viewModel,
                 healthManager: healthManager,
                 permissionsManager: permissionsManager
             )
-            creationViewModel.startIfNeeded()
+            if viewModel.isProgramCreationCompleted {
+                creationViewModel.restoreCompletedPresentationIfNeeded()
+            } else {
+                creationViewModel.startIfNeeded()
+            }
         }
         .onDisappear {
             creationViewModel.cancel()
@@ -94,7 +94,7 @@ struct OnboardingProgramCreationStepView: View {
     private func loadingContent(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
             Spacer()
-                .frame(height: OnboardingConstants.backOnlyContentTopInset + 4)
+                .frame(height: OnboardingConstants.titleTopPaddingFromScreenTop + 4)
 
             OnboardingProgramCreationHeroPercentage(value: creationViewModel.displayedPercentage)
 

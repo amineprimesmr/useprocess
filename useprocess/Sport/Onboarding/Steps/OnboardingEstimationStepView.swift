@@ -13,6 +13,7 @@ struct OnboardingEstimationStepView: View {
     let context: OnboardingEstimationContext
     let isAlreadyCompleted: Bool
     var onValidationChanged: ((Bool) -> Void)?
+    var onContinueUnlockProgressChanged: ((Double) -> Void)?
 
     @State private var projectedDate: Date?
     @State private var titleMessage = ""
@@ -72,6 +73,7 @@ struct OnboardingEstimationStepView: View {
         curveAnimationProgress = 0
         displayedDay = ""
         displayedMonth = ""
+        onContinueUnlockProgressChanged?(0)
         onValidationChanged?(false)
     }
 
@@ -171,6 +173,7 @@ struct OnboardingEstimationStepView: View {
 
         curveAnimationProgress = 0
         isCountdownFinished = false
+        onContinueUnlockProgressChanged?(0)
         onValidationChanged?(false)
 
         animationTask = Task { @MainActor in
@@ -203,6 +206,7 @@ struct OnboardingEstimationStepView: View {
             applyDateDisplay(for: final)
             updateDateDisplay(date: final)
             curveAnimationProgress = 1.0
+            onContinueUnlockProgressChanged?(1)
             return
         }
 
@@ -221,6 +225,7 @@ struct OnboardingEstimationStepView: View {
             } else if progress >= 1.0 {
                 curveAnimationProgress = 1.0
             }
+            onContinueUnlockProgressChanged?(curveAnimationProgress)
 
             let daysMoved = Int(round(Double(totalDayDelta) * progress))
             let displayDate = calendar.date(byAdding: .day, value: daysMoved * direction, to: startDate) ?? final
@@ -243,6 +248,7 @@ struct OnboardingEstimationStepView: View {
         applyDateDisplay(for: final)
         updateDateDisplay(date: final)
         curveAnimationProgress = 1.0
+        onContinueUnlockProgressChanged?(1)
     }
 
     private func cancelRunningTasks() {
@@ -268,6 +274,8 @@ struct OnboardingEstimationStepView: View {
         guard !isCountdownFinished else { return }
         isCountdownFinished = true
         cancelRunningTasks()
+        curveAnimationProgress = 1.0
+        onContinueUnlockProgressChanged?(1)
         onValidationChanged?(true)
         HapticManager.shared.notification(.success)
     }

@@ -1,18 +1,56 @@
 import AVFoundation
 import UIKit
 
+/// Profil caméra — visage serré vs corps entier (circuit lymphatique, scan 360°).
+enum ProcessScanCameraProfile: Sendable {
+    case facePortrait
+    case fullBody
+
+    nonisolated var isFullBody: Bool {
+        if case .fullBody = self { return true }
+        return false
+    }
+}
+
 /// Caméra des scans Process — selfie standard (TrueDepth), pas l’ultra grand-angle front.
 enum ProcessScanCamera {
-    /// Crop visuel UIKit / conteneur ARKit preview.
-    nonisolated static let frontPreviewLayoutZoom: CGFloat = 1.28
+    /// Crop visuel UIKit / conteneur ARKit preview — selfie serré, pas ultra grand-angle.
+    nonisolated static let frontPreviewLayoutZoom: CGFloat = 1.58
+    /// Circuit lymphatique / scan corps — pas de crop preview supplémentaire.
+    nonisolated static let fullBodyPreviewLayoutZoom: CGFloat = 1.0
+    /// Hub scan du jour (ovale compact) — crop portrait serré, effet selfie standard.
+    nonisolated static let scanDayHubPreviewZoom: CGFloat = 1.68
+    /// Zoom capteur front hub — pousse un peu plus que le plein écran.
+    nonisolated static let scanDayHubPortraitZoom: CGFloat = 1.42
+    /// Zoom capteur onboarding / plein écran ovale — optique portrait standard.
+    nonisolated static let onboardingPortraitSensorZoom: CGFloat = 1.42
+    /// Crop UIKit scan onboarding ovale (dashboard + premier scan).
+    nonisolated static let onboardingPortraitPreviewZoom: CGFloat = 1.62
     /// Zoom capteur AVCapture — ≥ 1 force l’optique « standard » sur iPhone dual-front.
-    nonisolated static let frontPortraitZoom: CGFloat = 1.28
+    nonisolated static let frontPortraitZoom: CGFloat = 1.38
 
-    static func device(position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+    static func device(
+        position: AVCaptureDevice.Position,
+        profile: ProcessScanCameraProfile = .facePortrait
+    ) -> AVCaptureDevice? {
         if position == .front {
-            return preferredFrontPortraitDevice()
+            switch profile {
+            case .facePortrait:
+                return preferredFrontPortraitDevice()
+            case .fullBody:
+                return preferredFrontFullBodyDevice()
+            }
         }
         return AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+    }
+
+    static func previewLayoutZoom(for profile: ProcessScanCameraProfile) -> CGFloat {
+        switch profile {
+        case .facePortrait:
+            return frontPreviewLayoutZoom
+        case .fullBody:
+            return fullBodyPreviewLayoutZoom
+        }
     }
 
     /// Selfie Face ID / TrueDepth en priorité — évite l’ultra-wide front quand un 2e capteur existe.
@@ -37,6 +75,49 @@ enum ProcessScanCamera {
         return discovery.devices.first
     }
 
+    /// Grand-angle front max — circuit lymphatique / tracking corps entier.
+    static func preferredFrontFullBodyDevice() -> AVCaptureDevice? {
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [
+                .builtInUltraWideCamera,
+                .builtInWideAngleCamera,
+                .builtInTrueDepthCamera
+            ],
+            mediaType: .video,
+            position: .front
+        )
+
+        if let widest = discovery.devices.min(by: {
+            if $0.minAvailableVideoZoomFactor != $1.minAvailableVideoZoomFactor {
+                return $0.minAvailableVideoZoomFactor < $1.minAvailableVideoZoomFactor
+            }
+            let rank: (AVCaptureDevice.DeviceType) -> Int = { type in
+                switch type {
+                case .builtInUltraWideCamera: return 0
+                case .builtInWideAngleCamera: return 1
+                default: return 2
+                }
+            }
+            return rank($0.deviceType) < rank($1.deviceType)
+        }) {
+            return widest
+        }
+
+        return preferredFrontPortraitDevice()
+    }
+
+    nonisolated static func applyZoomProfile(
+        to device: AVCaptureDevice,
+        profile: ProcessScanCameraProfile
+    ) {
+        switch profile {
+        case .facePortrait:
+            lockFrontCameraOutOfUltraWide(device)
+        case .fullBody:
+            lockFrontCameraForFullBody(device)
+        }
+    }
+
     /// À appeler **avant** `ARSession.run` / `startRunning`.
     nonisolated static func prepareForFrontPortraitScan() {
         disableCenterStageSafely()
@@ -54,26 +135,7 @@ enum ProcessScanCamera {
         }
     }
 
-    nonisolated static func lockFrontCameraOutOfUltraWide(_ device: AVCaptureDevice) {
-        guard device.position == .front else { return }
-
-        do {
-            try device.lockForConfiguration()
-            let maxZoom = device.maxAvailableVideoZoomFactor
-            let minZoom = device.minAvailableVideoZoomFactor
-            // minZoom < 1 ⇒ caméra virtuelle dual-front ; forcer ≥ 1 = optique standard.
-            let standardFloor = max(1.0, minZoom)
-            let target = min(max(standardFloor, frontPortraitZoom), maxZoom)
-            if abs(device.videoZoomFactor - target) > 0.02 {
-                device.videoZoomFactor = target
-            }
-            device.unlockForConfiguration()
-        } catch {
-            // Session déjà verrouillée (ARKit, etc.).
-        }
-    }
-
-    nonisolated static func lockActiveFrontCamerasIfPossible() {
+    nonisolated static func lockActiveFrontCamerasIfPossible(preferHubPortrait: Bool = false) {
         disableCenterStageSafely()
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [
@@ -84,7 +146,48 @@ enum ProcessScanCamera {
             mediaType: .video,
             position: .front
         )
-        discovery.devices.forEach(lockFrontCameraOutOfUltraWide)
+        let preferredZoom = preferHubPortrait ? scanDayHubPortraitZoom : frontPortraitZoom
+        discovery.devices.forEach {
+            lockFrontCameraOutOfUltraWide($0, preferredPortraitZoom: preferredZoom)
+        }
+    }
+
+    nonisolated static func lockFrontCameraOutOfUltraWide(
+        _ device: AVCaptureDevice,
+        preferredPortraitZoom: CGFloat = frontPortraitZoom
+    ) {
+        guard device.position == .front else { return }
+
+        do {
+            try device.lockForConfiguration()
+            let maxZoom = device.maxAvailableVideoZoomFactor
+            let minZoom = device.minAvailableVideoZoomFactor
+            // minZoom < 1 ⇒ caméra virtuelle dual-front ; forcer ≥ 1 = optique standard.
+            let standardFloor = max(1.0, minZoom)
+            let target = min(max(standardFloor, preferredPortraitZoom), maxZoom)
+            if abs(device.videoZoomFactor - target) > 0.02 {
+                device.videoZoomFactor = target
+            }
+            device.unlockForConfiguration()
+        } catch {
+            // Session déjà verrouillée (ARKit, etc.).
+        }
+    }
+
+    /// Zoom capteur minimal — champ le plus large pour voir genoux / bras levés.
+    nonisolated static func lockFrontCameraForFullBody(_ device: AVCaptureDevice) {
+        guard device.position == .front else { return }
+
+        do {
+            try device.lockForConfiguration()
+            let target = device.minAvailableVideoZoomFactor
+            if abs(device.videoZoomFactor - target) > 0.02 {
+                device.videoZoomFactor = target
+            }
+            device.unlockForConfiguration()
+        } catch {
+            // Session déjà verrouillée (ARKit, etc.).
+        }
     }
 
     /// Agrandit le layer dans un parent `clipsToBounds` — seul crop fiable sur ARKit / preview.

@@ -34,7 +34,7 @@ export async function resolveAcquisitionCode(rawCode) {
 
 export function buildCreatorLandingUrl(code, utm = {}) {
   const normalized = normalizeAcquisitionCode(code);
-  if (!normalized) return "https://useprocess.xyz/?get=1";
+  if (!normalized) return "https://useprocess.xyz/app";
   const url = new URL(`https://useprocess.xyz/join/${encodeURIComponent(normalized)}`);
   for (const [key, value] of Object.entries(utm || {})) {
     if (String(value || "").trim()) url.searchParams.set(key, String(value).trim());

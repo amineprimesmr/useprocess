@@ -5,6 +5,7 @@ struct SportOnboardingRootView: View {
 
     var body: some View {
         SportOnboardingView()
+            .id("fresh-onboarding-\(session.blocksAuthenticatedOnboardingRestore)-\(session.hasCompletedOnboarding)")
             .onAppear {
                 syncAuthWithSessionIfNeeded()
             }
@@ -12,10 +13,10 @@ struct SportOnboardingRootView: View {
 
     @MainActor
     private func syncAuthWithSessionIfNeeded() {
-        // Accès lazy — après le 1er frame, Firebase déjà configuré dans App.init.
         let authManager = AuthenticationManager.shared
-        if authManager.hasCompletedOnboarding != session.hasCompletedOnboarding {
-            authManager.hasCompletedOnboarding = session.hasCompletedOnboarding
+        authManager.hasCompletedOnboarding = session.hasCompletedOnboarding
+        if session.blocksAuthenticatedOnboardingRestore || !session.hasCompletedOnboarding {
+            authManager.isInOnboarding = true
         }
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FaceScanSessionView: View {
     @EnvironmentObject private var profileService: UnifiedProfileService
+    @Environment(\.colorScheme) private var colorScheme
 
     var onDismiss: () -> Void
     var onComplete: (FaceScanResult) -> Void
@@ -11,6 +12,11 @@ struct FaceScanSessionView: View {
     var onSkipCapture: (() -> Void)? = nil
     var showsMediaImport: Bool = false
     var compactSkipAction: Bool = false
+    var usesAppScreenBackground: Bool = false
+    var playsArrivalCountdown: Bool = false
+    var arrivalCountdownDelay: TimeInterval = 0
+    /// Capture → analyse : même push droite→gauche que le reste de l’onboarding.
+    var usesOnboardingPageTransitions: Bool = false
 
     @State private var captureInput: CaptureInput?
 
@@ -19,9 +25,15 @@ struct FaceScanSessionView: View {
         let markers: FaceWellnessMarkers
     }
 
+    private var sessionBackground: Color {
+        usesAppScreenBackground
+            ? ProcessBackgroundPalette.base(for: colorScheme)
+            : FaceScanWhoopPalette.canvas
+    }
+
     var body: some View {
         ZStack {
-            FaceScanWhoopPalette.canvas.ignoresSafeArea()
+            sessionBackground.ignoresSafeArea()
 
             Group {
                 if let input = captureInput {
@@ -38,10 +50,12 @@ struct FaceScanSessionView: View {
                             }
                         },
                         onRetryScan: {
-                            captureInput = nil
+                            withAnimation(transitionAnimation) {
+                                captureInput = nil
+                            }
                         }
                     )
-                    .transition(.opacity)
+                    .transition(pageTransition)
                 } else {
                     FaceScanCaptureScreen(
                         presentation: .fullScreen,
@@ -57,23 +71,39 @@ struct FaceScanSessionView: View {
                         compactSkipAction: compactSkipAction,
                         skipsHeadTiltPhase: true,
                         usesOnboardingFaceOval: true,
+                        usesAppScreenBackground: usesAppScreenBackground,
+                        playsArrivalCountdown: playsArrivalCountdown,
+                        arrivalCountdownDelay: arrivalCountdownDelay,
                         onContinue: { payload, markers in
-                            captureInput = CaptureInput(payload: payload, markers: markers)
+                            withAnimation(transitionAnimation) {
+                                captureInput = CaptureInput(payload: payload, markers: markers)
+                            }
                         }
                     )
-                    .transition(.opacity)
+                    .transition(pageTransition)
                 }
             }
             .id(captureInput?.payload.scanId ?? "capturing")
         }
         .processClearUIKitHostingBackground()
-        .background(FaceScanWhoopPalette.canvas)
-        .presentationBackground(FaceScanWhoopPalette.canvas)
+        .background(sessionBackground)
+        .presentationBackground(sessionBackground)
         .interactiveDismissDisabled(captureInput != nil)
+        .animation(transitionAnimation, value: captureInput?.payload.scanId)
         .onDisappear {
             FaceScanScreenFlash.shared.deactivate(animated: false)
             ProcessEveningCheckInPresenter.shared.dismissImmediately()
         }
+    }
+
+    private var transitionAnimation: Animation {
+        usesOnboardingPageTransitions ? OnboardingScanFlowMotion.animation : .easeInOut(duration: 0.28)
+    }
+
+    private var pageTransition: AnyTransition {
+        usesOnboardingPageTransitions
+            ? OnboardingScanFlowMotion.forwardTransition
+            : .opacity
     }
 }
 

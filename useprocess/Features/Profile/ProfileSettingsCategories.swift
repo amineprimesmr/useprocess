@@ -3,11 +3,11 @@ import SwiftUI
 /// Catégories du hub Paramètres — chaque entrée ouvre une sous-page.
 enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
     case studio
-    case affiliate
     case referral
     case account
     case health
     case app
+    case language
     case legal
 
     var id: String { rawValue }
@@ -16,11 +16,11 @@ enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
     var title: String {
         switch self {
         case .studio: return AppCopy.t("Studio contenu", en: "Content Studio")
-        case .affiliate: return AppCopy.t("Programme créateur", en: "Creator program")
-        case .referral: return AppCopy.t("Parrainage", en: "Referral Program")
+        case .referral: return AppCopy.t("Programme créateurs", en: "Creator Program")
         case .account: return AppCopy.t("Compte", en: "Account")
         case .health: return AppCopy.t("Santé & données", en: "Health & Data")
         case .app: return AppCopy.t("Application", en: "App")
+        case .language: return AppCopy.t("Langue", en: "Language")
         case .legal: return AppCopy.t("Aide & confidentialité", en: "Help & Privacy")
         }
     }
@@ -218,29 +218,17 @@ func profileSettingsDetail(for category: ProfileSettingsCategory) -> some View {
     switch category {
     case .studio:
         ProcessCreatorStudioView()
-            .processSettingsDetailPage()
-    case .affiliate:
-        ProcessAffiliateProgramDetailView()
-            .processSettingsDetailPage()
     case .referral:
         ProcessReferralProgramDetailView()
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background {
-                ProcessReferralTheme.pageBackground.ignoresSafeArea()
-            }
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationBarBackButtonHidden(true)
     case .account:
         ProfileSettingsAccountDetailView()
-            .processSettingsDetailPage()
     case .health:
         ProfileSettingsHealthDetailView()
-            .processSettingsDetailPage()
     case .app:
         ProfileSettingsAppDetailView()
-            .processSettingsDetailPage()
+    case .language:
+        ProfileSettingsLanguageDetailView()
     case .legal:
         ProfileSettingsLegalDetailView()
-            .processSettingsDetailPage()
     }
 }

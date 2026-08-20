@@ -4,6 +4,7 @@ import {
   db,
   httpStatusForError,
   normalizeReferralCode,
+  isValidReferralCode,
   registerReferralRecord,
   resolveReferrerUserId,
   setCors,
@@ -36,7 +37,7 @@ export const referralSyncProgram = onRequest(
 
       const referralCode = normalizeReferralCode(String(req.body?.referralCode ?? ""));
       const displayName = String(req.body?.displayName ?? "").trim();
-      if (!referralCode) {
+      if (!isValidReferralCode(referralCode)) {
         res.status(400).json({ error: "INVALID_CODE" });
         return;
       }
@@ -80,7 +81,7 @@ export const referralRegister = onRequest(
 
       const referralCode = normalizeReferralCode(String(req.body?.referralCode ?? ""));
       const displayName = String(req.body?.displayName ?? "").trim();
-      if (!referralCode) {
+      if (!isValidReferralCode(referralCode)) {
         res.status(400).json({ error: "INVALID_CODE" });
         return;
       }
@@ -114,6 +115,39 @@ export const referralRegister = onRequest(
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
       console.error("[referralRegister]", message);
+      res.status(httpStatusForError(message)).json({ error: message });
+    }
+  }
+);
+
+export const referralDashboard = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 45,
+    memory: "512MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      const uid = await verifyFirebaseUser(req);
+      await verifyAppAttestation(req);
+
+      const { fetchReferralDashboard } = await import("./referralCommissions");
+      const dashboard = await fetchReferralDashboard(uid);
+      res.status(200).json(dashboard);
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[referralDashboard]", message);
       res.status(httpStatusForError(message)).json({ error: message });
     }
   }

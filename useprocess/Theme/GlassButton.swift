@@ -107,6 +107,127 @@ private struct OnboardingPrimaryActionButtonStyle: ButtonStyle {
     }
 }
 
+struct OnboardingContinueFillRevealLabel: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    let title: String
+    let progress: Double
+
+    private var clampedProgress: Double {
+        min(1, max(0, progress))
+    }
+
+    private var isUnlocked: Bool {
+        clampedProgress >= 0.999
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let height = geometry.size.height
+            let fillWidth = width * clampedProgress
+            let leadingRadius = min(height / 2, max(fillWidth, 0))
+
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(trackColor)
+
+                fillLayer(
+                    fillWidth: fillWidth,
+                    height: height,
+                    leadingRadius: leadingRadius
+                )
+            }
+            .clipShape(Capsule(style: .continuous))
+            .overlay {
+                fillRevealTitle(fillWidth: fillWidth, totalWidth: width)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 58)
+        .animation(reduceMotion ? nil : .linear(duration: 0.09), value: clampedProgress)
+    }
+
+    @ViewBuilder
+    private func fillLayer(fillWidth: CGFloat, height: CGFloat, leadingRadius: CGFloat) -> some View {
+        if isUnlocked {
+            Capsule(style: .continuous)
+                .fill(Color.white)
+        } else if fillWidth > 0.5 {
+            UnevenRoundedRectangle(
+                topLeadingRadius: leadingRadius,
+                bottomLeadingRadius: leadingRadius,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0,
+                style: .continuous
+            )
+            .fill(Color.white)
+            .frame(width: fillWidth, height: height, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func fillRevealTitle(fillWidth: CGFloat, totalWidth: CGFloat) -> some View {
+        let clampedFill = min(max(fillWidth, 0), totalWidth)
+        let unfilledWidth = max(0, totalWidth - clampedFill)
+
+        ZStack {
+            Text(title)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(unfilledTextColor)
+                .mask(alignment: .trailing) {
+                    Rectangle()
+                        .frame(width: unfilledWidth)
+                }
+
+            Text(title)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(filledTextColor)
+                .mask(alignment: .leading) {
+                    Rectangle()
+                        .frame(width: clampedFill)
+                }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var trackColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.14)
+            : Color.black.opacity(0.88)
+    }
+
+    private var unfilledTextColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.72)
+            : Color.white.opacity(0.88)
+    }
+
+    private var filledTextColor: Color {
+        .black
+    }
+}
+
+struct OnboardingContinueFillRevealButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let isUnlocked: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Capsule())
+            .shadow(
+                color: Color.black.opacity(colorScheme == .dark ? (isUnlocked ? 0.35 : 0.12) : 0.14),
+                radius: configuration.isPressed ? 8 : (isUnlocked ? 12 : 6),
+                y: configuration.isPressed ? 2 : 4
+            )
+            .opacity(configuration.isPressed && isUnlocked ? 0.92 : 1)
+            .scaleEffect(configuration.isPressed && isUnlocked ? 0.985 : 1)
+            .animation(.spring(response: 0.24, dampingFraction: 0.82), value: configuration.isPressed)
+    }
+}
+
 extension View {
     @ViewBuilder
     func glassStyle() -> some View {

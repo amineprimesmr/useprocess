@@ -50,19 +50,17 @@ struct AppShellView: View {
                     MainAppView()
                         .processAppStoreReviewPrompts()
                         .transition(.opacity)
-                        .id("main-app-\(appLanguage.code.rawValue)")
                 } else {
                     PaywallView(
                         allowsLeaveWithoutPurchase: false,
                         analyticsSource: "subscription_gate"
                     )
                     .transition(.opacity)
-                    .id("subscription-gate-\(appLanguage.code.rawValue)")
                 }
             } else {
                 SportOnboardingRootView()
                     .transition(.opacity)
-                    .id("welcome-onboarding-\(appLanguage.code.rawValue)")
+                    .id("welcome-onboarding-\(session.hasCompletedOnboarding)")
             }
         }
         .environment(\.locale, appLanguage.locale)

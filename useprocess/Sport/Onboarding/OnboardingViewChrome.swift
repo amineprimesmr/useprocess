@@ -65,6 +65,7 @@ struct OnboardingHeaderChrome: View {
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 5)
+                .transition(.opacity)
             } else {
                 Spacer(minLength: 0)
                 if OnboardingStep(rawValue: currentStep) == .faceLeverageIntro {
@@ -76,5 +77,13 @@ struct OnboardingHeaderChrome: View {
         .frame(height: OnboardingConstants.backButtonSize, alignment: .center)
         .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
         .frame(maxWidth: .infinity, alignment: .top)
+        .ios26SafeAnimation(
+            (OnboardingStep(rawValue: currentStep)?.semanticOrderIndex ?? 0)
+                <= OnboardingStep.firstNameInput.semanticOrderIndex
+                ? .onboardingTransition
+                : .onboardingPage,
+            value: currentStep
+        )
+        .ios26SafeAnimation(.glowUpResultsCover, value: chatSegmentedProgress != nil)
     }
 }

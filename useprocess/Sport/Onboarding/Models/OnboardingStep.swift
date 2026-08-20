@@ -87,7 +87,7 @@ enum OnboardingStep: Int, CaseIterable {
     case biometricAuth = 58                    // ✨ Authentification biométrique (empreinte digitale)
     case notificationPermission = 59           // Conservé compat sauvegarde — page notifs supprimée, pop-up au paywall
     case transformationPreview = 64            // ✨ Témoignages avant / après (slider) avant le dashboard
-    case dashboardPreview = 69                 // ✨ Dashboard 3D après les témoignages, avant le paywall
+    case dashboardPreview = 69                 // ✨ Aperçu dashboard + 1er scan (après chat Moss)
     case dreamFaceCommit = 70                  // ✨ Slider d'engagement + pop notifications avant le paywall
     case payment = 60
     case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
@@ -103,7 +103,7 @@ enum OnboardingStep: Int, CaseIterable {
              .healthKitPermissions, .biometricAuth,
              .transformationPreview, .dashboardPreview, .dreamFaceCommit, .programCreation,
              .payment, .processWelcome, .referralReward, .featuresUnlock,
-             .referralCode, .appleSignIn, .appRating, .sleepDataRecovery,
+             .appleSignIn, .appRating, .sleepDataRecovery,
              .processResultsDurability,
              .faceLeverageIntro,
              .weightGoalIncompatible:
@@ -179,12 +179,12 @@ enum OnboardingStep: Int, CaseIterable {
         .sleepWindowReveal,
         .planReady,
         .onboardingInfo,
-        .referralCode,
         .appRating,
         .caloriesGoal,
         .carryOverCalories,
         .biometricAuth,
         .transformationPreview,
+        .referralCode,
         .dashboardPreview,
         .dreamFaceCommit,
         .payment,
@@ -228,12 +228,12 @@ enum OnboardingStep: Int, CaseIterable {
         }
     }
 
-    /// Reprise sans abonnement : on ne relance pas le paywall, on revient au dashboard.
+    /// Reprise sans abonnement : on ne relance pas le paywall, on revient à l'engagement visage.
     var unpaidResumeStep: OnboardingStep {
         switch self {
         case .payment, .appleSignIn, .dreamFaceCommit,
              .processWelcome, .referralReward, .featuresUnlock, .complete:
-            return .dashboardPreview
+            return .dreamFaceCommit
         default:
             return self
         }

@@ -87,6 +87,21 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         startProgressAnimation()
     }
 
+    /// Reprise après kill — ne pas relancer l'animation si déjà terminée.
+    func restoreCompletedPresentationIfNeeded() {
+        guard !hasStarted else { return }
+        hasStarted = true
+        phase = .complete
+        displayMode = .success
+        progressPanelVisible = true
+        progress = 1
+        displayedPercentage = 100
+        barProgresses = Array(repeating: 1, count: progressBarLabels.count)
+        visibleBarCount = progressBarLabels.count
+        continueUnlocked = true
+        successContentRevealed = true
+    }
+
     func handlePopupAnswer(_ answer: Bool) {
         guard popupPhaseIndex >= 0, let popupKind = activePopup?.kind else { return }
 
@@ -252,7 +267,6 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
 
     private func presentPopup(_ popup: OnboardingAnalysisProgressConfig.Popup, phaseIndex: Int) async {
         if popup.kind == .healthKit, healthManager?.isAuthorized == true {
-            onboardingViewModel?.healthKitGranted = true
             return
         }
 
@@ -325,9 +339,7 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
     }
 
     private func handleHealthKitPopupAnswer(_ answer: Bool) async {
-        guard let healthManager, let onboardingViewModel else { return }
-
-        onboardingViewModel.isRequestingHealthKit = true
+        guard let healthManager else { return }
 
         if answer {
             // Wait for the system sheets only — sync runs after progress resumes
@@ -344,9 +356,6 @@ final class OnboardingProgramCreationViewModel: ObservableObject {
         } else {
             ProcessAnalytics.trackHealthKitSkipped(source: "onboarding_program_creation")
         }
-
-        onboardingViewModel.healthKitGranted = healthManager.isAuthorized
-        onboardingViewModel.isRequestingHealthKit = false
     }
 }
 

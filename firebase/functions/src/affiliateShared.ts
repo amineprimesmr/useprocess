@@ -1,21 +1,24 @@
 import * as admin from "firebase-admin";
 import { isPaidPurchaseEvent } from "./revenueCat";
-import { normalizeReferralCode, resolveReferrerUserId } from "./referralShared";
+import {
+  COMMISSION_HOLD_DAYS,
+  COMMISSION_NET_FACTOR,
+  COMMISSION_RATE,
+  LIFETIME_PRODUCT_ID,
+  commissionDocId as sharedCommissionDocId,
+  commissionFromRevenueCatEvent,
+  type CommissionStatus,
+} from "./commissionShared";
+import { normalizeReferralCode, resolveReferrerUserId, isValidReferralCode } from "./referralShared";
 
-export const AFFILIATE_COMMISSION_RATE = Number(
-  process.env.AFFILIATE_COMMISSION_RATE ?? "0.40"
-);
-export const AFFILIATE_HOLD_DAYS = Number(process.env.AFFILIATE_HOLD_DAYS ?? "30");
-export const AFFILIATE_NET_FACTOR = Number(process.env.AFFILIATE_NET_FACTOR ?? "0.70");
-export const LIFETIME_PRODUCT_ID = "com.useprocess.lifetime";
+export const AFFILIATE_COMMISSION_RATE = COMMISSION_RATE;
+export const AFFILIATE_HOLD_DAYS = COMMISSION_HOLD_DAYS;
+export const AFFILIATE_NET_FACTOR = COMMISSION_NET_FACTOR;
+export { LIFETIME_PRODUCT_ID };
 
 export type AffiliateStatus = "pending" | "active" | "suspended";
 export type AffiliateAttributionStatus = "active" | "churned" | "refunded";
-export type AffiliateCommissionStatus =
-  | "pending_hold"
-  | "payable"
-  | "paid"
-  | "clawed_back";
+export type AffiliateCommissionStatus = CommissionStatus;
 
 export interface AffiliateCodeDoc {
   affiliateId: string;
@@ -140,7 +143,7 @@ export async function resolveCodeKind(
   }
 
   const normalizedReferral = normalizeReferralCode(code);
-  if (!normalizedReferral) return null;
+  if (!isValidReferralCode(normalizedReferral)) return null;
   const referrerUserId = await resolveReferrerUserId(normalizedReferral);
   if (!referrerUserId) return null;
 
@@ -151,47 +154,11 @@ export async function resolveCodeKind(
   };
 }
 
-export function commissionFromRevenueCatEvent(event: any): {
-  grossCents: number;
-  netCents: number;
-  commissionCents: number;
-  commissionRate: number;
-  currency: string;
-  productId?: string;
-} | null {
-  const productId = String(event?.product_id ?? "").trim() || undefined;
-  if (productId === LIFETIME_PRODUCT_ID) return null;
-
-  const price = Number(event?.price_in_purchased_currency ?? event?.price);
-  if (!Number.isFinite(price) || price <= 0) return null;
-
-  const grossCents = Math.round(price * 100);
-  const netCents = Math.round(grossCents * AFFILIATE_NET_FACTOR);
-  const commissionRate = AFFILIATE_COMMISSION_RATE;
-  const commissionCents = Math.round(netCents * commissionRate);
-  const currency = String(event?.currency ?? event?.currency_code ?? "EUR")
-    .trim()
-    .toUpperCase()
-    .slice(0, 8) || "EUR";
-
-  if (commissionCents <= 0) return null;
-
-  return {
-    grossCents,
-    netCents,
-    commissionCents,
-    commissionRate,
-    currency,
-    productId,
-  };
-}
-
 export function commissionDocId(affiliateId: string, rcEventId: string): string {
-  const safeEvent = String(rcEventId || "unknown")
-    .replace(/[^a-zA-Z0-9_-]/g, "_")
-    .slice(0, 120);
-  return `${affiliateId}_${safeEvent}`;
+  return sharedCommissionDocId(affiliateId, rcEventId);
 }
+
+export { commissionFromRevenueCatEvent };
 
 export async function registerAffiliateAttribution(params: {
   affiliateId: string;

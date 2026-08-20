@@ -41,6 +41,8 @@ La clé `appl_` est **publique** (prévue pour le client). Ne jamais committer u
 
 Voir aussi `docs/PAYWALL_PRICING_AB_TEST.md` pour la checklist A/B complète.
 
+**Retention Messaging (annulation abo iOS)** : [`firebase/RETENTION_MESSAGING.md`](../firebase/RETENTION_MESSAGING.md) — copy FR/EN, Apple ID `6753808143`, bouton « Gérer mon abonnement » dans l’app.
+
 Vérifier aussi : **Apps** → app iOS liée avec credentials App Store Connect.
 
 ## Tests

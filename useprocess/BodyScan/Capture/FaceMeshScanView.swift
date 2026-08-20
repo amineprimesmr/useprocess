@@ -62,6 +62,8 @@ struct FaceMeshScanView: UIViewRepresentable {
     /// Pas de phase « penche la tête ».
     var skipsHeadTiltPhase: Bool = true
     var cameraZoom: CGFloat = 1
+    var portraitFieldOfView: CGFloat = 32
+    var prefersHubPortraitLock: Bool = false
     var onComplete: (FaceScanCapturePayload) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -82,6 +84,8 @@ struct FaceMeshScanView: UIViewRepresentable {
             allowsScreenFlash: allowsScreenFlash,
             skipsHeadTiltPhase: skipsHeadTiltPhase,
             cameraZoom: cameraZoom,
+            portraitFieldOfView: portraitFieldOfView,
+            prefersHubPortraitLock: prefersHubPortraitLock,
             onComplete: onComplete
         )
     }
@@ -127,6 +131,9 @@ struct FaceMeshScanView: UIViewRepresentable {
         context.coordinator.isSessionRunning = isSessionRunning
         if isSessionRunning {
             context.coordinator.startSession(on: view)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak coordinator = context.coordinator] in
+                coordinator?.configurePortraitCameraEarly()
+            }
         } else {
             context.coordinator.isSessionPaused = true
         }
@@ -141,6 +148,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         let zoom = max(ProcessScanCamera.frontPreviewLayoutZoom, cameraZoom)
         uiView.previewZoom = zoom
         context.coordinator.cameraZoom = zoom
+        context.coordinator.portraitFieldOfView = portraitFieldOfView
+        context.coordinator.prefersHubPortraitLock = prefersHubPortraitLock
         context.coordinator.onComplete = onComplete
         context.coordinator.updateViewportSize(uiView.bounds.size)
 
@@ -185,6 +194,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         var allowsScreenFlash: Bool
         var skipsHeadTiltPhase: Bool
         var cameraZoom: CGFloat
+        var portraitFieldOfView: CGFloat
+        var prefersHubPortraitLock: Bool
         var onComplete: (FaceScanCapturePayload) -> Void
 
         weak var arView: ARSCNView?
@@ -289,6 +300,8 @@ struct FaceMeshScanView: UIViewRepresentable {
             allowsScreenFlash: Bool,
             skipsHeadTiltPhase: Bool,
             cameraZoom: CGFloat,
+            portraitFieldOfView: CGFloat,
+            prefersHubPortraitLock: Bool,
             onComplete: @escaping (FaceScanCapturePayload) -> Void
         ) {
             _progress = progress
@@ -307,6 +320,8 @@ struct FaceMeshScanView: UIViewRepresentable {
             self.allowsScreenFlash = allowsScreenFlash
             self.skipsHeadTiltPhase = skipsHeadTiltPhase
             self.cameraZoom = cameraZoom
+            self.portraitFieldOfView = portraitFieldOfView
+            self.prefersHubPortraitLock = prefersHubPortraitLock
             self.onComplete = onComplete
         }
 
@@ -380,7 +395,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             view.session.run(config, options: [.resetTracking, .removeExistingAnchors])
             isSessionPaused = false
             DispatchQueue.main.async {
-                ProcessScanCamera.lockActiveFrontCamerasIfPossible()
+                ProcessScanCamera.lockActiveFrontCamerasIfPossible(preferHubPortrait: self.prefersHubPortraitLock)
             }
         }
 
@@ -405,9 +420,10 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         func session(_ session: ARSession, didUpdate frame: ARFrame) {
             guard !completed, !isTornDown else { return }
-            if frontZoomLockAttempts < 8 {
+            configurePortraitCameraIfNeeded()
+            if frontZoomLockAttempts < 16 {
                 frontZoomLockAttempts += 1
-                ProcessScanCamera.lockActiveFrontCamerasIfPossible()
+                ProcessScanCamera.lockActiveFrontCamerasIfPossible(preferHubPortrait: prefersHubPortraitLock)
             }
             let intensity = frame.lightEstimate?.ambientIntensity ?? 1000
             currentAmbientIntensity = intensity
@@ -512,12 +528,16 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         private func configurePortraitCameraIfNeeded() {
             guard !didConfigurePortraitCamera, let view = arView else { return }
-            ProcessScanCamera.lockActiveFrontCamerasIfPossible()
+            ProcessScanCamera.lockActiveFrontCamerasIfPossible(preferHubPortrait: prefersHubPortraitLock)
             guard let camera = view.pointOfView?.camera else { return }
-            camera.fieldOfView = 32
+            camera.fieldOfView = portraitFieldOfView
             camera.zNear = 0.01
             camera.zFar = 2
             didConfigurePortraitCamera = true
+        }
+
+        func configurePortraitCameraEarly() {
+            configurePortraitCameraIfNeeded()
         }
 
         private func markFaceLost(force: Bool = false) {

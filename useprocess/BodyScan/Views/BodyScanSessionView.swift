@@ -100,7 +100,8 @@ struct BodyScanSessionView: View {
             BodyScanLiveCameraRepresentable(
                 session: camera.session,
                 landmarks: model.liveLandmarks,
-                isReady: model.liveFeedback.isReady
+                isReady: model.liveFeedback.isReady,
+                previewLayoutZoom: ProcessScanCamera.fullBodyPreviewLayoutZoom
             )
             .ignoresSafeArea()
 
@@ -204,7 +205,7 @@ struct BodyScanSessionView: View {
         wireCamera()
         switch camera.authorizationStatus {
         case .authorized:
-            camera.start(preferredPosition: .front)
+            camera.start(preferredPosition: .front, profile: .fullBody)
             model.startBodyTurntable()
         case .notDetermined:
             model.phase = .permissions

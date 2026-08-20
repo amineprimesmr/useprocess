@@ -209,10 +209,6 @@ enum OnboardingProfileChatQuestionBank {
         return .init(
             id: "profile_summary",
             promptBlocks: [
-                OnboardingCopy.t(
-                    "85 % des utilisateurs se sentent plus confiants après seulement 4 semaines. Le reste suit.",
-                    en: "85% of users feel more confident after just 4 weeks. Everything else starts to follow."
-                ),
                 nameLine,
                 OnboardingCopy.t(
                     "J’ai verrouillé tes réponses — ton dashboard est prêt 🙌",
@@ -316,7 +312,7 @@ enum OnboardingProfileChatQuestionBank {
         case "face_scan_offer", "profile_summary":
             guard viewModel.completedProfileChatQuestionIDs.contains(questionID)
                 || viewModel.completedProfileChatQuestionIDs.contains("face_scan_offer") else { return nil }
-            return OnboardingCopy.t("Emmène-moi →", en: "Take me there →")
+            return OnboardingCopy.t("Voir mon dashboard", en: "See my dashboard")
 
         case "sport_pick":
             guard let sport = OnboardingDataModel.shared.selectedSports.first else { return nil }

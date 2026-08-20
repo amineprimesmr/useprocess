@@ -21,20 +21,27 @@ struct OnboardingGlowUpResultsStepView: View {
     @State private var showStatRating = false
     @State private var showStatResults = false
     @State private var showContinueButton = false
+    @State private var isContinuing = false
 
     private let accentBlue = Color(red: 0.0, green: 0.478, blue: 1.0)
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 22) {
+        GeometryReader { geometry in
+            VStack(alignment: .leading, spacing: 0) {
                 header
                 comparisonCard
+                    .frame(maxWidth: .infinity)
+                    .frame(height: comparisonHeight(in: geometry.size))
+                    .padding(.top, 32)
                 testimonialBlock
+                    .padding(.top, 12)
                 statsRow
+                    .padding(.top, 60)
+                Spacer(minLength: 0)
             }
-            .padding(.top, OnboardingConstants.mossChatContentTopInset)
+            .padding(.top, OnboardingConstants.backOnlyContentTopInset)
             .padding(.horizontal, 24)
-            .padding(.bottom, 20)
+            .padding(.bottom, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(OnboardingTheme.screenBackground.ignoresSafeArea())
@@ -46,20 +53,33 @@ struct OnboardingGlowUpResultsStepView: View {
                 .accessibilityHidden(!showContinueButton)
         }
         .onAppear {
-            showContinueButton = true
+            isContinuing = false
+            showContinueButton = false
             startRevealSequence()
+        }
+        .onDisappear {
+            isContinuing = false
         }
     }
 
+    private func comparisonHeight(in size: CGSize) -> CGFloat {
+        let reservedChrome = OnboardingConstants.backOnlyContentTopInset + 284
+        let available = max(size.height - reservedChrome, 148)
+        let fromWidth = (size.width - 48) * 1.06
+        return min(available, fromWidth)
+    }
+
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             (
-                Text(OnboardingCopy.t("De vrais résultats ", en: "Real glow-up "))
+                Text(OnboardingCopy.t("Le ", en: ""))
                     .foregroundStyle(OnboardingTheme.primaryText)
-                + Text(OnboardingCopy.t("glow-up", en: "results"))
+                + Text(OnboardingCopy.t("debloat", en: "Debloat"))
                     .foregroundStyle(accentBlue)
+                + Text(OnboardingCopy.t(", ça se voit", en: " you can see"))
+                    .foregroundStyle(OnboardingTheme.primaryText)
             )
-            .font(.system(size: 30, weight: .bold))
+            .font(.system(size: 24, weight: .bold))
             .fixedSize(horizontal: false, vertical: true)
             .staggerReveal(showHeadline, reduceMotion: reduceMotion)
 
@@ -67,7 +87,7 @@ struct OnboardingGlowUpResultsStepView: View {
                 "Manny · 19 · fais glisser pour comparer",
                 en: "Manny · 19 · drag to compare"
             ))
-            .font(.system(size: 15, weight: .regular))
+            .font(.system(size: 13, weight: .regular))
             .foregroundStyle(OnboardingTheme.mutedText)
             .staggerReveal(showSubtext, reduceMotion: reduceMotion)
         }
@@ -81,24 +101,24 @@ struct OnboardingGlowUpResultsStepView: View {
             durationWeeks: 6,
             playsIntroHint: true,
             beforeBadgeTitle: OnboardingCopy.t("Jour 1", en: "Day 1"),
-            afterBadgeTitle: OnboardingCopy.t("Sem. 6", en: "Week 6"),
+            afterBadgeTitle: OnboardingCopy.t("Semaine 6", en: "Week 6"),
             desaturateBefore: true
         )
-        .aspectRatio(0.82, contentMode: .fit)
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.10), radius: 16, y: 8)
         .staggerReveal(showComparison, reduceMotion: reduceMotion)
     }
 
     private var testimonialBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(OnboardingCopy.t(
                 "« Mâchoire plus nette et peau plus claire dès la semaine 4 — juste en restant régulier. »",
                 en: "“Sharper jawline and clearer skin by week 4 — just from staying consistent.”"
             ))
-            .font(.system(size: 17, weight: .regular))
+            .font(.system(size: 14, weight: .regular))
             .italic()
             .foregroundStyle(OnboardingTheme.primaryText)
             .fixedSize(horizontal: false, vertical: true)
+            .lineLimit(3)
 
             HStack(spacing: 8) {
                 ZStack {
@@ -126,7 +146,7 @@ struct OnboardingGlowUpResultsStepView: View {
         HStack(spacing: 10) {
             statCard(
                 label: OnboardingCopy.t("UTILISATEURS", en: "USERS"),
-                value: "120k+",
+                value: "+10k",
                 style: .dark
             )
             .staggerReveal(showStatUsers, reduceMotion: reduceMotion)
@@ -163,13 +183,13 @@ struct OnboardingGlowUpResultsStepView: View {
                 .minimumScaleFactor(0.8)
 
             Text(value)
-                .font(.system(size: 22, weight: .bold))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(valueColor(for: style))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -216,6 +236,8 @@ struct OnboardingGlowUpResultsStepView: View {
 
     private var continueButton: some View {
         Button {
+            guard !isContinuing else { return }
+            isContinuing = true
             HapticManager.shared.impact(.medium)
             onContinue()
         } label: {
@@ -226,9 +248,11 @@ struct OnboardingGlowUpResultsStepView: View {
                 .frame(height: 58)
         }
         .onboardingPrimaryActionStyle()
+        .disabled(isContinuing)
         .padding(.horizontal, 34)
         .padding(.top, 8)
-        .padding(.bottom, 50)
+        .padding(.bottom, 34)
+        .contentShape(Rectangle())
         .background(OnboardingTheme.screenBackground.opacity(0.96))
         .accessibilityLabel(OnboardingCopy.continueCTAUpper)
     }
@@ -256,6 +280,7 @@ struct OnboardingGlowUpResultsStepView: View {
         reveal(after: 0.54) { showStatUsers = true }
         reveal(after: 0.64) { showStatRating = true }
         reveal(after: 0.74) { showStatResults = true }
+        reveal(after: 0.82) { showContinueButton = true }
     }
 
     private func revealAllImmediately() {

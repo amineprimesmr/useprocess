@@ -8,7 +8,10 @@ final class OnboardingProgressService {
     private static let legacyPrefix = (Bundle.main.bundleIdentifier ?? "useprocess") + ".sport."
 
     private var storageUserId: String {
-        UserScopedStorage.currentUserId() ?? "onboarding-local"
+        if AppSession.shared.hasCompletedOnboarding {
+            return UserScopedStorage.currentUserId() ?? "onboarding-local"
+        }
+        return "onboarding-in-progress"
     }
 
     private func scopedKey(_ suffix: String) -> String {
@@ -16,6 +19,29 @@ final class OnboardingProgressService {
     }
 
     private init() {}
+
+    /// Unifie la progression sous `onboarding-in-progress` (Auth pas encore prêt au 1er lancement).
+    func migrateInProgressStorageIfNeeded() {
+        guard !AppSession.shared.hasCompletedOnboarding else { return }
+
+        let targetUID = "onboarding-in-progress"
+        var sourceUIDs: [String] = ["onboarding-local"]
+        if let uid = UserScopedStorage.currentUserId() {
+            sourceUIDs.append(uid)
+        }
+
+        for suffix in ["current_step", "last_completed_step", "visited_steps", "answers", "flow_progress"] {
+            let targetKey = UserScopedStorage.key("onboarding.progress.\(suffix)", userId: targetUID)
+            guard userDefaults.object(forKey: targetKey) == nil else { continue }
+
+            for uid in sourceUIDs {
+                let sourceKey = UserScopedStorage.key("onboarding.progress.\(suffix)", userId: uid)
+                guard let value = userDefaults.object(forKey: sourceKey) else { continue }
+                userDefaults.set(value, forKey: targetKey)
+                break
+            }
+        }
+    }
 
     func saveCurrentStep(_ step: Int) {
         userDefaults.set(step, forKey: scopedKey("current_step"))
@@ -63,9 +89,31 @@ final class OnboardingProgressService {
     }
 
     func resetProgress() {
-        for suffix in ["current_step", "last_completed_step", "visited_steps", "answers", "flow_progress"] {
-            userDefaults.removeObject(forKey: scopedKey(suffix))
+        resetProgress(userId: storageUserId)
+        clearLegacyProgressKeys()
+    }
+
+    /// Efface la progression onboarding pour tous les identifiants connus (suppression de compte).
+    func resetProgressForAccountDeletion(primaryUID: String) {
+        var userIds = Set(UserScopedStorage.likelyUserIds(primary: primaryUID))
+        userIds.insert("onboarding-local")
+        userIds.insert("anonymous")
+        userIds.insert("local-user")
+
+        for uid in userIds {
+            resetProgress(userId: uid)
         }
+
+        clearLegacyProgressKeys()
+    }
+
+    private func resetProgress(userId: String) {
+        for suffix in ["current_step", "last_completed_step", "visited_steps", "answers", "flow_progress"] {
+            userDefaults.removeObject(forKey: UserScopedStorage.key("onboarding.progress.\(suffix)", userId: userId))
+        }
+    }
+
+    private func clearLegacyProgressKeys() {
         userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_current_step")
         userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_last_completed_step")
         userDefaults.removeObject(forKey: Self.legacyPrefix + "onboarding_visited_steps")

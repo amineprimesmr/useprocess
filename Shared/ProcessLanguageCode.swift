@@ -37,7 +37,7 @@ enum ProcessLanguageCode: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var localeIdentifier: String {
+    nonisolated var localeIdentifier: String {
         switch self {
         case .french: return "fr_FR"
         case .english: return "en_US"
@@ -94,7 +94,7 @@ enum ProcessLanguageCode: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    static func resolveFromDevice(
+    nonisolated static func resolveFromDevice(
         preferredLanguages: [String] = Locale.preferredLanguages
     ) -> ProcessLanguageCode {
         for tag in preferredLanguages {
@@ -110,7 +110,7 @@ enum ProcessLanguageCode: String, CaseIterable, Identifiable, Sendable {
         return .english
     }
 
-    static func normalize(_ raw: String) -> ProcessLanguageCode {
+    nonisolated static func normalize(_ raw: String) -> ProcessLanguageCode {
         let lower = raw.lowercased().replacingOccurrences(of: "_", with: "-")
         if lower.hasPrefix("fr") { return .french }
         if lower.hasPrefix("ja") { return .japanese }

@@ -110,7 +110,7 @@ struct GenderSelectionStepView: View {
         }
         .onAppear {
             // Animation d'entrée
-            withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
+            withAnimation(.easeOut(duration: 0.92).delay(0.24)) {
                 isAnimating = true
             }
         }

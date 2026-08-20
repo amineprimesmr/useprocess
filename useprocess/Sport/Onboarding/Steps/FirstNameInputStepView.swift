@@ -97,7 +97,7 @@ struct FirstNameInputStepView: View {
         guard !didBootstrap else { return }
         didBootstrap = true
         loadExistingFirstName()
-        DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingTransitionTiming.keyboardFocusDelay) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingTransitionTiming.earlyKeyboardFocusDelay) {
             isTextFieldFocusedState = true
         }
     }

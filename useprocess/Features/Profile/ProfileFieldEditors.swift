@@ -4,7 +4,6 @@ import UIKit
 enum ProfileEditDestination: Hashable {
     case firstName
     case gender
-    case birthDate
 }
 
 @ViewBuilder
@@ -21,15 +20,9 @@ func profileFieldEditor(for destination: ProfileEditDestination) -> some View {
             ProfileGenderEditorView(
                 initialValue: UnifiedProfileService.shared.currentProfile?.gender ?? .male
             )
-        case .birthDate:
-            ProfileBirthDateEditorView(
-                initialValue: UnifiedProfileService.shared.currentProfile?.birthDate
-                    ?? Calendar.current.date(byAdding: .year, value: -25, to: Date())
-                    ?? Date()
-            )
         }
     }
-    .processSettingsDetailPage()
+    .processSettingsOpalPage()
 }
 
 @MainActor
@@ -41,6 +34,22 @@ private func persistProfileChanges(
     update(&unified)
     unified.updateLastUpdated()
     try? await profileService.saveProfile(unified)
+}
+
+@MainActor
+private func saveProfileField(
+    using profileService: UnifiedProfileService,
+    dismiss: DismissAction,
+    afterSave: (() -> Void)? = nil,
+    update: @escaping (inout UnifiedUserProfile) -> Void
+) {
+    Task {
+        await ProcessSettingsChangeFeedback.performSave {
+            await persistProfileChanges(using: profileService, update: update)
+            afterSave?()
+        }
+        dismiss()
+    }
 }
 
 // MARK: - Name
@@ -56,43 +65,54 @@ struct ProfileNameEditorView: View {
     }
 
     var body: some View {
-        ZStack {
+        VStack(spacing: 0) {
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: AppCopy.t("Prénom", en: "First Name"), onDismiss: { dismiss() })
+                Text(AppCopy.t("Comment t'appelles-tu ?", en: "What's your name?"))
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 28)
 
-                ProfileEditorHero(
-                    headline: AppCopy.t("Comment tu t'appelles ? 👋", en: "What's your name? 👋"),
-                    subtitle: AppCopy.t("C'est le prénom qu'on utilise partout dans Process.", en: "This is the first name we use throughout Process.")
-                )
+                Text(AppCopy.t("On l'utilisera quand on te parlera", en: "We'll use it when we talk to you"))
+                    .font(.system(size: 17))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 10)
 
-                TextField("", text: $name, prompt:
-                    Text(AppCopy.t("Ton prénom", en: "Your first name"))
-                        .foregroundStyle(ProfileEditTheme.placeholder)
-                        .font(.system(size: 28, weight: .bold))
+                ProcessSettingsOpalField(
+                    text: $name,
+                    placeholder: AppCopy.t("Ton prénom", en: "Your first name")
                 )
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color.primary)
-                .multilineTextAlignment(.center)
                 .focused($isFocused)
-                .padding(.horizontal, 24)
-                .padding(.top, 36)
+                .padding(.top, 32)
 
                 Spacer(minLength: 0)
             }
         }
-        .toolbar(.hidden, for: .navigationBar)
+        .processSettingsStandardToolbar(
+            title: AppCopy.t("Prénom", en: "First Name"),
+            onBack: { dismiss() }
+        )
+        .processSettingsOpalPage()
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            ProfileEditorBottomSaveButton(
-                title: AppCopy.save,
+            ProcessSettingsOpalGlowButton(
+                title: AppCopy.continueCTA,
                 disabled: trimmedName.isEmpty
             ) {
-                Task {
-                    await persistProfileChanges(using: profileService) { $0.firstName = trimmedName }
-                    ProcessAnalytics.trackFirstNameSet(trimmedName, source: "profile_edit")
-                    ProcessCreatorModeStore.shared.evaluate(firstName: trimmedName)
-                    dismiss()
+                saveProfileField(
+                    using: profileService,
+                    dismiss: dismiss,
+                    afterSave: {
+                        ProcessAnalytics.trackFirstNameSet(trimmedName, source: "profile_edit")
+                        ProcessCreatorModeStore.shared.evaluate(firstName: trimmedName)
+                    }
+                ) {
+                    $0.firstName = trimmedName
                 }
             }
+            .padding(.bottom, 10)
         }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -119,41 +139,47 @@ struct ProfileLastNameEditorView: View {
     }
 
     var body: some View {
-        ZStack {
+        VStack(spacing: 0) {
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: AppCopy.t("Nom de famille", en: "Last Name"), onDismiss: { dismiss() })
+                Text(AppCopy.t("Quel est ton nom ?", en: "What's your last name?"))
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 28)
 
-                ProfileEditorHero(
-                    headline: AppCopy.t("Quel est ton nom ?", en: "What's your last name?"),
-                    subtitle: AppCopy.t("Il apparaît sur ton profil et dans les détails du compte.", en: "It appears on your profile and in your account details.")
-                )
+                Text(AppCopy.t("Il apparaît sur ton profil et dans les détails du compte.", en: "It appears on your profile and in your account details."))
+                    .font(.system(size: 17))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 10)
 
-                TextField("", text: $lastName, prompt:
-                    Text(AppCopy.t("Ton nom de famille", en: "Your last name"))
-                        .foregroundStyle(ProfileEditTheme.placeholder)
-                        .font(.system(size: 28, weight: .bold))
+                ProcessSettingsOpalField(
+                    text: $lastName,
+                    placeholder: AppCopy.t("Ton nom de famille", en: "Your last name")
                 )
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color.primary)
-                .multilineTextAlignment(.center)
                 .focused($isFocused)
-                .padding(.horizontal, 24)
-                .padding(.top, 36)
+                .padding(.top, 32)
 
                 Spacer(minLength: 0)
             }
         }
-        .toolbar(.hidden, for: .navigationBar)
+        .processSettingsStandardToolbar(
+            title: AppCopy.t("Nom de famille", en: "Last Name"),
+            onBack: { dismiss() }
+        )
+        .processSettingsOpalPage()
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            ProfileEditorBottomSaveButton(
+            ProcessSettingsOpalGlowButton(
                 title: AppCopy.save,
                 disabled: trimmedLastName.isEmpty
             ) {
-                Task {
-                    await persistProfileChanges(using: profileService) { $0.lastName = trimmedLastName }
-                    dismiss()
+                saveProfileField(using: profileService, dismiss: dismiss) {
+                    $0.lastName = trimmedLastName
                 }
             }
+            .padding(.bottom, 10)
         }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -173,109 +199,62 @@ struct ProfileGenderEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var profileService: UnifiedProfileService
     @State private var selectedGender: Gender
+    @State private var highlightedGender: Gender?
 
     init(initialValue: Gender) {
         _selectedGender = State(initialValue: initialValue)
     }
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                ProfileEditorHeader(
-                    title: AppCopy.t("Sexe", en: "Gender"),
-                    showsSave: true,
-                    onDismiss: { dismiss() },
-                    onSave: {
-                        Task {
-                            await persistProfileChanges(using: profileService) { $0.gender = selectedGender }
-                            dismiss()
-                        }
-                    }
-                )
+        ProcessSettingsOpalScrollPage(
+            title: AppCopy.t("Sexe", en: "Gender")
+        ) {
+            ProcessSettingsOpalSectionTitle(title: AppCopy.t("Sexe", en: "Gender"))
 
-                AccountDetailsCard {
-                    ForEach(Gender.allCases, id: \.self) { gender in
-                        Button {
+            ProcessSettingsOpalCard {
+                ForEach(Array(Gender.allCases.enumerated()), id: \.element) { index, gender in
+                    if index > 0 { ProcessSettingsOpalRowDivider() }
+
+                    Button {
+                        ProcessSettingsChangeFeedback.performRowSelection(
+                            highlight: $highlightedGender,
+                            value: gender,
+                            isSameValue: selectedGender == gender
+                        ) {
                             selectedGender = gender
-                        } label: {
-                            AccountDetailsGlassRow {
-                                HStack {
-                                    Text(gender.displayName)
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(Color.primary)
-                                    Spacer()
-                                    if selectedGender == gender {
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 15, weight: .semibold))
-                                            .foregroundStyle(Color.primary)
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 16)
-                                .contentShape(Rectangle())
-                            }
                         }
-                        .buttonStyle(.processPlain)
+                    } label: {
+                        ProcessSettingsOpalRow(
+                            icon: "person.fill",
+                            title: gender.displayName,
+                            trailingIcon: selectedGender == gender
+                                ? .status(AppCopy.t("Actif", en: "Active"))
+                                : .none,
+                            showsDivider: false
+                        )
+                        .processSettingsSelectionHighlight(
+                            isHighlighted: highlightedGender == gender,
+                            isActive: selectedGender == gender
+                        )
+                    }
+                    .processSettingsOpalRowButton()
+                }
+            }
+            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
+        }
+        .processSettingsScrollToolBar(
+            title: AppCopy.t("Sexe", en: "Gender"),
+            titleAlignment: .center,
+            onBack: { dismiss() },
+            trailing: {
+                ProcessSettingsSaveToolbarButton {
+                    saveProfileField(using: profileService, dismiss: dismiss) {
+                        $0.gender = selectedGender
                     }
                 }
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                .padding(.top, 20)
-
-                Spacer(minLength: 0)
             }
-        }
-        .toolbar(.hidden, for: .navigationBar)
-    }
-}
-
-// MARK: - Birth date
-
-struct ProfileBirthDateEditorView: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var profileService: UnifiedProfileService
-    @State private var birthDate: Date
-
-    init(initialValue: Date) {
-        _birthDate = State(initialValue: initialValue)
-    }
-
-    var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                ProfileEditorHeader(
-                    title: AppCopy.t("Date de naissance", en: "Date of Birth"),
-                    showsSave: true,
-                    onDismiss: { dismiss() },
-                    onSave: {
-                        Task {
-                            await persistProfileChanges(using: profileService) { profile in
-                                profile.birthDate = birthDate
-                                profile.age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? profile.age
-                            }
-                            dismiss()
-                        }
-                    }
-                )
-
-                DatePicker(
-                    "",
-                    selection: $birthDate,
-                    in: ...Date(),
-                    displayedComponents: .date
-                )
-                .datePickerStyle(.wheel)
-                .labelsHidden()
-                .environment(\.locale, ProcessAppLanguage.shared.locale)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accountDetailsGlassRelief()
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                .padding(.top, 12)
-
-                Spacer(minLength: 0)
-            }
-        }
-        .toolbar(.hidden, for: .navigationBar)
+        )
+        .processSettingsOpalPage()
     }
 }
 
@@ -292,50 +271,55 @@ struct ProfileBioEditorView: View {
     }
 
     var body: some View {
-        ZStack {
+        ScrollView {
             VStack(spacing: 0) {
-                ProfileEditorHeader(
-                    title: "Bio",
-                    showsSave: true,
-                    onDismiss: { dismiss() },
-                    onSave: {
-                        save()
-                        dismiss()
-                    }
-                )
+                Text(AppCopy.t("Écris quelque chose sur toi 💭", en: "Write something about yourself 💭"))
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 28)
 
-                ProfileEditorHero(
-                    headline: AppCopy.t("Écris quelque chose sur toi 💭", en: "Write something about yourself 💭"),
-                    subtitle: AppCopy.t("Ce que tu aimes, ce que tu fais, ou tout ce qui te semble juste.", en: "What you like, what you do, or anything that feels right.")
-                )
+                Text(AppCopy.t("Ce que tu aimes, ce que tu fais, ou tout ce qui te semble juste.", en: "What you like, what you do, or anything that feels right."))
+                    .font(.system(size: 17))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 10)
 
-                TextField(
-                    "",
+                ProcessSettingsOpalField(
                     text: $bio,
-                    prompt: Text(AppCopy.t("Ajoute ta bio", en: "Add your bio"))
-                        .foregroundStyle(ProfileEditTheme.placeholder)
-                        .font(.system(size: 22, weight: .bold)),
+                    placeholder: AppCopy.t("Ajoute ta bio", en: "Add your bio"),
                     axis: .vertical
                 )
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Color.primary)
-                .lineLimit(1...8)
                 .focused($isFocused)
-                .padding(.horizontal, 24)
-                .padding(.top, 28)
+                .padding(.top, 32)
 
-                Spacer(minLength: 0)
+                Text(bioCharacterLabel)
+                    .font(.system(size: 13))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 16)
             }
+            .padding(.bottom, 32)
         }
-        .toolbar(.hidden, for: .navigationBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Text(bioCharacterLabel)
-                .font(.system(size: 13))
-                .foregroundStyle(ProfileEditTheme.textSecondary)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 12)
-                .background(ProfileEditTheme.background)
-        }
+        .scrollIndicators(.hidden)
+        .processSettingsScrollToolBar(
+            title: AppCopy.t("Bio", en: "Bio"),
+            titleAlignment: .center,
+            onBack: { dismiss() },
+            trailing: {
+                ProcessSettingsSaveToolbarButton {
+                    Task {
+                        await ProcessSettingsChangeFeedback.performSave {
+                            save()
+                        }
+                        dismiss()
+                    }
+                }
+            }
+        )
+        .processSettingsOpalPage()
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 isFocused = true
@@ -369,39 +353,51 @@ struct ProfileEducationEditorView: View {
     }
 
     var body: some View {
-        ZStack {
+        VStack(spacing: 0) {
             VStack(spacing: 0) {
-                ProfileEditorHeader(title: AppCopy.t("Éducation", en: "Education"), onDismiss: { dismiss() })
+                Text(AppCopy.t("Où tu étudies? 🎓", en: "Where do you study? 🎓"))
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 28)
 
-                ProfileEditorHero(
-                    headline: AppCopy.t("Où tu étudies? 🎓", en: "Where do you study? 🎓"),
-                    subtitle: AppCopy.t("Ton école, ta filière, ou le campus où tu passes tes journées.", en: "Your school, major, or the campus where you spend your days.")
-                )
+                Text(AppCopy.t("Ton école, ta filière, ou le campus où tu passes tes journées.", en: "Your school, major, or the campus where you spend your days."))
+                    .font(.system(size: 17))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 10)
 
-                TextField("", text: $education, prompt:
-                    Text(AppCopy.t("Ajoute ton école", en: "Add your school"))
-                        .foregroundStyle(ProfileEditTheme.placeholder)
-                        .font(.system(size: 28, weight: .bold))
+                ProcessSettingsOpalField(
+                    text: $education,
+                    placeholder: AppCopy.t("Ajoute ton école", en: "Add your school"),
+                    textAlignment: .center
                 )
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color.primary)
-                .multilineTextAlignment(.center)
                 .focused($isFocused)
-                .padding(.horizontal, 24)
-                .padding(.top, 36)
+                .padding(.top, 32)
 
                 Spacer(minLength: 0)
             }
         }
-        .toolbar(.hidden, for: .navigationBar)
+        .processSettingsStandardToolbar(
+            title: AppCopy.t("Éducation", en: "Education"),
+            onBack: { dismiss() }
+        )
+        .processSettingsOpalPage()
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            ProfileEditorBottomSaveButton(
+            ProcessSettingsOpalGlowButton(
                 title: AppCopy.save,
                 disabled: trimmedEducation.isEmpty
             ) {
-                save()
-                dismiss()
+                Task {
+                    await ProcessSettingsChangeFeedback.performSave {
+                        save()
+                    }
+                    dismiss()
+                }
             }
+            .padding(.bottom, 10)
         }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -446,89 +442,93 @@ struct ProfileInterestsEditorView: View {
     }
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                ProfileEditorHeader(
-                    title: AppCopy.t("Intérêts", en: "Interests"),
-                    showsSave: true,
-                    onDismiss: { dismiss() },
-                    onSave: {
-                        save()
-                        dismiss()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    VStack(spacing: 10) {
+                        Text(AppCopy.t("Qu'est-ce qui te passionne en ce moment ? ✨", en: "What are you into right now? ✨"))
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+
+                        Text(AppCopy.t("Musique, mèmes, cueillette de champignons : tout ce qui te passionne. Ajoute le tien si ce n'est pas répertorié.", en: "Music, memes, mushroom hunting—anything you're into. Add yours if it's not listed."))
+                            .font(.system(size: 17))
+                            .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                            .multilineTextAlignment(.center)
                     }
+                    .padding(.horizontal, 28)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+                }
+
+                ProcessSettingsOpalField(
+                    text: $searchText,
+                    placeholder: AppCopy.t("Trouve ou ajoute ce que tu aimes...", en: "Find or add something you like...")
                 )
+                .focused($isSearchFocused)
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            ProfileEditorHero(
-                                headline: AppCopy.t("Qu'est-ce qui te passionne en ce moment ? ✨", en: "What are you into right now? ✨"),
-                                subtitle: AppCopy.t("Musique, mèmes, cueillette de champignons : tout ce qui te passionne. Ajoute le tien si ce n'est pas répertorié.", en: "Music, memes, mushroom hunting—anything you're into. Add yours if it's not listed.")
-                            )
-                            .padding(.bottom, 4)
-                        }
+                ForEach(filteredCategories) { category in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(category.title)
+                            .font(.system(size: 13))
+                            .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                            .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
 
-                        TextField("", text: $searchText, prompt:
-                            Text(AppCopy.t("Trouve ou ajoute ce que tu aimes...", en: "Find or add something you like..."))
-                                .foregroundStyle(ProfileEditTheme.placeholder)
-                                .font(.system(size: 22, weight: .bold))
-                        )
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(Color.primary)
-                        .focused($isSearchFocused)
-                        .padding(.horizontal, 16)
-
-                        ForEach(filteredCategories) { category in
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text(category.title)
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(ProfileEditTheme.textSecondary)
-                                    .padding(.horizontal, 16)
-
-                                ProfileInterestFlowLayout(spacing: 8) {
-                                    ForEach(category.interests) { interest in
-                                        ProfileInterestChip(
-                                            interest: interest,
-                                            isSelected: selectedIDs.contains(interest.id)
-                                        ) {
-                                            toggle(interest)
-                                        }
-                                    }
+                        ProfileInterestFlowLayout(spacing: 8) {
+                            ForEach(category.interests) { interest in
+                                ProfileInterestChip(
+                                    interest: interest,
+                                    isSelected: selectedIDs.contains(interest.id)
+                                ) {
+                                    toggle(interest)
                                 }
-                                .padding(.horizontal, 16)
                             }
                         }
+                        .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
                     }
-                    .padding(.bottom, 72)
                 }
-                .scrollIndicators(.hidden)
+
+                Text(AppCopy.t("Choisis-en jusqu'à \(ProfileInterestsCatalog.maxSelection)", en: "Choose up to \(ProfileInterestsCatalog.maxSelection)"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
             }
+            .padding(.bottom, 32)
         }
-        .toolbar(.hidden, for: .navigationBar)
-        .overlay(alignment: .bottom) {
-            Text(AppCopy.t("Choisis-en jusqu'à \(ProfileInterestsCatalog.maxSelection)", en: "Choose up to \(ProfileInterestsCatalog.maxSelection)"))
-                .font(.system(size: 13))
-                .foregroundStyle(ProfileEditTheme.textSecondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    LinearGradient(
-                        colors: [.clear, ProfileEditTheme.background.opacity(0.85), ProfileEditTheme.background],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-        }
+        .scrollIndicators(.hidden)
+        .processSettingsScrollToolBar(
+            title: AppCopy.t("Intérêts", en: "Interests"),
+            titleAlignment: .center,
+            onBack: { dismiss() },
+            trailing: {
+                ProcessSettingsSaveToolbarButton {
+                    Task {
+                        await ProcessSettingsChangeFeedback.performSave {
+                            save()
+                        }
+                        dismiss()
+                    }
+                }
+            }
+        )
+        .processSettingsOpalPage()
     }
 
     private func toggle(_ interest: ProfileInterest) {
         if selectedIDs.contains(interest.id) {
             selectedIDs.remove(interest.id)
+            ProcessSettingsChangeFeedback.playSelection()
             return
         }
 
-        guard selectedIDs.count < ProfileInterestsCatalog.maxSelection else { return }
+        guard selectedIDs.count < ProfileInterestsCatalog.maxSelection else {
+            HapticManager.shared.notification(.warning)
+            return
+        }
         selectedIDs.insert(interest.id)
+        ProcessSettingsChangeFeedback.play()
     }
 
     private func save() {

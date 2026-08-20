@@ -36,13 +36,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
+exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const coachValidation_1 = require("./coachValidation");
 const premiumAccess_1 = require("./premiumAccess");
+const referralShared_1 = require("./referralShared");
 const appleSignIn_1 = require("./appleSignIn");
 admin.initializeApp();
 const anthropicApiKey = (0, params_1.defineSecret)("ANTHROPIC_API_KEY");
@@ -192,14 +193,8 @@ async function deleteReferralArtifactsForUser(uid) {
         .get();
     const rawCode = program.data()?.referralCode;
     if (typeof rawCode === "string" && rawCode.trim()) {
-        const cleaned = rawCode.trim().toUpperCase().replace(/\s+/g, "");
-        const normalized = cleaned.includes("-")
-            ? cleaned.replace(/[^A-Z0-9-]/g, "")
-            : (() => {
-                const alnum = cleaned.replace(/[^A-Z0-9]/g, "");
-                return alnum.length <= 4 ? alnum : `${alnum.slice(0, 4)}-${alnum.slice(4)}`;
-            })();
-        if (!normalized)
+        const normalized = (0, referralShared_1.normalizeReferralCode)(rawCode);
+        if (!(0, referralShared_1.isValidReferralCode)(normalized))
             return;
         const codeRef = db.collection("referralCodes").doc(normalized);
         const codeSnap = await codeRef.get();
@@ -502,6 +497,7 @@ exports.coachStream = (0, https_1.onRequest)({
 var referral_1 = require("./referral");
 Object.defineProperty(exports, "referralSyncProgram", { enumerable: true, get: function () { return referral_1.referralSyncProgram; } });
 Object.defineProperty(exports, "referralRegister", { enumerable: true, get: function () { return referral_1.referralRegister; } });
+Object.defineProperty(exports, "referralDashboard", { enumerable: true, get: function () { return referral_1.referralDashboard; } });
 var referralRewards_1 = require("./referralRewards");
 Object.defineProperty(exports, "referralConfirmSubscription", { enumerable: true, get: function () { return referralRewards_1.referralConfirmSubscription; } });
 Object.defineProperty(exports, "referralRevenueCatWebhook", { enumerable: true, get: function () { return referralRewards_1.referralRevenueCatWebhook; } });
@@ -514,6 +510,7 @@ Object.defineProperty(exports, "affiliateDashboard", { enumerable: true, get: fu
 Object.defineProperty(exports, "affiliateAdminCreate", { enumerable: true, get: function () { return affiliate_1.affiliateAdminCreate; } });
 Object.defineProperty(exports, "affiliateAdminProvisionAuth", { enumerable: true, get: function () { return affiliate_1.affiliateAdminProvisionAuth; } });
 Object.defineProperty(exports, "affiliateAdminApprove", { enumerable: true, get: function () { return affiliate_1.affiliateAdminApprove; } });
+Object.defineProperty(exports, "affiliateAdminListPending", { enumerable: true, get: function () { return affiliate_1.affiliateAdminListPending; } });
 Object.defineProperty(exports, "affiliateAdminMarkPaid", { enumerable: true, get: function () { return affiliate_1.affiliateAdminMarkPaid; } });
 var affiliateCommissions_1 = require("./affiliateCommissions");
 Object.defineProperty(exports, "affiliateRevenueCatWebhook", { enumerable: true, get: function () { return affiliateCommissions_1.affiliateRevenueCatWebhook; } });

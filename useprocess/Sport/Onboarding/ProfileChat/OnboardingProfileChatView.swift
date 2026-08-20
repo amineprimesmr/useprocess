@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import AVFoundation
 
 struct OnboardingProfileChatView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -31,16 +30,25 @@ struct OnboardingProfileChatView: View {
                 .ignoresSafeArea()
 
             if !chatViewModel.isGlowUpResultsPresented {
-                MossBreathingArc(intensity: colorScheme == .dark ? 0.55 : 0.28)
+                MossBreathingArc(
+                    palette: .processBlue,
+                    intensity: colorScheme == .dark ? 1.05 : 0.62
+                )
             }
+
+            mossConversationSurface
+                .opacity(chatViewModel.isGlowUpResultsPresented ? 0 : 1)
+                .offset(x: chatViewModel.isGlowUpResultsPresented ? -64 : 0)
+                .allowsHitTesting(!chatViewModel.isGlowUpResultsPresented)
+                .accessibilityHidden(chatViewModel.isGlowUpResultsPresented)
+                .clipped()
 
             if chatViewModel.isGlowUpResultsPresented {
                 OnboardingGlowUpResultsStepView {
                     Task { await chatViewModel.completeGlowUpResults() }
                 }
-                .transition(.opacity)
-            } else {
-                mossConversationSurface
+                .zIndex(10)
+                .transition(.glowUpResultsCover)
             }
         }
         .onChange(of: chatViewModel.shouldFinish) { _, should in
@@ -70,6 +78,9 @@ struct OnboardingProfileChatView: View {
                     || chatViewModel.currentQuestion?.id == "face_scan_offer" {
                     chatViewModel.restoreFaceScanOfferAnswers()
                 }
+            }
+            onboardingViewModel.onOnboardingFaceScanSkip = { [chatViewModel] in
+                chatViewModel.faceScanDidSkip()
             }
             onboardingViewModel.onOnboardingFaceScanResult = { [chatViewModel] result in
                 chatViewModel.adoptDedicatedFaceScanResult(result)
@@ -127,6 +138,7 @@ struct OnboardingProfileChatView: View {
     }
 
     private func refreshChatHeaderProgress() {
+        guard !chatViewModel.isGlowUpResultsPresented else { return }
         onboardingViewModel.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
             questionID: chatViewModel.currentQuestion?.id,
             engine: mossEngine
@@ -135,20 +147,55 @@ struct OnboardingProfileChatView: View {
 
     // MARK: - Moss conversation surface
 
+    private var isProfileSummaryStep: Bool {
+        chatViewModel.currentQuestion?.kind == .profileSummary
+    }
+
+    private var isProfileSummaryCardVisible: Bool {
+        isProfileSummaryStep && mossEngine.controlsVisible
+    }
+
     private var mossConversationSurface: some View {
         let conversationTopInset = OnboardingConstants.mossChatContentTopInset
 
         return ZStack(alignment: .top) {
+            if isProfileSummaryCardVisible {
+                profileSummaryReadySurface(conversationTopInset: conversationTopInset)
+                    .transition(.opacity)
+            } else {
+                mossChatScrollSurface(conversationTopInset: conversationTopInset)
+                    .transition(.opacity)
+            }
+        }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: isProfileSummaryCardVisible)
+    }
+
+    private func profileSummaryReadySurface(conversationTopInset: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+                .frame(maxHeight: 20)
+
+            if let question = chatViewModel.currentQuestion,
+               question.kind == .profileSummary {
+                mossAnswerControls(for: question)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, conversationTopInset)
+        .padding(.horizontal, Theme.margin)
+        .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+    }
+
+    private func mossChatScrollSurface(conversationTopInset: CGFloat) -> some View {
+        ZStack(alignment: .top) {
             GeometryReader { geometry in
                 ScrollViewReader { proxy in
                     ScrollView {
                         mossConversationStack
                             .padding(.top, 12)
                             .padding(.bottom, Theme.Space.xl)
-                            .padding(
-                                .bottom,
-                                chatViewModel.currentQuestion?.kind == .profileSummary ? 36 : 0
-                            )
                             .frame(
                                 maxWidth: .infinity,
                                 minHeight: geometry.size.height,
@@ -160,7 +207,7 @@ struct OnboardingProfileChatView: View {
                         scrollToLatestMessage(proxy: proxy)
                     }
                     .onChange(of: mossEngine.controlsVisible) { _, visible in
-                        guard visible else { return }
+                        guard visible, !isProfileSummaryStep else { return }
                         scrollToInlineAnswer(proxy: proxy)
                     }
                 }
@@ -174,9 +221,10 @@ struct OnboardingProfileChatView: View {
         let engine = mossEngine
         let messages = engine.messages
         let lastIndex = messages.count - 1
+        let messageWindow = isProfileSummaryStep ? 2 : MossChatStyle.windowSize
 
-        return VStack(alignment: .leading, spacing: Theme.Space.xl) {
-            ForEach(Array(messages.enumerated()).suffix(MossChatStyle.windowSize), id: \.element.id) { item in
+        return VStack(alignment: .leading, spacing: Theme.Space.l) {
+            ForEach(Array(messages.enumerated()).suffix(messageWindow), id: \.element.id) { item in
                 let depth = lastIndex - item.offset
                 MossConversationBubble(message: item.element)
                     .padding(.top, firstMessageTopInset(for: item.element))
@@ -201,7 +249,8 @@ struct OnboardingProfileChatView: View {
                 }
 
                 if chatViewModel.showsAnswerOptions,
-                   let question = chatViewModel.currentQuestion {
+                   let question = chatViewModel.currentQuestion,
+                   question.kind != .profileSummary {
                     mossAnswerControls(for: question)
                         .opacity(engine.controlsVisible ? 1 : 0)
                         .allowsHitTesting(profileSummaryHitsEnabled(question, engine: engine))
@@ -216,8 +265,8 @@ struct OnboardingProfileChatView: View {
             .id("inlineAnswer")
         }
         .padding(.horizontal, Theme.margin)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.32), value: messages.count)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: engine.controlsVisible)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.18), value: messages.count)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.18), value: engine.controlsVisible)
     }
 
     /// Espace sous la barre de progression — uniquement la toute première bulle Moss.
@@ -253,14 +302,11 @@ struct OnboardingProfileChatView: View {
     }
 
     private func scrollToInlineAnswer(proxy: ScrollViewProxy) {
-        let anchor: UnitPoint = chatViewModel.currentQuestion?.kind == .profileSummary
-            ? .bottom
-            : .center
         if reduceMotion {
-            proxy.scrollTo("inlineAnswer", anchor: anchor)
+            proxy.scrollTo("inlineAnswer", anchor: .center)
         } else {
             withAnimation(.smooth(duration: 0.28)) {
-                proxy.scrollTo("inlineAnswer", anchor: anchor)
+                proxy.scrollTo("inlineAnswer", anchor: .center)
             }
         }
     }
@@ -281,7 +327,7 @@ struct OnboardingProfileChatView: View {
                 .settleIn(0)
 
             case .yesNo:
-                HStack(spacing: Theme.Space.s) {
+                VStack(spacing: MossAnswerChipMetrics.stackSpacing) {
                     MossChip(title: OnboardingCopy.t("Oui", en: "Yes"), isSelected: false) {
                         Task { await chatViewModel.submitYesNo(true) }
                     }
@@ -306,7 +352,10 @@ struct OnboardingProfileChatView: View {
                 )
 
             case .singleChoice:
-                MossFlowLayout(spacing: 8) {
+                OnboardingChatScrollableAnswerStack(
+                    choiceCount: question.choices.count,
+                    maxHeight: 220
+                ) {
                     ForEach(Array(question.choices.enumerated()), id: \.element.id) { index, choice in
                         MossChip(title: choice.label, isSelected: false) {
                             Task { await chatViewModel.submitSingleChoice(choice.id) }
@@ -316,7 +365,10 @@ struct OnboardingProfileChatView: View {
                 }
 
             case .multiChoice:
-                MossFlowLayout(spacing: 8) {
+                OnboardingChatScrollableAnswerStack(
+                    choiceCount: question.choices.count,
+                    maxHeight: 180
+                ) {
                     ForEach(Array(question.choices.enumerated()), id: \.element.id) { index, choice in
                         MossChip(
                             title: choice.label,
@@ -356,13 +408,10 @@ struct OnboardingProfileChatView: View {
                 OnboardingProfileChatProfileSummarySection(
                     sections: OnboardingProfileSummaryBuilder.sections(for: onboardingViewModel),
                     isRevealed: mossEngine.controlsVisible,
-                    isContinueEnabled: !chatViewModel.isSubmittingAnswer,
                     onContinue: {
                         Task { await chatViewModel.submitProfileSummaryContinue() }
                     }
                 )
-                .zIndex(20)
-                .settleIn(0)
 
             case .autoPlanCreation, .answersAnalysis, .analysisProgress:
                 EmptyView()
@@ -395,12 +444,6 @@ struct OnboardingProfileChatView: View {
     @MainActor
     private func launchOnboardingFaceScan() async {
         guard onboardingViewModel.presentedOnboardingFaceScan == nil else { return }
-        let granted = await AVCaptureDevice.requestAccess(for: .video)
-        if granted {
-            ProcessAnalytics.trackCameraAuthorized(source: "onboarding_face_scan")
-        } else {
-            ProcessAnalytics.trackCameraDenied(source: "onboarding_face_scan")
-        }
         onboardingViewModel.presentOnboardingFaceScan()
         await Task.yield()
         await chatViewModel.submitFaceScanNow()

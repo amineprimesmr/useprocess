@@ -7,8 +7,10 @@ struct ProcessCrispChatView: View {
 }
 
 struct ProcessSupportChatView: View {
+    var initialDraftMessage: String? = nil
+
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.appTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var viewModel = ProcessSupportChatViewModel()
     @FocusState private var isInputFocused: Bool
@@ -19,39 +21,29 @@ struct ProcessSupportChatView: View {
     var body: some View {
         NavigationStack {
             chatScroll
+                .processSettingsStandardToolbar(
+                    title: AppCopy.t("Discuter avec l'assistance", en: "Chat with Support"),
+                    onBack: closeChat
+                )
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     composer
                 }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        VStack(spacing: 1) {
-                            Text(AppCopy.t("Équipe Process", en: "Process team"))
-                                .font(.headline.weight(.semibold))
-                            Text(AppCopy.t("Réponse dans l'app", en: "Replies in the app"))
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(theme.secondaryText)
-                        }
-                    }
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(theme.primaryText)
-                                .frame(width: 34, height: 34)
-                                .background(
-                                    Circle()
-                                        .fill(theme.cardBackgroundStrong.opacity(theme.isDark ? 0.95 : 0.82))
-                                )
-                        }
-                        .accessibilityLabel(AppCopy.close)
-                    }
-                }
+                .processSettingsOpalPage()
         }
-        .processAppPageBackground()
         .processAppPresentationBackground()
-        .onAppear { viewModel.start() }
+        .onAppear {
+            viewModel.start()
+            if let initialDraftMessage,
+               viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                viewModel.inputText = initialDraftMessage
+            }
+        }
         .onDisappear { viewModel.stop() }
+    }
+
+    private func closeChat() {
+        isInputFocused = false
+        dismiss()
     }
 
     private var chatScroll: some View {
@@ -65,7 +57,7 @@ struct ProcessSupportChatView: View {
                     if let errorMessage = viewModel.errorMessage, viewModel.messages.isEmpty {
                         Text(errorMessage)
                             .font(.subheadline)
-                            .foregroundStyle(theme.secondaryText)
+                            .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
                             .padding(.horizontal, 20)
                     }
 
@@ -79,13 +71,13 @@ struct ProcessSupportChatView: View {
                         .id("support-bottom")
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 12)
+                .padding(.top, 8)
                 .padding(.bottom, 8)
             }
             .scrollDismissesKeyboard(.interactively)
             .processTransparentScrollSurface()
             .onChange(of: viewModel.messages.count) { _, _ in
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
+                withAnimation(ProcessSettingsOpalTheme.spring) {
                     proxy.scrollTo("support-bottom", anchor: .bottom)
                 }
             }
@@ -98,19 +90,51 @@ struct ProcessSupportChatView: View {
     }
 
     private var emptyIntro: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(AppCopy.t("Salut, c'est l'équipe Process.", en: "Hey, this is the Process team."))
+        VStack(alignment: .leading, spacing: 12) {
+            Text(introMessage)
                 .font(messageFont)
-                .foregroundStyle(theme.primaryText)
-            Text(AppCopy.t(
-                "Un bug, une idée, une question — écris-nous ici. On te répond dans cette conversation.",
-                en: "A bug, an idea, a question — write us here. We'll reply in this thread."
-            ))
-            .font(.subheadline)
-            .foregroundStyle(theme.secondaryText)
+                .foregroundStyle(.white)
+                .lineSpacing(5)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(ProcessSettingsOpalTheme.cardFillDark)
+                )
+                .padding(.trailing, 36)
+
+            HStack(spacing: 18) {
+                Button {} label: {
+                    Image(systemName: "hand.thumbsup")
+                        .font(.system(size: 16, weight: .regular))
+                }
+                .buttonStyle(.processPlain)
+                .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+
+                Button {} label: {
+                    Image(systemName: "hand.thumbsdown")
+                        .font(.system(size: 16, weight: .regular))
+                }
+                .buttonStyle(.processPlain)
+                .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+            }
+            .padding(.leading, 6)
         }
         .padding(.horizontal, 4)
         .padding(.bottom, 8)
+    }
+
+    private var introMessage: AttributedString {
+        var base = AttributedString(AppCopy.t(
+            "Bonjour, je suis Process et je réponds immédiatement. Notre équipe humaine examine les messages et peut répondre sous ",
+            en: "Hi, I'm Process and I reply immediately. Our human team reviews messages and can respond within "
+        ))
+        var bold = AttributedString(AppCopy.t("4 jours ouvrés", en: "4 business days"))
+        bold.font = .system(size: 17, weight: .semibold)
+        bold.foregroundColor = .white
+        base.append(bold)
+        base.append(AttributedString("."))
+        return base
     }
 
     @ViewBuilder
@@ -124,32 +148,24 @@ struct ProcessSupportChatView: View {
 
     private func userBubble(_ message: ProcessSupportMessage) -> some View {
         VStack(alignment: .trailing, spacing: 6) {
-            HStack(alignment: .bottom, spacing: 0) {
-                Spacer(minLength: 48)
-
-                CoachUserThoughtBubbleBody(bubbleColor: theme.coachUserBubble) {
-                    Text(message.text)
-                        .font(messageFont)
-                        .foregroundStyle(theme.primaryText)
-                        .lineSpacing(4)
-                        .multilineTextAlignment(.leading)
-                }
-
-                CoachThoughtBubbleTailView(color: theme.coachUserBubble)
-                    .padding(.leading, -7)
-
-                CoachUserChatAvatarView(
-                    profile: UnifiedProfileService.shared.currentProfile,
-                    bubbleColor: theme.coachUserBubble,
-                    textColor: theme.primaryText
+            Text(message.text)
+                .font(messageFont)
+                .foregroundStyle(.white)
+                .lineSpacing(4)
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color.white.opacity(0.10))
                 )
-            }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.leading, 56)
 
             if message.status == .sending {
                 Text(AppCopy.t("Envoi…", en: "Sending…"))
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(theme.secondaryText)
-                    .padding(.trailing, 52)
+                    .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
             } else if message.status == .failed {
                 Button {
                     Task { await viewModel.retry(message) }
@@ -159,29 +175,23 @@ struct ProcessSupportChatView: View {
                 }
                 .buttonStyle(.processPlain)
                 .foregroundStyle(.red.opacity(0.85))
-                .padding(.trailing, 52)
             }
         }
     }
 
     private func operatorBubble(_ message: ProcessSupportMessage) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(AppCopy.t("Équipe", en: "Team"))
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(theme.secondaryText)
-                .padding(.leading, 8)
-
             Text(message.text)
                 .font(messageFont)
-                .foregroundStyle(theme.primaryText)
+                .foregroundStyle(.white)
                 .lineSpacing(4)
                 .padding(.horizontal, 18)
-                .padding(.vertical, 12)
+                .padding(.vertical, 14)
                 .background(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(theme.coachAssistantBubble)
+                        .fill(ProcessSettingsOpalTheme.cardFillDark)
                 )
-                .padding(.trailing, 48)
+                .padding(.trailing, 56)
         }
     }
 
@@ -196,47 +206,68 @@ struct ProcessSupportChatView: View {
             }
 
             HStack(alignment: .bottom, spacing: 10) {
-                TextField(
-                    "",
-                    text: $viewModel.inputText,
-                    prompt: Text(AppCopy.t("Écris-nous un message…", en: "Write us a message…"))
-                        .foregroundStyle(Color.primary.opacity(0.38)),
-                    axis: .vertical
-                )
-                .lineLimit(1...6)
-                .font(.system(size: 16, weight: .regular))
-                .focused($isInputFocused)
-                .disabled(viewModel.isSending)
-                .submitLabel(.send)
-                .onSubmit {
-                    guard !trimmedEmpty else { return }
-                    isInputFocused = false
-                    Task { await viewModel.sendCurrentMessage() }
+                Button {} label: {
+                    Image(systemName: "photo")
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
+                        .frame(width: 36, height: 44)
                 }
-                .padding(.leading, 18)
-                .padding(.trailing, 8)
-                .padding(.vertical, 14)
+                .buttonStyle(.processPlain)
+                .disabled(true)
+                .opacity(0.45)
 
-                Button {
-                    isInputFocused = false
-                    Task { await viewModel.sendCurrentMessage() }
-                } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 16, weight: .bold))
-                        .frame(width: 44, height: 44)
+                HStack(alignment: .bottom, spacing: 8) {
+                    TextField(
+                        "",
+                        text: $viewModel.inputText,
+                        prompt: Text(AppCopy.t("Écris un message…", en: "Write a message…"))
+                            .foregroundStyle(ProcessSettingsOpalTheme.valueTint),
+                        axis: .vertical
+                    )
+                    .lineLimit(1...6)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(.white)
+                    .focused($isInputFocused)
+                    .disabled(viewModel.isSending)
+                    .submitLabel(.send)
+                    .onSubmit {
+                        guard !trimmedEmpty else { return }
+                        isInputFocused = false
+                        Task { await viewModel.sendCurrentMessage() }
+                    }
+                    .padding(.leading, 16)
+                    .padding(.trailing, 4)
+                    .padding(.vertical, 14)
+
+                    Button {
+                        isInputFocused = false
+                        Task { await viewModel.sendCurrentMessage() }
+                    } label: {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white.opacity(trimmedEmpty || viewModel.isSending ? 0.35 : 0.92))
+                            .frame(width: 34, height: 34)
+                            .background(Color.white.opacity(0.14), in: Circle())
+                    }
+                    .buttonStyle(.processPlain)
+                    .disabled(trimmedEmpty || viewModel.isSending)
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 8)
                 }
-                .processNativeGlassCircleButtonStyle()
-                .disabled(trimmedEmpty || viewModel.isSending)
-                .opacity(trimmedEmpty || viewModel.isSending ? 0.38 : 1)
-                .padding(.trailing, 6)
-                .padding(.bottom, 6)
+                .frame(minHeight: 52)
+                .background {
+                    barShape
+                        .fill(ProcessSettingsOpalTheme.cardFillDark)
+                        .overlay {
+                            barShape.strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                        }
+                }
             }
-            .frame(minHeight: 56)
-            .processGlassEffect(in: barShape, interactive: false)
         }
         .padding(.horizontal, 14)
         .padding(.bottom, isInputFocused ? 8 : 6)
         .padding(.top, 4)
+        .background(Color.black.opacity(0.92))
     }
 
     private var trimmedEmpty: Bool {

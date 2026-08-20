@@ -20,7 +20,7 @@ test("paid initial purchase and trial conversion are paid", () => {
   );
 });
 
-test("annual product ids map to yearly referrer reward", () => {
+test("annual product ids are recognized", () => {
   assert.equal(isAnnualProduct("com.useprocess.annual3499"), true);
   assert.equal(isAnnualProduct("com.useprocess.monthly999"), false);
 });

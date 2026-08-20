@@ -5,6 +5,7 @@
 
 import Foundation
 import SwiftUI
+import UIKit
 
 @MainActor
 @Observable
@@ -21,6 +22,8 @@ final class OnboardingProfileChatViewModel {
     var isSubmittingAnswer = false
     var shouldFinish = false
     var isGlowUpResultsPresented = false
+    private var glowUpPendingQuestion: OnboardingProfileChatQuestion?
+    private var isCompletingGlowUpResults = false
     var currentQuestion: OnboardingProfileChatQuestion?
     var analysisPhase: AnalysisPhase = .idle
     var analysisProgressPanelVisible = false
@@ -262,7 +265,7 @@ final class OnboardingProfileChatViewModel {
         }
 
         if initialDelay {
-            try? await Task.sleep(nanoseconds: 160_000_000)
+            try? await Task.sleep(nanoseconds: 80_000_000)
         }
 
         await speakMossLines(lines)
@@ -295,12 +298,8 @@ final class OnboardingProfileChatViewModel {
 
         if question.id == "intro_next" {
             isSubmittingAnswer = true
-            isGlowUpResultsPresented = true
-            onboardingViewModel?.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.Snapshot(
-                segmentCount: 4,
-                completedSegments: 4,
-                activeProgress: 1
-            )
+            glowUpPendingQuestion = question
+            setGlowUpResultsPresented(true)
             isSubmittingAnswer = false
             return
         }
@@ -313,24 +312,52 @@ final class OnboardingProfileChatViewModel {
     }
 
     func dismissGlowUpResults() {
-        isGlowUpResultsPresented = false
-        onboardingViewModel?.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
-            questionID: currentQuestion?.id,
-            engine: conversationEngine
-        )
+        glowUpPendingQuestion = nil
+        isCompletingGlowUpResults = false
+        setGlowUpResultsPresented(false)
     }
 
     func completeGlowUpResults() async {
-        guard isGlowUpResultsPresented,
-              currentQuestion?.id == "intro_next",
-              let question = currentQuestion else { return }
+        guard !isCompletingGlowUpResults,
+              isGlowUpResultsPresented,
+              let question = glowUpPendingQuestion ?? currentQuestion,
+              question.id == "intro_next" else { return }
 
-        isGlowUpResultsPresented = false
+        isCompletingGlowUpResults = true
+        glowUpPendingQuestion = nil
+        setGlowUpResultsPresented(false)
+        try? await Task.sleep(nanoseconds: glowUpResultsCoverDelayNanoseconds)
+
         isSubmittingAnswer = true
         await recordAnswer(
             display: question.continueLabel ?? OnboardingCopy.continueCTA,
             questionID: question.id
         )
+        isCompletingGlowUpResults = false
+    }
+
+    private func setGlowUpResultsPresented(_ presented: Bool) {
+        withAnimation(glowUpResultsCoverAnimation) {
+            isGlowUpResultsPresented = presented
+            if presented {
+                onboardingViewModel?.profileChatHeaderProgress = nil
+            } else {
+                onboardingViewModel?.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
+                    questionID: currentQuestion?.id,
+                    engine: conversationEngine
+                )
+            }
+        }
+    }
+
+    private var glowUpResultsCoverAnimation: Animation {
+        UIAccessibility.isReduceMotionEnabled
+            ? .easeInOut(duration: 0.22)
+            : .glowUpResultsCover
+    }
+
+    private var glowUpResultsCoverDelayNanoseconds: UInt64 {
+        UIAccessibility.isReduceMotionEnabled ? 200_000_000 : 420_000_000
     }
 
     /// Remonte d’une question / d’un texte dans le fil. `false` = quitter la discussion.
@@ -551,12 +578,11 @@ final class OnboardingProfileChatViewModel {
     }
 
     func submitProfileSummaryContinue() async {
-        guard !isSubmittingAnswer,
+        guard !shouldFinish,
               let question = currentQuestion,
               question.kind == .profileSummary else { return }
 
-        isSubmittingAnswer = true
-        let continueLabel = OnboardingCopy.t("Emmène-moi →", en: "Take me there →")
+        let continueLabel = OnboardingCopy.t("Voir mon dashboard", en: "See my dashboard")
         ProcessAnalytics.trackMossAction(
             page: .profileSummary,
             action: "continued_to_dashboard",
@@ -653,10 +679,6 @@ final class OnboardingProfileChatViewModel {
         ProcessAnalytics.lastMossPageName = nil
         trackCurrentChatQuestionViewed()
         ProcessAnalytics.trackMossAction(page: .faceScanOffer, action: "returned_from_scan")
-    }
-
-    func submitFaceScanResultsContinue() {
-        // Compat — plus utilisé (page dédiée hors chat).
     }
 
     /// Persiste le scan et clôture la discussion (connexion Apple après le paywall).

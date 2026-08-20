@@ -16,7 +16,7 @@ export function getRoute() {
   );
   const wantsGetApp = params.get("get") === "1" || hasReferral || hasUtm;
 
-  if (host === "join.useprocess.xyz") {
+  if (host === "join.useprocess.xyz" || host === "get.useprocess.xyz") {
     return { type: "get-app" };
   }
   if (path === "/studio" || path === "/studio.html") {
@@ -26,7 +26,10 @@ export function getRoute() {
     return { type: "affiliate" };
   }
   if (
+    path === "/app" ||
     path === "/get" ||
+    path === "/i" ||
+    path === "/a" ||
     path === "/telecharger" ||
     /^\/join\/[^/]+$/i.test(path) ||
     /^\/c\/[^/]+$/i.test(path) ||

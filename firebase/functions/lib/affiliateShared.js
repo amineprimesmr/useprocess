@@ -33,13 +33,12 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LIFETIME_PRODUCT_ID = exports.AFFILIATE_NET_FACTOR = exports.AFFILIATE_HOLD_DAYS = exports.AFFILIATE_COMMISSION_RATE = void 0;
+exports.commissionFromRevenueCatEvent = exports.LIFETIME_PRODUCT_ID = exports.AFFILIATE_NET_FACTOR = exports.AFFILIATE_HOLD_DAYS = exports.AFFILIATE_COMMISSION_RATE = void 0;
 exports.db = db;
 exports.normalizeAffiliateCode = normalizeAffiliateCode;
 exports.affiliateHttpStatus = affiliateHttpStatus;
 exports.resolveAffiliateByCode = resolveAffiliateByCode;
 exports.resolveCodeKind = resolveCodeKind;
-exports.commissionFromRevenueCatEvent = commissionFromRevenueCatEvent;
 exports.commissionDocId = commissionDocId;
 exports.registerAffiliateAttribution = registerAffiliateAttribution;
 exports.getAffiliateAttributionForUser = getAffiliateAttributionForUser;
@@ -56,11 +55,13 @@ exports.getAffiliateForUid = getAffiliateForUid;
 exports.formatMoney = formatMoney;
 const admin = __importStar(require("firebase-admin"));
 const revenueCat_1 = require("./revenueCat");
+const commissionShared_1 = require("./commissionShared");
+Object.defineProperty(exports, "LIFETIME_PRODUCT_ID", { enumerable: true, get: function () { return commissionShared_1.LIFETIME_PRODUCT_ID; } });
+Object.defineProperty(exports, "commissionFromRevenueCatEvent", { enumerable: true, get: function () { return commissionShared_1.commissionFromRevenueCatEvent; } });
 const referralShared_1 = require("./referralShared");
-exports.AFFILIATE_COMMISSION_RATE = Number(process.env.AFFILIATE_COMMISSION_RATE ?? "0.40");
-exports.AFFILIATE_HOLD_DAYS = Number(process.env.AFFILIATE_HOLD_DAYS ?? "30");
-exports.AFFILIATE_NET_FACTOR = Number(process.env.AFFILIATE_NET_FACTOR ?? "0.70");
-exports.LIFETIME_PRODUCT_ID = "com.useprocess.lifetime";
+exports.AFFILIATE_COMMISSION_RATE = commissionShared_1.COMMISSION_RATE;
+exports.AFFILIATE_HOLD_DAYS = commissionShared_1.COMMISSION_HOLD_DAYS;
+exports.AFFILIATE_NET_FACTOR = commissionShared_1.COMMISSION_NET_FACTOR;
 function db() {
     return admin.firestore();
 }
@@ -133,7 +134,7 @@ async function resolveCodeKind(code) {
         }
     }
     const normalizedReferral = (0, referralShared_1.normalizeReferralCode)(code);
-    if (!normalizedReferral)
+    if (!(0, referralShared_1.isValidReferralCode)(normalizedReferral))
         return null;
     const referrerUserId = await (0, referralShared_1.resolveReferrerUserId)(normalizedReferral);
     if (!referrerUserId)
@@ -144,37 +145,8 @@ async function resolveCodeKind(code) {
         referrerUserId,
     };
 }
-function commissionFromRevenueCatEvent(event) {
-    const productId = String(event?.product_id ?? "").trim() || undefined;
-    if (productId === exports.LIFETIME_PRODUCT_ID)
-        return null;
-    const price = Number(event?.price_in_purchased_currency ?? event?.price);
-    if (!Number.isFinite(price) || price <= 0)
-        return null;
-    const grossCents = Math.round(price * 100);
-    const netCents = Math.round(grossCents * exports.AFFILIATE_NET_FACTOR);
-    const commissionRate = exports.AFFILIATE_COMMISSION_RATE;
-    const commissionCents = Math.round(netCents * commissionRate);
-    const currency = String(event?.currency ?? event?.currency_code ?? "EUR")
-        .trim()
-        .toUpperCase()
-        .slice(0, 8) || "EUR";
-    if (commissionCents <= 0)
-        return null;
-    return {
-        grossCents,
-        netCents,
-        commissionCents,
-        commissionRate,
-        currency,
-        productId,
-    };
-}
 function commissionDocId(affiliateId, rcEventId) {
-    const safeEvent = String(rcEventId || "unknown")
-        .replace(/[^a-zA-Z0-9_-]/g, "_")
-        .slice(0, 120);
-    return `${affiliateId}_${safeEvent}`;
+    return (0, commissionShared_1.commissionDocId)(affiliateId, rcEventId);
 }
 async function registerAffiliateAttribution(params) {
     const affiliateRef = db().collection("affiliates").doc(params.affiliateId);
@@ -253,7 +225,7 @@ async function accrueAffiliateCommission(params) {
     if (!attribution || attribution.status !== "active") {
         return { created: false, skipped: "NOT_ATTRIBUTED" };
     }
-    const amounts = commissionFromRevenueCatEvent(params.event);
+    const amounts = (0, commissionShared_1.commissionFromRevenueCatEvent)(params.event);
     if (!amounts)
         return { created: false, skipped: "NO_COMMISSION" };
     const commissionId = commissionDocId(attribution.affiliateId, rcEventId);

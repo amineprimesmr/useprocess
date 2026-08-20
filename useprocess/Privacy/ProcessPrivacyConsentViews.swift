@@ -206,7 +206,8 @@ struct FaceScanCapturePrivacyGateView: View {
                     onCancelCapture: onCancelCapture,
                     onSkipCapture: onSkip,
                     showsMediaImport: ProcessCreatorModeStore.shared.allowsPhotoImport,
-                    compactSkipAction: true
+                    compactSkipAction: true,
+                    usesOnboardingPageTransitions: true
                 )
             } else {
                 ProgressView()

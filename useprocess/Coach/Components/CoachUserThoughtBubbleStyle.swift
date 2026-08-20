@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 enum CoachUserThoughtBubbleMetrics {
     static let cornerRadius: CGFloat = 24
@@ -43,8 +42,6 @@ struct CoachUserChatAvatarView: View {
     var textColor: Color
     var size: CGFloat = CoachUserThoughtBubbleMetrics.avatarSize
 
-    @State private var profileStore = SocialProfileStore.shared
-
     private var initials: String {
         let first = profile?.firstName.trimmingCharacters(in: .whitespacesAndNewlines).first.map(String.init) ?? ""
         let last = profile?.lastName?.trimmingCharacters(in: .whitespacesAndNewlines).first.map(String.init) ?? ""
@@ -56,26 +53,12 @@ struct CoachUserChatAvatarView: View {
     }
 
     var body: some View {
-        Group {
-            if let image = profileStore.profilePhoto {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Text(initials)
-                    .font(.system(size: size * 0.34, weight: .semibold))
-                    .foregroundStyle(textColor)
-            }
-        }
-        .frame(width: size, height: size)
-        .background(bubbleColor, in: Circle())
-        .clipShape(Circle())
-        .onAppear {
-            profileStore.bind(unified: profile)
-        }
-        .onChange(of: profile?.userId) { _, _ in
-            profileStore.bind(unified: profile)
-        }
+        Text(initials)
+            .font(.system(size: size * 0.34, weight: .semibold))
+            .foregroundStyle(textColor)
+            .frame(width: size, height: size)
+            .background(bubbleColor, in: Circle())
+            .clipShape(Circle())
     }
 }
 

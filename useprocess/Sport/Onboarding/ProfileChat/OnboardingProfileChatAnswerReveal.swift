@@ -6,9 +6,9 @@
 import SwiftUI
 
 enum OnboardingProfileChatAnswerReveal {
-    static let staggerDelay: UInt64 = 36_000_000
-    static let initialDelay: UInt64 = 80_000_000
-    static let spring = Animation.spring(response: 0.32, dampingFraction: 0.88)
+    static let staggerDelay: UInt64 = 42_000_000
+    static let initialDelay: UInt64 = 95_000_000
+    static let spring = Animation.spring(response: 0.38, dampingFraction: 0.88)
 
     static func orderedIDs(for question: OnboardingProfileChatQuestion) -> [String] {
         switch question.kind {

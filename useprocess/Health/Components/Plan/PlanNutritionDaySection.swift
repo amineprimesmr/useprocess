@@ -694,8 +694,8 @@ private struct PlanDayMealsMarketCard: View {
         .processZoomSource(id: .mealCatalog, namespace: zoomNamespace)
         .accessibilityLabel(accessibilityTitle)
         .accessibilityHint(AppCopy.t(
-            "Ouvre le catalogue des repas",
-            en: "Opens the meals catalog"
+            "Ouvre le catalogue recettes et aliments Debloat",
+            en: "Opens the recipe and Debloat foods catalog"
         ))
     }
 

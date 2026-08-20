@@ -9,9 +9,14 @@ struct OnboardingFaceDeepAnalysisView: View {
     var ringScale: CGFloat = 0.78
     var showsScoreRing: Bool = true
     var showsUnlockTeaser: Bool = true
+    var carouselMinHeight: CGFloat = 340
+    var animatesIndicatorReveal: Bool = false
 
     @State private var selectedPage: SignalCarouselPage? = .openSignals
     @State private var analysis: OnboardingFaceDeepAnalysis
+    @State private var revealedIndicatorCount = 0
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var currentPage: SignalCarouselPage {
         selectedPage ?? .openSignals
@@ -21,13 +26,22 @@ struct OnboardingFaceDeepAnalysisView: View {
         result: FaceScanResult,
         ringScale: CGFloat = 0.78,
         showsScoreRing: Bool = true,
-        showsUnlockTeaser: Bool = true
+        showsUnlockTeaser: Bool = true,
+        carouselMinHeight: CGFloat = 340,
+        animatesIndicatorReveal: Bool = false
     ) {
         self.result = result
         self.ringScale = ringScale
         self.showsScoreRing = showsScoreRing
         self.showsUnlockTeaser = showsUnlockTeaser
+        self.carouselMinHeight = carouselMinHeight
+        self.animatesIndicatorReveal = animatesIndicatorReveal
         _analysis = State(initialValue: OnboardingFaceDeepAnalysisBuilder.build(from: result))
+        _revealedIndicatorCount = State(
+            initialValue: animatesIndicatorReveal
+                ? 0
+                : OnboardingFaceDeepAnalysisBuilder.build(from: result).unlocked.count + 1
+        )
     }
 
     private var resolvedFirstName: String {
@@ -55,7 +69,7 @@ struct OnboardingFaceDeepAnalysisView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             if showsScoreRing {
                 FaceScanWhoopScoreRing(result: result, showsGlobalScore: false)
                     .scaleEffect(ringScale)
@@ -63,12 +77,11 @@ struct OnboardingFaceDeepAnalysisView: View {
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 0) {
+                LazyHStack(alignment: .top, spacing: 0) {
                     ForEach(SignalCarouselPage.allCases, id: \.self) { page in
                         signalPage(page)
                             .padding(.horizontal, 2)
-                            .containerRelativeFrame(.horizontal)
-                            .frame(maxHeight: .infinity, alignment: .top)
+                            .containerRelativeFrame(.horizontal, alignment: .top)
                             .id(page)
                     }
                 }
@@ -77,8 +90,7 @@ struct OnboardingFaceDeepAnalysisView: View {
             .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByOne))
             .scrollPosition(id: $selectedPage)
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-            .frame(minHeight: 360)
-            .frame(maxHeight: .infinity)
+            .frame(minHeight: carouselMinHeight, alignment: .top)
 
             signalPageDots
 
@@ -88,6 +100,46 @@ struct OnboardingFaceDeepAnalysisView: View {
         }
         .onChange(of: result) { _, newResult in
             analysis = OnboardingFaceDeepAnalysisBuilder.build(from: newResult)
+            resetIndicatorReveal()
+        }
+        .onChange(of: animatesIndicatorReveal) { _, shouldAnimate in
+            if shouldAnimate {
+                startIndicatorReveal()
+            }
+        }
+        .onAppear {
+            if animatesIndicatorReveal {
+                startIndicatorReveal()
+            }
+        }
+    }
+
+    private var openSignalItemCount: Int {
+        analysis.unlocked.count + 1
+    }
+
+    private func resetIndicatorReveal() {
+        revealedIndicatorCount = animatesIndicatorReveal ? 0 : openSignalItemCount
+    }
+
+    private func startIndicatorReveal() {
+        guard animatesIndicatorReveal else {
+            revealedIndicatorCount = openSignalItemCount
+            return
+        }
+
+        if reduceMotion {
+            revealedIndicatorCount = openSignalItemCount
+            return
+        }
+
+        revealedIndicatorCount = 0
+        for index in 0..<openSignalItemCount {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05 + (Double(index) * 0.07)) {
+                withAnimation(.smooth(duration: 0.24)) {
+                    revealedIndicatorCount = max(revealedIndicatorCount, index + 1)
+                }
+            }
         }
     }
 
@@ -120,16 +172,12 @@ struct OnboardingFaceDeepAnalysisView: View {
         switch page {
         case .openSignals:
             unlockedCard
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         case .bloatZones:
             bloatZonesCard
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         case .priorities:
             prioritiesCard
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         case .triggers:
             triggersCard
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
 
@@ -143,6 +191,8 @@ struct OnboardingFaceDeepAnalysisView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
                 .padding(.bottom, 6)
+                .opacity(!animatesIndicatorReveal || revealedIndicatorCount > 0 ? 1 : 0)
+                .offset(y: !animatesIndicatorReveal || revealedIndicatorCount > 0 ? 0 : 8)
 
             ForEach(Array(analysis.unlocked.enumerated()), id: \.element.id) { index, metric in
                 if index > 0 {
@@ -153,6 +203,13 @@ struct OnboardingFaceDeepAnalysisView: View {
                 unlockedRow(metric)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
+                    .modifier(
+                        OnboardingIndicatorRowRevealModifier(
+                            index: index,
+                            revealedCount: revealedIndicatorCount,
+                            enabled: animatesIndicatorReveal
+                        )
+                    )
             }
 
             Divider()
@@ -162,10 +219,16 @@ struct OnboardingFaceDeepAnalysisView: View {
             volumeCompositionRow(analysis.volumeComposition)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-
-            Spacer(minLength: 0)
+                .padding(.bottom, 12)
+                .modifier(
+                    OnboardingIndicatorRowRevealModifier(
+                        index: analysis.unlocked.count,
+                        revealedCount: revealedIndicatorCount,
+                        enabled: animatesIndicatorReveal
+                    )
+                )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -306,10 +369,9 @@ struct OnboardingFaceDeepAnalysisView: View {
                         .padding(.vertical, 13)
                 }
             }
-
-            Spacer(minLength: 0)
+            .padding(.bottom, 12)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -408,10 +470,9 @@ struct OnboardingFaceDeepAnalysisView: View {
                         .padding(.vertical, 13)
                 }
             }
-
-            Spacer(minLength: 0)
+            .padding(.bottom, 12)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -479,10 +540,9 @@ struct OnboardingFaceDeepAnalysisView: View {
                         .padding(.vertical, 13)
                 }
             }
-
-            Spacer(minLength: 0)
+            .padding(.bottom, 12)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .top)
         .liquidGlassCard(isDark: theme.isDark)
     }
 
@@ -611,6 +671,24 @@ struct OnboardingFaceDeepAnalysisView: View {
 
     private var dividerColor: Color {
         theme.isDark ? Color.white.opacity(0.08) : Color.primary.opacity(0.08)
+    }
+}
+
+// MARK: - Indicator reveal
+
+private struct OnboardingIndicatorRowRevealModifier: ViewModifier {
+    let index: Int
+    let revealedCount: Int
+    let enabled: Bool
+
+    private var isVisible: Bool {
+        !enabled || index < revealedCount
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isVisible ? 1 : 0)
+            .offset(y: isVisible ? 0 : 10)
     }
 }
 

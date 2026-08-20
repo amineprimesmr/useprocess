@@ -90,6 +90,9 @@ struct PlanDashboardView: View {
                     selectedPlanDate = OriginPlanPresenter.preferredHomeDate(in: plan)
                 }
                 refreshPlanHealthMetrics()
+                Task {
+                    await OnboardingProgressService.shared.savePendingDataIfNeeded(to: profileService)
+                }
                 guard !isOnboardingPreview else { return }
                 tutorialStore.reload()
                 tutorialStore.schedulePresentationIfNeeded(
@@ -163,9 +166,7 @@ struct PlanDashboardView: View {
                 plan: plan,
                 selectedDate: $selectedPlanDate,
                 onOpenScanHub: {
-                    withAnimation(ProcessGlass.spring) {
-                        selectedSection = .scan
-                    }
+                    CoachPlanNavigationBridge.shared.requestHomeFaceScan()
                 },
                 isPlanActive: isPlanRuntimeActive,
                 healthMetrics: planHealthMetrics,

@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-import LocalAuthentication
-import AVFoundation
 
 extension SportOnboardingView {
 
@@ -55,7 +53,7 @@ private func resolveFirstVisibleStep(from step: Int) -> Int? {
 }
 
 private func unlockNavigationAfterTransition() {
-    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingTransitionTiming.navigationUnlockDelay) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + activeNavigationUnlockDelay) {
         isTransitioning = false
     }
 }
@@ -102,11 +100,11 @@ func reconcileUnpaidOnboardingResumeIfNeeded() {
         OnboardingProgressService.shared.saveCurrentStep(resume.rawValue)
     }
 
-    guard resume == .dashboardPreview else { return }
-    if !viewModel.isFaceAnalysisCompleted {
-        viewModel.dashboardPreviewPresentation = .firstScanPending
+    reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: viewModel)
+
+    if OnboardingStep(rawValue: viewModel.currentStep) == .dashboardPreview {
+        commitVisibleStepToHistory(OnboardingStep.dashboardPreview.rawValue)
     }
-    commitVisibleStepToHistory(OnboardingStep.dashboardPreview.rawValue)
 }
 
 func reconcilePostPaymentStepIfNeeded() {
@@ -144,9 +142,16 @@ func nextStep() {
         return
     }
 
-    let warnings = viewModel.validateCrossStepConsistency()
-    if !warnings.isEmpty {
-    }
+    performOnboardingStepAdvance()
+}
+
+func performOnboardingStepAdvance() {
+    UIApplication.shared.sendAction(
+        #selector(UIResponder.resignFirstResponder),
+        to: nil,
+        from: nil,
+        for: nil
+    )
 
     guard let nextStepIndex = navigationEngine.resolveNextVisibleStep(from: viewModel.currentStep),
           nextStepIndex < totalSteps else {
@@ -186,75 +191,15 @@ func nextStep() {
     scheduleRefreshOnboardingFlowProgress()
 }
 
-/// Dashboard preview → commit : variante premier scan ou fin onboarding.
-func advanceFromDashboardPreview() {
-    guard OnboardingStep(rawValue: viewModel.currentStep) == .dashboardPreview else {
-        nextStep()
-        return
-    }
-
-    if viewModel.dashboardPreviewPresentation == .firstScanPending {
-        launchFirstScanFromEarlyDashboardPreview()
-        return
-    }
-
-    // Tap explicite sur « Je le veux » — ne jamais no-op sur isTransitioning.
-    isTransitioning = false
-    HapticManager.shared.impact(.medium)
-    WelcomePlanStore.shared.clearEphemeralPreviewPlan()
-    PlanHomeTutorialStore.shared.suppressPresentationForPreview(true)
-
-    let nextStepIndex = OnboardingStep.dreamFaceCommit.rawValue
-    ProcessAnalytics.trackOnboardingAnswer(step: .dashboardPreview, viewModel: viewModel)
-    OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
-    commitVisibleStepToHistory(viewModel.currentStep)
-
-    previousStepIndex = viewModel.currentStep
-    transitionDirection = .forward
-    isTransitioning = true
-
-    commitAnimatedStepChange(to: nextStepIndex)
-    commitVisibleStepToHistory(nextStepIndex)
-
-    unlockNavigationAfterTransition()
-
-    OnboardingProgressService.shared.saveCurrentStep(nextStepIndex)
-    viewModel.saveProgress()
-    scheduleRefreshOnboardingFlowProgress()
-}
-
 @MainActor
-func launchFirstScanFromEarlyDashboardPreview() {
-    guard viewModel.presentedOnboardingFaceScan == nil else { return }
-    isTransitioning = false
-    HapticManager.shared.impact(.medium)
-
-    Task {
-        let granted = await AVCaptureDevice.requestAccess(for: .video)
-        if granted {
-            ProcessAnalytics.trackCameraAuthorized(source: "onboarding_dashboard_first_scan")
-        } else {
-            ProcessAnalytics.trackCameraDenied(source: "onboarding_dashboard_first_scan")
-        }
-
-        if !ProcessPrivacyConsentStore.shared.canCaptureFaceScan {
-            ProcessPrivacyConsentStore.shared.acceptFaceScanCapture()
-        }
-
-        ProcessAnalytics.trackMossAction(
-            page: .profileSummary,
-            action: "started_scan_from_dashboard"
-        )
-
-        viewModel.presentOnboardingFaceScan(usesChatCallbacks: false)
-    }
-}
-
 func advanceFromEarlyDashboardFaceScan() {
     guard OnboardingStep(rawValue: viewModel.currentStep) == .dashboardPreview else { return }
 
     isTransitioning = false
     HapticManager.shared.notification(.success)
+    viewModel.dashboardPreviewPresentation = .firstScanPending
+    viewModel.hasCompletedFirstDashboardPreview = true
+    viewModel.clearDashboardScanPersistedState()
 
     let nextStepIndex = OnboardingStep.programCreation.rawValue
     ProcessAnalytics.trackOnboardingAnswer(step: .dashboardPreview, viewModel: viewModel)
@@ -275,86 +220,16 @@ func advanceFromEarlyDashboardFaceScan() {
     scheduleRefreshOnboardingFlowProgress()
 }
 
-func continueFromNutritionQuality() {
-    viewModel.commitPendingStepAnswers()
-
-    guard OnboardingStep(rawValue: viewModel.currentStep) == .nutritionQuality else {
-        nextStep()
-        return
-    }
-
-    ProcessAnalytics.trackOnboardingAnswer(step: .nutritionQuality, viewModel: viewModel)
-
-    let nextStepIndex = OnboardingStep.biometricAuth.rawValue
-
-    HapticManager.shared.impact(.medium)
-    OnboardingProgressService.shared.saveLastCompletedStep(viewModel.currentStep)
-    commitVisibleStepToHistory(viewModel.currentStep)
-
-    previousStepIndex = viewModel.currentStep
-    transitionDirection = .forward
-    isTransitioning = true
-
-    commitAnimatedStepChange(to: nextStepIndex)
-
-    commitVisibleStepToHistory(nextStepIndex)
-
-    unlockNavigationAfterTransition()
-
-    OnboardingProgressService.shared.saveCurrentStep(nextStepIndex)
-    viewModel.saveProgress()
-    scheduleRefreshOnboardingFlowProgress()
-}
-
-// MARK: - Biometric Auth
-
-func triggerBiometricAuthAndContinue() async {
-    HapticManager.shared.impact(.medium)
-
-    let context = LAContext()
-    var error: NSError?
-
-    guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-        nextStep()
-        return
-    }
-
-    let biometricType = context.biometryType
-    let reason: String
-
-    switch biometricType {
-    case .faceID:
-        reason = OnboardingCopy.t(
-            "Utilise Face ID pour confirmer ton engagement",
-            en: "Use Face ID to confirm your commitment"
-        )
-    case .touchID:
-        reason = OnboardingCopy.t(
-            "Restez appuyé avec votre doigt pour confirmer votre engagement",
-            en: "Keep your finger on the sensor to confirm your commitment"
-        )
-    default:
-        reason = OnboardingCopy.t(
-            "Authentifie-toi pour confirmer ton engagement",
-            en: "Authenticate to confirm your commitment"
-        )
-    }
-
-    do {
-        let success = try await context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
-        if success {
-            HapticManager.shared.notification(.success)
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            nextStep()
-        }
-    } catch {
-        nextStep()
-    }
-}
-
 func previousStep() {
     guard !isTransitioning else { return }
     HapticManager.shared.impact(.light)
+
+    UIApplication.shared.sendAction(
+        #selector(UIResponder.resignFirstResponder),
+        to: nil,
+        from: nil,
+        for: nil
+    )
 
     viewModel.visitedSteps = normalizeOnboardingVisitedStack(
         visitedSteps: viewModel.visitedSteps,
@@ -401,11 +276,6 @@ func previousStep() {
 func handleOnboardingBack() {
     guard !isTransitioning else { return }
 
-    if OnboardingStep(rawValue: viewModel.currentStep) == .programCreation {
-        handleBackFromProgramCreation()
-        return
-    }
-
     if OnboardingStep(rawValue: viewModel.currentStep) == .dashboardPreview,
        viewModel.dashboardPreviewPresentation == .firstScanPending {
         viewModel.prepareForBackNavigation(to: .weightMotivation)
@@ -421,33 +291,29 @@ func handleOnboardingBack() {
     previousStep()
 }
 
-/// Retour création programme → réouvre l'analyse du premier scan (pas la discussion).
-func handleBackFromProgramCreation() {
+func skipCreatorCodeStep() {
+    guard !isTransitioning else { return }
+    guard OnboardingStep(rawValue: viewModel.currentStep) == .referralCode else { return }
+
     HapticManager.shared.impact(.light)
-    viewModel.isProgramCreationCompleted = false
-
-    if let result = viewModel.restoredFaceScanResultForNavigation() {
-        viewModel.isFaceAnalysisCompleted = true
-        viewModel.presentOnboardingFaceScan(initialResult: result, usesChatCallbacks: false)
-        return
-    }
-
-    if let targetStep = OnboardingStep(rawValue: OnboardingStep.dashboardPreview.rawValue),
-       viewModel.dashboardPreviewPresentation == .firstScanPending {
-        viewModel.prepareForBackNavigation(to: targetStep)
-        previousStep()
-        return
-    }
-
-    if let targetStep = OnboardingStep(rawValue: OnboardingStep.weightMotivation.rawValue) {
-        viewModel.prepareForBackNavigation(to: targetStep)
-    }
-    previousStep()
+    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    viewModel.clearCreatorCodeStep()
+    performOnboardingStepAdvance()
 }
 
-@MainActor
-func completeProgramCreationBackFaceScan() async {
-    viewModel.dismissOnboardingFaceScan()
+func advanceFromVerifiedCreatorCode() {
+    guard !isTransitioning else { return }
+    guard OnboardingStep(rawValue: viewModel.currentStep) == .referralCode else { return }
+    guard viewModel.creatorCodeIsVerified else { return }
+
+    UIApplication.shared.sendAction(
+        #selector(UIResponder.resignFirstResponder),
+        to: nil,
+        from: nil,
+        for: nil
+    )
+    viewModel.commitCreatorCodeDraft()
+    performOnboardingStepAdvance()
 }
 
 /// Ajoute une étape visible à la pile (tronque une éventuelle branche future).
@@ -470,6 +336,8 @@ func commitVisibleStepToHistory(_ step: Int) {
 // MARK: - Progression header (hors body)
 
 func restoreOnboardingProgressFromSavedState() {
+    OnboardingProgressService.shared.migrateInProgressStorageIfNeeded()
+
     let savedStep = OnboardingProgressService.shared.loadCurrentStep()
 
     guard let step = OnboardingStep(rawValue: savedStep), savedStep >= 0, savedStep < totalSteps else {
@@ -521,6 +389,9 @@ func restoreOnboardingProgressFromSavedState() {
     )
     reconcileUnpaidOnboardingResumeIfNeeded()
     reconcilePostPaymentStepIfNeeded()
+    if OnboardingStep(rawValue: viewModel.currentStep) == .dashboardPreview {
+        reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: viewModel)
+    }
     viewModel.saveProgress()
 }
 
@@ -548,29 +419,6 @@ func scheduleRefreshOnboardingFlowProgress() {
 func cancelScheduledFlowProgressRefresh() {
     flowProgressRefreshTask?.cancel()
     flowProgressRefreshTask = nil
-}
-
-func buildPendingStepsQueue() {
-    viewModel.pendingSpecificSteps = [.hasSportActivity]
-}
-
-// MARK: - HealthKit
-
-func requestHealthKitAndContinue() async {
-    HapticManager.shared.impact(.heavy)
-    viewModel.isRequestingHealthKit = true
-
-    ProcessAnalytics.trackHealthKitPromptShown(source: "onboarding_legacy")
-    await healthManager.requestAuthorizationAsync(analyticsSource: "onboarding_legacy")
-
-    viewModel.healthKitGranted = healthManager.isAuthorized
-    viewModel.isRequestingHealthKit = false
-
-    nextStep()
-}
-
-func checkPermissions() {
-    viewModel.healthKitGranted = healthManager.isAuthorized
 }
 
 // MARK: - Completion
@@ -603,19 +451,4 @@ func checkPermissions() {
         viewModel.isCompleting = false
     }
 
-// MARK: - Helpers
-
-func savePlanDataProgressively() async {
-    await OnboardingProgressService.shared.savePlanData(
-        mainGoal: nil,
-        experienceLevel: viewModel.selectedExperienceLevel,
-        yearsOfExperience: viewModel.selectedYearsOfExperience,
-        sessionsPerWeek: viewModel.selectedSessionsPerWeek,
-        sessionDuration: viewModel.selectedSessionDuration,
-        trainingLocation: viewModel.selectedTrainingLocation,
-        equipment: viewModel.selectedEquipment,
-        weightGoal: viewModel.selectedWeightGoal,
-        to: profileService
-    )
-}
 }

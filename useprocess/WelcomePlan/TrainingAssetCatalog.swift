@@ -53,6 +53,16 @@ enum TrainingAssetCatalog {
     static let allAssetNames: [String] = [Names.mobiliteEpaulesHanches]
         + cardioAssetNames + postureHomeAssetNames
 
+    // MARK: - Coach / aperçu séance
+
+    static func resolvedHeroAsset(forSessionTitle title: String) -> String? {
+        blockAsset(for: title) ?? assetIfAvailable("session_cardio")
+    }
+
+    static func exerciseAsset(for name: String) -> String? {
+        blockAsset(for: name)
+    }
+
     // MARK: - Échauffement / cooldown / bloc posture / cardio
 
     static func blockAsset(for line: String) -> String? {

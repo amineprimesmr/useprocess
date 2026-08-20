@@ -199,7 +199,7 @@ struct TransformationPreviewStepView: View {
                             .padding(.horizontal, 24)
                     }
                 }
-                .padding(.top, OnboardingConstants.backOnlyContentTopInset)
+                .padding(.top, OnboardingConstants.titleTopPaddingFromScreenTop)
                 .padding(.bottom, 24)
             }
 

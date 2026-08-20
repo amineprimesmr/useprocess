@@ -29,21 +29,38 @@
     },
     {
       "source": "/c/:slug",
-      "destination": "/?get=1&utm_source=:slug&utm_medium=campaign&utm_campaign=:slug",
+      "destination": "/app?utm_source=:slug&utm_medium=campaign&utm_campaign=:slug",
       "permanent": false
+    },
+    {
+      "source": "/i",
+      "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/a",
+      "destination": "/app",
+      "permanent": true
     },
     {
       "source": "/get",
-      "destination": "/?get=1",
-      "permanent": false
+      "destination": "/app",
+      "permanent": true
     },
     {
       "source": "/telecharger",
-      "destination": "/?get=1",
-      "permanent": false
+      "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "get.useprocess.xyz" }],
+      "destination": "https://useprocess.xyz/app",
+      "permanent": true
     }
   ],
   "rewrites": [
+    { "source": "/app", "destination": "/app.html" },
     { "source": "/join/(.*)", "destination": "/index.html" },
     { "source": "/studio", "destination": "/studio.html" },
     { "source": "/studio/", "destination": "/studio.html" },

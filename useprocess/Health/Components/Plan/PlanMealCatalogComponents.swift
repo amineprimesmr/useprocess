@@ -1,13 +1,16 @@
 import SwiftUI
 
-// MARK: - Layout (aligné sur les cartes repas Accueil)
+// MARK: - Layout (catalogue — tuiles photo, sans chrome glass)
 
 enum PlanMealCatalogLayout {
-    static let cardWidth: CGFloat = 212
-    static let cardHeight: CGFloat = 268
-    static let imageDiameter: CGFloat = 152
-    static let cornerRadius: CGFloat = 30
-    static let spacing: CGFloat = 10
+    static let tileSize: CGFloat = 168
+    static let cornerRadius: CGFloat = 22
+    static let spacing: CGFloat = 12
+
+    /// Compat anciens call sites
+    static var cardWidth: CGFloat { tileSize }
+    static var cardHeight: CGFloat { tileSize }
+    static var imageDiameter: CGFloat { tileSize - 8 }
 }
 
 // MARK: - Carousel
@@ -32,13 +35,13 @@ struct PlanMealCatalogCarousel: View {
                     )
                     .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                         content
-                            .scaleEffect(phase.isIdentity ? 1 : 0.9)
-                            .opacity(phase.isIdentity ? 1 : 0.78)
+                            .scaleEffect(phase.isIdentity ? 1 : 0.94)
+                            .opacity(phase.isIdentity ? 1 : 0.82)
                     }
                 }
             }
             .scrollTargetLayout()
-            .padding(.vertical, 4)
+            .padding(.vertical, 2)
             .padding(.trailing, 20)
         }
         .scrollTargetBehavior(.viewAligned)
@@ -46,7 +49,7 @@ struct PlanMealCatalogCarousel: View {
     }
 }
 
-// MARK: - Carte catalogue (liquid glass — même langage que Accueil)
+// MARK: - Tuile catalogue (photo + score — pas de glass, pas de titre)
 
 struct PlanMealCatalogCard: View {
     let meal: MealSuggestionContent
@@ -70,7 +73,7 @@ struct PlanMealCatalogCard: View {
         )
     }
 
-    private var cardShape: RoundedRectangle {
+    private var tileShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: PlanMealCatalogLayout.cornerRadius, style: .continuous)
     }
 
@@ -79,56 +82,61 @@ struct PlanMealCatalogCard: View {
             HapticManager.shared.impact(.light)
             onTap()
         } label: {
-            VStack(spacing: 12) {
-                Text(meal.localizedDisplayName)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.86)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 18)
+            ZStack(alignment: .bottomLeading) {
+                mealImage
+                    .frame(
+                        width: PlanMealCatalogLayout.tileSize,
+                        height: PlanMealCatalogLayout.tileSize
+                    )
+                    .clipShape(tileShape)
 
-                ZStack(alignment: .bottom) {
-                    mealImage
-
-                    MealDebloatScorePill(assessment: assessment)
-                        .padding(.bottom, 2)
-                }
-                .frame(height: PlanMealCatalogLayout.imageDiameter + 10)
-
-                Spacer(minLength: 0)
+                MealDebloatScorePill(assessment: assessment)
+                    .padding(10)
             }
             .frame(
-                width: PlanMealCatalogLayout.cardWidth,
-                height: PlanMealCatalogLayout.cardHeight
+                width: PlanMealCatalogLayout.tileSize,
+                height: PlanMealCatalogLayout.tileSize
             )
-            .contentShape(cardShape)
+            .contentShape(tileShape)
         }
-        .processGlassButton(in: cardShape)
-        .processHomeGlassCardShadow(isDark: theme.isDark)
-        .accessibilityLabel(AppCopy.t("\(meal.localizedDisplayName), score Debloat \(assessment.score)", en: "\(meal.localizedDisplayName), Debloat score \(assessment.score)"))
+        .buttonStyle(PlanMealCatalogTileButtonStyle())
+        .accessibilityLabel(
+            AppCopy.t(
+                "\(meal.localizedDisplayName), score Debloat \(assessment.score)",
+                en: "\(meal.localizedDisplayName), Debloat score \(assessment.score)"
+            )
+        )
+        .accessibilityHint(
+            AppCopy.t("Ouvre la fiche recette", en: "Opens the recipe detail")
+        )
     }
 
     @ViewBuilder
     private var mealImage: some View {
         if ProcessAssetCatalog.contains(imageAsset) {
-            // PNG tels quels — pas de clip circulaire (évite le « rond noir » autour).
             Image(imageAsset)
                 .resizable()
-                .scaledToFit()
+                .scaledToFill()
                 .frame(
-                    width: PlanMealCatalogLayout.imageDiameter,
-                    height: PlanMealCatalogLayout.imageDiameter
+                    width: PlanMealCatalogLayout.tileSize,
+                    height: PlanMealCatalogLayout.tileSize
                 )
         } else {
-            Image(systemName: slot.icon)
-                .font(.system(size: 34, weight: .semibold))
-                .foregroundStyle(theme.onboardingAccent.opacity(0.8))
-                .frame(
-                    width: PlanMealCatalogLayout.imageDiameter,
-                    height: PlanMealCatalogLayout.imageDiameter
-                )
+            ZStack {
+                theme.primaryText.opacity(theme.isDark ? 0.08 : 0.05)
+                Image(systemName: slot.icon)
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundStyle(theme.onboardingAccent.opacity(0.75))
+            }
         }
+    }
+}
+
+private struct PlanMealCatalogTileButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .opacity(configuration.isPressed ? 0.92 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.82), value: configuration.isPressed)
     }
 }

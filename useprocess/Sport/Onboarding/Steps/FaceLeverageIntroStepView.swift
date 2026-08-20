@@ -22,11 +22,13 @@ struct FaceLeverageIntroStepView: View {
     @State private var showSectionLabel = false
     @State private var showTestimonial = false
     @State private var showBentoLeft = false
-    @State private var showBentoStatus = false
-    @State private var showBentoDating = false
+    @State private var showBentoPresence = false
+    @State private var showBentoAttraction = false
 
     private let accent = Color(red: 0.22, green: 0.47, blue: 0.98)
     private let testimonialAvatars = ["leo", "lucas", "imran"]
+    private let cardShape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+    private let bentoShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
 
     private var userFirstName: String {
         let trimmed = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -41,31 +43,31 @@ struct FaceLeverageIntroStepView: View {
         case .female:
             return "avaprime"
         default:
-            return "imranprime"
+            return "mannyprime-leverage"
         }
     }
 
     private var contentTopInset: CGFloat {
         OnboardingConstants.headerBackButtonTopPadding
             + OnboardingConstants.backButtonSize
-            + 6
+            + 24
     }
 
     var body: some View {
         ZStack {
-            OnboardingTheme.faceLeverageIntroBackground
+            OnboardingTheme.screenBackground
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
                     heroSection
-                        .padding(.bottom, 24)
+                        .padding(.bottom, 64)
 
                     sectionLabel
-                        .padding(.bottom, 12)
+                        .padding(.bottom, 14)
 
                     testimonialCard
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 14)
 
                     bentoGrid
                 }
@@ -91,7 +93,7 @@ struct FaceLeverageIntroStepView: View {
             onValidationChanged?(false)
         }
         .processRestoreOpaqueUIKitHostingBackground(
-            OnboardingTheme.faceLeverageIntroBackgroundUIColor
+            OnboardingTheme.hostingBackgroundUIColor
         )
     }
 
@@ -111,7 +113,7 @@ struct FaceLeverageIntroStepView: View {
         .padding(.horizontal, 34)
         .padding(.top, 8)
         .padding(.bottom, 34)
-        .background(OnboardingTheme.faceLeverageIntroBackground.opacity(0.96))
+        .background(OnboardingTheme.screenBackground.opacity(0.96))
         .accessibilityLabel(OnboardingCopy.continueCTA)
     }
 
@@ -119,9 +121,9 @@ struct FaceLeverageIntroStepView: View {
 
     private var heroSection: some View {
         HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("\(userFirstName),")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(accent)
                     .staggerReveal(showGreeting, reduceMotion: reduceMotion)
 
@@ -129,12 +131,16 @@ struct FaceLeverageIntroStepView: View {
                     .staggerReveal(showHeadline, reduceMotion: reduceMotion)
 
                 Text(OnboardingCopy.t(
-                    "Un meilleur visage penche chaque interaction en ta faveur.",
-                    en: "Better looks tilt every interaction in your favor."
+                    "Un visage plus net, et on te prend plus au sérieux. Avant même que tu parles.",
+                    en: "A sharper face, and people take you more seriously — before you even speak."
                 ))
-                .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(OnboardingTheme.mutedText)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(OnboardingTheme.bodyText)
+                .lineSpacing(2)
+                .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 2)
                 .staggerReveal(showSubtext, reduceMotion: reduceMotion)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -158,13 +164,16 @@ struct FaceLeverageIntroStepView: View {
         Image(portraitAssetName)
             .resizable()
             .scaledToFill()
-            .frame(width: 108, height: 118)
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .frame(width: 112, height: 124, alignment: .top)
+            .offset(y: -22)
+            .frame(width: 112, height: 124)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(Color.black.opacity(colorScheme == .dark ? 0.18 : 0.06), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.16 : 0.55), lineWidth: 1)
             }
-            .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.10), radius: 14, y: 8)
+            .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.38 : 0.10), radius: 16, y: 8)
             .staggerReveal(showPortrait, reduceMotion: reduceMotion)
             .accessibilityHidden(true)
     }
@@ -172,24 +181,24 @@ struct FaceLeverageIntroStepView: View {
     // MARK: - Why it matters
 
     private var sectionLabel: some View {
-        Text(OnboardingCopy.t("POURQUOI C’EST IMPORTANT", en: "WHY IT MATTERS"))
+        Text(OnboardingCopy.t("CE QUE ÇA CHANGE", en: "WHAT CHANGES"))
             .font(.system(size: 12, weight: .bold))
-            .tracking(0.8)
+            .tracking(1.1)
             .foregroundStyle(accent)
             .staggerReveal(showSectionLabel, reduceMotion: reduceMotion)
     }
 
     private var testimonialCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 0) {
                 overlappingAvatars
                 Text(OnboardingCopy.t(
-                    "120k+ utilisateurs déjà dans le programme",
-                    en: "120k+ users already on the program"
+                    "+10k utilisateurs",
+                    en: "+10k users"
                 ))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(OnboardingTheme.mutedText)
-                .padding(.leading, 8)
+                .padding(.leading, 10)
             }
 
             quoteText
@@ -209,15 +218,7 @@ struct FaceLeverageIntroStepView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(OnboardingTheme.cardBackground)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(OnboardingTheme.cardBorder, lineWidth: 1)
-        }
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.28 : 0.07), radius: 18, y: 8)
+        .processGlassEffect(in: cardShape, interactive: false)
         .staggerReveal(showTestimonial, reduceMotion: reduceMotion)
     }
 
@@ -231,7 +232,10 @@ struct FaceLeverageIntroStepView: View {
                     .clipShape(Circle())
                     .overlay {
                         Circle()
-                            .strokeBorder(OnboardingTheme.cardBackground, lineWidth: 2)
+                            .strokeBorder(
+                                OnboardingTheme.screenBackground,
+                                lineWidth: 2
+                            )
                     }
                     .zIndex(Double(testimonialAvatars.count - index))
             }
@@ -243,147 +247,100 @@ struct FaceLeverageIntroStepView: View {
         (
             Text("“")
                 .foregroundStyle(OnboardingTheme.primaryText)
-            + Text(OnboardingCopy.t("Trois semaines plus tard, les gens ", en: "Three weeks in and people "))
+            + Text(OnboardingCopy.t("En trois semaines, les gens ", en: "Three weeks in, people "))
                 .foregroundStyle(OnboardingTheme.primaryText)
-            + Text(OnboardingCopy.t("me traitent différemment.", en: "treat me differently."))
+            + Text(OnboardingCopy.t("me regardent autrement.", en: "look at me differently."))
                 .foregroundStyle(accent)
             + Text("”")
                 .foregroundStyle(OnboardingTheme.primaryText)
         )
-        .font(.system(size: 24, weight: .bold))
+        .font(.system(size: 22, weight: .bold))
         .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Bento
 
     private var bentoGrid: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 14) {
             bentoPrimaryCard
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 228)
+                .frame(minHeight: 236)
                 .staggerReveal(showBentoLeft, reduceMotion: reduceMotion)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 18) {
                 bentoSecondaryCard(
-                    title: OnboardingCopy.t("Statut", en: "Status"),
-                    subtitle: OnboardingCopy.t("Mène la pièce.", en: "Lead the room."),
-                    icon: "star",
-                    style: .light
+                    title: OnboardingCopy.t("Présence", en: "Presence"),
+                    subtitle: OnboardingCopy.t("On t’écoute davantage.", en: "People listen more."),
+                    icon: "person.wave.2"
                 )
-                .frame(height: 108)
-                .staggerReveal(showBentoStatus, reduceMotion: reduceMotion)
+                .frame(height: 104)
+                .staggerReveal(showBentoPresence, reduceMotion: reduceMotion)
 
                 bentoSecondaryCard(
-                    title: OnboardingCopy.t("Dating", en: "Dating"),
-                    subtitle: OnboardingCopy.t("Plus de matchs.", en: "More matches."),
-                    icon: "heart.fill",
-                    style: .accent
+                    title: OnboardingCopy.t("Attirance", en: "Attraction"),
+                    subtitle: OnboardingCopy.t("Plus de regards, plus d’intérêt.", en: "More looks, more interest."),
+                    icon: "heart.fill"
                 )
-                .frame(height: 108)
-                .staggerReveal(showBentoDating, reduceMotion: reduceMotion)
+                .frame(height: 104)
+                .staggerReveal(showBentoAttraction, reduceMotion: reduceMotion)
             }
             .frame(maxWidth: .infinity)
         }
     }
 
     private var bentoPrimaryCard: some View {
-        bentoCardShell(style: .dark) {
-            VStack(alignment: .leading, spacing: 0) {
-                bentoIcon(systemName: "person.crop.circle", style: .dark)
-                Spacer(minLength: 0)
-                Text(OnboardingCopy.t("Premières impressions", en: "First impressions"))
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                Text(OnboardingCopy.t(
-                    "Les gens jugent avant que tu parles.",
-                    en: "People judge before you speak."
-                ))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.white.opacity(0.68))
-                .padding(.top, 4)
-            }
+        VStack(alignment: .leading, spacing: 0) {
+            bentoIcon(systemName: "eye")
+            Spacer(minLength: 0)
+            Text(OnboardingCopy.t("Première impression", en: "First impression"))
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(OnboardingTheme.primaryText)
+            Text(OnboardingCopy.t(
+                "On te juge en 3 secondes. Ton visage parle avant toi.",
+                en: "They judge you in 3 seconds. Your face speaks first."
+            ))
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(OnboardingTheme.bodyText)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 4)
         }
-    }
-
-    private enum BentoCardStyle {
-        case dark
-        case light
-        case accent
+        .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .processGlassEffect(in: bentoShape, interactive: false)
     }
 
     private func bentoSecondaryCard(
         title: String,
         subtitle: String,
-        icon: String,
-        style: BentoCardStyle
+        icon: String
     ) -> some View {
-        bentoCardShell(style: style) {
-            VStack(alignment: .leading, spacing: 0) {
-                bentoIcon(systemName: icon, style: style)
-                Spacer(minLength: 0)
-                Text(title)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(style == .accent ? .white : OnboardingTheme.primaryText)
-                Text(subtitle)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(
-                        style == .accent
-                            ? Color.white.opacity(0.78)
-                            : OnboardingTheme.mutedText
-                    )
-                    .padding(.top, 3)
-            }
+        VStack(alignment: .leading, spacing: 0) {
+            bentoIcon(systemName: icon)
+            Spacer(minLength: 0)
+            Text(title)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(OnboardingTheme.primaryText)
+            Text(subtitle)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(OnboardingTheme.mutedText)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 3)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .processGlassEffect(in: bentoShape, interactive: false)
     }
 
-    private func bentoCardShell<Content: View>(
-        style: BentoCardStyle,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        content()
-            .padding(16)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(background(for: style))
-            }
-            .overlay {
-                if style == .light {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .strokeBorder(OnboardingTheme.cardBorder, lineWidth: 1)
-                }
-            }
-    }
-
-    private func background(for style: BentoCardStyle) -> Color {
-        switch style {
-        case .dark:
-            return colorScheme == .dark ? Color(white: 0.12) : .black
-        case .light:
-            return OnboardingTheme.cardBackground
-        case .accent:
-            return accent
-        }
-    }
-
-    private func bentoIcon(systemName: String, style: BentoCardStyle) -> some View {
+    private func bentoIcon(systemName: String) -> some View {
         ZStack {
             Circle()
-                .fill(
-                    style == .dark
-                        ? Color.white.opacity(0.12)
-                        : (style == .accent ? Color.white.opacity(0.18) : accent.opacity(0.12))
-                )
-                .frame(width: 34, height: 34)
+                .fill(accent.opacity(0.14))
+                .frame(width: 32, height: 32)
             Image(systemName: systemName)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(
-                    style == .dark || style == .accent
-                        ? .white
-                        : accent
-                )
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(accent)
         }
-        .padding(.bottom, 12)
+        .padding(.bottom, 10)
     }
 
     // MARK: - Animation
@@ -396,26 +353,26 @@ struct FaceLeverageIntroStepView: View {
         showSectionLabel = false
         showTestimonial = false
         showBentoLeft = false
-        showBentoStatus = false
-        showBentoDating = false
+        showBentoPresence = false
+        showBentoAttraction = false
 
         if reduceMotion {
             revealAllImmediately()
             return
         }
 
-        reveal(after: 0.05) { showGreeting = true }
-        reveal(after: 0.14) { showHeadline = true }
-        reveal(after: 0.24) {
+        reveal(after: 0.08) { showGreeting = true }
+        reveal(after: 0.18) { showHeadline = true }
+        reveal(after: 0.30) {
             showSubtext = true
             showPortrait = true
         }
-        reveal(after: 0.36) { showSectionLabel = true }
-        reveal(after: 0.44) { showTestimonial = true }
-        reveal(after: 0.58) { showBentoLeft = true }
-        reveal(after: 0.68) { showBentoStatus = true }
-        reveal(after: 0.78) {
-            showBentoDating = true
+        reveal(after: 0.44) { showSectionLabel = true }
+        reveal(after: 0.52) { showTestimonial = true }
+        reveal(after: 0.68) { showBentoLeft = true }
+        reveal(after: 0.80) { showBentoPresence = true }
+        reveal(after: 0.92) {
+            showBentoAttraction = true
             markCompleted()
         }
     }
@@ -428,14 +385,14 @@ struct FaceLeverageIntroStepView: View {
         showSectionLabel = true
         showTestimonial = true
         showBentoLeft = true
-        showBentoStatus = true
-        showBentoDating = true
+        showBentoPresence = true
+        showBentoAttraction = true
         markCompleted()
     }
 
     private func reveal(after delay: TimeInterval, action: @escaping () -> Void) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            withAnimation(.spring(response: 0.56, dampingFraction: 0.84)) {
+            withAnimation(.spring(response: 0.62, dampingFraction: 0.84)) {
                 action()
             }
         }

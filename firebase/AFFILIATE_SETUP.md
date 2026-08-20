@@ -69,6 +69,29 @@ Admin endpoints require header `X-Affiliate-Admin-Secret: <AFFILIATE_ADMIN_SECRE
 ./firebase/scripts/create-clipper.sh --auth MANNY manny@example.com
 ```
 
+## Self-serve apply (iOS + web)
+
+Users apply in-app (**Paramètres → Programme créateur**) or on **https://useprocess.xyz/affiliate** (email/password login).
+
+- `affiliateApply` creates `affiliates/{uid}` with `status: pending`
+- Codes stay **inactive** until you approve
+- User should message support (Crisp in-app or `support@useprocess.xyz`) with TikTok profile
+
+### Admin workflow (manual validation)
+
+```bash
+# 1. See pending applications
+./firebase/scripts/list-pending-clippers.sh
+
+# 2. Approve (activates codes — clipper can earn 40%)
+./firebase/scripts/approve-clipper.sh <affiliateId>
+
+# 3. Pay out via PayPal manually, then record in ledger
+./firebase/scripts/mark-paid-clipper.sh <affiliateId> 42.50 "March payout"
+```
+
+`affiliateId` for self-serve apply = the user's **Firebase UID** (not the vanity code).
+
 Portal: **https://useprocess.xyz/affiliate**
 
 Manual curl:
@@ -113,9 +136,10 @@ Resolution order: **affiliate code first**, then user referral code.
 
 ## iOS
 
-1. Optional onboarding step — creator / referral code
-2. `affiliateRegister` if affiliate, else `referralRegister`
-3. RevenueCat attribute `affiliate_code` synced via `ProcessAcquisitionAttribution`
+1. Onboarding step **« Avez-vous un code ? »** before paywall (`showsReferralCodeStepInOnboarding = true`)
+2. Settings → **Programme créateur** — apply form, pending state, dashboard, PayPal, share link
+3. `affiliateRegister` if affiliate, else `referralRegister`
+4. RevenueCat attribute `affiliate_code` synced via `ProcessAcquisitionAttribution`
 
 ## Website portal
 

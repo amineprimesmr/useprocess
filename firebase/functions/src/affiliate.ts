@@ -566,6 +566,58 @@ export const affiliateAdminApprove = onRequest(
   }
 );
 
+export const affiliateAdminListPending = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    secrets: [affiliateAdminSecret],
+    timeoutSeconds: 30,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      verifyAffiliateAdmin(req, affiliateAdminSecret.value());
+
+      const snap = await db()
+        .collection("affiliates")
+        .where("status", "==", "pending")
+        .limit(100)
+        .get();
+
+      const pending = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          affiliateId: doc.id,
+          displayName: data.displayName ?? doc.id,
+          email: data.email ?? null,
+          uid: data.uid ?? null,
+          codes: data.codes ?? [],
+          paypalEmail: data.paypalEmail ?? null,
+          createdAt: data.createdAt?.toMillis?.() ?? null,
+        };
+      });
+
+      pending.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+
+      res.status(200).json({ ok: true, pending, count: pending.length });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[affiliateAdminListPending]", message);
+      res.status(affiliateHttpStatus(message)).json({ error: message });
+    }
+  }
+);
+
 export const affiliateAdminMarkPaid = onRequest(
   {
     invoker: "public",

@@ -45,10 +45,13 @@ enum ReferralRemoteService {
     @discardableResult
     static func confirmSubscription() async throws -> Bool {
         let json = try await post(function: "referralConfirmSubscription", payload: [:])
-        if let skipped = json["skipped"] as? String, !skipped.isEmpty {
-            return false
-        }
         return json["ok"] as? Bool == true
+    }
+
+    static func fetchDashboard() async throws -> ProcessReferralDashboardResponse {
+        let json = try await post(function: "referralDashboard", payload: [:])
+        let data = try JSONSerialization.data(withJSONObject: json)
+        return try JSONDecoder().decode(ProcessReferralDashboardResponse.self, from: data)
     }
 
     private static func post(function: String, payload: [String: Any]) async throws -> [String: Any] {

@@ -45,6 +45,26 @@ enum SubscriptionConfiguration {
     /// Groupe d'abonnements App Store (StoreKit + éligibilité intro).
     static let subscriptionGroupID = "21837790"
 
+    /// App Store Connect → Informations sur l’app → Apple ID (formulaire Retention Messaging).
+    static let appStoreAppleID = "6753808143"
+
+    /// Copy prête à coller — RevenueCat Lifecycle → Retention (default message, fr-FR).
+    enum RetentionMessagingCopy {
+        static let defaultTitleFR = "Garde ton plan debloat actif"
+        static let defaultSubtitleFR =
+            "Scans visage, routine et coach restent débloqués tant que tu restes abonné."
+        static let defaultTitleEN = "Keep your debloat plan going"
+        static let defaultSubtitleEN =
+            "Face scans, routine, and coach stay unlocked while you stay subscribed."
+
+        static let trialTitleFR = "Ton essai t’aide déjà à debloat"
+        static let trialSubtitleFR =
+            "Continue maintenant pour garder tes scans, ta routine et ton coach."
+        static let trialTitleEN = "Your trial is already helping you debloat"
+        static let trialSubtitleEN =
+            "Continue now to keep your scans, routine, and coach."
+    }
+
     /// Quick action long-press icône : offre lifetime winback (pas d’essai gratuit).
     static let retentionQuickActionLifetimeOfferEnabled = true
 
@@ -331,6 +351,7 @@ enum SubscriptionError: LocalizedError {
     case pending
     case noActiveSubscription
     case notConfigured
+    case manageSubscriptionsUnavailable
     case unknown
 
     var errorDescription: String? {
@@ -368,6 +389,11 @@ enum SubscriptionError: LocalizedError {
             return AppCopy.tSync(
                 "Abonnements non configurés (clé RevenueCat manquante).",
                 en: "Subscriptions not configured (missing RevenueCat key)."
+            )
+        case .manageSubscriptionsUnavailable:
+            return AppCopy.tSync(
+                "Impossible d’ouvrir la gestion d’abonnement sur cet appareil.",
+                en: "Couldn't open subscription management on this device."
             )
         case .unknown:
             return AppCopy.tSync("Erreur inconnue.", en: "Unknown error.")

@@ -21,30 +21,15 @@ struct ProcessProfileHomeView: View {
     }
 
     var body: some View {
-        processMainScrollableChrome(
-            selectedSection: $selectedSection,
-            pageSection: .profile,
-            adoptsFloatingTabBar: !isOnboardingPreview
-        ) {
-            VStack(alignment: .leading, spacing: 20) {
-                identityBlock
-
-                ProfileDebloatScoreSection()
+        Group {
+            if isOnboardingPreview {
+                profileScroll
+            } else {
+                profileScroll.processAdoptForIGTabBar()
             }
-            .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-            .padding(.bottom, 32)
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            profileHeader
-                .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
-                .padding(.top, 16)
-                .padding(.bottom, 4)
-                .background(Color.clear)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
-        .toolbar(.hidden, for: .navigationBar)
-        .toolbarBackground(.hidden, for: .navigationBar)
         .processClearUIKitHostingBackground()
         .task {
             guard !isOnboardingPreview else { return }
@@ -66,24 +51,51 @@ struct ProcessProfileHomeView: View {
         }
     }
 
+    private var profileScroll: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if !isOnboardingPreview {
+                    profileHeader
+                }
+
+                identityBlock
+
+                ProfileDebloatScoreSection()
+            }
+            .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
+            .padding(.top, isOnboardingPreview ? 16 : 8)
+            .padding(.bottom, isOnboardingPreview ? 32 : ProcessIGTabMetrics.tabBarOverlayClearance + 32)
+        }
+        .scrollIndicators(.hidden)
+        .processTransparentScrollSurface()
+    }
+
     private var profileHeader: some View {
         HStack(alignment: .center, spacing: 12) {
             Text(AppCopy.t("Tes progrès", en: "Your progress"))
-                .font(.system(size: 34, weight: .bold))
+                .font(.system(size: 26, weight: .bold))
                 .foregroundStyle(theme.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
 
             Spacer(minLength: 8)
 
-            ProcessGlassIconButton(
-                systemName: "gearshape",
-                size: 44,
-                iconSize: 17,
-                action: openSettings
-            )
+            Button(action: openSettings) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
+                    .foregroundStyle(theme.primaryText)
+                    .frame(
+                        width: ProcessAppHeaderControlMetrics.size,
+                        height: ProcessAppHeaderControlMetrics.size
+                    )
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .processGlassButton(in: Circle())
             .accessibilityLabel(AppCopy.settings)
         }
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 
     private func openSettings() {

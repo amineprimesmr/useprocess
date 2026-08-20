@@ -7,6 +7,12 @@ final class BodyScanLiveCameraView: UIView {
 
     let previewLayer = AVCaptureVideoPreviewLayer()
     private let skeletonLayer = CAShapeLayer()
+    var previewLayoutZoom: CGFloat = ProcessScanCamera.frontPreviewLayoutZoom {
+        didSet {
+            guard oldValue != previewLayoutZoom else { return }
+            setNeedsLayout()
+        }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -32,7 +38,7 @@ final class BodyScanLiveCameraView: UIView {
         ProcessScanCamera.layoutPreviewLayer(
             previewLayer,
             in: bounds,
-            zoom: ProcessScanCamera.frontPreviewLayoutZoom
+            zoom: previewLayoutZoom
         )
         skeletonLayer.frame = previewLayer.bounds
         configurePreviewConnection()
@@ -111,14 +117,17 @@ struct BodyScanLiveCameraRepresentable: UIViewRepresentable {
     let session: AVCaptureSession
     let landmarks: [BodyLandmark]
     let isReady: Bool
+    var previewLayoutZoom: CGFloat = ProcessScanCamera.frontPreviewLayoutZoom
 
     func makeUIView(context: Context) -> BodyScanLiveCameraView {
         let view = BodyScanLiveCameraView()
+        view.previewLayoutZoom = previewLayoutZoom
         view.attachSession(session)
         return view
     }
 
     func updateUIView(_ uiView: BodyScanLiveCameraView, context: Context) {
+        uiView.previewLayoutZoom = previewLayoutZoom
         uiView.attachSession(session)
         uiView.updateSkeleton(landmarks: landmarks, isReady: isReady)
     }

@@ -36,6 +36,7 @@ Never open, index, edit, restore, or copy from those folders unless the user exp
 - Before editing, confirm `git status --short --branch` from `/Users/amine/Developer/useprocess`.
 - Keep generated Xcode data out of the repo: `DerivedData`, `Index.noindex`, `xcuserdata`, `SourcePackages`, `build`.
 - Prefer opening the Xcode project with the repo command: `./open-xcode.command`.
+- **Xcode project file**: agents may edit `useprocess.xcodeproj/project.pbxproj` when needed (SPM deps, build settings, exceptions). Source files under `useprocess/` are included via `PBXFileSystemSynchronizedRootGroup` — deleting a `.swift` on disk removes it from the target automatically; no per-file pbxproj entries to clean.
 - For Firebase/Auth changes, avoid direct `Auth.auth()` access before `FirebaseBootstrap.configure()` and a real `FirebaseApp.app()` check.
 - For subscription/paywall work, keep production purchase behavior real. Debug-only test bypasses must stay behind `#if DEBUG`.
 

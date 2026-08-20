@@ -9,6 +9,12 @@ final class UserSessionCoordinator {
 
     private(set) var activeUserId: String?
     private var authListener: AuthStateDidChangeListenerHandle?
+    private var bindWorkTask: Task<Void, Never>?
+
+    func cancelPendingBindWork() {
+        bindWorkTask?.cancel()
+        bindWorkTask = nil
+    }
 
     private init() {
         FirebaseBootstrap.configure()
@@ -40,15 +46,26 @@ final class UserSessionCoordinator {
             ProcessHydrationLogStore.shared.reload()
             ProcessDebloatTrajectoryStore.shared.reload()
             ProcessStreakStore.shared.reload()
-            AppSession.shared.reloadForCurrentUser()
+            if !AppSession.shared.isAccountWipeInProgress,
+               !AppSession.shared.blocksAuthenticatedOnboardingRestore {
+                AppSession.shared.reloadForCurrentUser()
+            }
             ProcessPrivacyConsentStore.shared.reloadForUser(userId: userId)
             BodyScanHistoryStore.shared.reloadForUser(userId: userId)
             CoachConversationStore.reloadForUser(userId: userId)
             SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
 
-            Task {
+            bindWorkTask?.cancel()
+            bindWorkTask = Task {
+                guard !Task.isCancelled else { return }
+                guard !AppSession.shared.isAccountWipeInProgress else { return }
+
                 await SubscriptionService.shared.syncAppUserID(userId)
+                guard !Task.isCancelled, !AppSession.shared.isAccountWipeInProgress else { return }
+
                 await UnifiedProfileService.shared.loadProfile()
+                guard !Task.isCancelled, !AppSession.shared.isAccountWipeInProgress else { return }
+
                 SocialProfileStore.shared.bind(unified: UnifiedProfileService.shared.currentProfile)
                 if let profile = UnifiedProfileService.shared.currentProfile {
                     ProcessReferralStore.shared.reload(
@@ -61,7 +78,10 @@ final class UserSessionCoordinator {
                     await AcquisitionCodeService.retryPendingRemoteRegistration(
                         displayName: profile.firstName.isEmpty ? profile.username : profile.firstName
                     )
+                    await ProcessAffiliateStore.shared.reload()
                 }
+                guard !Task.isCancelled, !AppSession.shared.isAccountWipeInProgress else { return }
+
                 await ReferralService.shared.confirmSubscriptionRewardsIfNeeded()
                 ProcessCrispSupport.syncUser()
                 if AppSession.shared.hasCompletedOnboarding,
@@ -78,8 +98,10 @@ final class UserSessionCoordinator {
     }
 
     func handleAccountDeleted() {
+        cancelPendingBindWork()
+        let deletedUID = activeUserId
         activeUserId = nil
-        UnifiedProfileService.shared.clearLocalProfile()
+        UnifiedProfileService.shared.clearAllPersistedProfiles(primaryUID: deletedUID)
         SocialProfileStore.shared.bind(unified: nil)
         BodyScanHistoryStore.shared.clearForUser(userId: nil)
         FaceScanHistoryStore.shared.clearForUser(userId: nil)
@@ -91,6 +113,7 @@ final class UserSessionCoordinator {
         activeUserId = nil
         UnifiedProfileService.shared.clearLocalProfile()
         SocialProfileStore.shared.bind(unified: nil)
+        ProcessAffiliateStore.shared.clearForSignOut()
         ProcessCrispSupport.resetSession()
         Task { await SubscriptionService.shared.logOutAfterAccountDeletion() }
     }

@@ -138,10 +138,21 @@ final class AuthenticationManager: NSObject, ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 guard !AppSession.shared.isAccountWipeInProgress else { return }
+                guard !AppSession.shared.blocksAuthenticatedOnboardingRestore else {
+                    self.isAuthenticated = user != nil
+                    if user == nil {
+                        UnifiedProfileService.shared.clearLocalProfile()
+                    }
+                    return
+                }
                 self.isAuthenticated = user != nil
                 if user != nil {
                     await UnifiedProfileService.shared.loadProfile()
+                    guard !AppSession.shared.isAccountWipeInProgress else { return }
+                    guard !AppSession.shared.blocksAuthenticatedOnboardingRestore else { return }
                     AppSession.shared.reloadForCurrentUser()
+                    guard !AppSession.shared.isAccountWipeInProgress else { return }
+                    guard !AppSession.shared.blocksAuthenticatedOnboardingRestore else { return }
                     AppSession.shared.reconcileOnboardingFromProfileIfNeeded()
                     self.hasCompletedOnboarding = AppSession.shared.hasCompletedOnboarding
                     if AppSession.shared.hasCompletedOnboarding {
@@ -166,73 +177,46 @@ final class AuthenticationManager: NSObject, ObservableObject {
         UnifiedProfileService.shared.clearLocalProfile()
     }
 
-    func deleteRemoteAccount() async throws {
+    /// Suppression serveur best-effort — **jamais** de pop-up Sign in with Apple ici.
+    /// La réauth Apple pendant la suppression renvoyait l'utilisateur dans l'app si annulée.
+    func deleteRemoteAccountBestEffort() async -> String? {
         guard firebaseAuthReady else {
-            throw AccountDeletionError.remoteDeletionFailed("Firebase non configuré.")
+            return AppCopy.tSync("Firebase non configuré.", en: "Firebase not configured.")
         }
 
         guard currentFirebaseUser != nil else {
-            throw AccountDeletionError.notSignedIn
-        }
-
-        var appleAuthorizationCode: String?
-        if usesAppleProvider {
-            appleAuthorizationCode = try await reauthenticateWithAppleForAccountDeletion()
+            return nil
         }
 
         do {
-            try await AccountDeletionRemoteService.deleteViaCloudFunction(
-                appleAuthorizationCode: appleAuthorizationCode
-            )
+            try await AccountDeletionRemoteService.deleteViaCloudFunction(appleAuthorizationCode: nil)
             #if DEBUG
-            print("[Auth] Compte supprimé via Cloud Function")
+            print("[Auth] Compte supprimé via Cloud Function (sans pop-up Apple)")
             #endif
-            return
+            return nil
         } catch {
             #if DEBUG
             print("[Auth] Cloud delete failed, trying client SDK: \(error.localizedDescription)")
             #endif
-            if case AccountDeletionError.cancelled = error { throw error }
         }
 
-        if usesAppleProvider, appleAuthorizationCode == nil {
-            appleAuthorizationCode = try await reauthenticateWithAppleForAccountDeletion()
-        }
-        try await AccountDeletionRemoteService.deleteViaClientSDK()
-    }
-
-    private var usesAppleProvider: Bool {
-        currentFirebaseUser?.providerData.contains { $0.providerID == "apple.com" } == true
-    }
-
-    private func reauthenticateWithAppleForAccountDeletion() async throws -> String? {
         do {
-            return try await withThrowingTaskGroup(of: String?.self) { group in
-                group.addTask { @MainActor in
-                    try await AppleSignInManager.shared.startReauthenticationForAccountDeletion()
-                }
-                group.addTask {
-                    try await Task.sleep(nanoseconds: 60_000_000_000)
-                    throw AccountDeletionError.remoteDeletionFailed(
-                        "Confirmation Apple expirée. Ferme les fenêtres ouvertes et réessaie."
-                    )
-                }
-
-                defer { group.cancelAll() }
-                return try await group.next()!
-            }
+            try await AccountDeletionRemoteService.deleteViaClientSDK()
+            #if DEBUG
+            print("[Auth] Compte supprimé via client SDK (sans pop-up Apple)")
+            #endif
+            return nil
         } catch let error as AccountDeletionError {
-            throw error
+            return error.localizedDescription
         } catch {
-            if let authError = error as? ASAuthorizationError, authError.code == .canceled {
-                throw AccountDeletionError.cancelled
-            }
-            let nsError = error as NSError
-            if nsError.domain == ASAuthorizationError.errorDomain,
-               nsError.code == ASAuthorizationError.canceled.rawValue {
-                throw AccountDeletionError.cancelled
-            }
-            throw error
+            return error.localizedDescription
+        }
+    }
+
+    @available(*, deprecated, message: "Use deleteRemoteAccountBestEffort() — no Apple reauth prompt.")
+    func deleteRemoteAccount() async throws {
+        if let warning = await deleteRemoteAccountBestEffort() {
+            throw AccountDeletionError.remoteDeletionFailed(warning)
         }
     }
 
@@ -242,13 +226,13 @@ final class AuthenticationManager: NSObject, ObservableObject {
 
     func applyPostAccountDeletion() {
         isAuthenticated = false
-        isInOnboarding = false
+        isInOnboarding = true
         hasCompletedOnboarding = false
         isLoading = false
         if firebaseAuthReady {
             try? Auth.auth().signOut()
         }
-        UnifiedProfileService.shared.clearLocalProfile()
+        UnifiedProfileService.shared.clearAllPersistedProfiles(primaryUID: nil)
     }
 
     func signOut() {
@@ -288,6 +272,15 @@ final class UnifiedProfileService: ObservableObject {
     }
 
     func clearLocalProfile() {
+        clearAllPersistedProfiles(primaryUID: currentProfile?.userId)
+    }
+
+    func clearAllPersistedProfiles(primaryUID: String?) {
+        let primary = primaryUID ?? UserScopedStorage.currentUserId() ?? "local-user"
+        for uid in UserScopedStorage.likelyUserIds(primary: primary) {
+            let key = UserScopedStorage.key(Self.localProfileKey, userId: uid)
+            UserDefaults.standard.removeObject(forKey: key)
+        }
         currentProfile = nil
         isAuthenticated = false
         error = nil
@@ -312,6 +305,9 @@ final class UnifiedProfileService: ObservableObject {
     }
 
     func loadProfile() async {
+        guard !AppSession.shared.isAccountWipeInProgress else { return }
+        guard !AppSession.shared.blocksAuthenticatedOnboardingRestore else { return }
+
         guard let user = currentFirebaseUser else {
             let userId = "local-user"
             if let cached = loadLocalProfile(userId: userId) {
@@ -341,6 +337,7 @@ final class UnifiedProfileService: ObservableObject {
 
         do {
             if let profile = try await FirebaseProfileRepository.shared.loadProfile(userId: userId) {
+                guard !AppSession.shared.isAccountWipeInProgress else { return }
                 currentProfile = profile
             } else if currentProfile?.userId != userId {
                 currentProfile = UnifiedUserProfile(

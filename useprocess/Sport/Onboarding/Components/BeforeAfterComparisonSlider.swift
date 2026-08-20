@@ -87,8 +87,9 @@ struct BeforeAfterComparisonSlider: View {
                 sliderHandle
                     .position(x: dividerX, y: height / 2)
                     .gesture(sliderDragGesture(width: width))
-
-                comparisonBadges(width: width, height: height, dividerX: dividerX)
+            }
+            .overlay(alignment: .top) {
+                comparisonBadges(width: width, dividerX: dividerX)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -125,6 +126,8 @@ struct BeforeAfterComparisonSlider: View {
                 .scaledToFill()
                 .frame(width: width, height: height)
                 .clipped()
+                .grayscale(desaturate ? 1 : 0)
+                .contrast(desaturate ? 1.12 : 1)
                 .saturation(desaturate ? 0 : 1)
                 .accessibilityLabel(accessibilityLabel)
         } else {
@@ -202,32 +205,30 @@ struct BeforeAfterComparisonSlider: View {
     }
 
     @ViewBuilder
-    private func comparisonBadges(width: CGFloat, height: CGFloat, dividerX: CGFloat) -> some View {
+    private func comparisonBadges(width: CGFloat, dividerX: CGFloat) -> some View {
         if beforeBadgeTitle != nil || afterBadgeTitle != nil {
-            ZStack(alignment: .top) {
+            HStack(alignment: .top, spacing: 8) {
                 if let beforeBadgeTitle, dividerX > 56 {
                     comparisonBadge(
                         title: beforeBadgeTitle,
                         style: .before
                     )
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 14)
-                    .padding(.top, 14)
                     .opacity(dividerX > 72 ? 1 : 0)
                 }
+
+                Spacer(minLength: 0)
 
                 if let afterBadgeTitle, (width - dividerX) > 56 {
                     comparisonBadge(
                         title: afterBadgeTitle,
                         style: .after
                     )
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.trailing, 14)
-                    .padding(.top, 14)
                     .opacity((width - dividerX) > 72 ? 1 : 0)
                 }
             }
-            .frame(width: width, height: height)
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+            .frame(maxWidth: .infinity)
             .allowsHitTesting(false)
         }
     }

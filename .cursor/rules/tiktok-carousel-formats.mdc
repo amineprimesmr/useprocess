@@ -1,0 +1,18 @@
+---
+description: Process TikTok carousel rules — App Store card overlay (format 01/02 vs 03)
+alwaysApply: true
+---
+
+# TikTok carousels (process-tiktok)
+
+Source: `/Users/amine/Desktop/process-tiktok`
+
+## App Store card overlay
+
+**Never** paste the App Store card (`paste_app_banner` / `paste_card` / `appstore-*.png`) **on top of** format **01** or format **02** slides.
+
+- Format 01 (`generate_format01_manny.py`, `generate_carousel_en.py`): Manny before/after + protocol. Scan slide = 2x2 faces + app screenshot **in the grid only**. No card overlay.
+- Format 02 (`generate_format_glowup.py`): celebrity glow-up. Same: no App Store card on top.
+- Format 03 foods (`generate_format_foods.py`): **keep** the App Store card (width 640, angle -1.8, y=28, black plate intact).
+
+Do not re-add the overlay on 01/02 “to match foods”. The scan UI cell in the 2x2 is enough.

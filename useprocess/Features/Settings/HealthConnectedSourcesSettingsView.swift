@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HealthConnectedSourcesSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var healthManager: HealthManager
     @Environment(\.appTheme) private var theme
 
@@ -9,7 +10,7 @@ struct HealthConnectedSourcesSettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 GroupedSettingsCard {
                     GroupedSettingsInfoRow(
-                        icon: "heart.text.square",
+                        icon: "heart.text.square.fill",
                         title: AppCopy.t("Apple Santé", en: "Apple Health"),
                         value: healthStatusLabel
                     )
@@ -58,7 +59,7 @@ struct HealthConnectedSourcesSettingsView: View {
                         if let last = healthManager.lastSyncDate {
                             GroupedSettingsRowDivider()
                             GroupedSettingsInfoRow(
-                                icon: "arrow.triangle.2.circlepath",
+                                icon: "arrow.clockwise.circle.fill",
                                 title: AppCopy.t("Dernière sync", en: "Last Sync"),
                                 value: last.formatted(date: .abbreviated, time: .shortened)
                             )
@@ -118,9 +119,11 @@ struct HealthConnectedSourcesSettingsView: View {
             .padding(.vertical, 16)
         }
         .scrollIndicators(.hidden)
-        .processTransparentScrollSurface()
-        .navigationTitle(AppCopy.t("Sources connectées", en: "Connected Sources"))
-        .navigationBarTitleDisplayMode(.inline)
+        .processSettingsStandardToolbar(
+            title: AppCopy.t("Sources connectées", en: "Connected Sources"),
+            onBack: { dismiss() }
+        )
+        .processSettingsOpalPage()
         .task {
             if healthManager.isAuthorized {
                 await healthManager.refreshConnectedSources()
@@ -141,7 +144,7 @@ struct HealthConnectedSourcesSettingsView: View {
     private func sourceIcon(for name: String) -> String {
         let lower = name.lowercased()
         if lower.contains("watch") { return "applewatch" }
-        if lower.contains("iphone") || lower.contains("phone") { return "iphone" }
-        return "app.badge"
+        if lower.contains("iphone") || lower.contains("phone") { return "iphone.fill" }
+        return "app.fill"
     }
 }

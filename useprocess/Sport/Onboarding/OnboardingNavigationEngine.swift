@@ -42,14 +42,19 @@ class OnboardingNavigationEngine {
 
     /// Parcours linéaire attendu (étapes affichées) selon l'état actuel du ViewModel — pour la barre de progression.
     func buildActiveFlowPath() -> [Int] {
-        defer { stepForNavigation = nil }
+        defer {
+            stepForNavigation = nil
+        }
 
         var path: [Int] = []
         var step = OnboardingStep.genderSelection.rawValue
-        var visited = Set<Int>()
+        var visitCounts: [Int: Int] = [:]
 
         for _ in 0..<100 {
-            guard visited.insert(step).inserted else { break }
+            let visits = visitCounts[step, default: 0]
+            guard visits == 0 else { break }
+
+            visitCounts[step, default: 0] += 1
             path.append(step)
             stepForNavigation = step
             guard let next = getNextStep() else { break }
@@ -143,69 +148,6 @@ class OnboardingNavigationEngine {
         }
         let nextIndex = currentIndex + 1
         return nextIndex < orderedSteps.count ? orderedSteps[nextIndex] : nil
-    }
-    
-    // MARK: - Previous Step
-    
-    func getPreviousStep() -> Int? {
-        guard let current = OnboardingStep(rawValue: viewModel.currentStep) else {
-            return nil
-        }
-        
-        // Flow initial inversé
-        switch current {
-        case .genderSelection:
-            return nil
-        case .ageSelection:
-            return OnboardingStep.genderSelection.rawValue
-        case .height:
-            return OnboardingStep.ageSelection.rawValue
-        case .weight:
-            return OnboardingStep.height.rawValue
-        case .idealWeight, .weightGoalIncompatible, .primaryGoal:
-            return OnboardingStep.weight.rawValue
-        case .heightWeight:
-            return OnboardingStep.ageSelection.rawValue
-        case .firstNameInput:
-            return OnboardingStep.weight.rawValue
-        case .bodyScan:
-            return OnboardingStep.weight.rawValue
-        case .faceLeverageIntro:
-            return OnboardingStep.firstNameInput.rawValue
-        case .processResultsDurability:
-            return OnboardingStep.firstNameInput.rawValue
-        default:
-            break
-        }
-        
-        // Flow objectifs spécifiques inversé
-        if let previous = getPreviousStepInSpecificFlow(from: current) {
-            return previous
-        }
-        
-        // Flow nutrition inversé
-        if let previous = getPreviousStepInNutritionFlow(from: current) {
-            return previous
-        }
-        
-        // Flow sommeil inversé
-        if let previous = getPreviousStepInSleepFlow(from: current) {
-            return previous
-        }
-        
-        // Flow finalisation inversé
-        if let previous = getPreviousStepInFinalizationFlow(from: current) {
-            return previous
-        }
-        
-        // Fallback de compatibilité pour rawValues non linéaires.
-        let orderedSteps = OnboardingStep.semanticOrder
-            .map(\.rawValue)
-        guard let currentIndex = orderedSteps.firstIndex(of: viewModel.currentStep),
-              currentIndex > 0 else {
-            return nil
-        }
-        return orderedSteps[currentIndex - 1]
     }
     
     // MARK: - Specific Flow (Objectifs)
@@ -304,8 +246,8 @@ class OnboardingNavigationEngine {
     private func getNextStepInFinalizationFlow(from current: OnboardingStep) -> Int? {
         switch current {
         case .referralCode:
-            return OnboardingStep.payment.rawValue
-            
+            return OnboardingStep.dreamFaceCommit.rawValue
+
         case .appRating:
             return OnboardingStep.biometricAuth.rawValue
             
@@ -319,15 +261,15 @@ class OnboardingNavigationEngine {
             return OnboardingStep.transformationPreview.rawValue
 
         case .transformationPreview:
-            return OnboardingStep.dashboardPreview.rawValue
-
-        case .dashboardPreview:
-            return OnboardingStep.dreamFaceCommit.rawValue
-
-        case .dreamFaceCommit:
             return OnboardingConstants.showsReferralCodeStepInOnboarding
                 ? OnboardingStep.referralCode.rawValue
-                : OnboardingStep.payment.rawValue
+                : OnboardingStep.dreamFaceCommit.rawValue
+
+        case .dashboardPreview:
+            return OnboardingStep.programCreation.rawValue
+
+        case .dreamFaceCommit:
+            return OnboardingStep.payment.rawValue
 
         case .payment:
             return OnboardingStep.appleSignIn.rawValue
@@ -344,138 +286,7 @@ class OnboardingNavigationEngine {
         }
     }
     
-    // MARK: - Previous Steps (Inverse)
-    
-    private func getPreviousStepInSpecificFlow(from current: OnboardingStep) -> Int? {
-        switch current {
-        case .weightGoalIncompatible, .idealWeight:
-            return OnboardingStep.weight.rawValue
-            
-        case .weightMotivation:
-            return OnboardingStep.faceLeverageIntro.rawValue
-            
-        case .goalPace, .hasSportActivity, .sportSelection,
-             .weightManagementExperience, .weightFailureReasons, .nutritionQuality:
-            return OnboardingStep.weightMotivation.rawValue
-            
-        case .weightEstimation, .notificationPermission:
-            return OnboardingStep.programCreation.rawValue
-            
-        case .programCreation:
-            if viewModel.dashboardPreviewPresentation == .firstScanPending
-                || viewModel.isFaceAnalysisCompleted {
-                return OnboardingStep.dashboardPreview.rawValue
-            }
-            return OnboardingStep.weightMotivation.rawValue
-            
-        case .sportClub, .experienceLevel, .yearsOfExperience, .trainingFrequency, .deadlineSelection, .potentialPace, .eventDetails:
-            return OnboardingStep.weightEstimation.rawValue
-            
-        case .goalProjection:
-            return OnboardingStep.weightEstimation.rawValue
-            
-        default:
-            return nil
-        }
-    }
-    
-    private func getPreviousStepInNutritionFlow(from current: OnboardingStep) -> Int? {
-        switch current {
-        case .nutritionQuality, .weightFailureReasons, .weightManagementExperience:
-            return OnboardingStep.weightMotivation.rawValue
-            
-        case .hasDietaryRestrictions, .whichRestrictions:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .faceAnalysis:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .programCreation:
-            if viewModel.dashboardPreviewPresentation == .firstScanPending
-                || viewModel.isFaceAnalysisCompleted {
-                return OnboardingStep.dashboardPreview.rawValue
-            }
-            return OnboardingStep.weightMotivation.rawValue
-
-        case .biometricAuth:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .nutritionPotential, .hasSufficientHydration, .hydrationLevel,
-             .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed,
-             .planGeneration, .alarmConfiguration, .sleepWindowReveal, .hardestMeal:
-            return OnboardingStep.weightEstimation.rawValue
-
-        default:
-            return nil
-        }
-    }
-    
-    private func getPreviousStepInSleepFlow(from current: OnboardingStep) -> Int? {
-        switch current {
-        case .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks, .sleepNeed, .planGeneration:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .sleepDataRecovery, .newsStep, .sleepNeedReveal, .sleepDebtInfo:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .healthKitPermissions:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .alarmConfiguration, .sleepWindowReveal:
-            return OnboardingStep.weightEstimation.rawValue
-
-        default:
-            return nil
-        }
-    }
-    
-    private func getPreviousStepInFinalizationFlow(from current: OnboardingStep) -> Int? {
-        switch current {
-        case .referralCode:
-            return OnboardingStep.dreamFaceCommit.rawValue
-
-        case .sleepWindowReveal, .alarmConfiguration:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .appRating, .caloriesGoal, .carryOverCalories:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .biometricAuth:
-            return OnboardingStep.weightEstimation.rawValue
-
-        case .transformationPreview:
-            return OnboardingStep.biometricAuth.rawValue
-
-        case .dashboardPreview:
-            if viewModel.dashboardPreviewPresentation == .firstScanPending {
-                return OnboardingStep.weightMotivation.rawValue
-            }
-            return OnboardingStep.transformationPreview.rawValue
-
-        case .dreamFaceCommit:
-            return OnboardingStep.dashboardPreview.rawValue
-
-        case .payment:
-            return OnboardingConstants.showsReferralCodeStepInOnboarding
-                ? OnboardingStep.referralCode.rawValue
-                : OnboardingStep.dreamFaceCommit.rawValue
-
-        case .appleSignIn:
-            return OnboardingStep.payment.rawValue
-            
-        case .processWelcome, .referralReward, .featuresUnlock, .complete:
-            return OnboardingStep.payment.rawValue
-            
-        default:
-            return nil
-        }
-    }
-    
     // MARK: - Helper Methods
-    
-    private func getDeadlineOrTrainingFrequency() -> Int {
-        OnboardingStep.weightEstimation.rawValue
-    }
     
     private func getNextStepInQueue(after step: OnboardingStep) -> Int? {
         let queue = pendingStepsQueue()
@@ -489,36 +300,5 @@ class OnboardingNavigationEngine {
         }
 
         return nil
-    }
-    
-    private func getPreviousStepInQueue(from step: OnboardingStep) -> Int? {
-        let queue = pendingStepsQueue()
-        guard let stepIndex = queue.firstIndex(of: step),
-              stepIndex > 0 else {
-            return nil
-        }
-
-        return queue[stepIndex - 1].rawValue
-    }
-    
-    /// Lecture seule — utilisé pendant `buildActiveFlowPath` sans muter le ViewModel.
-    private func wouldWeightGoalBeIncompatibleWithBMI() -> Bool {
-        guard viewModel.hasWeightGoal == true, viewModel.isIdealWeightEntered else { return false }
-
-        let goal: WeightGoal?
-        if viewModel.idealWeightValue < viewModel.selectedWeight {
-            goal = .lose
-        } else if viewModel.idealWeightValue > viewModel.selectedWeight {
-            goal = .gain
-        } else {
-            goal = nil
-        }
-        guard let goal else { return false }
-
-        let heightInMeters = viewModel.selectedHeight / 100.0
-        guard heightInMeters > 0 else { return false }
-
-        let currentBMI = viewModel.selectedWeight / (heightInMeters * heightInMeters)
-        return (currentBMI >= 25.0 && goal == .gain) || (currentBMI < 18.5 && goal == .lose)
     }
 }
