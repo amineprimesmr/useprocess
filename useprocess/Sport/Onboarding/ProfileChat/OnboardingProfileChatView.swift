@@ -124,6 +124,9 @@ struct OnboardingProfileChatView: View {
         .onChange(of: chatHeaderProgressRefreshKey) { _, _ in
             refreshChatHeaderProgress()
         }
+        .onChange(of: chatViewModel.isGlowUpResultsPresented) { _, _ in
+            refreshChatHeaderProgress()
+        }
         .onAppear {
             refreshChatHeaderProgress()
         }
@@ -134,58 +137,21 @@ struct OnboardingProfileChatView: View {
         let typingState = mossEngine.messages
             .map { "\($0.id):\($0.revealed)" }
             .joined(separator: "|")
-        return "\(questionID)|\(typingState)|\(mossEngine.isTyping)|\(mossEngine.controlsVisible)"
+        return "\(questionID)|\(typingState)|\(mossEngine.isTyping)|\(mossEngine.controlsVisible)|\(chatViewModel.isGlowUpResultsPresented)"
     }
 
     private func refreshChatHeaderProgress() {
-        guard !chatViewModel.isGlowUpResultsPresented else { return }
         onboardingViewModel.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
             questionID: chatViewModel.currentQuestion?.id,
-            engine: mossEngine
+            engine: mossEngine,
+            isGlowUpResultsPresented: chatViewModel.isGlowUpResultsPresented
         )
     }
 
     // MARK: - Moss conversation surface
 
-    private var isProfileSummaryStep: Bool {
-        chatViewModel.currentQuestion?.kind == .profileSummary
-    }
-
-    private var isProfileSummaryCardVisible: Bool {
-        isProfileSummaryStep && mossEngine.controlsVisible
-    }
-
     private var mossConversationSurface: some View {
-        let conversationTopInset = OnboardingConstants.mossChatContentTopInset
-
-        return ZStack(alignment: .top) {
-            if isProfileSummaryCardVisible {
-                profileSummaryReadySurface(conversationTopInset: conversationTopInset)
-                    .transition(.opacity)
-            } else {
-                mossChatScrollSurface(conversationTopInset: conversationTopInset)
-                    .transition(.opacity)
-            }
-        }
-        .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: isProfileSummaryCardVisible)
-    }
-
-    private func profileSummaryReadySurface(conversationTopInset: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 0)
-                .frame(maxHeight: 20)
-
-            if let question = chatViewModel.currentQuestion,
-               question.kind == .profileSummary {
-                mossAnswerControls(for: question)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, conversationTopInset)
-        .padding(.horizontal, Theme.margin)
-        .regularWidthContainer(maxWidth: AdaptiveScreenLayout.onboardingChatMaxWidth)
+        mossChatScrollSurface(conversationTopInset: OnboardingConstants.mossChatContentTopInset)
     }
 
     private func mossChatScrollSurface(conversationTopInset: CGFloat) -> some View {
@@ -207,7 +173,7 @@ struct OnboardingProfileChatView: View {
                         scrollToLatestMessage(proxy: proxy)
                     }
                     .onChange(of: mossEngine.controlsVisible) { _, visible in
-                        guard visible, !isProfileSummaryStep else { return }
+                        guard visible else { return }
                         scrollToInlineAnswer(proxy: proxy)
                     }
                 }
@@ -221,7 +187,7 @@ struct OnboardingProfileChatView: View {
         let engine = mossEngine
         let messages = engine.messages
         let lastIndex = messages.count - 1
-        let messageWindow = isProfileSummaryStep ? 2 : MossChatStyle.windowSize
+        let messageWindow = MossChatStyle.windowSize
 
         return VStack(alignment: .leading, spacing: Theme.Space.l) {
             ForEach(Array(messages.enumerated()).suffix(messageWindow), id: \.element.id) { item in
@@ -249,8 +215,7 @@ struct OnboardingProfileChatView: View {
                 }
 
                 if chatViewModel.showsAnswerOptions,
-                   let question = chatViewModel.currentQuestion,
-                   question.kind != .profileSummary {
+                   let question = chatViewModel.currentQuestion {
                     mossAnswerControls(for: question)
                         .opacity(engine.controlsVisible ? 1 : 0)
                         .allowsHitTesting(profileSummaryHitsEnabled(question, engine: engine))
@@ -302,11 +267,13 @@ struct OnboardingProfileChatView: View {
     }
 
     private func scrollToInlineAnswer(proxy: ScrollViewProxy) {
+        let isProfileSummary = chatViewModel.currentQuestion?.kind == .profileSummary
+        let anchor: UnitPoint = isProfileSummary ? .bottom : .center
         if reduceMotion {
-            proxy.scrollTo("inlineAnswer", anchor: .center)
+            proxy.scrollTo("inlineAnswer", anchor: anchor)
         } else {
             withAnimation(.smooth(duration: 0.28)) {
-                proxy.scrollTo("inlineAnswer", anchor: .center)
+                proxy.scrollTo("inlineAnswer", anchor: anchor)
             }
         }
     }
@@ -412,6 +379,7 @@ struct OnboardingProfileChatView: View {
                         Task { await chatViewModel.submitProfileSummaryContinue() }
                     }
                 )
+                .padding(.top, 48)
 
             case .autoPlanCreation, .answersAnalysis, .analysisProgress:
                 EmptyView()

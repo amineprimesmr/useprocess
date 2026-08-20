@@ -8,7 +8,6 @@ import {
   applyGetAppDocumentLanguage,
   applyGetAppChromeCopy,
   getAppPageCopy,
-  mountLanguageSwitch,
 } from "./site-chrome.js";
 import {
   buildAppStoreUrlWithReferral,
@@ -53,6 +52,13 @@ function detectDevicePlatform() {
   return "unknown";
 }
 
+function setVisible(el, visible) {
+  if (!el) return;
+  el.classList.toggle("hidden", !visible);
+  el.hidden = !visible;
+  if (visible) el.removeAttribute("hidden");
+}
+
 function openStorePage(referralCode = "", utm = {}) {
   const base = buildAppStoreUrlWithReferral(referralCode, utm);
 
@@ -86,28 +92,83 @@ async function openStoreWithReferral(referralCode, utm = {}) {
   openStorePage(referralCode, utm);
 }
 
-function showReferralBanner(referralCode, resolved = null) {
-  const banner = document.getElementById("get-app-referral-banner");
-  const codeEl = document.getElementById("get-app-referral-code");
-  const subtitle = document.getElementById("get-app-subtitle");
-  const title = document.getElementById("get-app-title");
-  if (!banner || !codeEl || !referralCode) return;
+function inviteTitle(copy, { isCreator, displayName }) {
+  const name = String(displayName || "").trim();
+  if (name) {
+    return isCreator ? copy.creatorInvitesTitleNamed(name) : copy.friendInvitesTitleNamed(name);
+  }
+  return isCreator ? copy.creatorInvitesTitle : copy.friendInvitesTitle;
+}
 
+function applyReferralLayout(referralCode, resolved = null) {
   const copy = getAppPageCopy();
-  codeEl.textContent = referralCode;
-  banner.classList.remove("hidden");
-  banner.hidden = false;
-
+  const shell = document.querySelector(".get-app-shell");
   const isCreator = resolved?.type === "affiliate";
-  if (title) title.textContent = isCreator ? copy.creatorTitle : copy.invitedTitle;
-  if (subtitle) {
-    subtitle.textContent = isCreator ? copy.creatorSubtitle : copy.invitedSubtitle;
+  const displayName = resolved?.displayName || "";
+  const mobile = isMobileDevice();
+
+  if (shell) {
+    shell.classList.add("get-app-shell--referral");
+    shell.classList.toggle("get-app-shell--mobile", mobile);
   }
 
-  const referralEyebrow = banner.querySelector(".get-app-referral-eyebrow");
-  if (referralEyebrow) {
-    referralEyebrow.textContent = isCreator ? copy.creatorEyebrow : copy.referralEyebrow;
+  setVisible(document.getElementById("get-app-guest-pass"), true);
+  setVisible(document.getElementById("get-app-logo-plain"), false);
+  setVisible(document.getElementById("get-app-store-plain"), false);
+
+  const guestLabel = document.getElementById("get-app-guest-label");
+  const guestValue = document.getElementById("get-app-guest-value");
+  if (guestLabel) guestLabel.textContent = isCreator ? copy.guestLabelCreator : copy.guestLabelReferral;
+  if (guestValue) guestValue.textContent = copy.guestValue;
+
+  const title = document.getElementById("get-app-title");
+  const subtitle = document.getElementById("get-app-subtitle");
+  if (title) title.textContent = inviteTitle(copy, { isCreator, displayName });
+  if (subtitle) subtitle.textContent = isCreator ? copy.creatorSubtitle : copy.invitedSubtitle;
+
+  const codePrefix = isCreator ? copy.stepCreatorCodePrefix : copy.stepCodePrefix;
+  const benefit = isCreator ? copy.stepBenefitCreator : copy.stepBenefitReferral;
+
+  for (const id of ["get-app-step-code-prefix", "get-app-step-code-prefix-fb"]) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = codePrefix;
   }
+  for (const id of ["get-app-referral-code", "get-app-referral-code-fb"]) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = referralCode;
+  }
+  for (const id of ["get-app-step-benefit", "get-app-step-benefit-fb"]) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = benefit;
+  }
+
+  const stepsHeading = document.getElementById("get-app-steps-primary-title");
+  const fallbackHeading = document.getElementById("get-app-steps-fallback-title");
+  const qrLabel = document.getElementById("get-app-step-qr-label");
+  const downloadLabel = document.getElementById("get-app-step-download-label");
+  const tapHint = document.getElementById("get-app-tap-hint-text");
+
+  if (stepsHeading) stepsHeading.textContent = copy.stepsHeading;
+  if (fallbackHeading) fallbackHeading.textContent = copy.stepsFallbackHeading;
+  if (qrLabel) qrLabel.textContent = copy.stepQr;
+  if (downloadLabel) downloadLabel.textContent = copy.stepDownload;
+  if (tapHint) tapHint.textContent = copy.tapBanner;
+
+  setVisible(document.getElementById("get-app-steps-primary"), !mobile);
+  setVisible(document.getElementById("get-app-steps-fallback"), mobile);
+  setVisible(document.getElementById("get-app-tap-hint"), mobile && detectDevicePlatform() === "ios");
+}
+
+function applyPlainLayout() {
+  const shell = document.querySelector(".get-app-shell");
+  if (shell) shell.classList.remove("get-app-shell--referral", "get-app-shell--mobile");
+
+  setVisible(document.getElementById("get-app-guest-pass"), false);
+  setVisible(document.getElementById("get-app-logo-plain"), true);
+  setVisible(document.getElementById("get-app-store-plain"), true);
+  setVisible(document.getElementById("get-app-steps-primary"), false);
+  setVisible(document.getElementById("get-app-steps-fallback"), false);
+  setVisible(document.getElementById("get-app-tap-hint"), false);
 }
 
 function applyGetAppPageCopy() {
@@ -115,34 +176,50 @@ function applyGetAppPageCopy() {
   const title = document.getElementById("get-app-title");
   const subtitle = document.getElementById("get-app-subtitle");
   const iosBtn = document.getElementById("get-app-store-ios");
-  const iosEyebrow = iosBtn?.querySelector(".store-download-btn__eyebrow");
-  const iosName = iosBtn?.querySelector(".store-download-btn__name");
+  const iosBtnFallback = document.getElementById("get-app-store-ios-fallback");
   const inAppFlow = shouldUseSafariStoreFlow();
 
   if (title) title.textContent = copy.title;
   if (subtitle) {
     subtitle.textContent = inAppFlow
       ? appCopy(
-          "TikTok bloque l’App Store. Ouvre Safari, puis retape Télécharger.",
+          "TikTok bloque l'App Store. Ouvre Safari, puis retape Télécharger.",
           "TikTok blocks the App Store. Open Safari, then tap Download again."
         )
       : copy.subtitle;
   }
-  if (iosEyebrow) {
-    iosEyebrow.textContent = inAppFlow
-      ? appCopy("Étape 1", "Step 1")
-      : copy.iosEyebrow;
-  }
-  if (iosName) iosName.textContent = inAppFlow ? appCopy("Safari", "Safari") : "App Store";
-  if (iosBtn) {
-    iosBtn.setAttribute(
+
+  for (const btn of [iosBtn, iosBtnFallback]) {
+    if (!btn) continue;
+    const iosEyebrow = btn.querySelector(".store-download-btn__eyebrow");
+    const iosName = btn.querySelector(".store-download-btn__name");
+    if (iosEyebrow) {
+      iosEyebrow.textContent = inAppFlow ? appCopy("Étape 1", "Step 1") : copy.iosEyebrow;
+    }
+    if (iosName) iosName.textContent = inAppFlow ? appCopy("Safari", "Safari") : "App Store";
+    btn.setAttribute(
       "aria-label",
       inAppFlow
         ? appCopy("Ouvrir dans Safari pour télécharger Process", "Open in Safari to download Process")
         : copy.iosAria
     );
   }
+
   applyGetAppDocumentLanguage();
+}
+
+function injectSmartAppBanner(referralCode, utm = {}) {
+  const existing = document.querySelector('meta[name="apple-itunes-app"]');
+  if (existing) existing.remove();
+
+  const deepLink = buildReferralDeepLink(referralCode, utm);
+  const meta = document.createElement("meta");
+  meta.name = "apple-itunes-app";
+  meta.content = `app-id=6753808143${deepLink ? `, app-argument=${deepLink}` : ""}`;
+  document.head.appendChild(meta);
+
+  const theme = document.querySelector('meta[name="theme-color"]');
+  if (theme) theme.setAttribute("content", "#000000");
 }
 
 function shouldStayOnPage() {
@@ -158,67 +235,67 @@ async function renderQR(referralCode = "", utm = {}) {
   if (!QRCodeStyling || !target || !container) return;
 
   const qrCode = new QRCodeStyling({
-    width: 250,
-    height: 250,
+    width: 220,
+    height: 220,
     type: "svg",
     data: referralCode
       ? buildReferralLandingUrl(referralCode, utm)
       : buildAppStoreUrlWithReferral("", utm),
     qrOptions: { typeNumber: 0, errorCorrectionLevel: "H" },
     image: "/assets/icone.png?v=20260808",
-    dotsOptions: { color: "#F6F4EC", type: "dots" },
-    cornersSquareOptions: { color: "#fafafa", type: "extra-rounded" },
-    cornersDotOptions: { color: "#F6F4EC", type: "square" },
-    backgroundOptions: { color: "#0F1920" },
-    imageOptions: { crossOrigin: "anonymous", margin: 4, imageSize: 0.5 },
+    dotsOptions: { color: "#111827", type: "rounded" },
+    cornersSquareOptions: { color: "#111827", type: "extra-rounded" },
+    cornersDotOptions: { color: "#111827", type: "dot" },
+    backgroundOptions: { color: "#ffffff" },
+    imageOptions: { crossOrigin: "anonymous", margin: 4, imageSize: 0.38 },
     margin: 0,
   });
 
   target.innerHTML = "";
   qrCode.append(target);
-  container.classList.remove("hidden");
+  setVisible(container, true);
 }
 
-function wireStoreButtons(referralCode = "", utm = {}) {
-  const btn = document.getElementById("get-app-store-ios");
+function wireStoreButton(btn, referralCode, utm) {
   if (!btn) return;
-
   btn.addEventListener("click", () => {
     const storeUrl = buildAppStoreUrlWithReferral(referralCode, utm);
-
     if (shouldUseSafariStoreFlow()) {
       window.location.href = getStoreButtonHref(storeUrl);
       return;
     }
-
     openStoreWithReferral(referralCode, utm);
   });
+}
+
+function wireStoreButtons(referralCode = "", utm = {}) {
+  wireStoreButton(document.getElementById("get-app-store-ios"), referralCode, utm);
+  wireStoreButton(document.getElementById("get-app-store-ios-fallback"), referralCode, utm);
 }
 
 export async function mountGetAppPage() {
   const referralCode = parseReferralCodeFromLocation();
   const utm = resolveAcquisitionUtm();
   const resolved = referralCode ? await resolveAcquisitionCode(referralCode) : null;
-  const langHost = document.getElementById("get-app-lang-host");
-  mountLanguageSwitch(langHost, { compact: true });
-
   const resync = () => {
     applyGetAppDocumentLanguage();
     applyGetAppChromeCopy();
-    if (referralCode) showReferralBanner(referralCode, resolved);
-    else applyGetAppPageCopy();
+    if (referralCode) applyReferralLayout(referralCode, resolved);
+    else applyPlainLayout();
+    applyGetAppPageCopy();
   };
   subscribeSiteLanguage(resync);
 
   if (referralCode) {
     rememberReferralCode(referralCode);
-    showReferralBanner(referralCode, resolved);
+    injectSmartAppBanner(referralCode, utm);
+    applyReferralLayout(referralCode, resolved);
     applyGetAppDocumentLanguage();
   } else {
+    applyPlainLayout();
     applyGetAppPageCopy();
   }
 
-  // Sans parrainage : redirection auto iOS vers l'App Store (comportement historique).
   if (
     !referralCode &&
     isMobileDevice() &&
@@ -232,7 +309,7 @@ export async function mountGetAppPage() {
 
   wireStoreButtons(referralCode, utm);
 
-  if (!isMobileDevice()) {
+  if (referralCode && !isMobileDevice()) {
     try {
       await renderQR(referralCode, utm);
     } catch (err) {

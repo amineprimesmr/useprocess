@@ -51,13 +51,21 @@ struct ProcessAffiliateDashboardPayout: Decodable, Equatable, Identifiable {
     let createdAt: Double?
 }
 
+struct ProcessAffiliateStripeConnect: Decodable, Equatable {
+    let accountId: String?
+    let onboardingComplete: Bool
+    let payoutsEnabled: Bool
+    let detailsSubmitted: Bool
+    let requirementsDue: [String]
+}
+
 struct ProcessAffiliateDashboardResponse: Decodable, Equatable {
     let ok: Bool
     let affiliateId: String
     let displayName: String
     let status: String
-    let paypalEmail: String?
     let payoutMethod: String?
+    let stripeConnect: ProcessAffiliateStripeConnect?
     let codes: [ProcessAffiliateDashboardCode]
     let stats: ProcessAffiliateDashboardStats
     let recentCommissions: [ProcessAffiliateDashboardCommission]

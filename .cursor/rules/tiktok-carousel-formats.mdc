@@ -1,11 +1,17 @@
 ---
-description: Process TikTok carousel rules — App Store card overlay (format 01/02 vs 03)
+description: Process TikTok carousel + Postiz publishing rules
 alwaysApply: true
 ---
 
 # TikTok carousels (process-tiktok)
 
 Source: `/Users/amine/Desktop/process-tiktok`
+
+## Postiz — FR drafts only
+
+- **Never Direct Post** (`--now`) and **never schedule** auto-publish. Always create **drafts**.
+- **French only** on `@mannyprcs` (`--lang fr` / `--langs fr`). Do not generate or upload EN/DE/ES/PT.
+- You publish later from [Postiz](https://platform.postiz.com/launches).
 
 ## App Store card overlay
 
@@ -14,5 +20,7 @@ Source: `/Users/amine/Desktop/process-tiktok`
 - Format 01 (`generate_format01_manny.py`, `generate_carousel_en.py`): Manny before/after + protocol. Scan slide = 2x2 faces + app screenshot **in the grid only**. No card overlay.
 - Format 02 (`generate_format_glowup.py`): celebrity glow-up. Same: no App Store card on top.
 - Format 03 foods (`generate_format_foods.py`): **keep** the App Store card (width 640, angle -1.8, y=28, black plate intact).
+- Format 04 hygin (`generate_format04_hygin.py`): B&W hook + red-banner 2×2 cause→effect. **No** App Store overlay. Canvas 1080×1440 (3:4). Manny bloat/prime only.
+- Format 05 columns (`generate_format05_hygin_columns.py`): 2-column method vs method + black silhouettes. Debloat winner = Process app screen. Clear skin winner = turmeric soap. **No** App Store overlay. Canvas 1080×1440.
 
 Do not re-add the overlay on 01/02 “to match foods”. The scan UI cell in the 2x2 is enough.

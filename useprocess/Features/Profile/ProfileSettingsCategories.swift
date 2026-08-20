@@ -16,7 +16,7 @@ enum ProfileSettingsCategory: String, Hashable, Identifiable, CaseIterable {
     var title: String {
         switch self {
         case .studio: return AppCopy.t("Studio contenu", en: "Content Studio")
-        case .referral: return AppCopy.t("Programme créateurs", en: "Creator Program")
+        case .referral: return AppCopy.t("Parrainage", en: "Refer friends")
         case .account: return AppCopy.t("Compte", en: "Account")
         case .health: return AppCopy.t("Santé & données", en: "Health & Data")
         case .app: return AppCopy.t("Application", en: "App")

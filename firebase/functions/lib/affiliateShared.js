@@ -92,6 +92,12 @@ function affiliateHttpStatus(message) {
         return 403;
     if (message === "AFFILIATE_NOT_LINKED")
         return 403;
+    if (message === "STRIPE_NOT_LINKED")
+        return 404;
+    if (message === "STRIPE_NOT_CONFIGURED")
+        return 503;
+    if (message === "STRIPE_NOT_READY")
+        return 400;
     if (message === "CODE_CONFLICT")
         return 409;
     if (message === "INVALID_ADMIN")

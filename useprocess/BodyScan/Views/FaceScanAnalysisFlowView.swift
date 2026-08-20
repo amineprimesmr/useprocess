@@ -81,7 +81,7 @@ struct FaceScanAnalysisFlowView: View {
                                     .foregroundStyle(FaceScanWhoopPalette.label)
                                     .multilineTextAlignment(.center)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.top, 16)
+                                    .padding(.top, 6)
                                     .padding(.horizontal, 28)
 
                                 FaceScanAnalysisProgressBars(
@@ -89,7 +89,7 @@ struct FaceScanAnalysisFlowView: View {
                                     progress: analysisProgress
                                 )
                                 .padding(.horizontal, 28)
-                                .padding(.top, 32)
+                                .padding(.top, 10)
                             }
 
                             if showsDevRescanButton {
@@ -617,7 +617,7 @@ struct FaceScanAnalysisHeroView: View {
 
     @State private var resolvedVideoURL: URL?
 
-    private let heroDiameter: CGFloat = 200
+    private let heroDiameter: CGFloat = 158
 
     var body: some View {
         ZStack {

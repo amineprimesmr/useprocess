@@ -20,16 +20,53 @@ function prefersLanguageFromBrowser() {
     const mapped = normalizeSiteLanguage(tag);
     if (mapped) return mapped;
   }
-  return "en";
+  return "fr";
 }
 
-/** Langue active du site : ?lang= → localStorage → navigateur. */
+/** Join / affiliate / get-app — langue = navigateur (pas de sélecteur manuel). */
+export function usesAutoSiteLanguage() {
+  if (typeof window === "undefined") return false;
+
+  if (
+    document.documentElement.classList.contains("page-get-app") ||
+    document.documentElement.classList.contains("page-affiliate")
+  ) {
+    return true;
+  }
+
+  const path = window.location.pathname.replace(/\/$/, "");
+  const host = window.location.hostname.toLowerCase();
+  const params = new URLSearchParams(window.location.search || "");
+  const hasReferral = Boolean(params.get("ref") || params.get("code"));
+
+  if (host === "join.useprocess.xyz" || host === "get.useprocess.xyz") return true;
+  if (path === "/affiliate" || path === "/affiliate.html") return true;
+
+  return (
+    path === "/app" ||
+    path === "/get" ||
+    path === "/i" ||
+    path === "/a" ||
+    path === "/telecharger" ||
+    /^\/join\/[^/]+$/i.test(path) ||
+    /^\/c\/[^/]+$/i.test(path) ||
+    params.get("get") === "1" ||
+    hasReferral ||
+    Boolean(params.get("utm_source") || params.get("utm_campaign") || params.get("source") || params.get("campaign"))
+  );
+}
+
+/** Langue active : ?lang= → (auto: navigateur | landing: localStorage) → navigateur → fr. */
 export function getSiteLanguage() {
   if (typeof window === "undefined") return "fr";
 
   const params = new URLSearchParams(window.location.search);
   const fromQuery = normalizeSiteLanguage(params.get("lang"));
   if (fromQuery) return fromQuery;
+
+  if (usesAutoSiteLanguage()) {
+    return prefersLanguageFromBrowser();
+  }
 
   try {
     const stored = normalizeSiteLanguage(localStorage.getItem(SITE_LANGUAGE_KEY));

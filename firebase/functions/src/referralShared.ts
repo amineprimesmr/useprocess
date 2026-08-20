@@ -1,6 +1,16 @@
 import * as admin from "firebase-admin";
+import {
+  activePremiumProductId,
+  fetchSubscriber,
+  grantPromotionalEntitlement,
+  hasPaidPremium,
+  isAnnualProduct,
+  type RevenueCatDuration,
+} from "./revenueCat";
 
 export const PREMIUM_ENTITLEMENT = "premium";
+export const REFERRER_REWARD_SHORT: RevenueCatDuration = "monthly";
+export const REFERRER_REWARD_ANNUAL: RevenueCatDuration = "yearly";
 
 export type ReferralStatus = "pending" | "accepted";
 
@@ -11,6 +21,8 @@ export interface ReferralInviteDoc {
   invitedAt: admin.firestore.Timestamp;
   status: ReferralStatus;
   acceptedAt?: admin.firestore.Timestamp;
+  inviteeRewardDuration?: RevenueCatDuration | null;
+  referrerRewardDuration?: RevenueCatDuration;
 }
 
 export function db() {
@@ -133,12 +145,11 @@ export async function upsertReferralCode(params: {
         referralCode: normalized,
         displayName: params.displayName.slice(0, 80),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        pendingCount: 0,
+        acceptedCount: 0,
         stats: {
-          pendingCents: 0,
-          payableCents: 0,
-          paidCents: 0,
-          lifetimeCents: 0,
-          activeSubscribers: 0,
+          pendingCount: 0,
+          acceptedCount: 0,
         },
       },
       { merge: true }
@@ -191,4 +202,176 @@ export async function registerReferralRecord(params: {
 
     transaction.set(inviteRef, invite);
   });
+}
+
+async function referrerRewardDuration(
+  referrerUserId: string,
+  secretKey: string
+): Promise<RevenueCatDuration> {
+  try {
+    const subscriber = await fetchSubscriber(referrerUserId, secretKey);
+    const productId = activePremiumProductId(subscriber, PREMIUM_ENTITLEMENT);
+    return isAnnualProduct(productId)
+      ? REFERRER_REWARD_ANNUAL
+      : REFERRER_REWARD_SHORT;
+  } catch (error) {
+    console.warn("[referral] Could not resolve referrer plan, defaulting to monthly", error);
+    return REFERRER_REWARD_SHORT;
+  }
+}
+
+async function claimReferralReward(referredUserId: string): Promise<{
+  referrerUserId: string;
+  referralCode: string;
+  referredMetaRef: admin.firestore.DocumentReference;
+}> {
+  const referredMetaRef = db()
+    .collection("users")
+    .doc(referredUserId)
+    .collection("referralMeta")
+    .doc("referredBy");
+
+  const claimed = await db().runTransaction(async (transaction) => {
+    const referredMeta = await transaction.get(referredMetaRef);
+    if (!referredMeta.exists) {
+      throw new Error("NOT_REFERRED");
+    }
+
+    const meta = referredMeta.data() ?? {};
+    if (meta.status === "accepted") {
+      throw new Error("ALREADY_REWARDED");
+    }
+    if (meta.status === "processing") {
+      const started = meta.processingAt?.toMillis?.() as number | undefined;
+      if (started && Date.now() - started < 120_000) {
+        throw new Error("ALREADY_REWARDED");
+      }
+    }
+
+    const referrerUserId = meta.referrerUserId as string | undefined;
+    const referralCode = meta.referralCode as string | undefined;
+    if (!referrerUserId || !referralCode) {
+      throw new Error("NOT_REFERRED");
+    }
+
+    transaction.set(
+      referredMetaRef,
+      {
+        status: "processing",
+        processingAt: admin.firestore.Timestamp.now(),
+      },
+      { merge: true }
+    );
+
+    return { referrerUserId, referralCode };
+  });
+
+  return { ...claimed, referredMetaRef };
+}
+
+async function revertReferralClaim(
+  referredMetaRef: admin.firestore.DocumentReference
+): Promise<void> {
+  await referredMetaRef.set(
+    {
+      status: "pending",
+      processingAt: admin.firestore.FieldValue.delete(),
+    },
+    { merge: true }
+  );
+}
+
+export async function processReferralRewards(params: {
+  referredUserId: string;
+  secretKey: string;
+}): Promise<{ referrerReward: RevenueCatDuration }> {
+  const claim = await claimReferralReward(params.referredUserId);
+
+  let referrerDuration: RevenueCatDuration;
+  try {
+    const subscriber = await fetchSubscriber(params.referredUserId, params.secretKey);
+    if (!hasPaidPremium(subscriber, PREMIUM_ENTITLEMENT)) {
+      throw new Error("SUBSCRIPTION_REQUIRED");
+    }
+    referrerDuration = await referrerRewardDuration(
+      claim.referrerUserId,
+      params.secretKey
+    );
+  } catch (error) {
+    await revertReferralClaim(claim.referredMetaRef);
+    throw error;
+  }
+
+  try {
+    await grantPromotionalEntitlement(
+      claim.referrerUserId,
+      PREMIUM_ENTITLEMENT,
+      referrerDuration,
+      params.secretKey
+    );
+  } catch (error) {
+    await revertReferralClaim(claim.referredMetaRef);
+    throw error;
+  }
+
+  const now = admin.firestore.Timestamp.now();
+  const inviteRef = db()
+    .collection("users")
+    .doc(claim.referrerUserId)
+    .collection("referralInvites")
+    .doc(params.referredUserId);
+  const acceptedPayload = {
+    status: "accepted" as const,
+    acceptedAt: now,
+    inviteeRewardDuration: null,
+    referrerRewardDuration: referrerDuration,
+  };
+
+  try {
+    await db().runTransaction(async (transaction) => {
+      transaction.set(claim.referredMetaRef, acceptedPayload, { merge: true });
+      transaction.set(inviteRef, acceptedPayload, { merge: true });
+      transaction.set(
+        db()
+          .collection("users")
+          .doc(claim.referrerUserId)
+          .collection("referralMeta")
+          .doc("program"),
+        {
+          acceptedCount: admin.firestore.FieldValue.increment(1),
+          pendingCount: admin.firestore.FieldValue.increment(-1),
+          lastRewardAt: now,
+        },
+        { merge: true }
+      );
+    });
+  } catch (error) {
+    console.error("[referral] granted referrer time but failed to persist", error);
+    await claim.referredMetaRef.set(acceptedPayload, { merge: true });
+    await inviteRef.set(acceptedPayload, { merge: true });
+  }
+
+  return { referrerReward: referrerDuration };
+}
+
+export async function fetchReferralProgramDashboard(
+  uid: string
+): Promise<Record<string, unknown>> {
+  const programSnap = await db()
+    .collection("users")
+    .doc(uid)
+    .collection("referralMeta")
+    .doc("program")
+    .get();
+
+  const program = programSnap.data() ?? {};
+  const stats = (program.stats as Record<string, number> | undefined) ?? {};
+
+  return {
+    ok: true,
+    referralCode: program.referralCode ?? null,
+    displayName: program.displayName ?? null,
+    pendingCount: program.pendingCount ?? stats.pendingCount ?? 0,
+    acceptedCount: program.acceptedCount ?? stats.acceptedCount ?? 0,
+  };
 }

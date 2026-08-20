@@ -12,6 +12,13 @@ enum ProcessScanCameraProfile: Sendable {
     }
 }
 
+/// Verrouillage zoom capteur front — onboarding plus serré que le hub scan du jour.
+enum ProcessScanPortraitLockProfile: Sendable {
+    case standard
+    case hub
+    case onboarding
+}
+
 /// Caméra des scans Process — selfie standard (TrueDepth), pas l’ultra grand-angle front.
 enum ProcessScanCamera {
     /// Crop visuel UIKit / conteneur ARKit preview — selfie serré, pas ultra grand-angle.
@@ -22,12 +29,34 @@ enum ProcessScanCamera {
     nonisolated static let scanDayHubPreviewZoom: CGFloat = 1.68
     /// Zoom capteur front hub — pousse un peu plus que le plein écran.
     nonisolated static let scanDayHubPortraitZoom: CGFloat = 1.42
-    /// Zoom capteur onboarding / plein écran ovale — optique portrait standard.
-    nonisolated static let onboardingPortraitSensorZoom: CGFloat = 1.42
+    /// Zoom capteur onboarding — force l’optique standard dual-front (≥ 1) + léger crop capteur.
+    nonisolated static let onboardingPortraitSensorZoom: CGFloat = 1.58
     /// Crop UIKit scan onboarding ovale (dashboard + premier scan).
-    nonisolated static let onboardingPortraitPreviewZoom: CGFloat = 1.62
+    nonisolated static let onboardingPortraitPreviewZoom: CGFloat = 1.82
     /// Zoom capteur AVCapture — ≥ 1 force l’optique « standard » sur iPhone dual-front.
     nonisolated static let frontPortraitZoom: CGFloat = 1.38
+
+    nonisolated static func portraitSensorZoom(for profile: ProcessScanPortraitLockProfile) -> CGFloat {
+        switch profile {
+        case .standard:
+            return frontPortraitZoom
+        case .hub:
+            return scanDayHubPortraitZoom
+        case .onboarding:
+            return onboardingPortraitSensorZoom
+        }
+    }
+
+    nonisolated static func portraitPreviewZoom(for profile: ProcessScanPortraitLockProfile) -> CGFloat {
+        switch profile {
+        case .standard:
+            return frontPreviewLayoutZoom
+        case .hub:
+            return scanDayHubPreviewZoom
+        case .onboarding:
+            return onboardingPortraitPreviewZoom
+        }
+    }
 
     static func device(
         position: AVCaptureDevice.Position,
@@ -54,7 +83,7 @@ enum ProcessScanCamera {
     }
 
     /// Selfie Face ID / TrueDepth en priorité — évite l’ultra-wide front quand un 2e capteur existe.
-    static func preferredFrontPortraitDevice() -> AVCaptureDevice? {
+    nonisolated static func preferredFrontPortraitDevice() -> AVCaptureDevice? {
         if let trueDepth = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) {
             return trueDepth
         }
@@ -76,7 +105,7 @@ enum ProcessScanCamera {
     }
 
     /// Grand-angle front max — circuit lymphatique / tracking corps entier.
-    static func preferredFrontFullBodyDevice() -> AVCaptureDevice? {
+    nonisolated static func preferredFrontFullBodyDevice() -> AVCaptureDevice? {
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [
                 .builtInUltraWideCamera,
@@ -135,8 +164,16 @@ enum ProcessScanCamera {
         }
     }
 
-    nonisolated static func lockActiveFrontCamerasIfPossible(preferHubPortrait: Bool = false) {
+    nonisolated static func lockActiveFrontCamerasIfPossible(
+        profile: ProcessScanPortraitLockProfile = .standard
+    ) {
         disableCenterStageSafely()
+        let preferredZoom = portraitSensorZoom(for: profile)
+
+        if let primary = preferredFrontPortraitDevice() {
+            lockFrontCameraOutOfUltraWide(primary, preferredPortraitZoom: preferredZoom)
+        }
+
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [
                 .builtInTrueDepthCamera,
@@ -146,10 +183,17 @@ enum ProcessScanCamera {
             mediaType: .video,
             position: .front
         )
-        let preferredZoom = preferHubPortrait ? scanDayHubPortraitZoom : frontPortraitZoom
         discovery.devices.forEach {
             lockFrontCameraOutOfUltraWide($0, preferredPortraitZoom: preferredZoom)
         }
+    }
+
+    /// Verrouillage synchrone avant `ARSession.run` — ARKit ne tient pas encore le capteur.
+    nonisolated static func lockFrontCamerasBeforeARSession(
+        profile: ProcessScanPortraitLockProfile = .standard
+    ) {
+        prepareForFrontPortraitScan()
+        lockActiveFrontCamerasIfPossible(profile: profile)
     }
 
     nonisolated static func lockFrontCameraOutOfUltraWide(

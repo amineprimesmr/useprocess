@@ -17,35 +17,35 @@ struct OnboardingProfileChatProfileSummarySection: View {
     private let cardShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             summaryContent
                 .onboardingChatAnswerReveal(isRevealed: isRevealed)
 
             continueButton
                 .id("profileSummaryCTA")
         }
-        .padding(16)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .processGlassEffect(in: cardShape, interactive: false)
     }
 
     private var summaryContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             statusPill
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(OnboardingCopy.t("Construit autour de toi", en: "Built around you"))
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 23, weight: .bold))
                     .foregroundStyle(OnboardingTheme.primaryText)
                 Text(OnboardingCopy.t(
                     "Tout ce que tu m’as dit, c’est verrouillé.",
                     en: "Everything you told me, locked in."
                 ))
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(OnboardingTheme.mutedText)
             }
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 ForEach(sections) { section in
                     summarySection(section)
                 }
@@ -54,17 +54,17 @@ struct OnboardingProfileChatProfileSummarySection: View {
     }
 
     private var statusPill: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 8) {
             Circle()
                 .fill(readyGreen)
-                .frame(width: 7, height: 7)
+                .frame(width: 8, height: 8)
             Text(OnboardingCopy.t("DASHBOARD PRÊT", en: "DASHBOARD READY"))
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 12, weight: .bold))
                 .tracking(0.7)
                 .foregroundStyle(readyGreen)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(
             Capsule(style: .continuous)
                 .fill(readyGreen.opacity(0.12))

@@ -227,7 +227,7 @@ struct PlanHomeUpgradeProCard: View {
         case .welcome:
             return AppCopy.t("Bienvenue dans Process", en: "Welcome to Process")
         case .referral:
-            return AppCopy.t("🎁 40 % à vie", en: "🎁 40% for life")
+            return AppCopy.t("🎁 Mois ou an offert", en: "🎁 Free month or year")
         }
     }
 
@@ -240,8 +240,8 @@ struct PlanHomeUpgradeProCard: View {
             )
         case .referral:
             return AppCopy.t(
-                "Partage ton lien. Tu touches 40 % du net à chaque paiement de tes amis.",
-                en: "Share your link. You earn 40% of net on every payment from friends."
+                "Partage ton lien. Tu gagnes 1 mois ou 1 an offert par ami abonné.",
+                en: "Share your link. Earn 1 free month or year for each friend who subscribes."
             )
         }
     }

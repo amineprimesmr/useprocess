@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Record a manual PayPal / bank payout for a clipper.
+# Record a Stripe Connect payout for a clipper (transfer + ledger).
 #
 # Usage:
 #   ./firebase/scripts/mark-paid-clipper.sh AFFILIATE_ID AMOUNT_EUR [note]
@@ -41,7 +41,7 @@ if [[ -z "${AFFILIATE_ADMIN_SECRET:-}" ]]; then
   exit 1
 fi
 
-payload="{\"affiliateId\":\"$AFFILIATE_ID\",\"amountCents\":$AMOUNT_CENTS,\"currency\":\"EUR\",\"method\":\"paypal\",\"note\":\"$NOTE\"}"
+payload="{\"affiliateId\":\"$AFFILIATE_ID\",\"amountCents\":$AMOUNT_CENTS,\"currency\":\"EUR\",\"method\":\"stripe\",\"note\":\"$NOTE\"}"
 
 response="$(curl -sS -X POST \
   "https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminMarkPaid" \

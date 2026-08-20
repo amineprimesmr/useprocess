@@ -59,22 +59,17 @@ enum AffiliateRemoteService {
         )
     }
 
-    static func apply(displayName: String, code: String?, email: String?, paypalEmail: String?) async throws {
+    static func apply(displayName: String, code: String?, email: String?) async throws {
         var payload: [String: Any] = ["displayName": displayName]
         if let code, !code.isEmpty { payload["code"] = code }
         if let email, !email.isEmpty { payload["email"] = email }
-        if let paypalEmail, !paypalEmail.isEmpty { payload["paypalEmail"] = paypalEmail }
         _ = try await post(function: "affiliateApply", payload: payload)
     }
 
-    static func syncProfile(paypalEmail: String?, payoutMethod: String = "paypal") async throws {
-        _ = try await post(
-            function: "affiliateSyncProfile",
-            payload: [
-                "paypalEmail": paypalEmail ?? "",
-                "payoutMethod": payoutMethod
-            ]
-        )
+    static func syncProfile(displayName: String? = nil) async throws {
+        var payload: [String: Any] = [:]
+        if let displayName, !displayName.isEmpty { payload["displayName"] = displayName }
+        _ = try await post(function: "affiliateSyncProfile", payload: payload)
     }
 
     static func dashboard() async throws -> ProcessAffiliateDashboardResponse {

@@ -20,8 +20,10 @@ import {
   verifyAppAttestation,
   verifyFirebaseUser,
 } from "./referralShared";
+import { createAffiliateStripeTransfer } from "./affiliateStripe";
 
 const affiliateAdminSecret = defineSecret("AFFILIATE_ADMIN_SECRET");
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 
 export const affiliateResolveCode = onRequest(
   {
@@ -142,7 +144,6 @@ export const affiliateApply = onRequest(
       );
       const displayName = String(req.body?.displayName ?? "").trim();
       const email = String(req.body?.email ?? "").trim();
-      const paypalEmail = String(req.body?.paypalEmail ?? "").trim();
       if (!displayName) {
         res.status(400).json({ error: "INVALID_TEXT" });
         return;
@@ -175,17 +176,6 @@ export const affiliateApply = onRequest(
         uid,
         status: "pending",
       });
-
-      if (paypalEmail) {
-        await db().collection("affiliates").doc(affiliateId).set(
-          {
-            paypalEmail: paypalEmail.slice(0, 120),
-            payoutMethod: "paypal",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
-      }
 
       res.status(200).json({
         ok: true,
@@ -223,8 +213,7 @@ export const affiliateSyncProfile = onRequest(
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
 
-      const paypalEmail = String(req.body?.paypalEmail ?? "").trim();
-      const payoutMethod = String(req.body?.payoutMethod ?? "paypal").trim();
+      const displayName = String(req.body?.displayName ?? "").trim();
 
       const affiliate = await getAffiliateForUid(uid);
       if (!affiliate) {
@@ -232,18 +221,18 @@ export const affiliateSyncProfile = onRequest(
         return;
       }
 
+      const patch: Record<string, unknown> = {
+        uid,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      if (displayName) {
+        patch.displayName = displayName.slice(0, 80);
+      }
+
       await db()
         .collection("affiliates")
         .doc(affiliate.affiliateId)
-        .set(
-          {
-            uid,
-            paypalEmail: paypalEmail.slice(0, 120) || null,
-            payoutMethod: payoutMethod === "bank" ? "bank" : "paypal",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
+        .set(patch, { merge: true });
 
       res.status(200).json({ ok: true, affiliateId: affiliate.affiliateId });
     } catch (error: any) {
@@ -282,11 +271,10 @@ export const affiliateDashboard = onRequest(
         return;
       }
 
-      try {
-        await releaseDueAffiliateCommissions();
-      } catch (releaseError) {
+      // Don't block dashboard reads — scheduled jobs also release holds.
+      void releaseDueAffiliateCommissions().catch((releaseError) => {
         console.warn("[affiliateDashboard] releaseDue skipped", releaseError);
-      }
+      });
 
       const refreshed = await db()
         .collection("affiliates")
@@ -343,7 +331,7 @@ export const affiliateDashboard = onRequest(
           id: doc.id,
           amountCents: row.amountCents ?? 0,
           currency: row.currency ?? "EUR",
-          method: row.method ?? "paypal",
+          method: row.method ?? "stripe",
           status: row.status ?? "completed",
           createdAt: row.createdAt?.toMillis?.() ?? null,
         };
@@ -356,8 +344,16 @@ export const affiliateDashboard = onRequest(
         affiliateId: affiliate.affiliateId,
         displayName: data.displayName ?? affiliate.displayName,
         status: data.status ?? affiliate.status,
-        paypalEmail: data.paypalEmail ?? null,
-        payoutMethod: data.payoutMethod ?? "paypal",
+        payoutMethod: data.payoutMethod ?? null,
+        stripeConnect: {
+          accountId: data.stripeAccountId ?? null,
+          onboardingComplete: Boolean(data.stripeOnboardingComplete),
+          payoutsEnabled: Boolean(data.stripePayoutsEnabled),
+          detailsSubmitted: Boolean(data.stripeDetailsSubmitted),
+          requirementsDue: Array.isArray(data.stripeRequirementsDue)
+            ? data.stripeRequirementsDue
+            : [],
+        },
         codes,
         stats: {
           referredCount: stats.referredCount ?? 0,
@@ -602,7 +598,8 @@ export const affiliateAdminListPending = onRequest(
           email: data.email ?? null,
           uid: data.uid ?? null,
           codes: data.codes ?? [],
-          paypalEmail: data.paypalEmail ?? null,
+          stripeOnboardingComplete: Boolean(data.stripeOnboardingComplete),
+          stripePayoutsEnabled: Boolean(data.stripePayoutsEnabled),
           createdAt: data.createdAt?.toMillis?.() ?? null,
         };
       });
@@ -622,7 +619,7 @@ export const affiliateAdminMarkPaid = onRequest(
   {
     invoker: "public",
     cors: true,
-    secrets: [affiliateAdminSecret],
+    secrets: [affiliateAdminSecret, stripeSecretKey],
     timeoutSeconds: 60,
     memory: "512MiB",
   },
@@ -642,7 +639,7 @@ export const affiliateAdminMarkPaid = onRequest(
       const affiliateId = String(req.body?.affiliateId ?? "").trim();
       const amountCents = Number(req.body?.amountCents ?? 0);
       const currency = String(req.body?.currency ?? "EUR").trim().toUpperCase();
-      const method = String(req.body?.method ?? "paypal").trim();
+      const method = String(req.body?.method ?? "stripe").trim();
       const note = String(req.body?.note ?? "").trim();
 
       if (!affiliateId || !Number.isFinite(amountCents) || amountCents <= 0) {
@@ -660,6 +657,7 @@ export const affiliateAdminMarkPaid = onRequest(
       }
 
       const stats = affiliateSnap.data()?.stats ?? {};
+      const affiliateData = affiliateSnap.data() ?? {};
       const payableCents = Number(stats.payableCents ?? 0);
       if (payableCents < amountCents) {
         res.status(400).json({
@@ -671,6 +669,24 @@ export const affiliateAdminMarkPaid = onRequest(
 
       const now = admin.firestore.Timestamp.now();
       const payoutRef = db().collection("affiliatePayouts").doc();
+      let stripeTransferId: string | null = null;
+
+      if (method === "stripe") {
+        const stripeAccountId = String(affiliateData.stripeAccountId ?? "").trim();
+        const payoutsEnabled = Boolean(affiliateData.stripePayoutsEnabled);
+        if (!stripeAccountId || !payoutsEnabled) {
+          res.status(400).json({ error: "STRIPE_NOT_READY" });
+          return;
+        }
+        stripeTransferId = await createAffiliateStripeTransfer({
+          affiliateId,
+          stripeAccountId,
+          amountCents,
+          currency,
+          payoutId: payoutRef.id,
+          secret: stripeSecretKey.value(),
+        });
+      }
 
       await db().runTransaction(async (transaction) => {
         transaction.set(payoutRef, {
@@ -680,6 +696,7 @@ export const affiliateAdminMarkPaid = onRequest(
           method,
           note: note.slice(0, 240) || null,
           status: "completed",
+          stripeTransferId,
           createdAt: now,
         });
 
@@ -727,6 +744,7 @@ export const affiliateAdminMarkPaid = onRequest(
         payoutId: payoutRef.id,
         affiliateId,
         amountCents,
+        stripeTransferId,
       });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";

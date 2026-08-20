@@ -28,11 +28,42 @@ enum OnboardingProfileChatCoachHeaderProgress {
         ("intro_next", 0)
     ]
 
-    static func snapshot(questionID: String?, engine: MossConversationEngine) -> Snapshot? {
-        guard let questionID, introQuestionIDs.contains(questionID) else {
-            return nil
+    static func snapshot(
+        questionID: String?,
+        engine: MossConversationEngine,
+        isGlowUpResultsPresented: Bool = false
+    ) -> Snapshot? {
+        if isGlowUpResultsPresented {
+            return glowUpResultsSnapshot()
         }
 
+        guard let questionID else { return nil }
+
+        if introQuestionIDs.contains(questionID) {
+            return introSnapshot(questionID: questionID, engine: engine)
+        }
+
+        if numberedQuestionIDs.contains(questionID) {
+            return numberedSnapshot(questionID: questionID, engine: engine)
+        }
+
+        if questionID == "profile_summary" {
+            return Snapshot(
+                segmentCount: numberedQuestionIDs.count,
+                completedSegments: numberedQuestionIDs.count,
+                activeProgress: 1
+            )
+        }
+
+        return nil
+    }
+
+    /// Fin de l’intro — page animation glow-up (même barre 4 segments, tout rempli).
+    static func glowUpResultsSnapshot() -> Snapshot {
+        Snapshot(segmentCount: 4, completedSegments: 4, activeProgress: 1)
+    }
+
+    private static func introSnapshot(questionID: String, engine: MossConversationEngine) -> Snapshot {
         let segmentIndex = introSegmentIndex(questionID: questionID, engine: engine)
         let lineID = OnboardingMossChatHelpers.lineID(
             questionID: introSegments[segmentIndex].questionID,
@@ -40,6 +71,16 @@ enum OnboardingProfileChatCoachHeaderProgress {
         )
         return Snapshot(
             segmentCount: 4,
+            completedSegments: segmentIndex,
+            activeProgress: typingFraction(lineID: lineID, engine: engine)
+        )
+    }
+
+    private static func numberedSnapshot(questionID: String, engine: MossConversationEngine) -> Snapshot {
+        let segmentIndex = numberedQuestionIDs.firstIndex(of: questionID) ?? 0
+        let lineID = OnboardingMossChatHelpers.lineID(questionID: questionID, blockIndex: 0)
+        return Snapshot(
+            segmentCount: numberedQuestionIDs.count,
             completedSegments: segmentIndex,
             activeProgress: typingFraction(lineID: lineID, engine: engine)
         )

@@ -268,7 +268,7 @@ struct SportOnboardingView: View {
                     Button(action: {
                         handleContinueButtonTap()
                     }) {
-                        Text(OnboardingCopy.continueCTAUpper)
+                        Text(continueButtonTitle)
                             .font(.system(size: 22, weight: .black))
                             .foregroundStyle(OnboardingTheme.onboardingPrimaryActionText(for: colorScheme))
                             .id("continue_button_label_\(viewModel.currentStep)")
@@ -282,20 +282,6 @@ struct SportOnboardingView: View {
             .disabled(!canContinue && OnboardingStep(rawValue: viewModel.currentStep) != .referralCode)
             .opacity(continueButtonOpacity)
             .allowsHitTesting(continueButtonHitTestingEnabled && !isTransitioning)
-
-            if shouldShowCreatorCodeSkipLink {
-                Button(action: skipCreatorCodeStep) {
-                    Text(AppCopy.t("Passer", en: "Skip"))
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(OnboardingTheme.mutedText)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 16)
-                        .frame(maxWidth: .infinity)
-                        .processTappableButtonLabel(maxWidth: true)
-                }
-                .buttonStyle(.processPlain)
-                .allowsHitTesting(!isTransitioning)
-            }
         }
         .padding(.bottom, animatedContinueBottomOffset)
         .id("onboarding_global_continue")

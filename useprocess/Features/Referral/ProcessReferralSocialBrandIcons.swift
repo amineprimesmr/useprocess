@@ -27,6 +27,8 @@ struct ProcessSocialBrandIcon: View {
     let brand: ProcessSocialBrand
     var size: CGFloat = 52
     var showsStroke: Bool = true
+    var linkIconRatio: CGFloat = 0.38
+    var brandImageFillScale: CGFloat = 1.0
 
     @ViewBuilder
     var body: some View {
@@ -35,7 +37,7 @@ struct ProcessSocialBrandIcon: View {
                 Circle()
                     .fill(Color.white.opacity(0.12))
                 Image(systemName: "link")
-                    .font(.system(size: size * 0.38, weight: .semibold))
+                    .font(.system(size: size * linkIconRatio, weight: .semibold))
                     .foregroundStyle(.white)
             }
             .frame(width: size, height: size)
@@ -51,6 +53,8 @@ struct ProcessSocialBrandIcon: View {
                 .resizable()
                 .scaledToFill()
                 .frame(width: size, height: size)
+                .scaleEffect(brandImageFillScale)
+                .frame(width: size, height: size)
                 .clipShape(Circle())
                 .overlay {
                     if showsStroke {
@@ -65,11 +69,23 @@ struct ProcessSocialBrandIcon: View {
 
 typealias ProcessReferralSocialBrand = ProcessSocialBrand
 
+enum ProcessReferralSocialShareMetrics {
+    static let buttonSize: CGFloat = 56
+    static let linkIconRatio: CGFloat = 0.50
+    static let brandImageFillScale: CGFloat = 1.12
+}
+
 struct ProcessReferralSocialBrandIcon: View {
     let brand: ProcessReferralSocialBrand
+    var size: CGFloat = ProcessReferralSocialShareMetrics.buttonSize
 
     var body: some View {
-        ProcessSocialBrandIcon(brand: brand, size: 52)
-            .shadow(color: Color.black.opacity(0.18), radius: 6, y: 3)
+        ProcessSocialBrandIcon(
+            brand: brand,
+            size: size,
+            linkIconRatio: ProcessReferralSocialShareMetrics.linkIconRatio,
+            brandImageFillScale: ProcessReferralSocialShareMetrics.brandImageFillScale
+        )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, y: 3)
     }
 }

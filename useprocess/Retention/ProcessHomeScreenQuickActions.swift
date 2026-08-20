@@ -18,7 +18,10 @@ enum ProcessHomeScreenQuickActions {
             UIApplicationShortcutItem(
                 type: ProcessHomeScreenQuickActionKind.lifetimeOffer.rawValue,
                 localizedTitle: AppCopy.t("Accès à vie offert", en: "Lifetime Access Offer"),
-                localizedSubtitle: AppCopy.t("Offre exclusive — \(SubscriptionConfiguration.winbackLifetimePrice)", en: "Exclusive offer — \(SubscriptionConfiguration.winbackLifetimePrice)"),
+                localizedSubtitle: AppCopy.t(
+                    "Offre exclusive — \(SubscriptionService.shared.winbackLifetimeDisplayPrice)",
+                    en: "Exclusive offer — \(SubscriptionService.shared.winbackLifetimeDisplayPrice)"
+                ),
                 icon: UIApplicationShortcutIcon(systemImageName: "gift.fill")
             )
         ]

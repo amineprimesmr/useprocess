@@ -68,12 +68,9 @@ struct ProcessReferralRewardsHeader: View {
                 Button(action: trailingAction) {
                     Text(trailingTitle)
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(ProcessReferralTheme.textPrimary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
-                        .processTappableButtonLabel(in: Capsule(style: .continuous))
                 }
-                .buttonStyle(.plain)
                 .processGlassButton(in: Capsule(style: .continuous))
             } else {
                 Color.clear.frame(width: 38, height: 38)
@@ -82,48 +79,42 @@ struct ProcessReferralRewardsHeader: View {
     }
 }
 
-// MARK: - Commission promo (partagé Réglages + page parrainage)
+// MARK: - Reward promo (partagé Réglages + page parrainage)
 
-struct ProcessReferralCommissionPromoFeature: Identifiable {
+struct ProcessReferralRewardPromoFeature: Identifiable {
     let id: String
     let icon: String
     let title: String
     let detail: String
 }
 
-enum ProcessReferralCommissionPromoContent {
+enum ProcessReferralRewardPromoContent {
     @MainActor
     static var headerTitle: String {
         AppCopy.t(
-            "Gagne ta première commission",
-            en: "Earn your first commission"
+            "Gagne du temps Process",
+            en: "Earn free Process time"
         )
     }
 
     @MainActor
     static var headerSubtitle: String {
         AppCopy.t(
-            "Rembourse ton abonnement en parrainant tes amis — \(ProcessReferralProgramTerms.commissionPercentLabel) à vie sur chaque paiement.",
-            en: "Cover your subscription by referring friends — \(ProcessReferralProgramTerms.commissionPercentLabel) for life on every payment."
+            "Parraine tes amis — \(ProcessReferralProgramTerms.perFriendRewardLabel) à chaque abonnement.",
+            en: "Refer friends — \(ProcessReferralProgramTerms.perFriendRewardLabel) for each subscription."
         )
     }
 
     @MainActor
-    static var features: [ProcessReferralCommissionPromoFeature] {
+    static var features: [ProcessReferralRewardPromoFeature] {
         [
-            ProcessReferralCommissionPromoFeature(
-                id: "rate",
-                icon: "percent",
-                title: AppCopy.t(
-                    "\(ProcessReferralProgramTerms.commissionPercentLabel) de commission à vie",
-                    en: "\(ProcessReferralProgramTerms.commissionPercentLabel) lifetime commission"
-                ),
-                detail: AppCopy.t(
-                    "Sur chaque abonnement payé par tes amis.",
-                    en: "On every paid subscription from your friends."
-                )
+            ProcessReferralRewardPromoFeature(
+                id: "reward",
+                icon: "gift.fill",
+                title: ProcessReferralProgramTerms.headline,
+                detail: ProcessReferralProgramTerms.subtitle
             ),
-            ProcessReferralCommissionPromoFeature(
+            ProcessReferralRewardPromoFeature(
                 id: "share",
                 icon: "link",
                 title: AppCopy.t("Lien unique à partager", en: "One link to share"),
@@ -132,33 +123,30 @@ enum ProcessReferralCommissionPromoContent {
                     en: "WhatsApp, Instagram, or iMessage in one tap."
                 )
             ),
-            ProcessReferralCommissionPromoFeature(
-                id: "renewals",
-                icon: "arrow.triangle.2.circlepath",
-                title: AppCopy.t("Renouvellements inclus", en: "Renewals included"),
+            ProcessReferralRewardPromoFeature(
+                id: "plan",
+                icon: "calendar",
+                title: AppCopy.t("Selon ton abonnement", en: "Based on your plan"),
                 detail: AppCopy.t(
-                    "Tu touches aussi à chaque renouvellement.",
-                    en: "You earn on every renewal too."
+                    "Plan mensuel → 1 mois offert. Plan annuel → 1 an offert.",
+                    en: "Monthly plan → 1 month free. Annual plan → 1 year free."
                 )
             ),
-            ProcessReferralCommissionPromoFeature(
-                id: "payout",
-                icon: "clock.fill",
-                title: AppCopy.t(
-                    "Versement sous \(ProcessReferralProgramTerms.holdDays) jours",
-                    en: "Payout after \(ProcessReferralProgramTerms.holdDays) days"
-                ),
+            ProcessReferralRewardPromoFeature(
+                id: "once",
+                icon: "checkmark.seal.fill",
+                title: AppCopy.t("Une fois par ami", en: "Once per friend"),
                 detail: AppCopy.t(
-                    "Gains disponibles après la période de sécurité.",
-                    en: "Earnings become available after the hold period."
+                    "La récompense est créditée quand ton ami paie son abonnement.",
+                    en: "The reward is granted when your friend pays for their subscription."
                 )
             )
         ]
     }
 }
 
-struct ProcessReferralCommissionPromoFeatureRow: View {
-    let feature: ProcessReferralCommissionPromoFeature
+struct ProcessReferralRewardPromoFeatureRow: View {
+    let feature: ProcessReferralRewardPromoFeature
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -186,7 +174,7 @@ struct ProcessReferralCommissionPromoFeatureRow: View {
     }
 }
 
-struct ProcessReferralCommissionSimulatorSection: View {
+struct ProcessReferralRewardSimulatorSection: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var friendCount: Double = 5
 
@@ -203,12 +191,12 @@ struct ProcessReferralCommissionSimulatorSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(ProcessReferralCommissionPromoContent.headerTitle)
+                Text(ProcessReferralRewardPromoContent.headerTitle)
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(ProcessSettingsOpalTheme.sectionTitleTint)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(ProcessReferralCommissionPromoContent.headerSubtitle)
+                Text(ProcessReferralRewardPromoContent.headerSubtitle)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(ProcessSettingsOpalTheme.valueTint)
                     .fixedSize(horizontal: false, vertical: true)
@@ -222,8 +210,8 @@ struct ProcessReferralCommissionSimulatorSection: View {
     private var promoCard: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 16) {
-                ForEach(ProcessReferralCommissionPromoContent.features) { feature in
-                    ProcessReferralCommissionPromoFeatureRow(feature: feature)
+                ForEach(ProcessReferralRewardPromoContent.features) { feature in
+                    ProcessReferralRewardPromoFeatureRow(feature: feature)
                 }
             }
 
@@ -254,18 +242,20 @@ struct ProcessReferralCommissionSimulatorSection: View {
 
     private var simulatorBlock: some View {
         VStack(alignment: .center, spacing: 14) {
-            Text(AppCopy.t("Simule tes gains", en: "Simulate your earnings"))
+            Text(AppCopy.t("Simule tes récompenses", en: "Simulate your rewards"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(ProcessReferralTheme.textSecondary)
                 .frame(maxWidth: .infinity)
 
-            Text(ProcessReferralProgramTerms.formattedSimulatorTotal(friendCount: friendCountInt))
+            Text(ProcessReferralProgramTerms.simulatedRewardLabel(friendCount: friendCountInt))
                 .font(PaywallBevelTheme.paywallHeroTitleFont(size: 48))
                 .tracking(PaywallBevelTheme.paywallHeroTitleTracking)
                 .foregroundStyle(PaywallBevelTheme.paywallProTitleGradient(for: colorScheme))
-                .monospacedDigit()
                 .contentTransition(.numericText())
                 .animation(.snappy(duration: 0.22), value: friendCountInt)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.7)
+                .lineLimit(2)
 
             Text(friendCountLabel)
                 .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 15))
@@ -295,7 +285,7 @@ struct ProcessReferralCommissionSimulatorSection: View {
                 .foregroundStyle(ProcessReferralTheme.textTertiary)
             }
 
-            Text(simulatorCommissionLine)
+            Text(ProcessReferralProgramTerms.perFriendSimulatorDetailLabel())
                 .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 15))
                 .foregroundStyle(ProcessReferralRewardsPalette.mintBright)
                 .multilineTextAlignment(.center)
@@ -304,13 +294,10 @@ struct ProcessReferralCommissionSimulatorSection: View {
     }
 
     private var promoWatermark: some View {
-        Image("PlanHomeUpgradeDollar")
-            .resizable()
-            .interpolation(.high)
-            .scaledToFit()
+        Image(systemName: "gift.fill")
+            .font(.system(size: 88, weight: .semibold))
+            .foregroundStyle(ProcessReferralRewardsPalette.mintBright.opacity(0.22))
             .frame(width: 132, height: 132)
-            .opacity(0.14)
-            .blendMode(.plusLighter)
             .accessibilityHidden(true)
     }
 
@@ -324,59 +311,158 @@ struct ProcessReferralCommissionSimulatorSection: View {
             return AppCopy.t("\(friendCountInt) amis", en: "\(friendCountInt) friends")
         }
     }
+}
 
-    private var simulatorCommissionLine: String {
-        AppCopy.t(
-            "\(ProcessReferralProgramTerms.simulatorCommissionPerFriendLabel) · \(ProcessReferralProgramTerms.commissionPercentLabel)",
-            en: "\(ProcessReferralProgramTerms.simulatorCommissionPerFriendLabel) · \(ProcessReferralProgramTerms.commissionPercentLabel)"
-        )
+// MARK: - Opal headline (page parrainage)
+
+struct ProcessReferralOpalHeadlineSection: View {
+    let acceptedCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(ProcessReferralProgramTerms.opalOfferHeadline)
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(ProcessReferralTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ProcessReferralOpalProgressText(acceptedCount: acceptedCount)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 24)
     }
 }
 
-// MARK: - Social share row (liquid glass)
+struct ProcessReferralOpalProgressText: View {
+    let acceptedCount: Int
 
-struct ProcessReferralGlassSocialShareRow: View {
-    let copyText: String
+    private var mint: Color { ProcessReferralRewardsPalette.mintBright }
 
     var body: some View {
-        HStack(spacing: 0) {
+        Group {
+            if acceptedCount == 0 {
+                Text(ProcessReferralProgramTerms.opalZeroFriendsBody)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(ProcessReferralTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                (
+                    Text(AppCopy.t("Bravo ! Tu as parrainé ", en: "Nice! You referred "))
+                        .foregroundStyle(ProcessReferralTheme.textSecondary)
+                    + Text(friendCountFragment)
+                        .foregroundStyle(mint)
+                        .fontWeight(.semibold)
+                    + Text(AppCopy.t(" sur Process. ", en: " on Process. "))
+                        .foregroundStyle(ProcessReferralTheme.textSecondary)
+                    + Text(ProcessReferralProgramTerms.opalProgressSuffix)
+                        .foregroundStyle(ProcessReferralTheme.textSecondary)
+                )
+                .font(.system(size: 15, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var friendCountFragment: String {
+        switch acceptedCount {
+        case 1:
+            return AppCopy.t("1 ami", en: "1 friend")
+        default:
+            return AppCopy.t("\(acceptedCount) amis", en: "\(acceptedCount) friends")
+        }
+    }
+}
+
+// MARK: - Social share row (style Opal)
+
+struct ProcessReferralGlassSocialShareRow: View {
+    let shareMessage: String
+    let link: String
+
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        HStack(spacing: 8) {
             socialItem(
                 title: AppCopy.t("Copier le lien", en: "Copy link"),
                 brand: .copyLink
             ) {
-                UIPasteboard.general.string = copyText
-                HapticManager.shared.notification(.success)
-            }
-
-            socialItem(
-                title: AppCopy.t("Messages", en: "Messages"),
-                brand: .messages
-            ) {
-                shareViaMessages(copyText)
+                _ = ProcessReferralShareRouter.handle(
+                    .copyLink,
+                    message: shareMessage,
+                    link: link
+                )
             }
 
             socialItem(
                 title: "Instagram",
                 brand: .instagram
             ) {
-                UIPasteboard.general.string = copyText
-                HapticManager.shared.notification(.success)
+                _ = ProcessReferralShareRouter.handle(
+                    .instagram,
+                    message: shareMessage,
+                    link: link
+                )
             }
 
             socialItem(
                 title: "WhatsApp",
                 brand: .whatsApp
             ) {
-                openURL("https://wa.me/?text=\(copyText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+                _ = ProcessReferralShareRouter.handle(
+                    .whatsApp,
+                    message: shareMessage,
+                    link: link
+                )
             }
 
             socialItem(
                 title: "TikTok",
                 brand: .tikTok
             ) {
-                UIPasteboard.general.string = copyText
-                HapticManager.shared.notification(.success)
+                _ = ProcessReferralShareRouter.handle(
+                    .tikTok,
+                    message: shareMessage,
+                    link: link
+                )
             }
+
+            clipperItem
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var clipperItem: some View {
+        let buttonSize = ProcessReferralSocialShareMetrics.buttonSize
+        let title = AppCopy.t("Clippers", en: "Clippers")
+
+        return VStack(spacing: 8) {
+            Button {
+                openURL(ProcessAffiliatePortalLink.urlForCurrentUser())
+                HapticManager.shared.impact(.light)
+            } label: {
+                Image("PlanHomeUpgradeDollar")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(width: buttonSize, height: buttonSize)
+                    .scaleEffect(ProcessReferralSocialShareMetrics.brandImageFillScale)
+                    .frame(width: buttonSize, height: buttonSize)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle()
+                            .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
+                    }
+                    .shadow(color: Color.black.opacity(0.18), radius: 6, y: 3)
+            }
+            .buttonStyle(.plain)
+            .frame(width: buttonSize, height: buttonSize)
+            .accessibilityLabel(title)
+
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(ProcessReferralTheme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
     }
@@ -386,97 +472,158 @@ struct ProcessReferralGlassSocialShareRow: View {
         brand: ProcessReferralSocialBrand,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                ProcessReferralSocialBrandIcon(brand: brand)
+        let buttonSize = ProcessReferralSocialShareMetrics.buttonSize
 
-                Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(ProcessReferralTheme.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+        return VStack(spacing: 8) {
+            Button(action: action) {
+                ProcessReferralSocialBrandIcon(brand: brand, size: buttonSize)
             }
-            .frame(maxWidth: .infinity)
+            .buttonStyle(.plain)
+            .frame(width: buttonSize, height: buttonSize)
+            .accessibilityLabel(title)
+
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(ProcessReferralTheme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .buttonStyle(.plain)
-    }
-
-    private func shareViaMessages(_ text: String) {
-        openURL("sms:&body=\(text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
-    }
-
-    private func openURL(_ string: String) {
-        guard let url = URL(string: string) else { return }
-        UIApplication.shared.open(url)
+        .frame(maxWidth: .infinity)
     }
 }
 
-// MARK: - Commission stats
+// MARK: - Referral stats (legacy card removed — rewards shown on metal card)
 
-struct ProcessReferralCommissionStatsCard: View {
-    let stats: ProcessReferralCommissionStats
+// MARK: - How it works (timeline)
 
-    private let cardShape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+private struct ProcessReferralHowItWorksStep: Identifiable {
+    let id: String
+    let icon: String
+    let title: String
+    let detail: String
+}
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(AppCopy.t("Tes gains", en: "Your earnings"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(ProcessReferralTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .center)
+struct ProcessReferralHowItWorksSection: View {
+    var onViewRewards: () -> Void
 
-            HStack(spacing: 0) {
-                statColumn(
-                    title: AppCopy.t("En attente", en: "Pending"),
-                    value: ProcessReferralProgramTerms.formattedCents(stats.pendingCents)
+    private let cardShape = RoundedRectangle(
+        cornerRadius: ProcessSettingsOpalTheme.cardCornerRadius,
+        style: .continuous
+    )
+
+    @MainActor
+    private var steps: [ProcessReferralHowItWorksStep] {
+        [
+            ProcessReferralHowItWorksStep(
+                id: "share",
+                icon: "link",
+                title: AppCopy.t("Partage ton invitation", en: "Share your invite"),
+                detail: AppCopy.t(
+                    "Envoie ton lien personnel à un ami.",
+                    en: "Send your personal invite link to a friend."
                 )
-                divider
-                statColumn(
-                    title: AppCopy.t("Disponible", en: "Payable"),
-                    value: ProcessReferralProgramTerms.formattedCents(stats.payableCents)
+            ),
+            ProcessReferralHowItWorksStep(
+                id: "join",
+                icon: "person.crop.circle.badge.plus",
+                title: AppCopy.t("Ton ami rejoint Process", en: "Friend joins Process"),
+                detail: AppCopy.t(
+                    "Il s’inscrit avec ton lien et s’abonne.",
+                    en: "They sign up with your link and subscribe."
                 )
-                divider
-                statColumn(
-                    title: AppCopy.t("Total", en: "Lifetime"),
-                    value: ProcessReferralProgramTerms.formattedCents(stats.lifetimeCents)
-                )
-            }
-
-            Text(
-                AppCopy.t(
-                    "Versement après \(ProcessReferralProgramTerms.holdDays) jours. 40 % du net à chaque paiement.",
-                    en: "Payout after \(ProcessReferralProgramTerms.holdDays) days. 40% of net on every payment."
+            ),
+            ProcessReferralHowItWorksStep(
+                id: "reward",
+                icon: "gift.fill",
+                title: AppCopy.t("Tu débloques ta récompense", en: "You unlock rewards"),
+                detail: AppCopy.t(
+                    "Tu gagnes \(ProcessReferralProgramTerms.perFriendRewardLabel) après son premier paiement.",
+                    en: "You earn \(ProcessReferralProgramTerms.perFriendRewardLabel) after their first payment."
                 )
             )
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(ProcessReferralTheme.textTertiary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity)
-        .processInteractiveGlassSurface(in: cardShape, interactive: false)
+        ]
     }
 
-    private var divider: some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.10))
-            .frame(width: 1, height: 44)
-    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                    ProcessReferralHowItWorksStepRow(
+                        step: step,
+                        showsConnector: index < steps.count - 1
+                    )
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 22)
+            .padding(.bottom, 18)
 
-    private func statColumn(title: String, value: String) -> some View {
-        VStack(spacing: 6) {
-            Text(value)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(ProcessReferralTheme.textPrimary)
-                .monospacedDigit()
-                .minimumScaleFactor(0.75)
-                .lineLimit(1)
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(ProcessReferralTheme.textTertiary)
+            Button(action: onViewRewards) {
+                Text(AppCopy.t("Voir les récompenses", en: "View rewards"))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(ProcessReferralTheme.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            cardShape.fill(ProcessReferralTheme.surface)
+        }
+        .overlay {
+            cardShape.strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+        }
+        .padding(.top, 28)
+    }
+}
+
+private struct ProcessReferralHowItWorksStepRow: View {
+    let step: ProcessReferralHowItWorksStep
+    let showsConnector: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(spacing: 0) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: step.icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(ProcessReferralTheme.textPrimary.opacity(0.88))
+                }
+
+                if showsConnector {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.12))
+                        .frame(width: 2, height: 36)
+                        .padding(.vertical, 6)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(step.title)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(ProcessReferralTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(step.detail)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(ProcessReferralTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 8)
+            .padding(.bottom, showsConnector ? 8 : 0)
+
+            Spacer(minLength: 0)
+        }
     }
 }
 
@@ -492,22 +639,10 @@ struct ProcessReferralGlassShareButton: View {
         Button(action: action) {
             Label(title, systemImage: "square.and.arrow.up")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(ProcessReferralTheme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .processTappableButtonLabel(in: shape, maxWidth: true)
         }
-        .buttonStyle(.plain)
         .processGlassButton(in: shape)
-        .controlSize(.regular)
-        .background {
-            shape
-                .strokeBorder(ProcessSettingsOpalTheme.glowGradient, lineWidth: 1.5)
-                .blur(radius: 6)
-                .opacity(0.45)
-                .offset(y: 4)
-                .allowsHitTesting(false)
-        }
     }
 }
 

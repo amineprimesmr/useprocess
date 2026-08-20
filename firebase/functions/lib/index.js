@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
+exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateStripeWebhook = exports.affiliateStripeConnectDashboard = exports.affiliateStripeConnectSync = exports.affiliateStripeConnectStart = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -515,6 +515,11 @@ Object.defineProperty(exports, "affiliateAdminMarkPaid", { enumerable: true, get
 var affiliateCommissions_1 = require("./affiliateCommissions");
 Object.defineProperty(exports, "affiliateRevenueCatWebhook", { enumerable: true, get: function () { return affiliateCommissions_1.affiliateRevenueCatWebhook; } });
 Object.defineProperty(exports, "affiliateReleaseHeldCommissions", { enumerable: true, get: function () { return affiliateCommissions_1.affiliateReleaseHeldCommissions; } });
+var affiliateStripe_1 = require("./affiliateStripe");
+Object.defineProperty(exports, "affiliateStripeConnectStart", { enumerable: true, get: function () { return affiliateStripe_1.affiliateStripeConnectStart; } });
+Object.defineProperty(exports, "affiliateStripeConnectSync", { enumerable: true, get: function () { return affiliateStripe_1.affiliateStripeConnectSync; } });
+Object.defineProperty(exports, "affiliateStripeConnectDashboard", { enumerable: true, get: function () { return affiliateStripe_1.affiliateStripeConnectDashboard; } });
+Object.defineProperty(exports, "affiliateStripeWebhook", { enumerable: true, get: function () { return affiliateStripe_1.affiliateStripeWebhook; } });
 var supportCrisp_1 = require("./supportCrisp");
 Object.defineProperty(exports, "supportSendMessage", { enumerable: true, get: function () { return supportCrisp_1.supportSendMessage; } });
 Object.defineProperty(exports, "supportCrispWebhook", { enumerable: true, get: function () { return supportCrisp_1.supportCrispWebhook; } });

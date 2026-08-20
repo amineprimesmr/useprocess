@@ -18,6 +18,13 @@ var shouldShowGlobalContinueButton: Bool {
     return !step.usesInternalContinueAction
 }
 
+var continueButtonTitle: String {
+    if OnboardingStep(rawValue: viewModel.currentStep) == .referralCode {
+        return AppCopy.tSync("PASSER", en: "SKIP")
+    }
+    return OnboardingCopy.continueCTAUpper
+}
+
 var continueButtonOpacity: Double {
     if OnboardingStep(rawValue: viewModel.currentStep) == .referralCode {
         return 1.0
@@ -136,10 +143,6 @@ var canContinue: Bool {
     viewModel.isCurrentStepValidated()
 }
 
-var shouldShowCreatorCodeSkipLink: Bool {
-    OnboardingStep(rawValue: viewModel.currentStep) == .referralCode
-}
-
 func handleContinueButtonTap() {
     HapticManager.shared.impact(.medium)
 
@@ -153,11 +156,7 @@ func handleContinueButtonTap() {
         nextStep()
 
     case .referralCode:
-        if viewModel.creatorCodeIsVerified {
-            advanceFromVerifiedCreatorCode()
-        } else {
-            viewModel.creatorCodeContinueAttempt += 1
-        }
+        skipCreatorCodeStep()
 
     default:
         nextStep()

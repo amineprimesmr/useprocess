@@ -142,8 +142,8 @@ export const referralDashboard = onRequest(
       const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
 
-      const { fetchReferralDashboard } = await import("./referralCommissions");
-      const dashboard = await fetchReferralDashboard(uid);
+      const { fetchReferralProgramDashboard } = await import("./referralShared");
+      const dashboard = await fetchReferralProgramDashboard(uid);
       res.status(200).json(dashboard);
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";

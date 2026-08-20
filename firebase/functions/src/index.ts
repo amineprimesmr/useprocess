@@ -593,4 +593,10 @@ export {
   affiliateRevenueCatWebhook,
   affiliateReleaseHeldCommissions,
 } from "./affiliateCommissions";
+export {
+  affiliateStripeConnectStart,
+  affiliateStripeConnectSync,
+  affiliateStripeConnectDashboard,
+  affiliateStripeWebhook,
+} from "./affiliateStripe";
 export { supportSendMessage, supportCrispWebhook, supportCrispPoll } from "./supportCrisp";

@@ -52,6 +52,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>instagram</string>
+		<string>instagram-stories</string>
+		<string>tiktok</string>
+		<string>snssdk1233</string>
+		<string>snssdk1180</string>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>The microphone lets you record voice messages that are converted to text for the coach. The text may be sent to Anthropic (Claude) if you allow it.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

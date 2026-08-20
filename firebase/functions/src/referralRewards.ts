@@ -1,19 +1,45 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import {
-  accrueReferralCommission,
-  clawbackReferralCommission,
-  markReferralAttributionChurned,
-} from "./referralCommissions";
-import { httpStatusForError, setCors, verifyAppAttestation, verifyFirebaseUser } from "./referralShared";
+  accrueAffiliateCommission,
+  clawbackAffiliateCommission,
+  markAffiliateAttributionChurned,
+} from "./affiliateShared";
+import { isPaidPurchaseEvent } from "./revenueCat";
+import {
+  httpStatusForError,
+  processReferralRewards,
+  setCors,
+  verifyAppAttestation,
+  verifyFirebaseUser,
+} from "./referralShared";
 
+const revenueCatSecretKey = defineSecret("REVENUECAT_SECRET_API_KEY");
 const revenueCatWebhookSecret = defineSecret("REVENUECAT_WEBHOOK_SECRET");
+
+function isReferralRewardEvent(eventType: string, event: any): boolean {
+  const isInitialPaid =
+    eventType === "INITIAL_PURCHASE" && isPaidPurchaseEvent(event);
+  const isLifetime = eventType === "NON_RENEWING_PURCHASE";
+  const isTrialConversion =
+    eventType === "RENEWAL" && event?.is_trial_conversion === true;
+  return isInitialPaid || isLifetime || isTrialConversion;
+}
+
+function isSkippedReferralError(message: string): boolean {
+  return (
+    message === "NOT_REFERRED" ||
+    message === "ALREADY_REWARDED" ||
+    message === "SUBSCRIPTION_REQUIRED"
+  );
+}
 
 export const referralConfirmSubscription = onRequest(
   {
     invoker: "public",
     cors: true,
-    timeoutSeconds: 30,
+    secrets: [revenueCatSecretKey],
+    timeoutSeconds: 60,
     memory: "256MiB",
   },
   async (req, res) => {
@@ -28,12 +54,21 @@ export const referralConfirmSubscription = onRequest(
     }
 
     try {
-      await verifyFirebaseUser(req);
+      const uid = await verifyFirebaseUser(req);
       await verifyAppAttestation(req);
-      // Commissions are credited by the RevenueCat webhook on paid events.
-      res.status(200).json({ ok: true, skipped: "WEBHOOK_PRIMARY" });
+
+      const rewards = await processReferralRewards({
+        referredUserId: uid,
+        secretKey: revenueCatSecretKey.value(),
+      });
+
+      res.status(200).json({ ok: true, rewards });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
+      if (isSkippedReferralError(message)) {
+        res.status(200).json({ ok: true, skipped: message });
+        return;
+      }
       console.error("[referralConfirmSubscription]", message);
       res.status(httpStatusForError(message)).json({ error: message });
     }
@@ -44,7 +79,7 @@ export const referralRevenueCatWebhook = onRequest(
   {
     invoker: "public",
     cors: false,
-    secrets: [revenueCatWebhookSecret],
+    secrets: [revenueCatSecretKey, revenueCatWebhookSecret],
     timeoutSeconds: 60,
     memory: "512MiB",
   },
@@ -72,19 +107,47 @@ export const referralRevenueCatWebhook = onRequest(
       }
 
       if (eventType === "REFUND") {
-        const result = await clawbackReferralCommission({ inviteeUid: appUserId, event });
-        res.status(200).json({ ok: true, clawed: result.clawed });
+        const affiliate = await clawbackAffiliateCommission({
+          inviteeUid: appUserId,
+          event,
+        });
+        res.status(200).json({ ok: true, affiliate });
         return;
       }
 
       if (eventType === "CANCELLATION" || eventType === "EXPIRATION") {
-        await markReferralAttributionChurned(appUserId);
+        await markAffiliateAttributionChurned(appUserId);
         res.status(200).json({ ok: true, status: eventType });
         return;
       }
 
-      const result = await accrueReferralCommission({ inviteeUid: appUserId, event });
-      res.status(200).json({ ok: true, ...result });
+      if (!isReferralRewardEvent(eventType, event)) {
+        res.status(200).json({ ok: true, skipped: eventType || "UNKNOWN_EVENT" });
+        return;
+      }
+
+      let referral: Record<string, unknown> = { skipped: "NOT_ATTEMPTED" };
+      try {
+        const rewards = await processReferralRewards({
+          referredUserId: appUserId,
+          secretKey: revenueCatSecretKey.value(),
+        });
+        referral = { ok: true, rewards };
+      } catch (error: any) {
+        const message = error?.message ?? "Unknown error";
+        if (isSkippedReferralError(message)) {
+          referral = { skipped: message };
+        } else {
+          throw error;
+        }
+      }
+
+      const affiliate = await accrueAffiliateCommission({
+        inviteeUid: appUserId,
+        event,
+      });
+
+      res.status(200).json({ ok: true, referral, affiliate });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
       console.error("[referralRevenueCatWebhook]", message);

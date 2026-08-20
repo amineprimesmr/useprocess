@@ -18,34 +18,22 @@ struct EditProfileView: View {
     @State private var toolbarSubtitle: String?
     @State private var activeSectionIndex: Int?
     @State private var scrollEffectsActive = false
-    @Bindable private var referralStore = ProcessReferralStore.shared
     @Bindable private var appLanguage = ProcessAppLanguage.shared
 
     var body: some View {
-        ZStack(alignment: .top) {
-            if showsCommissionPromo {
-                ProcessReferralBlueTopFade()
-                    .frame(height: 260)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .ignoresSafeArea(edges: .top)
-                    .allowsHitTesting(false)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                accountEntryCard
+                personalizeSection
+                assistanceSection
+                permissionsSection
+                programsSection
+                followSection
+                ProcessSettingsOpalVersionFooter()
             }
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    commissionPromoSection
-                    accountEntryCard
-                    personalizeSection
-                    assistanceSection
-                    permissionsSection
-                    programsSection
-                    followSection
-                    ProcessSettingsOpalVersionFooter()
-                }
-                .padding(.bottom, ProcessIGTabMetrics.tabBarOverlayClearance + 16)
-            }
-            .scrollIndicators(.hidden)
+            .padding(.bottom, ProcessIGTabMetrics.tabBarOverlayClearance + 16)
         }
+        .scrollIndicators(.hidden)
         .processAdoptForIGTabBar()
         .processSettingsScrollToolBar(
             title: toolbarSubtitle,
@@ -61,10 +49,6 @@ struct EditProfileView: View {
             await loadProfileIfNeeded()
             await refreshNotificationStatus()
             FaceScanHistoryStore.shared.reloadForUser(userId: profileService.currentProfile?.userId)
-            referralStore.reload(
-                username: profileService.currentProfile?.username,
-                userId: profileService.currentProfile?.userId
-            )
             try? await Task.sleep(for: .seconds(0.01))
             scrollEffectsActive = true
         }
@@ -89,13 +73,6 @@ struct EditProfileView: View {
         }
     }
 
-    // MARK: - Commission
-
-    private var commissionPromoSection: some View {
-        ProcessSettingsCommissionPromoSection()
-            .padding(.top, showsDismissHeader ? 24 : 12)
-    }
-
     // MARK: - Mon compte
 
     private var accountEntryCard: some View {
@@ -111,11 +88,7 @@ struct EditProfileView: View {
             .processSettingsOpalRowButton()
         }
         .padding(.horizontal, ProcessSettingsOpalTheme.horizontalPadding)
-        .padding(.top, showsCommissionPromo ? ProcessSettingsOpalTheme.cardSpacing : (showsDismissHeader ? 24 : 12))
-    }
-
-    private var showsCommissionPromo: Bool {
-        ProcessSettingsCommissionPromoSection.shouldShow(stats: referralStore.snapshot.commissionStats)
+        .padding(.top, showsDismissHeader ? 24 : 12)
     }
 
     private var accountInitials: String {
@@ -276,6 +249,18 @@ struct EditProfileView: View {
                 NavigationLink(value: ProfileSettingsCategory.referral) {
                     ProcessSettingsOpalRow(
                         icon: "gift.fill",
+                        title: AppCopy.t("Parrainage", en: "Refer friends")
+                    )
+                }
+                .processSettingsOpalRowButton()
+
+                ProcessSettingsOpalRowDivider()
+
+                Button {
+                    inAppSafariURL = ProcessAffiliatePortalLink.urlForCurrentUser()
+                } label: {
+                    ProcessSettingsOpalRow(
+                        icon: "sparkles",
                         title: AppCopy.t("Programme créateurs", en: "Creator Program")
                     )
                 }

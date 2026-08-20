@@ -164,8 +164,8 @@ export function buildReferralShareText(code) {
   if (!normalized) return "";
   const url = buildReferralLandingUrl(normalized);
   return appCopy(
-    `Télécharge Process gratuitement avec mon lien :\n${url}\n\nMon code parrainage : ${normalized}\n40 % de commission à vie pour moi sur ton abonnement.`,
-    `Download Process for free with my link:\n${url}\n\nMy referral code: ${normalized}\nI earn 40% lifetime commission on your subscription.`
+    `Télécharge Process gratuitement avec mon lien :\n${url}\n\nMon code parrainage : ${normalized}\nJe gagne 1 mois ou 1 an offert quand tu t’abonnes.`,
+    `Download Process for free with my link:\n${url}\n\nMy referral code: ${normalized}\nI earn 1 free month or year when you subscribe.`
   );
 }
 

@@ -185,9 +185,8 @@ struct ProcessSettingsToolbarBackButton: View {
                     width: ProcessAppHeaderControlMetrics.size,
                     height: ProcessAppHeaderControlMetrics.size
                 )
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.borderless)
+        .processGlassIconButtonStyle()
         .accessibilityLabel(AppCopy.t("Retour", en: "Back"))
     }
 }
@@ -207,9 +206,8 @@ struct ProcessSettingsToolbarIconButton: View {
                     width: ProcessAppHeaderControlMetrics.size,
                     height: ProcessAppHeaderControlMetrics.size
                 )
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.borderless)
+        .processGlassIconButtonStyle()
         .accessibilityLabel(accessibilityLabel)
     }
 }

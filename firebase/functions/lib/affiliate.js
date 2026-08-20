@@ -39,7 +39,9 @@ const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const affiliateShared_1 = require("./affiliateShared");
 const referralShared_1 = require("./referralShared");
+const affiliateStripe_1 = require("./affiliateStripe");
 const affiliateAdminSecret = (0, params_1.defineSecret)("AFFILIATE_ADMIN_SECRET");
+const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 exports.affiliateResolveCode = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
@@ -139,7 +141,6 @@ exports.affiliateApply = (0, https_1.onRequest)({
         const requestedCode = (0, affiliateShared_1.normalizeAffiliateCode)(String(req.body?.code ?? ""));
         const displayName = String(req.body?.displayName ?? "").trim();
         const email = String(req.body?.email ?? "").trim();
-        const paypalEmail = String(req.body?.paypalEmail ?? "").trim();
         if (!displayName) {
             res.status(400).json({ error: "INVALID_TEXT" });
             return;
@@ -165,13 +166,6 @@ exports.affiliateApply = (0, https_1.onRequest)({
             uid,
             status: "pending",
         });
-        if (paypalEmail) {
-            await (0, affiliateShared_1.db)().collection("affiliates").doc(affiliateId).set({
-                paypalEmail: paypalEmail.slice(0, 120),
-                payoutMethod: "paypal",
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }, { merge: true });
-        }
         res.status(200).json({
             ok: true,
             affiliateId,
@@ -203,22 +197,23 @@ exports.affiliateSyncProfile = (0, https_1.onRequest)({
     try {
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
-        const paypalEmail = String(req.body?.paypalEmail ?? "").trim();
-        const payoutMethod = String(req.body?.payoutMethod ?? "paypal").trim();
+        const displayName = String(req.body?.displayName ?? "").trim();
         const affiliate = await (0, affiliateShared_1.getAffiliateForUid)(uid);
         if (!affiliate) {
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
         }
+        const patch = {
+            uid,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        if (displayName) {
+            patch.displayName = displayName.slice(0, 80);
+        }
         await (0, affiliateShared_1.db)()
             .collection("affiliates")
             .doc(affiliate.affiliateId)
-            .set({
-            uid,
-            paypalEmail: paypalEmail.slice(0, 120) || null,
-            payoutMethod: payoutMethod === "bank" ? "bank" : "paypal",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
+            .set(patch, { merge: true });
         res.status(200).json({ ok: true, affiliateId: affiliate.affiliateId });
     }
     catch (error) {
@@ -250,12 +245,10 @@ exports.affiliateDashboard = (0, https_1.onRequest)({
             res.status(404).json({ error: "AFFILIATE_NOT_LINKED" });
             return;
         }
-        try {
-            await (0, affiliateShared_1.releaseDueAffiliateCommissions)();
-        }
-        catch (releaseError) {
+        // Don't block dashboard reads — scheduled jobs also release holds.
+        void (0, affiliateShared_1.releaseDueAffiliateCommissions)().catch((releaseError) => {
             console.warn("[affiliateDashboard] releaseDue skipped", releaseError);
-        }
+        });
         const refreshed = await (0, affiliateShared_1.db)()
             .collection("affiliates")
             .doc(affiliate.affiliateId)
@@ -306,7 +299,7 @@ exports.affiliateDashboard = (0, https_1.onRequest)({
                 id: doc.id,
                 amountCents: row.amountCents ?? 0,
                 currency: row.currency ?? "EUR",
-                method: row.method ?? "paypal",
+                method: row.method ?? "stripe",
                 status: row.status ?? "completed",
                 createdAt: row.createdAt?.toMillis?.() ?? null,
             };
@@ -318,8 +311,16 @@ exports.affiliateDashboard = (0, https_1.onRequest)({
             affiliateId: affiliate.affiliateId,
             displayName: data.displayName ?? affiliate.displayName,
             status: data.status ?? affiliate.status,
-            paypalEmail: data.paypalEmail ?? null,
-            payoutMethod: data.payoutMethod ?? "paypal",
+            payoutMethod: data.payoutMethod ?? null,
+            stripeConnect: {
+                accountId: data.stripeAccountId ?? null,
+                onboardingComplete: Boolean(data.stripeOnboardingComplete),
+                payoutsEnabled: Boolean(data.stripePayoutsEnabled),
+                detailsSubmitted: Boolean(data.stripeDetailsSubmitted),
+                requirementsDue: Array.isArray(data.stripeRequirementsDue)
+                    ? data.stripeRequirementsDue
+                    : [],
+            },
             codes,
             stats: {
                 referredCount: stats.referredCount ?? 0,
@@ -523,7 +524,8 @@ exports.affiliateAdminListPending = (0, https_1.onRequest)({
                 email: data.email ?? null,
                 uid: data.uid ?? null,
                 codes: data.codes ?? [],
-                paypalEmail: data.paypalEmail ?? null,
+                stripeOnboardingComplete: Boolean(data.stripeOnboardingComplete),
+                stripePayoutsEnabled: Boolean(data.stripePayoutsEnabled),
                 createdAt: data.createdAt?.toMillis?.() ?? null,
             };
         });
@@ -539,7 +541,7 @@ exports.affiliateAdminListPending = (0, https_1.onRequest)({
 exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
     invoker: "public",
     cors: true,
-    secrets: [affiliateAdminSecret],
+    secrets: [affiliateAdminSecret, stripeSecretKey],
     timeoutSeconds: 60,
     memory: "512MiB",
 }, async (req, res) => {
@@ -557,7 +559,7 @@ exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
         const affiliateId = String(req.body?.affiliateId ?? "").trim();
         const amountCents = Number(req.body?.amountCents ?? 0);
         const currency = String(req.body?.currency ?? "EUR").trim().toUpperCase();
-        const method = String(req.body?.method ?? "paypal").trim();
+        const method = String(req.body?.method ?? "stripe").trim();
         const note = String(req.body?.note ?? "").trim();
         if (!affiliateId || !Number.isFinite(amountCents) || amountCents <= 0) {
             res.status(400).json({ error: "INVALID_PAYOUT" });
@@ -571,6 +573,7 @@ exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
             return;
         }
         const stats = affiliateSnap.data()?.stats ?? {};
+        const affiliateData = affiliateSnap.data() ?? {};
         const payableCents = Number(stats.payableCents ?? 0);
         if (payableCents < amountCents) {
             res.status(400).json({
@@ -581,6 +584,23 @@ exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
         }
         const now = admin.firestore.Timestamp.now();
         const payoutRef = (0, affiliateShared_1.db)().collection("affiliatePayouts").doc();
+        let stripeTransferId = null;
+        if (method === "stripe") {
+            const stripeAccountId = String(affiliateData.stripeAccountId ?? "").trim();
+            const payoutsEnabled = Boolean(affiliateData.stripePayoutsEnabled);
+            if (!stripeAccountId || !payoutsEnabled) {
+                res.status(400).json({ error: "STRIPE_NOT_READY" });
+                return;
+            }
+            stripeTransferId = await (0, affiliateStripe_1.createAffiliateStripeTransfer)({
+                affiliateId,
+                stripeAccountId,
+                amountCents,
+                currency,
+                payoutId: payoutRef.id,
+                secret: stripeSecretKey.value(),
+            });
+        }
         await (0, affiliateShared_1.db)().runTransaction(async (transaction) => {
             transaction.set(payoutRef, {
                 affiliateId,
@@ -589,6 +609,7 @@ exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
                 method,
                 note: note.slice(0, 240) || null,
                 status: "completed",
+                stripeTransferId,
                 createdAt: now,
             });
             transaction.set(affiliateRef, {
@@ -627,6 +648,7 @@ exports.affiliateAdminMarkPaid = (0, https_1.onRequest)({
             payoutId: payoutRef.id,
             affiliateId,
             amountCents,
+            stripeTransferId,
         });
     }
     catch (error) {

@@ -68,11 +68,17 @@ enum ProcessReferralEntryStatus: String, Codable, Equatable {
     }
 }
 
+enum ProcessReferralRewardDuration: String, Codable, Equatable {
+    case monthly
+    case yearly
+}
+
 struct ProcessReferralEntry: Identifiable, Codable, Equatable {
     let id: String
     var displayName: String
     var invitedAt: Date
     var status: ProcessReferralEntryStatus
+    var rewardDuration: ProcessReferralRewardDuration?
     var rewardLabel: String?
 
     var maskedName: String {
@@ -84,151 +90,201 @@ struct ProcessReferralEntry: Identifiable, Codable, Equatable {
     }
 }
 
+struct ProcessReferralRewardSummary: Equatable {
+    var monthsEarned: Int
+    var yearsEarned: Int
+
+    static let empty = ProcessReferralRewardSummary(monthsEarned: 0, yearsEarned: 0)
+
+    static func from(entries: [ProcessReferralEntry]) -> ProcessReferralRewardSummary {
+        var months = 0
+        var years = 0
+        for entry in entries where entry.status == .accepted {
+            switch entry.rewardDuration {
+            case .yearly:
+                years += 1
+            case .monthly, .none:
+                months += 1
+            }
+        }
+        return ProcessReferralRewardSummary(monthsEarned: months, yearsEarned: years)
+    }
+
+    @MainActor
+    var displayLabel: String {
+        switch (monthsEarned, yearsEarned) {
+        case (0, 0):
+            return AppCopy.t("Aucune récompense", en: "No rewards yet")
+        case (0, 1):
+            return AppCopy.t("1 an offert", en: "1 year free")
+        case (0, let y) where y > 1:
+            return AppCopy.t("\(y) ans offerts", en: "\(y) years free")
+        case (1, 0):
+            return AppCopy.t("1 mois offert", en: "1 month free")
+        case (let m, 0) where m > 1:
+            return AppCopy.t("\(m) mois offerts", en: "\(m) months free")
+        default:
+            var parts: [String] = []
+            if monthsEarned > 0 {
+                parts.append(
+                    monthsEarned == 1
+                        ? AppCopy.t("1 mois", en: "1 month")
+                        : AppCopy.t("\(monthsEarned) mois", en: "\(monthsEarned) months")
+                )
+            }
+            if yearsEarned > 0 {
+                parts.append(
+                    yearsEarned == 1
+                        ? AppCopy.t("1 an", en: "1 year")
+                        : AppCopy.t("\(yearsEarned) ans", en: "\(yearsEarned) years")
+                )
+            }
+            let joined = parts.joined(separator: AppCopy.t(" · ", en: " · "))
+            return AppCopy.t("\(joined) offerts", en: "\(joined) free")
+        }
+    }
+}
+
 struct ProcessReferralSnapshot: Codable, Equatable {
     var referralCode: String
     var entries: [ProcessReferralEntry]
     var pendingCount: Int
     var acceptedCount: Int
-    var commissionStats: ProcessReferralCommissionStats
+
+    var rewardSummary: ProcessReferralRewardSummary {
+        ProcessReferralRewardSummary.from(entries: entries)
+    }
 
     static let empty = ProcessReferralSnapshot(
         referralCode: "",
         entries: [],
         pendingCount: 0,
-        acceptedCount: 0,
-        commissionStats: .empty
+        acceptedCount: 0
     )
 }
 
 enum ProcessReferralProgramTerms {
-    /// Commission nette après ~30 % de frais store.
-    static let netFactor = 0.70
-    static let commissionRate = 0.40
-    static let holdDays = 30
+    private static let annualProductIDs: Set<String> = [
+        SubscriptionConfiguration.annualProductID,
+        SubscriptionConfiguration.annual3499ProductID,
+        SubscriptionConfiguration.annual4999ProductID
+    ]
 
-    /// Prix de référence du simulateur (abonnement annuel — non affiché dans l’UI).
-    static let simulatorReferencePlanPrice: Double = 34.99
-
-    static var commissionPercentLabel: String {
-        AppCopy.tSync("40 %", en: "40%")
+    @MainActor
+    static var referrerUsesAnnualReward: Bool {
+        guard let productID = SubscriptionService.shared.activeProductIdentifier else {
+            return false
+        }
+        return annualProductIDs.contains(productID)
     }
 
     @MainActor
-    static var referencePlanPrice: String {
-        SubscriptionService.shared.referralRewardDisplayPrice
+    static var perFriendRewardLabel: String {
+        referrerUsesAnnualReward ? annualRewardLabel : shortRewardLabel
     }
 
     @MainActor
-    static var referencePlanPriceValue: Double {
-        parseDisplayPrice(referencePlanPrice) ?? 9.99
-    }
-
-    /// Commission estimée par paiement d’un ami (40 % du net).
-    @MainActor
-    static func estimatedCommissionPerPayment(planPrice: Double? = nil) -> Double {
-        let gross = planPrice ?? referencePlanPriceValue
-        return gross * netFactor * commissionRate
+    static var shortRewardLabel: String {
+        AppCopy.t("1 mois offert", en: "1 month free")
     }
 
     @MainActor
-    static var commissionPerPaymentLabel: String {
-        formattedCurrency(estimatedCommissionPerPayment())
+    static var annualRewardLabel: String {
+        AppCopy.t("1 an offert", en: "1 year free")
     }
 
     @MainActor
     static var headline: String {
         AppCopy.t(
-            "\(commissionPercentLabel) de commission à vie",
-            en: "\(commissionPercentLabel) lifetime commission"
+            "\(perFriendRewardLabel) par ami",
+            en: "\(perFriendRewardLabel) per friend"
         )
     }
 
     @MainActor
     static var subtitle: String {
-        AppCopy.t(
-            "Sur chaque abonnement payé par tes amis — achat initial et renouvellements.",
-            en: "On every paid subscription from your friends — initial purchase and renewals."
+        if referrerUsesAnnualReward {
+            return AppCopy.t(
+                "Quand un ami s’abonne avec ton lien, tu gagnes un an de Process en plus.",
+                en: "When a friend subscribes with your link, you earn an extra year of Process."
+            )
+        }
+        return AppCopy.t(
+            "Quand un ami s’abonne avec ton lien, tu gagnes un mois de Process en plus.",
+            en: "When a friend subscribes with your link, you earn an extra month of Process."
         )
     }
 
     @MainActor
-    static func rewardLabel(for _: String?, status: ProcessReferralEntryStatus) -> String? {
+    static func rewardLabel(for durationRaw: String?, status: ProcessReferralEntryStatus) -> String? {
         guard status == .accepted else { return nil }
-        return commissionPercentLabel
-    }
-
-    /// Revenu simulé (tous amis × commission sur le prix de référence du simulateur).
-    @MainActor
-    static func formattedSimulatedRecurring(friendCount: Int) -> String {
-        formattedSimulatorTotal(friendCount: friendCount)
-    }
-
-    @MainActor
-    static func simulatorCommissionPerFriend() -> Double {
-        estimatedCommissionPerPayment(planPrice: simulatorReferencePlanPrice)
-    }
-
-    @MainActor
-    static var simulatorCommissionPerFriendLabel: String {
-        formattedCurrency(simulatorCommissionPerFriend())
-    }
-
-    @MainActor
-    static func formattedSimulatorTotal(friendCount: Int) -> String {
-        let total = simulatorCommissionPerFriend() * Double(max(0, friendCount))
-        return formattedCurrency(total)
-    }
-
-    static func formattedCents(_ cents: Int, currency: String = "EUR") -> String {
-        let decimal = Decimal(cents) / 100
-        return SubscriptionConfiguration.formatPaywallPrice(decimal: decimal, currencyCode: currency)
-    }
-
-    static func formattedCurrency(_ amount: Double, currency: String = "EUR") -> String {
-        SubscriptionConfiguration.formatPaywallPrice(decimal: Decimal(amount), currencyCode: currency)
-    }
-
-    private static func parseDisplayPrice(_ raw: String) -> Double? {
-        var cleaned = raw
-            .replacingOccurrences(of: "€", with: "")
-            .replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: " ", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if cleaned.contains(",") && !cleaned.contains(".") {
-            cleaned = cleaned.replacingOccurrences(of: ",", with: ".")
+        switch ProcessReferralRewardDuration(rawValue: durationRaw ?? "") {
+        case .yearly:
+            return annualRewardLabel
+        case .monthly, .none:
+            return shortRewardLabel
         }
-        return Double(cleaned)
     }
-}
 
-struct ProcessReferralCommissionStats: Codable, Equatable {
-    var pendingCents: Int
-    var payableCents: Int
-    var paidCents: Int
-    var lifetimeCents: Int
-    var activeSubscribers: Int
+    @MainActor
+    static func simulatedRewardLabel(friendCount: Int) -> String {
+        let count = max(0, friendCount)
+        guard count > 0 else {
+            return AppCopy.t("0 récompense", en: "0 rewards")
+        }
 
-    static let empty = ProcessReferralCommissionStats(
-        pendingCents: 0,
-        payableCents: 0,
-        paidCents: 0,
-        lifetimeCents: 0,
-        activeSubscribers: 0
-    )
+        if referrerUsesAnnualReward {
+            switch count {
+            case 1:
+                return AppCopy.t("1 an offert", en: "1 year free")
+            default:
+                return AppCopy.t("\(count) ans offerts", en: "\(count) years free")
+            }
+        }
+
+        switch count {
+        case 1:
+            return AppCopy.t("1 mois offert", en: "1 month free")
+        default:
+            return AppCopy.t("\(count) mois offerts", en: "\(count) months free")
+        }
+    }
+
+    @MainActor
+    static func perFriendSimulatorDetailLabel() -> String {
+        AppCopy.t(
+            "\(perFriendRewardLabel) · par ami abonné",
+            en: "\(perFriendRewardLabel) · per subscribed friend"
+        )
+    }
+
+    @MainActor
+    static var opalOfferHeadline: String {
+        AppCopy.t(
+            "Gagne \(perFriendRewardLabel) par ami !",
+            en: "Earn \(perFriendRewardLabel) per friend!"
+        )
+    }
+
+    @MainActor
+    static var opalZeroFriendsBody: String {
+        AppCopy.t(
+            "Partage ton lien — tu gagnes \(perFriendRewardLabel) à chaque ami qui s’abonne.",
+            en: "Share your link — you earn \(perFriendRewardLabel) for each friend who subscribes."
+        )
+    }
+
+    @MainActor
+    static var opalProgressSuffix: String {
+        AppCopy.t(
+            "Continue à partager pour cumuler du temps Process.",
+            en: "Keep sharing to stack free Process time."
+        )
+    }
 }
 
 struct ProcessReferralDashboardResponse: Decodable, Equatable {
     let ok: Bool
     let pendingCount: Int?
     let acceptedCount: Int?
-    let stats: ProcessReferralDashboardStats?
-    let holdDays: Int?
-}
-
-struct ProcessReferralDashboardStats: Decodable, Equatable {
-    let pendingCents: Int
-    let payableCents: Int
-    let paidCents: Int
-    let lifetimeCents: Int
-    let activeSubscribers: Int
 }

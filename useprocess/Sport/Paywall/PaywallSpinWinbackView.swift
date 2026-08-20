@@ -114,7 +114,11 @@ struct PaywallSpinWinbackView: View {
     }
 
     private var trialAnnualStrikethroughPrice: String {
-        SubscriptionConfiguration.winbackCompareAtPrice
+        subscriptionService.winbackCompareAtDisplayPrice
+    }
+
+    private var lifetimeOfferPrice: String {
+        subscriptionService.winbackLifetimeDisplayPrice
     }
 
     /// Prix mensuel barré (ex. « 23€/mois ») — ancre visuelle vs lifetime.
@@ -220,8 +224,8 @@ struct PaywallSpinWinbackView: View {
             }
         }
         .task {
-            guard presentation == .offerOnly else { return }
             await subscriptionService.loadSubscriptions()
+            guard presentation == .offerOnly else { return }
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
                 onClaimed()
@@ -336,8 +340,8 @@ struct PaywallSpinWinbackView: View {
 
                     Text(
                         OnboardingCopy.t(
-                            "\(SubscriptionConfiguration.winbackLifetimePrice) à vie",
-                            en: "\(SubscriptionConfiguration.winbackLifetimePrice) lifetime"
+                            "\(lifetimeOfferPrice) à vie",
+                            en: "\(lifetimeOfferPrice) lifetime"
                         )
                     )
                     .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 22))
@@ -678,8 +682,8 @@ struct PaywallSpinWinbackView: View {
                 .animation(.spring(response: 0.52, dampingFraction: 0.78), value: winRevealNumberVisible)
 
             Text(OnboardingCopy.t(
-                "à \(SubscriptionConfiguration.winbackLifetimePrice) — accès premium",
-                en: "for \(SubscriptionConfiguration.winbackLifetimePrice) — premium access"
+                "à \(lifetimeOfferPrice) — accès premium",
+                en: "for \(lifetimeOfferPrice) — premium access"
             ))
                 .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 18))
                 .foregroundStyle(PaywallBevelTheme.subtitleText(for: colorScheme))
@@ -795,7 +799,7 @@ struct PaywallSpinWinbackView: View {
 
                     Spacer(minLength: 8)
 
-                    Text(SubscriptionConfiguration.winbackLifetimePrice)
+                    Text(lifetimeOfferPrice)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(PaywallBevelTheme.planPrimaryPrice(for: colorScheme))
                 }

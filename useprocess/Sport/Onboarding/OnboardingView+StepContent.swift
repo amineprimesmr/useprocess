@@ -80,8 +80,6 @@ extension SportOnboardingView {
             OnboardingCreatorCodeStepView(
                 draftCode: $viewModel.creatorCodeDraft,
                 isVerified: $viewModel.creatorCodeIsVerified,
-                continueAttempt: viewModel.creatorCodeContinueAttempt,
-                keyboardOverlap: keyboardHeight.height,
                 onAutoContinue: advanceFromVerifiedCreatorCode
             )
             .onAppear {

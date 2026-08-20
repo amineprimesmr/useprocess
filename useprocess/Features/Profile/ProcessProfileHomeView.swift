@@ -80,18 +80,12 @@ struct ProcessProfileHomeView: View {
 
             Spacer(minLength: 8)
 
-            Button(action: openSettings) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: ProcessAppHeaderControlMetrics.iconSize, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-                    .frame(
-                        width: ProcessAppHeaderControlMetrics.size,
-                        height: ProcessAppHeaderControlMetrics.size
-                    )
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .processGlassButton(in: Circle())
+            ProcessGlassIconButton(
+                systemName: "gearshape",
+                size: ProcessAppHeaderControlMetrics.size,
+                iconSize: ProcessAppHeaderControlMetrics.iconSize,
+                action: openSettings
+            )
             .accessibilityLabel(AppCopy.settings)
         }
         .padding(.top, 8)

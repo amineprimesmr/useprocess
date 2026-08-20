@@ -14,6 +14,22 @@ export function isFirebaseConfigured() {
 }
 
 let appPromise;
+let authModulePromise;
+
+export function warmFirebaseAuth() {
+  if (!isFirebaseConfigured()) return;
+  void getFirebaseAuth();
+  void getFirebaseAuthModule();
+}
+
+export function getFirebaseAuthModule() {
+  authModulePromise ||= import("firebase/auth");
+  return authModulePromise;
+}
+
+export async function getAuthToken(user, forceRefresh = false) {
+  return user.getIdToken(forceRefresh);
+}
 
 export async function getFirebaseAuth() {
   if (!isFirebaseConfigured()) {

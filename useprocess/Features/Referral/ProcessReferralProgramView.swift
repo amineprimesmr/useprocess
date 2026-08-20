@@ -52,6 +52,11 @@ struct ProcessReferralProgramDetailView: View {
 
 // MARK: - Screen
 
+private enum ProcessReferralProgramScrollAnchor {
+    static let metalCard = "referral_metal_card"
+    static let progress = "referral_progress"
+}
+
 private struct ProcessReferralProgramScreen: View {
     @Bindable var store: ProcessReferralStore
     let showsBackButton: Bool
@@ -63,30 +68,49 @@ private struct ProcessReferralProgramScreen: View {
             ProcessReferralTheme.pageBackground
                 .ignoresSafeArea()
 
-            ProcessReferralBlueTopFade()
-                .frame(height: 260)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .ignoresSafeArea(edges: .top)
-                .allowsHitTesting(false)
+            ScrollViewReader { scrollProxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ProcessReferralInviteHeadline()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ProcessReferralMetalCard(
-                        referralCode: store.displayReferralCode,
-                        copyText: store.referralLink,
-                        lifetimeEarningsCents: store.snapshot.commissionStats.lifetimeCents,
-                        onCopy: {}
-                    )
-                    .padding(.top, 4)
+                        ProcessReferralEngravedMetalCard(
+                            code: store.displayReferralCode,
+                            copyText: store.referralLink
+                        )
+                        .id(ProcessReferralProgramScrollAnchor.metalCard)
 
-                    ProcessReferralCommissionSimulatorSection()
+                        ProcessReferralOpalProgressText(acceptedCount: store.snapshot.acceptedCount)
+                            .padding(.top, 8)
+                            .id(ProcessReferralProgramScrollAnchor.progress)
 
-                    ProcessReferralGlassSocialShareRow(copyText: store.referralLink)
+                        ProcessReferralGlassShareButton(
+                            title: AppCopy.t("Partager l’invitation", en: "Share invitation")
+                        ) {
+                            HapticManager.shared.impact(.medium)
+                            ProcessAnalytics.trackReferralShareOpened(source: "referral_program")
+                            showShareSheet = true
+                        }
+                        .padding(.top, 24)
+
+                        ProcessReferralGlassSocialShareRow(
+                            shareMessage: store.shareMessage,
+                            link: store.referralLink
+                        )
                         .padding(.top, 22)
 
-                    Color.clear.frame(height: 24)
+                        ProcessReferralHowItWorksSection {
+                            withAnimation(.smooth(duration: 0.35)) {
+                                scrollProxy.scrollTo(
+                                    ProcessReferralProgramScrollAnchor.progress,
+                                    anchor: .center
+                                )
+                            }
+                        }
+
+                        Color.clear.frame(height: 32)
+                    }
+                    .padding(.horizontal, 22)
                 }
-                .padding(.horizontal, 22)
             }
         }
         .preferredColorScheme(.dark)
@@ -104,15 +128,6 @@ private struct ProcessReferralProgramScreen: View {
         }
         .refreshable {
             await store.refreshDashboard()
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            ProcessReferralStickyShareBar(
-                title: AppCopy.t("Partager l’invitation", en: "Share invitation")
-            ) {
-                HapticManager.shared.impact(.medium)
-                ProcessAnalytics.trackReferralShareOpened(source: "referral_program")
-                showShareSheet = true
-            }
         }
     }
 }

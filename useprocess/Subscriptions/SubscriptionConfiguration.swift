@@ -173,14 +173,33 @@ enum SubscriptionConfiguration {
         formatPaywallPrice(decimal: decimal, currencyCode: "EUR")
     }
 
-    /// Winback roue : accès à vie à 19 € (achat unique non consommable).
+    /// Winback roue : accès à vie (achat unique non consommable).
     static let lifetimeProductID = "com.useprocess.lifetime"
-    static let winbackLifetimePrice = "19€"
-    /// Prix barré (référence annuel) affiché à côté de l’offre lifetime.
-    static let winbackCompareAtPrice = "49€"
     static let winbackOfferID = "lifetime_19"
     /// Label jackpot roue / hero offre (FR — UI localise via OnboardingCopy).
     static let winbackJackpotTitle = "À VIE"
+
+    /// Fallback UI lifetime — FR. Le prix réel vient de StoreKit (`SubscriptionService.winbackLifetimeDisplayPrice`).
+    @MainActor
+    static func fallbackWinbackLifetimePrice() -> String {
+        if ProcessAppLanguage.usesFrenchCopy { return "19€" }
+        return "$24.99"
+    }
+
+    /// Fallback prix barré (référence annuel) — FR vs US.
+    @MainActor
+    static func fallbackWinbackCompareAtPrice() -> String {
+        if ProcessAppLanguage.usesFrenchCopy { return "49€" }
+        return "$59.99"
+    }
+
+    /// Alias legacy — préférer `SubscriptionService.winbackLifetimeDisplayPrice`.
+    @MainActor
+    static var winbackLifetimePrice: String { fallbackWinbackLifetimePrice() }
+
+    /// Alias legacy — préférer `SubscriptionService.winbackCompareAtDisplayPrice`.
+    @MainActor
+    static var winbackCompareAtPrice: String { fallbackWinbackCompareAtPrice() }
 }
 
 enum SubscriptionBillingPlan: String, CaseIterable, Identifiable {

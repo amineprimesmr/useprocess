@@ -67,7 +67,8 @@
     { "source": "/affiliate", "destination": "/affiliate.html" },
     { "source": "/affiliate/", "destination": "/affiliate.html" },
     { "source": "/tiktok/callback", "destination": "/tiktok/callback/index.html" },
-    { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "host", "value": "join.useprocess.xyz" }] }
+    { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "host", "value": "join.useprocess.xyz" }] },
+    { "source": "/((?!api|assets|cgu|confidentialite|mentions-legales|support|sources-sante|tiktok|\\.well-known).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

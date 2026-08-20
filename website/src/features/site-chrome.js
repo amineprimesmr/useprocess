@@ -10,23 +10,43 @@ export function notFoundCopy() {
 
 export function getAppPageCopy() {
   return {
-    title: appCopy("Téléchargez Process et dégonflez votre visage.", "Download Process and debloat your face."),
+    title: appCopy("Télécharge Process et dégonfle ton visage.", "Download Process and debloat your face."),
     subtitle: appCopy(
-      "Process — coach IA & protocole debloat. Télécharge sur iPhone.",
-      "Process — AI coach & debloat protocol. Download on iPhone."
+      "Process — coach IA & protocole debloat. Sur iPhone.",
+      "Process — AI coach & debloat protocol. On iPhone."
     ),
-    invitedTitle: appCopy("Tu es invité sur Process.", "You're invited to Process."),
+    guestLabelReferral: appCopy("Invitation parrainage", "Referral invite"),
+    guestLabelCreator: appCopy("Invitation créateur", "Creator invite"),
+    guestValue: appCopy("Coach IA & protocole debloat", "AI coach & debloat protocol"),
+    friendInvitesTitle: appCopy("Un ami t'invite sur Process", "Your friend invites you to Process"),
+    friendInvitesTitleNamed: (name) =>
+      appCopy(`${name} t'invite sur Process`, `${name} invites you to Process`),
+    creatorInvitesTitle: appCopy("Un créateur t'invite sur Process", "A creator invites you to Process"),
+    creatorInvitesTitleNamed: (name) =>
+      appCopy(`${name} t'invite sur Process`, `${name} invites you to Process`),
     invitedSubtitle: appCopy(
-      "Code actif — télécharge Process et commence ton protocole.",
-      "Code active — download Process and start your protocol."
+      "Télécharge l'app et commence ton protocole debloat.",
+      "Get the app and start your debloat protocol."
     ),
-    creatorTitle: appCopy("Un créateur t’a invité.", "A creator invited you."),
     creatorSubtitle: appCopy(
-      "Code créateur actif — télécharge Process et commence ton protocole.",
-      "Creator code active — download Process and start your protocol."
+      "Télécharge Process et commence ton protocole avec ce code.",
+      "Download Process and start your protocol with this code."
     ),
-    creatorEyebrow: appCopy("Invitation créateur", "Creator invite"),
-    referralEyebrow: appCopy("Invitation parrainage", "Referral invite"),
+    tapBanner: appCopy("Tapote la bannière pour commencer", "Tap the banner to start"),
+    stepsHeading: appCopy("Comment commencer", "How to get started"),
+    stepsFallbackHeading: appCopy("Tu ne vois pas la bannière ?", "Don't see the banner?"),
+    stepQr: appCopy("Scanne le QR code avec ton iPhone", "Scan QR Code with your iPhone"),
+    stepCodePrefix: appCopy("Ton code parrainage :", "Your referral code is"),
+    stepCreatorCodePrefix: appCopy("Ton code créateur :", "Your creator code is"),
+    stepBenefitReferral: appCopy(
+      "Profite de Process avec le code de ton ami",
+      "Enjoy Process with your friend's code"
+    ),
+    stepBenefitCreator: appCopy(
+      "Commence ton protocole debloat avec ce créateur",
+      "Start your debloat protocol with this creator"
+    ),
+    stepDownload: appCopy("Télécharge l'app", "Download the app"),
     iosEyebrow: appCopy("Télécharger sur", "Download on"),
     iosAria: appCopy("Télécharger sur App Store", "Download on App Store"),
     langAria: appCopy("Choisir la langue", "Choose language"),

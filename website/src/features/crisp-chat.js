@@ -5,6 +5,22 @@ function isValidWebsiteID(value) {
   return id.length >= 8 && !id.startsWith("YOUR_");
 }
 
+export function isAffiliatePage() {
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("page-affiliate");
+}
+
+/** Hide Crisp widget on affiliate (replaced by X DM button). */
+export function dismissCrispChat() {
+  if (typeof window === "undefined") return;
+  if (window.$crisp) {
+    window.$crisp.push(["do", "chat:hide"]);
+  }
+  for (const el of document.querySelectorAll("#crisp-chatbox, .crisp-client")) {
+    el.remove();
+  }
+}
+
 async function loadWebsiteID() {
   try {
     const response = await fetch("/crisp-website-id.json", { cache: "no-store" });
@@ -17,7 +33,7 @@ async function loadWebsiteID() {
 }
 
 export async function mountCrispChat() {
-  if (typeof window === "undefined" || window.$crisp) return;
+  if (typeof window === "undefined" || window.$crisp || isAffiliatePage()) return;
   const websiteID = await loadWebsiteID();
   if (!isValidWebsiteID(websiteID)) return;
 

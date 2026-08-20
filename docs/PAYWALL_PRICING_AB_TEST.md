@@ -110,3 +110,41 @@ UserDefaults.standard.set("test", forKey: "process.paywall_pricing_variant")
 - ASC groupe : https://appstoreconnect.apple.com/apps/6753808143/distribution/subscription-groups/21837790  
 - PostHog experiment : https://eu.posthog.com/project/240558/experiments/89144  
 - RC offerings : https://app.revenuecat.com/projects/ab4f477a/product-catalog/offerings
+
+---
+
+## Lifetime winback (`com.useprocess.lifetime`) — US vs FR
+
+### Problème
+
+Le paywall spin/winback affichait **19€ en dur** alors que le tier App Store Connect US facturait ~**$17**. L’UI et le checkout divergeaient.
+
+### Code (fait)
+
+- `SubscriptionService.loadLifetimeCatalog()` charge le prix StoreKit / RevenueCat pour `com.useprocess.lifetime`.
+- UI + analytics + quick action utilisent `winbackLifetimeDisplayPrice` / `winbackCompareAtDisplayPrice`.
+- Fallback si catalogue absent : **19€** (FR) / **$24.99** (EN).
+- Sandbox `SubscriptionProducts.storekit` : `displayPrice` **24.99**.
+
+### App Store Connect — action manuelle requise
+
+Le **montant facturé** ne change que dans ASC :
+
+| Produit | ID | Tier cible US | Tier cible FR |
+|---------|-----|---------------|---------------|
+| Lifetime winback | `com.useprocess.lifetime` | **$24.99** (ou $29.99 si tu veux plus de marge) | **19,99 €** (inchangé si déjà OK) |
+
+1. ASC → **In-App Purchases** → `com.useprocess.lifetime` → **Pricing** → United States → monter le tier (ex. $24.99).
+2. Attendre propagation (~15 min) ; vérifier en sandbox US que `Product.displayPrice` = `$24.99`.
+3. Soumettre la IAP avec la prochaine version app si statut *Finaliser avant soumission*.
+
+Sans cette étape ASC, l’app affichera le bon prix fallback ou StoreKit localisé, mais le **checkout US restera ~$17** tant que le tier n’est pas monté.
+
+### Abonnements A/B — US (21 août 2026)
+
+| Product ID | FR | US (avant) | US (depuis 2026-08-21) |
+|------------|-----|------------|-------------------------|
+| `com.useprocess.weekly899` | 8,99 € / sem | 7,99 $ | **9,99 $** |
+| `com.useprocess.monthly999` | 9,99 € / mois | 8,99 $ | **9,99 $** |
+| `com.useprocess.annual3499` | 34,99 € / an | 29,99 $ | **29,99 $** (inchangé) |
+| `com.useprocess.annual4999` | 49,99 € / an | 44,99 $ | **44,99 $** (inchangé) |

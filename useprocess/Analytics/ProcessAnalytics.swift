@@ -281,15 +281,18 @@ enum ProcessAnalytics {
         ]))
     }
 
-    // MARK: - Spin / winback funnel (lifetime 19 €)
+    // MARK: - Spin / winback funnel (lifetime)
+
+    private static var spinWinbackPricingProperties: [String: Any] {
+        [
+            "offer_price": SubscriptionService.shared.winbackLifetimeDisplayPrice,
+            "compare_at": SubscriptionService.shared.winbackCompareAtDisplayPrice,
+            "offer_id": SubscriptionConfiguration.winbackOfferID
+        ]
+    }
 
     static func trackSpinWheelViewed(source: String = "paywall_cancel_or_exit") {
-        capture("spin_wheel_viewed", properties: [
-            "source": source,
-            "offer_price": SubscriptionConfiguration.winbackLifetimePrice,
-            "compare_at": SubscriptionConfiguration.winbackCompareAtPrice,
-            "offer_id": SubscriptionConfiguration.winbackOfferID
-        ])
+        capture("spin_wheel_viewed", properties: spinWinbackPricingProperties.merging(["source": source]) { _, new in new })
         screen("spin_wheel")
     }
 
@@ -320,19 +323,16 @@ enum ProcessAnalytics {
     static func trackSpinWinRevealShown(jackpotTitle: String) {
         capture("spin_win_reveal_shown", properties: [
             "jackpot_title": jackpotTitle,
-            "offer_price": SubscriptionConfiguration.winbackLifetimePrice
+            "offer_price": SubscriptionService.shared.winbackLifetimeDisplayPrice
         ])
     }
 
     static func trackSpinOfferShown(source: String = "spin_wheel") {
-        capture("spin_offer_shown", properties: [
+        capture("spin_offer_shown", properties: spinWinbackPricingProperties.merging([
             "source": source,
             "plan": "winback_lifetime",
-            "offer_price": SubscriptionConfiguration.winbackLifetimePrice,
-            "compare_at": SubscriptionConfiguration.winbackCompareAtPrice,
-            "offer_id": SubscriptionConfiguration.winbackOfferID,
             "jackpot_title": SubscriptionConfiguration.winbackJackpotTitle
-        ])
+        ]) { _, new in new })
         screen("spin_offer_19")
     }
 
@@ -340,7 +340,7 @@ enum ProcessAnalytics {
         capture("spin_offer_cta_tapped", properties: [
             "source": source,
             "plan": "winback_lifetime",
-            "offer_price": SubscriptionConfiguration.winbackLifetimePrice
+            "offer_price": SubscriptionService.shared.winbackLifetimeDisplayPrice
         ])
     }
 

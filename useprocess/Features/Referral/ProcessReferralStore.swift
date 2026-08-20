@@ -27,8 +27,7 @@ final class ProcessReferralStore {
                 referralCode: makeReferralCode(username: username, userId: uid),
                 entries: [],
                 pendingCount: 0,
-                acceptedCount: 0,
-                commissionStats: .empty
+                acceptedCount: 0
             )
             persist(userId: uid)
         }
@@ -69,7 +68,7 @@ final class ProcessReferralStore {
         \(referralLink)
 
         \(AppCopy.t("Mon code parrainage : \(displayReferralCode)", en: "My referral code: \(displayReferralCode)"))
-        \(AppCopy.t("40 % de commission à vie pour moi sur ton abonnement.", en: "I earn 40% lifetime commission on your subscription."))
+        \(AppCopy.t("Je gagne \(ProcessReferralProgramTerms.perFriendRewardLabel) quand tu t’abonnes.", en: "I earn \(ProcessReferralProgramTerms.perFriendRewardLabel) when you subscribe."))
         """
     }
 
@@ -114,14 +113,7 @@ final class ProcessReferralStore {
 
         do {
             let dashboard = try await ReferralRemoteService.fetchDashboard()
-            guard dashboard.ok, let stats = dashboard.stats else { return }
-            snapshot.commissionStats = ProcessReferralCommissionStats(
-                pendingCents: stats.pendingCents,
-                payableCents: stats.payableCents,
-                paidCents: stats.paidCents,
-                lifetimeCents: stats.lifetimeCents,
-                activeSubscribers: stats.activeSubscribers
-            )
+            guard dashboard.ok else { return }
             if let pending = dashboard.pendingCount {
                 snapshot.pendingCount = pending
             }

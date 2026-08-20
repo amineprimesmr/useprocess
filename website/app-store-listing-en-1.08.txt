@@ -1,0 +1,20 @@
+================================================================================
+PROCESS — APP STORE LISTING (ENGLISH U.S.) — Version 1.08
+Copy into App Store Connect → Distribution → iOS App → 1.08 → English (U.S.)
+================================================================================
+
+WHAT'S NEW (What's New in This Version)
+================================================================================
+
+• Creator program: clipper applications, commission tracking, and a dedicated referral link
+• “Have a code?” step in onboarding before the paywall
+• Short link useprocess.xyz/app to download from TikTok and social bios
+• Lifetime winback pricing shown for your region (e.g. $24.99 in the United States)
+• Home Screen quick action “Lifetime Access Offer” with live StoreKit pricing
+
+================================================================================
+BUILD
+================================================================================
+
+Version: 1.08
+Build: 32

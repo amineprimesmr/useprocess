@@ -21,8 +21,10 @@ final class SubscriptionService: NSObject, ObservableObject {
     @Published private(set) var trialExpirationDate: Date?
     @Published private(set) var isIntroOfferEligible = true
     @Published private(set) var isRetentionTrialOfferActive = false
+    @Published private(set) var lifetimeDisplayPrice: String?
 
-    /// Compat paywall existant.
+    private var lifetimeStoreProductRC: StoreProduct?
+    private var lifetimeStoreProduct: Product?
     var annualProduct: Product? { annualStoreProduct }
     var monthlyProduct: Product? { monthlyStoreProduct }
 
@@ -64,7 +66,17 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     var hasLiveLifetimeProduct: Bool {
-        true
+        lifetimeStoreProductRC != nil || lifetimeStoreProduct != nil
+    }
+
+    /// Prix lifetime affiché (StoreKit) — fallback marché si catalogue pas encore chargé.
+    var winbackLifetimeDisplayPrice: String {
+        lifetimeDisplayPrice ?? SubscriptionConfiguration.fallbackWinbackLifetimePrice()
+    }
+
+    /// Ancre barrée — annuel live si dispo, sinon fallback marché.
+    var winbackCompareAtDisplayPrice: String {
+        annualDisplay?.displayPrice ?? SubscriptionConfiguration.fallbackWinbackCompareAtPrice()
     }
 
     enum SubscriptionStatus: Equatable {
@@ -253,7 +265,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         case SubscriptionConfiguration.annual4999ProductID, SubscriptionConfiguration.annualProductID:
             return PaywallPricingExperiment.Variant.test.fallbackAnnualPrice
         case SubscriptionConfiguration.lifetimeProductID:
-            return SubscriptionConfiguration.winbackLifetimePrice
+            return winbackLifetimeDisplayPrice
         default:
             return displayProduct(for: shortBillingPlan).displayPrice
         }
@@ -330,6 +342,8 @@ final class SubscriptionService: NSObject, ObservableObject {
                 applyDirectStoreKitProducts(storeKitProducts)
                 await refreshIntroOfferEligibility()
             }
+            await loadLifetimeCatalog()
+            ProcessHomeScreenQuickActions.syncForCurrentUser()
             return
         }
 
@@ -390,6 +404,33 @@ final class SubscriptionService: NSObject, ObservableObject {
                 applyDirectStoreKitProducts(storeKitProducts)
                 await refreshIntroOfferEligibility()
             }
+        }
+
+        await loadLifetimeCatalog()
+        ProcessHomeScreenQuickActions.syncForCurrentUser()
+    }
+
+    private func loadLifetimeCatalog() async {
+        let productID = SubscriptionConfiguration.lifetimeProductID
+        lifetimeDisplayPrice = nil
+        lifetimeStoreProductRC = nil
+        lifetimeStoreProduct = nil
+
+        if isConfigured {
+            let products = await Purchases.shared.products([productID])
+            if let product = products.first {
+                lifetimeStoreProductRC = product
+                lifetimeDisplayPrice = product.localizedPriceString
+            }
+        }
+
+        if lifetimeDisplayPrice == nil,
+           let product = try? await Product.products(for: [productID]).first {
+            lifetimeStoreProduct = product
+            lifetimeDisplayPrice = SubscriptionConfiguration.formatPaywallPrice(
+                decimal: product.price,
+                currencyCode: storeKitCurrencyCode(from: product)
+            )
         }
     }
 

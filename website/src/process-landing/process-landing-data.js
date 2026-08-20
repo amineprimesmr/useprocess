@@ -92,8 +92,8 @@ export function heroCopy() {
 export function statsCopy() {
   return {
     title: appCopy(
-      "Des données réelles. Un suivi réel. Des progrès réels.",
-      "Real data. Real tracking. Real improvement."
+      "Des mesures réelles sur ta rétention faciale.",
+      "Real measurements for facial water retention."
     ),
     items: [
       {
@@ -109,7 +109,7 @@ export function statsCopy() {
       {
         target: 850,
         format: "compact-k",
-        label: appCopy("Points de données analysés", "Data points analyzed"),
+        label: appCopy("Utilisateurs actifs sur leur protocole", "Users following their protocol"),
       },
     ],
   };
@@ -125,39 +125,39 @@ function processFeatureCard(titleFr, titleEn, bodyFr, bodyEn, icon = PROCESS_APP
 
 export function benefitsCopy() {
   return {
-    badge: appCopy("Nos avantages", "Our Benefits"),
-    title: appCopy("Technologie Process avancée", "Advanced Process Technology"),
+    badge: appCopy("L'app Process", "The Process app"),
+    title: appCopy("Coach IA & protocole debloat", "AI coach & debloat protocol"),
     subtitle: appCopy(
-      "Entraîne, suis et améliore ton visage avec un feedback en temps réel et des routines guidées.",
-      "Train, track, and improve your facial presence with real-time feedback and guided routines."
+      "Scan visage, hydratation, repas debloat et sommeil — un plan anti-rétention concret, pas une app skincare vague.",
+      "Face scan, hydration, debloat meals and sleep — a concrete anti-bloat plan, not a vague skincare app."
     ),
     cards: [
       processFeatureCard(
-        "Entraînement personnalisé",
-        "Personalized Training",
-        "Des routines sur mesure basées sur ton visage pour améliorer les zones clés.",
-        "Custom routines based on your face to improve key areas over time.",
-        LANDING_FEATURE_ICONS.training
-      ),
-      processFeatureCard(
-        "Suivi des progrès",
-        "Progress Tracking",
-        "Suis l'évolution de la symétrie, de la structure et de ton visage dans le temps.",
-        "Track changes in symmetry, structure, and overall facial presence.",
-        LANDING_FEATURE_ICONS.progress
-      ),
-      processFeatureCard(
-        "Analyse faciale 3D",
-        "3D Face Analysis",
-        "Scans précis avec TrueDepth pour mesurer ta structure faciale en temps réel.",
-        "Accurate scans using TrueDepth to measure your facial structure in real time.",
+        "Scan debloat quotidien",
+        "Daily debloat scan",
+        "Rétention, cernes, mâchoire, peau et cortisol estimé — tu vois ce qui gonfle ton visage.",
+        "Retention, under-eyes, jawline, skin and estimated cortisol — see what makes your face puffy.",
         LANDING_FEATURE_ICONS.face3d
       ),
       processFeatureCard(
-        "Coach IA visage",
-        "AI Face Coach",
-        "Feedback en direct et conseils actionnables adaptés à ton visage.",
-        "Get real-time feedback and actionable advice tailored to your face.",
+        "Protocole personnalisé",
+        "Personalized protocol",
+        "Nutrition, hydratation et sommeil adaptés à ton profil pour réduire la rétention d'eau.",
+        "Nutrition, hydration and sleep tailored to your profile to reduce water retention.",
+        LANDING_FEATURE_ICONS.routines
+      ),
+      processFeatureCard(
+        "Repas debloat",
+        "Debloat meals",
+        "Idées de repas et analyse photo pour limiter ce qui te fait gonfler.",
+        "Meal ideas and photo analysis to limit what makes you bloat.",
+        LANDING_FEATURE_ICONS.progress
+      ),
+      processFeatureCard(
+        "Coach IA",
+        "AI coach",
+        "Conseils actionnables sur ton visage, ton protocole et ta progression debloat.",
+        "Actionable advice on your face, protocol and debloat progress.",
         LANDING_FEATURE_ICONS.coach
       ),
     ],
@@ -167,11 +167,11 @@ export function benefitsCopy() {
 export function systemCopy() {
   const systemMedia = `${LANDING_MEDIA}/system`;
   return {
-    badge: appCopy("Nos résultats", "Our Results"),
-    title: appCopy("Un système conçu pour de vrais progrès", "A System Built for Real Improvement"),
+    badge: appCopy("Résultats debloat", "Debloat results"),
+    title: appCopy("Avant / après — moins de gonflement facial", "Before / after — less facial puffiness"),
     subtitle: appCopy(
-      "Des photos réelles, un suivi structuré — pas des promesses vagues.",
-      "Real photos, structured tracking — not vague promises."
+      "Des photos réelles d'utilisateurs Process — scan, protocole et suivi anti-rétention.",
+      "Real photos from Process users — scan, protocol and anti-retention tracking."
     ),
     beforeLabel: appCopy("Avant", "Before"),
     afterLabel: appCopy("Après", "After"),
@@ -191,17 +191,17 @@ export function systemCopy() {
 
 export function potentialCopy() {
   return {
-    title: appCopy("Tout ce qu'il te faut pour atteindre ton potentiel", "Everything You Need To Reach Your Potential"),
+    title: appCopy("Tout pour dégonfler ton visage au quotidien", "Everything to debloat your face daily"),
     subtitle: appCopy(
-      "Construit avec un suivi avancé, des données réelles et des routines structurées.",
-      "Built with advanced tracking, real data, and structured routines."
+      "Scan, checklist, hydratation, repas et coach IA — le loop debloat complet dans une seule app.",
+      "Scan, checklist, hydration, meals and AI coach — the full debloat loop in one app."
     ),
     checklist: [
-      appCopy("Cartographie faciale 3D", "3D Face Mapping"),
-      appCopy("Routines d'entraînement quotidiennes", "Daily Training Routines"),
-      appCopy("Partage FaceCard", "FaceCard Sharing"),
-      appCopy("Classements compétitifs", "Competitive Rankings"),
-      appCopy("Hub d'apprentissage", "In-Depth Learning Hub"),
+      appCopy("Scan visage & score de rétention", "Face scan & retention score"),
+      appCopy("Protocole debloat personnalisé", "Personalized debloat protocol"),
+      appCopy("Hydratation & repas debloat", "Hydration & debloat meals"),
+      appCopy("Sommeil & récupération", "Sleep & recovery tracking"),
+      appCopy("Coach IA anti-rétention", "Anti-retention AI coach"),
     ],
   };
 }
@@ -209,56 +209,56 @@ export function potentialCopy() {
 export function testimonialsCopy() {
   const avatars = onboardingCommunityAvatars();
   return {
-    title: appCopy("Nos témoignages", "Our Testimonials"),
+    title: appCopy("Ils dégonflent avec Process", "They debloat with Process"),
     subtitle: appCopy(
-      "Découvre comment Process aide les utilisateurs à dégonfler et suivre leur visage.",
-      "See how Process helps users debloat and track their face over time."
+      "Retours d'utilisateurs sur le scan, le protocole debloat et la rétention faciale.",
+      "User feedback on scan, debloat protocol and facial retention."
     ),
     items: [
       {
         quote: appCopy(
-          "Enfin une app qui donne de vraies mesures au lieu de notes IA vagues. Mon score mâchoire m'a ouvert les yeux.",
-          "Finally an app that gives real measurements instead of vague AI ratings. My jawline score was eye-opening."
+          "Mon visage était gonflé le matin — le scan m'a montré la rétention et quoi corriger côté hydratation.",
+          "My face was puffy every morning — the scan showed retention and what to fix with hydration."
         ),
         name: "Enzo",
         avatar: avatars[1],
       },
       {
         quote: appCopy(
-          "Le scan 3D est incroyablement précis. Je peux vraiment suivre mes progrès mewing avec de vraies données.",
-          "The 3D scan is insanely accurate. I can actually track my mewing progress now with real data."
+          "Enfin une app debloat avec un vrai protocole repas + eau, pas juste des conseils skincare.",
+          "Finally a debloat app with a real meals + water protocol, not just skincare tips."
         ),
         name: "Amir",
         avatar: avatars[2],
       },
       {
         quote: appCopy(
-          "La routine personnalisée basée sur MES mesures a tout changé. Ça vaut chaque centime.",
-          "The personalized routine based on MY measurements made all the difference. Worth every penny."
+          "Le suivi quotidien m'a aidé à voir ce qui me faisait gonfler — sel, sommeil, repas.",
+          "Daily tracking helped me see what made me bloat — salt, sleep, meals."
         ),
         name: "Ken",
         avatar: avatars[3],
       },
       {
         quote: appCopy(
-          "Je ne m'attendais pas à grand-chose mais le suivi est vraiment précis. Tu vois ce qu'il faut corriger.",
-          "Didn't expect much but the tracking is actually really accurate. You can see what you need to fix."
+          "Le coach IA répond sur mon protocole debloat, pas des généralités beauté.",
+          "The AI coach answers about my debloat protocol, not generic beauty advice."
         ),
         name: "Malik",
         avatar: avatars[4],
       },
       {
         quote: appCopy(
-          "FaceCard est cool, ça rend facile de voir les progrès et de les partager.",
-          "FaceCard is cool, makes it easy to see progress and share it."
+          "Checklist claire le matin : scan, eau, repas — je sais quoi faire.",
+          "Clear morning checklist: scan, water, meals — I know what to do."
         ),
         name: "Sam",
         avatar: avatars[0],
       },
       {
         quote: appCopy(
-          "Ce n'est pas qu'un scan unique. Les routines et le suivi quotidien permettent de vraiment progresser.",
-          "It's not just a one time scan. The routines and daily tracking make it feel like something you can actually improve with."
+          "Moins de gonflement au bout de deux semaines en suivant le plan Process.",
+          "Less puffiness after two weeks following the Process plan."
         ),
         name: "Rayan",
         avatar: avatars[5],
@@ -273,52 +273,45 @@ export function faqCopy() {
     title: appCopy("Questions fréquentes", "Frequently Asked Questions"),
     items: [
       {
-        q: appCopy("Comment fonctionne Process ?", "How does Process work?"),
+        q: appCopy("Process, c'est quoi ?", "What is Process?"),
         a: appCopy(
-          "Process scanne ton visage en 3D, analyse ta structure et te propose un protocole debloat personnalisé avec coach IA, nutrition et hydratation.",
-          "Process scans your face in 3D, analyzes your structure, and delivers a personalized debloat protocol with AI coaching, nutrition, and hydration."
+          "Une app iOS debloat : scan visage, protocole anti-rétention (hydratation, repas, sommeil) et coach IA.",
+          "An iOS debloat app: face scan, anti-retention protocol (hydration, meals, sleep) and AI coach."
         ),
       },
       {
-        q: appCopy("Le scan visage est-il précis ?", "Is the face scan accurate?"),
+        q: appCopy("Comment fonctionne le scan ?", "How does the scan work?"),
         a: appCopy(
-          "Oui — nous utilisons TrueDepth pour capturer des centaines de points de données faciales en temps réel.",
-          "Yes — we use TrueDepth to capture hundreds of facial data points in real time."
+          "Le scan analyse rétention, cernes, mâchoire et signaux visibles pour te donner un score debloat et des actions.",
+          "The scan analyzes retention, under-eyes, jawline and visible signals to give you a debloat score and actions."
+        ),
+      },
+      {
+        q: appCopy("Est-ce une app skincare ?", "Is this a skincare app?"),
+        a: appCopy(
+          "Non — Process cible la rétention d'eau et le gonflement facial via nutrition, hydratation et habitudes, pas des crèmes.",
+          "No — Process targets water retention and facial puffiness through nutrition, hydration and habits, not creams."
         ),
       },
       {
         q: appCopy("Comment améliorer mes résultats ?", "How do I improve my results?"),
         a: appCopy(
-          "Suis ton protocole quotidien, tes routines guidées et les conseils du coach IA adaptés à ton profil.",
-          "Follow your daily protocol, guided routines, and AI coach advice tailored to your profile."
-        ),
-      },
-      {
-        q: appCopy("Qu'est-ce que la FaceCard ?", "What is the FaceCard?"),
-        a: appCopy(
-          "Une carte partageable avec tes stats, scores et progrès faciaux.",
-          "A shareable card with your stats, scores, and facial progress."
-        ),
-      },
-      {
-        q: appCopy("Que sont les Face Battles ?", "What are Face Battles?"),
-        a: appCopy(
-          "Des compétitions où tu compares tes résultats avec d'autres utilisateurs dans le monde.",
-          "Competitions where you compare your results with other users globally."
+          "Suis ton protocole quotidien : scan, hydratation, repas debloat et sommeil. Le coach IA t'aide à ajuster.",
+          "Follow your daily protocol: scan, hydration, debloat meals and sleep. The AI coach helps you adjust."
         ),
       },
       {
         q: appCopy("Mes données sont-elles privées ?", "Is my data private?"),
         a: appCopy(
-          "Oui. Tes scans et données restent sur ton appareil et ton compte — consulte notre politique de confidentialité.",
+          "Oui. Tes scans et données restent sur ton appareil et ton compte — voir notre politique de confidentialité.",
           "Yes. Your scans and data stay on your device and account — see our privacy policy."
         ),
       },
       {
         q: appCopy("À quelle fréquence utiliser Process ?", "How often should I use Process?"),
         a: appCopy(
-          "Un scan quotidien et quelques minutes de routine suffisent pour suivre tes progrès.",
-          "A daily scan and a few minutes of routine are enough to track your progress."
+          "Un scan par jour et quelques minutes pour ta checklist debloat suffisent pour suivre ta progression.",
+          "One scan per day and a few minutes on your debloat checklist are enough to track progress."
         ),
       },
     ],
@@ -329,8 +322,8 @@ export function faqCopy() {
 export function footerCopy() {
   return {
     tagline: appCopy(
-      "Entraîne, suis et améliore ton visage avec Process",
-      "Train, track, and improve your face with Process"
+      "Dégonfle ton visage avec scan, protocole debloat et coach IA.",
+      "Debloat your face with scan, debloat protocol and AI coach."
     ),
     email: "contact@useprocess.xyz",
     privacy: appCopy("Politique de confidentialité", "Privacy Policy"),

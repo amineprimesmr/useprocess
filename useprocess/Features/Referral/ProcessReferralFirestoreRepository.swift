@@ -54,14 +54,16 @@ final class ProcessReferralFirestoreRepository {
             invitedAt = Date()
         }
 
-        let rewardLabel = data["referrerRewardDuration"] as? String
+        let rewardDurationRaw = data["referrerRewardDuration"] as? String
+        let rewardDuration = ProcessReferralRewardDuration(rawValue: rewardDurationRaw ?? "")
 
         return ProcessReferralEntry(
             id: document.documentID,
             displayName: displayName,
             invitedAt: invitedAt,
             status: status,
-            rewardLabel: ProcessReferralProgramTerms.rewardLabel(for: rewardLabel, status: status)
+            rewardDuration: rewardDuration,
+            rewardLabel: ProcessReferralProgramTerms.rewardLabel(for: rewardDurationRaw, status: status)
         )
     }
 }

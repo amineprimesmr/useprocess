@@ -339,14 +339,11 @@ final class OnboardingProfileChatViewModel {
     private func setGlowUpResultsPresented(_ presented: Bool) {
         withAnimation(glowUpResultsCoverAnimation) {
             isGlowUpResultsPresented = presented
-            if presented {
-                onboardingViewModel?.profileChatHeaderProgress = nil
-            } else {
-                onboardingViewModel?.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
-                    questionID: currentQuestion?.id,
-                    engine: conversationEngine
-                )
-            }
+            onboardingViewModel?.profileChatHeaderProgress = OnboardingProfileChatCoachHeaderProgress.snapshot(
+                questionID: currentQuestion?.id,
+                engine: conversationEngine,
+                isGlowUpResultsPresented: presented
+            )
         }
     }
 

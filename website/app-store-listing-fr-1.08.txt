@@ -1,0 +1,20 @@
+================================================================================
+PROCESS — FICHE APP STORE (FRANÇAIS) — Version 1.08
+Copier dans App Store Connect → Distribution → iOS App → 1.08 → Français
+================================================================================
+
+NOUVEAUTÉS (Nouveautés de cette version)
+================================================================================
+
+• Programme créateur : candidature clipper, suivi des commissions et lien de parrainage dédié
+• Étape « Avez-vous un code ? » dans l’onboarding avant le paywall
+• Lien court useprocess.xyz/app pour télécharger l’app depuis TikTok et les bios
+• Prix lifetime winback affichés selon ta région (ex. 24,99 $ aux États-Unis)
+• Quick action écran d’accueil « Accès à vie offert » avec prix StoreKit à jour
+
+================================================================================
+BUILD
+================================================================================
+
+Version: 1.08
+Build: 32

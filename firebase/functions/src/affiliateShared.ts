@@ -34,8 +34,14 @@ export interface AffiliateDoc {
   uid?: string;
   displayName: string;
   email?: string;
-  paypalEmail?: string;
-  payoutMethod?: "paypal" | "bank";
+  /** @deprecated Legacy PayPal field — payouts use Stripe Connect */
+  paypalEmail?: string | null;
+  stripeAccountId?: string | null;
+  stripeOnboardingComplete?: boolean;
+  stripePayoutsEnabled?: boolean;
+  stripeDetailsSubmitted?: boolean;
+  stripeRequirementsDue?: string[];
+  payoutMethod?: "stripe" | null;
   status: AffiliateStatus;
   codes: string[];
   stats: {
@@ -94,6 +100,9 @@ export function affiliateHttpStatus(message: string): number {
   if (message === "AFFILIATE_NOT_FOUND") return 404;
   if (message === "AFFILIATE_INACTIVE") return 403;
   if (message === "AFFILIATE_NOT_LINKED") return 403;
+  if (message === "STRIPE_NOT_LINKED") return 404;
+  if (message === "STRIPE_NOT_CONFIGURED") return 503;
+  if (message === "STRIPE_NOT_READY") return 400;
   if (message === "CODE_CONFLICT") return 409;
   if (message === "INVALID_ADMIN") return 401;
   if (message === "INVALID_TEXT") return 400;

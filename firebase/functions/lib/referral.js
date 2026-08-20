@@ -143,8 +143,8 @@ exports.referralDashboard = (0, https_1.onRequest)({
     try {
         const uid = await (0, referralShared_1.verifyFirebaseUser)(req);
         await (0, referralShared_1.verifyAppAttestation)(req);
-        const { fetchReferralDashboard } = await Promise.resolve().then(() => __importStar(require("./referralCommissions")));
-        const dashboard = await fetchReferralDashboard(uid);
+        const { fetchReferralProgramDashboard } = await Promise.resolve().then(() => __importStar(require("./referralShared")));
+        const dashboard = await fetchReferralProgramDashboard(uid);
         res.status(200).json(dashboard);
     }
     catch (error) {

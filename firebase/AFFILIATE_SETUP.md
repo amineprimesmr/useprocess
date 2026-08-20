@@ -22,15 +22,19 @@ export AFFILIATE_ADMIN_SECRET='…'      # admin create / approve / mark paid
 ./firebase/scripts/deploy-affiliate.sh
 ```
 
-## RevenueCat webhook (second integration)
+## RevenueCat webhook
 
-Add a **second** webhook in RevenueCat → Integrations:
+**Un seul webhook RC suffit** — `referralRevenueCatWebhook` traite aussi les commissions clipper (affiliate).
 
-- Name: `Process Affiliate`
-- URL: `https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateRevenueCatWebhook`
+Add in RevenueCat → Integrations (if not already present):
+
+- Name: `Process Referral + Affiliate` (or keep existing referral webhook)
+- URL: `https://us-central1-useprocess-d4385.cloudfunctions.net/referralRevenueCatWebhook`
 - Authorization: `Bearer <REVENUECAT_WEBHOOK_SECRET>`
 - Environment: production + sandbox
 - Events: all (function filters to purchase / renewal / refund / churn)
+
+Optional duplicate endpoint (same secret, same handler logic split): `affiliateRevenueCatWebhook` — **not required** if referral webhook is configured.
 
 ## Cloud Functions
 
@@ -39,8 +43,12 @@ Add a **second** webhook in RevenueCat → Integrations:
 | `affiliateResolveCode` | Resolve affiliate vs user referral code |
 | `affiliateRegister` | Attribute invitee to clipper |
 | `affiliateApply` | Clipper self-serve application (pending approval) |
-| `affiliateSyncProfile` | Clipper payout info (PayPal) |
+| `affiliateSyncProfile` | Clipper profile (display name) |
 | `affiliateDashboard` | Clipper stats + commissions |
+| `affiliateStripeConnectStart` | Stripe Express onboarding link |
+| `affiliateStripeConnectSync` | Refresh Stripe account status |
+| `affiliateStripeConnectDashboard` | Stripe Express dashboard login link |
+| `affiliateStripeWebhook` | Stripe Connect `account.updated` webhook |
 | `affiliateAdminCreate` | Admin: create vanity code (+ optional email/password auth) |
 | `affiliateAdminProvisionAuth` | Admin: link Firebase login to existing clipper |
 | `affiliateAdminApprove` | Admin: activate pending clipper |
@@ -86,7 +94,8 @@ Users apply in-app (**Paramètres → Programme créateur**) or on **https://use
 # 2. Approve (activates codes — clipper can earn 40%)
 ./firebase/scripts/approve-clipper.sh <affiliateId>
 
-# 3. Pay out via PayPal manually, then record in ledger
+# 3. Clipper connects Stripe on https://useprocess.xyz/affiliate → Payouts
+# 4. After hold period, mark paid in ledger (or automate later via Stripe Transfer)
 ./firebase/scripts/mark-paid-clipper.sh <affiliateId> 42.50 "March payout"
 ```
 
@@ -110,13 +119,44 @@ curl -X POST …/affiliateAdminCreate \
   -d '{"code":"MANNY","displayName":"Manny","uid":"<firebase_uid>"}'
 ```
 
-## Mark payout (manual PayPal / virement)
+## Stripe Connect payouts
+
+Clippers connect a **bank account via Stripe Express** on the web portal (`Payouts` → **Connect payout method**). Process never collects PayPal.
+
+### One-time setup (admin)
+
+1. Enable **Connect** in [Stripe Dashboard](https://dashboard.stripe.com/settings/connect) (Express accounts).
+2. Set Firebase secrets and deploy:
+
+```bash
+export STRIPE_SECRET_KEY='sk_live_…'          # or sk_test_ for sandbox
+export STRIPE_CONNECT_WEBHOOK_SECRET='whsec_…' # from Stripe webhook endpoint
+export REVENUECAT_WEBHOOK_SECRET='…'
+export AFFILIATE_ADMIN_SECRET='…'
+./firebase/scripts/deploy-affiliate.sh
+```
+
+3. In Stripe → Developers → Webhooks, add endpoint:
+   - URL: `https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateStripeWebhook`
+   - Events: `account.updated`
+
+### Clipper flow
+
+1. Log in at **https://useprocess.xyz/affiliate**
+2. Sidebar **Payouts** widget or **Payouts** page → **Connect payout method**
+3. Confirm bank requirements → redirect to Stripe onboarding
+4. Return URL: `https://useprocess.xyz/affiliate#/payouts?stripe=return`
+5. **Manage Stripe** opens the Stripe Express dashboard for balance / tax forms
+
+Commission ledger (`affiliateCommissions`) is unchanged. Recording a payout in Firestore (`affiliateAdminMarkPaid`) uses `method: "stripe"` by default.
+
+## Mark payout (ledger record)
 
 ```bash
 curl -X POST https://us-central1-useprocess-d4385.cloudfunctions.net/affiliateAdminMarkPaid \
   -H 'Content-Type: application/json' \
   -H "X-Affiliate-Admin-Secret: $AFFILIATE_ADMIN_SECRET" \
-  -d '{"affiliateId":"MANNY","amountCents":4200,"currency":"EUR","method":"paypal","note":"March payout"}'
+  -d '{"affiliateId":"MANNY","amountCents":4200,"currency":"EUR","method":"stripe","note":"March payout"}'
 ```
 
 ## Links
@@ -137,7 +177,7 @@ Resolution order: **affiliate code first**, then user referral code.
 ## iOS
 
 1. Onboarding step **« Avez-vous un code ? »** before paywall (`showsReferralCodeStepInOnboarding = true`)
-2. Settings → **Programme créateur** — apply form, pending state, dashboard, PayPal, share link
+2. Settings → **Programme créateur** — apply form, pending state, dashboard, Stripe payouts, share link
 3. `affiliateRegister` if affiliate, else `referralRegister`
 4. RevenueCat attribute `affiliate_code` synced via `ProcessAcquisitionAttribution`
 

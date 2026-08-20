@@ -13,8 +13,52 @@ export function normalizeAcquisitionCode(raw) {
     .slice(0, 24);
 }
 
+/** Extrait un code depuis une URL join/ref ou retourne la valeur normalisée. */
+export function parseAcquisitionCodeFromInput(raw) {
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) return "";
+
+  const looksLikeUrl =
+    /^https?:\/\//i.test(trimmed) ||
+    /^(join\.)?useprocess\.xyz\//i.test(trimmed) ||
+    trimmed.includes("useprocess.xyz/");
+
+  if (looksLikeUrl) {
+    try {
+      const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed.replace(/^\/+/, "")}`;
+      const url = new URL(href);
+      const host = url.hostname.toLowerCase();
+      const path = url.pathname.replace(/\/$/, "");
+
+      if (host === "join.useprocess.xyz" && path) {
+        const segment = decodeURIComponent(path.replace(/^\//, ""));
+        if (segment && !["get", "telecharger", "join", "c"].includes(segment.toLowerCase())) {
+          return normalizeAcquisitionCode(segment);
+        }
+      }
+
+      const joinMatch = path.match(/^\/join\/([^/]+)$/i);
+      if (joinMatch?.[1]) {
+        return normalizeAcquisitionCode(decodeURIComponent(joinMatch[1]));
+      }
+
+      const ref = url.searchParams.get("ref") || url.searchParams.get("code");
+      if (ref) return normalizeAcquisitionCode(ref);
+    } catch {
+      /* fall through */
+    }
+
+    const pathMatch = trimmed.match(/(?:join\/|join\.useprocess\.xyz\/)([A-Za-z0-9-]+)/i);
+    if (pathMatch?.[1]) {
+      return normalizeAcquisitionCode(pathMatch[1]);
+    }
+  }
+
+  return normalizeAcquisitionCode(trimmed);
+}
+
 export async function resolveAcquisitionCode(rawCode) {
-  const code = normalizeAcquisitionCode(rawCode || normalizeReferralCode(rawCode));
+  const code = parseAcquisitionCodeFromInput(rawCode);
   if (!code) return null;
 
   try {

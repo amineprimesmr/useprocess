@@ -6,8 +6,6 @@ struct OnboardingCreatorCodeStepView: View {
 
     @Binding var draftCode: String
     @Binding var isVerified: Bool
-    var continueAttempt: Int
-    var keyboardOverlap: CGFloat = 0
     var onAutoContinue: () -> Void = {}
 
     @State private var resolvedDisplayName: String?
@@ -33,7 +31,7 @@ struct OnboardingCreatorCodeStepView: View {
                     .frame(height: contentTopInset)
 
                 VStack(spacing: 12) {
-                    Text(AppCopy.t("Avez-vous un code ?", en: "Got a creator code?"))
+                    Text(AppCopy.t("As-tu un code ?", en: "Got a code?"))
                         .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(OnboardingTheme.primaryText)
                         .multilineTextAlignment(.center)
@@ -50,9 +48,9 @@ struct OnboardingCreatorCodeStepView: View {
                     .padding(.horizontal, 28)
                 }
                 .opacity(showsHero ? 1 : 0)
-                .offset(y: showsHero ? 0 : 14)
 
-                Spacer(minLength: 28)
+                Spacer()
+                    .frame(height: 40)
 
                 OnboardingCreatorCodeCircleInput(
                     code: $draftCode,
@@ -64,8 +62,7 @@ struct OnboardingCreatorCodeStepView: View {
                 )
                 .modifier(OnboardingHorizontalShakeEffect(shakes: codeShakePhase))
                 .opacity(showsInput ? 1 : 0)
-                .offset(y: showsInput ? 0 : 18)
-                .scaleEffect(showsInput ? 1 : 0.96)
+                .frame(height: 52)
 
                 if let resolvedDisplayName, let resolvedKind, showsResolvedHint {
                     resolvedBadge(kind: resolvedKind, name: resolvedDisplayName)
@@ -81,7 +78,7 @@ struct OnboardingCreatorCodeStepView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                Spacer(minLength: 28)
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, bottomChromeReserve)
@@ -126,9 +123,6 @@ struct OnboardingCreatorCodeStepView: View {
             let generation = resolveGeneration
             Task { await resolveDraftIfNeeded(generation: generation) }
         }
-        .onChange(of: continueAttempt) { _, _ in
-            handleContinueRejected()
-        }
     }
 
     private var contentTopInset: CGFloat {
@@ -138,11 +132,7 @@ struct OnboardingCreatorCodeStepView: View {
     }
 
     private var bottomChromeReserve: CGFloat {
-        let continueBlock: CGFloat = 58 + 44 + 16
-        if keyboardOverlap > 0 {
-            return keyboardOverlap + continueBlock
-        }
-        return OnboardingConstants.standardContinueBottomOffset + continueBlock
+        OnboardingConstants.standardContinueBottomOffset + 58 + 16
     }
 
     private var creatorCodeHeroGradient: some View {
@@ -170,15 +160,10 @@ struct OnboardingCreatorCodeStepView: View {
                 .foregroundStyle(Color.orange.opacity(0.92))
 
             Text(
-                draftCode.isEmpty
-                    ? AppCopy.t(
-                        "Entre un code ou appuie sur Passer.",
-                        en: "Enter a code or tap Skip."
-                    )
-                    : AppCopy.t(
-                        "Entre les 5 caractères du code.",
-                        en: "Enter all 5 code characters."
-                    )
+                AppCopy.t(
+                    "Entre les 5 caractères du code.",
+                    en: "Enter all 5 code characters."
+                )
             )
             .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(OnboardingTheme.primaryText)
@@ -263,13 +248,9 @@ struct OnboardingCreatorCodeStepView: View {
             return
         }
 
-        withAnimation(.smooth(duration: 0.24)) {
+        withAnimation(.smooth(duration: 0.22)) {
             showsHero = true
-        }
-        withAnimation(.smooth(duration: 0.26).delay(0.05)) {
             showsInput = true
-        }
-        withAnimation(.smooth(duration: 0.22).delay(0.10)) {
             showsResolvedHint = true
         }
     }
@@ -322,6 +303,7 @@ struct OnboardingCreatorCodeStepView: View {
                     clearCodeFeedback()
                 }
                 isVerified = true
+                scheduleAutoContinue(generation: generation)
             } else if canValidateCodeOnline {
                 isVerified = false
                 presentInvalidCodeFeedback()
@@ -333,6 +315,15 @@ struct OnboardingCreatorCodeStepView: View {
                 }
                 isVerified = false
             }
+        }
+    }
+
+    private func scheduleAutoContinue(generation: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+            guard generation == resolveGeneration, isVerified else { return }
+            HapticManager.shared.impact(.medium)
+            isFocused = false
+            onAutoContinue()
         }
     }
 

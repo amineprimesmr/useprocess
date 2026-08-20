@@ -63,7 +63,7 @@ struct FaceMeshScanView: UIViewRepresentable {
     var skipsHeadTiltPhase: Bool = true
     var cameraZoom: CGFloat = 1
     var portraitFieldOfView: CGFloat = 32
-    var prefersHubPortraitLock: Bool = false
+    var portraitLockProfile: ProcessScanPortraitLockProfile = .standard
     var onComplete: (FaceScanCapturePayload) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -85,7 +85,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             skipsHeadTiltPhase: skipsHeadTiltPhase,
             cameraZoom: cameraZoom,
             portraitFieldOfView: portraitFieldOfView,
-            prefersHubPortraitLock: prefersHubPortraitLock,
+            portraitLockProfile: portraitLockProfile,
             onComplete: onComplete
         )
     }
@@ -149,7 +149,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         uiView.previewZoom = zoom
         context.coordinator.cameraZoom = zoom
         context.coordinator.portraitFieldOfView = portraitFieldOfView
-        context.coordinator.prefersHubPortraitLock = prefersHubPortraitLock
+        context.coordinator.portraitLockProfile = portraitLockProfile
         context.coordinator.onComplete = onComplete
         context.coordinator.updateViewportSize(uiView.bounds.size)
 
@@ -195,7 +195,7 @@ struct FaceMeshScanView: UIViewRepresentable {
         var skipsHeadTiltPhase: Bool
         var cameraZoom: CGFloat
         var portraitFieldOfView: CGFloat
-        var prefersHubPortraitLock: Bool
+        var portraitLockProfile: ProcessScanPortraitLockProfile
         var onComplete: (FaceScanCapturePayload) -> Void
 
         weak var arView: ARSCNView?
@@ -301,7 +301,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             skipsHeadTiltPhase: Bool,
             cameraZoom: CGFloat,
             portraitFieldOfView: CGFloat,
-            prefersHubPortraitLock: Bool,
+            portraitLockProfile: ProcessScanPortraitLockProfile,
             onComplete: @escaping (FaceScanCapturePayload) -> Void
         ) {
             _progress = progress
@@ -321,7 +321,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             self.skipsHeadTiltPhase = skipsHeadTiltPhase
             self.cameraZoom = cameraZoom
             self.portraitFieldOfView = portraitFieldOfView
-            self.prefersHubPortraitLock = prefersHubPortraitLock
+            self.portraitLockProfile = portraitLockProfile
             self.onComplete = onComplete
         }
 
@@ -388,15 +388,13 @@ struct FaceMeshScanView: UIViewRepresentable {
             ProcessAudioSession.configureForMixingWithOthers()
             didConfigurePortraitCamera = false
             frontZoomLockAttempts = 0
-            ProcessScanCamera.prepareForFrontPortraitScan()
+            ProcessScanCamera.lockFrontCamerasBeforeARSession(profile: portraitLockProfile)
             let config = ARFaceTrackingConfiguration()
             config.isLightEstimationEnabled = true
             config.maximumNumberOfTrackedFaces = 1
             view.session.run(config, options: [.resetTracking, .removeExistingAnchors])
             isSessionPaused = false
-            DispatchQueue.main.async {
-                ProcessScanCamera.lockActiveFrontCamerasIfPossible(preferHubPortrait: self.prefersHubPortraitLock)
-            }
+            ProcessScanCamera.lockActiveFrontCamerasIfPossible(profile: portraitLockProfile)
         }
 
         func pauseSession() {
@@ -421,9 +419,9 @@ struct FaceMeshScanView: UIViewRepresentable {
         func session(_ session: ARSession, didUpdate frame: ARFrame) {
             guard !completed, !isTornDown else { return }
             configurePortraitCameraIfNeeded()
-            if frontZoomLockAttempts < 16 {
+            if frontZoomLockAttempts < 32 {
                 frontZoomLockAttempts += 1
-                ProcessScanCamera.lockActiveFrontCamerasIfPossible(preferHubPortrait: prefersHubPortraitLock)
+                ProcessScanCamera.lockActiveFrontCamerasIfPossible(profile: portraitLockProfile)
             }
             let intensity = frame.lightEstimate?.ambientIntensity ?? 1000
             currentAmbientIntensity = intensity
@@ -528,7 +526,7 @@ struct FaceMeshScanView: UIViewRepresentable {
 
         private func configurePortraitCameraIfNeeded() {
             guard !didConfigurePortraitCamera, let view = arView else { return }
-            ProcessScanCamera.lockActiveFrontCamerasIfPossible(preferHubPortrait: prefersHubPortraitLock)
+            ProcessScanCamera.lockActiveFrontCamerasIfPossible(profile: portraitLockProfile)
             guard let camera = view.pointOfView?.camera else { return }
             camera.fieldOfView = portraitFieldOfView
             camera.zNear = 0.01
@@ -737,7 +735,7 @@ struct FaceMeshScanView: UIViewRepresentable {
             let distanceFeedback = FaceScanQualityValidator.distanceFeedback(
                 distanceMeters: distanceMeters,
                 screenFillRatio: fillRatio,
-                cameraZoom: 1
+                cameraZoom: cameraZoom
             )
 
             if distanceFeedback != .ok, scanStartTime == nil {

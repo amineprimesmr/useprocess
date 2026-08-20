@@ -131,8 +131,10 @@ struct FaceScanCaptureScreen: View {
         (isScanDayHubCamera || usesOnboardingFaceOval) ? 24 : 32
     }
 
-    private var prefersPortraitCameraLock: Bool {
-        isScanDayHubCamera || usesOnboardingFaceOval
+    private var portraitLockProfile: ProcessScanPortraitLockProfile {
+        if usesOnboardingFaceOval { return .onboarding }
+        if isScanDayHubCamera { return .hub }
+        return .standard
     }
 
     private enum FaceScanPhase {
@@ -1413,7 +1415,7 @@ struct FaceScanCaptureScreen: View {
                 skipsHeadTiltPhase: skipsHeadTiltPhase,
                 cameraZoom: cameraZoom,
                 portraitFieldOfView: portraitFieldOfView,
-                prefersHubPortraitLock: prefersPortraitCameraLock,
+                portraitLockProfile: portraitLockProfile,
                 onComplete: handleCapture
             )
             .id(isInlineHome ? "inline-home-face-mesh-\(inlineMeshResetNonce)" : scanSessionID.uuidString)
