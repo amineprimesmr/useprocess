@@ -225,6 +225,16 @@ export function IconX(props) {
   );
 }
 
+export function IconLogout(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" {...props}>
+      <path d="M15 12H3" />
+      <path d="M11 8l-4 4 4 4" />
+      <path d="M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+    </svg>
+  );
+}
+
 export function ProcessAppIcon({ size = 32, className = "" }) {
   return (
     <img

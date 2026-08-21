@@ -1,0 +1,141 @@
+/* View-bonus board — used on landing (dark) and dashboard (light) */
+
+.af-view-bonus {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.af-view-bonus__elig {
+  margin: 0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-align: center;
+  justify-self: center;
+}
+
+.af-view-bonus__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.af-view-bonus__row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.92rem 1.05rem;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.af-view-bonus__amount {
+  font-size: 1.05rem;
+  text-align: left;
+}
+
+.af-view-bonus__at {
+  font-size: 0.95rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.af-view-bonus__views {
+  font-size: 1.05rem;
+  text-align: right;
+}
+
+.af-view-bonus__cap {
+  margin: 0.15rem 0 0;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.af-view-bonus__cap strong {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.af-view-bonus__note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.af-view-bonus.is-compact .af-view-bonus__row {
+  padding: 0.72rem 0.9rem;
+}
+
+.af-view-bonus.is-compact .af-view-bonus__amount,
+.af-view-bonus.is-compact .af-view-bonus__views {
+  font-size: 0.95rem;
+}
+
+/* Dark — landing offer / primes section */
+.af-view-bonus--dark .af-view-bonus__elig {
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255 / 0.78);
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.af-view-bonus--dark .af-view-bonus__row {
+  background: #2c2c2e;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+.af-view-bonus--dark .af-view-bonus__at,
+.af-view-bonus--dark .af-view-bonus__views {
+  color: rgb(255 255 255 / 0.52);
+}
+
+.af-view-bonus--dark .af-view-bonus__cap {
+  color: rgb(255 255 255 / 0.72);
+}
+
+.af-view-bonus--dark .af-view-bonus__cap strong {
+  color: #7ee8d8;
+}
+
+.af-view-bonus--dark .af-view-bonus__note {
+  color: rgb(255 255 255 / 0.5);
+}
+
+/* Light — dashboard / apply */
+.af-view-bonus--light .af-view-bonus__elig {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.af-view-bonus--light .af-view-bonus__row {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+.af-view-bonus--light .af-view-bonus__at,
+.af-view-bonus--light .af-view-bonus__views {
+  color: #6b7280;
+}
+
+.af-view-bonus--light .af-view-bonus__cap {
+  color: #4b5563;
+}
+
+.af-view-bonus--light .af-view-bonus__cap strong {
+  color: #0d9488;
+}
+
+.af-view-bonus--light .af-view-bonus__note {
+  color: #6b7280;
+}

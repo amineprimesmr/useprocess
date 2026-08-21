@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Configure French 3-day intro offers (App Store Connect) and verify RevenueCat.
+Configure 3-day intro offer on the referral-gated annual SKU only.
+
+Do NOT attach intro offers to com.useprocess.annual3499 — that would give
+everyone a trial without a referral code.
 
 Requires (pick one path for ASC):
   - `asc auth login` already done (keychain / ~/.asc/config.json), OR
@@ -30,9 +33,7 @@ FIREBASE_PROJECT = os.environ.get("FIREBASE_PROJECT", "useprocess-d4385")
 ASC_GROUP_ID = "21837790"
 ASC_APP_ID = "6753808143"
 ANNUAL_PRODUCT_IDS = (
-    "com.useprocess.annual3499",
-    "com.useprocess.annual4999",
-    "com.useprocess.annual",
+    "com.useprocess.annual3499trial",
 )
 INTRO_TERRITORY = "FRA"
 RC_V2_BASE = "https://api.revenuecat.com/v2"

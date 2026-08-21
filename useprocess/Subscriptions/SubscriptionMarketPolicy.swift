@@ -1,27 +1,18 @@
 import Foundation
 import StoreKit
 
-/// Règles marché pour les essais gratuits — storefront App Store (pas la langue produit).
+/// L’essai intro 3 jours n’est plus un droit marché FR : il est **débloqué par un code**.
 enum SubscriptionMarketPolicy {
-    /// Territoires où l’intro 3 jours annuel est autorisée (aligné App Store Connect).
-    static let frenchTrialStorefrontCountryCodes: Set<String> = ["FRA"]
-
-    /// Storefronts anglophones — paywall strict, jamais de copy / logique essai.
-    static let strictNoTrialStorefrontCountryCodes: Set<String> = [
-        "USA", "GBR", "CAN", "AUS", "NZL", "IRL",
-    ]
-
     private(set) static var cachedStorefrontCountryCode: String?
 
     static var resolvedStorefrontCountryCode: String? {
         cachedStorefrontCountryCode
     }
 
-    /// Vrai uniquement pour un storefront FR (billing Apple). Strict par défaut.
+    /// Vrai seulement après un code parrainage / créateur validé.
+    @MainActor
     static var allowsIntroductoryFreeTrial: Bool {
-        guard let code = resolvedStorefrontCountryCode?.uppercased() else { return false }
-        if strictNoTrialStorefrontCountryCodes.contains(code) { return false }
-        return frenchTrialStorefrontCountryCodes.contains(code)
+        ProcessReferralTrialEligibility.isUnlocked
     }
 
     @MainActor
@@ -31,9 +22,11 @@ enum SubscriptionMarketPolicy {
         }
     }
 
+    @MainActor
     static var analyticsProperties: [String: String] {
         var props: [String: String] = [
             "trial_market_allowed": allowsIntroductoryFreeTrial ? "true" : "false",
+            "referral_annual_trial": ProcessReferralTrialEligibility.isUnlocked ? "true" : "false",
         ]
         if let code = resolvedStorefrontCountryCode {
             props["storefront_country"] = code

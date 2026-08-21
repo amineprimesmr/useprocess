@@ -41,6 +41,7 @@ struct PaywallView: View {
     @State private var showsCloseXButton = false
     @State private var closeXAttemptCount = 0
     @State private var lastCloseXTapAt: Date?
+    @State private var referralTrialUnlocked = false
     @Bindable private var appLanguage = ProcessAppLanguage.shared
     private let termsURL = ProcessLegalURLs.termsOfUse
     private let privacyURL = ProcessLegalURLs.privacyPolicy
@@ -143,7 +144,8 @@ struct PaywallView: View {
             PaywallReferralCodeSheet()
         }
         .task {
-            await PaywallPricingExperiment.shared.resolveWhenFlagsReady()
+            _ = await ProcessReferralTrialEligibility.refreshByResolvingAttributedCode()
+            referralTrialUnlocked = ProcessReferralTrialEligibility.isUnlocked
             await subscriptionService.loadSubscriptions()
             if !didSetInitialPlan {
                 if subscriptionService.hasLiveAnnualProduct {
@@ -156,6 +158,12 @@ struct PaywallView: View {
             await subscriptionService.checkSubscriptionStatus()
             if subscriptionService.subscriptionStatus.isActive {
                 completePaywallFlow()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .processReferralAnnualTrialDidChange)) { _ in
+            referralTrialUnlocked = ProcessReferralTrialEligibility.isUnlocked
+            if referralTrialUnlocked {
+                selectedBillingPlan = .annual
             }
         }
         .onAppear {
@@ -434,7 +442,8 @@ struct PaywallView: View {
                 annualComparePrice: subscriptionService.displayProduct(for: shortBillingPlan)
                     .paywallAnnualStrikethroughComparePrice,
                 annualPrice: annualPrimaryPrice,
-                shortPlanPrice: shortPlanPrimaryPrice
+                shortPlanPrice: shortPlanPrimaryPrice,
+                annualOfferBadge: annualTrialBadgeText
             )
 
             PaywallBevelContinueButton(
@@ -476,6 +485,13 @@ struct PaywallView: View {
     private var shortPlanPrimaryPrice: String {
         let display = subscriptionService.displayProduct(for: shortBillingPlan)
         return display.paywallShortPlanPriceLabel(for: shortBillingPlan)
+    }
+
+    private var annualTrialBadgeText: String? {
+        guard referralTrialUnlocked || selectedPlanTrialInfo.isActiveOffer else {
+            return nil
+        }
+        return OnboardingCopy.t("3 jours offerts", en: "3 days free")
     }
 
     private var selectedPlanTrialInfo: SubscriptionTrialInfo {
@@ -703,8 +719,8 @@ private struct PaywallReferralCodeSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 Text(OnboardingCopy.t(
-                    "Tu as oublié ton code pendant l'onboarding ? Saisis-le ici.",
-                    en: "Forgot your code during onboarding? Enter it here."
+                    "Un code créateur ou ami débloque 3 jours d’essai sur l’annuel.",
+                    en: "A creator or friend code unlocks a 3-day yearly trial."
                 ))
                 .font(.system(size: 15))
                 .foregroundStyle(OnboardingTheme.bodyText)
@@ -787,9 +803,23 @@ private struct PaywallReferralCodeSheet: View {
         isSubmitting = true
         defer { isSubmitting = false }
 
+        let resolved = await AffiliateService.shared.resolveCode(normalized)
+        let canUnlockWithoutNetwork = !FirebaseBootstrap.isConfigured
+            || ClaudeConfiguration.functionsBaseURL == nil
+
+        if resolved == nil, !canUnlockWithoutNetwork {
+            feedback = OnboardingCopy.t(
+                "Code introuvable. Vérifie et réessaie.",
+                en: "Code not found. Check and try again."
+            )
+            HapticManager.shared.notification(.error)
+            return
+        }
+
         ProcessAcquisitionAttribution.captureReferralCode(normalized, source: "paywall", medium: "referral")
         ProcessAcquisitionAttribution.captureAffiliateCode(normalized, source: "paywall", medium: "creator")
         ProcessReferralAttribution.rememberManualEntry(normalized)
+        ProcessReferralTrialEligibility.unlock(code: resolved?.code ?? normalized)
         ProcessAnalytics.trackReferralCodeApplied(source: "paywall_menu")
 
         let userId = UnifiedProfileService.shared.currentProfile?.userId
@@ -807,7 +837,11 @@ private struct PaywallReferralCodeSheet: View {
         }
 
         HapticManager.shared.notification(.success)
-        feedback = OnboardingCopy.t("Code enregistré.", en: "Code saved.")
+        await SubscriptionService.shared.loadSubscriptions()
+        feedback = OnboardingCopy.t(
+            "3 jours d’essai débloqués sur l’annuel.",
+            en: "3-day yearly trial unlocked."
+        )
         try? await Task.sleep(for: .milliseconds(650))
         dismiss()
     }

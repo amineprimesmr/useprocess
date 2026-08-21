@@ -26,20 +26,21 @@ La clé `appl_` est **publique** (prévue pour le client). Ne jamais committer u
 |---------|--------|
 | Bundle ID | `com.useprocess` |
 | Entitlement | `premium` |
-| Offering (legacy) | `Premium` |
-| Offering A (A/B) | `Premium_A` — weekly899 + annual3499 |
-| Offering B (A/B) | `Premium_B` — monthly999 + annual4999 |
+| Offering (current) | `Premium` — monthly999 + annual3499 + annual3499trial |
+| Offering A (legacy A/B) | `Premium_A` — weekly899 + annual3499 |
+| Offering B (legacy A/B) | `Premium_B` — monthly999 + annual4999 |
 | ASC group ID | `21837790` (Process Premium) |
 | Mensuel (legacy) | `com.useprocess.monthly` |
 | Annuel (legacy) | `com.useprocess.annual` |
-| Hebdo A | `com.useprocess.weekly899` |
-| Annuel A | `com.useprocess.annual3499` |
-| Mensuel B | `com.useprocess.monthly999` |
-| Annuel B | `com.useprocess.annual4999` |
+| Mensuel | `com.useprocess.monthly999` (**9,99 €**) |
+| Annuel | `com.useprocess.annual3499` (**34,99 €**, sans essai) |
+| Annuel essai parrainage | `com.useprocess.annual3499trial` (**34,99 €**, intro 3 jours) |
+| Hebdo (legacy A/B) | `com.useprocess.weekly899` |
+| Annuel 49,99 (legacy A/B) | `com.useprocess.annual4999` |
 | Lifetime | `com.useprocess.lifetime` |
 | Packages | `$rc_weekly` / `$rc_monthly` / `$rc_annual` |
 
-Voir aussi `docs/PAYWALL_PRICING_AB_TEST.md` pour la checklist A/B complète.
+Voir `docs/PAYWALL_PRICING_AB_TEST.md` (catalogue unique + essai parrainage).
 
 **Retention Messaging (annulation abo iOS)** : [`firebase/RETENTION_MESSAGING.md`](../firebase/RETENTION_MESSAGING.md) — copy FR/EN, Apple ID `6753808143`, bouton « Gérer mon abonnement » dans l’app.
 

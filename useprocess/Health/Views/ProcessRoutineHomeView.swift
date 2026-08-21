@@ -64,7 +64,8 @@ struct ProcessRoutineHomeView: View {
                         plan: plan,
                         day: day,
                         selectedDate: selectedDate,
-                        isEditable: isDayEditable
+                        isEditable: isDayEditable,
+                        isOnboardingPreview: isOnboardingPreview
                     )
                 } else {
                     emptyState

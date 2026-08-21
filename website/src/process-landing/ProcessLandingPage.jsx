@@ -329,7 +329,7 @@ function Potential() {
         </ScrollReveal>
         <ScrollReveal variant="slide-right" delay={0.08}>
           <div className="fk-potential-phone" aria-hidden="true">
-            <img src={`${LANDING_MEDIA}/phone-progress.png`} alt="" width={420} height={840} />
+            <img src={`${LANDING_MEDIA}/phone-hero-app.png`} alt="" width={420} height={840} />
           </div>
         </ScrollReveal>
       </div>

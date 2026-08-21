@@ -32,6 +32,15 @@ struct ProcessProfileView: View {
     @State private var isReloadingCharts = false
     @State private var chartDataRevision = 0
     @ObservedObject private var creatorMode = ProcessCreatorModeStore.shared
+    @Bindable private var calibration = ProcessCalibrationMode.shared
+
+    private var isCalibrationLocked: Bool {
+        calibration.isLocked(forcePreview: isOnboardingPreview)
+    }
+
+    private var calibrationRemainingDays: Int {
+        calibration.displayedRemainingDays(forcePreview: isOnboardingPreview)
+    }
 
     private var isFlamePlaybackActive: Bool {
         isTabActive && scenePhase == .active
@@ -60,12 +69,20 @@ struct ProcessProfileView: View {
             await refreshProfile(forceHealthRefresh: false)
         }
         .onAppear {
+            calibration.refresh(now: creatorMode.effectiveNow)
             guard !isOnboardingPreview else { return }
             ProcessPerformanceTrace.endProfileOpen()
             ProcessDebloatTrajectoryStore.shared.reload()
             ProcessDebloatTrajectoryStore.shared.sync(from: WelcomePlanStore.shared.plan)
             ProcessPlanProgressStore.shared.reload(plan: WelcomePlanStore.shared.plan)
             rebuildPresentations()
+        }
+        .onChange(of: creatorMode.effectiveNow) { _, now in
+            calibration.refresh(now: now)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            calibration.refresh(now: creatorMode.effectiveNow)
         }
         .onChange(of: profileService.currentProfile?.userId) { _, _ in
             profileStore.bind(unified: profileService.currentProfile)
@@ -153,44 +170,62 @@ struct ProcessProfileView: View {
     }
 
     private var profileChartsSection: some View {
-        LazyVStack(spacing: 12) {
-            ForEach(metricPresentations) { presentation in
-                ProcessStickySection(
-                    config: .init(
-                        sectionPadding: 14,
-                        cornerRadius: 24,
-                        isGlassBackground: true
-                    )
-                ) {
-                    ProfileMetricChartSection(
-                        metric: presentation.metric,
-                        points: presentation.points,
-                        latestValue: presentation.latestValue,
-                        deltaVsPrevious: presentation.deltaVsPrevious,
-                        presentation: .stickySection
-                    )
-                } header: {
-                    HStack {
-                        Text(presentation.metric.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(theme.primaryText)
+        VStack(alignment: .leading, spacing: 12) {
+            if isCalibrationLocked {
+                ProcessCalibrationStatusBanner(
+                    surface: .streakCharts,
+                    remainingDays: calibrationRemainingDays
+                )
+            }
 
-                        Spacer(minLength: 0)
+            LazyVStack(spacing: 12) {
+                ForEach(Array(metricPresentations.enumerated()), id: \.element.id) { index, presentation in
+                    ProcessStickySection(
+                        config: .init(
+                            sectionPadding: 14,
+                            cornerRadius: 24,
+                            isGlassBackground: true
+                        )
+                    ) {
+                        ProfileMetricChartSection(
+                            metric: presentation.metric,
+                            points: presentation.points,
+                            latestValue: presentation.latestValue,
+                            deltaVsPrevious: presentation.deltaVsPrevious,
+                            presentation: .stickySection,
+                            isCalibrationLocked: isCalibrationLocked,
+                            calibrationRemainingDays: calibrationRemainingDays,
+                            showsCalibrationOverlay: index == 0
+                        )
+                    } header: {
+                        HStack {
+                            Text(presentation.metric.title)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(theme.primaryText)
 
-                        Image(systemName: presentation.metric.stickySectionIcon)
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(theme.secondaryText)
+                            Spacer(minLength: 0)
+
+                            if isCalibrationLocked {
+                                Text(ProcessCalibrationCopy.inDaysCaption(days: calibrationRemainingDays))
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(theme.secondaryText)
+                            } else {
+                                Image(systemName: presentation.metric.stickySectionIcon)
+                                    .font(.callout.weight(.semibold))
+                                    .foregroundStyle(theme.secondaryText)
+                            }
+                        }
+                    } minimisedHeader: {
+                        HStack(spacing: 6) {
+                            Image(systemName: presentation.metric.stickySectionIcon)
+
+                            Text(presentation.metric.stickyMinimisedTitle)
+
+                            Spacer(minLength: 0)
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(theme.secondaryText)
                     }
-                } minimisedHeader: {
-                    HStack(spacing: 6) {
-                        Image(systemName: presentation.metric.stickySectionIcon)
-
-                        Text(presentation.metric.stickyMinimisedTitle)
-
-                        Spacer(minLength: 0)
-                    }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(theme.secondaryText)
                 }
             }
         }

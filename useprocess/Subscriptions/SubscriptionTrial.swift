@@ -72,8 +72,7 @@ struct SubscriptionTrialInfo: Equatable {
 
 enum SubscriptionIntroOfferParser {
     static func trialDays(from product: Product?) -> Int? {
-        guard SubscriptionMarketPolicy.allowsIntroductoryFreeTrial,
-              let offer = product?.subscription?.introductoryOffer,
+        guard let offer = product?.subscription?.introductoryOffer,
               offer.paymentMode == .freeTrial else { return nil }
         return days(in: offer.period)
     }

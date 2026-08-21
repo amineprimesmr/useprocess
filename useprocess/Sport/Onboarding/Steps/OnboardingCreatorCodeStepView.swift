@@ -38,8 +38,8 @@ struct OnboardingCreatorCodeStepView: View {
 
                     Text(
                         AppCopy.t(
-                            "Facultatif — code à 5 caractères (créateur ou ami).",
-                            en: "Optional — 5-character code (creator or friend)."
+                            "Facultatif — 3 jours d’essai offerts sur l’annuel.",
+                            en: "Optional — 3 free days on the yearly plan."
                         )
                     )
                     .font(.system(size: 16, weight: .regular))

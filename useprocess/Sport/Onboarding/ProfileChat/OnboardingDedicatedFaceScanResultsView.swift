@@ -31,8 +31,8 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                     .opacity(showsHeader ? 1 : 0)
                     .offset(x: showsHeader ? 0 : 24)
 
-                FaceScanWhoopScoreRing(result: result, showsGlobalScore: false, ringSize: 252)
-                    .padding(.bottom, 28)
+                FaceScanWhoopScoreRing(result: result, showsGlobalScore: false, ringSize: 228)
+                    .padding(.bottom, 8)
                     .opacity(showsRing ? 1 : 0)
                     .offset(x: showsRing ? 0 : 28)
                     .scaleEffect(showsRing ? 1 : 0.96)
@@ -46,7 +46,7 @@ struct OnboardingDedicatedFaceScanResultsView: View {
                     animatesIndicatorReveal: showsIndicators
                 )
                 .padding(.horizontal, 16)
-                .padding(.top, 16)
+                .padding(.top, 4)
                 .padding(.bottom, 12)
                 .opacity(showsIndicators ? 1 : 0)
                 .offset(y: showsIndicators ? 0 : 14)

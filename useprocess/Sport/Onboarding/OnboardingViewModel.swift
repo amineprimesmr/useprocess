@@ -784,6 +784,7 @@ class OnboardingViewModel: ObservableObject {
         creatorCodeDraft = normalized
         ProcessAcquisitionAttribution.captureReferralCode(normalized)
         ProcessAcquisitionAttribution.captureAffiliateCode(normalized)
+        ProcessReferralTrialEligibility.unlock(code: normalized)
         saveProgress()
     }
 

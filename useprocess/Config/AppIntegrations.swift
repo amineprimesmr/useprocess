@@ -14,7 +14,7 @@ final class AppIntegrations {
     func refresh() {
         firebaseReady = AppConfiguration.firebaseConfigured
         authReady = firebaseReady && AuthUser.current != nil
-        // Analytics avant abonnements — le flag A/B tarifs dépend de PostHog.
+        // Analytics avant abonnements.
         ProcessAnalytics.configure()
         ProcessCrispSupport.configure()
         analyticsReady = ProcessAnalytics.isReady

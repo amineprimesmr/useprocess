@@ -2,10 +2,22 @@ import SwiftUI
 
 /// Profil — évolution du score debloat (scans visage), style Recap.
 struct ProfileDebloatScoreSection: View {
+    var isOnboardingPreview: Bool = false
+
     @Environment(\.appTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
     @Bindable private var scanStore = FaceScanHistoryStore.shared
+    @Bindable private var calibration = ProcessCalibrationMode.shared
 
     @State private var selectedRange: RangeKind = .week
+
+    private var isCalibrationLocked: Bool {
+        calibration.isLocked(forcePreview: isOnboardingPreview)
+    }
+
+    private var calibrationRemainingDays: Int {
+        calibration.displayedRemainingDays(forcePreview: isOnboardingPreview)
+    }
 
     private var calendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
@@ -55,11 +67,22 @@ struct ProfileDebloatScoreSection: View {
                 isDemo: usesDemoCurve
             )
             .frame(height: 236)
+            .processCalibrationLocked(
+                isCalibrationLocked,
+                remainingDays: calibrationRemainingDays,
+                surface: .progressChart,
+                cornerRadius: 18
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 18)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabel)
+        .onAppear { calibration.refresh() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            calibration.refresh()
+        }
     }
 
     private var heroBlock: some View {
@@ -87,7 +110,10 @@ struct ProfileDebloatScoreSection: View {
         let loss = Color(red: 0.95, green: 0.45, blue: 0.38)
 
         return Group {
-            if usesDemoCurve {
+            if isCalibrationLocked {
+                Text(ProcessCalibrationCopy.progressInsight)
+                    .foregroundStyle(theme.primaryText.opacity(0.92))
+            } else if usesDemoCurve {
                 Text(AppCopy.t(
                     "Scanne ton visage pour remplacer cette courbe d’exemple par ta vraie évolution.",
                     en: "Scan your face to replace this sample curve with your real evolution."
@@ -150,6 +176,9 @@ struct ProfileDebloatScoreSection: View {
                 .buttonStyle(.processPlain)
             }
         }
+        .disabled(isCalibrationLocked)
+        .opacity(isCalibrationLocked ? 0.45 : 1)
+        .allowsHitTesting(!isCalibrationLocked)
     }
 
     private var formattedScore: String {

@@ -5,10 +5,10 @@ enum SubscriptionConfiguration {
     /// Entitlement RevenueCat — accès premium app.
     static let entitlementID = "premium"
 
-    /// Offering RevenueCat par défaut (legacy).
+    /// Offering RevenueCat par défaut (mensuel 9,99 + annuel 34,99).
     static let defaultOfferingID = "Premium"
 
-    /// Offerings A/B tarifs.
+    /// Offerings A/B historiques (abonnés existants uniquement).
     static let offeringIDPricingA = "Premium_A"
     static let offeringIDPricingB = "Premium_B"
 
@@ -21,13 +21,24 @@ enum SubscriptionConfiguration {
     static let monthlyProductID = "com.useprocess.monthly"
     static let annualProductID = "com.useprocess.annual"
 
-    /// A/B pricing — variante A (control).
+    /// Catalogue actuel : 9,99 € / mois + 34,99 € / an.
     static let weekly899ProductID = "com.useprocess.weekly899"
     static let annual3499ProductID = "com.useprocess.annual3499"
-
-    /// A/B pricing — variante B (test).
     static let monthly999ProductID = "com.useprocess.monthly999"
     static let annual4999ProductID = "com.useprocess.annual4999"
+    /// Annuel 34,99 € **avec** intro 3 jours — uniquement si code parrainage validé.
+    static let annual3499TrialProductID = "com.useprocess.annual3499trial"
+
+    /// SKUs chargés sur le paywall (mensuel + annuel ± essai parrainage).
+    static var paywallCatalogProductIDs: [String] {
+        [monthly999ProductID, annual3499ProductID, annual3499TrialProductID]
+    }
+
+    /// Annuel à acheter : essai 3 j. seulement après un code validé.
+    @MainActor
+    static var annualProductIDForCurrentTrialState: String {
+        ProcessReferralTrialEligibility.isUnlocked ? annual3499TrialProductID : annual3499ProductID
+    }
 
     /// Tous les product IDs premium (entitlements / restore).
     static var allPremiumProductIDs: Set<String> {
@@ -36,6 +47,7 @@ enum SubscriptionConfiguration {
             annualProductID,
             weekly899ProductID,
             annual3499ProductID,
+            annual3499TrialProductID,
             monthly999ProductID,
             annual4999ProductID,
             lifetimeProductID
@@ -71,7 +83,7 @@ enum SubscriptionConfiguration {
     /// Quick action = lifetime 19 € uniquement (pas d’essai annuel rétention).
     static let retentionQuickActionTrialDays = 0
 
-    /// Fallback UI — essai annuel marché FR tant que StoreKit n’a pas répondu.
+    /// Durée de l’intro annuelle offerte avec un code (App Store Connect + StoreKit).
     static let frenchMarketAnnualTrialDays = 3
 
     static func retentionTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
@@ -79,22 +91,24 @@ enum SubscriptionConfiguration {
         return nil
     }
 
-    /// Essai gratuit annuel — storefront FR uniquement (Apple facture selon le compte App Store).
+    /// Essai 3 jours sur l’annuel **uniquement** si un code parrainage / créateur est validé.
+    @MainActor
     static func supportsFreeTrial(_ plan: SubscriptionBillingPlan) -> Bool {
-        guard SubscriptionMarketPolicy.allowsIntroductoryFreeTrial else { return false }
-        return plan == .annual
+        guard plan == .annual else { return false }
+        return ProcessReferralTrialEligibility.isUnlocked
     }
 
+    @MainActor
     static func configuredFallbackTrialDays(for plan: SubscriptionBillingPlan) -> Int? {
         guard supportsFreeTrial(plan) else { return nil }
-        return frenchMarketAnnualTrialDays
+        return ProcessReferralTrialEligibility.trialDays
     }
 
-    /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR) — legacy.
-    static let fallbackMonthlyPrice = "23€"
-    static let fallbackAnnualPrice = "49€"
-    static let fallbackAnnualMonthlyEquivalent = "4€"
-    static let fallbackMonthlyStrikethroughAnnualPrice = "276€"
+    /// Prix affichés en secours tant que StoreKit n'a pas répondu (zone EUR).
+    static let fallbackMonthlyPrice = "9,99€"
+    static let fallbackAnnualPrice = "34,99€"
+    static let fallbackAnnualMonthlyEquivalent = "2,92€"
+    static let fallbackMonthlyStrikethroughAnnualPrice = "120€"
     static let annualCompareAtPrice: String? = nil
 
     static func paywallStrikethroughAnnualTotal(

@@ -9,6 +9,59 @@ export const AFFILIATE_X_DM_URL = `https://x.com/messages/compose?screen_name=${
 export const COMMISSION_PERCENT = 40;
 export const HOLD_DAYS = 30;
 
+/** Cash view bonuses on top of lifetime commission — cumulative per video, capped. */
+export const VIEW_BONUS_TIERS = [
+  { amountUsd: 20, views: 40_000 },
+  { amountUsd: 30, views: 100_000 },
+  { amountUsd: 100, views: 500_000 },
+  { amountUsd: 150, views: 1_000_000 },
+];
+export const VIEW_BONUS_MAX_PER_VIDEO_USD = 300;
+export const VIEW_BONUS_ELIGIBILITY = {
+  minViews28d: 500_000,
+  minVideos: 5,
+  windowDays: 28,
+};
+
+export function formatViewCount(views) {
+  const n = Number(views) || 0;
+  if (n >= 1_000_000) {
+    const millions = n / 1_000_000;
+    return Number.isInteger(millions) ? `${millions}M` : `${millions.toFixed(1)}M`;
+  }
+  if (n >= 1_000) {
+    const thousands = n / 1_000;
+    return Number.isInteger(thousands) ? `${thousands}k` : `${Math.round(thousands)}k`;
+  }
+  return String(n);
+}
+
+export function viewBonusUsdForViews(views) {
+  const n = Number(views) || 0;
+  let total = 0;
+  for (const tier of VIEW_BONUS_TIERS) {
+    if (n >= tier.views) total += tier.amountUsd;
+  }
+  return Math.min(total, VIEW_BONUS_MAX_PER_VIDEO_USD);
+}
+
+export function viewBonusEligibilityLabel() {
+  const views = formatViewCount(VIEW_BONUS_ELIGIBILITY.minViews28d);
+  const days = VIEW_BONUS_ELIGIBILITY.windowDays;
+  const videos = VIEW_BONUS_ELIGIBILITY.minVideos;
+  return appCopy(
+    `${views}+ vues / ${days}j • ${videos}+ vidéos`,
+    `${views}+ views / ${days}d • ${videos}+ videos`
+  );
+}
+
+export function viewBonusCapLabel() {
+  return appCopy(
+    `$${VIEW_BONUS_MAX_PER_VIDEO_USD} max par vidéo`,
+    `$${VIEW_BONUS_MAX_PER_VIDEO_USD} max per video`
+  );
+}
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function isValidEmail(raw) {

@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env
+.env.local
+.DS_Store
+data/*.db
+data/*.db-*
+data/store.json
+*.tsbuildinfo
+.vercel
+.env*
+.agents/
+skills-lock.json

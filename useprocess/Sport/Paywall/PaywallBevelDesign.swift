@@ -336,11 +336,12 @@ struct PaywallBevelAutoScrollingFeatures: View {
 struct PaywallBevelPlanSegmentPicker: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var selection: SubscriptionBillingPlan
-    /// Plan court de la variante A/B (`.weekly` ou `.monthly`).
+    /// Plan court du catalogue (mensuel 9,99 €).
     let shortPlan: SubscriptionBillingPlan
     let annualComparePrice: String
     let annualPrice: String
     let shortPlanPrice: String
+    var annualOfferBadge: String? = nil
     var onSelectionChange: ((SubscriptionBillingPlan) -> Void)?
 
     @Namespace private var pillNamespace
@@ -362,6 +363,12 @@ struct PaywallBevelPlanSegmentPicker: View {
         .overlay {
             trackShape.strokeBorder(trackBorderColor, lineWidth: 1)
         }
+        .padding(.top, hasAnnualOfferBadge ? 12 : 0)
+    }
+
+    private var hasAnnualOfferBadge: Bool {
+        guard let annualOfferBadge, !annualOfferBadge.isEmpty else { return false }
+        return true
     }
 
     private var trackShape: RoundedRectangle {
@@ -400,19 +407,48 @@ struct PaywallBevelPlanSegmentPicker: View {
             .contentShape(RoundedRectangle(cornerRadius: pillCornerRadius, style: .continuous))
         }
         .buttonStyle(.processPlain)
+        .overlay(alignment: .top) {
+            if plan == .annual {
+                annualTopEdgeBadge
+            }
+        }
+        .accessibilityValue(plan == .annual ? (annualOfferBadge ?? "") : "")
+    }
+
+    @ViewBuilder
+    private var annualTopEdgeBadge: some View {
+        if let annualOfferBadge, !annualOfferBadge.isEmpty {
+            Text(annualOfferBadge)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(PaywallBevelTheme.badgeText(for: colorScheme))
+                .padding(.horizontal, 11)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule()
+                        .fill(PaywallBevelTheme.badgeFill(for: colorScheme))
+                )
+                .offset(y: -11)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder
     private func segmentContent(plan: SubscriptionBillingPlan, isSelected: Bool) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(plan.shortPickerTitle)
-                .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: isSelected ? 18 : 17))
-                .fontWeight(isSelected ? .bold : .semibold)
-                .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)
-
             if plan == .annual {
+                Text(plan.shortPickerTitle)
+                    .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: isSelected ? 18 : 17))
+                    .fontWeight(isSelected ? .bold : .semibold)
+                    .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)
+
                 annualPriceRow(isSelected: isSelected)
             } else {
+                Text(plan.shortPickerTitle)
+                    .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: isSelected ? 18 : 17))
+                    .fontWeight(isSelected ? .bold : .semibold)
+                    .foregroundStyle(isSelected ? selectedPrimaryText : unselectedText)
+
                 Text(shortPlanPrice)
                     .font(PaywallBevelTheme.paywallHeroSubtitleFont(size: 18))
                     .fontWeight(isSelected ? .bold : .semibold)

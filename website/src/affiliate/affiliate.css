@@ -172,6 +172,10 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   color: #059669;
 }
 
+.af-rewards-box .af-view-bonus {
+  margin-top: 12px;
+}
+
 /* ── Form fields ── */
 .af-field {
   display: grid;
@@ -732,6 +736,15 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   color: var(--af-text);
 }
 
+button.af-support-link {
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
 .af-payouts-mini {
   margin-top: auto;
   padding: 14px 10px;
@@ -924,6 +937,15 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   width: 18px;
   height: 18px;
   color: #059669;
+}
+
+.af-rewards-card .af-view-bonus,
+.af-view-bonus-card .af-view-bonus {
+  margin-top: 12px;
+}
+
+.af-view-bonus-card {
+  margin-bottom: 16px;
 }
 
 /* ── Stats grid ── */
@@ -1238,6 +1260,15 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
 .af-settings-item.is-active {
   background: var(--af-accent-soft);
   color: var(--af-accent);
+}
+
+.af-settings-item.af-settings-logout {
+  color: #b91c1c;
+  margin-top: 4px;
+}
+
+.af-settings-item.af-settings-logout:hover {
+  background: #fef2f2;
 }
 
 .af-setting-card {

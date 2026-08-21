@@ -1,97 +1,30 @@
-# Essai gratuit 3 jours — marché France (App Store Connect)
+# Essai 3 jours — uniquement avec code parrainage / créateur
 
-L’app active l’essai **uniquement** quand le **storefront App Store** est `FRA` (compte iTunes France).  
-La langue de l’app (FR/EN) ne change pas la facturation — seul le pays du compte App Store compte.
+L’essai n’est **plus** un droit marché France. Il se débloque seulement après un code validé (onboarding, paywall, ou lien `ref`/`code`).
 
-## Produits concernés
+Sans code : **aucun** essai, paiement immédiat (9,99 €/mois ou 34,99 €/an).
 
-Configurer l’intro offer sur **chaque produit annuel** actif :
+## Produits
 
-| Product ID | Offering RevenueCat |
-|---|---|
-| `com.useprocess.annual3499` | Premium_A |
-| `com.useprocess.annual4999` | Premium_B |
-| `com.useprocess.annual` | Premium (legacy) |
+| Product ID | Rôle | Intro 3 jours |
+|---|---|---|
+| `com.useprocess.monthly999` | Mensuel 9,99 € | **non** |
+| `com.useprocess.annual3499` | Annuel 34,99 € sans code | **non** (intro retirée) |
+| `com.useprocess.annual3499trial` | Annuel 34,99 € **avec code** | **oui**, 3 jours, 175 territoires (ASC `6803672506`, waiting for review) |
 
-**Ne pas** ajouter d’intro sur hebdo / mensuel — l’app n’expose l’essai que sur le plan **Annuel**.
+## App Store Connect
 
-## App Store Connect — étapes
-
-1. **App Store Connect** → Apps → Process → **Subscriptions** → groupe `21837790`
-2. Ouvrir le produit annuel (ex. `com.useprocess.annual3499`)
-3. **Subscription Prices** → vérifier que la France est bien tarifée
-4. **Introductory Offers** → **+** → type **Free Trial**
-5. Durée : **3 days**
-6. **Territories** : cocher **France** uniquement (décocher US, Canada, UK, Australie, etc.)
-7. Répéter pour les autres product IDs annuels ci-dessus
-8. **Save** puis attendre le statut **Ready to Submit** / sync StoreKit (souvent 15–60 min)
-
-## Territoires stricts (sans essai)
-
-Ne **pas** créer d’intro offer sur :
-
-- United States
-- United Kingdom
-- Canada
-- Australia
-- New Zealand
-- Ireland
-
-L’app force aussi un paywall strict sur ces storefronts (`SubscriptionMarketPolicy.strictNoTrialStorefrontCountryCodes`).
+Fait : intro 3 jours retirée de `annual3499` / `annual4999` / `annual`. SKU `annual3499trial` créé, tarifé, localisé FR/EN, soumis.
 
 ## RevenueCat
 
-**Aucune config dashboard requise** — RevenueCat expose les intro offers StoreKit par storefront.  
-Offerings `Premium`, `Premium_A`, `Premium_B` + entitlement `premium` restent inchangés.
+Fait : `annual3499trial` importé, entitlement `premium`, offering `Premium` = monthly999 + annual3499 + package `annual_trial`.
 
-Attributs client enrichis automatiquement par l’app :
+## Tests
 
-- `storefront_country`
-- `trial_market_allowed`
-
-### Vérification auto
-
-```bash
-python3 scripts/setup_french_trial_prod.py
-```
-
-Le script vérifie l’API RevenueCat (secret Firebase) et tente de créer les intro offers ASC via `asc` si une clé API ASC est configurée :
-
-```bash
-asc auth login --name Process --key-id KEY --issuer-id ISSUER --private-key /path/AuthKey.p8
-python3 scripts/setup_french_trial_prod.py
-```
-
-Clé API ASC : [Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api)
-
-## Tests sandbox
-
-| Compte sandbox | Storefront | Attendu |
-|---|---|---|
-| Compte **France** | FRA | Paywall « Démarrer mon essai gratuit » + sous-titre « Aucun paiement aujourd’hui… » |
-| Compte **US** | USA | Paywall strict — « Continuer, aucun engagement » — paiement immédiat |
-
-1. Créer 2 testeurs sandbox (FR + US) dans App Store Connect → Users and Access → Sandbox
-2. Sur l’iPhone : Réglages → App Store → Compte sandbox → se connecter avec le bon compte
-3. Désinstaller / réinstaller l’app si l’éligibilité intro semble figée (1 essai max par groupe d’abo / Apple ID)
-4. Vérifier dans PostHog : `paywall_viewed` avec `storefront_country` + `offer: trial` au tap CTA FR
-
-## Comportement app (résumé)
-
-```
-essai affiché = storefront FRA
-              ET produit annuel sélectionné
-              ET éligibilité intro StoreKit (pas déjà consommé)
-              ET intro offer ASC présente sur ce produit
-```
-
-US / anglophone : pas de copy essai, pas de logique trial — même si ASC était mal configuré.
-
-## Checklist go-live
-
-- [ ] Intro 3 jours sur les 3 product IDs annuels, **France only**
-- [ ] Aucune intro sur weekly / monthly
-- [ ] Build app avec ce commit déployé
-- [ ] Test sandbox FR → essai OK
-- [ ] Test sandbox US → strict OK
-- [ ] RevenueCat dashboard : achat trial visible en `period_type: trial`
+| Parcours | Attendu |
+|---|---|
+| Onboarding **sans** code | CTA « Continuer, aucun engagement. » — pas de 3 jours |
+| Code créateur / ami validé | Bandeau + « Démarrer mon essai gratuit » — achat `annual3499trial` |
+| Paywall → Code de parrainage | Même déblocage après résolution du code |
+| Compte qui a déjà consommé l’intro du groupe | Pas d’essai (éligibilité Apple) |

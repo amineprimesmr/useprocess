@@ -14,6 +14,20 @@ Cash commissions for **approved clippers** (TikTok / UGC). Separate from the use
 | Clawback | `REFUND` → pending/payable commissions reversed |
 | Lifetime SKU | **Excluded** (`com.useprocess.lifetime`) |
 
+## View bonuses (on top of 40%)
+
+Cash primes per Process TikTok, **in addition** to lifetime commission. Tiers stack on the same video, then cap.
+
+| Views | Bonus |
+|-------|-------|
+| 40k | **+$20** |
+| 100k | **+$30** |
+| 500k | **+$100** |
+| 1M | **+$150** |
+| **Cap** | **$300 max per video** |
+
+Eligibility to unlock the bonus track: **500k+ views / 28 days** and **5+ Process videos**. Paid via the same Stripe Connect ledger after review (not auto-accrued from RevenueCat).
+
 ## One-command deploy
 
 ```bash

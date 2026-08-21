@@ -60,7 +60,7 @@ struct ProcessProfileHomeView: View {
 
                 identityBlock
 
-                ProfileDebloatScoreSection()
+                ProfileDebloatScoreSection(isOnboardingPreview: isOnboardingPreview)
             }
             .padding(.horizontal, AccountDetailsTheme.horizontalPadding)
             .padding(.top, isOnboardingPreview ? 16 : 8)

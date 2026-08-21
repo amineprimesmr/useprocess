@@ -167,6 +167,7 @@ enum ProcessReferralProgramTerms {
     private static let annualProductIDs: Set<String> = [
         SubscriptionConfiguration.annualProductID,
         SubscriptionConfiguration.annual3499ProductID,
+        SubscriptionConfiguration.annual3499TrialProductID,
         SubscriptionConfiguration.annual4999ProductID
     ]
 
@@ -205,13 +206,13 @@ enum ProcessReferralProgramTerms {
     static var subtitle: String {
         if referrerUsesAnnualReward {
             return AppCopy.t(
-                "Quand un ami s’abonne avec ton lien, tu gagnes un an de Process en plus.",
-                en: "When a friend subscribes with your link, you earn an extra year of Process."
+                "Ton ami a 3 jours d’essai sur l’annuel. S’il s’abonne, tu gagnes un an de Process.",
+                en: "Your friend gets 3 free days on yearly. If they subscribe, you earn a year of Process."
             )
         }
         return AppCopy.t(
-            "Quand un ami s’abonne avec ton lien, tu gagnes un mois de Process en plus.",
-            en: "When a friend subscribes with your link, you earn an extra month of Process."
+            "Ton ami a 3 jours d’essai sur l’annuel. S’il s’abonne, tu gagnes un mois de Process.",
+            en: "Your friend gets 3 free days on yearly. If they subscribe, you earn a month of Process."
         )
     }
 

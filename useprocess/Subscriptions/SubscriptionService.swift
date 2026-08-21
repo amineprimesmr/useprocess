@@ -19,7 +19,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     @Published private(set) var annualStoreProduct: Product?
     @Published private(set) var isInFreeTrial = false
     @Published private(set) var trialExpirationDate: Date?
-    @Published private(set) var isIntroOfferEligible = true
+    @Published private(set) var isIntroOfferEligible = false
     @Published private(set) var isRetentionTrialOfferActive = false
     @Published private(set) var lifetimeDisplayPrice: String?
 
@@ -36,6 +36,7 @@ final class SubscriptionService: NSObject, ObservableObject {
     private var weeklyStoreProductRC: StoreProduct?
     private var monthlyStoreProductRC: StoreProduct?
     private var annualStoreProductRC: StoreProduct?
+    private var referralTrialCatalogObserver: NSObjectProtocol?
 
     var pricingVariant: PaywallPricingExperiment.Variant {
         PaywallPricingExperiment.shared.activeVariant
@@ -133,6 +134,15 @@ final class SubscriptionService: NSObject, ObservableObject {
 
     private override init() {
         super.init()
+        referralTrialCatalogObserver = NotificationCenter.default.addObserver(
+            forName: .processReferralAnnualTrialDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                await self?.loadSubscriptions()
+            }
+        }
         #if DEBUG
         applyPersistedDeveloperPremiumAccessIfNeeded()
         #endif
@@ -239,7 +249,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         #endif
     }
 
-    /// Prix de l’abonnement actuel — sinon le plan court de la variante A/B.
+    /// Prix de l’abonnement actuel — sinon le mensuel 9,99 €.
     var referralRewardDisplayPrice: String {
         if subscriptionStatus.isActive, let id = activeProductIdentifier {
             return displayPrice(forProductID: id)
@@ -257,13 +267,14 @@ final class SubscriptionService: NSObject, ObservableObject {
     private func fallbackPrice(forProductID id: String) -> String {
         switch id {
         case SubscriptionConfiguration.weekly899ProductID:
-            return PaywallPricingExperiment.Variant.control.fallbackShortPrice
+            return PaywallPricingExperiment.Variant.shipped.fallbackShortPrice
         case SubscriptionConfiguration.monthly999ProductID, SubscriptionConfiguration.monthlyProductID:
-            return PaywallPricingExperiment.Variant.test.fallbackShortPrice
-        case SubscriptionConfiguration.annual3499ProductID:
-            return PaywallPricingExperiment.Variant.control.fallbackAnnualPrice
+            return PaywallPricingExperiment.Variant.shipped.fallbackShortPrice
+        case SubscriptionConfiguration.annual3499ProductID,
+             SubscriptionConfiguration.annual3499TrialProductID:
+            return PaywallPricingExperiment.Variant.shipped.fallbackAnnualPrice
         case SubscriptionConfiguration.annual4999ProductID, SubscriptionConfiguration.annualProductID:
-            return PaywallPricingExperiment.Variant.test.fallbackAnnualPrice
+            return PaywallPricingExperiment.Variant.shipped.fallbackAnnualPrice
         case SubscriptionConfiguration.lifetimeProductID:
             return winbackLifetimeDisplayPrice
         default:
@@ -314,11 +325,11 @@ final class SubscriptionService: NSObject, ObservableObject {
 
         await SubscriptionMarketPolicy.refreshStorefrontCountryCode()
 
-        // Prefer async flag load when called from paywall; sync resolve is a no-op if sticky.
+        // Catalogue unique mensuel + annuel (essai parrainage géré à part).
         PaywallPricingExperiment.shared.resolve()
         let variant = pricingVariant
         let shortPlan = variant.shortPlan
-        let ids = variant.allProductIDs
+        let ids = SubscriptionConfiguration.paywallCatalogProductIDs
 
         // Reset packages hors variante active.
         weeklyPackage = nil
@@ -384,6 +395,14 @@ final class SubscriptionService: NSObject, ObservableObject {
                 packageID: SubscriptionConfiguration.annualPackageID,
                 fallbackType: .annual
             )
+            if annualPackage == nil, ProcessReferralTrialEligibility.isUnlocked {
+                annualPackage = resolvePackage(
+                    in: offering,
+                    productID: SubscriptionConfiguration.annual3499ProductID,
+                    packageID: SubscriptionConfiguration.annualPackageID,
+                    fallbackType: .annual
+                )
+            }
             applyPackageDisplay(annualPackage, plan: .annual)
             await refreshIntroOfferEligibility()
 
@@ -674,8 +693,8 @@ final class SubscriptionService: NSObject, ObservableObject {
 
         let groupID = SubscriptionConfiguration.subscriptionGroupID
         let storeEligible = await Product.SubscriptionInfo.isEligibleForIntroOffer(for: groupID)
-        let marketAllows = SubscriptionMarketPolicy.allowsIntroductoryFreeTrial
-        isIntroOfferEligible = storeEligible && marketAllows
+        let referralUnlocksTrial = ProcessReferralTrialEligibility.isUnlocked
+        isIntroOfferEligible = storeEligible && referralUnlocksTrial
         isRetentionTrialOfferActive = false
 
         if let weeklyDisplay {
@@ -690,8 +709,10 @@ final class SubscriptionService: NSObject, ObservableObject {
             if eligible, annualDisplay.freeTrialDays == nil,
                let fallbackDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual) {
                 annualDisplay = annualDisplay.updatingTrial(days: fallbackDays, eligible: true)
+            } else if eligible {
+                annualDisplay = annualDisplay.updatingIntroEligibility(true)
             } else {
-                annualDisplay = annualDisplay.updatingIntroEligibility(eligible)
+                annualDisplay = annualDisplay.updatingTrial(days: nil, eligible: false)
             }
             self.annualDisplay = annualDisplay
         }
@@ -705,15 +726,16 @@ final class SubscriptionService: NSObject, ObservableObject {
         if eligible, annualDisplay.freeTrialDays == nil,
            let fallbackDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual) {
             annualDisplay = annualDisplay.updatingTrial(days: fallbackDays, eligible: true)
+        } else if eligible {
+            annualDisplay = annualDisplay.updatingIntroEligibility(true)
         } else {
-            annualDisplay = annualDisplay.updatingIntroEligibility(eligible)
+            annualDisplay = annualDisplay.updatingTrial(days: nil, eligible: false)
         }
         self.annualDisplay = annualDisplay
     }
 
     private func scheduleTrialReminderIfNeeded(from info: CustomerInfo) async {
-        guard SubscriptionMarketPolicy.allowsIntroductoryFreeTrial,
-              let entitlement = info.entitlements[SubscriptionConfiguration.entitlementID],
+        guard let entitlement = info.entitlements[SubscriptionConfiguration.entitlementID],
               entitlement.isActive,
               entitlement.periodType == .trial,
               let expiration = entitlement.expirationDate else { return }
@@ -762,7 +784,7 @@ final class SubscriptionService: NSObject, ObservableObject {
         }
 
         let annualTrialDays = SubscriptionConfiguration.configuredFallbackTrialDays(for: .annual)
-        let annualIntroEligible = SubscriptionMarketPolicy.allowsIntroductoryFreeTrial && annualTrialDays != nil
+        let annualIntroEligible = ProcessReferralTrialEligibility.isUnlocked && annualTrialDays != nil
         annualDisplay = .fallback(
             for: .annual,
             freeTrialDays: annualTrialDays,
@@ -773,48 +795,56 @@ final class SubscriptionService: NSObject, ObservableObject {
     }
 
     private func applyDirectStoreProducts(_ storeProducts: [StoreProduct]) {
-        let variant = pricingVariant
+        let monthlyID = SubscriptionConfiguration.monthly999ProductID
+        let paidAnnualID = SubscriptionConfiguration.annual3499ProductID
+        let trialAnnualID = SubscriptionConfiguration.annual3499TrialProductID
+        let preferredAnnualID = SubscriptionConfiguration.annualProductIDForCurrentTrialState
+
         for product in storeProducts {
             let id = product.productIdentifier
-            if id == variant.shortProductID {
-                switch variant.shortPlan {
-                case .weekly:
-                    weeklyStoreProductRC = product
-                    weeklyDisplay = makeDisplay(from: product, plan: .weekly)
-                    weeklyStoreProduct = product.sk2Product
-                case .monthly:
-                    monthlyStoreProductRC = product
-                    monthlyDisplay = makeDisplay(from: product, plan: .monthly)
-                    monthlyStoreProduct = product.sk2Product
-                case .annual:
-                    break
-                }
-            } else if id == variant.annualProductID {
-                annualStoreProductRC = product
-                annualDisplay = makeDisplay(from: product, plan: .annual)
-                annualStoreProduct = product.sk2Product
+            if id == monthlyID {
+                monthlyStoreProductRC = product
+                monthlyDisplay = makeDisplay(from: product, plan: .monthly)
+                monthlyStoreProduct = product.sk2Product
+                weeklyDisplay = nil
+                weeklyStoreProduct = nil
+                weeklyStoreProductRC = nil
             }
+        }
+
+        let preferredAnnual = storeProducts.first { $0.productIdentifier == preferredAnnualID }
+            ?? storeProducts.first { $0.productIdentifier == paidAnnualID }
+            ?? storeProducts.first { $0.productIdentifier == trialAnnualID }
+
+        if let annual = preferredAnnual {
+            annualStoreProductRC = annual
+            annualDisplay = makeDisplay(from: annual, plan: .annual)
+            annualStoreProduct = annual.sk2Product
         }
     }
 
     private func applyDirectStoreKitProducts(_ products: [Product]) {
-        let variant = pricingVariant
+        let monthlyID = SubscriptionConfiguration.monthly999ProductID
+        let paidAnnualID = SubscriptionConfiguration.annual3499ProductID
+        let trialAnnualID = SubscriptionConfiguration.annual3499TrialProductID
+        let preferredAnnualID = SubscriptionConfiguration.annualProductIDForCurrentTrialState
+
         for product in products {
-            if product.id == variant.shortProductID {
-                switch variant.shortPlan {
-                case .weekly:
-                    weeklyStoreProduct = product
-                    weeklyDisplay = makeDisplay(from: product, plan: .weekly)
-                case .monthly:
-                    monthlyStoreProduct = product
-                    monthlyDisplay = makeDisplay(from: product, plan: .monthly)
-                case .annual:
-                    break
-                }
-            } else if product.id == variant.annualProductID {
-                annualStoreProduct = product
-                annualDisplay = makeDisplay(from: product, plan: .annual)
+            if product.id == monthlyID {
+                monthlyStoreProduct = product
+                monthlyDisplay = makeDisplay(from: product, plan: .monthly)
+                weeklyStoreProduct = nil
+                weeklyDisplay = nil
             }
+        }
+
+        let preferredAnnual = products.first { $0.id == preferredAnnualID }
+            ?? products.first { $0.id == paidAnnualID }
+            ?? products.first { $0.id == trialAnnualID }
+
+        if let annual = preferredAnnual {
+            annualStoreProduct = annual
+            annualDisplay = makeDisplay(from: annual, plan: .annual)
         }
     }
 

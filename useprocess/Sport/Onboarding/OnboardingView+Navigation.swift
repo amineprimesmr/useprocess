@@ -297,7 +297,12 @@ func skipCreatorCodeStep() {
 
     HapticManager.shared.impact(.light)
     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    viewModel.clearCreatorCodeStep()
+    if viewModel.creatorCodeIsVerified {
+        viewModel.commitCreatorCodeDraft()
+    } else {
+        viewModel.creatorCodeDraft = ""
+        viewModel.creatorCodeIsVerified = false
+    }
     performOnboardingStepAdvance()
 }
 

@@ -176,6 +176,42 @@
           "referenceName" : "Premium Yearly 49.99",
           "subscriptionGroupID" : "21837790",
           "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "34.99",
+          "familyShareable" : false,
+          "groupNumber" : 7,
+          "internalID" : "6738291007",
+          "introductoryOffer" : {
+            "displayPrice" : "0",
+            "internalID" : "6738291099",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Accès premium annuel à Process — 3 jours d’essai avec code parrainage",
+              "displayName" : "Process Premium — Annuel essai",
+              "locale" : "fr_FR"
+            },
+            {
+              "description" : "Yearly Process premium — 3-day trial with a referral code",
+              "displayName" : "Process Premium — Yearly trial",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.useprocess.annual3499trial",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly 34.99 Trial",
+          "subscriptionGroupID" : "21837790",
+          "type" : "RecurringSubscription"
         }
       ]
     }
@@ -184,10 +220,11 @@
     {
       "displayName" : "Premium",
       "identifier" : "Premium",
-      "referenceName" : "Premium Legacy",
+      "referenceName" : "Premium Current",
       "subscriptionProducts" : [
-        { "productID" : "com.useprocess.monthly" },
-        { "productID" : "com.useprocess.annual" }
+        { "productID" : "com.useprocess.monthly999" },
+        { "productID" : "com.useprocess.annual3499" },
+        { "productID" : "com.useprocess.annual3499trial" }
       ]
     },
     {

@@ -7,9 +7,19 @@ struct PlanTrainingDaySection: View {
     let day: OriginProgramDay
     var selectedDate: Date = Date()
     var isEditable: Bool = true
+    var isOnboardingPreview: Bool = false
 
     @Namespace private var trainingZoomNamespace
     @State private var selectedProtocolItem: PlanProtocolCarouselItem?
+    @Bindable private var calibration = ProcessCalibrationMode.shared
+
+    private var isCalibrationLocked: Bool {
+        calibration.isLocked(forcePreview: isOnboardingPreview)
+    }
+
+    private var calibrationRemainingDays: Int {
+        calibration.displayedRemainingDays(forcePreview: isOnboardingPreview)
+    }
 
     private var carouselItems: [PlanProtocolCarouselItem] {
         PlanProtocolCarouselBuilder.cardioAndCircuitItems(
@@ -22,14 +32,24 @@ struct PlanTrainingDaySection: View {
         VStack(alignment: .leading, spacing: PlanHomeSectionDesign.headerContentSpacing) {
             PlanProtocolSectionHeader(
                 title: PlanHomeSectionKind.training.title,
-                trailing: nil
+                trailing: isCalibrationLocked
+                    ? ProcessCalibrationCopy.inDaysCaption(days: calibrationRemainingDays)
+                    : nil
             )
 
             trainingCarousel(highlightsItemStrip: false)
+                .frame(minHeight: isCalibrationLocked ? 176 : 0)
+                .processCalibrationLocked(
+                    isCalibrationLocked,
+                    remainingDays: calibrationRemainingDays,
+                    surface: .cardioCircuit,
+                    cornerRadius: 22
+                )
         }
         .sheet(item: $selectedProtocolItem) { item in
             PlanProtocolItemDetailSheet(item: item)
         }
+        .onAppear { calibration.refresh() }
     }
 
     private func zoomID(for item: PlanProtocolCarouselItem) -> ProcessZoomTransitionID {

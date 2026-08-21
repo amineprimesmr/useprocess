@@ -64,11 +64,11 @@ final class ProcessReferralStore {
 
     var shareMessage: String {
         """
-        \(AppCopy.t("Télécharge Process gratuitement avec mon lien :", en: "Download Process for free with my link:"))
+        \(AppCopy.t("Télécharge Process avec mon lien — 3 jours d’essai offerts sur l’annuel :", en: "Download Process with my link — 3 free days on yearly:"))
         \(referralLink)
 
         \(AppCopy.t("Mon code parrainage : \(displayReferralCode)", en: "My referral code: \(displayReferralCode)"))
-        \(AppCopy.t("Je gagne \(ProcessReferralProgramTerms.perFriendRewardLabel) quand tu t’abonnes.", en: "I earn \(ProcessReferralProgramTerms.perFriendRewardLabel) when you subscribe."))
+        \(AppCopy.t("Tu as 3 jours offerts. Je gagne \(ProcessReferralProgramTerms.perFriendRewardLabel) quand tu t’abonnes.", en: "You get 3 free days. I earn \(ProcessReferralProgramTerms.perFriendRewardLabel) when you subscribe."))
         """
     }
 

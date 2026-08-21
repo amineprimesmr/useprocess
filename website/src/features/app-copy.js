@@ -175,7 +175,9 @@ export function applySiteDocumentLanguage(lang = getSiteLanguage()) {
   const meta = SITE_META[normalized] || SITE_META.en;
   document.documentElement.lang = meta.lang;
 
-  document.title = meta.title;
+  if (!document.documentElement.classList.contains("page-affiliate")) {
+    document.title = meta.title;
+  }
 
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.setAttribute("content", meta.description);

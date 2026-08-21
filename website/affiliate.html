@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr" class="page-affiliate">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Process — Portail créateur</title>
+    <meta name="theme-color" content="#ffffff" />
+    <meta
+      name="description"
+      content="Programme créateur Process — 40 % de commission à vie."
+    />
+    <link rel="icon" type="image/png" href="/assets/icone.png?v=20260808" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #fff;
+        color: #111;
+      }
+      #page-affiliate,
+      #affiliate-root {
+        display: block;
+        min-height: 100vh;
+      }
+    </style>
+    <script>
+      window.addEventListener("error", function (event) {
+        var root = document.getElementById("affiliate-root");
+        if (!root || root.dataset.mounted === "1") return;
+        root.dataset.mounted = "err";
+        root.style.cssText = "padding:32px 20px;font:15px/1.5 ui-sans-serif,system-ui;color:#b91c1c;white-space:pre-wrap";
+        root.textContent = (event.message || "Erreur") + "\n" + (event.filename || "") + ":" + (event.lineno || "");
+      });
+      window.addEventListener("unhandledrejection", function (event) {
+        var root = document.getElementById("affiliate-root");
+        if (!root || root.dataset.mounted === "1") return;
+        root.dataset.mounted = "err";
+        var reason = event.reason;
+        root.style.cssText = "padding:32px 20px;font:15px/1.5 ui-sans-serif,system-ui;color:#b91c1c;white-space:pre-wrap";
+        root.textContent = String(reason && (reason.stack || reason.message || reason));
+      });
+    </script>
+  </head>
+  <body>
+    <div id="page-affiliate">
+      <div id="affiliate-root"></div>
+    </div>
+    <script type="module" src="/src/affiliate/mount.jsx"></script>
+  </body>
+</html>

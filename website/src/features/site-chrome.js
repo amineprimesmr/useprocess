@@ -25,12 +25,12 @@ export function getAppPageCopy() {
     creatorInvitesTitleNamed: (name) =>
       appCopy(`${name} t'invite sur Process`, `${name} invites you to Process`),
     invitedSubtitle: appCopy(
-      "Télécharge l'app et commence ton protocole debloat.",
-      "Get the app and start your debloat protocol."
+      "3 jours d’essai offerts sur l’annuel. Télécharge l’app et entre le code.",
+      "3 free days on yearly. Get the app and enter the code."
     ),
     creatorSubtitle: appCopy(
-      "Télécharge Process et commence ton protocole avec ce code.",
-      "Download Process and start your protocol with this code."
+      "3 jours d’essai offerts sur l’annuel avec ce code créateur.",
+      "3 free days on yearly with this creator code."
     ),
     tapBanner: appCopy("Tapote la bannière pour commencer", "Tap the banner to start"),
     stepsHeading: appCopy("Comment commencer", "How to get started"),
@@ -39,12 +39,12 @@ export function getAppPageCopy() {
     stepCodePrefix: appCopy("Ton code parrainage :", "Your referral code is"),
     stepCreatorCodePrefix: appCopy("Ton code créateur :", "Your creator code is"),
     stepBenefitReferral: appCopy(
-      "Profite de Process avec le code de ton ami",
-      "Enjoy Process with your friend's code"
+      "3 jours d’essai offerts sur l’annuel avec le code de ton ami",
+      "3 free days on yearly with your friend's code"
     ),
     stepBenefitCreator: appCopy(
-      "Commence ton protocole debloat avec ce créateur",
-      "Start your debloat protocol with this creator"
+      "3 jours d’essai offerts sur l’annuel avec ce code créateur",
+      "3 free days on yearly with this creator code"
     ),
     stepDownload: appCopy("Télécharge l'app", "Download the app"),
     iosEyebrow: appCopy("Télécharger sur", "Download on"),

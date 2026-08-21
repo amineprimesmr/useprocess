@@ -32,6 +32,7 @@ import {
   IconInfo,
   IconLink,
   IconLock,
+  IconLogout,
   IconMail,
   IconOverview,
   IconSettings,
@@ -75,9 +76,12 @@ import {
   readDashboardCache,
   writeDashboardCache,
 } from "./affiliate-dashboard-cache.js";
+import { AffiliateLanding, AffiliateTopNav } from "./AffiliateLanding.jsx";
+import { ViewBonusBoard, ViewBonusNote } from "./ViewBonusBoard.jsx";
 import "./affiliate.css";
 
 const PRIVACY_URL = "https://useprocess.xyz/privacy";
+const LANDING_HASHES = new Set(["", "program", "programme", "comment", "primes", "offre", "faq"]);
 
 function AffiliateXSupportFab() {
   const label = appCopy("Contacter leks sur X", "Message leks on X");
@@ -211,6 +215,8 @@ function RewardsBox() {
           )}
         </span>
       </div>
+      <ViewBonusBoard variant="light" compact />
+      <ViewBonusNote />
     </div>
   );
 }
@@ -228,47 +234,8 @@ function PoweredFooter() {
   );
 }
 
-function ProgramLanding({ onApply }) {
-  return (
-    <div className="af-app">
-      <div className="af-program">
-        <div className="af-program-left">
-          <a className="af-back-link" href="https://useprocess.xyz/app">
-            <IconChevronLeft />
-            {appCopy("Programmes", "Programs")}
-          </a>
-          <div className="af-program-brand">
-            <ProcessAppIcon size={40} />
-            <div>
-              <h2>Process</h2>
-              <a className="af-program-site" href="https://useprocess.xyz/app">
-                <IconLink />
-                useprocess.xyz
-              </a>
-            </div>
-          </div>
-          <RewardsBox />
-          <button type="button" className="af-btn af-btn-secondary af-program-apply" onClick={onApply}>
-            {appCopy("Postuler", "Apply")}
-          </button>
-        </div>
-        <div className="af-program-right">
-          <h1>
-            {appCopy(
-              "Rejoins le programme créateur Process",
-              "Join the Process creator program"
-            )}
-          </h1>
-          <p>
-            {appCopy(
-              "Partage Process avec ton audience : pour chaque abonnement généré via ton lien, tu touches une part du revenu sur tous les plans qu'ils achètent.",
-              "Share Process with your audience — for each subscription generated through your referral, you'll earn a share of the revenue on any plans they purchase."
-            )}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+function ProgramLanding({ onApply, onLogin }) {
+  return <AffiliateLanding onApply={onApply} onLogin={onLogin} />;
 }
 
 function SocialChannelForm({ displayName, compact = false }) {
@@ -522,6 +489,7 @@ function ApplyFlow({
   onSwitchToLogin,
   onSwitchToSignup,
   onLogin,
+  onGoLogin,
   onSubmit,
   email,
   setEmail,
@@ -666,12 +634,13 @@ function ApplyFlow({
     (user || password.length >= 6);
 
   if (applyStep === 2) {
-    return (
-      <div className="af-app af-grid-bg">
-        <div className="af-flow">
-          <div className="af-flow-top">
-            <ProcessAppIcon size={36} />
-            <span className="af-step-pill">{appCopy("Étape 2 sur 2", "Step 2 of 2")}</span>
+  return (
+    <div className="af-app af-grid-bg af-ld-apply">
+      <AffiliateTopNav compact onApply={() => {}} onLogin={onGoLogin || onSwitchToLogin} />
+      <div className="af-flow">
+        <div className="af-flow-top">
+          <ProcessAppIcon size={36} />
+          <span className="af-step-pill">{appCopy("Étape 2 sur 2", "Step 2 of 2")}</span>
             <h1>{appCopy("Candidature envoyée", "Application submitted")}</h1>
             <p className="af-flow-lead">
               {appCopy(
@@ -697,7 +666,8 @@ function ApplyFlow({
   }
 
   return (
-    <div className="af-app af-grid-bg">
+    <div className="af-app af-grid-bg af-ld-apply">
+      <AffiliateTopNav compact onApply={() => {}} onLogin={onGoLogin || onSwitchToLogin} />
       <div className="af-flow">
         <div className="af-flow-top">
           <ProcessAppIcon size={36} />
@@ -959,6 +929,9 @@ function RewardsLinkCard({ primaryCode, linkUrl, isPending }) {
           `${COMMISSION_PERCENT}% per sale for the customer's lifetime`
         )}
       </div>
+
+      <ViewBonusBoard variant="light" compact />
+      <ViewBonusNote />
     </div>
   );
 }
@@ -1263,6 +1236,17 @@ function EarningsPage({ dashboard }) {
 
   return (
     <>
+      <div className="af-card af-card-pad af-view-bonus-card">
+        <div className="af-card-head">
+          <h2>{appCopy("Primes vues", "View bonuses")}</h2>
+          <span className="af-card-muted">
+            {appCopy(`En plus des ${COMMISSION_PERCENT} % à vie`, `On top of ${COMMISSION_PERCENT}% for life`)}
+          </span>
+        </div>
+        <ViewBonusBoard variant="light" />
+        <ViewBonusNote />
+      </div>
+
       <div className="af-toolbar">
         <button type="button" className="af-chip-btn">
           <IconFilter />
@@ -1537,6 +1521,15 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
           <IconShield />
           {appCopy("Sécurité", "Security")}
         </button>
+        <p className="af-settings-group">{appCopy("Session", "Session")}</p>
+        <button
+          type="button"
+          className="af-settings-item af-settings-logout"
+          onClick={onSignOut}
+        >
+          <IconLogout />
+          {appCopy("Se déconnecter", "Log out")}
+        </button>
       </nav>
 
       <div>
@@ -1651,6 +1644,24 @@ function SettingsPage({ user, dashboard, onConnectStripe, onManageStripe, stripe
               <div className="af-setting-footer">
                 <span>{appCopy("Utilisé pour le support.", "This may be used to identify your account in support.")}</span>
                 <CopyButton text={dashboard?.affiliateId || user?.uid || ""} />
+              </div>
+            </div>
+
+            <div className="af-card af-setting-card">
+              <div className="af-card-pad">
+                <h3>{appCopy("Se déconnecter", "Log out")}</h3>
+                <p className="desc">
+                  {appCopy(
+                    "Ferme ta session sur ce navigateur. Tes liens et tes gains restent inchangés.",
+                    "Sign out of this browser. Your links and earnings stay unchanged."
+                  )}
+                </p>
+              </div>
+              <div className="af-setting-footer">
+                <span>{appCopy("Tu pourras te reconnecter à tout moment.", "You can sign back in anytime.")}</span>
+                <button type="button" className="af-btn af-btn-sm af-btn-secondary" onClick={onSignOut}>
+                  {appCopy("Se déconnecter", "Log out")}
+                </button>
               </div>
             </div>
           </>
@@ -1833,6 +1844,10 @@ function DashboardShell({
             <IconDoc />
             {appCopy("Conditions", "Terms")}
           </a>
+          <button type="button" className="af-support-link af-sidebar-logout" onClick={onSignOut}>
+            <IconLogout />
+            {appCopy("Se déconnecter", "Log out")}
+          </button>
         </div>
       </aside>
 
@@ -1988,10 +2003,10 @@ export function AffiliateApp() {
 
   useEffect(() => {
     if (bootstrapping) return;
-    if (!user && !["program", "apply", "auth"].includes(route)) {
+    if (!user && !LANDING_HASHES.has(route) && !["apply", "auth"].includes(route)) {
       go("program");
     }
-    if (user && dashboard && route === "program") {
+    if (user && dashboard && LANDING_HASHES.has(route)) {
       go("overview");
     }
   }, [bootstrapping, user, dashboard, route, go]);
@@ -2005,7 +2020,7 @@ export function AffiliateApp() {
       setEmail(applyPrefill.email);
     }
 
-    if (route !== "apply" && (route === "program" || route === "")) {
+    if (route !== "apply" && LANDING_HASHES.has(route)) {
       go("apply");
     }
   }, [bootstrapping, user, dashboard, route, go, applyPrefill, email]);
@@ -2290,6 +2305,7 @@ export function AffiliateApp() {
       onSwitchToLogin={switchApplyToLogin}
       onSwitchToSignup={switchApplyToSignup}
       onLogin={handleApplyLogin}
+      onGoLogin={switchApplyToLogin}
       onSubmit={handleApply}
       email={email}
       setEmail={setEmail}
@@ -2302,36 +2318,49 @@ export function AffiliateApp() {
     />
   );
 
-  if (!isFirebaseConfigured()) {
+  const landing = (
+    <AffiliatePageChrome>
+      <ProgramLanding
+        onApply={() => go("apply")}
+        onLogin={() => {
+          switchApplyToLogin();
+          go("apply");
+        }}
+      />
+      {error ? <div className="af-toast error">{error}</div> : null}
+    </AffiliatePageChrome>
+  );
+
+  if (!user && !wantsApply) {
+    return landing;
+  }
+
+  if (!isFirebaseConfigured() && wantsApply) {
     return (
-      <div className="af-app af-flow">
-        <h1>{appCopy("Portail créateur", "Creator portal")}</h1>
-        <p className="af-flow-lead">
-          {appCopy(
-            "Configure VITE_FIREBASE_API_KEY et VITE_FIREBASE_APP_ID.",
-            "Set VITE_FIREBASE_API_KEY and VITE_FIREBASE_APP_ID."
-          )}
-        </p>
-      </div>
+      <AffiliatePageChrome>
+        <div className="af-app af-grid-bg af-ld-apply">
+          <AffiliateTopNav compact onApply={() => go("apply")} onLogin={() => {}} />
+          <div className="af-flow">
+            <h1>{appCopy("Portail créateur", "Creator portal")}</h1>
+            <p className="af-flow-lead">
+              {appCopy(
+                "Configure VITE_FIREBASE_API_KEY et VITE_FIREBASE_APP_ID.",
+                "Set VITE_FIREBASE_API_KEY and VITE_FIREBASE_APP_ID."
+              )}
+            </p>
+          </div>
+        </div>
+      </AffiliatePageChrome>
     );
   }
 
-  if (bootstrapping) {
+  if (bootstrapping && wantsApply) {
     return (
       <AffiliatePageChrome>
         <div className="af-app af-loading">
           <div className="af-spinner" />
           <span>{appCopy("Chargement…", "Loading…")}</span>
         </div>
-      </AffiliatePageChrome>
-    );
-  }
-
-  if (!user && !wantsApply && (route === "program" || route === "")) {
-    return (
-      <AffiliatePageChrome>
-        <ProgramLanding onApply={() => go("apply")} />
-        {error ? <div className="af-toast error">{error}</div> : null}
       </AffiliatePageChrome>
     );
   }
@@ -2346,12 +2375,7 @@ export function AffiliateApp() {
   }
 
   if (!user) {
-    return (
-      <AffiliatePageChrome>
-        <ProgramLanding onApply={() => go("apply")} />
-        {error ? <div className="af-toast error">{error}</div> : null}
-      </AffiliatePageChrome>
-    );
+    return landing;
   }
 
   if (!dashboard && applyStep !== 2) {
