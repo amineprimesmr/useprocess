@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { redisClient } from "./redis";
-import { MIN_BID_USD, centsToDollars } from "./format";
+import { MAX_BID_USD, MIN_BID_USD, centsToDollars } from "./format";
 import { onlineCount } from "./presence";
 import type { BoardPayload, Listing, ListingKind } from "./types";
 
@@ -392,11 +392,14 @@ export async function resolveClaimAmount(input: {
   if (!Number.isFinite(targetEuros) || targetEuros < MIN_BID_USD) {
     throw new Error("MIN_BID");
   }
+  if (targetEuros > MAX_BID_USD) {
+    throw new Error("MAX_BID");
+  }
 
   const targetBidCents = targetEuros * 100;
   if (existing && targetBidCents <= currentBidCents) {
     throw new Error("RAISE_ONLY");
   }
 
-  return { chargeCents: targetBidCents - currentBidCents, targetBidCents, currentBidCents };
+  return { chargeCents: targetBidCents, targetBidCents, currentBidCents };
 }

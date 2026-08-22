@@ -40,7 +40,7 @@ export function HeroSpotlight({ listing, locale, claimAmount, onClaim }: Props) 
         </button>
       </article>
       <a href="#board" className="mt-4 block text-center text-[12px] text-[var(--muted)] hover:text-[var(--ink)]">
-        {locale === "fr" ? "Voir le classement ↓" : "See leaderboard ↓"}
+        {copy.seeLeaderboard}
       </a>
     </div>
   );

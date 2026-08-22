@@ -1,3 +1,5 @@
+import type { Locale } from "./copy";
+import { localeItunesCountry } from "./locale";
 import { displayNameFromUrl, type NormalizedTarget } from "./keys";
 import type { ListingMeta } from "./types";
 
@@ -29,8 +31,8 @@ async function fetchText(url: string): Promise<string> {
   return res.text();
 }
 
-async function fromApple(appleId: string): Promise<Partial<ListingMeta>> {
-  const json = await fetchText(`https://itunes.apple.com/lookup?id=${appleId}&country=fr`);
+async function fromApple(appleId: string, country: string): Promise<Partial<ListingMeta>> {
+  const json = await fetchText(`https://itunes.apple.com/lookup?id=${appleId}&country=${country}`);
   if (!json) return {};
   try {
     const data = JSON.parse(json) as {
@@ -54,11 +56,11 @@ async function fromApple(appleId: string): Promise<Partial<ListingMeta>> {
   }
 }
 
-export async function resolveMeta(target: NormalizedTarget): Promise<ListingMeta> {
+export async function resolveMeta(target: NormalizedTarget, locale: Locale = "fr"): Promise<ListingMeta> {
   const base = fallbackMeta(target);
   if (!target.appleId) return base;
   try {
-    const apple = await fromApple(target.appleId);
+    const apple = await fromApple(target.appleId, localeItunesCountry(locale));
     return {
       ...base,
       ...apple,

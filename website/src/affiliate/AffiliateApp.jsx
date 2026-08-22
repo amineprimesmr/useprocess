@@ -25,7 +25,6 @@ import {
   IconCoin,
   IconCopy,
   IconCursor,
-  IconDoc,
   IconDollar,
   IconExternal,
   IconFilter,
@@ -33,7 +32,6 @@ import {
   IconLink,
   IconLock,
   IconLogout,
-  IconMail,
   IconOverview,
   IconSettings,
   IconShield,
@@ -1736,7 +1734,6 @@ function DashboardShell({
     { id: "links", label: appCopy("Liens", "Links"), icon: IconLink },
     { id: "earnings", label: appCopy("Gains", "Earnings"), icon: IconCoin },
     { id: "payouts", label: appCopy("Paiements", "Payouts"), icon: IconWallet },
-    { id: "settings", label: appCopy("Paramètres", "Settings"), icon: IconSettings },
   ];
 
   function renderPage() {
@@ -1800,13 +1797,6 @@ function DashboardShell({
     <div className="af-app af-shell">
       <aside className="af-sidebar">
         <div className="af-sidebar-logo">process</div>
-        <div className="af-sidebar-user">
-          <ProcessAppIcon size={24} />
-          <div className="af-sidebar-user-text">
-            <strong>{dashboard?.displayName || "Process"}</strong>
-            <span>{user?.email || ""}</span>
-          </div>
-        </div>
 
         <nav className="af-nav" aria-label={appCopy("Navigation", "Navigation")}>
           {navItems.map(({ id, label, icon: Icon }) => (
@@ -1835,20 +1825,19 @@ function DashboardShell({
           busy={stripeBusy}
         />
 
-        <div className="af-sidebar-footer">
-          <a className="af-support-link" href={`mailto:${SUPPORT_EMAIL}`}>
-            <IconMail />
-            {appCopy("Support", "Support")}
-          </a>
-          <a className="af-support-link" href={TERMS_URL}>
-            <IconDoc />
-            {appCopy("Conditions", "Terms")}
-          </a>
-          <button type="button" className="af-support-link af-sidebar-logout" onClick={onSignOut}>
-            <IconLogout />
-            {appCopy("Se déconnecter", "Log out")}
-          </button>
-        </div>
+        <button
+          type="button"
+          className={`af-sidebar-user ${route === "settings" ? "is-active" : ""}`}
+          onClick={() => go("settings")}
+          aria-label={appCopy("Paramètres", "Settings")}
+        >
+          <ProcessAppIcon size={24} />
+          <div className="af-sidebar-user-text">
+            <strong>{dashboard?.displayName || "Process"}</strong>
+            <span>{user?.email || ""}</span>
+          </div>
+          <IconSettings className="af-sidebar-user-gear" />
+        </button>
       </aside>
 
       <main className="af-main">

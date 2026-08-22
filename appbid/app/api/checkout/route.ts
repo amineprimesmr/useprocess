@@ -33,16 +33,21 @@ export async function POST(request: Request) {
     });
 
     const existing = await findListingByKey(target.key);
-    const meta = await resolveMeta(target);
+    const locale = body.locale === "en" ? "en" : "fr";
+    const meta = await resolveMeta(target, locale);
     const title = meta.title || String(existing?.title ?? target.url);
     const description = meta.description || String(existing?.description ?? "");
     const icon = meta.icon || String(existing?.icon ?? "");
-    const locale = body.locale === "en" ? "en" : "fr";
     const origin = siteUrl();
     const chargeEuros = centsToDollars(quote.chargeCents);
     const targetEuros = centsToDollars(quote.targetBidCents);
 
     const stripe = getStripe();
+    const bidLine =
+      locale === "en"
+        ? `Public leaderboard bid — $${targetEuros} (rank is the bid)`
+        : `Enchère classement public — ${targetEuros} $ (le rang, c'est l'enchère)`;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       managed_payments: { enabled: false },
@@ -62,8 +67,8 @@ export async function POST(request: Request) {
         after_submit: {
           message:
             locale === "en"
-              ? "You can raise later by entering the same App Store link and paying only the difference."
-              : "Tu pourras monter plus tard en saisissant le meme lien App Store, et en payant uniquement la difference.",
+              ? "You can raise later with the same App Store link — pay the full new bid amount."
+              : "Tu pourras monter plus tard avec le même lien App Store — paie le montant d'enchère en entier.",
         },
       },
       metadata: {
@@ -92,14 +97,7 @@ export async function POST(request: Request) {
             unit_amount: quote.chargeCents,
             product_data: {
               name: locale === "en" ? `appmog rank · ${title}` : `Rang appmog · ${title}`,
-              description:
-                quote.currentBidCents > 0
-                  ? locale === "en"
-                    ? `Raise to $${targetEuros} (you pay the $${chargeEuros} difference)`
-                    : `Monter a ${targetEuros} $ (tu paies la difference de ${chargeEuros} $)`
-                  : locale === "en"
-                    ? `Public leaderboard bid — $${targetEuros}`
-                    : `Enchere classement public — ${targetEuros} $`,
+              description: bidLine,
               images: icon.startsWith("https://") ? [icon] : undefined,
             },
           },
@@ -120,6 +118,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const code = error instanceof Error ? error.message : "ERROR";
     if (code === "MIN_BID") return NextResponse.json({ error: "MIN_BID" }, { status: 400 });
+    if (code === "MAX_BID") return NextResponse.json({ error: "MAX_BID" }, { status: 400 });
     if (code === "RAISE_ONLY") return NextResponse.json({ error: "RAISE_ONLY" }, { status: 400 });
     console.error("checkout failed", error instanceof Error ? error.message : error);
     return NextResponse.json({ error: "CHECKOUT_FAILED" }, { status: 500 });

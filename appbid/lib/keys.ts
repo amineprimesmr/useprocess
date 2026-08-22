@@ -19,6 +19,17 @@ export function normalizeTarget(raw: string): NormalizedTarget | null {
   const input = trimInput(raw);
   if (!input) return null;
 
+  const bareId = input.match(/^(?:id)?(\d{9,12})$/i);
+  if (bareId) {
+    const appleId = bareId[1];
+    return {
+      key: `appstore:${appleId}`,
+      url: `https://apps.apple.com/app/id${appleId}`,
+      kind: "appstore",
+      appleId,
+    };
+  }
+
   let urlText = input;
   if (!/^https?:\/\//i.test(urlText)) urlText = `https://${urlText}`;
 
@@ -33,10 +44,11 @@ export function normalizeTarget(raw: string): NormalizedTarget | null {
   const host = stripWww(url.hostname);
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
-  const apple = host.endsWith("apps.apple.com") || host === "itunes.apple.com";
+  const apple =
+    host.endsWith("apps.apple.com") || host === "itunes.apple.com" || host === "appstore.com";
   if (!apple) return null;
 
-  const idMatch = path.match(/id(\d+)/i) || url.search.match(/id=(\d+)/i);
+  const idMatch = path.match(/id(\d{9,12})/i) || url.search.match(/[?&]id=(\d{9,12})/i);
   if (!idMatch) return null;
   const appleId = idMatch[1];
   return {

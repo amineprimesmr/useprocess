@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { AppStoreUrlField, type UrlFieldError } from "@/components/AppStoreUrlField";
 import { AnimatedAmount } from "@/components/AnimatedAmount";
 import { AppAvatar } from "@/components/AppAvatar";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -9,36 +9,72 @@ import { SiteNav } from "@/components/SiteNav";
 import { StatsPill } from "@/components/StatsPill";
 import { siteCopy, type Locale } from "@/lib/copy";
 import {
-  MIN_BID_USD,
+  MAX_BID_USD,
   centsToDollars,
   formatCompactCount,
   formatMoney,
-  prefersEnglishFromNavigator,
+  parseBidInput,
   relativeTime,
 } from "@/lib/format";
 import type { BoardPayload, Listing } from "@/lib/types";
+import { normalizeTarget } from "@/lib/keys";
+import { createCheckoutSession, redirectToCheckout } from "@/lib/checkout-client";
 import { useLiveBoard } from "@/hooks/useLiveBoard";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useLocale } from "@/hooks/useLocale";
+import { quoteBid } from "@/lib/bid-quote";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-export function HomeClient({ initial }: { initial: BoardPayload }) {
-  const [locale, setLocale] = useState<Locale>("fr");
+export function HomeClient({ initial, locale: initialLocale }: { initial: BoardPayload; locale: Locale }) {
+  const locale = useLocale(initialLocale);
   const board = useLiveBoard(initial);
   const [url, setUrl] = useState("");
   const [amount, setAmount] = useState(initial.claimOneEuros);
   const [amountTouched, setAmountTouched] = useState(false);
   const [hoverRank, setHoverRank] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [urlError, setUrlError] = useState<UrlFieldError | null>(null);
   const [error, setError] = useState("");
   const [heroReady, setHeroReady] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const listingFlash = useRef<Map<string, number>>(new Map());
   const [flashIds, setFlashIds] = useState<string[]>([]);
 
   const copy = siteCopy(locale);
   const leader = board.listings[0] ?? null;
 
+  const urlTarget = useMemo(() => normalizeTarget(url.trim()), [url]);
+  const matchedListing = useMemo(
+    () =>
+      urlTarget ? board.listings.find((listing) => listing.listingKey === urlTarget.key) ?? null : null,
+    [board.listings, urlTarget],
+  );
+  const bidQuote = useMemo(
+    () =>
+      quoteBid({
+        listings: board.listings,
+        listingKey: urlTarget?.key ?? null,
+        targetEuros: amount,
+        minTargetEuros: board.claimOneEuros,
+      }),
+    [board.listings, board.claimOneEuros, amount, urlTarget],
+  );
+
+  const heroTitle = bidQuote.isExisting ? copy.raiseToRank(bidQuote.projectedRank) : copy.claimFor;
+  const heroHint = bidQuote.isExisting ? (
+    <>
+      {copy.alreadyOnBoardAt(formatMoney(bidQuote.currentEuros, locale))}{" "}
+      {bidQuote.canRaise
+        ? copy.checkoutFullBid(formatMoney(bidQuote.targetEuros, locale))
+        : copy.raiseOnly}
+    </>
+  ) : (
+    copy.heroHint
+  );
+  const submitLabel = copy.outbid;
+  const submitDisabled = busy || (bidQuote.isExisting && !bidQuote.canRaise);
+
   useEffect(() => {
-    setLocale(prefersEnglishFromNavigator() ? "en" : "fr");
     setHeroReady(true);
   }, []);
 
@@ -60,25 +96,61 @@ export function HomeClient({ initial }: { initial: BoardPayload }) {
     if (!amountTouched) setAmount(board.claimOneEuros);
   }, [board.claimOneEuros, amountTouched]);
 
-  const startCheckout = (opts: { amount: number; targetRank?: number }) => {
-    const value = url.trim();
+  const nudgeUrlInput = (kind: UrlFieldError) => {
+    setUrlError(kind);
+    setError("");
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 280);
+  };
+
+  const startCheckout = async (opts: { amount: number; targetRank?: number; listingUrl?: string }) => {
+    const value = (opts.listingUrl ?? url).trim();
     if (!value) {
-      setError(copy.needUrl);
-      inputRef.current?.focus();
-      inputRef.current?.classList.add("input-shake");
-      window.setTimeout(() => inputRef.current?.classList.remove("input-shake"), 420);
+      nudgeUrlInput("need");
       return;
     }
+    if (!normalizeTarget(value)) {
+      nudgeUrlInput("invalid");
+      return;
+    }
+
+    setUrlError(null);
+    let chargeAmount = opts.amount;
+    if (opts.targetRank && opts.targetRank >= 1) {
+      const occupant = board.listings[opts.targetRank - 1];
+      if (occupant) chargeAmount = centsToDollars(occupant.bidCents) + 1;
+    } else if (!opts.listingUrl) {
+      chargeAmount = Math.max(opts.amount, board.claimOneEuros);
+    }
+
     setBusy(true);
     setError("");
-    const q = new URLSearchParams({ url: value, amount: String(opts.amount), locale });
-    if (opts.targetRank) q.set("rank", String(opts.targetRank));
-    window.location.href = `/checkout?${q.toString()}`;
+
+    const result = await createCheckoutSession({
+      url: value,
+      amount: chargeAmount,
+      targetRank: opts.targetRank,
+      locale,
+    });
+
+    if (!result.ok) {
+      setBusy(false);
+      const map: Record<string, string> = {
+        INVALID: copy.invalidUrl,
+        MIN_BID: copy.minBid,
+        MAX_BID: copy.maxBid,
+        RAISE_ONLY: copy.raiseOnly,
+      };
+      setError(map[result.error] || copy.checkoutError);
+      return;
+    }
+
+    redirectToCheckout(result.stripeUrl);
   };
 
   return (
     <div className={`min-h-screen pb-16 ${heroReady ? "hero-ready" : ""}`}>
-      <SiteNav locale={locale} />
+      <SiteNav locale={locale} leader={leader} />
 
       <main className="mx-auto w-full max-w-[760px] px-5">
         <StatsPill
@@ -90,11 +162,14 @@ export function HomeClient({ initial }: { initial: BoardPayload }) {
         />
 
         <h1 className="hero-title mt-8 text-center text-[34px] font-extrabold leading-[1.08] tracking-[-0.04em] sm:text-[50px]">
-          {copy.claimFor}{" "}
+          {heroTitle}{" "}
           <AmountStepper
             amount={amount}
-            min={MIN_BID_USD}
+            min={board.claimOneEuros}
             locale={locale}
+            amountLabel={copy.amountLabel}
+            editLabel={copy.editAmount}
+            increaseLabel={copy.increaseLabel}
             onChange={(next) => {
               setAmountTouched(true);
               setAmount(next);
@@ -102,34 +177,38 @@ export function HomeClient({ initial }: { initial: BoardPayload }) {
           />
         </h1>
 
-        <p className="hero-hint mx-auto mt-4 max-w-[480px] text-center text-[15px] leading-relaxed text-[var(--muted)]">{copy.heroHint}</p>
+        <p className={`hero-hint mx-auto mt-4 max-w-[480px] text-center text-[15px] leading-relaxed text-[var(--muted)] ${bidQuote.isExisting ? "hero-hint-raise" : ""}`}>{heroHint}</p>
 
         <form
-          className="hero-form mx-auto mt-7 flex max-w-[560px] flex-col gap-3 sm:flex-row sm:items-center"
+          ref={formRef}
+          className="hero-form mx-auto mt-7 flex max-w-[560px] flex-col gap-3 sm:flex-row sm:items-start"
           onSubmit={(e) => { e.preventDefault(); startCheckout({ amount }); }}
         >
-          <label className="flex min-h-[56px] flex-1 items-center gap-3 rounded-full border border-[var(--line)] bg-[var(--card)] px-5 shadow-[var(--shadow)] focus-within:border-[rgba(0,0,0,0.22)]">
-            <AppStoreInputIcon />
-            <input
-              ref={inputRef}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder={copy.placeholder}
-              className="w-full bg-transparent text-[15px] outline-none placeholder:text-[var(--muted)]"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </label>
-          <button type="submit" disabled={busy} className="cta-outbid min-h-[56px] rounded-full px-8 text-[16px] font-semibold active:scale-[0.98] disabled:opacity-60">
-            {copy.outbid}
+          <AppStoreUrlField
+            locale={locale}
+            value={url}
+            onChange={(next) => {
+              setUrl(next);
+              if (next.trim()) setUrlError(null);
+            }}
+            error={urlError}
+            inputRef={inputRef}
+            disabled={busy}
+            matchedListing={matchedListing}
+          />
+          <button
+            type="submit"
+            disabled={submitDisabled}
+            className="cta-outbid min-h-[56px] shrink-0 rounded-full px-8 text-[16px] font-semibold active:scale-[0.98] disabled:opacity-60 sm:mt-0"
+          >
+            {submitLabel}
           </button>
         </form>
         <p className="hero-sub mt-3 text-center text-[13px] text-[var(--muted)]">{copy.alreadyOn}</p>
-        {error ? <p className="mt-2 text-center text-[13px] text-[var(--ink)]">{error}</p> : null}
+        {error ? <p className="checkout-error mt-2 text-center text-[13px] text-[var(--ink)]">{error}</p> : null}
 
         {leader ? (
-          <HeroSpotlight listing={leader} locale={locale} claimAmount={amount} onClaim={() => startCheckout({ amount, targetRank: 1 })} />
+          <HeroSpotlight listing={leader} locale={locale} claimAmount={amount} onClaim={() => startCheckout({ amount, targetRank: 1, listingUrl: leader.url })} />
         ) : null}
       </main>
 
@@ -137,7 +216,7 @@ export function HomeClient({ initial }: { initial: BoardPayload }) {
         {board.listings.length > 0 ? (
           <p className="board-live-label mb-4 flex items-center justify-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
             <span className="live-dot-bright h-2 w-2 rounded-full" />
-            {locale === "fr" ? "Classement live" : "Live leaderboard"}
+            {copy.liveLeaderboard}
           </p>
         ) : null}
         {board.listings.length === 0 ? (
@@ -159,7 +238,13 @@ export function HomeClient({ initial }: { initial: BoardPayload }) {
                 flash={flashIds.includes(listing.id)}
                 hovered={hoverRank === listing.rank}
                 onHover={setHoverRank}
-                onClaim={() => startCheckout({ amount: centsToDollars(listing.bidCents) + 1, targetRank: listing.rank })}
+                onClaim={() =>
+                  startCheckout({
+                    amount: centsToDollars(listing.bidCents) + 1,
+                    targetRank: listing.rank,
+                    listingUrl: listing.url,
+                  })
+                }
               />
             </div>
           ))
@@ -187,17 +272,26 @@ function AmountStepper({
   amount,
   min,
   locale,
+  amountLabel,
+  editLabel,
+  increaseLabel,
   onChange,
 }: {
   amount: number;
   min: number;
   locale: Locale;
+  amountLabel: string;
+  editLabel: string;
+  increaseLabel: string;
   onChange: (value: number) => void;
 }) {
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const amountRef = useRef(amount);
   amountRef.current = amount;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(amount));
 
   const clearHold = () => {
     if (holdTimer.current) {
@@ -212,38 +306,85 @@ function AmountStepper({
 
   useEffect(() => clearHold, []);
 
+  useEffect(() => {
+    if (!editing) setDraft(String(amount));
+  }, [amount, editing]);
+
+  useEffect(() => {
+    if (!editing) return;
+    const node = inputRef.current;
+    if (!node) return;
+    node.focus();
+    node.select();
+  }, [editing]);
+
+  const commitDraft = () => {
+    onChange(parseBidInput(draft, min, MAX_BID_USD));
+    setEditing(false);
+  };
+
   const step = (delta: number) => {
-    onChange(Math.max(min, amountRef.current + delta));
+    onChange(Math.min(MAX_BID_USD, Math.max(min, amountRef.current + delta)));
   };
 
   const startHold = (delta: number) => {
-    step(delta);
+    if (editing) {
+      const next = parseBidInput(draft, min, MAX_BID_USD);
+      onChange(Math.min(MAX_BID_USD, Math.max(min, next + delta)));
+      setEditing(false);
+    } else {
+      step(delta);
+    }
     holdTimer.current = setTimeout(() => {
       holdInterval.current = setInterval(() => step(delta), 90);
     }, 320);
   };
 
   return (
-    <span className="amount-stepper mt-2 inline-flex items-center justify-center gap-2.5 sm:mt-0" role="group" aria-label={locale === "fr" ? "Montant" : "Amount"}>
-      <StepperButton
-        label={locale === "fr" ? "Diminuer" : "Decrease"}
-        disabled={amount <= min}
-        onPress={() => startHold(-1)}
-        onRelease={clearHold}
-      >
-        <MinusIcon />
-      </StepperButton>
-      <span className="amount-stepper-display">
-        <AnimatedAmount
-          value={amount}
-          locale={locale}
-          className="text-[34px] font-extrabold text-[var(--ink)] sm:text-[44px]"
-          duration={360}
-        />
+    <span className="amount-stepper mt-2 inline-flex items-center justify-center gap-2.5 sm:mt-0" role="group" aria-label={amountLabel}>
+      <span className={`amount-stepper-display ${editing ? "amount-stepper-display-editing" : ""}`}>
+        {editing ? (
+          <>
+            {locale === "en" ? <span className="amount-affix">$</span> : null}
+            <input
+              ref={inputRef}
+              className="amount-stepper-input"
+              value={draft}
+              inputMode="decimal"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label={amountLabel}
+              size={Math.max(2, draft.length)}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commitDraft}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+                if (e.key === "Escape") {
+                  setDraft(String(amountRef.current));
+                  setEditing(false);
+                }
+              }}
+            />
+            {locale === "fr" ? <span className="amount-affix">$</span> : null}
+          </>
+        ) : (
+          <button type="button" className="amount-stepper-edit" aria-label={editLabel} onClick={() => setEditing(true)}>
+            <AnimatedAmount
+              value={amount}
+              locale={locale}
+              className="text-[34px] font-extrabold text-[var(--ink)] sm:text-[44px]"
+              duration={360}
+            />
+          </button>
+        )}
       </span>
       <StepperButton
-        label={locale === "fr" ? "Augmenter" : "Increase"}
-        disabled={false}
+        label={increaseLabel}
+        disabled={amount >= MAX_BID_USD}
         onPress={() => startHold(1)}
         onRelease={clearHold}
       >
@@ -287,32 +428,11 @@ function StepperButton({
   );
 }
 
-function MinusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
 function PlusIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M12 5v14M5 12h14" />
     </svg>
-  );
-}
-
-function AppStoreInputIcon() {
-  return (
-    <Image
-      src="/appstore-badge.png"
-      alt=""
-      width={24}
-      height={24}
-      className="shrink-0 rounded-[6px]"
-      priority
-    />
   );
 }
 
@@ -367,7 +487,7 @@ function RankCard({
         <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold" style={{ background: listing.rank <= 3 ? "var(--accent-mid)" : "rgba(0,0,0,0.06)", color: listing.rank <= 3 ? "var(--ink)" : "var(--muted)" }}>
           #{listing.rank}
         </span>
-        <AppAvatar title={listing.title} icon={listing.icon} listingKey={listing.listingKey} size={72} />
+        <AppAvatar title={listing.title} icon={listing.icon} listingKey={listing.listingKey} size={72} mogged={listing.rank !== 1} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <a href={`/go/${listing.id}`} className="truncate text-[18px] font-bold hover:opacity-70">{listing.title}</a>

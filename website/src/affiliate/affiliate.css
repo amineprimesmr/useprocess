@@ -572,10 +572,24 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px 12px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid var(--af-border);
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  border: none;
+  border-radius: var(--af-radius);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   flex-shrink: 0;
+}
+
+.af-sidebar-user:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.af-sidebar-user.is-active {
+  background: var(--af-accent-soft);
 }
 
 .af-sidebar-user-text {
@@ -583,6 +597,7 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
 .af-sidebar-user-text strong {
@@ -600,6 +615,18 @@ html.page-affiliate #affiliate-root:has(.af-shell) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.af-sidebar-user-gear {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--af-muted);
+}
+
+.af-sidebar-user.is-active .af-sidebar-user-gear {
+  color: var(--af-accent);
 }
 
 .af-nav {
