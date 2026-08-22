@@ -9,6 +9,93 @@ import "./studio.css";
 
 const TERMINAL = new Set(["PUBLISH_COMPLETE", "SEND_TO_USER_INBOX", "FAILED"]);
 
+function isTikTokReviewDemo() {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("tiktok_review") === "1";
+}
+
+function reviewDemoUser() {
+  return {
+    username: "process.debloat.app",
+    display_name: "Process Studio",
+    follower_count: 128400,
+    likes_count: 2400000,
+    video_count: 86,
+    following_count: 42,
+    bio_description: "Facial water retention / glow-up education",
+    avatar_url: "/assets/icone.png",
+  };
+}
+
+function reviewDemoCreator() {
+  return {
+    creator_username: "process.debloat.app",
+    creator_nickname: "Process Studio",
+    privacy_level_options: [
+      "PUBLIC_TO_EVERYONE",
+      "MUTUAL_FOLLOW_FRIENDS",
+      "FOLLOWER_OF_CREATOR",
+      "SELF_ONLY",
+    ],
+    comment_disabled: false,
+    duet_disabled: false,
+    stitch_disabled: false,
+  };
+}
+
+function reviewDemoVideos() {
+  return [
+    {
+      id: "demo-1",
+      title: "Glow-up protocol",
+      cover_image_url: "/tiktok-media/carousels/2026-08-12_01_glowup-marlon/slide_01.jpg",
+      view_count: 188000,
+      like_count: 14200,
+      comment_count: 310,
+      share_count: 890,
+    },
+    {
+      id: "demo-2",
+      title: "Foods that bloat",
+      cover_image_url: "/tiktok-media/carousels/2026-08-11_01_guide-debloat-mix/slide_01.jpg",
+      view_count: 107000,
+      like_count: 9100,
+      comment_count: 220,
+      share_count: 540,
+    },
+    {
+      id: "demo-3",
+      title: "Debloat guide",
+      cover_image_url: "/tiktok-media/carousels/2026-08-12_01_glowup-bradpitt/slide_01.jpg",
+      view_count: 178000,
+      like_count: 12100,
+      comment_count: 280,
+      share_count: 760,
+    },
+    {
+      id: "demo-4",
+      title: "Water retention POV",
+      cover_image_url: "/tiktok-media/carousels/2026-08-12_01_glowup-marlon/slide_02.jpg",
+      view_count: 98000,
+      like_count: 7400,
+      comment_count: 190,
+      share_count: 410,
+    },
+  ];
+}
+
+function reviewDemoTotals(videos) {
+  return videos.reduce(
+    (acc, v) => ({
+      views: acc.views + (v.view_count || 0),
+      likes: acc.likes + (v.like_count || 0),
+      comments: acc.comments + (v.comment_count || 0),
+      shares: acc.shares + (v.share_count || 0),
+    }),
+    { views: 0, likes: 0, comments: 0, shares: 0 }
+  );
+}
+
 function privacyLabel(level) {
   const map = {
     PUBLIC_TO_EVERYONE: appCopy("Tout le monde", "Everyone"),
@@ -111,6 +198,21 @@ export function StudioApp() {
           setStatusText(String(e.message || e));
           setStatusKind("err");
         }
+      }
+
+      if (isTikTokReviewDemo()) {
+        if (cancelled) return;
+        const videos = reviewDemoVideos();
+        setSandbox(true);
+        setCreator(reviewDemoCreator());
+        setUser(reviewDemoUser());
+        setAccounts([{ open_id: "review-demo", username: "process.debloat.app", active: true }]);
+        setVideos(videos);
+        setVideoTotals(reviewDemoTotals(videos));
+        setPrivacy("PUBLIC_TO_EVERYONE");
+        setMusicConsent(true);
+        if (!cancelled) setLoading(false);
+        return;
       }
 
       try {
@@ -253,6 +355,21 @@ export function StudioApp() {
 
   async function onPublish() {
     if (!canPublish) return;
+    if (isTikTokReviewDemo()) {
+      setBusy(true);
+      setStatusKind("warn");
+      setStatusText(appCopy("Publication en cours…", "Publishing…"));
+      await new Promise((r) => setTimeout(r, 800));
+      setStatusKind("ok");
+      setStatusText(
+        appCopy(
+          "Statut : PUBLISH_COMPLETE — carrousel envoyé via video.publish / video.upload (démo review).",
+          "Status: PUBLISH_COMPLETE — carousel sent via video.publish / video.upload (review demo)."
+        )
+      );
+      setBusy(false);
+      return;
+    }
     setBusy(true);
     setStatusKind("warn");
     setStatusText(appCopy("Publication en cours…", "Publishing…"));
@@ -328,6 +445,15 @@ export function StudioApp() {
         {banner ? (
           <p className={`ps-status ${statusKind === "err" ? "err" : "ok"}`} role="status">
             {banner}
+          </p>
+        ) : null}
+
+        {isTikTokReviewDemo() ? (
+          <p className="ps-status ok" role="status">
+            {appCopy(
+              "Démo review TikTok (sandbox / mockup du vrai /studio). Login Kit + Content Posting API — scopes : user.info.basic, user.info.profile, user.info.stats, video.list, video.upload, video.publish.",
+              "TikTok review demo (sandbox / mockup of live /studio). Login Kit + Content Posting API — scopes: user.info.basic, user.info.profile, user.info.stats, video.list, video.upload, video.publish."
+            )}
           </p>
         ) : null}
 
@@ -432,7 +558,10 @@ export function StudioApp() {
 
         {creator || user ? (
           <section className="ps-panel">
-            <h3>{appCopy("1b. Analytics (posts récents)", "1b. Analytics (recent posts)")}</h3>
+            <h3>
+              {appCopy("1b. Analytics (posts récents)", "1b. Analytics (recent posts)")}
+              {isTikTokReviewDemo() ? " · video.list / user.info.stats" : ""}
+            </h3>
             {videos.length ? (
               <>
                 {videoTotals ? (
@@ -471,7 +600,10 @@ export function StudioApp() {
         ) : null}
 
         <section className="ps-panel">
-          <h3>{appCopy("2. Choisir un carousel", "2. Choose a carousel")}</h3>
+          <h3>
+            {appCopy("2. Choisir un carousel", "2. Choose a carousel")}
+            {isTikTokReviewDemo() ? " · video.upload" : ""}
+          </h3>
           <div className="ps-packs">
             {carousels.map((pack) => {
               const cover = `${baseUrl}/${pack.id}/${pack.slides?.[0] || "slide_01.jpg"}`;
@@ -695,7 +827,10 @@ export function StudioApp() {
         </section>
 
         <section className="ps-panel">
-          <h3>{appCopy("4. Publier", "4. Publish")}</h3>
+          <h3>
+            {appCopy("4. Publier", "4. Publish")}
+            {isTikTokReviewDemo() ? " · video.publish" : ""}
+          </h3>
           <button
             type="button"
             className="ps-btn ps-btn-primary"
