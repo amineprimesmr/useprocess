@@ -5,7 +5,11 @@ import {
   affiliateHttpStatus,
   createAffiliateWithCode,
   db,
+  ensureAffiliateProfile,
+  ensureEmailPasswordSignInEnabled,
   getAffiliateForUid,
+  pickPrimaryAffiliateCode,
+  readOwnedProcessReferralCode,
   linkAffiliateAuthUser,
   normalizeAffiliateCode,
   provisionAffiliateAuthUser,
@@ -24,6 +28,52 @@ import { createAffiliateStripeTransfer } from "./affiliateStripe";
 
 const affiliateAdminSecret = defineSecret("AFFILIATE_ADMIN_SECRET");
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+
+function readAffiliateOnboarding(raw: unknown) {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  return {
+    firstName: String(row.firstName ?? "").slice(0, 80),
+    postedTiktok: String(row.postedTiktok ?? "").slice(0, 12),
+    tiktokHandle: String(row.tiktokHandle ?? "").slice(0, 240),
+    tiktokHandles: Array.isArray(row.tiktokHandles)
+      ? row.tiktokHandles.map((value) => String(value ?? "").slice(0, 80)).filter(Boolean).slice(0, 8)
+      : [],
+    hoursPerDay: String(row.hoursPerDay ?? "").slice(0, 40),
+    toolBudget: String(row.toolBudget ?? "").slice(0, 40),
+    experience: String(row.experience ?? "").slice(0, 40),
+    goal: String(row.goal ?? "").slice(0, 40),
+  };
+}
+
+export const affiliatePreparePasswordless = onRequest(
+  {
+    invoker: "public",
+    cors: true,
+    timeoutSeconds: 20,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      await ensureEmailPasswordSignInEnabled();
+      res.status(200).json({ ok: true });
+    } catch (error: any) {
+      const message = error?.message ?? "Unknown error";
+      console.error("[affiliatePreparePasswordless]", message);
+      res.status(500).json({ error: message });
+    }
+  }
+);
 
 export const affiliateResolveCode = onRequest(
   {
@@ -144,44 +194,68 @@ export const affiliateApply = onRequest(
       );
       const displayName = String(req.body?.displayName ?? "").trim();
       const email = String(req.body?.email ?? "").trim();
+      const onboarding = readAffiliateOnboarding(req.body?.onboarding);
       if (!displayName) {
         res.status(400).json({ error: "INVALID_TEXT" });
         return;
       }
 
-      const affiliateId = uid;
-      const code =
-        requestedCode ||
-        normalizeAffiliateCode(displayName.replace(/[^A-Za-z0-9]/g, "")).slice(
-          0,
-          12
-        );
-
       const existing = await getAffiliateForUid(uid);
-      if (existing) {
-        res.status(200).json({
-          ok: true,
-          affiliateId: existing.affiliateId,
-          status: existing.status,
-          codes: existing.codes ?? [],
+      const affiliateId = existing?.affiliateId || uid;
+
+      if (!existing) {
+        await ensureAffiliateProfile({
+          affiliateId,
+          displayName,
+          email: email || undefined,
+          uid,
+          status: "active",
         });
-        return;
       }
 
-      await createAffiliateWithCode({
-        affiliateId,
-        code,
-        displayName,
-        email: email || undefined,
-        uid,
-        status: "pending",
-      });
+      let attachedCode = "";
+      if (requestedCode) {
+        const created = await createAffiliateWithCode({
+          affiliateId,
+          code: requestedCode,
+          displayName: displayName || existing?.displayName || requestedCode,
+          email: email || existing?.email || undefined,
+          uid,
+          status: existing?.status || "active",
+          makePrimary: true,
+        });
+        attachedCode = created.code;
+      }
+
+      if (onboarding || email) {
+        await db()
+          .collection("affiliates")
+          .doc(affiliateId)
+          .set(
+            {
+              ...(onboarding ? { onboarding } : {}),
+              ...(email ? { email: email.slice(0, 120) } : {}),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+      }
+
+      const fresh = await getAffiliateForUid(uid);
+      const codes = fresh?.codes ?? [];
+      const primaryCode = pickPrimaryAffiliateCode(
+        codes,
+        attachedCode || fresh?.primaryCode,
+        await readOwnedProcessReferralCode(uid)
+      );
 
       res.status(200).json({
         ok: true,
         affiliateId,
-        code,
-        status: "pending",
+        status: fresh?.status || existing?.status || "active",
+        codes,
+        primaryCode,
+        code: primaryCode,
       });
     } catch (error: any) {
       const message = error?.message ?? "Unknown error";
@@ -271,6 +345,25 @@ export const affiliateDashboard = onRequest(
         return;
       }
 
+      const processCode = await readOwnedProcessReferralCode(uid);
+      if (processCode && affiliate.primaryCode !== processCode) {
+        try {
+          await createAffiliateWithCode({
+            affiliateId: affiliate.affiliateId,
+            code: processCode,
+            displayName: affiliate.displayName,
+            email: affiliate.email || undefined,
+            uid,
+            status: affiliate.status,
+            makePrimary: true,
+          });
+        } catch (syncError: any) {
+          if (syncError?.message !== "CODE_CONFLICT") {
+            console.warn("[affiliateDashboard] process code sync skipped", syncError);
+          }
+        }
+      }
+
       // Don't block dashboard reads — scheduled jobs also release holds.
       void releaseDueAffiliateCommissions().catch((releaseError) => {
         console.warn("[affiliateDashboard] releaseDue skipped", releaseError);
@@ -283,67 +376,97 @@ export const affiliateDashboard = onRequest(
       const data = refreshed.data() ?? {};
       const stats = data.stats ?? {};
 
-      const codesSnap = await db()
-        .collection("affiliateCodes")
-        .where("affiliateId", "==", affiliate.affiliateId)
-        .limit(20)
-        .get();
-      const codes = codesSnap.docs.map((doc) => ({
-        code: doc.id,
-        displayName: doc.data()?.displayName ?? doc.id,
-        status: doc.data()?.status ?? "active",
-      }));
+      let codes: Array<{ code: string; displayName: string; status: string }> = [];
+      let recentCommissions: any[] = [];
+      let payouts: any[] = [];
 
-      const recentSnap = await db()
-        .collection("affiliateCommissions")
-        .where("affiliateId", "==", affiliate.affiliateId)
-        .limit(50)
-        .get();
+      try {
+        const [codesSnap, recentSnap, payoutsSnap] = await Promise.all([
+          db()
+            .collection("affiliateCodes")
+            .where("affiliateId", "==", affiliate.affiliateId)
+            .limit(20)
+            .get(),
+          db()
+            .collection("affiliateCommissions")
+            .where("affiliateId", "==", affiliate.affiliateId)
+            .limit(50)
+            .get(),
+          db()
+            .collection("affiliatePayouts")
+            .where("affiliateId", "==", affiliate.affiliateId)
+            .limit(20)
+            .get(),
+        ]);
 
-      const recentCommissions = recentSnap.docs
-        .map((doc) => {
-        const row = doc.data();
-        return {
-          id: doc.id,
-          inviteeUid: row.inviteeUid,
-          eventType: row.rcEventType,
-          productId: row.productId ?? null,
-          commissionCents: row.commissionCents ?? 0,
-          currency: row.currency ?? "EUR",
-          status: row.status,
-          createdAt: row.createdAt?.toMillis?.() ?? null,
-          holdUntil: row.holdUntil?.toMillis?.() ?? null,
-        };
-      })
-        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-        .slice(0, 25);
+        codes = codesSnap.docs.map((doc) => ({
+          code: doc.id,
+          displayName: doc.data()?.displayName ?? doc.id,
+          status: doc.data()?.status ?? "active",
+        }));
 
-      const payoutsSnap = await db()
-        .collection("affiliatePayouts")
-        .where("affiliateId", "==", affiliate.affiliateId)
-        .limit(20)
-        .get();
+        recentCommissions = recentSnap.docs
+          .map((doc) => {
+            const row = doc.data();
+            return {
+              id: doc.id,
+              inviteeUid: row.inviteeUid,
+              eventType: row.rcEventType,
+              productId: row.productId ?? null,
+              commissionCents: row.commissionCents ?? 0,
+              currency: row.currency ?? "EUR",
+              status: row.status,
+              createdAt: row.createdAt?.toMillis?.() ?? null,
+              holdUntil: row.holdUntil?.toMillis?.() ?? null,
+            };
+          })
+          .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+          .slice(0, 25);
 
-      const payouts = payoutsSnap.docs
-        .map((doc) => {
-        const row = doc.data();
-        return {
-          id: doc.id,
-          amountCents: row.amountCents ?? 0,
-          currency: row.currency ?? "EUR",
-          method: row.method ?? "stripe",
-          status: row.status ?? "completed",
-          createdAt: row.createdAt?.toMillis?.() ?? null,
-        };
-      })
-        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-        .slice(0, 10);
+        payouts = payoutsSnap.docs
+          .map((doc) => {
+            const row = doc.data();
+            return {
+              id: doc.id,
+              amountCents: row.amountCents ?? 0,
+              currency: row.currency ?? "EUR",
+              method: row.method ?? "stripe",
+              status: row.status ?? "completed",
+              createdAt: row.createdAt?.toMillis?.() ?? null,
+            };
+          })
+          .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+          .slice(0, 10);
+      } catch (extraError) {
+        console.warn("[affiliateDashboard] extras skipped", extraError);
+      }
+
+      if (!codes.length && Array.isArray(data.codes)) {
+        codes = data.codes.map((code: string) => ({
+          code,
+          displayName: data.displayName ?? code,
+          status: data.status ?? "active",
+        }));
+      }
+
+      const primaryCode = pickPrimaryAffiliateCode(
+        codes.map((row) => row.code),
+        data.primaryCode || affiliate.primaryCode,
+        processCode
+      );
+      if (primaryCode) {
+        codes = [
+          ...codes.filter((row) => row.code === primaryCode),
+          ...codes.filter((row) => row.code !== primaryCode),
+        ];
+      }
 
       res.status(200).json({
         ok: true,
         affiliateId: affiliate.affiliateId,
         displayName: data.displayName ?? affiliate.displayName,
         status: data.status ?? affiliate.status,
+        primaryCode,
         payoutMethod: data.payoutMethod ?? null,
         stripeConnect: {
           accountId: data.stripeAccountId ?? null,

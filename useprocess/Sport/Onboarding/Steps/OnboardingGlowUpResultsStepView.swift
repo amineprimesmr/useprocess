@@ -54,7 +54,7 @@ struct OnboardingGlowUpResultsStepView: View {
         }
         .onAppear {
             isContinuing = false
-            showContinueButton = false
+            showContinueButton = true
             startRevealSequence()
         }
         .onDisappear {
@@ -280,7 +280,7 @@ struct OnboardingGlowUpResultsStepView: View {
         reveal(after: 0.54) { showStatUsers = true }
         reveal(after: 0.64) { showStatRating = true }
         reveal(after: 0.74) { showStatResults = true }
-        reveal(after: 0.82) { showContinueButton = true }
+        showContinueButton = true
     }
 
     private func revealAllImmediately() {

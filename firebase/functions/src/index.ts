@@ -578,6 +578,7 @@ export {
   referralRevenueCatWebhook,
 } from "./referralRewards";
 export {
+  affiliatePreparePasswordless,
   affiliateResolveCode,
   affiliateRegister,
   affiliateApply,

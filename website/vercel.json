@@ -53,6 +53,31 @@
       "permanent": true
     },
     {
+      "source": "/studio",
+      "destination": "https://scrollshow.io",
+      "permanent": true
+    },
+    {
+      "source": "/studio/",
+      "destination": "https://scrollshow.io",
+      "permanent": true
+    },
+    {
+      "source": "/studio.html",
+      "destination": "https://scrollshow.io",
+      "permanent": true
+    },
+    {
+      "source": "/tiktok/callback",
+      "destination": "https://scrollshow.io",
+      "permanent": true
+    },
+    {
+      "source": "/tiktok/callback/",
+      "destination": "https://scrollshow.io",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "get.useprocess.xyz" }],
       "destination": "https://useprocess.xyz/app",
@@ -62,13 +87,10 @@
   "rewrites": [
     { "source": "/app", "destination": "/app.html" },
     { "source": "/join/(.*)", "destination": "/index.html" },
-    { "source": "/studio", "destination": "/studio.html" },
-    { "source": "/studio/", "destination": "/studio.html" },
     { "source": "/affiliate", "destination": "/affiliate.html" },
     { "source": "/affiliate/", "destination": "/affiliate.html" },
-    { "source": "/tiktok/callback", "destination": "/tiktok/callback/index.html" },
     { "source": "/(.*)", "destination": "/index.html", "has": [{ "type": "host", "value": "join.useprocess.xyz" }] },
-    { "source": "/((?!api|assets|cgu|confidentialite|mentions-legales|support|sources-sante|tiktok|\\.well-known).*)", "destination": "/index.html" }
+    { "source": "/((?!api|assets|cgu|confidentialite|mentions-legales|support|sources-sante|\\.well-known).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

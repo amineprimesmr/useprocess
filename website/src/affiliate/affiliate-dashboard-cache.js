@@ -65,6 +65,7 @@ export function buildOptimisticDashboard({ affiliateId, displayName, code, statu
       detailsSubmitted: false,
       requirementsDue: [],
     },
+    primaryCode: code || codeRows[0]?.code || "",
     codes: codeRows,
     stats: {
       referredCount: 0,

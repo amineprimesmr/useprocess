@@ -281,7 +281,7 @@ struct SportOnboardingView: View {
             .padding(.horizontal, 34)
             .disabled(!canContinue && OnboardingStep(rawValue: viewModel.currentStep) != .referralCode)
             .opacity(continueButtonOpacity)
-            .allowsHitTesting(continueButtonHitTestingEnabled && !isTransitioning)
+            .allowsHitTesting(continueButtonHitTestingEnabled)
         }
         .padding(.bottom, animatedContinueBottomOffset)
         .id("onboarding_global_continue")

@@ -399,11 +399,9 @@ struct FaceLeverageIntroStepView: View {
     }
 
     private func markCompleted() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0 : 0.12)) {
-            viewModel.isFaceLeverageIntroCompleted = true
-            onValidationChanged?(true)
-            HapticManager.shared.impact(.soft)
-        }
+        viewModel.isFaceLeverageIntroCompleted = true
+        onValidationChanged?(true)
+        HapticManager.shared.impact(.soft)
     }
 }
 

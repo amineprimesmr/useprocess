@@ -7,9 +7,6 @@
       document.documentElement.classList.add("app-booting");
       (function () {
         var path = location.pathname.replace(/\/$/, "");
-        if (path === "/studio" || path === "/studio.html") {
-          document.documentElement.classList.add("page-studio");
-        }
         if (path === "/affiliate" || path === "/affiliate.html") {
           document.documentElement.classList.add("page-affiliate");
         }
@@ -18,9 +15,6 @@
     <style>
       .hidden { display: none !important; }
       html.app-booting #landing { visibility: hidden; }
-      html.page-studio #landing,
-      html.page-studio #page-404 { display: none !important; }
-      html.page-studio #page-studio { display: block !important; }
       html.page-affiliate,
       html.page-affiliate body {
         background: #fff !important;
@@ -92,10 +86,6 @@
           <div id="landing-legal-content"></div>
         </div>
       </main>
-    </div>
-
-    <div id="page-studio" class="hidden" aria-hidden="true">
-      <div id="studio-root"></div>
     </div>
 
     <div id="page-affiliate" class="hidden" aria-hidden="true">

@@ -30,6 +30,12 @@ function spaFallback() {
       server.middlewares.use(async (req, res, next) => {
         if (req.method !== "GET" || req.url == null) return next();
         const path = req.url.split("?")[0];
+        if (path === "/studio" || path === "/studio.html") {
+          res.statusCode = 308;
+          res.setHeader("Location", "https://scrollshow.io");
+          res.end();
+          return;
+        }
         if (path === "/affiliate" || path === "/affiliate.html") {
           return sendHtml("affiliate.html", req, res, next);
         }
@@ -44,8 +50,14 @@ function spaFallback() {
           if (path.startsWith("/src/") || path.startsWith("/@") || path.startsWith("/node_modules") || path.startsWith("/assets/")) {
             return next();
           }
-          if (["/cgu", "/confidentialite", "/mentions-legales", "/support", "/sources-sante", "/tiktok"].some((p) => path === p || path.startsWith(p + "/"))) {
+          if (["/cgu", "/confidentialite", "/mentions-legales", "/support", "/sources-sante"].some((p) => path === p || path.startsWith(p + "/"))) {
             return next();
+          }
+          if (path === "/studio" || path === "/studio.html") {
+            res.statusCode = 308;
+            res.setHeader("Location", "https://scrollshow.io");
+            res.end();
+            return;
           }
           if (path === "/affiliate" || path === "/affiliate.html") {
             return sendHtml("affiliate.html", req, res, next);

@@ -19,22 +19,22 @@ enum ProcessScanPortraitLockProfile: Sendable {
     case onboarding
 }
 
-/// Caméra des scans Process — selfie standard (TrueDepth), pas l’ultra grand-angle front.
+/// Caméra des scans Process — selfie standard (TrueDepth), jamais le grand-angle front.
 enum ProcessScanCamera {
-    /// Crop visuel UIKit / conteneur ARKit preview — selfie serré, pas ultra grand-angle.
-    nonisolated static let frontPreviewLayoutZoom: CGFloat = 1.58
+    /// Crop visuel — TrueDepth natif ~23 mm ; 2.35× ≈ selfie 50 mm, plus de grand-angle.
+    nonisolated static let frontPreviewLayoutZoom: CGFloat = 2.35
     /// Circuit lymphatique / scan corps — pas de crop preview supplémentaire.
     nonisolated static let fullBodyPreviewLayoutZoom: CGFloat = 1.0
-    /// Hub scan du jour (ovale compact) — crop portrait serré, effet selfie standard.
-    nonisolated static let scanDayHubPreviewZoom: CGFloat = 1.68
-    /// Zoom capteur front hub — pousse un peu plus que le plein écran.
-    nonisolated static let scanDayHubPortraitZoom: CGFloat = 1.42
-    /// Zoom capteur onboarding — force l’optique standard dual-front (≥ 1) + léger crop capteur.
-    nonisolated static let onboardingPortraitSensorZoom: CGFloat = 1.58
+    /// Hub scan du jour (ovale compact) — même optique selfie, un peu plus serré.
+    nonisolated static let scanDayHubPreviewZoom: CGFloat = 2.40
+    /// Zoom capteur front hub — force l’optique 1× puis crop selfie.
+    nonisolated static let scanDayHubPortraitZoom: CGFloat = 2.25
+    /// Zoom capteur onboarding — optique standard dual-front + crop serré.
+    nonisolated static let onboardingPortraitSensorZoom: CGFloat = 2.40
     /// Crop UIKit scan onboarding ovale (dashboard + premier scan).
-    nonisolated static let onboardingPortraitPreviewZoom: CGFloat = 1.82
-    /// Zoom capteur AVCapture — ≥ 1 force l’optique « standard » sur iPhone dual-front.
-    nonisolated static let frontPortraitZoom: CGFloat = 1.38
+    nonisolated static let onboardingPortraitPreviewZoom: CGFloat = 2.55
+    /// Zoom capteur AVCapture — ≥ switchover 1×, jamais 0,5× ultra grand-angle.
+    nonisolated static let frontPortraitZoom: CGFloat = 2.20
 
     nonisolated static func portraitSensorZoom(for profile: ProcessScanPortraitLockProfile) -> CGFloat {
         switch profile {
@@ -206,8 +206,11 @@ enum ProcessScanCamera {
             try device.lockForConfiguration()
             let maxZoom = device.maxAvailableVideoZoomFactor
             let minZoom = device.minAvailableVideoZoomFactor
-            // minZoom < 1 ⇒ caméra virtuelle dual-front ; forcer ≥ 1 = optique standard.
-            let standardFloor = max(1.0, minZoom)
+            // minZoom < 1 ou switchover > min ⇒ dual-front : le palier 1× quitte l’ultra grand-angle.
+            let switchFloor = device.virtualDeviceSwitchOverVideoZoomFactors
+                .map { CGFloat(truncating: $0) }
+                .first ?? 1.0
+            let standardFloor = max(1.0, minZoom, switchFloor)
             let target = min(max(standardFloor, preferredPortraitZoom), maxZoom)
             if abs(device.videoZoomFactor - target) > 0.02 {
                 device.videoZoomFactor = target

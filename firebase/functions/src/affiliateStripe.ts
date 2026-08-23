@@ -9,6 +9,32 @@ const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_CONNECT_WEBHOOK_SECRET");
 
 const AFFILIATE_PORTAL_BASE = "https://useprocess.xyz/affiliate";
+const AFFILIATE_PRODUCT_DESCRIPTION =
+  "Independent creator in the Process affiliate program. Promotes the Process iOS app on social media and earns a commission on subscriptions.";
+
+function creatorPublicUrl(data: admin.firestore.DocumentData): string {
+  const fromList = Array.isArray(data.onboarding?.tiktokHandles)
+    ? data.onboarding.tiktokHandles
+    : [];
+  const fromSingle = String(data.onboarding?.tiktokHandle || "").split(/\s+/);
+  const handle = String([...fromList, ...fromSingle].find(Boolean) || "")
+    .trim()
+    .replace(/^@+/, "");
+  if (handle) return `https://www.tiktok.com/@${encodeURIComponent(handle)}`;
+  const code = Array.isArray(data.codes) ? String(data.codes[0] || "") : "";
+  if (code) return `https://useprocess.xyz/join/${encodeURIComponent(code)}`;
+  return "https://useprocess.xyz";
+}
+
+function individualBusinessProfile(
+  data: admin.firestore.DocumentData
+): Stripe.AccountUpdateParams.BusinessProfile {
+  return {
+    mcc: "7311",
+    product_description: AFFILIATE_PRODUCT_DESCRIPTION,
+    url: creatorPublicUrl(data),
+  };
+}
 
 function stripeClient(secret: string): Stripe {
   return new Stripe(secret);
@@ -89,14 +115,27 @@ async function ensureExpressAccount(params: {
   const affiliateSnap = await affiliateRef.get();
   const data = affiliateSnap.data() ?? {};
 
-  if (data.stripeAccountId) return String(data.stripeAccountId);
-
   const stripe = stripeClient(params.secret);
+
+  if (data.stripeAccountId) {
+    const accountId = String(data.stripeAccountId);
+    try {
+      await stripe.accounts.update(accountId, {
+        business_type: "individual",
+        business_profile: individualBusinessProfile(data),
+      });
+    } catch (error) {
+      console.warn("[ensureExpressAccount] prefill skipped", error);
+    }
+    return accountId;
+  }
+
   const account = await stripe.accounts.create({
     type: "express",
     country: (params.country || "FR").toUpperCase().slice(0, 2),
     email: params.email || undefined,
     business_type: "individual",
+    business_profile: individualBusinessProfile(data),
     capabilities: {
       transfers: { requested: true },
     },
@@ -186,7 +225,7 @@ export const affiliateStripeConnectStart = onRequest(
         type: "account_onboarding",
         refresh_url: payoutReturnUrl("refresh"),
         return_url: payoutReturnUrl("return"),
-        collection_options: { fields: "eventually_due" },
+        collection_options: { fields: "currently_due" },
       });
 
       res.status(200).json({ ok: true, url: link.url, accountId });

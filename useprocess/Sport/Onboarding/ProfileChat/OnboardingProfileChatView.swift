@@ -249,10 +249,7 @@ struct OnboardingProfileChatView: View {
         engine: MossConversationEngine
     ) -> Bool {
         guard engine.controlsVisible else { return false }
-        if question.kind == .profileSummary {
-            return true
-        }
-        return !engine.isTyping
+        return true
     }
 
     private func scrollToLatestMessage(proxy: ScrollViewProxy) {
@@ -309,7 +306,7 @@ struct OnboardingProfileChatView: View {
                 OnboardingProfileChatSportPicker(
                     isSearching: $isSportSearchActive,
                     isSubmitting: chatViewModel.isSubmittingAnswer,
-                    revealedOptionIDs: Set(question.choices.map(\.id)),
+                    revealedOptionIDs: Set(OnboardingProfileChatAnswerReveal.orderedIDs(for: question)),
                     onSelectFeatured: { choiceId in
                         Task { await chatViewModel.submitSingleChoice(choiceId) }
                     },

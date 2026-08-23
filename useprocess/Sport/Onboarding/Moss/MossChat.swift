@@ -257,9 +257,7 @@ struct MossSettleIn: ViewModifier {
             .opacity(shown ? 1 : 0)
             .offset(y: shown ? 0 : 6)
             .onAppear {
-                if reduceMotion { shown = true; return }
-                withAnimation(.smooth(duration: 0.37)
-                    .delay(Double(index) * 0.058)) { shown = true }
+                shown = true
             }
     }
 }

@@ -46,6 +46,9 @@ exports.accrueAffiliateCommission = accrueAffiliateCommission;
 exports.clawbackAffiliateCommission = clawbackAffiliateCommission;
 exports.markAffiliateAttributionChurned = markAffiliateAttributionChurned;
 exports.releaseDueAffiliateCommissions = releaseDueAffiliateCommissions;
+exports.readOwnedProcessReferralCode = readOwnedProcessReferralCode;
+exports.pickPrimaryAffiliateCode = pickPrimaryAffiliateCode;
+exports.ensureAffiliateProfile = ensureAffiliateProfile;
 exports.createAffiliateWithCode = createAffiliateWithCode;
 exports.ensureEmailPasswordSignInEnabled = ensureEmailPasswordSignInEnabled;
 exports.provisionAffiliateAuthUser = provisionAffiliateAuthUser;
@@ -386,6 +389,66 @@ async function releaseDueAffiliateCommissions(affiliateId) {
     }
     return released;
 }
+async function readOwnedProcessReferralCode(uid) {
+    const program = await db()
+        .collection("users")
+        .doc(uid)
+        .collection("referralMeta")
+        .doc("program")
+        .get();
+    const raw = program.data()?.referralCode;
+    if (typeof raw !== "string")
+        return null;
+    const normalized = (0, referralShared_1.normalizeReferralCode)(raw);
+    if (!(0, referralShared_1.isValidReferralCode)(normalized))
+        return null;
+    const owner = await (0, referralShared_1.resolveReferrerUserId)(normalized);
+    return owner === uid ? normalized : null;
+}
+function pickPrimaryAffiliateCode(codes, stored, processCode) {
+    if (processCode && codes.includes(processCode))
+        return processCode;
+    if (stored && codes.includes(stored))
+        return stored;
+    const processLike = codes.find((code) => code.length === 5);
+    if (processLike)
+        return processLike;
+    return codes[0] || "";
+}
+async function ensureAffiliateProfile(params) {
+    const affiliateId = params.affiliateId.trim();
+    if (!affiliateId)
+        throw new Error("INVALID_CODE");
+    const affiliateRef = db().collection("affiliates").doc(affiliateId);
+    const now = admin.firestore.Timestamp.now();
+    const existing = await affiliateRef.get();
+    if (existing.exists) {
+        await affiliateRef.set({
+            displayName: params.displayName.slice(0, 80),
+            ...(params.email ? { email: params.email.slice(0, 120) } : {}),
+            updatedAt: now,
+        }, { merge: true });
+        return { affiliateId };
+    }
+    await affiliateRef.set({
+        uid: params.uid ?? null,
+        displayName: params.displayName.slice(0, 80),
+        email: params.email?.slice(0, 120) ?? null,
+        status: params.status ?? "active",
+        codes: [],
+        stats: {
+            referredCount: 0,
+            activeSubscribers: 0,
+            pendingCents: 0,
+            payableCents: 0,
+            paidCents: 0,
+            lifetimeCents: 0,
+        },
+        createdAt: now,
+        updatedAt: now,
+    });
+    return { affiliateId };
+}
 async function createAffiliateWithCode(params) {
     const code = normalizeAffiliateCode(params.code);
     if (!code || code.length < 3)
@@ -405,6 +468,18 @@ async function createAffiliateWithCode(params) {
             if (owner && owner !== affiliateId)
                 throw new Error("CODE_CONFLICT");
         }
+        const affiliateSnap = await transaction.get(affiliateRef);
+        const currentCodes = Array.isArray(affiliateSnap.data()?.codes)
+            ? affiliateSnap.data()?.codes
+            : [];
+        const nextCodes = params.makePrimary
+            ? [code, ...currentCodes.filter((item) => item !== code)]
+            : currentCodes.includes(code)
+                ? currentCodes
+                : [...currentCodes, code];
+        const nextPrimary = params.makePrimary || !affiliateSnap.data()?.primaryCode
+            ? code
+            : String(affiliateSnap.data()?.primaryCode || code);
         transaction.set(codeRef, {
             affiliateId,
             affiliateCode: code,
@@ -417,18 +492,23 @@ async function createAffiliateWithCode(params) {
         transaction.set(affiliateRef, {
             uid: params.uid ?? null,
             displayName: params.displayName.slice(0, 80),
-            email: params.email?.slice(0, 120) ?? null,
+            email: params.email?.slice(0, 120) ?? affiliateSnap.data()?.email ?? null,
             status,
-            codes: admin.firestore.FieldValue.arrayUnion(code),
-            stats: {
-                referredCount: 0,
-                activeSubscribers: 0,
-                pendingCents: 0,
-                payableCents: 0,
-                paidCents: 0,
-                lifetimeCents: 0,
-            },
-            createdAt: now,
+            codes: nextCodes,
+            primaryCode: nextPrimary,
+            ...(affiliateSnap.exists
+                ? {}
+                : {
+                    stats: {
+                        referredCount: 0,
+                        activeSubscribers: 0,
+                        pendingCents: 0,
+                        payableCents: 0,
+                        paidCents: 0,
+                        lifetimeCents: 0,
+                    },
+                }),
+            createdAt: affiliateSnap.data()?.createdAt ?? now,
             updatedAt: now,
         }, { merge: true });
     });
@@ -448,7 +528,7 @@ async function ensureEmailPasswordSignInEnabled() {
         const token = accessToken.token;
         if (!token)
             return;
-        const url = `https://identitytoolkit.googleapis.com/v2/projects/${projectId}/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired`;
+        const url = `https://identitytoolkit.googleapis.com/v2/projects/${projectId}/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired,signIn.anonymous.enabled`;
         const response = await fetch(url, {
             method: "PATCH",
             headers: {
@@ -459,7 +539,10 @@ async function ensureEmailPasswordSignInEnabled() {
                 signIn: {
                     email: {
                         enabled: true,
-                        passwordRequired: true,
+                        passwordRequired: false,
+                    },
+                    anonymous: {
+                        enabled: true,
                     },
                 },
             }),

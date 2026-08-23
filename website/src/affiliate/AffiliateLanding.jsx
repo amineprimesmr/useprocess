@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { appCopy } from "../features/app-copy.js";
 import { ProcessAppIcon } from "./AffiliateIcons.jsx";
 import { COMMISSION_PERCENT, HOLD_DAYS, SUPPORT_EMAIL } from "./affiliate-utils.js";
@@ -13,6 +13,17 @@ const PHONES = [
   { src: "/assets/process-landing/phone-hero-app.png", alt: "Process" },
   { src: "/assets/process-landing/phone-features-scan.png", alt: "Scan" },
   { src: "/assets/iphone-custom-clean.png", alt: "Progress" },
+];
+
+const REELS = [
+  { src: "/assets/affiliate-tiktoks/01-glowup-188k.png", slot: 1 },
+  { src: "/assets/affiliate-tiktoks/02-foods-107k.png", slot: 2 },
+  { src: "/assets/affiliate-tiktoks/03-guide-178k.png", slot: 3 },
+  { src: "/assets/affiliate-tiktoks/07-pov-98k.png", slot: 4 },
+  { src: "/assets/affiliate-tiktoks/05-beach-39k.png", slot: 5 },
+  { src: "/assets/affiliate-tiktoks/06-water-25k.png", slot: 6 },
+  { src: "/assets/affiliate-tiktoks/04-marlon-65k.png", slot: 7 },
+  { src: "/assets/affiliate-tiktoks/08-car-16k.png", slot: 8 },
 ];
 
 const AVATARS = [
@@ -58,151 +69,36 @@ export function AffiliateTopNav({
   onWorkspace,
   compact = false,
 }) {
-  const menuId = useId();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const label = loggedIn
+    ? appCopy("Mon espace", "Dashboard")
+    : compact
+      ? appCopy("Se connecter", "Log in")
+      : appCopy("Se connecter · S'inscrire", "Log in · Sign up");
 
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    document.body.classList.add("af-ld-menu-open");
-    const onKey = (event) => {
-      if (event.key === "Escape") closeMenu();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.classList.remove("af-ld-menu-open");
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [closeMenu, menuOpen]);
-
-  const links = [
-    { href: "#programme", label: appCopy("Programme", "Program") },
-    { href: "#comment", label: appCopy("Comment ça marche", "How it works") },
-    { href: "#primes", label: appCopy("Primes", "Bonuses") },
-    { href: "#faq", label: "FAQ" },
-  ];
+  function handleAuth() {
+    if (loggedIn) {
+      onWorkspace?.();
+      return;
+    }
+    if (compact) {
+      onLogin?.();
+      return;
+    }
+    onApply?.();
+  }
 
   return (
-    <>
-      <header
-        className={`af-ld-topnav${loggedIn ? " is-logged-in" : ""}${menuOpen ? " is-menu-open" : ""}`}
-        role="banner"
-      >
-        <div className="af-ld-topnav__inner">
-          <a className="af-ld-brand" href="https://useprocess.xyz/">
-            <ProcessAppIcon size={24} />
-            <span>Process</span>
-          </a>
-
-          <nav className="af-ld-topnav__nav" aria-label={appCopy("Navigation", "Navigation")}>
-            {links.map((link) => (
-              <a key={link.href} href={link.href} className="af-ld-topnav__link">
-                {link.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="af-ld-topnav__actions">
-            {loggedIn ? (
-              <button type="button" className="af-ld-topnav__cta af-ld-topnav__cta--solid af-ld-topnav__cta--desk" onClick={onWorkspace}>
-                {appCopy("Mon espace", "Dashboard")}
-              </button>
-            ) : (
-              <>
-                <button type="button" className="af-ld-topnav__signin" onClick={onLogin}>
-                  {appCopy("Se connecter", "Log in")}
-                </button>
-                {compact ? null : (
-                  <button type="button" className="af-ld-topnav__cta af-ld-topnav__cta--desk" onClick={onApply}>
-                    {appCopy("Postuler", "Apply")}
-                  </button>
-                )}
-              </>
-            )}
-
-            <button
-              type="button"
-              className={`af-ld-topnav__menu-btn${menuOpen ? " is-open" : ""}`}
-              aria-expanded={menuOpen}
-              aria-controls={menuId}
-              aria-label={menuOpen ? appCopy("Fermer le menu", "Close menu") : appCopy("Ouvrir le menu", "Open menu")}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <span aria-hidden />
-              <span aria-hidden />
-              <span aria-hidden />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {menuOpen ? (
-        <>
-          <button type="button" className="af-ld-topnav__overlay" aria-label={appCopy("Fermer le menu", "Close menu")} onClick={closeMenu} />
-          <nav id={menuId} className="af-ld-topnav__drawer" aria-label={appCopy("Menu mobile", "Mobile menu")}>
-            <div className="af-ld-topnav__drawer-head">
-              <ProcessAppIcon size={28} />
-              <span>Process</span>
-            </div>
-            <div className="af-ld-topnav__drawer-links">
-              {links.map((link) => (
-                <a key={link.href} href={link.href} className="af-ld-topnav__drawer-link" onClick={closeMenu}>
-                  {link.label}
-                </a>
-              ))}
-            </div>
-            <div className="af-ld-topnav__drawer-foot">
-              {loggedIn ? (
-                <button
-                  type="button"
-                  className="af-ld-topnav__drawer-cta"
-                  onClick={() => {
-                    closeMenu();
-                    onWorkspace?.();
-                  }}
-                >
-                  {appCopy("Mon espace", "Dashboard")}
-                </button>
-              ) : compact ? (
-                <button
-                  type="button"
-                  className="af-ld-topnav__drawer-cta"
-                  onClick={() => {
-                    closeMenu();
-                    onLogin?.();
-                  }}
-                >
-                  {appCopy("Se connecter", "Log in")}
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="af-ld-topnav__drawer-cta"
-                    onClick={() => {
-                      closeMenu();
-                      onApply?.();
-                    }}
-                  >
-                    {appCopy("Postuler", "Apply")}
-                  </button>
-                  <button
-                    type="button"
-                    className="af-ld-topnav__drawer-signout"
-                    onClick={() => {
-                      closeMenu();
-                      onLogin?.();
-                    }}
-                  >
-                    {appCopy("Se connecter", "Log in")}
-                  </button>
-                </>
-              )}
-            </div>
-          </nav>
-        </>
-      ) : null}
-    </>
+    <header className="af-ld-topnav" role="banner">
+      <div className="af-ld-topnav__inner">
+        <a className="af-ld-brand" href="https://useprocess.xyz/">
+          <ProcessAppIcon size={22} />
+          <span>Process</span>
+        </a>
+        <button type="button" className="af-ld-topnav__cta" onClick={handleAuth}>
+          {label}
+        </button>
+      </div>
+    </header>
   );
 }
 
@@ -251,6 +147,90 @@ function PhoneGallery() {
         </div>
       ))}
     </div>
+  );
+}
+
+function ViewsSection() {
+  const sectionRef = useRef(null);
+  const [phase, setPhase] = useState("boot");
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return undefined;
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let intro;
+    let expand;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        if (reduce) {
+          setPhase("expand");
+        } else {
+          intro = window.setTimeout(() => setPhase("intro"), 40);
+          expand = window.setTimeout(() => setPhase("expand"), 820);
+        }
+        io.disconnect();
+      },
+      { threshold: 0.28 }
+    );
+
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(intro);
+      window.clearTimeout(expand);
+    };
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      id="vues"
+      className={`af-ld-views is-${phase}`}
+      aria-labelledby="af-ld-views-title"
+    >
+      <div className="af-ld-stage">
+        <div className="af-ld-stage__cards" aria-hidden>
+          {REELS.map((reel, index) => (
+            <figure
+              key={reel.src}
+              className={`af-ld-reel af-ld-reel--${reel.slot}`}
+              style={{ "--i": index }}
+            >
+              <div className="af-ld-reel__frame">
+                <img
+                  src={reel.src}
+                  alt=""
+                  width={364}
+                  height={476}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </figure>
+          ))}
+        </div>
+
+        <div className="af-ld-stage__copy">
+          <p className="af-ld-hero-badge">
+            <span className="af-ld-hero-badge__dot" aria-hidden />
+            {appCopy("Formats qui convertissent", "Formats that convert")}
+          </p>
+          <h2 id="af-ld-views-title" className="af-ld-views__title">
+            {appCopy("Obtiens 1,2M vues", "Get 1.2M views")}
+            <em>{appCopy("par semaine", "every week")}</em>
+          </h2>
+          <p className="af-ld-hero-sub">
+            {appCopy(
+              "Ces TikToks tournent déjà. Tu les copies, tu les postes, tu encaisse.",
+              "These TikToks already work. Copy them, post them, get paid."
+            )}
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -655,6 +635,7 @@ function ClosingSection({ onApply }) {
 function LandingFooter() {
   const nav = [
     { href: "#programme", label: appCopy("Programme", "Program") },
+    { href: "#vues", label: appCopy("Vues", "Views") },
     { href: "#comment", label: appCopy("Comment ça marche", "How it works") },
     { href: "#primes", label: appCopy("Primes", "Bonuses") },
     { href: "#offre", label: appCopy("Rejoindre", "Join") },
@@ -747,6 +728,7 @@ export function AffiliateLanding({ onApply, onLogin, loggedIn = false, onWorkspa
           <PhoneGallery />
         </section>
 
+        <ViewsSection />
         <StepsSection onApply={onApply} />
         <PrimesSection onApply={onApply} />
         <OfferSection onApply={onApply} />

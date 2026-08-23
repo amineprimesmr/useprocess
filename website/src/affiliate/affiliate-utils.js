@@ -157,6 +157,12 @@ export function formatApplyError(error) {
       "This code is already taken — try another variant."
     );
   }
+  if (message === "APPLY_TIMEOUT" || message === "AUTH_TIMEOUT" || message === "TIMEOUT") {
+    return appCopy(
+      "Ça a pris trop de temps. Réessaie.",
+      "That took too long. Try again."
+    );
+  }
   if (message === "INVALID_CODE") {
     return appCopy(
       "Code invalide — minimum 3 caractères (lettres, chiffres ou tiret).",

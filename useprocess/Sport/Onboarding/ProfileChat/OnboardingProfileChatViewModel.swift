@@ -70,7 +70,6 @@ final class OnboardingProfileChatViewModel {
         return currentQuestion?.id == "face_scan_offer"
             && !shouldFinish
             && conversationEngine.controlsVisible
-            && !conversationEngine.isTyping
             && !isSubmittingAnswer
             && isQuestionReadyForAnswers
     }
@@ -88,7 +87,6 @@ final class OnboardingProfileChatViewModel {
         guard let conversationEngine else { return false }
         return !shouldFinish
             && conversationEngine.controlsVisible
-            && !conversationEngine.isTyping
             && !isSubmittingAnswer
             && !showsInlineFaceScanFlow
             && currentQuestion != nil
@@ -247,7 +245,7 @@ final class OnboardingProfileChatViewModel {
         )
     }
 
-    private func presentCurrentQuestion(initialDelay: Bool) async {
+    private func presentCurrentQuestion(initialDelay _: Bool) async {
         guard let question = currentQuestion else { return }
 
         isQuestionReadyForAnswers = false
@@ -264,11 +262,7 @@ final class OnboardingProfileChatViewModel {
             return
         }
 
-        if initialDelay {
-            try? await Task.sleep(nanoseconds: 80_000_000)
-        }
-
-        await speakMossLines(lines)
+        conversationEngine.speak(lines)
         await finalizeQuestionPresentation()
     }
 
@@ -931,6 +925,7 @@ final class OnboardingProfileChatViewModel {
         isQuestionReadyForAnswers = false
         currentQuestion = nil
 
+        conversationEngine.stopSpeaking()
         conversationEngine.userReplied(display)
         let shouldTypeNextQuestion = advanceToNextQuestion()
 

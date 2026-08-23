@@ -17,9 +17,11 @@ enum TransitionDirection {
 // MARK: - Timing
 
 enum OnboardingTransitionTiming {
-    static let earlyNavigationUnlockDelay: TimeInterval = 0.46
-    static let navigationUnlockDelay: TimeInterval = 0.36
-    static let dashboardRevealUnlockDelay: TimeInterval = 0.44
+    /// Plus de délai avant que Continuer / Retour soient cliquables.
+    /// Seule la page estimation garde son remplissage CTA.
+    static let earlyNavigationUnlockDelay: TimeInterval = 0
+    static let navigationUnlockDelay: TimeInterval = 0
+    static let dashboardRevealUnlockDelay: TimeInterval = 0
     static let earlyKeyboardFocusDelay: TimeInterval = 0.62
     static let keyboardFocusDelay: TimeInterval = 0.50
     /// Focus pendant le slide de page (ex. taille → poids) pour monter le CTA avec le pad.

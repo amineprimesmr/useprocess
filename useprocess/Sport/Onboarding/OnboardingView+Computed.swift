@@ -200,13 +200,6 @@ static func usesEarlyOnboardingTransition(from: Int, to: Int) -> Bool {
     return fromIndex <= cap && toIndex <= cap
 }
 
-var activeNavigationUnlockDelay: TimeInterval {
-    OnboardingTransitionTiming.navigationUnlockDelay(
-        early: shouldUseEarlyOnboardingTransition,
-        dashboardReveal: shouldUseDashboardRevealTransition
-    )
-}
-
 var onboardingPageChangeAnimation: Animation {
     if shouldUseDashboardRevealTransition { return .onboardingDashboardReveal }
     if shouldUseScanPagePush { return .onboardingScanPagePush }

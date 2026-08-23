@@ -19,9 +19,6 @@ export function getRoute() {
   if (host === "join.useprocess.xyz" || host === "get.useprocess.xyz") {
     return { type: "get-app" };
   }
-  if (path === "/studio" || path === "/studio.html") {
-    return { type: "studio" };
-  }
   if (path === "/affiliate" || path === "/affiliate.html") {
     return { type: "affiliate" };
   }
@@ -47,7 +44,6 @@ function getContainers() {
     landingMain: document.getElementById("landing-main"),
     landingLegal: document.getElementById("landing-legal"),
     legalContent: document.getElementById("landing-legal-content"),
-    pageStudio: document.getElementById("page-studio"),
     pageAffiliate: document.getElementById("page-affiliate"),
     page404: document.getElementById("page-404"),
   };
@@ -65,8 +61,6 @@ export async function initRouting() {
   document.body.classList.toggle("page-landing-subpage", route.type === "get-app");
   document.body.classList.toggle("page-get-app", route.type === "get-app");
   document.documentElement.classList.toggle("page-get-app", route.type === "get-app");
-  document.body.classList.toggle("page-studio", route.type === "studio");
-  document.documentElement.classList.toggle("page-studio", route.type === "studio");
   document.body.classList.toggle("page-affiliate", route.type === "affiliate");
   document.documentElement.classList.toggle("page-affiliate", route.type === "affiliate");
 
@@ -75,10 +69,6 @@ export async function initRouting() {
   }
 
   if (c.page404) c.page404.classList.add("hidden");
-  if (c.pageStudio) {
-    c.pageStudio.classList.add("hidden");
-    c.pageStudio.setAttribute("aria-hidden", "true");
-  }
   if (c.pageAffiliate) {
     c.pageAffiliate.classList.add("hidden");
     c.pageAffiliate.setAttribute("aria-hidden", "true");
@@ -92,17 +82,6 @@ export async function initRouting() {
       applyNotFoundCopy();
       applySiteDocumentLanguage();
     }
-    return null;
-  }
-
-  if (route.type === "studio") {
-    if (c.landing) c.landing.classList.add("hidden");
-    if (c.pageStudio) {
-      c.pageStudio.classList.remove("hidden");
-      c.pageStudio.setAttribute("aria-hidden", "false");
-    }
-    const page = await loadPage("studio");
-    await page.init(route);
     return null;
   }
 

@@ -2,19 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { appCopy, subscribeSiteLanguage, applySiteDocumentLanguage } from "../features/app-copy.js";
 import { dismissCrispChat } from "../features/crisp-chat.js";
 import { playSettingsChange } from "../features/process-sound.js";
-import { getIosAppStoreUrl } from "../features/app-store-urls.js";
-import { getStoreButtonHref } from "../features/in-app-browser-escape.js";
 import {
   affiliateApi,
   getFirebaseAuth,
   getAuthToken,
-  getFirebaseAuthModule,
   isFirebaseConfigured,
   warmFirebaseAuth,
 } from "../features/firebase-client.js";
 import {
   buildCreatorLandingUrl,
-  normalizeAcquisitionCode,
   parseAcquisitionCodeFromInput,
 } from "../features/acquisition-link.js";
 import {
@@ -44,14 +40,7 @@ import {
   AFFILIATE_X_DM_URL,
   buildSupportBody,
   buildSocialMailBody,
-  checkAffiliateCodeAvailability,
-  isValidEmail,
-  validateEmailFormat,
   COMMISSION_PERCENT,
-  existingAccountOAuthHint,
-  existingAccountPrompt,
-  passwordResetErrorMessage,
-  passwordResetSentMessage,
   formatApplyError,
   formatAuthError,
   formatShortDate,
@@ -60,12 +49,10 @@ import {
   navigateHash,
   readHashRoute,
   readHashQuery,
-  readAffiliatePrefillFromLocation,
   hasAffiliatePrefill,
   consumeAffiliatePrefill,
   socialMailSubject,
   supportMailto,
-  validateAffiliateCodeFormat,
   SUPPORT_EMAIL,
 } from "./affiliate-utils.js";
 import {
@@ -75,10 +62,24 @@ import {
   writeDashboardCache,
 } from "./affiliate-dashboard-cache.js";
 import { AffiliateLanding, AffiliateTopNav } from "./AffiliateLanding.jsx";
+import { AffiliateOnboarding } from "./AffiliateOnboarding.jsx";
+import { AffiliateMethodPage } from "./AffiliateMethod.jsx";
 import { ViewBonusBoard, ViewBonusNote } from "./ViewBonusBoard.jsx";
+import {
+  isOnboardingInProgress,
+  isOnboardingUnlocked,
+  markOnboardingUnlocked,
+  readOnboardingDraft,
+  writeOnboardingDraft,
+} from "./affiliate-onboarding-state.js";
+import {
+  completeAffiliateEmailLink,
+  consumeApplyAfterLink,
+  sendAffiliateEmailLink,
+  ensureAnonymousAffiliateUser,
+} from "./affiliate-email-link.js";
 import "./affiliate.css";
 
-const PRIVACY_URL = "https://useprocess.xyz/privacy";
 const LANDING_HASHES = new Set(["", "program", "programme", "comment", "primes", "offre", "faq"]);
 
 function AffiliateXSupportFab() {
@@ -105,8 +106,6 @@ function AffiliatePageChrome({ children }) {
     </>
   );
 }
-
-const TERMS_URL = "https://useprocess.xyz/terms";
 
 let consumedApplyPrefillCache;
 
@@ -200,38 +199,6 @@ function RequiredBadge({ done = false }) {
   );
 }
 
-function RewardsBox() {
-  return (
-    <div className="af-rewards-box">
-      <h3>{appCopy("Récompenses", "Rewards")}</h3>
-      <div className="af-reward-line">
-        <IconDollar />
-        <span>
-          {appCopy(
-            `Gagne ${COMMISSION_PERCENT} % par vente, à vie pour chaque client parrainé`,
-            `Earn ${COMMISSION_PERCENT}% per sale for the customer's lifetime`
-          )}
-        </span>
-      </div>
-      <ViewBonusBoard variant="light" compact />
-      <ViewBonusNote />
-    </div>
-  );
-}
-
-function PoweredFooter() {
-  return (
-    <div className="af-powered">
-      <span>{appCopy("Propulsé par", "Powered by")} <strong>Process</strong></span>
-      <div className="af-powered-links">
-        <a href={TERMS_URL}>{appCopy("Conditions d'utilisation", "Terms of Service")}</a>
-        <span>·</span>
-        <a href={PRIVACY_URL}>{appCopy("Politique de confidentialité", "Privacy Policy")}</a>
-      </div>
-    </div>
-  );
-}
-
 function ProgramLanding({ onApply, onLogin }) {
   return <AffiliateLanding onApply={onApply} onLogin={onLogin} />;
 }
@@ -284,558 +251,6 @@ function SocialChannelForm({ displayName, compact = false }) {
   );
 }
 
-function ReferralCodeField({ value, onChange, error, checking, shake, onBlurValidate, requiredDone }) {
-  const normalized = parseAcquisitionCodeFromInput(value);
-  const appStoreHref = getStoreButtonHref(getIosAppStoreUrl());
-
-  return (
-    <div className={`af-field af-code-field ${shake ? "is-shaking" : ""} ${error ? "is-invalid" : ""}`}>
-      <div className="af-label-row">
-        <label htmlFor="af-code">{appCopy("Code de parrainage", "Referral code")}</label>
-        <RequiredBadge done={requiredDone} />
-      </div>
-      <input
-        id="af-code"
-        className={`af-input ${error ? "is-error" : ""}`}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onPaste={(e) => {
-          const pasted = e.clipboardData?.getData("text") || "";
-          if (!pasted.trim()) return;
-          e.preventDefault();
-          onChange(pasted);
-        }}
-        onBlur={onBlurValidate}
-        placeholder={appCopy("Ex. MANNY", "e.g. MANNY")}
-        required
-        maxLength={24}
-        autoComplete="off"
-        spellCheck={false}
-        aria-invalid={Boolean(error)}
-        aria-describedby="af-code-hint af-code-help"
-      />
-      {checking ? (
-        <p className="af-field-hint af-code-checking">{appCopy("Vérification…", "Checking…")}</p>
-      ) : error ? (
-        <p className="af-field-error" role="alert">
-          {error}
-        </p>
-      ) : normalized ? (
-        <p id="af-code-hint" className="af-field-hint">
-          {`useprocess.xyz/join/${normalized}`}
-        </p>
-      ) : null}
-      <p id="af-code-help" className="af-field-help">
-        {appCopy("Pas de code ?", "No code?")}{" "}
-        <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-          {appCopy("Télécharge Process", "Download Process")}
-        </a>
-        {appCopy(" → Réglages → Programme créateurs.", " → Settings → Creator Program.")}
-      </p>
-    </div>
-  );
-}
-
-function ApplyLoginPanel({
-  email,
-  setEmail,
-  password,
-  setPassword,
-  authBusy,
-  busy,
-  error,
-  authNotice,
-  authNoticeTone,
-  onLogin,
-  onForgotPassword,
-  onSwitchToSignup,
-  onUseAnotherEmail,
-}) {
-  const [emailError, setEmailError] = useState("");
-  const [shakeEmail, setShakeEmail] = useState(false);
-  const emailValue = email.trim();
-  const emailOk = isValidEmail(emailValue);
-  const canSubmit = emailOk && password.length >= 6 && !authBusy && !busy;
-
-  function validateEmailField({ strict = false } = {}) {
-    const result = validateEmailFormat(email);
-    if (!result.ok) {
-      setEmailError(result.error);
-      if (strict) {
-        setShakeEmail(true);
-        window.setTimeout(() => setShakeEmail(false), 520);
-      }
-      return false;
-    }
-    setEmailError("");
-    return true;
-  }
-
-  return (
-    <div className="af-login-panel">
-      <h2 className="af-login-title">{appCopy("Connexion", "Log in")}</h2>
-      <p className="af-login-lead">
-        {appCopy(
-          "Connecte-toi avec ton compte Process pour envoyer ou reprendre ta candidature créateur.",
-          "Sign in with your Process account to submit or continue your creator application."
-        )}
-      </p>
-
-      <form
-        className="af-login-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!validateEmailField({ strict: true })) return;
-          if (!canSubmit) return;
-          onLogin?.({ email: emailValue, password });
-        }}
-      >
-        <div className={`af-field ${shakeEmail ? "is-shaking" : ""} ${emailError ? "is-invalid" : ""}`}>
-          <div className="af-label-row">
-            <label htmlFor="af-login-email">Email</label>
-            <RequiredBadge done={emailOk} />
-          </div>
-          <input
-            id="af-login-email"
-            className={`af-input ${emailError ? "is-error" : ""}`}
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (emailError) setEmailError("");
-            }}
-            onBlur={() => validateEmailField({ strict: Boolean(email.trim()) })}
-            required
-            autoComplete="email"
-            aria-invalid={Boolean(emailError)}
-          />
-          {emailError ? (
-            <p className="af-field-error" role="alert">
-              {emailError}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="af-field">
-          <div className="af-label-row">
-            <label htmlFor="af-login-password">{appCopy("Mot de passe", "Password")}</label>
-            <RequiredBadge done={password.length >= 6} />
-          </div>
-          <input
-            id="af-login-password"
-            className="af-input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            autoComplete="current-password"
-          />
-          <p className="af-field-help af-field-help-row">
-            <button
-              type="button"
-              className="af-inline-link"
-              disabled={authBusy || !emailOk}
-              onClick={() => onForgotPassword?.(emailValue)}
-            >
-              {authBusy
-                ? appCopy("Envoi…", "Sending…")
-                : appCopy("Mot de passe oublié ?", "Forgot password?")}
-            </button>
-          </p>
-        </div>
-
-        {authNotice ? (
-          <div
-            className={`af-form-info ${authNoticeTone === "success" ? "is-success" : ""}`}
-            role="status"
-          >
-            <p>{authNotice}</p>
-            {authNoticeTone !== "success" ? (
-              <button type="button" className="af-btn af-btn-sm af-btn-black" onClick={() => onUseAnotherEmail?.()}>
-                {appCopy("Utiliser un autre email", "Use another email")}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
-        {error ? <p className="af-form-error">{error}</p> : null}
-
-        <div className="af-form-actions">
-          <button type="submit" className="af-btn af-btn-primary" disabled={!canSubmit}>
-            {authBusy ? appCopy("Connexion…", "Logging in…") : appCopy("Se connecter", "Log in")}
-          </button>
-          <button type="button" className="af-text-link-below" disabled={authBusy || busy} onClick={() => onSwitchToSignup?.()}>
-            {appCopy("Créer un compte", "Create account")}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function ApplyFlow({
-  user,
-  busy,
-  authBusy,
-  error,
-  authMode,
-  authNotice,
-  authNoticeTone,
-  onUseAnotherEmail,
-  onForgotPassword,
-  onSwitchToLogin,
-  onSwitchToSignup,
-  onLogin,
-  onGoLogin,
-  onSubmit,
-  email,
-  setEmail,
-  password,
-  setPassword,
-  applyStep,
-  serverCodeError,
-  onClearServerCodeError,
-  prefill,
-}) {
-  const [name, setName] = useState(() => prefill?.name || user?.displayName || "");
-  const [terms, setTerms] = useState(false);
-  const [code, setCode] = useState(() => prefill?.code || "");
-  const [codeError, setCodeError] = useState("");
-  const [codeChecking, setCodeChecking] = useState(false);
-  const [codeOk, setCodeOk] = useState(false);
-  const [shakeCode, setShakeCode] = useState(false);
-  const [emailError, setEmailError] = useState("");
-  const [shakeEmail, setShakeEmail] = useState(false);
-  const debounceRef = useRef(null);
-  const prefillValidatedRef = useRef(false);
-
-  const emailValue = (user?.email || email).trim();
-  const emailOk = isValidEmail(emailValue);
-
-  useEffect(() => {
-    if (user?.email) setEmail(user.email);
-    if (user?.displayName && !name.trim()) setName(user.displayName);
-    else if (prefill?.name && !name.trim()) setName(prefill.name);
-  }, [user, setEmail, name, prefill?.name]);
-
-  useEffect(() => {
-    if (prefill?.email && !user?.email) {
-      setEmail(prefill.email);
-    }
-  }, [prefill?.email, user?.email, setEmail]);
-
-  useEffect(() => {
-    if (prefillValidatedRef.current) return;
-    const initialCode = (prefill?.code || code).trim();
-    if (!initialCode) return;
-    prefillValidatedRef.current = true;
-    validateCodeLive(initialCode);
-  }, [prefill?.code, code]);
-
-  function triggerCodeShake() {
-    setShakeCode(true);
-    window.setTimeout(() => setShakeCode(false), 520);
-  }
-
-  function triggerEmailShake() {
-    setShakeEmail(true);
-    window.setTimeout(() => setShakeEmail(false), 520);
-  }
-
-  function validateEmailField({ strict = false } = {}) {
-    if (user?.email) {
-      setEmailError("");
-      return true;
-    }
-
-    const result = validateEmailFormat(email);
-    if (!result.ok) {
-      setEmailError(result.error);
-      if (strict) triggerEmailShake();
-      return false;
-    }
-
-    setEmailError("");
-    return true;
-  }
-
-  async function validateCodeLive(raw, { strict = false } = {}) {
-    const trimmed = String(raw || "").trim();
-    onClearServerCodeError?.();
-
-    if (!trimmed) {
-      setCodeError("");
-      setCodeOk(false);
-      return false;
-    }
-
-    const format = validateAffiliateCodeFormat(trimmed);
-    if (!format.ok) {
-      setCodeError(format.error);
-      setCodeOk(false);
-      if (strict) triggerCodeShake();
-      return false;
-    }
-
-    setCodeChecking(true);
-    try {
-      const result = await checkAffiliateCodeAvailability(trimmed, { uid: user?.uid });
-      setCodeError(result.ok ? "" : result.error);
-      setCodeOk(result.ok);
-      if (!result.ok && strict) triggerCodeShake();
-      return result.ok;
-    } finally {
-      setCodeChecking(false);
-    }
-  }
-
-  useEffect(() => {
-    if (serverCodeError) {
-      setCodeError(serverCodeError);
-      setCodeOk(false);
-      triggerCodeShake();
-    }
-  }, [serverCodeError]);
-
-  useEffect(() => {
-    if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    if (!code.trim()) {
-      setCodeError("");
-      setCodeOk(false);
-      setCodeChecking(false);
-      return undefined;
-    }
-
-    debounceRef.current = window.setTimeout(() => {
-      validateCodeLive(code);
-    }, 450);
-
-    return () => {
-      if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    };
-  }, [code, user?.uid]);
-
-  function handleCodeChange(next) {
-    onClearServerCodeError?.();
-    setCode(parseAcquisitionCodeFromInput(next));
-  }
-
-  const formReady =
-    terms &&
-    name.trim() &&
-    emailOk &&
-    code.trim() &&
-    codeOk &&
-    !codeError &&
-    !codeChecking &&
-    (user || password.length >= 6);
-
-  if (applyStep === 2) {
-  return (
-    <div className="af-app af-grid-bg af-ld-apply">
-      <AffiliateTopNav compact onApply={() => {}} onLogin={onGoLogin || onSwitchToLogin} />
-      <div className="af-flow">
-        <div className="af-flow-top">
-          <ProcessAppIcon size={36} />
-          <span className="af-step-pill">{appCopy("Étape 2 sur 2", "Step 2 of 2")}</span>
-            <h1>{appCopy("Candidature envoyée", "Application submitted")}</h1>
-            <p className="af-flow-lead">
-              {appCopy(
-                "Envoie ton @ TikTok ou Instagram pour accélérer la validation de ton compte créateur.",
-                "Send your TikTok or Instagram @ to speed up your creator account approval."
-              )}
-            </p>
-          </div>
-          <RewardsBox />
-          <SocialChannelForm displayName={name} />
-          <button
-            type="button"
-            className="af-btn af-btn-primary"
-            style={{ marginTop: 16 }}
-            onClick={() => navigateHash("overview")}
-          >
-            {appCopy("Voir mon espace", "Go to dashboard")}
-          </button>
-          <PoweredFooter />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="af-app af-grid-bg af-ld-apply">
-      <AffiliateTopNav compact onApply={() => {}} onLogin={onGoLogin || onSwitchToLogin} />
-      <div className="af-flow">
-        <div className="af-flow-top">
-          <ProcessAppIcon size={36} />
-          <span className="af-step-pill">{appCopy("Étape 1 sur 2", "Step 1 of 2")}</span>
-          <h1>{appCopy("Postuler à Process", "Apply to Process")}</h1>
-          <p className="af-flow-lead">
-            {appCopy(
-              "Envoie ta candidature pour rejoindre le programme créateur Process et commence à gagner des commissions sur tes parrainages.",
-              "Submit your application to join the Process creator program and start earning commissions for your referrals."
-            )}
-          </p>
-        </div>
-
-        <RewardsBox />
-
-        {!user && authMode === "login" ? (
-          <ApplyLoginPanel
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            authBusy={authBusy}
-            busy={busy}
-            error={error}
-            authNotice={authNotice}
-            authNoticeTone={authNoticeTone}
-            onLogin={onLogin}
-            onForgotPassword={onForgotPassword}
-            onSwitchToSignup={onSwitchToSignup}
-            onUseAnotherEmail={onUseAnotherEmail}
-          />
-        ) : (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const emailValid = validateEmailField({ strict: true });
-            if (!emailValid) return;
-            const valid = await validateCodeLive(code, { strict: true });
-            if (!valid) return;
-            onSubmit({
-              displayName: name.trim(),
-              code: code.trim(),
-              email: emailValue,
-              password,
-            });
-          }}
-        >
-          <div className="af-field">
-            <div className="af-label-row">
-              <label htmlFor="af-first-name">{appCopy("Prénom", "First name")}</label>
-              <RequiredBadge done={name.trim().length > 0} />
-            </div>
-            <input
-              id="af-first-name"
-              className="af-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={appCopy("Ex. Amine", "e.g. Amine")}
-              autoComplete="given-name"
-              required
-            />
-          </div>
-
-          <div className={`af-field ${shakeEmail ? "is-shaking" : ""} ${emailError ? "is-invalid" : ""}`}>
-            <div className="af-label-row">
-              <label htmlFor="af-email">Email</label>
-              <RequiredBadge done={emailOk} />
-            </div>
-            <input
-              id="af-email"
-              className={`af-input ${emailError ? "is-error" : ""}`}
-              type="email"
-              value={user?.email || email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (emailError) setEmailError("");
-              }}
-              onBlur={() => validateEmailField({ strict: Boolean(email.trim()) })}
-              readOnly={Boolean(user?.email)}
-              required
-              autoComplete="email"
-              aria-invalid={Boolean(emailError)}
-            />
-            {emailError ? (
-              <p className="af-field-error" role="alert">
-                {emailError}
-              </p>
-            ) : null}
-          </div>
-
-          <ReferralCodeField
-            value={code}
-            onChange={handleCodeChange}
-            error={codeError}
-            checking={codeChecking}
-            shake={shakeCode}
-            onBlurValidate={() => validateCodeLive(code, { strict: true })}
-            requiredDone={codeOk}
-          />
-
-          {!user ? (
-            <div className="af-field">
-              <div className="af-label-row">
-                <label htmlFor="af-auth-password">{appCopy("Mot de passe", "Password")}</label>
-                <RequiredBadge done={password.length >= 6} />
-              </div>
-              <input
-                id="af-auth-password"
-                className="af-input"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-            </div>
-          ) : null}
-
-          {user && authNotice ? (
-            <div
-              className={`af-form-info ${authNoticeTone === "success" ? "is-success" : ""}`}
-              role="status"
-            >
-              <p>{authNotice}</p>
-            </div>
-          ) : null}
-
-          <label className="af-checkbox-row">
-            <input
-              type="checkbox"
-              checked={terms}
-              onChange={(e) => setTerms(e.target.checked)}
-              required
-            />
-            <span>
-              {appCopy("J'accepte les", "I agree to the")}{" "}
-              <a href={TERMS_URL} target="_blank" rel="noopener noreferrer">
-                {appCopy("Conditions du programme Process", "Process Program Terms")}
-              </a>
-              <IconExternal style={{ width: 12, height: 12, display: "inline", verticalAlign: "middle" }} />
-            </span>
-          </label>
-
-          {error ? <p className="af-form-error">{error}</p> : null}
-
-          <div className="af-form-actions">
-            <button type="submit" className="af-btn af-btn-primary" disabled={busy || authBusy || !formReady}>
-              {busy ? appCopy("Commencer…", "Starting…") : appCopy("Commencer", "Start")}
-            </button>
-
-            {!user ? (
-              <button
-                type="button"
-                className="af-text-link-below"
-                disabled={busy || authBusy}
-                onClick={() => onSwitchToLogin?.()}
-              >
-                {appCopy("Se connecter", "Log in")}
-              </button>
-            ) : null}
-          </div>
-        </form>
-        )}
-
-        <PoweredFooter />
-      </div>
-    </div>
-  );
-}
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
@@ -974,81 +389,6 @@ function PayoutSidebarWidget({ dashboard, onConnect, onManage, busy }) {
       <p className="af-payout-sidebar-note">
         {appCopy("Virements via Stripe Connect", "Payouts via Stripe Connect")}
       </p>
-    </div>
-  );
-}
-
-function StripeConnectModal({ open, onClose, onConfirm, busy }) {
-  const [confirmed, setConfirmed] = useState(false);
-
-  useEffect(() => {
-    if (open) setConfirmed(false);
-  }, [open]);
-
-  if (!open) return null;
-
-  return (
-    <div className="af-modal-overlay" role="presentation" onClick={onClose}>
-      <div
-        className="af-modal af-stripe-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="af-stripe-modal-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button type="button" className="af-modal-close" onClick={onClose} aria-label={appCopy("Fermer", "Close")}>
-          ×
-        </button>
-        <div className="af-stripe-modal-icon">
-          <IconWallet style={{ width: 22, height: 22 }} />
-        </div>
-        <h2 id="af-stripe-modal-title">{appCopy("Compte bancaire", "Bank account")}</h2>
-        <p className="af-stripe-modal-lead">
-          {appCopy(
-            "Process utilise Stripe pour des virements sécurisés vers ton compte.",
-            "Process uses Stripe for secure payouts to your bank account."
-          )}
-        </p>
-
-        <div className="af-stripe-warning">
-          <IconInfo style={{ width: 16, height: 16, flexShrink: 0 }} />
-          <p>
-            {appCopy(
-              "Si ton compte ne respecte pas ces conditions, les virements peuvent être retardés ou refusés.",
-              "If your bank account does not meet these requirements, payouts may be delayed or rejected."
-            )}
-          </p>
-        </div>
-
-        <ol className="af-stripe-requirements">
-          <li>{appCopy("Compte en devise locale (ex. EUR en France).", "Bank account must be in local currency (e.g. EUR for France).")}</li>
-          <li>{appCopy("Compte courant — pas d'épargne ni carte.", "Must be a checking account — not savings or debit card.")}</li>
-          <li>{appCopy("Titulaire identique à ton profil créateur.", "Account holder name must match your creator profile.")}</li>
-          <li>{appCopy("IBAN / RIB exacts à 100 %.", "Bank details must be 100% accurate.")}</li>
-        </ol>
-
-        <label className="af-stripe-confirm">
-          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-          <span>
-            {appCopy(
-              "Je confirme que mon compte respecte toutes ces conditions.",
-              "I confirm that my bank account meets all of the above requirements."
-            )}
-          </span>
-        </label>
-
-        <button
-          type="button"
-          className="af-btn af-btn-black af-stripe-continue"
-          disabled={!confirmed || busy}
-          onClick={onConfirm}
-        >
-          {busy ? appCopy("Redirection…", "Redirecting…") : appCopy("Continuer", "Continue")}
-        </button>
-        <p className="af-stripe-powered">
-          {appCopy("Propulsé par", "Powered by")} <strong>Stripe</strong>
-        </p>
-      </div>
     </div>
   );
 }
@@ -1718,6 +1058,7 @@ function DashboardShell({
 }) {
   const pageTitles = {
     overview: appCopy("Vue d'ensemble", "Overview"),
+    methode: appCopy("Méthode TikTok", "TikTok method"),
     links: appCopy("Liens", "Links"),
     earnings: appCopy("Gains", "Earnings"),
     analytics: appCopy("Analytique", "Analytics"),
@@ -1731,6 +1072,7 @@ function DashboardShell({
 
   const navItems = [
     { id: "overview", label: appCopy("Vue d'ensemble", "Overview"), icon: IconOverview },
+    { id: "methode", label: appCopy("Méthode", "Method"), icon: IconCursor },
     { id: "links", label: appCopy("Liens", "Links"), icon: IconLink },
     { id: "earnings", label: appCopy("Gains", "Earnings"), icon: IconCoin },
     { id: "payouts", label: appCopy("Paiements", "Payouts"), icon: IconWallet },
@@ -1738,6 +1080,8 @@ function DashboardShell({
 
   function renderPage() {
     switch (route) {
+      case "methode":
+        return <AffiliateMethodPage />;
       case "links":
         return <LinksPage dashboard={dashboard} isPending={isPending} primaryCode={primaryCode} linkUrl={linkUrl} />;
       case "earnings":
@@ -1862,15 +1206,13 @@ export function AffiliateApp() {
   const [route, go] = useHashRoute();
   const [user, setUser] = useState(null);
   const [dashboard, setDashboard] = useState(null);
+  const [dashboardLookup, setDashboardLookup] = useState("pending");
   const [bootstrapping, setBootstrapping] = useState(true);
   const [busy, setBusy] = useState(false);
   const [stripeBusy, setStripeBusy] = useState(false);
-  const [stripeModalOpen, setStripeModalOpen] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [email, setEmail] = useState(() => getConsumedApplyPrefill()?.email || "");
-  const [password, setPassword] = useState("");
-  const [applyStep, setApplyStep] = useState(1);
   const [applyCodeError, setApplyCodeError] = useState("");
   const [applyAuthMode, setApplyAuthMode] = useState("signup");
   const [authNotice, setAuthNotice] = useState("");
@@ -1910,13 +1252,16 @@ export function AffiliateApp() {
         const data = await affiliateApi("affiliateDashboard", { token });
         setDashboard(data);
         writeDashboardCache(nextUser.uid, data);
+        setDashboardLookup("ready");
         return data;
       } catch (err) {
         if (err.status === 404) {
           setDashboard(null);
           clearDashboardCache(nextUser.uid);
-        } else if (!silent) {
-          setError(err.message || "dashboard_error");
+          setDashboardLookup("missing");
+        } else {
+          setDashboardLookup((prev) => (prev === "ready" ? "ready" : "missing"));
+          if (!silent) setError(err.message || "dashboard_error");
         }
         throw err;
       } finally {
@@ -1939,6 +1284,13 @@ export function AffiliateApp() {
       }
       try {
         const auth = await getFirebaseAuth();
+        try {
+          await completeAffiliateEmailLink();
+        } catch (linkErr) {
+          if (!cancelled) {
+            setError(linkErr?.message || "email_link_failed");
+          }
+        }
         const { onAuthStateChanged } = await import("firebase/auth");
         onAuthStateChanged(auth, (nextUser) => {
           if (cancelled) return;
@@ -1946,6 +1298,7 @@ export function AffiliateApp() {
 
           if (!nextUser) {
             setDashboard(null);
+            setDashboardLookup("missing");
             dashboardUserRef.current = null;
             bootstrappedRef.current = true;
             setBootstrapping(false);
@@ -1955,6 +1308,7 @@ export function AffiliateApp() {
           const cached = readDashboardCache(nextUser.uid);
           if (cached) {
             setDashboard(cached);
+            setDashboardLookup("ready");
             bootstrappedRef.current = true;
             setBootstrapping(false);
             void loadDashboard(nextUser, { silent: true });
@@ -1996,9 +1350,26 @@ export function AffiliateApp() {
       go("program");
     }
     if (user && dashboard && LANDING_HASHES.has(route)) {
-      go("overview");
+      if (isOnboardingInProgress() && !isOnboardingUnlocked(user.uid)) {
+        go("apply");
+      } else {
+        go("overview");
+      }
     }
-  }, [bootstrapping, user, dashboard, route, go]);
+    if (user && dashboard && isOnboardingInProgress() && !isOnboardingUnlocked(user.uid) && route !== "apply") {
+      go("apply");
+    }
+    if (
+      user &&
+      !dashboard &&
+      dashboardLookup === "missing" &&
+      !LANDING_HASHES.has(route) &&
+      route !== "apply" &&
+      route !== "auth"
+    ) {
+      go(isOnboardingInProgress() ? "apply" : "program");
+    }
+  }, [bootstrapping, user, dashboard, dashboardLookup, route, go]);
 
   useEffect(() => {
     if (bootstrapping) return;
@@ -2039,7 +1410,13 @@ export function AffiliateApp() {
       } finally {
         if (!cancelled) {
           setStripeBusy(false);
-          navigateHash("payouts");
+          if (isOnboardingInProgress() && !isOnboardingUnlocked(user.uid)) {
+            const draft = readOnboardingDraft();
+            writeOnboardingDraft({ ...draft, stripeDone: true, stripeStarted: true, step: "preview" });
+            navigateHash("apply");
+          } else {
+            navigateHash("payouts");
+          }
         }
       }
     })();
@@ -2049,26 +1426,30 @@ export function AffiliateApp() {
     };
   }, [user, bootstrapping, loadDashboard]);
 
-  function openStripeConnectModal() {
-    setStripeModalOpen(true);
-  }
-
-  async function confirmStripeConnect() {
+  async function startStripeConnect() {
     if (!user) return;
     setStripeBusy(true);
     setError("");
     try {
       const token = await getAuthToken(user, false);
-      const result = await affiliateApi("affiliateStripeConnectStart", { token });
+      const result = await Promise.race([
+        affiliateApi("affiliateStripeConnectStart", { token }),
+        new Promise((_, reject) =>
+          window.setTimeout(() => reject(new Error("STRIPE_TIMEOUT")), 12000)
+        ),
+      ]);
       if (result?.url) {
         window.location.href = result.url;
         return;
       }
       throw new Error("STRIPE_NOT_CONFIGURED");
     } catch (err) {
-      setError(err.message || "stripe_connect_failed");
+      setError(
+        err.message === "STRIPE_TIMEOUT"
+          ? appCopy("Stripe met trop de temps. Réessaie.", "Stripe is taking too long. Try again.")
+          : err.message || "stripe_connect_failed"
+      );
       setStripeBusy(false);
-      setStripeModalOpen(false);
     }
   }
 
@@ -2084,7 +1465,7 @@ export function AffiliateApp() {
       }
     } catch (err) {
       if (err.status === 404) {
-        openStripeConnectModal();
+        void startStripeConnect();
       } else {
         setError(err.message || "stripe_dashboard_failed");
       }
@@ -2098,64 +1479,64 @@ export function AffiliateApp() {
     setError("");
     setApplyCodeError("");
 
-    const normalizedCode = parseAcquisitionCodeFromInput(form.code);
+    const normalizedCode = form.code ? parseAcquisitionCodeFromInput(form.code) : "";
+
+    if (dashboard?.affiliateId) {
+      setBusy(false);
+      return true;
+    }
 
     try {
       let currentUser = user;
       if (!currentUser) {
-        const auth = await getFirebaseAuth();
-        const { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } =
-          await getFirebaseAuthModule();
-
-        try {
-          const credential = await createUserWithEmailAndPassword(auth, form.email, form.password);
-          currentUser = credential.user;
-        } catch (createErr) {
-          if (createErr?.code === "auth/email-already-in-use") {
-            let oauthHint = "";
-            try {
-              const methods = await fetchSignInMethodsForEmail(auth, form.email);
-              if (methods.length > 0 && !methods.includes("password")) {
-                oauthHint = existingAccountOAuthHint();
-              }
-            } catch {
-              /* ignore */
-            }
-            setApplyAuthMode("login");
-            setAuthNotice(oauthHint || existingAccountPrompt());
-            setAuthNoticeTone("info");
-            setError("");
-            return;
-          }
-          throw createErr;
-        }
+        currentUser = await Promise.race([
+          ensureAnonymousAffiliateUser(),
+          new Promise((_, reject) =>
+            window.setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 8000)
+          ),
+        ]);
         setUser(currentUser);
       }
 
       const token = await getAuthToken(currentUser, false);
-      const applyResult = await affiliateApi("affiliateApply", {
-        token,
-        body: {
-          displayName: form.displayName,
-          code: normalizedCode,
-          email: form.email || currentUser.email || undefined,
-        },
-      });
+      const applyResult = await Promise.race([
+        affiliateApi("affiliateApply", {
+          token,
+          body: {
+            displayName: form.displayName,
+            ...(normalizedCode ? { code: normalizedCode } : {}),
+            email: form.email || currentUser.email || undefined,
+            onboarding: form.onboarding || undefined,
+          },
+        }),
+        new Promise((_, reject) =>
+          window.setTimeout(() => reject(new Error("APPLY_TIMEOUT")), 12000)
+        ),
+      ]);
+
+      if (!applyResult?.affiliateId) {
+        throw new Error("APPLY_TIMEOUT");
+      }
 
       const optimistic = buildOptimisticDashboard({
         affiliateId: applyResult.affiliateId,
         displayName: form.displayName,
-        code: applyResult.code || normalizedCode,
+        code: applyResult.primaryCode || applyResult.code || normalizedCode,
         status: applyResult.status,
         codes: applyResult.codes,
       });
       setDashboard(optimistic);
+      setDashboardLookup("ready");
       writeDashboardCache(currentUser.uid, optimistic);
 
-      setApplyStep(2);
-      playSettingsChange();
-      setSuccess(appCopy("Candidature envoyée.", "Application submitted."));
+      const draft = readOnboardingDraft();
+      writeOnboardingDraft({
+        ...draft,
+        applied: true,
+        step: draft.step === "validated" ? "stripe" : draft.step,
+      });
       void loadDashboard(currentUser, { silent: true, force: true });
+      return true;
     } catch (err) {
       const message = err?.data?.error || err?.message || "";
       if (message === "CODE_CONFLICT" || message === "INVALID_CODE") {
@@ -2165,6 +1546,62 @@ export function AffiliateApp() {
       } else {
         setError(formatApplyError(err));
       }
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!user || bootstrapping) return;
+    if (!consumeApplyAfterLink()) return;
+    const draft = readOnboardingDraft();
+    go("apply");
+    const name = String(draft.answers.firstName || "").trim();
+    if (draft.applied) {
+      writeOnboardingDraft({ ...draft, step: "invite" });
+    }
+    if (!name) return;
+    void handleApply({
+      displayName: name,
+      code: "",
+      email: user.email,
+      onboarding: draft.answers,
+    }).then((ok) => {
+      if (ok === true) {
+        writeOnboardingDraft({ ...readOnboardingDraft(), applied: true, step: "invite" });
+      }
+    });
+  }, [user, bootstrapping, go]);
+
+  async function handleClaimCode(form) {
+    if (!user) return false;
+    setBusy(true);
+    setError("");
+    setApplyCodeError("");
+    try {
+      const token = await getAuthToken(user, false);
+      await affiliateApi("affiliateApply", {
+        token,
+        body: {
+          displayName: form.displayName,
+          code: parseAcquisitionCodeFromInput(form.code),
+          email: form.email || user.email || undefined,
+          onboarding: form.onboarding || undefined,
+        },
+      });
+      markOnboardingUnlocked(user.uid);
+      playSettingsChange();
+      await loadDashboard(user, { silent: true, force: true });
+      return true;
+    } catch (err) {
+      const message = err?.data?.error || err?.message || "";
+      if (message === "CODE_CONFLICT" || message === "INVALID_CODE") {
+        setApplyCodeError(formatApplyError(err));
+      } else {
+        setError(formatApplyError(err));
+      }
+      return false;
     } finally {
       setBusy(false);
     }
@@ -2175,40 +1612,25 @@ export function AffiliateApp() {
     setError("");
     setAuthNotice("");
     setAuthNoticeTone("info");
-    setPassword("");
   }
 
-  async function handleApplyLogin({ email: loginEmail, password: loginPassword }) {
+  async function handleApplyLogin({ email: loginEmail }) {
     setAuthBusy(true);
     setError("");
     setAuthNotice("");
 
     try {
-      const auth = await getFirebaseAuth();
-      const { signInWithEmailAndPassword } = await getFirebaseAuthModule();
-      const credential = await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPassword);
-      setUser(credential.user);
-      setEmail(credential.user.email || loginEmail.trim());
-      setPassword("");
-      setApplyAuthMode("signup");
+      await sendAffiliateEmailLink(loginEmail, { nextHash: "apply", applyAfter: true });
+      setEmail(loginEmail.trim());
       setAuthNotice(
         appCopy(
-          "Connecté — complète ta candidature ci-dessous.",
-          "Signed in — complete your application below."
+          "Lien envoyé — ouvre ton email pour te connecter, sans mot de passe.",
+          "Link sent — open your email to sign in, no password."
         )
       );
       setAuthNoticeTone("success");
     } catch (err) {
-      if (err?.code === "auth/invalid-credential" || err?.code === "auth/wrong-password") {
-        setError(
-          appCopy(
-            "Mot de passe incorrect. Réessaie ou utilise un autre email.",
-            "Incorrect password. Try again or use another email."
-          )
-        );
-      } else {
-        setError(formatAuthError(err));
-      }
+      setError(formatAuthError(err) || err?.message || "email_link_failed");
     } finally {
       setAuthBusy(false);
     }
@@ -2226,36 +1648,7 @@ export function AffiliateApp() {
     setAuthNotice("");
     setAuthNoticeTone("info");
     setError("");
-    setPassword("");
     setEmail("");
-  }
-
-  async function handleForgotPassword(targetEmail) {
-    const normalized = String(targetEmail || "").trim();
-    if (!isValidEmail(normalized)) {
-      setError(
-        appCopy(
-          "Entre un email valide pour réinitialiser ton mot de passe.",
-          "Enter a valid email to reset your password."
-        )
-      );
-      return;
-    }
-
-    setAuthBusy(true);
-    setError("");
-    try {
-      const auth = await getFirebaseAuth();
-      const { sendPasswordResetEmail } = await import("firebase/auth");
-      await sendPasswordResetEmail(auth, normalized);
-      setApplyAuthMode("login");
-      setAuthNotice(passwordResetSentMessage(normalized));
-      setAuthNoticeTone("success");
-    } catch (err) {
-      setError(formatAuthError(err) || passwordResetErrorMessage());
-    } finally {
-      setAuthBusy(false);
-    }
   }
 
   async function signOut() {
@@ -2264,14 +1657,17 @@ export function AffiliateApp() {
     await firebaseSignOut(auth);
     clearDashboardCache(user?.uid);
     setDashboard(null);
+    setDashboardLookup("missing");
     dashboardUserRef.current = null;
-    setApplyStep(1);
     setApplyAuthMode("signup");
     setAuthNotice("");
     go("program");
   }
 
-  const primaryCode = useMemo(() => dashboard?.codes?.[0]?.code || "", [dashboard]);
+  const primaryCode = useMemo(
+    () => dashboard?.primaryCode || dashboard?.codes?.[0]?.code || "",
+    [dashboard]
+  );
   const linkUrl = useMemo(
     () => (primaryCode ? buildCreatorLandingUrl(primaryCode) : ""),
     [primaryCode]
@@ -2280,8 +1676,13 @@ export function AffiliateApp() {
   const wantsApply =
     route === "apply" || (!user && hasAffiliatePrefill(applyPrefill));
 
+  const unlocked = Boolean(user && isOnboardingUnlocked(user.uid));
+  const midApply = isOnboardingInProgress() && !unlocked;
+  const hasAccount = Boolean(user && dashboard);
+  const showOnboarding = !unlocked && (wantsApply || midApply) && !(hasAccount && !midApply);
+
   const applyFlow = (
-    <ApplyFlow
+    <AffiliateOnboarding
       user={user}
       busy={busy}
       authBusy={authBusy}
@@ -2290,20 +1691,27 @@ export function AffiliateApp() {
       authNotice={authNotice}
       authNoticeTone={authNoticeTone}
       onUseAnotherEmail={resetApplyAuth}
-      onForgotPassword={handleForgotPassword}
       onSwitchToLogin={switchApplyToLogin}
       onSwitchToSignup={switchApplyToSignup}
       onLogin={handleApplyLogin}
       onGoLogin={switchApplyToLogin}
+      onLeave={() => go("program")}
       onSubmit={handleApply}
+      onClaimCode={handleClaimCode}
+      onConnectStripe={startStripeConnect}
+      stripeBusy={stripeBusy}
       email={email}
       setEmail={setEmail}
-      password={password}
-      setPassword={setPassword}
-      applyStep={applyStep}
       serverCodeError={applyCodeError}
       onClearServerCodeError={() => setApplyCodeError("")}
       prefill={applyPrefill}
+      onFinished={() => {
+        if (user) markOnboardingUnlocked(user.uid);
+        go("methode");
+      }}
+      dashboard={dashboard}
+      linkUrl={linkUrl}
+      stripeReady={isStripePayoutReady(dashboard)}
     />
   );
 
@@ -2327,7 +1735,7 @@ export function AffiliateApp() {
   if (!isFirebaseConfigured() && wantsApply) {
     return (
       <AffiliatePageChrome>
-        <div className="af-app af-grid-bg af-ld-apply">
+        <div className="af-app af-ob af-ld-apply">
           <AffiliateTopNav compact onApply={() => go("apply")} onLogin={() => {}} />
           <div className="af-flow">
             <h1>{appCopy("Portail créateur", "Creator portal")}</h1>
@@ -2343,7 +1751,11 @@ export function AffiliateApp() {
     );
   }
 
-  if (bootstrapping && wantsApply) {
+  const waitingDashboard = Boolean(
+    user && !dashboard && (bootstrapping || dashboardLookup === "pending")
+  );
+
+  if ((bootstrapping && wantsApply) || waitingDashboard) {
     return (
       <AffiliatePageChrome>
         <div className="af-app af-loading">
@@ -2354,7 +1766,7 @@ export function AffiliateApp() {
     );
   }
 
-  if (wantsApply) {
+  if (showOnboarding || (wantsApply && !unlocked && !hasAccount)) {
     return (
       <AffiliatePageChrome>
         {applyFlow}
@@ -2363,52 +1775,24 @@ export function AffiliateApp() {
     );
   }
 
-  if (!user) {
+  if (!user || !dashboard) {
     return landing;
-  }
-
-  if (!dashboard && applyStep !== 2) {
-    return (
-      <AffiliatePageChrome>
-        <DashboardSkeleton
-        route={route}
-        pageTitles={{
-          overview: appCopy("Vue d'ensemble", "Overview"),
-          links: appCopy("Liens", "Links"),
-          earnings: appCopy("Gains", "Earnings"),
-          analytics: appCopy("Analytique", "Analytics"),
-          events: appCopy("Événements", "Events"),
-          customers: appCopy("Clients", "Customers"),
-          bounties: appCopy("Bonus", "Bounties"),
-          resources: appCopy("Ressources", "Resources"),
-          payouts: appCopy("Paiements", "Payouts"),
-          settings: appCopy("Paramètres", "Settings"),
-        }}
-        />
-      </AffiliatePageChrome>
-    );
   }
 
   return (
     <AffiliatePageChrome>
       <DashboardShell
-        route={["overview", "links", "earnings", "payouts", "settings"].includes(route) ? route : "overview"}
+        route={["overview", "methode", "links", "earnings", "payouts", "settings"].includes(route) ? route : "overview"}
         go={go}
         user={user}
         dashboard={dashboard}
         isPending={isPending}
         primaryCode={primaryCode}
         linkUrl={linkUrl}
-        onConnectStripe={openStripeConnectModal}
+        onConnectStripe={startStripeConnect}
         onManageStripe={openStripeDashboard}
         stripeBusy={stripeBusy}
         onSignOut={signOut}
-      />
-      <StripeConnectModal
-        open={stripeModalOpen}
-        onClose={() => setStripeModalOpen(false)}
-        onConfirm={confirmStripeConnect}
-        busy={stripeBusy}
       />
       {error ? <div className="af-toast error">{error}</div> : null}
       {success ? <div className="af-toast success">{success}</div> : null}

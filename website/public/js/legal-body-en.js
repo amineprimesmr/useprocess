@@ -4,8 +4,7 @@ window.LEGAL_BODY_EN = {
 
       <p>
         These terms govern access to and use of the mobile application
-        <strong>Process AI</strong> ("the App"), the website <strong>useprocess.xyz</strong>,
-        and <strong>Process Studio</strong> (<a href="https://useprocess.xyz/studio">/studio</a>),
+        <strong>Process AI</strong> ("the App") and the website <strong>useprocess.xyz</strong>,
         published by <strong>Process</strong>.
         By downloading or using these services, you agree to these terms.
       </p>
@@ -15,12 +14,6 @@ window.LEGAL_BODY_EN = {
         Process AI is a wellness and fitness tracking application offering an AI coach,
         health tracking (including via Apple Health), body/face scans, and personalized
         programs. The App does not replace professional medical advice.
-      </p>
-      <p>
-        <strong>Process Studio</strong> is the creator web tool on useprocess.xyz that lets you
-        connect one or more TikTok accounts (OAuth Login Kit), publish photo carousels
-        via the TikTok Content Posting API, and view public stats / posts to analyze performance.
-        You remain responsible for published content and compliance with TikTok rules.
       </p>
 
       <h2>2. Account</h2>
@@ -108,9 +101,7 @@ window.LEGAL_BODY_EN = {
       <p>
         This policy describes how <strong>Process AI</strong> ("the App," "we")
         collects, uses, shares, and retains your data when you use the iOS mobile application
-        available on the App Store, the website <a href="https://useprocess.xyz">useprocess.xyz</a>,
-        and <strong>Process Studio</strong> (<a href="https://useprocess.xyz/studio">/studio</a>),
-        the TikTok publishing / analytics web tool.
+        available on the App Store and the website <a href="https://useprocess.xyz">useprocess.xyz</a>.
       </p>
 
       <h2>1. Data controller</h2>
@@ -132,33 +123,7 @@ window.LEGAL_BODY_EN = {
         <li><strong>Audio</strong> (if authorized): voice dictation converted to text on-device.</li>
         <li><strong>Subscription</strong>: subscription status via Apple and RevenueCat (we do not collect payment card data).</li>
         <li><strong>Technical</strong>: session identifiers, error logs, app version.</li>
-        <li><strong>Process Studio / TikTok</strong> (if you connect TikTok via OAuth Login Kit): see section 2bis.</li>
       </ul>
-
-      <h2 id="tiktok-studio">2bis. Process Studio and TikTok data</h2>
-      <p>
-        Process Studio (<a href="https://useprocess.xyz/studio">https://useprocess.xyz/studio</a>) is a creator web tool
-        hosted on the <strong>useprocess.xyz</strong> domain. When you click
-        "Connect with TikTok," you authorize Process via the official TikTok Login Kit.
-      </p>
-      <p>Depending on the scopes you approve, we may process:</p>
-      <ul>
-        <li><strong>TikTok identity</strong> (<code>user.info.basic</code> / <code>user.info.profile</code>): open_id, avatar, display name, username, bio, profile link.</li>
-        <li><strong>Profile statistics</strong> (<code>user.info.stats</code>): follower count, following count, likes, and public video count.</li>
-        <li><strong>Video list</strong> (<code>video.list</code>): metadata and metrics for public posts (views, likes, comments, shares) for performance analysis.</li>
-        <li><strong>Publishing</strong> (<code>video.upload</code> / <code>video.publish</code>): sending photo carousels to the TikTok account you connected, only after your explicit action in Studio.</li>
-        <li><strong>OAuth tokens</strong>: access_token / refresh_token stored in a signed HttpOnly session cookie on useprocess.xyz (no TikTok password).</li>
-      </ul>
-      <p>
-        Purposes: publish Process educational content, display your stats and posts to help you
-        optimize your accounts, and secure the session. We do not sell your TikTok data.
-        You can disconnect an account (token revocation) at any time from Studio.
-        Deletion / rights requests: <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a>.
-      </p>
-      <p>
-        OAuth redirect domain: <strong>useprocess.xyz</strong>
-        (<code>https://useprocess.xyz/tiktok/callback</code>). No localhost redirects in production.
-      </p>
       <p>
         <strong>GPS location:</strong> Process AI does not collect your geographic location.
         No location data is requested or transmitted by the application.

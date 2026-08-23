@@ -53,9 +53,7 @@ private func resolveFirstVisibleStep(from step: Int) -> Int? {
 }
 
 private func unlockNavigationAfterTransition() {
-    DispatchQueue.main.asyncAfter(deadline: .now() + activeNavigationUnlockDelay) {
-        isTransitioning = false
-    }
+    isTransitioning = false
 }
 
 /// Après un paiement réussi : page merci + Apple Sign In (sans repasser par le moteur sleep/finalization).
@@ -146,6 +144,8 @@ func nextStep() {
 }
 
 func performOnboardingStepAdvance() {
+    guard !isTransitioning else { return }
+
     UIApplication.shared.sendAction(
         #selector(UIResponder.resignFirstResponder),
         to: nil,

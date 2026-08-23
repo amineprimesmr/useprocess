@@ -44,6 +44,7 @@ export interface AffiliateDoc {
   payoutMethod?: "stripe" | null;
   status: AffiliateStatus;
   codes: string[];
+  primaryCode?: string;
   stats: {
     referredCount: number;
     activeSubscribers: number;
@@ -497,6 +498,78 @@ export async function releaseDueAffiliateCommissions(
   return released;
 }
 
+export async function readOwnedProcessReferralCode(uid: string): Promise<string | null> {
+  const program = await db()
+    .collection("users")
+    .doc(uid)
+    .collection("referralMeta")
+    .doc("program")
+    .get();
+  const raw = program.data()?.referralCode;
+  if (typeof raw !== "string") return null;
+  const normalized = normalizeReferralCode(raw);
+  if (!isValidReferralCode(normalized)) return null;
+  const owner = await resolveReferrerUserId(normalized);
+  return owner === uid ? normalized : null;
+}
+
+export function pickPrimaryAffiliateCode(
+  codes: string[],
+  stored?: string,
+  processCode?: string | null
+): string {
+  if (processCode && codes.includes(processCode)) return processCode;
+  if (stored && codes.includes(stored)) return stored;
+  const processLike = codes.find((code) => code.length === 5);
+  if (processLike) return processLike;
+  return codes[0] || "";
+}
+
+export async function ensureAffiliateProfile(params: {
+  affiliateId: string;
+  displayName: string;
+  email?: string;
+  uid?: string;
+  status?: AffiliateStatus;
+}): Promise<{ affiliateId: string }> {
+  const affiliateId = params.affiliateId.trim();
+  if (!affiliateId) throw new Error("INVALID_CODE");
+
+  const affiliateRef = db().collection("affiliates").doc(affiliateId);
+  const now = admin.firestore.Timestamp.now();
+  const existing = await affiliateRef.get();
+  if (existing.exists) {
+    await affiliateRef.set(
+      {
+        displayName: params.displayName.slice(0, 80),
+        ...(params.email ? { email: params.email.slice(0, 120) } : {}),
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+    return { affiliateId };
+  }
+
+  await affiliateRef.set({
+    uid: params.uid ?? null,
+    displayName: params.displayName.slice(0, 80),
+    email: params.email?.slice(0, 120) ?? null,
+    status: params.status ?? "active",
+    codes: [],
+    stats: {
+      referredCount: 0,
+      activeSubscribers: 0,
+      pendingCents: 0,
+      payableCents: 0,
+      paidCents: 0,
+      lifetimeCents: 0,
+    },
+    createdAt: now,
+    updatedAt: now,
+  });
+  return { affiliateId };
+}
+
 export async function createAffiliateWithCode(params: {
   affiliateId: string;
   code: string;
@@ -505,6 +578,7 @@ export async function createAffiliateWithCode(params: {
   uid?: string;
   status?: AffiliateStatus;
   commissionRate?: number;
+  makePrimary?: boolean;
 }): Promise<{ affiliateId: string; code: string }> {
   const code = normalizeAffiliateCode(params.code);
   if (!code || code.length < 3) throw new Error("INVALID_CODE");
@@ -526,6 +600,20 @@ export async function createAffiliateWithCode(params: {
       if (owner && owner !== affiliateId) throw new Error("CODE_CONFLICT");
     }
 
+    const affiliateSnap = await transaction.get(affiliateRef);
+    const currentCodes = Array.isArray(affiliateSnap.data()?.codes)
+      ? (affiliateSnap.data()?.codes as string[])
+      : [];
+    const nextCodes = params.makePrimary
+      ? [code, ...currentCodes.filter((item) => item !== code)]
+      : currentCodes.includes(code)
+        ? currentCodes
+        : [...currentCodes, code];
+    const nextPrimary =
+      params.makePrimary || !affiliateSnap.data()?.primaryCode
+        ? code
+        : String(affiliateSnap.data()?.primaryCode || code);
+
     transaction.set(
       codeRef,
       {
@@ -545,18 +633,23 @@ export async function createAffiliateWithCode(params: {
       {
         uid: params.uid ?? null,
         displayName: params.displayName.slice(0, 80),
-        email: params.email?.slice(0, 120) ?? null,
+        email: params.email?.slice(0, 120) ?? affiliateSnap.data()?.email ?? null,
         status,
-        codes: admin.firestore.FieldValue.arrayUnion(code),
-        stats: {
-          referredCount: 0,
-          activeSubscribers: 0,
-          pendingCents: 0,
-          payableCents: 0,
-          paidCents: 0,
-          lifetimeCents: 0,
-        },
-        createdAt: now,
+        codes: nextCodes,
+        primaryCode: nextPrimary,
+        ...(affiliateSnap.exists
+          ? {}
+          : {
+              stats: {
+                referredCount: 0,
+                activeSubscribers: 0,
+                pendingCents: 0,
+                payableCents: 0,
+                paidCents: 0,
+                lifetimeCents: 0,
+              },
+            }),
+        createdAt: affiliateSnap.data()?.createdAt ?? now,
         updatedAt: now,
       },
       { merge: true }
@@ -580,7 +673,7 @@ export async function ensureEmailPasswordSignInEnabled(): Promise<void> {
     const token = accessToken.token;
     if (!token) return;
 
-    const url = `https://identitytoolkit.googleapis.com/v2/projects/${projectId}/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired`;
+    const url = `https://identitytoolkit.googleapis.com/v2/projects/${projectId}/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired,signIn.anonymous.enabled`;
     const response = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -591,7 +684,10 @@ export async function ensureEmailPasswordSignInEnabled(): Promise<void> {
         signIn: {
           email: {
             enabled: true,
-            passwordRequired: true,
+            passwordRequired: false,
+          },
+          anonymous: {
+            enabled: true,
           },
         },
       }),

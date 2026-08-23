@@ -13,8 +13,8 @@
   <main class="wrap">
     <header class="site">
       <a class="brand" href="/">
-        <img class="brand-mark" src="/assets/icone.png?v=20260822" width="32" height="32" alt="Process Studio" />
-        <span class="brand-name">Process Studio</span>
+        <img class="brand-mark" src="/assets/icone.png?v=20260822" width="32" height="32" alt="Process" />
+        <span class="brand-name">Process</span>
       </a>
     </header>
 
@@ -25,9 +25,7 @@
       <p>
         La présente politique décrit comment <strong>Process AI</strong> (« l'Application », « nous »)
         collecte, utilise, partage et conserve vos données lorsque vous utilisez l'application mobile iOS
-        disponible sur l'App Store, le site <a href="https://useprocess.xyz">useprocess.xyz</a>,
-        et <strong>Process Studio</strong> (<a href="https://useprocess.xyz/studio">/studio</a>),
-        l'outil web de publication / analyse TikTok.
+        disponible sur l'App Store et le site <a href="https://useprocess.xyz">useprocess.xyz</a>.
       </p>
 
       <h2>1. Responsable du traitement</h2>
@@ -49,33 +47,7 @@
         <li><strong>Audio</strong> (si autorisé) : dictée vocale convertie en texte sur l'appareil.</li>
         <li><strong>Abonnement</strong> : statut d'abonnement via Apple et RevenueCat (aucune donnée bancaire n'est collectée par nous).</li>
         <li><strong>Technique</strong> : identifiants de session, logs d'erreur, version de l'app.</li>
-        <li><strong>Process Studio / TikTok</strong> (si vous connectez TikTok via OAuth Login Kit) : voir section 2bis.</li>
       </ul>
-
-      <h2 id="tiktok-studio">2bis. Process Studio et données TikTok</h2>
-      <p>
-        Process Studio (<a href="https://useprocess.xyz/studio">https://useprocess.xyz/studio</a>) est un outil
-        créateur web hébergé sur le domaine <strong>useprocess.xyz</strong>. Lorsque vous cliquez sur
-        « Se connecter avec TikTok », vous autorisez Process via le Login Kit officiel TikTok.
-      </p>
-      <p>Selon les scopes que vous approuvez, nous pouvons traiter :</p>
-      <ul>
-        <li><strong>Identité TikTok</strong> (<code>user.info.basic</code> / <code>user.info.profile</code>) : open_id, avatar, nom d'affichage, username, bio, lien de profil.</li>
-        <li><strong>Statistiques de profil</strong> (<code>user.info.stats</code>) : nombre d'abonnés, d'abonnements, de likes et de vidéos publiques.</li>
-        <li><strong>Liste de vidéos</strong> (<code>video.list</code>) : métadonnées et métriques des posts publics (vues, likes, commentaires, partages) pour l'analyse de performance.</li>
-        <li><strong>Publication</strong> (<code>video.upload</code> / <code>video.publish</code>) : envoi de carrousels photo vers le compte TikTok que vous avez connecté, uniquement après votre action explicite dans Studio.</li>
-        <li><strong>Jetons OAuth</strong> : access_token / refresh_token stockés dans un cookie de session HttpOnly signé sur useprocess.xyz (pas de mot de passe TikTok).</li>
-      </ul>
-      <p>
-        Finalités : publier du contenu éducatif Process, afficher vos stats et posts pour vous aider à
-        optimiser vos comptes, et assurer la sécurité de la session. Nous ne revendons pas vos données TikTok.
-        Vous pouvez déconnecter un compte (révocation du token) à tout moment depuis Studio.
-        Contact suppression / droits : <a href="mailto:support@useprocess.xyz">support@useprocess.xyz</a>.
-      </p>
-      <p>
-        Domaine de redirection OAuth : <strong>useprocess.xyz</strong>
-        (<code>https://useprocess.xyz/tiktok/callback</code>). Aucune redirection vers localhost en production.
-      </p>
       <p>
         <strong>Localisation GPS :</strong> Process AI ne collecte pas votre position géographique.
         Aucune donnée de localisation n'est demandée ni transmise par l'application.

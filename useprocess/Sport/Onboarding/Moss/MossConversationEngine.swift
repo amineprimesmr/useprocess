@@ -125,7 +125,7 @@ final class MossConversationEngine {
                onBatchDone: (() -> Void)? = nil) {
         guard !lines.isEmpty else { onBatchDone?(); return }
         batchDone = onBatchDone
-        controlsVisible = false
+        controlsVisible = true
 
         if instant || reduceMotion || assistiveVoice {
             for line in lines {
@@ -156,6 +156,28 @@ final class MossConversationEngine {
     func completeCurrent() {
         guard isTyping else { return }
         completeRequested = true
+    }
+
+    /// Stop the typewriter so an answer can land immediately.
+    func stopSpeaking() {
+        pump?.cancel()
+        pump = nil
+        queue.removeAll()
+        if let index = messages.indices.last {
+            var message = messages[index]
+            if !message.done {
+                message.revealed = message.text.count
+                message.done = true
+                messages[index] = message
+            }
+        }
+        isTyping = false
+        controlsVisible = true
+        completeRequested = false
+        pendingLeadIn = 0
+        let done = batchDone
+        batchDone = nil
+        done?()
     }
 
     /// Drop everything (leaving the conversation entirely).

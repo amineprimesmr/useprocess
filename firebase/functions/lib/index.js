@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateStripeWebhook = exports.affiliateStripeConnectDashboard = exports.affiliateStripeConnectSync = exports.affiliateStripeConnectStart = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
+exports.supportCrispPoll = exports.supportCrispWebhook = exports.supportSendMessage = exports.affiliateStripeWebhook = exports.affiliateStripeConnectDashboard = exports.affiliateStripeConnectSync = exports.affiliateStripeConnectStart = exports.affiliateReleaseHeldCommissions = exports.affiliateRevenueCatWebhook = exports.affiliateAdminMarkPaid = exports.affiliateAdminListPending = exports.affiliateAdminApprove = exports.affiliateAdminProvisionAuth = exports.affiliateAdminCreate = exports.affiliateDashboard = exports.affiliateSyncProfile = exports.affiliateApply = exports.affiliateRegister = exports.affiliateResolveCode = exports.affiliatePreparePasswordless = exports.referralRevenueCatWebhook = exports.referralConfirmSubscription = exports.referralDashboard = exports.referralRegister = exports.referralSyncProgram = exports.coachStream = exports.coachComplete = exports.appleSignInRegisterToken = exports.deleteUserAccount = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -502,6 +502,7 @@ var referralRewards_1 = require("./referralRewards");
 Object.defineProperty(exports, "referralConfirmSubscription", { enumerable: true, get: function () { return referralRewards_1.referralConfirmSubscription; } });
 Object.defineProperty(exports, "referralRevenueCatWebhook", { enumerable: true, get: function () { return referralRewards_1.referralRevenueCatWebhook; } });
 var affiliate_1 = require("./affiliate");
+Object.defineProperty(exports, "affiliatePreparePasswordless", { enumerable: true, get: function () { return affiliate_1.affiliatePreparePasswordless; } });
 Object.defineProperty(exports, "affiliateResolveCode", { enumerable: true, get: function () { return affiliate_1.affiliateResolveCode; } });
 Object.defineProperty(exports, "affiliateRegister", { enumerable: true, get: function () { return affiliate_1.affiliateRegister; } });
 Object.defineProperty(exports, "affiliateApply", { enumerable: true, get: function () { return affiliate_1.affiliateApply; } });

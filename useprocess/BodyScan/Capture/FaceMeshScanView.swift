@@ -31,14 +31,11 @@ struct FaceMeshScanView: UIViewRepresentable {
         override func layoutSubviews() {
             super.layoutSubviews()
             let zoom = max(1, previewZoom)
-            let width = bounds.width * zoom
-            let height = bounds.height * zoom
-            arView.frame = CGRect(
-                x: (bounds.width - width) / 2,
-                y: (bounds.height - height) / 2,
-                width: width,
-                height: height
-            )
+            // Transform, pas un frame plus grand : ARSCNView (Metal) ignore souvent
+            // l’agrandissement de bounds et garde le FOV grand-angle natif.
+            arView.transform = .identity
+            arView.frame = bounds
+            arView.transform = CGAffineTransform(scaleX: zoom, y: zoom)
             onViewportSizeChange?(bounds.size)
         }
     }
