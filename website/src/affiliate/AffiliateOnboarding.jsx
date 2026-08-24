@@ -5,6 +5,7 @@ import { getIosAppStoreUrl } from "../features/app-store-urls.js";
 import { getStoreButtonHref } from "../features/in-app-browser-escape.js";
 import { parseAcquisitionCodeFromInput } from "../features/acquisition-link.js";
 import { IconCheck, IconChevronLeft, ProcessAppIcon } from "./AffiliateIcons.jsx";
+import { ViewBonusBoard, ViewBonusNote } from "./ViewBonusBoard.jsx";
 import {
   checkAffiliateCodeAvailability,
   COMMISSION_PERCENT,
@@ -151,7 +152,10 @@ function SimulatedDashboard({ live = false }) {
       if (t < 1) frame = window.requestAnimationFrame(tick);
     };
     frame = window.requestAnimationFrame(tick);
-    const done = window.setTimeout(() => setReady(true), 2100);
+    const done = window.setTimeout(() => {
+      setCents(target);
+      setReady(true);
+    }, 2100);
     return () => {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(done);
@@ -271,8 +275,6 @@ export function AffiliateOnboarding({
   const [codeError, setCodeError] = useState("");
   const [codeChecking, setCodeChecking] = useState(false);
   const [codeOk, setCodeOk] = useState(false);
-  const [opening, setOpening] = useState(false);
-  const leftOpeningRef = useRef(false);
   const debounceRef = useRef(null);
 
   const step = draft.step;
@@ -298,6 +300,12 @@ export function AffiliateOnboarding({
       setDraft(latest);
     }
   }, [stripeReady, dashboard, step]);
+
+  useEffect(() => {
+    if (step !== "preview") return undefined;
+    playDashboardOpen();
+    return undefined;
+  }, [step]);
 
   function persistDraft(next) {
     writeOnboardingDraft(next);
@@ -328,11 +336,6 @@ export function AffiliateOnboarding({
       onLeave?.();
       return;
     }
-    if (step === "opening") {
-      setOpening(false);
-      goTo("terms");
-      return;
-    }
     if (step === "stripe") {
       goTo("terms");
       return;
@@ -354,34 +357,17 @@ export function AffiliateOnboarding({
 
   const emailValue = (user?.email || email).trim();
 
-  function goToStripeFromOpening() {
-    if (leftOpeningRef.current) return;
-    leftOpeningRef.current = true;
-    persistDraft({ ...readOnboardingDraft(), applied: true, step: "stripe" });
-    setOpening(false);
-  }
-
   async function createDashboard() {
-    if (!answers.firstName.trim() || !terms || opening) return;
-    playDashboardOpen();
-    leftOpeningRef.current = false;
-    setOpening(true);
-    const started = Date.now();
-    persistDraft({ ...draft, applied: true, step: "opening" });
+    if (!answers.firstName.trim() || !terms || busy) return;
+    persistDraft({ ...draft, applied: true, step: "stripe" });
     const ok = await onSubmit({
       displayName: answers.firstName.trim(),
       code: "",
       onboarding: answers,
     });
     if (!ok) {
-      if (leftOpeningRef.current) return;
-      setOpening(false);
       persistDraft({ ...readOnboardingDraft(), applied: false, step: "terms" });
-      return;
     }
-    const wait = Math.max(0, 2400 - (Date.now() - started));
-    await new Promise((resolve) => window.setTimeout(resolve, wait));
-    goToStripeFromOpening();
   }
 
   async function validateInvite(raw, { strict = false } = {}) {
@@ -699,25 +685,6 @@ export function AffiliateOnboarding({
       );
     }
 
-    if (step === "opening") {
-      return (
-        <>
-          <p className="af-ob-kicker">{appCopy("Ouverture", "Opening")}</p>
-          <h1 className="af-ob-title">
-            {appCopy("Ton dashboard se crée", "Your dashboard is being created")}
-          </h1>
-          <p className="af-ob-lead">
-            {appCopy("Ton espace se construit — les ventes arrivent ici.", "Your workspace is building — sales land here.")}
-          </p>
-          <SimulatedDashboard live />
-          <Actions
-            onNext={goToStripeFromOpening}
-            nextLabel={appCopy("Continuer", "Continue")}
-          />
-        </>
-      );
-    }
-
     if (step === "stripe") {
       return (
         <div className="af-ob-status">
@@ -758,38 +725,24 @@ export function AffiliateOnboarding({
     }
 
     if (step === "preview") {
-      const stats = dashboard?.stats || {};
       return (
         <div>
           <p className="af-ob-kicker">{appCopy("Aperçu", "Preview")}</p>
           <h1 className="af-ob-title">{appCopy("Voici ton dashboard", "Here's your dashboard")}</h1>
           <p className="af-ob-lead">
             {appCopy(
-              "Ton espace est prêt. Entre ton code pour débloquer le dashboard.",
-              "Your workspace is ready. Enter your code to unlock the dashboard."
+              "Ton espace se construit. Les ventes et tes primes arrivent ici.",
+              "Your workspace is building. Sales and bonuses land here."
             )}
           </p>
-          <div className="af-ob-preview">
-            <div className="af-ob-preview__row">
-              <span>{appCopy("Créateur", "Creator")}</span>
-              <strong>{dashboard?.displayName || answers.firstName || "Process"}</strong>
+          <SimulatedDashboard live />
+          <div className="af-ob-primes">
+            <div className="af-ob-primes__head">
+              <span>{appCopy("Primes", "Bonuses")}</span>
+              <strong>{appCopy("Primes à débloquer", "Bonuses to unlock")}</strong>
             </div>
-            <div className="af-ob-preview__row">
-              <span>{appCopy("Lien", "Link")}</span>
-              <strong>{linkUrl ? linkUrl.replace(/^https?:\/\//, "") : "useprocess.xyz/join/…"}</strong>
-            </div>
-            <div className="af-ob-preview__row">
-              <span>{appCopy("Gains", "Earnings")}</span>
-              <strong>{money(stats.lifetimeCents || 0)}</strong>
-            </div>
-            <div className="af-ob-preview__row">
-              <span>Stripe</span>
-              <strong>
-                {stripeReady
-                  ? appCopy("Prêt à payer", "Ready to pay")
-                  : appCopy("À connecter", "Not connected yet")}
-              </strong>
-            </div>
+            <ViewBonusBoard variant="light" compact showEligibility={false} />
+            <ViewBonusNote />
           </div>
           {error ? <p className="af-ob-error">{error}</p> : null}
           <Actions
@@ -929,18 +882,15 @@ export function AffiliateOnboarding({
         ) : codeOk ? (
           <p className="af-ob-help">{appCopy("Code valide — tu peux entrer.", "Valid code — you can enter.")}</p>
         ) : null}
-        <p className="af-ob-help">
-          {appCopy("Pas de code ?", "No code?")}{" "}
-          <button type="button" className="af-ob-inline-link" onClick={() => goTo("codeHelp")}>
-            {appCopy("Clique ici", "Click here")}
-          </button>
-        </p>
         {error ? <p className="af-ob-error">{error}</p> : null}
         <Actions
           onNext={finishWithCode}
           nextDisabled={busy || !code.trim() || Boolean(codeError) || codeChecking}
           nextLabel={busy ? appCopy("Ouverture…", "Opening…") : appCopy("Accéder au dashboard", "Enter dashboard")}
         />
+        <button type="button" className="af-ob-btn af-ob-btn--ghost af-ob-btn--skip" onClick={() => goTo("codeHelp")}>
+          {appCopy("Je n'ai pas de code", "I don't have a code")}
+        </button>
       </StepForm>
     );
   }

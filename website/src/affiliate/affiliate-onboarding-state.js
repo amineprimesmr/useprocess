@@ -9,7 +9,6 @@ export const ONBOARDING_STEPS = [
   "tiktokHandle",
   "goal",
   "terms",
-  "opening",
   "stripe",
   "preview",
   "invite",
@@ -81,7 +80,11 @@ export function readOnboardingDraft() {
     const parsed = JSON.parse(raw);
     const rawStep = parsed?.step === "account" ? "invite" : parsed?.step;
     const remapped =
-      rawStep === "validated" ? "stripe" : rawStep === "postedTiktok" ? "hours" : rawStep;
+      rawStep === "validated" || rawStep === "opening"
+        ? "stripe"
+        : rawStep === "postedTiktok"
+          ? "hours"
+          : rawStep;
     const step = remapped;
     return {
       ...emptyOnboardingDraft(),
