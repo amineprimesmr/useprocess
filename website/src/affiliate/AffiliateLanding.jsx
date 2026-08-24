@@ -1,7 +1,17 @@
 import { useEffect, useId, useState } from "react";
 import { appCopy } from "../features/app-copy.js";
 import { IconChevronDown, IconX, ProcessAppIcon } from "./AffiliateIcons.jsx";
-import { AFFILIATE_X_HANDLE, COMMISSION_PERCENT, HOLD_DAYS, SUPPORT_EMAIL } from "./affiliate-utils.js";
+import {
+  AFFILIATE_X_HANDLE,
+  COMMISSION_PERCENT,
+  HOLD_DAYS,
+  SUPPORT_EMAIL,
+  VIEW_BONUS_MAX_PER_VIDEO_USD,
+  VIEW_BONUS_TIERS,
+  formatViewCount,
+  viewBonusUsdForViews,
+} from "./affiliate-utils.js";
+import { ViewBonusBoard, ViewBonusNote } from "./ViewBonusBoard.jsx";
 import "./affiliate-landing.css";
 
 const PRIVACY_URL = "https://useprocess.xyz/privacy";
@@ -38,10 +48,6 @@ function IconCoinMark() {
       <path d="M12 7.5v9M9.4 10.2h3.4a1.6 1.6 0 0 1 0 3.2H9.4" />
     </svg>
   );
-}
-
-function BrandMark({ name }) {
-  return <span className={`af-ld-brandmark af-ld-brandmark--${name}`} aria-hidden />;
 }
 
 export function AffiliateTopNav({
@@ -87,11 +93,9 @@ export function AffiliateTopNav({
 function HeroBadge() {
   return (
     <p className="af-ld-hero-badge">
-      <span className="af-ld-hero-badge__dot" aria-hidden />
-      {appCopy(
-        `Programme créateur · ${COMMISSION_PERCENT} % à vie + primes`,
-        `Creator program · ${COMMISSION_PERCENT}% lifetime + bonuses`
-      )}
+      <span className="af-ld-hero-badge__inner">
+        {appCopy("Programme créateur", "Creator program")}
+      </span>
     </p>
   );
 }
@@ -113,18 +117,33 @@ const SIM_MIN = 0;
 const SIM_MAX = 500;
 const SIM_DEFAULT = 50;
 const SIM_EUROS_PER = 25;
+const SIM_VIEW_STOPS = [0, ...VIEW_BONUS_TIERS.map((tier) => tier.views)];
+const SIM_VIEW_DEFAULT_INDEX = 2;
 
-function RevenueSimulator() {
-  const sliderId = useId();
-  const [count, setCount] = useState(SIM_DEFAULT);
-  const span = SIM_MAX - SIM_MIN || 1;
-  const pct = (count - SIM_MIN) / span;
-  const payout = count * SIM_EUROS_PER;
+function formatSimInt(n) {
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);
+}
+
+function SimSlider({
+  labelId,
+  label,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+  bubble,
+  startBound,
+  endBound,
+  ariaLabel,
+  ariaValuetext,
+}) {
+  const pct = (value - min) / (max - min || 1);
 
   return (
-    <div className="af-ld-sim" aria-labelledby={sliderId}>
-      <p id={sliderId} className="af-ld-sim__title">
-        {appCopy("Simulateur de revenu", "Revenue simulator")}
+    <div className="af-ld-sim__control">
+      <p id={labelId} className="af-ld-sim__label">
+        {label}
       </p>
       <div className="af-ld-sim__slider">
         <div className="af-ld-sim__rail">
@@ -132,37 +151,128 @@ function RevenueSimulator() {
           <div className="af-ld-sim__fill" style={{ width: `${pct * 100}%` }} />
           <input
             type="range"
-            min={SIM_MIN}
-            max={SIM_MAX}
-            step={1}
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
             className="af-ld-sim__input"
-            aria-valuemin={SIM_MIN}
-            aria-valuemax={SIM_MAX}
-            aria-valuenow={count}
-            aria-label={appCopy("Nombre d'affiliés", "Number of affiliates")}
+            aria-valuemin={min}
+            aria-valuemax={max}
+            aria-valuenow={value}
+            aria-valuetext={ariaValuetext}
+            aria-labelledby={labelId}
+            aria-label={ariaLabel}
           />
           <div className="af-ld-sim__thumb" style={{ left: `${pct * 100}%` }}>
-            <span className="af-ld-sim__bubble">{count}</span>
+            <span className="af-ld-sim__bubble">{bubble}</span>
           </div>
         </div>
         <div className="af-ld-sim__bounds" aria-hidden>
-          <span>{SIM_MIN}</span>
-          <span>{SIM_MAX}</span>
+          <span>{startBound}</span>
+          <span>{endBound}</span>
         </div>
       </div>
-      <div className="af-ld-sim__footer">
+    </div>
+  );
+}
+
+function RevenueSimulator() {
+  const affiliatesId = useId();
+  const viewsId = useId();
+  const [count, setCount] = useState(SIM_DEFAULT);
+  const [viewIndex, setViewIndex] = useState(SIM_VIEW_DEFAULT_INDEX);
+  const views = SIM_VIEW_STOPS[viewIndex] ?? 0;
+  const commission = count * SIM_EUROS_PER;
+  const bonus = viewBonusUsdForViews(views);
+  const viewsLabel = views === 0 ? "0" : formatViewCount(views);
+
+  return (
+    <div
+      className="af-ld-sim"
+      aria-label={appCopy("Simulateur de revenu", "Revenue simulator")}
+    >
+      <p className="af-ld-sim__title">{appCopy("Simulateur de revenu", "Revenue simulator")}</p>
+      <p className="af-ld-sim__lead">
+        {appCopy(
+          `${COMMISSION_PERCENT} % à vie + primes jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD} / vidéo`,
+          `${COMMISSION_PERCENT}% for life + bonuses up to $${VIEW_BONUS_MAX_PER_VIDEO_USD} / video`
+        )}
+      </p>
+
+      <SimSlider
+        labelId={affiliatesId}
+        label={appCopy("Affiliés", "Affiliates")}
+        min={SIM_MIN}
+        max={SIM_MAX}
+        step={1}
+        value={count}
+        onChange={setCount}
+        bubble={count}
+        startBound={SIM_MIN}
+        endBound={SIM_MAX}
+        ariaLabel={appCopy("Nombre d'affiliés", "Number of affiliates")}
+      />
+
+      <SimSlider
+        labelId={viewsId}
+        label={appCopy("Vues par vidéo", "Views per video")}
+        min={0}
+        max={SIM_VIEW_STOPS.length - 1}
+        step={1}
+        value={viewIndex}
+        onChange={setViewIndex}
+        bubble={viewsLabel}
+        startBound="0"
+        endBound={formatViewCount(SIM_VIEW_STOPS[SIM_VIEW_STOPS.length - 1])}
+        ariaLabel={appCopy("Vues par vidéo", "Views per video")}
+        ariaValuetext={`${viewsLabel} ${appCopy("vues", "views")}`}
+      />
+
+      <ul className="af-ld-sim__tiers">
+        {VIEW_BONUS_TIERS.map((tier, index) => {
+          const reached = views >= tier.views;
+          const current = views === tier.views;
+          return (
+            <li key={tier.views}>
+              <button
+                type="button"
+                className={`af-ld-sim__tier${reached ? " is-on" : ""}${current ? " is-current" : ""}`}
+                onClick={() => setViewIndex(index + 1)}
+              >
+                +${tier.amountUsd}
+                <span> · {formatViewCount(tier.views)}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="af-ld-sim__results">
         <p className="af-ld-sim__payout">
-          <span className="af-ld-sim__kicker">{appCopy("Versement", "Payout")}</span>
-          <strong>{payout}€</strong>
-          <span className="af-ld-sim__period">{appCopy("/mois", "/mo")}</span>
+          <span className="af-ld-sim__kicker">{appCopy("Commission", "Commission")}</span>
+          <strong>
+            {formatSimInt(commission)}€
+            <span className="af-ld-sim__period">{appCopy("/mois", "/mo")}</span>
+          </strong>
+          <span className="af-ld-sim__hint">
+            {count === 1
+              ? appCopy("1 affilié", "1 affiliate")
+              : appCopy(`${count} affiliés`, `${count} affiliates`)}
+          </span>
         </p>
-        <span className="af-ld-sim__badge">
-          {count === 1
-            ? appCopy("1 affilié", "1 affiliate")
-            : appCopy(`${count} affiliés`, `${count} affiliates`)}
-        </span>
+        <p className="af-ld-sim__payout af-ld-sim__payout--bonus">
+          <span className="af-ld-sim__kicker">{appCopy("Primes", "Bonuses")}</span>
+          <strong>
+            +${bonus}
+            <span className="af-ld-sim__period">{appCopy("/vidéo", "/video")}</span>
+          </strong>
+          <span className="af-ld-sim__hint">
+            {views === 0
+              ? appCopy("Aucun palier atteint", "No tier reached")
+              : appCopy(`${viewsLabel} vues`, `${viewsLabel} views`)}
+          </span>
+        </p>
       </div>
     </div>
   );
@@ -219,25 +329,25 @@ function StepsSection() {
           <StepBadge n={2} />
           <div className="af-ld-step__visual" aria-hidden>
             <div className="af-ld-share">
-              <span className="af-ld-share__line af-ld-share__line--yt" />
-              <span className="af-ld-share__line af-ld-share__line--ig" />
-              <span className="af-ld-share__line af-ld-share__line--tt" />
-              <span className="af-ld-share__line af-ld-share__line--x" />
-              <BrandMark name="yt" />
-              <BrandMark name="ig" />
-              <BrandMark name="tt" />
-              <BrandMark name="x" />
               <ProcessAppIcon size={44} className="af-ld-share__core" />
+              <span className="af-ld-share__line" />
+              <img
+                className="af-ld-share__tiktok"
+                src="/assets/logos/tiktok.png"
+                alt=""
+                width={48}
+                height={48}
+              />
             </div>
           </div>
           <div className="af-ld-step__copy">
             <IconBubble />
             <div>
-              <h3>{appCopy("Partagez votre lien affilié", "Share your affiliate link")}</h3>
+              <h3>{appCopy("Automatisez vos slideshow", "Automate your slideshows")}</h3>
               <p>
                 {appCopy(
-                  "Partagez votre lien affilié avec votre audience, vos followers, vos amis et vos clients.",
-                  "Share your affiliate link with your audience, followers, friends, and customers."
+                  "Partagez votre lien affilié sur TikTok. Vos slideshow tournent, vos commissions aussi.",
+                  "Share your affiliate link on TikTok. Your slideshows run, your commissions too."
                 )}
               </p>
             </div>
@@ -272,6 +382,32 @@ function StepsSection() {
             </div>
           </div>
         </article>
+      </div>
+    </section>
+  );
+}
+
+function PrimesSection() {
+  return (
+    <section id="primes" className="af-ld-primes" aria-labelledby="af-ld-primes-heading">
+      <header className="af-ld-primes__intro">
+        <BracketKicker>{appCopy("PRIMES", "BONUSES")}</BracketKicker>
+        <h2 id="af-ld-primes-heading">
+          {appCopy(
+            `Jusqu'à $${VIEW_BONUS_MAX_PER_VIDEO_USD} par vidéo`,
+            `Up to $${VIEW_BONUS_MAX_PER_VIDEO_USD} per video`
+          )}
+        </h2>
+        <p>
+          {appCopy(
+            `En plus des ${COMMISSION_PERCENT} % à vie. Les paliers se cumulent sur une même vidéo, jusqu'au plafond.`,
+            `On top of ${COMMISSION_PERCENT}% for life. Tiers stack on the same video, up to the cap.`
+          )}
+        </p>
+      </header>
+      <div className="af-ld-primes__board">
+        <ViewBonusBoard variant="light" />
+        <ViewBonusNote />
       </div>
     </section>
   );
@@ -385,6 +521,7 @@ function LandingFooter() {
   const nav = [
     { href: "#programme", label: appCopy("Programme", "Program") },
     { href: "#comment", label: appCopy("Comment ça marche", "How it works") },
+    { href: "#primes", label: appCopy("Primes", "Bonuses") },
     { href: "#faq", label: "FAQ" },
     { href: "#rejoindre", label: appCopy("Rejoindre", "Join") },
   ];
@@ -469,6 +606,7 @@ export function AffiliateLanding({ onApply, onLogin, loggedIn = false, onWorkspa
 
         <div className="af-ld-sheet">
           <StepsSection />
+          <PrimesSection />
           <FaqSection />
         </div>
 
