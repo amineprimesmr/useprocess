@@ -166,8 +166,8 @@ extension OnboardingEstimationContext {
                     gender: viewModel.selectedGender
                 ),
             goalPace: viewModel.selectedGoalPace,
-            experienceLevel: viewModel.selectedExperienceLevel,
-            yearsOfExperience: viewModel.selectedYearsOfExperience,
+            experienceLevel: nil,
+            yearsOfExperience: 0,
             selectedSports: selectedSports,
             trainingFrequency: viewModel.selectedTrainingFrequency,
             age: viewModel.selectedAge,

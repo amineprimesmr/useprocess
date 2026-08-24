@@ -2,111 +2,61 @@
 //  OnboardingStep.swift
 //  Process
 //
-//  Created by ENNASRI Amine on 22/09/2025.
+//  Étapes **live** uniquement. Les anciens raw values persistés sont
+//  migrés via `resolved(from:)`.
 //
 
 import Foundation
 
 enum OnboardingStep: Int, CaseIterable {
-    case videoIntroduction = 0              // Compat ancienne sauvegarde — page supprimée, saut auto
     case genderSelection = 1
     case ageSelection = 2
-    case height = 3                         // ✨ Taille (nouvelle page séparée)
-    case weight = 67                         // ✨ Poids (nouvelle page séparée)
-    case heightWeight = 68                   // ✨ Ancienne page combinée (dépréciée, gardée pour compatibilité)
-    case bodyScan = 63                      // Conservé compat sauvegarde — scan corps dans l'app, saut auto
+    case height = 3
     case firstNameInput = 4
-    case personalizedWelcome = 5             // Compat sauvegarde — page supprimée, saut auto
-    case processResultsDurability = 6       // ✨ Process génère des résultats durables (graphique performance)
-    case primaryGoal = 7                    // As-tu un objectif de poids ? (Oui/Non)
-
-    // Questions spécifiques selon l'objectif poids
-    case weightGoal = 8                    // Conservé compat sauvegarde — perdre/prendre supprimé, saut auto
-    case weightGoalIncompatible = 9        // ✨ Objectif incompatible avec IMC (blocage)
-    case idealWeight = 10                   // Conservé compat sauvegarde — poids de référence retiré, saut auto
-    case weightMotivation = 11                // ✨ Page de motivation après poids idéal
-    case hasSportActivity = 12              // ✨ Pratiques-tu une activité sportive ? (Oui/Non)
-    case sportSelection = 13                // Si primaryGoal = cardio / récupération / énergie (boostPerformance…)
-    case sportClub = 14                     // Conservé compat sauvegarde — en club supprimé, saut auto
-    case experienceLevel = 15               // Conservé compat sauvegarde — niveau supprimé, saut auto
-    /// Conservé pour compatibilité sauvegarde — écran supprimé.
-    case yearsOfExperience = 16
-
-    // Questions générales (TOUS les utilisateurs passent par là)
-    case deadlineSelection = 17              // ✨ Sélection de deadline (si poids non sélectionné)
-    case eventDetails = 18                    // ✨ Détails de l'événement (date, type, etc.) - après deadlineSelection si "Oui"
-    case goalProjection = 19                  // ✨ Projection dynamique avec courbe (après deadline)
-    case goalPace = 20                        // ✨ Vitesse d'atteinte d'objectif poids (si objectif poids sélectionné)
-    case potentialPace = 21                   // ✨ Vitesse d'atteinte de 100% du potentiel (si objectif poids NON sélectionné)
-    case weightEstimation = 22                // ✨ Estimation de la date d'atteinte du poids idéal
-    case trainingFrequency = 23                // ✨ Fréquence d'entraînement (pour tous)
-
-    // Nutrition (TOUS les utilisateurs passent par là)
-    case nutritionQuality = 24                // ✨ Qualité de l'alimentation actuelle
-    /// Conservé pour compatibilité sauvegarde — écrans supprimés, saut automatique.
-    case nutritionScanFeature = 25
-    /// Conservé pour compatibilité sauvegarde — écrans supprimés, saut automatique.
-    case hasDietaryRestrictions = 26
-    /// Conservé pour compatibilité sauvegarde — écrans supprimés, saut automatique.
-    case whichRestrictions = 27
-    case nutritionObstacles = 28              // ✨ Obstacles à une bonne nutrition
-    case weightManagementExperience = 29      // ✨ Expérience avec perte/prise de poids (si objectif poids)
-    case weightFailureReasons = 30            // ✨ Qu'est-ce qui t'empêche de réussir ? (si triedMultiple ou currentlyTrying)
-    case perfectNutritionBelief = 31          // ✨ Croyance en une alimentation parfaite
-    case hardestMeal = 32                     // Conservé compat sauvegarde — repas difficile supprimé, saut auto
-    case nutritionPotential = 33              // Conservé compat sauvegarde — écran supprimé, saut auto
-    case hasSufficientHydration = 34          // ✨ Penses-tu t'hydrater suffisamment ? (Oui/Non)
-    case hydrationLevel = 35                  // ✨ Niveau d'hydratation
-
-    // Sommeil (TOUS les utilisateurs passent par là)
-    case sleepInfo = 36                       // ✨ Information sur l'importance du sommeil
-    case sleepQuality = 37                    // ✨ Qualité perçue du sommeil
-    case fatigueFrequency = 38                // ✨ Fréquence de fatigue
-    case fatiguePeaks = 39                    // ✨ Pics de fatigue
-    case sleepNeed = 40                       // ✨ Découvre ton besoin de sommeil réel
-
-    // Finalisation
-    case healthKitPermissions = 41            // ✨ Autoriser l'accès HealthKit
-    case faceAnalysis = 42                    // ✨ Analyse faciale (cernes, rétention d'eau, sommeil)
-    case planGeneration = 43                  // ✨ Créons ton plan personnalisé
-    case sleepDataRecovery = 44                // ✨ Animation récupération données HealthKit
-    /// Valeurs conservées pour compatibilité sauvegarde — écrans supprimés, saut automatique.
-    case newsStep = 45
-    case sleepNeedReveal = 46
-    case sleepDebtInfo = 47
-    case alarmConfiguration = 48                // Conservé compat sauvegarde — écran supprimé, saut auto
-    case sleepWindowReveal = 49                // Conservé compat sauvegarde — écran supprimé, saut auto
-    case planReady = 50                        // ✨ Ton programme personnalisé est prêt
-    case onboardingInfo = 51                   // ✨ Page d'information (texte + bouton continuer)
-    case appleSignIn = 52                   // ✨ Thank you + Sign in with Apple (après paywall)
-    case referralCode = 53                     // ✨ Entrez le code de parrainage (facultatif)
-    case appRating = 54                        // Conservé compat sauvegarde — écran supprimé, saut auto
-    case caloriesGoal = 55                     // ✨ Ajouter les calories brûlées à votre objectif quotidien ?
-    case carryOverCalories = 56                // ✨ Reportez-vous aux calories supplémentaires au lendemain ?
-    case programCreation = 57               // ✨ Création du programme (analyse habitudes, plan 13 semaines)
-    case biometricAuth = 58                    // ✨ Authentification biométrique (empreinte digitale)
-    case notificationPermission = 59           // Conservé compat sauvegarde — page notifs supprimée, pop-up au paywall
-    case transformationPreview = 64            // ✨ Témoignages avant / après (slider) avant le dashboard
-    case dashboardPreview = 69                 // ✨ Aperçu dashboard + 1er scan (après chat Moss)
-    case dreamFaceCommit = 70                  // ✨ Slider d'engagement + pop notifications avant le paywall
+    case weightMotivation = 11
+    case weightEstimation = 22
+    case appleSignIn = 52
+    case referralCode = 53
+    case programCreation = 57
+    case biometricAuth = 58
     case payment = 60
-    case processWelcome = 61                   // ✨ Page de bienvenue "Bienvenue dans PROCESS"
-    case referralReward = 62                   // ✨ Page de parrainage avec slider de gains
-    case featuresUnlock = 65                   // ✨ Page de déblocage progressif des fonctionnalités
+    case transformationPreview = 64
     case complete = 66
-    case faceLeverageIntro = 71                 // ✨ Valeur « ton visage est ton levier » après prénom
-    // Note: bodyScan = 63 est placé après heightWeight mais avant firstNameInput pour logique de flow
+    case weight = 67
+    case dashboardPreview = 69
+    case dreamFaceCommit = 70
+    case faceLeverageIntro = 71
+
+    /// Parcours réel (écrans visibles), dans l’ordre utilisateur.
+    static let liveOrder: [OnboardingStep] = [
+        .genderSelection,
+        .ageSelection,
+        .height,
+        .weight,
+        .firstNameInput,
+        .faceLeverageIntro,
+        .weightMotivation,
+        .dashboardPreview,
+        .programCreation,
+        .weightEstimation,
+        .biometricAuth,
+        .transformationPreview,
+        .referralCode,
+        .dreamFaceCommit,
+        .payment,
+        .appleSignIn,
+        .complete
+    ]
+
+    var liveOrderIndex: Int {
+        Self.liveOrder.firstIndex(of: self) ?? rawValue
+    }
 
     var usesInternalContinueAction: Bool {
         switch self {
-        case .videoIntroduction, .faceAnalysis, .weightMotivation, .sportSelection,
-             .healthKitPermissions, .biometricAuth,
-             .transformationPreview, .dashboardPreview, .dreamFaceCommit, .programCreation,
-             .payment, .processWelcome, .referralReward, .featuresUnlock,
-             .appleSignIn, .appRating, .sleepDataRecovery,
-             .processResultsDurability,
-             .faceLeverageIntro,
-             .weightGoalIncompatible:
+        case .weightMotivation, .biometricAuth, .transformationPreview,
+             .dashboardPreview, .dreamFaceCommit, .programCreation,
+             .payment, .appleSignIn, .faceLeverageIntro:
             return true
         default:
             return false
@@ -121,121 +71,58 @@ enum OnboardingStep: Int, CaseIterable {
         maxRawValue + 1
     }
 
-    static let semanticOrder: [OnboardingStep] = [
-        .videoIntroduction,
-        .genderSelection,
-        .ageSelection,
-        .height,
-        .weight,
-        .heightWeight,
-        .bodyScan,
-        .firstNameInput,
-        .faceLeverageIntro,
-        .processResultsDurability,
-        .primaryGoal,
-        .weightGoal,
-        .idealWeight,
-        .weightGoalIncompatible,
-        .weightMotivation,
-        .programCreation,
-        .notificationPermission,
-        .goalPace,
-        .weightEstimation,
-        .hasSportActivity,
-        .sportSelection,
-        .sportClub,
-        .experienceLevel,
-        .yearsOfExperience,
-        .trainingFrequency,
-        .deadlineSelection,
-        .eventDetails,
-        .potentialPace,
-        .goalProjection,
-        .weightManagementExperience,
-        .weightFailureReasons,
-        .nutritionQuality,
-        .nutritionScanFeature,
-        .hasDietaryRestrictions,
-        .whichRestrictions,
-        .nutritionObstacles,
-        .perfectNutritionBelief,
-        .hardestMeal,
-        .nutritionPotential,
-        .hasSufficientHydration,
-        .hydrationLevel,
-        .sleepInfo,
-        .sleepQuality,
-        .fatigueFrequency,
-        .fatiguePeaks,
-        .sleepNeed,
-        .faceAnalysis,
-        .planGeneration,
-        .healthKitPermissions,
-        .sleepDataRecovery,
-        .newsStep,
-        .sleepNeedReveal,
-        .sleepDebtInfo,
-        .alarmConfiguration,
-        .sleepWindowReveal,
-        .planReady,
-        .onboardingInfo,
-        .appRating,
-        .caloriesGoal,
-        .carryOverCalories,
-        .biometricAuth,
-        .transformationPreview,
-        .referralCode,
-        .dashboardPreview,
-        .dreamFaceCommit,
-        .payment,
-        .appleSignIn,
-        .processWelcome,
-        .referralReward,
-        .featuresUnlock,
-        .complete
-    ]
-
-    var semanticOrderIndex: Int {
-        Self.semanticOrder.firstIndex(of: self) ?? rawValue
-    }
-
-    /// Étapes sautées automatiquement — absentes de l'historique retour.
+    /// Code créateur optionnel uniquement — plus d’étapes fantômes.
     var isTransientSkippedStep: Bool {
-        switch self {
-        case .videoIntroduction, .heightWeight, .bodyScan, .weightGoal, .sportClub, .experienceLevel, .hardestMeal,
-             .yearsOfExperience, .deadlineSelection, .eventDetails,
-             .potentialPace, .trainingFrequency, .nutritionScanFeature,
-             .hasDietaryRestrictions, .whichRestrictions,
-             .nutritionObstacles, .perfectNutritionBelief, .hasSufficientHydration, .hydrationLevel,
-             .nutritionPotential,
-             .goalPace, .hasSportActivity, .sportSelection,
-             .weightManagementExperience, .weightFailureReasons, .nutritionQuality,
-             .sleepNeed, .planGeneration,
-             .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
-             .alarmConfiguration, .sleepWindowReveal,
-             .caloriesGoal, .carryOverCalories, .appRating,
-             .processWelcome, .referralReward, .featuresUnlock, .complete,
-             .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
-             .processResultsDurability, .personalizedWelcome,
-             .sleepDataRecovery, .primaryGoal, .goalProjection,
-             .healthKitPermissions, .notificationPermission,
-             .idealWeight, .weightGoalIncompatible:
-            return true
-        case .referralCode:
+        if self == .referralCode {
             return !OnboardingConstants.showsReferralCodeStepInOnboarding
-        default:
-            return false
         }
+        return false
     }
 
-    /// Reprise sans abonnement : on ne relance pas le paywall, on revient à l'engagement visage.
+    /// Reprise sans abonnement : on ne relance pas le paywall.
     var unpaidResumeStep: OnboardingStep {
         switch self {
-        case .payment, .appleSignIn, .dreamFaceCommit,
-             .processWelcome, .referralReward, .featuresUnlock, .complete:
+        case .payment, .appleSignIn, .dreamFaceCommit, .complete:
             return .dreamFaceCommit
         default:
             return self
+        }
+    }
+
+    /// Étape live correspondant à une valeur persistée (y compris anciens raw).
+    static func resolved(from raw: Int) -> OnboardingStep {
+        if let step = Self(rawValue: raw) {
+            return step
+        }
+        return migrateLegacyRawValue(raw)
+    }
+
+    private static func migrateLegacyRawValue(_ raw: Int) -> OnboardingStep {
+        switch raw {
+        case 0:
+            return .genderSelection
+        case 5, 6, 7, 8, 9, 10:
+            return .weightMotivation
+        case 12, 13, 14, 15, 16, 17, 18:
+            return .dashboardPreview
+        case 19, 20, 21, 23:
+            return .weightEstimation
+        case 24...40, 41:
+            return .programCreation
+        case 42:
+            return .dashboardPreview
+        case 43...51, 54, 55, 56:
+            return .biometricAuth
+        case 59:
+            return .dreamFaceCommit
+        case 61, 62, 65:
+            return .appleSignIn
+        case 63:
+            return .firstNameInput
+        case 68:
+            return .weight
+        default:
+            return .genderSelection
         }
     }
 }

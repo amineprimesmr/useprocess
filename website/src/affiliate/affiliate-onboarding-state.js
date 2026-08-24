@@ -1,5 +1,6 @@
 const DRAFT_KEY = "process.affiliate.onboarding.v2";
 const UNLOCK_PREFIX = "process.affiliate.unlocked.";
+export const METHOD_PACE_KEY = "process.affiliate.method.pace";
 
 export const ONBOARDING_STEPS = [
   "firstName",
@@ -100,9 +101,38 @@ export function readOnboardingDraft() {
   }
 }
 
+function persistMethodPace(answers) {
+  const hoursPerDay = String(answers?.hoursPerDay || "").trim();
+  const accountCount = answers?.accountCount || "";
+  if (!hoursPerDay && !accountCount) return;
+  try {
+    window.localStorage.setItem(
+      METHOD_PACE_KEY,
+      JSON.stringify({ hoursPerDay, accountCount })
+    );
+  } catch {
+    /* private mode */
+  }
+}
+
+export function readMethodPace() {
+  try {
+    const raw = window.localStorage.getItem(METHOD_PACE_KEY);
+    if (!raw) return { hoursPerDay: "", accountCount: "" };
+    const data = JSON.parse(raw);
+    return {
+      hoursPerDay: String(data?.hoursPerDay || "").trim(),
+      accountCount: data?.accountCount || "",
+    };
+  } catch {
+    return { hoursPerDay: "", accountCount: "" };
+  }
+}
+
 export function writeOnboardingDraft(next) {
   try {
     window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+    persistMethodPace(next?.answers);
   } catch {
     /* private mode */
   }

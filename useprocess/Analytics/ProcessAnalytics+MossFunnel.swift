@@ -23,6 +23,8 @@ extension ProcessAnalytics {
         case programCreationPopupTriedDebloat = "program_creation_popup_tried_debloat"
         case programCreationPhasePlan = "program_creation_phase_plan"
         case programCreationSuccess = "program_creation_success"
+        /// Overlay glow-up entre `intro_next` et les questions profil.
+        case glowUpResults = "glow_up_results"
 
         var pageIndex: Int {
             Self.allCases.firstIndex(of: self) ?? -1
@@ -53,6 +55,8 @@ extension ProcessAnalytics {
                  .programCreationPhasePlan,
                  .programCreationSuccess:
                 return "program_creation"
+            case .glowUpResults:
+                return "chat_overlay"
             default:
                 return "chat_question"
             }
@@ -107,6 +111,13 @@ extension ProcessAnalytics {
 
         capture("onboarding_moss_page_viewed", properties: props)
         screen("moss_\(name)")
+
+        if let funnelScreen = OnboardingFunnelScreen.from(mossPage: page) {
+            trackFunnelScreen(funnelScreen, extra: [
+                "question_id": extra["question_id"] as? String ?? name,
+                "page_kind": page.kind
+            ])
+        }
     }
 
     /// Action sur une sous-page (réponse, skip, cancel, continue…).

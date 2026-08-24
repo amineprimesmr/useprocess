@@ -5,45 +5,10 @@
 
 import Foundation
 
-enum OnboardingProfileChatRole {
-    case assistant
-    case user
-}
-
-struct OnboardingProfileChatMessage: Identifiable, Equatable {
-    let id: UUID
-    let role: OnboardingProfileChatRole
-    let text: String
-    /// Texte complet pour figer la mise en page pendant le typewriter.
-    let layoutAnchorText: String?
-    /// Question associée quand il s'agit d'une réponse utilisateur (édition depuis l'historique).
-    let questionId: String?
-
-    init(
-        id: UUID = UUID(),
-        role: OnboardingProfileChatRole,
-        text: String,
-        layoutAnchorText: String? = nil,
-        questionId: String? = nil
-    ) {
-        self.id = id
-        self.role = role
-        self.text = text
-        self.layoutAnchorText = layoutAnchorText
-        self.questionId = questionId
-    }
-}
-
 enum OnboardingProfileChatQuestionKind {
     case infoContinue
-    case autoPlanCreation
-    case yesNo
     case singleChoice
-    case multiChoice
-    case faceScanOffer
     case profileSummary
-    case answersAnalysis
-    case analysisProgress
 }
 
 struct OnboardingProfileChatChoice: Identifiable, Equatable {
@@ -65,8 +30,6 @@ struct OnboardingProfileChatQuestion: Identifiable, Equatable {
     let promptBlocks: [String]?
     let kind: OnboardingProfileChatQuestionKind
     let choices: [OnboardingProfileChatChoice]
-    let allowsSkip: Bool
-    let detailText: String?
     /// Label du bouton pour `.infoContinue` (défaut : Continuer).
     let continueLabel: String?
 
@@ -83,8 +46,6 @@ struct OnboardingProfileChatQuestion: Identifiable, Equatable {
         promptBlocks: [String]? = nil,
         kind: OnboardingProfileChatQuestionKind,
         choices: [OnboardingProfileChatChoice] = [],
-        allowsSkip: Bool = false,
-        detailText: String? = nil,
         continueLabel: String? = nil
     ) {
         self.id = id
@@ -97,8 +58,6 @@ struct OnboardingProfileChatQuestion: Identifiable, Equatable {
         }
         self.kind = kind
         self.choices = choices
-        self.allowsSkip = allowsSkip
-        self.detailText = detailText
         self.continueLabel = continueLabel
     }
 }
@@ -219,11 +178,6 @@ enum OnboardingProfileChatQuestionBank {
         )
     }
 
-    /// Conservé pour compat sauvegarde / analytics.
-    static func faceScanQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
-        profileSummaryQuestion(for: viewModel)
-    }
-
     static func introSwollenFaceQuestion(for viewModel: OnboardingViewModel) -> OnboardingProfileChatQuestion {
         .init(
             id: "intro_swollen_face",
@@ -252,9 +206,6 @@ enum OnboardingProfileChatQuestionBank {
             en: "A puffy face is almost never fat."
         )
     }
-
-    /// Conservé pour compat.
-    static func openingLine(for viewModel: OnboardingViewModel) -> String? { nil }
 
     static func resolvedQuestion(
         _ question: OnboardingProfileChatQuestion,
@@ -313,10 +264,6 @@ enum OnboardingProfileChatQuestionBank {
             guard viewModel.completedProfileChatQuestionIDs.contains(questionID)
                 || viewModel.completedProfileChatQuestionIDs.contains("face_scan_offer") else { return nil }
             return OnboardingCopy.t("Voir mon dashboard", en: "See my dashboard")
-
-        case "sport_pick":
-            guard let sport = OnboardingDataModel.shared.selectedSports.first else { return nil }
-            return OnboardingSportCatalog.localizedName(sport)
 
         default:
             return nil

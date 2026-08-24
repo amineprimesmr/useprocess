@@ -21,8 +21,8 @@ struct FaceMeshScanView: UIViewRepresentable {
         override init(frame: CGRect) {
             super.init(frame: frame)
             clipsToBounds = true
-            backgroundColor = .clear
-            isOpaque = false
+            backgroundColor = UIColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1)
+            isOpaque = true
             addSubview(arView)
         }
 
@@ -95,8 +95,9 @@ struct FaceMeshScanView: UIViewRepresentable {
         view.session.delegate = context.coordinator
         view.automaticallyUpdatesLighting = true
         view.scene = SCNScene()
-        view.backgroundColor = .clear
-        view.isOpaque = false
+        // Opaque : ARSCNView isOpaque=false + background clear = preview caméra noire.
+        view.backgroundColor = UIColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1)
+        view.isOpaque = true
         view.rendersCameraGrain = false
         view.preferredFramesPerSecond = 30
         context.coordinator.arView = view

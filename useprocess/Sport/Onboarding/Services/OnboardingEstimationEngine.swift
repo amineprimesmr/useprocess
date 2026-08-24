@@ -16,13 +16,6 @@ struct OnboardingEstimationTimeline: Equatable {
     var debloatDays: Int { trajectory.debloatDays }
     var weightGoalDays: Int? { trajectory.weightDays }
     var weightGoalDate: Date? { trajectory.weightMilestone?.date }
-
-    // Legacy
-    var potentialDate: Date { debloatDate }
-    var potentialDays: Int { trajectory.debloatDays }
-    var weightMilestoneFraction: Double {
-        trajectory.weightMilestone?.fraction ?? 0
-    }
 }
 
 @MainActor
@@ -47,14 +40,6 @@ final class OnboardingEstimationEngine {
         )
 
         return OnboardingEstimationTimeline(trajectory: trajectory)
-    }
-
-    func debloatDate(for context: OnboardingEstimationContext, now: Date = Date()) -> Date {
-        computeTimeline(for: context, now: now).debloatDate
-    }
-
-    func computePotentialDate(for context: OnboardingEstimationContext, now: Date = Date()) -> Date {
-        debloatDate(for: context, now: now)
     }
 
     @MainActor

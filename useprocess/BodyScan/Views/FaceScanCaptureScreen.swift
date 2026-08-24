@@ -693,6 +693,7 @@ struct FaceScanCaptureScreen: View {
             if showsDelayedScanLaterLink, onSkip != nil, phase != .completed {
                 delayedScanLaterLink
                     .padding(.top, 10)
+                    .zIndex(30)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
@@ -1690,12 +1691,16 @@ struct FaceScanCaptureScreen: View {
                 onSkip()
             } label: {
                 Text(AppCopy.t("Faire mon scan plus tard", en: "Do my scan later"))
-                    .font(.system(size: 12, weight: .regular))
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(
                         onboardingUsesLightChrome
-                            ? Color.black.opacity(0.24)
-                            : Color.white.opacity(0.28)
+                            ? Color.black.opacity(0.52)
+                            : Color.white.opacity(0.62)
                     )
+                    .padding(.vertical, 14)
+                    .padding(.horizontal, 28)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.processPlain)
             .accessibilityLabel(AppCopy.t("Faire mon scan plus tard", en: "Do my scan later"))
@@ -1706,14 +1711,8 @@ struct FaceScanCaptureScreen: View {
         delayedScanLaterTask?.cancel()
         guard onSkip != nil, usesOnboardingFaceOval else { return }
 
-        showsDelayedScanLaterLink = false
-        delayedScanLaterTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(10))
-            guard !Task.isCancelled, phase != .completed, onSkip != nil else { return }
-            withAnimation(.easeInOut(duration: 0.35)) {
-                showsDelayedScanLaterLink = true
-            }
-        }
+        showsDelayedScanLaterLink = true
+        delayedScanLaterTask = nil
     }
 
     private func cancelDelayedScanLaterLink() {

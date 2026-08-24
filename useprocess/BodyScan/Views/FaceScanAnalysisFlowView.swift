@@ -135,6 +135,9 @@ struct FaceScanAnalysisFlowView: View {
         .onAppear {
             ProcessCreatorModeStore.shared.evaluate(firstName: profile?.firstName)
             ProcessCreatorModeStore.shared.syncFromCurrentProfile()
+            if tracksOnboardingMossFunnel, baseResult == nil {
+                ProcessAnalytics.trackMossPageViewed(.faceScanAnalyzing)
+            }
         }
         .onDisappear {
             guard !didCompleteAnalysis else { return }

@@ -2,40 +2,15 @@
 //  OnboardingFlowHelpers.swift
 //  Process
 //
-//  Validation d'étapes, reprise de progression et estimation du nombre d'étapes — extraits de OnboardingView.
-//
 
 import Foundation
 
 // MARK: - Validation de disponibilité d'étape
 
-/// Indique si une étape peut être affichée avec les données actuelles du ViewModel (reprise de progression).
 func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: OnboardingViewModel) -> Bool {
     switch step {
-    case .goalPace, .weightManagementExperience, .weightFailureReasons:
-        return viewModel.hasWeightObjective
-
-    case .idealWeight, .weightGoalIncompatible, .primaryGoal, .weightGoal:
-        return false
-
-    case .notificationPermission:
-        return false
-
-    case .personalizedWelcome:
-        return false
-
     case .faceLeverageIntro:
         return !viewModel.firstName.isEmpty
-
-    case .sportSelection:
-        return viewModel.hasSportActivity == true
-
-    case .hydrationLevel:
-        return viewModel.nutritionProfile.hasSufficientHydration == false
-
-    case .planReady, .onboardingInfo, .caloriesGoal, .carryOverCalories:
-        return false
-
     default:
         return true
     }
@@ -47,14 +22,11 @@ func validateOnboardingStepAvailability(step: OnboardingStep, viewModel: Onboard
 private let onboardingStepsAfterFirstDashboardPreview: [OnboardingStep] = [
     .programCreation,
     .weightEstimation,
-    .goalProjection,
-    .faceAnalysis,
     .biometricAuth,
     .transformationPreview,
     .referralCode
 ]
 
-/// L'utilisateur a dépassé le 1er tour dashboard (carrousel + scan).
 func hasPassedFirstDashboardPreviewSection(viewModel: OnboardingViewModel) -> Bool {
     if viewModel.hasCompletedFirstDashboardPreview { return true }
     if viewModel.isFaceAnalysisCompleted { return true }
@@ -73,7 +45,6 @@ func hasPassedFirstDashboardPreviewSection(viewModel: OnboardingViewModel) -> Bo
     return false
 }
 
-/// Meilleure étape mid-flow quand le 1er dashboard ne doit plus s'afficher.
 func bestMidOnboardingResumeStep(viewModel: OnboardingViewModel) -> Int {
     let orderedSteps = onboardingStepsAfterFirstDashboardPreview
     let visited = Set(viewModel.visitedSteps)
@@ -83,23 +54,18 @@ func bestMidOnboardingResumeStep(viewModel: OnboardingViewModel) -> Int {
     }
 
     let lastCompleted = OnboardingProgressService.shared.loadLastCompletedStep()
-    if let step = OnboardingStep(rawValue: lastCompleted),
-       orderedSteps.contains(step) {
+    let lastStep = OnboardingStep.resolved(from: lastCompleted)
+    if orderedSteps.contains(lastStep) {
         return lastCompleted
-    }
-
-    if viewModel.isProgramCreationCompleted || viewModel.isFaceAnalysisCompleted {
-        return OnboardingStep.programCreation.rawValue
     }
 
     return OnboardingStep.programCreation.rawValue
 }
 
-/// Reprise onboarding : ne pas rouvrir le 1er dashboard si déjà dépassé.
 func reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: OnboardingViewModel) {
     guard !AppSession.shared.hasCompletedOnboarding else { return }
     if SubscriptionService.shared.subscriptionStatus.isActive { return }
-    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return }
+    let step = OnboardingStep.resolved(from: viewModel.currentStep)
 
     if onboardingStepsAfterFirstDashboardPreview.contains(step) {
         return
@@ -138,9 +104,6 @@ func reconcileFirstDashboardPreviewResumeIfNeeded(viewModel: OnboardingViewModel
     OnboardingProgressService.shared.saveCurrentStep(target)
 }
 
-// MARK: - Dernière étape valide (reprise)
-
-/// Parcourt l'historique des étapes visitées et retourne la dernière étape affichable.
 func findLastValidOnboardingStepIndex(visitedSteps: [Int], viewModel: OnboardingViewModel) -> Int {
     for stepValue in visitedSteps.reversed() {
         guard let step = OnboardingStep(rawValue: stepValue) else { continue }
@@ -151,9 +114,6 @@ func findLastValidOnboardingStepIndex(visitedSteps: [Int], viewModel: Onboarding
     return OnboardingStep.genderSelection.rawValue
 }
 
-// MARK: - Progression barre / lueur
-
-/// Parcours utilisé pour la barre : dérivé du moteur de navigation (questionnaire jusqu'à `nutritionQuality`).
 func buildOnboardingProgressFlowPath(
     viewModel: OnboardingViewModel,
     navigationEngine: OnboardingNavigationEngine
@@ -162,8 +122,7 @@ func buildOnboardingProgressFlowPath(
     var progressPath: [Int] = []
 
     for rawStep in activePath {
-        guard let step = OnboardingStep(rawValue: rawStep) else { continue }
-        if step == .videoIntroduction { continue }
+        let step = OnboardingStep.resolved(from: rawStep)
         if step == .firstNameInput {
             progressPath.append(rawStep)
             break
@@ -178,16 +137,14 @@ func buildOnboardingProgressFlowPath(
 
 func isAfterQuestionnairePhase(_ step: OnboardingStep) -> Bool {
     switch step {
-    case .faceAnalysis, .programCreation, .healthKitPermissions, .sleepDataRecovery,
-         .biometricAuth, .notificationPermission, .transformationPreview, .dashboardPreview, .dreamFaceCommit, .payment, .appleSignIn, .processWelcome,
-         .complete, .referralReward, .featuresUnlock:
+    case .programCreation, .weightEstimation, .biometricAuth, .transformationPreview,
+         .dashboardPreview, .dreamFaceCommit, .payment, .appleSignIn, .complete:
         return true
     default:
         return false
     }
 }
 
-/// Étapes finales qui gardent le header « retour seul » (sans barre ni drapeau).
 func showsBackOnlyOnboardingHeader(_ step: OnboardingStep) -> Bool {
     switch step {
     case .biometricAuth, .transformationPreview, .programCreation:
@@ -197,11 +154,9 @@ func showsBackOnlyOnboardingHeader(_ step: OnboardingStep) -> Bool {
     }
 }
 
-/// Étapes après la page prénom — pas de barre de progression ni lueur header.
 func isAfterFirstNameProgressPhase(_ step: OnboardingStep) -> Bool {
     switch step {
-    case .genderSelection, .ageSelection, .height, .weight, .heightWeight, .bodyScan,
-         .idealWeight, .weightGoalIncompatible, .firstNameInput:
+    case .genderSelection, .ageSelection, .height, .weight, .firstNameInput:
         return false
     default:
         return true
@@ -218,8 +173,8 @@ private func progressCount(
         return index + 1
     }
 
-    if let step = OnboardingStep(rawValue: viewModel.currentStep),
-       isAfterFirstNameProgressPhase(step) || isAfterQuestionnairePhase(step) {
+    let step = OnboardingStep.resolved(from: viewModel.currentStep)
+    if isAfterFirstNameProgressPhase(step) || isAfterQuestionnairePhase(step) {
         return path.count
     }
 
@@ -236,7 +191,6 @@ private func progressCount(
     return 1
 }
 
-/// Calcule en une seule passe les métriques utilisées par la barre et la lueur.
 func onboardingFlowMetrics(
     viewModel: OnboardingViewModel,
     navigationEngine: OnboardingNavigationEngine
@@ -250,9 +204,9 @@ func onboardingFlowMetrics(
     }
 
     let totalSteps = max(path.count, 1)
+    let current = OnboardingStep.resolved(from: viewModel.currentStep)
 
-    if let current = OnboardingStep(rawValue: viewModel.currentStep),
-       isAfterQuestionnairePhase(current) || isAfterFirstNameProgressPhase(current) {
+    if isAfterQuestionnairePhase(current) || isAfterFirstNameProgressPhase(current) {
         return (progress: 1.0, totalSteps: totalSteps, glowProgressCount: totalSteps)
     }
 
@@ -264,7 +218,6 @@ func onboardingFlowMetrics(
     )
 }
 
-/// Réaligne l'historique visité sur le parcours actif (reprise après relance ou changement de branche).
 func reconcileVisitedStepsForRestore(
     viewModel: OnboardingViewModel,
     navigationEngine: OnboardingNavigationEngine
@@ -287,7 +240,6 @@ func reconcileVisitedStepsForRestore(
     viewModel.visitedSteps = needsRebuild ? expectedPrefix : normalized
 }
 
-/// Reconstruit l'historique visité comme préfixe du parcours jusqu'à l'étape cible (étapes visibles uniquement).
 func rebuildVisitedStepsPrefix(
     to targetStep: Int,
     viewModel: OnboardingViewModel,
@@ -295,34 +247,29 @@ func rebuildVisitedStepsPrefix(
 ) -> [Int] {
     let path = navigationEngine.buildActiveFlowPath()
     let visiblePath = path.filter {
-        guard let step = OnboardingStep(rawValue: $0) else { return false }
-        return !step.isTransientSkippedStep
+        !OnboardingStep.resolved(from: $0).isTransientSkippedStep
     }
 
-    let pathIndex = visiblePath.firstIndex(of: targetStep)
-
-    if let index = pathIndex {
+    if let index = visiblePath.firstIndex(of: targetStep) {
         return Array(visiblePath.prefix(index + 1))
     }
 
-    if let step = OnboardingStep(rawValue: targetStep), !step.isTransientSkippedStep {
+    let step = OnboardingStep.resolved(from: targetStep)
+    if !step.isTransientSkippedStep {
         return [targetStep]
     }
 
     return visiblePath.isEmpty ? [OnboardingStep.genderSelection.rawValue] : [visiblePath[0]]
 }
 
-/// Normalise la pile : étapes visibles uniquement, dernière = étape courante.
 func normalizeOnboardingVisitedStack(
     visitedSteps: [Int],
     currentStep: Int
 ) -> [Int] {
-    var stack = visitedSteps.filter {
-        guard let step = OnboardingStep(rawValue: $0) else { return false }
-        return !step.isTransientSkippedStep
-    }
+    var stack = visitedSteps.filter { OnboardingStep(rawValue: $0) != nil }
 
-    guard let step = OnboardingStep(rawValue: currentStep), !step.isTransientSkippedStep else {
+    let step = OnboardingStep.resolved(from: currentStep)
+    guard !step.isTransientSkippedStep else {
         return stack
     }
 
@@ -334,5 +281,3 @@ func normalizeOnboardingVisitedStack(
 
     return stack
 }
-
-// MARK: - Nombre d'étapes pour la barre / lueur

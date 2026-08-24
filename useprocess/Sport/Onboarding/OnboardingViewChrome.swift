@@ -78,8 +78,8 @@ struct OnboardingHeaderChrome: View {
         .padding(.top, OnboardingConstants.headerBackButtonTopPadding)
         .frame(maxWidth: .infinity, alignment: .top)
         .ios26SafeAnimation(
-            (OnboardingStep(rawValue: currentStep)?.semanticOrderIndex ?? 0)
-                <= OnboardingStep.firstNameInput.semanticOrderIndex
+            (OnboardingStep.resolved(from: currentStep).liveOrderIndex)
+                <= OnboardingStep.firstNameInput.liveOrderIndex
                 ? .onboardingTransition
                 : .onboardingPage,
             value: currentStep

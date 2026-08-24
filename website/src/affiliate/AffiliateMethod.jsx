@@ -1,59 +1,313 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { appCopy } from "../features/app-copy.js";
+import { IconChevronDown, IconExternal, IconLink } from "./AffiliateIcons.jsx";
+import { ViewBonusBoard, ViewBonusNote } from "./ViewBonusBoard.jsx";
+import { navigateHash, readHashQuery } from "./affiliate-utils.js";
+import { readMethodPace } from "./affiliate-onboarding-state.js";
+import {
+  FORMAT_SPECS,
+  MANNY_TIKTOK_HANDLE,
+  MANNY_TIKTOK_URL,
+  METHOD_MODULES,
+  fillVars,
+  moduleByQuery,
+  paceFromHours,
+} from "./method-catalog.js";
+import "./affiliate-method.css";
 
-const BLOCKS = [
-  {
-    title: { fr: "1. Un format, une promesse", en: "1. One format, one promise" },
-    body: {
-      fr: "Glow-up, foods, POV, protocole. Une idée par vidéo. Le viewer doit comprendre en 1 seconde ce qu'il gagne.",
-      en: "Glow-up, foods, POV, protocol. One idea per video. The viewer should get the payoff in one second.",
-    },
-  },
-  {
-    title: { fr: "2. Volume calme", en: "2. Calm volume" },
-    body: {
-      fr: "1 à 3 posts / jour, tous les jours. Mieux vaut 14 jours d'affilée que 10 vidéos le dimanche. Tes heures d'onboarding calibrent le rythme.",
-      en: "1–3 posts a day, every day. 14 days in a row beats 10 videos on Sunday. Your onboarding hours set the pace.",
-    },
-  },
-  {
-    title: { fr: "3. Lien Process partout", en: "3. Process link everywhere" },
-    body: {
-      fr: "Bio, pin comment, sticker story. Un seul lien créateur. Chaque abo via ce lien = 40 % à vie + primes vues.",
-      en: "Bio, pinned comment, story sticker. One creator link. Every sub through that link = 40% for life + view bonuses.",
-    },
-  },
-  {
-    title: { fr: "4. Recycle ce qui marche", en: "4. Recycle what works" },
-    body: {
-      fr: "Dès qu'une vidéo passe 40k, tu la dupliques (même hook, autre angle). Les primes sont plafonnées à $300 / vidéo — le volume de hits compte.",
-      en: "When a video clears 40k, duplicate it (same hook, new angle). Bonuses cap at $300 / video — hit volume matters.",
-    },
-  },
-];
+const METHOD_MODULE_KEY = "process.affiliate.method.module";
 
-export function AffiliateMethodPage() {
+function copyPair(pair, vars) {
+  if (!pair) return "";
+  return fillVars(appCopy(pair.fr, pair.en), vars);
+}
+
+function copyText(fr, en, vars) {
+  return fillVars(appCopy(fr, en), vars);
+}
+
+function readStoredModule() {
+  try {
+    return window.localStorage.getItem(METHOD_MODULE_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function persistModule(id) {
+  try {
+    window.localStorage.setItem(METHOD_MODULE_KEY, id);
+  } catch {
+    /* private mode */
+  }
+}
+
+function currentModuleFromHash() {
+  const query = readHashQuery();
+  if (query.m) return moduleByQuery(query.m);
+  const stored = readStoredModule();
+  return stored ? moduleByQuery(stored) : METHOD_MODULES[0];
+}
+
+function SlideStrip({ slides }) {
+  if (!slides?.length) return null;
   return (
-    <div className="af-card af-card-pad">
-      <p className="af-ob-kicker" style={{ marginBottom: 8 }}>
-        {appCopy("Méthode TikTok", "TikTok method")}
+    <ul className="af-md-slides">
+      {slides.map((slide) => (
+        <li key={slide.src}>
+          <img src={slide.src} alt={appCopy(slide.fr, slide.en)} width={180} height={320} />
+          <span>{appCopy(slide.fr, slide.en)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function FormatCard({ spec }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <article className={`af-md-format${open ? " is-open" : ""}`}>
+      <button type="button" className="af-md-format__head" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <div>
+          <strong>{appCopy(spec.name.fr, spec.name.en)}</strong>
+          <span>{spec.canvas}</span>
+        </div>
+        <IconChevronDown />
+      </button>
+      {open ? (
+        <div className="af-md-format__body">
+          <p className="af-md-hook">“{appCopy(spec.hook.fr, spec.hook.en)}”</p>
+          <p>{appCopy(spec.when.fr, spec.when.en)}</p>
+          <SlideStrip slides={spec.slides} />
+          <ol className="af-md-ol">
+            {spec.structure.map((item) => (
+              <li key={item.en}>{appCopy(item.fr, item.en)}</li>
+            ))}
+          </ol>
+          <p className="af-md-caption">
+            <span>{appCopy("Caption", "Caption")}</span>
+            {appCopy(spec.caption.fr, spec.caption.en)}
+          </p>
+          <p className="af-md-fatal">{appCopy(spec.fatal.fr, spec.fatal.en)}</p>
+        </div>
+      ) : (
+        <SlideStrip slides={spec.slides.slice(0, 3)} />
+      )}
+    </article>
+  );
+}
+
+function MethodLinks({ items, vars }) {
+  return (
+    <ul className="af-md-links">
+      {items.map((item) => {
+        const href = item.hrefKey ? vars[item.hrefKey] : item.href;
+        if (!href) return null;
+        return (
+          <li key={item.id}>
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {copyText(item.fr, item.en, vars)}
+              <IconExternal />
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function MethodBlock({ block, vars, pace, onGoLinks }) {
+  if (block.type === "lead") {
+    return <p className="af-md-lead">{copyText(block.fr, block.en, vars)}</p>;
+  }
+
+  if (block.type === "callout") {
+    return <p className="af-md-callout">{copyText(block.fr, block.en, vars)}</p>;
+  }
+
+  if (block.type === "pace") {
+    return (
+      <p className="af-md-pace">
+        {appCopy("Ton rythme :", "Your pace:")} <strong>{appCopy(pace.fr, pace.en)}</strong>
+        {vars.accounts
+          ? ` · ${appCopy(`${vars.accounts} compte(s)`, `${vars.accounts} account(s)`)}`
+          : ""}
       </p>
-      <h2 style={{ margin: "0 0 0.4rem", letterSpacing: "-0.03em" }}>
-        {appCopy("Le playbook Process", "The Process playbook")}
-      </h2>
-      <p style={{ margin: "0 0 1.4rem", color: "#71717a", lineHeight: 1.5 }}>
-        {appCopy(
-          "Simple, répétable, fait pour convertir vers l'app — pas pour faire du contenu vide.",
-          "Simple, repeatable, built to convert to the app — not empty content."
-        )}
-      </p>
-      <div style={{ display: "grid", gap: 14 }}>
-        {BLOCKS.map((block) => (
-          <article key={block.title.en} className="af-card af-card-pad" style={{ margin: 0, boxShadow: "none" }}>
-            <h3 style={{ margin: "0 0 0.35rem", fontSize: "1.02rem" }}>{appCopy(block.title.fr, block.title.en)}</h3>
-            <p style={{ margin: 0, color: "#52525b", lineHeight: 1.5 }}>{appCopy(block.body.fr, block.body.en)}</p>
-          </article>
+    );
+  }
+
+  if (block.type === "links") {
+    return <MethodLinks items={block.items} vars={vars} />;
+  }
+
+  if (block.type === "bonus") {
+    return (
+      <div className="af-md-bonus">
+        <ViewBonusBoard variant="light" />
+        <ViewBonusNote />
+      </div>
+    );
+  }
+
+  if (block.type === "steps") {
+    return (
+      <section className="af-md-section">
+        {block.title ? <h3>{copyPair(block.title, vars)}</h3> : null}
+        <ol className="af-md-ol">
+          {block.items.map((item) => (
+            <li key={item.en}>{copyPair(item, vars)}</li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
+
+  if (block.type === "dont") {
+    return (
+      <section className="af-md-section af-md-section--dont">
+        {block.title ? <h3>{copyPair(block.title, vars)}</h3> : null}
+        <ul className="af-md-ul">
+          {block.items.map((item) => (
+            <li key={item.en}>{copyPair(item, vars)}</li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
+
+  if (block.type === "formats") {
+    return (
+      <div className="af-md-formats">
+        <p className="af-md-ref">
+          <a href={MANNY_TIKTOK_URL} target="_blank" rel="noopener noreferrer">
+            {MANNY_TIKTOK_HANDLE}
+            <IconExternal />
+          </a>
+        </p>
+        {FORMAT_SPECS.map((spec) => (
+          <FormatCard key={spec.id} spec={spec} />
         ))}
       </div>
+    );
+  }
+
+  if (block.type === "shot") {
+    return (
+      <figure className="af-md-shot">
+        <img src={block.src} alt={copyText(block.fr, block.en, vars)} />
+        <figcaption>{copyText(block.fr, block.en, vars)}</figcaption>
+      </figure>
+    );
+  }
+
+  if (block.type === "examples") {
+    return (
+      <ul className="af-md-examples">
+        {block.items.map((item) => (
+          <li key={item.format}>
+            <img src={item.src} alt="" width={120} height={160} />
+            <div>
+              <strong>
+                {appCopy("Format", "Format")} {item.format}
+              </strong>
+              <p className="af-md-hook">“{copyPair(item.hook, vars)}”</p>
+              <p>{copyPair(item.why, vars)}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (block.type === "cta-links" && onGoLinks) {
+    return (
+      <button type="button" className="af-md-inline-link" onClick={onGoLinks}>
+        <IconLink />
+        {appCopy("Ouvrir mes liens", "Open my links")}
+      </button>
+    );
+  }
+
+  return null;
+}
+
+export function AffiliateMethodPage({ linkUrl = "", primaryCode = "", onGoLinks }) {
+  const [mod, setMod] = useState(() => currentModuleFromHash());
+  const paceState = readMethodPace();
+  const pace = paceFromHours(paceState.hoursPerDay);
+  const vars = useMemo(
+    () => ({
+      link: linkUrl.replace(/^https:\/\//, "") || "useprocess.xyz/join/CODE",
+      linkUrl,
+      code: primaryCode || "CODE",
+      posts: appCopy(pace.fr, pace.en),
+      accounts: paceState.accountCount || "",
+    }),
+    [linkUrl, primaryCode, pace.fr, pace.en, paceState.accountCount]
+  );
+
+  const goModule = useCallback((next) => {
+    setMod(next);
+    persistModule(String(next.index));
+    const hash = next.index === 0 ? "methode" : `methode?m=${next.index}`;
+    navigateHash(hash);
+  }, []);
+
+  useEffect(() => {
+    const sync = () => setMod(currentModuleFromHash());
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+
+  useEffect(() => {
+    persistModule(String(mod.index));
+    const query = readHashQuery();
+    if (!query.m && mod.index > 0) {
+      navigateHash(`methode?m=${mod.index}`);
+    }
+  }, [mod.index]);
+
+  const indexInList = METHOD_MODULES.findIndex((item) => item.id === mod.id);
+  const prev = METHOD_MODULES[indexInList - 1];
+  const next = METHOD_MODULES[indexInList + 1];
+
+  return (
+    <div className="af-md">
+      <nav className="af-md-toc" aria-label={appCopy("Modules", "Modules")}>
+        {METHOD_MODULES.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`af-md-toc__item${item.id === mod.id ? " is-on" : ""}`}
+            onClick={() => goModule(item)}
+          >
+            {copyPair(item.nav, vars)}
+          </button>
+        ))}
+      </nav>
+
+      <article className="af-md-page" key={mod.id}>
+        <p className="af-md-kicker">{copyPair(mod.kicker, vars)}</p>
+        <h2>{copyPair(mod.title, vars)}</h2>
+        {mod.blocks.map((block, i) => (
+          <MethodBlock key={`${mod.id}-${block.type}-${i}`} block={block} vars={vars} pace={pace} onGoLinks={onGoLinks} />
+        ))}
+
+        <div className="af-md-pager">
+          {prev ? (
+            <button type="button" className="af-md-pager__btn" onClick={() => goModule(prev)}>
+              ← {copyPair(prev.nav, vars)}
+            </button>
+          ) : (
+            <span />
+          )}
+          {next ? (
+            <button type="button" className="af-md-pager__btn is-next" onClick={() => goModule(next)}>
+              {copyPair(next.nav, vars)} →
+            </button>
+          ) : null}
+        </div>
+      </article>
     </div>
   );
 }

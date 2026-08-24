@@ -23,9 +23,6 @@ struct SportOnboardingView: View {
     @State var transitionDirection: TransitionDirection = .forward
     @State var isTransitioning: Bool = false
 
-    /// Recherche sport active : masque le bouton retour
-    @State var isSportSearchActive = false
-
     /// Progression header — fraction 0…1.
     @State var flowProgress: Double = OnboardingProgressService.shared.loadFlowProgress() ?? 0
     @State var flowTotalSteps: Int = 1
@@ -220,10 +217,15 @@ struct SportOnboardingView: View {
                         viewModel.onOnboardingFaceScanCancel?()
                     }
                 },
-                onSkip: presentation.usesChatCallbacks ? {
+                onSkip: {
                     viewModel.dismissOnboardingFaceScan()
-                    viewModel.onOnboardingFaceScanSkip?()
-                } : nil,
+                    if presentation.usesChatCallbacks {
+                        viewModel.onOnboardingFaceScanSkip?()
+                    } else {
+                        viewModel.skipDashboardFaceScanForLater()
+                        viewModel.onOnboardingFaceScanContinueFromDashboard?()
+                    }
+                },
                 onResultReady: { result in
                     if presentation.usesChatCallbacks {
                         viewModel.onOnboardingFaceScanResult?(result)

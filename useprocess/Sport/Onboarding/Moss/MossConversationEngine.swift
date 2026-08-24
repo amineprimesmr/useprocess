@@ -30,8 +30,6 @@ import UIKit
 // MARK: - Typing profiles
 
 enum MossTypingProfile {
-    /// Ceremonial and emotional lines ("I'm Moss." / the reflection).
-    case ceremonial
     /// Questions and normal statements.
     case standard
     /// Longer explanatory copy (shorten first; this only softens the rest).
@@ -39,7 +37,6 @@ enum MossTypingProfile {
 
     var millisPerCharacter: Double {
         switch self {
-        case .ceremonial: 25
         case .standard: 18
         case .explanatory: 14
         }
@@ -125,7 +122,6 @@ final class MossConversationEngine {
                onBatchDone: (() -> Void)? = nil) {
         guard !lines.isEmpty else { onBatchDone?(); return }
         batchDone = onBatchDone
-        controlsVisible = true
 
         if instant || reduceMotion || assistiveVoice {
             for line in lines {
@@ -138,6 +134,8 @@ final class MossConversationEngine {
             return
         }
 
+        // Les CTA n’apparaissent qu’une fois le batch entièrement tapé.
+        controlsVisible = false
         queue.append(contentsOf: lines)
         startPumpIfNeeded()
     }
@@ -382,137 +380,9 @@ final class MossTypeHaptics {
     }
 
     /// The line has landed — one grounded pulse, deeper when it mattered.
-    /// As `play`, but hands the player back so the caller can stop it
-    /// (the portal's tap acceleration retires its running composition).
-    func playRetained(_ pattern: CHHapticPattern) -> CHHapticPatternPlayer? {
-        guard supported else { return nil }
-        prepare()
-        startIfNeeded()
-        guard let engine,
-              let player = try? engine.makePlayer(with: pattern) else { return nil }
-        try? player.start(atTime: CHHapticTimeImmediate)
-        return player
-    }
-
-    /// Play one authored composition (the purchase bloom) through the
-    /// shared engine — a single coherent pattern, never a pile of UIKit
-    /// feedback calls.
-    func play(_ pattern: CHHapticPattern) {
-        guard supported else { return }
-        prepare()
-        startIfNeeded()
-        guard let engine,
-              let player = try? engine.makePlayer(with: pattern) else { return }
-        try? player.start(atTime: CHHapticTimeImmediate)
-    }
-
-    // MARK: - The signing hold
-
-    private var holdPlayer: CHHapticAdvancedPatternPlayer?
-
-    /// The rumble under the hold-to-sign capsule: a true crescendo. It
-    /// begins near-silent — barely a presence under the finger — and only
-    /// earns weight in the final stretch, peaking as the signature lands.
-    /// Stops instantly on release.
-    func holdBegan(duration: TimeInterval) {
-        guard supported else { return }
-        prepare()
-        startIfNeeded()
-        guard let engine else { return }
-        let event = CHHapticEvent(
-            eventType: .hapticContinuous,
-            parameters: [
-                CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0),
-                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15),
-            ],
-            relativeTime: 0,
-            duration: duration)
-        let swell = CHHapticParameterCurve(
-            parameterID: .hapticIntensityControl,
-            controlPoints: [
-                .init(relativeTime: 0, value: 0.06),
-                .init(relativeTime: duration * 0.5, value: 0.22),
-                .init(relativeTime: duration * 0.85, value: 0.55),
-                .init(relativeTime: duration, value: 0.9),
-            ],
-            relativeTime: 0)
-        guard let pattern = try? CHHapticPattern(events: [event],
-                                                 parameterCurves: [swell]),
-              let player = try? engine.makeAdvancedPlayer(with: pattern)
-        else { return }
-        holdPlayer = player
-        try? player.start(atTime: CHHapticTimeImmediate)
-    }
-
-    func holdEnded() {
-        try? holdPlayer?.stop(atTime: CHHapticTimeImmediate)
-        holdPlayer = nil
-    }
-
     func completion(emotional: Bool) {
         transient(intensity: emotional ? 0.62 : 0.42,
                   sharpness: emotional ? 0.28 : 0.34)
-    }
-
-    /// The trade's climax, struck SYNCHRONOUSLY as the hold completes —
-    /// the pen leaving the paper. Nothing haptic follows it; the persisted
-    /// row speaks through the stamp, not through a second pulse.
-    func signatureStrike() {
-        let events = [
-            CHHapticEvent(eventType: .hapticTransient, parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.85),
-                .init(parameterID: .hapticSharpness, value: 0.20),
-            ], relativeTime: 0),
-            CHHapticEvent(eventType: .hapticContinuous, parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.35),
-                .init(parameterID: .hapticSharpness, value: 0.05),
-            ], relativeTime: 0.02, duration: 0.28),
-        ]
-        if let pattern = try? CHHapticPattern(events: events, parameters: []) {
-            play(pattern)
-        }
-    }
-
-    /// Money cleared: one warm settled pulse, deliberately smaller than the
-    /// bloom that follows in the arrival — confirmation, not celebration.
-    func activated() {
-        let events = [
-            CHHapticEvent(eventType: .hapticTransient, parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.55),
-                .init(parameterID: .hapticSharpness, value: 0.18),
-            ], relativeTime: 0),
-            CHHapticEvent(eventType: .hapticContinuous, parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.22),
-                .init(parameterID: .hapticSharpness, value: 0.05),
-            ], relativeTime: 0.02, duration: 0.24),
-        ]
-        if let pattern = try? CHHapticPattern(events: events, parameters: []) {
-            play(pattern)
-        }
-    }
-
-    /// The unique success texture when the personalized plan finishes:
-    /// three soft rising drops settling into one deep, restrained landing.
-    func planReady() {
-        guard supported, let engine else {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-            return
-        }
-        startIfNeeded()
-        let steps: [(Double, Float, Float)] = [
-            (0.00, 0.25, 0.30), (0.16, 0.35, 0.34),
-            (0.32, 0.45, 0.38), (0.60, 0.75, 0.22),
-        ]
-        let events = steps.map { time, intensity, sharpness in
-            CHHapticEvent(eventType: .hapticTransient, parameters: [
-                CHHapticEventParameter(parameterID: .hapticIntensity, value: intensity),
-                CHHapticEventParameter(parameterID: .hapticSharpness, value: sharpness),
-            ], relativeTime: time)
-        }
-        if let pattern = try? CHHapticPattern(events: events, parameters: []),
-           let player = try? engine.makePlayer(with: pattern) {
-            try? player.start(atTime: 0)
-        }
     }
 
     private func transient(intensity: Float, sharpness: Float) {

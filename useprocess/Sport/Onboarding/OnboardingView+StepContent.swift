@@ -2,8 +2,6 @@
 //  OnboardingView+StepContent.swift
 //  Process
 //
-//  Contenu des étapes d'onboarding (switch extrait de OnboardingView).
-//
 
 import SwiftUI
 
@@ -11,9 +9,6 @@ extension SportOnboardingView {
     @ViewBuilder
     func onboardingStepContent(for step: OnboardingStep) -> some View {
         switch step {
-        case .videoIntroduction:
-            EmptyView()
-                .onAppear { skipTransientStep() }
         case .genderSelection:
             GenderSelectionStepView(
                 selectedGender: $viewModel.selectedGender,
@@ -32,7 +27,6 @@ extension SportOnboardingView {
             HeightStepView(
                 selectedHeight: $viewModel.selectedHeight,
                 onValidationChanged: { isValid in
-                    // ✅ Forcer la mise à jour sur le main thread
                     Task { @MainActor in
                         viewModel.isHeightWeightSelected = isValid
                     }
@@ -47,27 +41,8 @@ extension SportOnboardingView {
                         viewModel.refreshBodyCompositionRouting()
                     }
                 },
-                onContinue: nextStep // ✅ NOUVEAU: Passer à l'étape suivante depuis le clavier
+                onContinue: nextStep
             )
-        case .heightWeight, .bodyScan, .primaryGoal, .weightGoal, .idealWeight, .weightGoalIncompatible,
-             .sportClub, .experienceLevel, .hardestMeal,
-             .yearsOfExperience, .deadlineSelection, .eventDetails,
-             .potentialPace, .trainingFrequency, .nutritionScanFeature,
-             .hasDietaryRestrictions, .whichRestrictions,
-             .nutritionObstacles, .perfectNutritionBelief, .hasSufficientHydration, .hydrationLevel,
-             .nutritionPotential,
-             .goalPace, .hasSportActivity, .sportSelection,
-             .weightManagementExperience, .weightFailureReasons, .nutritionQuality,
-             .goalProjection,
-             .sleepNeed, .planGeneration,
-             .newsStep, .sleepNeedReveal, .sleepDebtInfo, .planReady, .onboardingInfo,
-             .alarmConfiguration, .sleepWindowReveal,
-             .caloriesGoal, .carryOverCalories, .appRating,
-             .processWelcome, .referralReward, .featuresUnlock,
-             .sleepInfo, .sleepQuality, .fatigueFrequency, .fatiguePeaks,
-             .processResultsDurability, .personalizedWelcome:
-            EmptyView()
-                .onAppear { skipTransientStep() }
         case .faceLeverageIntro:
             FaceLeverageIntroStepView(
                 viewModel: viewModel,
@@ -85,12 +60,6 @@ extension SportOnboardingView {
             .onAppear {
                 viewModel.bootstrapCreatorCodeDraftIfNeeded()
             }
-        case .faceAnalysis:
-            FaceScanStepView(
-                viewModel: viewModel,
-                onComplete: nextStep,
-                onBack: previousStep
-            )
         case .firstNameInput:
             FirstNameInputStepView(
                 firstName: $viewModel.firstName,
@@ -122,12 +91,6 @@ extension SportOnboardingView {
                     viewModel.estimationContinueUnlockProgress = progress
                 }
             )
-        case .healthKitPermissions:
-            EmptyView()
-                .onAppear { skipTransientStep() }
-        case .sleepDataRecovery:
-            EmptyView()
-                .onAppear { skipTransientStep() }
         case .biometricAuth:
             BiometricAuthStepView(onComplete: nextStep)
         case .transformationPreview:
@@ -167,9 +130,6 @@ extension SportOnboardingView {
                 viewModel: viewModel,
                 onComplete: nextStep
             )
-        case .notificationPermission:
-            EmptyView()
-                .onAppear { skipTransientStep() }
         case .payment:
             PaywallView(
                 onComplete: {
@@ -187,12 +147,6 @@ extension SportOnboardingView {
         case .complete:
             Color.clear
                 .task { await completeOnboarding() }
-        @unknown default:
-            EmptyView()
-                .onAppear {
-                    nextStep()
-                }
         }
-
     }
 }

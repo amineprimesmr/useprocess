@@ -14,8 +14,7 @@ extension SportOnboardingView {
 
 var shouldShowGlobalContinueButton: Bool {
     guard !isImmersiveOnboardingStep else { return false }
-    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
-    return !step.usesInternalContinueAction
+    return !OnboardingStep.resolved(from: viewModel.currentStep).usesInternalContinueAction
 }
 
 var continueButtonTitle: String {
@@ -62,8 +61,8 @@ var continueButtonKeyboardGap: CGFloat { 16 }
 
 /// Steps où le clavier est ouvert par défaut — le CTA doit suivre la hauteur réelle.
 var isKeyboardAnchoredContinueStep: Bool {
-    switch OnboardingStep(rawValue: viewModel.currentStep) {
-    case .firstNameInput, .weight, .idealWeight, .referralCode:
+    switch OnboardingStep.resolved(from: viewModel.currentStep) {
+    case .firstNameInput, .weight, .referralCode:
         return true
     default:
         return false
@@ -80,11 +79,11 @@ private static let estimatedASCIIKeyboardOverlap: CGFloat = 336
 /// Projection clavier pendant le slide taille → poids (avant willShow).
 var shouldProjectKeyboardOverlapForCurrentStep: Bool {
     guard isKeyboardAnchoredContinueStep, keyboardHeight.height == 0 else { return false }
-    guard let previous = previousStepIndex,
-          let previousStep = OnboardingStep(rawValue: previous) else { return false }
-    switch OnboardingStep(rawValue: viewModel.currentStep) {
+    guard let previous = previousStepIndex else { return false }
+    let previousStep = OnboardingStep.resolved(from: previous)
+    switch OnboardingStep.resolved(from: viewModel.currentStep) {
     case .weight:
-        return previousStep == .height || previousStep == .heightWeight
+        return previousStep == .height
     case .referralCode:
         return previousStep == .transformationPreview
     default:
@@ -148,10 +147,10 @@ func handleContinueButtonTap() {
 
     viewModel.commitPendingStepAnswers()
 
-    let step = OnboardingStep(rawValue: viewModel.currentStep)
+    let step = OnboardingStep.resolved(from: viewModel.currentStep)
 
     switch step {
-    case .firstNameInput, .weight, .idealWeight:
+    case .firstNameInput, .weight:
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         nextStep()
 
@@ -194,9 +193,9 @@ var shouldUseEarlyOnboardingTransition: Bool {
 }
 
 static func usesEarlyOnboardingTransition(from: Int, to: Int) -> Bool {
-    let cap = OnboardingStep.firstNameInput.semanticOrderIndex
-    let fromIndex = OnboardingStep(rawValue: from)?.semanticOrderIndex ?? 0
-    let toIndex = OnboardingStep(rawValue: to)?.semanticOrderIndex ?? 0
+    let cap = OnboardingStep.firstNameInput.liveOrderIndex
+    let fromIndex = OnboardingStep.resolved(from: from).liveOrderIndex
+    let toIndex = OnboardingStep.resolved(from: to).liveOrderIndex
     return fromIndex <= cap && toIndex <= cap
 }
 
@@ -221,15 +220,15 @@ var onboardingPageTransition: AnyTransition {
 }
 
 static func usesScanStylePagePush(from: Int, to: Int) -> Bool {
-    let threshold = OnboardingStep.weightMotivation.semanticOrderIndex
-    let fromIndex = OnboardingStep(rawValue: from)?.semanticOrderIndex ?? 0
-    let toIndex = OnboardingStep(rawValue: to)?.semanticOrderIndex ?? 0
+    let threshold = OnboardingStep.weightMotivation.liveOrderIndex
+    let fromIndex = OnboardingStep.resolved(from: from).liveOrderIndex
+    let toIndex = OnboardingStep.resolved(from: to).liveOrderIndex
     return fromIndex >= threshold || toIndex >= threshold
 }
 
 static func usesDashboardRevealTransition(from: Int, to: Int) -> Bool {
-    guard let fromStep = OnboardingStep(rawValue: from),
-          let toStep = OnboardingStep(rawValue: to) else { return false }
+    let fromStep = OnboardingStep.resolved(from: from)
+    let toStep = OnboardingStep.resolved(from: to)
     if toStep == .dashboardPreview, fromStep == .weightMotivation { return true }
     if fromStep == .dashboardPreview, toStep == .weightMotivation { return true }
     return false
@@ -252,31 +251,25 @@ func commitAnimatedStepChange(to newStep: Int) {
 }
 
 var isImmersiveOnboardingStep: Bool {
-    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else { return false }
-    // Paywall en immersif : évite le remount `.id(onboarding_content_…)` qui cassait
-    // le double-swipe Home (« Attends ! ») juste après la fin de l’onboarding.
-    return step == .videoIntroduction || step == .faceAnalysis || step == .dashboardPreview || step == .dreamFaceCommit || step == .payment || step == .appleSignIn
+    switch OnboardingStep.resolved(from: viewModel.currentStep) {
+    case .dashboardPreview, .dreamFaceCommit, .payment, .appleSignIn:
+        return true
+    default:
+        return false
+    }
 }
 
 var shouldShowBackButton: Bool {
-    if isSportSearchActive {
-        return false
-    }
-
-    guard let currentStep = OnboardingStep(rawValue: viewModel.currentStep) else {
-        return false
-    }
+    let currentStep = OnboardingStep.resolved(from: viewModel.currentStep)
 
     let blockedSteps: Set<OnboardingStep> = [
-        .videoIntroduction, .payment, .appleSignIn, .processWelcome, .featuresUnlock, .complete, .faceAnalysis,
-        .dashboardPreview, .dreamFaceCommit
+        .payment, .appleSignIn, .complete, .dashboardPreview, .dreamFaceCommit
     ]
     if blockedSteps.contains(currentStep) {
         return false
     }
 
-    // Création du programme et toutes les étapes suivantes : pas de retour.
-    if currentStep.semanticOrderIndex >= OnboardingStep.programCreation.semanticOrderIndex {
+    if currentStep.liveOrderIndex >= OnboardingStep.programCreation.liveOrderIndex {
         return false
     }
 
@@ -288,32 +281,14 @@ var onboardingScreenBackground: Color {
 }
 
 var shouldAddTopPadding: Bool {
-    guard let step = OnboardingStep(rawValue: viewModel.currentStep) else {
+    switch OnboardingStep.resolved(from: viewModel.currentStep) {
+    case .payment, .appleSignIn, .complete,
+         .genderSelection, .ageSelection, .height, .weight,
+         .firstNameInput, .faceLeverageIntro, .weightMotivation,
+         .weightEstimation, .programCreation, .biometricAuth,
+         .transformationPreview, .referralCode, .dashboardPreview, .dreamFaceCommit:
         return false
     }
-
-    // Pages avec titre en overlay : pas de padding parent (évite le double décalage).
-    if step == .videoIntroduction || step == .payment || step == .appleSignIn || step == .processWelcome || step == .faceAnalysis
-        || step == .genderSelection || step == .ageSelection || step == .height || step == .weight
-        || step == .heightWeight || step == .firstNameInput || step == .faceLeverageIntro
-        || step == .weightEstimation || step == .goalProjection
-        || step == .primaryGoal || step == .idealWeight || step == .goalPace
-        || step == .hasSportActivity || step == .nutritionQuality
-        || step == .weightManagementExperience || step == .weightFailureReasons
-        || step == .sportSelection || step == .weightMotivation || step == .weightGoalIncompatible
-        || step == .programCreation
-        || step == .biometricAuth || step == .notificationPermission || step == .transformationPreview
-        || step == .referralCode
-        || step == .dashboardPreview || step == .dreamFaceCommit
-        || step == .healthKitPermissions {
-        return false
-    }
-
-    // Pages avec header retour + contenu scrollé sans overlay titre.
-    return OnboardingHeaderLayout.showsAnyHeader(
-        currentStep: viewModel.currentStep,
-        shouldShowBackButton: shouldShowBackButton
-    )
 }
 
 }

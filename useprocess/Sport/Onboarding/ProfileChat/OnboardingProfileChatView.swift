@@ -21,8 +21,6 @@ struct OnboardingProfileChatView: View {
 
     @State private var mossEngine = MossConversationEngine()
     @State private var chatViewModel = OnboardingProfileChatViewModel()
-    @State private var multiSelection: Set<String> = []
-    @State private var isSportSearchActive = false
 
     var body: some View {
         ZStack {
@@ -54,10 +52,6 @@ struct OnboardingProfileChatView: View {
         .onChange(of: chatViewModel.shouldFinish) { _, should in
             guard should else { return }
             chatViewModel.finish(onComplete: onComplete)
-        }
-        .onChange(of: chatViewModel.currentQuestion?.id) { _, _ in
-            multiSelection = []
-            isSportSearchActive = false
         }
         .task(id: onboardingViewModel.currentStep) {
             mossEngine.reduceMotion = reduceMotion
@@ -206,18 +200,10 @@ struct OnboardingProfileChatView: View {
             }
 
             VStack(alignment: .leading, spacing: Theme.Space.l) {
-                if chatViewModel.showsProgramCreationSection {
-                    programCreationSection
-                }
-
-                if chatViewModel.showsAnalysisSection {
-                    analysisSection
-                }
-
                 if chatViewModel.showsAnswerOptions,
                    let question = chatViewModel.currentQuestion {
                     mossAnswerControls(for: question)
-                        .opacity(engine.controlsVisible ? 1 : 0)
+                        .opacity(engine.controlsVisible && !engine.isTyping ? 1 : 0)
                         .allowsHitTesting(profileSummaryHitsEnabled(question, engine: engine))
                         .id("controls.\(question.id)")
                         .transition(.asymmetric(
@@ -243,12 +229,12 @@ struct OnboardingProfileChatView: View {
         return 16
     }
 
-    /// La carte résumé reste tappable dès qu’elle est visible — le typewriter ne doit plus voler le tap.
+    /// Les contrôles ne reçoivent le tap qu’après la fin du typewriter.
     private func profileSummaryHitsEnabled(
         _ question: OnboardingProfileChatQuestion,
         engine: MossConversationEngine
     ) -> Bool {
-        guard engine.controlsVisible else { return false }
+        guard engine.controlsVisible, !engine.isTyping else { return false }
         return true
     }
 
@@ -290,31 +276,6 @@ struct OnboardingProfileChatView: View {
                 }
                 .settleIn(0)
 
-            case .yesNo:
-                VStack(spacing: MossAnswerChipMetrics.stackSpacing) {
-                    MossChip(title: OnboardingCopy.t("Oui", en: "Yes"), isSelected: false) {
-                        Task { await chatViewModel.submitYesNo(true) }
-                    }
-                    .settleIn(0)
-                    MossChip(title: OnboardingCopy.t("Non", en: "No"), isSelected: false) {
-                        Task { await chatViewModel.submitYesNo(false) }
-                    }
-                    .settleIn(1)
-                }
-
-            case .singleChoice where question.id == "sport_pick":
-                OnboardingProfileChatSportPicker(
-                    isSearching: $isSportSearchActive,
-                    isSubmitting: chatViewModel.isSubmittingAnswer,
-                    revealedOptionIDs: Set(OnboardingProfileChatAnswerReveal.orderedIDs(for: question)),
-                    onSelectFeatured: { choiceId in
-                        Task { await chatViewModel.submitSingleChoice(choiceId) }
-                    },
-                    onSelectSearched: { sport in
-                        Task { await chatViewModel.submitSearchedSport(sport) }
-                    }
-                )
-
             case .singleChoice:
                 OnboardingChatScrollableAnswerStack(
                     choiceCount: question.choices.count,
@@ -328,90 +289,18 @@ struct OnboardingProfileChatView: View {
                     }
                 }
 
-            case .multiChoice:
-                OnboardingChatScrollableAnswerStack(
-                    choiceCount: question.choices.count,
-                    maxHeight: 180
-                ) {
-                    ForEach(Array(question.choices.enumerated()), id: \.element.id) { index, choice in
-                        MossChip(
-                            title: choice.label,
-                            isSelected: multiSelection.contains(choice.id)
-                        ) {
-                            if multiSelection.contains(choice.id) {
-                                multiSelection.remove(choice.id)
-                            } else {
-                                multiSelection.insert(choice.id)
-                            }
-                        }
-                        .settleIn(index)
-                    }
-                }
-
-                MossChatPrimaryButton(
-                    title: OnboardingCopy.t("Valider", en: "Confirm"),
-                    enabled: !multiSelection.isEmpty && !chatViewModel.isSubmittingAnswer
-                ) {
-                    let selection = multiSelection
-                    multiSelection = []
-                    Task { await chatViewModel.submitMultiChoice(selection) }
-                }
-                .settleIn(question.choices.count)
-
-            case .faceScanOffer:
-                OnboardingProfileChatInlineFaceScanSection(
-                    isSubmitting: chatViewModel.isSubmittingAnswer,
-                    isScanRevealed: mossEngine.controlsVisible,
-                    onLaunchScan: {
-                        Task { await launchOnboardingFaceScan() }
-                    }
-                )
-                .settleIn(0)
-
             case .profileSummary:
                 OnboardingProfileChatProfileSummarySection(
                     sections: OnboardingProfileSummaryBuilder.sections(for: onboardingViewModel),
-                    isRevealed: mossEngine.controlsVisible,
+                    isRevealed: mossEngine.controlsVisible && !mossEngine.isTyping,
                     onContinue: {
                         Task { await chatViewModel.submitProfileSummaryContinue() }
                     }
                 )
                 .padding(.top, 48)
-
-            case .autoPlanCreation, .answersAnalysis, .analysisProgress:
-                EmptyView()
             }
         }
         .padding(.top, Theme.Space.s)
-    }
-
-    private var programCreationSection: some View {
-        OnboardingProfileChatPlanCreationPanel(
-            isVisible: chatViewModel.showsProgramCreationSection,
-            isComplete: chatViewModel.programCreationPhase == .complete
-        )
-        .padding(.top, Theme.Space.s)
-    }
-
-    private var analysisSection: some View {
-        OnboardingProfileChatAnalysisPanel(
-            phaseLabel: chatViewModel.analysisPhaseLabel,
-            phaseIndex: chatViewModel.analysisPhaseIndex,
-            displayedPercentage: chatViewModel.analysisDisplayedPercentage,
-            progress: chatViewModel.analysisProgress,
-            elapsedSeconds: chatViewModel.analysisElapsedSeconds,
-            isPaused: chatViewModel.analysisIsPaused,
-            isVisible: chatViewModel.showsAnalysisSection
-        )
-        .padding(.top, Theme.Space.s)
-    }
-
-    @MainActor
-    private func launchOnboardingFaceScan() async {
-        guard onboardingViewModel.presentedOnboardingFaceScan == nil else { return }
-        onboardingViewModel.presentOnboardingFaceScan()
-        await Task.yield()
-        await chatViewModel.submitFaceScanNow()
     }
 
     @MainActor

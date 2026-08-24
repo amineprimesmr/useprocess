@@ -30,39 +30,13 @@ enum OnboardingAnalysisProgressConfig {
         }
     }
 
-    struct SourcePill: Identifiable, Equatable, Sendable {
-        let id: String
-        let imageName: String?
-        let systemImage: String?
-        let label: String
-
-        nonisolated init(id: String, imageName: String? = nil, systemImage: String? = nil, label: String) {
-            self.id = id
-            self.imageName = imageName
-            self.systemImage = systemImage
-            self.label = label
-        }
-    }
-
     struct ProgressStep: Identifiable, Equatable, Sendable {
         let id: String
         let phaseLabel: String
-        let query: String
-        let resultCount: Int?
-        let sources: [SourcePill]
 
-        nonisolated init(
-            id: String,
-            phaseLabel: String,
-            query: String,
-            resultCount: Int?,
-            sources: [SourcePill]
-        ) {
+        nonisolated init(id: String, phaseLabel: String) {
             self.id = id
             self.phaseLabel = phaseLabel
-            self.query = query
-            self.resultCount = resultCount
-            self.sources = sources
         }
     }
 
@@ -70,84 +44,15 @@ enum OnboardingAnalysisProgressConfig {
         [
             .init(
                 id: "face",
-                phaseLabel: AppCopy.tSync("Rétention d'eau", en: "Water retention"),
-                query: AppCopy.tSync(
-                    "Lecture de ta vidéo et du relief 3D",
-                    en: "Reading your video and 3D mesh"
-                ),
-                resultCount: nil,
-                sources: []
+                phaseLabel: AppCopy.tSync("Rétention d'eau", en: "Water retention")
             ),
             .init(
                 id: "structure",
-                phaseLabel: AppCopy.tSync("Visage gonflé", en: "Puffy face"),
-                query: AppCopy.tSync(
-                    "Symétrie, mâchoire, pommettes, rétention",
-                    en: "Symmetry, jaw, cheekbones, retention"
-                ),
-                resultCount: nil,
-                sources: []
+                phaseLabel: AppCopy.tSync("Visage gonflé", en: "Puffy face")
             ),
             .init(
                 id: "summary",
-                phaseLabel: AppCopy.tSync("Bilan debloat", en: "Debloat readout"),
-                query: AppCopy.tSync(
-                    "Synthèse personnalisée de tes résultats",
-                    en: "A personal summary of your results"
-                ),
-                resultCount: nil,
-                sources: []
-            )
-        ]
-    }
-
-    nonisolated static var answersAnalysisSteps: [ProgressStep] {
-        [
-            .init(
-                id: "responses",
-                phaseLabel: AppCopy.tSync("Tes objectifs", en: "Your goals"),
-                query: AppCopy.tSync(
-                    "Analyse de tes objectifs et de ton ressenti…",
-                    en: "Analyzing your goals and how you feel…"
-                ),
-                resultCount: nil,
-                sources: [
-                    .init(id: "profile", systemImage: "person.crop.circle", label: AppCopy.tSync("Objectif", en: "Goal")),
-                    .init(id: "habits", systemImage: "list.bullet.clipboard", label: AppCopy.tSync("Habitudes", en: "Habits"))
-                ]
-            ),
-            .init(
-                id: "healthkit",
-                phaseLabel: AppCopy.tSync("Ton équilibre", en: "Your balance"),
-                query: AppCopy.tSync(
-                    "Croisement de tes habitudes et données Santé…",
-                    en: "Crossing your habits with Health data…"
-                ),
-                resultCount: nil,
-                sources: [
-                    .init(id: "health", imageName: "healthapple", label: AppCopy.tSync("Santé", en: "Health")),
-                    .init(id: "hydration", systemImage: "drop.fill", label: AppCopy.tSync("Hydratation", en: "Hydration")),
-                    .init(id: "sleep", systemImage: "bed.double.fill", label: AppCopy.tSync("Sommeil", en: "Sleep")),
-                    .init(id: "activity", systemImage: "figure.walk", label: AppCopy.tSync("Mouvement", en: "Movement"))
-                ]
-            ),
-            .init(
-                id: "debloat",
-                phaseLabel: AppCopy.tSync("Phase Debloat", en: "Debloat phase"),
-                query: AppCopy.tSync(
-                    "Préparation de ta première phase…",
-                    en: "Preparing your first phase…"
-                ),
-                resultCount: nil,
-                sources: [
-                    .init(id: "nutrition", systemImage: "fork.knife", label: AppCopy.tSync("Nutrition", en: "Nutrition")),
-                    .init(
-                        id: "recovery",
-                        systemImage: "moon.zzz.fill",
-                        label: AppCopy.tSync("Cernes et fatigue", en: "Under-eyes & fatigue")
-                    ),
-                    .init(id: "coach", imageName: "caochiaicon", label: "Process")
-                ]
+                phaseLabel: AppCopy.tSync("Bilan debloat", en: "Debloat readout")
             )
         ]
     }
@@ -161,45 +66,6 @@ enum OnboardingAnalysisProgressConfig {
     }
 
     static var phases: [String] { progressBarLabels }
-
-    static var steps: [ProgressStep] {
-        let labels = phases
-        return [
-            .init(
-                id: "healthkit",
-                phaseLabel: labels[0],
-                query: AppCopy.tSync("Lecture de tes données dans l’app Santé…", en: "Reading your Health app data…"),
-                resultCount: 4,
-                sources: [
-                    .init(id: "health", imageName: "healthapple", label: AppCopy.tSync("Santé", en: "Health")),
-                    .init(id: "activity", systemImage: "figure.run", label: AppCopy.tSync("Activité", en: "Activity")),
-                    .init(id: "sleep", systemImage: "bed.double.fill", label: AppCopy.tSync("Sommeil", en: "Sleep")),
-                    .init(id: "heart", systemImage: "heart.fill", label: AppCopy.tSync("Fréquence", en: "Heart rate"))
-                ]
-            ),
-            .init(
-                id: "claude",
-                phaseLabel: labels[1],
-                query: AppCopy.tSync("Réflexion avec Claude sur ton profil…", en: "Reviewing your profile with Claude…"),
-                resultCount: nil,
-                sources: [
-                    .init(id: "claude", imageName: "claudeLogo", label: "Claude"),
-                    .init(id: "process", imageName: "caochiaicon", label: "Process")
-                ]
-            ),
-            .init(
-                id: "program",
-                phaseLabel: labels[2],
-                query: AppCopy.tSync("Assemblage de ton programme sur mesure…", en: "Assembling your custom program…"),
-                resultCount: nil,
-                sources: [
-                    .init(id: "nutrition", systemImage: "fork.knife", label: AppCopy.tSync("Nutrition", en: "Nutrition")),
-                    .init(id: "training", systemImage: "dumbbell.fill", label: AppCopy.tSync("Entraînement", en: "Training")),
-                    .init(id: "recovery", systemImage: "moon.zzz.fill", label: AppCopy.tSync("Cernes et fatigue", en: "Under-eyes & fatigue"))
-                ]
-            )
-        ]
-    }
 
     static var phaseEndPopups: [Popup?] {
         [
@@ -227,19 +93,5 @@ enum OnboardingAnalysisProgressConfig {
     }
 
     static let tickIntervalNs: UInt64 = 22_000_000
-    static let segmentStep: Double = 0.012
-    static let startDelayNs: UInt64 = 150_000_000
-
-    static let programCreationTickIntervalNs: UInt64 = 26_000_000
-    static let programCreationSegmentStep: Double = 0.009
     static let programCreationStartDelayNs: UInt64 = 180_000_000
-
-    static func stepIndex(forPhaseLabel label: String) -> Int? {
-        steps.firstIndex { $0.phaseLabel == label }
-    }
-
-    static func step(forPhaseIndex index: Int) -> ProgressStep? {
-        guard steps.indices.contains(index) else { return nil }
-        return steps[index]
-    }
 }

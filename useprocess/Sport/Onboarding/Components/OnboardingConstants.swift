@@ -45,12 +45,6 @@ struct OnboardingConstants {
     /// Alias historique — même valeur que `titleTopPaddingFromScreenTop`.
     static var titleTopPadding: CGFloat { titleTopPaddingFromScreenTop }
 
-    /// Alias historique — aligné sur le même repère que les autres pages.
-    static var titleTopPaddingAfterPrimaryGoal: CGFloat { titleTopPaddingFromScreenTop }
-
-    /// Espace réservé en haut du contenu scrollé (pages sans overlay titre).
-    static var scrollContentTopInset: CGFloat { titleTopPaddingFromScreenTop + 24 }
-
     /// Repère haut après la page prénom (retour seul, sans barre ni drapeau).
     static var backOnlyContentTopInset: CGFloat {
         headerBackButtonTopPadding + backButtonSize + spacingBelowHeaderBar
@@ -79,17 +73,15 @@ enum OnboardingHeaderLayout {
     }
 
     static func showsFullHeader(currentStep: Int) -> Bool {
-        guard let step = OnboardingStep(rawValue: currentStep) else { return false }
-
-        if step == .videoIntroduction || isAfterQuestionnairePhase(step) { return false }
+        let step = OnboardingStep.resolved(from: currentStep)
+        if isAfterQuestionnairePhase(step) { return false }
         return !isAfterFirstNameProgressPhase(step)
     }
 
     /// Retour seul après la page prénom (pas de barre ni drapeau).
     static func showsBackOnly(currentStep: Int, shouldShowBackButton: Bool) -> Bool {
         guard shouldShowBackButton else { return false }
-        guard let step = OnboardingStep(rawValue: currentStep) else { return false }
-        if step == .videoIntroduction { return false }
+        let step = OnboardingStep.resolved(from: currentStep)
         if showsBackOnlyOnboardingHeader(step) { return true }
         if isAfterQuestionnairePhase(step) { return false }
         return isAfterFirstNameProgressPhase(step)
@@ -102,11 +94,8 @@ enum OnboardingHeaderLayout {
 
     /// Étapes sans chrome global (pas de barre, drapeau ni retour overlay).
     static func usesDedicatedFullScreenChrome(currentStep: Int) -> Bool {
-        guard let step = OnboardingStep(rawValue: currentStep) else { return false }
-        switch step {
-        case .videoIntroduction, .faceAnalysis, .payment, .appleSignIn,
-             .processWelcome, .featuresUnlock, .complete,
-             .healthKitPermissions, .sleepDataRecovery, .dashboardPreview, .dreamFaceCommit:
+        switch OnboardingStep.resolved(from: currentStep) {
+        case .payment, .appleSignIn, .complete, .dashboardPreview, .dreamFaceCommit:
             return true
         default:
             return false

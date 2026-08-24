@@ -11,12 +11,7 @@ import Foundation
 enum OnboardingMossChatHelpers {
     /// Questions à réponses (hors intros info) — affichent `(x/x)` dans le prompt.
     static func isNumberedAnswerQuestion(_ question: OnboardingProfileChatQuestion) -> Bool {
-        switch question.kind {
-        case .singleChoice, .multiChoice, .yesNo:
-            return true
-        default:
-            return false
-        }
+        question.kind == .singleChoice
     }
 
     static func answerProgress(

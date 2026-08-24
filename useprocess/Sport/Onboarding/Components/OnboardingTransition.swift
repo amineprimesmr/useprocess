@@ -17,24 +17,9 @@ enum TransitionDirection {
 // MARK: - Timing
 
 enum OnboardingTransitionTiming {
-    /// Plus de délai avant que Continuer / Retour soient cliquables.
-    /// Seule la page estimation garde son remplissage CTA.
-    static let earlyNavigationUnlockDelay: TimeInterval = 0
-    static let navigationUnlockDelay: TimeInterval = 0
-    static let dashboardRevealUnlockDelay: TimeInterval = 0
     static let earlyKeyboardFocusDelay: TimeInterval = 0.62
-    static let keyboardFocusDelay: TimeInterval = 0.50
     /// Focus pendant le slide de page (ex. taille → poids) pour monter le CTA avec le pad.
     static let keyboardFocusDuringPageTransitionDelay: TimeInterval = 0.14
-
-    static func navigationUnlockDelay(early: Bool, dashboardReveal: Bool = false) -> TimeInterval {
-        if dashboardReveal { return dashboardRevealUnlockDelay }
-        return early ? earlyNavigationUnlockDelay : navigationUnlockDelay
-    }
-
-    static func keyboardFocusDelay(early: Bool) -> TimeInterval {
-        early ? earlyKeyboardFocusDelay : keyboardFocusDelay
-    }
 }
 
 // MARK: - Animations
@@ -43,10 +28,6 @@ extension Animation {
     /// Début onboarding (genre → prénom) — spring visible, comme avant.
     static var onboardingTransition: Animation {
         .spring(response: 0.42, dampingFraction: 0.86, blendDuration: 0.18)
-    }
-
-    static var onboardingTransitionFast: Animation {
-        .spring(response: 0.4, dampingFraction: 0.9, blendDuration: 0.2)
     }
 
     /// Suite onboarding — fluide, sans rebond.
@@ -65,10 +46,6 @@ extension Animation {
 
     static var glowUpResultsCover: Animation {
         .smooth(duration: 0.40, extraBounce: 0)
-    }
-
-    static var onboardingEntrance: Animation {
-        .spring(response: 0.54, dampingFraction: 0.82, blendDuration: 0.16)
     }
 }
 
@@ -130,7 +107,6 @@ extension AnyTransition {
 enum OnboardingScanFlowMotion {
     static let animation = Animation.onboardingScanPagePush
     static let forwardTransition = AnyTransition.onboardingScanPagePush(direction: .forward)
-    static let backwardTransition = AnyTransition.onboardingScanPagePush(direction: .backward)
 }
 
 // MARK: - Layout onboarding (immersif vs questionnaire)

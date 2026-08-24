@@ -26,8 +26,4 @@ final class OnboardingDataModel: ObservableObject {
             selectedSports = Set(saved)
         }
     }
-
-    func persistSelectedSports() {
-        userDefaults.set(Array(selectedSports), forKey: selectedSportsKey)
-    }
 }

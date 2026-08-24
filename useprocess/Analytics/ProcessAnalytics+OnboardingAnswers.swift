@@ -7,7 +7,7 @@ extension ProcessAnalytics {
         var props: [String: Any] = [
             "step": step.analyticsName,
             "step_raw": step.rawValue,
-            "step_index": step.semanticOrderIndex,
+            "step_index": OnboardingFunnelScreen.from(step: step)?.funnelIndex ?? step.liveOrderIndex,
             "answer_keys": Array(answer.keys).sorted()
         ]
         for (key, value) in answer {
@@ -21,9 +21,9 @@ extension ProcessAnalytics {
         case .firstNameInput:
             trackFirstNameSet(viewModel.firstName, source: "onboarding_first_name")
             trackOnboardingProfileSnapshot(viewModel: viewModel, trigger: step.analyticsName)
-        case .genderSelection, .ageSelection, .height, .weight, .heightWeight:
+        case .genderSelection, .ageSelection, .height, .weight:
             trackOnboardingProfileSnapshot(viewModel: viewModel, trigger: step.analyticsName)
-        case .faceAnalysis:
+        case .dashboardPreview:
             trackFaceScanProfile(viewModel: viewModel)
         default:
             break
@@ -64,13 +64,8 @@ extension ProcessAnalytics {
            OnboardingViewModel.isPlausibleWeight(viewModel.idealWeightValue) {
             props["ideal_weight_kg"] = viewModel.idealWeightValue
         }
-        if let focus = viewModel.onboardingPrimaryFocus {
-            props["primary_focus"] = focus.rawValue
-        }
         let drivers = viewModel.onboardingDebloatDrivers.map(\.rawValue).sorted()
         if !drivers.isEmpty { props["debloat_drivers"] = drivers }
-        let challenges = viewModel.onboardingRoutineChallenges.map(\.rawValue).sorted()
-        if !challenges.isEmpty { props["routine_challenges"] = challenges }
         if let quality = viewModel.nutritionProfile.nutritionQuality {
             props["nutrition_quality"] = quality.rawValue
         }
@@ -130,9 +125,6 @@ extension ProcessAnalytics {
         if let goal = viewModel.selectedWeightGoal {
             props["weight_goal"] = goal.rawValue
         }
-        if let focus = viewModel.onboardingPrimaryFocus {
-            props["primary_focus"] = focus.rawValue
-        }
         if let bmi = bodyMassIndex(viewModel) {
             props["bmi"] = bmi
         }
@@ -172,100 +164,12 @@ extension ProcessAnalytics {
             if let gender = viewModel.selectedGender { props["gender"] = gender.rawValue }
             if viewModel.isAgeSelected { props["age"] = viewModel.selectedAge }
 
-        case .heightWeight:
-            props["height_cm"] = viewModel.selectedHeight
-            props["weight_kg"] = viewModel.selectedWeight
-            if let bmi = bodyMassIndex(viewModel) { props["bmi"] = bmi }
-
         case .firstNameInput:
             let name = viewModel.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
             props["first_name"] = name
             props["first_name_length"] = name.count
 
-        case .primaryGoal:
-            if let hasGoal = viewModel.hasWeightGoal {
-                props["has_weight_goal"] = hasGoal
-            }
-            props["primary_goals"] = viewModel.selectedPrimaryGoals.map(\.rawValue).sorted()
-
-        case .weightGoal:
-            if let goal = viewModel.selectedWeightGoal {
-                props["weight_goal"] = goal.rawValue
-            }
-
-        case .idealWeight:
-            props["ideal_weight_kg"] = viewModel.idealWeightValue
-            props["current_weight_kg"] = viewModel.selectedWeight
-            props["weight_delta_kg"] = viewModel.idealWeightValue - viewModel.selectedWeight
-            if let goal = viewModel.selectedWeightGoal {
-                props["weight_goal"] = goal.rawValue
-            }
-
-        case .hasSportActivity:
-            if let value = viewModel.hasSportActivity {
-                props["has_sport_activity"] = value
-            }
-
-        case .sportSelection:
-            let sports = OnboardingDataModel.shared.selectedSports.sorted()
-            props["sports"] = sports
-            props["sports_count"] = sports.count
-
-        case .experienceLevel:
-            if let level = viewModel.selectedExperienceLevel {
-                props["experience_level"] = level.rawValue
-            }
-
-        case .trainingFrequency:
-            if let frequency = viewModel.selectedTrainingFrequency {
-                props["training_frequency"] = frequency
-            }
-            props["sessions_per_week"] = viewModel.selectedSessionsPerWeek
-
-        case .goalPace, .potentialPace:
-            if let pace = viewModel.selectedGoalPace {
-                props["goal_pace"] = pace.rawValue
-            }
-
-        case .nutritionQuality:
-            if let quality = viewModel.nutritionProfile.nutritionQuality {
-                props["nutrition_quality"] = quality.rawValue
-            }
-
-        case .nutritionObstacles:
-            props["nutrition_obstacles"] = viewModel.nutritionProfile.nutritionObstacles
-                .map(\.rawValue)
-                .sorted()
-
-        case .weightManagementExperience:
-            if let experience = viewModel.nutritionProfile.weightManagementExperience {
-                props["weight_management_experience"] = experience.rawValue
-            }
-
-        case .hasSufficientHydration:
-            if let value = viewModel.nutritionProfile.hasSufficientHydration {
-                props["has_sufficient_hydration"] = value
-            }
-
-        case .hydrationLevel:
-            if let level = viewModel.nutritionProfile.hydrationLevel {
-                props["hydration_level"] = level.rawValue
-            }
-
-        case .sleepQuality:
-            if let quality = viewModel.sleepProfile.sleepQuality {
-                props["sleep_quality"] = quality.rawValue
-            }
-
-        case .fatigueFrequency:
-            if let frequency = viewModel.sleepProfile.fatigueFrequency {
-                props["fatigue_frequency"] = frequency.rawValue
-            }
-
-        case .fatiguePeaks:
-            props["fatigue_peaks"] = viewModel.sleepProfile.fatiguePeaks.map(\.rawValue).sorted()
-
-        case .faceAnalysis:
+        case .dashboardPreview:
             props["face_analysis_completed"] = viewModel.isFaceAnalysisCompleted
             if let markers = viewModel.onboardingFaceMarkers {
                 props["face_puffiness"] = markers.puffinessScore
@@ -285,11 +189,7 @@ extension ProcessAnalytics {
 
         case .programCreation:
             props["program_creation_completed"] = viewModel.isProgramCreationCompleted
-            if let focus = viewModel.onboardingPrimaryFocus {
-                props["primary_focus"] = focus.rawValue
-            }
             props["debloat_drivers"] = viewModel.onboardingDebloatDrivers.map(\.rawValue).sorted()
-            props["routine_challenges"] = viewModel.onboardingRoutineChallenges.map(\.rawValue).sorted()
 
         default:
             break

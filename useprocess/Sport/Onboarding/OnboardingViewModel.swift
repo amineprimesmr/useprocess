@@ -28,76 +28,46 @@ class OnboardingViewModel: ObservableObject {
     @Published var hasWeightGoal: Bool? = nil
     @Published var selectedPrimaryGoals: Set<PrimaryGoal> = []
     @Published var selectedWeightGoal: WeightGoal? = nil
-    @Published var goalDeadline: GoalDeadline = GoalDeadline()
     @Published var selectedGoalPace: GoalPace? = nil
-    
-    // MARK: - Sport et expérience
-    @Published var hasSportActivity: Bool? = nil  // ✨ Pratiques-tu une activité sportive ?
-    @Published var isInClub: Bool? = nil  // ✨ Fais-tu du sport en club ?
-    @Published var selectedExperienceLevel: ExperienceLevel? = nil
-    @Published var selectedYearsOfExperience: Int = 0
+
+    // MARK: - Sport (chat cardio)
+    @Published var hasSportActivity: Bool? = nil
     @Published var selectedTrainingFrequency: String? = nil
-    @Published var selectedSessionsPerWeek: Int = 3
-    @Published var selectedSessionDuration: Int = 60
-    @Published var selectedTrainingLocation: TrainingLocation = .mixed
-    @Published var selectedEquipment: Set<PlanEquipment> = []
-    
-    // MARK: - Nutrition
+
+    // MARK: - Nutrition / sommeil
     @Published var nutritionProfile = NutritionProfile()
-    @Published var hasDietaryRestrictions: Bool? = nil
-    @Published var otherDietaryRestriction: String = ""
-    
-    // MARK: - Navigation
-    @Published var pendingSpecificSteps: [OnboardingStep] = []
-    @Published var hasDoneFirstGoalPace: Bool = false
-    
+    @Published var sleepProfile = SleepProfile()
+
     // MARK: - États de validation
     @Published var isGenderSelected: Bool = false
     @Published var isAgeSelected: Bool = false
     @Published var isHeightWeightSelected: Bool = false
     @Published var isFirstNameEntered: Bool = false
-    @Published var isPrimaryGoalSelected: Bool = false // Conservé compat — reflète hasWeightGoal != nil
+    @Published var isPrimaryGoalSelected: Bool = false
     @Published var isWeightGoalSelected: Bool = false
     @Published var isIdealWeightEntered: Bool = false
-    @Published var isSportsSelected: Bool = false
-    @Published var isExperienceLevelSelected: Bool = false
     @Published var isTrainingFrequencySelected: Bool = false
-    @Published var isDeadlineSelected: Bool = false
     @Published var isGoalPaceSelected: Bool = false
     @Published var isWeightEstimationCompleted: Bool = false
     /// Progression 0…1 du remplissage CTA « Continuer » (écran estimations).
     @Published var estimationContinueUnlockProgress: Double = 0
     @Published var isGoalProjectionCompleted: Bool = false
     @Published var isNutritionQualitySelected: Bool = false
-    @Published var isHasDietaryRestrictionsSelected: Bool = false
-    @Published var isWhichRestrictionsSelected: Bool = false
-    @Published var isNutritionObstaclesSelected: Bool = false
     @Published var isWeightManagementExperienceSelected: Bool = false
-    @Published var isHasSufficientHydrationSelected: Bool = false
-    @Published var isHydrationLevelSelected: Bool = false
-    @Published var isSleepQualitySelected: Bool = false
-    @Published var isFatigueFrequencySelected: Bool = false
-    @Published var isFatiguePeaksSelected: Bool = false
-    @Published var isPersonalizedWelcomeCompleted: Bool = false
     @Published var isFaceLeverageIntroCompleted: Bool = false
     @Published var isWeightMotivationCompleted: Bool = false
     @Published var isFaceAnalysisCompleted: Bool = false
     @Published var onboardingFaceMarkers: FaceWellnessMarkers?
     @Published var onboardingFaceMesh: FaceMesh3DData?
     @Published var isProgramCreationCompleted: Bool = false
-    
-    // MARK: - Sleep Profile (migré complètement vers ViewModel)
-    @Published var sleepProfile = SleepProfile()
-    
-    // MARK: - Referral
-    @Published var referralCode: String? = nil // Code de parrainage utilisé à l'inscription
+
+    // MARK: - Referral / chat
+    @Published var referralCode: String? = nil
     @Published var creatorCodeDraft: String = ""
     @Published var creatorCodeIsVerified = false
     @Published var creatorCodeContinueAttempt = 0
     @Published var completedProfileChatQuestionIDs: Set<String> = []
-    @Published var onboardingPrimaryFocus: OnboardingPrimaryFocus?
     @Published var onboardingDebloatDrivers: Set<OnboardingDebloatDriver> = []
-    @Published var onboardingRoutineChallenges: Set<OnboardingRoutineChallenge> = []
     
     // MARK: - Initialization
     
@@ -114,7 +84,8 @@ class OnboardingViewModel: ObservableObject {
             applyCachedAnswers(cached)
         }
         
-        if savedStep > 0, let saved = OnboardingStep(rawValue: savedStep) {
+        if savedStep > 0 {
+            let saved = OnboardingStep.resolved(from: savedStep)
             let resumeStep = saved.unpaidResumeStep.rawValue
             currentStep = resumeStep
 
@@ -129,10 +100,7 @@ class OnboardingViewModel: ObservableObject {
         } else {
             currentStep = OnboardingStep.genderSelection.rawValue
             if !savedVisitedSteps.isEmpty {
-                visitedSteps = savedVisitedSteps.filter {
-                    guard let step = OnboardingStep(rawValue: $0) else { return false }
-                    return !step.isTransientSkippedStep
-                }
+                visitedSteps = savedVisitedSteps.compactMap { OnboardingStep(rawValue: $0)?.rawValue }
                 if visitedSteps.isEmpty {
                     visitedSteps = [OnboardingStep.genderSelection.rawValue]
                 }
@@ -216,7 +184,7 @@ class OnboardingViewModel: ObservableObject {
     // MARK: - Validation
     
     func isCurrentStepValidated() -> Bool {
-        switch OnboardingStep(rawValue: currentStep) {
+        switch OnboardingStep.resolved(from: currentStep) {
         case .genderSelection:
             return isGenderSelected && selectedGender != nil
         case .ageSelection:
@@ -225,85 +193,16 @@ class OnboardingViewModel: ObservableObject {
             return selectedHeight > 0
         case .weight:
             return Self.isPlausibleWeight(selectedWeight)
-        case .heightWeight:
-            return isHeightWeightSelected && selectedHeight > 0 && Self.isPlausibleWeight(selectedWeight)
         case .firstNameInput:
             return isFirstNameEntered && !firstName.trimmingCharacters(in: .whitespaces).isEmpty
         case .faceLeverageIntro:
             return isFaceLeverageIntroCompleted
-        case .personalizedWelcome:
-            return true
-        case .bodyScan:
-            return true
-        case .processResultsDurability, .weightGoalIncompatible:
-            return true
         case .weightMotivation:
             return isWeightMotivationCompleted
-        case .sportClub, .experienceLevel, .hardestMeal:
-            return true
-        case .appleSignIn:
-            return true
-        case .hasSportActivity:
-            return hasSportActivity != nil
-        case .primaryGoal:
-            return hasWeightGoal != nil
-        case .weightGoal:
-            return true
-        case .idealWeight:
-            return isIdealWeightEntered
-                && Self.isPlausibleWeight(idealWeightValue)
-                && abs(idealWeightValue - selectedWeight) >= 0.5
-                && Self.isReasonableIdealWeight(
-                    idealWeightValue,
-                    currentWeight: selectedWeight,
-                    height: selectedHeight,
-                    gender: selectedGender
-                )
-        case .sportSelection:
-            return isSportsSelected
-        case .yearsOfExperience:
-            return selectedYearsOfExperience > 0 || selectedYearsOfExperience == -1
-        case .deadlineSelection:
-            return isDeadlineSelected
-        case .goalPace, .potentialPace:
-            return isGoalPaceSelected && selectedGoalPace != nil
         case .weightEstimation:
             return isWeightEstimationCompleted
-        case .goalProjection:
-            return isWeightEstimationCompleted
-        case .trainingFrequency:
-            return isTrainingFrequencySelected && selectedTrainingFrequency != nil
-        case .nutritionQuality:
-            // Toujours validée : valeur par défaut + commit explicite au tap Continuer
-            return true
-        case .nutritionObstacles, .nutritionPotential:
-            return true
-        case .perfectNutritionBelief:
-            return nutritionProfile.hasPerfectNutrition != nil
-        case .hasDietaryRestrictions, .whichRestrictions:
-            return true
-        case .hasSufficientHydration:
-            return isHasSufficientHydrationSelected
-        case .hydrationLevel:
-            return isHydrationLevelSelected
-        case .sleepQuality:
-            return isSleepQualitySelected
-        case .fatigueFrequency:
-            return isFatigueFrequencySelected
-        case .fatiguePeaks:
-            return isFatiguePeaksSelected
-        case .sleepNeed:
-            // ✅ Page informative, toujours validée
-            return true
-        case .faceAnalysis:
-            return isFaceAnalysisCompleted
         case .programCreation:
             return isProgramCreationCompleted
-        case .weightManagementExperience:
-            if hasWeightGoal != true {
-                return true
-            }
-            return isWeightManagementExperienceSelected
         case .referralCode:
             return creatorCodeIsVerified
         default:
@@ -314,17 +213,6 @@ class OnboardingViewModel: ObservableObject {
     // MARK: - Objectif poids (flux simplifié)
 
     var hasWeightObjective: Bool { hasWeightGoal == true }
-
-    var bodyCompositionAssessment: BodyCompositionAssessment? {
-        BodyCompositionAssessment.evaluate(
-            weight: selectedWeight,
-            height: selectedHeight,
-            age: selectedAge,
-            gender: selectedGender
-        )
-    }
-
-    /// Étape « poids de référence / objectif de poids » retirée du parcours — toujours sautée.
 
     func refreshBodyCompositionRouting() {
         // Défauts debloat une seule fois — évite une tempête de @Published pendant la nav.
@@ -364,15 +252,8 @@ class OnboardingViewModel: ObservableObject {
 
     /// Persiste les réponses implicites (valeurs par défaut UI) avant navigation.
     func commitPendingStepAnswers() {
-        guard let step = OnboardingStep(rawValue: currentStep) else { return }
-
-        switch step {
-        case .nutritionQuality:
-            if nutritionProfile.nutritionQuality == nil {
-                updateNutritionQuality(.average)
-            }
-        default:
-            break
+        if nutritionProfile.nutritionQuality == nil {
+            updateNutritionQuality(.average)
         }
     }
 
@@ -389,50 +270,6 @@ class OnboardingViewModel: ObservableObject {
         isWeightGoalSelected = selectedWeightGoal != nil
     }
 
-    private func inferredWeightGoalFromIdealWeight() -> WeightGoal? {
-        guard hasWeightGoal == true, isIdealWeightEntered else { return nil }
-        if idealWeightValue < selectedWeight { return .lose }
-        if idealWeightValue > selectedWeight { return .gain }
-        return nil
-    }
-
-    func recommendedIdealWeight() -> Double? {
-        guard Self.isPlausibleWeight(selectedWeight),
-              selectedHeight >= 120,
-              selectedHeight <= 230,
-              let gender = selectedGender,
-              let goal = selectedWeightGoal
-                ?? PersonalizedIdealWeightCalculator.inferredWeightGoal(
-                    currentWeight: selectedWeight,
-                    height: selectedHeight,
-                    age: selectedAge,
-                    gender: gender
-                ) else {
-            return nil
-        }
-
-        let recommendation = PersonalizedIdealWeightCalculator.calculatePersonalizedIdealWeight(
-            currentWeight: selectedWeight,
-            height: selectedHeight,
-            age: selectedAge,
-            gender: gender,
-            weightGoal: goal
-        )
-
-        guard Self.isPlausibleWeight(recommendation),
-              Self.isReasonableIdealWeight(
-                recommendation,
-                currentWeight: selectedWeight,
-                height: selectedHeight,
-                gender: gender
-              ),
-              abs(recommendation - selectedWeight) >= 0.5 else {
-            return nil
-        }
-
-        return recommendation
-    }
-    
     // MARK: - Progress Management
     
     func saveProgress() {
@@ -444,11 +281,10 @@ class OnboardingViewModel: ObservableObject {
     /// Tant que l’onboarding n’est pas payé, on mémorise le dashboard — pas le paywall.
     private var persistedResumeStep: Int {
         guard !AppSession.shared.hasCompletedOnboarding,
-              !SubscriptionService.shared.subscriptionStatus.isActive,
-              let step = OnboardingStep(rawValue: currentStep) else {
+              !SubscriptionService.shared.subscriptionStatus.isActive else {
             return currentStep
         }
-        return step.unpaidResumeStep.rawValue
+        return OnboardingStep.resolved(from: currentStep).unpaidResumeStep.rawValue
     }
 
     func saveFlowProgress(_ progress: Double) {
@@ -458,7 +294,7 @@ class OnboardingViewModel: ObservableObject {
     func resetProgress() {
         OnboardingProgressService.shared.resetProgress()
         sleepProfile = SleepProfile()
-        currentStep = 0
+        currentStep = OnboardingStep.genderSelection.rawValue
     }
 
     func makeAnswersSnapshot() -> OnboardingAnswersSnapshot {
@@ -472,27 +308,15 @@ class OnboardingViewModel: ObservableObject {
             hasWeightGoal: hasWeightGoal,
             selectedPrimaryGoals: selectedPrimaryGoals.sorted { $0.rawValue < $1.rawValue },
             selectedWeightGoal: selectedWeightGoal,
-            goalDeadline: goalDeadline,
             selectedGoalPace: selectedGoalPace,
             hasSportActivity: hasSportActivity,
-            isInClub: isInClub,
-            selectedExperienceLevel: selectedExperienceLevel,
-            selectedYearsOfExperience: selectedYearsOfExperience,
             selectedTrainingFrequency: selectedTrainingFrequency,
-            selectedSessionsPerWeek: selectedSessionsPerWeek,
-            selectedSessionDuration: selectedSessionDuration,
-            selectedTrainingLocation: selectedTrainingLocation,
-            selectedEquipment: selectedEquipment.sorted { $0.rawValue < $1.rawValue },
             selectedSports: OnboardingDataModel.shared.selectedSports.sorted(),
             nutritionProfile: nutritionProfile,
-            hasDietaryRestrictions: hasDietaryRestrictions,
-            otherDietaryRestriction: otherDietaryRestriction,
             sleepProfile: sleepProfile,
             referralCode: referralCode,
             completedProfileChatQuestionIDs: completedProfileChatQuestionIDs.sorted(),
-            onboardingPrimaryFocus: onboardingPrimaryFocus,
             onboardingDebloatDrivers: onboardingDebloatDrivers.sorted { $0.rawValue < $1.rawValue },
-            onboardingRoutineChallenges: onboardingRoutineChallenges.sorted { $0.rawValue < $1.rawValue },
             isGenderSelected: isGenderSelected,
             isAgeSelected: isAgeSelected,
             isHeightWeightSelected: isHeightWeightSelected,
@@ -500,28 +324,15 @@ class OnboardingViewModel: ObservableObject {
             isPrimaryGoalSelected: isPrimaryGoalSelected,
             isWeightGoalSelected: isWeightGoalSelected,
             isIdealWeightEntered: isIdealWeightEntered,
-            isSportsSelected: isSportsSelected,
-            isExperienceLevelSelected: isExperienceLevelSelected,
             isTrainingFrequencySelected: isTrainingFrequencySelected,
-            isDeadlineSelected: isDeadlineSelected,
             isGoalPaceSelected: isGoalPaceSelected,
             isNutritionQualitySelected: isNutritionQualitySelected,
-            isHasDietaryRestrictionsSelected: isHasDietaryRestrictionsSelected,
-            isWhichRestrictionsSelected: isWhichRestrictionsSelected,
-            isNutritionObstaclesSelected: isNutritionObstaclesSelected,
             isWeightManagementExperienceSelected: isWeightManagementExperienceSelected,
-            isHasSufficientHydrationSelected: isHasSufficientHydrationSelected,
-            isHydrationLevelSelected: isHydrationLevelSelected,
-            isSleepQualitySelected: isSleepQualitySelected,
-            isFatigueFrequencySelected: isFatigueFrequencySelected,
-            isFatiguePeaksSelected: isFatiguePeaksSelected,
-            isPersonalizedWelcomeCompleted: isPersonalizedWelcomeCompleted,
             isWeightMotivationCompleted: isWeightMotivationCompleted,
             isWeightEstimationCompleted: isWeightEstimationCompleted,
             isGoalProjectionCompleted: isGoalProjectionCompleted,
             isFaceAnalysisCompleted: isFaceAnalysisCompleted,
             isProgramCreationCompleted: isProgramCreationCompleted,
-            hasDoneFirstGoalPace: hasDoneFirstGoalPace,
             dashboardPreviewPresentation: dashboardPreviewPresentation.rawValue,
             hasCompletedFirstDashboardPreview: hasCompletedFirstDashboardPreview,
             dashboardScanPersistedState: dashboardScanPersistedState
@@ -556,50 +367,20 @@ class OnboardingViewModel: ObservableObject {
         if let value = snapshot.selectedWeightGoal {
             selectedWeightGoal = value
         }
-        if let value = snapshot.goalDeadline {
-            goalDeadline = value
-        }
         if let value = snapshot.selectedGoalPace {
             selectedGoalPace = value
         }
         if let value = snapshot.hasSportActivity {
             hasSportActivity = value
         }
-        if let value = snapshot.isInClub {
-            isInClub = value
-        }
-        if let value = snapshot.selectedExperienceLevel {
-            selectedExperienceLevel = value
-        }
-        if let value = snapshot.selectedYearsOfExperience {
-            selectedYearsOfExperience = value
-        }
         if let value = snapshot.selectedTrainingFrequency {
             selectedTrainingFrequency = value
-        }
-        if let value = snapshot.selectedSessionsPerWeek {
-            selectedSessionsPerWeek = value
-        }
-        if let value = snapshot.selectedSessionDuration {
-            selectedSessionDuration = value
-        }
-        if let value = snapshot.selectedTrainingLocation {
-            selectedTrainingLocation = value
-        }
-        if let equipment = snapshot.selectedEquipment {
-            selectedEquipment = Set(equipment)
         }
         if let sports = snapshot.selectedSports {
             OnboardingDataModel.shared.selectedSports = Set(sports)
         }
         if let value = snapshot.nutritionProfile {
             nutritionProfile = value
-        }
-        if let value = snapshot.hasDietaryRestrictions {
-            hasDietaryRestrictions = value
-        }
-        if let value = snapshot.otherDietaryRestriction {
-            otherDietaryRestriction = value
         }
         if let value = snapshot.sleepProfile {
             sleepProfile = value
@@ -610,16 +391,10 @@ class OnboardingViewModel: ObservableObject {
         if let ids = snapshot.completedProfileChatQuestionIDs {
             completedProfileChatQuestionIDs = Set(ids)
         }
-        if let value = snapshot.onboardingPrimaryFocus {
-            onboardingPrimaryFocus = value
-        }
         if let values = snapshot.onboardingDebloatDrivers {
             onboardingDebloatDrivers = Set(values)
         } else if let value = snapshot.onboardingDebloatDriver {
             onboardingDebloatDrivers = [value]
-        }
-        if let values = snapshot.onboardingRoutineChallenges {
-            onboardingRoutineChallenges = Set(values)
         }
 
         if let value = snapshot.isGenderSelected { isGenderSelected = value }
@@ -629,30 +404,12 @@ class OnboardingViewModel: ObservableObject {
         if let value = snapshot.isPrimaryGoalSelected { isPrimaryGoalSelected = value }
         if let value = snapshot.isWeightGoalSelected { isWeightGoalSelected = value }
         if let value = snapshot.isIdealWeightEntered { isIdealWeightEntered = value }
-        if let value = snapshot.isSportsSelected { isSportsSelected = value }
-        if let value = snapshot.isExperienceLevelSelected { isExperienceLevelSelected = value }
         if let value = snapshot.isTrainingFrequencySelected { isTrainingFrequencySelected = value }
-        if let value = snapshot.isDeadlineSelected { isDeadlineSelected = value }
         if let value = snapshot.isGoalPaceSelected { isGoalPaceSelected = value }
         isNutritionQualitySelected = nutritionProfile.nutritionQuality != nil
             || (snapshot.isNutritionQualitySelected ?? false)
-        if let value = snapshot.isHasDietaryRestrictionsSelected {
-            isHasDietaryRestrictionsSelected = value
-        }
-        if let value = snapshot.isWhichRestrictionsSelected { isWhichRestrictionsSelected = value }
-        if let value = snapshot.isNutritionObstaclesSelected { isNutritionObstaclesSelected = value }
         if let value = snapshot.isWeightManagementExperienceSelected {
             isWeightManagementExperienceSelected = value
-        }
-        if let value = snapshot.isHasSufficientHydrationSelected {
-            isHasSufficientHydrationSelected = value
-        }
-        if let value = snapshot.isHydrationLevelSelected { isHydrationLevelSelected = value }
-        if let value = snapshot.isSleepQualitySelected { isSleepQualitySelected = value }
-        if let value = snapshot.isFatigueFrequencySelected { isFatigueFrequencySelected = value }
-        if let value = snapshot.isFatiguePeaksSelected { isFatiguePeaksSelected = value }
-        if let value = snapshot.isPersonalizedWelcomeCompleted {
-            isPersonalizedWelcomeCompleted = value
         }
         if let value = snapshot.isWeightMotivationCompleted {
             isWeightMotivationCompleted = value
@@ -665,7 +422,6 @@ class OnboardingViewModel: ObservableObject {
             isFaceAnalysisCompleted = value
         }
         if let value = snapshot.isProgramCreationCompleted { isProgramCreationCompleted = value }
-        if let value = snapshot.hasDoneFirstGoalPace { hasDoneFirstGoalPace = value }
         if let raw = snapshot.dashboardPreviewPresentation, !raw.isEmpty {
             dashboardPreviewPresentation = .firstScanPending
         }
@@ -810,7 +566,7 @@ class OnboardingViewModel: ObservableObject {
     }
 
     func presentOnboardingFaceScan(initialResult: FaceScanResult? = nil, usesChatCallbacks: Bool = true) {
-        if OnboardingStep(rawValue: currentStep) == .dashboardPreview,
+        if OnboardingStep.resolved(from: currentStep) == .dashboardPreview,
            dashboardPreviewPresentation == .firstScanPending,
            initialResult == nil {
             return
@@ -845,9 +601,9 @@ class OnboardingViewModel: ObservableObject {
 
     /// Réinitialise les validations bloquantes quand l'utilisateur revient en arrière.
     func prepareForBackNavigation(to targetStep: OnboardingStep) {
-        if let current = OnboardingStep(rawValue: currentStep),
-           current == .programCreation || current.rawValue > OnboardingStep.programCreation.rawValue,
-           targetStep.rawValue <= OnboardingStep.programCreation.rawValue {
+        let current = OnboardingStep.resolved(from: currentStep)
+        if current.liveOrderIndex >= OnboardingStep.programCreation.liveOrderIndex,
+           targetStep.liveOrderIndex <= OnboardingStep.programCreation.liveOrderIndex {
             isProgramCreationCompleted = false
         }
 
@@ -855,15 +611,13 @@ class OnboardingViewModel: ObservableObject {
             isWeightMotivationCompleted = false
             suppressProfileChatAutoFinish = true
 
-            if let current = OnboardingStep(rawValue: currentStep),
-               current == .programCreation,
+            if current == .programCreation,
                isFaceAnalysisCompleted {
                 shouldReopenFaceScanResultsAfterBack = true
                 return
             }
 
-            if let current = OnboardingStep(rawValue: currentStep),
-               current == .dashboardPreview,
+            if current == .dashboardPreview,
                dashboardPreviewPresentation == .firstScanPending {
                 let orderedIDs = OnboardingProfileChatQuestionBank.questions(for: self).map(\.id)
                 if completedProfileChatQuestionIDs.contains("profile_summary")
@@ -881,15 +635,10 @@ class OnboardingViewModel: ObservableObject {
     }
 
     private func hasReachedFaceScanStep(savedStep: Int, visited: [Int]) -> Bool {
-        if visited.contains(OnboardingStep.faceAnalysis.rawValue) {
+        if visited.contains(OnboardingStep.dashboardPreview.rawValue) {
             return true
         }
-
-        guard let step = OnboardingStep(rawValue: savedStep) else {
-            return false
-        }
-
-        return isAfterQuestionnairePhase(step)
+        return isAfterQuestionnairePhase(OnboardingStep.resolved(from: savedStep))
     }
 
     static func isRealUserFirstName(_ value: String) -> Bool {
@@ -901,38 +650,6 @@ class OnboardingViewModel: ObservableObject {
 
     static func isPlausibleWeight(_ value: Double) -> Bool {
         value >= 35 && value <= 250
-    }
-
-    static func isReasonableIdealWeight(
-        _ value: Double,
-        currentWeight: Double,
-        height: Double,
-        gender: Gender?
-    ) -> Bool {
-        guard isPlausibleWeight(value), height >= 120, height <= 230 else { return false }
-
-        let heightM = height / 100.0
-        let bmi = value / (heightM * heightM)
-        let minBMI = gender == .male ? 19.0 : 18.5
-        let maxBMI: Double
-
-        switch gender {
-        case .male:
-            maxBMI = 27.0
-        case .female:
-            maxBMI = 26.0
-        default:
-            maxBMI = 26.5
-        }
-
-        guard bmi >= minBMI, bmi <= maxBMI else { return false }
-
-        if isPlausibleWeight(currentWeight) {
-            let maxDelta = max(25.0, currentWeight * 0.30)
-            return abs(value - currentWeight) <= maxDelta
-        }
-
-        return true
     }
 }
 

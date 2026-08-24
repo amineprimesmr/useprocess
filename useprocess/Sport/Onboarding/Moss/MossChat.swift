@@ -14,25 +14,13 @@ import UIKit
 
 enum MossChatStyle {
     // Onboarding copy runs in the SYSTEM face — every sentence, question,
-    // title and spoken line. GT Alpina is reserved for numerals alone (see
-    // `numeral(_:)`). The system face sets wider than the condensed cut, so
-    // copy steps down slightly; letterspacing stays native.
+    // title and spoken line. The system face sets wider than the condensed
+    // cut, so copy steps down slightly; letterspacing stays native.
     static let displayScale: CGFloat = 0.92
 
     /// Onboarding prose: system font.
     static func display(_ size: CGFloat) -> Font {
         .system(size: size * displayScale)
-    }
-
-    /// Display numerals only — GT Alpina Condensed Thin, at its design size.
-    static func numeral(_ size: CGFloat) -> Font {
-        Theme.Fonts.serif(size)
-    }
-
-    /// For value slots that carry either a figure or a phrase ("15 min" vs
-    /// "Your chosen apps"): numerals get GT Alpina, pure words stay system.
-    static func value(_ text: String, _ size: CGFloat) -> Font {
-        text.contains(where: \.isNumber) ? numeral(size) : display(size)
     }
 
     static let mossFont = display(24)
@@ -79,22 +67,8 @@ enum MossChatStyle {
 ///   Its one entry is `CKGrayBalloonColorLightMode`, light-mode only, and its
 ///   value is exactly systemGray5 — which is where the dark half comes from.
 enum MossIMessage {
-    /// CKBlueBalloonColor0 — the light stop, top.
-    static let blue0Light = Color(hex: 0x5AC8FA)
-    static let blue0Dark  = Color(hex: 0x409CFF)
-    /// CKBlueBalloonColor1 — the deep stop, bottom.
-    static let blue1Light = Color(hex: 0x0088FF)
-    static let blue1Dark  = Color(hex: 0x0091FF)
-    /// The outgoing balloon, kept for reference — MOSS uses the grey.
-    static let blueBalloon = LinearGradient(colors: [blue0Dark, blue1Dark],
-                                            startPoint: .top, endPoint: .bottom)
-
-    /// CKGrayBalloonColorLightMode == systemGray5. Flat, both appearances.
-    static let grayLight = Color(hex: 0xE5E5EA)
+    /// CKGrayBalloonColor — flat dark grey (ChatKit).
     static let grayDark  = Color(hex: 0x2C2C2E)
-
-    /// MOSS is a pure-black surface end to end, so the dark value always wins;
-    /// the light values are reference, not a light appearance.
     static let balloon = grayDark
     /// Apple sets balloon text in `label`, which is plain white on the dark
     /// grey — not an off-white, and not MOSS's warm Theme.ink.
@@ -268,52 +242,11 @@ extension View {
     }
 }
 
-/// MossRecessedSurface — the record material (audit 6.4): evidence set
-/// INTO the ground, never floating above it. Paper fill over the void, a
-/// hairline that brightens toward the bottom, a soft inner top shade.
-/// Recessed things cast no shadow, ever. The screen-blended aurora
-/// suffuses the low-alpha fill from behind — that glow is the dampness;
-/// never occlude it. Shared by review, mirror and trade.
-struct MossRecessedSurface: ViewModifier {
-    var cornerRadius: CGFloat = 24
-
-    func body(content: Content) -> some View {
-        content.background {
-            let shape = RoundedRectangle(cornerRadius: cornerRadius,
-                                         style: .continuous)
-            ZStack {
-                shape.fill(Color(hex: 0xFCF8F5).opacity(0.06))
-                LinearGradient(
-                    stops: [
-                        .init(color: .black.opacity(0.16), location: 0),
-                        .init(color: .clear, location: 0.20),
-                    ],
-                    startPoint: .top, endPoint: .bottom)
-                    .clipShape(shape)
-                shape.strokeBorder(
-                    LinearGradient(
-                        colors: [Color(hex: 0xFCF8F5).opacity(0.05),
-                                 Color(hex: 0xFCF8F5).opacity(0.13)],
-                        startPoint: .top, endPoint: .bottom),
-                    lineWidth: 0.5)
-            }
-        }
-    }
-}
-
-extension View {
-    func mossRecessedSurface(cornerRadius: CGFloat = 24) -> some View {
-        modifier(MossRecessedSurface(cornerRadius: cornerRadius))
-    }
-}
-
 // MARK: - Footer buttons
 
 /// CTA pleine largeur dans le fil de discussion onboarding.
 struct MossChatPrimaryButton: View {
     let title: String
-    /// The brand never renders as text: the CTA closes with the wordmark.
-    var wordmarkSuffix: Bool = false
     var enabled: Bool = true
     let action: () -> Void
 
@@ -336,84 +269,9 @@ struct MossChatPrimaryButton: View {
     }
 
     private var label: some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(Theme.Fonts.sans(16, weight: .semibold))
-            if wordmarkSuffix {
-                MossWordmark(
-                    height: 14,
-                    color: OnboardingTheme.onboardingPrimaryActionText(for: colorScheme)
-                )
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-/// The quiet secondary ("Later") beside a primary.
-struct MossChatGhostButton: View {
-    let title: String
-    var enabled: Bool = true
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(Theme.Fonts.sans(15, weight: .medium))
-                .foregroundStyle(Theme.ink2)
-                .frame(maxWidth: .infinity, minHeight: 54)
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-    }
-}
-
-// MARK: - Wrapping layout for chip groups
-
-/// A simple left-to-right wrapping layout (for chip rows).
-struct MossFlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var x: CGFloat = 0
-        var totalHeight: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var usedWidth: CGFloat = 0
-
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > maxWidth {
-                totalHeight += rowHeight + spacing
-                x = 0
-                rowHeight = 0
-            }
-            x += size.width + spacing
-            usedWidth = max(usedWidth, x - spacing)
-            rowHeight = max(rowHeight, size.height)
-        }
-        totalHeight += rowHeight
-
-        let width = maxWidth.isFinite ? maxWidth : usedWidth
-        return CGSize(width: width, height: max(totalHeight, 0))
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX
-        var y = bounds.minY
-        var rowHeight: CGFloat = 0
-
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x + size.width > bounds.maxX, x > bounds.minX {
-                x = bounds.minX
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
+        Text(title)
+            .font(Theme.Fonts.sans(16, weight: .semibold))
+            .frame(maxWidth: .infinity)
     }
 }
 

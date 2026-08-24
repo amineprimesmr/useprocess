@@ -11,40 +11,11 @@ extension SportOnboardingView {
 
 // MARK: - Navigation
 
-/// Avance automatiquement à travers les étapes transitoires (sans validation).
-func skipTransientStep() {
-    guard !isTransitioning else { return }
-    guard let currentStep = OnboardingStep(rawValue: viewModel.currentStep),
-          currentStep.isTransientSkippedStep else { return }
-
-    guard let visibleStep = resolveFirstVisibleStep(from: viewModel.currentStep),
-          visibleStep != viewModel.currentStep,
-          visibleStep < totalSteps else {
-        return
-    }
-
-    commitVisibleStepToHistory(viewModel.currentStep)
-
-    previousStepIndex = viewModel.currentStep
-    transitionDirection = .forward
-    isTransitioning = true
-
-    commitAnimatedStepChange(to: visibleStep)
-
-    commitVisibleStepToHistory(visibleStep)
-
-    unlockNavigationAfterTransition()
-
-    OnboardingProgressService.shared.saveCurrentStep(visibleStep)
-    viewModel.saveProgress()
-    scheduleRefreshOnboardingFlowProgress()
-}
-
 /// Saute toutes les étapes transitoires d'un coup (évite les animations en chaîne).
 private func resolveFirstVisibleStep(from step: Int) -> Int? {
     var cursor = step
     for _ in 0..<40 {
-        guard let current = OnboardingStep(rawValue: cursor) else { return nil }
+        let current = OnboardingStep.resolved(from: cursor)
         if !current.isTransientSkippedStep { return cursor }
         guard let next = navigationEngine.nextStep(after: cursor) else { return nil }
         cursor = next
@@ -344,15 +315,9 @@ func restoreOnboardingProgressFromSavedState() {
     OnboardingProgressService.shared.migrateInProgressStorageIfNeeded()
 
     let savedStep = OnboardingProgressService.shared.loadCurrentStep()
+    let step = OnboardingStep.resolved(from: savedStep)
 
-    guard let step = OnboardingStep(rawValue: savedStep), savedStep >= 0, savedStep < totalSteps else {
-        viewModel.currentStep = OnboardingStep.genderSelection.rawValue
-        viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
-        viewModel.saveProgress()
-        return
-    }
-
-    if step == .videoIntroduction {
+    if savedStep < 0 {
         viewModel.currentStep = OnboardingStep.genderSelection.rawValue
         viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
         viewModel.saveProgress()
@@ -363,15 +328,15 @@ func restoreOnboardingProgressFromSavedState() {
 
     if canDisplayStep && savedStep > 0 {
         if step.isTransientSkippedStep,
-           let visibleStep = navigationEngine.resolveNextVisibleStep(from: savedStep) {
+           let visibleStep = navigationEngine.resolveNextVisibleStep(from: step.rawValue) {
             viewModel.currentStep = visibleStep
         } else {
-            viewModel.currentStep = savedStep
+            viewModel.currentStep = step.rawValue
         }
     } else if !canDisplayStep && savedStep > 0 {
         let activePath = navigationEngine.buildActiveFlowPath()
-        if activePath.contains(savedStep) {
-            viewModel.currentStep = savedStep
+        if activePath.contains(step.rawValue) {
+            viewModel.currentStep = step.rawValue
         } else {
             let lastValidStep = findLastValidOnboardingStepIndex(
                 visitedSteps: viewModel.visitedSteps,
@@ -383,7 +348,7 @@ func restoreOnboardingProgressFromSavedState() {
         if viewModel.visitedSteps.isEmpty {
             viewModel.visitedSteps = [OnboardingStep.genderSelection.rawValue]
         }
-        if viewModel.currentStep == 0 {
+        if viewModel.currentStep == 0 || OnboardingStep(rawValue: viewModel.currentStep) == nil {
             viewModel.currentStep = OnboardingStep.genderSelection.rawValue
         }
     }

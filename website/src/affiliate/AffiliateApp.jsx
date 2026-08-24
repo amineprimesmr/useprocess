@@ -132,13 +132,11 @@ function useHashRoute() {
   }, []);
 
   const go = useCallback((next) => {
-    const normalized =
-      String(next || "")
-        .replace(/^#\/?/, "")
-        .split("?")[0]
-        .trim() || "program";
+    const raw = String(next || "").replace(/^#\/?/, "").trim() || "program";
+    const [path, query] = raw.split("?");
+    const normalized = (path || "program").trim();
     setRoute(normalized);
-    navigateHash(normalized);
+    navigateHash(query ? `${normalized}?${query}` : normalized);
   }, []);
 
   return [route, go];
@@ -1081,7 +1079,13 @@ function DashboardShell({
   function renderPage() {
     switch (route) {
       case "methode":
-        return <AffiliateMethodPage />;
+        return (
+          <AffiliateMethodPage
+            linkUrl={linkUrl}
+            primaryCode={primaryCode}
+            onGoLinks={() => go("links")}
+          />
+        );
       case "links":
         return <LinksPage dashboard={dashboard} isPending={isPending} primaryCode={primaryCode} linkUrl={linkUrl} />;
       case "earnings":
@@ -1185,7 +1189,7 @@ function DashboardShell({
       </aside>
 
       <main className="af-main">
-        {route !== "payouts" && route !== "settings" ? (
+        {route !== "payouts" && route !== "settings" && route !== "methode" ? (
           <div className="af-page-head">
             <h1>
               {pageTitles[route] || pageTitles.overview}

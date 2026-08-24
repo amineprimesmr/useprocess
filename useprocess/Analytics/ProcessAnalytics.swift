@@ -10,6 +10,8 @@ enum ProcessAnalytics {
     private static var lastTrackedFirstName: String?
     /// Dedupe consecutive Moss sub-page views (chat / scan / program creation).
     static var lastMossPageName: String?
+    /// Dedupe du parcours réel (`onboarding_funnel_step`).
+    static var lastFunnelScreenID: String?
 
     // MARK: - Lifecycle
 
@@ -76,6 +78,7 @@ enum ProcessAnalytics {
         lastOnboardingStepName = nil
         lastTrackedFirstName = nil
         lastMossPageName = nil
+        lastFunnelScreenID = nil
     }
 
     /// Enregistre le prénom pour différencier les users (event + person + super properties).
@@ -202,16 +205,50 @@ enum ProcessAnalytics {
 
     static func trackOnboardingStep(step: OnboardingStep?) {
         guard let step else { return }
-        let name = step.analyticsName
-        guard name != lastOnboardingStepName else { return }
-        lastOnboardingStepName = name
+        // Les étapes transitoires (HealthKit, notifs…) sautent trop vite et
+        // polluent le funnel avec un ordre faux.
+        if step.isTransientSkippedStep { return }
+        // Le chat n’est pas un écran unique : chaque question part via Moss.
+        if step == .weightMotivation { return }
 
-        if !didTrackOnboardingStarted {
-            trackOnboardingStarted(step: step)
+        let name = step.analyticsName
+        if name != lastOnboardingStepName {
+            lastOnboardingStepName = name
+
+            if !didTrackOnboardingStarted {
+                trackOnboardingStarted(step: step)
+            }
+
+            capture("onboarding_step_viewed", properties: stepProperties(step))
+            screen("onboarding_\(name)")
         }
 
-        capture("onboarding_step_viewed", properties: stepProperties(step))
-        screen("onboarding_\(name)")
+        if let funnelScreen = OnboardingFunnelScreen.from(step: step) {
+            trackFunnelScreen(funnelScreen)
+        }
+    }
+
+    /// Écran du parcours réel — une ligne PostHog = un écran utilisateur.
+    static func trackFunnelScreen(
+        _ funnelScreen: OnboardingFunnelScreen,
+        extra: [String: Any] = [:]
+    ) {
+        guard funnelScreen.id != lastFunnelScreenID else { return }
+        lastFunnelScreenID = funnelScreen.id
+
+        var props: [String: Any] = [
+            "screen": funnelScreen.id,
+            "screen_label": funnelScreen.labelEN,
+            "screen_label_fr": funnelScreen.labelFR,
+            "funnel_index": funnelScreen.funnelIndex,
+            "funnel_phase": funnelScreen.phase,
+            "funnel_version": 2
+        ]
+        for (key, value) in extra {
+            props[key] = value
+        }
+        capture("onboarding_funnel_step", properties: props)
+        screen("funnel_\(funnelScreen.id)")
     }
 
     static func trackOnboardingCompleted() {
@@ -253,6 +290,7 @@ enum ProcessAnalytics {
     static func trackPaywallViewed(source: String = "unknown") {
         capture("paywall_viewed", properties: withPricingVariant(["source": source]))
         screen("paywall")
+        trackFunnelScreen(.paywall, extra: ["source": source])
     }
 
     static func trackPaywallPlanSelected(plan: String, source: String = "paywall") {
@@ -532,6 +570,7 @@ enum ProcessAnalytics {
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
         capture("purchase_started", properties: withPricingVariant(withAcquisition(props)))
+        trackFunnelScreen(.purchaseStarted, extra: props)
     }
 
     static func trackPurchaseCompleted(
@@ -543,6 +582,7 @@ enum ProcessAnalytics {
         if let offer { props["offer"] = offer }
         if let source { props["source"] = source }
         capture("purchase_completed", properties: withPricingVariant(withAcquisition(props)))
+        trackFunnelScreen(.purchaseCompleted, extra: props)
     }
 
     static func trackPurchaseCancelled(
@@ -655,11 +695,18 @@ enum ProcessAnalytics {
 
     private static func stepProperties(_ step: OnboardingStep?) -> [String: Any] {
         guard let step else { return [:] }
-        return [
+        var props: [String: Any] = [
             "step": step.analyticsName,
             "step_raw": step.rawValue,
-            "step_index": step.semanticOrderIndex
+            "step_index": OnboardingFunnelScreen.from(step: step)?.funnelIndex ?? step.liveOrderIndex,
+            "funnel_version": 2
         ]
+        if let funnel = OnboardingFunnelScreen.from(step: step) {
+            props["screen"] = funnel.id
+            props["screen_label_fr"] = funnel.labelFR
+            props["funnel_phase"] = funnel.phase
+        }
+        return props
     }
 
     private static func resolvedFirstName(from raw: String?) -> String? {
